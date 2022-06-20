@@ -1,4 +1,6 @@
 <HelpBalloon>
 	<title><![CDATA[Messung mit Cookie]]></title>
-	<content><![CDATA[Bitte beachten Sie, dass Sie vor dem Setzen von Cookies f&uuml;r Marketing-Zwecke eine aktive Einwilligung des Empf&auml;ngers einholen sollten (z.B. im Rahmen der Anmeldung oder Registrierung) und den Kunden &uuml;ber Zweck und Dauer der Speicherung informieren. Auch Ihre Datenschutzerkl&auml;rung sollte entsprechend erg&auml;nzt werden.]]></content>
+	<content><![CDATA[Bitte beachten Sie, dass Sie vor dem Setzen von Cookies f&uuml;r Marketing-Zwecke eine aktive Einwilligung des Empf&auml;ngers einholen sollten (z.B. im Rahmen der Anmeldung oder Registrierung) und den Kunden &uuml;ber Zweck und Dauer der Speicherung informieren. Auch Ihre Datenschutzerkl&auml;rung sollte entsprechend erg&auml;nzt werden.
+	
+	Voraussetzung f&uuml;r das Retargeting ist, dass Sie zuvor die EMM-Messpunkte in Ihre Website eingebunden haben.]]></content>
 </HelpBalloon>

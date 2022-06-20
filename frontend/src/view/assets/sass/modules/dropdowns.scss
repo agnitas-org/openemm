@@ -318,11 +318,11 @@ body.dark-theme .dropdown-menu {
 
     &:hover,
     &:focus {
-      background-color: darken($c-dt-dropdown-background, 10%);
+      background-color: lighten($c-dt-dropdown-background, 10%);
     }
 
     &:active {
-      background-color: darken($c-dt-dropdown-background, 15%);
+      background-color: lighten($c-dt-dropdown-background, 15%);
     }
   }
 }

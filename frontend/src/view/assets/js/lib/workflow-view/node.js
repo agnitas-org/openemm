@@ -361,6 +361,7 @@
                 node.setDependent(false);
                 data.mailinglistId = 0;
                 data.targets = [];
+                data.altgs = [];
                 data.targetsOption = null;
                 break;
 

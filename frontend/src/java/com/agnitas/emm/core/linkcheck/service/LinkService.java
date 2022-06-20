@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -47,7 +47,7 @@ public interface LinkService {
 	 * AgnTag [agnPROFILE] ARE NOT resolved.
 	 * AgnTag [agnUNSUBSCRIBE] ARE NOT resolved.
 	 * AgnTag [agnFORM] ARE NOT resolved.
-	 * @throws Exception 
+	 * @throws Exception
 	 */
 	LinkScanResult scanForLinks(String text, int companyID) throws Exception;
 
@@ -146,8 +146,8 @@ public interface LinkService {
 		private final List<ComTrackableLink> trackableLinks;
 		private final List<String> imageLinks;
 		private final List<String> notTrackableLinks;
-		private final List<ErrorneousLink> errorneousLinks;
-		private final List<ErrorneousLink> localLinks;
+		private final List<ErroneousLink> erroneousLinks;
+		private final List<ErroneousLink> localLinks;
 		private final List<LinkWarning> linkWarnings;
 		
 		
@@ -155,11 +155,11 @@ public interface LinkService {
 			this(new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
 		}
 		
-		public LinkScanResult(List<ComTrackableLink> trackableLinks, List<String> imageLinks, List<String> notTrackableLinks, List<ErrorneousLink> errorneousLinks, List<ErrorneousLink> localLinks, final List<LinkWarning> linkWarnings) {
+		public LinkScanResult(List<ComTrackableLink> trackableLinks, List<String> imageLinks, List<String> notTrackableLinks, List<ErroneousLink> erroneousLinks, List<ErroneousLink> localLinks, final List<LinkWarning> linkWarnings) {
 			this.trackableLinks = trackableLinks;
 			this.imageLinks = imageLinks;
 			this.notTrackableLinks = notTrackableLinks;
-			this.errorneousLinks = errorneousLinks;
+			this.erroneousLinks = erroneousLinks;
 			this.localLinks = localLinks;
 			this.linkWarnings = linkWarnings;
 		}
@@ -176,11 +176,11 @@ public interface LinkService {
 			return notTrackableLinks;
 		}
 		
-		public List<ErrorneousLink> getErrorneousLinks() {
-			return errorneousLinks;
+		public List<ErroneousLink> getErroneousLinks() {
+			return erroneousLinks;
 		}
 		
-		public final List<ErrorneousLink> getLocalLinks() {
+		public final List<ErroneousLink> getLocalLinks() {
 			return this.localLinks;
 		}
 
@@ -190,12 +190,12 @@ public interface LinkService {
 		
 	}
 	
-	class ErrorneousLink {
+	class ErroneousLink {
 		String errorMessageKey;
 		int position;
 		String linkText;
 		
-		public ErrorneousLink(String errorMessageKey, int position, String linkText) {
+		public ErroneousLink(String errorMessageKey, int position, String linkText) {
 			this.errorMessageKey = Objects.requireNonNull(errorMessageKey, "Message key is null");
 			this.position = position;
 			this.linkText = Objects.requireNonNull(linkText, "Link is null");
@@ -214,7 +214,7 @@ public interface LinkService {
 		}
 	}
 	
-	public class LinkWarning {
+	class LinkWarning {
 		public enum WarningType {
 			INSECURE,
 			AGN_TAG_NON_TRACKABLE

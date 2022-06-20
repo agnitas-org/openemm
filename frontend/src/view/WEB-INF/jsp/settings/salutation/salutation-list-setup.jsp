@@ -1,12 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" import="org.agnitas.web.*" errorPage="/error.do" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-<%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
-<%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
-
-<c:set var="ACTION_LIST" 			value="<%= SalutationAction.ACTION_LIST %>"/>
-<c:set var="ACTION_CONFIRM_DELETE" 	value="<%= SalutationAction.ACTION_CONFIRM_DELETE %>"/>
-<c:set var="ACTION_VIEW" 			value="<%= SalutationAction.ACTION_VIEW %>"/>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
 <c:set var="agnNavigationKey" 		value="Salutations" 			scope="request" />
 <c:set var="agnTitleKey" 			value="settings.FormsOfAddress" scope="request" />
@@ -20,11 +15,11 @@
 
 <emm:ShowByPermission token="salutation.change">
 	<c:set var="createNewItemUrl" scope="request">
-		<html:rewrite page='/salutation.do?action=2&salutationID=0'/>
+        <c:url value='/salutation/create.action'/>
 	</c:set>
 
 	<c:set var="createNewItemLabel" scope="request">
-		<bean:message key="default.salutation.shortname"/>
+		<mvc:message code="default.salutation.shortname"/>
 	</c:set>
 </emm:ShowByPermission>
 

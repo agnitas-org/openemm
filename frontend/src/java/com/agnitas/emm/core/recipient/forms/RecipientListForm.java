@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -15,21 +15,21 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import org.agnitas.web.forms.PaginationForm;
 import org.apache.commons.lang.StringUtils;
 
-public class RecipientListForm extends PaginationForm {
+public class RecipientListForm extends RecipientListBaseForm {
     private static final String DEFAULT_FIELD = "email";
 
     private int filterMailinglistId;
     private int filterTargetId;
+    private int filterAltgId;
     private int filterUserStatus;
     private String filterUserType;
     private String searchFirstName;
     private String searchLastName;
     private String searchEmail;
     private String searchQueryBuilderRules = "[]";
-    private List<String> selectedFields = new ArrayList<>();
+    private String eql;
 
     public int getFilterMailinglistId() {
         return filterMailinglistId;
@@ -45,6 +45,14 @@ public class RecipientListForm extends PaginationForm {
 
     public void setFilterTargetId(int filterTargetId) {
         this.filterTargetId = filterTargetId;
+    }
+
+    public int getFilterAltgId() {
+        return filterAltgId;
+    }
+
+    public void setFilterAltgId(int filterAltgId) {
+        this.filterAltgId = filterAltgId;
     }
 
     public int getFilterUserStatus() {
@@ -95,18 +103,20 @@ public class RecipientListForm extends PaginationForm {
         this.searchQueryBuilderRules = searchQueryBuilderRules;
     }
 
-    public List<String> getSelectedFields() {
-        return selectedFields;
+    public String getEql() {
+        return eql;
     }
 
-    public void setSelectedFields(List<String> selectedFields) {
-        this.selectedFields = selectedFields;
+    public void setEql(String eql) {
+        this.eql = eql;
     }
 
+    @Override
     public boolean isDefaultColumn(String column) {
         return StringUtils.equalsIgnoreCase(DEFAULT_FIELD, column);
     }
 
+    @Override
     public boolean isSelectedColumn(String column) {
         return selectedFields.contains(column);
     }
@@ -116,6 +126,7 @@ public class RecipientListForm extends PaginationForm {
         Map<String, Object> map = super.toMap();
         map.put("filterMailinglistId", filterMailinglistId);
         map.put("filterTargetId", filterTargetId);
+        map.put("filterAltgId", filterAltgId);
         map.put("filterUserStatus", filterUserStatus);
         map.put("filterUserType", filterUserType);
         map.put("searchFirstName", searchFirstName);

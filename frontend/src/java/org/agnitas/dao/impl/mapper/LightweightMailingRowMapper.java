@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -17,13 +17,24 @@ import org.agnitas.emm.core.mailing.beans.LightweightMailing;
 import org.springframework.jdbc.core.RowMapper;
 
 import com.agnitas.beans.MailingContentType;
+import com.agnitas.emm.common.MailingType;
 
 /**
  * {@link RowMapper} for {@link LightweightMailing}.
  */
 public class LightweightMailingRowMapper implements RowMapper<LightweightMailing> {
 	
-	// TODO Performance improvement: Introduce static constant INSTANCE and reduce visibility of constructor to private.
+	/** Singleton instance. */
+	public static final LightweightMailingRowMapper INSTANCE = new LightweightMailingRowMapper();
+	
+	/**
+	 * Creates a new instance.
+	 * 
+	 * @see #INSTANCE
+	 */
+	private LightweightMailingRowMapper() {
+		// Empty
+	}
 
 	@Override
 	public LightweightMailing mapRow(ResultSet resultSet, int index) throws SQLException {
@@ -31,17 +42,22 @@ public class LightweightMailingRowMapper implements RowMapper<LightweightMailing
 		final int mailingID = resultSet.getInt("mailing_id");
 		final String shortname = resultSet.getString("shortname") != null ? resultSet.getString("shortname") : "";
 		final String description = resultSet.getString("description") != null ? resultSet.getString("description") : "";
-		final int mailingTypeCode = resultSet.getInt("mailing_type");
+		MailingType mailingType;
+		try {
+			mailingType = MailingType.fromCode(resultSet.getInt("mailing_type"));
+		} catch (Exception e) {
+			throw new SQLException("Invalid mailingtype code: " + resultSet.getInt("mailing_type"));
+		}
 		final String workStatus = resultSet.getString("work_status");
 		final String contentTypeString = resultSet.getString("content_type");
 		
 		final MailingContentType contentType = decodeContentType(contentTypeString);
 		
 		
-		return new LightweightMailing(companyID, mailingID, shortname, description, mailingTypeCode, workStatus, contentType);
+		return new LightweightMailing(companyID, mailingID, shortname, description, mailingType, workStatus, contentType);
 	}
 
-	private final MailingContentType decodeContentType(final String contentTypeString) {
+	private MailingContentType decodeContentType(final String contentTypeString) {
 		try {
 			return MailingContentType.getFromString(contentTypeString);
 		} catch(final Exception e) {

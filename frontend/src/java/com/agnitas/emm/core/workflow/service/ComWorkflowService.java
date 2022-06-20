@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -17,6 +17,7 @@ import java.util.Set;
 
 import org.agnitas.beans.AdminEntry;
 import org.agnitas.beans.CompaniesConstraints;
+import org.agnitas.dao.UserStatus;
 import org.agnitas.emm.core.mailing.beans.LightweightMailing;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
@@ -26,6 +27,7 @@ import com.agnitas.beans.ComTarget;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.TargetLight;
+import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.workflow.beans.ComWorkflowReaction;
 import com.agnitas.emm.core.workflow.beans.Workflow;
 import com.agnitas.emm.core.workflow.beans.Workflow.WorkflowStatus;
@@ -88,7 +90,7 @@ public interface ComWorkflowService {
 
     List<LightweightMailing> getAllMailingsSorted(ComAdmin admin, String sortFiled, String sortDirection);
 
-    List<Map<String, Object>> getAllMailings(ComAdmin admin, List<Integer> mailingTypes, String status,
+    List<Map<String, Object>> getAllMailings(ComAdmin admin, List<MailingType> mailingTypes, String status,
                                              String mailingStatus, boolean takeMailsForPeriod, String sort,
                                              String order);
 
@@ -171,7 +173,7 @@ public interface ComWorkflowService {
     /**
      * User statuses are required to compose correct sql for email recipients selection.
      */
-    List<Integer> getProperUserStatusList(ComWorkflowReaction reaction);
+    List<UserStatus> getProperUserStatusList(ComWorkflowReaction reaction);
 
     /**
      * Get an entity representing a trigger for the referenced action-based workflow or {@code null} if the workflow

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -21,26 +21,26 @@ import java.util.Set;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.util.AgnUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
+import com.agnitas.beans.AdminPreferences;
 import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.ComAdminPreferences;
 import com.agnitas.emm.core.admin.form.AdminForm;
-import com.agnitas.emm.core.admin.form.AdminPreferences;
 import com.agnitas.emm.core.admin.service.AdminChangesLogService;
 import com.agnitas.emm.core.admin.service.AdminService;
 
 public class AdminChangesLogServiceImpl implements AdminChangesLogService {
 
     /** The logger. */
-    private static final transient Logger logger = Logger.getLogger(AdminChangesLogServiceImpl.class);
+    private static final transient Logger logger = LogManager.getLogger(AdminChangesLogServiceImpl.class);
 
     /** Service handling admins. */
     private AdminService adminService;
 
     @Override
-    public List<UserAction> getChangesAsUserActions(AdminForm newAdminData, ComAdmin oldAdmin, ComAdminPreferences oldAdminPreferences) {
+    public List<UserAction> getChangesAsUserActions(AdminForm newAdminData, ComAdmin oldAdmin, AdminPreferences oldAdminPreferences) {
         List<UserAction> userActions = new ArrayList<>();
 
         collectAdminChanges(userActions, newAdminData, oldAdmin);
@@ -110,11 +110,19 @@ public class AdminChangesLogServiceImpl implements AdminChangesLogService {
                         "Username: " + userName + ". Gender changed from " + AdminChangesLogService.getGenderText(oldAdmin.getGender()) +
                                 " to " + AdminChangesLogService.getGenderText(newAdminData.getGender())));
             }
+            
             //log first name changes
             if (!StringUtils.equals(oldAdmin.getFirstName(), newAdminData.getFirstname())) {
                 userActions.add(new UserAction("edit user",
                         "Username: " + userName + ". First Name changed from " + oldAdmin.getFirstName() + " to " + newAdminData.getFirstname()));
             }
+            
+            //log employeeid changes
+            if (!StringUtils.equals(oldAdmin.getEmployeeID(), newAdminData.getEmployeeID())) {
+                userActions.add(new UserAction("edit user",
+                        "Username: " + userName + ". EmployeeID changed from " + oldAdmin.getEmployeeID() + " to " + newAdminData.getEmployeeID()));
+            }
+            
             //log email changes
             if (!StringUtils.equals(oldAdmin.getEmail(), newAdminData.getEmail())) {
                 userActions.add(new UserAction("edit user",
@@ -151,7 +159,7 @@ public class AdminChangesLogServiceImpl implements AdminChangesLogService {
      * @param oldAdmin - current data
      * @param oldAdminPreferences - current admin preferences
      */
-    private void collectAdminPreferencesChanges(List<UserAction> userActions, AdminForm newAdminData, ComAdmin oldAdmin, ComAdminPreferences oldAdminPreferences) {
+    private void collectAdminPreferencesChanges(List<UserAction> userActions, AdminForm newAdminData, ComAdmin oldAdmin, AdminPreferences oldAdminPreferences) {
         //EMM preferences
         try {
             String userName = oldAdmin.getUsername();

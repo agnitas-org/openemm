@@ -46,19 +46,19 @@ public class Imagepool {
 		return MAILING;
 	}
 
-	public Image findImage(String name, boolean isMobile) {
+	public Image findImage(String name, String filename, boolean isMobile) {
 		if (isMobile) {
 			String mobileName = MOBILE_IMAGE_PREFIX + name;
 			if (imageNames.contains(mobileName)) {
-				return new Image(0, mobileName, mobileName, null);
+				return new Image(0, mobileName, MOBILE_IMAGE_PREFIX + filename, null);
 			}
 		}
 
-		return new Image(0, name, name, null);
+		return new Image(0, name, filename, null);
 	}
 
-	public Image findMediapoolImage (String name, boolean isMobile) {
-	        data.logging(Log.DEBUG, "imagepool", "Default implementation, ignore 'name' and 'isMobile' parameter!");
+	public Image findMediapoolImage (String name, String filename, boolean isMobile) {
+	        data.logging(Log.DEBUG, "imagepool", "Default implementation, ignore 'name', 'filename' and 'isMobile' parameter!");
 		return null;
 	}
 

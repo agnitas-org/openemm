@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -15,8 +15,19 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.TimeZone;
+import java.util.Vector;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
@@ -30,6 +41,7 @@ import org.agnitas.beans.Mailinglist;
 import org.agnitas.beans.impl.ColumnMappingImpl;
 import org.agnitas.beans.impl.DatasourceDescriptionImpl;
 import org.agnitas.beans.impl.ImportProfileImpl;
+import org.agnitas.dao.SourceGroupType;
 import org.agnitas.emm.core.autoimport.service.RemoteFile;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
@@ -59,7 +71,8 @@ import org.agnitas.web.StrutsActionBase;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
@@ -69,7 +82,7 @@ import org.apache.struts.action.ActionMessages;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComAdmin;
-import com.agnitas.dao.ComDatasourceDescriptionDao;
+import com.agnitas.dao.DatasourceDescriptionDao;
 import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.mailinglist.service.ComMailinglistService;
@@ -90,7 +103,7 @@ import jakarta.servlet.http.HttpServletResponse;
 public final class ComImportWizardAction extends StrutsActionBase {
 	
 	/** The logger. */
-	private static final transient Logger logger = Logger.getLogger(ComImportWizardAction.class);
+	private static final transient Logger logger = LogManager.getLogger(ComImportWizardAction.class);
 	
 	/**
 	 * Constant for Action List
@@ -146,7 +159,7 @@ public final class ComImportWizardAction extends StrutsActionBase {
 	protected DataSource dataSource;
 	protected ConfigService configService;
 	protected ComRecipientDao recipientDao;
-	protected ComDatasourceDescriptionDao datasourceDescriptionDao;
+	protected DatasourceDescriptionDao datasourceDescriptionDao;
 	protected ImportWizardService importWizardService;
 	protected RecipientsReportService reportService;
     private MailinglistApprovalService mailinglistApprovalService;
@@ -178,7 +191,7 @@ public final class ComImportWizardAction extends StrutsActionBase {
 	}
 
 	@Required
-	public void setDatasourceDescriptionDao(ComDatasourceDescriptionDao datasourceDescriptionDao) {
+	public void setDatasourceDescriptionDao(DatasourceDescriptionDao datasourceDescriptionDao) {
 		this.datasourceDescriptionDao = datasourceDescriptionDao;
 	}
 
@@ -694,7 +707,7 @@ public final class ComImportWizardAction extends StrutsActionBase {
 		DatasourceDescription dsDescription = new DatasourceDescriptionImpl();
 		dsDescription.setId(0);
 		dsDescription.setCompanyID(admin.getCompanyID());
-		dsDescription.setSourcegroupID(2);
+		dsDescription.setSourceGroupType(SourceGroupType.File);
 		dsDescription.setCreationDate(new Date());
 		dsDescription.setDescription(aForm.getCsvFile().getFileName());
 		dsDescription.setDescription2("EMM-Import (Classic/ProfileImport)");

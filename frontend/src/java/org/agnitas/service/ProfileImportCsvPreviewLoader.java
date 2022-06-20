@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -12,7 +12,6 @@ package org.agnitas.service;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
@@ -30,6 +29,7 @@ import org.agnitas.dao.ImportRecipientsDao;
 import org.agnitas.service.impl.CSVColumnState;
 import org.agnitas.service.impl.FieldsFactory;
 import org.agnitas.service.impl.ImportWizardContentParseException;
+import org.agnitas.util.AgnUtils;
 import org.agnitas.util.CaseInsensitiveSet;
 import org.agnitas.util.CsvColInfo;
 import org.agnitas.util.CsvDataException;
@@ -45,7 +45,6 @@ import org.agnitas.util.importvalues.Separator;
 import org.agnitas.util.importvalues.TextRecognitionChar;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 
@@ -58,8 +57,6 @@ import net.lingala.zip4j.ZipFile;
 import net.lingala.zip4j.model.FileHeader;
 
 public class ProfileImportCsvPreviewLoader {
-    @SuppressWarnings("unused")
-	private static final transient Logger logger = Logger.getLogger(ProfileImportCsvPreviewLoader.class);
 
 	private ComRecipientDao recipientDao;
 	
@@ -195,8 +192,8 @@ public class ProfileImportCsvPreviewLoader {
 		}
 	}
 	
-	private InputStream getImportInputStream() throws FileNotFoundException {
-		if (importProfile.isZipped()) {
+	private InputStream getImportInputStream() throws Exception {
+		if (AgnUtils.isZipArchiveFile(importFile)) {
 			try {
 				if (importProfile.getZipPassword() == null) {
 					InputStream dataInputStream = ZipUtilities.openZipInputStream(new FileInputStream(importFile));

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -16,7 +16,8 @@ import java.util.Locale;
 import org.agnitas.emm.springws.endpoint.Utils;
 import org.agnitas.emm.springws.security.authorities.AllEndpointsAuthority;
 import org.agnitas.emm.springws.security.authorities.EndpointAuthority;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.ws.context.MessageContext;
 import org.springframework.ws.soap.SoapBody;
 import org.springframework.ws.soap.SoapHeaderElement;
@@ -37,7 +38,7 @@ import com.agnitas.emm.springws.common.EndpointClassUtil;
 public final class PermissionCheckingEndpointInterceptor implements SoapEndpointInterceptor {
 	
 	/** The logger. */
-	private static final transient Logger LOGGER = Logger.getLogger(PermissionCheckingEndpointInterceptor.class);
+	private static final transient Logger LOGGER = LogManager.getLogger(PermissionCheckingEndpointInterceptor.class);
 
 	@Override
 	public final void afterCompletion(final MessageContext messageContext, final Object endpoint, final Exception arg2) throws Exception {

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -14,8 +14,12 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -34,10 +38,14 @@ import org.agnitas.beans.impl.DatasourceDescriptionImpl;
 import org.agnitas.beans.impl.ImportProfileImpl;
 import org.agnitas.beans.impl.ImportStatusImpl;
 import org.agnitas.beans.impl.RecipientImpl;
+import org.agnitas.beans.impl.ViciousFormDataException;
 import org.agnitas.dao.MailinglistDao;
+import org.agnitas.dao.SourceGroupType;
 import org.agnitas.dao.UserStatus;
 import org.agnitas.emm.core.autoimport.service.RemoteFile;
 import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.emm.core.recipient.RecipientUtils;
 import org.agnitas.emm.core.useractivitylog.dao.UserActivityLogDao;
 import org.agnitas.service.ColumnInfoService;
 import org.agnitas.service.ProfileImportWorker;
@@ -46,6 +54,7 @@ import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.DbColumnType.SimpleDataType;
 import org.agnitas.util.HttpUtils.RequestMethod;
+import org.agnitas.util.ImportUtils;
 import org.agnitas.util.ImportUtils.ImportErrorType;
 import org.agnitas.util.importvalues.Charset;
 import org.agnitas.util.importvalues.CheckForDuplicates;
@@ -55,16 +64,14 @@ import org.agnitas.util.importvalues.ImportMode;
 import org.agnitas.util.importvalues.MailType;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.ComRecipientMailing;
 import com.agnitas.beans.ProfileField;
 import com.agnitas.dao.ComBindingEntryDao;
-import com.agnitas.dao.ComDatasourceDescriptionDao;
 import com.agnitas.dao.ComRecipientDao;
-import com.agnitas.dao.impl.ComCompanyDaoImpl;
+import com.agnitas.dao.DatasourceDescriptionDao;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.mailing.service.FullviewService;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
@@ -75,6 +82,8 @@ import com.agnitas.emm.restful.ResponseType;
 import com.agnitas.emm.restful.RestfulClientException;
 import com.agnitas.emm.restful.RestfulNoDataFoundException;
 import com.agnitas.emm.restful.RestfulServiceHandler;
+import com.agnitas.emm.util.html.xssprevention.HtmlXSSPreventer;
+import com.agnitas.emm.util.html.xssprevention.XSSHtmlException;
 import com.agnitas.json.Json5Reader;
 import com.agnitas.json.JsonArray;
 import com.agnitas.json.JsonNode;
@@ -91,8 +100,6 @@ import jakarta.servlet.http.HttpServletResponse;
  * https://<system.url>/restful/recipient
  */
 public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
-	@SuppressWarnings("unused")
-	private static final transient Logger logger = Logger.getLogger(RecipientRestfulServiceHandler.class);
 	
 	public static final String NAMESPACE = "recipient";
 	
@@ -104,8 +111,9 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 	private ColumnInfoService columnInfoService;
 	private MailinglistDao mailinglistDao;
 	private ProfileImportWorkerFactory profileImportWorkerFactory;
-	private ComDatasourceDescriptionDao datasourceDescriptionDao;
+	private DatasourceDescriptionDao datasourceDescriptionDao;
 	private FullviewService fullviewService;
+	private ConfigService configService;
 
 	@Required
 	public void setUserActivityLogDao(UserActivityLogDao userActivityLogDao) {
@@ -138,13 +146,18 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 	}
 
 	@Required
-	public void setDatasourceDescriptionDao(final ComDatasourceDescriptionDao datasourceDescriptionDao) {
+	public void setDatasourceDescriptionDao(final DatasourceDescriptionDao datasourceDescriptionDao) {
 		this.datasourceDescriptionDao = datasourceDescriptionDao;
 	}
 
 	@Required
 	public void setFullviewService(FullviewService fullviewService) {
 		this.fullviewService = fullviewService;
+	}
+
+	@Required
+	public void setConfigService(ConfigService configService) {
+		this.configService = configService;
 	}
 
 	@Override
@@ -197,7 +210,11 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 		String requestedRecipientKeyValue = restfulContext[0];
 		List<Integer> customerIDs;
 		if (AgnUtils.isEmailValid(requestedRecipientKeyValue)) {
-			customerIDs = recipientDao.getRecipientIDs(admin.getCompanyID(), "email", requestedRecipientKeyValue);
+			// Normalize email, if configured so
+			if (!configService.getBooleanValue(ConfigValue.AllowUnnormalizedEmails, admin.getCompanyID())) {
+				requestedRecipientKeyValue = AgnUtils.normalizeEmail(requestedRecipientKeyValue);
+			}
+			customerIDs = recipientDao.getRecipientIDs(admin.getCompanyID(), "email",requestedRecipientKeyValue);
 		} else if (AgnUtils.isNumber(requestedRecipientKeyValue)) {
 			customerIDs = recipientDao.getRecipientIDs(admin.getCompanyID(), "customer_id", requestedRecipientKeyValue);
 		} else {
@@ -209,13 +226,18 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 		
 		CaseInsensitiveMap<String, ProfileField> profileFields = columnInfoService.getColumnInfoMap(admin.getCompanyID(), admin.getAdminID());
 		
+		DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(DateUtilities.ISO_8601_DATETIME_FORMAT).withZone(TimeZone.getTimeZone(admin.getAdminTimezone()).toZoneId());
+		
 		if (customerIDs.size() > 1) {
 			JsonArray result = new JsonArray();
-			for (CaseInsensitiveMap<String, Object> customerDataMap : recipientDao.getCustomersData(customerIDs, admin.getCompanyID(), TimeZone.getTimeZone(admin.getAdminTimezone()))) {
+			for (CaseInsensitiveMap<String, Object> customerDataMap : recipientDao.getCustomersData(customerIDs, admin.getCompanyID())) {
 				JsonObject customerJsonObject = new JsonObject();
 				for (String key : AgnUtils.sortCollectionWithItemsFirst(customerDataMap.keySet(), "customer_id", "email")) {
 					if (profileFields.get(key) != null && profileFields.get(key).getSimpleDataType() == SimpleDataType.Date && customerDataMap.get(key) instanceof Date) {
 						customerJsonObject.add(key.toLowerCase(), new SimpleDateFormat(DateUtilities.ISO_8601_DATE_FORMAT_NO_TIMEZONE).format(customerDataMap.get(key)));
+					} else if (profileFields.get(key) != null && profileFields.get(key).getSimpleDataType() == SimpleDataType.DateTime && customerDataMap.get(key) instanceof Date) {
+						ZonedDateTime systemZonedDateTime = ZonedDateTime.ofInstant(((Date) customerDataMap.get(key)).toInstant(), ZoneId.systemDefault());
+						customerJsonObject.add(key.toLowerCase(), dateTimeFormatter.format(systemZonedDateTime));
 					} else {
 						customerJsonObject.add(key.toLowerCase(), customerDataMap.get(key));
 					}
@@ -227,11 +249,14 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 			}
 			return result;
 		} else if (customerIDs.size() == 1) {
-			CaseInsensitiveMap<String, Object> customerDataMap = recipientDao.getCustomerData(admin.getCompanyID(), customerIDs.get(0), TimeZone.getTimeZone(admin.getAdminTimezone()));
+			CaseInsensitiveMap<String, Object> customerDataMap = recipientDao.getCustomerData(admin.getCompanyID(), customerIDs.get(0));
 			JsonObject customerJsonObject = new JsonObject();
 			for (String key : AgnUtils.sortCollectionWithItemsFirst(customerDataMap.keySet(), "customer_id", "email")) {
 				if (profileFields.get(key) != null && profileFields.get(key).getSimpleDataType() == SimpleDataType.Date && customerDataMap.get(key) instanceof Date) {
 					customerJsonObject.add(key.toLowerCase(), new SimpleDateFormat(DateUtilities.ISO_8601_DATE_FORMAT_NO_TIMEZONE).format(customerDataMap.get(key)));
+				} else if (profileFields.get(key) != null && profileFields.get(key).getSimpleDataType() == SimpleDataType.DateTime && customerDataMap.get(key) instanceof Date) {
+					ZonedDateTime systemZonedDateTime = ZonedDateTime.ofInstant(((Date) customerDataMap.get(key)).toInstant(), ZoneId.systemDefault());
+					customerJsonObject.add(key.toLowerCase(), dateTimeFormatter.format(systemZonedDateTime));
 				} else {
 					customerJsonObject.add(key.toLowerCase(), customerDataMap.get(key));
 				}
@@ -253,7 +278,7 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 
 			mailingJsonObject.add("mailing_id", mailing.getMailingId());
 			mailingJsonObject.add("senddate", new SimpleDateFormat(DateUtilities.ISO_8601_DATE_FORMAT_NO_TIMEZONE).format(mailing.getSendDate()));
-			mailingJsonObject.add("mailing_type", mailing.getMailingType());
+			mailingJsonObject.add("mailing_type", mailing.getMailingType().name());
 			mailingJsonObject.add("mailing_name", mailing.getShortName());
 			mailingJsonObject.add("mailing_subject", mailing.getSubject());
 			mailingJsonObject.add("openings", mailing.getNumberOfOpenings());
@@ -289,6 +314,10 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 		String requestedRecipientKeyValue = restfulContext[0];
 		List<Integer> customerIDs;
 		if (AgnUtils.isEmailValid(requestedRecipientKeyValue)) {
+			// Normalize email, if configured so
+			if (!configService.getBooleanValue(ConfigValue.AllowUnnormalizedEmails, admin.getCompanyID())) {
+				requestedRecipientKeyValue = AgnUtils.normalizeEmail(requestedRecipientKeyValue);
+			}
 			customerIDs = recipientDao.getRecipientIDs(admin.getCompanyID(), "email", requestedRecipientKeyValue);
 		} else if (AgnUtils.isNumber(requestedRecipientKeyValue)) {
 			customerIDs = recipientDao.getRecipientIDs(admin.getCompanyID(), "customer_id", requestedRecipientKeyValue);
@@ -323,15 +352,24 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 		
 		RestfulServiceHandler.getRestfulContext(request, NAMESPACE, 0, 0);
 		
-		Integer mailinglistToSubscribe = null;
+		boolean onlyUpdateExistingBindings = false;
+		List<Integer> mailinglistsToSubscribe = null;
 		if (StringUtils.isNotBlank(request.getParameter("mailinglist"))) {
-			if (!AgnUtils.isNumber(request.getParameter("mailinglist"))) {
-				throw new RestfulClientException("Invalid parameter mailinglist: '" + request.getParameter("mailinglist") + "'");
-			}
-			mailinglistToSubscribe = Integer.parseInt(request.getParameter("mailinglist"));
-			Mailinglist mailinglist = mailinglistDao.getMailinglist(mailinglistToSubscribe, admin.getCompanyID());
-			if (mailinglist == null || mailinglist.isRemoved()) {
-				throw new RestfulClientException("Invalid mailinglist: '" + mailinglistToSubscribe + "'");
+			if ("*".equals(request.getParameter("mailinglist"))) {
+				mailinglistsToSubscribe = mailinglistDao.getMailinglistIds(admin.getCompanyID());
+				onlyUpdateExistingBindings = true;
+			} else {
+				if (!AgnUtils.isNumber(request.getParameter("mailinglist"))) {
+					throw new RestfulClientException("Invalid parameter mailinglist: '" + request.getParameter("mailinglist") + "'");
+				}
+				int mailinglistToSubscribe = Integer.parseInt(request.getParameter("mailinglist"));
+				Mailinglist mailinglist = mailinglistDao.getMailinglist(mailinglistToSubscribe, admin.getCompanyID());
+				if (mailinglist == null || mailinglist.isRemoved()) {
+					throw new RestfulClientException("Invalid mailinglist: '" + mailinglistToSubscribe + "'");
+				} else {
+					mailinglistsToSubscribe = new ArrayList<>();
+					mailinglistsToSubscribe.add(mailinglistToSubscribe);
+				}
 			}
 		}
 		
@@ -361,6 +399,11 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 			}
 		}
 		
+		Map<String, String> additionalProfileValues = new HashMap<>();
+		if (StringUtils.isNotBlank(request.getParameter("testuser"))) {
+			additionalProfileValues.put("testuser", request.getParameter("testuser"));
+		}
+		
 		try (InputStream inputStream = RestfulServiceHandler.getRequestDataStream(requestData, requestDataFile)) {
 			try (Json5Reader jsonReader = new Json5Reader(inputStream)) {
 				// Read root JSON element
@@ -380,7 +423,20 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 						if (JsonToken.JsonSimpleValue != readJsonToken) {
 							throw new RestfulClientException("Expected JSON item type 'JsonSimpleValue' but was: " + readJsonToken);
 						}
+						Object propertyValue = jsonReader.getCurrentObject();
+						if (propertyValue != null && propertyValue instanceof String && !admin.permissionAllowed(Permission.RECIPIENT_PROFILEFIELD_HTML_ALLOWED)) {
+							// Check for unallowed html content
+							try {
+								HtmlXSSPreventer.checkString((String) propertyValue);
+							} catch(final XSSHtmlException e) {
+								throw new RestfulClientException("Invalid recipient data containing HTML for recipient field: " + propertyKey);
+							}
+						}
 						jsonObject.add(propertyKey, jsonReader.getCurrentObject());
+					}
+					
+					for (Entry<String, String> entry : additionalProfileValues.entrySet()) {
+						jsonObject.add(entry.getKey(), entry.getValue());
 					}
 
 					if (JsonToken.JsonObject_Close != readJsonToken) {
@@ -391,16 +447,22 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 					((RecipientImpl) recipient).setRecipientDao(recipientDao);
 					recipient.setCompanyID(admin.getCompanyID());
 					
-					if (jsonObject.containsPropertyKey("customer_id")) {
-						throw new RestfulClientException("Invalid recipient data for new recipient. Internal key field customer_id is included");
+					List<String> hiddenColumns = ImportUtils.getHiddenColumns(admin);
+					for (String key : jsonObject.keySet()) {
+						if (hiddenColumns.contains(key)) {
+							throw new RestfulClientException("Invalid recipient data for new recipient. Internal key field " + key + " is included");
+						}
 					}
 					
 					Map<String, Object> custParameters = recipient.getCustParameters();
 					removeTripleDateEntries(custParameters);
+					
+					if (configService.getBooleanValue(ConfigValue.AnonymizeAllRecipients, admin.getCompanyID())) {
+						custParameters.put(RecipientUtils.COLUMN_DO_NOT_TRACK, 1);
+					}
+					
 					for (Entry<String, Object> entry : jsonObject.entrySet()) {
-						if (!"customer_id".equalsIgnoreCase(entry.getKey()) && !ComCompanyDaoImpl.STANDARD_FIELD_BOUNCELOAD.equalsIgnoreCase(entry.getKey())) {
-							custParameters.put(entry.getKey(), entry.getValue());
-						}
+						custParameters.put(entry.getKey(), entry.getValue());
 					}
 
 					// Set default data if missing
@@ -411,35 +473,61 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 						custParameters.put("mailtype", MailType.HTML.getIntValue());
 					}
 					
-					recipient.setChangeFlag(true);
-					
-					if (!recipientDao.updateInDbWithException(recipient, false)) {
-						throw new RestfulClientException("Invalid recipient data for recipient");
+					// Normalize email, if configured so
+					if (custParameters.containsKey("email") && !configService.getBooleanValue(ConfigValue.AllowUnnormalizedEmails, admin.getCompanyID())) {
+						custParameters.put("email", AgnUtils.normalizeEmail((String) custParameters.get("email")));
 					}
 					
-					if (mailinglistToSubscribe != null) {
-						BindingEntry bindingEntry = new BindingEntryImpl();
-						bindingEntry.setCustomerID(recipient.getCustomerID());
-						bindingEntry.setMailinglistID(mailinglistToSubscribe);
-						bindingEntry.setUserStatus(newUserStatus.getStatusCode());
-						bindingEntry.setUserType(BindingEntry.UserType.World.getTypeCode());
-						bindingEntry.setMediaType(newMediaType.getMediaCode());
-						bindingEntry.setUserRemark("Set by " + admin.getUsername() + " via restful");
-						
-						boolean success = bindingEntryDao.updateBinding(bindingEntry, admin.getCompanyID());
-						if (!success) {
-							bindingEntryDao.insertNewBinding(bindingEntry, admin.getCompanyID());
+					DatasourceDescription datasourceDescription = datasourceDescriptionDao.getByDescription(SourceGroupType.RestfulService, admin.getCompanyID(), "RestfulService");
+					if (datasourceDescription == null) {
+						// Use fallback datasource for companyid 0
+						datasourceDescription = datasourceDescriptionDao.getByDescription(SourceGroupType.RestfulService, 0, "RestfulService");
+					}
+					if (datasourceDescription != null) {
+						recipient.getCustParameters().put("datasource_id", datasourceDescription.getId());
+						recipient.getCustParameters().put("latest_datasource_id", datasourceDescription.getId());
+					}
+					
+					recipient.setChangeFlag(true);
+					
+					try {
+						if (!recipientDao.updateInDbWithException(recipient, false)) {
+							throw new RestfulClientException("Invalid recipient data for recipient");
+						}
+					} catch (ViciousFormDataException e) {
+						throw new RestfulClientException("Invalid recipient data for recipient: " + e.getMessage(), e);
+					}
+					
+					if (mailinglistsToSubscribe != null) {
+						for (int mailinglistToSubscribe : mailinglistsToSubscribe) {
+							BindingEntry bindingEntry = new BindingEntryImpl();
+							bindingEntry.setCustomerID(recipient.getCustomerID());
+							bindingEntry.setMailinglistID(mailinglistToSubscribe);
+							bindingEntry.setUserStatus(newUserStatus.getStatusCode());
+							bindingEntry.setUserType(BindingEntry.UserType.World.getTypeCode());
+							bindingEntry.setMediaType(newMediaType.getMediaCode());
+							bindingEntry.setUserRemark("Set by " + admin.getUsername() + " via restful");
+							
+							boolean success = bindingEntryDao.updateBinding(bindingEntry, admin.getCompanyID());
+							if (!success && !onlyUpdateExistingBindings) {
+								bindingEntryDao.insertNewBinding(bindingEntry, admin.getCompanyID());
+							}
 						}
 					}
 					
 					userActivityLogDao.addAdminUseOfFeature(admin, "restful/recipient", new Date());
 					userActivityLogDao.writeUserActivityLog(admin, "restful/recipient POST", "" + recipient.getCustomerID());
 					
-					CaseInsensitiveMap<String, Object> customerDataMap = recipientDao.getCustomerData(admin.getCompanyID(), recipient.getCustomerID(), TimeZone.getTimeZone(admin.getAdminTimezone()));
+					DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(DateUtilities.ISO_8601_DATETIME_FORMAT).withZone(TimeZone.getTimeZone(admin.getAdminTimezone()).toZoneId());
+					
+					CaseInsensitiveMap<String, Object> customerDataMap = recipientDao.getCustomerData(admin.getCompanyID(), recipient.getCustomerID());
 					JsonObject customerJsonObject = new JsonObject();
 					for (String key : AgnUtils.sortCollectionWithItemsFirst(customerDataMap.keySet(), "customer_id", "email")) {
 						if (profileFields.get(key) != null && profileFields.get(key).getSimpleDataType() == SimpleDataType.Date && customerDataMap.get(key) instanceof Date) {
 							customerJsonObject.add(key.toLowerCase(), new SimpleDateFormat(DateUtilities.ISO_8601_DATE_FORMAT_NO_TIMEZONE).format(customerDataMap.get(key)));
+						} else if (profileFields.get(key) != null && profileFields.get(key).getSimpleDataType() == SimpleDataType.DateTime && customerDataMap.get(key) instanceof Date) {
+							ZonedDateTime systemZonedDateTime = ZonedDateTime.ofInstant(((Date) customerDataMap.get(key)).toInstant(), ZoneId.systemDefault());
+							customerJsonObject.add(key.toLowerCase(), dateTimeFormatter.format(systemZonedDateTime));
 						} else {
 							customerJsonObject.add(key.toLowerCase(), customerDataMap.get(key));
 						}
@@ -465,10 +553,6 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 					String requestUUID = AgnUtils.generateNewUUID().toString().replace("-", "").toUpperCase();
 					
 					File temporaryImportFile = new File(importTempFileDirectory.getAbsolutePath() + "/Recipientimportjson_" + requestUUID + ".json");
-					int mailinglistID = 0;
-					if (mailinglistToSubscribe != null) {
-						mailinglistID = mailinglistToSubscribe;
-					}
 					ImportMode importMode = ImportMode.ADD;
 					String keyColumn = "email";
 					
@@ -491,7 +575,20 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 								if (JsonToken.JsonSimpleValue != readJsonToken) {
 									throw new RestfulClientException("Expected JSON item type 'JsonSimpleValue' but was: " + readJsonToken);
 								}
+								Object propertyValue = jsonReader.getCurrentObject();
+								if (propertyValue != null && propertyValue instanceof String && !admin.permissionAllowed(Permission.RECIPIENT_PROFILEFIELD_HTML_ALLOWED)) {
+									// Check for unallowed html content
+									try {
+										HtmlXSSPreventer.checkString((String) propertyValue);
+									} catch(final XSSHtmlException e) {
+										throw new RestfulClientException("Invalid recipient data containing HTML for recipient field: " + propertyKey);
+									}
+								}
 								jsonObject.add(propertyKey, jsonReader.getCurrentObject());
+							}
+
+							for (Entry<String, String> entry : additionalProfileValues.entrySet()) {
+								jsonObject.add(entry.getKey(), entry.getValue());
 							}
 	
 							if (JsonToken.JsonObject_Close != readJsonToken) {
@@ -510,7 +607,7 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 			
 					Set<MediaTypes> newMediaTypes = new HashSet<>();
 					newMediaTypes.add(newMediaType);
-					ImportStatus status = importRecipients(admin, importMode, keyColumn, mailinglistID, temporaryImportFile, requestUUID, newMediaTypes);
+					ImportStatus status = importRecipients(admin, importMode, keyColumn, mailinglistsToSubscribe, temporaryImportFile, requestUUID, newMediaTypes);
 					
 					userActivityLogDao.addAdminUseOfFeature(admin, "restful/recipient", new Date());
 					userActivityLogDao.writeUserActivityLog(admin, "restful/recipient POST", "IMPORT");
@@ -557,16 +654,25 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 		}
 		
 		String[] restfulContext = RestfulServiceHandler.getRestfulContext(request, NAMESPACE, 0, 1);
-		
-		Integer mailinglistToSubscribe = null;
+
+		boolean onlyUpdateExistingBindings = false;
+		List<Integer> mailinglistsToSubscribe = null;
 		if (StringUtils.isNotBlank(request.getParameter("mailinglist"))) {
-			if (!AgnUtils.isNumber(request.getParameter("mailinglist"))) {
-				throw new RestfulClientException("Invalid parameter mailinglist: '" + request.getParameter("mailinglist") + "'");
-			}
-			mailinglistToSubscribe = Integer.parseInt(request.getParameter("mailinglist"));
-			Mailinglist mailinglist = mailinglistDao.getMailinglist(mailinglistToSubscribe, admin.getCompanyID());
-			if (mailinglist == null || mailinglist.isRemoved()) {
-				throw new RestfulClientException("Invalid mailinglist: '" + mailinglistToSubscribe + "'");
+			if ("*".equals(request.getParameter("mailinglist"))) {
+				mailinglistsToSubscribe = mailinglistDao.getMailinglistIds(admin.getCompanyID());
+				onlyUpdateExistingBindings = true;
+			} else {
+				if (!AgnUtils.isNumber(request.getParameter("mailinglist"))) {
+					throw new RestfulClientException("Invalid parameter mailinglist: '" + request.getParameter("mailinglist") + "'");
+				}
+				int mailinglistToSubscribe = Integer.parseInt(request.getParameter("mailinglist"));
+				Mailinglist mailinglist = mailinglistDao.getMailinglist(mailinglistToSubscribe, admin.getCompanyID());
+				if (mailinglist == null || mailinglist.isRemoved()) {
+					throw new RestfulClientException("Invalid mailinglist: '" + mailinglistToSubscribe + "'");
+				} else {
+					mailinglistsToSubscribe = new ArrayList<>();
+					mailinglistsToSubscribe.add(mailinglistToSubscribe);
+				}
 			}
 		}
 		
@@ -596,6 +702,11 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 			}
 		}
 		
+		Map<String, String> additionalProfileValues = new HashMap<>();
+		if (StringUtils.isNotBlank(request.getParameter("testuser"))) {
+			additionalProfileValues.put("testuser", request.getParameter("testuser"));
+		}
+		
 		try (InputStream inputStream = RestfulServiceHandler.getRequestDataStream(requestData, requestDataFile)) {
 			try (Json5Reader jsonReader = new Json5Reader(inputStream)) {
 				// Read root JSON element
@@ -615,7 +726,20 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 						if (JsonToken.JsonSimpleValue != readJsonToken) {
 							throw new RestfulClientException("Expected JSON item type 'JsonSimpleValue' but was: " + readJsonToken);
 						}
+						Object propertyValue = jsonReader.getCurrentObject();
+						if (propertyValue != null && propertyValue instanceof String && !admin.permissionAllowed(Permission.RECIPIENT_PROFILEFIELD_HTML_ALLOWED)) {
+							// Check for unallowed html content
+							try {
+								HtmlXSSPreventer.checkString((String) propertyValue);
+							} catch(final XSSHtmlException e) {
+								throw new RestfulClientException("Invalid recipient data containing HTML for recipient field: " + propertyKey);
+							}
+						}
 						jsonObject.add(propertyKey, jsonReader.getCurrentObject());
+					}
+					
+					for (Entry<String, String> entry : additionalProfileValues.entrySet()) {
+						jsonObject.add(entry.getKey(), entry.getValue());
 					}
 
 					if (JsonToken.JsonObject_Close != readJsonToken) {
@@ -629,40 +753,84 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 					if (restfulContext.length == 1) {
 						String requestedRecipientKeyValue = restfulContext[0];
 						if (AgnUtils.isEmailValid(requestedRecipientKeyValue)) {
+							// Normalize email, if configured so
+							if (!configService.getBooleanValue(ConfigValue.AllowUnnormalizedEmails, admin.getCompanyID())) {
+								requestedRecipientKeyValue = AgnUtils.normalizeEmail(requestedRecipientKeyValue);
+							}
 							int customerID = recipientDao.findByKeyColumn(recipient, "email", requestedRecipientKeyValue);
 							if (customerID <= 0) {
 								throw new RestfulClientException("No recipient found for update with email: " + requestedRecipientKeyValue);
 							}
+							
+							List<String> hiddenColumns = ImportUtils.getHiddenColumns(admin);
+							for (String key : jsonObject.keySet()) {
+								if (hiddenColumns.contains(key.toLowerCase())) {
+									throw new RestfulClientException("Invalid recipient data for new recipient. Internal key field " + key + " is included");
+								}
+							}
+							
 							recipient.setCustParameters(recipientDao.getCustomerDataFromDb(admin.getCompanyID(), customerID, recipient.getDateFormat()));
 							Map<String, Object> custParameters = recipient.getCustParameters();
 							removeTripleDateEntries(custParameters);
 							for (Entry<String, Object> entry : jsonObject.entrySet()) {
-								if (!"customer_id".equalsIgnoreCase(entry.getKey()) && !ComCompanyDaoImpl.STANDARD_FIELD_BOUNCELOAD.equalsIgnoreCase(entry.getKey())) {
-									custParameters.put(entry.getKey(), entry.getValue());
-								}
+								custParameters.put(entry.getKey(), entry.getValue());
+							}
+							
+							DatasourceDescription datasourceDescription = datasourceDescriptionDao.getByDescription(SourceGroupType.RestfulService, admin.getCompanyID(), "RestfulService");
+							if (datasourceDescription == null) {
+								// Use fallback datasource for companyid 0
+								datasourceDescription = datasourceDescriptionDao.getByDescription(SourceGroupType.RestfulService, 0, "RestfulService");
+							}
+							if (datasourceDescription != null) {
+								recipient.getCustParameters().put("latest_datasource_id", datasourceDescription.getId());
 							}
 							
 							recipient.setChangeFlag(true);
-							if (!recipientDao.updateInDbWithException(recipient, false)) {
-								throw new RestfulClientException("Invalid recipient data for recipient: " + requestedRecipientKeyValue);
+							
+							try {
+								if (!recipientDao.updateInDbWithException(recipient, false)) {
+									throw new RestfulClientException("Invalid recipient data for recipient: " + requestedRecipientKeyValue);
+								}
+							} catch (ViciousFormDataException e) {
+								throw new RestfulClientException("Invalid recipient data for recipient: " + e.getMessage(), e);
 							}
 						} else if (AgnUtils.isNumber(requestedRecipientKeyValue)) {
 							int customerID = recipientDao.findByKeyColumn(recipient, "customer_id", requestedRecipientKeyValue);
 							if (customerID <= 0) {
 								throw new RestfulClientException("No recipient found for update with id: " + requestedRecipientKeyValue);
 							}
+
+							List<String> hiddenColumns = ImportUtils.getHiddenColumns(admin);
+							for (String key : jsonObject.keySet()) {
+								if (hiddenColumns.contains(key.toLowerCase())) {
+									throw new RestfulClientException("Invalid recipient data for new recipient. Internal key field " + key + " is included");
+								}
+							}
+							
 							recipient.setCustParameters(recipientDao.getCustomerDataFromDb(admin.getCompanyID(), customerID, recipient.getDateFormat()));
 							Map<String, Object> custParameters = recipient.getCustParameters();
 							removeTripleDateEntries(custParameters);
 							for (Entry<String, Object> entry : jsonObject.entrySet()) {
-								if (!"customer_id".equalsIgnoreCase(entry.getKey()) && !ComCompanyDaoImpl.STANDARD_FIELD_BOUNCELOAD.equalsIgnoreCase(entry.getKey())) {
-									custParameters.put(entry.getKey(), entry.getValue());
-								}
+								custParameters.put(entry.getKey(), entry.getValue());
+							}
+							
+							DatasourceDescription datasourceDescription = datasourceDescriptionDao.getByDescription(SourceGroupType.RestfulService, admin.getCompanyID(), "RestfulService");
+							if (datasourceDescription == null) {
+								// Use fallback datasource for companyid 0
+								datasourceDescription = datasourceDescriptionDao.getByDescription(SourceGroupType.RestfulService, 0, "RestfulService");
+							}
+							if (datasourceDescription != null) {
+								recipient.getCustParameters().put("latest_datasource_id", datasourceDescription.getId());
 							}
 							
 							recipient.setChangeFlag(true);
-							if (!recipientDao.updateInDbWithException(recipient, false)) {
-								throw new RestfulClientException("Invalid recipient data for recipient: " + requestedRecipientKeyValue);
+							
+							try {
+								if (!recipientDao.updateInDbWithException(recipient, false)) {
+									throw new RestfulClientException("Invalid recipient data for recipient: " + requestedRecipientKeyValue);
+								}
+							} catch (ViciousFormDataException e) {
+								throw new RestfulClientException("Invalid recipient data for recipient: " + e.getMessage(), e);
 							}
 						} else {
 							throw new RestfulClientException("Invalid requested recipient key: " + requestedRecipientKeyValue);
@@ -671,19 +839,36 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 						int customerID = 0;
 						if (jsonObject.containsPropertyKey("customer_id")) {
 							customerID = recipientDao.findByKeyColumn(recipient, "customer_id", jsonObject.get("customer_id").toString());
+							// Remove customer_id from data for update
+							jsonObject.remove("customer_id");
 						} else if (jsonObject.containsPropertyKey("email")) {
-							customerID = recipientDao.findByKeyColumn(recipient, "email", (String) jsonObject.get("email"));
+							String recipientsEmail = (String) jsonObject.get("email");
+							// Normalize email, if configured so
+							if (!configService.getBooleanValue(ConfigValue.AllowUnnormalizedEmails, admin.getCompanyID())) {
+								recipientsEmail = AgnUtils.normalizeEmail(recipientsEmail);
+							}
+							customerID = recipientDao.findByKeyColumn(recipient, "email", recipientsEmail);
 						}
 						
 						if (customerID > 0) {
 							recipient.setCustParameters(recipientDao.getCustomerDataFromDb(admin.getCompanyID(), customerID, recipient.getDateFormat()));
+						} else {
+							if (configService.getBooleanValue(ConfigValue.AnonymizeAllRecipients, admin.getCompanyID())) {
+								recipient.getCustParameters().put(RecipientUtils.COLUMN_DO_NOT_TRACK, 1);
+							}
 						}
+						
+						List<String> hiddenColumns = ImportUtils.getHiddenColumns(admin);
+						for (String key : jsonObject.keySet()) {
+							if (hiddenColumns.contains(key.toLowerCase())) {
+								throw new RestfulClientException("Invalid recipient data for new recipient. Internal key field " + key + " is included");
+							}
+						}
+						
 						Map<String, Object> custParameters = recipient.getCustParameters();
 						removeTripleDateEntries(custParameters);
 						for (Entry<String, Object> entry : jsonObject.entrySet()) {
-							if (!"customer_id".equalsIgnoreCase(entry.getKey()) && !ComCompanyDaoImpl.STANDARD_FIELD_BOUNCELOAD.equalsIgnoreCase(entry.getKey())) {
-								custParameters.put(entry.getKey(), entry.getValue());
-							}
+							custParameters.put(entry.getKey(), entry.getValue());
 						}
 
 						// Set default data if missing
@@ -694,36 +879,64 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 							custParameters.put("mailtype", MailType.HTML.getIntValue());
 						}
 						
+						// Normalize email, if configured so
+						if (custParameters.containsKey("email") && !configService.getBooleanValue(ConfigValue.AllowUnnormalizedEmails, admin.getCompanyID())) {
+							custParameters.put("email", AgnUtils.normalizeEmail((String) custParameters.get("email")));
+						}
+						
+						DatasourceDescription datasourceDescription = datasourceDescriptionDao.getByDescription(SourceGroupType.RestfulService, admin.getCompanyID(), "RestfulService");
+						if (datasourceDescription == null) {
+							// Use fallback datasource for companyid 0
+							datasourceDescription = datasourceDescriptionDao.getByDescription(SourceGroupType.RestfulService, 0, "RestfulService");
+						}
+						if (datasourceDescription != null) {
+							if (customerID <= 0) {
+								recipient.getCustParameters().put("datasource_id", datasourceDescription.getId());
+							}
+							recipient.getCustParameters().put("latest_datasource_id", datasourceDescription.getId());
+						}
+						
 						recipient.setChangeFlag(true);
 						
-						if (!recipientDao.updateInDbWithException(recipient, false)) {
-							throw new RestfulClientException("Invalid recipient data for recipient");
+						try {
+							if (!recipientDao.updateInDbWithException(recipient, false)) {
+								throw new RestfulClientException("Invalid recipient data for recipient");
+							}
+						} catch (ViciousFormDataException e) {
+							throw new RestfulClientException("Invalid recipient data for recipient: " + e.getMessage(), e);
 						}
 					}
 					
-					if (mailinglistToSubscribe != null) {
-						BindingEntry bindingEntry = new BindingEntryImpl();
-						bindingEntry.setCustomerID(recipient.getCustomerID());
-						bindingEntry.setMailinglistID(mailinglistToSubscribe);
-						bindingEntry.setUserStatus(newUserStatus.getStatusCode());
-						bindingEntry.setUserType(BindingEntry.UserType.World.getTypeCode());
-						bindingEntry.setMediaType(newMediaType.getMediaCode());
-						bindingEntry.setUserRemark("Set by " + admin.getUsername() + " via restful");
-						
-						boolean success = bindingEntryDao.updateBinding(bindingEntry, admin.getCompanyID());
-						if (!success) {
-							bindingEntryDao.insertNewBinding(bindingEntry, admin.getCompanyID());
+					if (mailinglistsToSubscribe != null) {
+						for (int mailinglistToSubscribe : mailinglistsToSubscribe) {
+							BindingEntry bindingEntry = new BindingEntryImpl();
+							bindingEntry.setCustomerID(recipient.getCustomerID());
+							bindingEntry.setMailinglistID(mailinglistToSubscribe);
+							bindingEntry.setUserStatus(newUserStatus.getStatusCode());
+							bindingEntry.setUserType(BindingEntry.UserType.World.getTypeCode());
+							bindingEntry.setMediaType(newMediaType.getMediaCode());
+							bindingEntry.setUserRemark("Set by " + admin.getUsername() + " via restful");
+							
+							boolean success = bindingEntryDao.updateBinding(bindingEntry, admin.getCompanyID());
+							if (!success && !onlyUpdateExistingBindings) {
+								bindingEntryDao.insertNewBinding(bindingEntry, admin.getCompanyID());
+							}
 						}
 					}
 					
 					userActivityLogDao.addAdminUseOfFeature(admin, "restful/recipient", new Date());
 					userActivityLogDao.writeUserActivityLog(admin, "restful/recipient PUT", "" + recipient.getCustomerID());
+					
+					DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(DateUtilities.ISO_8601_DATETIME_FORMAT).withZone(TimeZone.getTimeZone(admin.getAdminTimezone()).toZoneId());
 
-					CaseInsensitiveMap<String, Object> customerDataMap = recipientDao.getCustomerData(admin.getCompanyID(), recipient.getCustomerID(), TimeZone.getTimeZone(admin.getAdminTimezone()));
+					CaseInsensitiveMap<String, Object> customerDataMap = recipientDao.getCustomerData(admin.getCompanyID(), recipient.getCustomerID());
 					JsonObject customerJsonObject = new JsonObject();
 					for (String key : AgnUtils.sortCollectionWithItemsFirst(customerDataMap.keySet(), "customer_id", "email")) {
 						if (profileFields.get(key) != null && profileFields.get(key).getSimpleDataType() == SimpleDataType.Date && customerDataMap.get(key) instanceof Date) {
 							customerJsonObject.add(key.toLowerCase(), new SimpleDateFormat(DateUtilities.ISO_8601_DATE_FORMAT_NO_TIMEZONE).format(customerDataMap.get(key)));
+						} else if (profileFields.get(key) != null && profileFields.get(key).getSimpleDataType() == SimpleDataType.DateTime && customerDataMap.get(key) instanceof Date) {
+							ZonedDateTime systemZonedDateTime = ZonedDateTime.ofInstant(((Date) customerDataMap.get(key)).toInstant(), ZoneId.systemDefault());
+							customerJsonObject.add(key.toLowerCase(), dateTimeFormatter.format(systemZonedDateTime));
 						} else {
 							customerJsonObject.add(key.toLowerCase(), customerDataMap.get(key));
 						}
@@ -749,10 +962,6 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 					String requestUUID = AgnUtils.generateNewUUID().toString().replace("-", "").toUpperCase();
 					
 					File temporaryImportFile = new File(importTempFileDirectory.getAbsolutePath() + "/Recipientimportjson_" + requestUUID + ".json");
-					int mailinglistID = 0;
-					if (mailinglistToSubscribe != null) {
-						mailinglistID = mailinglistToSubscribe;
-					}
 					ImportMode importMode = ImportMode.ADD_AND_UPDATE;
 					String keyColumn = "email";
 						
@@ -775,7 +984,20 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 								if (JsonToken.JsonSimpleValue != readJsonToken) {
 									throw new RestfulClientException("Expected JSON item type 'JsonSimpleValue' but was: " + readJsonToken);
 								}
-								jsonObject.add(propertyKey, jsonReader.getCurrentObject());
+								Object propertyValue = jsonReader.getCurrentObject();
+								if (propertyValue != null && propertyValue instanceof String && !admin.permissionAllowed(Permission.RECIPIENT_PROFILEFIELD_HTML_ALLOWED)) {
+									// Check for unallowed html content
+									try {
+										HtmlXSSPreventer.checkString((String) propertyValue);
+									} catch(final XSSHtmlException e) {
+										throw new RestfulClientException("Invalid recipient data containing HTML for recipient field: " + propertyKey);
+									}
+								}
+								jsonObject.add(propertyKey, propertyValue);
+							}
+							
+							for (Entry<String, String> entry : additionalProfileValues.entrySet()) {
+								jsonObject.add(entry.getKey(), entry.getValue());
 							}
 	
 							if (JsonToken.JsonObject_Close != readJsonToken) {
@@ -794,7 +1016,7 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 
 					Set<MediaTypes> newMediaTypes = new HashSet<>();
 					newMediaTypes.add(newMediaType);
-					ImportStatus status = importRecipients(admin, importMode, keyColumn, mailinglistID, temporaryImportFile, requestUUID, newMediaTypes);
+					ImportStatus status = importRecipients(admin, importMode, keyColumn, mailinglistsToSubscribe, temporaryImportFile, requestUUID, newMediaTypes);
 					
 					userActivityLogDao.addAdminUseOfFeature(admin, "restful/recipient", new Date());
 					userActivityLogDao.writeUserActivityLog(admin, "restful/recipient PUT", "IMPORT");
@@ -836,7 +1058,7 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 			|| StringUtils.endsWithIgnoreCase(item.getKey(), ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_SECOND));
 	}
 
-	private ImportStatus importRecipients(ComAdmin admin, ImportMode importMode, String keyColumn, int mailinglistID, File temporaryImportFile, String sessionID, Set<MediaTypes> mediaTypes) throws Exception {
+	private ImportStatus importRecipients(ComAdmin admin, ImportMode importMode, String keyColumn, List<Integer> mailingListIdsToAssign, File temporaryImportFile, String sessionID, Set<MediaTypes> mediaTypes) throws Exception {
 		ImportProfile importProfile = new ImportProfileImpl();
 		importProfile.setCompanyId(admin.getCompanyID());
 		importProfile.setAdminId(admin.getAdminID());
@@ -855,16 +1077,11 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 		DatasourceDescription dsDescription = new DatasourceDescriptionImpl();
 		dsDescription.setId(0);
 		dsDescription.setCompanyID(admin.getCompanyID());
-		dsDescription.setSourcegroupID(2);
+		dsDescription.setSourceGroupType(SourceGroupType.File);
 		dsDescription.setCreationDate(new Date());
 		dsDescription.setDescription(temporaryImportFile.getName());
 		dsDescription.setDescription2("Restful-Import");
 		datasourceDescriptionDao.save(dsDescription);
-
-		List<Integer> mailingListIdsToAssign = new ArrayList<>();
-		if (mailinglistID != 0) {
-			mailingListIdsToAssign.add(mailinglistID);
-		}
 
 		ProfileImportWorker profileImportWorker = profileImportWorkerFactory.getProfileImportWorker(
 			false, // Not interactive mode, because there is no error edit GUI

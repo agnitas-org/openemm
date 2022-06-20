@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -16,8 +16,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
 
-import jakarta.servlet.http.HttpServletRequest;
-
 import org.agnitas.beans.BaseTrackableLink;
 import org.agnitas.beans.Recipient;
 import org.agnitas.beans.factory.RecipientFactory;
@@ -32,7 +30,8 @@ import org.agnitas.util.AgnUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.struts.action.ActionErrors;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Required;
@@ -59,9 +58,11 @@ import com.agnitas.userform.bean.UserForm;
 import com.agnitas.userform.trackablelinks.bean.ComTrackableUserFormLink;
 import com.agnitas.util.LinkUtils;
 
+import jakarta.servlet.http.HttpServletRequest;
+
 public final class UserFormExecutionServiceImpl implements UserFormExecutionService, ApplicationContextAware {
 	
-	private static final transient Logger logger = Logger.getLogger(UserFormExecutionServiceImpl.class);
+	private static final transient Logger logger = LogManager.getLogger(UserFormExecutionServiceImpl.class);
 
 	private ConfigService configService;
 	private ComDeviceService deviceService;
@@ -208,6 +209,14 @@ public final class UserFormExecutionServiceImpl implements UserFormExecutionServ
 		if (deviceID != ComDeviceService.DEVICE_BLACKLISTED_NO_COUNT) {
 			final ComTrackableUserFormLink formStatisticsDummyLink = trackableLinkDao.getDummyUserFormTrackableLinkForStatisticCount(userForm.getCompanyID(), userForm.getId());
 			if (formStatisticsDummyLink != null) {
+				/*
+				 * Set default tracking level:
+				 *   - When no recipient can be identified (customer ID <= 0):
+				 *   	We track all data (here: IP address only, because recipient ID is 0)
+				 *   - When a recipient can be identified (customer ID > 0):
+				 *   	The default behavior is anonymous tracking (customer ID and IP address are not tracked). This will be overwritten by
+				 *      recipient setting ("sys_tracking_veto" = 1), when the customer ID is known.
+				 */
 				TrackingLevel trackingLevel = uid != null && uid.getCustomerID() > 0 ? TrackingLevel.ANONYMOUS : TrackingLevel.PERSONAL;
 				
 				if (uid != null) {
@@ -222,14 +231,14 @@ public final class UserFormExecutionServiceImpl implements UserFormExecutionServ
 				}
 				
 				trackableLinkDao.logUserFormCallInDB(
-						userForm.getCompanyID(), 
-						userForm.getId(), 
-						formStatisticsDummyLink.getId(), 
-						mailingIdInt, 
-						(trackingLevel == TrackingLevel.ANONYMOUS) ? Integer.valueOf(0) : customerIdInt, 
-						(trackingLevel == TrackingLevel.ANONYMOUS) ? null : remoteAddress, 
-						deviceClass, 
-						deviceID, 
+						userForm.getCompanyID(),
+						userForm.getId(),
+						formStatisticsDummyLink.getId(),
+						mailingIdInt,
+						(trackingLevel == TrackingLevel.ANONYMOUS) ? Integer.valueOf(0) : customerIdInt,
+						(trackingLevel == TrackingLevel.ANONYMOUS) ? null : remoteAddress,
+						deviceClass,
+						deviceID,
 						clientID);
 			}
 		}
@@ -284,7 +293,7 @@ public final class UserFormExecutionServiceImpl implements UserFormExecutionServ
 			responseMimeType = userForm.getErrorMimetype();
 		}
 
-		return new UserFormExecutionResult(responseContent, responseMimeType);
+		return new UserFormExecutionResult(userForm.getId(), responseContent, responseMimeType);
 	}
 	
 	private String determineSuccessResponseMimeType(final UserForm userForm, final CaseInsensitiveMap<String, Object> params) {

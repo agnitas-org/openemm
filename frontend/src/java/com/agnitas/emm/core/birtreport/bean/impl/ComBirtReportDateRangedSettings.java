@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -18,14 +18,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.agnitas.util.EmmCalendar;
+
 import com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils;
 import com.agnitas.reporting.birt.external.utils.BirtReporUtils;
-import org.agnitas.util.EmmCalendar;
-import org.apache.log4j.Logger;
 
 public abstract class ComBirtReportDateRangedSettings extends ComBirtReportSettings {
-    @SuppressWarnings("unused")
-	private static final transient Logger logger = Logger.getLogger(ComBirtReportDateRangedSettings.class);
 
     public static final String DATE_RANGE_KEY = "dateRangeType";
     public static final String DATE_RANGE_PREDEFINED_KEY = "predefinedDateRange";

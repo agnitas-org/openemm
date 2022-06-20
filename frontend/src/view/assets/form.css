@@ -1339,7 +1339,12 @@ input[type="month"] {
   .form-group-lg input.form-control-small[type="month"] {
     line-height: 40px; }
 
-.form-group {
+.form-group-header {
+  display: flex;
+  align-items: center;
+  float: right; }
+
+.form-group, .form-group-header {
   margin-bottom: 10px; }
 
 .radio,
@@ -1668,13 +1673,13 @@ body.dark-theme label {
 .checkbox {
   min-height: 26px; }
 
-.form-group {
+.form-group, .form-group-header {
   margin-left: -7px;
   margin-right: -7px; }
-  .form-group:before, .form-group:after {
+  .form-group:before, .form-group-header:before, .form-group:after, .form-group-header:after {
     content: " ";
     display: table; }
-  .form-group:after {
+  .form-group:after, .form-group-header:after {
     clear: both; }
 
 @media (min-width: 768px) {
@@ -1704,7 +1709,7 @@ body.dark-theme label {
   .form-group-sm .control-label {
     padding-top: 0; } }
 
-.form-vertical .form-group {
+.form-vertical .form-group, .form-vertical .form-group-header {
   margin-left: 0;
   margin-right: 0;
   margin-bottom: 15px; }
@@ -3889,7 +3894,7 @@ label {
 .checkbox-group label input {
   margin-right: 5px; }
 
-.form-group {
+.form-group, .form-group-header {
   margin-right: inherit;
   margin-left: inherit; }
 

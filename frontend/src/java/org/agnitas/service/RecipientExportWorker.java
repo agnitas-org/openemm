@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -34,18 +34,14 @@ import org.agnitas.util.DateUtilities;
 import org.agnitas.util.importvalues.DateFormat;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.log4j.Logger;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.dao.impl.ComCompanyDaoImpl;
-import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.export.util.ExportWizardUtils;
 import com.agnitas.emm.core.target.service.ComTargetService;
 import com.agnitas.service.ComColumnInfoService;
 
 public class RecipientExportWorker extends GenericExportWorker {
-	@SuppressWarnings("unused")
-	private static final transient Logger logger = Logger.getLogger(RecipientExportWorker.class);
 
 	public static final String EXPORT_FILE_DIRECTORY = AgnUtils.getTempDir() + File.separator + "RecipientExport";
 
@@ -142,6 +138,7 @@ public class RecipientExportWorker extends GenericExportWorker {
 			done = false;
 			
 			int companyID = exportProfile.getCompanyID();
+            int adminId = admin.getAdminID();
 			List<Integer> mailingListIds = getMailingListIds();
 
 			// Create basic Select statement
@@ -149,17 +146,9 @@ public class RecipientExportWorker extends GenericExportWorker {
 			StringBuilder customerTableSql = new StringBuilder("SELECT ");
 			boolean selectBounces = false;
 			boolean isFirstColumn = true;
-			if (exportProfile.getExportColumnMappings().isEmpty()) {
-				throw new Exception("No export columns selected");
-			}
-            String exportedColumns;
-			if (admin.permissionAllowed(Permission.EXPORT_OWN_COLUMNS)) {
-                List<ExportColumnMapping> profileFieldColumns = ExportWizardUtils.getProfileFieldColumnsFromExport(exportProfile, companyID, admin.getAdminID(), columnInfoService);
-                exportedColumns = StringUtils.join(profileFieldColumns.stream().map(ExportColumnMapping::getDbColumn).collect(Collectors.toList()), ";");
-            } else {
-                exportedColumns = StringUtils.join(exportProfile.getExportColumnMappings().stream().map(ExportColumnMapping::getDbColumn).collect(Collectors.toList()), ";");
-            }
-			for (String columnName : AgnUtils.removeEmptyFromStringlist(AgnUtils.splitAndTrimList(exportedColumns))) {
+            List<ExportColumnMapping> profileFieldsToExport = getProfileFieldsToExport(companyID, adminId);
+
+            for (String columnName : getSplittedColumnNames(profileFieldsToExport)) {
 				if ("mailing_bounce".equalsIgnoreCase(columnName)) {
 					if (exportProfile.getUserStatus() == UserStatus.Bounce.getStatusCode()) {
 						//show bounces only if user checked checkbox with bounces and Recipient status of the export is "Bounced"
@@ -182,15 +171,15 @@ public class RecipientExportWorker extends GenericExportWorker {
 					customerTableSql.append("cust.").append(columnName).append(" ").append(columnName);
 				}
 			}
-
-			columnMappings = new ArrayList<>(exportProfile.getExportColumnMappings());
-
+            columnMappings = new ArrayList<>(profileFieldsToExport);
+            columnMappings.addAll(ExportWizardUtils.getCustomColumnMappingsFromExport(exportProfile, companyID, adminId, columnInfoService));
+            
 			for (int selectedMailinglistID : mailingListIds) {
 				customerTableSql.append(", m" + selectedMailinglistID + ".user_status AS Userstate_Mailinglist_" + selectedMailinglistID);
 				columnMappings.add(new ExportColumnMapping("Userstate_Mailinglist_" + selectedMailinglistID, "Userstate_Mailinglist_" + selectedMailinglistID, null, false));
 				customerTableSql.append(", m" + selectedMailinglistID + ".timestamp AS Mailinglist_" + selectedMailinglistID + "_Timestamp");
 				columnMappings.add(new ExportColumnMapping("Mailinglist_" + selectedMailinglistID + "_Timestamp", "Mailinglist_" + selectedMailinglistID + "_Timestamp", null, false));
-				customerTableSql.append(", m" + selectedMailinglistID + ".user_remark AS Mailinglist_" + selectedMailinglistID + "_UserRemark");
+				customerTableSql.append(", m" + selectedMailinglistID + ".user_remark || CASE WHEN (m" + selectedMailinglistID + ".exit_mailing_id IS NULL OR m" + selectedMailinglistID + ".exit_mailing_id = 0) THEN '' ELSE (' ExitMailingID: ' || m" + selectedMailinglistID + ".exit_mailing_id) END AS Mailinglist_" + selectedMailinglistID + "_UserRemark");
 				columnMappings.add(new ExportColumnMapping("Mailinglist_" + selectedMailinglistID + "_UserRemark", "Mailinglist_" + selectedMailinglistID + "_UserRemark", null, false));
 				if (selectBounces) {
 					customerTableSql.append(", m" + selectedMailinglistID + ".exit_mailing_id AS Mailinglist_" + selectedMailinglistID + "_ExitMailID");
@@ -412,9 +401,27 @@ public class RecipientExportWorker extends GenericExportWorker {
 		return this;
 	}
 
-    private void appendCustomColumnMappingsToTableSql(StringBuilder customerTableSql, List<ExportColumnMapping> customColumnMappings) {
-        customColumnMappings.forEach(mapping -> customerTableSql
-                .append(", '").append(mapping.getDefaultValue()).append("' ").append(mapping.getDbColumn()));
+    private List<String> getSplittedColumnNames(List<ExportColumnMapping> columnsToExport) {
+        return AgnUtils.removeEmptyFromStringlist(AgnUtils.splitAndTrimList(
+                columnsToExport.stream().map(ExportColumnMapping::getDbColumn).collect(Collectors.joining(";"))));
+    }
+
+    private List<ExportColumnMapping> getProfileFieldsToExport(int companyID, int adminId) throws Exception {
+        List<ExportColumnMapping> profileFieldColumns = ExportWizardUtils
+                .getProfileFieldColumnsFromExport(exportProfile, companyID, adminId, columnInfoService);
+        if (profileFieldColumns.isEmpty()) {
+            return columnInfoService.getComColumnInfos(companyID, adminId).stream().map(profileField -> {
+            	ExportColumnMapping columnMapping = new ExportColumnMapping();
+                columnMapping.setDbColumn(profileField.getColumn());
+                return columnMapping;
+            }).collect(Collectors.toList());
+        } else {
+            return profileFieldColumns.stream().map(profileField -> {
+            	ExportColumnMapping columnMapping = new ExportColumnMapping();
+                columnMapping.setDbColumn(profileField.getDbColumn());
+                return columnMapping;
+            }).collect(Collectors.toList());
+        }
     }
 
 	protected List<Integer> getMailingListIds() {

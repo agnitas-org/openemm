@@ -29,7 +29,7 @@
                     <div class="col-sm-4">
                         <label for="parameter-name" class="control-label">
                             <c:set var="nameMsg"><bean:message key="default.Name"/></c:set>
-                            ${nameMsg}
+                            ${nameMsg}*
                         </label>
                     </div>
                     <div class="col-sm-8">
@@ -50,7 +50,7 @@
                 <div class="form-group">
                     <div class="col-sm-4">
                         <label for="parameter-value" class="control-label">
-                            <bean:message key="mailing.MailingParameter.value"/>
+                            <bean:message key="mailing.MailingParameter.value"/>*
                         </label>
                     </div>
                     <div class="col-sm-8">

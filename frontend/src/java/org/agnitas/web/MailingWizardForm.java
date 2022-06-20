@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -13,18 +13,22 @@ package org.agnitas.web;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import org.agnitas.beans.DynamicTagContent;
 import org.agnitas.beans.TrackableLink;
-import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.web.forms.StrutsFormBase;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
@@ -34,14 +38,16 @@ import com.agnitas.beans.DynamicTag;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MailingContentType;
 import com.agnitas.beans.MediatypeEmail;
-import com.agnitas.emm.core.report.enums.fields.MailingTypes;
+import com.agnitas.beans.TargetLight;
+import com.agnitas.emm.common.MailingType;
+import com.agnitas.web.MailingWizardAction;
 
 import jakarta.mail.internet.InternetAddress;
 import jakarta.servlet.http.HttpServletRequest;
 
 public class MailingWizardForm extends StrutsFormBase {
 	
-	private static final transient Logger logger = Logger.getLogger( MailingWizardForm.class);
+	private static final transient Logger logger = LogManager.getLogger( MailingWizardForm.class);
     
     private static final long serialVersionUID = 9104717555855628618L;
     private static final Pattern CONTENT_PARAMETER_PATTERN = Pattern.compile("newContent|content\\[\\d+]\\.dynContent");
@@ -56,9 +62,6 @@ public class MailingWizardForm extends StrutsFormBase {
     @Override
     protected void loadNonFormDataForErrorView(ActionMapping mapping, HttpServletRequest request) {
         super.loadNonFormDataForErrorView(mapping, request);
-        
-        request.setAttribute("isEnableTrackingVeto", getConfigService()
-				.getBooleanValue(ConfigValue.EnableTrackingVeto, AgnUtils.getCompanyID(request)));
     }
     
     /**
@@ -81,7 +84,7 @@ public class MailingWizardForm extends StrutsFormBase {
                 StringUtils.length(this.getMailing().getShortname()) < 3) {
             errors.add("shortname", new ActionMessage("error.name.too.short"));
         }
-        
+
         if (this.action.equals(MailingWizardAction.ACTION_SENDADDRESS)) {
             if (StringUtils.length(getReplyFullname()) > 255) {
                 errors.add("replyFullname", new ActionMessage("error.reply_fullname_too_long"));
@@ -112,14 +115,35 @@ public class MailingWizardForm extends StrutsFormBase {
             errors.add("subject", new ActionMessage("error.mailing.subject.too_short"));
         }
 
+        if (action.equals(MailingWizardAction.ACTION_TEXTMODULE) && mapping.getPath().equals("/mwTextmodule")){
+            Map<String, DynamicTag> dynamicTags = mailing.getDynTags();
+            if (hasDuplicate(dynamicTags)) {
+				errors.add("textmodule", new ActionMessage("error.mailing.content.target.duplicated"));
+			}
+        }
+
         if (mailing != null && (MailingWizardAction.ACTION_TARGET.equalsIgnoreCase(action) ||
-                MailingWizardAction.ACTION_FINISH.equalsIgnoreCase(action))) {
-    	  if (CollectionUtils.isEmpty(mailing.getTargetGroups()) && CollectionUtils.isEmpty(targetGroups) && mailing.getMailingType() == MailingTypes.DATE_BASED.getCode()) {
+        		MailingWizardAction.ACTION_FINISH.equalsIgnoreCase(action))) {
+    	  if (CollectionUtils.isEmpty(mailing.getTargetGroups()) && CollectionUtils.isEmpty(targetGroups) && mailing.getMailingType() == MailingType.DATE_BASED) {
               errors.add("global", new ActionMessage("error.mailing.rulebased_without_target"));
           }
     	}
-        
+
         return errors;
+    }
+
+    public boolean hasDuplicate(Map<String, DynamicTag> dynamicTags){
+        for (DynamicTag dynamicTag : dynamicTags.values()) {
+            Map<Integer, DynamicTagContent> contentMap = dynamicTag.getDynContent();
+            Set<Integer> targets = new HashSet<>();
+            for (DynamicTagContent dynamicTagContent : contentMap.values()) {
+                int targetID = dynamicTagContent.getTargetID();
+                if (!targets.add(targetID)) {
+					return true;
+				}
+            }
+        }
+        return false;
     }
 
     @Override
@@ -129,6 +153,7 @@ public class MailingWizardForm extends StrutsFormBase {
 
 	/**
      * Holds value of property action.
+     *
      */
     private String action;
 
@@ -236,7 +261,7 @@ public class MailingWizardForm extends StrutsFormBase {
         if (tracklinkIterator.hasNext()) {
             String id = tracklinkIterator.next();
 
-            tracklink = mailing.getTrackableLinks().get(id); 
+            tracklink = mailing.getTrackableLinks().get(id);
             return true;
         }
         tracklink=null;
@@ -563,7 +588,7 @@ public class MailingWizardForm extends StrutsFormBase {
      */
     public void setNewContent(String newContent) {
         this.newContent = newContent;
-    } 
+    }
     
     /**
      * Holds value of property newAttachmentType.
@@ -705,7 +730,33 @@ public class MailingWizardForm extends StrutsFormBase {
         this.contentID = contentID;
     }
 
-	public void clearEmailData() {
+    /**
+     * Target Group List
+     * */
+
+    private List<TargetLight> target;
+
+    /**
+     * Getter for property target.
+     *
+     * @return Value of property target.
+     */
+
+    public List<TargetLight> getTarget(){
+        return target;
+    }
+
+    /**
+     * Setter for property target.
+     *
+     * @param target New value of property target.
+     */
+
+    public void setTarget(List<TargetLight> target) {
+        this.target = target;
+    }
+
+    public void clearEmailData() {
 		this.setEmailSubject(null);
 		this.setEmailFormat(2);
 		this.setEmailOnepixel(null);

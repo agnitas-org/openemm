@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -18,8 +18,8 @@ public enum Business {
     B2B(1, "company.business.1"),
     B2C(2, "company.business.2");
 
-    private int id;
-    private String messageKey;
+    private final int id;
+    private final String messageKey;
 
     Business(int id, String messageKey) {
         this.id = id;
@@ -30,16 +30,8 @@ public enum Business {
         return id;
     }
 
-    public void setId(int id) {
-        this.id = id;
-    }
-
     public String getMessageKey() {
         return messageKey;
-    }
-
-    public void setMessageKey(String messageKey) {
-        this.messageKey = messageKey;
     }
 
     public static Business getById(int id) {

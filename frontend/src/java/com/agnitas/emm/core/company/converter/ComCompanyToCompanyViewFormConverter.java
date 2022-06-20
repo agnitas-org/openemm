@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -17,20 +17,17 @@ import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.stereotype.Component;
 
-import com.agnitas.beans.ComCompany;
+import com.agnitas.beans.Company;
 import com.agnitas.emm.core.company.dto.CompanyInfoDto;
 import com.agnitas.emm.core.company.dto.CompanySettingsDto;
 import com.agnitas.emm.core.company.enums.LoginlockSettings;
 import com.agnitas.emm.core.company.form.CompanyViewForm;
 
 @Component
-public class ComCompanyToCompanyViewFormConverter implements Converter<ComCompany, CompanyViewForm> {
-    @SuppressWarnings("unused")
-	private static final transient Logger logger = Logger.getLogger(ComCompanyToCompanyViewFormConverter.class);
+public class ComCompanyToCompanyViewFormConverter implements Converter<Company, CompanyViewForm> {
 
     private final ConfigService configService;
 
@@ -39,14 +36,14 @@ public class ComCompanyToCompanyViewFormConverter implements Converter<ComCompan
     }
 
     @Override
-    public CompanyViewForm convert(ComCompany comCompany) {
+    public CompanyViewForm convert(Company comCompany) {
         CompanyViewForm companyViewForm = new CompanyViewForm();
         companyViewForm.setCompanyInfoDto(convertInfo(comCompany));
         companyViewForm.setCompanySettingsDto(convertSettings(comCompany));
         return companyViewForm;
     }
 
-    private CompanyInfoDto convertInfo(ComCompany comCompany) {
+    private CompanyInfoDto convertInfo(Company comCompany) {
         CompanyInfoDto companyInfoDto = new CompanyInfoDto();
         companyInfoDto.setId(comCompany.getId());
         companyInfoDto.setName(comCompany.getShortname());
@@ -54,7 +51,7 @@ public class ComCompanyToCompanyViewFormConverter implements Converter<ComCompan
         return companyInfoDto;
     }
 
-    private CompanySettingsDto convertSettings(ComCompany comCompany) {
+    private CompanySettingsDto convertSettings(Company comCompany) {
         CompanySettingsDto settingsDto = new CompanySettingsDto();
         settingsDto.setHasMailTracking(BooleanUtils.toBoolean(comCompany.getMailtracking()));
         settingsDto.setStatisticsExpireDays(configService.getIntegerValue(ConfigValue.ExpireStatistics, comCompany.getId()));
@@ -77,8 +74,8 @@ public class ComCompanyToCompanyViewFormConverter implements Converter<ComCompan
         // todo: check is it necessary. the reason is: comCompany.isForceSending()
         settingsDto.setHasForceSending(configService.getBooleanValue(ConfigValue.ForceSending, comCompany.getId()));
 
-        settingsDto.setHasRecipientsCleanup(configService.getBooleanValue(ConfigValue.CleanRecipientsWithoutBinding, comCompany.getId()));
-        settingsDto.setRecipientAnonymization(configService.getBooleanAsInteger(ConfigValue.CleanRecipientsData, comCompany.getId(), 30, -1));
+        settingsDto.setCleanRecipientsWithoutBinding(configService.getBooleanValue(ConfigValue.CleanRecipientsWithoutBinding, comCompany.getId()));
+        settingsDto.setRecipientAnonymization(configService.getIntegerValue(ConfigValue.CleanRecipientsData, comCompany.getId()));
         settingsDto.setRecipientCleanupTracking(configService.getIntegerValue(ConfigValue.CleanTrackingData, comCompany.getId()));
         settingsDto.setRecipientDeletion(configService.getIntegerValue(ConfigValue.DeleteRecipients, comCompany.getId()));
         settingsDto.setHasTrackingVeto(configService.getBooleanValue(ConfigValue.AnonymizeTrackingVetoRecipients, comCompany.getId()));
@@ -99,6 +96,31 @@ public class ComCompanyToCompanyViewFormConverter implements Converter<ComCompan
         
         // 2FA cookie
         settingsDto.setHostauthCookieExpireDays(this.configService.getIntegerValue(ConfigValue.HostAuthenticationHostIdCookieExpireDays, comCompany.getId()));
+
+        settingsDto.setSendPasswordChangedNotification(configService.getBooleanValue(ConfigValue.SendPasswordChangedNotification, comCompany.getId()));
+        
+        settingsDto.setDefaultLinkExtension(configService.getValue(ConfigValue.DefaultLinkExtension, comCompany.getId()));
+        settingsDto.setLinkcheckerLinktimeout(configService.getIntegerValue(ConfigValue.Linkchecker_Linktimeout, comCompany.getId()));
+        settingsDto.setLinkcheckerThreadcount(configService.getIntegerValue(ConfigValue.Linkchecker_Threadcount, comCompany.getId()));
+        settingsDto.setMailingUndoLimit(configService.getIntegerValue(ConfigValue.MailingUndoLimit, comCompany.getId()));
+        settingsDto.setPrefillCheckboxSendDuplicateCheck(configService.getBooleanValue(ConfigValue.PrefillCheckboxSendDuplicateCheck, comCompany.getId()));
+        settingsDto.setFullviewFormName(configService.getValue(ConfigValue.FullviewFormName, comCompany.getId()));
+
+        settingsDto.setTrackingVetoAllowTransactionTracking(configService.getBooleanValue(ConfigValue.TrackingVetoAllowTransactionTracking, comCompany.getId()));
+        settingsDto.setDeleteSuccessfullyImportedFiles(configService.getBooleanValue(ConfigValue.DeleteSuccessfullyImportedFiles, comCompany.getId()));
+        settingsDto.setImportAlwaysInformEmail(configService.getValue(ConfigValue.ImportAlwaysInformEmail, comCompany.getId()));
+        settingsDto.setExportAlwaysInformEmail(configService.getValue(ConfigValue.ExportAlwaysInformEmail, comCompany.getId()));
+        settingsDto.setAnonymizeAllRecipients(configService.getBooleanValue(ConfigValue.AnonymizeAllRecipients, comCompany.getId()));
+        settingsDto.setRecipientEmailInUseWarning(configService.getBooleanValue(ConfigValue.RecipientEmailInUseWarning, comCompany.getId()));
+        settingsDto.setAllowEmailWithWhitespace(configService.getBooleanValue(ConfigValue.AllowEmailWithWhitespace, comCompany.getId()));
+        settingsDto.setAllowEmptyEmail(configService.getBooleanValue(ConfigValue.AllowEmptyEmail, comCompany.getId()));
+        settingsDto.setExpireStatistics(configService.getIntegerValue(ConfigValue.ExpireStatistics, comCompany.getId()));
+        settingsDto.setExpireOnePixel(configService.getIntegerValue(ConfigValue.ExpireOnePixel, comCompany.getId()));
+        settingsDto.setExpireSuccess(configService.getIntegerValue(ConfigValue.ExpireSuccess, comCompany.getId()));
+        settingsDto.setExpireRecipient(configService.getIntegerValue(ConfigValue.ExpireRecipient, comCompany.getId()));
+        settingsDto.setExpireBounce(configService.getIntegerValue(ConfigValue.ExpireBounce, comCompany.getId()));
+        settingsDto.setExpireUpload(configService.getIntegerValue(ConfigValue.ExpireUpload, comCompany.getId()));
+        settingsDto.setWriteCustomerOpenOrClickField(configService.getBooleanValue(ConfigValue.WriteCustomerOpenOrClickField, comCompany.getId()));
         
         return settingsDto;
     }

@@ -21,7 +21,7 @@
 
 <emm:ShowByPermission token="actions.change">
     <c:url var="createNewItemUrl" value="/action/new.action" scope="request"/>
-    <mvc:message var="createNewItemLabel" code="action.New_Action" scope="request"/>
+    <mvc:message code="action.New_Action" var="createNewItemLabel" scope="request"/>
 </emm:ShowByPermission>
 
 <emm:instantiate var="agnBreadcrumbs" type="java.util.LinkedHashMap" scope="request">

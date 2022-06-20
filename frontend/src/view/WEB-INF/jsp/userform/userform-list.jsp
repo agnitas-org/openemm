@@ -13,6 +13,7 @@
 <%--@elvariable id="adminDateFormat" type="java.lang.String"--%>
 <%--@elvariable id="userFormURLPattern" type="java.lang.String"--%>
 <%--@elvariable id="webformListJson" type="net.sf.json.JSONArray"--%>
+<%--@elvariable id="companyToken" type="java.lang.String"--%>
 
 <c:set var="active" value="<%= ActivenessStatus.ACTIVE %>"/>
 <c:set var="inactive" value="<%= ActivenessStatus.INACTIVE %>"/>
@@ -145,7 +146,7 @@
                     "field": "creationDate",
                     "type": "dateColumn",
                     "cellRenderer": "DateCellRenderer",
-                    "cellRendererParams": { "optionDateFormat": "${fn:toUpperCase(adminDateFormat)}" },
+                    "cellRendererParams": { "optionDateFormat": "${fn:replace(fn:replace(adminDateFormat, "d", "D"), "y", "Y")}" },
                     "width": 150
                 },
                 {
@@ -154,7 +155,7 @@
                     "field": "changeDate",
                     "type": "dateColumn",
                     "cellRenderer": "DateCellRenderer",
-                    "cellRendererParams": { "optionDateFormat": "${fn:toUpperCase(adminDateFormat)}" },
+                    "cellRendererParams": { "optionDateFormat": "${fn:replace(fn:replace(adminDateFormat, "d", "D"), "y", "Y")}" },
                     "width": 150
                 },
                 {
@@ -192,10 +193,17 @@
 </div>
 
 <script id="webform-filters-description" type="text/x-mustache-template">
-    <div class='well'>
-        <strong><mvc:message code="yourCompanyID"/></strong>
-        ${AgnUtils.getCompanyID(pageContext.request)}
-    </div>
+    <c:choose>
+        <c:when test="${empty companyToken}">
+            <div class='well'>
+                <strong><mvc:message code="yourCompanyID"/></strong>
+                ${AgnUtils.getCompanyID(pageContext.request)}
+            </div>
+        </c:when>
+        <c:otherwise>
+            <div class='well'><strong>CTOKEN: </strong><span data-copyable="" data-copyable-value="${companyToken}">${companyToken} <i class="icon icon-copy"></i></span></div>
+        </c:otherwise>
+    </c:choose>
 </script>
 
 <script id="webform-usage-badge" type="text/x-mustache-template">

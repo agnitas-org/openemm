@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -13,6 +13,7 @@ package com.agnitas.beans.impl;
 import java.util.Date;
 
 import com.agnitas.beans.ComRecipientMailing;
+import com.agnitas.emm.common.MailingType;
 
 /**
  * POJO containing information about mailing sent to recipient.
@@ -22,11 +23,12 @@ public class ComRecipientMailingImpl implements ComRecipientMailing {
     private int mailingId;
     private Date sendDate;
     private Date deliveryDate;
-    private int mailingType;
+    private MailingType mailingType;
     private String shortName;
     private String subject;
     private int numberOfOpenings;
     private int numberOfClicks;
+    private int sendCount;
 
     @Override
 	public int getMailingId() {
@@ -59,12 +61,12 @@ public class ComRecipientMailingImpl implements ComRecipientMailing {
     }
 
     @Override
-    public int getMailingType() {
+    public MailingType getMailingType() {
         return mailingType;
     }
 
     @Override
-    public void setMailingType(int mailingType) {
+    public void setMailingType(MailingType mailingType) {
         this.mailingType = mailingType;
     }
 
@@ -107,4 +109,15 @@ public class ComRecipientMailingImpl implements ComRecipientMailing {
 	public void setNumberOfClicks(int numberOfClicks) {
         this.numberOfClicks = numberOfClicks;
     }
+
+	@Override
+	public int getSendCount() {
+		return sendCount;
+	}
+
+	@Override
+	public void setSendCount(int sendCount) {
+		this.sendCount = sendCount;
+	}
+    
 }

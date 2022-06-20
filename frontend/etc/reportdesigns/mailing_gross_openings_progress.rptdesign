@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.23" id="1">
-    <property name="createdBy">Eclipse BIRT Designer Version 4.6.0.v201606072122</property>
+    <property name="createdBy">Eclipse BIRT Designer Version 4.8.0.v201806261756</property>
     <simple-property-list name="includeResource">
         <value>WEB-INF/classes/messages</value>
     </simple-property-list>
@@ -155,7 +155,7 @@ if(reportContext.getOutputFormat()=="csv") {
         <script-data-source name="DummyDataSource" id="7"/>
     </data-sources>
     <data-sets>
-        <script-data-set name="MailingOpeningsTimeBasedDataSet" id="429">
+        <script-data-set name="MailingOpenersTimeBasedDataSet" id="429">
             <list-property name="resultSetHints">
                 <structure>
                     <property name="position">1</property>
@@ -245,8 +245,10 @@ if(reportContext.getOutputFormat()=="csv") {
             <property name="dataSource">DummyDataSource</property>
             <method name="open"><![CDATA[importPackage(Packages.com.agnitas.reporting.birt.external.dataset);
 importPackage(Packages.java.lang);
-dataSet = new Packages.com.agnitas.reporting.birt.external.dataset.MailingOpeningsTimeBasedDataSet();
-openingsData = dataSet.getData(params["mailingID"], params["companyID"], params["selectedTargets"], params["startDate"], params["stopDate"], params["hourScale"], params["recipientType"]);
+dataSet = new Packages.com.agnitas.reporting.birt.external.dataset.MailingOpenersTimeBasedDataSet();
+tempTableID = dataSet.prepareData(params["mailingID"], params["companyID"], params["selectedTargets"], params["startDate"], params["stopDate"], params["hourScale"], params["recipientType"]);
+reportContext.setPersistentGlobalVariable("tempTableID", new Integer(tempTableID));
+openingsData = dataSet.getData(tempTableID);
 currentrow = 0;
 ]]></method>
             <method name="fetch"><![CDATA[if (currentrow < openingsData.size()) {
@@ -433,7 +435,7 @@ allTargets</expression>
         </grid>
         <grid name="graphicalReport" id="419">
             <property name="style">block-table</property>
-            <property name="dataSet">MailingOpeningsTimeBasedDataSet</property>
+            <property name="dataSet">MailingOpenersTimeBasedDataSet</property>
             <list-property name="boundDataColumns">
                 <structure>
                     <property name="name">DATETIME</property>
@@ -1789,7 +1791,7 @@ function beforeDrawLegendItem(lerh, bounds, icsc) {
                                     <property name="color">#707173</property>
                                     <property name="height">320px</property>
                                     <property name="width">780px</property>
-                                    <property name="dataSet">MailingOpeningsTimeBasedDataSet</property>
+                                    <property name="dataSet">MailingOpenersTimeBasedDataSet</property>
                                     <list-property name="boundDataColumns">
                                         <structure>
                                             <property name="name">DATETIME</property>
@@ -3157,7 +3159,7 @@ function beforeGeneration( chart, icsc )
                                     <property name="color">#707173</property>
                                     <property name="height">320px</property>
                                     <property name="width">780px</property>
-                                    <property name="dataSet">MailingOpeningsTimeBasedDataSet</property>
+                                    <property name="dataSet">MailingOpenersTimeBasedDataSet</property>
                                     <list-property name="boundDataColumns">
                                         <structure>
                                             <property name="name">DATETIME</property>
@@ -4525,7 +4527,7 @@ function beforeGeneration( chart, icsc )
                                     <property name="color">#707173</property>
                                     <property name="height">320px</property>
                                     <property name="width">780px</property>
-                                    <property name="dataSet">MailingOpeningsTimeBasedDataSet</property>
+                                    <property name="dataSet">MailingOpenersTimeBasedDataSet</property>
                                     <list-property name="boundDataColumns">
                                         <structure>
                                             <property name="name">DATETIME</property>
@@ -5893,7 +5895,7 @@ function beforeGeneration( chart, icsc )
                                     <property name="color">#707173</property>
                                     <property name="height">320px</property>
                                     <property name="width">780px</property>
-                                    <property name="dataSet">MailingOpeningsTimeBasedDataSet</property>
+                                    <property name="dataSet">MailingOpenersTimeBasedDataSet</property>
                                     <list-property name="boundDataColumns">
                                         <structure>
                                             <property name="name">DATETIME</property>
@@ -7261,7 +7263,7 @@ function beforeGeneration( chart, icsc )
                                     <property name="color">#707173</property>
                                     <property name="height">320px</property>
                                     <property name="width">780px</property>
-                                    <property name="dataSet">MailingOpeningsTimeBasedDataSet</property>
+                                    <property name="dataSet">MailingOpenersTimeBasedDataSet</property>
                                     <list-property name="boundDataColumns">
                                         <structure>
                                             <property name="name">DATETIME</property>
@@ -8629,7 +8631,7 @@ function beforeGeneration( chart, icsc )
                                     <property name="color">#707173</property>
                                     <property name="height">320px</property>
                                     <property name="width">780px</property>
-                                    <property name="dataSet">MailingOpeningsTimeBasedDataSet</property>
+                                    <property name="dataSet">MailingOpenersTimeBasedDataSet</property>
                                     <list-property name="boundDataColumns">
                                         <structure>
                                             <property name="name">DATETIME</property>
@@ -8671,7 +8673,7 @@ function beforeGeneration( chart, icsc )
             </row>
         </grid>
         <table name="csvData" id="753">
-            <property name="dataSet">MailingOpeningsTimeBasedDataSet</property>
+            <property name="dataSet">MailingOpenersTimeBasedDataSet</property>
             <list-property name="boundDataColumns">
                 <structure>
                     <property name="name">DATETIME</property>

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,15 +10,14 @@
 
 package com.agnitas.emm.core.mailloop.service.impl;
 
-import java.util.List;
 import java.util.Map;
-import java.util.Vector;
 
 import org.agnitas.beans.Mailloop;
 import org.agnitas.dao.MailloopDao;
 import org.agnitas.dao.UserStatus;
 import org.agnitas.emm.core.mailing.beans.LightweightMailing;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.dao.ComMailingDao;
@@ -37,7 +36,7 @@ import com.agnitas.emm.core.mailloop.service.MailloopService;
 public class MailloopServiceImpl implements MailloopService {
 
 	/** The logger. */
-	private static final transient Logger logger = Logger.getLogger(MailloopServiceImpl.class);
+	private static final transient Logger logger = LogManager.getLogger(MailloopServiceImpl.class);
 
 	/** DAO for accessing mailloop settings. */
 	private MailloopDao mailloopDao;
@@ -101,13 +100,12 @@ public class MailloopServiceImpl implements MailloopService {
 
 		final LightweightMailing mailing = mailingDao.getLightweightMailing(mailloop.getCompanyID(), autoresponderMailingId);
 
-		final List<Integer> allowedUserStatusList = createUserStatusList();
 		final Map<String, String> overwriteMailgunOptions = null;				// Currently no mailgun option is overwritten
 
 		try {
 			final MailgunOptions mailgunOptions = new MailgunOptions();
 			mailgunOptions.withForceSending(true);
-			mailgunOptions.withAllowedUserStatus(allowedUserStatusList);
+			mailgunOptions.withAllowedUserStatus(UserStatus.Active, UserStatus.WaitForConfirm);
 			mailgunOptions.withProfileFieldValues(overwriteMailgunOptions);
 			mailgunOptions.withForceSending(true);
 			sendActionbasedMailingService.sendActionbasedMailing(mailing.getCompanyID(), mailing.getMailingID(), customerID, 0, mailgunOptions);
@@ -115,20 +113,6 @@ public class MailloopServiceImpl implements MailloopService {
 			logger.error("Error sending auto-responder", e);
 			throw new UnableToSendAutoresponderMailingException(autoresponderMailingId, customerID, mailloop.getId(), e);
 		}
-	}
-
-	/**
-	 * Create list containing all user status, that are allowed to send mailings to.
-	 *
-	 * @return list of user status
-	 */
-	private static List<Integer> createUserStatusList() {
-		final List<Integer> list = new Vector<>();
-
-		list.add(UserStatus.Active.getStatusCode());
-		list.add(UserStatus.WaitForConfirm.getStatusCode());
-
-		return list;
 	}
 
 	/**

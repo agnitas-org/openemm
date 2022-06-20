@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -13,12 +13,11 @@ package com.agnitas.emm.core.company.factory.impl;
 import java.util.Objects;
 
 import org.agnitas.emm.core.commons.anonymization.RecipientAnonymizationSettings;
-import org.agnitas.emm.core.commons.anonymization.RecipientCleanupTracking;
-import org.agnitas.emm.core.commons.anonymization.RecipientDeletion;
 import org.agnitas.emm.core.commons.password.PasswordExpireSettings;
 import org.agnitas.emm.core.commons.password.policy.PasswordPolicies;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.util.AgnUtils;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.emm.core.company.dto.CompanySettingsDto;
@@ -46,11 +45,36 @@ public class CompanySettingsDtoFactoryImpl implements CompanySettingsDtoFactory 
         companySettingsDto.setPasswordPolicyName(PasswordPolicies.DEFAULT_POLICY.getPolicyName());
         companySettingsDto.setPasswordExpireDays(PasswordExpireSettings.DEFAULT.getExpireDays());
         companySettingsDto.setRecipientAnonymization(RecipientAnonymizationSettings.DEFAULT.getRecipientAnonymization());
-        companySettingsDto.setRecipientCleanupTracking(RecipientCleanupTracking.DEFAULT.getRecipientCleanupTracking());
-        companySettingsDto.setRecipientDeletion(RecipientDeletion.DEFAULT.getRecipientDeletion());
         companySettingsDto.setHostauthCookieExpireDays(HostAuthenticationCookieExpirationSettings.DEFAULT.getExpireDays());
         companySettingsDto.setRecipientExpireDays(configService.getIntegerValue(ConfigValue.ExpireRecipient));
         companySettingsDto.setStatisticsExpireDays(configService.getIntegerValue(ConfigValue.ExpireStatisticsMax));
+        companySettingsDto.setSendPasswordChangedNotification(AgnUtils.interpretAsBoolean(ConfigValue.SendPasswordChangedNotification.getDefaultValue()));
+        
+        companySettingsDto.setDefaultLinkExtension(ConfigValue.DefaultLinkExtension.getDefaultValue());
+        companySettingsDto.setLinkcheckerLinktimeout(Integer.parseInt(ConfigValue.Linkchecker_Linktimeout.getDefaultValue()));
+        companySettingsDto.setLinkcheckerThreadcount(Integer.parseInt(ConfigValue.Linkchecker_Threadcount.getDefaultValue()));
+        companySettingsDto.setMailingUndoLimit(Integer.parseInt(ConfigValue.MailingUndoLimit.getDefaultValue()));
+        companySettingsDto.setPrefillCheckboxSendDuplicateCheck(AgnUtils.interpretAsBoolean(ConfigValue.PrefillCheckboxSendDuplicateCheck.getDefaultValue()));
+        companySettingsDto.setFullviewFormName(ConfigValue.FullviewFormName.getDefaultValue());
+
+        companySettingsDto.setTrackingVetoAllowTransactionTracking(AgnUtils.interpretAsBoolean(ConfigValue.TrackingVetoAllowTransactionTracking.getDefaultValue()));
+        companySettingsDto.setDeleteSuccessfullyImportedFiles(AgnUtils.interpretAsBoolean(ConfigValue.DeleteSuccessfullyImportedFiles.getDefaultValue()));
+        companySettingsDto.setImportAlwaysInformEmail(ConfigValue.ImportAlwaysInformEmail.getDefaultValue());
+        companySettingsDto.setExportAlwaysInformEmail(ConfigValue.ExportAlwaysInformEmail.getDefaultValue());
+        companySettingsDto.setAnonymizeAllRecipients(AgnUtils.interpretAsBoolean(ConfigValue.AnonymizeAllRecipients.getDefaultValue()));
+        companySettingsDto.setCleanRecipientsWithoutBinding(AgnUtils.interpretAsBoolean(ConfigValue.CleanRecipientsWithoutBinding.getDefaultValue()));
+        companySettingsDto.setRecipientCleanupTracking(Integer.parseInt(ConfigValue.CleanTrackingData.getDefaultValue()));
+        companySettingsDto.setRecipientDeletion(Integer.parseInt(ConfigValue.DeleteRecipients.getDefaultValue()));
+        companySettingsDto.setRecipientEmailInUseWarning(AgnUtils.interpretAsBoolean(ConfigValue.RecipientEmailInUseWarning.getDefaultValue()));
+        companySettingsDto.setAllowEmailWithWhitespace(AgnUtils.interpretAsBoolean(ConfigValue.AllowEmailWithWhitespace.getDefaultValue()));
+        companySettingsDto.setAllowEmptyEmail(AgnUtils.interpretAsBoolean(ConfigValue.AllowEmptyEmail.getDefaultValue()));
+        companySettingsDto.setExpireStatistics(Integer.parseInt(ConfigValue.ExpireStatistics.getDefaultValue()));
+        companySettingsDto.setExpireOnePixel(Integer.parseInt(ConfigValue.ExpireOnePixel.getDefaultValue()));
+        companySettingsDto.setExpireSuccess(Integer.parseInt(ConfigValue.ExpireSuccess.getDefaultValue()));
+        companySettingsDto.setExpireRecipient(Integer.parseInt(ConfigValue.ExpireRecipient.getDefaultValue()));
+        companySettingsDto.setExpireBounce(Integer.parseInt(ConfigValue.ExpireBounce.getDefaultValue()));
+        companySettingsDto.setExpireUpload(Integer.parseInt(ConfigValue.ExpireUpload.getDefaultValue()));
+        companySettingsDto.setWriteCustomerOpenOrClickField(AgnUtils.interpretAsBoolean(ConfigValue.WriteCustomerOpenOrClickField.getDefaultValue()));
 
         return companySettingsDto;
     }

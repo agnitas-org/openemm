@@ -28,7 +28,6 @@
         }
     </script>
     
-    <emm:HideByPermission token="datasource_id.overview.js_table.rollback">
     <div class="tile js-data-table" data-table="datasource-id-overview">
         <div class="tile-header">
             <h2 class="headline"><bean:message key="default.Overview"/></h2>
@@ -76,11 +75,13 @@
                  {
                     "field": "id",
                     "headerName": "<mvc:message code='recipient.DatasourceId'/>",
+                    "cellStyle": {"user-select": "text"},
                     "editable": false
                 },
                 {
                     "field": "description",
                     "headerName": "<mvc:message code='Description'/>",
+                    "cellStyle": {"user-select": "text"},                    
                     "editable": false
                 }
             ],
@@ -88,78 +89,4 @@
         }
         </script>
     </div>
-    </emm:HideByPermission>
-    
-    <emm:ShowByPermission token="datasource_id.overview.js_table.rollback">
-    <div class="tile">
-    	<div class="tile-header">
-        	<h2 class="headline"><bean:message key="default.Overview"/></h2>
-        	<ul class="tile-header-actions">
-                <li class="dropdown">
-                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                        <i class="icon icon-eye"></i>
-                        <span class="text"><bean:message key="button.Show"/></span>
-                        <i class="icon icon-caret-down"></i>
-                    </a>
-                    <ul class="dropdown-menu">
-                        <li class="dropdown-header"><bean:message key="listSize"/></li>
-                        <li>
-                            <label class="label">
-                                <mvc:radiobutton path="numberOfRows" value="20"/>
-                                <span class="label-text">20</span>
-                            </label>
-                            <label class="label">
-                                <mvc:radiobutton path="numberOfRows" value="50"/>
-                                <span class="label-text">50</span>
-                            </label>
-                            <label class="label">
-                                <mvc:radiobutton path="numberOfRows" value="100"/>
-                                <span class="label-text">100</span>
-                            </label>
-                        </li>
-                        <li class="divider"></li>
-                        <li>
-                            <p>
-                                <button class="btn btn-block btn-secondary btn-regular" type="button" data-form-change data-form-submit>
-                                    <i class="icon icon-refresh"></i><span class="text"><bean:message key="button.Show"/></span>
-                                </button>
-                            </p>
-                        </li>
-                    </ul>
-                </li>
-            </ul>
-    	</div>
-
-    	<div class="tile-content">
-        	<div class="table-wrapper">
-            	<display:table id="datasource"
-                               name="datasources"
-                               requestURI="/importexport/datasource/list.action"
-                               class="table table-bordered table-striped table-hover js-table"
-                               sort="external"
-                               partialList="true"
-                               size="${datasources.fullListSize}"
-                               pagesize="${datasourceForm.numberOfRows gt 0 ? datasourceForm.numberOfRows : 20}"
-                               excludedParams="*">
-                	<display:column titleKey="recipient.DatasourceId"
-                                    property="id"
-                                    headerClass="js-checkable"
-                                    sortable="true"
-                                    sortProperty="datasource_id"/>
-
-                	<display:column titleKey="Description"
-                                    property="description"
-                                    headerClass="js-checkable"
-                                    sortable="true"
-                                    sortProperty="description"/>
-                    <display:caption>
-						<div class="l-tile-recipient-info-box align-left">
-                        	<span> <bean:message key="recipient.datasource.info"/></span>
-						</div>
-                    </display:caption>
-            	</display:table>
-        	</div>
-    	</div>
-	</div>
-    </emm:ShowByPermission>
 </mvc:form>

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -18,11 +18,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import jakarta.servlet.SessionTrackingMode;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
-
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.logintracking.service.LoginTrackService;
@@ -33,7 +28,8 @@ import org.agnitas.service.WebStorageBundle;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.UserActivityLogActions;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.struts.Globals;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.ui.Model;
@@ -47,7 +43,7 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.ComAdminPreferences;
+import com.agnitas.beans.AdminPreferences;
 import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.commons.password.PasswordState;
 import com.agnitas.emm.core.logon.beans.LogonState;
@@ -70,9 +66,14 @@ import com.agnitas.service.SimpleServiceResult;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.perm.annotations.Anonymous;
 
+import jakarta.servlet.SessionTrackingMode;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
+
 public class LogonControllerBasic {
 	/** The logger. */
-    private static final Logger logger = Logger.getLogger(LogonControllerBasic.class);
+    private static final Logger logger = LogManager.getLogger(LogonControllerBasic.class);
 
     protected static final String PASSWORD_CHANGED_KEY = "com.agnitas.emm.core.logon.web.PASSWORD_CHANGED";
     public static final String PASSWORD_RESET_LINK_PATTERN = "/logon/reset-password.action?username={username}&token={token}";
@@ -148,6 +149,14 @@ public class LogonControllerBasic {
 
         if (result.isSuccess()) {
             ComAdmin admin = result.getResult();
+            
+            if (admin.isRestful()) {
+            	// Restfull webservice user may not logon via GUI
+            	form.setPassword(null);
+                popups.addPopups(new ServiceResult<>(admin, false, Message.of("error.admin.gui.locked", admin.getUsername())));
+                return getLogonPage(model, request.getServerName(), request);
+            }
+            
             logonStateBundle.toAuthenticationState(admin);
 
             HttpSession session = request.getSession();
@@ -369,7 +378,8 @@ public class LogonControllerBasic {
     @GetMapping("/start.action")
     public String startView(final LogonStateBundle logonStateBundle, ComAdmin admin, Model model) {
         if (admin == null) {
-        	logonStateBundle.requireLogonState(LogonState.COMPLETE);
+        	// No need to check login state here. This GET requests just displays the login form.
+        	
             return getLogonCompletePage(logonStateBundle.getAdmin(), model);
         } else {
             // Admin is already in, redirect to EMM start page.
@@ -540,7 +550,7 @@ public class LogonControllerBasic {
     }
 
     private String complete(final ComAdmin admin, final String webStorageJson, final Popups popups) {
-        final ComAdminPreferences preferences = logonService.getPreferences(admin);
+        final AdminPreferences preferences = logonService.getPreferences(admin);
         final RequestAttributes attributes = RequestContextHolder.getRequestAttributes();
 
         attributes.setAttribute(AgnUtils.SESSION_CONTEXT_KEYNAME_ADMIN, admin, RequestAttributes.SCOPE_SESSION);

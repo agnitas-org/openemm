@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,9 +10,7 @@
 
 package org.agnitas.service;
 
-import java.util.Objects;
-
-import org.agnitas.web.RecipientForm;
+import java.util.Set;
 
 public class RecipientSqlOptions implements RecipientOptions {
     
@@ -21,7 +19,7 @@ public class RecipientSqlOptions implements RecipientOptions {
     private String dir;
     private int listId;
     private int targetId;
-    private int accessLimitTargetId;
+    private int accessLimitTargetId; // delete after GWUA-4957 has been successfully tested
     private String targetEQL;
     private String queryBuilderRules;
     private String userType;
@@ -29,8 +27,7 @@ public class RecipientSqlOptions implements RecipientOptions {
     private String searchLastName;
     private String searchEmail;
     private int userStatus;
-    private boolean useAdvancedSearch;
-    private RecipientForm form;
+    private Set<Integer> altgIds;
 
     public static Builder builder() {
         return new Builder();
@@ -61,6 +58,11 @@ public class RecipientSqlOptions implements RecipientOptions {
     @Override
     public int getAltgId() {
         return accessLimitTargetId;
+    }
+    
+    @Override
+    public Set<Integer> getAltgIds() {
+        return altgIds;
     }
 
     public String getTargetEQL() {
@@ -93,14 +95,6 @@ public class RecipientSqlOptions implements RecipientOptions {
         return userStatus;
     }
     
-    public boolean isUseAdvancedSearch() {
-        return useAdvancedSearch;
-    }
-    
-    public RecipientForm getForm() {
-        return form;
-    }
-    
     @Override
 	public boolean isUserTypeEmpty() {
         return false;
@@ -113,15 +107,6 @@ public class RecipientSqlOptions implements RecipientOptions {
             RecipientSqlOptions result = options;
             options = null;
             return result;
-        }
-    
-        public Builder setUseAdvancedSearch(boolean userAdvancedSearch, RecipientForm form) {
-            if (userAdvancedSearch) {
-                options.form = Objects.requireNonNull(form);
-            }
-            options.useAdvancedSearch = userAdvancedSearch;
-            
-            return this;
         }
     
         public Builder setListId(int listId) {
@@ -176,6 +161,11 @@ public class RecipientSqlOptions implements RecipientOptions {
 
         public Builder setLimitAccessTargetId(int accessLimitTargetId) {
             options.accessLimitTargetId = accessLimitTargetId;
+            return this;
+        }
+        
+        public Builder setAltgIds(Set<Integer> altgIds) {
+            options.altgIds = altgIds;
             return this;
         }
 

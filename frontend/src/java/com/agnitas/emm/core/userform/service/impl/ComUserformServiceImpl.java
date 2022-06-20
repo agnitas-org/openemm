@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -13,6 +13,7 @@ package com.agnitas.emm.core.userform.service.impl;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -30,7 +31,6 @@ import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.recipient.service.RecipientService;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.userforms.impl.UserformServiceImpl;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.service.UserFormExporter;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
@@ -41,7 +41,8 @@ import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComAdmin;
@@ -70,7 +71,7 @@ import net.sf.json.JSONObject;
 
 public class ComUserformServiceImpl extends UserformServiceImpl implements ComUserformService {
 
-    private static final Logger logger = Logger.getLogger(ComUserformServiceImpl.class);
+    private static final Logger logger = LogManager.getLogger(ComUserformServiceImpl.class);
 
     private static final int USER_FORM_NAME_MAX_LENGTH = 50;
 
@@ -86,17 +87,17 @@ public class ComUserformServiceImpl extends UserformServiceImpl implements ComUs
     private RecipientService recipentService;
 
     @Override
-	public String getUserFormName(int formId, @VelocityCheck int companyId) {
+	public String getUserFormName(int formId, int companyId) {
         return userFormDao.getUserFormName(formId, companyId);
     }
 
     @Override
-    public List<UserForm> getUserForms(@VelocityCheck int companyId) {
+    public List<UserForm> getUserForms(int companyId) {
         return userFormDao.getUserForms(companyId);
     }
 
     @Override
-    public UserAction setActiveness(@VelocityCheck int companyId, Map<Integer, Boolean> activeness) {
+    public UserAction setActiveness(int companyId, Map<Integer, Boolean> activeness) {
         if (MapUtils.isEmpty(activeness) || companyId <= 0) {
             return null;
         }
@@ -185,7 +186,7 @@ public class ComUserformServiceImpl extends UserformServiceImpl implements ComUs
                 actions.add(actionNames.get(actionId));
             }
 
-            final String url = userFormUrlPattern.replace(URLEncoder.encode(placeholder), userForm.getFormName());
+            final String url = userFormUrlPattern.replace(URLEncoder.encode(placeholder, StandardCharsets.UTF_8), userForm.getFormName());
 
 			entry.element("actionNames", actions);
 			entry.element("creationDate", DateUtilities.toLong(userForm.getCreationDate()));
@@ -199,7 +200,7 @@ public class ComUserformServiceImpl extends UserformServiceImpl implements ComUs
     }
 
     @Override
-	public UserFormDto getUserForm(@VelocityCheck int companyId, int formId) {
+	public UserFormDto getUserForm(int companyId, int formId) {
         UserForm userForm = userFormDao.getUserForm(formId, companyId);
         if (userForm != null) {
             return conversionService.convert(userForm, UserFormDto.class);
@@ -235,7 +236,7 @@ public class ComUserformServiceImpl extends UserformServiceImpl implements ComUs
 	}
 
     @Override
-    public List<UserFormDto> bulkDeleteUserForm(List<Integer> bulkIds, @VelocityCheck int companyId) {
+    public List<UserFormDto> bulkDeleteUserForm(List<Integer> bulkIds, int companyId) {
         List<UserFormDto> deletedUserForms = new ArrayList<>();
         for (int userFormId : bulkIds) {
             UserFormDto userForm = getUserForm(companyId, userFormId);
@@ -271,7 +272,7 @@ public class ComUserformServiceImpl extends UserformServiceImpl implements ComUs
 	}
 
 	@Override
-	public String getCloneUserFormName(String name, @VelocityCheck int companyId, Locale locale) {
+	public String getCloneUserFormName(String name, int companyId, Locale locale) {
         String prefix = I18nString.getLocaleString("mailing.CopyOf", locale) + " ";
         return AgnUtils.getUniqueCloneName(name, StringUtils.replaceChars(prefix, " ", "_"),
                 USER_FORM_NAME_MAX_LENGTH,

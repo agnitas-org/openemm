@@ -1,5 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 <%@ page import="org.agnitas.web.ProfileImportAction" %>
+<%@ page import="com.agnitas.emm.core.imports.beans.ImportProgressSteps" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
@@ -36,6 +37,7 @@
     </c:when>
     <c:otherwise>
         <c:set var="refreshMillis">${newImportWizardForm.refreshMillis}</c:set>
+        <c:set var="stepsNum" value="<%= ImportProgressSteps.values().length %>"/>
 
         <agn:agnForm action="/newimportwizard" data-form="loading" data-polling-interval="${refreshMillis}">
             <html:hidden property="action"/>
@@ -47,11 +49,29 @@
                 </div>
                 <div class="msg-tile-content">
                     <h3><bean:message key="upload.data"/></h3>
-                    <div class="progress">
-                        <div class="progress-bar" role="progressbar" aria-valuenow="${newImportWizardForm.completedPercent}" aria-valuemin="0" aria-valuemax="100" style="width: ${newImportWizardForm.completedPercent}%">
-                            <bean:message key="import.csv_importing_data"/> ${newImportWizardForm.completedPercent}%
+                    <div class="progress thin-progress">
+                        <div class="progress-bar" role="progressbar" aria-valuenow="${newImportWizardForm.currentProgressStatus.parentStep.ordinal()}" aria-valuemin="0" aria-valuemax="${stepsNum}" style="width: ${(newImportWizardForm.currentProgressStatus.parentStep.ordinal() + 1) / stepsNum * 100}%">
                         </div>
                     </div>
+
+                    <p class="progress-bottom-desc">
+                        <bean:message key="import.steps" arg0="${newImportWizardForm.currentProgressStatus.parentStep.ordinal() + 1}" arg1="${stepsNum}"/>
+                        : <bean:message key="import.progress.step.${newImportWizardForm.currentProgressStatus.parentStep}" />
+                    </p>
+
+
+                    <c:choose>
+                        <c:when test="${newImportWizardForm.currentProgressStatus eq 'IMPORTING_DATA_TO_TMP_TABLE'}">
+                            <div class="progress">
+                                <div class="progress-bar" role="progressbar" aria-valuenow="${newImportWizardForm.completedPercent}" aria-valuemin="0" aria-valuemax="100" style="width: ${newImportWizardForm.completedPercent}%">
+                                    <bean:message key="import.csv_importing_data"/> ${newImportWizardForm.completedPercent}%
+                                </div>
+                            </div>
+                        </c:when>
+                        <c:otherwise>
+                            <p>Details: <bean:message key="import.progress.detailedItem.${newImportWizardForm.currentProgressStatus}"/></p>
+                        </c:otherwise>
+                    </c:choose>
                 </div>
             </div>
         </agn:agnForm>

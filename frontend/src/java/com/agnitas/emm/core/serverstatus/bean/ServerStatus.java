@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -22,7 +22,8 @@ import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.commons.util.DateUtil;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class ServerStatus {
     private String licenseName;
@@ -40,10 +41,12 @@ public class ServerStatus {
     private boolean overallStatus;
     private boolean jobQueueStatus;
     private boolean importStatus;
+    private boolean exportStatus;
     private boolean dbStatus;
     private boolean reportStatus;
     private String dbType;
     private String dbUrl;
+    private String dbVersion;
     private boolean dbConnectStatus;
     private List<VersionStatus> dbVersionStatuses;
 
@@ -107,6 +110,10 @@ public class ServerStatus {
         return importStatus;
     }
     
+    public boolean isExportStatus() {
+        return exportStatus;
+    }
+    
     public boolean isDbStatus() {
         return dbStatus;
     }
@@ -123,6 +130,10 @@ public class ServerStatus {
         return dbUrl;
     }
     
+    public String getDbVersion() {
+        return dbVersion;
+    }
+    
     public boolean isDbConnectStatus() {
         return dbConnectStatus;
     }
@@ -136,7 +147,7 @@ public class ServerStatus {
     }
     
     public static class StatusBuilder {
-        private static final Logger logger = Logger.getLogger(StatusBuilder.class);
+        private static final Logger logger = LogManager.getLogger(StatusBuilder.class);
 
         private String version;
         private SimpleDateFormat dateFormat;
@@ -147,11 +158,13 @@ public class ServerStatus {
         private boolean overallStatus;
         private boolean jobQueueStatus;
         private boolean importStatus;
+        private boolean exportStatus;
         private boolean dbStatus;
         private boolean reportStatus;
         private List<VersionStatus> dbVersionStatuses = new ArrayList<>();
         private String dbType;
         private String dbUrl;
+        private String dbVersion;
         private boolean dbConnectStatus;
         private final ConfigService configService;
     
@@ -169,18 +182,20 @@ public class ServerStatus {
             return this;
         }
         
-        public ServerStatus.StatusBuilder statuses(boolean overallStatusToUse, boolean jobQueueStatusToUse, boolean importStatusToUse, boolean dbStatusToUse, boolean reportStatusToUse) {
+        public ServerStatus.StatusBuilder statuses(boolean overallStatusToUse, boolean jobQueueStatusToUse, boolean importStatusToUse, boolean exportStatusToUse, boolean dbStatusToUse, boolean reportStatusToUse) {
             this.overallStatus = overallStatusToUse;
             this.jobQueueStatus = jobQueueStatusToUse;
             this.importStatus = importStatusToUse;
+            this.exportStatus = exportStatusToUse;
             this.dbStatus = dbStatusToUse;
             this.reportStatus = reportStatusToUse;
             return this;
         }
 
-        public ServerStatus.StatusBuilder database(String dbTypeToUse, String dbUrlToUse, boolean dbConnectStatusToUse) {
+        public ServerStatus.StatusBuilder database(String dbTypeToUse, String dbUrlToUse, String dbVersionToUse, boolean dbConnectStatusToUse) {
             this.dbType = dbTypeToUse;
             this.dbUrl = dbUrlToUse;
+            this.dbVersion = dbVersionToUse;
             this.dbConnectStatus = dbConnectStatusToUse;
             return this;
         }
@@ -223,11 +238,13 @@ public class ServerStatus {
             serverStatus.overallStatus = overallStatus;
             serverStatus.jobQueueStatus = jobQueueStatus;
             serverStatus.importStatus = importStatus;
+            serverStatus.exportStatus = exportStatus;
             serverStatus.dbStatus = dbStatus;
             serverStatus.reportStatus = reportStatus;
             
             serverStatus.dbType = dbType;
             serverStatus.dbUrl = dbUrl;
+            serverStatus.dbVersion = dbVersion;
             serverStatus.dbConnectStatus = dbConnectStatus;
             
             serverStatus.dbVersionStatuses = dbVersionStatuses;

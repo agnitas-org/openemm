@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -19,6 +19,7 @@ import java.net.URLEncoder;
 import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
@@ -31,8 +32,6 @@ import java.util.Objects;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -42,7 +41,9 @@ import org.agnitas.beans.DatasourceDescription;
 import org.agnitas.beans.Recipient;
 import org.agnitas.beans.impl.BindingEntryImpl;
 import org.agnitas.dao.MaildropStatusDao;
+import org.agnitas.dao.SourceGroupType;
 import org.agnitas.dao.UserStatus;
+import org.agnitas.dao.exception.UnknownUserStatusException;
 import org.agnitas.emm.core.commons.uid.ExtensibleUIDService;
 import org.agnitas.emm.core.commons.uid.parser.exception.DeprecatedUIDVersionException;
 import org.agnitas.emm.core.commons.uid.parser.exception.InvalidUIDException;
@@ -59,7 +60,8 @@ import org.agnitas.util.HttpUtils;
 import org.agnitas.util.TimeoutLRUMap;
 import org.agnitas.util.XmlUtilities;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
@@ -73,7 +75,7 @@ import com.agnitas.beans.MaildropEntry;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.impl.MaildropEntryImpl;
 import com.agnitas.dao.ComBindingEntryDao;
-import com.agnitas.dao.ComDatasourceDescriptionDao;
+import com.agnitas.dao.DatasourceDescriptionDao;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.dao.ScripthelperEmailLogDao;
@@ -90,9 +92,12 @@ import com.agnitas.emm.core.scripthelper.service.ScriptHelperService;
 import com.agnitas.json.Json5Reader;
 import com.agnitas.json.JsonObject;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+
 public class ScriptHelper {
 	/** The logger. */
-	private static final transient Logger logger = Logger.getLogger(ScriptHelper.class);
+	private static final transient Logger logger = LogManager.getLogger(ScriptHelper.class);
 
 	/** Maximum length for valid email. This is a workaround for AGNEMM-2306. */
 	private static final int MAXIMUM_EMAIL_ADDRESS_LENGTH = 100;	// 100 is same size as of column CUSTOMER_?_TBL.email
@@ -115,7 +120,7 @@ public class ScriptHelper {
 
 	private ConfigService configService;
 	
-	private ComDatasourceDescriptionDao datasourceDescriptionDao;
+	private DatasourceDescriptionDao datasourceDescriptionDao;
 
 	private HttpServletResponse res = null;
 
@@ -761,9 +766,9 @@ public class ScriptHelper {
 		try {
 			Integer datasourceDescriptionId = datasourceIdCache.get(companyID);
 			if (datasourceDescriptionId == null) {
-				DatasourceDescription datasourceDescription = datasourceDescriptionDao.getByDescription("V", companyID, "Velocity");
+				DatasourceDescription datasourceDescription = datasourceDescriptionDao.getByDescription(SourceGroupType.Velocity, companyID, "Velocity");
 				if (datasourceDescription == null) {
-					datasourceDescription = datasourceDescriptionDao.getByDescription("V", 0, "Velocity");
+					datasourceDescription = datasourceDescriptionDao.getByDescription(SourceGroupType.Velocity, 0, "Velocity");
 				}
 				if (datasourceDescription != null) {
 					datasourceDescriptionId = datasourceDescription.getId();
@@ -1303,7 +1308,22 @@ public class ScriptHelper {
 		try {
 			final MailgunOptions mailgunOptions = new MailgunOptions();
 			if (userStatusList != null) {
-				mailgunOptions.withAllowedUserStatus(userStatusList);
+				final List<UserStatus> statusList = new ArrayList<>();
+				
+				for(final int statusCode : userStatusList) {
+					try {
+						final UserStatus status = UserStatus.getUserStatusByID(statusCode);
+						statusList.add(status);
+					} catch(final UnknownUserStatusException e) {
+						/*
+						 * When an unknown status code is encountered we
+						 * can ignore it. Even as int-typed code, if wouldn't have any effect.
+						 */
+						logger.error(String.format("Skipping unknown user status code %d", statusCode));
+					}
+				}
+
+				mailgunOptions.withAllowedUserStatus(statusList);
 			}
 			if (overwrite != null) {
 				mailgunOptions.withProfileFieldValues(overwrite);
@@ -1571,7 +1591,7 @@ public class ScriptHelper {
 	}
 	
 	@Required
-	public final void setDatasourceDescriptionDao(final ComDatasourceDescriptionDao datasourceDescriptionDao) {
+	public final void setDatasourceDescriptionDao(final DatasourceDescriptionDao datasourceDescriptionDao) {
 		this.datasourceDescriptionDao = Objects.requireNonNull(datasourceDescriptionDao, "datasourceDescriptionDao is null");
 	}
 }

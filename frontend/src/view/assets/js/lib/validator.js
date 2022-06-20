@@ -2,6 +2,10 @@
   var Validator;
 
   Validator = function(handlers) {
+    if (handlers.init) {
+      handlers.init();
+      delete handlers.init;
+    }
     return $.extend(this, handlers);
   };
 

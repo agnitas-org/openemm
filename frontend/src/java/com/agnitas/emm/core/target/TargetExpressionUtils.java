@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -16,6 +16,8 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import com.agnitas.emm.core.target.service.ComTargetService;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -61,6 +63,71 @@ public class TargetExpressionUtils {
             .collect(Collectors.joining(conjunction ? OPERATOR_AND : OPERATOR_OR));
     }
 
+    public static String getTargetExpressionWithPrependedAltgs(Collection<Integer> altgIds, String targetExpression) {
+        if (CollectionUtils.isEmpty(altgIds)) {
+            return targetExpression;
+        }
+        return "(" + makeTargetExpressionAltgPart(altgIds) + ")" 
+                + (StringUtils.isNotBlank(targetExpression) ? OPERATOR_AND + "(" + targetExpression + ")" : "");
+    }
+
+    private static String makeTargetExpressionAltgPart(Collection<Integer> altgIds) {
+        return altgIds.stream()
+                .distinct()
+                .filter(id -> id != null && id != 0)
+                .map(Object::toString)
+                .collect(Collectors.joining(OPERATOR_OR));
+    }
+
+    public static String makeTargetExpressionWithAltgs(Collection<Integer> altgIds, Collection<Integer> targetIds, boolean conjunctionForTargets) {
+        String targetExpression = makeTargetExpression(targetIds, conjunctionForTargets);
+        return getTargetExpressionWithPrependedAltgs(altgIds, targetExpression);
+    }
+    
+    public static String makeTargetExpressionWithAltgs(Collection<Integer> altgIds, Collection<Integer> targetIds, WorkflowTargetOption option) {
+        String targetExpression = makeTargetExpression(targetIds, option);
+        return getTargetExpressionWithPrependedAltgs(altgIds, targetExpression);
+    }
+    
+    public static boolean isTargetExpressionContainsAnyAltg(String mailingTargetExpression, ComTargetService targetService) {
+        return getTargetIds(mailingTargetExpression).stream().anyMatch(targetService::isAltg);
+    }
+    
+    private static boolean targetExpressionContainsAltgPart(String expression, ComTargetService targetService) {
+        if (!StringUtils.startsWith(expression, "(") || !isTargetExpressionContainsAnyAltg(expression, targetService)) {
+            return false;
+        }
+        String altgExpr = StringUtils.trimToEmpty(expression.substring(1, expression.indexOf(")")));
+        if (altgExpr.isBlank() && altgExpr.contains("&")) {
+            return false;
+        }
+        Set<Integer> exprAltgIds = getTargetIds(altgExpr);
+        return exprAltgIds.stream().allMatch(targetService::isAltg);
+    }
+
+    public static String extractNotAltgTargetExpressionPart(String targetExpression, ComTargetService targetService) {
+        if (!targetExpressionContainsAltgPart(targetExpression, targetService)) {
+            return StringUtils.defaultString(targetExpression);
+        }        
+	    return targetExpression.matches("^\\(.+\\)&\\(.+\\)$")
+                ? targetExpression.substring(targetExpression.indexOf(")&(") + 3, targetExpression.lastIndexOf(")"))
+                : "";
+    }
+    
+    public static Set<Integer> getAltgIds(String expression, ComTargetService targetService) {
+	    return getTargetIds(expression).stream()
+                .filter(targetService::isAltg)
+                .collect(Collectors.toSet());
+    }
+    
+   	public static boolean isComplexTargetExpression(String targetExpression, ComTargetService targetService) {
+   		if (StringUtils.isBlank(targetExpression)) {
+               return false;
+           }
+   		String expression = extractNotAltgTargetExpressionPart(targetExpression, targetService);
+   		return (expression.contains("&") && expression.contains("|")) || StringUtils.containsAny(expression, "()!");
+   	}
+    
     public static String makeTargetExpression(Collection<Integer> targetGroupIds, WorkflowTargetOption option) {
         if (CollectionUtils.isEmpty(targetGroupIds) || option == null) {
             return "";

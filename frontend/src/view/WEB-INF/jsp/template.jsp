@@ -4,8 +4,10 @@
 <%@ page import="org.agnitas.emm.core.commons.util.ConfigService" %>
 <%@ page import="com.agnitas.util.ComHelpUtil" %>
 <%@ page import="org.agnitas.beans.EmmLayoutBase" %>
-<%@ page import="com.agnitas.beans.ComAdminPreferences" %>
+<%@ page import="com.agnitas.beans.AdminPreferences" %>
 <%@ page import="org.agnitas.service.WebStorage" %>
+<%@ page import="org.agnitas.util.AgnUtils" %>
+<%@ page import="com.agnitas.emm.core.commons.web.ConnectionSpeedTestController" %>
 <%@ taglib uri="http://struts.apache.org/tags-tiles" prefix="tiles" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
@@ -19,6 +21,8 @@
 <c:set var="MENU_POSITION_TOP" value="<%= EmmLayoutBase.MENU_POSITION_TOP%>" scope="page"/>
 <c:set var="isWideSidebarWebStorageBundleKey" value="<%= WebStorage.IS_WIDE_SIDEBAR%>" scope="page"/>
 <c:set var="DARK_MODE_THEME_TYPE" value="<%= EmmLayoutBase.ThemeType.DARK_MODE%>" scope="page"/>
+<c:set var="SPEED_TEST_RESOURCE_SIZE" value="<%= ConnectionSpeedTestController.SPEED_TEST_RESOURCE_SIZE%>" scope="page"/>
+<c:set var="SLOW_CONNECTION_THRESHOLD_KBPS" value="<%= ConfigService.getInstance().getIntegerValue(ConfigValue.SlowConnectionThresholdKbps, AgnUtils.getCompanyID(request)) %>" scope="page"/>
 
 <c:set var="isTabsMenuShown" value="true" scope="request"/>
 <c:set var="isBreadcrumbsShown" value="false" scope="request"/>
@@ -37,7 +41,7 @@
     <div class="loader">
         <i class="icon icon-refresh icon-spin"></i> <bean:message key="default.loading" />
     </div>
-
+    
     <!-- Header BEGIN -->
     <header class="l-header">
         <div id="wide-menu-toggle" data-action="expandMenu">
@@ -131,7 +135,7 @@
     <aside class="l-sidebar">
         <%@ include file="logo.jspf" %>
 
-        <ul class="l-menu scrollable js-scrollable" data-controller="sidemenu" data-initializer="sidemenu">
+        <ul class="l-menu scrollable js-scrollable" data-controller="sidemenu">
             <%-- init data for transfering on frontend side --%>
             <c:set var="creationTime" value="${pageContext.session.creationTime}"/>
             <c:set var="lastAccessedTime" value="${pageContext.session.lastAccessedTime}"/>
@@ -164,16 +168,28 @@
                     <span class="item" id="session-time-field"></span>
                 </div>
             </li>
-            <li>
+            <li class="logout-area">
                 <form action="${LOGOUT}" method="POST" class="logout-form">
                     <button type="submit" data-tooltip="<bean:message key='default.Logout'/>">
                         <i class="logout-logo icon-fa5 icon-power-off"></i>
                         <span class="logout-text"><bean:message key='default.Logout'/></span>
                     </button>
                 </form>
+                <c:if test="${SLOW_CONNECTION_THRESHOLD_KBPS > 0}">
+                    <span id="internet-indicator" class="icon-stack icon-lg" data-tooltip="<bean:message key='OK'/>">
+                      <i class="fas icon-wifi icon-stack-1x icon-inverse"></i>
+                    </span>
+                </c:if>
             </li>
             <li id="account-data" data-initializer="account-data">
-                <html:link page="/selfservice.do?action=showChangeForm">
+                <emm:ShowByPermission token="selfservice.migration">
+                    <c:set var="selfserviceUrl" value="/selfservice/view.action"/>
+                </emm:ShowByPermission>
+                <emm:HideByPermission token="selfservice.migration">
+                    <c:set var="selfserviceUrl" value="/selfservice.do?action=showChangeForm"/>
+                </emm:HideByPermission>
+
+                <html:link page="${selfserviceUrl}">
                     <div class="account-initials">
                         <span><c:if test="${not empty firstName}">${fn:substring(firstName, 0, 1)}</c:if>${fn:substring(fullName, 0, 1)}</span>
                     </div>
@@ -225,6 +241,15 @@
     <tiles:insert attribute="footer_matomo"/>
 
     <tiles:insert attribute="messages"/>
+    
+    <c:if test="${SLOW_CONNECTION_THRESHOLD_KBPS > 0}">
+        <script data-initializer="connection-speed-test" type="application/json">
+            {
+                "SLOW_CONNECTION_THRESHOLD_KBPS": ${SLOW_CONNECTION_THRESHOLD_KBPS},
+                "SPEED_TEST_RESOURCE_SIZE": ${SPEED_TEST_RESOURCE_SIZE}
+            }
+        </script>
+    </c:if>
 
 </body>
 </html>

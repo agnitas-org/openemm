@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -13,7 +13,7 @@ package org.agnitas.emm.company.service.impl;
 import java.util.List;
 import java.util.Objects;
 
-import com.agnitas.beans.ComCompany;
+import com.agnitas.beans.Company;
 import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.emm.core.company.bean.CompanyEntry;
 import com.agnitas.emm.core.servicemail.UnknownCompanyIdException;
@@ -26,13 +26,13 @@ public final class CompanyServiceImpl implements CompanyService {
 	private ComCompanyDao companyDao;
 	
 	@Override
-	public final ComCompany getCompanyOrNull(@VelocityCheck int companyId) {
+	public final Company getCompanyOrNull(@VelocityCheck int companyId) {
 		return companyDao.getCompany(companyId);
 	}
 	
 	@Override
-	public final ComCompany getCompany(@VelocityCheck int companyId) throws UnknownCompanyIdException {
-		final ComCompany company = this.companyDao.getCompany(companyId);
+	public final Company getCompany(@VelocityCheck int companyId) throws UnknownCompanyIdException {
+		final Company company = this.companyDao.getCompany(companyId);
 		
 		if(company == null) {
 			throw new UnknownCompanyIdException(companyId);
@@ -57,7 +57,7 @@ public final class CompanyServiceImpl implements CompanyService {
 	}
 
 	@Override
-	public List<ComCompany> getCreatedCompanies(@VelocityCheck int companyId) {
+	public List<Company> getCreatedCompanies(@VelocityCheck int companyId) {
 		return companyDao.getCreatedCompanies(companyId);
 	}
 

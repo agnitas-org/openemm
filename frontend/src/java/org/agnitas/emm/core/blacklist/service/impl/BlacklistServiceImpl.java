@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -28,7 +28,8 @@ import org.agnitas.emm.core.blacklist.service.validation.BlacklistModelValidator
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.dao.ComRecipientDao;
@@ -40,7 +41,7 @@ import com.agnitas.service.ExtendedConversionService;
 public class BlacklistServiceImpl implements BlacklistService {
 
 	/** The logger. */
-	private static final Logger logger = Logger.getLogger( BlacklistServiceImpl.class);
+	private static final Logger logger = LogManager.getLogger( BlacklistServiceImpl.class);
 	
 	/** DAO for blacklists. */
 	private ComBlacklistDao blacklistDao;
@@ -62,7 +63,7 @@ public class BlacklistServiceImpl implements BlacklistService {
 		
 		if( result) {
 			try {
-				bindingService.updateBindingStatusByEmailPattern( model.getCompanyId(), model.getEmail(), UserStatus.Blacklisted.getStatusCode(), "Blacklisted");
+				bindingService.updateBindingStatusByEmailPattern( model.getCompanyId(), model.getEmail(), UserStatus.Blacklisted, "Added to blocklist");
 			} catch( BindingServiceException e) {
 				logger.error( "Unable to update binding status for blacklisted email: " + model.getEmail(), e);
 			}
@@ -118,7 +119,7 @@ public class BlacklistServiceImpl implements BlacklistService {
 	}
 
 	@Override
-	public void updateBlacklistedBindings(BlacklistModel bm, List<Integer> mailinglistIds, int userStatus) {
+	public void updateBlacklistedBindings(BlacklistModel bm, List<Integer> mailinglistIds, UserStatus userStatus) {
 		if( mailinglistIds.size() == 0) {
 			if( logger.isInfoEnabled()) {
 				logger.info( "List of mailinglist IDs is empty - doing nothing");
@@ -139,8 +140,8 @@ public class BlacklistServiceImpl implements BlacklistService {
 	public boolean add(@VelocityCheck int companyId, int adminId, String email, String reason) throws Exception {
 		boolean isSuccessfullyInserted = blacklistDao.insert(companyId, email, reason);
 		if (isSuccessfullyInserted) {
-			String remark = "Blacklisted by " + adminId;
-			bindingService.updateBindingStatusByEmailPattern(companyId, email, UserStatus.Blacklisted.getStatusCode(), remark);
+			String remark = "Added to blocklist by " + adminId;
+			bindingService.updateBindingStatusByEmailPattern(companyId, email, UserStatus.Blacklisted, remark);
 		}
 
 		return isSuccessfullyInserted;
@@ -199,7 +200,7 @@ public class BlacklistServiceImpl implements BlacklistService {
 				filteredMailinglistIds = Collections.emptyList();
 			}
 
-			updateBlacklistedBindings(blacklistModel, filteredMailinglistIds, UserStatus.AdminOut.getStatusCode());
+			updateBlacklistedBindings(blacklistModel, filteredMailinglistIds, UserStatus.AdminOut);
 			return true;
 		}
 

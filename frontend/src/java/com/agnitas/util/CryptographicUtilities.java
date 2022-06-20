@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -20,6 +20,13 @@ import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.security.Signature;
+import java.security.cert.CertPathBuilder;
+import java.security.cert.Certificate;
+import java.security.cert.PKIXBuilderParameters;
+import java.security.cert.PKIXCertPathBuilderResult;
+import java.security.cert.TrustAnchor;
+import java.security.cert.X509CertSelector;
+import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.PKCS8EncodedKeySpec;
@@ -28,6 +35,9 @@ import java.security.spec.RSAPrivateCrtKeySpec;
 import java.security.spec.RSAPublicKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 
 import javax.crypto.Cipher;
 import javax.crypto.CipherInputStream;
@@ -36,7 +46,8 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.PBEParametersGenerator;
 import org.bouncycastle.crypto.generators.PKCS5S2ParametersGenerator;
@@ -51,7 +62,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
  * May need installed "US_export_policy.jar" and "local_policy.jar" for unlimited key strength Download: http://www.oracle.com/technetwork/java/javase/downloads/jce-7-download-432124.html
  */
 public class CryptographicUtilities {
-	public static Logger logger = Logger.getLogger(CryptographicUtilities.class);
+	public static Logger logger = LogManager.getLogger(CryptographicUtilities.class);
 	
 	public static String DEFAULT_SYMMETRIC_ENCRYPTION_METHOD = "AES/CBC/PKCS7Padding";
 	
@@ -326,6 +337,33 @@ public class CryptographicUtilities {
 			return signature.verify(signatureData);
 		} catch (Exception e) {
 			throw new Exception("Cannot verify signature", e);
+		}
+	}
+
+	/**
+	 * Check if "certificate" was certified by "trustedCertificates"
+	 *
+	 * @param certificate
+	 * @param trustedCertificates
+	 * @return
+	 * @throws Exception
+	 */
+	public static boolean verifyChainOfTrust(final X509Certificate certificate, final Collection<? extends Certificate> trustedCertificates) throws Exception {
+		final X509CertSelector targetConstraints = new X509CertSelector();
+		targetConstraints.setCertificate(certificate);
+
+		final Set<TrustAnchor> trustAnchors = new HashSet<>();
+		for (final Certificate trustedRootCert : trustedCertificates) {
+			trustAnchors.add(new TrustAnchor((X509Certificate) trustedRootCert, null));
+		}
+
+		final PKIXBuilderParameters params = new PKIXBuilderParameters(trustAnchors, targetConstraints);
+		params.setRevocationEnabled(false);
+		try {
+			final PKIXCertPathBuilderResult result = (PKIXCertPathBuilderResult) CertPathBuilder.getInstance("PKIX").build(params);
+			return result != null;
+		} catch (@SuppressWarnings("unused") final Exception cpbe) {
+			return false;
 		}
 	}
 }

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -19,7 +19,8 @@ import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.service.JobWorker;
 import org.agnitas.util.AgnUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 /**
@@ -28,7 +29,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
  *    VALUES ((SELECT MAX(id) + 1 FROM job_queue_tbl), 'DBErrorCheck', CURRENT_TIMESTAMP, NULL, 0, 'OK', 0, 0, '**00', CURRENT_TIMESTAMP, NULL, 'org.agnitas.util.quartz.DBErrorCheckJobWorker', 1);
  */
 public class DBErrorCheckJobWorker extends JobWorker {
-	private static final transient Logger logger = Logger.getLogger(DBErrorCheckJobWorker.class);
+	private static final transient Logger logger = LogManager.getLogger(DBErrorCheckJobWorker.class);
 	
 	@Override
 	public String runJob() throws Exception {

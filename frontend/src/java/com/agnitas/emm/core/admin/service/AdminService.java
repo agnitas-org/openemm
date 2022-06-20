@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -23,9 +23,9 @@ import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.Tuple;
 
+import com.agnitas.beans.AdminPreferences;
 import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.ComAdminPreferences;
-import com.agnitas.beans.ComCompany;
+import com.agnitas.beans.Company;
 import com.agnitas.emm.core.admin.AdminException;
 import com.agnitas.emm.core.admin.form.AdminForm;
 import com.agnitas.emm.core.admin.web.PermissionsOverviewData;
@@ -64,7 +64,7 @@ public interface AdminService {
 	ServiceResult<ComAdmin> delete(ComAdmin admin, int adminIdToDelete);
     boolean deleteAdmin(final int adminID, final int companyID);
 
-    AdminSavingResult saveAdmin(AdminForm form, ComAdmin editorAdmin);
+    AdminSavingResult saveAdmin(AdminForm form, boolean restfulUser, ComAdmin editorAdmin);
 
     /**
      * Save the permissions for an admin.
@@ -94,7 +94,7 @@ public interface AdminService {
 
     List<AdminGroup> getAdminGroups(@VelocityCheck int companyID, ComAdmin admin);
 
-    List<ComCompany> getCreatedCompanies(@VelocityCheck int companyID);
+    List<Company> getCreatedCompanies(@VelocityCheck int companyID);
 
     int adminGroupExists(@VelocityCheck int companyId, String groupname);
 
@@ -126,7 +126,7 @@ public interface AdminService {
 
     Map<String, PermissionsOverviewData.PermissionCategoryEntry> getPermissionOverviewData(ComAdmin admin, ComAdmin adminToEdit);
 
-    ComAdminPreferences getAdminPreferences(int adminId);
+    AdminPreferences getAdminPreferences(int adminId);
 
     List<EmmLayoutBase> getEmmLayoutsBase(@VelocityCheck int companyID);
 
@@ -144,6 +144,8 @@ public interface AdminService {
 
     int getAccessLimitTargetId(ComAdmin admin);
     
+    boolean isExtendedAltgEnabled(ComAdmin admin);
+    
 	int getAdminWelcomeMailingId(String language);
 	
 	int getPasswordResetMailingId(String language);
@@ -151,4 +153,26 @@ public interface AdminService {
 	int getPasswordChangedMailingId(String language);
 	
 	void updateLoginDate(final int adminID);
+	
+	PaginatedListImpl<AdminEntry> getRestfulUserList(
+            int companyID,
+            String searchFirstName,
+            String searchLastName,
+            String searchEmail,
+            String searchCompanyName,
+            Integer filterCompanyId,
+            Integer filterAdminGroupId,
+            Integer filterMailinglistId,
+            String filterLanguage,
+            String sort,
+            String direction,
+            int pageNumber,
+            int pageSize);
+	
+	List<ComAdmin> getAdmins(int companyID, boolean restful);
+	
+	boolean isDisabledMailingListsSupported();
+
+	void setDefaultPreferencesSettings(AdminPreferences preferences);
+	List<Integer> getAccessLimitingAdmins(int accessLimitingTargetGroupID);
 }

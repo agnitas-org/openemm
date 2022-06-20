@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -15,13 +15,12 @@ import static com.agnitas.web.mvc.Pollable.DEFAULT_TIMEOUT;
 import java.net.IDN;
 import java.util.concurrent.Callable;
 
-import jakarta.servlet.http.HttpSession;
-
 import org.agnitas.service.UserActivityLogService;
 import org.agnitas.service.WebStorage;
 import org.agnitas.web.forms.FormUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.stereotype.Controller;
@@ -36,6 +35,7 @@ import org.springframework.web.servlet.ModelAndView;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.PollingUid;
+import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.bounce.dto.BounceFilterDto;
 import com.agnitas.emm.core.bounce.form.BounceFilterForm;
 import com.agnitas.emm.core.bounce.form.BounceFilterListForm;
@@ -48,19 +48,22 @@ import com.agnitas.emm.core.bounce.service.impl.EmailInUseException;
 import com.agnitas.emm.core.bounce.util.BounceUtils;
 import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
-import com.agnitas.emm.core.report.enums.fields.MailingTypes;
 import com.agnitas.emm.core.userform.service.ComUserformService;
 import com.agnitas.service.ComWebStorage;
 import com.agnitas.web.mvc.Pollable;
 import com.agnitas.web.mvc.Popups;
+import com.agnitas.web.mvc.XssCheckAware;
 import com.agnitas.web.perm.annotations.PermissionMapping;
+
+import jakarta.servlet.http.HttpSession;
 
 @Controller
 @PermissionMapping("bounce.filter")
 @RequestMapping("/administration/bounce")
-public class BounceFilterController {
+public class BounceFilterController implements XssCheckAware {
     
-    private static final Logger logger = Logger.getLogger(BounceFilterController.class);
+	/** The logger. */
+    private static final Logger logger = LogManager.getLogger(BounceFilterController.class);
     
     private static final String MAILING_LISTS = "mailingLists";
     private static final String USER_FORM_LIST = "userFormList";
@@ -210,7 +213,7 @@ public class BounceFilterController {
     private void loadAdditionalFormData(ComAdmin admin, Model model){
         model.addAttribute(MAILING_LISTS, mailinglistApprovalService.getEnabledMailinglistsForAdmin(admin));
         model.addAttribute(USER_FORM_LIST, userFormService.getUserForms(admin.getCompanyID()));
-        model.addAttribute(ACTIONBASED_MAILINGS, mailingService.getMailingsByType(MailingTypes.ACTION_BASED, admin.getCompanyID(), false));
+        model.addAttribute(ACTIONBASED_MAILINGS, mailingService.getMailingsByType(MailingType.ACTION_BASED, admin.getCompanyID(), false));
     }
 
     private boolean isValid(ComAdmin admin, BounceFilterForm form, Popups popups){
@@ -236,7 +239,7 @@ public class BounceFilterController {
     			
     			return false;
     		}
-    	} 
+    	}
     	
     	return false;
     }

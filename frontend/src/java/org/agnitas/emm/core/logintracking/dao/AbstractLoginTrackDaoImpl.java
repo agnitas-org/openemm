@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -19,7 +19,7 @@ import java.util.Optional;
 import org.agnitas.dao.impl.BaseDaoImpl;
 import org.agnitas.emm.core.logintracking.LoginStatus;
 import org.agnitas.emm.core.logintracking.bean.LoginData;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
 import org.springframework.jdbc.core.RowMapper;
 
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
@@ -55,7 +55,7 @@ public abstract class AbstractLoginTrackDaoImpl extends BaseDaoImpl implements L
 			final String sql = String.format("SELECT * FROM %s ORDER BY creation_date DESC", getTrackingTableName());
 			
 			return select(getLogger(), sql, new LoginDataRowMapper());
-		} else {		
+		} else {
 			final String sql = String.format("SELECT * FROM %s WHERE creation_date > ? ORDER BY creation_date DESC", getTrackingTableName());
 					
 			return select(getLogger(), sql, new LoginDataRowMapper(), sinceOrNull);
@@ -68,7 +68,7 @@ public abstract class AbstractLoginTrackDaoImpl extends BaseDaoImpl implements L
 			final String sql = String.format("SELECT * FROM %s WHERE ip_address = ? ORDER BY creation_date DESC", getTrackingTableName());
 			
 			return select(getLogger(), sql, new LoginDataRowMapper(), ipAddress);
-		} else {		
+		} else {
 			final String sql = String.format("SELECT * FROM %s WHERE creation_date > ? AND ip_address = ? ORDER BY creation_date DESC", getTrackingTableName());
 					
 			return select(getLogger(), sql, new LoginDataRowMapper(), sinceOrNull, ipAddress);
@@ -80,11 +80,11 @@ public abstract class AbstractLoginTrackDaoImpl extends BaseDaoImpl implements L
 		if(sinceOrNull == null) {
 			final String sql = String.format("SELECT * FROM %s WHERE username = ? ORDER BY creation_date DESC", getTrackingTableName());
 			
-			return select(getLogger(), sql, new LoginDataRowMapper(), username);		
-		} else {		
+			return select(getLogger(), sql, new LoginDataRowMapper(), username);
+		} else {
 			final String sql = String.format("SELECT * FROM %s WHERE creation_date > ? AND username = ? ORDER BY creation_date DESC", getTrackingTableName());
 				
-			return select(getLogger(), sql, new LoginDataRowMapper(), sinceOrNull, username);		
+			return select(getLogger(), sql, new LoginDataRowMapper(), sinceOrNull, username);
 		}
 	}
 	
@@ -107,10 +107,12 @@ public abstract class AbstractLoginTrackDaoImpl extends BaseDaoImpl implements L
 	@Override
 	@DaoUpdateReturnValueCheck
 	public int deleteOldRecords(int holdBackDays, int maxRecords) {
-		if(holdBackDays < 0)
+		if(holdBackDays < 0) {
 			throw new IllegalArgumentException("holdBackDays must be >= 0");
-		if(maxRecords < 0)
+		}
+		if(maxRecords < 0) {
 			throw new IllegalArgumentException("maxRecords must be >= 0");
+		}
 		
 		final String sql = isOracleDB()
 				? String.format("DELETE FROM %s WHERE (sysdate - creation_date) > ? AND ROWNUM <= ?", getTrackingTableName())
@@ -122,10 +124,12 @@ public abstract class AbstractLoginTrackDaoImpl extends BaseDaoImpl implements L
 	@Override
 	@DaoUpdateReturnValueCheck
 	public int deleteOldRecordsHours(int holdBackHours, int maxRecords) {
-		if(holdBackHours < 0)
+		if(holdBackHours < 0) {
 			throw new IllegalArgumentException("holdBackHours must be >= 0");
-		if(maxRecords < 0)
+		}
+		if(maxRecords < 0) {
 			throw new IllegalArgumentException("maxRecords must be >= 0");
+		}
 		
 		final String sql = isOracleDB()
 				? String.format("DELETE FROM %s WHERE creation_date < sysdate - ? / 24.0 AND ROWNUM <= ?", getTrackingTableName())

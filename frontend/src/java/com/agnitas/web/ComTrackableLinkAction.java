@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -25,13 +25,9 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-
 import org.agnitas.actions.EmmAction;
 import org.agnitas.beans.BaseTrackableLink;
-import org.agnitas.beans.Mediatype;
+import com.agnitas.beans.Mediatype;
 import org.agnitas.beans.TrackableLink;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.EmmActionDao;
@@ -46,7 +42,8 @@ import org.agnitas.web.BaseTrackableLinkForm;
 import org.agnitas.web.StrutsActionBase;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
@@ -74,6 +71,9 @@ import com.agnitas.service.ComWebStorage;
 import com.agnitas.service.GridServiceWrapper;
 import com.agnitas.web.exception.ClearLinkExtensionsException;
 
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import net.sf.json.JSONObject;
 
 /**
@@ -85,7 +85,7 @@ public class ComTrackableLinkAction extends StrutsActionBase {
 	private static final transient IntelliAdChecker intelliAdChecker = new IntelliAdChecker();
 
 	/** The logger. */
-	private static final transient Logger logger = Logger.getLogger(ComTrackableLinkAction.class);
+	private static final transient Logger logger = LogManager.getLogger(ComTrackableLinkAction.class);
 
 	public static final int ACTION_SET_STANDARD_ACTION = ACTION_LAST + 1;
 	public static final int ACTION_GLOBAL_USAGE = ACTION_LAST + 2;
@@ -455,8 +455,9 @@ public class ComTrackableLinkAction extends StrutsActionBase {
         }
 
         if (aForm.isEveryPositionLink()){
-        	mailingBaseService.activateTrackingLinksOnEveryPosition(admin, aMailing, bulkLinkIds, getApplicationContext(req));
+            mailingBaseService.activateTrackingLinksOnEveryPosition(admin, aMailing, getApplicationContext(req));
         }
+        
 
         // saveAdminLinks(aForm, req);
         for (ComTrackableLink trackableLink : aMailing.getTrackableLinks().values()) {
@@ -950,7 +951,7 @@ public class ComTrackableLinkAction extends StrutsActionBase {
 		return WebApplicationContextUtils.getRequiredWebApplicationContext(req
 				.getSession().getServletContext());
 	}
-
+    
 	@Required
 	public void setConfigService(ConfigService configService) {
 		this.configService = configService;

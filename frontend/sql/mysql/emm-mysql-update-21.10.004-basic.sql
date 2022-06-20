@@ -6,3 +6,5 @@ DELETE FROM permission_category_tbl WHERE category_name = 'NegativePermissions';
 
 INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
 	VALUES ('21.10.004', CURRENT_USER, CURRENT_TIMESTAMP);
+
+COMMIT;

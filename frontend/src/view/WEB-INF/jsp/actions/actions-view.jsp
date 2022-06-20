@@ -154,7 +154,7 @@
     <emm:instantiate var="columnInfo" type="java.util.LinkedHashMap">
         <emm:ShowColumnInfo id="agnTbl" table="<%= AgnUtils.getCompanyID(request) %>"
                             hide="change_date, timestamp, creation_date, datasource_id, bounceload, sys_tracking_veto,
-                            cleaned_date, facebook_status, foursquare_status, google_status, twitter_status, xing_status">
+                            cleaned_date, facebook_status, foursquare_status, google_status, twitter_status, xing_status, sys_encrypted_sending">
             <%--@elvariable id="_agnTbl_column_name" type="java.lang.String"--%>
             <%--@elvariable id="_agnTbl_shortname" type="java.lang.String"--%>
 

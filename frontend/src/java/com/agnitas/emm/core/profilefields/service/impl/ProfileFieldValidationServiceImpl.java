@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -24,7 +24,8 @@ import org.agnitas.util.DbUtilities;
 import org.agnitas.util.KeywordList;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComAdmin;
@@ -41,7 +42,7 @@ import com.agnitas.service.ServiceResult;
 
 public class ProfileFieldValidationServiceImpl implements ProfileFieldValidationService {
     
-    private static final Logger logger = Logger.getLogger(ProfileFieldValidationServiceImpl.class);
+    private static final Logger logger = LogManager.getLogger(ProfileFieldValidationServiceImpl.class);
     
     private static final int MAX_VARCHAR_LENGTH = 4000;
 
@@ -127,10 +128,16 @@ public class ProfileFieldValidationServiceImpl implements ProfileFieldValidation
     }
 
     @Override
-    public boolean isInvalidFloatField(String fieldType, String fieldDefault) {
-        return DbColumnType.GENERIC_TYPE_FLOAT.equals(fieldType)
-                && StringUtils.isNotEmpty(fieldDefault)
-                && !AgnUtils.isDouble(fieldDefault);
+    public boolean isInvalidFloatField(String fieldType, String fieldDefault, Locale locale) {
+        if (!DbColumnType.GENERIC_TYPE_FLOAT.equals(fieldType) || StringUtils.isEmpty(fieldDefault)) {
+            return false;
+        }
+        String normalizedDecimalNumber = AgnUtils.getNormalizedDecimalNumber(fieldDefault, locale);
+        if (normalizedDecimalNumber.isEmpty()) {
+            return true;
+        }
+        
+        return !AgnUtils.isDouble(normalizedDecimalNumber);
     }
 
     @Override

@@ -1,6 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
-<%@ page import="com.agnitas.web.ComMailingBaseAction" %>
-<%@ page import="com.agnitas.web.ComMailingWizardAction" %>
+<%@ page import="com.agnitas.web.MailingBaseAction" %>
+<%@ page import="com.agnitas.web.MailingWizardAction" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
@@ -9,10 +9,10 @@
 <%--@elvariable id="emmLayoutBase" type="org.agnitas.beans.EmmLayoutBase"--%>
 <%--@elvariable id="workflowId" type="java.lang.Integer"--%>
 
-<c:set var="ACTION_START" 				value="<%= ComMailingWizardAction.ACTION_START %>"/>
-<c:set var="ACTION_NEW" 				value="<%= ComMailingBaseAction.ACTION_NEW %>"/>
-<c:set var="ACTION_MAILING_TEMPLATES" 	value="<%= ComMailingBaseAction.ACTION_MAILING_TEMPLATES %>"/>
-<c:set var="ACTION_MAILING_IMPORT" 		value="<%= ComMailingBaseAction.ACTION_MAILING_IMPORT %>" />
+<c:set var="ACTION_START" 				value="<%=MailingWizardAction.ACTION_START%>"/>
+<c:set var="ACTION_NEW" 				value="<%= MailingBaseAction.ACTION_NEW %>"/>
+<c:set var="ACTION_MAILING_TEMPLATES" 	value="<%= MailingBaseAction.ACTION_MAILING_TEMPLATES %>"/>
+<c:set var="ACTION_MAILING_IMPORT" 		value="<%= MailingBaseAction.ACTION_MAILING_IMPORT %>" />
 <emm:setAbsolutePath var="absoluteImagePath" path="${emmLayoutBase.imagesURL}"/>
 
 <div class="col-md-offset-3 col-md-6">
@@ -23,6 +23,9 @@
 
         <div class="tile-content">
             <ul class="link-list">
+            <%@include file="mailing-wizard-start-grid.jspf" %>
+            
+            <emm:ShowByPermission token="mailing.classic">
                 <li>
                     <html:link page="/mailingbase.do?action=${ACTION_MAILING_TEMPLATES}&mailingID=0&isTemplate=false&keepForward=${workflowId > 0}" styleClass="link-list-item">
                         <div class="thumbnail">
@@ -39,10 +42,7 @@
                         <i class="nav-arrow icon icon-angle-right"></i>
                     </html:link>
                 </li>
-
-				<%@include file="mailing-wizard-start-grid2.jspf" %>
-
-                <li>
+			    <li>
                     <html:link page="/mwStart.do?action=${ACTION_START}&keepForward=${workflowId > 0}" styleClass="link-list-item">
                         <div class="thumbnail">
                             <img alt=""  class="media-object" src="${absoluteImagePath}/facelift/agn_mailing-new-assistant.png">
@@ -58,6 +58,7 @@
                         <i class="nav-arrow icon icon-angle-right"></i>
                     </html:link>
                 </li>
+                </emm:ShowByPermission>
                 <emm:ShowByPermission token="mailing.import">
                     <li>
 	                    <html:link page="/mailingbase.do?action=${ACTION_MAILING_IMPORT}" styleClass="link-list-item">

@@ -139,6 +139,7 @@ AGN.Lib.Controller.new('mailing-view-base', function() {
           '#lightWeightMailingList',
           '#assignTargetGroups',
           '#targetGroupIds',
+          '#altgIds',
           '#followUpType'
       ];
 

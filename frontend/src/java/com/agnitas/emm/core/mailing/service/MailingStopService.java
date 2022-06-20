@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -39,6 +39,19 @@ public interface MailingStopService {
 	
 	boolean resumeMailing(final int companyID, final int mailingID) throws MailingStopServiceException;
 	
+	/**
+	 * Copies the stopped mailing for resume.
+	 * 
+	 * Requires enabled mailtracking for company.
+	 * 
+	 * @param admin admin
+	 * @param mailingID mailing ID
+	 * 
+	 * @return mailing ID of copy
+	 * 
+	 * @throws MailingStopServiceException on errors during processing
+	 * @throws MailtrackingNotEnabledException if mailtracking is not enabled for company
+	 */
 	int copyMailingForResume(final ComAdmin admin, final int mailingID) throws MailingStopServiceException;
 	
 	boolean isStopped(final int mailingID);

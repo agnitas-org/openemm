@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -12,14 +12,14 @@ package com.agnitas.emm.core.admin.form;
 
 import java.util.List;
 
-import com.agnitas.beans.ComCompany;
+import com.agnitas.beans.Company;
 import org.agnitas.beans.AdminGroup;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.web.forms.PaginationForm;
 
 public class AdminListForm extends PaginationForm {
 
-    private List<ComCompany> companies;
+    private List<Company> companies;
     private List<AdminGroup> adminGroups;
     private List<Mailinglist> mailinglists;
     private String searchFirstName;
@@ -31,11 +31,11 @@ public class AdminListForm extends PaginationForm {
     private Integer filterAdminGroupId;
     private String filterLanguage;
 
-    public List<ComCompany> getCompanies() {
+    public List<Company> getCompanies() {
         return companies;
     }
 
-    public void setCompanies(List<ComCompany> companies) {
+    public void setCompanies(List<Company> companies) {
         this.companies = companies;
     }
 

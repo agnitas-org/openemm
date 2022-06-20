@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -15,19 +15,20 @@ import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
 
-import jakarta.servlet.http.HttpServletRequest;
-
 import org.agnitas.util.AgnUtils;
 import org.agnitas.web.forms.StrutsFormBase;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 
+import jakarta.servlet.http.HttpServletRequest;
+
 public class ComAdminForm extends StrutsFormBase {
 	/** The logger. */
-	private static final transient Logger logger = Logger.getLogger(ComAdminForm.class);
+	private static final transient Logger logger = LogManager.getLogger(ComAdminForm.class);
 
 	private static final long serialVersionUID = -5934996047571867787L;
 	private String statEmail;
@@ -42,6 +43,7 @@ public class ComAdminForm extends StrutsFormBase {
     private int gender = 2;
 	protected String title;
     private String firstname;
+    private String employeeID;
     private String action;
 	private int adminID = 0;
 	private int companyID = 1;
@@ -104,9 +106,11 @@ public class ComAdminForm extends StrutsFormBase {
 		ActionErrors actionErrors = new ActionErrors();
 		boolean doNotDelete = request.getParameter("delete") == null || request.getParameter("delete").isEmpty();
 		if (doNotDelete && "save".equals(action)) {
-			if (StringUtils.trimToNull(username) == null || StringUtils.trimToNull(username).length() < 3) {
+			if (StringUtils.trimToNull(username) == null) {
+				actionErrors.add("username", new ActionMessage("error.username.blank"));
+			} else if (StringUtils.trimToNull(username).length() < 3) {
 				actionErrors.add("username", new ActionMessage("error.username.tooShort"));
-			} else if (StringUtils.trimToNull(username).length() > 180) {
+			} else if (StringUtils.length(username) > 180) {
 				actionErrors.add("username", new ActionMessage("error.username.tooLong"));
 			}
 
@@ -114,19 +118,21 @@ public class ComAdminForm extends StrutsFormBase {
 				actionErrors.add("password", new ActionMessage("error.password.mismatch"));
 			}
 
-			if (StringUtils.isBlank(fullname) || fullname.length() < 2) {
-				actionErrors.add("fullname", new ActionMessage("error.name.too.short"));
+			if (StringUtils.trimToNull(fullname) == null) {
+				actionErrors.add("fullname", new ActionMessage("error.fullname.blank"));
 			} else if (fullname.length() > 100) {
-				actionErrors.add("fullname", new ActionMessage("error.username.tooLong"));
+				actionErrors.add("fullname", new ActionMessage("error.fullname.tooLong"));
 			}
 
-			if (StringUtils.isBlank(firstname) || firstname.length() < 2) {
-				actionErrors.add("firstname", new ActionMessage("error.name.too.short"));
+			if (StringUtils.trimToNull(firstname) == null) {
+				actionErrors.add("firstname", new ActionMessage("error.firstname.blank"));
 			} else if (firstname.length() > 100) {
-				actionErrors.add("firstname", new ActionMessage("error.username.tooLong"));
+				actionErrors.add("firstname", new ActionMessage("error.firstname.tooLong"));
 			}
 
-			if (StringUtils.isBlank(companyName) || companyName.length() < 2) {
+			if (StringUtils.trimToNull(companyName) == null) {
+				actionErrors.add("companyName", new ActionMessage("error.company.blank"));
+			} else if (companyName.length() < 2) {
 				actionErrors.add("companyName", new ActionMessage("error.company.tooShort"));
 			} else if (companyName.length() > 100) {
 				actionErrors.add("companyName", new ActionMessage("error.company.tooLong"));
@@ -223,15 +229,19 @@ public class ComAdminForm extends StrutsFormBase {
     public void setFirstname(String firstname) {
         this.firstname = firstname;
     }
+    
 	public int getGender() {
 		return gender;
 	}
+	
 	public void setGender(int gender) {
 		this.gender = gender;
 	}
+	
 	public String getTitle() {
 		return title;
 	}
+	
 	public void setTitle(String title) {
 		this.title = title;
 	}
@@ -483,4 +493,12 @@ public class ComAdminForm extends StrutsFormBase {
 	public void setGroupIDs(String[] groupIDs) {
 		this.groupIDs = groupIDs;
 	}
+
+    public String getEmployeeID() {
+        return employeeID;
+    }
+
+    public void setEmployeeID(String employeeID) {
+        this.employeeID = employeeID;
+    }
 }

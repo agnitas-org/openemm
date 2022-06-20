@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -30,7 +30,8 @@ import org.agnitas.util.DateUtilities;
 import org.agnitas.util.Tuple;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.MaildropEntry;
@@ -42,20 +43,20 @@ import com.agnitas.beans.impl.MailingImpl;
 import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.dao.ComTrackableLinkDao;
+import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.maildrop.MaildropGenerationStatus;
 import com.agnitas.emm.core.maildrop.MaildropStatus;
 import com.agnitas.emm.core.maildrop.service.MaildropService;
 import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
 import com.agnitas.emm.core.mailing.service.MailingPriorityService;
 import com.agnitas.emm.core.mailing.service.MailingService;
-import com.agnitas.emm.core.report.enums.fields.MailingTypes;
 import com.agnitas.messages.Message;
 import com.agnitas.service.ComMailingSendService;
 import com.agnitas.util.ClassicTemplateGenerator;
 
 public class ComMailingSendServiceImpl implements ComMailingSendService {
     /** The logger. */
-    private static final transient Logger logger = Logger.getLogger(ComMailingSendServiceImpl.class);
+    private static final transient Logger logger = LogManager.getLogger(ComMailingSendServiceImpl.class);
 
     private ComMailingDao mailingDao;
     private ComCompanyDao companyDao;
@@ -79,7 +80,7 @@ public class ComMailingSendServiceImpl implements ComMailingSendService {
 
         Mailing mailing = mailingDao.getMailing(mailingId, companyId);
 
-        MailingTypes mailingType = MailingTypes.getByCode(mailing.getMailingType());
+        MailingType mailingType = mailing.getMailingType();
         if (mailing.getId() == 0) {
             logger.error("Mailing #" + mailingId + " (companyId #" + companyId + ") not found so cannot be sent");
             return;
@@ -147,7 +148,7 @@ public class ComMailingSendServiceImpl implements ComMailingSendService {
             blocksize = configService.getIntegerValue(ConfigValue.DefaultBlocksizeValue, companyId);
         }
 
-        if (mailingType == MailingTypes.NORMAL || mailingType == MailingTypes.FOLLOW_UP) {
+        if (mailingType == MailingType.NORMAL || mailingType == MailingType.FOLLOW_UP) {
             Tuple<Integer, Integer> blocksizeAndStepping = AgnUtils.makeBlocksizeAndSteppingFromBlocksize(blocksize, options.getDefaultStepping());
             blocksize = blocksizeAndStepping.getFirst();
             stepping = blocksizeAndStepping.getSecond();
@@ -233,7 +234,7 @@ public class ComMailingSendServiceImpl implements ComMailingSendService {
             mailingDao.saveMailing(mailing, false);
         }
 
-        if (mailing.getMailingType() != MailingTypes.FOLLOW_UP.getCode() && world && this.maildropService.isActiveMailing(mailing.getId(), mailing.getCompanyID())) {
+        if (mailing.getMailingType() != MailingType.FOLLOW_UP && world && this.maildropService.isActiveMailing(mailing.getId(), mailing.getCompanyID())) {
             if (logger.isDebugEnabled()) {
                 logger.debug("Mailing id: " + mailing.getId() + " is already scheduled");
             }
@@ -242,7 +243,7 @@ public class ComMailingSendServiceImpl implements ComMailingSendService {
 
         int startGen = MaildropGenerationStatus.NOW.getCode();
 
-        switch (MailingTypes.getByCode(mailing.getMailingType())) {
+        switch (mailing.getMailingType()) {
             case NORMAL:
                 if (world && DateUtil.isDateForImmediateGeneration(genDate) && isPrioritized(companyId, mailingId)) {
                     startGen = MaildropGenerationStatus.SCHEDULED.getCode();
@@ -266,7 +267,7 @@ public class ComMailingSendServiceImpl implements ComMailingSendService {
         }
 
         if (!DateUtil.isDateForImmediateGeneration(genDate)) {
-            switch (MailingTypes.getByCode(mailing.getMailingType())) {
+            switch (mailing.getMailingType()) {
                 case NORMAL:
                 case FOLLOW_UP:
                     startGen = MaildropGenerationStatus.SCHEDULED.getCode();

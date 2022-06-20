@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -24,11 +24,11 @@ import java.util.Map;
 
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.impl.PaginatedBaseDaoImpl;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.AgnUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.support.lob.DefaultLobHandler;
 
@@ -39,7 +39,9 @@ import com.agnitas.emm.core.upload.bean.UploadData;
 import com.agnitas.emm.core.upload.dao.ComUploadDao;
 
 public class ComUploadDaoImpl extends PaginatedBaseDaoImpl implements ComUploadDao {
-	private static final transient Logger logger = Logger.getLogger(ComUploadDaoImpl.class);
+	
+	/** The logger. */
+	private static final transient Logger logger = LogManager.getLogger(ComUploadDaoImpl.class);
 	
 	// should be inserted by spring...
 	protected DefaultLobHandler lobhandler = new DefaultLobHandler();
@@ -323,13 +325,13 @@ public class ComUploadDaoImpl extends PaginatedBaseDaoImpl implements ComUploadD
 	}
 	
 	@Override
-	public boolean deleteByCompany(@VelocityCheck int companyID) {
+	public boolean deleteByCompany(int companyID) {
 		int touchedLines = update(logger, "DELETE FROM upload_tbl WHERE company_id = ?", companyID);
 		return touchedLines > 0;
 	}
 
 	@Override
-	public List<Map<String, Object>> getUploadIdsToDelete(int daysToHold, @VelocityCheck int companyID) {
+	public List<Map<String, Object>> getUploadIdsToDelete(int daysToHold, int companyID) {
 		if (isOracleDB()) {
 			return select(logger, "SELECT upload_id FROM upload_tbl WHERE no_delete = 0 and company_id = ? and change_date < CURRENT_TIMESTAMP - ?", companyID, daysToHold);
 		} else {
@@ -338,7 +340,7 @@ public class ComUploadDaoImpl extends PaginatedBaseDaoImpl implements ComUploadD
 	}
 	
 	@Override
-	public List<UploadData> getDataByCompanyID(@VelocityCheck int companyID) {
+	public List<UploadData> getDataByCompanyID(int companyID) {
 		String sql = "SELECT payload, admin_id, creation_date, upload_id, filename, filesize, contact_firstname, contact_name,"
 				+ " contact_mail, contact_phone, sendto_mail, upload_id FROM upload_tbl WHERE company_id = ?";
 		List<UploadData> uploadDataList = select(logger, sql, new DownloadDataRowMapper(), companyID);
@@ -346,7 +348,7 @@ public class ComUploadDaoImpl extends PaginatedBaseDaoImpl implements ComUploadD
 	}
 
 	@Override
-	public UploadData getDataByFileName(String name, @VelocityCheck int companyID) {
+	public UploadData getDataByFileName(String name, int companyID) {
 		String sql = "SELECT payload, admin_id, creation_date, upload_id, filename, filesize, contact_firstname, contact_name,"
 			+ " contact_mail, contact_phone, sendto_mail, upload_id FROM upload_tbl WHERE filename LIKE ? AND company_id = ?";
 		List<UploadData> uploadDataList = select(logger, sql, new DownloadDataRowMapper(), name, companyID);
@@ -382,7 +384,7 @@ public class ComUploadDaoImpl extends PaginatedBaseDaoImpl implements ComUploadD
 	 * @param companyId
 	 * @return
 	 */
-	protected String getUniqueFilename(String filename, @VelocityCheck int companyId) {
+	protected String getUniqueFilename(String filename, int companyId) {
 		String sql = "SELECT COUNT(upload_id) FROM upload_tbl WHERE company_id = ? AND filename = ?";
 		int count = selectInt(logger, sql, companyId, filename);
 		if (count > 0) {

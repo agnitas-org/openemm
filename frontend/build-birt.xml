@@ -326,6 +326,7 @@
 				<include name="jfreechart*" />
 				<include name="jcommon*" />
 				<include name="jackson*" />
+				<include name="http*" />
 			</fileset>
 		</copy>
 
@@ -523,7 +524,7 @@
 		</replaceregexp>
 	</target>
 
-	<target name="createPropertiesFiles" depends="checkForPropertiesFile, parseApplicationVersion, setDeploytarget" description="Create emm/log4j.properties">
+	<target name="createPropertiesFiles" depends="checkForPropertiesFile, parseApplicationVersion, setDeploytarget" description="Create properties">
 		<mkdir dir="${deploydir}${appname}/WEB-INF/classes" />
 		
 		<delete file="${deploydir}${appname}/WEB-INF/classes/emm.properties" />
@@ -567,15 +568,15 @@
 			</else>
 		</if>
 		
-		<delete file="${deploydir}${appname}/WEB-INF/classes/log4j.properties" />
-		<echo message="log4j.properties deleted" />
+		<delete file="${deploydir}${appname}/WEB-INF/classes/log4j2.xml" />
+		<echo message="Properties deleted" />
 		
-		<copy file="${basecss}/build/templates/log4j-statistics.properties" tofile="${deploydir}${appname}/WEB-INF/classes/log4j.properties" overwrite="true" />
+		<copy file="${basecss}/build/templates/log4j2-statistics.xml" tofile="${deploydir}${appname}/WEB-INF/classes/log4j2.xml" overwrite="true" />
 		<replace dir="${deploydir}${appname}/WEB-INF/classes" value="${deploytarget}">
-			<include name="log4j.properties" />
+			<include name="log4j2.xml" />
 			<replacetoken>${deploytarget}</replacetoken>
 		</replace>
-		<echo message="emm/log4j.properties build with data from 'build/properties/${deploytarget}.xml'" />
+		<echo message="Properties build with data from 'build/properties/${deploytarget}.xml'" />
 	</target>
 
 	<target name="setupContexts" depends="copy, create_web.xml" description="Removes cronContext.xml">

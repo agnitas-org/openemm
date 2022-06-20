@@ -23,7 +23,8 @@ AGN.Lib.CoreInitializer.new('image-editor', function($scope) {
       var newWidthOfEditor = width + $('#l-img-editor-tools').width() + 10;
       $('#l-img-editor').css('min-width', newWidthOfEditor);
 
-      var newSrc = context.canvas.toDataURL();
+      var contentType = $('#editor-img').data('content-type');
+      var newSrc = context.canvas.toDataURL(contentType);
       $('#editor-result').attr('value', newSrc);
     };
   });

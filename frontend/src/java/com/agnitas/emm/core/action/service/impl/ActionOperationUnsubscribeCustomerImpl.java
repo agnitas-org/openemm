@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -16,20 +16,15 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import jakarta.servlet.http.HttpServletRequest;
-
 import org.agnitas.beans.BindingEntry;
 import org.agnitas.beans.BindingEntry.UserType;
-import org.agnitas.beans.Recipient;
 import org.agnitas.dao.UserStatus;
 import org.agnitas.dao.exception.UnknownUserStatusException;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.recipient.service.RecipientService;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.BeanLookupFactory;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationType;
@@ -39,21 +34,20 @@ import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
 import com.agnitas.emm.core.action.service.EmmActionOperationErrors.ErrorCode;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 
+import jakarta.servlet.http.HttpServletRequest;
+
 public class ActionOperationUnsubscribeCustomerImpl implements EmmActionOperation {
 
-    private static final Logger LOGGER = Logger.getLogger(ActionOperationUnsubscribeCustomerImpl.class);
+	/** The logger. */
+    private static final Logger LOGGER = LogManager.getLogger(ActionOperationUnsubscribeCustomerImpl.class);
 
-    private BeanLookupFactory beanLookupFactory;
     private RecipientService recipientService;
-    private ConfigService configService;
     private ComMailingDao mailingDao;
 
     @Override
     public boolean execute(AbstractActionOperationParameters operation, Map<String, Object> params, EmmActionOperationErrors errors) throws Exception {
         // GWUA-4782: Expand unsubscribe action
-        return configService.getBooleanValue(ConfigValue.ActopUnsubscribeExtended, operation.getCompanyId())
-                ? newExecute(operation, params, errors)
-                : oldExecute(operation, params);
+        return newExecute(operation, params, errors);
     }
 
     @Override
@@ -175,97 +169,13 @@ public class ActionOperationUnsubscribeCustomerImpl implements EmmActionOperatio
         }
     }
 
-    private boolean oldExecute(AbstractActionOperationParameters operation, Map<String, Object> params) throws UnknownUserStatusException {
-        ActionOperationUnsubscribeCustomerParameters op = (ActionOperationUnsubscribeCustomerParameters) operation;
-        int companyID = op.getCompanyId();
-
-        int customerID = 0;
-        int mailingID = 0;
-        if (params.get("customerID") != null) {
-            customerID = ((Integer) params.get("customerID")).intValue();
-        }
-
-        if (params.get("mailingID") != null) {
-            mailingID = ((Integer) params.get("mailingID")).intValue();
-        }
-
-        String remoteAddr;
-        try {
-            HttpServletRequest request = (HttpServletRequest) params.get("_request");
-            remoteAddr = request.getRemoteAddr();
-        } catch (Exception e) {
-            remoteAddr = "IP unknown";
-        }
-
-        if (customerID != 0 && mailingID != 0) {
-            Recipient aCust = beanLookupFactory.getBeanRecipient();
-            aCust.setCompanyID(companyID);
-            aCust.setCustomerID(customerID);
-            aCust.setCustDBStructure(recipientService.getRecipientDBStructure(companyID));
-            aCust.setCustParameters(recipientService.getCustomerDataFromDb(companyID, customerID, aCust.getDateFormat()));
-            aCust.setListBindings(recipientService.getMailinglistBindings(companyID, customerID));
-
-            final int mailinglistID = mailingDao.getMailinglistId(mailingID, companyID);
-            if (mailinglistID <= 0) {
-                return false;
-            } else {
-                Map<Integer, Map<Integer, BindingEntry>> bindingsByMailinglistAndMediatype = aCust.getListBindings();
-                if (bindingsByMailinglistAndMediatype.containsKey(mailinglistID)) {
-                    Map<Integer, BindingEntry> bindingsByMediatype = bindingsByMailinglistAndMediatype.get(mailinglistID);
-                    if (bindingsByMediatype.containsKey(MediaTypes.EMAIL.getMediaCode())) {
-                        BindingEntry aEntry = bindingsByMediatype.get(MediaTypes.EMAIL.getMediaCode());
-                        switch (UserStatus.getUserStatusByID(aEntry.getUserStatus())) {
-                            case Active:
-                            case Bounce:
-                            case Suspend:
-                                if (!aEntry.getUserType().equals(UserType.TestVIP.getTypeCode()) && !aEntry.getUserType().equals(UserType.WorldVIP.getTypeCode())) {
-                                    aEntry.setUserStatus(UserStatus.UserOut.getStatusCode());
-                                    aEntry.setUserRemark("User-Opt-Out: " + remoteAddr);
-                                    aEntry.setExitMailingID(mailingID);
-                                    aEntry.updateBindingInDB(companyID);
-                                    // next Event-Mailing goes to a user with status 4
-                                    params.put("__agn_USER_STATUS", "4");
-                                }
-                                return true;
-
-                            case AdminOut:
-                            case UserOut:
-                                // next Event-Mailing goes to a user with status 4
-                                params.put("__agn_USER_STATUS", "4");
-                                return true;
-
-                            default:
-                                return false;
-                        }
-                    } else {
-                        return false;
-                    }
-                } else {
-                    return false;
-                }
-            }
-        } else {
-            return false;
-        }
-    }
-
     @Required
     public void setMailingDao(ComMailingDao mailingDao) {
         this.mailingDao = mailingDao;
     }
 
     @Required
-    public void setBeanLookupFactory(BeanLookupFactory beanLookupFactory) {
-        this.beanLookupFactory = beanLookupFactory;
-    }
-
-    @Required
     public void setRecipientService(RecipientService recipientService) {
         this.recipientService = recipientService;
-    }
-
-    @Required
-    public void setConfigService(ConfigService configService) {
-        this.configService = configService;
     }
 }

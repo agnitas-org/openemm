@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -14,6 +14,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+
+import org.agnitas.util.Str;
+import org.agnitas.util.Systemconfig;
 
 /**
  * general class to read configuration files
@@ -39,12 +42,12 @@ public class Config {
 		config = new HashMap <> ();
 		namespace = new HashMap<>();
 		locked = new HashSet <> ();
-		namespace.put("home", Data.home);
-		namespace.put("fqdn", Data.fqdn);
-		namespace.put("hostname", Data.hostname);
-		namespace.put("user", Data.user);
-		namespace.put("version", Data.version);
-		String[] versionParts = Data.version.split("\\.");
+		namespace.put("home", Systemconfig.home);
+		namespace.put("fqdn", Systemconfig.fqdn);
+		namespace.put("hostname", Systemconfig.hostname);
+		namespace.put("user", Systemconfig.user);
+		namespace.put("version", Systemconfig.version);
+		String[] versionParts = Systemconfig.version.split("\\.");
 		String major, minor, patchlevel, hotfix;
 
 		major = minor = "?";
@@ -162,10 +165,10 @@ public class Config {
 	}
 
 	private boolean convertToBool(String str) {
-		return StringOps.atob (str, false);
+		return Str.atob (str, false);
 	}
 
 	private String fill(String s) {
-		return s != null ? StringOps.fill(s, namespace) : s;
+		return s != null ? Str.fill(s, namespace) : s;
 	}
 }

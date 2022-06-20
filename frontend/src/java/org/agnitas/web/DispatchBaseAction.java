@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -18,13 +18,14 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.service.UserActivityLogService;
 import org.agnitas.web.forms.StrutsFormBase;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.struts.actions.DispatchAction;
 
 import com.agnitas.beans.ComAdmin;
 
 public class DispatchBaseAction extends DispatchAction {
-    private static final Logger logger = Logger.getLogger(DispatchBaseAction.class);
+    private static final Logger logger = LogManager.getLogger(DispatchBaseAction.class);
 
     private UserActivityLogService userActivityLogService;
 	

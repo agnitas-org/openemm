@@ -611,6 +611,16 @@
 
     <function>
         <description>
+            Searches for the current aceEditor installation with the highest version number.
+            The result is cached.
+        </description>
+        <name>aceEditorPath</name>
+        <function-class>org.agnitas.util.AgnUtils</function-class>
+        <function-signature>java.lang.String getAceEditorPath(jakarta.servlet.http.HttpServletRequest)</function-signature>
+    </function>
+
+    <function>
+        <description>
             Return the value for the current type for CKEditor.
         </description>
         <name>isCKEditorTrimmed</name>
@@ -755,6 +765,20 @@
         <function-signature>java.lang.String getFullUrlWithExtensions(java.lang.String, java.util.List))</function-signature>
         <example>
             ${emm:getFullUrlWithExtensions("", link.properties)}
+        </example>
+    </function>
+    
+    <function>
+        <description>
+             This method extends the full url of this link with its link extensions for display purposes.
+            User or mailing data is not used, so hash-tags will be left empty.
+            For usage of user and mailing data in correct replacements of hash-tags use
+        </description>
+        <name>getFullUrlWithDtoExtensions</name>
+        <function-class>com.agnitas.util.LinkUtils</function-class>
+        <function-signature>java.lang.String getFullUrlWithDtoExtensions(java.lang.String,java.util.List)</function-signature>
+        <example>
+            ${emm:getFullUrlWithDtoExtensions("", link.properties)}
         </example>
     </function>
 

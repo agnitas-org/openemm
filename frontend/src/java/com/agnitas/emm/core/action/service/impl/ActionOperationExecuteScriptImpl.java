@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -19,8 +19,7 @@ import org.agnitas.beans.BindingEntry;
 import org.agnitas.beans.DatasourceDescription;
 import org.agnitas.beans.Recipient;
 import org.agnitas.dao.MailingDao;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.dao.SourceGroupType;
 import org.agnitas.emm.core.velocity.VelocityResult;
 import org.agnitas.emm.core.velocity.VelocityWrapper;
 import org.agnitas.emm.core.velocity.VelocityWrapperFactory;
@@ -35,12 +34,13 @@ import org.agnitas.emm.core.velocity.emmapi.VelocityRecipient;
 import org.agnitas.emm.core.velocity.emmapi.VelocityRecipientWrapper;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.TimeoutLRUMap;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.BeanLookupFactory;
 import com.agnitas.beans.Mailing;
-import com.agnitas.dao.ComDatasourceDescriptionDao;
+import com.agnitas.dao.DatasourceDescriptionDao;
 import com.agnitas.dao.impl.ComCompanyDaoImpl;
 import com.agnitas.emm.core.JavaMailService;
 import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
@@ -54,7 +54,7 @@ import com.agnitas.util.ScriptHelper;
 public class ActionOperationExecuteScriptImpl implements EmmActionOperation {
 
 	/** The logger. */
-	private static final Logger logger = Logger.getLogger(ActionOperationExecuteScriptImpl.class);
+	private static final Logger logger = LogManager.getLogger(ActionOperationExecuteScriptImpl.class);
 	
 	private MailingDao mailingDao;
 
@@ -62,11 +62,9 @@ public class ActionOperationExecuteScriptImpl implements EmmActionOperation {
 	
 	private JavaMailService javaMailService;
 	
-	private ConfigService configService;
-	
 	private CompanyAccessCheck companyAccessCheck;
 	
-	private ComDatasourceDescriptionDao datasourceDescriptionDao;
+	private DatasourceDescriptionDao datasourceDescriptionDao;
 	
 	private SendActionbasedMailingService sendActionbasedMailingService;
 	
@@ -80,10 +78,7 @@ public class ActionOperationExecuteScriptImpl implements EmmActionOperation {
 		try {
 			Integer datasourceDescriptionId = datasourceIdCache.get(companyID);
 			if (datasourceDescriptionId == null) {
-				DatasourceDescription datasourceDescription = datasourceDescriptionDao.getByDescription("V", companyID, "Velocity");
-				if (datasourceDescription == null) {
-					datasourceDescription = datasourceDescriptionDao.getByDescription("V", 0, "Velocity");
-				}
+				DatasourceDescription datasourceDescription = datasourceDescriptionDao.getByDescription(SourceGroupType.Velocity, companyID, "Velocity");
 				if (datasourceDescription != null) {
 					datasourceDescriptionId = datasourceDescription.getId();
 					datasourceIdCache.put(companyID, datasourceDescriptionId);
@@ -98,48 +93,31 @@ public class ActionOperationExecuteScriptImpl implements EmmActionOperation {
 			logger.error("Cannot set velocity datasource_id in recipient for company " + companyID, e);
 		}
 
-		if (configService.getBooleanValue(ConfigValue.Development.VelocityUseRecipientApiClass, companyID)) {
-			final VelocityRecipient apiClass = new VelocityRecipientWrapper(companyID, cust, this.companyAccessCheck);
-			params.put("Customer", apiClass);
-		} else {
-			params.put("Customer", cust);
-		}
+		final VelocityRecipient apiClass = new VelocityRecipientWrapper(companyID, cust, this.companyAccessCheck);
+		params.put("Customer", apiClass);
 	}
 	
 	private final void registerBindingEntry(final Map<String, Object> params, final int companyId) {
 		// neu von ma
 		final BindingEntry binding = beanLookupFactory.getBeanBindingEntry();
-		
-		if(configService.getBooleanValue(ConfigValue.Development.VelocityUseBindingEntryApiClass, companyId)) {
-			final VelocityBindingEntry apiClass = new VelocityBindingEntryWrapper(companyId, binding, companyAccessCheck);
-			params.put("BindingEntry", apiClass);
-		} else {
-			params.put("BindingEntry", binding);
-		}
-		
+
+		final VelocityBindingEntry apiClass = new VelocityBindingEntryWrapper(companyId, binding, companyAccessCheck);
+		params.put("BindingEntry", apiClass);
 	}
 	
 	private final void registerMailing(final Map<String, Object> params, final int companyID) {
 		final Mailing mail = beanLookupFactory.getBeanMailing();
 		mail.setCompanyID(companyID);
 		
-		if(configService.getBooleanValue(ConfigValue.Development.VelocityUseMailingApiClass, companyID)) {
-			final VelocityMailing apiClass = new VelocityMailingWrapper(mail, this.sendActionbasedMailingService);
-			
-			params.put("Mailing", apiClass);
-		} else {
-			params.put("Mailing", mail);
-		}
+		final VelocityMailing apiClass = new VelocityMailingWrapper(mail, this.sendActionbasedMailingService);
+		
+		params.put("Mailing", apiClass);
 	}
 	
 	private final void registerMailingDao(final Map<String, Object> params, final int companyID) {
-		if(configService.getBooleanValue(ConfigValue.Development.VelocityUseMailingDaoApiClass, companyID)) {
-			final VelocityMailingDao apiClass = new VelocityMailingDaoWrapper(companyID, mailingDao, companyAccessCheck);
-			
-			params.put("MailingDao", apiClass);
-		} else {
-			params.put("MailingDao", mailingDao);
-		}
+		final VelocityMailingDao apiClass = new VelocityMailingDaoWrapper(companyID, mailingDao, companyAccessCheck);
+		
+		params.put("MailingDao", apiClass);
 	}
 	
 	private final void registerScriptHelper(final Map<String, Object> params, final int companyID) {
@@ -211,17 +189,12 @@ public class ActionOperationExecuteScriptImpl implements EmmActionOperation {
 	}
 	
 	@Required
-	public final void setConfigService(final ConfigService service) {
-		this.configService = Objects.requireNonNull(service, "ConfigService is null");
-	}
-	
-	@Required
 	public final void setCompanyAccessCheck(final CompanyAccessCheck check) {
 		this.companyAccessCheck = Objects.requireNonNull(check, "CompanyAccessCheck is null");
 	}
 	
 	@Required
-	public final void setDatasourceDescriptionDao(final ComDatasourceDescriptionDao datasourceDescriptionDao) {
+	public final void setDatasourceDescriptionDao(final DatasourceDescriptionDao datasourceDescriptionDao) {
 		this.datasourceDescriptionDao = Objects.requireNonNull(datasourceDescriptionDao, "datasourceDescriptionDao is null");
 	}
 	

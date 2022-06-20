@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -36,10 +36,11 @@ import org.agnitas.util.PubID;
 import org.agnitas.util.TimeoutLRUMap;
 import org.agnitas.util.UnclosedTagException;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.ComCompany;
+import com.agnitas.beans.Company;
 import com.agnitas.beans.ComTrackableLink;
 import com.agnitas.beans.LinkProperty;
 import com.agnitas.beans.impl.ComTrackableLinkImpl;
@@ -63,8 +64,9 @@ import com.agnitas.util.backend.Decrypt;
 public class LinkServiceImpl implements LinkService {
 	
 	/** The logger. */
-	private static final transient Logger logger = Logger.getLogger(LinkServiceImpl.class);
+	private static final transient Logger logger = LogManager.getLogger(LinkServiceImpl.class);
 
+	private static final Pattern PLACEHOLDER_PATTERN = Pattern.compile("^\\{\\d+\\}$");
 	private static final Pattern HASHTAG_PATTERN = Pattern.compile("##([^#]+)##");
 	private static final Pattern AGNTAG_PATTERN = Pattern.compile("\\[agn[^\\]]+]");
 	private static final Pattern GRIDTAG_PATTERN = Pattern.compile("\\[gridPH[^\\]]+]");
@@ -208,7 +210,7 @@ public class LinkServiceImpl implements LinkService {
 	}
 	
 	private final Map<String, Object> decryptStaticValueMap(final int companyID, final int customerID, final String encryptedStaticValueMap) {
-		final ComCompany company = this.companyDao.getCompany(companyID);
+		final Company company = this.companyDao.getCompany(companyID);
 		
 		try {
 			final Decrypt decrypt = new Decrypt(company.getSecretKey());
@@ -392,20 +394,20 @@ public class LinkServiceImpl implements LinkService {
 		final List<ComTrackableLink> foundTrackableLinks = new ArrayList<>();
 		final List<String> foundImages = new ArrayList<>();
 		final List<String> foundNotTrackableLinks = new ArrayList<>();
-		final List<ErrorneousLink> foundErrorneousLinks = new ArrayList<>();
-		final List<ErrorneousLink> localLinks = new ArrayList<>();
+		final List<ErroneousLink> foundErroneousLinks = new ArrayList<>();
+		final List<ErroneousLink> localLinks = new ArrayList<>();
 		final List<LinkWarning> linkWarnings = new ArrayList<>();
 		
 		try {
 			findAllLinks(textWithReplacedHashTags, (start, end) -> {
-				final LinkScanContext context = new LinkScanContext(text, start, end, foundTrackableLinks, foundImages, foundNotTrackableLinks, foundErrorneousLinks, localLinks, linkWarnings);
+				final LinkScanContext context = new LinkScanContext(text, start, end, foundTrackableLinks, foundImages, foundNotTrackableLinks, foundErroneousLinks, localLinks, linkWarnings);
 				doLinkChecks(context);
 			});
 		} catch (RuntimeException e) {
 			throw new Exception(e);
 		}
 
-		return new LinkScanResult(foundTrackableLinks, foundImages, foundNotTrackableLinks, foundErrorneousLinks, localLinks, linkWarnings);
+		return new LinkScanResult(foundTrackableLinks, foundImages, foundNotTrackableLinks, foundErroneousLinks, localLinks, linkWarnings);
 	}
 	
 	private final void doLinkChecks(final LinkScanContext context) {
@@ -421,22 +423,22 @@ public class LinkServiceImpl implements LinkService {
 		}
 		
 		if (linkCheckIsLocalUrl(context)) {
-			context.getLocalLinks().add(new ErrorneousLink("error.mailing.url.local", context.getStart(), context.getLinkUrl()));
+			context.getLocalLinks().add(new ErroneousLink("error.mailing.url.local", context.getStart(), context.getLinkUrl()));
 			return;
 		}
 
         if (!isValidLinkLength(context)) {
-            context.getFoundErrorneousLinks().add(new ErrorneousLink("GWUA.error.mailing.url.maxLength", context.getStart(), context.getLinkUrl()));
+            context.getFoundErroneousLinks().add(new ErroneousLink("error.mailing.url.maxlength", context.getStart(), context.getLinkUrl()));
             return;
         }
 		
 		if (linkCheckUrlContainsBlanks(context)) {
-			context.getFoundErrorneousLinks().add(new ErrorneousLink("error.mailing.url.blank", context.getStart(), context.getLinkUrl()));
+			context.getFoundErroneousLinks().add(new ErroneousLink("error.mailing.url.blank", context.getStart(), context.getLinkUrl()));
 			return;
 		}
 		
 		if (linkCheckHasMultipleProtocols(context)) {
-			context.getFoundErrorneousLinks().add(new ErrorneousLink("error.mailing.url.multipleProtocols", context.getStart(), context.getLinkUrl()));
+			context.getFoundErroneousLinks().add(new ErroneousLink("error.mailing.url.multipleProtocols", context.getStart(), context.getLinkUrl()));
 			return;
 		}
 		
@@ -466,15 +468,17 @@ public class LinkServiceImpl implements LinkService {
 			if (linkCheckIsInsecureProtocol(context)) {
 				context.getLinkWarnings().add(new LinkWarning(WarningType.INSECURE, context.getLinkUrl()));
 			}
+		} else if(isPlaceholderUrl(context)) {
+			// Does nothing but accepting this url
 		} else if (!linkCheckIsAnchor(context)) {
-			context.getLocalLinks().add(new ErrorneousLink("error.mailing.url.local", context.getStart(), context.getLinkUrl()));
+			context.getLocalLinks().add(new ErroneousLink("error.mailing.url.local", context.getStart(), context.getLinkUrl()));
 		}
 	}
 	
 	private final void doImageLinkCheck(final LinkScanContext context) {
 		if (linkCheckContainsHashTag(context)) {
 			// No hash tags in image links allowed
-			context.getFoundErrorneousLinks().add(new ErrorneousLink("error.mailing.imagelink.hash", context.getStart(), context.getLinkUrl()));
+			context.getFoundErroneousLinks().add(new ErroneousLink("error.mailing.imagelink.hash", context.getStart(), context.getLinkUrl()));
 		} else {
 			if (!linkCheckIsProtocolSchemaPresent(context) || linkCheckIsHttpOrHttpsSchema(context)) {
 				context.getFoundImages().add(context.getLinkUrl());
@@ -490,9 +494,13 @@ public class LinkServiceImpl implements LinkService {
 				}
 			} else {
 				// No HTTP/HTTPS protocol and no AGN tag? -> Treat at local link
-				context.getLocalLinks().add(new ErrorneousLink("error.mailing.url.local", context.getStart(), context.getLinkUrl()));
+				context.getLocalLinks().add(new ErroneousLink("error.mailing.url.local", context.getStart(), context.getLinkUrl()));
 			}
 		}
+	}
+	
+	private final boolean isPlaceholderUrl(final LinkScanContext context) {
+		return PLACEHOLDER_PATTERN.matcher(context.getLinkUrl()).matches();
 	}
 	
 	private final boolean linkCheckIsNamespace(final LinkScanContext context) {
@@ -906,7 +914,7 @@ public class LinkServiceImpl implements LinkService {
 	
 	@Override
 	public Integer getLineNumberOfFirstRdirLink(final int companyID, String text) {
-		final ComCompany company = this.companyDao.getCompany(companyID);
+		final Company company = this.companyDao.getCompany(companyID);
 		
 		final int indexOfRdirLink = text.indexOf(RDIRLINK_SEARCH_STRING);
 		final int indexOfRdirLinkNewFormat = text.indexOf(company.getRdirDomain() + "/r/");

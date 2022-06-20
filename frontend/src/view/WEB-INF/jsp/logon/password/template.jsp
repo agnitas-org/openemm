@@ -5,6 +5,7 @@
 <%@ taglib prefix="html" uri="http://struts.apache.org/tags-html" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
 <%--@elvariable id="layoutdir" type="java.lang.String"--%>
 
@@ -35,8 +36,8 @@
                     <div class="logo">
                         <img class="logo-image" src="${agnitasEmmLogoSvgSrc}" onerror="this.onerror=null; this.src='${agnitasEmmLogoPngSrc}'" alt="Logo">
 
-                        <p class="headline"><s:message code="default.EMM"/></p>
-                        <p class="version"><s:message code="default.version"/></p>
+                        <p class="headline"><mvc:message code="default.EMM"/></p>
+                        <p class="version"><mvc:message code="default.version"/></p>
                     </div>
                     <div class="edition-logo">
                         <img class="logo-image" src="${editionLogoSrc}" alt="Edition Logo">
@@ -48,7 +49,7 @@
         <div id="notifications-container">
             <script type="text/javascript" data-message>
               <html:messages id="msg" property="org.apache.struts.action.GLOBAL_MESSAGE" message="false">
-                AGN.Lib.Messages('<s:message code="Error" javaScriptEscape="true"/>', '${emm:escapeJs(msg)}', 'alert');
+                AGN.Lib.Messages('<mvc:message code="Error" javaScriptEscape="true"/>', '${emm:escapeJs(msg)}', 'alert');
               </html:messages>
             </script>
         </div>

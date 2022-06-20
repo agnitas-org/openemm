@@ -8,9 +8,9 @@
 <%@ taglib prefix="c"       uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%--@elvariable id="webserviceUserListForm" type="com.agnitas.emm.core.wsmanager.form.WebserviceUserListForm"--%>
-
-<%@include file="webserviceuser-create.jsp"%>
-
+<emm:ShowByPermission token="webservice.user.create">
+	<%@include file="webserviceuser-create.jsp"%>
+</emm:ShowByPermission>
 <mvc:form servletRelativeAction="/administration/wsmanager/users.action" id="wsuser-list-form"
           modelAttribute="webserviceUserListForm" data-form="resource">
     <script type="application/json" data-initializer="web-storage-persist">

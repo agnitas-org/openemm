@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -15,13 +15,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.agnitas.beans.Company;
 import org.agnitas.beans.impl.CompanyStatus;
 import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.Tuple;
 
-import com.agnitas.beans.ComCompany;
+import com.agnitas.beans.Company;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.company.bean.CompanyEntry;
 
@@ -29,7 +27,7 @@ public interface ComCompanyDao {
 	
 	boolean initTables(int cid);
 	
-	ComCompany getCompany(@VelocityCheck int companyID);
+	Company getCompany(int companyID);
 	
 	/**
 	 * Writes changes to the given company to the database or creates a new one if needed.
@@ -39,23 +37,23 @@ public interface ComCompanyDao {
 	 */
 	void saveCompany(Company comp) throws Exception;
 	
-	boolean existTrackingTables(@VelocityCheck int companyID);
+	boolean existTrackingTables(int companyID);
 
 	/**
 	 * returns true, if mailtracking for this companyID is active.
 	 */
-	boolean isMailtrackingActive(@VelocityCheck int companyID);
+	boolean isMailtrackingActive(int companyID);
 
-	boolean isCreatorId(@VelocityCheck int companyId, int creatorId);
+	boolean isCreatorId(int companyId, int creatorId);
 
 	/**
 	 * get the rdir_domain value for this companyId
 	 */
-	String getRedirectDomain(@VelocityCheck int companyId);
+	String getRedirectDomain(int companyId);
 
-	List<ComCompany> getCreatedCompanies(@VelocityCheck int companyId);
+	List<Company> getCreatedCompanies(int companyId);
 	
-	List<ComCompany> getAllActiveCompaniesWithoutMasterCompany();
+	List<Company> getAllActiveCompaniesWithoutMasterCompany();
 	
 	void updateCompanyStatus(int companyID, CompanyStatus status);
 
@@ -64,21 +62,19 @@ public interface ComCompanyDao {
 	 */
 	List<Integer> getAllActiveCompaniesIdsWithoutMasterCompany();
 	
-	List<ComCompany> getActiveCompaniesWithoutMasterCompanyFromStart(int startCompany);
+	List<Company> getActiveCompaniesWithoutMasterCompanyFromStart(int startCompany);
 
 	boolean createHistoryTables(int companyID);
 
-	PaginatedListImpl<CompanyEntry> getCompanyList(@VelocityCheck int companyID, String sort, String direction, int page, int rownums);
+	PaginatedListImpl<CompanyEntry> getCompanyList(int companyID, String sort, String direction, int page, int rownums);
 
-    List<ComCompany> getAllActiveCompanies();
+    List<Company> getAllActiveCompanies();
     
-    boolean checkDeeptrackingAutoActivate(@VelocityCheck int companyID);
+    boolean checkDeeptrackingAutoActivate(int companyID);
     
-    int getCompanyDatasource(@VelocityCheck int companyID);
+    int getCompanyDatasource(int companyID);
 
 	int getMaximumNumberOfCustomers();
-
-	int getMaximumNumberOfProfileFields() throws Exception;
 	
 	/**
 	 * Get number of active and not deleted companies
@@ -99,7 +95,7 @@ public interface ComCompanyDao {
 	List<CompanyEntry> getActiveCompaniesLight(boolean allowTransitionStatus);
 	
 	//get only own company and companies created by own company + status = active
-	List<CompanyEntry> getActiveOwnCompaniesLight(@VelocityCheck int companyId, boolean allowTransitionStatus);
+	List<CompanyEntry> getActiveOwnCompaniesLight(int companyId, boolean allowTransitionStatus);
 
 	CompanyEntry getCompanyLight(int id);
 
@@ -123,13 +119,13 @@ public interface ComCompanyDao {
 	
 	void changeFeatureRights(String featureName, int companyID, boolean activate, String comment);
 
-	int getPriorityCount(@VelocityCheck int companyId);
+	int getPriorityCount(int companyId);
 
-	void setPriorityCount(@VelocityCheck int companyId, int value);
+	void setPriorityCount(int companyId, int value);
 
     boolean isCompanyExist(int companyId);
 
-    String getShortName(@VelocityCheck int companyId);
+    String getShortName(int companyId);
 
 	void deactivateExtendedCompanies();
 	
@@ -143,7 +139,7 @@ public interface ComCompanyDao {
 	
 	int getParenCompanyId(int companyId);
 	
-	boolean createFrequencyFields(@VelocityCheck int companyID);
+	boolean createFrequencyFields(int companyID);
 
-	ComCompany getCompanyByName(String clientName);
+	Company getCompanyByName(String clientName);
 }

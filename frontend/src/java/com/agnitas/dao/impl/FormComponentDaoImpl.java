@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -25,7 +25,8 @@ import org.agnitas.util.AgnUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.ArrayUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.jdbc.core.RowMapper;
 
 import com.agnitas.beans.FormComponent;
@@ -37,10 +38,9 @@ import com.agnitas.dao.FormComponentDao;
  * The Class FormComponentDaoImpl.
  */
 public class FormComponentDaoImpl extends BaseDaoImpl implements FormComponentDao {
-	/**
-	 * The Constant logger.
-	 */
-	private static final transient Logger logger = Logger.getLogger(FormComponentDaoImpl.class);
+	
+	/** The logger. */
+	private static final transient Logger logger = LogManager.getLogger(FormComponentDaoImpl.class);
 
 	/* (non-Javadoc)
 	 * @see com.agnitas.dao.FormComponentDao#exists(int, int, int)
@@ -83,6 +83,8 @@ public class FormComponentDaoImpl extends BaseDaoImpl implements FormComponentDa
 	@DaoUpdateReturnValueCheck
 	public boolean saveFormComponent(FormComponent formComponent) {
 		try {
+			validateDescription(formComponent.getDescription());
+			
 			if (formComponent.getFormID() != 0) {
 				if (formComponent.getId() == 0 || !exists(formComponent.getFormID(), formComponent.getCompanyID(), formComponent.getId())) {
 	                formComponent.setCreationDate(new Date());
@@ -250,6 +252,8 @@ public class FormComponentDaoImpl extends BaseDaoImpl implements FormComponentDa
 	}
 
 	private int saveComponent(int formId, int companyId, FormComponent component) throws Exception {
+		validateDescription(component.getDescription());
+		
 		int componentId;
 		if (isOracleDB()) {
 			componentId = selectInt(logger, "SELECT form_component_tbl_seq.NEXTVAL FROM DUAL");
@@ -299,5 +303,11 @@ public class FormComponentDaoImpl extends BaseDaoImpl implements FormComponentDa
 		}
 
 		return 0;
+	}
+
+	private void validateDescription(String description) {
+		if (description != null && description.length() > 100) {
+			throw new RuntimeException("Value for form_component_tbl.description is to long (Maximum: 100, Current: " + description.length() + ")");
+		}
 	}
 }

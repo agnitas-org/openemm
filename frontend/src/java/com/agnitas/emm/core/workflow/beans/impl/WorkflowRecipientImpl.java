@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -19,9 +19,12 @@ import com.agnitas.emm.core.workflow.beans.WorkflowDependencyType;
 import com.agnitas.emm.core.workflow.beans.WorkflowIconType;
 import com.agnitas.emm.core.workflow.beans.WorkflowRecipient;
 
+import org.apache.commons.collections4.CollectionUtils;
+
 public class WorkflowRecipientImpl extends BaseWorkflowIcon implements WorkflowRecipient {
 	private int mailinglistId;
     private List<Integer> targets = new ArrayList<>();
+    private List<Integer> altgs = new ArrayList<>();
     private WorkflowTargetOption targetsOption;
 
     public WorkflowRecipientImpl() {
@@ -50,6 +53,16 @@ public class WorkflowRecipientImpl extends BaseWorkflowIcon implements WorkflowR
 	}
 
 	@Override
+    public List<Integer> getAltgs() {
+        return altgs;
+    }
+
+    @Override
+    public void setAltgs(List<Integer> altgs) {
+        this.altgs = altgs;
+    }
+
+    @Override
     public WorkflowTargetOption getTargetsOption() {
         return targetsOption;
     }
@@ -72,6 +85,13 @@ public class WorkflowRecipientImpl extends BaseWorkflowIcon implements WorkflowR
 					}
 				}
 			}
+            if (CollectionUtils.isNotEmpty(altgs)) {
+                for (int altgId : altgs) {
+                    if (altgId > 0) {
+                        dependencies.add(WorkflowDependencyType.ACCESS_LIMIT_TARGET_GROUP.forId(altgId));
+                    }
+                }
+            }
 		}
 
 		return dependencies;

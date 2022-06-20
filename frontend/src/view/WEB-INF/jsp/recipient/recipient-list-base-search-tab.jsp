@@ -5,6 +5,8 @@
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
 <%--@elvariable id="form" type="com.agnitas.emm.core.recipient.forms.RecipientListForm"--%>
+<%--@elvariable id="adminAltgs" type="java.util.List<com.agnitas.beans.TargetLight>"--%>
+<%--@elvariable id="isSearchExtended" type="java.lang.Boolean"--%>
 
 <c:set var="isAdvanced" value="${param.advanced}"/>
 <c:set var="advancedSuffix" value="${isAdvanced ? '_advanced' : ''}"/>
@@ -14,6 +16,8 @@
 <c:set var="USER_TYPE_NORMAL" value="<%= BindingEntry.UserType.World.getTypeCode() %>"/>
 <c:set var="USER_TYPE_TEST_VIP" value="<%= BindingEntry.UserType.TestVIP.getTypeCode() %>"/>
 <c:set var="USER_TYPE_NORMAL_VIP" value="<%= BindingEntry.UserType.WorldVIP.getTypeCode() %>"/>
+
+<c:set var="baseSearchSelectWidth" value="${isSearchExtended ? 'col-md-2' : 'col-md-3'}" />
 
 <div class="row">
     <div class="col-md-3">
@@ -38,7 +42,8 @@
             </div>
         </div>
     </div>
-    <div class="col-md-3">
+    <%@include file="fragments/search-altg-select.jspf" %>
+    <div class="${baseSearchSelectWidth}">
         <div class="form-group">
             <div class="col-md-12">
                 <label class="control-label" for="search_targetgroup${advancedSuffix}">
@@ -57,7 +62,7 @@
             </div>
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="${baseSearchSelectWidth}">
         <div class="form-group">
             <div class="col-md-12">
                 <label class="control-label" for="search_recipient_type${advancedSuffix}">
@@ -72,14 +77,14 @@
                     <mvc:option value=""><mvc:message code="default.All"/></mvc:option>
                     <mvc:option value="${USER_TYPE_ADMIN}"><mvc:message code="recipient.Administrator"/></mvc:option>
                     <mvc:option value="${USER_TYPE_TEST}"><mvc:message code="TestSubscriber"/></mvc:option>
-                    <%@include file="/WEB-INF/jsp/recipient/recipient-novip-test-new.jspf" %>
+                    <%@include file="/WEB-INF/jsp/recipient/recipient-novip-test.jspf" %>
                     <mvc:option value="${USER_TYPE_NORMAL}"><mvc:message code="NormalSubscriber"/></mvc:option>
-                    <%@include file="/WEB-INF/jsp/recipient/recipient-novip-normal-new.jspf" %>
+                    <%@include file="/WEB-INF/jsp/recipient/recipient-novip-normal.jspf" %>
                 </mvc:select>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="${baseSearchSelectWidth}">
         <div class="form-group">
             <div class="col-md-12">
                 <label class="control-label" for="search_recipient_state${advancedSuffix}">

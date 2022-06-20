@@ -25,7 +25,10 @@ AGN.Lib.Controller.new('notification-global-stat', function() {
     this.addAction({
         click: 'close'
     }, function() {
-        $('#notifications-container').fadeOut('slow');
+        var notificationContainer = $('#notifications-container');
+        notificationContainer.fadeOut('slow', function () {
+            notificationContainer.remove();
+        });
     });
 
     this.addAction({
@@ -157,7 +160,7 @@ AGN.Lib.Controller.new('notification-global-stat', function() {
     }
 
     function updateProgressChart() {
-        $('#notifications-container').hide();
+        $('#notifications-container').remove();
 
         if (isValidDatesRange()) {
             if ($('#monthProgressStat').attr('class') == 'active' || $('#dateRangeProgressStat').attr('class') == 'active') {
@@ -172,18 +175,12 @@ AGN.Lib.Controller.new('notification-global-stat', function() {
             var endDay = $('#endDay').val();
 
             if (isEmptyDate(startDay) || isEmptyDate(endDay)) {
-                $('#notifications-container').show();
-                setTimeout(function() {
-                    $('#notifications-container').fadeOut('slow');
-                }, 7000);
+                showErrorPeriodFormat();
                 return false;
             }
 
             if( (new Date(startDay).getTime() > new Date(endDay).getTime())) {
-                $('#notifications-container').show();
-                setTimeout(function() {
-                    $('#notifications-container').fadeOut('slow');
-                }, 7000);
+                showErrorPeriodFormat();
                 return false;
             }
         }
@@ -192,5 +189,17 @@ AGN.Lib.Controller.new('notification-global-stat', function() {
 
     function isEmptyDate(date) {
         return typeof date === 'undefined' || date == '';
+    }
+
+    function showErrorPeriodFormat() {
+        AGN.Lib.Messages(t('defaults.error'), t('error.statistic.period_format'), 'alert');
+
+        setTimeout(function() {
+            var notificationContainer = $('#notifications-container');
+
+            notificationContainer.fadeOut('slow', function(){
+                notificationContainer.remove();
+            });
+        }, 7000);
     }
 });

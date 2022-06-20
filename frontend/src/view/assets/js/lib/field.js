@@ -920,8 +920,7 @@ The required field helps with preventing a form from submit, when its field valu
   /* Usage:
   <div class="js-datetime-field" data-field="datetime"
     data-property="propertyName"
-    data-field-options="format: '${fn:toLowerCase(adminDateFormat)}',
-                        defaultValue: '1/1/2021 10:00'">
+    data-field-options="dateFormat: '${fn:toLowerCase(adminDateFormat)}'">
   </div>
   */
   DateTimeField = function($field) {
@@ -930,11 +929,12 @@ The required field helps with preventing a form from submit, when its field valu
     var $el = $(this.el);
     var propertyName = $el.data('property');
     var options = _.extend({}, AGN.Lib.Helpers.objFromString($el.data('field-options')));
-    var value = options.value || options.defaultValue;
+    var value = options.value || options.defaultValue || '';
+    var dateFormat = options.dateFormat || 'dd.mm.yyyy';
 
-    prepareDatetimeInput($el, propertyName, value, options.format);
+    prepareDatetimeInput($el, propertyName, value, dateFormat);
     $el.on('change', function() {
-      setDateTimeFieldValue(propertyName, options.format);
+      setDateTimeFieldValue(propertyName, dateFormat);
     });
   }
   // inherit from Field
@@ -943,21 +943,21 @@ The required field helps with preventing a form from submit, when its field valu
   AGN.Lib.DateTimeField = DateTimeField;
   AGN.Opt.Fields['datetime'] = DateTimeField;
   
-  function setDateTimeFieldValue(property, format) {
+  function setDateTimeFieldValue(property, dateFormat) {
     var escapedProperty = property.replace(/([:.\[\],=@])/g, "\\$1");
     var $date = $('#' + escapedProperty + '_date');
     var $time = $('#' + escapedProperty + '_time');
-    $('[name="' + property + '"]').val(prepareDateTimeValue($date, $time, format));
+    $('[name="' + property + '"]').val(prepareDateTimeValue($date, $time, dateFormat));
   }
 
-  function prepareDateTimeValue($date, $time, format) {
+  function prepareDateTimeValue($date, $time, dateFormat) {
     var time = $time ? $time.val() : '';
     time = time ? time.replaceAll('_', '0') : "00:00";
-    return $date.val() ? formatDateTime($date.pickadate("picker"), time, format) : '';
+    return $date.val() ? formatDateTime($date.pickadate("picker"), time, dateFormat) : '';
   }
 
-  function formatDateTime(date, time, format) {
-    return date.get("select", format) + (isValidTimeField(time) ? (' ' + time) : '');
+  function formatDateTime(date, time, dateFormat) {
+    return date.get("select", dateFormat) + (isValidTimeField(time) ? (' ' + time) : '');
   }
 
   function isValidTimeField(time) {
@@ -981,18 +981,18 @@ The required field helps with preventing a form from submit, when its field valu
     return '';
   }
   
-  function prepareDatetimeInput($el, propertyName, value, format) {
+  function prepareDatetimeInput($el, propertyName, value, dateFormat) {
     var input = document.createElement("input");
     input.type = "hidden";
     input.name = propertyName;
     input.value = value;
-    $el.append(input);
     $el.append(_.template(AGN.Opt.Templates['datetime-picker'])({
       date: getDateFromFieldValue(value),
       time: getTimeFromFieldValue(value),
       property: propertyName,
-      format: format
+      dateFormat: dateFormat
     }));
+    $el.append(input);
     
     AGN.runAll($el);
   }

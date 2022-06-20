@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -18,6 +18,8 @@ import java.util.stream.Collectors;
 
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.exception.target.TargetGroupTooLargeException;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.recipient.service.RecipientService;
 import org.agnitas.emm.core.target.exception.UnknownTargetGroupIdException;
 import org.agnitas.emm.core.velocity.VelocityCheck;
@@ -27,7 +29,8 @@ import org.agnitas.target.TargetFactory;
 import org.agnitas.util.AgnUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -48,7 +51,6 @@ import com.agnitas.emm.core.target.beans.TargetComplexityGrade;
 import com.agnitas.emm.core.target.beans.TargetGroupDependentType;
 import com.agnitas.emm.core.target.eql.EqlDetailedAnalysisResult;
 import com.agnitas.emm.core.target.eql.EqlFacade;
-import com.agnitas.emm.core.target.eql.parser.EqlParserException;
 import com.agnitas.emm.core.target.eql.parser.EqlSyntaxError;
 import com.agnitas.emm.core.target.form.TargetDependentsListForm;
 import com.agnitas.emm.core.target.form.TargetEditForm;
@@ -72,8 +74,9 @@ import jakarta.servlet.http.HttpServletRequest;
 @PermissionMapping("target")
 public class QueryBuilderTargetController {
 
-    private static final Logger logger = Logger.getLogger(TargetController.class);
+    private static final Logger logger = LogManager.getLogger(TargetController.class);
 
+    private final ConfigService configService;
     private final MailinglistApprovalService mailinglistApprovalService;
     private final ComTargetService targetService;
     private final RecipientService recipientService;
@@ -91,7 +94,8 @@ public class QueryBuilderTargetController {
                                         RecipientService recipientService, EditorContentSynchronizer editorContentSynchronizer,
                                         EqlFacade eqlFacade, TargetCopyService targetCopyService, TargetFactory targetFactory,
                                         UserActivityLogService userActivityLogService, BirtStatisticsService birtStatisticsService,
-                                        WebStorage webStorage, GridServiceWrapper gridService, TargetEditFormValidator editFormValidator) {
+                                        WebStorage webStorage, GridServiceWrapper gridService, TargetEditFormValidator editFormValidator, ConfigService configService) {
+        this.configService = configService;
         this.mailinglistApprovalService = mailinglistApprovalService;
         this.targetService = targetService;
         this.recipientService = recipientService;
@@ -108,7 +112,7 @@ public class QueryBuilderTargetController {
 
     @RequestMapping("/{targetId:\\d+}/view.action")
     public String view(@PathVariable int targetId, ComAdmin admin, Model model, @ModelAttribute("targetEditForm") TargetEditForm form,
-                       Popups popups, HttpServletRequest request, @RequestParam(required = false) boolean isMailingWizard) throws EqlParserException {
+                       Popups popups, HttpServletRequest request, @RequestParam(required = false) boolean isMailingWizard) {
         WorkflowUtils.updateForwardParameters(request);
 
         if (targetId > 0 && form.getPreviousViewFormat() == null) {
@@ -132,7 +136,7 @@ public class QueryBuilderTargetController {
                        @RequestParam(required = false) boolean showStatistic,
                        Popups popups, RedirectAttributes redirectAttributes,
                        @RequestParam(required = false) boolean isMailingWizard)
-            throws UnknownTargetGroupIdException, EqlParserException {
+            throws UnknownTargetGroupIdException {
 
         int mailinglistId = form.getMailinglistId();
         TargetgroupViewFormat previousFormat = form.getPreviousViewFormat();
@@ -168,7 +172,7 @@ public class QueryBuilderTargetController {
     }
 
     @RequestMapping("/create.action")
-    public String create(ComAdmin admin, Model model, TargetEditForm form, Popups popups) throws EqlParserException {
+    public String create(ComAdmin admin, Model model, TargetEditForm form, Popups popups) {
 
         form.setViewFormat(TargetgroupViewFormat.QUERY_BUILDER);
 
@@ -370,6 +374,7 @@ public class QueryBuilderTargetController {
             form.setDescription(target.getTargetDescription());
             form.setEql(target.getEQL());
             form.setUseForAdminAndTestDelivery(target.isAdminTestDelivery());
+            form.setAccessLimitation(target.isAccessLimitation());
             return true;
         } catch (final UnknownTargetGroupIdException e) {
             logger.warn(String.format("Unknown target group ID %d", form.getTargetId()), e);
@@ -423,6 +428,20 @@ public class QueryBuilderTargetController {
 
         // Update editable properties
         FormHelper.formPropertiesToTargetGroup(newTarget, form);
+        
+        if(form.isAccessLimitation()) {
+	        int accessLimitingTargetgroupsAmount = targetService.getAccessLimitingTargetgroupsAmount(companyId);
+	        int licenseMaximumOfAccessLimitingTargetgroupsPerCompany = configService.getIntegerValue(ConfigValue.System_License_MaximumNumberOfAccessLimitingTargetgroupsPerCompany);
+			if (licenseMaximumOfAccessLimitingTargetgroupsPerCompany >= 0 && licenseMaximumOfAccessLimitingTargetgroupsPerCompany < accessLimitingTargetgroupsAmount + 1) {
+				popups.alert("error.altg.exceeded", licenseMaximumOfAccessLimitingTargetgroupsPerCompany);
+				return 0;
+			}
+	        int configMaximumOfAccessLimitingTargetgroupsForThisCompany = configService.getIntegerValue(ConfigValue.MaximumAccessLimitingTargetgroups, companyId);
+	        if (configMaximumOfAccessLimitingTargetgroupsForThisCompany >= 0 && configMaximumOfAccessLimitingTargetgroupsForThisCompany < accessLimitingTargetgroupsAmount + 1) {
+	        	popups.alert("error.altg.exceeded", configMaximumOfAccessLimitingTargetgroupsForThisCompany);
+				return 0;
+			}
+        }
 
         try {
             final List<Message> errors = new ArrayList<>();

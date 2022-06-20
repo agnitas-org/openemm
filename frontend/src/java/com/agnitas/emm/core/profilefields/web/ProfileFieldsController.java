@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,6 +10,7 @@
 
 package com.agnitas.emm.core.profilefields.web;
 
+import java.text.DecimalFormatSymbols;
 import java.text.SimpleDateFormat;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -22,6 +23,7 @@ import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.service.UserActivityLogService;
 import org.agnitas.service.WebStorage;
+import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.DbColumnType;
 import org.agnitas.util.GuiConstants;
@@ -29,7 +31,8 @@ import org.agnitas.web.forms.FormUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -59,8 +62,10 @@ import com.agnitas.web.perm.annotations.PermissionMapping;
 @Controller
 @PermissionMapping("profiledb")
 public class ProfileFieldsController {
-    private static final Logger logger = Logger.getLogger(ProfileFieldsController.class);
+    private static final Logger logger = LogManager.getLogger(ProfileFieldsController.class);
 
+    private static final String INVALID_DEFAULT_VALUE_ERROR_MSG = "error.profiledb.invalidDefaultValue";
+    
     private ProfileFieldService profileFieldService;
     private WebStorage webStorage;
     private ConversionService conversionService;
@@ -97,7 +102,7 @@ public class ProfileFieldsController {
 
         if (profileFieldService.isAddingNearLimit(companyId)) {
             int currentField = profileFieldService.getCurrentSpecificFieldCount(companyId);
-            int maximumField = profileFieldService.getMaximumSpecificFieldCount(companyId);
+            int maximumField = profileFieldService.getMaximumCompanySpecificFieldCount(companyId);
 
             popups.warning("error.profiledb.nearLimit", currentField, maximumField);
         }
@@ -119,6 +124,7 @@ public class ProfileFieldsController {
 
             form = conversionService.convert(field, ProfileFieldForm.class);
             form.setFieldname(fieldName);
+            prepareDefaultValue(form, admin.getLocale());
 
             if (field.getHistorize()) {
                 form.setDependentWorkflowName(profileFieldService.getTrackingDependentWorkflows(companyId, fieldName));
@@ -140,6 +146,17 @@ public class ProfileFieldsController {
         model.addAttribute("changeDate", changeDate);
 
         return "settings_profile_field_view";
+    }
+
+    private void prepareDefaultValue(ProfileFieldForm form, Locale locale) {
+        if (("NUMBER".equalsIgnoreCase(form.getFieldType()) ||
+                "FLOAT".equalsIgnoreCase(form.getFieldType()) ||
+                "DOUBLE".equalsIgnoreCase(form.getFieldType())) &&
+                StringUtils.isNotBlank(form.getFieldDefault())) {
+        	DecimalFormatSymbols decimalFormatSymbols = new DecimalFormatSymbols(locale);
+            String decimalSeparator = Character.toString(decimalFormatSymbols.getDecimalSeparator());
+            form.setFieldDefault(form.getFieldDefault().replace(".", decimalSeparator));
+        }
     }
 
     @RequestMapping("/profiledb/{fieldname}/dependents.action")
@@ -325,7 +342,6 @@ public class ProfileFieldsController {
         field.setDataTypeLength(form.getFieldLength());
         field.setDescription(form.getDescription());
         field.setShortname(form.getShortname());
-        field.setDefaultValue(form.getFieldDefault());
         field.setSort(form.getFieldSort());
         field.setLine(form.getLine() ? 1 : 0);
         field.setInterest(form.isInterest());
@@ -356,12 +372,12 @@ public class ProfileFieldsController {
             popups.field("description", "error.descriptionToShort");
         }
 
-        if (validationService.isInvalidIntegerField(form.getFieldType(), form.getFieldDefault())) {
+        if (validationService.isInvalidIntegerField(form.getFieldType(), getDefaultValueToValidate(form, admin.getLocale()))) {
             popups.alert("error.profiledb.numeric.invalid");
         }
 
-        if (validationService.isInvalidFloatField(form.getFieldType(), form.getFieldDefault())) {
-            popups.alert("error.profiledb.float.invalid");
+        if (validationService.isInvalidFloatField(form.getFieldType(), form.getFieldDefault(), admin.getLocale())) {
+            popups.alert(INVALID_DEFAULT_VALUE_ERROR_MSG, getFloatFormatForAlertMessage(admin.getLocale()));
         }
 
         if (validationService.isInvalidVarcharField(form.getFieldType(), form.getFieldLength())) {
@@ -371,15 +387,26 @@ public class ProfileFieldsController {
         if (form.isUseAllowedValues() && ArrayUtils.isEmpty(form.getAllowedValues())) {
             popups.field("allowedValues", "error.profiledb.missingFixedValues");
         }
+        if (popups.hasAlertPopups()) {
+            return;
+        }
 
         if (profileField == null) {
-            validateForCreating(companyId, form, popups, admin.getDateFormat());
+            validateForCreating(companyId, form, popups, admin.getDateFormat(), admin.getLocale());
         } else {
             validationForUpdating(companyId, profileField, form, popups, admin.getDateFormat(), admin.getLocale());
         }
     }
+    
+    private String getFloatFormatForAlertMessage(Locale locale) {
+    	DecimalFormatSymbols decimalFormatSymbols = new DecimalFormatSymbols(locale);
+    	String groupingSeparator = Character.toString(decimalFormatSymbols.getGroupingSeparator());
+    	String decimalSeparator = Character.toString(decimalFormatSymbols.getDecimalSeparator());
+        return "1" + groupingSeparator + "234" + groupingSeparator + "567" + decimalSeparator + "89"
+                + " or " + "1234567" + decimalSeparator + "89";
+    }
 
-    private void validateForCreating(int companyId, ProfileFieldForm form, Popups popups, SimpleDateFormat dateFormat) {
+    private void validateForCreating(int companyId, ProfileFieldForm form, Popups popups, SimpleDateFormat dateFormat, Locale locale) {
         if (!form.isFieldNull() && StringUtils.isEmpty(form.getFieldDefault())) {
             popups.alert("error.profiledb.empty");
         }
@@ -388,8 +415,8 @@ public class ProfileFieldsController {
             popups.alert("error.profiledb.invalidFieldName", form.getFieldname());
         } else if (validationService.isShortnameInDB(companyId, form.getShortname())) {
             popups.alert("error.profiledb.exists");
-        } else if (!validationService.isAllowedDefaultValue(form.getFieldType(), form.getFieldDefault(), dateFormat)) {
-            popups.alert("error.profiledb.invalidDefaultValue", dateFormat.toPattern());
+        } else if (!validationService.isAllowedDefaultValue(form.getFieldType(), getDefaultValueToValidate(form, locale), dateFormat)) {
+            popups.alert(INVALID_DEFAULT_VALUE_ERROR_MSG, dateFormat.toPattern());
         } else if (!validationService.isDefaultValueAllowedInDb(companyId, form.getFieldname(), form.getFieldDefault())) {
             popups.alert("error.profiledb.tooManyEntriesToChangeDefaultValue", configService.getIntegerValue(ConfigValue.MaximumNumberOfEntriesForDefaultValueChange, companyId));
         } else if (containNotAllowedValue(form, form.getFieldType(), dateFormat)) {
@@ -399,14 +426,14 @@ public class ProfileFieldsController {
         }
     }
 
-    private void validationForUpdating(int companyId, ProfileField field, ProfileFieldForm form, Popups popups, 
+    private void validationForUpdating(int companyId, ProfileField field, ProfileFieldForm form, Popups popups,
                                        SimpleDateFormat dateFormat, Locale locale) {
         if (!field.getNullable() && StringUtils.isEmpty(form.getFieldDefault())) {
             popups.alert("error.profiledb.empty");
         }
 
-        if (!validationService.isAllowedDefaultValue(field.getDataType(), form.getFieldDefault(), dateFormat)) {
-            popups.alert("error.profiledb.invalidDefaultValue", dateFormat.toPattern());
+        if (!validationService.isAllowedDefaultValue(field.getDataType(), getDefaultValueToValidate(form, locale), dateFormat)) {
+            popups.alert(INVALID_DEFAULT_VALUE_ERROR_MSG, dateFormat.toPattern());
         } else if (containNotAllowedValue(form, field.getDataType(), dateFormat)) {
             popups.alert("error.profiledb.invalidFixedValue");
         } else if (form.isIncludeInHistory()) {
@@ -423,6 +450,23 @@ public class ProfileFieldsController {
             }
         }
         alertIfUsedProfileFieldRenamed(popups, companyId, field, form.getShortname(), locale);
+    }
+
+    private String getDefaultValueToValidate(ProfileFieldForm form, Locale locale) {
+        String fieldDefault = form.getFieldDefault();
+        switch (form.getFieldType()) {
+            case "NUMBER":
+            case "FLOAT":
+            case "DOUBLE":
+                return AgnUtils.getNormalizedDecimalNumber(fieldDefault, locale);
+            case "INTEGER":
+                if (AgnUtils.isValidNumberWithGroupingSeparator(fieldDefault, locale)) {
+                    return AgnUtils.normalizeNumber(locale, fieldDefault);
+                }
+                return fieldDefault;
+            default:
+                return fieldDefault;
+        }
     }
 
     private void alertIfUsedProfileFieldRenamed(Popups popups, int companyId, ProfileField field, String newName, Locale locale) {

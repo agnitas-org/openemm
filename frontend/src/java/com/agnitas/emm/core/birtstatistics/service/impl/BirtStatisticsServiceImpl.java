@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -25,18 +25,24 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
+import org.agnitas.util.FileDownload;
 import org.agnitas.util.FileUtils;
 import org.agnitas.util.Tuple;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.map.LinkedMap;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -63,7 +69,7 @@ import com.agnitas.reporting.birt.external.dataset.MailingBouncesDataSet;
 import com.agnitas.reporting.birt.external.web.filter.BirtInterceptingFilter;
 
 public class BirtStatisticsServiceImpl implements BirtStatisticsService {
-	private static final Logger logger = Logger.getLogger(BirtStatisticsServiceImpl.class);
+	private static final Logger logger = LogManager.getLogger(BirtStatisticsServiceImpl.class);
 	
 	protected static final String REPORT_NAME = "__report";
 	protected static final String IS_SVG = "__svg";
@@ -157,7 +163,7 @@ public class BirtStatisticsServiceImpl implements BirtStatisticsService {
 				.setParameters(map)
 				.build();
 
-		return generateUrlWithParams(options);
+		return generateUrlWithParams(options, admin.getCompanyID());
 	}
 
 	@Override
@@ -187,7 +193,7 @@ public class BirtStatisticsServiceImpl implements BirtStatisticsService {
 				.setParameters(map)
 				.setAdmin(admin).build();
 
-		return generateUrlWithParams(options);
+		return generateUrlWithParams(options, admin.getCompanyID());
 	}
 
 	@Override
@@ -212,14 +218,15 @@ public class BirtStatisticsServiceImpl implements BirtStatisticsService {
 		map.put(EMM_SESSION, sessionId);
 		map.put(TARGET_BASE_URL.toLowerCase(), generateTargetBaseUrl());
 
-		BirtUrlOptions options = BirtUrlOptions.builder(configService, adminService)
+        BirtUrlOptions options = getOptionsBuilderForMonthlyStatisticUrl(admin, map, monthlyStatistic.getTargetId()).build();
+		return generateUrlWithParams(options, admin.getCompanyID());
+	}
+	
+	protected BirtUrlOptions.Builder getOptionsBuilderForMonthlyStatisticUrl(ComAdmin admin, Map<String, Object> map, int targetId) {
+        return BirtUrlOptions.builder(configService, adminService)
 				.setInternalAccess(false)
 				.setAdmin(admin)
-				.setParameters(map)
-				.setAltgMatcher((altg) -> altg > 0 && monthlyStatistic.getTargetId() != altg)
-				.build();
-
-		return generateUrlWithParams(options);
+				.setParameters(map);
 	}
 	
 	@Override
@@ -260,7 +267,7 @@ public class BirtStatisticsServiceImpl implements BirtStatisticsService {
 				String reportSettingsName = BirtReportSettingsUtils.getLocalizedReportName(
 						reportSetting, locale, reportFormat);
 
-				reportUrlMap.put(reportSettingsName, generateUrlWithParams(map, true));
+				reportUrlMap.put(reportSettingsName, generateUrlWithParams(map, true, companyId));
 			}
 		}
 
@@ -268,26 +275,26 @@ public class BirtStatisticsServiceImpl implements BirtStatisticsService {
 	}
 
 	@Override
-	public String generateUrlWithParams(Map<String, Object> parameters, boolean internalAccess) {
-		String birtUrl = getBirtUrl(internalAccess);
+	public String generateUrlWithParams(Map<String, Object> parameters, boolean internalAccess, final int companyID) {
+		String birtUrl = getBirtUrl(internalAccess, companyID);
 		
         UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromHttpUrl(birtUrl);
         parameters.forEach(uriBuilder::queryParam);
         return uriBuilder.toUriString();
 	}
 
-	public String generateUrlWithParams(BirtUrlOptions options) {
-		return generateUrlWithParams(options.getParameters(), options.isInternalAccess());
+	public String generateUrlWithParams(BirtUrlOptions options, final int companyID) {
+		return generateUrlWithParams(options.getParameters(), options.isInternalAccess(), companyID);
 	}
 	
-	protected String getBirtUrl(boolean internalAccess) {
+	protected String getBirtUrl(boolean internalAccess, final int companyID) {
     	String birtUrl = "";
     	if (internalAccess) {
-			birtUrl = configService.getValue(ConfigValue.BirtUrlIntern);
+			birtUrl = configService.getValue(ConfigValue.BirtUrlIntern, companyID);
 		}
 		
 		if (StringUtils.isBlank(birtUrl)) {
-			birtUrl = configService.getValue(ConfigValue.BirtUrl);
+			birtUrl = configService.getValue(ConfigValue.BirtUrl, companyID);
 		}
 
         return birtUrl + "/run";
@@ -314,15 +321,16 @@ public class BirtStatisticsServiceImpl implements BirtStatisticsService {
 		map.put(EMM_SESSION, sessionId);
 		map.put(TARGET_BASE_URL.toLowerCase(), generateTargetBaseUrl());
 
-		BirtUrlOptions options = BirtUrlOptions.builder(configService, adminService)
-				.setAdmin(admin)
-				.setParameters(map)
-				.setInternalAccess(false)
-				.setAltgMatcher((altg) -> altg > 0 && recipientStatistic.getTargetId() != altg)
-				.build();
-
-		return generateUrlWithParams(options);
+        BirtUrlOptions options = getOptionsBuilderForRecipientStatisticUrl(admin, recipientStatistic, map).build();
+		return generateUrlWithParams(options, admin.getCompanyID());
 	}
+
+    protected BirtUrlOptions.Builder getOptionsBuilderForRecipientStatisticUrl(ComAdmin admin, RecipientStatisticDto recipientStatistic, Map<String, Object> map) {
+        return BirtUrlOptions.builder(configService, adminService)
+                .setAdmin(admin)
+                .setParameters(map)
+                .setInternalAccess(false);
+    }
 
 	@Override
 	public String getMailingStatisticUrl(ComAdmin admin, String sessionId, MailingStatisticDto mailingStatistic) throws Exception {
@@ -366,7 +374,7 @@ public class BirtStatisticsServiceImpl implements BirtStatisticsService {
 				.setParameters(params)
 				.setAdmin(admin).build();
 
-		return generateUrlWithParams(options);
+		return generateUrlWithParams(options, admin.getCompanyID());
 	}
 
 	private Tuple<LocalDateTime, LocalDateTime> computeMailingSummaryDateRestrictions(LocalDateTime startDate, LocalDateTime endDate, DateMode dateMode) {
@@ -375,7 +383,7 @@ public class BirtStatisticsServiceImpl implements BirtStatisticsService {
 				startDate = LocalDateTime.now();
 			}
 
-			return new Tuple<>(startDate.withHour(0), startDate.withHour(23));
+			return new Tuple<>(startDate.withHour(0), startDate.plusDays(1).withHour(0));
 		}
 
 		if (endDate == null) {
@@ -516,14 +524,14 @@ public class BirtStatisticsServiceImpl implements BirtStatisticsService {
 				.setParameters(map)
 				.setAdmin(admin).build();
 
-		return generateUrlWithParams(options);
+		return generateUrlWithParams(options, admin.getCompanyID());
 	}
 	
 	@Override
-	public File getBirtMailingComparisonTmpFile(String birtURL, MailingComparisonDto mailingComparisonDto) throws Exception {
+	public File getBirtMailingComparisonTmpFile(String birtURL, MailingComparisonDto mailingComparisonDto, final int companyId) throws Exception {
 		try {
 			return exportBirtStatistic("mailing_compare_export_", "." + mailingComparisonDto.getReportFormat(),
-					MAILINGCOMPARE_FILE_DIRECTORY, birtURL);
+					MAILINGCOMPARE_FILE_DIRECTORY, birtURL, companyId);
         } catch (Exception e) {
             logger.error("Cannot get birt mailings comparison file: " + e.getMessage());
 			return null;
@@ -540,8 +548,26 @@ public class BirtStatisticsServiceImpl implements BirtStatisticsService {
             return null;
         }
     }
+	
+	
     
     @Override
+	public File getBirtReportTmpFile(final int birtReportId, final String birtUrl, final CloseableHttpClient httpClient, final Logger loggerForErrors) {
+        try {
+            return exportBirtStatistic(
+            		String.format(BIRT_REPORT_TEMP_FILE_PATTERN, birtReportId), 
+            		".tmp",
+                    BIRT_REPORT_TEMP_DIR, 
+                    birtUrl, 
+                    httpClient, 
+                    loggerForErrors);
+        } catch (Exception e) {
+        	loggerForErrors.error("Cannot get birt report file: " + e.getMessage());
+            return null;
+        }
+	}
+
+	@Override
     public String getRecipientStatusStatisticUrl(ComAdmin admin, String sessionId, RecipientStatusStatisticDto recipientStatusDto) throws Exception {
     	final Map<String, Object> params = new LinkedHashMap<>();
 
@@ -558,7 +584,7 @@ public class BirtStatisticsServiceImpl implements BirtStatisticsService {
 				.setParameters(params)
 				.setAdmin(admin).build();
 
-		return generateUrlWithParams(options);
+		return generateUrlWithParams(options, admin.getCompanyID());
 	}
 
     @Override
@@ -580,7 +606,7 @@ public class BirtStatisticsServiceImpl implements BirtStatisticsService {
 				.setAdmin(admin)
 				.setInternalAccess(false).build();
 
-		return generateUrlWithParams(options);
+		return generateUrlWithParams(options, admin.getCompanyID());
     }
 
 	@Override
@@ -596,15 +622,28 @@ public class BirtStatisticsServiceImpl implements BirtStatisticsService {
 				.setParameters(map)
 				.setInternalAccess(false).build();
 
-        return generateUrlWithParams(options);
+        return generateUrlWithParams(options, admin.getCompanyID());
 	}
 
+	/**
+	 * @see #exportBirtStatistic(String, String, String, String, CloseableHttpClient, Logger)
+	 */
+	@Deprecated
 	protected File exportBirtStatistic(String prefix, String suffix, String dir, String birtURL, HttpClient httpClient, Logger loggerParameter) throws Exception {
 		return FileUtils.downloadAsTemporaryFile(prefix, suffix, dir, birtURL, httpClient, loggerParameter);
 	}
 	
-	protected File exportBirtStatistic(String prefix, String suffix, String dir, String birtURL) throws Exception {
-		return FileUtils.downloadAsTemporaryFile(prefix, suffix, dir, birtURL, getBirtUrl(true));
+	@Deprecated
+	protected File exportBirtStatistic(String prefix, String suffix, String dir, String birtURL, final int companyId) throws Exception {
+		return FileUtils.downloadAsTemporaryFile(prefix, suffix, dir, birtURL, getBirtUrl(true, companyId));
+	}
+	
+	protected File exportBirtStatistic(final String prefix, final String suffix, final String dir, final String url, final CloseableHttpClient httpClient, final Logger loggerForErrors) throws Exception {
+		final File file = File.createTempFile(prefix, suffix, AgnUtils.createDirectory(dir));
+		
+		final boolean result = FileDownload.downloadAsFile(url, file, httpClient);
+		
+		return result ? file : null;
 	}
 
 	protected String generateTargetBaseUrl() {
@@ -643,6 +682,7 @@ public class BirtStatisticsServiceImpl implements BirtStatisticsService {
 			private Map<String, Object> defaultParameters = new HashMap<>();
 			private Map<String, Object> parameters = new HashMap<>();
 			private Function<Integer, Boolean> altgChecker = null;
+            private Function<Set<Integer>, Boolean> altgMatcher = null;
 
 			private ConfigService configService;
 			private AdminService adminService;
@@ -673,10 +713,15 @@ public class BirtStatisticsServiceImpl implements BirtStatisticsService {
 				return this;
 			}
 
-			public Builder setAltgMatcher(Function<Integer, Boolean> function) {
+			public Builder setAltgChecker(Function<Integer, Boolean> function) {
 				this.altgChecker = function;
 				return this;
 			}
+			
+            public Builder setAltgMatcher(Function<Set<Integer>, Boolean> function) {
+                this.altgMatcher = function;
+                return this;
+            }
 
 			protected BirtUrlOptions build() throws Exception {
 				BirtUrlOptions options = new BirtUrlOptions();
@@ -691,15 +736,26 @@ public class BirtStatisticsServiceImpl implements BirtStatisticsService {
 				defaultParameters.put(LANGUAGE, StringUtils.defaultIfEmpty(admin.getAdminLang(), "EN"));
 				defaultParameters.put(IS_SVG, true);
 
-				int altgId = adminService.getAccessLimitTargetId(admin);
-
-				if (altgChecker != null) {
-					if (altgChecker.apply(altgId)) {
-						defaultParameters.put(HIDDEN_TARGET_ID, altgId);
-					}
-				} else if (altgId > 0) {
-					defaultParameters.put(HIDDEN_TARGET_ID, altgId);
-				}
+				if (adminService.isExtendedAltgEnabled(admin)) {
+                    Set<Integer> adminAltgIds = admin.getAltgIds();
+                    if (altgMatcher != null) {
+                        if (Boolean.TRUE.equals(altgMatcher.apply(adminAltgIds))) {
+                            defaultParameters.put(HIDDEN_TARGET_ID, adminAltgIds.stream().map(String::valueOf).collect(Collectors.joining(",")));
+                        }
+                    } else if (CollectionUtils.isNotEmpty(adminAltgIds)) {
+                        defaultParameters.put(HIDDEN_TARGET_ID, adminAltgIds.stream().map(String::valueOf).collect(Collectors.joining(",")));
+                    }
+                } else {
+                    int altgId = adminService.getAccessLimitTargetId(admin);
+    
+    				if (altgChecker != null) {
+    					if (altgChecker.apply(altgId)) {
+    						defaultParameters.put(HIDDEN_TARGET_ID, altgId);
+    					}
+    				} else if (altgId > 0) {
+    					defaultParameters.put(HIDDEN_TARGET_ID, altgId);
+    				}
+                }
 
 				defaultParameters.put(DARKMODE, adminService.isDarkmodeEnabled(admin));
 

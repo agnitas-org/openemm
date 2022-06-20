@@ -69,7 +69,7 @@
                             Map<String, String> linkedMap = new LinkedHashMap<String, String>();
                         %>
                         <emm:ShowColumnInfo id="agnTbl" table="<%= AgnUtils.getCompanyID(request) %>"
-                                            hide="timestamp, change_date, creation_date, bounceload, datasource_id, lastopen_date, lastclick_date, lastsend_date, latest_datasource_id, sys_tracking_veto, cleaned_date, facebook_status, foursquare_status, google_status, twitter_status, xing_status">
+                                            hide="timestamp, change_date, creation_date, bounceload, datasource_id, lastopen_date, lastclick_date, lastsend_date, latest_datasource_id, cleaned_date, facebook_status, foursquare_status, google_status, twitter_status, xing_status, sys_encrypted_sending">
                             <%
                                 String colName = (String) pageContext.getAttribute("_agnTbl_column_name");
                                 String aliasName = (String) pageContext.getAttribute("_agnTbl_shortname");

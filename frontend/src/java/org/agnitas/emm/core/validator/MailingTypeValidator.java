@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,17 +10,22 @@
 
 package org.agnitas.emm.core.validator;
 
+import org.agnitas.emm.core.validator.annotation.MailingType;
+
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 
-import org.agnitas.emm.core.mailing.service.MailingModel;
-import org.agnitas.emm.core.validator.annotation.MailingType;
-
 public class MailingTypeValidator implements ConstraintValidator<MailingType, String> {
-
 	@Override
 	public boolean isValid(String value, ConstraintValidatorContext constraintValidatorContext) {
-		return value == null || MailingModel.mailingTypeMap.containsKey(value.toLowerCase());
+		if (value == null) {
+			return true;
+		} else {
+			try {
+				return com.agnitas.emm.common.MailingType.fromName(value) != null;
+			} catch (Exception e) {
+				return false;
+			}
+		}
 	}
-
 }

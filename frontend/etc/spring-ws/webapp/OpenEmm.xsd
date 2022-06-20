@@ -816,6 +816,13 @@
 								</xs:complexType>
 							</xs:element>
 							<xs:element name="mailingStatus" type="xs:string" minOccurs="0" maxOccurs="1" />
+							<xs:element name="mailingStatusList" minOccurs="0" maxOccurs="1">
+								<xs:complexType>
+									<xs:sequence>
+										<xs:element name="mailingStatus" type="xs:string" minOccurs="1" maxOccurs="unbounded" />
+									</xs:sequence>
+								</xs:complexType>
+							</xs:element>
 						</xs:all>
 					</xs:complexType>
 				</xs:element>

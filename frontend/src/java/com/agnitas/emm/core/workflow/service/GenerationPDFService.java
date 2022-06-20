@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -29,7 +29,8 @@ import org.agnitas.util.HttpUtils;
 import org.agnitas.util.SafeString;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.agnitas.beans.ComAdmin;
 import com.lowagie.text.DocumentException;
@@ -43,7 +44,7 @@ import com.lowagie.text.pdf.PdfStamper;
 public class GenerationPDFService {
 
 	/** The logger. */
-    private static final transient Logger logger = Logger.getLogger(GenerationPDFService.class);
+    private static final transient Logger logger = LogManager.getLogger(GenerationPDFService.class);
     
 	public static final String PREVIEW_FILE_DIRECTORY = AgnUtils.getTempDir() + File.separator + "Preview";
 

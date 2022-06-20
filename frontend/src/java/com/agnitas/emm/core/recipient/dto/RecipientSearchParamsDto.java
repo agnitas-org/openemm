@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -13,12 +13,13 @@ package com.agnitas.emm.core.recipient.dto;
 public class RecipientSearchParamsDto {
     private int mailingListId;
     private int targetGroupId;
+    private int altgId;
     private int userStatus;
     private String userType;
     private String firstName;
     private String lastName;
     private String email;
-    private String queryBuilderRules;
+    private String eql;
 
     public int getMailingListId() {
         return mailingListId;
@@ -34,6 +35,14 @@ public class RecipientSearchParamsDto {
 
     public void setTargetGroupId(int targetGroupId) {
         this.targetGroupId = targetGroupId;
+    }
+
+    public int getAltgId() {
+        return altgId;
+    }
+
+    public void setAltgId(int altgId) {
+        this.altgId = altgId;
     }
 
     public int getUserStatus() {
@@ -76,11 +85,11 @@ public class RecipientSearchParamsDto {
         this.email = email;
     }
 
-    public String getQueryBuilderRules() {
-        return queryBuilderRules;
+    public String getEql() {
+        return eql;
     }
 
-    public void setQueryBuilderRules(String queryBuilderRules) {
-        this.queryBuilderRules = queryBuilderRules;
+    public void setEql(String eql) {
+        this.eql = eql;
     }
 }

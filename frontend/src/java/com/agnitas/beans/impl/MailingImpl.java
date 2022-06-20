@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -45,13 +45,11 @@ import org.agnitas.beans.DynamicTagContent;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.MailingComponentType;
 import org.agnitas.beans.MediaTypeStatus;
-import org.agnitas.beans.Mediatype;
 import org.agnitas.beans.TrackableLink;
 import org.agnitas.beans.impl.MailingBaseImpl;
 import org.agnitas.dao.FollowUpType;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.preview.AgnTagError;
 import org.agnitas.preview.TagSyntaxChecker;
 import org.agnitas.service.UserMessageException;
@@ -61,7 +59,8 @@ import org.agnitas.util.SafeString;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.text.StringEscapeUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.springframework.context.ApplicationContext;
@@ -75,16 +74,17 @@ import com.agnitas.beans.LinkProperty.PropertyType;
 import com.agnitas.beans.MaildropEntry;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MailingContentType;
+import com.agnitas.beans.Mediatype;
 import com.agnitas.beans.MediatypeEmail;
 import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.dao.ComTargetDao;
+import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.linkcheck.service.LinkService;
-import com.agnitas.emm.core.linkcheck.service.LinkService.ErrorneousLink;
+import com.agnitas.emm.core.linkcheck.service.LinkService.ErroneousLink;
 import com.agnitas.emm.core.linkcheck.service.LinkService.LinkScanResult;
 import com.agnitas.emm.core.mailing.bean.ComMailingParameter;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.target.TargetExpressionUtils;
-import com.agnitas.emm.core.target.eql.codegen.resolver.MailingType;
 import com.agnitas.emm.core.trackablelinks.web.LinkScanResultToActionMessages;
 import com.agnitas.messages.I18nString;
 import com.agnitas.service.AgnDynTagGroupResolverFactory;
@@ -96,14 +96,9 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 	public static final String LINK_SWYN_PREFIX = "SWYN: ";
 
 	/** The logger. */
-	private static final transient Logger logger = Logger.getLogger(MailingImpl.class);
+	private static final transient Logger logger = LogManager.getLogger(MailingImpl.class);
 
-	/**
-	 * mailingType can hold the values 0-3 0: Normal mailing 1: Action-Based 2:
-	 * Date-Based 3: Followup Defined in Mailing.java eg. TYPE_NORMAL
-	 */
-	protected int mailingType;
-	
+	protected MailingType mailingType;
 	protected int mailTemplateID;
 	protected int targetID;
 	protected Map<String, DynamicTag> dynTags = new LinkedHashMap<>();
@@ -142,12 +137,16 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 	
 	private boolean statusmailOnErrorOnly;
 
-    protected Date planDate;
-    
-    private List<ComMailingParameter> parameters;
+	private Integer clearanceThreshold;
+	
+	private String clearanceEmail;
+
+	protected Date planDate;
+
+	private List<ComMailingParameter> parameters;
 
 	private int previewComponentId;
-	
+
 	private MailingContentType mailingContentType;
 
 	@Override
@@ -208,11 +207,8 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 				throw new Exception("maildropStatusID is 0");
 			}
 			
-			// Annotation from mu: I believe that "< 4" is a safety feature, but i
-			// don't know why.
-			// I think that whoever used it has a good reason for that i leave that
-			// condition in here.
-			if (getMailingType() < 4) {
+			// Interval Mailings are only triggered by an Jobqueue Worker
+			if (getMailingType() != MailingType.INTERVAL) {
 				if (logger.isDebugEnabled()) {
 					logger.debug("Before Mailgun");
 				}
@@ -262,7 +258,7 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 						linkFound.setCompanyID(companyID);
 						linkFound.setMailingID(id);
 						linkFound.setUsage(TrackableLink.TRACKABLE_TEXT_HTML);
-						
+
 						// Extend new links with the default company extension if set
 						setDefaultExtension(linkFound, applicationContext);
 						
@@ -306,7 +302,7 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 					}
 					
 					if (linkScanResult.getLocalLinks().size() > 0) {
-						for (final ErrorneousLink link : linkScanResult.getLocalLinks()) {
+						for (final ErroneousLink link : linkScanResult.getLocalLinks()) {
 							warnings.add(GuiConstants.ACTIONMESSAGE_CONTAINER_WARNING_PERMANENT,
 									new ActionMessage("error.mailing.localLink",
 											textModuleName,
@@ -316,20 +312,20 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 					
 					LinkScanResultToActionMessages.linkWarningsToActionMessages(linkScanResult, warnings);
 					
-					// Check for not errorneous links
-					if (linkScanResult.getErrorneousLinks().size() > 0) {
+					// Check for not erroneous links
+					if (linkScanResult.getErroneousLinks().size() > 0) {
 						final String linkText = StringEscapeUtils.escapeHtml4(
-								linkScanResult.getErrorneousLinks().get(0).getLinkText());
+								linkScanResult.getErroneousLinks().get(0).getLinkText());
 						
 						final String errorText = I18nString.getLocaleString(
-								linkScanResult.getErrorneousLinks().get(0).getErrorMessageKey(),
+								linkScanResult.getErroneousLinks().get(0).getErrorMessageKey(),
 								admin.getLocale(),
 								linkText
 							);
 						
 						errors.add(ActionMessages.GLOBAL_MESSAGE,
-								new ActionMessage("error.mailing.links.errorneous",
-										linkScanResult.getErrorneousLinks().size(),
+								new ActionMessage("error.mailing.links",
+										linkScanResult.getErroneousLinks().size(),
 										textModuleName,
 										linkText,
 										errorText));
@@ -456,6 +452,26 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 	@Override
 	public void setStatusmailOnErrorOnly(boolean statusmailOnErrorOnly) {
 		this.statusmailOnErrorOnly = statusmailOnErrorOnly;
+	}
+
+	@Override
+	public Integer getClearanceThreshold() {
+		return clearanceThreshold;
+	}
+
+	@Override
+	public void setClearanceThreshold(Integer clearanceThreshold) {
+		this.clearanceThreshold = clearanceThreshold;
+	}
+
+	@Override
+	public String getClearanceEmail() {
+		return clearanceEmail;
+	}
+
+	@Override
+	public void setClearanceEmail(String clearanceEmail) {
+		this.clearanceEmail = clearanceEmail;
 	}
 
 	@Override
@@ -834,7 +850,24 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
                 foundComponent.setType(MailingComponentType.Image);
 
                 if (!components.containsKey(componentLinkString)) {
-                    if (foundComponent.getComponentName().contains("[agn")) {
+                    if (foundComponent.getComponentName().contains("[agnDVALUE")) {
+                        var name = getAgnTagName(componentLinkString);
+                        for (DynamicTagContent contentBlock : dynTags.get(name).getDynContent().values()) {
+                            if (contentBlock.getTargetID() == 0) {
+                                name = contentBlock.getDynContent().trim();
+                            }
+                        }
+                        if (name.contains("[agn")) {
+                            name = getAgnTagName(name);
+                            foundComponent = components.get(name);
+                        } else {
+                            foundComponent.setComponentName(name);
+                            foundComponent.loadContentFromURL();
+                            if (foundComponent.getMimeType().startsWith("image")) {
+                                componentsToAdd.add(foundComponent);
+                            }
+                        }
+                    } else if (foundComponent.getComponentName().contains("[agn")) {
                         // Don't check image mimetype, if img-link url contains agnTags
                         componentsToAdd.add(foundComponent);
                     } else {
@@ -848,7 +881,7 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
                 }
 
                 if (foundComponent.getMimeType().startsWith("image")) {
-                    foundComponentUrls.add(componentLinkString);
+                    foundComponentUrls.add(foundComponent.getComponentName());
                 }
             });
         }
@@ -862,6 +895,11 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 
 		return foundComponentUrls;
 	}
+
+    private String getAgnTagName(String componentLinkString) {
+        var name = StringUtils.substringBetween(componentLinkString, "name=\"", "\"/]");
+        return StringUtils.isBlank(name) ? StringUtils.substringBetween(componentLinkString, "name=\"", "\"]") : name;
+    }
 
     /**
      * Remove ActionID tag (ex: actionID="123") from mailing content.
@@ -912,9 +950,14 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 	 * @return Value of property mailingType.
 	 */
 	@Override
-	public int getMailingType() {
+	public MailingType getMailingType() {
 		return mailingType;
 	}
+
+   	@Override
+   	public int getMailingTypeCode() {
+   		return mailingType == null ? 0 : mailingType.getCode();
+   	}
 
 	/**
 	 * Setter for property mailingType.
@@ -923,13 +966,17 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 	 *            New value of property mailingType.
 	 */
 	@Override
-	public void setMailingType(int mailingType) {
+	public void setMailingType(MailingType mailingType) {
 		this.mailingType = mailingType;
 	}
-
+	
 	@Override
-	public void setMailingType(MailingType mailingType) {
-		this.mailingType = mailingType.getCode();
+	public void setMailingTypeCode(int mailingTypeCode) {
+		try {
+			this.mailingType = MailingType.fromCode(mailingTypeCode);
+		} catch (Exception e) {
+			throw new RuntimeException("Invalid code for MailngType: " + mailingTypeCode);
+		}
 	}
 
 	/**
@@ -1223,7 +1270,7 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 	}
 
 	@Override
-	public void init( @VelocityCheck int newCompanyID, ApplicationContext con) {
+	public void init(int newCompanyID, ApplicationContext con) {
 		MailingComponent comp;
 		Mediatype type;
 
@@ -1331,7 +1378,6 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 	@Override
 	public boolean buildDependencies(boolean scanDynTags, List<String> dynNamesForDeletion, ApplicationContext con, ActionMessages messages, ActionMessages errors, ComAdmin admin) throws Exception {
 		Vector<String> componentsToCheck = new Vector<>();
-		Vector<String> links = new Vector<>();
 
 		// scan for Dyntags
 		// in template-components and Mediatype-Params
@@ -1372,7 +1418,7 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 
 		// scan for Links
 		// in template-components and dyncontent
-		links.addAll(scanForLinks(con, messages, errors, admin));
+		Vector<String> links = new Vector<>(scanForLinks(con, messages, errors, admin));
 		// if(ConfigService.isOracleDB()) {
 		// causes problem with links in OpenEMM
 		cleanupTrackableLinks(links);

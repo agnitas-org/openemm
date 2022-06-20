@@ -1,5 +1,5 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
-<%@ page import="org.agnitas.web.MailingBaseAction"  %>
+<%@ page import="com.agnitas.web.MailingBaseAction"  %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 

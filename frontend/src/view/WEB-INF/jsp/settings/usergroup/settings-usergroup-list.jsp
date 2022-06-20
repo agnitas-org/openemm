@@ -1,4 +1,6 @@
-<%@ page language="java" contentType="text/html; charset=utf-8"%>
+<%@ page import="org.agnitas.util.AgnUtils" %>
+<%@ page import="com.agnitas.emm.core.usergroup.web.UserGroupController" %>
+<%@ page contentType="text/html; charset=utf-8"%>
 <%@ taglib prefix="mvc"     uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="display" uri="http://displaytag.sf.net" %>
 <%@ taglib prefix="emm"     uri="https://emm.agnitas.de/jsp/jsp/common" %>
@@ -7,8 +9,10 @@
 <%--@elvariable id="userGroupListForm" type="org.agnitas.web.forms.PaginationForm"--%>
 <%--@elvariable id="userGroupList" type="org.displaytag.pagination.PaginatedList"--%>
 <%--@elvariable id="numberOfRows" type="java.lang.Integer"--%>
-<%--@elvariable id="currentCompanyId" type="java.lang.Integer"--%>
-<%--@elvariable id="ROOT_COMPANY_ID" type="java.lang.Integer"--%>
+
+<c:set var="SESSION_CONTEXT_KEYNAME_ADMIN" value="<%= AgnUtils.SESSION_CONTEXT_KEYNAME_ADMIN %>" />
+<c:set var="admin" value="${sessionScope[SESSION_CONTEXT_KEYNAME_ADMIN]}"/>
+<c:set var="ROOT_COMPANY_ID" value="<%= UserGroupController.ROOT_COMPANY_ID %>" scope="request"/>
 
 <mvc:form servletRelativeAction="/administration/usergroup/list.action" modelAttribute="userGroupListForm" id="userGroupListForm" data-form="resource">
     <script type="application/json" data-initializer="web-storage-persist">
@@ -77,6 +81,8 @@
                                pagesize="${userGroupListForm.numberOfRows}"
                                excludedParams="*">
 
+                    <%--@elvariable id="userGroup" type="com.agnitas.emm.core.usergroup.dto.UserGroupDto"--%>
+
                     <%--<!-- Prevent table controls/headers collapsing when the table is empty -->--%>
                     <display:setProperty name="basic.empty.showtable" value="true"/>
 
@@ -105,7 +111,7 @@
 
                         <a href="${viewNotificationLink}" class="hidden js-row-show"></a>
 
-                        <c:if test="${allowedDeleteUserGroup && userGroup.removable && currentCompanyId ne ROOT_COMPANY_ID}">
+                        <c:if test="${allowedDeleteUserGroup && userGroup.companyId eq admin.companyID or admin.companyID eq ROOT_COMPANY_ID}">
                             <c:url var="deleteUserGroupLink" value="/administration/usergroup/${userGroup.userGroupId}/confirmDelete.action"/>
 
                             <c:set var="deleteMessage">

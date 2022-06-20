@@ -74,19 +74,6 @@
                 <div class="col-md-3">
                     <div class="form-group">
                         <div class="col-md-12">
-                            <label for="filterMailinglistId" class="control-label"><mvc:message code="Mailinglist"/></label>
-                        </div>
-                        <div class="col-md-12">
-                            <mvc:select id="filterMailinglistId" path="filterMailinglistId" size="1" cssClass="form-control js-select">
-                                <mvc:option value=""><mvc:message code="default.All"/></mvc:option>
-                                <mvc:options itemValue="id" itemLabel="shortname" items="${adminListForm.mailinglists}"/>
-                            </mvc:select>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <div class="col-md-12">
                             <label class="control-label"><mvc:message code="settings.Usergroup"/></label>
                         </div>
                         <div class="col-md-12">

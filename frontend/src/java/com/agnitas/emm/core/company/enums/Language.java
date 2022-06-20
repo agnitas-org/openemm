@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -20,8 +20,8 @@ public enum Language {
     NL("nl_NL", "settings.Dutch"),
     IT("it_IT", "settings.Italian");
 
-    private String key;
-    private String messageKey;
+    private final String key;
+    private final String messageKey;
 
     Language(String key, String messageKey) {
         this.key = key;
@@ -32,15 +32,8 @@ public enum Language {
         return key;
     }
 
-    public void setKey(String key) {
-        this.key = key;
-    }
-
     public String getMessageKey() {
         return messageKey;
     }
-
-    public void setMessageKey(String messageKey) {
-        this.messageKey = messageKey;
-    }
+    
 }

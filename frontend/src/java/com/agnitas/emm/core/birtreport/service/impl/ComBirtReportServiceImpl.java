@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
@@ -41,10 +42,12 @@ import org.agnitas.util.DateUtilities;
 import org.agnitas.util.DbUtilities;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.dao.ComMailingDao;
+import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.birtreport.bean.ComBirtReport;
 import com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportComparisonSettings;
 import com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportMailingSettings;
@@ -59,7 +62,8 @@ import com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils;
 
 public class ComBirtReportServiceImpl implements ComBirtReportService {
     /** The logger. */
-    private static final transient Logger logger = Logger.getLogger(ComBirtReportServiceImpl.class);
+    private static final transient Logger logger = LogManager.getLogger(ComBirtReportServiceImpl.class);
+    
     public static final String KEY_START_DATE = "from";
     public static final String KEY_END_DATE = "to";
 
@@ -97,19 +101,19 @@ public class ComBirtReportServiceImpl implements ComBirtReportService {
         }
     }
 
-    protected List<MailingBase> getPredefinedMailingsForReports(@VelocityCheck int companyId, int number, int filterType, int filterValue, int mailingType, String orderKey, int targetId) {
-        return mailingDao.getPredefinedMailingsForReports(companyId, number, filterType, filterValue, mailingType, orderKey, targetId);
+    protected List<MailingBase> getPredefinedMailingsForReports(@VelocityCheck int companyId, int number, int filterType, int filterValue, MailingType mailingType, String orderKey, int targetId, Set<Integer> adminAltgIds) {
+        return mailingDao.getPredefinedMailingsForReports(companyId, number, filterType, filterValue, mailingType, orderKey, targetId, adminAltgIds);
     }
 
-    protected List<MailingBase> getPredefinedMailingsForReports(@VelocityCheck int companyId, int number, int filterType, int filterValue, int mailingType, String orderKey, Map<String, LocalDate> datesRestriction, int targetId) {
+    protected List<MailingBase> getPredefinedMailingsForReports(@VelocityCheck int companyId, int number, int filterType, int filterValue, MailingType mailingType, String orderKey, Map<String, LocalDate> datesRestriction, int targetId, Set<Integer> adminAltgIds) {
         if (number == 0) {
             Date from = DateUtilities.toDate(datesRestriction.get(KEY_START_DATE), AgnUtils.getSystemTimeZoneId());
             // Include the defined day completely, so use limit of next day 00:00
             Date to = DateUtilities.toDate(datesRestriction.get(KEY_END_DATE).plus(1, ChronoUnit.DAYS), AgnUtils.getSystemTimeZoneId());
 
-            return mailingDao.getPredefinedNormalMailingsForReports(companyId, from, to, filterType, filterValue, orderKey, targetId);
+            return mailingDao.getPredefinedNormalMailingsForReports(companyId, from, to, filterType, filterValue, orderKey, targetId, adminAltgIds);
         } else {
-            return mailingDao.getPredefinedMailingsForReports(companyId, number, filterType, filterValue, mailingType, orderKey, targetId);
+            return mailingDao.getPredefinedMailingsForReports(companyId, number, filterType, filterValue, mailingType, orderKey, targetId, adminAltgIds);
         }
     }
 
@@ -160,12 +164,12 @@ public class ComBirtReportServiceImpl implements ComBirtReportService {
                 return !mailingsToSend.isEmpty();
             } else {
                 ComBirtReportMailingSettings mailingSettings = birtReport.getReportMailingSettings();
-                updateSelectedMailingIds(mailingSettings, birtReport.getCompanyID(), 0);
+                updateSelectedMailingIds(mailingSettings, birtReport.getCompanyID(), 0, null);
                 final List<Integer> mailingsToSend = mailingSettings.getMailingsIdsToSend();
                 boolean doMailingReport = mailingSettings.isEnabled() && !mailingsToSend.isEmpty();
 
                 ComBirtReportComparisonSettings comparisonSettings = birtReport.getReportComparisonSettings();
-                updateSelectedComparisonIds(comparisonSettings, birtReport.getCompanyID(), 0);
+                updateSelectedComparisonIds(comparisonSettings, birtReport.getCompanyID(), 0, null);
                 List<String> compareMailings = comparisonSettings.getMailings();
                 boolean doComparisonReport = comparisonSettings.isEnabled() && CollectionUtils.isNotEmpty(compareMailings);
 
@@ -180,7 +184,7 @@ public class ComBirtReportServiceImpl implements ComBirtReportService {
         }
     }
 
-    protected void updateSelectedMailingIds(ComBirtReportMailingSettings reportMailingSettings, int companyId, int targetId) {
+    protected void updateSelectedMailingIds(ComBirtReportMailingSettings reportMailingSettings, int companyId, int targetId, Set<Integer> adminAltgIds) {
         List<Integer> mailingIds;
         int mailingType = reportMailingSettings.getMailingType();
         int mailingGeneralType = reportMailingSettings.getMailingGeneralType();
@@ -193,7 +197,7 @@ public class ComBirtReportServiceImpl implements ComBirtReportService {
                 if (filterType == FilterType.FILTER_ARCHIVE.getKey() || filterType == FilterType.FILTER_MAILINGLIST.getKey()) {
                     filterValue = reportMailingSettings.getReportSettingAsInt(ComBirtReportMailingSettings.PREDEFINED_ID_KEY);
                 }
-                mailingIds = getPredefinedMailingsForReports(companyId, numOfMailings, filterType, filterValue, -1, sortOrder, targetId)
+                mailingIds = getPredefinedMailingsForReports(companyId, numOfMailings, filterType, filterValue, null, sortOrder, targetId, adminAltgIds)
                         .stream()
                         .map(MailingBase::getId)
                         .collect(Collectors.toList());
@@ -205,11 +209,11 @@ public class ComBirtReportServiceImpl implements ComBirtReportService {
         }
     }
 
-    protected void updateSelectedComparisonIds(ComBirtReportComparisonSettings reportComparisonSettings, int companyId, int targetId) {
-        updateSelectedComparisonIds(reportComparisonSettings, null, companyId, targetId);
+    protected void updateSelectedComparisonIds(ComBirtReportComparisonSettings reportComparisonSettings, int companyId, int targetId, Set<Integer> adminAltgIds) {
+        updateSelectedComparisonIds(reportComparisonSettings, null, companyId, targetId, adminAltgIds);
     }
 
-    protected void updateSelectedComparisonIds(ComBirtReportComparisonSettings reportComparisonSettings, DateTimeFormatter formatter, int companyId, int targetId) {
+    protected void updateSelectedComparisonIds(ComBirtReportComparisonSettings reportComparisonSettings, DateTimeFormatter formatter, int companyId, int targetId, Set<Integer> adminAltgIds) {
         int mailingType = reportComparisonSettings.getReportSettingAsInt(MAILING_TYPE_KEY);
 
         if (mailingType == ComBirtReportSettings.MAILINGS_PREDEFINED) {
@@ -223,7 +227,7 @@ public class ComBirtReportServiceImpl implements ComBirtReportService {
             if (numOfMailings >= 0) {
                 PeriodType periodType = PeriodType.getTypeByKey(reportComparisonSettings.getPeriodType());
                 Map<String, LocalDate> datesRestriction = getDatesRestrictionMap(periodType, reportComparisonSettings.getSettingsMap(), formatter);
-                String[] mailingIds = getPredefinedMailingsForReports(companyId, numOfMailings, filterType, filterValue, -1, sortOrder, datesRestriction, targetId)
+                String[] mailingIds = getPredefinedMailingsForReports(companyId, numOfMailings, filterType, filterValue, null, sortOrder, datesRestriction, targetId, adminAltgIds)
                         .stream()
                         .map(mailing -> Integer.toString(mailing.getId()))
                         .toArray(String[]::new);

@@ -40,6 +40,7 @@ INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT
 INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT admin_group_id, 'mailing.attachments.show' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT admin_group_id, 'mailing.can_send_always' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT admin_group_id, 'mailing.change' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
+INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT admin_group_id, 'mailing.classic' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT admin_group_id, 'mailing.components.change' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT admin_group_id, 'mailing.components.show' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT admin_group_id, 'mailing.content.show' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
@@ -109,6 +110,10 @@ INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT
 INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT admin_group_id, 'workflow.show' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT admin_group_id, 'forms.export' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT admin_group_id, 'mailing.export' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
+INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT admin_group_id, 'restfulUser.show' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
+INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT admin_group_id, 'restfulUser.new' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
+INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT admin_group_id, 'restfulUser.change' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
+INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT admin_group_id, 'restfulUser.delete' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 
 
 -- User/Admin: EMM-Master
@@ -126,7 +131,6 @@ INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'admin.s
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'adminlog.show');
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'blacklist');
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'calendar.show');
-INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'campaign.autoopt');
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'campaign.change');
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'campaign.delete');
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'campaign.show');
@@ -151,6 +155,7 @@ INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'import.
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'mailing.attachments.show');
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'mailing.can_send_always');
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'mailing.change');
+INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'mailing.classic');
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'mailing.components.change');
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'mailing.components.show');
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'mailing.content.show');
@@ -221,3 +226,7 @@ INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'workflo
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'workflow.show');
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'forms.export');
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'mailing.export');
+INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'restfulUser.show');
+INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'restfulUser.new');
+INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'restfulUser.change');
+INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'restfulUser.delete');

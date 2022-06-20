@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -25,7 +25,6 @@ import org.agnitas.beans.Recipient;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.UserStatus;
 import org.agnitas.emm.core.recipient.service.RecipientsModel.CriteriaEquals;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.CsvColInfo;
 import org.agnitas.util.DbColumnType;
 import org.agnitas.util.Tuple;
@@ -52,19 +51,19 @@ public interface ComRecipientDao {
     String SUPPLEMENTAL_DATECOLUMN_SUFFIX_MINUTE = "_MINUTE_DATE";
     String SUPPLEMENTAL_DATECOLUMN_SUFFIX_SECOND = "_SECOND_DATE";
 
-	Tuple<Integer, String> findSpecificCustomerColumn(@VelocityCheck int companyID, String firstname, String lastname, String email, String fieldname);
+	Tuple<Integer, String> findSpecificCustomerColumn(int companyID, String firstname, String lastname, String email, String fieldname);
     
     boolean updateDataSource(Recipient cust);
 
-    void deleteAllNoBindings(@VelocityCheck int companyID, String toBeDeletedTable);
+    void deleteAllNoBindings(int companyID, String toBeDeletedTable);
 
-    String createTmpTableByMailinglistID(@VelocityCheck int companyID, int mailinglistID);
+    String createTmpTableByMailinglistID(int companyID, int mailinglistID);
 	
-	CaseInsensitiveMap<String, Object> getCustomerDataFromDb(@VelocityCheck int companyID, int customerID, boolean respectHideSignIfSet);
+	CaseInsensitiveMap<String, Object> getCustomerDataFromDb(int companyID, int customerID, boolean respectHideSignIfSet);
 
-	List<ComRecipientLiteImpl> getAdminAndTestRecipients(@VelocityCheck int companyID, int mailinglistID);
+	List<ComRecipientLiteImpl> getAdminAndTestRecipients(int companyID, int mailinglistID);
 
-    List<Integer> getAdminAndTestRecipientIds(@VelocityCheck int companyID, int mailinglistID);
+    List<Integer> getAdminAndTestRecipientIds(int companyID, int mailinglistID);
 
 	List<Integer> filterRecipientsByMailinglistAndTarget(List<Integer> recipientIds, int companyId, int mailinglistId, String sqlTargetExpression, boolean allRecipients);
 
@@ -72,9 +71,9 @@ public interface ComRecipientDao {
 
 	List<Integer> getDateMatchingRecipients(int companyId, List<Date> allDates, String dateProfileField, String dateFieldOperator, String dateFieldValue, String dateFormat);
 
-    boolean successTableActivated(@VelocityCheck int companyID);
+    boolean successTableActivated(int companyID);
 
-    boolean isMailtrackingEnabled(@VelocityCheck int companyID);
+    boolean isMailtrackingEnabled(int companyID);
 
     List<ComRecipientMailing> getMailingsSentToRecipient(int recipientID, int companyID);
 
@@ -86,7 +85,7 @@ public interface ComRecipientDao {
 
     PaginatedListImpl<ComRecipientReaction> getRecipientReactionsHistory(int recipientID, int companyID, int pageNumber, int rowsPerPage, String sortCriterion, boolean sortAscending);
 
-    List<Recipient> getDuplicateRecipients(@VelocityCheck int companyId, String email, String select, Object[] queryParams) throws Exception;
+    List<Recipient> getDuplicateRecipients(int companyId, String email, String select, Object[] queryParams) throws Exception;
 
     /**
      *  Select only a certain page of recipients with all available fields, used for dynamic paging in list views
@@ -108,9 +107,7 @@ public interface ComRecipientDao {
 
     PaginatedListImpl<Map<String, Object>> getPaginatedRecipientsData(int companyID, Set<String> columns, String sqlStatementForData, Object[] sqlParametersForData, String sortCriterion, boolean sortedAscending, int pageNumber, int rownums) throws Exception;
 
-    PaginatedListImpl<Recipient> getDuplicatePaginatedRecipientList(int companyID, Set<String> columns, String statement, Object[] parameters, String sortCriterion, boolean sortedAscending, int pageNumber, int pageSize) throws Exception;
-    
-    PaginatedListImpl<MailingRecipientStatRow> getMailingRecipients(int mailingId, @VelocityCheck int companyId, int filterType, int pageNumber, int rowsPerPage, String sortCriterion, boolean sortAscending, List<String> columns) throws Exception;
+    PaginatedListImpl<MailingRecipientStatRow> getMailingRecipients(int mailingId, int companyId, int filterType, int pageNumber, int rowsPerPage, String sortCriterion, boolean sortAscending, List<String> columns) throws Exception;
 
     int getNumberOfRecipients(int companyId);
 
@@ -119,9 +116,9 @@ public interface ComRecipientDao {
 	/**
      *  Select number of recipients with specific attributes
      */
-	int getNumberOfRecipients(@VelocityCheck int companyID, String sqlStatementForData, Object[] parametersForData);
+	int getNumberOfRecipients(int companyID, String sqlStatementForData, Object[] parametersForData);
 
-	int getNumberOfRecipients(@VelocityCheck int companyId, int mailingListId, String sqlConditions, Object... sqlConditionParameters) throws Exception;
+	int getNumberOfRecipients(int companyId, int mailingListId, String sqlConditions, Object... sqlConditionParameters) throws Exception;
 
 	/**
 	 * For bulk insert of new recipients only.
@@ -133,13 +130,13 @@ public interface ComRecipientDao {
 	 */
 	void checkParameters(CaseInsensitiveMap<String, Object> custParameters, int companyID);
 
-	List<Object> updateCustomers(@VelocityCheck int companyID, List<Recipient> recipients);
+	List<Object> updateCustomers(int companyID, List<Recipient> recipients);
 
-	List<Object> insertCustomers(@VelocityCheck int companyID, List<Recipient> recipients, List<Boolean> doubleCheck, List<Boolean> overwrite, List<String> keyFields);
+	List<Object> insertCustomers(int companyID, List<Recipient> recipients, List<Boolean> doubleCheck, List<Boolean> overwrite, List<String> keyFields);
 
 	List<CaseInsensitiveMap<String, Object>> getCustomers(List<Integer> customerIDs, int companyID);
 
-    int getAdminOrTestRecipientId(@VelocityCheck int companyID, int adminId);
+    int getAdminOrTestRecipientId(int companyID, int adminId);
 
     /**
      * Check whether it is allowed to add the given number of recipients.
@@ -150,7 +147,7 @@ public interface ComRecipientDao {
      * @param count the number of recipients that should be added.
      * @return true if it is allowed to add the given number of recipients.
      */
-    boolean mayAdd(@VelocityCheck int companyID, int count);
+    boolean mayAdd(int companyID, int count);
 
     /**
      * Inserts new customer record in Database with a fresh customer-id
@@ -190,7 +187,7 @@ public interface ComRecipientDao {
      */
 	boolean updateInDbWithException(final Recipient cust, final boolean missingFieldsToNull) throws Exception;
 
-    Map<String, Object> getRecipientData(@VelocityCheck int companyId, int recipientId, boolean respectHideSignIfSet);
+    Map<String, Object> getRecipientData(int companyId, int recipientId, boolean respectHideSignIfSet);
 
     /**
      * Find Subscriber by providing a column-name and a value. Only exact matches possible.
@@ -212,7 +209,7 @@ public interface ComRecipientDao {
      * @param remark remark for status update
      * @throws Exception
      */
-    void updateStatusByColumn(@VelocityCheck int companyId, String columnName, String columnValue, int newStatus, String remark) throws Exception;
+    void updateStatusByColumn(int companyId, String columnName, String columnValue, int newStatus, String remark) throws Exception;
 
     /**
      * Find Subscriber by providing the id of the company, a column-name and a value.
@@ -222,7 +219,7 @@ public interface ComRecipientDao {
      * @param value Value to search for in col
      * @return customerID or 0 if no matching record found
      */
-    int findByColumn(@VelocityCheck int companyID, String col, String value);
+    int findByColumn(int companyID, String col, String value);
 
     /**
      * Find Subscriber by providing a username and password. Only exact machtes possible.
@@ -234,7 +231,7 @@ public interface ComRecipientDao {
      * @param passValue Value for Password
      * @return customerID or 0 if no matching record found
      */
-    int findByUserPassword(@VelocityCheck int companyID, String userCol, String userValue, String passCol, String passValue);
+    int findByUserPassword(int companyID, String userCol, String userValue, String passCol, String passValue);
     
     /**
      * Load complete Subscriber data from DB. customerID must be set first for this method.
@@ -243,9 +240,9 @@ public interface ComRecipientDao {
      * @param customerID The id of the customer
      * @return Map with Key/Value-Pairs of customer data
      */
-    CaseInsensitiveMap<String, Object> getCustomerDataFromDb(@VelocityCheck int companyID, int customerID);
+    CaseInsensitiveMap<String, Object> getCustomerDataFromDb(int companyID, int customerID);
     
-    CaseInsensitiveMap<String, Object> getCustomerDataFromDb(@VelocityCheck int companyID, int customerID, final DateFormat dateFormat);
+    CaseInsensitiveMap<String, Object> getCustomerDataFromDb(int companyID, int customerID, final DateFormat dateFormat);
 
     /**
      * Load selective Subscriber data from DB. customerID must be set first for this method.
@@ -255,7 +252,7 @@ public interface ComRecipientDao {
      * @param columns The collection of DB columns to load
      * @return Map with Key/Value-Pairs of customer data
      */
-    CaseInsensitiveMap<String, Object> getCustomerDataFromDb(@VelocityCheck int companyID, int customerID, Collection<String> columns);
+    CaseInsensitiveMap<String, Object> getCustomerDataFromDb(int companyID, int customerID, Collection<String> columns);
 
     /**
      * Delete complete Subscriber-Data from DB. customerID must be set first for this method.
@@ -263,7 +260,7 @@ public interface ComRecipientDao {
      * @param companyID The id of the company
      * @param customerID The id of the customer
      */
-    void deleteCustomerDataFromDb(@VelocityCheck int companyID, int customerID);
+    void deleteCustomerDataFromDb(int companyID, int customerID);
     
     /**
      * Loads complete Mailinglist-Binding-Information for given customer-id from Database
@@ -272,7 +269,7 @@ public interface ComRecipientDao {
      * @param customerID The id of the customer
      * @return Map with key/value-pairs as combinations of mailinglist-id and BindingEntry-Objects
      */
-    Map<Integer, Map<Integer, BindingEntry>> loadAllListBindings(@VelocityCheck int companyID, int customerID);
+    Map<Integer, Map<Integer, BindingEntry>> loadAllListBindings(int companyID, int customerID);
     
 
     /**
@@ -283,7 +280,7 @@ public interface ComRecipientDao {
      * @param companyID The id of the company
      * @return String value of column named selectVal or empty String if there is not value
      */
-    String getField(String selectVal, int recipientID, @VelocityCheck int companyID);
+    String getField(String selectVal, int recipientID, int companyID);
 
     /**
      * Loads all mailing lists for given customer
@@ -292,7 +289,7 @@ public interface ComRecipientDao {
      * @param companyID The id of the company
      * @return Map with key/value-pairs as combinations of mailinglist-id and map with key/value-pairs as combinations of mediatype and BindingEntry-Objects
      */
-    Map<Integer, Map<Integer, BindingEntry>>	getAllMailingLists(int customerID, @VelocityCheck int companyID);
+    Map<Integer, Map<Integer, BindingEntry>> getAllMailingLists(int customerID, int companyID);
 
     /**
      * Load number of recipients for given condition
@@ -301,7 +298,7 @@ public interface ComRecipientDao {
      * @param target the condition for select to database
      * @return number of recipients or 0 if error
      */
-    int sumOfRecipients(@VelocityCheck int companyID, String target);
+    int sumOfRecipients(int companyID, String target);
 
     /**
      * Delete recipients from database for given condition
@@ -310,7 +307,7 @@ public interface ComRecipientDao {
      * @param target the condition for delete to database
      * @return true if success or false if error
      */
-    boolean deleteRecipients(@VelocityCheck int companyID, String target);
+    boolean deleteRecipients(int companyID, String target);
 
     /**
      * Delete recipients from database for given list of customer id
@@ -318,7 +315,7 @@ public interface ComRecipientDao {
      * @param companyID the id of the company
      * @param list the list of customer id
      */
-    void deleteRecipients(@VelocityCheck int companyID, List<Integer> list);
+    void deleteRecipients(int companyID, List<Integer> list);
 
     /**
      * Loads meta information for all columns from database for given customer
@@ -326,7 +323,7 @@ public interface ComRecipientDao {
      * @param companyID the id of the company
      * @return  Map with key/value-pairs as combinations of column name and CsvColInfo Objects
      */
-	CaseInsensitiveMap<String, CsvColInfo> readDBColumns(@VelocityCheck int companyID);
+	CaseInsensitiveMap<String, CsvColInfo> readDBColumns(int companyID);
 	
     /**
      * Method gets a list of test/admin recipients for preview drop-down list
@@ -335,7 +332,7 @@ public interface ComRecipientDao {
      * @param mailingId id of mailing
      * @return Map in a format "recipient id" -> "recipient description (name, lastname, email)"
      */
-	Map<Integer, String> getAdminAndTestRecipientsDescription(@VelocityCheck int companyId, int mailingId);
+	Map<Integer, String> getAdminAndTestRecipientsDescription(int companyId, int mailingId);
 
     /**
      * Method gets the first available test/admin recipient for a mailing preview generation.
@@ -344,7 +341,7 @@ public interface ComRecipientDao {
      * @param mailingId an identifier of a mailing (to retrieve a recipient from its mailing list).
      * @return an identifier of the first available test/admin recipient or zero.
      */
-    int getPreviewRecipient(@VelocityCheck int companyId, int mailingId);
+    int getPreviewRecipient(int companyId, int mailingId);
 
     /**
      * Loads the list of bounced recipients for given mailing
@@ -353,7 +350,7 @@ public interface ComRecipientDao {
      * @param mailingId the id of mailing
      * @return the list of  Recipient objects
      */
-    List<Recipient> getBouncedMailingRecipients(@VelocityCheck int companyId, int mailingId);
+    List<Recipient> getBouncedMailingRecipients(int companyId, int mailingId);
 
     /**
      * Check of existence of customer in database for given id
@@ -362,11 +359,11 @@ public interface ComRecipientDao {
      * @param customerId the id of customer
      * @return true if customer exist or false if not
      */
-    boolean exist(int customerId, @VelocityCheck int companyId);
+    boolean exist(int customerId, int companyId);
 
-    void deleteRecipientsBindings(int mailinglistID, @VelocityCheck int companyID, boolean activeOnly, boolean noAdminsAndTests);
+    void deleteRecipientsBindings(int mailinglistID, int companyID, boolean activeOnly, boolean noAdminsAndTests);
 
-    int getCustomerIdWithEmailInMailingList(@VelocityCheck int companyId, int mailingId, String email);
+    int getCustomerIdWithEmailInMailingList(int companyId, int mailingId, String email);
 
     int getDefaultDatasourceID(String username, int companyID);
 	
@@ -376,7 +373,7 @@ public interface ComRecipientDao {
     
     int getSizeOfCustomerDataFromDbList(int companyId, boolean matchAll, List<CriteriaEquals> criteriaEquals);
 
-    CaseInsensitiveMap<String, ProfileField> getAvailableProfileFields(@VelocityCheck int companyID) throws Exception;
+    CaseInsensitiveMap<String, ProfileField> getAvailableProfileFields(int companyID) throws Exception;
 
 	List<WebtrackingHistoryEntry> getRecipientWebtrackingHistory(int companyID, int recipientID);
 
@@ -384,7 +381,7 @@ public interface ComRecipientDao {
 
 	String selectCustomerValue(String selectValue, int companyID, int customerId);
 
-    int bulkUpdateEachRecipientsFields(@VelocityCheck int companyId, int adminId, int mailingListId, String sqlTargetExpression, Map<String, Object> updateValues) throws Exception;
+    int bulkUpdateEachRecipientsFields(int companyId, int adminId, int mailingListId, String sqlTargetExpression, Map<String, Object> updateValues) throws Exception;
     
     int getRecipientsAmountForTargetGroup(int companyId, int adminId, int mailingListId, String sqlTargetExpression);
 
@@ -392,15 +389,15 @@ public interface ComRecipientDao {
 
 	List<Map<String, Object>> getUnsubscribedRecipients(int companyID, Date fromDate);
 
-	RecipientDates getRecipientDates(@VelocityCheck int companyId, int recipientId);
+	RecipientDates getRecipientDates(int companyId, int recipientId);
 
 	DataSource getDataSource();
 	
 	boolean isOracleDB();
 
-    List<Integer> insertTestRecipients(@VelocityCheck int companyId, int mailingListId, int userStatus, String remark, List<String> addresses) throws Exception;
+    List<Integer> insertTestRecipients(int companyId, int mailingListId, UserStatus userStatus, String remark, List<String> addresses) throws Exception;
 
-    String getEmail(@VelocityCheck int companyId, int customerId);
+    String getEmail(int companyId, int customerId);
 
     /**
      * Check whether a given email address in used by some recipient other that given {@code recipientId}.
@@ -410,7 +407,7 @@ public interface ComRecipientDao {
      * @param companyId an identifier of a current user's company.
      * @return {@code true} if there's a recipient (other that given recipientId) having given email or {@code false} otherwise.
      */
-    boolean checkAddressInUse(String email, int recipientId, @VelocityCheck int companyId);
+    boolean checkAddressInUse(String email, int recipientId, int companyId);
     
     /**
      * Find existing recipient ID other that given {@code recipientId} by a given email address in used.
@@ -420,7 +417,7 @@ public interface ComRecipientDao {
      * @param companyId an identifier of a current user's company.
      * @return {@code int} recipient ID if there's a recipient (other that given recipientId) having given email or {@code 0} otherwise.
      */
-    int getRecipientIdByAddress(String email, int recipientId, @VelocityCheck int companyId);
+    int getRecipientIdByAddress(String email, int recipientId, int companyId);
     
     void writeEmailAddressChangeRequest(final int companyID, final int customerID, final String newEmailAddress, final String confirmationCode);
 
@@ -436,23 +433,21 @@ public interface ComRecipientDao {
 
 	List<Integer> getRecipientIDs(int companyID, String keyColumn, String keyValue);
 
-	CaseInsensitiveMap<String, Object> getCustomerData(int companyID, int customerID, TimeZone timeZone);
+	CaseInsensitiveMap<String, Object> getCustomerData(int companyID, int customerID);
 
     boolean isRecipientMatchTarget(int companyId, String targetExpression, int customerId);
-
-    boolean isNotSavedRecipientDataMatchTarget(int companyId, String targetExpression, Recipient recipient) throws Exception;
 
     boolean isNotSavedRecipientDataMatchTarget(int companyId, int recipientId, String targetExpression, Map<String, Object> entry) throws Exception;
 
     List<Integer> listRecipientIdsByTargetGroup(final int companyId, final ComTarget target);
 
-    int saveRecipient(@VelocityCheck int companyId, int recipientId, Map<String, Object> recipientValues);
+    int saveRecipient(int companyId, int recipientId, Map<String, Object> recipientValues);
 
 	List<Recipient> findByData(int companyID, Map<String, Object> searchDataMap) throws Exception;
 
 	BindingEntry getMailinglistBinding(int companyID, int customerID, int mailinglistId, int mediaType) throws Exception;
 
-	List<CaseInsensitiveMap<String, Object>> getMailinglistRecipients(int companyID, int mailinglistID, MediaTypes mediaTypes, String targetSql, List<UserStatus> userstatusList, TimeZone timeZone) throws Exception;
+	List<CaseInsensitiveMap<String, Object>> getMailinglistRecipients(int companyID, int mailinglistID, MediaTypes mediaTypes, String targetSql, List<String> profileFieldsList, List<UserStatus> userstatusList, TimeZone timeZone) throws Exception;
 
 	List<ComRecipientLiteImpl> listAdminAndTestRecipientsByAdmin(int companyID, int adminID);
 	
@@ -461,5 +456,11 @@ public interface ComRecipientDao {
 	 * Keeps datatypes in Object class (differs from method "getCustomers")<br />
 	 * Dates are returned as items of class Date
 	 */
-	List<CaseInsensitiveMap<String, Object>> getCustomersData(List<Integer> customerIDs, int companyID, TimeZone timeZone);
+	List<CaseInsensitiveMap<String, Object>> getCustomersData(List<Integer> customerIDs, int companyID);
+
+	int getMinimumCustomerId(int companyID);
+
+	boolean isRecipientTrackingAllowed(int companyID, int recipientID);
+
+	List<CaseInsensitiveMap<String, Object>> getTargetRecipients(int companyID, String targetSql, List<String> profileFieldsList, TimeZone timeZone) throws Exception;
 }

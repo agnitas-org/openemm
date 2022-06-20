@@ -2,7 +2,7 @@
 
 <%@ page import="org.agnitas.util.AgnUtils" %>
 <%@ page import="com.agnitas.emm.core.push.bean.PushNotificationStatus" %>
-<%@ page import="com.agnitas.web.ComMailingBaseAction" %>
+<%@ page import="com.agnitas.web.MailingBaseAction" %>
 <%@ page import="com.agnitas.emm.core.calendar.web.CalendarController" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
@@ -29,7 +29,7 @@
 
 <c:set var="SECONDS_BEFORE_WAIT_MESSAGE" value="<%= CalendarController.SECONDS_BEFORE_WAIT_MESSAGE %>"/>
 
-<c:set var="ACTION_VIEW" value="<%= ComMailingBaseAction.ACTION_VIEW %>"/>
+<c:set var="ACTION_VIEW" value="<%= MailingBaseAction.ACTION_VIEW %>"/>
 
 <c:set var="MONTH_LIST" value="<%= AgnUtils.getMonthList() %>"/>
 <c:set var="YEAR_LIST" value="<%= AgnUtils.getCalendarYearList(CalendarController.SELECTOR_START_YEAR_NUM) %>"/>

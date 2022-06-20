@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -24,7 +24,6 @@ import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.MailingComponentType;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.beans.MediaTypeStatus;
-import org.agnitas.beans.Mediatype;
 import org.agnitas.dao.MailinglistDao;
 import org.agnitas.emm.core.mediatypes.dao.MediatypesDao;
 import org.agnitas.emm.core.mediatypes.dao.MediatypesDaoException;
@@ -33,7 +32,8 @@ import org.agnitas.service.MailingExporter;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.importvalues.MailType;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.agnitas.beans.Campaign;
 import com.agnitas.beans.ComTarget;
@@ -41,6 +41,7 @@ import com.agnitas.beans.ComTrackableLink;
 import com.agnitas.beans.DynamicTag;
 import com.agnitas.beans.LinkProperty;
 import com.agnitas.beans.Mailing;
+import com.agnitas.beans.Mediatype;
 import com.agnitas.beans.MediatypeEmail;
 import com.agnitas.dao.CampaignDao;
 import com.agnitas.dao.ComCompanyDao;
@@ -48,14 +49,13 @@ import com.agnitas.dao.ComMailingDao;
 import com.agnitas.dao.ComTargetDao;
 import com.agnitas.emm.core.mailing.bean.ComMailingParameter;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import com.agnitas.emm.core.target.eql.codegen.resolver.MailingType;
 import com.agnitas.json.JsonWriter;
 
 import jakarta.annotation.Resource;
 
 public class MailingExporterImpl extends ActionExporter implements MailingExporter {
 	/** The logger. */
-	private static final transient Logger logger = Logger.getLogger(MailingExporterImpl.class);
+	private static final transient Logger logger = LogManager.getLogger(MailingExporterImpl.class);
 	
 	@Resource(name="CompanyDao")
 	protected ComCompanyDao companyDao;
@@ -114,7 +114,7 @@ public class MailingExporterImpl extends ActionExporter implements MailingExport
 		writeJsonObjectAttribute(writer, "mailinglist_id", mailinglist.getId());
 		writeJsonObjectAttributeWhenNotNullOrBlank(writer, "mailinglist_shortname", mailinglist.getShortname());
 		writeJsonObjectAttributeWhenNotNullOrBlank(writer, "mailinglist_description", mailinglist.getDescription());
-		writeJsonObjectAttribute(writer, "mailingtype", MailingType.fromCode(mailing.getMailingType()).name());
+		writeJsonObjectAttribute(writer, "mailingtype", mailing.getMailingType().name());
 		
 		if (StringUtils.isNotBlank(mailing.getTargetExpression())) {
 			writeJsonObjectAttributeWhenNotNullOrBlank(writer, "target_expression", mailing.getTargetExpression());
@@ -326,7 +326,11 @@ public class MailingExporterImpl extends ActionExporter implements MailingExport
 					writeJsonObjectAttribute(writer, "administrative", trackableLink.isAdminLink());
 				}
 				
-				if(trackableLink.isCreateSubstituteLinkForAgnDynMulti()) {
+				if (trackableLink.isStaticValue()) {
+					writeJsonObjectAttribute(writer, "static", trackableLink.isStaticValue());
+				}
+				
+				if (trackableLink.isCreateSubstituteLinkForAgnDynMulti()) {
 					writeJsonObjectAttribute(writer, "create_substitute_link", trackableLink.isCreateSubstituteLinkForAgnDynMulti());
 				}
 				

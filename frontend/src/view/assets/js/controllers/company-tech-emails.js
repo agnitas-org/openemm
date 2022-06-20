@@ -1,83 +1,42 @@
-AGN.Lib.Controller.new('company-tech-emails', function() {
+AGN.Lib.Controller.new('email-list-controller', function() {
 
-    var scope = this.el;
-    var rowSelector = '';
     var targetFieldName = '';
+    var separator = ' ';
+    var emailsListManager;
 
     var dataList = function() {
         var result = [""];
         var stringValue = $('input[name="' + targetFieldName + '"]').val();
         if(stringValue) {
-            result = stringValue.split(', ');
+            result = stringValue.split(separator);
         }
         return result;
     };
 
-    var rowValue = function() {
-        var values = [];
-        _.each(scope.find(rowSelector + " input"), function(rowInput) {
-            var value = rowInput.value;
-            if(value.trim() !== '') {
-                values.push(value);
-            }
-        });
-        return values;
-    };
-
-    var removeDeleteBtn = function() {
-        var $rows = scope.find(rowSelector);
-        if($rows.length === 1 && $rows.find('.btn-alert')) {
-            $rows.find('.btn-alert').remove();
-        }
-    };
-
-    var addDeleteBtns = function() {
-        _.each(scope.find(rowSelector), function(row) {
-            var $row = $(row);
-            if($row.find('.btn-alert').length === 0) {
-                $row.find('.input-group-btn').append(AGN.Lib.Template.text('remove-button', {}));
-            }
-        });
-    };
-
-    var addFieldRow = function(el, value, setAfter) {
-        var template = AGN.Lib.Template.text('email-input', {email: value});
-        if(setAfter) {
-            el.closest(rowSelector).after(template);
-        } else {
-            el.append(template);
-        }
-        addDeleteBtns();
-    };
-
     var saveDataToField = function() {
-        $('input[name="' + targetFieldName + '"]').val(rowValue().join(', '));
+        var jsonData = emailsListManager.getJsonData();
+        $('input[name="' + targetFieldName + '"]').val(jsonData.join(separator));
     };
 
-    this.addDomInitializer('company-emails-list', function() {
-        scope = this.el;
+    this.addDomInitializer('email-list-initializer', function() {
+        var scope = $(this.el);
         targetFieldName =  scope.data('target-field') || '';
-        rowSelector = scope.data('row-selector') || '';
+        separator =  scope.data('data-emails-separator') || separator;
 
-        _.each(dataList(), function (email) {
-            addFieldRow(scope, email, false);
-        });
-
-        removeDeleteBtn();
+        emailsListManager = AGN.Lib.EmailsListManager.initialize(scope, dataList());
     });
 
-    this.addAction({'click': 'deleteContactEmail'}, function(){
-        this.el.closest(rowSelector).remove();
-        removeDeleteBtn();
+    this.addAction({'click': 'delete-email'}, function(){
+        emailsListManager.deleteRow($(this.el));
         saveDataToField();
     });
 
-    this.addAction({'click': 'createContactEmail'}, function() {
-        addFieldRow(this.el, "", true);
+    this.addAction({'click': 'create-email'}, function() {
+        emailsListManager.createRowAfter($(this.el));
         saveDataToField();
     });
 
-    this.addAction({'change': 'inputValue'}, function() {
+    this.addAction({'change': 'change-trigger'}, function() {
         saveDataToField();
     });
 });

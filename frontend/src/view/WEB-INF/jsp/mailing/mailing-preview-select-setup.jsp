@@ -1,5 +1,5 @@
 <%@ page language="java" contentType="text/html; charset=utf-8"  errorPage="/error.do" %>
-<%@ page import="org.agnitas.web.MailingBaseAction" %>
+<%@ page import="com.agnitas.web.MailingBaseAction" %>
 <%@ page import="org.agnitas.web.MailingSendAction" %>
 <%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
@@ -81,10 +81,14 @@
 						<c:set var="agnNavigationKey" value="templateView" scope="request" />
 					</c:otherwise>
 				</c:choose>
-                <c:set var="agnNavHrefAppend" 		value="&mailingID=${mailingId}"	scope="request" />
                 <c:set var="agnTitleKey" 			value="Template" 				scope="request" />
                 <c:set var="agnSubtitleKey" 		value="Template" 				scope="request" />
                 <c:set var="sidemenu_sub_active"	value="Templates" 				scope="request" />
+                
+                <emm:instantiate var="agnNavHrefParams" type="java.util.LinkedHashMap" scope="request">
+                    <c:set target="${agnNavHrefParams}" property="mailingID" value="${mailingBaseForm.mailingID}"/>
+                    <c:set target="${agnNavHrefParams}" property="init" value="true"/>
+                </emm:instantiate>
             </c:when>
             <c:otherwise>
                 <c:choose>

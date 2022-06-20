@@ -6,10 +6,6 @@
 	version="3.0">
 
 	<display-name>OpenEMM</display-name>
-	
-	<session-config>
-		<session-timeout>30</session-timeout>
-	</session-config>
 
 	<context-param>
 		<description>spring context</description>

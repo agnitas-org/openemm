@@ -7,7 +7,7 @@
 	java.text.DateFormat,
 	java.text.SimpleDateFormat,
 	org.agnitas.emm.core.logintracking.*" %>
-<%@ page import="com.agnitas.beans.ComAdminPreferences" %>
+<%@ page import="com.agnitas.beans.AdminPreferences" %>
 <%@ page import="org.agnitas.emm.core.logintracking.bean.LoginData" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
@@ -22,28 +22,28 @@
 <%--@elvariable id="adminForm" type="com.agnitas.web.ComAdminForm"--%>
 
 <%
-	ComAdmin admin = AgnUtils.getAdmin(request);
+ComAdmin admin = AgnUtils.getAdmin(request);
 %>
 
-<c:set var="LOGIN_STATUS_SUCCESS" value="<%= LoginStatus.SUCCESS.getStatusCode() %>" />
-<c:set var="LOGIN_STATUS_FAIL" value="<%= LoginStatus.FAIL.getStatusCode() %>" />
-<c:set var="LOGIN_STATUS_SUCCESS_BUT_BLOCKED" value="<%= LoginStatus.SUCCESS_BUT_BLOCKED.getStatusCode() %>" />
+<c:set var="LOGIN_STATUS_SUCCESS" value="<%=LoginStatus.SUCCESS.getStatusCode()%>" />
+<c:set var="LOGIN_STATUS_FAIL" value="<%=LoginStatus.FAIL.getStatusCode()%>" />
+<c:set var="LOGIN_STATUS_SUCCESS_BUT_BLOCKED" value="<%=LoginStatus.SUCCESS_BUT_BLOCKED.getStatusCode()%>" />
 
-<c:set var="MAILING_CONTENT_HTML_EDITOR" value="<%= ComAdminPreferences.MAILING_CONTENT_HTML_EDITOR %>"/>      <%-- 1 --%>
-<c:set var="MAILING_CONTENT_HTML_CODE" value="<%= ComAdminPreferences.MAILING_CONTENT_HTML_CODE %>"/>          <%-- 0 --%>
+<c:set var="MAILING_CONTENT_HTML_EDITOR" value="<%=AdminPreferences.MAILING_CONTENT_HTML_EDITOR%>"/>      <%-- 1 --%>
+<c:set var="MAILING_CONTENT_HTML_CODE" value="<%=AdminPreferences.MAILING_CONTENT_HTML_CODE%>"/>          <%-- 0 --%>
 
-<c:set var="DASHBOARD_MAILINGS_LIST" value="<%= ComAdminPreferences.DASHBOARD_MAILINGS_LIST %>"/>              <%-- 0 --%>
-<c:set var="DASHBOARD_MAILINGS_PREVIEW" value="<%= ComAdminPreferences.DASHBOARD_MAILINGS_PREVIEW %>"/>        <%-- 1 --%>
+<c:set var="DASHBOARD_MAILINGS_LIST" value="<%=AdminPreferences.DASHBOARD_MAILINGS_LIST%>"/>              <%-- 0 --%>
+<c:set var="DASHBOARD_MAILINGS_PREVIEW" value="<%=AdminPreferences.DASHBOARD_MAILINGS_PREVIEW%>"/>        <%-- 1 --%>
 
-<c:set var="MAILING_SETTINGS_EXPANDED" value="<%= ComAdminPreferences.MAILING_SETTINGS_EXPANDED %>"/>          <%-- 0 --%>
-<c:set var="MAILING_SETTINGS_COLLAPSED" value="<%= ComAdminPreferences.MAILING_SETTINGS_COLLAPSED %>"/>        <%-- 1 --%>
+<c:set var="MAILING_SETTINGS_EXPANDED" value="<%=AdminPreferences.MAILING_SETTINGS_EXPANDED%>"/>          <%-- 0 --%>
+<c:set var="MAILING_SETTINGS_COLLAPSED" value="<%=AdminPreferences.MAILING_SETTINGS_COLLAPSED%>"/>        <%-- 1 --%>
 
-<c:set var="LIVE_PREVIEW_RIGHT" value="<%= ComAdminPreferences.LIVE_PREVIEW_RIGHT %>"/>                        <%-- 0 --%>
-<c:set var="LIVE_PREVIEW_BOTTOM" value="<%= ComAdminPreferences.LIVE_PREVIEW_BOTTOM %>"/>                      <%-- 1 --%>
-<c:set var="LIVE_PREVIEW_DEACTIVATE" value="<%= ComAdminPreferences.LIVE_PREVIEW_DEACTIVATE %>"/>              <%-- 2 --%>
+<c:set var="LIVE_PREVIEW_RIGHT" value="<%=AdminPreferences.LIVE_PREVIEW_RIGHT%>"/>                        <%-- 0 --%>
+<c:set var="LIVE_PREVIEW_BOTTOM" value="<%=AdminPreferences.LIVE_PREVIEW_BOTTOM%>"/>                      <%-- 1 --%>
+<c:set var="LIVE_PREVIEW_DEACTIVATE" value="<%=AdminPreferences.LIVE_PREVIEW_DEACTIVATE%>"/>              <%-- 2 --%>
 
-<c:set var="STATISTIC_LOADTYPE_ON_CLICK" value="<%= ComAdminPreferences.STATISTIC_LOADTYPE_ON_CLICK %>"/>      <%-- 0 --%>
-<c:set var="STATISTIC_LOADTYPE_IMMEDIATELY" value="<%= ComAdminPreferences.STATISTIC_LOADTYPE_IMMEDIATELY %>"/><%-- 1 --%>
+<c:set var="STATISTIC_LOADTYPE_ON_CLICK" value="<%=AdminPreferences.STATISTIC_LOADTYPE_ON_CLICK%>"/>      <%-- 0 --%>
+<c:set var="STATISTIC_LOADTYPE_IMMEDIATELY" value="<%=AdminPreferences.STATISTIC_LOADTYPE_IMMEDIATELY%>"/><%-- 1 --%>
 
 <agn:agnForm id="adminForm" action="selfservice.do?action=save" data-form="search" data-form-focus="username">
     <html:hidden property="action"/>

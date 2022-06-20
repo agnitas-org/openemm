@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -38,7 +38,8 @@ import org.agnitas.util.ImportUtils.ImportErrorType;
 import org.agnitas.util.importvalues.NullValuesAction;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.dao.impl.ComCompanyDaoImpl;
@@ -49,7 +50,7 @@ public class ImportRecipientsDaoImpl extends RetryUpdateBaseDaoImpl implements I
 	/**
 	 * The logger.
 	 */
-	private static final transient Logger logger = Logger.getLogger(ImportRecipientsDaoImpl.class);
+	private static final transient Logger logger = LogManager.getLogger(ImportRecipientsDaoImpl.class);
 	
     public static final String MYSQL_COMPARE_DATE_FORMAT = "%Y-%m-%d %H:%i:%s";
     public static final String JAVA_COMPARE_DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
@@ -76,7 +77,7 @@ public class ImportRecipientsDaoImpl extends RetryUpdateBaseDaoImpl implements I
 
 	@Override
 	public String createTemporaryCustomerImportTable(int companyID, String destinationTableName, int adminID, int datasourceID, List<String> keyColumns, String sessionId, String description) throws Exception {
-		List<String> alreadyRunningImports = select(logger, "SELECT description FROM import_temporary_tables WHERE import_table_name = ?", new StringRowMapper(), destinationTableName.toLowerCase());
+		List<String> alreadyRunningImports = select(logger, "SELECT description FROM import_temporary_tables WHERE import_table_name = ?", StringRowMapper.INSTANCE, destinationTableName.toLowerCase());
 		if (alreadyRunningImports.size() > 0) {
 			throw new ImportException(false, "error.import.AlreadyRunning", alreadyRunningImports.get(0));
 		}
@@ -467,7 +468,7 @@ public class ImportRecipientsDaoImpl extends RetryUpdateBaseDaoImpl implements I
     }
 
 	@Override
-	public void addErrorneousCsvEntry(int companyID, String temporaryErrorTableName, List<Integer> importedCsvFileColumnIndexes, List<String> csvDataLine, int csvLineIndex, ReasonCode reasonCode, String errorneousFieldName) {
+	public void addErroneousCsvEntry(int companyID, String temporaryErrorTableName, List<Integer> importedCsvFileColumnIndexes, List<String> csvDataLine, int csvLineIndex, ReasonCode reasonCode, String erroneousFieldName) {
 		List<String> columnNames = new ArrayList<>();
 		Object[] parameters = new Object[importedCsvFileColumnIndexes.size() + 3];
 		for (int i = 0; i < importedCsvFileColumnIndexes.size(); i++) {
@@ -476,14 +477,14 @@ public class ImportRecipientsDaoImpl extends RetryUpdateBaseDaoImpl implements I
 		}
 		parameters[importedCsvFileColumnIndexes.size()] = csvLineIndex;
 		parameters[importedCsvFileColumnIndexes.size() + 1] = reasonCode == null ? "Unknown" : reasonCode.toString();
-		parameters[importedCsvFileColumnIndexes.size() + 2] = errorneousFieldName;
+		parameters[importedCsvFileColumnIndexes.size() + 2] = erroneousFieldName;
 		
 		retryableUpdate(companyID, logger, "DELETE FROM " + temporaryErrorTableName + " WHERE csvindex = ?", csvLineIndex);
 		retryableUpdate(companyID, logger, "INSERT INTO " + temporaryErrorTableName + " (" + StringUtils.join(columnNames, ", ") + ", csvindex, reason, errorfield, errorfixed) VALUES (" + AgnUtils.repeatString("?", columnNames.size(), ", ") + ", ?, ?, ?, 0)", parameters);
 	}
 	
 	@Override
-	public void addErrorneousCsvEntry(int companyID, String temporaryErrorTableName, List<String> csvDataLine, int csvLineIndex, ReasonCode reasonCode, String errorneousFieldName) {
+	public void addErroneousCsvEntry(int companyID, String temporaryErrorTableName, List<String> csvDataLine, int csvLineIndex, ReasonCode reasonCode, String erroneousFieldName) {
 		List<String> columnNames = new ArrayList<>();
 		Object[] parameters = new Object[csvDataLine.size() + 3];
 		for (int i = 0; i < csvDataLine.size(); i++) {
@@ -492,14 +493,14 @@ public class ImportRecipientsDaoImpl extends RetryUpdateBaseDaoImpl implements I
 		}
 		parameters[csvDataLine.size()] = csvLineIndex;
 		parameters[csvDataLine.size() + 1] = reasonCode == null ? "Unknown" : reasonCode.toString();
-		parameters[csvDataLine.size() + 2] = errorneousFieldName;
+		parameters[csvDataLine.size() + 2] = erroneousFieldName;
 
 		retryableUpdate(companyID, logger, "DELETE FROM " + temporaryErrorTableName + " WHERE csvindex = ?", csvLineIndex);
 		retryableUpdate(companyID, logger, "INSERT INTO " + temporaryErrorTableName + " (" + StringUtils.join(columnNames, ", ") + ", csvindex, reason, errorfield, errorfixed) VALUES (" + AgnUtils.repeatString("?", columnNames.size(), ", ") + ", ?, ?, ?, 0)", parameters);
 	}
 
 	@Override
-	public void addErrorneousJsonObject(int companyID, String temporaryErrorTableName, Map<String, ColumnMapping> columnMappingByDbColumn, List<String> importedDBColumns, JsonObject jsonDataObject, int jsonObjectCount, ReasonCode reasonCode, String jsonAttributeName) {
+	public void addErroneousJsonObject(int companyID, String temporaryErrorTableName, Map<String, ColumnMapping> columnMappingByDbColumn, List<String> importedDBColumns, JsonObject jsonDataObject, int jsonObjectCount, ReasonCode reasonCode, String jsonAttributeName) {
 		List<String> columnNames = new ArrayList<>();
 		Object[] parameters = new Object[importedDBColumns.size() + 3];
 		for (int i = 0; i < importedDBColumns.size(); i++) {
@@ -579,7 +580,7 @@ public class ImportRecipientsDaoImpl extends RetryUpdateBaseDaoImpl implements I
 
 	@Override
 	public int dropLeftoverTables(int companyID, String hostName) {
-		List<String> tableNames = select(logger, "SELECT temporary_table_name FROM import_temporary_tables WHERE LOWER(host) = ?", new StringRowMapper(), hostName.toLowerCase());
+		List<String> tableNames = select(logger, "SELECT temporary_table_name FROM import_temporary_tables WHERE LOWER(host) = ?", StringRowMapper.INSTANCE, hostName.toLowerCase());
 		int droppedTables = 0;
 		for (String tableName : tableNames) {
 			if (DbUtilities.checkIfTableExists(getDataSource(), tableName)) {
@@ -593,7 +594,7 @@ public class ImportRecipientsDaoImpl extends RetryUpdateBaseDaoImpl implements I
 
 	@Override
 	public int dropLeftoverTables(String hostName) {
-		List<String> tableNames = select(logger, "SELECT temporary_table_name FROM import_temporary_tables WHERE LOWER(host) = ?", new StringRowMapper(), hostName.toLowerCase());
+		List<String> tableNames = select(logger, "SELECT temporary_table_name FROM import_temporary_tables WHERE LOWER(host) = ?", StringRowMapper.INSTANCE, hostName.toLowerCase());
 		int droppedTables = 0;
 		for (String tableName : tableNames) {
 			if (DbUtilities.checkIfTableExists(getDataSource(), tableName)) {
@@ -704,7 +705,7 @@ public class ImportRecipientsDaoImpl extends RetryUpdateBaseDaoImpl implements I
         	+ " UNION ALL"
         	+ " SELECT DISTINCT customer_id FROM " + temporaryImportTableName + " temp WHERE (customer_id != 0 AND customer_id IS NOT NULL)"
         		+ " AND NOT EXISTS (SELECT 1 FROM customer_" + companyId + "_binding_tbl bind WHERE temp.customer_id = bind.customer_id AND bind.mailinglist_id = ?)";
-			return select(logger, selectCustomerIdsStatement, new IntegerRowMapper(), datasourceId, mailinglistId, mailinglistId);
+			return select(logger, selectCustomerIdsStatement, IntegerRowMapper.INSTANCE, datasourceId, mailinglistId, mailinglistId);
 	}
 
 	@Override
@@ -746,7 +747,7 @@ public class ImportRecipientsDaoImpl extends RetryUpdateBaseDaoImpl implements I
 		int blacklistedEntries = retryableUpdate(companyID, logger, "DELETE FROM " + tempTableName + " WHERE EXISTS (SELECT 1 FROM cust" + companyID + "_ban_tbl ban WHERE " + tempTableName + ".email = ban.email AND NOT ban.email LIKE '%*%' AND NOT ban.email LIKE '%|%%' ESCAPE '|')");
 		
 		// Remove emails by wildcard match
-		List<String> blacklistPatterns = select(logger, "SELECT email FROM cust" + companyID + "_ban_tbl WHERE email LIKE '%|%%' escape '|' OR email LIKE '%*%'", new StringRowMapper());
+		List<String> blacklistPatterns = select(logger, "SELECT email FROM cust" + companyID + "_ban_tbl WHERE email LIKE '%|%%' escape '|' OR email LIKE '%*%'", StringRowMapper.INSTANCE);
 		for (String blacklistPattern : blacklistPatterns) {
 			// Preserves "?" as regular character (non-wilcard), escapes "_" not to be a wildcard, replaces "*" by "%", escape the escape char
 			final String likePattern = blacklistPattern.replace("_", "\\_").replace('*', '%').replace("|", "||");
@@ -815,5 +816,10 @@ public class ImportRecipientsDaoImpl extends RetryUpdateBaseDaoImpl implements I
 	@Override
 	public void changeEmailColumnCollation(String temporaryImportTableName, String collation) {
 		execute(logger, "ALTER TABLE " + temporaryImportTableName + " MODIFY email VARCHAR(150) COLLATE " + collation + " NOT NULL");
+	}
+
+	@Override
+	public void updateColumnOfTemporaryCustomerImportTable(String temporaryImportTableName, String columnName, Object value) {
+		update(logger, "UPDATE " + temporaryImportTableName + " SET " + columnName + "= ?", value);
 	}
 }

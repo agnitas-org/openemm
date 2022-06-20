@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -15,8 +15,6 @@ import java.util.Set;
 
 public class UserGroupDto {
     
-    public static final int ROOT_COMPANY_ID = 1;
-
     private int id;
     
     private int companyId;
@@ -28,7 +26,7 @@ public class UserGroupDto {
     private Set<String> grantedPermissions;
     
     private String[] parentGroupIDs;
-    
+
     public int getUserGroupId() {
         return id;
     }
@@ -60,11 +58,7 @@ public class UserGroupDto {
     public void setDescription(String description) {
         this.description = description;
     }
-    
-    public boolean isRemovable() {
-        return companyId != UserGroupDto.ROOT_COMPANY_ID;
-    }
-    
+
     public Set<String> getGrantedPermissions() {
         return grantedPermissions == null ? new HashSet<>() : grantedPermissions;
     }

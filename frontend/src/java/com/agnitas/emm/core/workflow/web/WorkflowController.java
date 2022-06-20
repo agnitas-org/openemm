@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -19,7 +19,18 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.GregorianCalendar;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.TimeZone;
 
 import org.agnitas.beans.MailingComponentType;
 import org.agnitas.emm.core.autoexport.bean.AutoExport;
@@ -30,7 +41,6 @@ import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.mailing.beans.LightweightMailing;
 import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.service.UserActivityLogService;
 import org.agnitas.service.WebStorage;
 import org.agnitas.util.AgnUtils;
@@ -46,14 +56,14 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -74,11 +84,11 @@ import com.agnitas.beans.TargetLight;
 import com.agnitas.dao.CampaignDao;
 import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.dao.ComMailingComponentDao;
+import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.mailing.service.ComMailingDeliveryStatService;
 import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
-import com.agnitas.emm.core.report.enums.fields.MailingTypes;
 import com.agnitas.emm.core.target.service.ComTargetService;
 import com.agnitas.emm.core.workflow.beans.Workflow;
 import com.agnitas.emm.core.workflow.beans.WorkflowDecision;
@@ -103,7 +113,6 @@ import com.agnitas.messages.Message;
 import com.agnitas.service.ComWebStorage;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.editors.IntEnumEditor;
-import com.agnitas.web.perm.annotations.PermissionMapping;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.Version;
 import com.fasterxml.jackson.databind.JsonSerializer;
@@ -116,11 +125,8 @@ import jakarta.servlet.http.HttpSession;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
-@Controller
-@RequestMapping("/workflow")
-@PermissionMapping("workflow")
 public class WorkflowController {
-    private static final Logger logger = Logger.getLogger(WorkflowController.class);
+    private static final Logger logger = LogManager.getLogger(WorkflowController.class);
 
     public static final String INCOMPLETE_WORKFLOW_NAME = "incompleteWorkflowName";
 
@@ -164,8 +170,8 @@ public class WorkflowController {
     private ConversionService conversionService;
     private MailingService mailingService;
     private ComOptimizationService optimizationService;
-    private AdminService adminService;
-    private final ComTargetService targetService;
+    protected AdminService adminService;
+    protected final ComTargetService targetService;
 
 
     public WorkflowController(ComWorkflowService workflowService, ComWorkflowValidationService validationService,
@@ -557,7 +563,10 @@ public class WorkflowController {
         if (StringUtils.isEmpty(mailingTypes)) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         } else {
-            List<Integer> mailingTypeList = com.agnitas.reporting.birt.external.utils.StringUtils.buildListFormCommaSeparatedValueString(mailingTypes);
+            List<MailingType> mailingTypeList = new ArrayList<>();
+            for (int value : com.agnitas.reporting.birt.external.utils.StringUtils.buildListFormCommaSeparatedValueString(mailingTypes)) {
+            	mailingTypeList.add(MailingType.fromCode(value));
+            }
             boolean takeMailsForPeriod = Boolean.parseBoolean(takeMailsForPeriodParam);
 
             List<Map<String, Object>> mailings = workflowService.getAllMailings(admin, mailingTypeList,
@@ -661,15 +670,14 @@ public class WorkflowController {
         Map<String, Object> mailingData = new HashMap<>();
         if(mailing.getId() > 0) {
             mailingData.put("mailinglistId", mailing.getMailinglistID());
-            mailingData.put("targetGroupIds", mailing.getTargetGroups());
+            putTargetsToMailingData(admin, mailing.getTargetGroups(), mailingData);
             mailingData.put("planDate", mailing.getPlanDate());
             mailingData.put("campaignId", mailing.getCampaignID());
 
-            int mailingType = mailing.getMailingType();
-            mailingData.put("mailingType", mailingType);
+            mailingData.put("mailingType", mailing.getMailingType().getCode());
 
             // Get send date.
-            DeliveryStat deliveryStat = deliveryStatService.getDeliveryStats(companyId, mailingId, mailingType);
+            DeliveryStat deliveryStat = deliveryStatService.getDeliveryStats(companyId, mailingId, mailing.getMailingType());
             if (deliveryStat.getScheduledSendTime() != null) {
                 Calendar sendDate = DateUtilities.calendar(deliveryStat.getScheduledSendTime(), TimeZone.getTimeZone(admin.getAdminTimezone()));
                 mailingData.put("sendDate", sendDate.getTime());
@@ -707,6 +715,10 @@ public class WorkflowController {
         }
 
         return mailingData;
+    }
+
+    protected void putTargetsToMailingData(ComAdmin admin, Collection<Integer> targetGroups, Map<String, Object> mailingData) {
+        mailingData.put("targetGroupIds", targetGroups);
     }
 
     @GetMapping("/viewOnlyElements.action")
@@ -905,13 +917,13 @@ public class WorkflowController {
     private void prepareViewPage(ComAdmin admin, Model model) throws Exception {
         // @todo we need to think whether we need to set all that to request or is it better to get that by ajax requests when it is needed
         int companyId = admin.getCompanyID();
-
+        List<TargetLight> allTargets = workflowService.getAllTargets(companyId);
         model.addAttribute("profileFields", workflowService.getProfileFields(companyId));
         model.addAttribute("profileFieldsHistorized", workflowService.getHistorizedProfileFields(companyId));
         model.addAttribute("isMailtrackingActive", companyDao.isMailtrackingActive(companyId));
         model.addAttribute("admins", workflowService.getAdmins(companyId));
         model.addAttribute("allReports", workflowService.getAllReports(companyId));
-        model.addAttribute("allTargets", workflowService.getAllTargets(companyId));
+        model.addAttribute("allTargets", allTargets);
         model.addAttribute("campaigns", campaignDao.getCampaignList(companyId, "lower(shortname)", 1));
         model.addAttribute("allMailinglists", mailinglistApprovalService.getEnabledMailinglistsForAdmin(admin));
         model.addAttribute("allUserForms", workflowService.getAllUserForms(companyId));
@@ -923,8 +935,12 @@ public class WorkflowController {
         model.addAttribute("allAutoImports", autoImportService == null ? new ArrayList<AutoImportLight>() : autoImportService.listAutoImports(companyId));
         model.addAttribute("allAutoExports", autoExportService == null ? new ArrayList<AutoExport>() : autoExportService.getAutoExportsOverview(admin));
         model.addAttribute("allMailings", workflowService.getAllMailings(admin));
-        model.addAttribute("isEnableTrackingVeto", configService.getBooleanValue(ConfigValue.EnableTrackingVeto, companyId));
-        model.addAttribute("accessLimitTargetId", adminService.getAccessLimitTargetId(admin));
+        addExtendedModelAttrs(admin, model, allTargets);
+    }
+
+    protected void addExtendedModelAttrs(ComAdmin admin, Model model, List<TargetLight> allTargets) {
+        model.addAttribute("accessLimitTargetId", 0);
+        model.addAttribute("isExtendedAltgEnabled", false);
     }
 
     private boolean validateStatusTransition(Workflow.WorkflowStatus currentStatus, Workflow.WorkflowStatus newStatus, List<Message> errors) {
@@ -1226,7 +1242,7 @@ public class WorkflowController {
         return isUpdated;
     }
 
-    private List<Message> validateWorkflow(ComAdmin admin, List<WorkflowIcon> icons, int workflowId, Workflow.WorkflowStatus status) {
+    private List<Message> validateWorkflow(ComAdmin admin, List<WorkflowIcon> icons, int workflowId, Workflow.WorkflowStatus status) throws Exception {
         assert (admin != null);
         List<Message> messages = new ArrayList<>();
 
@@ -1393,7 +1409,7 @@ public class WorkflowController {
         }
     }
 
-    private List<Message> validateMailingTrackingUsage(List<WorkflowIcon> icons, @VelocityCheck int companyId, int trackingDays) {
+    private List<Message> validateMailingTrackingUsage(List<WorkflowIcon> icons, int companyId, int trackingDays) throws Exception {
         List<Message> messages = new ArrayList<>();
 
         // It's possible to show a separate error message for each case (e.g. listing names of affected mailings)
@@ -1439,11 +1455,11 @@ public class WorkflowController {
     }
 
     private Message translateToActionMessage(ComWorkflowValidationService.MailingTrackingUsageError error, int trackingDays) {
-        MailingTypes mailingType = MailingTypes.getByCode(error.getMailingType());
+        MailingType mailingType = error.getMailingType();
         switch (error.getErrorType()) {
             case BASE_MAILING_NOT_FOUND:
             case DECISION_MAILING_INVALID:
-                if (mailingType == MailingTypes.ACTION_BASED || mailingType == MailingTypes.DATE_BASED) {
+                if (mailingType == MailingType.ACTION_BASED || mailingType == MailingType.DATE_BASED) {
                     return Message.of("error.workflow.baseMailingNeedActivated", error.getMailingName());
                 } else {
                     return Message.of("error.workflow.baseMailingNeedsSent", error.getMailingName());

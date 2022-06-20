@@ -5,7 +5,6 @@ import javax.sql.DataSource;
 
 import org.agnitas.emm.core.commons.util.CompanyInfoDao;
 import org.agnitas.emm.core.commons.util.ConfigService;
-import org.apache.log4j.Logger;
 
 import com.agnitas.dao.ComAdminDao;
 import com.agnitas.dao.ComCompanyDao;
@@ -22,9 +21,6 @@ import com.agnitas.emm.core.JavaMailServiceImpl;
  * Open Emm implemntation of BIRTDataSetHelper for {@link BIRTDataSet }
  */
 public class BIRTDataSetHelper {
-    @SuppressWarnings("unused")
-	private static final transient Logger logger = Logger.getLogger(BIRTDataSetHelper.class);
-
     private static BIRTDataSetHelper instance;
     
     private ConfigService configService;

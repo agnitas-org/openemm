@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -33,7 +33,6 @@ import javax.naming.NamingException;
 import javax.sql.DataSource;
 
 import org.agnitas.beans.BindingEntry.UserType;
-import org.agnitas.beans.Mediatype;
 import org.agnitas.dao.MailingStatus;
 import org.agnitas.dao.impl.mapper.StringRowMapper;
 import org.agnitas.emm.core.commons.util.ConfigService;
@@ -41,24 +40,25 @@ import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.mediatypes.dao.MediatypesDaoException;
 import org.agnitas.emm.core.mediatypes.dao.impl.MediatypesDaoImpl;
 import org.agnitas.emm.core.mediatypes.factory.MediatypeFactoryImpl;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.DbUtilities;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
+import com.agnitas.beans.Mediatype;
 import com.agnitas.beans.MediatypeEmail;
+import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.JavaMailService;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import com.agnitas.emm.core.report.enums.fields.MailingTypes;
 import com.agnitas.reporting.birt.external.beans.LightMailingList;
 import com.agnitas.reporting.birt.external.beans.LightTarget;
 import com.agnitas.reporting.birt.external.dao.LightTargetDao;
@@ -67,7 +67,7 @@ import com.agnitas.reporting.birt.external.dao.impl.LightTargetDaoImpl;
 import com.agnitas.util.LongRunningSelectResultCacheDao;
 
 public class BIRTDataSet extends LongRunningSelectResultCacheDao {
-	private static final transient Logger logger = Logger.getLogger(BIRTDataSet.class);
+	private static final transient Logger logger = LogManager.getLogger(BIRTDataSet.class);
 	
 	private static final String TEMPTABLECACHE_TABLENAME = "temp_cache_tbl";
 
@@ -348,7 +348,7 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 		}
 	}
 	
-	protected List<String> getTargetSql(String selectedTargets, @VelocityCheck Integer companyId) {
+	protected List<String> getTargetSql(String selectedTargets, Integer companyId) {
 		List<String> targetSql = new ArrayList<>();
 		try {
 			if (!StringUtils.isEmpty(selectedTargets)) {
@@ -368,7 +368,7 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 		return targetSql;
 	}
 	
-	protected List<LightTarget> getTargets(String selectedTargets, @VelocityCheck Integer companyID) {
+	protected List<LightTarget> getTargets(String selectedTargets, Integer companyID) {
 		try {
 			if (StringUtils.isNotEmpty(selectedTargets)) {
 				LightTargetDao lightTargetDao = new LightTargetDaoImpl();
@@ -382,7 +382,7 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 		return new ArrayList<>();
 	}
 	
-	protected List<LightTarget> getTargets(List<String> selectedTargets, @VelocityCheck Integer companyID) {
+	protected List<LightTarget> getTargets(List<String> selectedTargets, Integer companyID) {
 		try {
 			if (selectedTargets != null && !selectedTargets.isEmpty()) {
 				LightTargetDao lightTargetDao = new LightTargetDaoImpl();
@@ -396,7 +396,7 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 		return new ArrayList<>();
 	}
 	
-	protected LightTarget getTarget(int targetID, @VelocityCheck int companyID) {
+	protected LightTarget getTarget(int targetID, int companyID) {
 		try {
 			LightTargetDao lightTargetDao = new LightTargetDaoImpl();
 			((LightTargetDaoImpl) lightTargetDao).setDataSource(getDataSource());
@@ -408,7 +408,7 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 		return null;
 	}
 	
-	protected String getMailinglistName(@VelocityCheck int companyId, int mailinglistId) {
+	protected String getMailinglistName(int companyId, int mailinglistId) {
 	   try {
            LightMailingList mailingList = new LightMailingListDaoImpl(getDataSource()).getMailingList(mailinglistId, companyId);
            return mailingList != null ? mailingList.getShortname() : "";
@@ -419,7 +419,7 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 		return "";
     }
     
-    protected String getMailingSubject(@VelocityCheck int companyId, int mailingId) {
+    protected String getMailingSubject(int companyId, int mailingId) {
 		try {
 			MediatypesDaoImpl mediatypesDao = new MediatypesDaoImpl();
 			mediatypesDao.setDataSource(getDataSource());
@@ -437,7 +437,7 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 		return "";
 	}
 	
-	protected String getTargetSqlString(String selectedTargets, @VelocityCheck Integer companyId) {
+	protected String getTargetSqlString(String selectedTargets, Integer companyId) {
 		List<String> sqlList = getTargetSql(selectedTargets, companyId);
 		if (CollectionUtils.isNotEmpty(sqlList)) {
 			return sqlList.stream()
@@ -474,7 +474,7 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 	public void resetTempDatabase() {
 		try {
 			logger.info("Resetting temporary database (derby)");
-			List<String> existingTables = selectEmbedded(logger, "SELECT t.tablename FROM sys.systables t, sys.sysschemas s WHERE t.schemaid = s.schemaid AND t.tabletype = 'T'", new StringRowMapper());
+			List<String> existingTables = selectEmbedded(logger, "SELECT t.tablename FROM sys.systables t, sys.sysschemas s WHERE t.schemaid = s.schemaid AND t.tabletype = 'T'", StringRowMapper.INSTANCE);
 			for (String existingTable : existingTables) {
 				executeEmbedded(logger, "DROP TABLE " + existingTable);
 			}
@@ -490,18 +490,18 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 		}
 	}
 	
-	public boolean isMailingTrackingActivated(@VelocityCheck int companyID) {
+	public boolean isMailingTrackingActivated(int companyID) {
 		String query = "SELECT COALESCE(mailtracking, 0) FROM company_tbl WHERE company_id = ?";
 		return select(logger, query, Integer.class, companyID) != 0;
 	}
 	
-	public boolean isMailingTrackingDataAvailable(int mailingID, @VelocityCheck int companyID) {
+	public boolean isMailingTrackingDataAvailable(int mailingID, int companyID) throws Exception {
 		return isMailingTrackingActivated(companyID) && isTrackingExists(mailingID, companyID);
 	}
 	
-	public boolean isTrackingExists(int mailingID, @VelocityCheck int companyID) {
+	public boolean isTrackingExists(int mailingID, int companyID) throws Exception {
 		StringBuilder queryBuilder = new StringBuilder();
-		if (getMailingType(mailingID) == MailingTypes.INTERVAL.getCode()) {
+		if (getMailingType(mailingID) == MailingType.INTERVAL) {
 			queryBuilder
 					.append("SELECT COUNT(*)")
 					.append(" FROM interval_track_").append(companyID).append("_tbl mt")
@@ -515,7 +515,7 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 		return select(logger, queryBuilder.toString(), Integer.class, mailingID) > 0;
 	}
 	
-	public boolean isTrackingExistsOfOptimizationMailings(int optimizationId, @VelocityCheck int companyID) {
+	public boolean isTrackingExistsOfOptimizationMailings(int optimizationId, int companyID) throws Exception {
 		List<Integer> mailings = getAutoOptimizationMailings(optimizationId, companyID).stream().filter(id -> id != 0).collect(Collectors.toList());
 		for (int mailingId: mailings) {
 			if (!isTrackingExists(mailingId, companyID)) {
@@ -525,12 +525,12 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 		return !CollectionUtils.isEmpty(mailings);
 	}
 	
-	public boolean isMailingBouncesExpire(@VelocityCheck int companyId, int mailingId) {
+	public boolean isMailingBouncesExpire(int companyId, int mailingId) {
 		Map<Integer, Boolean> expireMap = getMailingBouncesExpire(companyId, String.valueOf(mailingId));
 		return expireMap.get(mailingId);
 	}
 	
-	public Map<Integer, Boolean> getMailingBouncesExpire(@VelocityCheck int companyId, String mailingIds) {
+	public Map<Integer, Boolean> getMailingBouncesExpire(int companyId, String mailingIds) {
 		HashMap<Integer, Boolean> expireMap = new HashMap<>();
 		int bounceExpire =  getConfigService().getIntegerValue(ConfigValue.ExpireBounce, companyId);
 
@@ -592,7 +592,7 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
         return selectInt(logger, query, optimizationID, companyID);
     }
     
-    protected List<LightMailingList> getMailingLists(List<Integer> mailingListIds, @VelocityCheck Integer companyID) {
+    protected List<LightMailingList> getMailingLists(List<Integer> mailingListIds, Integer companyID) {
     	if (mailingListIds != null && mailingListIds.size() > 0) {
 			return new LightMailingListDaoImpl(getDataSource()).getMailingLists(mailingListIds, companyID);
         } else {
@@ -605,7 +605,7 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
         try {
             if (StringUtils.isNotEmpty(stringOfIds)) {
                 for (String id : stringOfIds.split(",")) {
-                    ids.add(new Integer(id.trim()));
+                    ids.add(Integer.valueOf(id.trim()));
                 }
             }
         } catch (Exception e) {
@@ -614,15 +614,15 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
         return ids;
     }
 	
-    protected int getMailingType(int mailingId) {
+    protected MailingType getMailingType(int mailingId) throws Exception {
     	if (mailingId <= 0) {
     		throw new RuntimeException("Invalid mailing id");
     	} else {
-    		return select(logger, "SELECT mailing_type FROM mailing_tbl WHERE mailing_id = ?", Integer.class, mailingId);
+    		return MailingType.fromCode(select(logger, "SELECT mailing_type FROM mailing_tbl WHERE mailing_id = ?", Integer.class, mailingId));
     	}
     }
 	
-    protected int getNumberSentMailings(@VelocityCheck int companyID, int mailingID, String recipientsType, String targetSql, String startDateString, String endDateString) throws Exception {
+    protected int getNumberSentMailings(int companyID, int mailingID, String recipientsType, String targetSql, String startDateString, String endDateString) throws Exception {
     	Date startDate = null;
     	Date endDate = null;
         if (StringUtils.isNotBlank(startDateString) && StringUtils.isNotBlank(endDateString)) {
@@ -630,8 +630,8 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
         	endDate = parseStatisticEndDate(endDateString);
 		}
         
-        int mailingType = getMailingType(mailingID);
-        if (mailingType == MailingTypes.INTERVAL.getCode()) {
+        MailingType mailingType = getMailingType(mailingID);
+        if (mailingType == MailingType.INTERVAL) {
             StringBuilder queryBuilder = new StringBuilder("SELECT COUNT(*) FROM");
     		List<Object> parameters = new ArrayList<>();
             
@@ -667,7 +667,7 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
         		}
              
             	queryBuilder.append(" mailtrack_").append(companyID).append("_tbl track");
-            	queryBuilder.append(" WHERE track.mailing_id = ?");
+            	queryBuilder.append(" WHERE track.mailing_id = ? AND track.maildrop_status_id <> 0");
         		parameters.add(mailingID);
 
             	if (startDate != null && endDate != null) {
@@ -692,12 +692,12 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
             		List<Object> parametersMailingAccount = new ArrayList<>();
             		parametersMailingAccount.add(mailingID);
                     
-                    if (mailingType == MailingTypes.INTERVAL.getCode()) {
+                    if (mailingType == MailingType.INTERVAL) {
                     	queryBuilderMailingAccount.append(" AND status_field = 'D'");
                     } else if (CommonKeys.TYPE_ADMIN_AND_TEST.equals(recipientsType)) {
                     	queryBuilderMailingAccount.append(" AND status_field IN ('A', 'T')");
                     } else {
-                    	queryBuilderMailingAccount.append(" AND status_field NOT IN ('A', 'T')");
+                    	queryBuilderMailingAccount.append(" AND status_field NOT IN ('A', 'T', 'V')");
                     }
 
                 	if (startDate != null && endDate != null) {
@@ -716,12 +716,12 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
         		List<Object> parameters = new ArrayList<>();
         		parameters.add(mailingID);
                 
-                if (mailingType == MailingTypes.INTERVAL.getCode()) {
+                if (mailingType == MailingType.INTERVAL) {
                     queryBuilder.append(" AND status_field = 'D'");
                 } else if (CommonKeys.TYPE_ADMIN_AND_TEST.equals(recipientsType)) {
                     queryBuilder.append(" AND status_field IN ('A', 'T')");
                 } else {
-            		queryBuilder.append(" AND status_field NOT IN ('A', 'T')");
+            		queryBuilder.append(" AND status_field NOT IN ('A', 'T', 'V')");
                 }
 
             	if (startDate != null && endDate != null) {
@@ -750,7 +750,7 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 		}
 	}
 	
-	protected int selectNumberOfDeliveredMails(@VelocityCheck int companyID, int mailingID, String recipientsType, String targetSql, String startDateString, String endDateString) throws Exception {
+	protected int selectNumberOfDeliveredMails(int companyID, int mailingID, String recipientsType, String targetSql, String startDateString, String endDateString) throws Exception {
     	// Do not count by "distinct customer_id", because event based mailings (birthday mailings etc.) might be delivered multiple times
         StringBuilder queryBuilder = new StringBuilder("SELECT COUNT(s.customer_id) AS counter FROM success_" + companyID + "_tbl s");
 		List<Object> parameters = new ArrayList<>();
@@ -774,9 +774,9 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 		}
 
 		if (CommonKeys.TYPE_WORLDMAILING.equals(recipientsType)) {
-			queryBuilder.append(" AND EXISTS (SELECT 1 FROM customer_" + companyID + "_binding_tbl bind WHERE bind.user_type IN ('" + UserType.World.getTypeCode() + "', '" + UserType.WorldVIP.getTypeCode() + "') AND bind.mailinglist_id = (SELECT mtbl.mailinglist_id FROM mailing_tbl mtbl WHERE mtbl.mailing_id = s.mailing_id) AND bind.customer_id = b.customer_id)");
+			queryBuilder.append(" AND EXISTS (SELECT 1 FROM customer_" + companyID + "_binding_tbl bind WHERE bind.user_type IN ('" + UserType.World.getTypeCode() + "', '" + UserType.WorldVIP.getTypeCode() + "') AND bind.mailinglist_id IN (SELECT mtbl.mailinglist_id FROM mailing_tbl mtbl WHERE mtbl.mailing_id = s.mailing_id) AND bind.customer_id = s.customer_id)");
         } else if(CommonKeys.TYPE_ADMIN_AND_TEST.equals(recipientsType)) {
-        	queryBuilder.append(" AND EXISTS (SELECT 1 FROM customer_" + companyID + "_binding_tbl bind WHERE bind.user_type IN ('" + UserType.Admin.getTypeCode() + "', '" + UserType.TestUser.getTypeCode() + "', '" + UserType.TestVIP.getTypeCode() + "') AND bind.mailinglist_id = (SELECT mtbl.mailinglist_id FROM mailing_tbl mtbl WHERE mtbl.mailing_id = s.mailing_id) AND bind.customer_id = b.customer_id)");
+        	queryBuilder.append(" AND EXISTS (SELECT 1 FROM customer_" + companyID + "_binding_tbl bind WHERE bind.user_type IN ('" + UserType.Admin.getTypeCode() + "', '" + UserType.TestUser.getTypeCode() + "', '" + UserType.TestVIP.getTypeCode() + "') AND bind.mailinglist_id IN (SELECT mtbl.mailinglist_id FROM mailing_tbl mtbl WHERE mtbl.mailing_id = s.mailing_id) AND bind.customer_id = s.customer_id)");
         }
 
 		List<Map<String, Object>> result = selectLongRunning(logger, queryBuilder.toString(), parameters.toArray(new Object[0]));
@@ -796,11 +796,11 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
         return reportName;
     }
     
-    public boolean successTableActivated(@VelocityCheck int companyId) {
+    public boolean successTableActivated(int companyId) {
     	return select(logger, "SELECT COALESCE(mailtracking, 0) FROM company_tbl WHERE company_id = ?", Integer.class, companyId) != 0;
     }
 
-    public boolean hasSuccessTableData(@VelocityCheck int companyID, int mailingID) {
+    public boolean hasSuccessTableData(int companyID, int mailingID) {
     	return select(logger, "SELECT COUNT(*) FROM success_" + companyID + "_tbl WHERE mailing_id = ?", Integer.class, mailingID) > 0;
 	}
 	
@@ -993,7 +993,7 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 		}
 	}
     
-	public boolean isMailTrackingExpired(@VelocityCheck int companyID, int mailingID) {
+	public boolean isMailTrackingExpired(int companyID, int mailingID) {
         int periodicallySendEntries = selectInt(logger, "SELECT COUNT(mst.mailing_id) AS count FROM maildrop_status_tbl mst JOIN mailing_tbl mt ON mst.mailing_id = mt.mailing_id WHERE mst.mailing_id = ? AND mst.status_field IN ('C', 'E', 'R', 'D') AND mt.work_status = '" + MailingStatus.ACTIVE.getDbKey() + "' AND mst.senddate < CURRENT_TIMESTAMP", mailingID);
         if (periodicallySendEntries > 0) {
         	return false;

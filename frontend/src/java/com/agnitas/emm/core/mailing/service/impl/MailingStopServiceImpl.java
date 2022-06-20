@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -15,21 +15,26 @@ import java.util.List;
 import java.util.Objects;
 
 import org.agnitas.dao.MailingStatus;
+import org.agnitas.emm.company.service.CompanyService;
 import org.agnitas.emm.core.commons.util.CompanyInfoDao;
 import org.agnitas.emm.core.mailing.beans.LightweightMailing;
 import org.agnitas.emm.core.mailing.service.CopyMailingService;
 import org.agnitas.emm.core.mailing.service.MailingModel;
 import org.agnitas.util.AgnUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Company;
 import com.agnitas.emm.core.maildrop.MaildropStatus;
 import com.agnitas.emm.core.maildrop.service.MaildropService;
 import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.emm.core.mailing.service.MailingStopService;
 import com.agnitas.emm.core.mailing.service.MailingStopServiceException;
+import com.agnitas.emm.core.mailing.service.MailtrackingNotEnabledException;
 import com.agnitas.emm.core.serverprio.server.ServerPrioService;
+import com.agnitas.emm.core.servicemail.UnknownCompanyIdException;
 import com.agnitas.emm.core.target.eql.EqlFacade;
 import com.agnitas.emm.core.target.eql.codegen.CodeGenerationFlags;
 import com.agnitas.emm.core.target.eql.codegen.CodeGenerationFlags.Flag;
@@ -41,7 +46,7 @@ import com.agnitas.emm.core.target.eql.codegen.sql.SqlCode;
 public final class MailingStopServiceImpl implements MailingStopService {
 
 	/** The logger. */
-	private static final transient Logger LOGGER = Logger.getLogger(MailingStopServiceImpl.class);
+	private static final transient Logger LOGGER = LogManager.getLogger(MailingStopServiceImpl.class);
 
 	/** Service dealing with mailings. */
 	private MailingService mailingService;
@@ -55,6 +60,7 @@ public final class MailingStopServiceImpl implements MailingStopService {
 	private CopyMailingService copyMailingService;
 	private CompanyInfoDao companyInfoDao;
 	private EqlFacade eqlFacade;
+	private CompanyService companyService;
 	
 	@Override
 	public final boolean isStopped(final int mailingID) {
@@ -118,7 +124,10 @@ public final class MailingStopServiceImpl implements MailingStopService {
 
 	@Override
 	public final int copyMailingForResume(ComAdmin admin, int mailingID) throws MailingStopServiceException {
-		int companyId = admin.getCompanyID();
+		final int companyId = admin.getCompanyID();
+
+		checkMailtrackingEnabled(companyId);
+		
 		try {
 			final LightweightMailing mailing = mailingService.getLightweightMailing(admin.getCompanyID(), mailingID);
 
@@ -226,6 +235,18 @@ public final class MailingStopServiceImpl implements MailingStopService {
 			throw new MailingStopServiceException(msg);
 		}
 	}
+	
+	private final void checkMailtrackingEnabled(final int companyID) throws MailingStopServiceException {
+		try {
+			final Company company = this.companyService.getCompany(companyID);
+
+			if(company.getMailtracking() == 0) {
+				throw new MailtrackingNotEnabledException(companyID);
+			}
+		} catch (final UnknownCompanyIdException e) {
+			throw new MailingStopServiceException(e);
+		}
+	}
 
 	@Required
 	public final void setMailingService(final MailingService service) {
@@ -255,5 +276,10 @@ public final class MailingStopServiceImpl implements MailingStopService {
 	@Required
 	public final void setEqlFacade(final EqlFacade facade) {
 		this.eqlFacade = Objects.requireNonNull(facade, "EQL facade is null");
+	}
+	
+	@Required
+	public final void setCompanyService(final CompanyService service) {
+		this.companyService = Objects.requireNonNull(service, "companyService");
 	}
 }

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -30,10 +30,13 @@ import org.agnitas.emm.core.recipient.service.RecipientNotExistException;
 import org.agnitas.emm.core.recipient.service.impl.ProfileFieldNotExistException;
 import org.agnitas.emm.core.target.service.TargetNotExistException;
 import org.agnitas.emm.springws.exception.DateFormatException;
+import org.agnitas.emm.springws.exception.InvalidFilterSettingsException;
 import org.agnitas.emm.springws.exception.MailingNotEditableException;
+import org.agnitas.emm.springws.exception.MissingKeyColumnOrValueException;
 import org.agnitas.exceptions.FormNotFoundException;
 import org.apache.commons.lang.exception.ExceptionUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.oxm.MarshallingException;
@@ -49,7 +52,7 @@ import com.agnitas.emm.springws.subscriptionrejection.exceptions.SubscriptionRej
 
 public abstract class AbstractEmmExceptionResolver extends AbstractSoapFaultDefinitionExceptionResolver {
 
-	private static final transient Logger classLogger = Logger.getLogger(AbstractEmmExceptionResolver.class);
+	private static final transient Logger classLogger = LogManager.getLogger(AbstractEmmExceptionResolver.class);
 
     protected AbstractEmmExceptionResolver() {
         setOrder(1);
@@ -146,6 +149,10 @@ public abstract class AbstractEmmExceptionResolver extends AbstractSoapFaultDefi
             definition.setFaultStringOrReason("Invalid date format");
         } else if(ex instanceof MailingNotEditableException) {
         	definition.setFaultStringOrReason(ex.getMessage());
+        } else if(ex instanceof InvalidFilterSettingsException) {
+        	definition.setFaultStringOrReason(ex.getMessage());
+        } else if(ex instanceof MissingKeyColumnOrValueException) {
+        	definition.setFaultStringOrReason("Key column or value missing or empty");
         } else {
             definition.setFaultStringOrReason("Unknown error");
         }

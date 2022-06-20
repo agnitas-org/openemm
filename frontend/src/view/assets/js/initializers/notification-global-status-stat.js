@@ -65,15 +65,19 @@
                 type: "POST",
                 url: url,
                 success: function (data) {
-                    var titles = [];
-                    var values = [];
-                    for(key in data) {
-                        titles.push(key);
-                        values.push(data[key]);
-                    }
+                    if (data && data.warning && data.warning.length > 0) {
+                        AGN.Lib.JsonMessages(data, true);
+                    } else {
+                        var titles = [];
+                        var values = [];
+                        for(key in data) {
+                            titles.push(key);
+                            values.push(data[key]);
+                        }
 
-                    c3.generate(GLobalNotificationStatusStatService.data.statusChartData.build(titles, values));
-                    AGN.Lib.CoreInitializer.run('equalizer');
+                        c3.generate(GLobalNotificationStatusStatService.data.statusChartData.build(titles, values));
+                        AGN.Lib.CoreInitializer.run('equalizer');
+                    }
                 }
             });
         }

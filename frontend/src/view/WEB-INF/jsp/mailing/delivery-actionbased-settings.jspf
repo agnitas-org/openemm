@@ -1,0 +1,119 @@
+<div class="form-group">
+    <div class="well block">
+        <logic:equal name="mailingSendForm" property="worldMailingSend" value="true">
+            <bean:message key="mailing.send.active.event" /><br>
+            <c:if test="${not empty mailingSendForm.bounceFilterNames}">
+                <bean:message key="warning.mailing.mailloop.binding" arg0="${mailingSendForm.bounceFilterNames}"/>
+            </c:if>
+
+            <c:if test="${empty mailingSendForm.bounceFilterNames}">
+                <bean:message key="mailing.send.deactivate" />
+            </c:if>
+        </logic:equal>
+
+        <logic:equal name="mailingSendForm" property="worldMailingSend" value="false">
+            <bean:message key="mailing.send.ready" /><br>
+            <bean:message key="mailing.send.activate.event" />
+        </logic:equal>
+    </div>
+</div>
+
+<logic:equal name="mailingSendForm" property="isTemplate" value="false">
+
+    <%-- Deativate buttons--%>
+    <c:set var="canBeDeactivated" value="${false}"/>
+
+    <logic:equal name="mailingSendForm" property="worldMailingSend" value="true">
+        <emm:ShowByPermission token="mailing.send.world">
+            <c:if test="${empty mailingSendForm.bounceFilterNames}">
+                <c:set var="canBeDeactivated" value="${true}"/>
+            </c:if>
+        </emm:ShowByPermission>
+    </logic:equal>
+
+    <c:if test="${canBeDeactivated}">
+        <div class="form-group">
+            <div class="col-sm-4">
+                <label class="control-label">
+                    <bean:message key="MailingDeactivate" />
+                </label>
+            </div>
+
+            <div class="col-sm-8">
+                <c:if test="${not isWorkflowDriven}">
+                    <html:link styleClass="btn btn-regular btn-warning"
+                               page='/mailingsend.do?action=${ACTION_DEACTIVATE_MAILING}&mailingID=${tmpMailingID}'>
+                        <i class="icon icon-ban"></i>
+                        <span class="text"><bean:message key="btndeactivate" /></span>
+                    </html:link>
+                </c:if>
+                <c:if test="${isWorkflowDriven}">
+                    <div class="input-group">
+                        <div class="input-group-btn">
+                            <button class="btn btn-regular btn-warning" disabled='disabled'>
+                                <i class="icon icon-ban"></i>
+                                <span class="text"><bean:message key="btndeactivate" /></span>
+                            </button>
+                            <a href="${WORKFLOW_LINK}" class="btn btn-info btn-regular">
+                                <i class="icon icon-linkage-campaignmanager"></i>
+                                <strong><bean:message key="campaign.manager.icon"/></strong>
+                            </a>
+                        </div>
+                    </div>
+                </c:if>
+            </div>
+
+        </div>
+    </c:if>
+
+    <%-- Activate buttons--%>
+    <logic:equal name="mailingSendForm" property="worldMailingSend" value="false">
+        <emm:ShowByPermission token="mailing.send.world">
+            <c:choose>
+                <c:when test="${not mailingSendForm.hasDeletedTargetGroups}">
+                    <div class="form-group">
+                        <div class="col-sm-4">
+                            <label class="control-label">
+                                <bean:message key="MailingActivate" />
+                            </label>
+                        </div>
+                        <div class="col-sm-8">
+                            <c:if test="${not isWorkflowDriven}">
+                                <html:link styleClass="btn btn-regular btn-primary"
+                                        page="/mailingsend.do?action=${ACTION_ACTIVATE_CAMPAIGN}&to=3&mailingID=${tmpMailingID}">
+                                    <i class="icon icon-check-circle-o"></i>
+                                    <span class="text"><bean:message key="button.Activate" /></span>
+                                </html:link>
+                            </c:if>
+                            <c:if test="${isWorkflowDriven}">
+                                <div class="input-group">
+                                    <div class="input-group-btn">
+                                        <button class="btn btn-regular" disabled='disabled'>
+                                            <i class="icon icon-check-circle-o"></i>
+                                            <span class="text"><bean:message key="button.Activate" /></span>
+                                        </button>
+                                        <a href="${WORKFLOW_LINK}" class="btn btn-info btn-regular">
+                                            <i class="icon icon-linkage-campaignmanager"></i>
+                                            <strong><bean:message key="campaign.manager.icon"/></strong>
+                                        </a>
+                                    </div>
+                                </div>
+                            </c:if>
+                        </div>
+                    </div>
+                </c:when>
+                <c:otherwise>
+                    <%@ include file="fragments/mailing-cannot-activate-message.jspf" %>
+                </c:otherwise>
+            </c:choose>
+        </emm:ShowByPermission>
+    </logic:equal>
+
+    <%@ include file="mailing-send-prioritization.jspf" %>
+    <%@ include file="mailing-send-size.jspf" %>
+
+    <%-- Approve button --%>
+    <%@ include file="fragments/mailing-approve-button.jspf" %>
+</logic:equal>
+
+<%@ include file="fragments/mailing-notification-settings.jspf" %>

@@ -57,10 +57,10 @@
 
                         <div class="l-edition">
                             <div class="l-edition-name">
-                                <span><s:message code="default.EMM"/></span>
+                                <span><mvc:message code="default.EMM"/></span>
                             </div>
                             <div class="l-edition-version">
-                                <span><s:message code="default.version"/></span>
+                                <span><mvc:message code="default.version"/></span>
                             </div>
                         </div>
 
@@ -74,7 +74,7 @@
                     <div class="form-group ${not empty usernameErrorMessage ? 'has-alert has-feedback' : ''}">
                         <div class="col-md-12">
                             <label for="username" class="control-label">
-                                <i class="icon icon-user"></i> <s:message code="logon.username"/>
+                                <i class="icon icon-user"></i> <mvc:message code="logon.username"/>
                             </label>
                         </div>
                         <div class="col-md-12">
@@ -93,7 +93,7 @@
                     <div class="form-group ${not empty passwordErrorMessage ? 'has-alert has-feedback' : ''}">
                         <div class="col-md-12">
                             <label for="password" class="control-label">
-                                <i class="icon icon-key"></i> <s:message code="logon.password"/>
+                                <i class="icon icon-key"></i> <mvc:message code="logon.password"/>
                             </label>
                         </div>
                         <div class="col-md-12">
@@ -108,14 +108,14 @@
                     <div class="form-group l-login-button-group">
                         <div class="col-md-12">
                             <button type="submit" class="btn btn-primary btn-large btn-block" data-controls-group="input-mask">
-                                <s:message code="logon.login"/> <i class="icon icon-angle-right"></i>
+                                <mvc:message code="logon.login"/> <i class="icon icon-angle-right"></i>
                             </button>
                         </div>
                     </div>
                     <div class="form-group l-bottom-links-group">
                         <div class="col-xs-6">
                             <a href="<c:url value="/logon/reset-password.action"/>">
-                                <s:message code="logon.password_reset"/>
+                                <mvc:message code="logon.password_reset"/>
                             </a>
                         </div>
                         <div class="col-xs-6 align-right">
@@ -123,7 +123,15 @@
                             <s:message var="legalNoticeMessage" code="logon.security" arguments="${supportMailAddress}" htmlEscape="true"/>
 
                             <a href="#" data-msg="${legalNoticeTitle}" data-msg-content="${legalNoticeMessage}">
-                                <s:message code="logon.hint"/>
+                                <mvc:message code="logon.hint"/>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="form-group l-bottom-links-group">
+                        <div class="col-xs-6"></div>
+                        <div class="col-xs-6 align-right">
+                            <a href="https://status.agnitas.de" target="_blank">
+                                <mvc:message code="logon.show.status"/>
                             </a>
                         </div>
                     </div>
@@ -132,13 +140,13 @@
                 <div id="notifications-container">
                     <script type="text/javascript" data-message="">
                       <html:messages id="msg" property="org.apache.struts.action.GLOBAL_MESSAGE" message="false">
-                      AGN.Lib.Messages('<s:message code="Error" javaScriptEscape="true"/>', '${emm:escapeJs(msg)}', 'alert');
+                      AGN.Lib.Messages('<mvc:message code="Error" javaScriptEscape="true"/>', '${emm:escapeJs(msg)}', 'alert');
                       </html:messages>
                     </script>
                 </div>
             </mvc:form>
             <div id="logon-copyright">
-                <p><s:message code="default.Copyright"/></p>
+                <p><mvc:message code="default.Copyright"/></p>
             </div>
         </div>
 

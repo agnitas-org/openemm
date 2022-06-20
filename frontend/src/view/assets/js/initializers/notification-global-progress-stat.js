@@ -60,36 +60,40 @@
                     endDay: endDayFromDatePicker
                 },
                 success: function (data) {
-                    for (objIndex in data) {
-                        var jsonItem = data[objIndex];
-                        for (objKey in jsonItem) {
-                            //set row name
-                            if (objIndex == 0 && objKey != 'time') {
-                                if (data1.length == 0) {
-                                    data1.push(objKey);
-                                } else if (data2.length == 0) {
-                                    data2.push(objKey);
-                                } else if (data3.length == 0) {
-                                    data3.push(objKey);
+                    if (data && data.warning && data.warning.length > 0) {
+                        AGN.Lib.JsonMessages(data, true);
+                    } else {
+                        for (objIndex in data) {
+                            var jsonItem = data[objIndex];
+                            for (objKey in jsonItem) {
+                                //set row name
+                                if (objIndex == 0 && objKey != 'time') {
+                                    if (data1.length == 0) {
+                                        data1.push(objKey);
+                                    } else if (data2.length == 0) {
+                                        data2.push(objKey);
+                                    } else if (data3.length == 0) {
+                                        data3.push(objKey);
+                                    }
+                                }
+
+                                //set row value
+                                var value = jsonItem[objKey];
+                                if (objKey == 'time') {
+                                    time.push(value);
+                                } else if (objKey == data1[0]) {
+                                    data1.push(value);
+                                } else if (objKey == data2[0]) {
+                                    data2.push(value);
+                                } else if (objKey == data3[0]) {
+                                    data3.push(value);
                                 }
                             }
-
-                            //set row value
-                            var value = jsonItem[objKey];
-                            if (objKey == 'time') {
-                                time.push(value);
-                            } else if (objKey == data1[0]) {
-                                data1.push(value);
-                            } else if (objKey == data2[0]) {
-                                data2.push(value);
-                            } else if (objKey == data3[0]) {
-                                data3.push(value);
-                            }
                         }
-                    }
 
-                    c3.generate(GLobalNotificationProgressStatService.data.globalProgressChartData.build(time, data1, data2, data3));
-                    AGN.Lib.CoreInitializer.run('equalizer');
+                        c3.generate(GLobalNotificationProgressStatService.data.globalProgressChartData.build(time, data1, data2, data3));
+                        AGN.Lib.CoreInitializer.run('equalizer');
+                    }
                 }
             });
 

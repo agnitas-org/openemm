@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -13,16 +13,17 @@ package org.agnitas.emm.springws.endpoint.mailing;
 import java.util.Collection;
 import java.util.List;
 
-import com.agnitas.beans.Mailing;
 import org.agnitas.emm.core.mailing.service.MailingModel;
 import org.agnitas.emm.core.mailing.service.MailingModel.Format;
 import org.agnitas.emm.springws.jaxb.Template;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
+import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MediatypeEmail;
 
 public class MailingResponseBuilder {
-	private static final transient Logger logger = Logger.getLogger(MailingResponseBuilder.class);
+	private static final transient Logger logger = LogManager.getLogger(MailingResponseBuilder.class);
 
 	public org.agnitas.emm.springws.jaxb.Mailing createResponse(Mailing mailing) {
 		org.agnitas.emm.springws.jaxb.Mailing responseMailing = new org.agnitas.emm.springws.jaxb.Mailing();
@@ -40,7 +41,7 @@ public class MailingResponseBuilder {
 			responseMailing.setTargetIDList(targetIDList);
 		}
 		try {
-			responseMailing.setMailingType(MailingModel.getMailingType(mailing.getMailingType()).getName());
+			responseMailing.setMailingType(mailing.getMailingType().getWebserviceCode());
 		} catch (RuntimeException e) {
 			responseMailing.setMailingType("Unknown");
 		}
@@ -88,7 +89,7 @@ public class MailingResponseBuilder {
 			responseTemplate.setTargetIDList(targetIDList);
 		}
 		try {
-			responseTemplate.setMailingType(MailingModel.getMailingType(mailing.getMailingType()).getName());
+			responseTemplate.setMailingType(mailing.getMailingType().getWebserviceCode());
 		} catch (RuntimeException e) {
 			responseTemplate.setMailingType("Unknown");
 		}

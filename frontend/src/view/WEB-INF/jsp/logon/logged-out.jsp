@@ -3,6 +3,7 @@
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib prefix="s" uri="http://www.springframework.org/tags" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
 <%--@elvariable id="supportMailAddress" type="java.lang.String"--%>
 <%--@elvariable id="layoutdir" type="java.lang.String"--%>
@@ -39,10 +40,10 @@
                     <img class="logo-image" src="${agnitasEmmLogoSvgSrc}" onerror="this.onerror=null; this.src='${agnitasEmmLogoPngSrc}'" alt="Logo">
 
                     <p class="headline">
-                        <s:message code="default.EMM"/>
+                        <mvc:message code="default.EMM"/>
                     </p>
                     <p class="version">
-                        <s:message code="default.version"/>
+                        <mvc:message code="default.version"/>
                     </p>
                 </div>
                 <div class="edition-logo">
@@ -51,15 +52,15 @@
             </div>
             <div class="system-tile-content">
                 <div class="form-group">
-                    <s:message code="logout.successful"/>
+                    <mvc:message code="logout.successful"/>
                 </div>
                 <div class="form-group">
                     <a href="${logonPageLink}">
-                        <s:message code="logout.relogin"/>
+                        <mvc:message code="logout.relogin"/>
                     </a>
                 </div>
                 <div class="form-group">
-                    <s:message code="logon.security" arguments="${supportMailAddress}"/>
+                    <mvc:message code="logon.security" arguments="${supportMailAddress}"/>
                 </div>
             </div>
         </div>

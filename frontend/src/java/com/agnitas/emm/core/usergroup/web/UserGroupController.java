@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -12,6 +12,7 @@ package com.agnitas.emm.core.usergroup.web;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -30,7 +31,8 @@ import org.agnitas.web.forms.PaginationForm;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.dao.PermissionDeniedDataAccessException;
 import org.springframework.stereotype.Controller;
@@ -42,7 +44,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import com.agnitas.beans.ComAdmin;
+import com.agnitas.dao.PermissionDao;
 import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.PermissionInfo;
 import com.agnitas.emm.core.admin.web.PermissionsOverviewData;
 import com.agnitas.emm.core.usergroup.dto.UserGroupDto;
 import com.agnitas.emm.core.usergroup.form.UserGroupForm;
@@ -57,28 +61,28 @@ import com.agnitas.web.perm.annotations.PermissionMapping;
 @PermissionMapping("user.group")
 public class UserGroupController implements XssCheckAware {
 
-    private static final Logger logger = Logger.getLogger(UserGroupController.class);
+    private static final Logger logger = LogManager.getLogger(UserGroupController.class);
 
     public static final int ROOT_ADMIN_ID = PermissionsOverviewData.ROOT_ADMIN_ID;
+    public static final int ROOT_COMPANY_ID = 1;
 
     public static final int NEW_USER_GROUP_ID = -1;
 
-    private UserGroupService userGroupService;
-
-    private WebStorage webStorage;
-
-    private ConfigService configService;
-
-    private UserActivityLogService userActivityLogService;
-
-    private ConversionService conversionService;
+    private final UserGroupService userGroupService;
+    private final WebStorage webStorage;
+    private final ConfigService configService;
+    private final UserActivityLogService userActivityLogService;
+    private final ConversionService conversionService;
+    private final PermissionDao permissionDao;
     
-    public UserGroupController(UserGroupService userGroupService, WebStorage webStorage, ConfigService configService, UserActivityLogService userActivityLogService, ConversionService conversionService) {
+    public UserGroupController(UserGroupService userGroupService, WebStorage webStorage, ConfigService configService, UserActivityLogService userActivityLogService,
+                               ConversionService conversionService, PermissionDao permissionDao) {
         this.userGroupService = userGroupService;
         this.webStorage = webStorage;
         this.configService = configService;
         this.userActivityLogService = userActivityLogService;
         this.conversionService = conversionService;
+        this.permissionDao = permissionDao;
     }
     
     @RequestMapping("/list.action")
@@ -97,7 +101,6 @@ public class UserGroupController implements XssCheckAware {
 		}
 
 		model.addAttribute("userGroupList", userGroupList);
-		model.addAttribute("currentCompanyId", admin.getCompanyID());
 
         return "settings_usergroup_list";
     }
@@ -127,7 +130,6 @@ public class UserGroupController implements XssCheckAware {
         userActivityLogService.writeUserActivityLog(admin, "admin group view", getDescription(form), logger);
 
         model.addAttribute("userGroupForm", form);
-        model.addAttribute("currentCompanyId", admin.getCompanyID());
         int groupIdToEdit = form.getId();
         model.addAttribute("availableAdminGroups", userGroupService.getAdminGroupsByCompanyIdAndDefault(admin.getCompanyID(), adminGroup).stream().filter(group -> group.getGroupID() != groupIdToEdit).collect(Collectors.toList()));
         loadPermissionsSettings(admin, form.getId(), form.getCompanyId(), model);
@@ -199,7 +201,7 @@ public class UserGroupController implements XssCheckAware {
     public String confirmDelete(ComAdmin admin, @PathVariable("id") int userGroupId, Model model, Popups popups) {
         UserGroupDto userGroup = userGroupService.getUserGroup(admin, userGroupId);
         boolean hasError = false;
-        if(userGroup != null && userGroup.getUserGroupId() > NEW_USER_GROUP_ID) {
+        if (userGroup != null && userGroup.getUserGroupId() > NEW_USER_GROUP_ID) {
             model.addAttribute("userGroupForm", conversionService.convert(userGroup, UserGroupForm.class));
         } else {
             popups.alert("Error");
@@ -214,8 +216,10 @@ public class UserGroupController implements XssCheckAware {
     @PostMapping("/delete.action")
     public String delete(ComAdmin admin, UserGroupForm form, Popups popups) {
         int userGroupId = form.getId();
+
         List<String> adminNames = userGroupService.getAdminNamesOfGroup(userGroupId, admin.getCompanyID());
         List<String> groupNames = userGroupService.getGroupNamesUsingGroup(userGroupId, admin.getCompanyID());
+
         if(!adminNames.isEmpty()) {
             String adminNamesString = StringUtils.abbreviate(StringUtils.join(adminNames, ", "), 64);
             popups.alert("error.group.delete.hasAdmins", adminNamesString);
@@ -245,7 +249,7 @@ public class UserGroupController implements XssCheckAware {
             popups.alert("Error");
             return "redirect:/administration/usergroup/" + id + "/view.action";
         }
-        userActivityLogService.writeUserActivityLog(admin, "copied user group", 
+        userActivityLogService.writeUserActivityLog(admin, "copied user group",
                 String.format("User group ID = %d - copied from ID = %d)", copiedGroupId, id));
         return "redirect:/administration/usergroup/" + copiedGroupId + "/view.action";
     }
@@ -273,7 +277,7 @@ public class UserGroupController implements XssCheckAware {
             return false;
         }
 
-        if(!userGroupService.isShortnameUnique(shortname, userGroupId, form.getCompanyId())) {
+        if (!userGroupService.isShortnameUnique(shortname, userGroupId, form.getCompanyId())) {
             popups.field("shortname", "error.usergroup.duplicate");
             return false;
         }
@@ -327,9 +331,10 @@ public class UserGroupController implements XssCheckAware {
             return userActions;
         }
        
+        LinkedHashMap<String, PermissionInfo> permissionInfos = permissionDao.getPermissionInfos();
         for (String category : permissionCategories) {
             List<String> permissionsForCategory = Permission.getAllSystemPermissions().stream()
-                    .filter(permission -> StringUtils.equals(permission.getCategory(), category))
+                    .filter(permission -> StringUtils.equals(permissionInfos.get(permission.getTokenString()).getCategory(), category))
                     .filter(Permission::isVisible)
                     .map(Permission::getTokenString)
                     .filter(changedPermissions::contains)

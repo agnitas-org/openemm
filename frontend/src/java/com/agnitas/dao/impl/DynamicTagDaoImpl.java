@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -29,10 +29,10 @@ import org.agnitas.beans.DynamicTagContent;
 import org.agnitas.dao.DynamicTagContentDao;
 import org.agnitas.dao.impl.BaseDaoImpl;
 import org.agnitas.dao.impl.mapper.StringRowMapper;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.jdbc.core.RowMapper;
@@ -46,7 +46,9 @@ import com.agnitas.dao.impl.ComMailingDaoImpl.DynamicTagContentRowMapper;
 import com.agnitas.dao.impl.ComMailingDaoImpl.DynamicTagRowMapper;
 
 public class DynamicTagDaoImpl extends BaseDaoImpl implements DynamicTagDao {
-	private static final transient Logger logger = Logger.getLogger(DynamicTagDaoImpl.class);
+	
+	/** The logger. */
+	private static final transient Logger logger = LogManager.getLogger(DynamicTagDaoImpl.class);
 	
 	private DynamicTagContentDao dynamicTagContentDao;
 
@@ -56,7 +58,7 @@ public class DynamicTagDaoImpl extends BaseDaoImpl implements DynamicTagDao {
 	}
 	
 	@Override
-	public List<DynamicTag> getNameList(@VelocityCheck int companyId, int mailingId) {
+	public List<DynamicTag> getNameList(int companyId, int mailingId) {
 		return select(logger, "SELECT company_id, dyn_name_id, dyn_name FROM dyn_name_tbl WHERE mailing_id = ? AND company_id = ? AND deleted = 0", new DynamicTag_RowMapper(), mailingId,
 				companyId);
 	}
@@ -125,7 +127,7 @@ public class DynamicTagDaoImpl extends BaseDaoImpl implements DynamicTagDao {
 	}
 	
 	@Override
-	public boolean deleteDynamicTagsByCompany(@VelocityCheck int companyID) {
+	public boolean deleteDynamicTagsByCompany(int companyID) {
 		try {
 			update(logger, "DELETE FROM dyn_content_tbl WHERE company_id = ?", companyID);
 			update(logger, "DELETE FROM dyn_name_tbl WHERE company_id = ?", companyID);
@@ -137,12 +139,12 @@ public class DynamicTagDaoImpl extends BaseDaoImpl implements DynamicTagDao {
 	}
 
 	@Override
-	public String getDynamicTagInterestGroup(@VelocityCheck int companyId, int mailingId, int dynTagId) {
+	public String getDynamicTagInterestGroup(int companyId, int mailingId, int dynTagId) {
 		return select(logger, "SELECT interest_group FROM dyn_name_tbl WHERE mailing_id = ? AND company_id = ? AND dyn_name_id = ?", String.class, mailingId, companyId, dynTagId);
 	}
 
 	@Override
-	public int getId(@VelocityCheck int companyId, int mailingId, String dynTagName) {
+	public int getId(int companyId, int mailingId, String dynTagName) {
 		String sqlGetId = "SELECT dyn_name_id FROM dyn_name_tbl WHERE company_id = ? AND mailing_id = ? AND dyn_name = ?";
 		return selectInt(logger, sqlGetId, companyId, mailingId, dynTagName);
 	}
@@ -156,7 +158,7 @@ public class DynamicTagDaoImpl extends BaseDaoImpl implements DynamicTagDao {
 			sqlGetDynName += " LIMIT 1";
 		}
 		
-		List<String> nameResults = select(logger, sqlGetDynName, new StringRowMapper(), companyId, mailingId, dynTagId);
+		List<String> nameResults = select(logger, sqlGetDynName, StringRowMapper.INSTANCE, companyId, mailingId, dynTagId);
 		
 		if (nameResults.size() > 0) {
 			return nameResults.get(0);
@@ -192,7 +194,7 @@ public class DynamicTagDaoImpl extends BaseDaoImpl implements DynamicTagDao {
 	}
 
     @Override
-    public DynamicTag getDynamicTag(int dynNameId, @VelocityCheck int companyId) {
+    public DynamicTag getDynamicTag(int dynNameId, int companyId) {
         final String sqlGetTags = "SELECT company_id, mailing_id, dyn_name_id, dyn_name, dyn_group, interest_group, no_link_extension " +
                 "FROM dyn_name_tbl " +
                 "WHERE company_id = ? AND dyn_name_id = ? AND deleted = 0";
@@ -214,7 +216,7 @@ public class DynamicTagDaoImpl extends BaseDaoImpl implements DynamicTagDao {
     }
 
     @Override
-    public List<DynamicTag> getDynamicTags(final int mailingId, @VelocityCheck final int companyId, final boolean includeDeletedDynTags) {
+    public List<DynamicTag> getDynamicTags(final int mailingId, final int companyId, final boolean includeDeletedDynTags) {
         final String sqlGetTags = "SELECT company_id, mailing_id, dyn_name_id, dyn_name, dyn_group, interest_group, no_link_extension " +
                 "FROM dyn_name_tbl " +
                 "WHERE company_id = ? AND mailing_id = ? AND (deleted = 0 OR 1 = ?) " +
@@ -254,7 +256,7 @@ public class DynamicTagDaoImpl extends BaseDaoImpl implements DynamicTagDao {
         update(logger, "DELETE FROM dyn_content_tbl WHERE dyn_name_id IN (SELECT dyn_name_id FROM dyn_name_tbl WHERE mailing_id = ?)", mailingId);
         update(logger, "DELETE FROM dyn_name_tbl WHERE mailing_id = ?", mailingId);
     }
-
+    
     /**
      * Deletes all dyn content by dyn tag name
 	 * @param mailingId
@@ -292,9 +294,17 @@ public class DynamicTagDaoImpl extends BaseDaoImpl implements DynamicTagDao {
 
     @Override
     public void updateDynamicTags(int companyID, int mailingID, String encodingCharset, List<DynamicTag> dynamicTags) throws Exception {
+    	updateDynamicTags(companyID, mailingID, encodingCharset, dynamicTags, false);
+    }
+    
+    private void updateDynamicTags(int companyID, int mailingID, String encodingCharset, List<DynamicTag> dynamicTags, final boolean removeUnusedContent) throws Exception {
         if (CollectionUtils.isEmpty(dynamicTags)) {
             return;
         } else {
+        	for (DynamicTag tag : dynamicTags) {
+        		validateDynName(tag.getDynName());
+        	}
+        	
             List<Object[]> parameterList = dynamicTags.stream().map(tag -> new Object[]{
                     tag.getDynName(),
                     tag.getGroup(),
@@ -304,17 +314,23 @@ public class DynamicTagDaoImpl extends BaseDaoImpl implements DynamicTagDao {
                     companyID,
                     tag.getId()
             }).collect(Collectors.toList());
-
+            
             final String updateSql = "UPDATE dyn_name_tbl SET change_date = current_timestamp, dyn_name = ?, dyn_group = ?, interest_group = ?, deleted = 0, no_link_extension = ? WHERE mailing_id = ? AND company_id = ? AND dyn_name_id = ?";
             batchupdate(logger, updateSql, parameterList);
 
-            dynamicTagContentDao.saveDynamicTagContent(companyID, mailingID, encodingCharset, dynamicTags);
+            dynamicTagContentDao.saveDynamicTagContent(companyID, mailingID, encodingCharset, dynamicTags, removeUnusedContent);
         }
     }
 
 	@Override
     @DaoUpdateReturnValueCheck
     public void saveDynamicTags(final Mailing mailing, final Map<String, DynamicTag> dynTags) throws Exception {
+		saveDynamicTags(mailing, dynTags, false);
+	}		
+
+	@Override
+    @DaoUpdateReturnValueCheck
+    public void saveDynamicTags(final Mailing mailing, final Map<String, DynamicTag> dynTags, final boolean removeUnusedContent) throws Exception {
         int companyId = mailing.getCompanyID();
         int mailingId = mailing.getId();
 
@@ -363,7 +379,7 @@ public class DynamicTagDaoImpl extends BaseDaoImpl implements DynamicTagDao {
         }
         
         createDynamicTags(companyId, mailingId, mailingCharset, dynTagsForCreation);
-        updateDynamicTags(companyId, mailingId, mailingCharset, dynTagsForUpdate);
+        updateDynamicTags(companyId, mailingId, mailingCharset, dynTagsForUpdate, removeUnusedContent);
     }
 
 	@Override
@@ -371,6 +387,10 @@ public class DynamicTagDaoImpl extends BaseDaoImpl implements DynamicTagDao {
         if (CollectionUtils.isEmpty(dynamicTags)) {
             return;
         } else {
+        	for (DynamicTag tag : dynamicTags) {
+        		validateDynName(tag.getDynName());
+        	}
+        	
             if (isOracleDB()) {
                 dynamicTags.forEach(tag -> tag.setId(selectInt(logger, "SELECT dyn_name_tbl_seq.NEXTVAL FROM DUAL")));
 
@@ -428,4 +448,10 @@ public class DynamicTagDaoImpl extends BaseDaoImpl implements DynamicTagDao {
 
         return oldIds.stream().filter(oldId -> !newIds.contains(oldId)).collect(Collectors.toList());
     }
+    
+	private void validateDynName(String dynName) {
+		if (dynName != null && dynName.length() > 100) {
+			throw new RuntimeException("Value for dyn_name_tbl.dyn_name is to long (Maximum: 100, Current: " + dynName.length() + ")");
+		}
+	}
 }

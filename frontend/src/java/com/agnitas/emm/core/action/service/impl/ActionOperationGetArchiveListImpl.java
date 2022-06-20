@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -19,10 +19,11 @@ import java.util.Objects;
 import org.agnitas.beans.MediaTypeStatus;
 import org.agnitas.emm.core.commons.uid.ExtensibleUIDService;
 import org.agnitas.emm.core.commons.util.ConfigService;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.ComCompany;
+import com.agnitas.beans.Company;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MediatypeEmail;
 import com.agnitas.dao.ComCompanyDao;
@@ -38,10 +39,8 @@ import com.agnitas.mailing.preview.service.MailingPreviewService;
 
 public class ActionOperationGetArchiveListImpl implements EmmActionOperation {
 	
-	/**
-	 * The logger.
-	 */
-	private static final Logger logger = Logger.getLogger(ActionOperationGetArchiveListImpl.class);
+	/** The logger. */
+	private static final Logger logger = LogManager.getLogger(ActionOperationGetArchiveListImpl.class);
 
 	private ExtensibleUIDService uidService;
 	private ComMailingDao mailingDao;
@@ -72,7 +71,7 @@ public class ActionOperationGetArchiveListImpl implements EmmActionOperation {
             return false;
         }
 
-        final ComCompany company = companyDao.getCompany(companyID);
+        final Company company = companyDao.getCompany(companyID);
         
         if(company == null) {
         	return false;

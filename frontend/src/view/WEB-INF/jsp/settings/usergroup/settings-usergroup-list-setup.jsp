@@ -1,10 +1,7 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do"%>
-<%@ page import="com.agnitas.emm.core.usergroup.dto.UserGroupDto" %>
-<%@ taglib prefix="c"       uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.do"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="emm"     uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
-
-<c:set var="ROOT_COMPANY_ID" value="<%= UserGroupDto.ROOT_COMPANY_ID %>" scope="request"/>
 
 <c:set var="agnNavigationKey" 		value="usergroup" 	        scope="request" />
 <c:set var="agnTitleKey" 			value="settings.Usergroup" 	scope="request" />

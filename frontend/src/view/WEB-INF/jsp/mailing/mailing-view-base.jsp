@@ -1,7 +1,7 @@
+<%@page import="com.agnitas.emm.common.MailingType"%>
 <%@ page import="com.agnitas.beans.Mailing"%>
 <%@ page language="java" contentType="text/html; charset=utf-8" buffer="64kb" errorPage="/error.do" %>
 <%@ page import="org.agnitas.web.*, com.agnitas.web.*, org.agnitas.beans.*, com.agnitas.beans.*" %>
-<%@ page import="com.agnitas.emm.core.report.enums.fields.MailingTypes" %>
 <%@ page import="org.agnitas.web.forms.WorkflowParametersHelper" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
@@ -17,16 +17,16 @@
 <%--@elvariable id="isCampaignEnableTargetGroups" type="java.lang.Boolean"--%>
 
 <c:set var="ACTION_VIEW" value="<%= MailingBaseAction.ACTION_VIEW %>"/>
-<c:set var="ACTION_CONFIRM_UNDO" value="<%= ComMailingBaseAction.ACTION_CONFIRM_UNDO %>"/>
+<c:set var="ACTION_CONFIRM_UNDO" value="<%= MailingBaseAction.ACTION_CONFIRM_UNDO %>"/>
 <c:set var="ACTION_CONFIRM_DELETE" value="<%= MailingBaseAction.ACTION_CONFIRM_DELETE %>" />
 <c:set var="ACTION_PREVIEW_SELECT" value="<%=ComMailingSendActionBasic.ACTION_PREVIEW_SELECT%>"/>
-<c:set var="ACTION_RECIPIENTS_CALCULATE" value="<%= ComMailingBaseAction.ACTION_RECIPIENTS_CALCULATE %>"/>
-<c:set var="ACTION_VIEW_WITHOUT_LOAD" value="<%= ComMailingBaseAction.ACTION_VIEW_WITHOUT_LOAD %>"/>
+<c:set var="ACTION_RECIPIENTS_CALCULATE" value="<%= MailingBaseAction.ACTION_RECIPIENTS_CALCULATE %>"/>
+<c:set var="ACTION_VIEW_WITHOUT_LOAD" value="<%= MailingBaseAction.ACTION_VIEW_WITHOUT_LOAD %>"/>
 
-<c:set var="TYPE_FOLLOWUP" value="<%= MailingTypes.FOLLOW_UP.getCode() %>"/>
-<c:set var="TYPE_INTERVAL" value="<%= MailingTypes.INTERVAL.getCode() %>"/>
-<c:set var="TYPE_ACTIONBASED" value="<%= MailingTypes.ACTION_BASED.getCode() %>"/>
-<c:set var="TYPE_DATEBASED" value="<%= MailingTypes.DATE_BASED.getCode() %>"/>
+<c:set var="TYPE_FOLLOWUP" value="<%= MailingType.FOLLOW_UP.getCode() %>"/>
+<c:set var="TYPE_INTERVAL" value="<%= MailingType.INTERVAL.getCode() %>"/>
+<c:set var="TYPE_ACTIONBASED" value="<%= MailingType.ACTION_BASED.getCode() %>"/>
+<c:set var="TYPE_DATEBASED" value="<%= MailingType.DATE_BASED.getCode() %>"/>
 
 <c:set var="TARGET_MODE_OR" value="<%= Mailing.TARGET_MODE_OR %>"/>
 <c:set var="TARGET_MODE_AND" value="<%= Mailing.TARGET_MODE_AND %>"/>
@@ -163,7 +163,7 @@
                                 <div class="col-sm-4">
                                     <label class="control-label" for="mailingShortname">
                                         <c:set var="nameMsg"><bean:message key="default.Name"/></c:set>
-                                        ${nameMsg}
+                                        ${nameMsg}*
                                     </label>
                                 </div>
                                 <div class="col-sm-8">
@@ -214,23 +214,21 @@
                                 </div>
                             </c:if>
 
-                            <c:if test="${isEnableTrackingVeto}">
-	                            <div class="form-group">
-	                                <div class="col-sm-4">
-	                                    <label class="control-label" for="mailingContentTypeAdvertising">
-	                                        <bean:message key="mailing.contentType.advertising"/>
-	                                        <button class="icon icon-help" data-help="help_${helplanguage}/mailing/view_base/AdvertisingMsg.xml" tabindex="-1" type="button"></button>
-	                                    </label>
-	                                </div>
-	                                <div class="col-sm-8">
-		                				<html:hidden property="__STRUTS_CHECKBOX_mailingContentTypeAdvertising" value="false" />
-		  								<label class="toggle">
-		  									<html:checkbox property="mailingContentTypeAdvertising" styleId="mailingContentTypeAdvertising"/>
-		                          			<div class="toggle-control"></div>
-		  								</label>
-	                                </div>
-	                            </div>
-                            </c:if>
+                            <div class="form-group">
+                                <div class="col-sm-4">
+                                    <label class="control-label" for="mailingContentTypeAdvertising">
+                                        <bean:message key="mailing.contentType.advertising"/>
+                                        <button class="icon icon-help" data-help="help_${helplanguage}/mailing/view_base/AdvertisingMsg.xml" tabindex="-1" type="button"></button>
+                                    </label>
+                                </div>
+                                <div class="col-sm-8">
+	                				<html:hidden property="__STRUTS_CHECKBOX_mailingContentTypeAdvertising" value="false" />
+	  								<label class="toggle">
+	  									<html:checkbox property="mailingContentTypeAdvertising" styleId="mailingContentTypeAdvertising"/>
+	                          			<div class="toggle-control"></div>
+	  								</label>
+                                </div>
+                            </div>
 
                             <%@include file="./mailing-frequency-toggle.jspf" %>
 

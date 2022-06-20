@@ -1,0 +1,5 @@
+<HelpBalloon>
+	<title><![CDATA[Valeur limite]]></title>
+	<content><![CDATA[Avec la valeur seuil, vous d&eacute;finissez une limite de s&eacute;curit&eacute; qui vous permet d'&eacute;viter que le mailing soit envoy&eacute; par erreur &agrave; trop de destinataires, par exemple parce que le groupe cible utilis&eacute; a &eacute;t&eacute; modifi&eacute; ult&eacute;rieurement.
+Si la valeur seuil est atteinte ou d&eacute;pass&eacute;e, le mailing est automatiquement d&eacute;sactiv&eacute; et doit &ecirc;tre à nouveau valid&eacute; manuellement pour l'envoi. Le destinataire du mail de statut re&ccedil;oit une notification lorsque ce cas se pr&eacute;sente. La valeur seuil ne doit toutefois pas &ecirc;tre fix&eacute;e trop bas, afin que votre envoi de mail ne soit pas trop souvent interrompu. Conseil : &eacute;valuez 5 &eacute;chantillons et pr&eacute;voyez un tampon de quelques pour cent sur le plus grand &eacute;chantillon.]]></content>
+</HelpBalloon>

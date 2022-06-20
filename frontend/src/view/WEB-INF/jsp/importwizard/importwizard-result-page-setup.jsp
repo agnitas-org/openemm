@@ -1,6 +1,5 @@
 <%@ page language="java" contentType="text/html; charset=utf-8"  errorPage="/error.do" %>
 <%@ page import="org.agnitas.web.ProfileImportAction" %>
-<%@ page import="org.agnitas.web.RecipientAction" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
@@ -9,7 +8,6 @@
 <emm:CheckLogon/>
 <emm:Permission token="wizard.import"/>
 
-<c:set var="ACTION_LIST" 		value="<%= RecipientAction.ACTION_LIST %>" 								scope="request" />
 <c:set var="ACTION_START" 		value="<%= ProfileImportAction.ACTION_START %>" 						scope="request" />
 <c:set var="DOWNLOAD_ACTION"	value="<%= ProfileImportAction.ACTION_DOWNLOAD_CSV_FILE %>" 			scope="request" />
 <c:set var="RESULT" 			value="<%= ProfileImportAction.RESULT_TYPE %>" 							scope="request" />
@@ -52,17 +50,9 @@
         <c:set target="${element0}" property="iconBefore" value="icon-share"/>
         <c:set target="${element0}" property="type" value="href"/>
         <c:set target="${element0}" property="url">
-            <emm:HideByPermission token="recipient.rollback">
-                <c:url value="/recipient/list.action">
-                    <c:param name="latestDataSourceId" value="${newImportWizardForm.datasourceId}"/>
-                </c:url>
-            </emm:HideByPermission>
-            <emm:ShowByPermission token="recipient.rollback">
-                <html:rewrite page="/recipient.do">
-                    <html:param name="action" value="${ACTION_LIST}"/>
-                    <html:param name="latestDataSourceId" value="${newImportWizardForm.datasourceId}"/>
-                </html:rewrite>
-            </emm:ShowByPermission>
+            <c:url value="/recipient/list.action">
+                <c:param name="latestDataSourceId" value="${newImportWizardForm.datasourceId}"/>
+            </c:url>
         </c:set>
         <c:set target="${element0}" property="name">
             <bean:message key="button.Finish"/>

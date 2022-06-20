@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -25,7 +25,8 @@ import org.agnitas.util.AgnUtils;
 import org.agnitas.util.CsvReader;
 import org.agnitas.util.CsvWriter;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.agnitas.beans.ComTrackableLink;
 import com.agnitas.beans.LinkProperty;
@@ -37,7 +38,7 @@ import com.agnitas.util.LinkUtils;
  * Event Code 1=Linkklick, 2=Opening, 3=Unsubscribtion, 4=Mail-Delivery, 5=Softbounce, 6=Hardbounce, 7=Blacklist 8=Revenue
  */
 public class RecipientReactionsExportWorker extends GenericExportWorker {
-	private static final transient Logger logger = Logger.getLogger(RecipientReactionsExportWorker.class);
+	private static final transient Logger logger = LogManager.getLogger(RecipientReactionsExportWorker.class);
 
 	private ComRecipientDao recipientDao;
 	private ComTrackableLinkDao trackableLinkDao;
@@ -115,12 +116,14 @@ public class RecipientReactionsExportWorker extends GenericExportWorker {
 			csvFileHeaders.add("MAILING_NAME");
 			csvFileHeaders.add("CUSTOMER_ID");
 			csvFileHeaders.add("EMAIL");
-			if (additionalCustomerFields != null) {
-				for (String additionalField : additionalCustomerFields) {
-					csvFileHeaders.add(additionalField.toUpperCase());
-					additionalCustomerFieldsSqlPart += ", cust." + additionalField.toLowerCase();
+			if (additionalCustomerFields != null && additionalCustomerFields.size() > 0) {
+ 				for (String additionalField : additionalCustomerFields) {
+					if (StringUtils.isNotBlank(additionalField)) {
+						csvFileHeaders.add(additionalField.toUpperCase());
+						additionalCustomerFieldsSqlPart += ", cust." + additionalField.toLowerCase();
+					}
 				}
-			}
+ 			}
 			csvFileHeaders.add("EVENT");
 			csvFileHeaders.add("TIMESTAMP");
 			csvFileHeaders.add("LINK");
@@ -221,6 +224,21 @@ public class RecipientReactionsExportWorker extends GenericExportWorker {
 			
 			sqlSelectStatement.append("\nUNION ALL\n");
 			
+			// Blacklisted
+			sqlSelectStatement.append("SELECT NULL, ban.reason, bind.customer_id, cust.email" + additionalCustomerFieldsSqlPart + ", 7, MIN(bind.timestamp), NULL, NULL"
+				+ " FROM customer_" + autoExport.getCompanyId() + "_binding_tbl bind, customer_" + autoExport.getCompanyId() + "_tbl cust"
+				+ " LEFT OUTER join cust" + autoExport.getCompanyId() + "_ban_tbl ban ON ban.email = cust.email"
+				+ " WHERE bind.customer_id = cust.customer_id"
+				+ " AND bind.user_status = ?"
+				+ " AND bind.timestamp >= ?"
+				+ " AND bind.timestamp < ?"
+				+ " GROUP BY ban.reason, bind.customer_id, cust.email" + additionalCustomerFieldsSqlPart);
+			sqlParameter.add(UserStatus.Blacklisted.getStatusCode());
+			sqlParameter.add(exportDataStartDate);
+			sqlParameter.add(exportDataEndDate);
+			
+			sqlSelectStatement.append("\nUNION ALL\n");
+			
 			// Revenues
 			sqlSelectStatement.append("SELECT valnum.mailing_id, mail.shortname, valnum.customer_id, cust.email" + additionalCustomerFieldsSqlPart + ", 8, valnum.timestamp, NULL, valnum.num_parameter"
 				+ " FROM rdirlog_" + autoExport.getCompanyId() + "_val_num_tbl valnum, customer_" + autoExport.getCompanyId() + "_tbl cust, mailing_tbl mail"
@@ -241,21 +259,25 @@ public class RecipientReactionsExportWorker extends GenericExportWorker {
 			
 			// Add link extensions
 			File extendedExportFile = File.createTempFile("ReactionsExtendedExportFile", "");
-			try (CsvReader reader = new CsvReader(new FileInputStream(new File(exportFile)), encoding, delimiter, stringQuote);
-					CsvWriter writer = new CsvWriter(new FileOutputStream(extendedExportFile), encoding, delimiter, stringQuote)) {
-				// skip headers
-				writer.writeValues(reader.readNextCsvLine());
-				List<String> nextLine;
-				while ((nextLine = reader.readNextCsvLine()) != null) {
-					int mailingID = Integer.parseInt(nextLine.get(0));
-					int customerID = Integer.parseInt(nextLine.get(2));
-					String urlIdString = nextLine.get(nextLine.size() - 2);
-					if (StringUtils.isNotEmpty(urlIdString)) {
-						int urlId = Integer.parseInt(urlIdString);
-						String fullUrlWithLinkextensions = createDirectLinkWithOptionalExtensions(autoExport.getCompanyId(), mailingID, customerID, urlId);
-						nextLine.set(nextLine.size() - 2, fullUrlWithLinkextensions);
+			if (exportFile.length() > 0) {
+				try (CsvReader reader = new CsvReader(new FileInputStream(new File(exportFile)), encoding, delimiter, stringQuote);
+						CsvWriter writer = new CsvWriter(new FileOutputStream(extendedExportFile), encoding, delimiter, stringQuote)) {
+					// skip headers
+					writer.writeValues(reader.readNextCsvLine());
+					List<String> nextLine;
+					while ((nextLine = reader.readNextCsvLine()) != null) {
+						if (StringUtils.isNotEmpty(nextLine.get(0))) {
+							int mailingID = Integer.parseInt(nextLine.get(0));
+							int customerID = Integer.parseInt(nextLine.get(2));
+							String urlIdString = nextLine.get(nextLine.size() - 2);
+							if (StringUtils.isNotEmpty(urlIdString)) {
+								int urlId = Integer.parseInt(urlIdString);
+								String fullUrlWithLinkextensions = createDirectLinkWithOptionalExtensions(autoExport.getCompanyId(), mailingID, customerID, urlId);
+								nextLine.set(nextLine.size() - 2, fullUrlWithLinkextensions);
+							}
+						}
+						writer.writeValues(nextLine);
 					}
-					writer.writeValues(nextLine);
 				}
 			}
 			new File(exportFile).delete();

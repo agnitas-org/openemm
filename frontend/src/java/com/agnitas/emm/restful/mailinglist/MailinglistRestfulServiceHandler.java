@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -13,6 +13,7 @@ package com.agnitas.emm.restful.mailinglist;
 import java.io.File;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -31,7 +32,6 @@ import org.agnitas.util.DbColumnType.SimpleDataType;
 import org.agnitas.util.HttpUtils.RequestMethod;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComAdmin;
@@ -61,8 +61,6 @@ import jakarta.servlet.http.HttpServletResponse;
  * https://<system.url>/restful/mailinglist
  */
 public class MailinglistRestfulServiceHandler implements RestfulServiceHandler {
-	@SuppressWarnings("unused")
-	private static final transient Logger logger = Logger.getLogger(MailinglistRestfulServiceHandler.class);
 	
 	public static final String NAMESPACE = "mailinglist";
 
@@ -186,8 +184,27 @@ public class MailinglistRestfulServiceHandler implements RestfulServiceHandler {
 				
 				if (showMailinglistRecipients) {
 					CaseInsensitiveMap<String, ProfileField> profileFields = columnInfoService.getColumnInfoMap(admin.getCompanyID(), admin.getAdminID());
-					JsonArray recipientArray = new JsonArray();
-					List<CaseInsensitiveMap<String, Object>> recipients = recipientDao.getMailinglistRecipients(admin.getCompanyID(), mailinglist.getId(), MediaTypes.EMAIL, null, Arrays.asList(new UserStatus[] { UserStatus.Active }), TimeZone.getTimeZone(admin.getAdminTimezone()));
+					
+					List<String> profileFieldsToShow = null;
+					String fieldsString = request.getParameter("fields");
+					if (StringUtils.isNotBlank(fieldsString)) {
+						if ("*".equals(fieldsString)) {
+							profileFieldsToShow = new ArrayList<>();
+							for (String profileField : profileFields.keySet()) {
+								profileFieldsToShow.add(profileField);
+							}
+						} else {
+							profileFieldsToShow = AgnUtils.splitAndTrimList(fieldsString);
+							for (String profileField : profileFieldsToShow) {
+								if (!profileFields.containsKey(profileField)) {
+									throw new RestfulClientException("Unknown profile field: " + profileField);
+								}
+							}
+						}
+					}
+					
+					JsonArray recipientsArray = new JsonArray();
+					List<CaseInsensitiveMap<String, Object>> recipients = recipientDao.getMailinglistRecipients(admin.getCompanyID(), mailinglist.getId(), MediaTypes.EMAIL, null, profileFieldsToShow, Arrays.asList(new UserStatus[] { UserStatus.Active }), TimeZone.getTimeZone(admin.getAdminTimezone()));
 					for (CaseInsensitiveMap<String, Object> customerDataMap : recipients) {
 						JsonObject customerJsonObject = new JsonObject();
 						for (String key : AgnUtils.sortCollectionWithItemsFirst(customerDataMap.keySet(), "customer_id", "email")) {
@@ -197,9 +214,9 @@ public class MailinglistRestfulServiceHandler implements RestfulServiceHandler {
 								customerJsonObject.add(key.toLowerCase(), customerDataMap.get(key));
 							}
 						}
-						recipientArray.add(customerJsonObject);
+						recipientsArray.add(customerJsonObject);
 					}
-					mailinglistJsonObject.add("recipients", recipientArray);
+					mailinglistJsonObject.add("recipients", recipientsArray);
 				}
 				return mailinglistJsonObject;
 			} else {
@@ -256,7 +273,7 @@ public class MailinglistRestfulServiceHandler implements RestfulServiceHandler {
 	 */
 	private Object createNewMailinglist(HttpServletRequest request, byte[] requestData, File requestDataFile, ComAdmin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.MAILINGLIST_CHANGE)) {
-			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.RECIPIENT_CREATE.toString() + "'");
+			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.MAILINGLIST_CHANGE.toString() + "'");
 		}
 		
 		try (InputStream inputStream = RestfulServiceHandler.getRequestDataStream(requestData, requestDataFile)) {
@@ -331,7 +348,7 @@ public class MailinglistRestfulServiceHandler implements RestfulServiceHandler {
 	 */
 	private Object createOrUpdateMailinglist(HttpServletRequest request, byte[] requestData, File requestDataFile, ComAdmin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.MAILINGLIST_CHANGE)) {
-			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.RECIPIENT_CREATE.toString() + "'");
+			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.MAILINGLIST_CHANGE.toString() + "'");
 		}
 		
 		String[] restfulContext = RestfulServiceHandler.getRestfulContext(request, NAMESPACE, 0, 1);

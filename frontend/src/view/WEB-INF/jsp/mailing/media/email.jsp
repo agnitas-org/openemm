@@ -1,7 +1,7 @@
+<%@page import="com.agnitas.emm.common.MailingType"%>
 <%@ page language="java" contentType="text/html; charset=utf-8" buffer="32kb"  errorPage="/error.do" %>
 <%@page import="com.agnitas.beans.MediatypeEmail"%>
 <%@page import="com.agnitas.web.forms.ComMailingBaseForm"%>
-<%@ page import="com.agnitas.emm.core.report.enums.fields.MailingTypes" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
@@ -11,7 +11,7 @@
 
 <%--@elvariable id="mailingBaseForm" type="com.agnitas.web.forms.ComMailingBaseForm"--%>
 <c:set var="TEXTAREA_WIDTH" value="<%= ComMailingBaseForm.TEXTAREA_WIDTH%>" scope="page" />
-<c:set var="TYPE_DATEBASED" value="<%= MailingTypes.DATE_BASED.getCode() %>"/>
+<c:set var="TYPE_DATEBASED" value="<%= MailingType.DATE_BASED.getCode() %>"/>
 
 <c:set var="isEmailSettingsEditable" value="${mailingBaseForm.canChangeEmailSettings}"/>
 
@@ -226,7 +226,7 @@
             <div class="form-group" data-field="validator">
                 <div class="col-sm-4">
                     <label class="control-label" for="emailSubject">
-                        <bean:message key="mailing.Subject"/>
+                        <bean:message key="mailing.Subject"/>*
                     </label>
                 </div>
                 <div class="col-sm-8">
@@ -255,7 +255,7 @@
             <div class="form-group" data-field="validator">
                 <div class="col-sm-4">
                     <label class="control-label" for="emailSenderMail">
-                        <bean:message key="mailing.SenderEmail"/>
+                        <bean:message key="mailing.SenderEmail"/>*
                     </label>
                 </div>
                 <div class="col-sm-8">
@@ -280,7 +280,7 @@
             <div class="form-group" data-field="validator">
                 <div class="col-sm-4">
                     <label class="control-label" for="emailReplyEmail">
-                        <bean:message key="mailing.ReplyEmail"/>
+                        <bean:message key="mailing.ReplyEmail"/>*
                     </label>
                 </div>
                 <div class="col-sm-8">

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,9 +10,16 @@
 
 package org.agnitas.service.impl;
 
-import jakarta.annotation.Resource;
 import java.util.List;
 import java.util.Map;
+
+import org.agnitas.actions.EmmAction;
+import org.agnitas.actions.impl.EmmActionImpl;
+import org.agnitas.dao.EmmActionDao;
+import org.agnitas.dao.EmmActionOperationDao;
+import org.agnitas.dao.EmmActionType;
+import org.agnitas.util.importvalues.MailType;
+import org.apache.commons.lang3.StringUtils;
 
 import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationActivateDoubleOptInParameters;
@@ -30,13 +37,8 @@ import com.agnitas.emm.core.action.operations.ActionOperationUnsubscribeCustomer
 import com.agnitas.emm.core.action.operations.ActionOperationUpdateCustomerParameters;
 import com.agnitas.json.JsonArray;
 import com.agnitas.json.JsonObject;
-import org.agnitas.actions.EmmAction;
-import org.agnitas.actions.impl.EmmActionImpl;
-import org.agnitas.dao.EmmActionDao;
-import org.agnitas.dao.EmmActionOperationDao;
-import org.agnitas.dao.EmmActionType;
-import org.agnitas.util.importvalues.MailType;
-import org.apache.commons.lang3.StringUtils;
+
+import jakarta.annotation.Resource;
 
 public class ActionImporter extends BaseImporterExporter {
 	@Resource(name="EmmActionDao")
@@ -45,9 +47,11 @@ public class ActionImporter extends BaseImporterExporter {
 	@Resource(name="EmmActionOperationDao")
 	private EmmActionOperationDao actionOperationDao;
 	
-	public int importAction(int companyID, JsonObject actionJsonObject, Map<Integer, Integer> actionIdMappings) throws Exception {
-		int actionID = (Integer) actionJsonObject.get("id");
-		
+	public int importAction(int companyID, JsonObject actionJsonObject) throws Exception {
+		return importAction(companyID, actionJsonObject, null);
+	}
+	
+	public int importAction(int companyID, JsonObject actionJsonObject, Map<Integer, Integer> mailingIdReplacements) throws Exception {
 		String actionName = (String) actionJsonObject.get("name");
 		String actionDescription = (String) actionJsonObject.get("description");
 		String actionType = (String) actionJsonObject.get("type");
@@ -116,6 +120,9 @@ public class ActionImporter extends BaseImporterExporter {
 							}
 						} else if (ActionOperationType.SEND_MAILING.getName().equals(actionOperationType)) {
 							int mailingID = (Integer) actionOperation.get("mailing_id");
+							if (mailingIdReplacements != null && mailingIdReplacements.containsKey(mailingID)) {
+								mailingID = mailingIdReplacements.get(mailingID);
+							}
 							int delayMinutes = (Integer) actionOperation.get("delayMinutes");
 							String bccAddress = (String) actionOperation.get("bccAddress");
 							if (mailingID != ((ActionOperationSendMailingParameters) existingActionOperation).getMailingID()
@@ -228,7 +235,11 @@ public class ActionImporter extends BaseImporterExporter {
 					newAction.getActionOperations().add(actionOperationIdentifyCustomer);
 				} else if (ActionOperationType.SEND_MAILING.getName().equals(actionOperationType)) {
 					ActionOperationSendMailingParameters actionOperationSendMailing = new ActionOperationSendMailingParameters();
-					actionOperationSendMailing.setMailingID((Integer) actionOperation.get("mailing_id"));
+					int mailingID = (Integer) actionOperation.get("mailing_id");
+					if (mailingIdReplacements != null && mailingIdReplacements.containsKey(mailingID)) {
+						mailingID = mailingIdReplacements.get(mailingID);
+					}
+					actionOperationSendMailing.setMailingID(mailingID);
 					actionOperationSendMailing.setDelayMinutes((Integer) actionOperation.get("delayMinutes"));
 					actionOperationSendMailing.setBcc((String) actionOperation.get("bccAddress"));
 					newAction.getActionOperations().add(actionOperationSendMailing);
@@ -247,7 +258,7 @@ public class ActionImporter extends BaseImporterExporter {
 					actionOperationSubscribeCustomer.setDoubleOptIn((Boolean) actionOperation.get("doubleOptIn"));
 					newAction.getActionOperations().add(actionOperationSubscribeCustomer);
 				} else if (ActionOperationType.UNSUBSCRIBE_CUSTOMER.getName().equals(actionOperationType)) {
-					ActionOperationUnsubscribeCustomerParameters actionOperationUnsubscribeCustomer = new ActionOperationUnsubscribeCustomerParameters();								
+					ActionOperationUnsubscribeCustomerParameters actionOperationUnsubscribeCustomer = new ActionOperationUnsubscribeCustomerParameters();
 					// ActionOperationUnsubscribeCustomer has no additional data
 					newAction.getActionOperations().add(actionOperationUnsubscribeCustomer);
 				} else if (ActionOperationType.UPDATE_CUSTOMER.getName().equals(actionOperationType)) {
@@ -270,10 +281,6 @@ public class ActionImporter extends BaseImporterExporter {
 				actionOperationDao.saveOperation(actionOperation);
 			}
 			foundExistingActionID = newAction.getId();
-		}
-		
-		if (actionIdMappings != null) {
-			actionIdMappings.put(actionID, foundExistingActionID);
 		}
 		
 		return foundExistingActionID;

@@ -39,7 +39,7 @@
 		<property name="companyDao" ref="CompanyDao" />
 	</bean>
 
-	<bean id="AdminPreferencesDao" class="com.agnitas.dao.impl.ComAdminPreferencesDaoImpl">
+	<bean id="AdminPreferencesDao" class="com.agnitas.dao.impl.AdminPreferencesDaoImpl">
 		<property name="dataSource" ref="dataSource" />
 		<property name="javaMailService" ref="JavaMailService" />
 		<property name="adminPreferencesFactory" ref="AdminPreferencesFactory" />
@@ -114,7 +114,7 @@
 	</bean>
 		
 <!-- ============================================================================================================================== Datasource description -->
-	<bean id="DatasourceDescriptionDao" class="com.agnitas.dao.impl.ComDatasourceDescriptionDaoImpl">
+	<bean id="DatasourceDescriptionDao" class="com.agnitas.dao.impl.DatasourceDescriptionDaoImpl">
 		<property name="dataSource" ref="dataSource" />
 		<property name="javaMailService" ref="JavaMailService" />
 		<property name="datasourceDescriptionFactory" ref="DatasourceDescriptionFactory" />
@@ -154,7 +154,7 @@
 	</bean>
 
 <!-- ============================================================================================================================== EMM actions -->
-	<bean id="EmmActionDao" class="com.agnitas.dao.impl.ComEmmActionDaoImpl">
+	<bean id="EmmActionDao" class="com.agnitas.dao.impl.EmmActionDaoImpl">
 		<property name="dataSource" ref="dataSource" />
 		<property name="javaMailService" ref="JavaMailService" />
 	</bean>
@@ -255,12 +255,6 @@
 		<property name="javaMailService" ref="JavaMailService" />
 	</bean>
 	
-<!-- ============================================================================================================================== Follow up statistics -->
-	<bean id="FollowUpStatDao" class="com.agnitas.emm.core.mailing.dao.impl.ComFollowUpStatsDaoImpl">
-		<property name="dataSource" ref="dataSource" />
-		<property name="javaMailService" ref="JavaMailService" />
-	</bean>
-	
 <!-- ============================================================================================================================== Host authentication -->
 	<bean id="HostAuthenticationDao_commonSQL" class="com.agnitas.emm.core.logon.dao.ComHostAuthenticationDaoImpl">
 		<property name="dataSource" ref="dataSource" />
@@ -342,6 +336,12 @@
 	</bean>
 	
 	<bean id="MailingStatTgtGrpDao" class="com.agnitas.emm.core.stat.dao.impl.MailingStatTgtGrpDaoImpl">
+		<property name="dataSource" ref="dataSource" />
+		<property name="javaMailService" ref="JavaMailService" />
+	</bean>
+
+<!-- ============================================================================================================================== Mailing delivery lock -->
+	<bean id="MailingDeliveryLockDao" class="com.agnitas.emm.core.mailing.dao.impl.MailingDeliveryLockDaoImpl">
 		<property name="dataSource" ref="dataSource" />
 		<property name="javaMailService" ref="JavaMailService" />
 	</bean>
@@ -531,7 +531,8 @@
 	<bean id="comWorkflowDao" class="com.agnitas.emm.core.workflow.dao.impl.ComWorkflowDaoImpl">
 		<property name="dataSource" ref="dataSource" />
 		<property name="javaMailService" ref="JavaMailService" />
-	</bean>
+        <property name="targetService" ref="targetService"/>
+    </bean>
 
 	<bean id="WorkflowReactionDao" class="com.agnitas.emm.core.workflow.dao.impl.ComWorkflowReactionDaoImpl">
 		<property name="dataSource" ref="dataSource" />

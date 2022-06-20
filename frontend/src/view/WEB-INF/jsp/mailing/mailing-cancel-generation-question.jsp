@@ -1,18 +1,23 @@
 <%--checked --%>
 <%@ page language="java" import="org.agnitas.web.MailingSendAction" contentType="text/html; charset=utf-8"  errorPage="/error.do" %>
+<%@ page import="com.agnitas.web.ComMailingSendActionBasic" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="agn" uri="https://emm.agnitas.de/jsp/jstl/tags" %>
 
 <emm:CheckLogon/>
 
 <emm:Permission token="mailing.send.show"/>
 
+<c:set var="actionViewSend" value="<%= ComMailingSendActionBasic.ACTION_VIEW_SEND %>"/>
+
 <div class="modal">
     <div class="modal-dialog">
         <div class="modal-content">
 
-            <html:form action="/mailingsend">
+            <agn:agnForm action="/mailingsend" data-form="resource">
                 <html:hidden property="mailingID"/>
                 <html:hidden property="action"/>
                 <input type="hidden" id="kill" name="kill" value="true"/>
@@ -33,14 +38,19 @@
                             <i class="icon icon-times"></i>
                             <span class="text"><bean:message key="default.No"/></span>
                         </button>
-                        <button type="button" class="btn btn-primary btn-large js-confirm-positive" data-dismiss="modal">
+                        <c:url value="/mailingsend.do" var="baseUrl">
+                            <c:param name="action" value="${actionViewSend}"/>
+                            <c:param name="mailingID" value="${mailingSendForm.mailingID}"/>
+                        </c:url>
+
+                        <button type="button" class="btn btn-primary btn-large" data-dismiss="modal" data-action="cancel-mailing" data-base-url="${baseUrl}">
                             <i class="icon icon-check"></i>
                             <span class="text"><bean:message key="default.Yes"/></span>
                         </button>
                     </div>
                 </div>
 
-            </html:form>
+            </agn:agnForm>
         </div>
     </div>
 </div>

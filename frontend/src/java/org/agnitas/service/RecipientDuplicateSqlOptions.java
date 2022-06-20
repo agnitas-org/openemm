@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -9,6 +9,8 @@
 */
 
 package org.agnitas.service;
+
+import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -19,13 +21,15 @@ public class RecipientDuplicateSqlOptions implements RecipientOptions {
     private String dir;
     private int listId;
     private int targetId;
-    private int limitAccessTargetId;
+    private int limitAccessTargetId; // delete after GWUA-4957 has been successfully tested
     private String userType;
     private int userStatus;
     private boolean userTypeEmpty;
     private boolean singleMode;
     private String searchFieldName;
     private int recipientId;
+    private boolean caseSensitive;
+    private Set<Integer> altgIds;
 
     public static Builder builder() {
         return new Builder();
@@ -57,6 +61,11 @@ public class RecipientDuplicateSqlOptions implements RecipientOptions {
     public int getAltgId() {
         return limitAccessTargetId;
     }
+    
+    @Override
+    public Set<Integer> getAltgIds() {
+        return altgIds;
+    }
 
     @Override
 	public String getUserType() {
@@ -85,6 +94,10 @@ public class RecipientDuplicateSqlOptions implements RecipientOptions {
         return recipientId;
     }
 
+    public boolean isCaseSensitive() {
+        return caseSensitive;
+    }
+
     public static class Builder {
         private RecipientDuplicateSqlOptions options = new RecipientDuplicateSqlOptions();
 
@@ -111,6 +124,11 @@ public class RecipientDuplicateSqlOptions implements RecipientOptions {
 
         public Builder setLimitAccessTargetId(int altgId) {
             options.limitAccessTargetId = altgId;
+            return this;
+        }
+        
+        public Builder setAltgIds(Set<Integer> altgIds) {
+            options.altgIds = altgIds;
             return this;
         }
 
@@ -149,9 +167,13 @@ public class RecipientDuplicateSqlOptions implements RecipientOptions {
             return this;
         }
 
-
         public Builder setSearchFieldName(String searchField) {
             options.searchFieldName = searchField;
+            return this;
+        }
+
+        public Builder setCaseSensitive(boolean caseSensitive) {
+            options.caseSensitive = caseSensitive;
             return this;
         }
     }

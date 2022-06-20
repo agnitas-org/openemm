@@ -26,7 +26,8 @@
 
 <agn:agnForm action="/exportwizard" id="exportWizardForm" data-form="resource" data-form-focus="shortname"
              data-controller="exportwizard-view"
-             data-initializer="exportwizard-view">
+             data-initializer="exportwizard-view"
+             data-validator="export/form">
     <html:hidden property="action"/>
     <html:hidden property="exportPredefID"/>
 
@@ -47,7 +48,6 @@
         {
             "adminHasOwnColumnPermission": ${adminHasOwnColumnPermission},
             "bounceUserStatusCode": ${BOUNCE_USER_STATUS_CODE},
-            "profileFieldColumns": ${emm:toJson(availableColumns)},
             "columnMappings": ${emm:toJson(exportWizardForm.customColumnMappings)}
         }
     </script>
@@ -182,80 +182,6 @@
 
 
         <div class="tile-content tile-content-forms" id="recipient-export-tile-columns">
-            <emm:HideByPermission token="export.ownColumns">
-            <div class="notification-simple notification-info">
-                <bean:message key="export.wizard.hint.export.columns"/>
-            </div>
-            <div class="table-responsive">
-                <table class="table table-bordered table-striped">
-                    <thead>
-                        <tr>
-                            <th width="30">
-                                <input type="checkbox" data-form-bulk='columns' />
-                            </th>
-                            <th><bean:message key="export.Column_Name"/></th>
-                            <th><bean:message key="default.Type"/></th>
-                        </tr>
-                    </thead>
-
-                    <tbody>
-                        <emm:ShowColumnInfo id="agnTbl" table="<%= AgnUtils.getCompanyID(request) %>">
-                            <c:set var="colName" value='<%=pageContext.getAttribute("_agnTbl_column_name")%>'/>
-                            <c:set var="colType" value='<%=pageContext.getAttribute("_agnTbl_data_type")%>'/>
-                            <c:set var="shortName" value='<%=pageContext.getAttribute("_agnTbl_shortname")%>'/>
-                            <tr>
-                                <td>
-                                    <html:multibox property="columns" value="${colName}" styleId="checkbox-${colName}"/>
-                                </td>
-                                <td>
-                                    <label for="checkbox-${colName}">
-                                    ${shortName}
-                                    </label>
-                                </td>
-                                <td>
-                                    <c:choose>
-                                        <c:when test='${colType.toUpperCase().indexOf(GENERIC_TYPE_VARCHAR) ne -1}'>
-                                            <bean:message key="statistic.alphanumeric"/>
-                                        </c:when>
-                                        <c:when test='${colType.toUpperCase().indexOf(GENERIC_TYPE_INTEGER) ne -1}'>
-                                            <bean:message key="statistic.numeric"/>
-                                        </c:when>
-                                        <c:when test='${colType.toUpperCase().indexOf(GENERIC_TYPE_FLOAT) ne -1}'>
-                                            <bean:message key="statistic.numeric"/>
-                                        </c:when>
-                                        <c:when test='${colType.toUpperCase().indexOf(GENERIC_TYPE_DATETIME) ne -1}'>
-                                            <bean:message key="settings.fieldType.DATE"/>
-                                        </c:when>
-                                        <c:when test='${colType.toUpperCase().indexOf(GENERIC_TYPE_DATE) ne -1}'>
-                                            <bean:message key="settings.fieldType.DATE"/>
-                                        </c:when>
-                                        <c:otherwise>
-                                            ${colType}
-                                        </c:otherwise>
-                                    </c:choose>
-                                </td>
-                            </tr>
-                        </emm:ShowColumnInfo>
-                        <c:set var="bounceColumn" value="mailing_bounce"/>
-                        <tr id="bounce-export-row">
-                            <td>
-                                <html:multibox property="columns" value="MAILING_BOUNCE" styleId="checkbox-${bounceColumn}"/>
-                            </td>
-                            <td>
-                                <label for="checkbox-${bounceColumn}">
-                                    <bean:message key="report.bounce.reason"/>
-                                </label>
-                            </td>
-                            <td>
-                                <bean:message key="statistic.alphanumeric"/>
-                            </td>
-                        </tr>
-                    </tbody>
-
-                </table>
-            </div>
-            </emm:HideByPermission>
-            <emm:ShowByPermission token="export.ownColumns">
             <div class="form-group">
                 <div class="col-sm-offset-4 col-sm-8">
                     <div class="notification-simple notification-info">
@@ -268,8 +194,10 @@
                     <label class="control-label" for="chooseColumns"><bean:message key="export.columns"/></label>
                 </div>
                 <div id="chooseColumns" class="col-sm-8">
+                    <c:set var="allColumnsStr"><bean:message key="export.columns.all"/></c:set>
                     <agn:agnSelect property="columns"
                                    styleClass="form-control js-select"
+                                   data-placeholder="${allColumnsStr}"
                                    multiple="true">
                         <c:forEach var="column" items="${availableColumns}">
                             <c:choose>
@@ -300,6 +228,7 @@
                     ${exportWizardForm.customColumnMappings.clear()}
                 </div>
             </div>
+            <emm:ShowByPermission token="export.ownColumns">
             <div class="form-group">
                 <div class="col-sm-4">
                     <label class="control-label" for="columnMappings"><bean:message key="export.columns.add.own"/></label>
@@ -426,7 +355,7 @@
                 <div class="col-sm-8">
                     <html:select property="dateFormat" styleClass="form-control js-select" styleId="recipient-export-format-delimiter">
 						<c:forEach var="availableDateFormat" items="${availableDateFormats}">
-							<html:option value="${availableDateFormat.intValue}"><bean:message key="${availableDateFormat.publicValue}"/></html:option>
+							<html:option value="${availableDateFormat.intValue}">${availableDateFormat.publicValue}</html:option>
 						</c:forEach>
                     </html:select>
                 </div>
@@ -441,7 +370,7 @@
                 <div class="col-sm-8">
                     <html:select property="dateTimeFormat" styleClass="form-control js-select" styleId="recipient-export-format-delimiter">
 						<c:forEach var="availableDateTimeFormat" items="${availableDateTimeFormats}">
-							<html:option value="${availableDateTimeFormat.intValue}"><bean:message key="${availableDateTimeFormat.publicValue}"/></html:option>
+							<html:option value="${availableDateTimeFormat.intValue}">${availableDateTimeFormat.publicValue}</html:option>
 						</c:forEach>
                     </html:select>
                 </div>

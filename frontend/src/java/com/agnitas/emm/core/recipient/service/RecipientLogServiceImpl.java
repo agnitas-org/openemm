@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -20,7 +20,8 @@ import java.util.Map;
 import org.agnitas.emm.core.recipient.RecipientUtils;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Service;
 
 import com.agnitas.beans.ComAdmin;
@@ -31,7 +32,7 @@ import com.agnitas.emm.core.recipient.dto.SaveRecipientDto;
 @Service("recipientLogService")
 public class RecipientLogServiceImpl implements RecipientLogService {
 
-    private static final Logger logger = Logger.getLogger(RecipientLogServiceImpl.class);
+    private static final Logger logger = LogManager.getLogger(RecipientLogServiceImpl.class);
 
     @Override
     public UserAction getRecipientFieldsBulkChangeLog(int targetId, int mailinglistId, Map<String, Object> affectedFields) {
@@ -139,5 +140,4 @@ public class RecipientLogServiceImpl implements RecipientLogService {
 
         return "";
     }
-
 }

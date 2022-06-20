@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -11,6 +11,8 @@
 package com.agnitas.reporting.birt.external.web.filter;
 
 import java.io.IOException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
@@ -24,13 +26,14 @@ import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.agnitas.reporting.birt.util.RSACryptUtil;
 
 public class BirtInterceptingFilter implements Filter {
 	/** Logger. */
-	private static final transient Logger logger = Logger.getLogger(BirtInterceptingFilter.class);
+	private static final transient Logger logger = LogManager.getLogger(BirtInterceptingFilter.class);
 	
 	protected ConfigService configService;
 
@@ -72,7 +75,9 @@ public class BirtInterceptingFilter implements Filter {
 		dispatcher.forward(request, response);
 	}
 
-	private boolean verifySecurityToken(String securityTokenString, @VelocityCheck int companyID) {
+	private boolean verifySecurityToken(String securityTokenStringEncoded, @VelocityCheck int companyID) {
+		final String securityTokenString = URLDecoder.decode(securityTokenStringEncoded, StandardCharsets.US_ASCII);
+
 		String privateKeyString = getConfigService().getValue(ConfigValue.BirtPrivateKey, companyID);
 		if (StringUtils.isBlank(privateKeyString) ) {
 			logger.warn("Birt private key is missing");
@@ -109,7 +114,7 @@ public class BirtInterceptingFilter implements Filter {
         if (StringUtils.isBlank(publicKeyString)) {
             throw new Exception("Parameter 'birt.publickey' is missing");
         } else {
-        	return RSACryptUtil.encrypt(Integer.toString(companyID), publicKeyString);
+        	return RSACryptUtil.encryptUrlSafe(Integer.toString(companyID), publicKeyString);
         }
 	}
 

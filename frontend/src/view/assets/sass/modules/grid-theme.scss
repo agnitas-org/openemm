@@ -1025,19 +1025,19 @@ $tool-panel-box-padding: 4px 4px 10px 4px;
 
    .ag-menu {
      border-color: $c-dt-dropdown-border;
-     background-color: $c-dt-dropdown-background;
+     background-color: $c-dt-grid-background;
      .ag-tab-header {
-       background-color: $c-dt-dropdown-background;
+       background-color: $c-dt-grid-background;
      }
      .ag-tab-selected {
-       background-color: darken($c-dt-dropdown-background, 10%);
+       background-color: darken($c-dt-grid-background, 10%);
        border-color: $c-dt-dropdown-border;
      }
    }
 
    .ag-filter-apply-panel {
      border-color: $c-dt-dropdown-border;
-     color: $c-dt-dropdown-text;
+     color: $c-gray-80;
    }
 
    .ag-status-bar,

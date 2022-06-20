@@ -13,7 +13,6 @@
 <logic:equal name="mailingSendForm" property="isTemplate" value="true">
 <!--  template navigation: -->
     <c:set var="agnNavigationKey"		value="templateView"							scope="request" />
-    <c:set var="agnNavHrefAppend"		value="&mailingID=${mailingBaseForm.mailingID}"	scope="request" />
     <c:set var="agnTitleKey"			value="Template"								scope="request" />
     <c:set var="agnSubtitleKey"			value="Template"								scope="request" />
     <c:set var="agnSubtitleValue"		value="${mailingBaseForm.shortname}"			scope="request" />
@@ -21,6 +20,10 @@
     <c:set var="sidemenu_sub_active"	value="none"									scope="request" />
     <c:set var="agnHighlightKey"		value="mailing.Send_Mailing"					scope="request" />
     
+    <emm:instantiate var="agnNavHrefParams" type="java.util.LinkedHashMap" scope="request">
+        <c:set target="${agnNavHrefParams}" property="mailingID" value="${mailingBaseForm.mailingID}"/>
+        <c:set target="${agnNavHrefParams}" property="init" value="true"/>
+    </emm:instantiate>
 </logic:equal>
 
 <logic:equal name="mailingSendForm" property="isTemplate" value="false">

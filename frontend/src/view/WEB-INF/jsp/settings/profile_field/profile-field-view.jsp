@@ -37,7 +37,7 @@
 		<div class="tile-content tile-content-forms">
 			<div class="form-group" data-field="required">
 				<div class="col-sm-4">
-					<label class="control-label" for="fieldShortname"><bean:message key="settings.FieldName"/></label>
+					<label class="control-label" for="fieldShortname"><bean:message key="settings.FieldName"/> *</label>
 				</div>
 				<div class="col-sm-8">
 					<mvc:text path="shortname" id="fieldShortname" cssClass="form-control" maxlength="99" size="32" data-field-required=""/>
@@ -64,7 +64,7 @@
 
 			<div class="form-group" data-field="required">
 				<div class="col-sm-4">
-					<label class="control-label"><bean:message key="settings.FieldNameDB"/></label>
+					<label class="control-label"><bean:message key="settings.FieldNameDB"/> *</label>
 				</div>
 				<div class="col-sm-8">
 					<c:choose>
@@ -148,7 +148,7 @@
                             <label class="control-label" for="fieldDefault"><bean:message key="settings.Default_Value"/></label>
                         </div>
                         <div class="col-sm-8">
-                            <mvc:text path="fieldDefault" id="fieldDefault" cssClass="form-control" size="32"  maxlength="199"/>
+                            <mvc:text path="fieldDefault" id="fieldDefault" cssClass="form-control" readonly="${!isNewField}" size="32"  maxlength="199"/>
                         </div>
                     </div>
                 </c:if>

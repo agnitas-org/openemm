@@ -1,11 +1,9 @@
-<%@ page import="org.agnitas.dao.MailingStatus" %>
 <%@ page language="java" contentType="text/html; charset=utf-8" buffer="64kb"  errorPage="/error.do" %>
+<%@ page import="org.agnitas.dao.MailingStatus" %>
 <%@ page import="org.agnitas.web.ExportWizardAction" %>
-<%@ page import="org.agnitas.web.MailingBaseAction" %>
-<%@ page import="org.agnitas.web.MailingWizardAction" %>
+<%@ page import="com.agnitas.web.MailingBaseAction" %>
+<%@ page import="com.agnitas.web.MailingWizardAction" %>
 <%@ page import="org.agnitas.web.ProfileImportAction" %>
-<%@ page import="org.agnitas.web.RecipientAction" %>
-<%@ page import="org.agnitas.web.SalutationAction" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
@@ -20,11 +18,8 @@
 <c:set var="ACTION_VIEW_MAILING" value="<%= MailingBaseAction.ACTION_VIEW %>" scope="request"/>
 <c:set var="ACTION_NEW_MAILING" value="<%= MailingBaseAction.ACTION_NEW %>" scope="request"/>
 <c:set var="ACTION_START_MW" value="<%= MailingWizardAction.ACTION_START %>" scope="request"/>
-<c:set var="ACTION_RECIPIENT_OVERVIEW" value="<%= RecipientAction.ACTION_OVERVIEW_START%>" scope="request"/>
-<c:set var="ACTION_VIEW_RECIPIENT" value="<%= RecipientAction.ACTION_VIEW %>" scope="request"/>
 <c:set var="ACTION_IMPORT_RECIPIENT" value="<%= ProfileImportAction.ACTION_START %>" scope="request"/>
 <c:set var="ACTION_EXPORT_RECIPIENT" value="<%= ExportWizardAction.ACTION_LIST %>" scope="request"/>
-<c:set var="ACTION_SALUTATION_LIST" value="<%= SalutationAction.ACTION_LIST %>" scope="request"/>
 
 <div data-controller="dashboard">
     <div class="row" data-equalizer="max" data-equalizer-max="400">

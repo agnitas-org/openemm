@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -33,7 +33,7 @@ public interface LoginTrackService {
 	 * @param ipAddress IP address
 	 * @param username user name
 	 */
-	public void trackLoginSuccessful(final String ipAddress, final String username);
+	void trackLoginSuccessful(final String ipAddress, final String username);
 
 	/**
 	 * Write tracking record about failed login.
@@ -41,7 +41,7 @@ public interface LoginTrackService {
 	 * @param ipAddress IP address
 	 * @param username user name
 	 */
-	public void trackLoginFailed(final String ipAddress, final String username);
+	void trackLoginFailed(final String ipAddress, final String username);
 
 	/**
 	 * Write tracking record about successful login while IP address is blocked.
@@ -49,14 +49,14 @@ public interface LoginTrackService {
 	 * @param ipAddress IP address
 	 * @param username user name
 	 */
-	public void trackLoginSuccessfulButBlocked(final String ipAddress, final String username);
+	void trackLoginSuccessfulButBlocked(final String ipAddress, final String username);
 	
 	/**
 	 * Unlock given IP address.
 	 * 
 	 * @param ipAddress IP address to unlock
 	 */
-	public void unlockIpAddress(final String ipAddress);
+	void unlockIpAddress(final String ipAddress);
 
 	/**
 	 * Checks, if given IP address is locked.
@@ -68,7 +68,7 @@ public interface LoginTrackService {
 	 * 
 	 * @return <code>true</code> if IP address is locked, otherwise <code>false</code>
 	 */
-	public boolean isIpAddressLocked(final String ipAddress, final int companyID);
+	boolean isIpAddressLocked(final String ipAddress, final int companyID);
 	
 	/**
 	 * Counts the number of failed logins since last successful login.
@@ -81,7 +81,7 @@ public interface LoginTrackService {
 	 *
 	 * @return number of failed logins since last successful
 	 */
-	public int countFailedLoginsSinceLastSuccess(final String username, final boolean skipFirstIfSuccess);
+	int countFailedLoginsSinceLastSuccess(final String username, final boolean skipFirstIfSuccess);
 
 	/**
 	 * Returns the  data of the last successful login.
@@ -93,7 +93,7 @@ public interface LoginTrackService {
 	 *
 	 * @return last successful login or null
 	 */
-	public Optional<LoginData> findLastSuccessfulLogin(String username, boolean skipFirstIfSuccess);
+	Optional<LoginData> findLastSuccessfulLogin(String username, boolean skipFirstIfSuccess);
 	
 	/**
 	 * Returns an ordered list of login informations since the given time.
@@ -104,7 +104,7 @@ public interface LoginTrackService {
 	 *
 	 * @return list of login informations to be displayed
 	 */
-	public List<LoginData> listLoginAttemptsSince(final String username, final Date sinceOrNull);
+	List<LoginData> listLoginAttemptsSince(final String username, final Date sinceOrNull);
 
 	/**
 	 * Returns the blocked IP address for given tracking ID.
@@ -115,7 +115,7 @@ public interface LoginTrackService {
 	 * 
 	 * @return blocked address data or {@link Optional#empty()}
 	 */
-	public Optional<BlockedAddressData> findBlockedAddressByTrackingID(int trackingId);
+	Optional<BlockedAddressData> findBlockedAddressByTrackingID(int trackingId);
 	
 	/**
 	 * Unlocks blocked IP address by tracking ID.
@@ -129,14 +129,14 @@ public interface LoginTrackService {
 	 * @see #unlockIpAddress(String)
 	 */
 	@Deprecated // Block by IP using unlockIpAddress()
-	public boolean unlockBlockedAddressByTrackingId(final int trackingID);
+	boolean unlockBlockedAddressByTrackingId(final int trackingID);
 
 	/**
 	 * Lists blocked IP addresses.
 	 * 
 	 * @return List of blocked IP addresses
 	 */
-	public List<BlockedAddressData> listBlockedIpAddresses();
+	List<BlockedAddressData> listBlockedIpAddresses();
 
-	public PaginatedListImpl<BlockedAddressData> getBlockedIPListAfterSuccessfulLogin(final LoginTrackSortCriterion criterion, final SortDirection order, int pageNumber, int pageSize);
+	PaginatedListImpl<BlockedAddressData> getBlockedIPListAfterSuccessfulLogin(final LoginTrackSortCriterion criterion, final SortDirection order, int pageNumber, int pageSize);
 }

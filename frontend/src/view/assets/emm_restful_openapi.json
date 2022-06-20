@@ -3,7 +3,7 @@
   "info" : {
     "title" : "EMM Restful API",
     "description" : "This is the EMM Restful API.<br /><br />Authorization is done via username and password as URL parameters or via Basic Auth (see https://en.wikipedia.org/wiki/Basic_access_authentication).<br />Use username and password of an EMM GUI user with permission \"utilize the RESTful interface\".<br /><br />Example for request via wget with URL parameters:<br /><pre>wget -S -O - --content-on-error \"https://&lt;emm_system_url>/restful/mailing/1?username=&lt;UrlencodedUserName>&password=&lt;UrlencodedPassword>\" > test.txt; cat test.txt</pre><br />Example for request via wget with BASIC AUTH:<br /><pre>wget -S -O - --content-on-error --auth-no-challenge --http-user=\"&lt;UrlencodedUserName>\" --http-password=\"&lt;UrlencodedPassword>\" \"https://&lt;emm_system_url>/restful/mailing/1\" > test.txt; cat test.txt</pre>",
-    "version" : "1.0.0",
+    "version" : "1.1.0",
     "contact" : {
       "email" : "info@agnitas.ag"
     }
@@ -44,6 +44,21 @@
   }, {
     "name" : "Send",
     "description" : "Everything about mailing delivery"
+  }, {
+    "name" : "Target",
+    "description" : "Everything about targetgroups"
+  }, {
+    "name" : "User",
+    "description" : "Everything about GUI users"
+  }, {
+    "name" : "UserGroup",
+    "description" : "Everything about usergroups used by GUI users and Restful users"
+  }, {
+    "name" : "RestfulUser",
+    "description" : "Everything about Restful users"
+  }, {
+    "name" : "WebserviceUser",
+    "description" : "Everything about SOAP-Webservice users"
   } ],
   "paths" : {
     "/openapi" : {
@@ -232,6 +247,86 @@
           },
           "400" : {
             "description" : "Any client side error like invalid mailing id or not existing mailing"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    },
+    "/mailing/{mailing_id}/copy" : {
+      "post" : {
+        "summary" : "Copy an existing mailing",
+        "tags" : [ "Mailing" ],
+        "operationId" : "copyMailingById",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "mailing_id",
+          "required" : true,
+          "schema" : {
+            "type" : "integer"
+          },
+          "description" : "Numeric ID of the mailing to copy"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Newly created MailingID",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid mailing id"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    },
+    "/mailing/{mailing_id}/status" : {
+      "get" : {
+        "summary" : "read status of an existing mailing",
+        "tags" : [ "Mailing" ],
+        "operationId" : "getMailingStatus",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "mailing_id",
+          "required" : true,
+          "schema" : {
+            "type" : "integer"
+          },
+          "description" : "Numeric ID of the mailing to copy"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Newly created MailingID",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid mailing id"
           },
           "401" : {
             "description" : "Authorization information is missing or invalid"
@@ -1679,7 +1774,7 @@
         },
         "responses" : {
           "200" : {
-            "description" : "Stored data of updated mailing content item",
+            "description" : "Stored data of updated mailinglist item",
             "content" : {
               "application/json" : {
                 "schema" : {
@@ -1705,7 +1800,7 @@
     },
     "/mailinglist/{mailinglist_id}/recipients" : {
       "get" : {
-        "summary" : "Read a single existing mailinglist item and its recipients",
+        "summary" : "Read a single existing mailinglist item and its recipients (Optional additional request parameter \"?fields=customer_id,email, ...\" or \"?fields=*\")",
         "tags" : [ "Mailinglist" ],
         "parameters" : [ {
           "in" : "path",
@@ -1853,6 +1948,276 @@
           },
           "400" : {
             "description" : "Any client side error like invalid id or not existing item"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    },
+    "/target" : {
+      "get" : {
+        "summary" : "Read all existing target data",
+        "tags" : [ "Target" ],
+        "operationId" : "getTarget",
+        "description" : "Read existing target data",
+        "responses" : {
+          "200" : {
+            "description" : "search results matching criteria",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/TargetItem"
+                  }
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid mailing id or not existing mailing"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "post" : {
+        "summary" : "Write new target data",
+        "tags" : [ "Target" ],
+        "operationId" : "posttarget",
+        "description" : "Write new target data. Does not update existing target objects.",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/TargetItem"
+              }
+            }
+          },
+          "description" : "target data to add"
+        },
+        "responses" : {
+          "200" : {
+            "description" : "item created"
+          },
+          "400" : {
+            "description" : "invalid input, object invalid"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "put" : {
+        "summary" : "Create or update target data",
+        "tags" : [ "Target" ],
+        "requestBody" : {
+          "description" : "target data to add",
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/TargetItem"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Stored data of new target item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TargetItem"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid target id or not existing target"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    },
+    "/target/{target_id}" : {
+      "get" : {
+        "summary" : "Read a single existing target item",
+        "tags" : [ "Target" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "target_id",
+          "required" : true,
+          "schema" : {
+            "type" : "integer"
+          },
+          "description" : "Numeric ID of the target to get"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "target item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TargetItem"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid target id or not existing target"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "delete" : {
+        "summary" : "Delete single existing target content",
+        "tags" : [ "Target" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "target_id",
+          "required" : true,
+          "schema" : {
+            "type" : "integer"
+          },
+          "description" : "Numeric ID of the target to delete"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Simple confirmation text",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid id or not existing item"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "put" : {
+        "summary" : "Create or update target",
+        "tags" : [ "Target" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "target_id",
+          "required" : true,
+          "schema" : {
+            "type" : "integer"
+          },
+          "description" : "Numeric ID of the target to create or update"
+        } ],
+        "requestBody" : {
+          "description" : "New data for existing target item",
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/TargetItem"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Stored data of updated target item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TargetItem"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid id or not existing item"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    },
+    "/target/{target_id}/recipients" : {
+      "get" : {
+        "summary" : "Read a single existing target item and its recipients (Optional additional request parameter \"?fields=customer_id,email, ...\" or \"?fields=*\")",
+        "tags" : [ "Target" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "target_id",
+          "required" : true,
+          "schema" : {
+            "type" : "integer"
+          },
+          "description" : "Numeric ID of the target to get"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "target item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TargetItemWithRecipients"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid target id or not existing target"
           },
           "401" : {
             "description" : "Authorization information is missing or invalid"
@@ -4194,6 +4559,1517 @@
           }
         }
       }
+    },
+    "/user" : {
+      "get" : {
+        "summary" : "Read all existing user data",
+        "tags" : [ "User" ],
+        "operationId" : "getuser",
+        "description" : "Read existing user data",
+        "responses" : {
+          "200" : {
+            "description" : "search results matching criteria",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/UserItemGet"
+                  }
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid mailing id or not existing mailing"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "post" : {
+        "summary" : "Write new user data",
+        "tags" : [ "User" ],
+        "operationId" : "postuser",
+        "description" : "Write new user data. Does not update existing user objects.",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UserItemPostWithoutUrlParam"
+              }
+            }
+          },
+          "description" : "user data to add"
+        },
+        "responses" : {
+          "200" : {
+            "description" : "item created"
+          },
+          "400" : {
+            "description" : "invalid input, object invalid"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "put" : {
+        "summary" : "Create or update user data",
+        "tags" : [ "User" ],
+        "requestBody" : {
+          "description" : "user data to add",
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UserItemPutWithoutUrlParam"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Stored data of new user item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UserItemGet"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid user id or not existing user"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    },
+    "/user/{user_id}" : {
+      "get" : {
+        "summary" : "Read a single existing user item",
+        "tags" : [ "User" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "user_id",
+          "required" : true,
+          "schema" : {
+            "type" : "integer"
+          },
+          "description" : "Numeric ID of the user to get"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "user item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UserItemGet"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid user id or not existing user"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "delete" : {
+        "summary" : "Delete single existing user content",
+        "tags" : [ "User" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "user_id",
+          "required" : true,
+          "schema" : {
+            "type" : "integer"
+          },
+          "description" : "Numeric ID of the user to delete"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Simple confirmation text",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid id or not existing item"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "put" : {
+        "summary" : "Update user",
+        "tags" : [ "User" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "user_id",
+          "required" : true,
+          "schema" : {
+            "type" : "integer"
+          },
+          "description" : "Numeric ID of the user to create or update"
+        } ],
+        "requestBody" : {
+          "description" : "New data for existing user item",
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UserItemPutWithUrlParam"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Stored data of updated user item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UserItemGet"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid id or not existing item"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    },
+    "/user/{user_name}" : {
+      "get" : {
+        "summary" : "Read a single existing user item",
+        "tags" : [ "User" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "user_name",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          },
+          "description" : "Name of the user to get"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "user item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UserItemGet"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid user id or not existing user"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "delete" : {
+        "summary" : "Delete single existing user content",
+        "tags" : [ "User" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "user_name",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          },
+          "description" : "Name of the user to delete"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Simple confirmation text",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid id or not existing item"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "post" : {
+        "summary" : "Create a new user",
+        "tags" : [ "User" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "user_name",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          },
+          "description" : "Name of the user to create"
+        } ],
+        "requestBody" : {
+          "description" : "Data for the user to create",
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UserItemPostWithUrlParam"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Stored data of user item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UserItemGet"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid id or not existing item"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "put" : {
+        "summary" : "Create or update user",
+        "tags" : [ "User" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "user_name",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          },
+          "description" : "Name of the user to create or update"
+        } ],
+        "requestBody" : {
+          "description" : "New data for existing user item",
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UserItemPutWithUrlParam"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Stored data of updated user item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UserItemGet"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid id or not existing item"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    },
+    "/usergroup" : {
+      "get" : {
+        "summary" : "Read all existing usergroup data",
+        "tags" : [ "UserGroup" ],
+        "operationId" : "getusergroup",
+        "description" : "Read existing usergroup data",
+        "responses" : {
+          "200" : {
+            "description" : "search results matching criteria",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/UserGroupItemGet"
+                  }
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid mailing id or not existing mailing"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "post" : {
+        "summary" : "Write new usergroup data",
+        "tags" : [ "UserGroup" ],
+        "operationId" : "postusergroup",
+        "description" : "Write new usergroup data. Does not update existing usergroup objects.",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UserGroupItemPostWithoutUrlParam"
+              }
+            }
+          },
+          "description" : "usergroup data to add"
+        },
+        "responses" : {
+          "200" : {
+            "description" : "item created"
+          },
+          "400" : {
+            "description" : "invalid input, object invalid"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "put" : {
+        "summary" : "Create or update usergroup data",
+        "tags" : [ "UserGroup" ],
+        "requestBody" : {
+          "description" : "usergroup data to add",
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UserGroupItemPutWithoutUrlParam"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Stored data of new usergroup item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UserGroupItemGet"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid usergroup id or not existing usergroup"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    },
+    "/usergroup/{usergroup_id}" : {
+      "get" : {
+        "summary" : "Read a single existing usergroup item",
+        "tags" : [ "UserGroup" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "usergroup_id",
+          "required" : true,
+          "schema" : {
+            "type" : "integer"
+          },
+          "description" : "Numeric ID of the usergroup to get"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "usergroup item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UserGroupItemGet"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid usergroup id or not existing usergroup"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "delete" : {
+        "summary" : "Delete single existing usergroup content",
+        "tags" : [ "UserGroup" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "usergroup_id",
+          "required" : true,
+          "schema" : {
+            "type" : "integer"
+          },
+          "description" : "Numeric ID of the usergroup to delete"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Simple confirmation text",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid id or not existing item"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "put" : {
+        "summary" : "Update usergroup",
+        "tags" : [ "UserGroup" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "usergroup_id",
+          "required" : true,
+          "schema" : {
+            "type" : "integer"
+          },
+          "description" : "Numeric ID of the usergroup to create or update"
+        } ],
+        "requestBody" : {
+          "description" : "New data for existing usergroup item",
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UserGroupItemPutWithUrlParam"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Stored data of updated usergroup item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UserGroupItemGet"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid id or not existing item"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    },
+    "/usergroup/{usergroup_name}" : {
+      "get" : {
+        "summary" : "Read a single existing usergroup item",
+        "tags" : [ "UserGroup" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "usergroup_name",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          },
+          "description" : "Name of the usergroup to get"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "usergroup item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UserGroupItemGet"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid usergroup id or not existing usergroup"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "delete" : {
+        "summary" : "Delete single existing usergroup content",
+        "tags" : [ "UserGroup" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "usergroup_name",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          },
+          "description" : "Name of the usergroup to delete"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Simple confirmation text",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid id or not existing item"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "post" : {
+        "summary" : "Create a new usergroup",
+        "tags" : [ "UserGroup" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "usergroup_name",
+          "required" : true,
+          "schema" : {
+            "type" : "integer"
+          },
+          "description" : "Name of the usergroup to create"
+        } ],
+        "requestBody" : {
+          "description" : "Data for the usergroup to create",
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UserGroupItemPostWithUrlParam"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Stored data of created usergroup item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UserGroupItemGet"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid id or not existing item"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "put" : {
+        "summary" : "Create or update usergroup",
+        "tags" : [ "UserGroup" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "usergroup_name",
+          "required" : true,
+          "schema" : {
+            "type" : "integer"
+          },
+          "description" : "Name of the usergroup to create or update"
+        } ],
+        "requestBody" : {
+          "description" : "New data for existing usergroup item",
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UserGroupItemPutWithUrlParam"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Stored data of updated usergroup item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UserGroupItemGet"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid id or not existing item"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    },
+    "/restuser" : {
+      "get" : {
+        "summary" : "Read all existing restful user data",
+        "tags" : [ "RestfulUser" ],
+        "operationId" : "getrestful user",
+        "description" : "Read existing restful user data",
+        "responses" : {
+          "200" : {
+            "description" : "search results matching criteria",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/RestUserItemGet"
+                  }
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid mailing id or not existing mailing"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "post" : {
+        "summary" : "Write new restful user data",
+        "tags" : [ "RestfulUser" ],
+        "operationId" : "postrestful user",
+        "description" : "Write new restful user data. Does not update existing restful user objects.",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RestUserItemPostWithoutUrlParam"
+              }
+            }
+          },
+          "description" : "restful user data to add"
+        },
+        "responses" : {
+          "200" : {
+            "description" : "item created"
+          },
+          "400" : {
+            "description" : "invalid input, object invalid"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "put" : {
+        "summary" : "Create or update restful user data",
+        "tags" : [ "RestfulUser" ],
+        "requestBody" : {
+          "description" : "restful user data to add",
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RestUserItemPutWithoutUrlParam"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Stored data of new restful user item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RestUserItemGet"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid restful user id or not existing restful user"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    },
+    "/restuser/{restful_user_id}" : {
+      "get" : {
+        "summary" : "Read a single existing restful user item",
+        "tags" : [ "RestfulUser" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "restful_user_id",
+          "required" : true,
+          "schema" : {
+            "type" : "integer"
+          },
+          "description" : "Numeric ID of the restful user to get"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "restful user item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RestUserItemGet"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid restful user id or not existing restful user"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "delete" : {
+        "summary" : "Delete single existing restful user content",
+        "tags" : [ "RestfulUser" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "restful_user_id",
+          "required" : true,
+          "schema" : {
+            "type" : "integer"
+          },
+          "description" : "Numeric ID of the restful user to delete"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Simple confirmation text",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid id or not existing item"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "put" : {
+        "summary" : "Update restful user",
+        "tags" : [ "RestfulUser" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "restful_user_id",
+          "required" : true,
+          "schema" : {
+            "type" : "integer"
+          },
+          "description" : "Numeric ID of the restful user to create or update"
+        } ],
+        "requestBody" : {
+          "description" : "New data for existing restful user item",
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RestUserItemPutWithUrlParam"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Stored data of updated restful user item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RestUserItemGet"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid id or not existing item"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    },
+    "/restuser/{restful_user_name}" : {
+      "get" : {
+        "summary" : "Read a single existing restful user item",
+        "tags" : [ "RestfulUser" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "restful_user_name",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          },
+          "description" : "Name of the restful user to get"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "restful user item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RestUserItemGet"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid restful user id or not existing restful user"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "delete" : {
+        "summary" : "Delete single existing restful user content",
+        "tags" : [ "RestfulUser" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "restful_user_name",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          },
+          "description" : "Name of the restful user to delete"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Simple confirmation text",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid id or not existing item"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "post" : {
+        "summary" : "Create restful user",
+        "tags" : [ "RestfulUser" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "restful_user_name",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          },
+          "description" : "Name of the restful user to create"
+        } ],
+        "requestBody" : {
+          "description" : "Data for restful user to create",
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RestUserItemPostWithUrlParam"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Stored data of restful user item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RestUserItemGet"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid id or not existing item"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "put" : {
+        "summary" : "Create or update restful user",
+        "tags" : [ "RestfulUser" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "restful_user_name",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          },
+          "description" : "Name of the restful user to create or update"
+        } ],
+        "requestBody" : {
+          "description" : "New data for existing restful user item",
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RestUserItemPutWithUrlParam"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Stored data of updated restful user item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RestUserItemGet"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid id or not existing item"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    },
+    "/wsuser" : {
+      "get" : {
+        "summary" : "Read all existing webservice user data",
+        "tags" : [ "WebserviceUser" ],
+        "operationId" : "getwebservice user",
+        "description" : "Read existing webservice user data",
+        "responses" : {
+          "200" : {
+            "description" : "search results matching criteria",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/WebserviceUserItemGet"
+                  }
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid mailing id or not existing mailing"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "post" : {
+        "summary" : "Write new webservice user data",
+        "tags" : [ "WebserviceUser" ],
+        "operationId" : "postwebservice user",
+        "description" : "Write new webservice user data. Does not update existing webservice user objects.",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/WebserviceUserItemPostWithoutUrlParam"
+              }
+            }
+          },
+          "description" : "webservice user data to add"
+        },
+        "responses" : {
+          "200" : {
+            "description" : "item created"
+          },
+          "400" : {
+            "description" : "invalid input, object invalid"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "put" : {
+        "summary" : "Create or update webservice user data",
+        "tags" : [ "WebserviceUser" ],
+        "requestBody" : {
+          "description" : "webservice user data to add",
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/WebserviceUserItemPutWithoutUrlParam"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Stored data of new webservice user item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/WebserviceUserItemGet"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid webservice user id or not existing webservice user"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    },
+    "/wsuser/{webservice_user_name}" : {
+      "get" : {
+        "summary" : "Read a single existing webservice user item",
+        "tags" : [ "WebserviceUser" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "webservice_user_name",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          },
+          "description" : "Name of the webservice user to get"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "webservice user item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/WebserviceUserItemGet"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid webservice user id or not existing webservice user"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "delete" : {
+        "summary" : "Delete single existing webservice user content",
+        "tags" : [ "WebserviceUser" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "webservice_user_name",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          },
+          "description" : "Name of the webservice user to delete"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Simple confirmation text",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid id or not existing item"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "post" : {
+        "summary" : "Create a new webservice user",
+        "tags" : [ "WebserviceUser" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "webservice_user_name",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          },
+          "description" : "Name of the webservice user to create"
+        } ],
+        "requestBody" : {
+          "description" : "Data for webservice user to create",
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/WebserviceUserItemPostWithUrlParam"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Stored data of webservice user item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/WebserviceUserItemGet"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid id or not existing item"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "put" : {
+        "summary" : "Create or update webservice user",
+        "tags" : [ "WebserviceUser" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "webservice_user_name",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          },
+          "description" : "Name of the webservice user to create or update"
+        } ],
+        "requestBody" : {
+          "description" : "New data for existing webservice user item",
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/WebserviceUserItemPutWithUrlParam"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Stored data of updated webservice user item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/WebserviceUserItemGet"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid id or not existing item"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    },
+    "/altg" : {
+      "get" : {
+        "summary" : "Read a list of all ALTG target groups",
+        "tags" : [ "Target" ],
+        "responses" : {
+          "200" : {
+            "description" : "list of all ALTG target groups and their assigned userids"
+          },
+          "400" : {
+            "description" : "Any client side error like invalid webservice user id or not existing webservice user"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
     }
   },
   "components" : {
@@ -4405,7 +6281,50 @@
           },
           "recipients" : {
             "type" : "array",
-            "description" : "Array of recipients data",
+            "description" : "Array of recipients data. By default only customer_id values are listed. You may use optional additional request parameter \"?fields=customer_id,email, ...\" or \"?fields=*\".",
+            "items" : {
+              "$ref" : "#/components/schemas/RecipientItem"
+            }
+          }
+        }
+      },
+      "TargetItem" : {
+        "type" : "object",
+        "required" : [ "name", "eql" ],
+        "properties" : {
+          "name" : {
+            "type" : "string",
+            "description" : "Name of target"
+          },
+          "description" : {
+            "type" : "string",
+            "example" : "Description of target"
+          },
+          "eql" : {
+            "type" : "string",
+            "description" : "Definition of target in EQL syntax"
+          }
+        }
+      },
+      "TargetItemWithRecipients" : {
+        "type" : "object",
+        "required" : [ "name", "eql" ],
+        "properties" : {
+          "name" : {
+            "type" : "string",
+            "description" : "Name of target"
+          },
+          "description" : {
+            "type" : "string",
+            "example" : "Description of target"
+          },
+          "eql" : {
+            "type" : "string",
+            "description" : "Definition of target in EQL syntax"
+          },
+          "recipients" : {
+            "type" : "array",
+            "description" : "Array of recipients data. By default only customer_id values are listed. You may use optional additional request parameter \"?fields=customer_id,email, ...\" or \"?fields=*\".",
             "items" : {
               "$ref" : "#/components/schemas/RecipientItem"
             }
@@ -4517,7 +6436,6 @@
       },
       "MailingInfoItem" : {
         "type" : "object",
-        "required" : [ "shortname", "mailinglist_id" ],
         "properties" : {
           "shortname" : {
             "type" : "string",
@@ -4529,7 +6447,81 @@
           },
           "mailinglist_id" : {
             "type" : "integer",
-            "description" : "Numeric ID of the mailinglist to set for this mailing"
+            "description" : "Numeric ID of the mailinglist to set for this mailing (not to be used simultaneously with mailinglist_shortname)"
+          },
+          "mailinglist_shortname" : {
+            "type" : "string",
+            "description" : "Name of the mailinglist to set for this mailing (not to be used simultaneously with mailinglist_id)"
+          },
+          "mailingtype" : {
+            "type" : "string",
+            "description" : "Type of mailing (Default NORMAL, Other values ACTION_BASED, DATE_BASED, FOLLOW_UP, INTERVAL)"
+          },
+          "mailing_content_type" : {
+            "type" : "string",
+            "description" : "Contenttype of mailing (advertising, transaction)"
+          },
+          "target_expression" : {
+            "type" : "string",
+            "description" : "Expression for targetgroups (Single targetgroupID or multiple ids seprated by \"&\" or \"|\" getrennt, only single type of operator allowed)"
+          },
+          "is_template" : {
+            "type" : "boolean",
+            "description" : "Mark mailing as template"
+          },
+          "open_action_id" : {
+            "type" : "integer",
+            "description" : "ActionID for openings"
+          },
+          "click_action_id" : {
+            "type" : "integer",
+            "description" : "ActionID for clicks"
+          },
+          "campaign_id" : {
+            "type" : "integer",
+            "description" : "Assign mailing to workflow campaign"
+          },
+          "parameters" : {
+            "description" : "Mailingparameters as JsonArray of JsonObjects",
+            "type" : "array",
+            "items" : {
+              "type" : "object",
+              "properties" : {
+                "name" : {
+                  "type" : "string",
+                  "description" : "Parametername"
+                },
+                "value" : {
+                  "type" : "string",
+                  "description" : "Parametervalue"
+                },
+                "description" : {
+                  "type" : "string",
+                  "description" : "Descriptiontext"
+                }
+              }
+            }
+          },
+          "links" : {
+            "description" : "Mailing Trackable Links as JsonArray of JsonObjects",
+            "type" : "array",
+            "items" : {
+              "type" : "object",
+              "properties" : {
+                "name" : {
+                  "type" : "string",
+                  "description" : "Linkname"
+                },
+                "url" : {
+                  "type" : "string",
+                  "description" : "Link URL"
+                },
+                "action_id" : {
+                  "type" : "integer",
+                  "description" : "ACtionID for clicks"
+                }
+              }
+            }
           }
         }
       },
@@ -4566,6 +6558,1022 @@
             "items" : {
               "$ref" : "#/components/schemas/ContentItem"
             }
+          }
+        }
+      },
+      "UserItemGet" : {
+        "type" : "object",
+        "properties" : {
+          "username" : {
+            "type" : "string"
+          },
+          "userID" : {
+            "type" : "integer"
+          },
+          "clientID" : {
+            "type" : "integer"
+          },
+          "company" : {
+            "type" : "string"
+          },
+          "gender" : {
+            "type" : "integer"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "firstname" : {
+            "type" : "string"
+          },
+          "lastname" : {
+            "type" : "string"
+          },
+          "employeeID" : {
+            "type" : "string"
+          },
+          "email" : {
+            "type" : "string"
+          },
+          "phone" : {
+            "type" : "string"
+          },
+          "statisticsEmail" : {
+            "type" : "string"
+          },
+          "location" : {
+            "type" : "string"
+          },
+          "language" : {
+            "type" : "string"
+          },
+          "timezone" : {
+            "type" : "string"
+          },
+          "groups" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/UserGroupRefItem"
+            }
+          },
+          "permissions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/PermissionItem"
+            }
+          },
+          "defaultImportProfileID" : {
+            "type" : "integer"
+          },
+          "accessLimitingTargetGroupID" : {
+            "type" : "integer"
+          },
+          "disabledMailingLists" : {
+            "type" : "array",
+            "items" : {
+              "type" : "integer"
+            }
+          }
+        }
+      },
+      "UserItemPostWithoutUrlParam" : {
+        "type" : "object",
+        "properties" : {
+          "username" : {
+            "type" : "string"
+          },
+          "clientID" : {
+            "type" : "integer"
+          },
+          "company" : {
+            "type" : "string"
+          },
+          "gender" : {
+            "type" : "integer"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "firstname" : {
+            "type" : "string"
+          },
+          "lastname" : {
+            "type" : "string"
+          },
+          "employeeID" : {
+            "type" : "string"
+          },
+          "email" : {
+            "type" : "string"
+          },
+          "phone" : {
+            "type" : "string"
+          },
+          "statisticsEmail" : {
+            "type" : "string"
+          },
+          "location" : {
+            "type" : "string"
+          },
+          "language" : {
+            "type" : "string"
+          },
+          "timezone" : {
+            "type" : "string"
+          },
+          "groups" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/UserGroupRefItem"
+            }
+          },
+          "permissions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/PermissionItem"
+            }
+          },
+          "defaultImportProfileID" : {
+            "type" : "integer"
+          },
+          "accessLimitingTargetGroupID" : {
+            "type" : "integer"
+          },
+          "disabledMailingLists" : {
+            "type" : "array",
+            "items" : {
+              "type" : "integer"
+            }
+          },
+          "password" : {
+            "type" : "string",
+            "description" : "Needed for new users. Not needed when SSO is used."
+          }
+        }
+      },
+      "UserItemPostWithUrlParam" : {
+        "type" : "object",
+        "properties" : {
+          "clientID" : {
+            "type" : "integer"
+          },
+          "company" : {
+            "type" : "string"
+          },
+          "gender" : {
+            "type" : "integer"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "firstname" : {
+            "type" : "string"
+          },
+          "lastname" : {
+            "type" : "string"
+          },
+          "employeeID" : {
+            "type" : "string"
+          },
+          "email" : {
+            "type" : "string"
+          },
+          "phone" : {
+            "type" : "string"
+          },
+          "statisticsEmail" : {
+            "type" : "string"
+          },
+          "location" : {
+            "type" : "string"
+          },
+          "language" : {
+            "type" : "string"
+          },
+          "timezone" : {
+            "type" : "string"
+          },
+          "groups" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/UserGroupRefItem"
+            }
+          },
+          "permissions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/PermissionItem"
+            }
+          },
+          "defaultImportProfileID" : {
+            "type" : "integer"
+          },
+          "accessLimitingTargetGroupID" : {
+            "type" : "integer"
+          },
+          "disabledMailingLists" : {
+            "type" : "array",
+            "items" : {
+              "type" : "integer"
+            }
+          },
+          "password" : {
+            "type" : "string",
+            "description" : "Needed for new users. Not needed when SSO is used."
+          }
+        }
+      },
+      "UserItemPutWithoutUrlParam" : {
+        "type" : "object",
+        "properties" : {
+          "username" : {
+            "type" : "string"
+          },
+          "clientID" : {
+            "type" : "integer"
+          },
+          "company" : {
+            "type" : "string"
+          },
+          "gender" : {
+            "type" : "integer"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "firstname" : {
+            "type" : "string"
+          },
+          "lastname" : {
+            "type" : "string"
+          },
+          "employeeID" : {
+            "type" : "string"
+          },
+          "email" : {
+            "type" : "string"
+          },
+          "phone" : {
+            "type" : "string"
+          },
+          "statisticsEmail" : {
+            "type" : "string"
+          },
+          "location" : {
+            "type" : "string"
+          },
+          "language" : {
+            "type" : "string"
+          },
+          "timezone" : {
+            "type" : "string"
+          },
+          "groups" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/UserGroupRefItem"
+            }
+          },
+          "permissions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/PermissionItem"
+            }
+          },
+          "defaultImportProfileID" : {
+            "type" : "integer"
+          },
+          "accessLimitingTargetGroupID" : {
+            "type" : "integer"
+          },
+          "disabledMailingLists" : {
+            "type" : "array",
+            "items" : {
+              "type" : "integer"
+            }
+          },
+          "password" : {
+            "type" : "string",
+            "description" : "Optional. Needed for new users. Not needed when SSO is used."
+          }
+        }
+      },
+      "UserItemPutWithUrlParam" : {
+        "type" : "object",
+        "properties" : {
+          "username" : {
+            "type" : "string"
+          },
+          "clientID" : {
+            "type" : "integer"
+          },
+          "company" : {
+            "type" : "string"
+          },
+          "gender" : {
+            "type" : "integer"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "firstname" : {
+            "type" : "string"
+          },
+          "lastname" : {
+            "type" : "string"
+          },
+          "employeeID" : {
+            "type" : "string"
+          },
+          "email" : {
+            "type" : "string"
+          },
+          "phone" : {
+            "type" : "string"
+          },
+          "statisticsEmail" : {
+            "type" : "string"
+          },
+          "location" : {
+            "type" : "string"
+          },
+          "language" : {
+            "type" : "string"
+          },
+          "timezone" : {
+            "type" : "string"
+          },
+          "groups" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/UserGroupRefItem"
+            }
+          },
+          "permissions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/PermissionItem"
+            }
+          },
+          "defaultImportProfileID" : {
+            "type" : "integer"
+          },
+          "accessLimitingTargetGroupID" : {
+            "type" : "integer"
+          },
+          "disabledMailingLists" : {
+            "type" : "array",
+            "items" : {
+              "type" : "integer"
+            }
+          },
+          "password" : {
+            "type" : "string",
+            "description" : "Optional. Needed for new users. Not needed when SSO is used."
+          }
+        }
+      },
+      "RestUserItemGet" : {
+        "type" : "object",
+        "properties" : {
+          "username" : {
+            "type" : "string"
+          },
+          "userID" : {
+            "type" : "integer"
+          },
+          "clientID" : {
+            "type" : "integer"
+          },
+          "company" : {
+            "type" : "string"
+          },
+          "gender" : {
+            "type" : "integer"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "firstname" : {
+            "type" : "string"
+          },
+          "lastname" : {
+            "type" : "string"
+          },
+          "employeeID" : {
+            "type" : "string"
+          },
+          "email" : {
+            "type" : "string"
+          },
+          "phone" : {
+            "type" : "string"
+          },
+          "statisticsEmail" : {
+            "type" : "string"
+          },
+          "location" : {
+            "type" : "string"
+          },
+          "language" : {
+            "type" : "string"
+          },
+          "timezone" : {
+            "type" : "string"
+          },
+          "groups" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/UserGroupRefItem"
+            }
+          },
+          "permissions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/PermissionItem"
+            }
+          },
+          "defaultImportProfileID" : {
+            "type" : "integer"
+          },
+          "accessLimitingTargetGroupID" : {
+            "type" : "integer"
+          },
+          "disabledMailingLists" : {
+            "type" : "array",
+            "items" : {
+              "type" : "integer"
+            }
+          }
+        }
+      },
+      "RestUserItemPostWithoutUrlParam" : {
+        "type" : "object",
+        "properties" : {
+          "username" : {
+            "type" : "string"
+          },
+          "clientID" : {
+            "type" : "integer"
+          },
+          "company" : {
+            "type" : "string"
+          },
+          "gender" : {
+            "type" : "integer"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "firstname" : {
+            "type" : "string"
+          },
+          "lastname" : {
+            "type" : "string"
+          },
+          "employeeID" : {
+            "type" : "string"
+          },
+          "email" : {
+            "type" : "string"
+          },
+          "phone" : {
+            "type" : "string"
+          },
+          "statisticsEmail" : {
+            "type" : "string"
+          },
+          "location" : {
+            "type" : "string"
+          },
+          "language" : {
+            "type" : "string"
+          },
+          "timezone" : {
+            "type" : "string"
+          },
+          "groups" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/UserGroupRefItem"
+            }
+          },
+          "permissions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/PermissionItem"
+            }
+          },
+          "defaultImportProfileID" : {
+            "type" : "integer"
+          },
+          "accessLimitingTargetGroupID" : {
+            "type" : "integer"
+          },
+          "disabledMailingLists" : {
+            "type" : "array",
+            "items" : {
+              "type" : "integer"
+            }
+          },
+          "password" : {
+            "type" : "string",
+            "description" : "Needed for new users. Not needed when SSO is used."
+          }
+        }
+      },
+      "RestUserItemPostWithUrlParam" : {
+        "type" : "object",
+        "properties" : {
+          "clientID" : {
+            "type" : "integer"
+          },
+          "company" : {
+            "type" : "string"
+          },
+          "gender" : {
+            "type" : "integer"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "firstname" : {
+            "type" : "string"
+          },
+          "lastname" : {
+            "type" : "string"
+          },
+          "employeeID" : {
+            "type" : "string"
+          },
+          "email" : {
+            "type" : "string"
+          },
+          "phone" : {
+            "type" : "string"
+          },
+          "statisticsEmail" : {
+            "type" : "string"
+          },
+          "location" : {
+            "type" : "string"
+          },
+          "language" : {
+            "type" : "string"
+          },
+          "timezone" : {
+            "type" : "string"
+          },
+          "groups" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/UserGroupRefItem"
+            }
+          },
+          "permissions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/PermissionItem"
+            }
+          },
+          "defaultImportProfileID" : {
+            "type" : "integer"
+          },
+          "accessLimitingTargetGroupID" : {
+            "type" : "integer"
+          },
+          "disabledMailingLists" : {
+            "type" : "array",
+            "items" : {
+              "type" : "integer"
+            }
+          },
+          "password" : {
+            "type" : "string",
+            "description" : "Needed for new users. Not needed when SSO is used."
+          }
+        }
+      },
+      "RestUserItemPutWithoutUrlParam" : {
+        "type" : "object",
+        "properties" : {
+          "username" : {
+            "type" : "string"
+          },
+          "company" : {
+            "type" : "string"
+          },
+          "gender" : {
+            "type" : "integer"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "firstname" : {
+            "type" : "string"
+          },
+          "lastname" : {
+            "type" : "string"
+          },
+          "employeeID" : {
+            "type" : "string"
+          },
+          "email" : {
+            "type" : "string"
+          },
+          "phone" : {
+            "type" : "string"
+          },
+          "statisticsEmail" : {
+            "type" : "string"
+          },
+          "location" : {
+            "type" : "string"
+          },
+          "language" : {
+            "type" : "string"
+          },
+          "timezone" : {
+            "type" : "string"
+          },
+          "groups" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/UserGroupRefItem"
+            }
+          },
+          "permissions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/PermissionItem"
+            }
+          },
+          "defaultImportProfileID" : {
+            "type" : "integer"
+          },
+          "accessLimitingTargetGroupID" : {
+            "type" : "integer"
+          },
+          "disabledMailingLists" : {
+            "type" : "array",
+            "items" : {
+              "type" : "integer"
+            }
+          },
+          "password" : {
+            "type" : "string",
+            "description" : "Optional. Needed for new users. Not needed when SSO is used."
+          }
+        }
+      },
+      "RestUserItemPutWithUrlParam" : {
+        "type" : "object",
+        "properties" : {
+          "username" : {
+            "type" : "string"
+          },
+          "company" : {
+            "type" : "string"
+          },
+          "gender" : {
+            "type" : "integer"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "firstname" : {
+            "type" : "string"
+          },
+          "lastname" : {
+            "type" : "string"
+          },
+          "employeeID" : {
+            "type" : "string"
+          },
+          "email" : {
+            "type" : "string"
+          },
+          "phone" : {
+            "type" : "string"
+          },
+          "statisticsEmail" : {
+            "type" : "string"
+          },
+          "location" : {
+            "type" : "string"
+          },
+          "language" : {
+            "type" : "string"
+          },
+          "timezone" : {
+            "type" : "string"
+          },
+          "groups" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/UserGroupRefItem"
+            }
+          },
+          "permissions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/PermissionItem"
+            }
+          },
+          "defaultImportProfileID" : {
+            "type" : "integer"
+          },
+          "accessLimitingTargetGroupID" : {
+            "type" : "integer"
+          },
+          "disabledMailingLists" : {
+            "type" : "array",
+            "items" : {
+              "type" : "integer"
+            }
+          },
+          "password" : {
+            "type" : "string",
+            "description" : "Optional. Needed for new users. Not needed when SSO is used."
+          }
+        }
+      },
+      "WebserviceUserItemGet" : {
+        "type" : "object",
+        "properties" : {
+          "username" : {
+            "type" : "string"
+          },
+          "clientID" : {
+            "type" : "integer"
+          },
+          "contactInfo" : {
+            "type" : "string"
+          },
+          "email" : {
+            "type" : "integer"
+          },
+          "groups" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/UserGroupRefItem"
+            }
+          },
+          "permissions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/PermissionItem"
+            }
+          }
+        }
+      },
+      "WebserviceUserItemPostWithoutUrlParam" : {
+        "type" : "object",
+        "properties" : {
+          "username" : {
+            "type" : "string"
+          },
+          "contactInfo" : {
+            "type" : "string"
+          },
+          "email" : {
+            "type" : "integer"
+          },
+          "groups" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/UserGroupRefItem"
+            }
+          },
+          "permissions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/PermissionItem"
+            }
+          }
+        }
+      },
+      "WebserviceUserItemPostWithUrlParam" : {
+        "type" : "object",
+        "properties" : {
+          "contactInfo" : {
+            "type" : "string"
+          },
+          "email" : {
+            "type" : "integer"
+          },
+          "groups" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/UserGroupRefItem"
+            }
+          },
+          "permissions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/PermissionItem"
+            }
+          }
+        }
+      },
+      "WebserviceUserItemPutWithoutUrlParam" : {
+        "type" : "object",
+        "properties" : {
+          "username" : {
+            "type" : "string"
+          },
+          "contactInfo" : {
+            "type" : "string"
+          },
+          "email" : {
+            "type" : "integer"
+          },
+          "groups" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/UserGroupRefItem"
+            }
+          },
+          "permissions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/PermissionItem"
+            }
+          },
+          "password" : {
+            "type" : "string",
+            "description" : "Optional. Needed for new users. Not needed when SSO is used."
+          }
+        }
+      },
+      "WebserviceUserItemPutWithUrlParam" : {
+        "type" : "object",
+        "properties" : {
+          "contactInfo" : {
+            "type" : "string"
+          },
+          "email" : {
+            "type" : "integer"
+          },
+          "groups" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/UserGroupRefItem"
+            }
+          },
+          "permissions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/PermissionItem"
+            }
+          },
+          "password" : {
+            "type" : "string",
+            "description" : "Optional. Needed for new users. Not needed when SSO is used."
+          }
+        }
+      },
+      "UserGroupItemGet" : {
+        "type" : "object",
+        "properties" : {
+          "groupID" : {
+            "type" : "integer"
+          },
+          "clientID" : {
+            "type" : "integer"
+          },
+          "groupName" : {
+            "type" : "string"
+          },
+          "description" : {
+            "type" : "string"
+          },
+          "parentgroups" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/UserGroupRefItem"
+            }
+          },
+          "permissions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/PermissionItem"
+            }
+          }
+        }
+      },
+      "UserGroupItemPostWithoutUrlParam" : {
+        "type" : "object",
+        "properties" : {
+          "groupName" : {
+            "type" : "string"
+          },
+          "description" : {
+            "type" : "string"
+          },
+          "parentgroups" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/UserGroupRefItem"
+            }
+          },
+          "permissions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/PermissionItem"
+            }
+          }
+        }
+      },
+      "UserGroupItemPostWithUrlParam" : {
+        "type" : "object",
+        "properties" : {
+          "groupName" : {
+            "type" : "string"
+          },
+          "description" : {
+            "type" : "string"
+          },
+          "parentgroups" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/UserGroupRefItem"
+            }
+          },
+          "permissions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/PermissionItem"
+            }
+          }
+        }
+      },
+      "UserGroupItemPutWithoutUrlParam" : {
+        "type" : "object",
+        "properties" : {
+          "groupID" : {
+            "type" : "integer"
+          },
+          "groupName" : {
+            "type" : "string"
+          },
+          "description" : {
+            "type" : "string"
+          },
+          "parentgroups" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/UserGroupRefItem"
+            }
+          },
+          "permissions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/PermissionItem"
+            }
+          }
+        }
+      },
+      "UserGroupItemPutWithUrlParam" : {
+        "type" : "object",
+        "properties" : {
+          "groupName" : {
+            "type" : "string"
+          },
+          "description" : {
+            "type" : "string"
+          },
+          "parentgroups" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/UserGroupRefItem"
+            }
+          },
+          "permissions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/PermissionItem"
+            }
+          }
+        }
+      },
+      "UserGroupRefItem" : {
+        "type" : "object",
+        "properties" : {
+          "groupID" : {
+            "description" : "Optional attribute. At least one of groupID and groupName must be set",
+            "type" : "integer"
+          },
+          "groupName" : {
+            "description" : "Optional attribute. At least one of groupID and groupName must be set",
+            "type" : "string"
+          }
+        }
+      },
+      "PermissionItem" : {
+        "type" : "object",
+        "properties" : {
+          "permission" : {
+            "type" : "string"
           }
         }
       }

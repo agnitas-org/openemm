@@ -6,6 +6,7 @@ AGN.Lib.Controller.new('mailing-content-controller', function () {
   var preparedTableEntryTemplate;
   var isMailingExclusiveLockingAcquired;
   var isEditableMailing;
+  var templateId;
 
   var $tableBody;
 
@@ -24,6 +25,16 @@ AGN.Lib.Controller.new('mailing-content-controller', function () {
     initTableContent();
   });
 
+  this.addDomInitializer('gridTemplate-textContent-initializer', function () {
+    $tableBody = $('#textModulesTable');
+    templateId = this.config.templateId;
+    isEditableMailing = true;
+    isMailingExclusiveLockingAcquired = true;
+    preparedTableEntryTemplate = Template.prepare('gridTemplate-textContent-tableRow-template');
+    mailingContent = new MailingContent(this.config.dynTags, this.config.targets, [], []);
+    initTableContent();
+  });
+  
   this.addAction({click: 'createContentEditorModal'}, function() {
     var dynNameId = parseInt(this.el.data('dyn-name-id'));
 
@@ -62,6 +73,43 @@ AGN.Lib.Controller.new('mailing-content-controller', function () {
     }
   });
 
+  this.addAction({click: 'createGridTemplateTextContentEditorModal'}, function() {
+    var dynNameId = parseInt(this.el.data('dyn-name-id'));
+
+    if (dynNameId > 0) {
+      $.ajax({
+        url: AGN.url('/layoutbuilder/template/'+ templateId +'/textModules/' + dynNameId + '/view.action'),
+        method: 'GET',
+        dataType: 'json',
+        success: function(resp) {
+          var dynTag = new DynTag(resp);
+          var isHtmlContentBlock = mailingContent.isHtmlContentBlock(dynTag.name);
+
+          var promise = Confirm.createFromTemplate({
+            dynTag: dynTag,
+            targetGroups: _.cloneDeep(mailingContent.targetGroups),
+            interestGroups: _.cloneDeep(mailingContent.interestGroups),
+            saveUrl: AGN.url('/layoutbuilder/template/' + templateId + '/textModules/update.action'),
+            DynTagObject: DynTag,
+            isFullHtmlTags: dynTag.name == 'HTML-Version',
+            showHTMLEditor: isHtmlContentBlock,
+            isEditableMailing: isEditableMailing
+          }, 'content-editor-template');
+
+          promise.done(function(dynBlock) {
+            mailingContent.setDynTag(dynBlock);
+            replaceTableContent(dynBlock);
+          });
+        },
+        statusCode: {
+          404: function() {
+            AGN.Lib.Messages(t('defaults.error'), t('defaults.error'), 'alert');
+          }
+        }
+      });
+    }
+  });
+  
   var updatePreview = function () {
     var form = AGN.Lib.Form.get($('#preview'));
     form.setValue('previewForm.reload', false);

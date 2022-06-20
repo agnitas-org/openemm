@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -34,7 +34,8 @@ import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.web.MailingSendAction;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.fit.cssbox.css.CSSNorm;
 import org.fit.cssbox.css.DOMAnalyzer;
 import org.fit.cssbox.io.DOMSource;
@@ -54,13 +55,14 @@ import com.agnitas.emm.core.mediatypes.service.MediaTypesService;
 import com.agnitas.util.preview.PreviewImageGenerationQueue;
 import com.agnitas.util.preview.PreviewImageGenerationTask;
 import com.agnitas.util.preview.PreviewImageService;
-import com.agnitas.web.ComMailingBaseAction;
+import com.agnitas.web.MailingBaseAction;
 
 import cz.vutbr.web.css.MediaSpec;
 
+// TODO Move thumbnail generation to new MailingThumbnailService
 public class PreviewImageServiceImpl implements PreviewImageService {
     /** The logger */
-    private static final Logger logger = Logger.getLogger(PreviewImageServiceImpl.class);
+    private static final Logger logger = LogManager.getLogger(PreviewImageServiceImpl.class);
     
 	public static final String PREVIEW_FILE_DIRECTORY = AgnUtils.getTempDir() + File.separator + "Preview";
 
@@ -398,7 +400,7 @@ public class PreviewImageServiceImpl implements PreviewImageService {
         @Override
         public void run() {
             try {
-                Dimension maxSize = new Dimension(ComMailingBaseAction.MAILING_PREVIEW_WIDTH, ComMailingBaseAction.MAILING_PREVIEW_HEIGHT);
+                Dimension maxSize = new Dimension(MailingBaseAction.MAILING_PREVIEW_WIDTH, MailingBaseAction.MAILING_PREVIEW_HEIGHT);
                 byte[] preview = generatePreview(getPreviewUrl(), maxSize, true);
 
                 List<MailingComponent> components = mailingComponentDao.getMailingComponents(mailingId, companyId, MailingComponentType.ThumbnailImage, false);

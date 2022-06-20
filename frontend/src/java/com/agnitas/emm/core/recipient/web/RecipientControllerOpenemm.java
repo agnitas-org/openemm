@@ -11,13 +11,16 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.SessionAttributes;
 
+import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.emm.core.delivery.service.DeliveryService;
 import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
 import com.agnitas.emm.core.recipient.forms.RecipientsFormSearchParams;
 import com.agnitas.emm.core.recipient.service.RecipientLogService;
+import com.agnitas.emm.core.target.eql.EqlValidatorService;
 import com.agnitas.emm.core.target.eql.emm.querybuilder.EqlToQueryBuilderConverter;
 import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderFilterListBuilder;
+import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderToEqlConverter;
 import com.agnitas.emm.core.target.service.ComTargetService;
 import com.agnitas.web.perm.annotations.PermissionMapping;
 
@@ -28,19 +31,22 @@ import com.agnitas.web.perm.annotations.PermissionMapping;
 public class RecipientControllerOpenemm extends RecipientController {
 
 	public RecipientControllerOpenemm(RecipientService recipientService,
-                                      RecipientLogService recipientLogService,
-                                      MailinglistApprovalService mailinglistApprovalService,
-                                      ComTargetService targetService,
-                                      UserActivityLogService userActivityLogService,
-                                      DeliveryService deliveryService,
-                                      ComMailingBaseService mailingBaseService,
-                                      WebStorage webStorage,
-                                      ConversionService conversionService,
-                                      QueryBuilderFilterListBuilder filterListBuilder,
-                                      ColumnInfoService columnInfoService,
-                                      ConfigService configService,
-                                      BlacklistService blacklistService,
-                                      EqlToQueryBuilderConverter eqlToQueryBuilderConverter) {
+									RecipientLogService recipientLogService,
+									MailinglistApprovalService mailinglistApprovalService,
+									ComTargetService targetService,
+									UserActivityLogService userActivityLogService,
+									DeliveryService deliveryService,
+									ComMailingBaseService mailingBaseService,
+									WebStorage webStorage,
+									ConversionService conversionService,
+									QueryBuilderFilterListBuilder filterListBuilder,
+									ColumnInfoService columnInfoService,
+									ConfigService configService,
+									BlacklistService blacklistService,
+									EqlToQueryBuilderConverter eqlToQueryBuilderConverter,
+									QueryBuilderToEqlConverter queryBuilderToEqlConverter,
+									ComCompanyDao companyDao,
+									EqlValidatorService eqlValidatorService) {
 		super(recipientService,
 				recipientLogService,
 				mailinglistApprovalService,
@@ -54,6 +60,9 @@ public class RecipientControllerOpenemm extends RecipientController {
 				columnInfoService,
 				configService,
 				blacklistService,
-				eqlToQueryBuilderConverter);
+				eqlToQueryBuilderConverter,
+				queryBuilderToEqlConverter,
+				companyDao,
+				eqlValidatorService);
 	}
 }

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -26,7 +26,10 @@ public enum ExtensibleUidVersion {
 	XUID_WITH_SHA512(2),
 	
 	/** Version of UID with bit field using SHA-512- */
-	UID_WITH_BITFIELD_USING_SHA512(3);
+	UID_WITH_BITFIELD_USING_SHA512(3),
+	
+	/** Version of UID with company ID. */
+	V4_WITH_COMPANY_ID(4);
 	
 	private final int versionCode;
 	
@@ -64,6 +67,10 @@ public enum ExtensibleUidVersion {
 	
 	public final int getVersionCode() {
 		return this.versionCode;
+	}
+	
+	public final boolean isVersionCode(final int versionCodeToCheck) {
+		return this.versionCode == versionCodeToCheck;
 	}
 	
 	public final boolean isNewerThan(final int otherVersionCode) {

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,7 +10,7 @@
 
 package com.agnitas.emm.core.recipient.dto;
 
-import static com.agnitas.web.ComRecipientAction.COLUMN_DATASOURCE_ID;
+import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_DATASOURCE_ID;
 import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_DO_NOT_TRACK;
 import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_EMAIL;
 import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_FIRSTNAME;
@@ -18,6 +18,7 @@ import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_GENDER;
 import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_LASTNAME;
 import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_LATEST_DATASOURCE_ID;
 import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_MAILTYPE;
+import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_TIMESTAMP;
 import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_TITLE;
 import static org.agnitas.emm.core.recipient.RecipientUtils.formatRecipientDateTimeValue;
 import static org.agnitas.emm.core.recipient.RecipientUtils.formatRecipientDateValue;
@@ -74,9 +75,9 @@ public class RecipientDto {
         Object value = parameters.get(column);
         if (value != null) {
             return value.toString();
+        } else {
+        	return "";
         }
-
-        return "";
     }
 
     public int getIntValue(String column) {
@@ -87,48 +88,58 @@ public class RecipientDto {
         Object value = parameters.get(column);
         if (value != null) {
             return ((Number) value).intValue();
+        } else {
+        	return defaultValue;
         }
-
-        return defaultValue;
     }
 
     public Date getDateValue(String column) {
         Object value = parameters.get(column);
         if (value != null) {
             return (Date) value;
+        } else {
+        	return null;
         }
-
-        return null;
     }
 
     public double getDoubleValue(String column) {
         Object value = parameters.get(column);
         if (value != null) {
             return ((Number) value).doubleValue();
+        } else {
+        	return 0.0d;
         }
-
-        return 0.0d;
     }
 
     public String getColumnFormattedValue(ComAdmin admin, String columnName) {
         ProfileField profileField = getDbColumns().get(columnName);
         if (profileField == null) {
             return "";
-        }
-
-        DbColumnType.SimpleDataType dataType = profileField.getSimpleDataType();
-        String formattedValue;
-        if (dataType == DbColumnType.SimpleDataType.Date) {
-            formattedValue = formatRecipientDateValue(admin, getDateValue(columnName));
-        } else if (dataType == DbColumnType.SimpleDataType.DateTime) {
-            formattedValue = formatRecipientDateTimeValue(admin, getDateValue(columnName));
-        } else if (dataType == DbColumnType.SimpleDataType.Float) {
-            formattedValue = formatRecipientDoubleValue(admin, getDoubleValue(columnName));
         } else {
-            formattedValue = getStringValue(columnName);
+	        DbColumnType.SimpleDataType dataType = profileField.getSimpleDataType();
+	        String formattedValue;
+	        if (dataType == DbColumnType.SimpleDataType.Date) {
+	            formattedValue = formatRecipientDateValue(admin, getDateValue(columnName));
+	        } else if (dataType == DbColumnType.SimpleDataType.DateTime) {
+	            formattedValue = formatRecipientDateTimeValue(admin, getDateValue(columnName));
+	        } else if (dataType == DbColumnType.SimpleDataType.Float) {
+	        	if (parameters.get(columnName) == null) {
+	        		formattedValue = "";
+	        	} else {
+	        		formattedValue = formatRecipientDoubleValue(admin, getDoubleValue(columnName));
+	        	}
+	        } else if (dataType == DbColumnType.SimpleDataType.Numeric) {
+	        	if (parameters.get(columnName) == null) {
+	        		formattedValue = "";
+	        	} else {
+		            formattedValue = formatRecipientDoubleValue(admin, getIntValue(columnName));
+	        	}
+	        } else {
+	            formattedValue = getStringValue(columnName);
+	        }
+	
+	        return formattedValue;
         }
-
-        return formattedValue;
     }
 
     public String getEmail() {
@@ -165,5 +176,9 @@ public class RecipientDto {
 
     public int getDataSourceId() {
         return getIntValue(COLUMN_DATASOURCE_ID);
+    }
+
+    public String getTimestamp(){
+        return getStringValue(COLUMN_TIMESTAMP);
     }
 }

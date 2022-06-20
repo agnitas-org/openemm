@@ -26,6 +26,7 @@
 <c:set var="operatorsTypeSupportMap" value="<%= WorkflowDecision.OPERATOR_TYPE_SUPPORT_MAP %>"/>
 
 <%--@elvariable id="workflowForm" type="com.agnitas.emm.core.workflow.web.forms.WorkflowForm"--%>
+<%--delete after GWUA-4957 has been successfully tested--%>
 <%--@elvariable id="accessLimitTargetId" type="java.lang.Integer"--%>
 <%--@elvariable id="showStatistics" type="java.lang.Boolean"--%>
 
@@ -216,7 +217,8 @@
 	            },
                 "imagePath": "${absoluteImagePath}/campaignManager/",
                 "initialWorkflowStatus": "${workflowForm.status}",
-                "localeDateTimePattern": "${localeDateTimePattern}"
+                "localeDateTimePattern": "${localeDateTimePattern}",
+                "isAltgExtended" : ${not empty adminAltgs}
 	        }
         }
     </script>

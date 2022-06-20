@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -22,18 +22,17 @@ import java.util.Set;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-import org.agnitas.beans.Company;
 import com.agnitas.beans.Mailing;
 import org.agnitas.beans.impl.MaildropDeleteException;
 import org.agnitas.emm.core.commons.util.Constants;
 import org.agnitas.emm.core.mailing.MailingAllReadySentException;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.web.BaseDispatchActionSupport;
 import org.agnitas.web.StrutsActionBase;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
@@ -43,6 +42,7 @@ import org.apache.struts.action.ActionMessages;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Company;
 import com.agnitas.emm.core.birtstatistics.optimization.dto.OptimizationStatisticDto;
 import com.agnitas.emm.core.birtstatistics.service.BirtStatisticsService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
@@ -58,7 +58,7 @@ import com.agnitas.reporting.birt.external.dataset.CommonKeys;
 public class ComOptimizationAction extends BaseDispatchActionSupport {
 	
 	/** The logger. */
-	private static final transient Logger logger = Logger.getLogger(ComOptimizationAction.class);
+	private static final transient Logger logger = LogManager.getLogger(ComOptimizationAction.class);
 	
 	private ComOptimizationService optimizationService;
 	
@@ -76,8 +76,7 @@ public class ComOptimizationAction extends BaseDispatchActionSupport {
     	this.birtStatisticsService = Objects.requireNonNull(birtStatisticsService, "Birt statistics service is null");
     }
 
-	public ActionForward list(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response)
-			 {
+	public ActionForward list(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
 		if (!checkLogon(request)) {
 			return mapping.findForward("logon");
 		}
@@ -153,6 +152,7 @@ public class ComOptimizationAction extends BaseDispatchActionSupport {
 			if (optimizationForm.isNewOptimization()) {
 				optimization = new ComOptimizationImpl();
 				optimization.setCampaignID(optimizationForm.getCampaignID());
+				optimization.setCampaignName(optimizationForm.getCampaignName());
 				optimization.setCompanyID(companyID);
 				optimizationForm.setOptimization(optimization);
 				optimizationForm.setTargetMode(Mailing.TARGET_MODE_AND);
@@ -376,7 +376,7 @@ public class ComOptimizationAction extends BaseDispatchActionSupport {
 		this.optimizationScheduleService = optimizationScheduleService;
 	}
 
-	private void setCommonRequestAttributes(HttpServletRequest request, @VelocityCheck int companyID, ComOptimization optimization, ComAdmin admin) {
+	private void setCommonRequestAttributes(HttpServletRequest request, int companyID, ComOptimization optimization, ComAdmin admin) {
 		request.setAttribute("splitTypes", optimizationService.getSplitTypeList(companyID, optimization.getSplitType(), admin.getAdminLang()));
 		request.setAttribute("mailingLists", mailinglistApprovalService.getEnabledMailinglistsForAdmin(admin));
 		request.setAttribute("targets",optimizationService.getTargets(optimization.getTargetExpression(), companyID));

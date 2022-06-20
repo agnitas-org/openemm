@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -46,7 +46,8 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -63,11 +64,10 @@ import com.agnitas.service.ExtendedConversionService;
 import com.agnitas.service.SimpleServiceResult;
 import com.agnitas.util.ImageUtils;
 
-public abstract class ComComponentServiceImpl extends ComponentServiceImpl implements ComComponentService {
-	private static final transient Logger logger = Logger.getLogger(ComComponentServiceImpl.class);
+public class ComComponentServiceImpl extends ComponentServiceImpl implements ComComponentService {
 	
-	public static final int THUMBNAIL_WIDTH = 56;
-	public static final int THUMBNAIL_HEIGHT = 79;
+	/** The logger. */
+	private static final transient Logger logger = LogManager.getLogger(ComComponentServiceImpl.class);
 
 	private ExtendedConversionService conversionService;
 
@@ -113,90 +113,6 @@ public abstract class ComComponentServiceImpl extends ComponentServiceImpl imple
 	public int addMailingComponent(MailingComponent mailingComponent) throws Exception {
 		mailingComponentDao.saveMailingComponent(mailingComponent);
 		return mailingComponent.getId();
-	}
-
-	@Override
-	public boolean saveFormComponent(FormComponent formComponent) {
-		if (formComponent.getType() == FormComponentType.IMAGE) {
-			// Create thumbnail for this image
-			FormComponent thumbnailComponent = new FormComponent();
-			thumbnailComponent.setType(FormComponentType.THUMBNAIL);
-			thumbnailComponent.setCompanyID(formComponent.getCompanyID());
-			thumbnailComponent.setFormID(formComponent.getFormID());
-			thumbnailComponent.setName(formComponent.getName());
-			thumbnailComponent.setDescription("Thumbnail for " + formComponent.getName());
-			thumbnailComponent.setMimeType(formComponent.getMimeType());
-			thumbnailComponent.setCompanyID(formComponent.getCompanyID());
-			thumbnailComponent.setCompanyID(formComponent.getCompanyID());
-			
-			ByteArrayInputStream inputStream = null;
-			ByteArrayOutputStream outputStream = null;
-			try {
-				inputStream = new ByteArrayInputStream(formComponent.getData());
-				outputStream = new ByteArrayOutputStream();
-				BufferedImage imageFullSize = ImageIO.read(inputStream);
-				formComponent.setWidth(imageFullSize.getWidth());
-				formComponent.setHeight(imageFullSize.getHeight());
-				
-				// Keep aspect ratio of original image in thumbnail
-				int thumbnailWidth = formComponent.getWidth();
-				int thumbnailHeight = formComponent.getHeight();
-				double aspectRatio = thumbnailWidth / (double) thumbnailHeight;
-				if (thumbnailWidth > THUMBNAIL_WIDTH) {
-					thumbnailWidth = THUMBNAIL_WIDTH;
-					thumbnailHeight = (int) Math.round(thumbnailWidth / aspectRatio);
-				}
-				if (thumbnailHeight > THUMBNAIL_HEIGHT) {
-					thumbnailWidth = (int) Math.round(thumbnailHeight * aspectRatio);
-					thumbnailHeight = THUMBNAIL_HEIGHT;
-				}
-				
-				BufferedImage imageThumbnail = new BufferedImage(thumbnailWidth, thumbnailHeight, BufferedImage.TYPE_INT_RGB);
-				imageThumbnail.createGraphics().drawImage(imageFullSize.getScaledInstance(thumbnailWidth, thumbnailHeight, BufferedImage.SCALE_SMOOTH), 0, 0, null);
-				ImageIO.write(imageThumbnail, AgnUtils.getFileExtension(formComponent.getName()), outputStream);
-				thumbnailComponent.setData(outputStream.toByteArray());
-				thumbnailComponent.setWidth(thumbnailWidth);
-				thumbnailComponent.setHeight(thumbnailHeight);
-			} catch (Exception e) {
-				logger.error("Cannot create thumbnail for image", e);
-				return false;
-			} finally {
-				IOUtils.closeQuietly(outputStream);
-				IOUtils.closeQuietly(inputStream);
-			}
-
-			boolean success = formComponentDao.saveFormComponent(formComponent);
-			
-			if (success) {
-				// Delete old thumbnail for this image by name
-				formComponentDao.deleteFormComponent(formComponent.getCompanyID(), formComponent.getFormID(), formComponent.getName(), FormComponentType.THUMBNAIL);
-				
-				success = formComponentDao.saveFormComponent(thumbnailComponent);
-			}
-			return success;
-		} else {
-			return formComponentDao.saveFormComponent(formComponent);
-		}
-	}
-
-	@Override
-	public FormComponent getFormComponent(int formID, int companyID, String imageFileName, FormComponentType componentType) {
-		return formComponentDao.getFormComponent(formID, companyID, imageFileName, componentType);
-	}
-
-	@Override
-	public List<FormComponent> getFormComponentDescriptions(int companyID, int formID, FormComponentType componentType) {
-		return formComponentDao.getFormComponentDescriptions(companyID, formID, componentType);
-	}
-
-	@Override
-	public boolean deleteFormComponent(int formID, int companyID, String componentName) {
-		return formComponentDao.deleteFormComponent(companyID, formID, componentName, null);
-	}
-
-	@Override
-	public List<FormComponent> getFormComponents(int companyID, int formID) {
-		return formComponentDao.getFormComponents(companyID, formID);
 	}
 
 	@Override

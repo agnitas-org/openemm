@@ -195,7 +195,7 @@
             <div class="col-sm-4">
                 <label class="control-label">
                     <label for="import_email"><bean:message key="error.import.profile.email"/></label>
-                    <button class="icon icon-help" data-help="help_${helplanguage}/importwizard/step_2/ReportEmail.xml" tabindex="-1" type="button"></button>
+                    <button class="icon icon-help" data-help="help_${helplanguage}/importwizard/step_2/ErrorEmail.xml" tabindex="-1" type="button"></button>
                 </label>
             </div>
             <div class="col-sm-8">

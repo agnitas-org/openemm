@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -15,6 +15,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import com.agnitas.beans.ComAdmin;
 import org.agnitas.beans.MailingBase;
 import org.agnitas.beans.MailingSendStatus;
 import org.agnitas.beans.impl.PaginatedListImpl;
@@ -24,6 +25,7 @@ import org.agnitas.emm.core.velocity.VelocityCheck;
 import com.agnitas.beans.ComTarget;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MailingsListProperties;
+import com.agnitas.emm.common.MailingType;
 
 public interface MailingDao {
 	/**
@@ -67,6 +69,7 @@ public interface MailingDao {
      * @return id of saved mailing
 	 */
 	int saveMailing(Mailing mailing, boolean preserveTrackableLinks, boolean errorTolerant) throws Exception;
+	int saveMailing(Mailing mailing, boolean preserveTrackableLinks, boolean errorTolerant, boolean removeUnusedContent) throws Exception;
 
 	/**
 	 * Marks mailing as deleted
@@ -159,13 +162,15 @@ public interface MailingDao {
 	/**
 	 * Selects all non-deleted mailings of certain company and creates paginated list according to given criteria of sorting and pagination
 	 *
-	 * @param companyID an identifier of a current user's company.
+	 * @param admin current user.
 	 * @param props filtering, sorting and pagination parameters for mailing list selection.
 	 *
 	 * @return PaginatedList of MailingBase
 	 * @throws Exception
 	 */
-	PaginatedListImpl<Map<String, Object>> getMailingList(@VelocityCheck int companyID, int adminId, MailingsListProperties props);
+	PaginatedListImpl<Map<String, Object>> getMailingList(ComAdmin admin, MailingsListProperties props);
+
+	List<LightweightMailing> getLightweightMailings(ComAdmin admin, MailingsListProperties props);
 
 	/**
      * Creates empty paginated list
@@ -370,23 +375,18 @@ public interface MailingDao {
     /**
      * Loads list of non-deleted mailing have been sent by certain company
      *
-     * @param companyID
-     *                  Id of the company that sent the mailings
-     * @param adminId
+     * @param admin current user
 	 * @return  List of MailingBase bean objects
      */
-	List<MailingBase> getMailingsForComparation(@VelocityCheck int companyID, int adminId);
-
-	List<MailingBase> getMailingsForComparation(@VelocityCheck int companyID, int adminId, int targetId);
+	List<MailingBase> getMailingsForComparation(ComAdmin admin);
 
     /**
      * Loads list of templates of certain company
      *
-     * @param companyID
-     *               Id of the company
+     * @param admin current user
      * @return List of Mailing bean objects
      */
-	List<Mailing> getTemplates( @VelocityCheck int companyID, int targetId);
+	List<Mailing> getTemplates(ComAdmin admin);
 
     /**
      * Loads list of non-deleted templates of certain company
@@ -396,17 +396,6 @@ public interface MailingDao {
      * @return List of MailingBase bean objects
      */
 	List<MailingBase> getTemplateMailingsByCompanyID( @VelocityCheck int companyID);
-
-    /**
-     * Gets mailing by given id
-     *
-     * @param templateID
-     *              Id of the mailing in database
-     * @param companyID
-     *              Id of the company that created a mailing
-     * @return  MailingBase bean object or null
-     */
-	MailingBase getMailingForTemplateID(int templateID, @VelocityCheck int companyID);
 
     /**
      * Loads list of action-based mailings have been sent by certain company
@@ -459,21 +448,20 @@ public interface MailingDao {
 
 	String getSQLExpression(String targetExpression);
 
-	List<LightweightMailing> getLightweightIntervalMailings(int companyId);
-
-	List<LightweightMailing> getLightweightIntervalMailings(int companyID, int targetId);
+	List<LightweightMailing> getLightweightIntervalMailings(ComAdmin admin);
 
     /**
      * returns the mailing-Type for the given mailing.
      * eg. 3 means a Follow-Up mailing.
      * @param mailingID
      * @return
+     * @throws Exception
      */
-    int getMailingType(int mailingID);
+	MailingType getMailingType(int mailingID) throws Exception;
 
 	Date getMailingPlanDate(int mailingId, @VelocityCheck int companyId);
 
     boolean isOracleDB();
 
-	List<MailingBase> getMailingTemplatesWithPreview(@VelocityCheck int companyId, int targetId, String sort, String direction);
+	List<MailingBase> getMailingTemplatesWithPreview(ComAdmin admin, String sort, String direction);
 }

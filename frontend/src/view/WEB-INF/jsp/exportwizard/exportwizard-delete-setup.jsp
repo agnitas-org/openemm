@@ -10,5 +10,5 @@
 <c:set var="agnSubtitleValue" 		value="${exportWizardForm.shortname}"	scope="request" />
 <c:set var="sidemenu_active" 		value="ImportExport" 					scope="request" />
 <c:set var="sidemenu_sub_active"	value="export" 							scope="request" />
-<c:set var="agnHighlightKey" 		value="export.Wizard" 					scope="request" />
+<c:set var="agnHighlightKey" 		value="export"		 					scope="request" />
 <c:set var="agnHelpKey" 			value="export" 							scope="request" />

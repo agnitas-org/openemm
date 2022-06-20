@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -12,28 +12,40 @@ package com.agnitas.emm.restful.mailing;
 
 import java.io.File;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 
 import org.agnitas.beans.Mailinglist;
+import org.agnitas.dao.MailingStatus;
 import org.agnitas.dao.MailinglistDao;
 import org.agnitas.emm.core.mailing.beans.LightweightMailing;
+import org.agnitas.emm.core.mailing.service.CopyMailingService;
 import org.agnitas.emm.core.useractivitylog.dao.UserActivityLogDao;
 import org.agnitas.service.ImportResult;
 import org.agnitas.service.MailingExporter;
 import org.agnitas.service.MailingImporter;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.HttpUtils.RequestMethod;
-import org.apache.log4j.Logger;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.ComTrackableLink;
+import com.agnitas.beans.LinkProperty;
+import com.agnitas.beans.LinkProperty.PropertyType;
 import com.agnitas.beans.Mailing;
+import com.agnitas.beans.MailingContentType;
+import com.agnitas.beans.impl.ComTrackableLinkImpl;
 import com.agnitas.dao.ComMailingDao;
+import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.Permission;
-import com.agnitas.emm.core.target.eql.codegen.resolver.MailingType;
+import com.agnitas.emm.core.mailing.bean.ComMailingParameter;
+import com.agnitas.emm.core.thumbnails.service.ThumbnailService;
 import com.agnitas.emm.restful.BaseRequestResponse;
-import com.agnitas.emm.restful.ErrorCode;
 import com.agnitas.emm.restful.JsonRequestResponse;
 import com.agnitas.emm.restful.ResponseType;
 import com.agnitas.emm.restful.RestfulClientException;
@@ -54,8 +66,6 @@ import jakarta.servlet.http.HttpServletResponse;
  * https://<system.url>/restful/mailing
  */
 public class MailingRestfulServiceHandler implements RestfulServiceHandler {
-	@SuppressWarnings("unused")
-	private static final transient Logger logger = Logger.getLogger(MailingRestfulServiceHandler.class);
 	
 	public static final String NAMESPACE = "mailing";
 
@@ -66,6 +76,8 @@ public class MailingRestfulServiceHandler implements RestfulServiceHandler {
 	private MailinglistDao mailinglistDao;
 	private MailingImporter mailingImporter;
 	private MailingExporter mailingExporter;
+	private CopyMailingService copyMailingService;
+	private ThumbnailService thumbnailService;
 
 	@Required
 	public void setUserActivityLogDao(UserActivityLogDao userActivityLogDao) {
@@ -91,6 +103,16 @@ public class MailingRestfulServiceHandler implements RestfulServiceHandler {
 		this.mailingExporter = mailingExporter;
 	}
 
+	@Required
+	public void setCopyMailingService(CopyMailingService copyMailingService) {
+		this.copyMailingService = copyMailingService;
+	}
+
+	@Required
+	public void setThumbnailService(ThumbnailService thumbnailService) {
+		this.thumbnailService = thumbnailService;
+	}
+
 	@Override
 	public RestfulServiceHandler redirectServiceHandlerIfNeeded(ServletContext context, HttpServletRequest request, String restfulSubInterfaceName) throws Exception {
 		// No redirect needed
@@ -108,10 +130,8 @@ public class MailingRestfulServiceHandler implements RestfulServiceHandler {
 			}
 		} else if (requestMethod == RequestMethod.DELETE) {
 			((JsonRequestResponse) restfulResponse).setJsonResponseData(new JsonNode(deleteMailing(request, admin)));
-		} else if ((requestData == null || requestData.length == 0) && (requestDataFile == null || requestDataFile.length() <= 0)) {
-			restfulResponse.setError(new RestfulClientException("Missing request data"), ErrorCode.REQUEST_DATA_ERROR);
 		} else if (requestMethod == RequestMethod.POST) {
-			((JsonRequestResponse) restfulResponse).setJsonResponseData(new JsonNode(importMailing(request, requestData, requestDataFile, admin)));
+			((JsonRequestResponse) restfulResponse).setJsonResponseData(new JsonNode(createNewMailing(request, requestData, requestDataFile, admin)));
 		} else if (requestMethod == RequestMethod.PUT) {
 			((JsonRequestResponse) restfulResponse).setJsonResponseData(new JsonNode(updateMailing(request, requestData, requestDataFile, admin)));
 		} else {
@@ -132,7 +152,7 @@ public class MailingRestfulServiceHandler implements RestfulServiceHandler {
 			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.MAILING_SHOW.toString() + "'");
 		}
 		
-		String[] restfulContext = RestfulServiceHandler.getRestfulContext(request, NAMESPACE, 0, 1);
+		String[] restfulContext = RestfulServiceHandler.getRestfulContext(request, NAMESPACE, 0, 2);
 		
 		if (restfulContext.length == 0) {
 			// Show all mailings
@@ -145,7 +165,7 @@ public class MailingRestfulServiceHandler implements RestfulServiceHandler {
 				for (LightweightMailing mailing : mailingDao.getMailingsByType(mailingType.getCode(), admin.getCompanyID())) {
 					JsonObject mailingJsonObject = new JsonObject();
 					mailingJsonObject.add("mailing_id", mailing.getMailingID());
-					mailingJsonObject.add("type", MailingType.fromCode(mailing.getMailingType()).name());
+					mailingJsonObject.add("type", mailing.getMailingType().name());
 					mailingJsonObject.add("name", mailing.getShortname());
 					mailingJsonObject.add("description", mailing.getMailingDescription());
 					mailingsJsonArray.add(mailingJsonObject);
@@ -153,7 +173,7 @@ public class MailingRestfulServiceHandler implements RestfulServiceHandler {
 			}
 			
 			return mailingsJsonArray;
-		} else {
+		} else if (restfulContext.length == 1) {
 			// Export a single mailing
 			if (!admin.permissionAllowed(Permission.MAILING_EXPORT)) {
 				throw new RestfulClientException("Authorization failed: Access denied '" + Permission.MAILING_EXPORT.toString() + "'");
@@ -176,6 +196,16 @@ public class MailingRestfulServiceHandler implements RestfulServiceHandler {
 			} else {
 				throw new RestfulNoDataFoundException("No data found");
 			}
+		} else if (restfulContext.length == 2) {
+			if (AgnUtils.isNumber(restfulContext[0]) && "status".equalsIgnoreCase(restfulContext[1])) {
+				int mailingID = Integer.parseInt(restfulContext[0]);
+				String status = mailingDao.getWorkStatus(admin.getCompanyID(), mailingID);
+				return MailingStatus.fromDbKey(status).name();
+			} else {
+				throw new RestfulClientException("Invalid request");
+			}
+		} else {
+			throw new RestfulClientException("Invalid request");
 		}
 	}
 
@@ -224,25 +254,47 @@ public class MailingRestfulServiceHandler implements RestfulServiceHandler {
 	 * @return
 	 * @throws Exception
 	 */
-	private Object importMailing(HttpServletRequest request, byte[] requestData, File requestDataFile, ComAdmin admin) throws Exception {
+	private Object createNewMailing(HttpServletRequest request, byte[] requestData, File requestDataFile, ComAdmin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.MAILING_IMPORT)) {
 			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.MAILING_IMPORT.toString() + "'");
 		}
 		
-		try (InputStream inputStream = RestfulServiceHandler.getRequestDataStream(requestData, requestDataFile)) {
-			ImportResult result = mailingImporter.importMailingFromJson(admin.getCompanyID(), inputStream, false, null, null, true, false, true);
-			if (result.isSuccess()) {
-				LightweightMailing mailing = mailingDao.getLightweightMailing(admin.getCompanyID(), result.getMailingID());
-				
+		String[] restfulContext = RestfulServiceHandler.getRestfulContext(request, NAMESPACE, 0, 2);
+		
+		if (restfulContext.length == 0) {
+			if ((requestData == null || requestData.length == 0) && (requestDataFile == null || requestDataFile.length() <= 0)) {
+				throw new RestfulClientException("Missing request data");
+			} else {
+				try (InputStream inputStream = RestfulServiceHandler.getRequestDataStream(requestData, requestDataFile)) {
+					ImportResult result = mailingImporter.importMailingFromJson(admin.getCompanyID(), inputStream, false, null, null, true, false, true);
+					if (result.isSuccess()) {
+						thumbnailService.updateMailingThumbnailByWebservice(admin.getCompanyID(), result.getMailingID());
+						
+						LightweightMailing mailing = mailingDao.getLightweightMailing(admin.getCompanyID(), result.getMailingID());
+						
+						JsonObject returnJsonObject = new JsonObject();
+						returnJsonObject.add("mailing_id", mailing.getMailingID());
+						returnJsonObject.add("type", mailing.getMailingType().name());
+						returnJsonObject.add("name", mailing.getShortname());
+						returnJsonObject.add("description", mailing.getMailingDescription());
+						return returnJsonObject;
+					} else {
+						throw new RestfulClientException("Error while creating mailing: " + result.getErrors());
+					}
+				}
+			}
+		} else if (restfulContext.length == 2) {
+			if (AgnUtils.isNumber(restfulContext[0]) && "copy".equalsIgnoreCase(restfulContext[1])) {
+				int newMailingId = copyMailingService.copyMailing(admin.getCompanyID(), Integer.parseInt(restfulContext[0]), admin.getCompanyID(), null, null);
+				thumbnailService.updateMailingThumbnailByWebservice(admin.getCompanyID(), newMailingId);
 				JsonObject returnJsonObject = new JsonObject();
-				returnJsonObject.add("mailing_id", mailing.getMailingID());
-				returnJsonObject.add("type", MailingType.fromCode(mailing.getMailingType()).name());
-				returnJsonObject.add("name", mailing.getShortname());
-				returnJsonObject.add("description", mailing.getMailingDescription());
+				returnJsonObject.add("mailing_id", newMailingId);
 				return returnJsonObject;
 			} else {
-				throw new RestfulClientException("Error while creating mailing: " + result.getErrors());
+				throw new RestfulClientException("Invalid request");
 			}
+		} else {
+			throw new RestfulClientException("Invalid request");
 		}
 	}
 
@@ -256,6 +308,10 @@ public class MailingRestfulServiceHandler implements RestfulServiceHandler {
 	 * @throws Exception
 	 */
 	private Object updateMailing(HttpServletRequest request, byte[] requestData, File requestDataFile, ComAdmin admin) throws Exception {
+		if ((requestData == null || requestData.length == 0) && (requestDataFile == null || requestDataFile.length() <= 0)) {
+			throw new RestfulClientException("Missing request data");
+		}
+		
 		if (!admin.permissionAllowed(Permission.MAILING_CHANGE)) {
 			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.MAILING_CHANGE.toString() + "'");
 		}
@@ -292,16 +348,190 @@ public class MailingRestfulServiceHandler implements RestfulServiceHandler {
 									throw new RestfulClientException("Invalid data type for 'description'. String expected");
 								}
 							} else if ("mailinglist_id".equals(entry.getKey())) {
-								if (entry.getValue() != null && entry.getValue() instanceof Integer) {
-									Mailinglist mailinglist = mailinglistDao.getMailinglist((Integer) entry.getValue(), admin.getCompanyID());
-									if (mailinglist == null) {
-										throw new RestfulClientException("Invalid value for 'mailinglist_id'. Mailinglist does not exist: " + entry.getValue());
+								if (jsonObject.containsPropertyKey("mailinglist_shortname")) {
+									throw new RestfulClientException("Invalid data for 'mailinglist_id'. Information is duplicated by 'mailinglist_shortname'");
+								} else {
+									if (entry.getValue() != null && entry.getValue() instanceof Integer) {
+										Mailinglist mailinglist = mailinglistDao.getMailinglist((Integer) entry.getValue(), admin.getCompanyID());
+										if (mailinglist == null) {
+											throw new RestfulClientException("Invalid value for 'mailinglist_id'. Mailinglist does not exist: " + entry.getValue());
+										} else {
+											mailing.setMailinglistID((Integer) entry.getValue());
+										}
 									} else {
-										mailing.setMailinglistID((Integer) entry.getValue());
+										throw new RestfulClientException("Invalid data type for 'mailinglist_id'. Integer expected");
+									}
+								}
+							} else if ("mailinglist_shortname".equals(entry.getKey())) {
+								if (jsonObject.containsPropertyKey("mailinglist_id")) {
+									throw new RestfulClientException("Invalid data for 'mailinglist_shortname'. Information is duplicated by 'mailinglist_id'");
+								} else {
+									boolean mailinglistFound = false;
+									String mailinglistShortname = (String) jsonObject.get("mailinglist_shortname");
+									for (Mailinglist mailinglist : mailinglistDao.getMailinglists(admin.getCompanyID())) {
+										if (StringUtils.equals(mailinglist.getShortname(), mailinglistShortname)) {
+											if (mailinglistFound) {
+												throw new RestfulClientException("Invalid value for 'mailinglist_id'. Mailinglist name exists multiple times: " + entry.getValue());
+											} else {
+												mailing.setMailinglistID(mailinglist.getId());
+												mailinglistFound = true;
+											}
+										}
+									}
+									if (!mailinglistFound) {
+										throw new RestfulClientException("Invalid value for 'mailinglist_id'. Mailinglist does not exist: " + entry.getValue());
+									}
+								}
+							} else if ("mailingtype".equals(entry.getKey())) {
+								if (entry.getValue() != null && entry.getValue() instanceof String) {
+									MailingType mailingType;
+									try {
+										mailingType = MailingType.fromName((String) entry.getValue());
+									} catch (Exception e) {
+										throw new RestfulClientException("Invalid value for 'mailingtype': " + entry.getValue());
+									}
+									mailing.setMailingType(mailingType);
+								} else {
+									throw new RestfulClientException("Invalid data type for 'mailingtype'. String expected");
+								}
+							} else if ("mailing_content_type".equals(entry.getKey())) {
+								if (entry.getValue() != null && entry.getValue() instanceof String) {
+									MailingContentType mailingContentType;
+									try {
+										mailingContentType = MailingContentType.getFromString((String) jsonObject.get("mailing_content_type"));
+									} catch (Exception e) {
+										throw new RestfulClientException("Invalid value for 'mailing_content_type': " + entry.getValue());
+									}
+									mailing.setMailingContentType(mailingContentType);
+								} else {
+									throw new RestfulClientException("Invalid data type for 'mailing_content_type'. String expected");
+								}
+							} else if ("target_expression".equals(entry.getKey())) {
+								if (entry.getValue() != null && entry.getValue() instanceof String) {
+									String targetExpression;
+									try {
+										targetExpression = (String) jsonObject.get("target_expression");
+									} catch (Exception e) {
+										throw new RestfulClientException("Invalid value for 'target_expression': " + entry.getValue());
+									}
+									mailing.setTargetExpression(targetExpression);
+								} else {
+									throw new RestfulClientException("Invalid data type for 'target_expression'. String expected");
+								}
+							} else if ("is_template".equals(entry.getKey())) {
+								if (entry.getValue() != null && entry.getValue() instanceof Boolean) {
+									Boolean isTemplate;
+									try {
+										isTemplate = (Boolean) jsonObject.get("is_template");
+									} catch (Exception e) {
+										throw new RestfulClientException("Invalid value for 'is_template': " + entry.getValue());
+									}
+									mailing.setIsTemplate(isTemplate);
+								} else {
+									throw new RestfulClientException("Invalid data type for 'is_template'. Boolean expected");
+								}
+							} else if ("open_action_id".equals(entry.getKey())) {
+								if (entry.getValue() != null && entry.getValue() instanceof Integer) {
+									int openActionId;
+									try {
+										openActionId = (Integer) jsonObject.get("open_action_id");
+									} catch (Exception e) {
+										throw new RestfulClientException("Invalid value for 'open_action_id': " + entry.getValue());
+									}
+									mailing.setOpenActionID(openActionId);
+								} else {
+									throw new RestfulClientException("Invalid data type for 'open_action_id'. Integer expected");
+								}
+							} else if ("click_action_id".equals(entry.getKey())) {
+								if (entry.getValue() != null && entry.getValue() instanceof Integer) {
+									int clickActionId;
+									try {
+										clickActionId = (Integer) jsonObject.get("click_action_id");
+									} catch (Exception e) {
+										throw new RestfulClientException("Invalid value for 'click_action_id': " + entry.getValue());
+									}
+									mailing.setClickActionID(clickActionId);
+								} else {
+									throw new RestfulClientException("Invalid data type for 'click_action_id'. Integer expected");
+								}
+							} else if ("campaign_id".equals(entry.getKey())) {
+								if (entry.getValue() != null && entry.getValue() instanceof Integer) {
+									int campaignId;
+									try {
+										campaignId = (Integer) jsonObject.get("campaign_id");
+									} catch (Exception e) {
+										throw new RestfulClientException("Invalid value for 'campaign_id': " + entry.getValue());
+									}
+									mailing.setCampaignID(campaignId);
+								} else {
+									throw new RestfulClientException("Invalid data type for 'campaign_id'. Integer expected");
+								}
+							} else if ("parameters".equals(entry.getKey())) {
+								if (entry.getValue() != null && entry.getValue() instanceof JsonArray) {
+									try {
+										List<ComMailingParameter> parameters = new ArrayList<>();
+										for (Object parameterObject : (JsonArray) jsonObject.get("parameters")) {
+											JsonObject parameterJsonObject = (JsonObject) parameterObject;
+											ComMailingParameter mailingParameter = new ComMailingParameter();
+											mailingParameter.setName((String) parameterJsonObject.get("name"));
+											mailingParameter.setValue((String) parameterJsonObject.get("value"));
+											mailingParameter.setDescription((String) parameterJsonObject.get("description"));
+											parameters.add(mailingParameter);
+										}
+										mailing.setParameters(parameters);
+									} catch (Exception e) {
+										throw new RestfulClientException("Invalid value for 'parameters': " + entry.getValue());
 									}
 								} else {
-									throw new RestfulClientException("Invalid data type for 'mailinglist_id'. Integer expected");
+									throw new RestfulClientException("Invalid data type for 'parameters'. JsonArray expected");
 								}
+							} else if ("links".equals(entry.getKey())) {
+								Map<String, ComTrackableLink> trackableLinks = new HashMap<>();
+								for (Object linkObject : (JsonArray) jsonObject.get("links")) {
+									JsonObject linkJsonObject = (JsonObject) linkObject;
+									ComTrackableLink trackableLink = new ComTrackableLinkImpl();
+									trackableLink.setShortname((String) linkJsonObject.get("name"));
+									String fullUrl = (String) linkJsonObject.get("url");
+									fullUrl = fullUrl.replace("[COMPANY_ID]", Integer.toString(admin.getCompanyID())).replace("[RDIR_DOMAIN]", admin.getCompany().getRdirDomain());
+									trackableLink.setFullUrl(fullUrl);
+
+									if (linkJsonObject.containsPropertyKey("deep_tracking")) {
+										trackableLink.setDeepTracking((Integer) linkJsonObject.get("deep_tracking"));
+									}
+
+									if (linkJsonObject.containsPropertyKey("usage")) {
+										trackableLink.setUsage((Integer) linkJsonObject.get("usage"));
+									}
+
+									if (linkJsonObject.containsPropertyKey("action_id")) {
+										trackableLink.setActionID((Integer) linkJsonObject.get("action_id"));
+									}
+									
+									if (linkJsonObject.containsPropertyKey("administrative")) {
+										trackableLink.setAdminLink((Boolean) linkJsonObject.get("administrative"));
+									}
+
+									if (linkJsonObject.containsPropertyKey("properties")) {
+										List<LinkProperty> linkProperties = new ArrayList<>();
+										for (Object propertyObject : (JsonArray) linkJsonObject.get("properties")) {
+											JsonObject propertyJsonObject = (JsonObject) propertyObject;
+											String propertyName = (String) propertyJsonObject.get("name");
+											if (propertyName == null) {
+												propertyName = "";
+											}
+											String propertyValue = (String) propertyJsonObject.get("value");
+											if (propertyValue == null) {
+												propertyValue = "";
+											}
+											LinkProperty linkProperty = new LinkProperty(PropertyType.parseString((String) propertyJsonObject.get("type")), propertyName, propertyName);
+											linkProperties.add(linkProperty);
+										}
+										trackableLink.setProperties(linkProperties);
+									}
+
+									trackableLinks.put(trackableLink.getFullUrl(), trackableLink);
+								}
+								mailing.setTrackableLinks(trackableLinks);
 							} else {
 								throw new RestfulClientException("Invalid property '" + entry.getKey() + "' for mailing");
 							}

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -34,6 +34,10 @@ public class TargetExpression {
 	 */
 	private long splitID;
 	/**
+	 * id for adding restricting target
+	 */
+	private long deliveryRestrictID;
+	/**
 	 * the computed subselection for the receiver of this mailing
 	 */
 	private String subselect;
@@ -58,6 +62,10 @@ public class TargetExpression {
 	public void splitID(long nSplitID) {
 		splitID = nSplitID;
 	}
+	
+	public void deliveryRestrictID (long nDeliveryRestrictID) {
+		deliveryRestrictID = nDeliveryRestrictID;
+	}
 
 	public String subselect() {
 		return subselect;
@@ -69,6 +77,7 @@ public class TargetExpression {
 	public void clear() {
 		expression = null;
 		splitID = 0;
+		deliveryRestrictID = 0;
 		subselect = null;
 	}
 
@@ -85,6 +94,7 @@ public class TargetExpression {
 	public void logSettings() {
 		data.logging(Log.DEBUG, "init", "\ttargetExpression.expression = " + (expression == null ? "*not set*" : expression));
 		data.logging(Log.DEBUG, "init", "\ttargetExpression.splitID = " + splitID);
+		data.logging(Log.DEBUG, "init", "\ttargetExpression.deliveryRestrictID = " + deliveryRestrictID);
 		data.logging(Log.DEBUG, "init", "\ttargetExpression.subselect = " + (subselect == null ? "*not set*" : subselect));
 	}
 
@@ -113,6 +123,13 @@ public class TargetExpression {
 				}
 			} else {
 				getTarget(splitID, false);
+			}
+		}
+		if (deliveryRestrictID > 0) {
+			if (combinedExpression == null) {
+				combinedExpression = Long.toString (deliveryRestrictID);
+			} else {
+				combinedExpression = "(" + combinedExpression + ") & " + deliveryRestrictID;
 			}
 		}
 		if (combinedExpression != null) {
@@ -280,7 +297,7 @@ public class TargetExpression {
 	}
 
 	/*
-	 * Get the sql fragment for a split list expression
+	 * Get the sql fragment for a split expression
 	 *
 	 * @return the sql fragment
 	 */

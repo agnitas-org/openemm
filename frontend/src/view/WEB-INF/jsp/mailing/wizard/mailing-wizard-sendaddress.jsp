@@ -1,4 +1,4 @@
-<%@ page import="org.agnitas.web.MailingWizardAction" %>
+<%@ page import="com.agnitas.web.MailingWizardAction" %>
 <%@ page language="java" contentType="text/html; charset=utf-8"  errorPage="/error.do" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>

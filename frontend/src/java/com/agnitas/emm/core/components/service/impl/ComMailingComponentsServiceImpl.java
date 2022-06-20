@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -47,18 +48,22 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.struts.upload.FormFile;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.dao.ComMailingComponentDao;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.emm.core.commons.StreamHelper;
+import com.agnitas.emm.core.components.dto.MailingImageDto;
 import com.agnitas.emm.core.components.dto.NewFileDto;
 import com.agnitas.emm.core.components.dto.UpdateMailingAttachmentDto;
 import com.agnitas.emm.core.components.dto.UploadMailingAttachmentDto;
+import com.agnitas.emm.core.components.dto.UploadMailingImageDto;
 import com.agnitas.emm.core.components.form.AttachmentType;
 import com.agnitas.emm.core.components.service.ComMailingComponentsService;
 import com.agnitas.emm.core.components.service.ComponentValidationService;
@@ -68,13 +73,15 @@ import com.agnitas.emm.core.upload.dao.ComUploadDao;
 import com.agnitas.messages.I18nString;
 import com.agnitas.messages.Message;
 import com.agnitas.service.ComSftpService;
+import com.agnitas.service.ExtendedConversionService;
 import com.agnitas.service.MimeTypeService;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.service.SimpleServiceResult;
 import com.agnitas.util.ImageUtils;
 
 public class ComMailingComponentsServiceImpl implements	ComMailingComponentsService {
-	private static final transient Logger logger = Logger.getLogger(ComMailingComponentsServiceImpl.class);
+	/** The logger. */
+	private static final transient Logger logger = LogManager.getLogger(ComMailingComponentsServiceImpl.class);
 
 	private static final Set<String> SFTP_PERMITTED_EXTENSIONS = ImageUtils.getValidImageFileExtensions();
 
@@ -86,6 +93,7 @@ public class ComMailingComponentsServiceImpl implements	ComMailingComponentsServ
 	private ComSftpService sftpService;
 	private MailingComponentFactory mailingComponentFactory;
 	private ConfigService configService;
+    private ExtendedConversionService conversionService;
 
     @Override
     public MailingComponent getMailingTextTemplate(int mailingId, int companyID) {
@@ -102,6 +110,7 @@ public class ComMailingComponentsServiceImpl implements	ComMailingComponentsServ
 		return map;
 	}
 
+	// Check usage and delete after GWUA-4800 has been successfully tested
 	@Override
 	public Map<String, Integer> getImageSizeMap(int companyId, int mailingId, boolean includeExternalImages) {
 		Map<Integer, Integer> sizeMap = mailingComponentDao.getImageSizes(companyId, mailingId);
@@ -113,6 +122,16 @@ public class ComMailingComponentsServiceImpl implements	ComMailingComponentsServ
 		return map;
 	}
 
+	@Override
+	public long getAttachmentsSize(int companyId, int mailingId) {
+		List<MailingComponent> attachments = getPreviewHeaderComponents(companyId, mailingId);
+
+		return attachments.stream()
+				.map(attachment -> StringUtils.length(AgnUtils.encodeBase64(attachment.getBinaryBlock())))
+				.reduce(0, Integer::sum);
+	}
+
+	// Check usage and delete after GWUA-4800 has been successfully tested
 	@Override
 	public Map<Integer, String> getImageTimestamps(@VelocityCheck int companyId, int mailingId, DateFormat format) {
 		Map<Integer, String> map = new HashMap<>();
@@ -250,6 +269,18 @@ public class ComMailingComponentsServiceImpl implements	ComMailingComponentsServ
 		}
     }
 
+    @Override
+    public List<MailingImageDto> getMailingImages(int companyId, int mailingId) {
+        List<MailingComponent> images =  getComponentsByType(companyId, mailingId, Arrays.asList(
+                MailingComponentType.HostedImage, 
+                MailingComponentType.Image));
+        List<MailingImageDto> dtos = conversionService.convert(images, MailingComponent.class, MailingImageDto.class);
+        Map<Integer, Integer> sizes = mailingComponentDao.getImageSizes(companyId, mailingId);
+        for (MailingImageDto dto : dtos) {
+            dto.setSize(sizes.get(dto.getId()));
+        }
+        return dtos;
+    }
 
     @Override
     public List<MailingComponent> getComponentsByType(@VelocityCheck int companyID, int mailingId, List<MailingComponentType> types) {
@@ -355,6 +386,23 @@ public class ComMailingComponentsServiceImpl implements	ComMailingComponentsServ
     		return ServiceResult.error(Message.of("Error"));
 		}
 	}
+	
+    @Override
+  	public ServiceResult<ImportStatistics> uploadImages(ComAdmin admin, int mailingId, List<UploadMailingImageDto> images, List<UserAction> userActions) {
+      	if (mailingDao.exist(mailingId, admin.getCompanyID())) {
+      		if (images.isEmpty()) {
+      			return ServiceResult.success(new ImportStats(0, 0));
+  			}
+  
+            return doImport(admin, mailingId, importer -> {
+                for (UploadMailingImageDto image : images) {
+                    importer.importFile(image, userActions);
+                }
+            });
+  		} else {
+      		return ServiceResult.error(Message.of("Error"));
+  		}
+  	}
 
 	@Override
 	public ServiceResult<ImportStatistics> importImagesFromSftp(ComAdmin admin, int mailingId, String sftpServerAndAuthConfigString, String sftpPrivateKeyString, String sftpFilePath, List<UserAction> userActions) {
@@ -575,6 +623,17 @@ public class ComMailingComponentsServiceImpl implements	ComMailingComponentsServ
     			importFile(file, newFile.getLink(), newFile.getDescription(), newFile.getMobileComponentBase(), userActions);
 			}
 		}
+		
+        private void importFile(UploadMailingImageDto imageFile, List<UserAction> userActions) {
+            MultipartFile file = imageFile.getFile();
+            String filename = file.getOriginalFilename();
+
+            if (StringUtils.endsWithIgnoreCase(filename, ".zip")) {
+                importArchive(file, userActions);
+            } else {
+                importFile(file, imageFile.getLink(), imageFile.getDescription(), imageFile.getMobileBase(), userActions);
+            }
+        }
 
 		private void importArchive(FormFile file, List<UserAction> userActions) {
     		String archiveFilename = file.getFileName();
@@ -613,6 +672,64 @@ public class ComMailingComponentsServiceImpl implements	ComMailingComponentsServ
 			}
 		}
 
+        private void importArchive(MultipartFile file, List<UserAction> userActions) {
+        		String archiveFilename = file.getOriginalFilename();
+    
+    			try (ZipInputStream zipStream = new ZipInputStream(file.getInputStream())) {
+    				int countBefore = countValid;
+    
+    				for (ZipEntry entry = zipStream.getNextEntry(); entry != null; entry = zipStream.getNextEntry()) {
+    					final String path = entry.getName();
+    					final String name = FilenameUtils.getName(path);
+    
+    					if (!entry.isDirectory() && ImageUtils.isValidImageFileExtension(FilenameUtils.getExtension(name))) {
+    						logger.info("uploadImagesBulk(): found image file '" + path + "' in ZIP stream");
+    						countOverall++;
+    
+    						if (validateFileSize(archiveFilename + "/" + path, entry.getSize())) {
+    							byte[] content = StreamHelper.streamToByteArray(zipStream);
+    							if (ImageUtils.isValidImage(content)) {
+    								importImage(name, content);
+    							} else {
+    								invalidFiles.add(archiveFilename + "/" + path);
+    							}
+    						}
+    					}
+    
+    					zipStream.closeEntry();
+    				}
+    
+    				// If at least one image imported from archive.
+    				if (countValid > countBefore) {
+    					userActions.add(new UserAction("upload archive", String.format("%s(%d), uploaded images from archive", mailingName, mailingId)));
+    				}
+    			} catch (IOException e) {
+    				logger.error("uploadImagesBulk(): IO-error on ZIP-file processing", e);
+    				invalidArchives.add(archiveFilename);
+    			}
+    		}
+		
+        private void importFile(MultipartFile file, String link, String description, String mobileBase, List<UserAction> userActions) {
+            countOverall++;
+
+            try {
+                String filename = file.getOriginalFilename();
+
+                if (validateFileSize(filename, file.getSize())) {
+                    byte[] content = file.getBytes();
+
+                    if (ImageUtils.isValidImage(content)) {
+                        importImage(filename, file.getContentType(), content, link, description, mobileBase);
+                        userActions.add(new UserAction("upload mailing component file", String.format("%s(%d), uploaded image `%s`", mailingName, mailingId, filename)));
+                    } else {
+                        invalidFiles.add(filename);
+                    }
+                }
+            } catch (IOException e) {
+                logger.error("uploadImagesBulk(): IO-error on image file processing", e);
+            }
+        }
+		
 		private void importFile(FormFile file, String link, String description, String mobileComponentBase, List<UserAction> userActions) {
     		countOverall++;
 
@@ -726,4 +843,9 @@ public class ComMailingComponentsServiceImpl implements	ComMailingComponentsServ
 			return countValid;
 		}
 	}
+	
+    @Required
+  	public void setConversionService(ExtendedConversionService conversionService) {
+  		this.conversionService = conversionService;
+  	}
 }

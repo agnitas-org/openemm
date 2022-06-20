@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -25,13 +25,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.Stack;
 import java.util.stream.Stream;
-
-import org.apache.log4j.Appender;
-import org.apache.log4j.AppenderSkeleton;
-import org.apache.log4j.BasicConfigurator;
-import org.apache.log4j.Level;
-import org.apache.log4j.spi.Filter;
-import org.apache.log4j.spi.LoggingEvent;
 
 /**
  * This class provides a common logging interface with separate
@@ -166,19 +159,11 @@ public class Log {
 		printer = null;
 
 		String	separator = System.getProperty ("file.separator");
-		String	home = System.getProperty ("user.home", ".");
-		String	logdir;
 		String	hostname;
 		int idx;
 
 		idc = new Stack<>();
-		logdir = System.getProperty ("log.home", home + separator + "var" + separator + "log");
-		if (logdir == null) {
-			path = "";
-		} else {
-			path = logdir + separator;
-		}
-
+		path = System.getProperty ("log.home", Str.makePath ("$home", "var", "log"));
 		try {
 			InetAddress addr = InetAddress.getLocalHost ();
 
@@ -312,7 +297,7 @@ public class Log {
 	}
 
 	private String mkfname (String postfix) {
-		return path + fmt_fname.format (new Date ()) + "-" + postfix + ".log";
+		return Str.makePath (path, fmt_fname.format (new Date ()) + "-" + postfix + ".log");
 	}
 
 	/**
@@ -412,95 +397,5 @@ public class Log {
 		} catch (IOException e) {
 			out (ERROR, name, fname + " io failed (" + e.toString () + "): " + msg);
 		}
-	}
-	
-	/* Allow linking log4j to internal logger */
-	static class LogFilter extends Filter {
-		@Override
-		public int decide (LoggingEvent e) {
-			Level	l = e.getLevel ();
-
-			if ((l == Level.DEBUG) || (l == Level.INFO) || (l == Level.WARN) || (l == Level.ERROR) || (l == Level.FATAL)) {
-				return Filter.ACCEPT;
-			}
-			return Filter.NEUTRAL;
-		}
-	}
-	static class LogAppender extends AppenderSkeleton {
-		private Log log;
-		private String id;
-		private String[] pattern;
-
-		public LogAppender (Log nLog, String nId, String[] nPattern) {
-			super ();
-			log = nLog;
-			id = nId;
-			pattern = nPattern;
-		}
-
-		@Override
-		public boolean requiresLayout () {
-			return false;
-		}
-
-		@Override
-		public void close () {
-			// Nothing to do here
-		}
-
-		@Override
-		protected void append (LoggingEvent e) {
-			Level	l = e.getLevel ();
-			int lvl = -1;
-
-			if (l == Level.DEBUG) {
-				lvl = DEBUG;
-			} else if (l == Level.INFO) {
-				lvl = INFO;
-			} else if (l == Level.WARN) {
-				lvl = WARNING;
-			} else if (l == Level.ERROR) {
-				lvl = ERROR;
-			} else if (l == Level.FATAL) {
-				lvl = FATAL;
-			}
-			if (lvl != -1) {
-				String loggerName = e.getLoggerName ();
-				boolean match = (loggerName == null) || (pattern == null) || (pattern.length == 0);
-
-				if (! match) {
-					for (int n = 0; n < pattern.length; ++n) {
-						if (loggerName != null && loggerName.startsWith (pattern[n])) {
-							match = true;
-							break;
-						}
-					}
-				}
-				if (match) {
-					log.out (lvl, id, e.getRenderedMessage ());
-				}
-			}
-		}
-	}
-
-	/**
-	 * Link this instance to log4j
-	 * 
-	 * @param id the id for which we accept log entries
-	 * @param pattern a list of strings where one must be a prefix for the name to log
-	 */
-	public void link (String id, String[] pattern) {
-		Appender	app = new LogAppender (this, id, pattern);
-
-		app.addFilter (new LogFilter ());
-		BasicConfigurator.configure (app);
-	}
-	/**
-	 * Link this instance to log4j
-	 * 
-	 * @param id the id for which we accept log entries
-	 */
-	public void link (String id) {
-		link (id, null);
 	}
 }

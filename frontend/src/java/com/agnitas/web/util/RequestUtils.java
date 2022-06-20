@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -14,10 +14,9 @@ import java.util.Enumeration;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import jakarta.servlet.http.HttpServletRequest;
+import org.apache.logging.log4j.Logger;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import jakarta.servlet.http.HttpServletRequest;
 
 /**
  * Utility class dealing with {@link HttpServletRequest}s.
@@ -54,7 +53,7 @@ public final class RequestUtils {
 	/**
 	 * Returns the start value of the HTTP &quot;Range&quot; header.
 	 * If header is missing or value does not match the expected pattern, -1 is returned.
-	 *  
+	 * 
 	 * @param request HTTP request
 	 * 
 	 * @return start value of Range header or -1
@@ -86,15 +85,15 @@ public final class RequestUtils {
 	 * @param logger Log4j {@link Logger}
 	 * @param level Log level
 	 */
-	public static final void dumpRequest(final HttpServletRequest request, final Logger logger, final Level level) {
-		logger.log(level, "    Query String: " + request.getQueryString());
+	public static final void dumpRequest(final HttpServletRequest request, final Logger logger) {
+		logger.warn("    Query String: " + request.getQueryString());
 		final Enumeration<String> names = request.getHeaderNames();
 		while(names.hasMoreElements()) {
 			final String name = names.nextElement();
 			final Enumeration<String> values = request.getHeaders(name);
 			
 			while(values.hasMoreElements()) {
-				logger.log(level, "    " + name + " : " + values.nextElement());
+				logger.warn("    " + name + " : " + values.nextElement());
 			}
 		}
 

@@ -96,8 +96,8 @@ class OpenEMM (Sanity):
 	
 	def __crontab (self, r: Report) -> None:
 		Crontab ().update ([
-			'10 2 * * * /home/openemm/bin/janitor.sh openemm',
-			'45 20 * * * /home/openemm/bin/bouncemanagement.sh',
+			'10 2 * * * $home/bin/janitor.sh openemm',
+			'45 20 * * * $home/bin/bouncemanagement.sh',
 		], runas = 'openemm')
 
 class Sanities:

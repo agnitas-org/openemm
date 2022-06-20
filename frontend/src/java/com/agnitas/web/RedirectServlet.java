@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -33,15 +33,15 @@ import org.agnitas.util.PunycodeCodec;
 import org.agnitas.util.TimeoutLRUMap;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
-import com.agnitas.beans.ComCompany;
 import com.agnitas.beans.ComTrackableLink;
+import com.agnitas.beans.Company;
 import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.dao.ComTrackableLinkDao;
@@ -75,22 +75,11 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 public class RedirectServlet extends HttpServlet {
-	
-	private static final class LinkAndUrl {
-		public ComTrackableLink link;
-		public String url;
-		
-		public LinkAndUrl(final ComTrackableLink link, final String url) {
-			this.link = link;
-			this.url = url;
-		}
-	}
-
 	/** Serial version UID. */
 	private static final long serialVersionUID = 7767318643176056518L;
 
 	/** The logger. */
-	private static final transient Logger logger = Logger.getLogger(RedirectServlet.class);
+	private static final transient Logger logger = LogManager.getLogger(RedirectServlet.class);
 
     protected TimeoutLRUMap<Integer, TrackableLink> urlCache;
 
@@ -164,7 +153,7 @@ public class RedirectServlet extends HttpServlet {
 
 			final boolean cachingDisabled = StringUtils.equals(uid.getPrefix(), "nc"); // StringUtils.equals() is null-safe
 			ComTrackableLink trackableLink = loadTrackableLink(uid, cachingDisabled);
-			final ComCompany company = getCompanyDao().getCompany(uid.getCompanyID());
+			final Company company = getCompanyDao().getCompany(uid.getCompanyID());
 			final String referenceTableRecordSelector = referenceTableRecordSelector(request, company, uid.getCustomerID());
 			final String encryptedStaticValueMapOrNull = request.getParameter("stc");
 			final Recipient recipientForUid = getRecipientService().getRecipient(uid.getCompanyID(), uid.getCustomerID());
@@ -208,7 +197,7 @@ public class RedirectServlet extends HttpServlet {
 				if (RequestUtils.hasRangeHeader(request)) {
 					logger.warn("Got request with 'Range' header");
 					
-					RequestUtils.dumpRequest(request, logger, Level.WARN);
+					RequestUtils.dumpRequest(request, logger);
 				}
 				
 				// noCount examples: ...&nocount ...&nocount= ...&nocount=true ...&nocount=jhg
@@ -273,7 +262,7 @@ public class RedirectServlet extends HttpServlet {
 		return this.substituteLinkRdirPostProcessor;
 	}
 
-	private final String emitDeeptrackingToken(final TrackableLink trackableLink, final Recipient recipient, final ComExtensibleUID uid, final String fullUrl, final HttpServletResponse response, final ComCompany company) {
+	private final String emitDeeptrackingToken(final TrackableLink trackableLink, final Recipient recipient, final ComExtensibleUID uid, final String fullUrl, final HttpServletResponse response, final Company company) {
 		String newFullUrl = fullUrl;
 		
 		if(!recipient.isDoNotTrackMe()) {
@@ -637,7 +626,7 @@ public class RedirectServlet extends HttpServlet {
 		}
 	}
 	
-	private static final String referenceTableRecordSelector(final HttpServletRequest request, final ComCompany company, final long customerID) {
+	private static final String referenceTableRecordSelector(final HttpServletRequest request, final Company company, final long customerID) {
 		final String encrypted = request.getParameter("ref");
 		
 		if (encrypted == null) {

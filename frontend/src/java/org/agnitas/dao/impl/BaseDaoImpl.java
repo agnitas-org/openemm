@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -41,7 +41,8 @@ import org.agnitas.util.DbUtilities;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -71,7 +72,7 @@ public abstract class BaseDaoImpl {
 	/**
 	 * General logger of this class. This logger is not used for the select and update actions.
 	 */
-	private static final transient Logger baseDaoImplLogger = Logger.getLogger(BaseDaoImpl.class);
+	private static final transient Logger baseDaoImplLogger = LogManager.getLogger(BaseDaoImpl.class);
 
 	private static Integer MYSQL_MAXPACKETSIZE = null;
 	
@@ -98,8 +99,12 @@ public abstract class BaseDaoImpl {
 	 * Cache the existence state of table 'disabled_mailinglist_tbl'
 	 */
 	private Boolean isDisabledMailingListsSupported;
-
 	
+	/**
+	 * Cache the existence state of table 'dyn_target_tbl' and column 'is_access_limiting'
+	 */
+	private Boolean isAccessLimitingTargetgroupsSupported;
+
 	/**
 	 * Dependency injection method
 	 * @param dataSource to be used by this dao object
@@ -200,7 +205,7 @@ public abstract class BaseDaoImpl {
 	 * @param statement
 	 * @param parameter
 	 */
-	protected void logSqlError(Exception e, Logger logger, String statement, Object... parameter) {
+	protected void logSqlError(Exception e, org.apache.logging.log4j.Logger logger, String statement, Object... parameter) {
 		if (parameter != null && parameter.length > 0) {
 			logger.error("Error: " + e.getMessage() + "\nSQL: " + statement + "\nParameter: " + getParameterStringList(parameter), e);
 		} else {
@@ -286,6 +291,7 @@ public abstract class BaseDaoImpl {
 	protected List<Map<String, Object>> select(Logger logger, String statement, Object... parameter) {
 		try {
 			validateStatement(statement);
+			validateParameters(parameter);
 			logSqlStatement(logger, statement, parameter);
 			return getJdbcTemplate().queryForList(statement, parameter);
 		} catch (DataAccessException e) {
@@ -309,6 +315,7 @@ public abstract class BaseDaoImpl {
 	protected <T> List<T> select(Logger logger, String statement, RowMapper<T> rowMapper, Object... parameter) {
 		try {
 			validateStatement(statement);
+			validateParameters(parameter);
 			logSqlStatement(logger, statement, parameter);
 			return getJdbcTemplate().query(statement, rowMapper, parameter);
 		} catch (DataAccessException e) {
@@ -331,6 +338,7 @@ public abstract class BaseDaoImpl {
 	protected void query(Logger logger, String statement, RowCallbackHandler rowHandler, Object... parameter) {
 		try {
 			validateStatement(statement);
+			validateParameters(parameter);
 			logSqlStatement(logger, statement, parameter);
 			getJdbcTemplate().query(statement, rowHandler, parameter);
 		} catch (DataAccessException e) {
@@ -353,6 +361,7 @@ public abstract class BaseDaoImpl {
 	protected Map<String, Object> selectSingleRow(Logger logger, String statement, Object... parameter) {
 		try {
 			validateStatement(statement);
+			validateParameters(parameter);
 			logSqlStatement(logger, statement, parameter);
 			return getJdbcTemplate().queryForMap(statement, parameter);
 		} catch (DataAccessException e) {
@@ -376,6 +385,7 @@ public abstract class BaseDaoImpl {
 	protected <T> T select(Logger logger, String statement, Class<T> requiredType, Object... parameter) {
 		try {
 			validateStatement(statement);
+			validateParameters(parameter);
 			logSqlStatement(logger, statement, parameter);
 			return getJdbcTemplate().queryForObject(statement, requiredType, parameter);
 		} catch (DataAccessException e) {
@@ -386,7 +396,7 @@ public abstract class BaseDaoImpl {
 			throw e;
 		}
 	}
-	
+
 	/**
 	 * Logs the statement and parameter in debug-level, executes select and logs error.
 	 * If the searched entry does not exist an DataAccessException is thrown.
@@ -400,6 +410,7 @@ public abstract class BaseDaoImpl {
 	protected <T> T selectObject(Logger logger, String statement, RowMapper<T> rowMapper, Object... parameter) {
 		try {
 			validateStatement(statement);
+			validateParameters(parameter);
 			logSqlStatement(logger, statement, parameter);
 			return getJdbcTemplate().queryForObject(statement, rowMapper, parameter);
 		} catch (DataAccessException e) {
@@ -472,6 +483,7 @@ public abstract class BaseDaoImpl {
 	protected int selectIntWithDefaultValue(Logger logger, String statement, int defaultValue, Object... parameter) {
 		try {
 			validateStatement(statement);
+			validateParameters(parameter);
 			logSqlStatement(logger, statement, parameter);
 			Integer value = getJdbcTemplate().queryForObject(statement, parameter, Integer.class);
 			
@@ -489,7 +501,7 @@ public abstract class BaseDaoImpl {
 			throw e;
 		}
 	}
-	
+
 	/**
 	 * Logs the statement and parameter in debug-level, executes select and logs error.
 	 * The given default value is returned, if the statement return an EmptyResultDataAccessException,
@@ -505,6 +517,7 @@ public abstract class BaseDaoImpl {
 	protected long selectLongWithDefaultValue(Logger logger, String statement, long defaultValue, Object... parameter) {
 		try {
 			validateStatement(statement);
+			validateParameters(parameter);
 			logSqlStatement(logger, statement, parameter);
 			Long value = getJdbcTemplate().queryForObject(statement, parameter, Long.class);
 			
@@ -535,6 +548,7 @@ public abstract class BaseDaoImpl {
 	protected <T> T selectWithDefaultValue(Logger logger, String statement, Class<T> requiredType, T defaultValue, Object... parameter) {
 		try {
 			validateStatement(statement);
+			validateParameters(parameter);
 			logSqlStatement(logger, statement, parameter);
 			return getJdbcTemplate().queryForObject(statement, requiredType, parameter);
 		} catch (EmptyResultDataAccessException e) {
@@ -561,14 +575,8 @@ public abstract class BaseDaoImpl {
 	 */
 	protected int update(Logger logger, String statement, Object... parameter) {
 		try {
-			if (parameter != null) {
-				for (Object parameterObject : parameter) {
-					if (parameterObject != null && parameterObject.getClass().isArray()) {
-						throw new RuntimeException("Invalid usage of BaseDaoImpl 'update' method for array parameter. Use 'updateBlob' method instead.");
-					}
-				}
-			}
 			validateStatement(statement);
+			validateParameters(parameter);
 			logSqlStatement(logger, statement, parameter);
 			int touchedLines = getJdbcTemplate().update(statement, parameter);
 			if (logger.isDebugEnabled()) {
@@ -604,7 +612,7 @@ public abstract class BaseDaoImpl {
 			throw e;
 		}
 	}
-	
+
 	/**
 	 * Execute DDL statements with retry on "busy resource",
 	 * 
@@ -673,6 +681,7 @@ public abstract class BaseDaoImpl {
 	protected int update(Logger logger, String statement, KeyHolder keys, String[] keyColumns, Object... parameter) {
 		try {
 			validateStatement(statement);
+			validateParameters(parameter);
 			logSqlStatement(logger, statement, parameter);
 			int touchedLines = getJdbcTemplate().update(connection -> {
 				PreparedStatement ps = connection.prepareStatement(statement, keyColumns);
@@ -705,6 +714,7 @@ public abstract class BaseDaoImpl {
 		if (clobData == null) {
 			try {
 				validateStatement(statement);
+				validateParameters(parameter);
 				logSqlStatement(logger, statement + " clobDataLength: NULL-Clob", parameter);
 				Object[] parameterInclNull = new Object[parameter.length + 1];
 				parameterInclNull[0] = null;
@@ -718,6 +728,7 @@ public abstract class BaseDaoImpl {
 			}
 		} else {
 			validateStatement(statement);
+			validateParameters(parameter);
 			logSqlStatement(logger, statement + " clobDataLength:" + clobData.length(), parameter);
 			
 			checkMaximumDataSize(clobData.getBytes("UTF-8").length);
@@ -760,7 +771,7 @@ public abstract class BaseDaoImpl {
 			updateBlob(logger, statement, new ByteArrayInputStream(blobData), parameter);
 		}
 	}
-	
+
 	/**
 	 * Method to update the data of an blob.
 	 * This method should be DB-Vendor independent.
@@ -778,6 +789,7 @@ public abstract class BaseDaoImpl {
 		if (blobDataInputStream == null) {
 			try {
 				validateStatement(statement);
+				validateParameters(parameter);
 				logSqlStatement(logger, statement + " blobDataLength: NULL-Blob", parameter);
 				Object[] parameterInclNull = new Object[parameter.length + 1];
 				parameterInclNull[0] = null;
@@ -791,6 +803,7 @@ public abstract class BaseDaoImpl {
 			}
 		} else {
 			validateStatement(statement);
+			validateParameters(parameter);
 			logSqlStatement(logger, statement + " blobDataLength:" + blobDataInputStream.available(), parameter);
 			
 			checkMaximumDataSize(blobDataInputStream.available());
@@ -818,7 +831,7 @@ public abstract class BaseDaoImpl {
 			}
 		}
 	}
-	
+
 	/**
 	 * Write the data of a blob into an outputstream.
 	 * The selectBlobStatement must return a single column of type Blob.
@@ -836,6 +849,7 @@ public abstract class BaseDaoImpl {
 				throw new RuntimeException("outputStream is null");
 			}
 			validateStatement(selectBlobStatement);
+			validateParameters(parameter);
 			logSqlStatement(logger, selectBlobStatement, parameter);
 			Blob blob = getJdbcTemplate().queryForObject(selectBlobStatement, Blob.class, parameter);
 			if (blob != null) {
@@ -996,6 +1010,7 @@ public abstract class BaseDaoImpl {
 	protected int insertIntoAutoincrementMysqlTable(Logger logger, String autoincrementColumn, String insertStatement, Object... parameter) {
 		try {
 			validateStatement(insertStatement);
+			validateParameters(parameter);
 			logSqlStatement(logger, insertStatement + " autoincrement: " + autoincrementColumn, parameter);
 
 			int[] insertParameterTypes = new int[parameter.length];
@@ -1063,6 +1078,7 @@ public abstract class BaseDaoImpl {
 	protected int insertMultipleIntoAutoincrementMysqlTable(Logger logger, String autoincrementColumn, String insertStatement, Object... parameter) {
 		try {
 			validateStatement(insertStatement);
+			validateParameters(parameter);
 			logSqlStatement(logger, insertStatement + " autoincrement: " + autoincrementColumn, parameter);
 
 			int[] insertParameterTypes = new int[parameter.length];
@@ -1195,6 +1211,18 @@ public abstract class BaseDaoImpl {
 		}
 	}
 
+	protected void validateParameters(Object[] parameter) {
+		if (parameter != null) {
+			for (Object parameterObject : parameter) {
+				if (parameterObject != null && parameterObject.getClass().isArray()) {
+					throw new RuntimeException("Invalid usage of array as sql parameter");
+				} else if (parameterObject != null && parameterObject.getClass().isEnum()) {
+					throw new RuntimeException("Invalid usage of enum as sql parameter");
+				}
+			}
+		}
+	}
+
 	protected String replaceWildCardCharacters(String searchQuery) {
 		return searchQuery.replaceAll("\\*", "%").replaceAll("\\?", "_");
 	}
@@ -1231,7 +1259,7 @@ public abstract class BaseDaoImpl {
 
         sqlGetMaxIndex = String.format("SELECT %s FROM %s WHERE %s %s like ?", fieldName, tableName, condition, fieldName);
 		
-		List<String> nameList = select(logger, sqlGetMaxIndex, new StringRowMapper(), ArrayUtils.add(parameters, prefix + "%"));
+		List<String> nameList = select(logger, sqlGetMaxIndex, StringRowMapper.INSTANCE, ArrayUtils.add(parameters, prefix + "%"));
 		
 		return AgnUtils.findUniqueCloneName(nameList, prefix);
 	}
@@ -1250,5 +1278,18 @@ public abstract class BaseDaoImpl {
 		}
 
 		return isDisabledMailingListsSupported;
+	}
+    
+    protected boolean isAccessLimitingTargetgroupsSupported() {
+		if (isAccessLimitingTargetgroupsSupported == null) {
+			try {
+				isAccessLimitingTargetgroupsSupported = DbUtilities.checkTableAndColumnsExist(getDataSource(), "dyn_target_tbl", "is_access_limiting");
+			} catch (Exception e) {
+				e.printStackTrace();
+				isAccessLimitingTargetgroupsSupported = false;
+			}
+		}
+
+		return isAccessLimitingTargetgroupsSupported;
 	}
 }

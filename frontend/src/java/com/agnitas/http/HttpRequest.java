@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -134,6 +134,16 @@ public class HttpRequest {
 	}
 
 	public HttpRequest addBasicAuthenticationHeader(final String username, final String password) throws Exception {
+		if (headers.containsKey(HEADER_NAME_BASIC_AUTHENTICATION)) {
+			throw new Exception("Request already contains a BasicAuthenticationHeader");
+		} else {
+			addHeader(HttpRequest.HEADER_NAME_BASIC_AUTHENTICATION, HttpUtilities.createBasicAuthenticationHeaderValue(username, password));
+
+			return this;
+		}
+	}
+
+	public HttpRequest addBasicAuthenticationHeader(final String username, final char[] password) throws Exception {
 		if (headers.containsKey(HEADER_NAME_BASIC_AUTHENTICATION)) {
 			throw new Exception("Request already contains a BasicAuthenticationHeader");
 		} else {

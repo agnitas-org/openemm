@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -14,26 +14,32 @@ import org.jsoup.nodes.Attributes;
 import org.xml.sax.SAXException;
 
 public interface SaxParsingHandler {
+    @SuppressWarnings("unused")	// Required for throws-clause
     default void onDoctype(String name, String publicId, String systemId, boolean isForceQuirks) throws SAXException {
 		// nothing to do
     }
 
+    @SuppressWarnings("unused")	// Required for throws-clause
     default void onOpeningTag(String name, Attributes attributes, boolean isStandalone) throws SAXException {
 		// nothing to do
     }
 
+    @SuppressWarnings("unused")	// Required for throws-clause
     default void onClosingTag(String name) throws SAXException {
 		// nothing to do
     }
 
+    @SuppressWarnings("unused")	// Required for throws-clause
     default void onComment(String data) throws SAXException {
 		// nothing to do
     }
 
-    default void onCharacter(String data) throws SAXException {
+    @SuppressWarnings("unused")	// Required for throws-clause
+	default void onCharacter(String data) throws SAXException {
 		// nothing to do
     }
 
+    @SuppressWarnings("unused")	// Required for throws-clause
     default void onEnd() throws SAXException {
 		// nothing to do
     }

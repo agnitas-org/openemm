@@ -20,6 +20,7 @@
 <%--@elvariable id="admin" type="com.agnitas.beans.ComAdmin"--%>
 <%--@elvariable id="helplanguage" type="java.lang.String"--%>
 <%--@elvariable id="mailingSendForm" type="com.agnitas.web.ComMailingSendForm"--%>
+<%--@elvariable id="autoImports" type="java.util.List<org.agnitas.emm.core.autoimport.bean.AutoImportLight>"--%>
 
 <c:set var="admin" value="${sessionScope[SESSION_CONTEXT_KEYNAME_ADMIN]}" />
 
@@ -45,7 +46,7 @@
 <fmt:formatDate value="${now}" pattern="HH" timeZone="${aZone}" var="currentHour" />
 <fmt:formatDate value="${now}" pattern="mm" timeZone="${aZone}" var="currentMinutes" />
 
-<agn:agnForm action="/mailingsend" data-form="resource">
+<agn:agnForm action="/mailingsend" data-form="resource" data-controller="mailing-send">
 	<html:hidden property="action" />
 	<html:hidden property="mailingID" />
 	<html:hidden property="sendStatText" />
@@ -382,7 +383,27 @@
 											</ul>
 									</div>
 								</div>
-		
+
+								<emm:ShowByPermission token="recipient.import.auto.mailing">
+									<div class="form-group">
+										<div class="col-sm-12 control-label-left">
+											<label class="control-label">
+												<label for="required-auto-import" style="margin-bottom: 0;">
+													<bean:message key="autoImport.autoImport" />
+												</label>
+											</label>
+										</div>
+										<div class="col-sm-12">
+											<html:select property="autoImportId" styleClass="form-control js-select" styleId="required-auto-impor">
+												<html:option value="0">---</html:option>
+												<c:forEach items="${autoImports}" var="autoImport">
+													<html:option value="${autoImport.autoImportId}">${autoImport.shortname}</html:option>
+												</c:forEach>
+											</html:select>
+										</div>
+									</div>
+								</emm:ShowByPermission>
+
 								<emm:ShowByPermission token="mailing.setmaxrecipients">
 									<div class="form-group">
 										<div class="col-sm-12 control-label-left">

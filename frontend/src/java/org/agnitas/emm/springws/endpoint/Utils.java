@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -17,6 +17,8 @@ import java.util.OptionalInt;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.springws.jaxb.Map;
 import org.agnitas.emm.springws.jaxb.MapItem;
+import org.agnitas.emm.springws.util.SecurityContextAccess;
+import org.agnitas.emm.springws.util.UserActivityLogAccess;
 import org.agnitas.service.UserActivityLogService;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.springframework.security.core.GrantedAuthority;
@@ -69,28 +71,49 @@ public class Utils {
 		return object.getTextContent();
 	}
 	
+	/**
+	 * @see SecurityContextAccess#isAuthorityGranted(GrantedAuthority)
+	 */
+	@Deprecated	// TODO Remove after migrating all endpoints to use SecurityContextAccess
 	public static final boolean isAuthorityGranted(final GrantedAuthority authority) {
 		return getWebserviceUserDetails().getAuthorities().contains(authority);
 	}
 	
+	/**
+	 * @see SecurityContextAccess#getWebserviceUserCompanyId() 
+	 */
+	@Deprecated	// TODO Remove after migrating all endpoints to use SecurityContextAccess
 	public static int getUserCompany() {
 		return getWebserviceUserDetails().getCompanyID();
 	}
 
+	/**
+	 * @see SecurityContextAccess#getWebserviceUserName() 
+	 */
+	@Deprecated	// TODO Remove after migrating all endpoints to use SecurityContextAccess
     public static String getUserName(){
     	return getWebserviceUserDetails().getUsername();
     }
     
+	/**
+	 * @see SecurityContextAccess#getWebserviceUserDetails() 
+	 */
+	@Deprecated	// TODO Remove after migrating all endpoints to use SecurityContextAccess
     public static final WebserviceUserDetails getWebserviceUserDetails() {
     	return ((WebserviceUserDetails)SecurityContextHolder.getContext().getAuthentication().getPrincipal());
     }
 
+	@Deprecated // TODO Remove after migrating all endpoints to use SecurityContextAccess
     private static ComAdmin getAdminForUserActivityLog() {
 		ComAdmin admin = new ComAdminImpl();
 		admin.setUsername(getUserName());
 		return admin;
 	}
 
+	/**
+	 * @see UserActivityLogAccess#writeLog(List)
+	 */
+	@Deprecated // TODO Remove after migrating all endpoints to use SecurityContextAccess
 	public static void writeLog(UserActivityLogService service, List<UserAction> userActions) {
 		ComAdmin admin = Utils.getAdminForUserActivityLog();
 		for (UserAction action : userActions) {

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -15,11 +15,6 @@ import java.io.UnsupportedEncodingException;
 import java.util.Map;
 import java.util.Objects;
 
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-
 import org.agnitas.beans.BaseTrackableLink;
 import org.agnitas.beans.Recipient;
 import org.agnitas.beans.factory.RecipientFactory;
@@ -32,7 +27,8 @@ import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.recipient.service.RecipientService;
 import org.agnitas.util.AgnUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
@@ -50,11 +46,16 @@ import com.agnitas.emm.core.trackablelinks.dao.FormTrackableLinkDao;
 import com.agnitas.userform.trackablelinks.bean.ComTrackableUserFormLink;
 import com.agnitas.util.LinkUtils;
 
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+
 /**
  * redirect servlet for links within a user form
  */
 public class ComRdirUserForm extends HttpServlet {
-	private static final transient Logger logger = Logger.getLogger(ComRdirUserForm.class);
+	private static final transient Logger logger = LogManager.getLogger(ComRdirUserForm.class);
 	private static final long serialVersionUID = -83951043191964625L;
 
 	// ----------------------------------------------------------------------------------------------------------------
@@ -91,7 +92,7 @@ public class ComRdirUserForm extends HttpServlet {
 	private FormTrackableLinkDao getUserFormDao() {
 		if (formTrackableLinkDao == null) {
 			ApplicationContext applicationContext = WebApplicationContextUtils.getWebApplicationContext(getServletContext());
-			formTrackableLinkDao = (FormTrackableLinkDao) applicationContext.getBean("UserFormDao");
+			formTrackableLinkDao = applicationContext.getBean("FormTrackableLinkDao", FormTrackableLinkDao.class);
 		}
 		return formTrackableLinkDao;
 	}
@@ -203,7 +204,15 @@ public class ComRdirUserForm extends HttpServlet {
 		
 		ComExtensibleUID uid = null;
 
-		String paramUid = request.getParameter("uid");
+		/*
+		 *  In all cases I found in code, the parameter is named "agnUID".
+		 *  Why the parameter here is named "uid" I don't know.
+		 *  I also don't know, if there is a link using "uid" instead of "agnUID", 
+		 *  so I will support both variants, preferring "agnUID" over "uid". 
+		 */
+		final String paramUid = request.getParameter("agnUID") != null 
+				? request.getParameter("agnUID")
+				: request.getParameter("uid");
 
 		if (StringUtils.isNotBlank(paramUid)) {
 			try {
@@ -244,6 +253,14 @@ public class ComRdirUserForm extends HttpServlet {
 		}
 
 		if (deviceID != ComDeviceService.DEVICE_BLACKLISTED_NO_COUNT) {
+			/*
+			 * Set default tracking level:
+			 *   - When no recipient can be identified (customer ID <= 0):
+			 *   	We track all data (here: IP address only, because recipient ID is 0)
+			 *   - When a recipient can be identified (customer ID > 0):
+			 *   	The default behavior is anonymous tracking (customer ID and IP address are not tracked). This will be overwritten by
+			 *      recipient setting ("sys_tracking_veto" = 1), when the customer ID is known.
+			 */
 			TrackingLevel trackingLevel = uid != null && uid.getCustomerID() > 0 ? TrackingLevel.ANONYMOUS : TrackingLevel.PERSONAL;
 			
 			// The available mailing_id and customer_id should be logged in any case of a trackable link
@@ -257,16 +274,16 @@ public class ComRdirUserForm extends HttpServlet {
 					recipient.setCustomerID(uid.getCustomerID());
 					recipient.setCustParameters(getRecipientService().getCustomerDataFromDb(uid.getCompanyID(), uid.getCustomerID(), recipient.getDateFormat()));
 
-					trackingLevel = TrackingVetoHelper.computeTrackingLevel(uid, recipient.isDoNotTrackMe(), configService, mailingContentTypeCache);
+					trackingLevel = TrackingVetoHelper.computeTrackingLevel(uid, recipient.isDoNotTrackMe(), getConfigService(), getMailingContentTypeCache());
 				}
 
 				getUserFormDao().logUserFormTrackableLinkClickInDB(
-						comTrackableUserFormLink, 
-						(trackingLevel == TrackingLevel.ANONYMOUS) ? Integer.valueOf(0) : customerIdInt, 
-						mailingIdInt, 
-						(trackingLevel == TrackingLevel.ANONYMOUS) ? null : request.getRemoteAddr(), 
-						deviceClass, 
-						deviceID, 
+						comTrackableUserFormLink,
+						(trackingLevel == TrackingLevel.ANONYMOUS) ? Integer.valueOf(0) : customerIdInt,
+						mailingIdInt,
+						(trackingLevel == TrackingLevel.ANONYMOUS) ? null : request.getRemoteAddr(),
+						deviceClass,
+						deviceID,
 						clientID);
 			}
 		}

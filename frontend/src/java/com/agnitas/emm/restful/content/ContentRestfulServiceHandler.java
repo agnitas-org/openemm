@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -22,7 +22,6 @@ import org.agnitas.emm.core.useractivitylog.dao.UserActivityLogDao;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.HttpUtils.RequestMethod;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComAdmin;
@@ -32,6 +31,7 @@ import com.agnitas.dao.ComMailingDao;
 import com.agnitas.dao.ComTargetDao;
 import com.agnitas.dao.DynamicTagDao;
 import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.thumbnails.service.ThumbnailService;
 import com.agnitas.emm.restful.BaseRequestResponse;
 import com.agnitas.emm.restful.ErrorCode;
 import com.agnitas.emm.restful.JsonRequestResponse;
@@ -54,8 +54,6 @@ import jakarta.servlet.http.HttpServletResponse;
  * https://<system.url>/restful/content
  */
 public class ContentRestfulServiceHandler implements RestfulServiceHandler {
-	@SuppressWarnings("unused")
-	private static final transient Logger logger = Logger.getLogger(ContentRestfulServiceHandler.class);
 	
 	public static final String NAMESPACE = "content";
 
@@ -65,6 +63,7 @@ public class ContentRestfulServiceHandler implements RestfulServiceHandler {
 	private ComMailingDao mailingDao;
 	private DynamicTagDao dynamicTagDao;
 	private ComTargetDao targetDao;
+	private ThumbnailService thumbnailService;
 
 	@Required
 	public void setUserActivityLogDao(UserActivityLogDao userActivityLogDao) {
@@ -84,6 +83,11 @@ public class ContentRestfulServiceHandler implements RestfulServiceHandler {
 	@Required
 	public void setTargetDao(ComTargetDao targetDao) {
 		this.targetDao = targetDao;
+	}
+
+	@Required
+	public void setThumbnailService(ThumbnailService thumbnailService) {
+		this.thumbnailService = thumbnailService;
 	}
 
 	@Override
@@ -253,6 +257,7 @@ public class ContentRestfulServiceHandler implements RestfulServiceHandler {
 			throw new RestfulClientException("Content already exists: " + dynamicTag.getDynName());
 		} else {
 			dynamicTagDao.createDynamicTags(admin.getCompanyID(), mailingID, "UTF-8", Collections.singletonList(dynamicTag));
+			thumbnailService.updateMailingThumbnailByWebservice(admin.getCompanyID(), mailingID);
 			return createContentJsonObject(dynamicTagDao.getDynamicTag(dynamicTag.getId(), admin.getCompanyID()));
 		}
 	}
@@ -293,6 +298,7 @@ public class ContentRestfulServiceHandler implements RestfulServiceHandler {
 				throw new RestfulClientException("Content already exists: " + dynamicTag.getDynName());
 			} else {
 				dynamicTagDao.createDynamicTags(admin.getCompanyID(), mailingID, "UTF-8", Collections.singletonList(dynamicTag));
+				thumbnailService.updateMailingThumbnailByWebservice(admin.getCompanyID(), mailingID);
 				return createContentJsonObject(dynamicTagDao.getDynamicTag(dynamicTag.getId(), admin.getCompanyID()));
 			}
 		} else {
@@ -337,6 +343,7 @@ public class ContentRestfulServiceHandler implements RestfulServiceHandler {
 			DynamicTag storedDynamicTag = dynamicTagDao.getDynamicTag(dynamicTag.getId(), admin.getCompanyID());
 			
 			if (storedDynamicTag != null) {
+				thumbnailService.updateMailingThumbnailByWebservice(admin.getCompanyID(), mailingID);
 				return createContentJsonObject(storedDynamicTag);
 			} else {
 				throw new RestfulNoDataFoundException("No data found");
@@ -404,14 +411,20 @@ public class ContentRestfulServiceHandler implements RestfulServiceHandler {
 										DynamicTagContent dynamicTagContent = new DynamicTagContentImpl();
 										
 										for (Entry<String, Object> contentItemEntry : ((JsonObject) contentObject).entrySet()) {
-											if ("target_id".equals(contentItemEntry.getKey())) {
+											if ("id".equals(contentItemEntry.getKey())) {
+												if (contentItemEntry.getValue() != null && contentItemEntry.getValue() instanceof Integer) {
+													dynamicTagContent.setId((Integer) contentItemEntry.getValue());
+												} else {
+													throw new RestfulClientException("Invalid data type for 'id'. Integer expected");
+												}
+											} else if ("target_id".equals(contentItemEntry.getKey())) {
 												if (contentItemEntry.getValue() != null && contentItemEntry.getValue() instanceof Integer) {
 													dynamicTagContent.setTargetID((Integer) contentItemEntry.getValue());
 												} else {
 													throw new RestfulClientException("Invalid data type for 'target_id'. Integer expected");
 												}
 												
-												if (targetDao.getTarget(dynamicTagContent.getTargetID(), admin.getCompanyID()) == null) {
+												if (dynamicTagContent.getTargetID() != 0 && targetDao.getTarget(dynamicTagContent.getTargetID(), admin.getCompanyID()) == null) {
 													throw new RestfulClientException("Invalid not existing 'target_id': " + dynamicTagContent.getTargetID());
 												}
 											} else if ("order".equals(contentItemEntry.getKey())) {

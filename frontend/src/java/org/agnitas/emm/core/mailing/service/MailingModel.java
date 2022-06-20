@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -21,6 +21,7 @@ import java.util.Map.Entry;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.antlr.v4.runtime.misc.Nullable;
 
+import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.maildrop.MaildropStatus;
 import com.agnitas.emm.core.report.enums.DatabaseField;
 import com.agnitas.emm.core.report.enums.DatabaseFieldUtils;
@@ -53,59 +54,6 @@ public class MailingModel {
 	public interface GetForMLID {
     	// do nothing
     }
-
-	public static enum MailingType {
-		REGULAR("regular", 0), ACTION_BASED("action-based", 1), RULE_BASED("rule-based", 2);
-
-		private final String name;
-		private final int value;
-
-		private MailingType(String name, int value) {
-			this.name = name;
-			this.value = value;
-		}
-
-		public String getName() {
-			return name;
-		}
-
-		public int getValue() {
-			return value;
-		}
-	}
-
-	public final static Map<String, MailingType> mailingTypeMap;
-	static {
-		mailingTypeMap = new HashMap<>(3);
-		mailingTypeMap.put(MailingType.REGULAR.getName(), MailingType.REGULAR);
-		mailingTypeMap.put(MailingType.ACTION_BASED.getName(), MailingType.ACTION_BASED);
-		mailingTypeMap.put(MailingType.RULE_BASED.getName(), MailingType.RULE_BASED);
-	}
-
-	public final static Map<Integer, MailingType> mailingTypeValueMap;
-	static {
-		mailingTypeValueMap = new HashMap<>(3);
-		mailingTypeValueMap.put(MailingType.REGULAR.getValue(), MailingType.REGULAR);
-		mailingTypeValueMap.put(MailingType.ACTION_BASED.getValue(), MailingType.ACTION_BASED);
-		mailingTypeValueMap.put(MailingType.RULE_BASED.getValue(), MailingType.RULE_BASED);
-	}
-
-	public static MailingType getMailingType(String mailingTypeString) {
-		mailingTypeString = mailingTypeString != null ? mailingTypeString.toLowerCase() : null;
-		MailingType mailingType = mailingTypeMap.get(mailingTypeString);
-		if (mailingType == null) {
-			throw new RuntimeException("Invalid mailType");
-		}
-		return mailingType;
-	}
-
-	public static MailingType getMailingType(Integer mailingTypeInt) {
-		MailingType mailingType = mailingTypeValueMap.get(mailingTypeInt);
-		if (mailingType == null) {
-			throw new RuntimeException("Invalid mailType");
-		}
-		return mailingType;
-	}
 
 	public enum Format implements DatabaseField<Integer, Format> {
 		TEXT(0, "text", "MailType.0"),
@@ -315,7 +263,6 @@ public class MailingModel {
 	private int mailinglistId;
 	private List<Integer> targetIDList;
 	private String mailingTypeString;
-	private MailingType mailingType;
 	private String subject;
 	private String senderName;
 	private String senderAddress;
@@ -380,20 +327,44 @@ public class MailingModel {
 		this.targetIDList = targetIDList;
 	}
 
+	public void setMailingTypeString(String mailingTypeString) {
+		if (mailingTypeString == null) {
+			this.mailingTypeString = null;
+		} else {
+			try {
+				this.mailingTypeString = MailingType.fromName(mailingTypeString).name();
+			} catch (Exception e) {
+				this.mailingTypeString = MailingType.NORMAL.name();
+			}
+		}
+	}
+	
 	public String getMailingTypeString() {
-		return mailingTypeString;
+		if (mailingTypeString == null) {
+			return null;
+		} else {
+			try {
+				return MailingType.fromName(mailingTypeString).name();
+			} catch (Exception e) {
+				return MailingType.NORMAL.name();
+			}
+		}
 	}
 
-	public void setMailingType(String mailingTypeString) {
-		this.mailingTypeString = mailingTypeString;
-		mailingType = null;
+	public void setMailingType(MailingType mailingType) {
+		mailingTypeString = mailingType == null ? null : mailingType.name();
 	}
 
 	public MailingType getMailingType() {
-		if (mailingType == null && mailingTypeString != null) {
-			mailingType = getMailingType(mailingTypeString);
+		if (mailingTypeString == null) {
+			return null;
+		} else {
+			try {
+				return MailingType.fromName(mailingTypeString);
+			} catch (Exception e) {
+				return MailingType.NORMAL;
+			}
 		}
-		return mailingType;
 	}
 
 	public String getSubject() {

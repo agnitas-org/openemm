@@ -1,0 +1,23 @@
+    <c:if test="${CAN_ENABLE_SEND_WORLDMAILING}">
+        <c:choose>
+            <c:when test="${not mailingSendForm.hasDeletedTargetGroups}">
+                <div class="form-group">
+                    <div class="col-sm-4">
+                        <label class="control-label">
+                            <bean:message key="MailingUnlockSend" />
+                        </label>
+                    </div>
+                    <div class="col-sm-8">
+                        <html:link styleClass="btn btn-regular"
+                                    page="/mailingsend.do?action=${ACTION_UNLOCK_SEND}&mailingID=${tmpMailingID}">
+                            <i class="icon icon-check"></i>
+                            <span class="text"><bean:message key="default.unlock" /></span>
+                        </html:link>
+                    </div>
+                </div>
+            </c:when>
+            <c:otherwise>
+                <%@ include file="mailing-cannot-activate-message.jspf" %>
+            </c:otherwise>
+        </c:choose>
+    </c:if>

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -23,8 +23,10 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import org.agnitas.beans.LightProfileField;
+import org.agnitas.beans.impl.CompanyStatus;
 import org.agnitas.beans.impl.LightProfileFieldImpl;
 import org.agnitas.dao.impl.BaseDaoImpl;
+import org.agnitas.dao.impl.mapper.IntegerRowMapper;
 import org.agnitas.dao.impl.mapper.StringRowMapper;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
@@ -37,7 +39,8 @@ import org.agnitas.util.SafeString;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.jdbc.core.RowMapper;
 
@@ -58,7 +61,7 @@ import net.sf.json.JSONException;
 public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFieldDao {
 	
 	/** The logger. */
-	private static final transient Logger logger = Logger.getLogger(ComProfileFieldDaoImpl.class);
+	private static final transient Logger logger = LogManager.getLogger(ComProfileFieldDaoImpl.class);
 	
 	private static final String TABLE = "customer_field_tbl";
 
@@ -120,7 +123,8 @@ public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFie
 		ComCompanyDaoImpl.STANDARD_FIELD_LASTCLICK_DATE,
 		ComCompanyDaoImpl.STANDARD_FIELD_LASTSEND_DATE,
 		ComCompanyDaoImpl.STANDARD_FIELD_DO_NOT_TRACK,
-		ComCompanyDaoImpl.STANDARD_FIELD_CLEANED_DATE
+		ComCompanyDaoImpl.STANDARD_FIELD_CLEANED_DATE,
+		ComCompanyDaoImpl.STANDARD_FIELD_ENCRYPTED_SENDING
 	);
 
 	/** Service accessing configuration data. */
@@ -665,14 +669,17 @@ public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFie
 	@Override
 	@DaoUpdateReturnValueCheck
     public boolean saveProfileField(ProfileField field, ComAdmin admin) throws Exception {
-		ProfileField comProfileField = field;
-		ProfileField previousProfileField = getProfileField(comProfileField.getCompanyID(), comProfileField.getColumn());
+		ProfileField previousProfileField = getProfileField(field.getCompanyID(), field.getColumn());
 		
-		if (("NUMBER".equalsIgnoreCase(comProfileField.getDataType()) || "FLOAT".equalsIgnoreCase(comProfileField.getDataType()) || "DOUBLE".equalsIgnoreCase(comProfileField.getDataType()) || "INTEGER".equalsIgnoreCase(comProfileField.getDataType())) && StringUtils.isNotBlank(comProfileField.getDefaultValue())) {
-			comProfileField.setDefaultValue(AgnUtils.normalizeNumber(admin.getLocale(), comProfileField.getDefaultValue()));
+		if (("NUMBER".equalsIgnoreCase(field.getDataType()) ||
+				"FLOAT".equalsIgnoreCase(field.getDataType()) ||
+				"DOUBLE".equalsIgnoreCase(field.getDataType()) ||
+				"INTEGER".equalsIgnoreCase(field.getDataType())) &&
+				StringUtils.isNotBlank(field.getDefaultValue())) {
+			field.setDefaultValue(AgnUtils.normalizeNumber(admin.getLocale(), field.getDefaultValue()));
 		}
 
-		String[] allowedValues = comProfileField.getAllowedValues();
+		String[] allowedValues = field.getAllowedValues();
 		String allowedValuesJson = null;
 		if (allowedValues != null) {
 			JSONArray array = new JSONArray();
@@ -682,46 +689,46 @@ public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFie
 
 		if (previousProfileField == null) {
 			// Check if new shortname already exists before a new column is added to dbtable
-			if (getProfileFieldByShortname(comProfileField.getCompanyID(), comProfileField.getShortname()) != null) {
+			if (getProfileFieldByShortname(field.getCompanyID(), field.getShortname()) != null) {
 				throw new Exception("New shortname for customerprofilefield already exists");
 			}
 
 			// Change DB Structure if needed (throws an Exception if change is not possible)
-			boolean createdDbField = addColumnToDbTable(comProfileField.getCompanyID(), comProfileField.getColumn(), comProfileField.getDataType(), comProfileField.getDataTypeLength(), comProfileField.getDefaultValue(), admin.getDateFormat(), !comProfileField.getNullable());
+			boolean createdDbField = addColumnToDbTable(field.getCompanyID(), field.getColumn(), field.getDataType(), field.getDataTypeLength(), field.getDefaultValue(), admin.getDateFormat(), !field.getNullable());
 			if (!createdDbField) {
 				throw new Exception("DB-field could not be created");
 			}
 			
 			// Shift other entries if needed
-			if (comProfileField.getSort() < MAX_SORT_INDEX) {
-				update(logger, "UPDATE " + TABLE + " SET " + FIELD_SORT + " = " + FIELD_SORT + " + 1 WHERE " + FIELD_SORT + " < " + MAX_SORT_INDEX + " AND " + FIELD_SORT + " >= ?", comProfileField.getSort());
+			if (field.getSort() < MAX_SORT_INDEX) {
+				update(logger, "UPDATE " + TABLE + " SET " + FIELD_SORT + " = " + FIELD_SORT + " + 1 WHERE " + FIELD_SORT + " < " + MAX_SORT_INDEX + " AND " + FIELD_SORT + " >= ?", field.getSort());
 			}
 			
 			// Insert new entry
 			String statementString = "INSERT INTO " + TABLE + " (" + FIELD_COMPANY_ID + ", " + FIELD_COLUMN_NAME + ", " + FIELD_ADMIN_ID + ", " + FIELD_SHORTNAME + ", " + FIELD_DESCRIPTION + ", " + FIELD_DEFAULT_VALUE + ", " + FIELD_MODE_EDIT + ", " + FIELD_MODE_INSERT + ", " + FIELD_LINE + ", " + FIELD_SORT + ", " + FIELD_ISINTEREST + ", " + FIELD_CREATION_DATE + ", " + FIELD_CHANGE_DATE + ", " + FIELD_HISTORIZE + ", " + FIELD_ALLOWED_VALUES + ") VALUES (?, UPPER(?), ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?)";
-			update(logger, statementString, field.getCompanyID(), field.getColumn(), field.getAdminID(), field.getShortname().trim(), field.getDescription(), field.getDefaultValue(), field.getModeEdit(), field.getModeInsert(), comProfileField.getLine(), comProfileField.getSort(), comProfileField.getInterest(), comProfileField.getHistorize(), allowedValuesJson);
+			update(logger, statementString, field.getCompanyID(), field.getColumn(), field.getAdminID(), field.getShortname().trim(), field.getDescription(), field.getDefaultValue(), field.getModeEdit(), field.getModeInsert(), field.getLine(), field.getSort(), field.getInterest(), field.getHistorize(), allowedValuesJson);
 		} else {
 			// Check if new shortname already exists before a new column is added to dbtable
-			if (!previousProfileField.getShortname().equals(comProfileField.getShortname())
-					&& existWithExactShortname(comProfileField.getCompanyID(), comProfileField.getShortname())) {
+			if (!previousProfileField.getShortname().equals(field.getShortname())
+					&& existWithExactShortname(field.getCompanyID(), field.getShortname())) {
 				throw new Exception("New shortname for customerprofilefield already exists");
 			}
 
 			// Change DB Structure if needed (throws an Exception if change is not possible)
-			if (comProfileField.getDataType() != null) {
-    			boolean alteredDbField = alterColumnTypeInDbTable(comProfileField.getCompanyID(), comProfileField.getColumn(), comProfileField.getDataType(), comProfileField.getDataTypeLength(), comProfileField.getDefaultValue(), admin.getDateFormat(), !comProfileField.getNullable());
+			if (field.getDataType() != null) {
+    			boolean alteredDbField = alterColumnTypeInDbTable(field.getCompanyID(), field.getColumn(), field.getDataType(), field.getDataTypeLength(), field.getDefaultValue(), admin.getDateFormat(), !field.getNullable());
     			if (!alteredDbField) {
     				throw new Exception("DB-field could not be changed");
     			}
 			}
 			
 			// Shift other entries if needed
-			if (comProfileField.getSort() != previousProfileField.getSort()) {
-    			if (comProfileField.getSort() < MAX_SORT_INDEX) {
-    				if (comProfileField.getSort() < previousProfileField.getSort()) {
-    					update(logger, "UPDATE " + TABLE + " SET " + FIELD_SORT + " = " + FIELD_SORT + " + 1 WHERE " + FIELD_SORT + " < " + MAX_SORT_INDEX + " AND " + FIELD_SORT + " >= ? AND " + FIELD_SORT + " < ?", comProfileField.getSort(), previousProfileField.getSort());
+			if (field.getSort() != previousProfileField.getSort()) {
+    			if (field.getSort() < MAX_SORT_INDEX) {
+    				if (field.getSort() < previousProfileField.getSort()) {
+    					update(logger, "UPDATE " + TABLE + " SET " + FIELD_SORT + " = " + FIELD_SORT + " + 1 WHERE " + FIELD_SORT + " < " + MAX_SORT_INDEX + " AND " + FIELD_SORT + " >= ? AND " + FIELD_SORT + " < ?", field.getSort(), previousProfileField.getSort());
     				} else {
-    					update(logger, "UPDATE " + TABLE + " SET " + FIELD_SORT + " = " + FIELD_SORT + " - 1 WHERE " + FIELD_SORT + " < " + MAX_SORT_INDEX + " AND " + FIELD_SORT + " > ? AND " + FIELD_SORT + " <= ?", comProfileField.getSort(), previousProfileField.getSort());
+    					update(logger, "UPDATE " + TABLE + " SET " + FIELD_SORT + " = " + FIELD_SORT + " - 1 WHERE " + FIELD_SORT + " < " + MAX_SORT_INDEX + " AND " + FIELD_SORT + " > ? AND " + FIELD_SORT + " <= ?", field.getSort(), previousProfileField.getSort());
     				}
     			} else if (previousProfileField.getSort() < MAX_SORT_INDEX) {
     				update(logger, "UPDATE " + TABLE + " SET " + FIELD_SORT + " = " + FIELD_SORT + " - 1 WHERE " + FIELD_SORT + " < " + MAX_SORT_INDEX + " AND " + FIELD_SORT + " > ?", previousProfileField.getSort());
@@ -731,11 +738,11 @@ public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFie
 			if (selectInt(logger, "SELECT COUNT(*) FROM " + TABLE + " WHERE " + FIELD_COMPANY_ID + " = ? AND LOWER(" + FIELD_COLUMN_NAME + ") = LOWER(?)", field.getCompanyID(), field.getColumn()) < 1) {
     			// Insert new entry for some manually by db-support in db added fields
 				String statementString = "INSERT INTO " + TABLE + " (" + FIELD_COMPANY_ID + ", " + FIELD_COLUMN_NAME + ", " + FIELD_ADMIN_ID + ", " + FIELD_SHORTNAME + ", " + FIELD_DESCRIPTION + ", " + FIELD_DEFAULT_VALUE + ", " + FIELD_MODE_EDIT + ", " + FIELD_MODE_INSERT + ", " + FIELD_LINE + ", " + FIELD_SORT + ", " + FIELD_ISINTEREST + ", " + FIELD_CREATION_DATE + ", " + FIELD_CHANGE_DATE + ", " + FIELD_HISTORIZE + ", " + FIELD_ALLOWED_VALUES + ") VALUES (?, UPPER(?), ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?)";
-    			update(logger, statementString, field.getCompanyID(), field.getColumn(), field.getAdminID(), field.getShortname().trim(), field.getDescription(), field.getDefaultValue(), field.getModeEdit(), field.getModeInsert(), comProfileField.getLine(), comProfileField.getSort(), comProfileField.getInterest(), comProfileField.getHistorize(), allowedValuesJson);
+    			update(logger, statementString, field.getCompanyID(), field.getColumn(), field.getAdminID(), field.getShortname().trim(), field.getDescription(), field.getDefaultValue(), field.getModeEdit(), field.getModeInsert(), field.getLine(), field.getSort(), field.getInterest(), field.getHistorize(), allowedValuesJson);
 			} else {
     			// Update existing entry
     			update(logger, "UPDATE " + TABLE + " SET " + FIELD_SHORTNAME + " = ?, " + FIELD_DESCRIPTION + " = ?, " + FIELD_DEFAULT_VALUE + " = ?, " + FIELD_MODE_EDIT + " = ?, " + FIELD_MODE_INSERT + " = ?, " + FIELD_LINE + " = ?, " + FIELD_SORT + " = ?, " + FIELD_ISINTEREST + " = ?, " + FIELD_CHANGE_DATE + " = CURRENT_TIMESTAMP, " + FIELD_HISTORIZE + " = ?, " + FIELD_ALLOWED_VALUES + " = ? WHERE " + FIELD_COMPANY_ID + " = ? AND UPPER(" + FIELD_COLUMN_NAME + ") = UPPER(?) AND " + FIELD_ADMIN_ID + " IN (0, ?)",
-   					field.getShortname().trim(), field.getDescription(), field.getDefaultValue(), field.getModeEdit(), field.getModeInsert(), comProfileField.getLine(), comProfileField.getSort(), comProfileField.getInterest(), comProfileField.getHistorize(), allowedValuesJson, field.getCompanyID(), field.getColumn(), field.getAdminID());
+   					field.getShortname().trim(), field.getDescription(), field.getDefaultValue(), field.getModeEdit(), field.getModeInsert(), field.getLine(), field.getSort(), field.getInterest(), field.getHistorize(), allowedValuesJson, field.getCompanyID(), field.getColumn(), field.getAdminID());
 			}
 		}
 
@@ -750,10 +757,8 @@ public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFie
 			if (companyID <= 0) {
 	    		return false;
 	    	} else {
-	    		int maxFields = getMaximumFieldCount(companyID);
-				
-				int currentFieldCount = DbUtilities.getColumnCount(getDataSource(), "customer_" + companyID + "_tbl");
-				
+	    		int maxFields = getMaximumCompanySpecificFieldCount(companyID);
+				int currentFieldCount = getCurrentCompanySpecificFieldCount(companyID);
 				return currentFieldCount < maxFields;
 	    	}
 		} catch (Exception e) {
@@ -768,38 +773,14 @@ public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFie
 			if (companyID <= 0) {
 	    		return false;
 	    	} else {
-	    		int maxFields = getMaximumFieldCount(companyID);
-				
-				int currentFieldCount = DbUtilities.getColumnCount(getDataSource(), "customer_" + companyID + "_tbl");
-				
+	    		int maxFields = getMaximumCompanySpecificFieldCount(companyID);
+	    		int currentFieldCount = getCurrentCompanySpecificFieldCount(companyID);
 				return maxFields - 5 <= currentFieldCount && currentFieldCount < maxFields;
 	    	}
 		} catch (Exception e) {
 			logger.error(e.getMessage(), e);
 			return false;
 		}
-	}
-	
-	@Override
-	public int getMaximumFieldCount(@VelocityCheck int companyID) throws Exception {
-		int systemMaxFields = configService.getIntegerValue(ConfigValue.System_License_MaximumNumberOfProfileFields);
-		int companyMaxFields = configService.getIntegerValue(ConfigValue.MaxFields, companyID);
-		int maxFields;
-		int standardFieldsCount = ComCompanyDaoImpl.STANDARD_CUSTOMER_FIELDS.length;
-		
-		// Socialmedia fields to be ignored in limit checks for profile field counts until they are removed entirely in all client tables
-		for (String fieldName : ComCompanyDaoImpl.OLD_SOCIAL_MEDIA_FIELDS) {
-			if (DbUtilities.checkTableAndColumnsExist(getDataSource(), "customer_" + companyID + "_tbl", fieldName)) {
-				standardFieldsCount++;
-			}
-		}
-		
-		if (companyMaxFields < systemMaxFields || systemMaxFields < 0) {
-			maxFields = companyMaxFields + standardFieldsCount;
-		} else {
-			maxFields = systemMaxFields + standardFieldsCount;
-		}
-		return maxFields;
 	}
 	
 	@Override
@@ -1107,7 +1088,7 @@ public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFie
 
 	@Override
 	public Set<String> listUserSelectedProfileFieldColumnsWithHistoryFlag(int companyID) {
-		List<String> list = select(logger, "SELECT LOWER(col_name) FROM customer_field_tbl WHERE company_id = ? AND historize = 1", new StringRowMapper(), companyID);
+		List<String> list = select(logger, "SELECT LOWER(col_name) FROM customer_field_tbl WHERE company_id = ? AND historize = 1", StringRowMapper.INSTANCE, companyID);
 
 		Set<String> set = new HashSet<>(list);
 		set.removeAll(RecipientProfileHistoryUtil.DEFAULT_COLUMNS_FOR_HISTORY);
@@ -1181,5 +1162,17 @@ public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFie
 		} else {
 			return DbUtilities.RESERVED_WORDS_MYSQL_MARIADB.contains(fieldname);
 		}
+	}
+	
+	@Override
+	public int getMaximumNumberOfCompanySpecificProfileFields() throws Exception {
+		int maximumNumberOfProfileFields = 0;
+		for (Integer companyID : select(logger, "SELECT company_id FROM company_tbl WHERE status = ?", IntegerRowMapper.INSTANCE, CompanyStatus.ACTIVE.getDbValue())) {
+			if (DbUtilities.checkIfTableExists(getDataSource(), "customer_" + companyID + "_tbl")) {
+				int numberOfProfileFields = getCurrentCompanySpecificFieldCount(companyID);
+				maximumNumberOfProfileFields = Math.max(maximumNumberOfProfileFields, numberOfProfileFields);
+			}
+		}
+		return maximumNumberOfProfileFields;
 	}
 }

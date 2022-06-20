@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -19,17 +19,17 @@ import java.time.format.ResolverStyle;
 import java.time.temporal.ChronoField;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.TimeZone;
 
 import org.agnitas.beans.AdminGroup;
-import org.agnitas.beans.Company;
-import org.agnitas.beans.impl.CompanyImpl;
 import org.apache.commons.lang3.StringUtils;
 
 import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Company;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.supervisor.beans.Supervisor;
 
@@ -61,10 +61,13 @@ public class ComAdminImpl implements ComAdmin {
 	protected Date lastNewsDate;
 	protected Date lastMessageDate;
 	protected String adminPhone;
-	private int accessLimitingTargetGroupID;
+	private int accessLimitingTargetGroupID; // delete after GWUA-4957 has been successfully tested. And 'limiting_target_id' column code usages.
+    private Set<Integer> altgIds = new HashSet<>();
 	private Date lastLoginDate;
-    
-    /**
+	private boolean restful = false;
+	protected String employeeID;
+
+	/**
      * This member is not stored in db, but encrypted into securePasswordHash by PasswordEncryptor
      */
     protected String passwordForStorage = null;
@@ -511,6 +514,16 @@ public class ComAdminImpl implements ComAdmin {
 		this.accessLimitingTargetGroupID = accessLimitingTargetGroupID;
 	}
 
+    @Override
+	public Set<Integer> getAltgIds() {
+	    return altgIds;
+    }
+
+    @Override
+	public void setAltgIds(Set<Integer> altgIds) {
+        this.altgIds = altgIds;
+    }
+	
 	@Override
 	public boolean permissionAllowedByGroups(Permission... permission) {
 		if (groups != null && !groups.isEmpty() ) {
@@ -534,5 +547,24 @@ public class ComAdminImpl implements ComAdmin {
 	public final void setLastLoginDate(final Date lastLoginDate) {
 		this.lastLoginDate = lastLoginDate;
 	}
+
+	@Override
+    public boolean isRestful() {
+		return restful;
+	}
 	
+	@Override
+	public void setRestful(boolean restful) {
+		this.restful = restful;
+	}
+	
+	@Override
+	public String getEmployeeID() {
+		return employeeID;
+	}
+	
+	@Override
+	public void setEmployeeID(String employeeID) {
+		this.employeeID = employeeID;
+	}
 }

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -27,17 +27,17 @@ import org.agnitas.emm.core.commons.password.policy.PasswordPolicies;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.service.UserActivityLogService;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.ComCompany;
+import com.agnitas.beans.Company;
 import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.admin.form.AdminForm;
@@ -68,7 +68,7 @@ public class ComCompanyServiceImpl implements ComCompanyService {
     /**
      * The logger.
      */
-    private static final transient Logger logger = Logger.getLogger(ComCompanyServiceImpl.class);
+    private static final transient Logger logger = LogManager.getLogger(ComCompanyServiceImpl.class);
 
     private RecipientProfileHistoryService recipientProfileHistoryService;
     private UserActivityLogService userActivityLogService;
@@ -92,12 +92,12 @@ public class ComCompanyServiceImpl implements ComCompanyService {
     }
 
     @Override
-    public final List<ComCompany> listActiveCompanies() {
+    public final List<Company> listActiveCompanies() {
         return companyDao.getAllActiveCompaniesWithoutMasterCompany();
     }
 
     @Override
-    public final ComCompany getCompany(int companyID) {
+    public final Company getCompany(int companyID) {
         return companyDao.getCompany(companyID);
     }
 
@@ -113,12 +113,12 @@ public class ComCompanyServiceImpl implements ComCompanyService {
     }
 
     @Override
-    public int getPriorityCount(@VelocityCheck int companyId) {
+    public int getPriorityCount(int companyId) {
         return companyDao.getPriorityCount(companyId);
     }
 
     @Override
-    public void setPriorityCount(@VelocityCheck int companyId, int value) {
+    public void setPriorityCount(int companyId, int value) {
         companyDao.setPriorityCount(companyId, Math.max(0, value));
     }
 
@@ -135,7 +135,7 @@ public class ComCompanyServiceImpl implements ComCompanyService {
 
     @Override
     public CompanyViewForm getCompanyForm(int companyId) {
-        ComCompany company = getCompany(companyId);
+        Company company = getCompany(companyId);
         return conversionService.convert(company, CompanyViewForm.class);
     }
 
@@ -146,7 +146,7 @@ public class ComCompanyServiceImpl implements ComCompanyService {
 
     @Override
     public int save(ComAdmin admin, CompanyCreateForm form, Popups popups, String sessionId) throws Exception {
-        ComCompany company = (ComCompany) companyFactory.newCompany();
+        Company company = companyFactory.newCompany();
         company.setCreatorID(admin.getCompanyID());
         company.setStatus(CompanyStatus.ACTIVE);
         company.setRdirDomain(configService.getValue(ConfigValue.DefaultRdirDomain));
@@ -177,7 +177,7 @@ public class ComCompanyServiceImpl implements ComCompanyService {
 
     @Override
     public int update(ComAdmin admin, CompanyViewForm form) throws Exception {
-        ComCompany company = companyDao.getCompany(form.getCompanyInfoDto().getId());
+        Company company = companyDao.getCompany(form.getCompanyInfoDto().getId());
         UserAction companyChangesLog = getCompanyChangesLog(form, company);
         setupInfo(company, form.getCompanyInfoDto());
         setupSettings(company, form.getCompanySettingsDto());
@@ -195,7 +195,7 @@ public class ComCompanyServiceImpl implements ComCompanyService {
     
     @Override
     public CompanyStatus getStatus(int companyID) {
-    	ComCompany company = companyDao.getCompany(companyID);
+    	Company company = companyDao.getCompany(companyID);
 		return company.getStatus();
     }
 
@@ -206,7 +206,7 @@ public class ComCompanyServiceImpl implements ComCompanyService {
     
     @Override
     public boolean deactivateCompany(int companyIdForDeactivation) {
-        ComCompany company = companyDao.getCompany(companyIdForDeactivation);
+        Company company = companyDao.getCompany(companyIdForDeactivation);
         if (Objects.nonNull(company) && company.getStatus() == CompanyStatus.ACTIVE) {
             companyDao.updateCompanyStatus(company.getId(), CompanyStatus.TODELETE);
             if (logger.isInfoEnabled()) {
@@ -220,7 +220,7 @@ public class ComCompanyServiceImpl implements ComCompanyService {
     
     @Override
     public boolean reactivateCompany(int companyIdForReactivation) {
-        ComCompany company = companyDao.getCompany(companyIdForReactivation);
+        Company company = companyDao.getCompany(companyIdForReactivation);
         if (Objects.nonNull(company) && (company.getStatus() == CompanyStatus.TODELETE || company.getStatus() == CompanyStatus.LOCKED)) {
             companyDao.updateCompanyStatus(company.getId(), CompanyStatus.ACTIVE);
             if (logger.isInfoEnabled()) {
@@ -233,7 +233,7 @@ public class ComCompanyServiceImpl implements ComCompanyService {
     }
 
     @Override
-    public int getCompanyDatasource(@VelocityCheck int companyId) {
+    public int getCompanyDatasource(int companyId) {
         return companyDao.getCompanyDatasource(companyId);
     }
 
@@ -248,16 +248,16 @@ public class ComCompanyServiceImpl implements ComCompanyService {
     }
 
     @Override
-    public boolean isCreatorId(@VelocityCheck int companyId, int creatorId) {
+    public boolean isCreatorId(int companyId, int creatorId) {
         return companyId > 0 && companyDao.isCreatorId(companyId, creatorId);
     }
 
-    private void setupInfo(ComCompany company, CompanyInfoDto companyInfoDto) {
+    private void setupInfo(Company company, CompanyInfoDto companyInfoDto) {
         company.setShortname(companyInfoDto.getName());
         company.setDescription(companyInfoDto.getDescription());
     }
 
-    private void setupSettings(ComCompany company, CompanySettingsDto settingsDto) {
+    private void setupSettings(Company company, CompanySettingsDto settingsDto) {
         company.setSalutationExtended(BooleanUtils.toInteger(settingsDto.isHasExtendedSalutation()));
         company.setStatAdmin(settingsDto.getExecutiveAdministrator());
         company.setContactTech(settingsDto.getTechnicalContacts());
@@ -272,119 +272,143 @@ public class ComCompanyServiceImpl implements ComCompanyService {
         company.setSecretKey(RandomStringUtils.randomAscii(32));
         company.setSector(settingsDto.getSector());
         company.setBusiness(settingsDto.getBusiness());
-        company.setMaxAdminMails(settingsDto.getMaxAdminMails());
     }
 
     private void saveConfigValues(ComAdmin admin, int companyId, CompanySettingsDto settings) {
         if (admin.permissionAllowed(Permission.COMPANY_AUTHENTICATION)) {
             // Write 2FA settings
-            writeHostAuthSettings(settings, companyId, admin.getAdminID());
-
+            writeHostAuthSettings(settings, companyId, admin);
         }
 
-        if (admin.permissionAllowed(Permission.COMPANY_FORCE_SENDING)) {
-            configService.writeOrDeleteIfDefaultBooleanValue(ConfigValue.ForceSending,
-                    companyId,
-                    settings.isHasForceSending(), "Changed by '" + admin.getUsername() + (admin.isSupervisor() ? "/" + admin.getSupervisor().getSupervisorName() : "") + "'");
-        }
+        checkChangeAndLogCompanyInfoBooleanValue(ConfigValue.ForceSending, companyId, admin, settings.isHasForceSending());
 
         if (!settings.getLanguage().equalsIgnoreCase(Language.NONE.toString())) {
-            String locale = settings.getLanguage();
-            configService.writeOrDeleteIfDefaultValue(ConfigValue.LocaleLanguage, companyId, locale, "set default language by AdminID:" + admin.getAdminID());
+            checkChangeAndLogCompanyInfoValue(ConfigValue.LocaleLanguage, companyId, admin, settings.getLanguage());
 
+            String locale = settings.getLanguage();
             String localeCountry = locale.substring(locale.indexOf('_') + 1);
-            configService.writeOrDeleteIfDefaultValue(ConfigValue.LocaleCountry, companyId, localeCountry, "set default country by AdminID:" + admin.getAdminID());
+            checkChangeAndLogCompanyInfoValue(ConfigValue.LocaleCountry, companyId, admin, localeCountry);
         } else {
-            configService.writeOrDeleteIfDefaultValue(ConfigValue.LocaleLanguage, companyId, null, "reset default language by AdminID:" + admin.getAdminID());
-            configService.writeOrDeleteIfDefaultValue(ConfigValue.LocaleCountry, companyId, null, "reset default country by AdminID:" + admin.getAdminID());
+        	checkChangeAndLogCompanyInfoValue(ConfigValue.LocaleLanguage, companyId, admin, null);
+        	checkChangeAndLogCompanyInfoValue(ConfigValue.LocaleCountry, companyId, admin, null);
         }
 
         if (!StringUtils.equalsIgnoreCase(settings.getTimeZone(), "0")) {
-            configService.writeOrDeleteIfDefaultValue(ConfigValue.LocaleTimezone, companyId, settings.getTimeZone(), "set default timezone by AdminID:" + admin.getAdminID());
+        	checkChangeAndLogCompanyInfoValue(ConfigValue.LocaleTimezone, companyId, admin, settings.getTimeZone());
         } else {
-            configService.writeOrDeleteIfDefaultValue(ConfigValue.LocaleTimezone, companyId, null, "reset default timezone by AdminID:" + admin.getAdminID());
-        }
-
-        if (settings.isHasRecipientsCleanup() != configService.getBooleanValue(ConfigValue.CleanRecipientsWithoutBinding, companyId)) {
-            configService.writeOrDeleteIfDefaultValue(ConfigValue.CleanRecipientsWithoutBinding, companyId, String.valueOf(settings.isHasRecipientsCleanup()), "set cleaning of recipients without binding by AdminID:" + admin.getAdminID());
+        	checkChangeAndLogCompanyInfoValue(ConfigValue.LocaleTimezone, companyId, admin, null);
         }
 
         if (admin.permissionAllowed(Permission.CLEANUP_RECIPIENT_DATA)) {
-	        if (settings.getRecipientAnonymization() != configService.getBooleanAsInteger(ConfigValue.CleanRecipientsData, companyId, 30, -1)) {
-	        	configService.writeOrDeleteIfDefaultValue(ConfigValue.CleanRecipientsData, companyId, String.valueOf(settings.getRecipientAnonymization()), "set recipient anonymisation by AdminID:" + admin.getAdminID());
-	        }
+        	checkChangeAndLogCompanyInfoIntegerValue(ConfigValue.CleanRecipientsData, companyId, admin, settings.getRecipientAnonymization());
         }
+        
         if (admin.permissionAllowed(Permission.CLEANUP_RECIPIENT_TRACKING) || admin.permissionAllowed(Permission.CLEANUP_RECIPIENT_DATA)) {
-	        if (settings.getRecipientCleanupTracking() != configService.getIntegerValue(ConfigValue.CleanTrackingData, companyId)) {
-	        	configService.writeOrDeleteIfDefaultValue(ConfigValue.CleanTrackingData, companyId, String.valueOf(settings.getRecipientCleanupTracking()), "set recipient tracking cleanup by AdminID:" + admin.getAdminID());
-	        }
-        }
-        if (admin.permissionAllowed(Permission.CLEANUP_RECIPIENT_DATA)) {
-	        if (settings.getRecipientDeletion() != configService.getIntegerValue(ConfigValue.DeleteRecipients, companyId)) {
-	        	configService.writeOrDeleteIfDefaultValue(ConfigValue.DeleteRecipients, companyId, String.valueOf(settings.getRecipientDeletion()), "set recipient deletion by AdminID:" + admin.getAdminID());
-	        }
+        	checkChangeAndLogCompanyInfoIntegerValue(ConfigValue.CleanTrackingData, companyId, admin, settings.getRecipientCleanupTracking());
         }
         
-        if (settings.isHasTrackingVeto() != configService.getBooleanValue(ConfigValue.AnonymizeTrackingVetoRecipients, companyId)) {
-            configService.writeOrDeleteIfDefaultValue(ConfigValue.AnonymizeTrackingVetoRecipients, companyId, String.valueOf(settings.isHasTrackingVeto()), "set anonymisation of tracking veto recipients by AdminID:" + admin.getAdminID());
-        }
+        checkChangeAndLogCompanyInfoBooleanValue(ConfigValue.CleanRecipientsWithoutBinding, companyId, admin, settings.isCleanRecipientsWithoutBinding());
+        
+        checkChangeAndLogCompanyInfoBooleanValue(ConfigValue.AnonymizeTrackingVetoRecipients, companyId, admin, settings.isHasTrackingVeto());
 
-        configService.writeOrDeleteIfDefaultBooleanValue(ConfigValue.SupervisorRequiresLoginPermission, companyId, settings.isHasActivatedAccessAuthorization(), "Changed by '" + admin.getUsername() + (admin.isSupervisor() ? "/" + admin.getSupervisor().getSupervisorName() : "") + "'");
+        checkChangeAndLogCompanyInfoBooleanValue(ConfigValue.SupervisorRequiresLoginPermission, companyId, admin, settings.isHasActivatedAccessAuthorization());
         
-        if (settings.getMaxAdminMails() != 0) {
-        	configService.writeOrDeleteIfDefaultValue(ConfigValue.MaxAdminMails, companyId, Integer.toString(settings.getMaxAdminMails()), "set maximum number of admin mails by AdminID:" + admin.getAdminID());
-        }
-        
-    	int expireMaximum = configService.getIntegerValue(ConfigValue.ExpireStatisticsMax);
-    	if (admin.permissionAllowed(Permission.MAILING_EXPIRE)) {
-	        if (settings.getStatisticsExpireDays() > 0) {
-	        	configService.writeOrDeleteIfDefaultValue(ConfigValue.ExpireStatistics, companyId, Integer.toString(Math.min(expireMaximum, settings.getStatisticsExpireDays())), "set expire statistics value by AdminID:" + admin.getAdminID());
-	        }
-    	}
-        
-        if (admin.permissionAllowed(Permission.MAILING_EXPIRE)) {
-        	configService.writeOrDeleteIfDefaultValue(ConfigValue.ExpireRecipient, companyId, Integer.toString(settings.getRecipientExpireDays()), "set expire recipient value by AdminID:" + admin.getAdminID());
-        }
-        
+        checkChangeAndLogCompanyInfoIntegerValue(ConfigValue.DeleteRecipients, companyId, admin, settings.getRecipientDeletion());
         
         // Login lock settings
-        writeLoginLockSettingsConfigValues(settings, companyId, admin.getAdminID());
+        writeLoginLockSettingsConfigValues(settings, companyId, admin);
         
         // Write password policy
-        writePasswordSecuritySettings(settings, companyId, admin.getAdminID());
+        writePasswordSecuritySettings(settings, companyId, admin);
 
+        checkChangeAndLogCompanyInfoBooleanValue(ConfigValue.SendPasswordChangedNotification, companyId, admin, settings.isSendPasswordChangedNotification()) ;
+        
+        if (settings.getMaxAdminMails() > 0) {
+        	checkChangeAndLogCompanyInfoIntegerValue(ConfigValue.MaxAdminMails, companyId, admin, settings.getMaxAdminMails()) ;
+        } else {
+        	checkChangeAndLogCompanyInfoIntegerValue(ConfigValue.MaxAdminMails, companyId, admin, Integer.parseInt(ConfigValue.MaxAdminMails.getDefaultValue()));
+        }
+        
+        checkChangeAndLogCompanyInfoValue(ConfigValue.ImportAlwaysInformEmail, companyId, admin, settings.getImportAlwaysInformEmail());
+        
+        checkChangeAndLogCompanyInfoValue(ConfigValue.ExportAlwaysInformEmail, companyId, admin, settings.getExportAlwaysInformEmail());
+        
+        checkChangeAndLogCompanyInfoBooleanValue(ConfigValue.AnonymizeAllRecipients, companyId, admin, settings.isAnonymizeAllRecipients());
+        
+        if (admin.permissionAllowed(Permission.COMPANY_SETTINGS_INTERN)) {      
+            checkChangeAndLogCompanyInfoValue(ConfigValue.DefaultLinkExtension, companyId, admin, settings.getDefaultLinkExtension());
+	        
+            checkChangeAndLogCompanyInfoIntegerValue(ConfigValue.Linkchecker_Linktimeout, companyId, admin, settings.getLinkcheckerLinktimeout());
+	        
+	        checkChangeAndLogCompanyInfoIntegerValue(ConfigValue.Linkchecker_Threadcount, companyId, admin, settings.getLinkcheckerThreadcount());
+	        
+	        checkChangeAndLogCompanyInfoIntegerValue(ConfigValue.MailingUndoLimit, companyId, admin, settings.getMailingUndoLimit());
+	        
+	        checkChangeAndLogCompanyInfoBooleanValue(ConfigValue.PrefillCheckboxSendDuplicateCheck, companyId, admin, settings.isPrefillCheckboxSendDuplicateCheck());
+	        
+	        checkChangeAndLogCompanyInfoValue(ConfigValue.FullviewFormName, companyId, admin, settings.getFullviewFormName());
+	        
+	        checkChangeAndLogCompanyInfoBooleanValue(ConfigValue.TrackingVetoAllowTransactionTracking, companyId, admin, settings.isTrackingVetoAllowTransactionTracking());
+	        
+	        checkChangeAndLogCompanyInfoBooleanValue(ConfigValue.DeleteSuccessfullyImportedFiles, companyId, admin, settings.isDeleteSuccessfullyImportedFiles());
+	        
+	        checkChangeAndLogCompanyInfoIntegerValue(ConfigValue.CleanTrackingData, companyId, admin, settings.getRecipientCleanupTracking());
+	        
+	        checkChangeAndLogCompanyInfoBooleanValue(ConfigValue.RecipientEmailInUseWarning, companyId, admin, settings.isRecipientEmailInUseWarning());
+	        
+	        checkChangeAndLogCompanyInfoBooleanValue(ConfigValue.AllowEmailWithWhitespace, companyId, admin, settings.isAllowEmailWithWhitespace());
+	        
+	        checkChangeAndLogCompanyInfoBooleanValue(ConfigValue.AllowEmptyEmail, companyId, admin, settings.isAllowEmptyEmail());
+	        
+	    	if (admin.permissionAllowed(Permission.MAILING_EXPIRE)) {
+	        	int expireMaximum = configService.getIntegerValue(ConfigValue.ExpireStatisticsMax);
+	    		int newExpireStatistics = Math.max(1, Math.min(expireMaximum, settings.getStatisticsExpireDays()));
+	        	checkChangeAndLogCompanyInfoIntegerValue(ConfigValue.ExpireStatistics, companyId, admin, newExpireStatistics);
+	    	}
+	        
+	        checkChangeAndLogCompanyInfoIntegerValue(ConfigValue.ExpireOnePixel, companyId, admin, settings.getExpireOnePixel());
+	        
+	        checkChangeAndLogCompanyInfoIntegerValue(ConfigValue.ExpireSuccess, companyId, admin, settings.getExpireSuccess());
+	        
+        	checkChangeAndLogCompanyInfoIntegerValue(ConfigValue.ExpireRecipient, companyId, admin, settings.getRecipientExpireDays());
+	        
+	        checkChangeAndLogCompanyInfoIntegerValue(ConfigValue.ExpireBounce, companyId, admin, settings.getExpireBounce());
+	        
+	        checkChangeAndLogCompanyInfoIntegerValue(ConfigValue.ExpireUpload, companyId, admin, settings.getExpireUpload());
+	        
+	        checkChangeAndLogCompanyInfoBooleanValue(ConfigValue.WriteCustomerOpenOrClickField, companyId, admin, settings.isWriteCustomerOpenOrClickField());
+        }
     }
     
-    private final void writePasswordSecuritySettings(final CompanySettingsDto companySettings, final int companyID, final int adminID) {
+    private final void writePasswordSecuritySettings(final CompanySettingsDto settings, final int companyId, final ComAdmin admin) {
     	// Password policy
-        final PasswordPolicies policy = PasswordPolicies.findByName(companySettings.getPasswordPolicyName());	// Make this step to get a valid password policy name
-        configService.writeOrDeleteIfDefaultValue(ConfigValue.PasswordPolicy, companyID, policy.getPolicyName(), "changed password policy settings by AdminID:" + adminID);
+    	checkChangeAndLogCompanyInfoValue(ConfigValue.PasswordPolicy, companyId, admin, PasswordPolicies.findByName(settings.getPasswordPolicyName()).getPolicyName());
      	
         // Password expire days
-        final Optional<PasswordExpireSettings> optional = PasswordExpireSettings.findByDays(companySettings.getPasswordExpireDays());
+        final Optional<PasswordExpireSettings> optional = PasswordExpireSettings.findByDays(settings.getPasswordExpireDays());
         
 		if (optional.isPresent()) {
-			final PasswordExpireSettings settings = optional.get();
-			
-	    	configService.writeOrDeleteIfDefaultValue(ConfigValue.UserPasswordExpireDays, companyID, Integer.toString(settings.getExpireDays()), "changed expiration days of passwords by AdminID:" + adminID);
+			final PasswordExpireSettings passwordExpireSettings = optional.get();
+			checkChangeAndLogCompanyInfoIntegerValue(ConfigValue.UserPasswordExpireDays, companyId, admin, passwordExpireSettings.getExpireDays());
 		} else {
     		try {
     			throw new Exception("Stack trace");	// Throw exception to get stack trace
     		} catch(final Exception e) {
-    			logger.error(String.format("Invalid password expire days settings name: '%d'", companySettings.getPasswordExpireDays()), e);
+    			logger.error(String.format("Invalid password expire days settings name: '%d'", settings.getPasswordExpireDays()), e);
     		}
 		}
     }
-    
-    private final void writeLoginLockSettingsConfigValues(final CompanySettingsDto companySettings, final int companyID, final int adminID) {
-    	if(companyID != 0) { // Do not overwrite global settings
+
+	private final void writeLoginLockSettingsConfigValues(final CompanySettingsDto companySettings, final int companyId, final ComAdmin admin) {
+    	if (companyId != 0) { // Do not overwrite global settings
     		final Optional<LoginlockSettings> settingsOptional = LoginlockSettings.fromName(companySettings.getLoginlockSettingsName());
     		
     		if(settingsOptional.isPresent()) {
     			final LoginlockSettings settings = settingsOptional.get();
     			
-		    	configService.writeOrDeleteIfDefaultValue(ConfigValue.LoginTracking.WebuiIpBlockTimeSeconds, companyID, Integer.toString(settings.getLockTimeMinutes() * 60), "set maximum number of failed logins (Web UI) by AdminID:" + adminID);
-		    	configService.writeOrDeleteIfDefaultValue(ConfigValue.LoginTracking.WebuiMaxFailedAttempts, companyID, Integer.toString(settings.getMaxFailedAttempts()), "set login block time in seconds (Web UI) by AdminID:" + adminID);
+    			checkChangeAndLogCompanyInfoIntegerValue(ConfigValue.LoginTracking.WebuiIpBlockTimeSeconds, companyId, admin, settings.getLockTimeMinutes() * 60);
+    			
+    			checkChangeAndLogCompanyInfoIntegerValue(ConfigValue.LoginTracking.WebuiMaxFailedAttempts, companyId, admin, settings.getMaxFailedAttempts());
     		} else {
         		try {
         			throw new Exception("Stack trace");	// Throw exception to get stack trace
@@ -401,16 +425,46 @@ public class ComCompanyServiceImpl implements ComCompanyService {
     	}
     }
     
-    private final void writeHostAuthSettings(final CompanySettingsDto companySettings, final int companyID, final int adminID) {
+    private final void writeHostAuthSettings(final CompanySettingsDto settings, final int companyId, final ComAdmin admin) {
     	// Write global 2FA enable state
-        configService.writeOrDeleteIfDefaultBooleanValue(ConfigValue.HostAuthentication, companyID, companySettings.isHasTwoFactorAuthentication(), "Changed by AdminID:" + adminID);
+    	checkChangeAndLogCompanyInfoBooleanValue(ConfigValue.HostAuthentication, companyId, admin, settings.isHasTwoFactorAuthentication());
 
         // Write 2FA cookie expiration
-    	final HostAuthenticationCookieExpirationSettings cookieExpireSettings = HostAuthenticationCookieExpirationSettings.findByExpireDays(companySettings.getHostauthCookieExpireDays());
-    	configService.writeOrDeleteIfDefaultValue(ConfigValue.HostAuthenticationHostIdCookieExpireDays, companyID, Integer.toString(cookieExpireSettings.getExpireDays()), "set hostauth cookie expire days by AdminID:" + adminID);
+    	final HostAuthenticationCookieExpirationSettings cookieExpireSettings = HostAuthenticationCookieExpirationSettings.findByExpireDays(settings.getHostauthCookieExpireDays());
+    	checkChangeAndLogCompanyInfoIntegerValue(ConfigValue.HostAuthenticationHostIdCookieExpireDays, companyId, admin, cookieExpireSettings.getExpireDays());
     }
 
-    private int initTableAndCopyTemplates(ComCompany company, String sessionId) throws Exception {
+	private void checkChangeAndLogCompanyInfoValue(ConfigValue configValue, final int companyId, final ComAdmin admin, String newValue) {
+		String currentValue = configService.getValue(configValue, companyId);
+		if (currentValue == null) {
+			currentValue = "";
+    	}
+    	if (newValue == null) {
+    		newValue = "";
+    	}
+		if (!StringUtils.equals(currentValue, newValue)) {
+			configService.writeOrDeleteIfDefaultValue(configValue, companyId, newValue, "Changed by: " + admin.getUsername() + (admin.isSupervisor() ? "/" + admin.getSupervisor().getSupervisorName() : ""));
+			userActivityLogService.writeUserActivityLog(admin, "Company setting changed", configValue.getName() + ": " + currentValue + " => " + newValue);
+		}
+	}
+
+	private void checkChangeAndLogCompanyInfoBooleanValue(ConfigValue configValue, final int companyId, final ComAdmin admin, boolean newValue) {
+		boolean currentValue = configService.getBooleanValue(configValue, companyId);
+		if (currentValue != newValue) {
+			configService.writeOrDeleteIfDefaultValue(configValue, companyId, newValue ? "true" : "false", "Changed by: " + admin.getUsername() + (admin.isSupervisor() ? "/" + admin.getSupervisor().getSupervisorName() : ""));
+			userActivityLogService.writeUserActivityLog(admin, "Company setting changed", configValue.getName() + ": " + currentValue + " => " + newValue);
+		}
+	}
+
+	private void checkChangeAndLogCompanyInfoIntegerValue(ConfigValue configValue, final int companyId, final ComAdmin admin, int newValue) {
+		int currentValue = configService.getIntegerValue(configValue, companyId);
+		if (currentValue != newValue) {
+			configService.writeOrDeleteIfDefaultValue(configValue, companyId, Integer.toString(newValue), "Changed by: " + admin.getUsername() + (admin.isSupervisor() ? "/" + admin.getSupervisor().getSupervisorName() : ""));
+			userActivityLogService.writeUserActivityLog(admin, "Company setting changed", configValue.getName() + ": " + currentValue + " => " + newValue);
+		}
+	}
+
+    private int initTableAndCopyTemplates(Company company, String sessionId) throws Exception {
         int companyId = company.getId();
 
         if (initTables(companyId)) {
@@ -445,7 +499,7 @@ public class ComCompanyServiceImpl implements ComCompanyService {
         // do nothing
     }
 
-    void checkRetargeting(ComCompany company) {
+    void checkRetargeting(Company company) {
     	// do nothing
     }
 
@@ -475,7 +529,7 @@ public class ComCompanyServiceImpl implements ComCompanyService {
 
         adminForm.setAdminTimezone(companyAdmin.getTimeZone());
 
-        AdminSavingResult result = adminService.saveAdmin(adminForm, admin);
+        AdminSavingResult result = adminService.saveAdmin(adminForm, false, admin);
 
         if (result.isSuccess()) {
             ComAdmin savedAdmin = result.getResult();
@@ -486,12 +540,11 @@ public class ComCompanyServiceImpl implements ComCompanyService {
         }
     }
 
-    private UserAction getCompanyChangesLog(CompanyViewForm newCompany, ComCompany oldCompany) {
+    private UserAction getCompanyChangesLog(CompanyViewForm newCompany, Company oldCompany) {
         StringBuilder description = new StringBuilder();
         description.append("ID(").append(newCompany.getCompanyInfoDto().getId()).append(")");
 
         String oldCompanyShortname = oldCompany.getShortname();
-
         if (!oldCompanyShortname.equals(newCompany.getCompanyInfoDto().getName())) {
             description.append(" Short Name(")
                     .append(oldCompanyShortname)
@@ -502,7 +555,6 @@ public class ComCompanyServiceImpl implements ComCompanyService {
 
         String oldDescription = StringUtils.trimToEmpty(oldCompany.getDescription());
         String newDescription = StringUtils.trimToEmpty(newCompany.getCompanyInfoDto().getDescription());
-
         if (!oldDescription.equals(newDescription)) {
             description.append(" Description(")
                     .append(oldDescription)
@@ -510,30 +562,9 @@ public class ComCompanyServiceImpl implements ComCompanyService {
                     .append(newCompany.getCompanyInfoDto().getDescription())
                     .append(")");
         }
-
-        int oldExpireStat = configService.getIntegerValue(ConfigValue.ExpireStatistics, oldCompany.getId());
-
-        if (oldExpireStat != newCompany.getCompanySettingsDto().getStatisticsExpireDays()) {
-            description.append(" Expire Stat(")
-                    .append(oldExpireStat)
-                    .append(" changed to ")
-                    .append(newCompany.getCompanySettingsDto().getStatisticsExpireDays())
-                    .append(")");
-        }
-
-        int oldExpireRecipient = configService.getIntegerValue(ConfigValue.ExpireRecipient, oldCompany.getId());
-
-        if (oldExpireRecipient != newCompany.getCompanySettingsDto().getRecipientExpireDays()) {
-            description.append(" Expire Recipient(")
-                    .append(oldExpireRecipient)
-                    .append(" changed to ")
-                    .append(newCompany.getCompanySettingsDto().getRecipientExpireDays())
-                    .append(")");
-        }
  
         int oldSectorIndex = oldCompany.getSector();
         int newSectorIndex = newCompany.getCompanySettingsDto().getSector();
-
         if (oldSectorIndex != newSectorIndex) {
             description.append(" Sector(")
                     .append(Sector.getById(oldSectorIndex))
@@ -543,66 +574,12 @@ public class ComCompanyServiceImpl implements ComCompanyService {
         }
 
         int oldBusinessIndex = oldCompany.getBusiness();
-
         if (oldBusinessIndex != newCompany.getCompanySettingsDto().getBusiness()) {
             description.append(" Business(")
                     .append(Business.getById(oldBusinessIndex))
                     .append(" changed to ")
                     .append(Business.getById(newCompany.getCompanySettingsDto().getBusiness()))
                     .append(")");
-        }
-
-        boolean oldCleanupSettings = configService.getBooleanValue(ConfigValue.CleanRecipientsWithoutBinding, newCompany.getCompanyInfoDto().getId());
-        if (oldCleanupSettings != newCompany.getCompanySettingsDto().isHasRecipientsCleanup()) {
-            description.append(" Recipients Cleanup (")
-                    .append(oldCleanupSettings)
-                    .append(" changed to ")
-                    .append(newCompany.getCompanySettingsDto().isHasRecipientsCleanup())
-                    .append(")");
-        }
-
-        int oldRecipientAnonymiseSettings = configService.getBooleanAsInteger(ConfigValue.CleanRecipientsData, newCompany.getCompanyInfoDto().getId(), 30, -1);
-        if (oldRecipientAnonymiseSettings != newCompany.getCompanySettingsDto().getRecipientAnonymization()) {
-        	description.append(" Recipients Anonymisation (")
-            .append(oldRecipientAnonymiseSettings)
-            .append(" changed to ")
-            .append(newCompany.getCompanySettingsDto().getRecipientAnonymization())
-            .append(")");
-        }
-        
-        int oldRecipientCleanupTracking = configService.getIntegerValue(ConfigValue.CleanTrackingData, newCompany.getCompanyInfoDto().getId());
-        if (oldRecipientCleanupTracking != newCompany.getCompanySettingsDto().getRecipientCleanupTracking()) {
-        	description.append(" Recipients tracking cleanup (")
-            .append(oldRecipientCleanupTracking)
-            .append(" changed to ")
-            .append(newCompany.getCompanySettingsDto().getRecipientCleanupTracking())
-            .append(")");
-        }
-        
-        int oldRecipientDeletion = configService.getIntegerValue(ConfigValue.DeleteRecipients, newCompany.getCompanyInfoDto().getId());
-        if (oldRecipientDeletion != newCompany.getCompanySettingsDto().getRecipientDeletion()) {
-        	description.append(" Recipients deletion (")
-            .append(oldRecipientDeletion)
-            .append(" changed to ")
-            .append(newCompany.getCompanySettingsDto().getRecipientDeletion())
-            .append(")");
-        }
-
-        boolean oldAnonymizeSettings = configService.getBooleanValue(ConfigValue.AnonymizeTrackingVetoRecipients, newCompany.getCompanyInfoDto().getId());
-        if (oldAnonymizeSettings != newCompany.getCompanySettingsDto().isHasTrackingVeto()) {
-            description.append(" Recipients AnonymizeTrackingVetoStatistics (")
-                    .append(oldAnonymizeSettings)
-                    .append(" changed to ")
-                    .append(newCompany.getCompanySettingsDto().isHasTrackingVeto())
-                    .append(")");
-        }
-
-        boolean oldAccessAuthorisation = configService.getBooleanValue(ConfigValue.SupervisorRequiresLoginPermission, newCompany.getCompanyInfoDto().getId());
-        if (oldAccessAuthorisation != newCompany.getCompanySettingsDto().isHasActivatedAccessAuthorization()) {
-            description.append("Access authorisation settings were ")
-                    .append(oldAccessAuthorisation)
-                    .append(" changed to ")
-                    .append(newCompany.getCompanySettingsDto().isHasActivatedAccessAuthorization());
         }
 
         return new UserAction("edit company", description.toString());
@@ -615,7 +592,7 @@ public class ComCompanyServiceImpl implements ComCompanyService {
 	}
 	
     @Override
-    public boolean createFrequencyFields(@VelocityCheck int companyID) {
+    public boolean createFrequencyFields(int companyID) {
     	return companyDao.createFrequencyFields(companyID);
     }
 

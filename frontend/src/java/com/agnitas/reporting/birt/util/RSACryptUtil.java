@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -25,11 +25,15 @@ import java.security.spec.X509EncodedKeySpec;
 import javax.crypto.Cipher;
 
 import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.agnitas.util.CryptographicUtilities;
 
 public class RSACryptUtil {
+	
+	/** The logger. */
+    private static final Logger LOGGER = LogManager.getLogger(RSACryptUtil.class);
 
 	protected static final String ALGORITHM = "RSA";
 
@@ -47,8 +51,6 @@ public class RSACryptUtil {
 	 */
 
 	public static byte[] encrypt(byte[] text, String publicKey) throws Exception {
-		byte[] cipherText = null;
-
 		PublicKey key = getPublicKeyFromString(publicKey);
 
 		try {
@@ -57,12 +59,11 @@ public class RSACryptUtil {
 			Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
 			// encrypt the plaintext using the public key
 			cipher.init(Cipher.ENCRYPT_MODE, key);
-			cipherText = cipher.doFinal(text);
+			return cipher.doFinal(text);
 		} catch (Exception e) {
-			Logger.getLogger(RSACryptUtil.class).error("Error while encrypting: " + e.getMessage());
+			LOGGER.error("Error while encrypting: " + e.getMessage());
 			throw e;
 		}
-		return cipherText;
 	}
 
 	/**
@@ -74,17 +75,38 @@ public class RSACryptUtil {
 	 *            The public key
 	 * @return Encrypted text encoded as BASE64
 	 * @throws java.lang.Exception
+	 * 
+	 * @see {@link #encryptUrlSafe(String, String)}
 	 */
 	public static String encrypt(String text, String publicKey) throws Exception {
-		String encryptedText;
 		try {
 			byte[] cipherText = encrypt(text.getBytes("UTF8"), publicKey);
-			encryptedText = encodeBASE64(cipherText);
+			return encodeBASE64(cipherText);
 		} catch (Exception e) {
-			Logger.getLogger(RSACryptUtil.class).error("Error while encrypting: " + e.getMessage());
+			LOGGER.error("Error while encrypting: " + e.getMessage());
 			throw e;
 		}
-		return encryptedText;
+	}
+	
+	/**
+	 * Encrypt a text using public key. The result is enctypted URL-safe BASE64 encoded text
+	 * 
+	 * @param text
+	 *            The original unencrypted text
+	 * @param publicKey
+	 *            The public key
+	 * @return Encrypted text encoded as BASE64
+	 * @throws java.lang.Exception
+	 */
+	public static String encryptUrlSafe(String text, String publicKey) throws Exception {
+		try {
+			byte[] cipherText = encrypt(text.getBytes("UTF8"), publicKey);
+
+			return encodeBASE64Url(cipherText);
+		} catch (Exception e) {
+			LOGGER.error("Error while encrypting: " + e.getMessage());
+			throw e;
+		}
 	}
 
 	/**
@@ -98,19 +120,16 @@ public class RSACryptUtil {
 	 * @throws java.lang.Exception
 	 */
 	public static byte[] decrypt(byte[] text, String privateKey) throws Exception {
-		byte[] dectyptedText = null;
 		PrivateKey key = getPrivateKeyFromString(privateKey);
 		try {
 			// decrypt the text using the private key
 			Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
 			cipher.init(Cipher.DECRYPT_MODE, key);
-			dectyptedText = cipher.doFinal(text);
+			return cipher.doFinal(text);
 		} catch (Exception e) {
-			Logger.getLogger(RSACryptUtil.class).error("Error while decrypting: " + e.getMessage());
+			LOGGER.error("Error while decrypting: " + e.getMessage());
 			throw e;
 		}
-		return dectyptedText;
-
 	}
 
 	/**
@@ -124,17 +143,14 @@ public class RSACryptUtil {
 	 * @throws java.lang.Exception
 	 */
 	public static String decrypt(String text, String privateKey) throws Exception {
-		String result;
 		try {
 			// decrypt the text using the private key
 			byte[] dectyptedText = decrypt(decodeBASE64(text), privateKey);
-			result = new String(dectyptedText, "UTF8");
+			return new String(dectyptedText, "UTF8");
 		} catch (Exception e) {
-			Logger.getLogger(RSACryptUtil.class).error("Error while decrypting: " + e.getMessage());
+			LOGGER.error("Error while decrypting: " + e.getMessage());
 			throw e;
 		}
-		return result;
-
 	}
 
 	/**
@@ -145,7 +161,7 @@ public class RSACryptUtil {
 	 * @return A string representation of the key
 	 * @throws UnsupportedEncodingException
 	 */
-	public static String getKeyAsString(Key key) throws Exception {
+	public static String getKeyAsString(Key key) throws UnsupportedEncodingException {
 		return new String(Base64.encodeBase64(key.getEncoded()), "UTF-8");
 	}
 
@@ -180,14 +196,30 @@ public class RSACryptUtil {
 	}
 
 	/**
-	 * Encode bytes array to BASE64 string
+	 * Encode bytes array to BASE64 string.
+	 * 
+	 * Consider using {@link #encodeBASE64Url(byte[])}.
+	 * 
+	 * 
+	 * @param bytes
+	 * @return Encoded string
+	 * @throws UnsupportedEncodingException
+	 * 
+	 * @see {@link #encodeBASE64Url(byte[])}
+	 */
+	private static String encodeBASE64(byte[] bytes) throws UnsupportedEncodingException {
+		return new String(Base64.encodeBase64(bytes), "UTF-8");
+	}
+
+	/**
+	 * Encode bytes array to BASE64 string URL safe.
 	 * 
 	 * @param bytes
 	 * @return Encoded string
 	 * @throws UnsupportedEncodingException
 	 */
-	private static String encodeBASE64(byte[] bytes) throws Exception {
-		return new String(Base64.encodeBase64(bytes), "UTF-8");
+	private static String encodeBASE64Url(byte[] bytes) throws UnsupportedEncodingException {
+		return Base64.encodeBase64URLSafeString(bytes);
 	}
 
 	/**

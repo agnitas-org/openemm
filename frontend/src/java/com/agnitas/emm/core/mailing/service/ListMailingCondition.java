@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -11,7 +11,13 @@
 package com.agnitas.emm.core.mailing.service;
 
 import java.time.ZonedDateTime;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+
+import org.agnitas.dao.MailingStatus;
 
 public class ListMailingCondition {
 
@@ -56,13 +62,13 @@ public class ListMailingCondition {
 	}
 	
 	public static final class MailingStatusCondition extends MailingPropertyCondition {
-		private final String status;
+		private final Set<MailingStatus> status;
 		
-		private MailingStatusCondition(final String status) {
-			this.status = Objects.requireNonNull(status);
+		private MailingStatusCondition(final Collection<MailingStatus> statusList) {
+			this.status = new HashSet<>(Objects.requireNonNull(statusList));
 		}
 		
-		public final String getStatus() {
+		public final Set<MailingStatus> getStatusList() {
 			return this.status;
 		}
 	}
@@ -83,7 +89,11 @@ public class ListMailingCondition {
 		return new SentAfterCondition(timestamp, inclusive);
 	}
 	
-	public static final MailingStatusCondition mailingStatus(final String status) {
-		return new MailingStatusCondition(status);
+	public static final MailingStatusCondition mailingStatus(final MailingStatus status) {
+		return new MailingStatusCondition(List.of(status));
+	}
+
+	public static ListMailingCondition mailingStatusList(final List<MailingStatus> statusList) {
+		return new MailingStatusCondition(statusList);
 	}
 }

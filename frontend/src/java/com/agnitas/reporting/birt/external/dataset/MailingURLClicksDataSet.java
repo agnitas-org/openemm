@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -22,9 +22,9 @@ import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.Tuple;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.lang3.time.DateUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.dao.DataAccessException;
 
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
@@ -37,7 +37,7 @@ import com.agnitas.reporting.birt.external.beans.MailingClickStatsPerTargetRow;
  */
 public class MailingURLClicksDataSet extends BIRTDataSet {
 	/** The logger. */
-	private static final transient Logger logger = Logger.getLogger(MailingURLClicksDataSet.class);
+	private static final transient Logger logger = LogManager.getLogger(MailingURLClicksDataSet.class);
 
 	private static String getTempTableName(int companyId) {
 		return "tmp_report_aggregation_" + companyId + "_tbl";
@@ -60,10 +60,8 @@ public class MailingURLClicksDataSet extends BIRTDataSet {
 
 		insertTargetGroup(CommonKeys.ALL_SUBSCRIBERS, null, mailingID, companyID, tempTableID, CommonKeys.ALL_SUBSCRIBERS_INDEX, recipientsType, dateFormats.getStartDate(), dateFormats.getStopDate());
 		List<LightTarget> targetsList = getTargets(selectedTargets, companyID);
-		final int hiddenTargetId = NumberUtils.toInt(hiddenTargetIdStr, -1);
-		final LightTarget hiddenTarget = hiddenTargetId > 0 ? getTarget(hiddenTargetId, companyID) : null;
 
-		final String hiddenTargetSql = hiddenTarget == null ? null : hiddenTarget.getTargetSQL();
+		final String hiddenTargetSql = getTargetSqlString(hiddenTargetIdStr, companyID);
 
 		if (CollectionUtils.isNotEmpty(targetsList)) {
 			int columnIndex = CommonKeys.ALL_SUBSCRIBERS_INDEX;

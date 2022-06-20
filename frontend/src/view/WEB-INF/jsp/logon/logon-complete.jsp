@@ -3,6 +3,7 @@
 <%@ taglib prefix="tiles" uri="http://struts.apache.org/tags-tiles" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="s" uri="http://www.springframework.org/tags" %>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
 <%--@elvariable id="webStorageBundleNames" type="java.util.List"--%>
 <%--@elvariable id="isFrameShown" type="java.lang.Boolean"--%>
@@ -18,7 +19,7 @@
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <title><s:message code="logon.title"/></title>
+        <title><mvc:message code="logon.title"/></title>
 
         <link rel="shortcut icon" href="<c:url value="/favicon.ico"/>">
 

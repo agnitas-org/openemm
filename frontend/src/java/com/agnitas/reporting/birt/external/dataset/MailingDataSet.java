@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,11 +10,11 @@
 
 package com.agnitas.reporting.birt.external.dataset;
 
-import java.sql.SQLException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
@@ -26,16 +26,14 @@ import java.util.regex.Pattern;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.MailingComponentType;
 import org.agnitas.beans.factory.impl.MailingComponentFactoryImpl;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.SafeString;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.agnitas.beans.Campaign;
-import com.agnitas.dao.CampaignDao;
-import com.agnitas.dao.ComMailingComponentDao;
 import com.agnitas.dao.impl.CampaignDaoImpl;
 import com.agnitas.dao.impl.ComMailingComponentDaoImpl;
 import com.agnitas.messages.I18nString;
@@ -48,7 +46,7 @@ import com.agnitas.reporting.birt.external.dataset.MailingBouncesDataSet.Bounces
 
 public class MailingDataSet extends BIRTDataSet {
 	/** The logger. */
-	private static final transient Logger logger = Logger.getLogger(MailingDataSet.class);
+	private static final transient Logger logger = LogManager.getLogger(MailingDataSet.class);
 	
 	public static class MailingData {
         int mailingId;
@@ -135,7 +133,7 @@ public class MailingDataSet extends BIRTDataSet {
 		}
 	}
 
-	public List<MailingData> getData(Integer mailingId, @VelocityCheck Integer companyId, String language,
+	public List<MailingData> getData(Integer mailingId, Integer companyId, String language,
             String startDate, String stopDate, Boolean hourScale) throws Exception {
 		Locale locale = new Locale(language);
         SimpleDateFormat dateTimeFormat = (SimpleDateFormat) SimpleDateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM, locale);
@@ -200,9 +198,9 @@ public class MailingDataSet extends BIRTDataSet {
 			data.scheduledDate = "-";
 		}
 		try {
-			long numberOfBytes = 0l;
+			long numberOfBytes = 0L;
 			
-			long numberOfSentEmails = 0l;
+			long numberOfSentEmails = 0L;
 			if (mailStats.get("MAILS") != null) {
 				numberOfSentEmails = ((Number) mailStats.get("MAILS")).longValue();
 			}
@@ -228,11 +226,11 @@ public class MailingDataSet extends BIRTDataSet {
 			if (numberOfSentEmails > 0) {
 				data.averageMailsize = numberOfBytes / numberOfSentEmails / 1024;
 			} else {
-				data.averageMailsize = 0l;
+				data.averageMailsize = 0L;
 			}
 		} catch (Exception e) {
 			logger.error(e.getMessage(), e);
-			data.averageMailsize = 0l;
+			data.averageMailsize = 0L;
 		}
         try{
             Campaign campaign = getCampaign(mailing.getArchiveId(), companyId);
@@ -242,11 +240,10 @@ public class MailingDataSet extends BIRTDataSet {
         }
 
         List<String> targets = getTargets(mailingId, companyId);
-        if (targets.size() == 1) {
-            if ("All_Subscribers".equals(targets.get(0))) {
-                targets.clear();
-            }
+        if (targets.size() == 1 && "All_Subscribers".equals(targets.get(0))) {
+			targets.clear();
         }
+
         String targetsStr = "";
         for (int i = 0; i < targets.size(); i++) {
             targetsStr += targets.get(i);
@@ -256,15 +253,13 @@ public class MailingDataSet extends BIRTDataSet {
         }
         data.setTargets(targetsStr);
 
-        List<MailingData> l = new ArrayList<>();
-        l.add(data);
-		return l;
+        return Collections.singletonList(data);
 	}
 
-	private byte[] getThumbnailImage(int mailingId, int companyId) throws SQLException {
-		ComMailingComponentDao componentDao = new ComMailingComponentDaoImpl();
-		((ComMailingComponentDaoImpl) componentDao).setDataSource(getDataSource());
-		((ComMailingComponentDaoImpl) componentDao).setMailingComponentFactory(new MailingComponentFactoryImpl());
+	private byte[] getThumbnailImage(int mailingId, int companyId) {
+		ComMailingComponentDaoImpl componentDao = new ComMailingComponentDaoImpl();
+		componentDao.setDataSource(getDataSource());
+		componentDao.setMailingComponentFactory(new MailingComponentFactoryImpl());
 
 		int componentId = componentDao.getImageComponent(companyId, mailingId, MailingComponentType.ThumbnailImage);
 		MailingComponent component = componentDao.getMailingComponent(componentId, companyId);
@@ -274,107 +269,7 @@ public class MailingDataSet extends BIRTDataSet {
 		return null;
 	}
 
-	/**
-	 * This Method is only needed for old Design BIRT, which uses 4 parameters in rptdesign instead of 6
-     * TODO Remove
-	 * 
-	 * @param mailingId
-	 * @param companyId
-	 * @param language
-	 * @param selectedTargetIds
-	 * @return
-	 */
-	public List<MailingData> getData(Integer mailingId, @VelocityCheck Integer companyId, String language, String selectedTargetIds) {
-		Locale locale = new Locale(language);
-        SimpleDateFormat dateTimeFormat = (SimpleDateFormat) SimpleDateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM, locale);
-		dateTimeFormat.applyPattern(dateTimeFormat.toPattern().replaceFirst("y+", "yyyy").replaceFirst(", ", " "));
-		MailingData data = new MailingData();
-		LightMailing mailing = getMailing(mailingId, companyId);
-		String mtParam = getMailingMtParam(mailingId);
-
-        data.mailingId = mailingId;
-        data.mailingName = mailing.getShortname();
-        data.description = mailing.getDescription();
-        data.mailingList = getMailingList(companyId, mailing.getMailinglistId()).getShortname();
-
-        if (mtParam.isEmpty()) {
-            String locMessage = SafeString.getLocaleString("mailing.NoEmailDataAvailable", locale);
-            data.subject =  locMessage;
-            data.senderName = locMessage;
-            data.replyName = locMessage;
-            data.mailFormat = locMessage;
-        } else {
-            data.subject = getSubject(mtParam);
-			data.senderName = com.agnitas.reporting.birt.external.utils.StringUtils.findParam("from", mtParam);
-			data.replyName = com.agnitas.reporting.birt.external.utils.StringUtils.findParam("reply", mtParam);
-            try {
-                data.mailFormat = I18nString.getLocaleString("MailType."+getMailformat(mtParam), language);
-            } catch (Exception ex) {
-                data.mailFormat = "-";
-            }
-        }
-
-		Map<String,Object>mailStats = getMailingStats(mailingId);
-		data.numMails = ((Number) mailStats.get("MAILS")).longValue();
-		data.isMailTrackingAvailable = isTrackingAvailableForMailing(mailingId, companyId);
-		if (data.isMailTrackingAvailable) {
-			data.numberOfAnonymousUsers = getNumberOfAnonymousUsersInMailing(mailingId, companyId);
-		}
-
-		try {
-			data.startSending = dateTimeFormat.format(mailStats.get("MINTIME"));
-		} catch (Exception ex) {
-			data.startSending = "-";
-		}
-		try {
-			data.stopSending = dateTimeFormat.format(mailStats.get("MAXTIME"));
-		} catch (Exception ex) {
-			data.stopSending = "-";
-		}
-		try {
-			data.averageMailsize = ((Number) mailStats.get("BYTES")).longValue() / ((Number) mailStats.get("MAILS")).longValue() / 1024;
-		} catch (Exception ex) {
-			data.averageMailsize = 0l;
-		}
-        try{
-            Campaign campaign = getCampaign(mailing.getArchiveId(), companyId);
-            data.archiveName = campaign.getShortname();
-        } catch (Exception ex) {
-            data.archiveName = "-";
-        }
-
-        List<String> targets = getTargets(mailingId, companyId);
-        if (targets.size() == 1) {
-            if ("All_Subscribers".equals(targets.get(0))) {
-                targets.clear();
-            }
-        }
-        String targetsStr = "";
-        for (int i = 0; i < targets.size(); i++) {
-            targetsStr += targets.get(i);
-            if (i < targets.size() - 1) {
-                targetsStr += "\n";
-            }
-        }
-        data.setTargets(targetsStr);
-
-        List<MailingData> l = new ArrayList<>();
-        l.add(data);
-		return l;
-	}
-	
-	/**
-	 * This Method is only needed for old Design BIRT
-     * TODO Remove
-	 * 
-	 * @param mailingId
-	 * @return
-	 */
-	public Map<String, Object> getMailingStats(Integer mailingId) {
-		return new MailingSendDataSet().getMailingStats(mailingId);
-	}
-
-    public List<MailingDataSet.MailingData> getMailingsInfo(@VelocityCheck int companyID, String mailings, String language, DateFormats dateFormats) throws Exception {
+    public List<MailingDataSet.MailingData> getMailingsInfo(int companyID, String mailings, String language, DateFormats dateFormats) throws Exception {
         List<Integer> mailingIds = parseMailingIds(mailings);
 
         List<MailingDataSet.MailingData> mailingDataList = new LinkedList<>();
@@ -384,7 +279,7 @@ public class MailingDataSet extends BIRTDataSet {
         return mailingDataList;
     }
 
-	public LightMailing getMailing(Integer mailingId, @VelocityCheck Integer companyId) {
+	public LightMailing getMailing(Integer mailingId, Integer companyId) {
 		LightMailing mailing = new LightMailingDaoImpl(getDataSource()).getMailing(mailingId, companyId);
 		if (mailing == null) {
 			return new LightMailing();
@@ -393,13 +288,13 @@ public class MailingDataSet extends BIRTDataSet {
 		return mailing;
 	}
 
-	public Campaign getCampaign(Integer campaignId, @VelocityCheck Integer companyId) {
-		CampaignDao campaignDaoImpl = new CampaignDaoImpl();
-		((CampaignDaoImpl) campaignDaoImpl).setDataSource(getDataSource());
+	public Campaign getCampaign(Integer campaignId, Integer companyId) {
+		CampaignDaoImpl campaignDaoImpl = new CampaignDaoImpl();
+		campaignDaoImpl.setDataSource(getDataSource());
 		return campaignDaoImpl.getCampaign(campaignId, companyId);
 	}
 
-    private LightMailingList getMailingList(@VelocityCheck int companyId, int mailingListId) {
+    private LightMailingList getMailingList(int companyId, int mailingListId) {
 		LightMailingList mailingList = new LightMailingListDaoImpl(getDataSource()).getMailingList(mailingListId, companyId);
 		if (mailingList == null) {
 			return new LightMailingList();
@@ -429,11 +324,10 @@ public class MailingDataSet extends BIRTDataSet {
 		return (null != mailformat) ? mailformat : "";
 	}
 	
-	public List<String> getTargets(int mailingID, @VelocityCheck int companyID ) {
+	public List<String> getTargets(int mailingID, int companyID ) {
 		List<String> targets = new ArrayList<>();
 		LightMailing mailing = getMailing(mailingID, companyID);
 		String targExp = mailing.getTargetExpression();
-		
 
 		if (StringUtils.isEmpty(targExp) || "null".equals(targExp.trim())) {
 			 targets.add("All_Subscribers");
@@ -512,7 +406,7 @@ public class MailingDataSet extends BIRTDataSet {
 	 * @return int [noOfSoftbounces,noOfHardbounces]
 	 * @throws Exception
 	 */
-	public int[] getBounces(Integer mailingId, @VelocityCheck Integer companyId, String language, String selectedTargets) throws Exception {
+	public int[] getBounces(Integer mailingId, Integer companyId, String language, String selectedTargets) throws Exception {
 		int soft = 0;
 		int hard = 0;
 		List<BouncesRow> list = new MailingBouncesDataSet().getBouncesWithDetail(companyId, mailingId, language, selectedTargets, MailingBouncesDataSet.BounceType.BOTH, null);
@@ -532,7 +426,7 @@ public class MailingDataSet extends BIRTDataSet {
         	List<Integer> mailingIds = new LinkedList<>();
             if (!StringUtils.isEmpty(mailings)) {
                 for (String mailingId : mailings.split(",")) {
-                    mailingIds.add(new Integer(mailingId.trim()));
+                    mailingIds.add(Integer.valueOf(mailingId.trim()));
                 }
             }
             return mailingIds;

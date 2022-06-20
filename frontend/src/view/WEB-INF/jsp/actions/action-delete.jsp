@@ -15,7 +15,7 @@
                         <i aria-hidden="true" class="icon icon-times-circle"></i>
                         <span class="sr-only"><mvc:message code="button.Cancel"/></span>
                     </button>
-                    <h4 class="modal-title"><mvc:message code="action.Action"/>:&nbsp;${simpleActionForm.shortname}</h4>
+                    <h4 class="modal-title"><mvc:message code="userform.usesActions"/>:&nbsp;${simpleActionForm.shortname}</h4>
                 </div>
                 <div class="modal-body">
                     <mvc:message code="action.deleteQuestion"/>

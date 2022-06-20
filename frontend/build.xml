@@ -135,7 +135,7 @@
 		</condition>
 	</target>
 
-	<target name="createPropertiesFiles" depends="checkForPropertiesFile, parseApplicationVersion, setDeploytarget" description="Create emm/log4j.properties">
+	<target name="createPropertiesFiles" depends="checkForPropertiesFile, parseApplicationVersion, setDeploytarget" description="Create properties">
 		<delete dir="${deploydir}${appname}" />
 		<mkdir dir="${deploydir}${appname}/WEB-INF/classes" />
 
@@ -152,8 +152,8 @@
 		</if>
 
 		<delete file="${deploydir}${appname}/WEB-INF/classes/emm.properties" />
-		<delete file="${deploydir}${appname}/WEB-INF/classes/log4j.properties" />
-		<echo message="emm/log4j.properties deleted" />
+		<delete file="${deploydir}${appname}/WEB-INF/classes/log4j2.xml" />
+		<echo message="Properties deleted" />
 
 		<delete file="${deploydir}${appname}/WEB-INF/classes/emm.properties" />
 		<copy file="${basecss}/build/templates/emm.properties" tofile="${deploydir}${appname}/WEB-INF/classes/emm.properties" />
@@ -191,13 +191,13 @@
 			</then>
 		</if>
 		
-		<copy file="${basecss}/build/templates/log4j-emm.properties" tofile="${deploydir}${appname}/WEB-INF/classes/log4j.properties" overwrite="true" />
+		<copy file="${basecss}/build/templates/log4j2-emm.xml" tofile="${deploydir}${appname}/WEB-INF/classes/log4j2.xml" overwrite="true" />
 		<replace dir="${deploydir}${appname}/WEB-INF/classes" value="${deploytarget}">
-			<include name="log4j.properties" />
+			<include name="log4j2.xml" />
 			<replacetoken>${deploytarget}</replacetoken>
 		</replace>
 
-		<echo message="emm/log4j.properties build with data from 'build/properties/${deploytarget}.xml'" />
+		<echo message="emm build with data from 'build/properties/${deploytarget}.xml'" />
 		<copy file="${basecss}/build/templates/startup-jobs.whitelist" tofile="${deploydir}${appname}/WEB-INF/startup-jobs.whitelist" overwrite="true" />
 	</target>
 

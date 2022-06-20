@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -12,7 +12,6 @@ package org.agnitas.emm.core.commons.uid.parser.impl;
 
 import java.util.Objects;
 
-import org.agnitas.beans.Company;
 import org.agnitas.emm.core.commons.daocache.CompanyDaoCache;
 import org.agnitas.emm.core.commons.uid.builder.ExtensibleUIDStringBuilder;
 import org.agnitas.emm.core.commons.uid.builder.impl.exception.RequiredInformationMissingException;
@@ -23,19 +22,16 @@ import org.agnitas.emm.core.commons.uid.parser.exception.InvalidUIDException;
 import org.agnitas.emm.core.commons.uid.parser.exception.SignatureNotMatchParseException;
 import org.agnitas.emm.core.commons.uid.parser.exception.UIDParseException;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
+import com.agnitas.beans.Company;
 import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
-import com.agnitas.emm.core.commons.uid.ExtensibleUidVersion;
 
 /**
  * Base class for all UID parsers.
  */
 public abstract class BaseExtensibleUIDParser implements ExtensibleUIDParser {
-
-	/** UID version handled by the parser. */
-    protected ExtensibleUidVersion handledUidVersion;
     
     /** Caching DAO for accessing company data. */
     protected CompanyDaoCache companyDaoCache;
@@ -52,7 +48,7 @@ public abstract class BaseExtensibleUIDParser implements ExtensibleUIDParser {
     /** Length of signature in bytes. */
     private int signatureLength;
 
-    /** Logger. */    
+    /** Logger. */
     private Logger logger;
 
     /**
@@ -145,9 +141,9 @@ public abstract class BaseExtensibleUIDParser implements ExtensibleUIDParser {
     private void checkUIDVersion(String uidString, ComExtensibleUID uid) throws DeprecatedUIDVersionException {
         final Company company = this.companyDaoCache.getItem(uid.getCompanyID());
         Number minimumSupportedVersion = company.getMinimumSupportedUIDVersion();
-        if (handledUidVersion.isOlderThan(minimumSupportedVersion)) {
+        if (getHandledUidVersion().isOlderThan(minimumSupportedVersion)) {
             String descriptionTemplate = "Version validation Error. Deprecated UID version. minimumSupportedVersion: %d, actualVersion: %s, encodedUid: %s";
-            String message = String.format(descriptionTemplate, minimumSupportedVersion, handledUidVersion.getVersionCode(), uidString);
+            String message = String.format(descriptionTemplate, minimumSupportedVersion, getHandledUidVersion().getVersionCode(), uidString);
             logger.warn(message);
             throw new DeprecatedUIDVersionException(message, uid);
         }
@@ -169,7 +165,7 @@ public abstract class BaseExtensibleUIDParser implements ExtensibleUIDParser {
             String actualSignature = getActualSignature(parts);
             if (!actualSignature.equals(expectedSignature)) {
                 String descriptionTemplate = "Signature validation error. Signature doesn't match. Expected signature: %s, actual signature: %s, version: %d, uid: %s";
-                String message = String.format(descriptionTemplate, expectedSignature, actualSignature, handledUidVersion.getVersionCode(), uidString);
+                String message = String.format(descriptionTemplate, expectedSignature, actualSignature, getHandledUidVersion().getVersionCode(), uidString);
                 if(logger.isInfoEnabled()) {
                 	logger.info(message);
                 }
@@ -219,11 +215,6 @@ public abstract class BaseExtensibleUIDParser implements ExtensibleUIDParser {
         return (parts.length == minPartsCount || parts.length == maxPartsCount) && parts[parts.length - 1].length() == signatureLength;
     }
 
-    @Override
-    public int getHandledUidVersion() {
-        return handledUidVersion.getVersionCode();
-    }
-
     /**
      * Set CompanyDaoCache.
      *
@@ -232,18 +223,6 @@ public abstract class BaseExtensibleUIDParser implements ExtensibleUIDParser {
     @Required
     public void setCompanyDaoCache(final CompanyDaoCache companyDaoCache) {
         this.companyDaoCache = Objects.requireNonNull(companyDaoCache, "Company cache cannot be null");
-    }
-
-    /**
-     * Set UID version handled by the parser.
-     * 
-     * @param handledUidVersion UID version handled by the parser
-     * @throws NullPointerException if given UID version is <code>null</code>
-     */
-    @Deprecated // TODO Should not be injected. Make getHandledUidVersion() abstract and let sub-class implement this method accordingly.
-    @Required
-    public void setHandledUidVersion(ExtensibleUidVersion handledUidVersion) {
-        this.handledUidVersion = Objects.requireNonNull(handledUidVersion, "handled uid version cannot be null");
     }
 
     /**

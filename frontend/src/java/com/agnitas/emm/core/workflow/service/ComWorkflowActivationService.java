@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -32,6 +32,10 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.stream.Collectors;
 
+import com.agnitas.emm.core.target.TargetExpressionUtils;
+
+import com.agnitas.emm.core.target.service.ComTargetService;
+
 import org.agnitas.dao.MailingStatus;
 import org.agnitas.dao.exception.target.TargetGroupPersistenceException;
 import org.agnitas.emm.core.autoexport.service.AutoExportService;
@@ -43,7 +47,8 @@ import org.agnitas.util.AgnUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComAdmin;
@@ -57,8 +62,8 @@ import com.agnitas.beans.TargetLight;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.dao.ComTargetDao;
+import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.admin.service.AdminService;
-import com.agnitas.emm.core.report.enums.fields.MailingTypes;
 import com.agnitas.emm.core.workflow.beans.ComWorkflowReaction;
 import com.agnitas.emm.core.workflow.beans.Workflow;
 import com.agnitas.emm.core.workflow.beans.WorkflowArchive;
@@ -97,7 +102,7 @@ import com.agnitas.service.ComMailingSendService.DeliveryType;
 
 public class ComWorkflowActivationService {
 
-	private static final transient Logger logger = Logger.getLogger(ComWorkflowActivationService.class);
+	private static final transient Logger logger = LogManager.getLogger(ComWorkflowActivationService.class);
     public static final int DEFAULT_STEPPING = 60;
 
 	public static final List<Integer> ALL_MAILING_TYPES = Arrays.asList(
@@ -125,6 +130,7 @@ public class ComWorkflowActivationService {
 	private ComWorkflowReportScheduleDao reportScheduleDao;
     private AutoImportService autoImportService;
     private AutoExportService autoExportService;
+    private ComTargetService targetService;
 	private ComWorkflowEQLHelper eqlHelper;
 	private ComRecipientDao recipientDao;
 
@@ -252,21 +258,23 @@ public class ComWorkflowActivationService {
 				if (CollectionUtils.isNotEmpty(recipientIcons)) {
 					// Assign target groups from a recipient icon to the following mailings
 
-					if (accesLimitationTargetId > 0) {
-						//for users with ALTG add ALTG target group
-						recipientIcons
-								.forEach(recipient -> {
-									//for users with ALTG add ALTG target group is such the group is absent
-									if (!recipient.getTargets().contains(accesLimitationTargetId)) {
-										recipient.getTargets().add(accesLimitationTargetId);
-									}
+                    if (!adminService.isExtendedAltgEnabled(admin)) {
+                        if (accesLimitationTargetId > 0) {
+                            //for users with ALTG add ALTG target group
+                            recipientIcons
+                                    .forEach(recipient -> {
+                                        //for users with ALTG add ALTG target group is such the group is absent
+                                        if (!recipient.getTargets().contains(accesLimitationTargetId)) {
+                                            recipient.getTargets().add(accesLimitationTargetId);
+                                        }
 
-									//for user with ALTG is available only ALL_TARGETS_REQUIRED option
-									if (recipient.getTargetsOption() != ALL_TARGETS_REQUIRED) {
-										recipient.setTargetsOption(ALL_TARGETS_REQUIRED);
-									}
-								});
-					}
+                                        //for user with ALTG is available only ALL_TARGETS_REQUIRED option
+                                        if (recipient.getTargetsOption() != ALL_TARGETS_REQUIRED) {
+                                            recipient.setTargetsOption(ALL_TARGETS_REQUIRED);
+                                        }
+                                    });
+                        }
+                    }
 
 					recipientIcons.stream()
 							.filter(recipient -> {
@@ -297,7 +305,11 @@ public class ComWorkflowActivationService {
 				}
 
 				Mailing mailing = getMailingToUpdate(companyId, mailingId, mailingsToUpdate);
-				mailing.setTargetExpression(Condition.toReducedTargetExpression(conditions));
+				if (adminService.isExtendedAltgEnabled(admin)) {
+                    mailing.setTargetExpression(generateMailingTargetExpression(admin, conditions));
+                } else {
+                    mailing.setTargetExpression(Condition.toReducedTargetExpression(conditions));
+                }
 			}
 
 			Map<Integer, List<WorkflowParameter>> assignedParameters = new LinkedHashMap<>();
@@ -349,6 +361,16 @@ public class ComWorkflowActivationService {
 
 		return errorsList.isEmpty();
 	}
+
+    private String generateMailingTargetExpression(ComAdmin admin, ConditionGroup conditions) {
+        String mailingTargetExpression = Condition.toReducedTargetExpression(conditions);
+        Set<Integer> altgIds = admin.getAltgIds();
+        if (CollectionUtils.isEmpty(altgIds)
+                || TargetExpressionUtils.isTargetExpressionContainsAnyAltg(mailingTargetExpression, targetService)) {
+            return mailingTargetExpression;             
+        }
+        return TargetExpressionUtils.getTargetExpressionWithPrependedAltgs(altgIds, mailingTargetExpression);
+    }
 
 	private int createTargetWithDeadlineRespect(int companyId, int workflowId, WorkflowStart start, List<WorkflowIcon> deadlineIcons) {
         List<WorkflowDeadline> deadlines = deadlineIcons.stream().map(icon -> ((WorkflowDeadline)icon)).collect(Collectors.toList());
@@ -715,7 +737,7 @@ public class ComWorkflowActivationService {
 				emailParam.setFollowUpMethod(followUpMethod);
 				emailParam.setFollowupFor(String.valueOf(baseMailing));
 			}
-			followupMailing.setMailingType(MailingTypes.FOLLOW_UP.getCode());
+			followupMailing.setMailingType(MailingType.FOLLOW_UP);
 		}
 	}
 
@@ -1070,7 +1092,7 @@ public class ComWorkflowActivationService {
 		// if the reaction is "Change of Profile" and the rules are used - take rules
 		// from the start icon (we don't need rules-sql for any other reaction)
 		if (startIcon.getReaction() == WorkflowReactionType.CHANGE_OF_PROFILE && startIcon.isUseRules()) {
-			String sqlRules = eqlHelper.generateRuleEQL(companyId, startIcon.getRules(), startIcon.getProfileField(), startIcon.getDateFormat(), false);
+			String sqlRules = eqlHelper.generateRuleSQL(companyId, startIcon.getRules(), startIcon.getProfileField(), startIcon.getDateFormat(), false);
 			reaction.setRulesSQL(sqlRules);
 		}
 
@@ -1386,6 +1408,11 @@ public class ComWorkflowActivationService {
 	@Required
 	public void setAdminService(AdminService adminService) {
 		this.adminService = adminService;
+	}
+	
+	@Required
+	public void setTargetService(ComTargetService targetService) {
+		this.targetService = targetService;
 	}
 
 	private class ActionBasedCampaignProcessor {

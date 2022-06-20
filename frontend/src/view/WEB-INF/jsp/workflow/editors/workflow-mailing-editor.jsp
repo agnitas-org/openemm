@@ -1,5 +1,5 @@
+<%@page import="com.agnitas.emm.common.MailingType"%>
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
-<%@ page import="com.agnitas.emm.core.report.enums.fields.MailingTypes" %>
 <%@ page import="com.agnitas.emm.core.workflow.web.WorkflowController" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
@@ -10,7 +10,7 @@
 <c:set var="FORWARD_MAILING_CREATE" value="<%= WorkflowController.FORWARD_MAILING_CREATE%>" scope="page"/>
 <c:set var="FORWARD_MAILING_EDIT" value="<%= WorkflowController.FORWARD_MAILING_EDIT%>" scope="page"/>
 <c:set var="FORWARD_MAILING_COPY" value="<%= WorkflowController.FORWARD_MAILING_COPY%>" scope="page"/>
-<c:set var="MAILING_TYPE_NORMAL" value="<%=MailingTypes.NORMAL.getCode()%>" scope="page"/>
+<c:set var="MAILING_TYPE_NORMAL" value="<%=MailingType.NORMAL.getCode()%>" scope="page"/>
 <c:set var="selectName" value="mailingId" scope="page"/>
 
 <div id="mailing-editor" data-initializer="mailing-editor-initializer">

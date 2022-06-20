@@ -3,7 +3,7 @@
 <%@ page import="com.agnitas.web.ComMailingComponentsAction" %>
 <%@ page import="com.agnitas.web.ShowImageServlet" %>
 <%@ page import="org.agnitas.beans.MailingComponent" %>
-<%@ page import="org.agnitas.web.MailingBaseAction" %>
+<%@ page import="com.agnitas.web.MailingBaseAction" %>
 <%@ page import="com.agnitas.util.ImageUtils" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
@@ -297,7 +297,7 @@
                             <c:if test="${component.type == MAILING_COMPONENT_TYPE_HOSTED_IMAGE}">
                                 <a href="#" data-modal="image-editor-modal"
                                    data-tooltip="<bean:message key="button.Edit"/>"
-                                   data-modal-set="src: <html:rewrite page="/sc?compID=${component.id}" />, componentId: ${component.id}"
+                                   data-modal-set="src: <html:rewrite page="/sc?compID=${component.id}" />, contentType: ${component.mimeType}, componentId: ${component.id}"
                                    class="btn btn-regular btn-secondary	">
                                     <i class="icon icon-pencil"></i>
                                 </a>
@@ -372,7 +372,7 @@
                             </ul>
                                 <div id="canvas-editor-area">
                                     <canvas id="editor-canvas"></canvas>
-                                    <img class="hidden" id="editor-img" src="{{= src }}"/>
+                                    <img class="hidden" id="editor-img" src="{{= src }}" data-content-type="{{= contentType }}"/>
                                 </div>
                         </div>
                    </div>

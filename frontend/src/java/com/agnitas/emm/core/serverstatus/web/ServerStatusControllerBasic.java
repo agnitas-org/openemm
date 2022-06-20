@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -21,9 +21,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.useractivitylog.UserAction;
@@ -41,7 +38,8 @@ import org.agnitas.util.TextTable;
 import org.agnitas.util.ZipUtilities;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
@@ -64,6 +62,7 @@ import com.agnitas.dao.ComServerMessageDao;
 import com.agnitas.dao.LicenseDao;
 import com.agnitas.emm.core.JavaMailService;
 import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.PermissionType;
 import com.agnitas.emm.core.logon.service.ComLogonService;
 import com.agnitas.emm.core.logon.service.LogonServiceException;
 import com.agnitas.emm.core.serverstatus.bean.VersionStatus;
@@ -83,10 +82,12 @@ import com.agnitas.web.mvc.DeleteFileAfterSuccessReadResource;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.perm.annotations.Anonymous;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import net.sf.json.JSONArray;
 
 public class ServerStatusControllerBasic {
-	private static final Logger logger = Logger.getLogger(ServerStatusControllerBasic.class);
+	private static final Logger logger = LogManager.getLogger(ServerStatusControllerBasic.class);
 	
 	private static final String TEMP_LICENSE_DIRECTORY = AgnUtils.getTempDir() + File.separator + "License";
 
@@ -346,7 +347,7 @@ public class ServerStatusControllerBasic {
 	public @ResponseBody String showPremiumPermissionsList() {
 		List<String> premiumList = new ArrayList<>();
 		for (Permission permission : Permission.getAllSystemPermissions()) {
-			if (permission.isPremium()) {
+			if (permission.getPermissionType() == PermissionType.Premium) {
 				premiumList.add(permission.getTokenString());
 			}
 		}
@@ -380,35 +381,58 @@ public class ServerStatusControllerBasic {
 					} else if (!serverStatusService.isJobQueueStatusOK()) {
 						if (StringUtils.isNotBlank(request.getParameter("acknowledge"))) {
 							int idToAcknowledge = Integer.parseInt(request.getParameter("acknowledge"));
-							serverStatusService.acknowledgeErrorneousJob(idToAcknowledge);
+							serverStatusService.acknowledgeErroneousJob(idToAcknowledge);
 							JobDto job = jobQueueService.getJob(idToAcknowledge);
 							javaMailService.sendEmail(admin.getCompanyID(), job.getEmailOnError(), "Erroneous Job \"" + job.getDescription() + "\" (ID: " + idToAcknowledge + ", Criticality: " + job.getCriticality() + ") acknowledged", "No more further emails about this error will be sent: \n" + job.getLastResult(), "No more further emails about this error will be sent: <br />\n" + job.getLastResult());
 						}
 						
 						resultJsonObject.add("message", "WARNING: Some jobqueue jobs have errors");
-						JsonArray errorneousJobsArray = new JsonArray();
-						resultJsonObject.add("errorneousJobs", errorneousJobsArray);
-						List<JobDto> errorneousJobs = serverStatusService.getErrorneousJobs();
-						for (JobDto jobDto : errorneousJobs) {
-							JsonObject errorneousJobObject = new JsonObject();
-							errorneousJobObject.add("id", jobDto.getId());
-							errorneousJobObject.add("description", jobDto.getDescription());
-							errorneousJobObject.add("criticality", jobDto.getCriticality());
-							errorneousJobObject.add("lastResult", jobDto.getLastResult());
-							errorneousJobObject.add("laststart", jobDto.getLastStart());
-							errorneousJobObject.add("acknowledged", jobDto.isAcknowledged());
-							errorneousJobsArray.add(errorneousJobObject);
+						JsonArray erroneousJobsArray = new JsonArray();
+						resultJsonObject.add("erroneousJobs", erroneousJobsArray);
+						List<JobDto> erroneousJobs = serverStatusService.getErroneousJobs();
+						for (JobDto jobDto : erroneousJobs) {
+							JsonObject erroneousJobObject = new JsonObject();
+							erroneousJobObject.add("id", jobDto.getId());
+							erroneousJobObject.add("description", jobDto.getDescription());
+							erroneousJobObject.add("criticality", jobDto.getCriticality());
+							erroneousJobObject.add("lastResult", jobDto.getLastResult());
+							erroneousJobObject.add("laststart", jobDto.getLastStart());
+							erroneousJobObject.add("acknowledged", jobDto.isAcknowledged());
+							erroneousJobsArray.add(erroneousJobObject);
 						}
 						responseCode = 409;
 					} else if (serverStatusService.isImportStalling()) {
 						resultJsonObject.add("status", "ERROR: Some import job is stalling");
+						
+						JsonArray erroneousImportsArray = new JsonArray();
+						List<String> erroneousImports = serverStatusService.getErroneousImports();
+						for (String importName : erroneousImports) {
+							JsonObject erroneousJobObject = new JsonObject();
+							erroneousJobObject.add("description", importName);
+							erroneousImportsArray.add(erroneousJobObject);
+						}
+						resultJsonObject.add("erroneousJobs", erroneousImportsArray);
+						
+						responseCode = 409;
+					} else if (serverStatusService.isExportStalling()) {
+						resultJsonObject.add("status", "ERROR: Some export job is stalling");
+						
+						JsonArray erroneousExportsArray = new JsonArray();
+						List<String> erroneousExports = serverStatusService.getErroneousExports();
+						for (String exportName : erroneousExports) {
+							JsonObject erroneousJobObject = new JsonObject();
+							erroneousJobObject.add("description", exportName);
+							erroneousExportsArray.add(erroneousJobObject);
+						}
+						resultJsonObject.add("erroneousJobs", erroneousExportsArray);
+						
 						responseCode = 409;
 					} else {
 						resultJsonObject.add("status", "OK");
 						responseCode = 200;
 					}
 				} catch (Exception e) {
-					resultJsonObject.add("error", "Internal server error: Cannot read errorneous jobs: " + e.getMessage());
+					resultJsonObject.add("error", "Internal server error: Cannot read erroneous jobs: " + e.getMessage());
 					responseCode = 500;
 				}
 			}
@@ -441,14 +465,14 @@ public class ServerStatusControllerBasic {
 
 		String result = "";
 		int httpCode;
-		boolean foundErrorneousDbVersion = false;
+		boolean foundErroneousDbVersion = false;
 		for (VersionStatus versionItem : serverStatusService.getLatestDBVersionsAndErrors()) {
 			if (!versionItem.getStatus()) {
 				result += "\n\t" + versionItem.toString();
-				foundErrorneousDbVersion = true;
+				foundErroneousDbVersion = true;
 			}
 		}
-		if (foundErrorneousDbVersion) {
+		if (foundErroneousDbVersion) {
 			result = "ERROR: DB is missing some version updates" + result;
 			httpCode = 500;
 		} else {

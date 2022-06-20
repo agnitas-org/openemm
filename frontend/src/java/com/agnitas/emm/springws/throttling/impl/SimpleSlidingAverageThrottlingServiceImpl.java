@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -12,9 +12,9 @@ package com.agnitas.emm.springws.throttling.impl;
 
 import java.io.Serializable;
 import java.util.Objects;
-import java.util.concurrent.ExecutionException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.emm.util.quota.api.QuotaLimitExceededException;
@@ -33,7 +33,7 @@ import net.sf.ehcache.Element;
  */
 @Deprecated // Replaced by Bucket4jThrottlingService (remove after rollout EMM-8146)
 public class SimpleSlidingAverageThrottlingServiceImpl implements QuotaService {
-	private static final transient Logger logger = Logger.getLogger(SimpleSlidingAverageThrottlingServiceImpl.class);
+	private static final transient Logger logger = LogManager.getLogger(SimpleSlidingAverageThrottlingServiceImpl.class);
 	
 	private static final int CACHE_SIZE = 10000;
 	private static final int CACHE_EXPIRED_SECONDS = 300;
@@ -67,12 +67,12 @@ public class SimpleSlidingAverageThrottlingServiceImpl implements QuotaService {
 			if(!result) {
 				throw new QuotaLimitExceededException(username, companyID, apiServiceName);
 			}
-		} catch (final IllegalStateException | ExecutionException | CacheException e) {
+		} catch (final IllegalStateException | CacheException e) {
 			throw new QuotaServiceException(e);
 		}
 	}
 	
-	private final boolean checkAndTrack(String user) throws ExecutionException, IllegalStateException, CacheException {
+	private final boolean checkAndTrack(String user) throws IllegalStateException, CacheException {
 		LimitMeter limitMeter = getMeter(user);
 		if (limitMeter.limit != null && limitMeter.limit > 0 && !limitMeter.checkAndTrack()) {
 			//TODO: log limit exceeded event for statistic

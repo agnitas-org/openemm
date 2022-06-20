@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -39,6 +39,7 @@ public class MailingDAO {
 	private Timestamp creationDate;
 	private String targetExpression;
 	private long splitID;
+	private long deliveryRestrictID;
 	private int mailingType;
 	private String workStatus;
 	private int priority;
@@ -83,6 +84,9 @@ public class MailingDAO {
 				}
 				if (row.containsKey("freq_counter_disabled")) {
 					frequencyCounterDisabled = dbase.asInt(row.get("freq_counter_disabled")) == 1;
+				}
+				if (row.containsKey ("delivery_restrict_tg_id")) {
+					deliveryRestrictID = dbase.asLong (row.get ("delivery_restrict_tg_id"));
 				}
 				//
 				// workflow related informations
@@ -217,6 +221,10 @@ public class MailingDAO {
 
 	public long splitID() {
 		return splitID;
+	}
+	
+	public long deliveryRestrictID () {
+		return deliveryRestrictID;
 	}
 
 	public int mailingType() {

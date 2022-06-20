@@ -16,7 +16,7 @@
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <title><s:message code="logon.title"/></title>
+        <title><mvc:message code="logon.title"/></title>
 
         <link rel="shortcut icon" href="<c:url value="/favicon.ico"/>">
 
@@ -29,10 +29,10 @@
                     <img class="logo-image" src="${agnitasEmmLogoSvgSrc}" onerror="this.onerror=null; this.src='${agnitasEmmLogoPngSrc}'">
 
                     <p class="headline">
-                        <s:message code="default.EMM"/>
+                        <mvc:message code="default.EMM"/>
                     </p>
                     <p class="version">
-                        <s:message code="default.version"/>
+                        <mvc:message code="default.version"/>
                     </p>
                 </div>
                 <div class="edition-logo">
@@ -41,11 +41,11 @@
             </div>
             <div class="system-tile-content align-center">
                 <div class="form-group">
-                    <s:message code="AreYouSure"/>
+                    <mvc:message code="AreYouSure"/>
                 </div>
                 <div class="form-group">
                     <mvc:form servletRelativeAction="/logout.action" method="POST">
-                        <c:set var="messageDefaultLogout"><s:message code="default.Logout"/></c:set>
+                        <c:set var="messageDefaultLogout"><mvc:message code="default.Logout"/></c:set>
                         <button type="submit" class="btn btn-regular" data-tooltip="${messageDefaultLogout}">
                             <i class="icon icon-power-off"></i>
                             <span>${messageDefaultLogout}</span>

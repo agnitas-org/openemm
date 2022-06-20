@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import com.agnitas.beans.ComAdmin;
 import org.agnitas.beans.MailingBase;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.MailingDao;
@@ -28,9 +29,11 @@ import org.agnitas.emm.core.velocity.VelocityCheck;
 import com.agnitas.beans.ComRdirMailingData;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MailingContentType;
+import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.mailing.TooManyTargetGroupsInMailingException;
 import com.agnitas.emm.core.mailing.bean.ComFollowUpStats;
 import com.agnitas.emm.core.mailing.service.ListMailingFilter;
+import com.agnitas.emm.core.mailing.web.MailingSendSecurityOptions;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 
 public interface ComMailingDao extends MailingDao {
@@ -67,7 +70,10 @@ public interface ComMailingDao extends MailingDao {
 
 	boolean saveStatusmailOnErrorOnly(int companyID, int mailingID, boolean statusmailOnErrorOnly);
 
-    /**
+	@DaoUpdateReturnValueCheck
+	boolean saveSecuritySettings(int companyId, int mailingId, MailingSendSecurityOptions options);
+
+	/**
      * Get mailings which is set as the followup to given one,
      *
      * @param mailingID - target mailing id
@@ -113,7 +119,7 @@ public interface ComMailingDao extends MailingDao {
     int saveUndoMailing(int mailingId, int adminId);
 
     void deleteUndoDataOverLimit(int mailingId);
-	
+
 	int getFollowUpStat(ComFollowUpStats comFollowUpStats, boolean useTargetGroups) throws Exception;
 
     boolean isMailingMarkedDeleted(int mailingID, @VelocityCheck int companyID);
@@ -137,8 +143,9 @@ public interface ComMailingDao extends MailingDao {
 	 * returns the base mailing for the given one.
 	 * @param mailingID
 	 * @return
+	 * @throws Exception
 	 */
-	String getFollowUpFor(int mailingID);
+	String getFollowUpFor(int mailingID) throws Exception;
 	
 	/**
 	 * returns the last change timestamp of the given mailing.
@@ -147,10 +154,7 @@ public interface ComMailingDao extends MailingDao {
 	 */
 	Date getChangeDate(int mailingID);
 	
-    PaginatedListImpl<Map<String, Object>> getDashboardMailingList(@VelocityCheck int companyId, int adminId, String sort, String direction, int rownums);
-
-	PaginatedListImpl<Map<String, Object>> getDashboardMailingList(@VelocityCheck int companyId, int adminId,
-			String sort, String direction, int rownums, int targetId);
+    PaginatedListImpl<Map<String, Object>> getDashboardMailingList(ComAdmin admin, String sort, String direction, int rownums);
 
     /**
      * Get the last n sent world mailings in descend order
@@ -159,10 +163,7 @@ public interface ComMailingDao extends MailingDao {
 	 * @param number number of mailings you want to achieve
 	 * @return a list of hashmaps. Currently there are the keys mailingid (int) and shortname (string) available
      */
-    List<Map<String, Object>> getLastSentWorldMailings(@VelocityCheck int companyId, int adminId, int number);
-
-	List<Map<String, Object>> getLastSentWorldMailings(@VelocityCheck int companyId, int adminId, int number,
-			int targetId);
+    List<Map<String, Object>> getLastSentWorldMailings(ComAdmin admin, int number);
 
     int getLastSentMailingId(@VelocityCheck int companyID);
 	    
@@ -186,21 +187,15 @@ public interface ComMailingDao extends MailingDao {
 	 */
     int getLastSentWorldMailingByCompanyAndMailinglist(@VelocityCheck int companyID, int mailingListID);
 
-    List<MailingBase> getPredefinedMailingsForReports(@VelocityCheck int companyId, int number, int filterType, int filterValue, int mailingType, String orderKey, int targetId);
+    List<MailingBase> getPredefinedMailingsForReports(@VelocityCheck int companyId, int number, int filterType, int filterValue, MailingType mailingType, String orderKey, int targetId, Set<Integer> adminAltgIds);
 
-	List<MailingBase> getSentWorldMailingsForReports(@VelocityCheck int companyID, int number, int targetId);
+	List<MailingBase> getSentWorldMailingsForReports(@VelocityCheck int companyID, int number, int targetId, Set<Integer> targetIds);
 
-	List<MailingBase> getPredefinedNormalMailingsForReports(@VelocityCheck int companyId, Date from, Date to, int filterType, int filterValue, String orderKey, int targetId);
+	List<MailingBase> getPredefinedNormalMailingsForReports(@VelocityCheck int companyId, Date from, Date to, int filterType, int filterValue, String orderKey, int targetId, Set<Integer> adminAltgIds);
 
-	List<Map<String, Object>> getSentAndScheduled(@VelocityCheck int companyId, int adminId, Date startDate, Date endDate);
+	List<Map<String, Object>> getSentAndScheduled(ComAdmin admin, Date startDate, Date endDate);
 
-	List<Map<String, Object>> getSentAndScheduled(@VelocityCheck int companyId, int adminId, Date startDate, Date endDate,
-			final int targetId);
-
-    List<Map<String, Object>> getPlannedMailings(@VelocityCheck int companyId, int adminId, Date startDate, Date endDate);
-
-	List<Map<String, Object>> getPlannedMailings(@VelocityCheck int companyId, int adminId, Date startDate,
-			Date endDate, int targetId);
+	List<Map<String, Object>> getPlannedMailings(ComAdmin admin, Date startDate, Date endDate);
 
 	Map<Integer, Integer> getOpeners(@VelocityCheck int companyId, List<Integer> mailingsId);
 
@@ -232,34 +227,19 @@ public interface ComMailingDao extends MailingDao {
 
 	Map<Integer, Integer> getSentNumber(@VelocityCheck int companyId, Collection<Integer> mailingsId);
 
-	PaginatedListImpl<Map<String, Object>> getUnsentMailings(@VelocityCheck int companyId, int adminId, int targetId,
-			int rownums);
+	PaginatedListImpl<Map<String, Object>> getUnsentMailings(ComAdmin admin, int rownums);
 
-	PaginatedListImpl<Map<String, Object>> getUnsentMailings(@VelocityCheck int companyId, int adminId, int rownums);
+	PaginatedListImpl<Map<String, Object>> getPlannedMailings(ComAdmin admin, int rownums);
 
-	PaginatedListImpl<Map<String, Object>> getPlannedMailings(@VelocityCheck int companyId, int adminId, int targetId,
-			int rownums);
+	List<LightweightMailing> getMailingNames(ComAdmin admin);
 
-	PaginatedListImpl<Map<String, Object>> getPlannedMailings(@VelocityCheck int companyId, int adminId, int rownums);
-    
-    List<LightweightMailing> getMailingNames(@VelocityCheck int companyID, int adminId, int targetId);
+    List<LightweightMailing> getAllMailingsSorted(ComAdmin admin, String sortFiled, String sortDirection);
 
-    List<LightweightMailing> getAllMailingsSorted(@VelocityCheck int companyId, int adminId, String sortFiled, String sortDirection);
+    List<LightweightMailing> getMailingsDateSorted(ComAdmin admin);
 
-	List<LightweightMailing> getAllMailingsSorted(@VelocityCheck int companyId, int adminId, String sortField,
-			String sortDirection, int targetId);
-
-	List<LightweightMailing> getMailingsDateSorted(@VelocityCheck int companyID, int adminId);
-
-	List<LightweightMailing> getMailingsDateSorted(@VelocityCheck int companyID, int adminId, int targetId);
-
-	List<Map<String, Object>> getMailingsNamesByStatus(@VelocityCheck int companyID, int adminId, List<Integer> mailingTypes,
+	List<Map<String, Object>> getMailingsNamesByStatus(ComAdmin admin, List<MailingType> mailingTypes,
 			String workStatus, String mailingStatus,
 			boolean takeMailsForPeriod, String sort, String order);
-
-	List<Map<String, Object>> getMailingsNamesByStatus(@VelocityCheck int companyID, int adminId, List<Integer> mailingTypes,
-			String workStatus, String mailingStatus,
-			boolean takeMailsForPeriod, String sort, String order, int targetId);
 
     List<LightweightMailing> getMailingsDependentOnTargetGroup(@VelocityCheck int companyID, int targetGroupID);
 
@@ -275,7 +255,7 @@ public interface ComMailingDao extends MailingDao {
 
 	boolean existsNotSentMailingsWhichContentDependsOnTargetGroup(int companyID, int targetGroupID);
 
-	List<LightweightMailing> getActionDbMailingNames(@VelocityCheck int companyID, String types, String sort, String direction);
+	List<LightweightMailing> getActionDbMailingNames(@VelocityCheck int companyID, List<MailingType> types, String sort, String direction);
         
     boolean deleteMailingsByCompanyIDReally(@VelocityCheck int companyID);
 
@@ -404,4 +384,7 @@ public interface ComMailingDao extends MailingDao {
 
 	boolean isActiveIntervalMailing(int companyID, int mailingID);
 
+	boolean resumeDateBasedSending(int mailingId);
+
+	boolean isThresholdClearanceExceeded(int mailingId);
 }

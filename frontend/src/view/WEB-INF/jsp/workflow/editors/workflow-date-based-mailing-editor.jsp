@@ -1,6 +1,6 @@
+<%@page import="com.agnitas.emm.common.MailingType"%>
 <%@ page import="com.agnitas.beans.Mailing" %>
 <%@ page import="com.agnitas.emm.core.workflow.web.WorkflowController" %>
-<%@ page import="com.agnitas.emm.core.report.enums.fields.MailingTypes" %>
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
@@ -10,7 +10,7 @@
 <c:set var="FORWARD_MAILING_CREATE" value="<%= WorkflowController.FORWARD_MAILING_CREATE%>" scope="page"/>
 <c:set var="FORWARD_MAILING_EDIT" value="<%= WorkflowController.FORWARD_MAILING_EDIT%>" scope="page"/>
 <c:set var="FORWARD_MAILING_COPY" value="<%= WorkflowController.FORWARD_MAILING_COPY%>" scope="page"/>
-<c:set var="MAILING_TYPE_DATEBASED" value="<%=MailingTypes.DATE_BASED.getCode()%>" scope="page"/>
+<c:set var="MAILING_TYPE_DATEBASED" value="<%=MailingType.DATE_BASED.getCode()%>" scope="page"/>
 
 <div id="datebased_mailing-editor" data-initializer="date-mailing-initializer">
 

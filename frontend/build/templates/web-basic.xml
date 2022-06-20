@@ -6,10 +6,6 @@
 	version="3.0">
 
 	<display-name>OpenEMM</display-name>
-	
-	<session-config>
-		<session-timeout>30</session-timeout>
-	</session-config>
 
 	<!-- Spring context -->
 	<context-param>
@@ -30,14 +26,14 @@
 		<filter-name>InvalidSessionToNodeFilter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
-
+	
 	<!-- HTTP Security Header -->
+	<!-- 
 	<filter>
 		<filter-name>HttpSecurityHeaderFilter</filter-name>
 		<filter-class>com.agnitas.web.filter.HttpSecurityHeaderFilter</filter-class>
 		<async-supported>true</async-supported>
 		
-		<!-- Strict-Transport-Security -->
 		<init-param>
 			<param-name>hsts.enable</param-name>
 			<param-value>true</param-value>
@@ -45,10 +41,8 @@
 		<init-param>
 			<param-name>hsts.maxAge</param-name>
 			<param-value>15768000</param-value>
-			<!-- 6 month -->
 		</init-param>
 		
-		<!-- Referrer-Policy -->
 		<init-param>
 			<param-name>referrer-policy.enable</param-name>
 			<param-value>true</param-value>
@@ -61,6 +55,31 @@
 	</filter>
 	<filter-mapping>
 		<filter-name>HttpSecurityHeaderFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+	-->
+	
+	<!--  Generic replacement for HttpSecurityHeaderFilter -->
+	<filter>
+		<filter-name>HttpResponseHeaderFilter</filter-name>
+		<filter-class>com.agnitas.web.filter.responseheaders.HttpResponseHeadersFilter</filter-class>
+		<async-supported>true</async-supported>
+		
+		<init-param>
+			<param-name>cache.period-millis</param-name>
+			<param-value>60000</param-value>	<!--  Reload settings every 60 seconds -->
+		</init-param>
+		<init-param>
+			<param-name>source.classname</param-name>
+			<param-value>com.agnitas.web.filter.responseheaders.DatabaseHeaderConfigSource</param-value>
+		</init-param>
+		<init-param>
+			<param-name>source.config-file</param-name>
+			<param-value>WEB-INF/http-response-headers</param-value>
+		</init-param>
+	</filter>
+	<filter-mapping>
+		<filter-name>HttpResponseHeaderFilter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
 
@@ -490,4 +509,5 @@
 			<transport-guarantee>NONE</transport-guarantee>
 		</user-data-constraint>
 	</security-constraint>
+	
 </web-app>

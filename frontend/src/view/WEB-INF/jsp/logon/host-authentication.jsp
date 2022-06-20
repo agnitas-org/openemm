@@ -42,8 +42,8 @@
                 <div class="logo">
                     <img class="logo-image" src="${agnitasEmmLogoSvgSrc}" onerror="this.onerror=null; this.src='${agnitasEmmLogoPngSrc}'" alt="Logo">
 
-                    <p class="headline"><s:message code="default.EMM"/></p>
-                    <p class="version"><s:message code="default.version"/></p>
+                    <p class="headline"><mvc:message code="default.EMM"/></p>
+                    <p class="version"><mvc:message code="default.version"/></p>
                 </div>
                 <div class="edition-logo">
                     <img class="logo-image" src="${editionLogoSrc}" alt="Edition Logo">
@@ -53,7 +53,7 @@
                 <mvc:form servletRelativeAction="/logon/authenticate-host.action" data-form-focus="authenticationCode" modelAttribute="form">
                     <div class="form-group <logic:messagesPresent property="authenticationCode">has-alert has-feedback</logic:messagesPresent>">
                         <div class="col-sm-4">
-                            <label class="control-label"><i class="icon icon-unlock"></i> <s:message code="logon.hostauth.code"/></label>
+                            <label class="control-label"><i class="icon icon-unlock"></i> <mvc:message code="logon.hostauth.code"/></label>
                         </div>
                         <div class="col-sm-8">
                             <mvc:text path="authenticationCode" cssClass="form-control" maxlength="20"/>
@@ -69,7 +69,7 @@
                     
                     <div class="form-group">
                         <div class="col-sm-4">
-                            <label class="control-label" for="trustedDevice"><s:message code="logon.hostauth.trustDevice"/></label>
+                            <label class="control-label" for="trustedDevice"><mvc:message code="logon.hostauth.trustDevice"/></label>
                         </div>
                          <div class="col-sm-8">
                          	<label class="toggle">
@@ -82,7 +82,7 @@
                     <div class="form-group">
                         <div class="col-sm-offset-4 col-sm-8">
                             <button type="submit" class="btn btn-primary btn-large btn-block">
-                                <s:message code="logon.hostauth.authenticate"/> <i class="icon icon-angle-right"></i>
+                                <mvc:message code="logon.hostauth.authenticate"/> <i class="icon icon-angle-right"></i>
                             </button>
                         </div>
                     </div>
@@ -91,7 +91,7 @@
             <div class="system-tile-footer">
                 <div class="pull-left">
                     <a href="<c:url value="/logon/reset-password.action"/>">
-                        <s:message code="logon.password_reset"/>
+                        <mvc:message code="logon.password_reset"/>
                     </a>
                 </div>
                 <div class="pull-right">
@@ -99,7 +99,7 @@
                     <s:message var="logonHintMessage" code="logon.security" arguments="${supportMailAddress}" htmlEscape="true"/>
 
                     <a href="#" data-msg-system="system" data-msg="${logonHint}" data-msg-content="${logonHintMessage}">
-                        <s:message code="logon.hint"/>
+                        <mvc:message code="logon.hint"/>
                     </a>
                 </div>
             </div>
@@ -108,10 +108,10 @@
         <div id="notifications-container">
             <script type="text/javascript" data-message="">
                 <html:messages id="msg" property="org.apache.struts.action.GLOBAL_MESSAGE" message="false">
-                    AGN.Lib.Messages('<s:message code="Error"/>', '${emm:escapeJs(msg)}', 'alert');
+                    AGN.Lib.Messages('<mvc:message code="Error"/>', '${emm:escapeJs(msg)}', 'alert');
                 </html:messages>
                 <html:messages id="msg" property="de.agnitas.GLOBAL_WARNING">
-                    AGN.Lib.Messages('<s:message code="warning"/>', '${emm:escapeJs(msg)}', 'warning');
+                    AGN.Lib.Messages('<mvc:message code="warning"/>', '${emm:escapeJs(msg)}', 'warning');
                 </html:messages>
             </script>
         </div>

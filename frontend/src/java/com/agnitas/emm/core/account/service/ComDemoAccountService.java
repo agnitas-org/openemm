@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -12,17 +12,17 @@ package com.agnitas.emm.core.account.service;
 
 import java.util.Map;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
-
 public interface ComDemoAccountService {
     //is check for companyID necessary or could it be a problem?
-    Map<String, Integer> resetAccount(@VelocityCheck int companyId);
+    Map<String, Integer> resetAccount(int companyId) throws Exception;
     
-    Map<String, Integer> deleteAccount(@VelocityCheck int companyId);
+    Map<String, Integer> resetAccount(int companyId, boolean reset_advanced) throws Exception;
+    
+    Map<String, Integer> deleteAccount(int companyId);
        
-    boolean fillAccountFromMaster(@VelocityCheck int companyId) throws Exception;
+    boolean fillAccountFromMaster(int companyId) throws Exception;
     
-    boolean fillAccountFromCompany(@VelocityCheck int companyId, @VelocityCheck int fromCompanyID) throws Exception;
+    boolean fillAccountFromCompany(int companyId, int fromCompanyID) throws Exception;
 
     int checkDB();
     
@@ -30,5 +30,11 @@ public interface ComDemoAccountService {
     
     boolean deleteUser(int companyID);
     
-    boolean sendAthenticationData(int companyID, int adminID, String clientIp);
+    boolean sendAuthenticationData(int companyID, int adminID, String clientIp);
+
+	int initJob(int companyID, String method, String supervisorUser);
+
+	void updateJob(int jobID, String status, String result);
+
+	String getJobStatus(int companyID) throws Exception;
 }

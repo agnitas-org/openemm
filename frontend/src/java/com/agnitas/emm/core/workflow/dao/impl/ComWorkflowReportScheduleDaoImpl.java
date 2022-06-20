@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -21,7 +21,8 @@ import org.agnitas.dao.impl.BaseDaoImpl;
 import org.agnitas.dao.impl.mapper.IntegerRowMapper;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.DbUtilities;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.jdbc.core.RowMapper;
 
@@ -32,7 +33,8 @@ import com.agnitas.emm.core.workflow.dao.ComWorkflowReportScheduleDao;
 
 public class ComWorkflowReportScheduleDaoImpl extends BaseDaoImpl implements ComWorkflowReportScheduleDao {
 
-	private static final transient Logger logger = Logger.getLogger(ComWorkflowReportScheduleDaoImpl.class);
+	/** The logger. */
+	private static final transient Logger logger = LogManager.getLogger(ComWorkflowReportScheduleDaoImpl.class);
 	
 	private BirtReportFactory birtReportFactory;
 
@@ -47,7 +49,7 @@ public class ComWorkflowReportScheduleDaoImpl extends BaseDaoImpl implements Com
     @Deprecated
 	public List<Integer> getAllWorkflowReportsToSend() {
         String query = "SELECT report_id FROM workflow_report_schedule_tbl WHERE send_date < CURRENT_TIMESTAMP AND sent = 0";
-        return select(logger, query, new IntegerRowMapper());
+        return select(logger, query, IntegerRowMapper.INSTANCE);
 	}
 
     @Override
@@ -75,7 +77,7 @@ public class ComWorkflowReportScheduleDaoImpl extends BaseDaoImpl implements Com
 			selectStatement = query + " LIMIT ?";
 		}
         
-        return select(logger, selectStatement, new IntegerRowMapper(), maximumNumberOfReports);
+        return select(logger, selectStatement, IntegerRowMapper.INSTANCE, maximumNumberOfReports);
     }
 
 	@Override

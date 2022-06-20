@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,8 +10,10 @@
 
 package com.agnitas.emm.core.serverstatus.service.impl;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.StringReader;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -23,6 +25,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.zip.ZipOutputStream;
 
+import org.agnitas.emm.core.autoexport.dao.AutoExportDao;
 import org.agnitas.emm.core.autoimport.dao.AutoImportDao;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
@@ -31,10 +34,12 @@ import org.agnitas.service.JobDto;
 import org.agnitas.service.JobQueueService;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
+import org.agnitas.util.HttpUtils;
 import org.agnitas.util.ZipUtilities;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.dao.ComServerStatusDao;
@@ -51,9 +56,9 @@ import jakarta.servlet.ServletContext;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
-public abstract class ServerStatusServiceImplBasic implements ServerStatusService {
+public class ServerStatusServiceImplBasic implements ServerStatusService {
 	
-	private static final Logger logger = Logger.getLogger(ServerStatusService.class);
+	private static final Logger logger = LogManager.getLogger(ServerStatusService.class);
 	
 	private static final String ORACLE = "oracle";
 	private static final String MYSQL = "mysql";
@@ -64,6 +69,8 @@ public abstract class ServerStatusServiceImplBasic implements ServerStatusServic
 	protected ComServerStatusDao serverStatusDao;
 	
 	protected AutoImportDao autoImportDao;
+	
+	protected AutoExportDao autoExportDao;
 
 	protected ConfigService configService;
 	
@@ -82,6 +89,16 @@ public abstract class ServerStatusServiceImplBasic implements ServerStatusServic
 			return serverStatusDao.getDbUrl();
 		} catch (Exception e) {
 			logger.error("Cannot obtain DB url: ", e);
+			return "";
+		}
+	}
+    
+    @Override
+    public String getDbVersion() {
+		try {
+			return serverStatusDao.getDbVersion();
+		} catch (Exception e) {
+			logger.error("Cannot obtain DB Version: ", e);
 			return "";
 		}
 	}
@@ -186,9 +203,9 @@ public abstract class ServerStatusServiceImplBasic implements ServerStatusServic
 		
 		// Job queue status
 		try {
-			List<String> errorneousStatus = serverStatusDao.getErrorJobsStatuses();
-			status.put("emm.errorneaousjobs.count", Integer.toString(errorneousStatus.size()));
-			status.put("emm.errorneaousjobs", StringUtils.join(errorneousStatus, ", "));
+			List<String> erroneousStatus = serverStatusDao.getErrorJobsStatuses();
+			status.put("emm.errorneaousjobs.count", Integer.toString(erroneousStatus.size()));
+			status.put("emm.errorneaousjobs", StringUtils.join(erroneousStatus, ", "));
 		} catch (Exception e) {
 			status.put("emm.errorneaousjobs", ERROR);
 		}
@@ -237,9 +254,9 @@ public abstract class ServerStatusServiceImplBasic implements ServerStatusServic
 		String installPath = servletContext.getRealPath("/");
 		SimpleDateFormat dateTimeFormat = new SimpleDateFormat(DateUtilities.DD_MM_YYYY_HH_MM_SS);
 		return ServerStatus.builder(version, installPath, admin.getLocale(), configService)
-				.database(serverStatusDao.getDbVendor(), getDbUrl(), checkDatabaseConnection())
+				.database(serverStatusDao.getDbVendor(), getDbUrl(), getDbVersion(), checkDatabaseConnection())
 				.dateTimeSettings(dateTimeFormat, configService.getStartupTime(), configService.getConfigurationExpirationTime())
-				.statuses(isOverallStatusOK(), isJobQueueStatusOK(), !isImportStalling(), isDBStatusOK(), isReportStatusOK())
+				.statuses(isOverallStatusOK(), isJobQueueStatusOK(), !isImportStalling(), !isExportStalling(), isDBStatusOK(), isReportStatusOK())
 				.dbVersionStatuses(getLatestDBVersionsAndErrors())
 				.build();
 	}
@@ -363,6 +380,12 @@ public abstract class ServerStatusServiceImplBasic implements ServerStatusServic
 		// Only retrieve the status once per request for performance
 		return autoImportDao != null && autoImportDao.isImportStalling();
 	}
+
+	@Override
+	public boolean isExportStalling() {
+		// Only retrieve the status once per request for performance
+		return autoExportDao != null && autoExportDao.isExportStalling();
+	}
 	
 	private List<Version> getMandatoryDbVersions() {
 		List<Version> list = new ArrayList<>();
@@ -393,8 +416,8 @@ public abstract class ServerStatusServiceImplBasic implements ServerStatusServic
 	}
 
 	@Override
-	public List<JobDto> getErrorneousJobs() {
-		return jobQueueService.selectErrorneousJobs();
+	public List<JobDto> getErroneousJobs() {
+		return jobQueueService.selectErroneousJobs();
 	}
 	
 	@Override
@@ -479,7 +502,41 @@ public abstract class ServerStatusServiceImplBasic implements ServerStatusServic
 	}
 
 	@Override
-	public void acknowledgeErrorneousJob(int idToAcknowledge) {
-		jobQueueService.acknowledgeErrorneousJob(idToAcknowledge);
+	public void acknowledgeErroneousJob(int idToAcknowledge) {
+		jobQueueService.acknowledgeErroneousJob(idToAcknowledge);
 	}
+
+	@Override
+	public List<String> getErroneousImports() {
+		return serverStatusDao.getErroneousImports();
+	}
+
+	@Override
+	public List<String> getErroneousExports() {
+		return serverStatusDao.getErroneousExports();
+	}
+
+	@Override
+	public Version getAvailableUpdateVersion() throws Exception {
+		return getAvailableUpdateVersion("https://www.agnitas.de/download/openemm-version/");
+	}
+
+	protected Version getAvailableUpdateVersion(String url) throws Exception {
+		String versionData = HttpUtils.executeHttpRequest(url, null, null, configuredSecureTransportLayerProtocol());
+		try (BufferedReader reader = new BufferedReader(new StringReader(versionData))) {
+			String nextLine;
+			while ((nextLine = reader.readLine()) != null) {
+				if (nextLine.startsWith("frontend:")) {
+					String[] frontendLineParts = nextLine.substring(9).trim().split(" ");
+					return new Version(frontendLineParts[0].trim());
+				}
+			}
+			return null;
+		}
+	}
+
+	private String configuredSecureTransportLayerProtocol() {
+		return this.configService.getValue(ConfigValue.SecureTransportLayerProtocol);
+	}
+
 }

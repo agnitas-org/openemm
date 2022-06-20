@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -23,6 +23,7 @@ import org.agnitas.dao.MailingStatus;
 import org.agnitas.util.Bit;
 import org.agnitas.util.Blacklist;
 import org.agnitas.util.Log;
+import org.agnitas.util.Str;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -305,7 +306,7 @@ public class MailgunImpl implements Mailgun {
 		if ((bouncelog = data.company.infoSubstituted ("bounce-log")) == null) {
 			bouncelog = data.mailing.bounceLogfile ();
 		} else {
-			bouncelog = StringOps.makePath(bouncelog);
+			bouncelog = Str.makePath(bouncelog);
 		}
 		blist.setBouncelog(bouncelog);
 

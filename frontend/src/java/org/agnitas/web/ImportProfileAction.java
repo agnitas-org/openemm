@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -24,6 +24,7 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.agnitas.actions.EmmAction;
 import org.agnitas.beans.ColumnMapping;
 import org.agnitas.beans.ImportProfile;
 import org.agnitas.beans.impl.ImportProfileImpl;
@@ -51,7 +52,8 @@ import org.agnitas.web.forms.ImportProfileForm;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
@@ -80,7 +82,7 @@ import jakarta.servlet.http.HttpServletResponse;
  */
 public class ImportProfileAction extends StrutsActionBase {
 	/** The logger. */
-    private static final transient Logger logger = Logger.getLogger(ImportProfileAction.class);
+    private static final transient Logger logger = LogManager.getLogger(ImportProfileAction.class);
 
     public static final int ACTION_SET_DEFAULT = ACTION_LAST + 3;
 
@@ -657,7 +659,6 @@ public class ImportProfileAction extends StrutsActionBase {
                 String.valueOf(newImport.getDecimalSeparator()),
                 String.valueOf(oldImport.getDecimalSeparator())));
         logDescription.append(addChangedFieldLog("No csv headers", newImport.isNoHeaders(), oldImport.isNoHeaders()));
-        logDescription.append(addChangedFieldLog("Zipped file", newImport.isZipped(), oldImport.isZipped()));
         logDescription.append(addChangedFieldLog("Zip password", newImport.getZipPassword(), oldImport.getZipPassword()));
         try {
             String newImportMode = ImportMode.getFromInt(newImport.getImportMode()).getMessageKey();
@@ -760,7 +761,7 @@ public class ImportProfileAction extends StrutsActionBase {
 
     private String getActionForNewRecipientsName(int actionId, int companyId) {
         if (actionId != 0) {
-            var emmAction = emmActionDao.getEmmActionsByOperationType(companyId, false, ActionOperationType.SUBSCRIBE_CUSTOMER, ActionOperationType.SEND_MAILING)
+        	EmmAction emmAction = emmActionDao.getEmmActionsByOperationType(companyId, false, ActionOperationType.SUBSCRIBE_CUSTOMER, ActionOperationType.SEND_MAILING)
                     .stream().filter(action -> action.getId() == actionId).findFirst().orElse(null);
             return emmAction != null ? emmAction.getShortname() : UNKNOWN_ACTION;
         }
@@ -790,7 +791,7 @@ public class ImportProfileAction extends StrutsActionBase {
 			if (!importRecipientsDao.isKeyColumnIndexed(importProfile.getCompanyId(), columnsToCheck)) {
 				int unindexedLimit = configService.getIntegerValue(ConfigValue.MaximumContentLinesForUnindexedImport, importProfile.getCompanyId());
 				if (unindexedLimit >= 0 && importRecipientsDao.getResultEntriesCount("SELECT COUNT(*) FROM customer_" + importProfile.getCompanyId() + "_tbl") > unindexedLimit) {
-					errors.add(GuiConstants.ACTIONMESSAGE_CONTAINER_WARNING, new ActionMessage("warning.import.keyColumn.index"));
+					errors.add(GuiConstants.ACTIONMESSAGE_CONTAINER_WARNING, new ActionMessage("error.import.keyColumn.index"));
 				} else {
 					messages.add(GuiConstants.ACTIONMESSAGE_CONTAINER_WARNING, new ActionMessage("warning.import.keyColumn.index"));
 				}

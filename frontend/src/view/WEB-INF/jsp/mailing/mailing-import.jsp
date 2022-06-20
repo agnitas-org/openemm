@@ -1,12 +1,12 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
-<%@ page import="com.agnitas.web.ComMailingBaseAction"%>
+<%@ page import="com.agnitas.web.MailingBaseAction"%>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 
-<c:set var="ACTION_MAILING_IMPORT" value="<%= ComMailingBaseAction.ACTION_MAILING_IMPORT %>"/>
-<c:set var="ACTION_IMPORT_TEMPLATES" value="<%= ComMailingBaseAction.ACTION_IMPORT_TEMPLATES %>"/>
+<c:set var="ACTION_MAILING_IMPORT" value="<%= MailingBaseAction.ACTION_MAILING_IMPORT %>"/>
+<c:set var="ACTION_IMPORT_TEMPLATES" value="<%= MailingBaseAction.ACTION_IMPORT_TEMPLATES %>"/>
 <c:set var="importAction" value="${ACTION_MAILING_IMPORT}"/>
 <c:if test="${not empty param.importFromTemplates and param.importFromTemplates}">
 	<c:set var="importAction" value="${ACTION_IMPORT_TEMPLATES}"/>

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -21,9 +21,11 @@ import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.beans.ComAdmin;
+import com.agnitas.emm.core.components.dto.MailingImageDto;
 import com.agnitas.emm.core.components.dto.NewFileDto;
 import com.agnitas.emm.core.components.dto.UpdateMailingAttachmentDto;
 import com.agnitas.emm.core.components.dto.UploadMailingAttachmentDto;
+import com.agnitas.emm.core.components.dto.UploadMailingImageDto;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.service.SimpleServiceResult;
 import com.agnitas.util.ImageUtils;
@@ -51,6 +53,8 @@ public interface ComMailingComponentsService {
 
 	Map<String, Integer> getImageSizeMap(int companyId, int mailingId, boolean includeExternalImages);
 
+	long getAttachmentsSize(int companyId, int mailingId);
+
 	Map<Integer, String> getImageTimestamps(@VelocityCheck int companyId, int mailingId, DateFormat format);
 
 	MailingComponent getComponent(int componentId, @VelocityCheck int companyID);
@@ -72,6 +76,10 @@ public interface ComMailingComponentsService {
 
 	List<MailingComponent> getComponents(@VelocityCheck int companyId, int mailingId, boolean includeContent);
 
+    List<MailingImageDto> getMailingImages(int companyId, int mailingId);
+
+    ServiceResult<ImportStatistics> uploadImages(ComAdmin admin, int mailingId, List<UploadMailingImageDto> images, List<UserAction> userActions);
+    
 	List<MailingComponent> getComponentsByType(@VelocityCheck int companyID, int mailingId, List<MailingComponentType> types);
 
 	List<MailingComponent> getPreviewHeaderComponents(@VelocityCheck int companyId, int mailingId);

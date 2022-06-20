@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -30,7 +30,8 @@ import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.http.MediaType;
 
 /**
@@ -39,7 +40,7 @@ import org.springframework.http.MediaType;
 public class FileUtils {
 	
 	/** Logger used by this class. */
-	private static final transient Logger logger = Logger.getLogger( FileUtils.class);
+	private static final transient Logger logger = LogManager.getLogger( FileUtils.class);
 	
 	private static final String INVALID_FILENAME_PATTERN = "^.*[\\,%\\&/\\?\\*#:].*$";
 	
@@ -355,13 +356,20 @@ public class FileUtils {
      * @return file handle to temporary file containing report
      *
      * @throws Exception on errors reading report data
+     * 
+     * @see FileDownload#downloadAsFile(String, File)
      */
+	@Deprecated 
     public static File downloadAsTemporaryFile(String prefix, String suffix, String dirName, String birtUrl, String clientInternalUrl) throws Exception {
 		HttpClient httpClient = HttpUtils.initializeHttpClient(clientInternalUrl);
 		NetworkUtil.setHttpClientProxyFromSystem(httpClient, birtUrl);
 		return downloadAsTemporaryFile(prefix, suffix, dirName, birtUrl, httpClient, logger);
 	}
-	
+
+	/**
+	 * @see FileDownload#downloadAsFile(String, File, org.apache.http.impl.client.CloseableHttpClient)
+	 */
+	@Deprecated
     public static File downloadAsTemporaryFile(String prefix, String suffix, String dirName, String birtUrl, HttpClient httpClient, Logger loggerParameter) throws Exception {
 		final GetMethod method = new GetMethod(birtUrl);
 		method.setFollowRedirects(true);

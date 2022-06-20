@@ -12,25 +12,17 @@
 
 		<form-bean name="optimizationScheduleForm" type="com.agnitas.mailing.autooptimization.web.forms.ComOptimizationScheduleForm" />
 
-		<form-bean name="recipientForm" type="com.agnitas.web.ComRecipientForm" />
-
-		<form-bean name="salutationForm" type="org.agnitas.web.SalutationForm" />
-
 		<form-bean name="adminForm" type="com.agnitas.web.ComAdminForm" />
 
 		<form-bean name="mailingContentForm" type="com.agnitas.web.ComMailingContentForm" />
 
 		<form-bean name="mailingComponentsForm" type="com.agnitas.web.forms.ComMailingComponentsForm" />
 
-		<form-bean name="mailingAttachmentsForm" type="com.agnitas.web.forms.ComMailingAttachmentsForm" />
-
 		<form-bean name="mailingSendForm" type="com.agnitas.web.ComMailingSendForm" />
 
 		<form-bean name="mailingWizardForm" type="org.agnitas.web.MailingWizardForm" />
 
 		<form-bean name="trackableLinkForm" type="com.agnitas.web.ComTrackableLinkForm" />
-
-		<form-bean name="predeliveryForm" type="com.agnitas.predelivery.web.ComPredeliveryForm" />
 
 		<form-bean name="importWizardForm" type="com.agnitas.web.ComImportWizardForm" />
 
@@ -60,8 +52,6 @@
 		<form-bean name="mailingGridForm" type="com.agnitas.web.forms.ComMailingGridForm" />
 		
 		<form-bean name="sendMailloopAutoresponderMailForm" type="com.agnitas.emm.core.mailloop.web.SendAutoresponderMailForm" />
-		
-		<form-bean name="editTargetForm" type="com.agnitas.emm.core.target.web.QueryBuilderTargetGroupForm" />
 
         <form-bean name="supervisorGrantLoginPermissionForm" type="com.agnitas.web.forms.SupervisorGrantLoginPermissionForm" />
 		<form-bean name="supervisorRevokeLoginPermissionForm" type="com.agnitas.web.forms.SupervisorRevokeLoginPermissionForm" />
@@ -147,12 +137,6 @@
             <forward name="messages" path="messages" />
 		</action>
 
-		<!-- Process a mailing attachment request -->
-		<action path="/mailingattachments" type="com.agnitas.web.perm.DelegatingActionProxySecured" name="mailingAttachmentsForm" scope="request" input="mailing_attachments">
-			<forward name="list" path="mailing_attachments" />
-            <forward name="delete" path="mailing_attachments_delete_ajax" />
-		</action>
-
 		<!-- Process a trackable link -->
 		<action path="/tracklink" type="com.agnitas.web.perm.DelegatingActionProxySecured" name="trackableLinkForm" scope="request">
 			<forward name="view" path="mailing_trackablelink_view" />
@@ -206,12 +190,6 @@
 			<forward name="finish" path="mailing_wizard_finish" />
 			<forward name="newTarget" path="mailing_wizard_new_target" />
 			<forward name="targetView" path="mailing_wizard_target" />
-		</action>
-
-		<action path="/mwNewTarget" type="com.agnitas.web.perm.DelegatingActionProxySecured" name="editTargetForm" scope="session" parameter="method" input="mailing_wizard_new_target">
-			<forward name="view" path="mailing_wizard_new_target" />
-			<forward name="targetView" path="mailing_wizard_target" />
-			<forward name="messages" path="messages" />
 		</action>
 
 		<action path="/mwTextmodules" type="org.springframework.web.struts.DelegatingActionProxy" name="mailingWizardForm" scope="session" parameter="action" input="mailing_wizard_textmodules">
@@ -274,20 +252,6 @@
             <forward name="delete" path="mailingParameter_delete_ajax" />
 		</action>
 
-		<!-- Process recipients -->
-		<action path="/recipient" type="com.agnitas.web.perm.DelegatingActionProxySecured" name="recipientForm" scope="session" input="/recipient.do?init=1">
-			<forward name="list" path="recipient_list" />
-			<forward name="view" path="recipient_view" />
-			<forward name="history" path="recipient_history" />
-			<forward name="search" path="recipient_list" />
-			<forward name="delete" path="recipient_delete_ajax" />
-			<forward name="loading" path="recipient_loading" />
-			<forward name="social_updating" path="recipient_social_updating" />
-			<forward name="bulk_delete_confirm" path="recipient_bulk_delete_ajax" />
-			<forward name="confirm_save" path="recipient_confirm_save_modal" />
-			<forward name="messages" path="messages" />
-		</action>
-
 
 		<action path="/recipient_chart" type="com.agnitas.web.perm.DelegatingActionProxySecured" parameter="method"/>
 
@@ -339,24 +303,6 @@
 			<forward name="delete_question" path="exportwizard_delete_ajax" />
 			<forward name="progress" path="exportwizard_progress" />
 		</action>
-
-		<!-- Process a salutation -->
-		<action path="/salutation" type="com.agnitas.web.perm.DelegatingActionProxySecured" name="salutationForm" scope="request" input="settings_salutation_view">
-			<forward name="view" path="settings_salutation_view" />
-			<forward name="list" path="settings_salutation_list" />
-			<forward name="delete" path="settings_salutation_delete_ajax" />
-			<forward name="loading" path="settings_salutation_loading" />
-		</action>
-
-		<action path="/targetQB" type="com.agnitas.web.perm.DelegatingActionProxySecured" name="editTargetForm" parameter="method" scope="request">
-			<forward name="view" path="targets_querybuilder_view" />
-			<forward name="dependents_list" path="targets_querybuilder_dependents_list" />
-			<forward name="list" path="/target/list.action" />
-			<forward name="messages" path="messages" />
-		</action>
-		
-		
-		<action path="/newTargetGroup" type="org.apache.struts.actions.ForwardAction" parameter="/targetQB.do?method=create" />
 
 		<action path="/support" type="org.springframework.web.struts.DelegatingActionProxy" parameter="method" scope="request" name="supportForm" input="/WEB-INF/jsp/support/form_not_found.jsp">
 			<forward name="form_not_found_sent" path="/WEB-INF/jsp/support/form_not_found_sent.jsp" />

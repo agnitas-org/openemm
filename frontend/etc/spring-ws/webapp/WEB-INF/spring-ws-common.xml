@@ -45,7 +45,6 @@
         <property name="throttlingService" ref="throttlingService"/>
     </bean>
 
-
 	<!--  Security interceptor without login tracking. -->
 	<!-- 
 	<bean id="wsSecurityInterceptor"

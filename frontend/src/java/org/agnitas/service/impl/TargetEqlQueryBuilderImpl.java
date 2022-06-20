@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -21,7 +21,8 @@ import org.agnitas.target.PseudoColumn;
 import org.agnitas.util.DbColumnType;
 import org.agnitas.web.forms.TargetEqlBuilder;
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ProfileField;
@@ -32,7 +33,7 @@ import com.agnitas.beans.ProfileField;
 public class TargetEqlQueryBuilderImpl implements TargetEqlQueryBuilder {
 	
 	/** The logger. */
-	private static final transient Logger logger = Logger.getLogger(TargetEqlQueryBuilderImpl.class);
+	private static final transient Logger logger = LogManager.getLogger(TargetEqlQueryBuilderImpl.class);
 
 	public static final String COLUMN_TYPE_MAILING_OPENED = "OPENED_MAILING";
 	public static final String COLUMN_TYPE_MAILING_CLICKED = "CLICKED_IN_MAILING";
@@ -52,18 +53,6 @@ public class TargetEqlQueryBuilderImpl implements TargetEqlQueryBuilder {
 	@Required
 	public void setColumnInfoService(ColumnInfoService service) {
 		this.columnInfoService = service;
-	}
-
-	@Override
-	public final String createEqlFromForm(final TargetEqlBuilder form, final int companyId) {
-		final StringBuffer eqlBuffer = new StringBuffer();
-		
-		final int lastIndex = form.getNumTargetNodes();
-		for(int index = 0; index < lastIndex; index++) {
-			createEqlFromForm(form, companyId, index, eqlBuffer);
-		}
-		
-		return eqlBuffer.toString();
 	}
 	
 	public final void createEqlFromForm(final TargetEqlBuilder form, final int companyId, final int index, final StringBuffer eqlBuffer) {

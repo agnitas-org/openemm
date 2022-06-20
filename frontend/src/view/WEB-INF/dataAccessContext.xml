@@ -18,8 +18,6 @@
 		<property name="jndiName" value="java:comp/env/jdbc/emm_db" />
 	</bean>
 
-	<bean id="nativeJdbcExtractor" class="org.springframework.jdbc.support.nativejdbc.CommonsDbcpNativeJdbcExtractor" />
-
 	<!-- enable the configuration of transactional behavior based on annotations -->
  	<tx:annotation-driven transaction-manager="transactionManager"/>
 

@@ -1,5 +1,5 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" buffer="32kb" errorPage="/error.do" %>
-<%@ page import="org.agnitas.web.MailingBaseAction" %>
+<%@ page import="com.agnitas.web.MailingBaseAction" %>
 <%@ page import="org.agnitas.web.forms.WorkflowParametersHelper" %>
 <%@ page import="com.agnitas.emm.core.birtstatistics.enums.StatisticType" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core"      prefix="c" %>

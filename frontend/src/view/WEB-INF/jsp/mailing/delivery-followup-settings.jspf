@@ -1,0 +1,27 @@
+<div class="form-group">
+    <div class="well block">
+        <logic:equal name="mailingSendForm" property="worldMailingSend" value="true">
+            <bean:message key="mailing.send.finished" />
+        </logic:equal>
+
+        <logic:equal name="mailingSendForm" property="worldMailingSend" value="false">
+            <bean:message key="mailing.send.ready" />
+        </logic:equal>
+    </div>
+</div>
+
+<logic:equal name="mailingSendForm" property="isTemplate" value="false">
+
+    <%@ include file="mailing-send-prioritization.jspf" %>
+    <%@ include file="mailing-send-size.jspf" %>
+
+    <%-- Configure button --%>
+    <%@ include file="fragments/mailing-configure-button.jspf" %>
+
+    <%-- Approve button --%>
+    <%@ include file="fragments/mailing-approve-button.jspf" %>
+</logic:equal>
+
+<c:if test="${mailingSendForm.worldMailingSend && not mailingSendForm.isTemplate}">
+    <%@ include file="fragments/mailing-notification-settings.jspf" %>
+</c:if>

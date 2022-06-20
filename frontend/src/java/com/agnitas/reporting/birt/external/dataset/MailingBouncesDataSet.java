@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -23,16 +23,15 @@ import org.agnitas.dao.UserStatus;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.AgnUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.agnitas.messages.I18nString;
 import com.agnitas.reporting.birt.external.beans.BouncesEmailStatRow;
-import com.agnitas.reporting.birt.external.beans.LightTarget;
-import com.agnitas.reporting.birt.external.beans.SendStatRow;
 
 public class MailingBouncesDataSet extends BIRTDataSet {
 	/** The logger. */
-	private static final transient Logger logger = Logger.getLogger(MailingBouncesDataSet.class);
+	private static final transient Logger logger = LogManager.getLogger(MailingBouncesDataSet.class);
 
     public static final int SOFTBOUNCES_UNDELIVERABLE = 33;
 
@@ -230,23 +229,6 @@ public class MailingBouncesDataSet extends BIRTDataSet {
         return softUndelivered;
     }
 
-	public List<BouncesEmailStatRow> getBouncesWithDetailAndEmailByMailings(int companyID, String mailings, String language, String selectedTargets, boolean showSoftbounces, boolean showHardbounces){
-		List<Integer> mailingIDs = parseCommaSeparatedIds(mailings);
-		if(!mailingIDs.isEmpty()){
-			List<BouncesEmailStatRow> result = new ArrayList<>();
-			for(Integer id : mailingIDs){
-				result.addAll(getBouncesWithDetailAndEmail(companyID, id, language, selectedTargets, showSoftbounces, showHardbounces));
-			}
-			return result;
-		}
-		return new ArrayList<>();
-	}
-
-    // For the backward compatibility
-    public List<BouncesEmailStatRow> getBouncesWithDetailAndEmail(@VelocityCheck int companyID, int mailingID, String language) {
-        return getBouncesWithDetailAndEmail(companyID, mailingID, language, "");
-    }
-
 	public List<BouncesEmailStatRow> getBouncesWithDetailAndEmail(@VelocityCheck int companyID, int mailingID, String language, String selectedTargets) {
 		return getBouncesWithDetailAndEmail(companyID, mailingID, language, selectedTargets, true, true);
 	}
@@ -340,81 +322,6 @@ public class MailingBouncesDataSet extends BIRTDataSet {
 
 		return statList;
 	}
-
-	public List<SendStatRow> getTotalBounces(@VelocityCheck int companyID, int mailingID, String useMailTrackingStr, String targetIDs, String language,Boolean includeAdminAndTestMails ) {
-		language = StringUtils.defaultIfEmpty(language, "EN");
-		
-		StringBuilder query = new StringBuilder();
-		query.append("SELECT '<TOTAL>' AS targetgroup, COUNT(DISTINCT customer_id) AS bounces FROM customer_" + companyID + "_binding_tbl bind");
-		query.append(" WHERE bind.user_status = ? AND bind.exit_mailing_id = ? AND bind.user_type IN ('" + UserType.World.getTypeCode() + "', '" + UserType.WorldVIP.getTypeCode() + "')");
-
-		List<Integer> targetIDList = com.agnitas.reporting.birt.external.utils.StringUtils.buildListFormCommaSeparatedValueString(targetIDs);
-		if (useMailTrackingStr == null || "".equals(useMailTrackingStr.trim())) {
-			useMailTrackingStr = "false";
-		}
-
-		boolean useMailTracking = new Boolean(useMailTrackingStr.toLowerCase());
-
-		if (useMailTracking && !targetIDList.isEmpty()) {
-			List<String> targetIDStringList = new ArrayList<>();
-			for(Integer id:targetIDList) {
-				targetIDStringList.add(id.toString());
-			}
-			List<LightTarget> targets = getTargets(targetIDStringList, companyID);
-			for (LightTarget target : targets ) {
-				if (StringUtils.isNotBlank(target.getTargetSQL())) {
-					String targetQuery = getTargetgroupBouncesQuery(target.getName(), companyID, mailingID, target.getTargetSQL());
-					query.append(" UNION ");
-					query.append(targetQuery);
-				}
-
-			}
-		}
-
-		int totalsend = new MailingSendDataSet(getDataSource()).getTotalSend(mailingID, includeAdminAndTestMails);
-		List<SendStatRow> statList = new ArrayList<>();
-		List<Map<String, Object>> result = select(logger, query.toString(), UserStatus.Bounce.getStatusCode(), mailingID);
-		int targetgroupindex = 1;
-        for (Map<String, Object> resultRow : result) {
-			SendStatRow row = new SendStatRow();
-
-			String targetgroup = (String) resultRow.get("targetgroup");
-			if ("<TOTAL>".equals(targetgroup)) {
-				targetgroup = I18nString.getLocaleString("statistic.all_subscribers", language);
-				row.setTargetgroupindex(0);
-			} else {
-				row.setTargetgroupindex(targetgroupindex);
-				targetgroupindex++;
-			}
-			row.setTargetgroup(targetgroup);
-			row.setCount(((Number) resultRow.get("bounces")).intValue());
-			if (totalsend != 0) {
-				row.setRate((row.getCount() * 1.0f) / totalsend);
-			}
-			statList.add(row);
-
-		}
-
-		return statList;
-	}
-
-	private String getTargetgroupBouncesQuery(String targetgroup, @VelocityCheck int companyID, int mailingID, String targetSQL ) {
-		String template = getTargetgroupBouncesQueryTemplate();
-		template = template.replace("<TARGETGROUP>", targetgroup);
-		template = template.replace("<COMPANYID>", Integer.toString(companyID));
-		template = template.replace("<MAILINGID>", Integer.toString(mailingID));
-		template = template.replace("<TARGETSQL>", targetSQL );
-		return template;
-	}
-
-
-	private String getTargetgroupBouncesQueryTemplate() {
-		return "SELECT '<TARGETGROUP>' targetgroup, COUNT(DISTINCT (bind.customer_id)) AS bounces FROM customer_<COMPANYID>_binding_tbl bind JOIN customer_<COMPANYID>_tbl cust "
-		   + " ON( cust.customer_id = bind.customer_id) "
-		   + " WHERE bind.exit_mailing_id = <MAILINGID> AND bind.user_status = 2 AND (<TARGETSQL>)"
-		   + " GROUP BY bind.user_status";
-	}
-
 
 	/**
 	 * Contains all hard bounce statuses and their names provided by the AGNINTAS.

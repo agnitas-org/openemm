@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -15,20 +15,20 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.agnitas.dao.UserStatus;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.jdbc.core.RowMapper;
 
+import com.agnitas.dao.impl.ComCompanyDaoImpl;
 import com.agnitas.messages.I18nString;
 import com.agnitas.reporting.birt.external.beans.DomainStatRow;
 import com.agnitas.reporting.birt.external.beans.LightTarget;
 
 public class DomainStatDataSet extends BIRTDataSet {
 	/** The logger. */
-	private static final transient Logger logger = Logger.getLogger(DomainStatDataSet.class);
-	
-	private static final int BIND_USER_STATUS = 1;
+	private static final transient Logger logger = LogManager.getLogger(DomainStatDataSet.class);
 	
 	private static String getCustomerTableName(int companyId) {
 		return "customer_" + companyId + "_tbl";
@@ -38,7 +38,7 @@ public class DomainStatDataSet extends BIRTDataSet {
 		return "customer_" + companyId + "_binding_tbl";
 	}
 	
-	public List<DomainStatRow> getDomainStat(@VelocityCheck int companyID, String targetID, Integer mailinglistId, int limit, String language, Boolean topLevelDomains) {
+	public List<DomainStatRow> getDomainStat(int companyID, String targetID, Integer mailinglistId, int limit, String language, Boolean topLevelDomains) {
 		language = StringUtils.defaultIfEmpty(language, "EN");
   
 		String targetSql = "";
@@ -63,13 +63,14 @@ public class DomainStatDataSet extends BIRTDataSet {
 	}
 	
 	private int getDomainsTotalCount(int companyId, String mailingListSql, String targetSql) {
-		String sql = "SELECT COUNT(cust.customer_id) as domain_count" +
-				" FROM " + getCustomerTableName(companyId) + " cust, " + getCustomerBindingTableName(companyId) + " bind" +
-				" WHERE cust.customer_id = bind.customer_id" +
-				" AND bind.user_status = " + BIND_USER_STATUS +
-				" " + mailingListSql +
-				" " + targetSql;
-		
+		String sql = "SELECT COUNT(DISTINCT cust.customer_id) AS domain_count"
+			+ " FROM " + getCustomerTableName(companyId) + " cust, " + getCustomerBindingTableName(companyId) + " bind"
+			+ " WHERE cust.customer_id = bind.customer_id"
+			+ " AND cust." + ComCompanyDaoImpl.STANDARD_FIELD_BOUNCELOAD + " = 0"
+			+ " AND bind.user_status = " + UserStatus.Active.getStatusCode()
+			+ " " + mailingListSql
+			+ " " + targetSql;
+
 		return select(logger, sql, Integer.class);
 	}
 	
@@ -87,14 +88,15 @@ public class DomainStatDataSet extends BIRTDataSet {
             instrEmail = topLevelDomains ? "LENGTH(email) - INSTR(REVERSE(email), '.')" : "INSTR(email, '@')";
         }
 		
-		String sql = "SELECT COUNT(cust.customer_id) as domain_count, SUBSTR(email, " + instrEmail + " + 1) AS domain_name" +
-				" FROM " + getCustomerTableName(companyId) + " cust, " + getCustomerBindingTableName(companyId) + " bind " +
-				" WHERE cust.customer_id = bind.customer_id" +
-				" AND bind.user_status = " + BIND_USER_STATUS +
-				" " + mailingListSql +
-				" " + targetSql +
-				" GROUP BY SUBSTR(email, " + instrEmail + " + 1)" +
-				" ORDER BY domain_count DESC";
+		String sql = "SELECT COUNT(DISTINCT cust.customer_id) AS domain_count, SUBSTR(email, " + instrEmail + " + 1) AS domain_name"
+				+ " FROM " + getCustomerTableName(companyId) + " cust, " + getCustomerBindingTableName(companyId) + " bind "
+				+ " WHERE cust.customer_id = bind.customer_id"
+				+ " AND cust." + ComCompanyDaoImpl.STANDARD_FIELD_BOUNCELOAD + " = 0"
+				+ " AND bind.user_status = " + UserStatus.Active.getStatusCode()
+				+ " " + mailingListSql
+				+ " " + targetSql
+				+ " GROUP BY SUBSTR(email, " + instrEmail + " + 1)"
+				+ " ORDER BY domain_count DESC";
 		
 		DomainRowMapper rowMapper = new DomainRowMapper();
 		String sqlLimited = "SELECT * FROM (" + sql + ")";

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -28,7 +28,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.agnitas.beans.BindingEntry.UserType;
-import org.agnitas.beans.Company;
 import org.agnitas.beans.DynamicTagContent;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.TrackableLink;
@@ -41,7 +40,6 @@ import org.agnitas.dao.impl.mapper.StringRowMapper;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.mailing.service.CopyMailingService;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.service.UserFormExporter;
 import org.agnitas.service.UserFormImporter;
 import org.agnitas.util.AgnUtils;
@@ -50,14 +48,15 @@ import org.agnitas.util.DbUtilities;
 import org.agnitas.util.Tuple;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.jdbc.core.RowMapper;
 
-import com.agnitas.beans.ComCompany;
+import com.agnitas.beans.Company;
 import com.agnitas.beans.DynamicTag;
 import com.agnitas.beans.Mailing;
-import com.agnitas.beans.impl.ComCompanyImpl;
+import com.agnitas.beans.impl.CompanyImpl;
 import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.dao.ComTargetDao;
@@ -69,7 +68,7 @@ import com.agnitas.emm.core.recipient.dao.BindingHistoryDao;
 
 public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompanyDao {
 	/** The logger. */
-	private static final transient Logger logger = Logger.getLogger(ComCompanyDaoImpl.class);
+	private static final transient Logger logger = LogManager.getLogger(ComCompanyDaoImpl.class);
 
 	/** Configuration service. */
 	private ConfigService configService;
@@ -208,7 +207,8 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 		STANDARD_FIELD_LATEST_DATASOURCE_ID,
 		STANDARD_FIELD_TIMESTAMP,
 		STANDARD_FIELD_CLEANED_DATE,
-		STANDARD_FIELD_CREATION_DATE};
+		STANDARD_FIELD_CREATION_DATE,
+		STANDARD_FIELD_ENCRYPTED_SENDING};
 	
 	public static final String[] CLEAN_IMMUTABALE_FIELDS = new String[] {
 		STANDARD_FIELD_CUSTOMER_ID,
@@ -217,16 +217,17 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 		STANDARD_FIELD_CREATION_DATE,
 		STANDARD_FIELD_BOUNCELOAD,
 		STANDARD_FIELD_CLEANED_DATE,
-		STANDARD_FIELD_TIMESTAMP};
+		STANDARD_FIELD_TIMESTAMP,
+		STANDARD_FIELD_ENCRYPTED_SENDING};
 	
 	@Override
-	public ComCompany getCompany(@VelocityCheck int companyID) {
+	public Company getCompany(int companyID) {
 		if (companyID == 0) {
 			return null;
 		} else {
 			try {
 				String sql = "SELECT company_id, creator_company_id, shortname, description, rdir_domain, mailloop_domain, status, mailtracking, stat_admin, secret_key, uid_version, auto_mailing_report_active, sector, business_field, max_recipients, salutation_extended, enabled_uid_version, export_notify, parent_company_id, contact_tech FROM company_tbl WHERE company_id = ?";
-				List<ComCompany> list = select(logger, sql, new ComCompany_RowMapper(), companyID);
+				List<Company> list = select(logger, sql, new ComCompany_RowMapper(), companyID);
 				if (list.size() > 0) {
 					return list.get(0);
 				} else {
@@ -241,7 +242,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 	@Override
 	@DaoUpdateReturnValueCheck
 	public void saveCompany(Company company) throws Exception {
-		ComCompany comCompany = (ComCompany) company;
+		Company comCompany = company;
 		try {
 			List<Map<String, Object>> list = select(logger, "SELECT company_id FROM company_tbl WHERE company_id = ?", comCompany.getId());
 			
@@ -387,11 +388,11 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 		final Date lifeTimeExpire = DateUtilities.getDateOfDaysAgo(configService.getIntegerValue(ConfigValue.System_License_MaximumLifetimeOfTestAccounts));
 		final int creatorCompany = configService.getIntegerValue(ConfigValue.System_License_OpenEMMMasterCompany);
 		String sql = "SELECT company_id FROM company_tbl WHERE creator_company_id = ? AND status = '" + CompanyStatus.ACTIVE.getDbValue() + "' AND timestamp < ?";
-		return select(logger, sql, new IntegerRowMapper(), creatorCompany, lifeTimeExpire);
+		return select(logger, sql, IntegerRowMapper.INSTANCE, creatorCompany, lifeTimeExpire);
 	}
 	
 	@Override
-	public PaginatedListImpl<CompanyEntry> getCompanyList(@VelocityCheck int companyID, String sortCriterion, String sortDirection, int pageNumber, int pageSize) {
+	public PaginatedListImpl<CompanyEntry> getCompanyList(int companyID, String sortCriterion, String sortDirection, int pageNumber, int pageSize) {
 		if (StringUtils.isBlank(sortCriterion)) {
 			sortCriterion = "shortname";
 		}
@@ -420,7 +421,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 	}
 	
 	@Override
-	public List<CompanyEntry> getActiveOwnCompaniesLight(@VelocityCheck int companyId, boolean allowTransitionStatus) {
+	public List<CompanyEntry> getActiveOwnCompaniesLight(int companyId, boolean allowTransitionStatus) {
 		if (allowTransitionStatus) {
 			if (companyId == 1) {
 				return select(logger, "SELECT company_id, shortname, description, status, timestamp FROM company_tbl WHERE status != '" + CompanyStatus.DELETED.getDbValue() + "' ORDER BY LOWER(shortname)", new CompanyEntryRowMapper());
@@ -439,7 +440,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 	}
 
 	@Override
-	public List<ComCompany> getCreatedCompanies(@VelocityCheck int companyId) {
+	public List<Company> getCreatedCompanies(int companyId) {
 		try {
 			if (companyId == 1) {
 				return select(logger, "SELECT company_id, creator_company_id, shortname, description, rdir_domain, mailloop_domain, status, mailtracking, stat_admin, secret_key, uid_version, auto_mailing_report_active, sector, business_field, max_recipients, salutation_extended, enabled_uid_version, export_notify, parent_company_id, contact_tech FROM company_tbl WHERE status = '" + CompanyStatus.ACTIVE.getDbValue() + "' ORDER BY LOWER (shortname)", new ComCompany_RowMapper());
@@ -453,7 +454,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 
 	@Override
 	@DaoUpdateReturnValueCheck
-	public boolean initTables(@VelocityCheck int newCompanyId) {
+	public boolean initTables(int newCompanyId) {
 		if (newCompanyId <= 0) {
 			return false;
 		}
@@ -500,6 +501,10 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 				sql = "CREATE TABLE interval_track_" + newCompanyId + "_tbl (customer_id NUMBER NOT NULL, mailing_id NUMBER NOT NULL, send_date TIMESTAMP NOT NULL)" + tablespaceClauseDataSuccess;
 				executeWithRetry(logger, 0, 3, 120, sql);
 				sql = "CREATE INDEX intervtrack$" + newCompanyId + "mid$idx ON interval_track_" + newCompanyId + "_tbl (mailing_id)" + tablespaceClauseCustomerBindIndex;
+				executeWithRetry(logger, 0, 3, 120, sql);
+				sql = "CREATE INDEX intervtrack$" + newCompanyId + "$cid$idx ON interval_track_" + newCompanyId + "_tbl (customer_id)" + tablespaceClauseCustomerBindIndex;
+				executeWithRetry(logger, 0, 3, 120, sql);
+				sql = "CREATE INDEX intervtrack$" + newCompanyId + "$sendd$idx ON interval_track_" + newCompanyId + "_tbl (send_date)" + tablespaceClauseCustomerBindIndex;
 				executeWithRetry(logger, 0, 3, 120, sql);
 				
 				sql = "CREATE TABLE mailtrack_" + newCompanyId + "_tbl (mailing_id NUMBER, maildrop_status_id NUMBER, customer_id NUMBER, timestamp date default SYSDATE)" + tablespaceClauseDataSuccess;
@@ -556,10 +561,17 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 				executeWithRetry(logger, 0, 3, 120, sql);
 				sql = "CREATE TABLE rdir_traffic_agr_" + newCompanyId + "_tbl (mailing_id NUMBER, content_name VARCHAR2(3000), content_size NUMBER, demand_date TIMESTAMP, amount NUMBER)" + tablespaceClauseCustomerTable;
 				executeWithRetry(logger, 0, 3, 120, sql);
+				
+				// Initially create a mailing_tbl entry for UID generation
+				update(logger, "INSERT INTO mailing_tbl (mailing_id, company_id, deleted) VALUES (mailing_tbl_seq.nextval, 1, 1)");
 			} else {
 				sql = "CREATE TABLE interval_track_" + newCompanyId + "_tbl (customer_id INTEGER UNSIGNED NOT NULL, mailing_id INT(11) NOT NULL, send_date TIMESTAMP NOT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
 				executeWithRetry(logger, 0, 3, 120, sql);
 				sql = "CREATE INDEX intervtrack$" + newCompanyId + "mid$idx ON interval_track_" + newCompanyId + "_tbl (mailing_id)";
+				executeWithRetry(logger, 0, 3, 120, sql);
+				sql = "CREATE INDEX intervtrack$" + newCompanyId + "$cid$idx ON interval_track_" + newCompanyId + "_tbl (customer_id)";
+				executeWithRetry(logger, 0, 3, 120, sql);
+				sql = "CREATE INDEX intervtrack$" + newCompanyId + "$sendd$idx ON interval_track_" + newCompanyId + "_tbl (send_date)";
 				executeWithRetry(logger, 0, 3, 120, sql);
 				
 				initCustomerTables(newCompanyId);
@@ -614,6 +626,9 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 				executeWithRetry(logger, 0, 3, 120, sql);
 				sql = "CREATE TABLE rdir_traffic_agr_" + newCompanyId + "_tbl (mailing_id INTEGER, content_name VARCHAR(3000), content_size INTEGER, demand_date TIMESTAMP NULL, amount INTEGER) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
 				executeWithRetry(logger, 0, 3, 120, sql);
+				
+				// Initially create a mailing_tbl entry for UID generation
+				update(logger, "INSERT INTO mailing_tbl (company_id, deleted) VALUES (1, 1)");
 			}
 			
 			createRdirValNumTable(newCompanyId);
@@ -646,7 +661,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 				if (customerToCopyID > 0) {
 					update(logger, "INSERT INTO customer_" + newCompanyId + "_tbl (customer_id, gender, firstname, lastname, email, mailtype, creation_date, timestamp) (SELECT " + newCustomerID + ", gender, firstname, lastname, email, mailtype, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP FROM customer_1_tbl WHERE customer_id = " + customerToCopyID + ")");
 				} else {
-					update(logger, "INSERT INTO customer_" + newCompanyId + "_tbl (customer_id, gender, bounceload, email, mailtype, creation_date, timestamp) VALUES(?, 2, 0, 'test@example.com', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)", newCustomerID);
+					update(logger, "INSERT INTO customer_" + newCompanyId + "_tbl (customer_id, gender, " + STANDARD_FIELD_BOUNCELOAD + ", email, mailtype, creation_date, timestamp) VALUES(?, 2, 0, 'test@example.com', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)", newCustomerID);
 				}
 				if (customerToCopyID > 0) {
 					// Set binding for new customer
@@ -655,13 +670,13 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 				}
 				
 				// New customer
-				sql = "INSERT INTO customer_" + newCompanyId + "_tbl (customer_id, gender, bounceload, email, mailtype, creation_date, timestamp) VALUES(customer_" + newCompanyId + "_tbl_seq.NEXTVAL, 2, 1, 'adam+" + newCompanyId + "@adamatis.eu', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
+				sql = "INSERT INTO customer_" + newCompanyId + "_tbl (customer_id, gender, " + STANDARD_FIELD_BOUNCELOAD + ", email, mailtype, creation_date, timestamp) VALUES(customer_" + newCompanyId + "_tbl_seq.NEXTVAL, 2, 1, 'adam+" + newCompanyId + "@adamatis.eu', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
 				update(logger, sql);
-				sql = "INSERT INTO customer_" + newCompanyId + "_tbl (customer_id, gender, bounceload, email, mailtype, creation_date, timestamp) VALUES(customer_" + newCompanyId + "_tbl_seq.NEXTVAL, 2, 1, 'eva+" + newCompanyId + "@adamatis.eu', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
+				sql = "INSERT INTO customer_" + newCompanyId + "_tbl (customer_id, gender, " + STANDARD_FIELD_BOUNCELOAD + ", email, mailtype, creation_date, timestamp) VALUES(customer_" + newCompanyId + "_tbl_seq.NEXTVAL, 2, 1, 'eva+" + newCompanyId + "@adamatis.eu', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
 				update(logger, sql);
-				sql = "INSERT INTO customer_" + newCompanyId + "_tbl (customer_id, gender, bounceload, email, mailtype, creation_date, timestamp) VALUES(customer_" + newCompanyId + "_tbl_seq.NEXTVAL, 2, 1, 'kain+" + newCompanyId + "@adamatis.eu', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
+				sql = "INSERT INTO customer_" + newCompanyId + "_tbl (customer_id, gender, " + STANDARD_FIELD_BOUNCELOAD + ", email, mailtype, creation_date, timestamp) VALUES(customer_" + newCompanyId + "_tbl_seq.NEXTVAL, 2, 1, 'kain+" + newCompanyId + "@adamatis.eu', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
 				update(logger, sql);
-				sql = "INSERT INTO customer_" + newCompanyId + "_tbl (customer_id, gender, bounceload, email, mailtype, creation_date, timestamp) VALUES(customer_" + newCompanyId + "_tbl_seq.NEXTVAL, 2, 1, 'abel+" + newCompanyId + "@adamatis.eu', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
+				sql = "INSERT INTO customer_" + newCompanyId + "_tbl (customer_id, gender, " + STANDARD_FIELD_BOUNCELOAD + ", email, mailtype, creation_date, timestamp) VALUES(customer_" + newCompanyId + "_tbl_seq.NEXTVAL, 2, 1, 'abel+" + newCompanyId + "@adamatis.eu', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
 				update(logger, sql);
 
 				// Default mediapool categories
@@ -692,7 +707,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 				if (customerToCopyID > 0) {
 					newCustomerID = insertIntoAutoincrementMysqlTable(logger, "customer_id", "INSERT INTO customer_" + newCompanyId + "_tbl (gender, firstname, lastname, email, mailtype, creation_date, timestamp) (SELECT gender, firstname, lastname, email, mailtype, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP FROM customer_1_tbl WHERE customer_id = ?)", customerToCopyID);
 				} else {
-					newCustomerID = insertIntoAutoincrementMysqlTable(logger, "customer_id", "INSERT INTO customer_" + newCompanyId + "_tbl (gender, bounceload, email, mailtype, creation_date, timestamp) VALUES (2, 0, 'test@example.com', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)");
+					newCustomerID = insertIntoAutoincrementMysqlTable(logger, "customer_id", "INSERT INTO customer_" + newCompanyId + "_tbl (gender, " + STANDARD_FIELD_BOUNCELOAD + ", email, mailtype, creation_date, timestamp) VALUES (2, 0, 'test@example.com', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)");
 				}
 				if (newCustomerID > 0) {
 					// Set binding for new customer
@@ -701,13 +716,13 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 				}
 
 				// New customer
-				sql = "INSERT INTO customer_" + newCompanyId + "_tbl (gender, bounceload, email, mailtype, creation_date, timestamp) VALUES(2, 1, 'adam+" + newCompanyId + "@adamatis.eu', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
+				sql = "INSERT INTO customer_" + newCompanyId + "_tbl (gender, " + STANDARD_FIELD_BOUNCELOAD + ", email, mailtype, creation_date, timestamp) VALUES(2, 1, 'adam+" + newCompanyId + "@adamatis.eu', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
 				update(logger, sql);
-				sql = "INSERT INTO customer_" + newCompanyId + "_tbl (gender, bounceload, email, mailtype, creation_date, timestamp) VALUES(2, 1, 'eva+" + newCompanyId + "@adamatis.eu', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
+				sql = "INSERT INTO customer_" + newCompanyId + "_tbl (gender, " + STANDARD_FIELD_BOUNCELOAD + ", email, mailtype, creation_date, timestamp) VALUES(2, 1, 'eva+" + newCompanyId + "@adamatis.eu', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
 				update(logger, sql);
-				sql = "INSERT INTO customer_" + newCompanyId + "_tbl (gender, bounceload, email, mailtype, creation_date, timestamp) VALUES(2, 1, 'kain+" + newCompanyId + "@adamatis.eu', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
+				sql = "INSERT INTO customer_" + newCompanyId + "_tbl (gender, " + STANDARD_FIELD_BOUNCELOAD + ", email, mailtype, creation_date, timestamp) VALUES(2, 1, 'kain+" + newCompanyId + "@adamatis.eu', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
 				update(logger, sql);
-				sql = "INSERT INTO customer_" + newCompanyId + "_tbl (gender, bounceload, email, mailtype, creation_date, timestamp) VALUES(2, 1, 'abel+" + newCompanyId + "@adamatis.eu', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
+				sql = "INSERT INTO customer_" + newCompanyId + "_tbl (gender, " + STANDARD_FIELD_BOUNCELOAD + ", email, mailtype, creation_date, timestamp) VALUES(2, 1, 'abel+" + newCompanyId + "@adamatis.eu', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
 				update(logger, sql);
 
 				// Default mediapool categories
@@ -738,7 +753,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 					replaceTextInFile(userFormTempFile, newCompanyId, mailinglistID, rdirDomain);
 					
 					try (InputStream userFormInputStream = new FileInputStream(userFormTempFile)) {
-						userFormImporter.importUserForm(newCompanyId, userFormInputStream, null);
+						userFormImporter.importUserForm(newCompanyId, userFormInputStream, null, null);
 					}
 				} catch (Exception e) {
 					logger.error("Could not copy user form (" + sampleFormID + ") for new company (" + newCompanyId + "): " + e.getMessage(), e);
@@ -775,13 +790,13 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 
 	@Override
 	@DaoUpdateReturnValueCheck
-	public void copySampleMailings(@VelocityCheck int newCompanyId, int mailinglistID, String rdirDomain) throws Exception {
+	public void copySampleMailings(int newCompanyId, int mailinglistID, String rdirDomain) throws Exception {
 		Map<Integer, Integer> mailingsMapping = new HashMap<>();
 		
 		doCopySampleMailings(newCompanyId, mailinglistID, rdirDomain, mailingsMapping);
 	}
 	
-	protected void doCopySampleMailings(@VelocityCheck int newCompanyId, int mailinglistID, String rdirDomain, final Map<Integer, Integer> mailingsMapping) throws Exception {
+	protected void doCopySampleMailings(int newCompanyId, int mailinglistID, String rdirDomain, final Map<Integer, Integer> mailingsMapping) throws Exception {
 		// Copy sample mailing templates
 		for (int sampleMailingID : mailingDao.getSampleMailingIDs()) {
 			int copiedMailingID = copyMailingService.copyMailing(1, sampleMailingID, newCompanyId, null, null);
@@ -941,6 +956,8 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 				}
 				sql = "CREATE INDEX cust" + newCompanyId + "$email$idx ON customer_" + newCompanyId + "_tbl (email)" + tablespaceClauseCustomerBindIndex;
 				executeWithRetry(logger, 0, 3, 120, sql);
+				sql = "CREATE INDEX cust" + newCompanyId + "$lowemail$idx ON customer_" + newCompanyId + "_tbl (LOWER(email))" + tablespaceClauseCustomerBindIndex;
+				executeWithRetry(logger, 0, 3, 120, sql);
 				
 				sql = "CREATE TABLE customer_" + newCompanyId + "_binding_tbl ("
 					+ "customer_id NUMBER, "
@@ -1075,7 +1092,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 	}
 	
 	@Override
-	public boolean existTrackingTables(@VelocityCheck int companyID) {
+	public boolean existTrackingTables(int companyID) {
 		if (!DbUtilities.checkIfTableExists(getDataSource(), "rdirlog_" + companyID + "_val_alpha_tbl")) {
 			return false;
 		} else if (!DbUtilities.checkIfTableExists(getDataSource(), "rdirlog_" + companyID + "_ext_link_tbl")) {
@@ -1089,7 +1106,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 	 * returns true, if mailtracking for this companyID is active.
 	 */
 	@Override
-	public boolean isMailtrackingActive(@VelocityCheck int companyID) {
+	public boolean isMailtrackingActive(int companyID) {
 		try {
 			return selectInt(logger, "SELECT mailtracking FROM company_tbl WHERE company_id = ?", companyID) == 1;
 		} catch (Exception e) {
@@ -1099,24 +1116,24 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 	}
 
 	@Override
-	public boolean isCreatorId(@VelocityCheck int companyId, int creatorId) {
+	public boolean isCreatorId(int companyId, int creatorId) {
 		String sqlGetCount = "SELECT COUNT(*) FROM company_tbl WHERE company_id = ? AND creator_company_id = ?";
 		return selectInt(logger, sqlGetCount, companyId, creatorId) > 0;
 	}
 
 	@Override
-	public String getRedirectDomain(@VelocityCheck int companyId) {
+	public String getRedirectDomain(int companyId) {
 		final String sql = "SELECT rdir_domain FROM company_tbl WHERE company_id = ?";
 		return selectObjectDefaultNull(logger, sql, (rs, index) -> rs.getString("rdir_domain"), companyId);
 	}
 
 	@Override
-	public boolean checkDeeptrackingAutoActivate(@VelocityCheck int companyID) {
+	public boolean checkDeeptrackingAutoActivate(int companyID) {
 		return selectInt(logger, "SELECT auto_deeptracking FROM company_tbl WHERE company_id = ?", companyID) == 1;
 	}
 
 	@Override
-	public int getCompanyDatasource(@VelocityCheck int companyID) {
+	public int getCompanyDatasource(int companyID) {
 		return selectIntWithDefaultValue(logger, "SELECT default_datasource_id FROM company_tbl WHERE company_id = ?", -1, companyID);
 	}
 
@@ -1126,7 +1143,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 	 * @return
 	 */
 	@Override
-	public List<ComCompany> getAllActiveCompaniesWithoutMasterCompany() {
+	public List<Company> getAllActiveCompaniesWithoutMasterCompany() {
 		String sql = "SELECT company_id, creator_company_id, shortname, description, rdir_domain, mailloop_domain, status, mailtracking, stat_admin, secret_key, uid_version, auto_mailing_report_active, sector, business_field, max_recipients, salutation_extended, enabled_uid_version, export_notify, parent_company_id, contact_tech FROM company_tbl WHERE status = '" + CompanyStatus.ACTIVE.getDbValue() + "' AND company_id > 1 ORDER BY company_id";
 		try {
 			return select(logger, sql, new ComCompany_RowMapper());
@@ -1140,7 +1157,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 	 * This method returns a list of all companies, with status ='active' starting from a given companyID
 	 */
 	@Override
-	public List<ComCompany> getActiveCompaniesWithoutMasterCompanyFromStart(int startCompany) {
+	public List<Company> getActiveCompaniesWithoutMasterCompanyFromStart(int startCompany) {
 		String sql = "SELECT company_id, creator_company_id, shortname, description, rdir_domain, mailloop_domain, status, mailtracking, stat_admin, secret_key, uid_version, auto_mailing_report_active, sector, business_field, max_recipients, salutation_extended, enabled_uid_version, export_notify, parent_company_id, contact_tech FROM company_tbl WHERE status = '" + CompanyStatus.ACTIVE.getDbValue() + "' AND company_id >= ? ORDER BY company_id";
 		try {
 			return select(logger, sql, new ComCompany_RowMapper(), startCompany);
@@ -1152,7 +1169,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 
 	@Override
 	public List<Integer> getAllActiveCompaniesIdsWithoutMasterCompany() {
-		return select(logger, "SELECT company_id from company_tbl WHERE status = '" + CompanyStatus.ACTIVE.getDbValue() + "' AND company_id > 1", new IntegerRowMapper());
+		return select(logger, "SELECT company_id from company_tbl WHERE status = '" + CompanyStatus.ACTIVE.getDbValue() + "' AND company_id > 1", IntegerRowMapper.INSTANCE);
 	}
 
 	@Override
@@ -1218,7 +1235,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 							+ "entry_mailing_id INT(11), "
 							+ "mediatype INTEGER UNSIGNED, "
 							+ "change_type INT(11), "
-							+ "timestamp_change TIMESTAMP, "
+							+ "timestamp_change TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
 							+ "client_info VARCHAR(150), "
 							+ "email VARCHAR(100), "
 							+ "referrer VARCHAR(4000)"
@@ -1257,7 +1274,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 	 * @return
 	 */
 	@Override
-	public List<ComCompany> getAllActiveCompanies() {
+	public List<Company> getAllActiveCompanies() {
 		String sql = "SELECT company_id, creator_company_id, shortname, description, rdir_domain, mailloop_domain, status, mailtracking, stat_admin, secret_key, uid_version, auto_mailing_report_active, sector, business_field, max_recipients, salutation_extended, enabled_uid_version, export_notify, parent_company_id, contact_tech FROM company_tbl WHERE status = '" + CompanyStatus.ACTIVE.getDbValue() + "' ORDER BY company_id DESC";
 		try {
 			return select(logger, sql, new ComCompany_RowMapper());
@@ -1267,10 +1284,10 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 		}
 	}
 
-	private class ComCompany_RowMapper implements RowMapper<ComCompany> {
+	private class ComCompany_RowMapper implements RowMapper<Company> {
 		@Override
-		public ComCompany mapRow(ResultSet resultSet, int row) throws SQLException {
-			ComCompany readCompany = new ComCompanyImpl();
+		public Company mapRow(ResultSet resultSet, int row) throws SQLException {
+			Company readCompany = new CompanyImpl();
 			
 			readCompany.setId(resultSet.getInt("company_id"));
 			readCompany.setCreatorID(resultSet.getInt("creator_company_id"));
@@ -1309,7 +1326,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 	@Override
 	public int getMaximumNumberOfCustomers() {
 		int maximumNumberOfCustomers = 0;
-		for (Integer companyID : select(logger, "SELECT company_id FROM company_tbl WHERE status = ?", new IntegerRowMapper(), CompanyStatus.ACTIVE.getDbValue())) {
+		for (Integer companyID : select(logger, "SELECT company_id FROM company_tbl WHERE status = ?", IntegerRowMapper.INSTANCE, CompanyStatus.ACTIVE.getDbValue())) {
 			if (DbUtilities.checkIfTableExists(getDataSource(), "customer_" + companyID + "_tbl")) {
 				int numberOfCustomers = selectInt(logger, "SELECT COUNT(*) FROM customer_" + companyID + "_tbl WHERE " + ComCompanyDaoImpl.STANDARD_FIELD_BOUNCELOAD + " = 0");
 				maximumNumberOfCustomers = Math.max(maximumNumberOfCustomers, numberOfCustomers);
@@ -1319,19 +1336,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 	}
 
 	@Override
-	public int getMaximumNumberOfProfileFields() throws Exception {
-		int maximumNumberOfProfileFields = 0;
-		for (Integer companyID : select(logger, "SELECT company_id FROM company_tbl WHERE status = ?", new IntegerRowMapper(), CompanyStatus.ACTIVE.getDbValue())) {
-			if (DbUtilities.checkIfTableExists(getDataSource(), "customer_" + companyID + "_tbl")) {
-				int numberOfProfileFields = DbUtilities.getColumnCount(getDataSource(), "customer_" + companyID + "_tbl");
-				maximumNumberOfProfileFields = Math.max(maximumNumberOfProfileFields, numberOfProfileFields);
-			}
-		}
-		return maximumNumberOfProfileFields;
-	}
-
-	@Override
-	public int getNumberOfProfileFields(@VelocityCheck int companyID) throws Exception {
+	public int getNumberOfProfileFields(int companyID) throws Exception {
 		return DbUtilities.getColumnCount(getDataSource(), "customer_" + companyID + "_tbl");
 	}
 
@@ -1355,7 +1360,9 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 	}
 
 	private List<Integer> getSampleFormIDs() {
-		return select(logger, "SELECT form_id FROM userform_tbl WHERE company_id = 1 AND (LOWER(formname) LIKE '%sample%' OR LOWER(formname) LIKE '%example%' OR LOWER(formname) LIKE '%muster%' OR LOWER(formname) LIKE '%beispiel%')", new IntegerRowMapper());
+		return select(logger, "SELECT form_id FROM userform_tbl WHERE company_id = 1 AND (LOWER(formname) LIKE '%sample%' OR LOWER(formname) LIKE '%example%' OR LOWER(formname) LIKE '%muster%' OR LOWER(formname) LIKE '%beispiel%' OR LOWER(formname) = ?)",
+				IntegerRowMapper.INSTANCE,
+				configService.getValue(ConfigValue.FullviewFormName));
 	}
 	@Override
 	public void createCompanyPermission(int companyID, Permission permission, String comment) {
@@ -1379,7 +1386,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 			}
 			return returnSet;
 		} else {
-			List<String> result = select(logger, "SELECT DISTINCT permission_name FROM company_permission_tbl WHERE company_id = ? OR company_id = 0", new StringRowMapper(), companyID);
+			List<String> result = select(logger, "SELECT DISTINCT permission_name FROM company_permission_tbl WHERE company_id = ? OR company_id = 0", StringRowMapper.INSTANCE, companyID);
 			Set<Permission> returnSet = new HashSet<>();
 			for (String securityToken: result) {
 				Permission permission = Permission.getPermissionByToken(securityToken);
@@ -1426,7 +1433,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 		if (unAllowedPremiumFeatures != null && unAllowedPremiumFeatures.size() > 0) {
 			Object[] parameters = unAllowedPremiumFeatures.toArray(new String[unAllowedPremiumFeatures.size()]);
 			
-			List<String> foundUnAllowedPremiumFeatures_Admin = select(logger, "SELECT permission_name FROM company_permission_tbl WHERE permission_name IN (" + AgnUtils.repeatString("?", unAllowedPremiumFeatures.size(), ", ") + ")", new StringRowMapper(), parameters);
+			List<String> foundUnAllowedPremiumFeatures_Admin = select(logger, "SELECT permission_name FROM company_permission_tbl WHERE permission_name IN (" + AgnUtils.repeatString("?", unAllowedPremiumFeatures.size(), ", ") + ")", StringRowMapper.INSTANCE, parameters);
 			
 			int touchedLines1 = update(logger, "DELETE FROM company_permission_tbl WHERE permission_name IN (" + AgnUtils.repeatString("?", unAllowedPremiumFeatures.size(), ", ") + ")", parameters);
 			if (touchedLines1 > 0) {
@@ -1443,8 +1450,8 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 	
 	@Override
 	public void changeFeatureRights(String featureName, int companyID, boolean activate, String comment) {
-		List<Integer> subCompanyIDs = select(logger, "SELECT company_id FROM company_tbl WHERE parent_company_id = ? AND status = ?", new IntegerRowMapper(), companyID, CompanyStatus.ACTIVE.dbValue);
-		List<String> rightsToSet = select(logger, "SELECT permission_name FROM permission_tbl WHERE feature_package = ?", new StringRowMapper(), featureName);
+		List<Integer> subCompanyIDs = select(logger, "SELECT company_id FROM company_tbl WHERE parent_company_id = ? AND status = ?", IntegerRowMapper.INSTANCE, companyID, CompanyStatus.ACTIVE.dbValue);
+		List<String> rightsToSet = select(logger, "SELECT permission_name FROM permission_tbl WHERE feature_package = ?", StringRowMapper.INSTANCE, featureName);
 
 		for (String rightToCheck : rightsToSet) {
 			if (Permission.getPermissionByToken(rightToCheck) != null) {
@@ -1464,12 +1471,12 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 	}
 
 	@Override
-	public int getPriorityCount(@VelocityCheck int companyId) {
+	public int getPriorityCount(int companyId) {
 		throw new UnsupportedOperationException("Not implemented");
 	}
 
 	@Override
-	public void setPriorityCount(@VelocityCheck int companyId, int value) {
+	public void setPriorityCount(int companyId, int value) {
 		throw new UnsupportedOperationException("Not implemented");
 	}
 
@@ -1479,16 +1486,16 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 	}
 
 	@Override
-	public String getShortName(@VelocityCheck int companyId) {
+	public String getShortName(int companyId) {
 		String query = "SELECT shortname FROM company_tbl WHERE company_id = ?";
 		return selectWithDefaultValue(logger, query, String.class, null, companyId);
 	}
 
 	@Override
 	public void deactivateExtendedCompanies() {
-		update(logger, "UPDATE company_tbl SET status = '" + CompanyStatus.LOCKED.getDbValue() + "', timestamp = CURRENT_TIMESTAMP WHERE company_id IS NULL OR company_id < 1 OR company_id > 1");
+		update(logger, "UPDATE company_tbl SET status = '" + CompanyStatus.LOCKED.getDbValue() + "', timestamp = CURRENT_TIMESTAMP WHERE company_id IS NULL OR company_id <> 1");
 	}
-	
+
 	@Override
 	public int selectForTestCompany() {
 		return selectIntWithDefaultValue(logger, "SELECT company_id FROM company_tbl WHERE shortname like 'OpenEMM Test%' AND status = '" + CompanyStatus.LOCKED.getDbValue() + "' LIMIT 1", 0);
@@ -1511,7 +1518,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 	}
 	
 	@Override
-	public boolean createFrequencyFields(@VelocityCheck int companyID) {
+	public boolean createFrequencyFields(int companyID) {
 		try {
 			if (isOracleDB()) {
 				executeWithRetry(logger, 0, 3, 120, "ALTER TABLE customer_" + companyID + "_tbl ADD freq_count_day NUMBER");
@@ -1536,13 +1543,13 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 	}
 	
 	@Override
-	public ComCompany getCompanyByName(String companyName) {
+	public Company getCompanyByName(String companyName) {
 		if (StringUtils.isBlank(companyName)) {
 			return null;
 		} else {
 			try {
 				String sql = "SELECT company_id, creator_company_id, shortname, description, rdir_domain, mailloop_domain, status, mailtracking, stat_admin, secret_key, uid_version, auto_mailing_report_active, sector, business_field, max_recipients, salutation_extended, enabled_uid_version, export_notify, parent_company_id, contact_tech FROM company_tbl WHERE shortname = ?";
-				List<ComCompany> list = select(logger, sql, new ComCompany_RowMapper(), companyName);
+				List<Company> list = select(logger, sql, new ComCompany_RowMapper(), companyName);
 				if (list.size() > 0) {
 					return list.get(0);
 				} else {

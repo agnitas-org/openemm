@@ -46,24 +46,28 @@
                 type: "POST",
                 url: url,
                 success: function (data) {
-                    var titles = [];
-                    var values = [];
-                    var sumValue = 0;
-                    for(key in data) {
-                        var value = GLobalNotificationBrowserStatService.roundTo(data[key] * 100, 1);
-                        titles.push(key);
-                        values.push(value);
-                        sumValue += value;
-                    }
-
-                    if (!isNaN(sumValue) && sumValue > 0) {
-                        for (var i = 0; i < values.length; i++) {
-                            titles[i] += ' ' + GLobalNotificationBrowserStatService.roundTo(100 * values[i]/sumValue, 1) + '%';
+                    if (data && (data.warning && data.warning.length > 0)) {
+                        AGN.Lib.JsonMessages(data, true);
+                    } else {
+                        var titles = [];
+                        var values = [];
+                        var sumValue = 0;
+                        for(key in data) {
+                            var value = GLobalNotificationBrowserStatService.roundTo(data[key] * 100, 1);
+                            titles.push(key);
+                            values.push(value);
+                            sumValue += value;
                         }
-                    }
 
-                    c3.generate(GLobalNotificationBrowserStatService.data.browserChartData.build(titles, values));
-                    AGN.Lib.CoreInitializer.run('equalizer');
+                        if (!isNaN(sumValue) && sumValue > 0) {
+                            for (var i = 0; i < values.length; i++) {
+                                titles[i] += ' ' + GLobalNotificationBrowserStatService.roundTo(100 * values[i]/sumValue, 1) + '%';
+                            }
+                        }
+
+                        c3.generate(GLobalNotificationBrowserStatService.data.browserChartData.build(titles, values));
+                        AGN.Lib.CoreInitializer.run('equalizer');
+                    }
                 }
             });
         }

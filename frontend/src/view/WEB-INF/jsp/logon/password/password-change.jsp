@@ -24,15 +24,15 @@
     <div id="suggestion-view" class="${isExpired or isAnotherAttempt ? 'hidden' : ''}">
         <div class="align-center">
             <c:if test="${isExpiring}">
-                <s:message code="password.change.notification.expiration" arguments="${expirationDate}"/><br/>
+                <mvc:message code="password.change.notification.expiration" arguments="${expirationDate}"/><br/>
             </c:if>
-            <s:message code="password.change.notification.info"/>
+            <mvc:message code="password.change.notification.info"/>
         </div>
 
         <div class="form-group vspace-top-20">
             <div class="col-sm-6 col-sm-push-3">
                 <button type="button" class="btn btn-large btn-block btn-primary" data-action="showPasswordChangeForm">
-                    <span class="text"><s:message code="button.Change"/></span>
+                    <span class="text"><mvc:message code="button.Change"/></span>
                 </button>
             </div>
         </div>
@@ -43,7 +43,7 @@
                     <input type="hidden" name="skip" value="true"/>
 
                     <button type="submit" class="btn btn-large btn-block">
-                        <span class="text"><s:message code="Proceed"/></span>
+                        <span class="text"><mvc:message code="Proceed"/></span>
                     </button>
                 </mvc:form>
             </div>
@@ -56,21 +56,21 @@
             <c:if test="${isExpired and not empty expirationDate}">
                 <c:choose>
                     <c:when test="${isSupervisor}">
-                        <s:message code="password.supervisor.change.notification.expired" arguments="${expirationDate}"/><br/>
+                        <mvc:message code="password.supervisor.change.notification.expired" arguments="${expirationDate}"/><br/>
                     </c:when>
                     <c:otherwise>
-                        <s:message code="password.change.notification.expired" arguments="${expirationDate}"/><br/>
+                        <mvc:message code="password.change.notification.expired" arguments="${expirationDate}"/><br/>
                     </c:otherwise>
                 </c:choose>
             </c:if>
-            <s:message code="password.change.text"/>
+            <mvc:message code="password.change.text"/>
         </div>
 
         <mvc:form servletRelativeAction="/logon/change-password.action" data-form="static" method="POST" modelAttribute="form" data-validator="logon-new-password/form">
             <div class="form-group vspace-top-20">
                 <div class="col-sm-4">
                     <label for="password" class="control-label"><i class="icon icon-key"></i>
-                        <s:message code="password.new"/>
+                        <mvc:message code="password.new"/>
                         <button class="icon icon-help" data-help="help_${helplanguage}/settings/AdminPasswordRules.xml" tabindex="-1" type="button"></button>
                     </label>
                 </div>
@@ -81,7 +81,7 @@
 
             <div class="form-group">
                 <div class="col-sm-4">
-                    <label for="password-repeat" class="control-label"><i class="icon icon-key"></i> <s:message code="password.repeat"/></label>
+                    <label for="password-repeat" class="control-label"><i class="icon icon-key"></i> <mvc:message code="password.repeat"/></label>
                 </div>
                 <div class="col-sm-8">
                     <input type="password" id="password-repeat" class="form-control" />
@@ -91,7 +91,7 @@
             <div class="form-group">
                 <div class="col-sm-offset-4 col-sm-8">
                     <button type="button" class="btn btn-large btn-primary btn-block" data-form-submit="">
-                        <span class="text"><s:message code="password.change.now"/> <i class="icon icon-angle-right"></i></span>
+                        <span class="text"><mvc:message code="password.change.now"/> <i class="icon icon-angle-right"></i></span>
                     </button>
                 </div>
             </div>
@@ -102,7 +102,7 @@
 <div class="system-tile-footer">
     <div class="pull-left">
         <a href="<c:url value="/logon/reset-password.action"/>">
-            <s:message code="logon.password_reset"/>
+            <mvc:message code="logon.password_reset"/>
         </a>
     </div>
 
@@ -111,7 +111,7 @@
         <s:message var="logonHintMessage" code="logon.security" arguments="${supportMailAddress}" htmlEscape="true"/>
 
         <a href="#" data-msg-system="system" data-msg="${logonHint}" data-msg-content="${logonHintMessage}">
-            <s:message code="logon.hint"/>
+            <mvc:message code="logon.hint"/>
         </a>
     </div>
 </div>

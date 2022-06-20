@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,8 +10,16 @@
 
 package com.agnitas.emm.core.birtstatistics.mailing.web;
 
-import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.*;
+import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.BOUNCES;
+import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.CLICK_STATISTICS_PER_LINK;
+import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.PROGRESS_OF_CLICKS;
+import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.PROGRESS_OF_DELIVERY;
+import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.PROGRESS_OF_OPENINGS;
+import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.SUMMARY;
+import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.SUMMARY_AUTO_OPT;
+import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.TOP_DOMAINS;
 import static java.time.temporal.TemporalAdjusters.firstDayOfMonth;
+import static java.time.temporal.TemporalAdjusters.firstDayOfNextMonth;
 import static java.time.temporal.TemporalAdjusters.lastDayOfMonth;
 
 import java.text.SimpleDateFormat;
@@ -19,6 +27,7 @@ import java.time.LocalDateTime;
 import java.time.Year;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -27,6 +36,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.agnitas.beans.MailingSendStatus;
+import org.agnitas.dao.MailingStatus;
 import org.agnitas.emm.company.service.CompanyService;
 import org.agnitas.service.UserActivityLogService;
 import org.agnitas.service.WebStorage;
@@ -38,17 +48,19 @@ import org.agnitas.web.MailingAdditionalColumn;
 import org.agnitas.web.forms.FormDateTime;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.context.request.RequestContextHolder;
 
+import com.agnitas.beans.AdminPreferences;
 import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.ComAdminPreferences;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MailingsListProperties;
+import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.birtreport.service.ComBirtReportService;
 import com.agnitas.emm.core.birtstatistics.DateMode;
@@ -59,7 +71,6 @@ import com.agnitas.emm.core.birtstatistics.mailing.forms.MailingStatisticForm;
 import com.agnitas.emm.core.birtstatistics.service.BirtStatisticsService;
 import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
-import com.agnitas.emm.core.report.enums.fields.MailingTypes;
 import com.agnitas.emm.core.target.service.ComTargetService;
 import com.agnitas.mailing.autooptimization.service.ComOptimizationService;
 import com.agnitas.service.ComWebStorage;
@@ -67,7 +78,9 @@ import com.agnitas.service.GridServiceWrapper;
 import com.agnitas.web.mvc.Popups;
 
 public class MailingBirtStatController {
-    private static final transient Logger logger = Logger.getLogger(MailingBirtStatController.class);
+	
+	/** The logger. */
+    private static final transient Logger logger = LogManager.getLogger(MailingBirtStatController.class);
 
     private static final List<StatisticType> ALLOWED_STATISTIC = Arrays.asList(
             SUMMARY,
@@ -157,7 +170,7 @@ public class MailingBirtStatController {
         form.setDescription(mailing.getDescription());
         form.setTemplateId(gridServiceWrapper.getGridTemplateIdByMailingId(mailing.getId()));
 
-        ComAdminPreferences adminPreferences = adminService.getAdminPreferences(admin.getAdminID());
+        AdminPreferences adminPreferences = adminService.getAdminPreferences(admin.getAdminID());
         form.setStatisticType(getReportType(form.getStatisticType(), adminPreferences));
         form.setDateMode(getDateMode(form.getStatisticType(), mailingId, form.getDateMode()));
 
@@ -218,7 +231,7 @@ public class MailingBirtStatController {
         props.setSearchName(statForm.isSearchNameChecked());
         props.setSearchDescription(statForm.isSearchDescriptionChecked());
         props.setTypes("0,1,2,3,4"); // all mailing types
-        props.setStatuses(Collections.singletonList("sent")); // just set mailings
+        props.setStatuses(Collections.singletonList(MailingStatus.SENT.getDbKey())); // just set mailings
         props.setSort(StringUtils.defaultString(statForm.getSort(), "senddate")); // sort by send date by default
         props.setDirection(StringUtils.defaultString(statForm.getDir(), "desc")); // desc order by default
         props.setPage(statForm.getPage());
@@ -258,13 +271,13 @@ public class MailingBirtStatController {
         return birtStatisticsService.getMailingStatisticUrl(admin, sessionId, mailingStatisticDto);
     }
 
-    private StatisticType getReportType(StatisticType statisticType, ComAdminPreferences adminPreferences) {
+    private StatisticType getReportType(StatisticType statisticType, AdminPreferences adminPreferences) {
         if (statisticType != null && isAllowedStatistic(statisticType)) {
             return statisticType;
         
         }
 
-        if (adminPreferences.getStatisticLoadType() == ComAdminPreferences.STATISTIC_LOADTYPE_ON_CLICK) {
+        if (adminPreferences.getStatisticLoadType() == AdminPreferences.STATISTIC_LOADTYPE_ON_CLICK) {
             return null;
         }
 
@@ -275,13 +288,13 @@ public class MailingBirtStatController {
         return ALLOWED_STATISTIC.contains(statisticType);
     }
 
-    private DateMode getDateMode(StatisticType statisticType, int mailingId, DateMode oldDateMode) {
+    private DateMode getDateMode(StatisticType statisticType, int mailingId, DateMode oldDateMode) throws Exception {
         DateMode dateMode = statisticType != null ? statisticType.getDateMode() : DateMode.NONE;
         if (dateMode != DateMode.NONE && SUMMARY == statisticType) {
-            int mailingType = mailingBaseService.getMailingType(mailingId);
-            if ((mailingType != MailingTypes.ACTION_BASED.getCode()) &&
-                    (mailingType != MailingTypes.DATE_BASED.getCode()) &&
-                    (mailingType != MailingTypes.INTERVAL.getCode())) {
+        	MailingType mailingType = mailingBaseService.getMailingType(mailingId);
+            if ((mailingType != MailingType.ACTION_BASED) &&
+                    (mailingType != MailingType.DATE_BASED) &&
+                    (mailingType != MailingType.INTERVAL)) {
                 return DateMode.NONE;
             }
         }
@@ -384,7 +397,7 @@ public class MailingBirtStatController {
                     return new Tuple<>(LocalDateTime.now().withHour(0), LocalDateTime.now().withHour(23));
                 } else {
                     //ignore endDate
-                    return new Tuple<>(startDate.withHour(0), startDate.withHour(23));
+                    return new Tuple<>(startDate.withHour(0), startDate.plusDays(1));
                 }
             case LAST_MONTH:
                 //ignore start and end dates an always set values of first and last day of month
@@ -393,9 +406,9 @@ public class MailingBirtStatController {
                 //ignore start and end dates, take into account only year and month selected on GUI dropdown
                 LocalDateTime selectedMonth = LocalDateTime.now()
                         .withYear(form.getYear())
-                        .withMonth(form.getMonthValue().getValue());
+                        .withMonth(form.getMonthValue().getValue()).truncatedTo(ChronoUnit.DAYS);
 
-                return new Tuple<>(selectedMonth.with(firstDayOfMonth()), selectedMonth.with(lastDayOfMonth()));
+                return new Tuple<>(selectedMonth.with(firstDayOfMonth()), selectedMonth.with(firstDayOfNextMonth()));
             case SELECT_PERIOD:
                 if(startDate == null) {
                     startDate = LocalDateTime.now().with(firstDayOfMonth());

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -28,7 +28,8 @@ import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.DbUtilities;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.jdbc.core.RowMapper;
 
@@ -53,7 +54,7 @@ public class ComWorkflowReactionDaoImpl extends BaseDaoImpl implements ComWorkfl
     /**
      * The logger.
      */
-    private static final transient Logger logger = Logger.getLogger(ComWorkflowReactionDaoImpl.class);
+    private static final transient Logger logger = LogManager.getLogger(ComWorkflowReactionDaoImpl.class);
 
     /**
      * Service handling profile field history.
@@ -117,7 +118,7 @@ public class ComWorkflowReactionDaoImpl extends BaseDaoImpl implements ComWorkfl
     @Deprecated
     private List<Integer> getMailingsToSend(int reactionId, int companyId) {
         String sqlGetMailingsToSend = "SELECT send_mailing_id FROM workflow_reaction_mailing_tbl WHERE company_id = ? AND reaction_id = ?";
-        return select(logger, sqlGetMailingsToSend, new IntegerRowMapper(), companyId, reactionId);
+        return select(logger, sqlGetMailingsToSend, IntegerRowMapper.INSTANCE, companyId, reactionId);
     }
 
     private void restoreReactionId(ComWorkflowReaction reaction) {
@@ -401,7 +402,7 @@ public class ComWorkflowReactionDaoImpl extends BaseDaoImpl implements ComWorkfl
             sqlParameters.add(UserStatus.Active.getStatusCode());
         }
 
-        return select(logger, sqlGetRecipients, new IntegerRowMapper(), sqlParameters.toArray());
+        return select(logger, sqlGetRecipients, IntegerRowMapper.INSTANCE, sqlParameters.toArray());
     }
 
     @Override
@@ -451,7 +452,7 @@ public class ComWorkflowReactionDaoImpl extends BaseDaoImpl implements ComWorkfl
             sqlParameters.add(UserStatus.Active.getStatusCode());
         }
 
-        return select(logger, sqlGetRecipients, new IntegerRowMapper(), sqlParameters.toArray());
+        return select(logger, sqlGetRecipients, IntegerRowMapper.INSTANCE, sqlParameters.toArray());
     }
 
     @Override
@@ -516,7 +517,7 @@ public class ComWorkflowReactionDaoImpl extends BaseDaoImpl implements ComWorkfl
                 sqlParameters.add(UserStatus.Active.getStatusCode());
             }
 
-            return select(logger, sqlBuilder.toString(), new IntegerRowMapper(), sqlParameters.toArray());
+            return select(logger, sqlBuilder.toString(), IntegerRowMapper.INSTANCE, sqlParameters.toArray());
         } else {
             return new ArrayList<>();
         }
@@ -591,9 +592,9 @@ public class ComWorkflowReactionDaoImpl extends BaseDaoImpl implements ComWorkfl
         if (joinType.equals("FULL") && !isOracleDB()) {
             // Duplicate parameters for UNION that combines two similar SELECT clauses having same placeholders.
             sqlParameters.addAll(Arrays.asList(sqlParameters.toArray()));
-            return select(logger, convertFullJoinToUnion(sqlGetRecipientsBuilder), new IntegerRowMapper(), sqlParameters.toArray());
+            return select(logger, convertFullJoinToUnion(sqlGetRecipientsBuilder), IntegerRowMapper.INSTANCE, sqlParameters.toArray());
         } else {
-            return select(logger, sqlGetRecipientsBuilder.toString(), new IntegerRowMapper(), sqlParameters.toArray());
+            return select(logger, sqlGetRecipientsBuilder.toString(), IntegerRowMapper.INSTANCE, sqlParameters.toArray());
         }
     }
 
@@ -707,7 +708,7 @@ public class ComWorkflowReactionDaoImpl extends BaseDaoImpl implements ComWorkfl
     @Override
     public List<Integer> getStepRecipients(WorkflowReactionStepInstance step) {
         String sqlGetRecipients = "SELECT customer_id FROM workflow_reaction_out_tbl WHERE company_id = ? AND reaction_id = ? AND case_id = ? AND step_id = ?";
-        return select(logger, sqlGetRecipients, new IntegerRowMapper(), step.getCompanyId(), step.getReactionId(), step.getCaseId(), step.getStepId());
+        return select(logger, sqlGetRecipients, IntegerRowMapper.INSTANCE, step.getCompanyId(), step.getReactionId(), step.getCaseId(), step.getStepId());
     }
 
     protected void setTriggerStepRecipients(int caseId, int reactionId, int companyId, List<Integer> recipients, Date reactionDate) {

@@ -79,7 +79,7 @@
 		<property name="applicationtype" value="WS" />
 	</target>
 	
-	<target name="createPropertiesFiles" depends="setDeploytarget" description="Create emm-ws/emm/log4j.properties">
+	<target name="createPropertiesFiles" depends="setDeploytarget" description="Create properties">
 		<mkdir dir="${deploydir}${appname}/WEB-INF/classes" />
 
 		<!-- Copy and sign license file -->
@@ -95,8 +95,8 @@
 		</if>
 
 		<delete file="${deploydir}${appname}/WEB-INF/classes/emm.properties" />
-		<delete file="${deploydir}${appname}/WEB-INF/classes/log4j.properties" />
-		<echo message="emm-ws/emm/log4j.properties deleted" />
+		<delete file="${deploydir}${appname}/WEB-INF/classes/log4j2.xml" />
+		<echo message="Properties deleted" />
 
 		<delete file="${deploydir}${appname}/WEB-INF/classes/emm.properties" />
 		<copy file="${basecss}/build/templates/emm.properties" tofile="${deploydir}${appname}/WEB-INF/classes/emm.properties" />
@@ -127,12 +127,12 @@
 		<propertyregex property="buildUser" input="${buildUserRaw}" regexp="([^@]*).*" select="\1" casesensitive="false" />
 		<echo file="${deploydir}${appname}/WEB-INF/classes/emm.properties" append="true" message="BuildUser=${buildUser}${line.separator}" />
 		
-		<copy file="${basecss}/build/templates/log4j-ws.properties" tofile="${deploydir}${appname}/WEB-INF/classes/log4j.properties" overwrite="true" />
+		<copy file="${basecss}/build/templates/log4j2-ws.xml" tofile="${deploydir}${appname}/WEB-INF/classes/log4j2.xml" overwrite="true" />
 		<replace dir="${deploydir}${appname}/WEB-INF/classes" value="${deploytarget}">
-			<include name="log4j.properties" />
+			<include name="log4j2.xml" />
 			<replacetoken>${deploytarget}</replacetoken>
 		</replace>
-		<echo message="emm-ws/emm/log4j.properties build with data from 'build/properties/${deploytarget}.xml'" />
+		<echo message="Properties build with data from 'build/properties/${deploytarget}.xml'" />
 	</target>
 
 	<target name="deploy" depends="compile">

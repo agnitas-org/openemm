@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -15,7 +15,6 @@ import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collection;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
@@ -30,9 +29,11 @@ import org.agnitas.util.DbUtilities;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.lang3.time.DateUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.jdbc.core.RowCallbackHandler;
 
+import com.agnitas.dao.impl.ComCompanyDaoImpl;
 import com.agnitas.messages.I18nString;
 import com.agnitas.reporting.birt.external.beans.LightTarget;
 import com.agnitas.reporting.birt.external.beans.RecipientDetailRow;
@@ -42,7 +43,7 @@ import com.agnitas.reporting.birt.external.beans.RecipientStatusRow;
 
 public class RecipientStatDataSet extends RecipientsBasedDataSet {
 	/** The logger. */
-	private static final transient Logger logger = Logger.getLogger(RecipientStatDataSet.class);
+	private static final transient Logger logger = LogManager.getLogger(RecipientStatDataSet.class);
 
 	public List<RecipientStatusRow> getRecipientStatus(@VelocityCheck int companyID, String targetIdStr, Integer mailinglistID,
 			int mediaType, String language, final String hiddenFilterTargetIdStr) {
@@ -52,15 +53,14 @@ public class RecipientStatDataSet extends RecipientsBasedDataSet {
 
 		final int targetId = NumberUtils.toInt(targetIdStr, -1);
 		final LightTarget target = targetId < 0 ? null : getDefaultTarget(getTarget(targetId, companyID));
-		final int filterTargetId = NumberUtils.toInt(hiddenFilterTargetIdStr, -1);
-		final String filterTargetSql = filterTargetId < 0 || filterTargetId == targetId ? null : getTarget(filterTargetId, companyID).getTargetSQL();
+		final String filterTargetSql = getHiddenTargetSql(companyID, target, hiddenFilterTargetIdStr);
 
 		StringBuilder query = new StringBuilder();
 		List<Object> parameters = new ArrayList<>();
 		query.append("SELECT bind.user_status AS userstatus, COUNT(DISTINCT cust.customer_id) AS amount")
 				.append(" FROM ").append(getCustomerTableName(companyID)).append(" cust")
 				.append(" LEFT JOIN ").append(getCustomerBindingTableName(companyID)).append(" bind ON (cust.customer_id = bind.customer_id)")
-				.append(" WHERE (bind.user_status IN (0, 1, 2, 3, 4, 5, 6, 7) OR bind.user_status IS NULL) AND cust.bounceload = 0");
+				.append(" WHERE (bind.user_status IN (0, 1, 2, 3, 4, 5, 6, 7) OR bind.user_status IS NULL) AND cust." + ComCompanyDaoImpl.STANDARD_FIELD_BOUNCELOAD + " = 0");
 
 		// bounceload check is NEEDED here, because we also select customers without binding table entries
 		if (target != null && StringUtils.isNotBlank(target.getTargetSQL())) {
@@ -133,12 +133,9 @@ public class RecipientStatDataSet extends RecipientsBasedDataSet {
 		final StringBuilder query = new StringBuilder();
 		final List<Object> parameters = new ArrayList<>();
 		final int targetId = NumberUtils.toInt(targetIdStr, -1);
-		final String targetSql = targetId < 0 ? null : getDefaultTarget(getTarget(targetId, companyID)).getTargetSQL();
-
-		final int filterTargetId = NumberUtils.toInt(hiddenFilterTargetIdStr, -1);
-		final String filterTargetSql = filterTargetId < 0 || filterTargetId == targetId
-				? null
-				: getTarget(filterTargetId, companyID).getTargetSQL();
+		final LightTarget target = targetId < 0 ? null : getDefaultTarget(getTarget(targetId, companyID));
+		final String targetSql = target == null ? null : target.getTargetSQL();
+		final String filterTargetSql = getHiddenTargetSql(companyID, target, hiddenFilterTargetIdStr);
 
 		query.append("SELECT cust.mailtype AS mailtype, COUNT(DISTINCT cust.customer_id) AS amount ")
 				.append(" FROM ")
@@ -203,7 +200,7 @@ public class RecipientStatDataSet extends RecipientsBasedDataSet {
     	List<Object> parameters = new ArrayList<>();
     	String dateSelectPart;
 
-        final Collection<String> targetSqls = getTargetSql(concatTargets(targetID, hiddenFilterTargetId), companyID);
+        String targetSqls = joinWhereClause(getTargetSqlString(targetID, companyID), getTargetSqlString(hiddenFilterTargetId, companyID));
 
 		Date startDate = new SimpleDateFormat("yyyy-MM-dd").parse(startDateString);
 		Date endDate;
@@ -245,7 +242,7 @@ public class RecipientStatDataSet extends RecipientsBasedDataSet {
 		// bounceload check is not needed here, because we select on binding table where bounceload-customers has no entries
 
 		if (!targetSqls.isEmpty()) {
-			sql.append(" AND (").append(StringUtils.join(targetSqls, " AND ")).append(")");
+			sql.append(" AND (").append(targetSqls).append(")");
 		}
 
 		if (mailinglistID != null) {
@@ -314,22 +311,6 @@ public class RecipientStatDataSet extends RecipientsBasedDataSet {
 		}
 
 		return returnList;
-    }
-
-    private String concatTargets(final String targetId, final String hiddenTargetId) {
-        final StringBuilder sbTargets = new StringBuilder();
-        if(StringUtils.isNotEmpty(targetId)) {
-            sbTargets.append(targetId);
-        }
-
-        if(StringUtils.isNotEmpty(hiddenTargetId)) {
-            if(sbTargets.length() > 0) {
-                sbTargets.append(",");
-            }
-            sbTargets.append(hiddenTargetId);
-        }
-
-        return sbTargets.toString();
     }
 
     private static class RecipientStatusesMapCallback implements RowCallbackHandler {

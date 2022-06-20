@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,28 +10,29 @@
 
 package com.agnitas.emm.core.delivery.service.impl;
 
-import static com.agnitas.emm.core.Permission.RECIPIENT_HISTORY_MAILING_DELIVERY;
-
-import java.util.List;
-
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.emm.core.delivery.beans.DeliveryInfo;
+import com.agnitas.emm.core.delivery.beans.SuccessfulDeliveryInfo;
+import com.agnitas.emm.core.delivery.dao.DeliveryDao;
+import com.agnitas.emm.core.delivery.service.DeliveryService;
+import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
+import net.sf.json.util.JSONUtils;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.DateUtilities;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.emm.core.delivery.beans.DeliveryInfo;
-import com.agnitas.emm.core.delivery.dao.DeliveryDao;
-import com.agnitas.emm.core.delivery.service.DeliveryService;
+import java.util.List;
 
-import net.sf.json.JSONArray;
-import net.sf.json.JSONObject;
-import net.sf.json.util.JSONUtils;
+import static com.agnitas.emm.core.Permission.RECIPIENT_HISTORY_MAILING_DELIVERY;
 
 public class DeliveryServiceImpl implements DeliveryService {
 
     private DeliveryDao deliveryDao;
+    private ComMailingBaseService mailingBaseService;
 
     @Override
     public JSONArray getDeliveriesInfo(@VelocityCheck final int companyId, final int mailingId, final int customerId) {
@@ -41,6 +42,17 @@ public class DeliveryServiceImpl implements DeliveryService {
         } else {
 	        return mapToJson(deliveriesInfo);
         }
+    }
+
+    @Override
+    public JSONArray getSuccessfulDeliveriesInfo(int companyId, int mailingId, int recipientId) {
+        List<SuccessfulDeliveryInfo> deliveries = deliveryDao.getSuccessfulDeliveriesInfo(companyId, mailingId, recipientId);
+
+        if (CollectionUtils.isEmpty(deliveries)) {
+            return new JSONArray();
+        }
+
+        return successfulDeliveriesToJson(deliveries, companyId);
     }
 
     @Override
@@ -58,6 +70,25 @@ public class DeliveryServiceImpl implements DeliveryService {
             jsonArray.element(mapToJson(deliveryInfo));
         }
         return jsonArray;
+    }
+
+    private JSONArray successfulDeliveriesToJson(List<SuccessfulDeliveryInfo> deliveriesInfo, int companyId) {
+        JSONArray jsonArray = new JSONArray();
+
+        for (SuccessfulDeliveryInfo deliveryInfo: deliveriesInfo) {
+            jsonArray.element(successfulDeliveryToJson(deliveryInfo, companyId));
+        }
+
+        return jsonArray;
+    }
+
+    private JSONObject successfulDeliveryToJson(SuccessfulDeliveryInfo deliveryInfo, int companyId) {
+        JSONObject entry = new JSONObject();
+
+        entry.element("timestamp", DateUtilities.toLong(deliveryInfo.getTimestamp()));
+        entry.element("mailing", mailingBaseService.getMailingName(deliveryInfo.getMailingId(), companyId));
+
+        return entry;
     }
 
     private JSONObject mapToJson(final DeliveryInfo deliveryInfo) {
@@ -81,5 +112,10 @@ public class DeliveryServiceImpl implements DeliveryService {
     @Required
     public void setDeliveryDao(DeliveryDao deliveryDao) {
         this.deliveryDao = deliveryDao;
+    }
+
+    @Required
+    public void setMailingBaseService(ComMailingBaseService mailingBaseService) {
+        this.mailingBaseService = mailingBaseService;
     }
 }

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.agnitas.emm.grid.grid.beans.ComGridTemplate;
 import org.agnitas.beans.BaseTrackableLink;
 import org.agnitas.beans.TrackableLink;
 import org.agnitas.dao.MailingDao;
@@ -29,7 +30,8 @@ import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComAdmin;
@@ -56,8 +58,10 @@ import jakarta.annotation.Resource;
  */
 public class ComTrackableLinkServiceImpl implements ComTrackableLinkService {
 
+    public static final String LINK_SWYN_PREFIX = "SWYN: ";
+
 	/** The logger. */
-    private static final transient Logger logger = Logger.getLogger(ComTrackableLinkServiceImpl.class);
+    private static final transient Logger logger = LogManager.getLogger(ComTrackableLinkServiceImpl.class);
     
     /** DAO for accessing trackable links. */
     private ComTrackableLinkDao trackableLinkDao;
@@ -70,10 +74,7 @@ public class ComTrackableLinkServiceImpl implements ComTrackableLinkService {
 
     @Override
     public void addExtensions(Mailing aMailing, Set<Integer> bulkIds, List<LinkProperty> extensions, List<UserAction> userActions) {
-		Collection<ComTrackableLink> bulkLinks = aMailing.getTrackableLinks().values()
-                .stream().filter(l -> bulkIds.contains(l.getId()) && (l.getShortname() == null
-                                || !l.getShortname().startsWith(MailingImpl.LINK_SWYN_PREFIX)))
-                .collect(Collectors.toList());
+        Collection<ComTrackableLink> bulkLinks = getBulkLinks(aMailing.getTrackableLinks().values(), bulkIds);
         List<LinkProperty> commonExtensions = getCommonExtensions(aMailing.getId(), aMailing.getCompanyID(), bulkIds);
 
         for (ComTrackableLink link : bulkLinks) {
@@ -81,8 +82,15 @@ public class ComTrackableLinkServiceImpl implements ComTrackableLinkService {
             extensionsToSet.removeAll(commonExtensions);
             extensionsToSet.addAll(extensions);
             link.setProperties(new ArrayList<>(extensionsToSet));
-            userActionLogLinksCreated(userActions, aMailing, extensions, commonExtensions, link);
+            userActionLogMailingLinksCreated(userActions, aMailing, extensions, commonExtensions, link);
         }
+    }
+
+    private Collection<ComTrackableLink> getBulkLinks(Collection<ComTrackableLink> allLinks, Set<Integer> bulkIds) {
+        return allLinks
+                .stream().filter(l -> bulkIds.contains(l.getId()) && (l.getShortname() == null
+                        || !l.getShortname().startsWith(MailingImpl.LINK_SWYN_PREFIX)))
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -158,7 +166,7 @@ public class ComTrackableLinkServiceImpl implements ComTrackableLinkService {
 
         return trackableLinkDao.getTrackableLinks(companyId, mailingId);
     }
-    
+
     @Override
     public List<ComTrackableLink> getTrackableLinks(int companyId, List<Integer> urlIds) {
         if (companyId < 0) {
@@ -201,23 +209,23 @@ public class ComTrackableLinkServiceImpl implements ComTrackableLinkService {
 
     @Override
 	public void updateLinkTarget(ComTrackableLink link, String newUrl) throws TrackableLinkException {
-		if(logger.isInfoEnabled()) {
-			logger.info("Set url of link " + link.getId() + " to " + newUrl);
-		}
+        if(logger.isInfoEnabled()) {
+            logger.info("Set url of link " + link.getId() + " to " + newUrl);
+        }
 
-		checkUrlEditingAllowed(link);
+        checkUrlEditingAllowed(link);
 
-		// Set original URL is full URL has been changed and original URL currently not set.
-		if(!newUrl.equals(link.getFullUrl()) && StringUtils.isEmpty(link.getOriginalUrl())) {
-			link.setOriginalUrl(link.getFullUrl());
-		}
-		
-		// Update URL and save changes
-		link.setFullUrl(newUrl);
-		
-		trackableLinkDao.saveTrackableLink(link);
-	}
-    
+        // Set original URL is full URL has been changed and original URL currently not set.
+        if(!newUrl.equals(link.getFullUrl()) && StringUtils.isEmpty(link.getOriginalUrl())) {
+            link.setOriginalUrl(link.getFullUrl());
+        }
+
+        // Update URL and save changes
+        link.setFullUrl(newUrl);
+
+        trackableLinkDao.saveTrackableLink(link);
+    }
+
     /**
      * Checks, if URL editing is allowed for given link.
      * 
@@ -253,13 +261,21 @@ public class ComTrackableLinkServiceImpl implements ComTrackableLinkService {
 		}
     }
 
-    private void userActionLogLinksCreated(List<UserAction> userActions, Mailing aMailing, List<LinkProperty> passedLinkProperties, List<LinkProperty> commonLinkProperties, ComTrackableLink comLink) {
+    private void userActionLogMailingLinksCreated(List<UserAction> userActions, Mailing aMailing, List<LinkProperty> passedLinkProperties, List<LinkProperty> commonLinkProperties, ComTrackableLink comLink) {
+        userActionLogLinksCreated(aMailing.getId(), "edit mailing links", userActions, passedLinkProperties, commonLinkProperties, comLink);
+    }
+
+    private void userActionLogTemplateLinksCreated(List<UserAction> userActions, ComGridTemplate template, List<LinkProperty> passedLinkProperties, List<LinkProperty> commonLinkProperties, ComTrackableLink comLink) {
+        userActionLogLinksCreated(template.getId(), "edit template links", userActions, passedLinkProperties, commonLinkProperties, comLink);
+    }
+
+    private void userActionLogLinksCreated(int creatorId, String actionMessage, List<UserAction> userActions, List<LinkProperty> passedLinkProperties, List<LinkProperty> commonLinkProperties, ComTrackableLink comLink) {
         StringBuilder description = new StringBuilder();
 
         for (LinkProperty passedLinkProperty : passedLinkProperties) {
             if (!commonLinkProperties.contains(passedLinkProperty)) {
                 description.append("ID = ")
-                        .append(aMailing.getId())
+                        .append(creatorId)
                         .append(". ")
                         .append("Trackable link ")
                         .append(comLink.getFullUrl())
@@ -269,7 +285,7 @@ public class ComTrackableLinkServiceImpl implements ComTrackableLinkService {
                         .append(passedLinkProperty.getPropertyValue())
                         .append(" created.");
 
-                userActions.add(new UserAction("edit mailing links", description.toString()));
+                userActions.add(new UserAction(actionMessage, description.toString()));
                 description.setLength(0);
             }
         }
@@ -297,11 +313,31 @@ public class ComTrackableLinkServiceImpl implements ComTrackableLinkService {
 
     @Override
     public List<LinkProperty> getCommonExtensions(final int mailingId, final int companyId, final Set<Integer> bulkIds) {
+        Mailing mailing = mailingDao.getMailing(mailingId, companyId);
+        return getCommonExtensions(mailing.getTrackableLinks().values(), bulkIds);
+    }
+
+    @Override
+    public List<LinkProperty> getCommonLinkExtensions(Collection<ComTrackableLink> trackableLinks) {
+        List<LinkProperty> commonLinkProperties = null;
+        for (TrackableLink link : trackableLinks) {
+            if (link.getShortname() == null || !link.getShortname().startsWith(LINK_SWYN_PREFIX)) {
+                if (commonLinkProperties == null) {
+                    commonLinkProperties = new ArrayList<>(link.getProperties());
+                } else {
+                    commonLinkProperties.retainAll(link.getProperties());
+                }
+            }
+        }
+
+        return commonLinkProperties != null ? commonLinkProperties : new ArrayList<>();
+    }
+
+    private List<LinkProperty> getCommonExtensions(final Collection<ComTrackableLink> links, final Set<Integer> bulkIds) {
         if (CollectionUtils.isEmpty(bulkIds)) {
             return new ArrayList<>();
         }
-        Mailing mailing = mailingDao.getMailing(mailingId, companyId);
-        return mailing.getTrackableLinks().values().stream()
+        return links.stream()
                 .filter(comTrackableLink -> bulkIds.contains(comTrackableLink.getId()))
                 .map(BaseTrackableLink::getProperties)
                 .reduce((p1, p2) -> {

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -34,7 +35,8 @@ import javax.xml.transform.TransformerFactoryConfigurationError;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -48,7 +50,7 @@ import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
 public class XmlUtilities {
-	private static final transient Logger logger = Logger.getLogger(XmlUtilities.class);
+	private static final transient Logger logger = LogManager.getLogger(XmlUtilities.class);
 
 	/**
 	 * @see <a href="https://www.owasp.org/index.php/XML_External_Entity_(XXE)_Prevention_Cheat_Sheet#JAXP_DocumentBuilderFactory.2C_SAXParserFactory_and_DOM4J">OWASP</a>
@@ -625,16 +627,9 @@ public class XmlUtilities {
 		final DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 		
 		dbf.setExpandEntityReferences(false);
-		/*
-		 * Currently disabled. Apache Xerces does not support these proerties.
-		 * See https://issues.apache.org/jira/browse/XERCESJ-1654
-		 * 
-		 * Problem:
-		 * Sun Xerces did support these constants, but has been removed in JDK 11.
-		 * 
+
 		dbf.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
 		dbf.setAttribute(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
-		*/
 
 		return dbf;
 	}
@@ -646,17 +641,9 @@ public class XmlUtilities {
 	 */
 	public static final TransformerFactory newXxeProtectedTransformerFactory() {
 		final TransformerFactory tf = TransformerFactory.newInstance();
-		
-		/*
-		 * Currently disabled. Apache Xerces does not support these proerties.
-		 * See https://issues.apache.org/jira/browse/XERCESJ-1654
-		 * 
-		 * Problem:
-		 * Sun Xerces did support these constants, but has been removed in JDK 11.
-		 * 
+
 		tf.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
 		tf.setAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
-		*/
 		
 		return tf;
 	}

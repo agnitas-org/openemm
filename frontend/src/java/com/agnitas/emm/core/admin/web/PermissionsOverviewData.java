@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -12,10 +12,11 @@
 package com.agnitas.emm.core.admin.web;
 
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
@@ -25,6 +26,8 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.PermissionInfo;
+import com.agnitas.emm.core.PermissionType;
 
 public class PermissionsOverviewData {
     public static final int ROOT_ADMIN_ID = 1;
@@ -50,7 +53,9 @@ public class PermissionsOverviewData {
         private AdminGroup groupToEdit;
     
         private Set<Permission> visiblePermissions;
+        private String licenseType;
         private Set<Permission> companyPermissions;
+        private Map<String, PermissionInfo> permissionInfos;
         private boolean groupPermissions;
         private boolean allowedForGroup;
         
@@ -69,6 +74,10 @@ public class PermissionsOverviewData {
         public void setVisiblePermissions(Set<Permission> visiblePermissions) {
             this.visiblePermissions = visiblePermissions;
         }
+
+		public void setLicenseType(String licenseType) {
+            this.licenseType = licenseType;
+		}
     
         public void setCompanyPermissions(Set<Permission> companyPermissions) {
             this.companyPermissions = companyPermissions;
@@ -76,6 +85,10 @@ public class PermissionsOverviewData {
         
         public void setGroupPermissions(boolean groupPermissions) {
             this.groupPermissions = groupPermissions;
+        }
+        
+        public void setPermissionInfos(Map<String, PermissionInfo> permissionInfos) {
+        	this.permissionInfos = permissionInfos;
         }
     
         public PermissionsOverviewData build() {
@@ -93,7 +106,7 @@ public class PermissionsOverviewData {
 	            }
 	            
 	            Set<Permission> filtered = visiblePermissions.stream()
-	                    .filter(permission -> (!Permission.CATEGORY_KEY_SYSTEM.equals(permission.getCategory()) || admin.permissionAllowed(permission) || admin.permissionAllowed(Permission.MASTER_SHOW) || admin.getAdminID() == ROOT_ADMIN_ID))
+	                    .filter(permission -> (permission.getPermissionType() != PermissionType.System || admin.permissionAllowed(permission) || ((admin.permissionAllowed(Permission.MASTER_SHOW) || admin.getAdminID() == ROOT_ADMIN_ID) && !"Inhouse".equalsIgnoreCase(licenseType))))
 	                    .collect(Collectors.toSet());
 	    
 	            Map<String, PermissionCategoryEntry> permissionsCategories;
@@ -121,42 +134,57 @@ public class PermissionsOverviewData {
 				}
 			}
 			
-			List<Permission> filteredAndSortedVisiblePermissions = new ArrayList<>(filteredVisiblePermissions);
-			Collections.sort(filteredAndSortedVisiblePermissions);
-			for (Permission permission : filteredAndSortedVisiblePermissions) {
-			    String categoryName = permission.getCategory();
-
-			    if (categoryName != null) {
-				    String subCategoryName = StringUtils.defaultString(permission.getSubCategory());
-				    PermissionSubCategoryEntry subCategory =
-				            permissionsCategories.computeIfAbsent(categoryName, PermissionCategoryEntry::new)
-				            .subCategories.computeIfAbsent(subCategoryName, PermissionSubCategoryEntry::new);
-				    
-				    PermissionEntry permissionEntry = new PermissionEntry();
-			    	
-			    	permissionEntry.name = permission.toString();
-			    	permissionEntry.granted = adminToCollectPermissionsFor.permissionAllowed(permission);
-			    	
-				    for (AdminGroup adminGroup : adminToCollectPermissionsFor.getGroups()) {
-				    	if (adminGroup != null && adminGroup.permissionAllowed(permission)) {
-							permissionEntry.adminGroup = adminGroup;
-				    		break;
-				    	}
+			for (Entry<String, PermissionInfo> permissionInfosEntry : permissionInfos.entrySet()) {
+				Permission permission = Permission.getPermissionByToken(permissionInfosEntry.getKey());
+				if (permission != null && filteredVisiblePermissions.contains(permission)) {
+				    String categoryName = permissionInfosEntry.getValue().getCategory();
+	
+				    if (categoryName != null) {
+					    String subCategoryName = StringUtils.defaultString(permissionInfosEntry.getValue().getSubCategory());
+					    PermissionSubCategoryEntry subCategory =
+					            permissionsCategories.computeIfAbsent(categoryName, PermissionCategoryEntry::new)
+					            .subCategories.computeIfAbsent(subCategoryName, PermissionSubCategoryEntry::new);
+					    
+					    PermissionEntry permissionEntry = new PermissionEntry();
+				    	
+				    	permissionEntry.name = permission.toString();
+				    	permissionEntry.granted = adminToCollectPermissionsFor.permissionAllowed(permission);
+				    	
+					    for (AdminGroup adminGroup : adminToCollectPermissionsFor.getGroups()) {
+					    	if (adminGroup != null && adminGroup.permissionAllowed(permission)) {
+								permissionEntry.adminGroup = adminGroup;
+					    		break;
+					    	}
+					    }
+					    
+						if (permissionEntry.adminGroup != null) {
+				    		permissionEntry.changeable = false;
+						} else if (permission.getPermissionType() == PermissionType.Premium) {
+							permissionEntry.changeable = companyPermissions.contains(permission);
+						} else if (permission.getPermissionType() == PermissionType.System) {
+							permissionEntry.changeable = companyPermissions.contains(permission) && (admin.permissionAllowed(permission) || admin.permissionAllowed(Permission.MASTER_SHOW) || admin.getAdminID() == ROOT_ADMIN_ID);
+						} else {
+							permissionEntry.changeable = true;
+						}
+						
+						subCategory.permissions.add(permissionEntry);
 				    }
-				    
-					if (permissionEntry.adminGroup != null) {
-			    		permissionEntry.changeable = false;
-					} else if (permission.isPremium()) {
-						permissionEntry.changeable = companyPermissions.contains(permission);
-					} else if (Permission.CATEGORY_KEY_SYSTEM.equals(permission.getCategory())) {
-						permissionEntry.changeable = admin.permissionAllowed(permission) || admin.permissionAllowed(Permission.MASTER_SHOW) || admin.getAdminID() == ROOT_ADMIN_ID;
-					} else {
-						permissionEntry.changeable = true;
-					}
-					
-					subCategory.permissions.add(permissionEntry);
-			    }
+				}
 			}
+			
+			// Remove empty categories and subcategories
+			for (String categoryName : new HashSet<>(permissionsCategories.keySet())) {
+				Map<String, PermissionSubCategoryEntry> subcategories = permissionsCategories.get(categoryName).getSubCategories();
+				for (String subCategoryName : new HashSet<>(subcategories.keySet())) {
+					if (subcategories.get(subCategoryName) == null || subcategories.get(subCategoryName).getPermissions() == null || subcategories.get(subCategoryName).getPermissions().size() == 0) {
+						subcategories.remove(subCategoryName);
+					}
+				}
+				if (permissionsCategories.get(categoryName) == null || permissionsCategories.get(categoryName).getSubCategories() == null || permissionsCategories.get(categoryName).getSubCategories().size() == 0) {
+					permissionsCategories.remove(categoryName);
+				}
+			}
+			
 			return permissionsCategories;
         }
     
@@ -172,46 +200,61 @@ public class PermissionsOverviewData {
 					}
 				}
 			}
-			
-			List<Permission> filteredAndSortedVisiblePermissions = new ArrayList<>(filteredVisiblePermissions);
-			Collections.sort(filteredAndSortedVisiblePermissions);
-			for (Permission permission : filteredAndSortedVisiblePermissions) {
-			    String categoryName = permission.getCategory();
 
-			    if (categoryName != null) {
-				    String subCategoryName = StringUtils.defaultString(permission.getSubCategory());
-				    PermissionSubCategoryEntry subCategory =
-				            permissionsCategories.computeIfAbsent(categoryName, PermissionCategoryEntry::new)
-				            .subCategories.computeIfAbsent(subCategoryName, PermissionSubCategoryEntry::new);
-				    
-				    PermissionEntry permissionEntry = new PermissionEntry();
-			    	
-			    	permissionEntry.name = permission.toString();
-			    	
-			    	if (groupToCollectPermissionsFor != null) {
-				    	permissionEntry.granted = groupToCollectPermissionsFor.permissionAllowed(permission);
+			for (Entry<String, PermissionInfo> permissionInfosEntry : permissionInfos.entrySet()) {
+				Permission permission = Permission.getPermissionByToken(permissionInfosEntry.getKey());
+				if (permission != null && filteredVisiblePermissions.contains(permission)) {
+				    String categoryName = permissionInfosEntry.getValue().getCategory();
+	
+				    if (categoryName != null) {
+					    String subCategoryName = StringUtils.defaultString(permissionInfosEntry.getValue().getSubCategory());
+					    PermissionSubCategoryEntry subCategory =
+					            permissionsCategories.computeIfAbsent(categoryName, PermissionCategoryEntry::new)
+					            .subCategories.computeIfAbsent(subCategoryName, PermissionSubCategoryEntry::new);
+					    
+					    PermissionEntry permissionEntry = new PermissionEntry();
 				    	
-					    for (AdminGroup adminGroup : groupToCollectPermissionsFor.getParentGroups()) {
-					    	if (adminGroup != null && adminGroup.permissionAllowed(permission)) {
-								permissionEntry.adminGroup = adminGroup;
-					    		break;
-					    	}
-					    }
-			    	}
-				    
-					if (permissionEntry.adminGroup != null) {
-			    		permissionEntry.changeable = false;
-					} else if (permission.isPremium()) {
-						permissionEntry.changeable = companyPermissions.contains(permission);
-					} else if (Permission.CATEGORY_KEY_SYSTEM.equals(permission.getCategory())) {
-						permissionEntry.changeable = admin.permissionAllowed(permission) || admin.permissionAllowed(Permission.MASTER_SHOW) || admin.getAdminID() == ROOT_ADMIN_ID;
-					} else {
-						permissionEntry.changeable = true;
-					}
-					
-					subCategory.permissions.add(permissionEntry);
-			    }
+				    	permissionEntry.name = permission.toString();
+				    	
+				    	if (groupToCollectPermissionsFor != null) {
+					    	permissionEntry.granted = groupToCollectPermissionsFor.permissionAllowed(permission);
+					    	
+						    for (AdminGroup adminGroup : groupToCollectPermissionsFor.getParentGroups()) {
+						    	if (adminGroup != null && adminGroup.permissionAllowed(permission)) {
+									permissionEntry.adminGroup = adminGroup;
+						    		break;
+						    	}
+						    }
+				    	}
+					    
+						if (permissionEntry.adminGroup != null) {
+				    		permissionEntry.changeable = false;
+						} else if (permission.getPermissionType() == PermissionType.Premium) {
+							permissionEntry.changeable = companyPermissions.contains(permission);
+						} else if (permission.getPermissionType() == PermissionType.System) {
+							permissionEntry.changeable = companyPermissions.contains(permission) && (admin.permissionAllowed(permission) || admin.permissionAllowed(Permission.MASTER_SHOW) || admin.getAdminID() == ROOT_ADMIN_ID);
+						} else {
+							permissionEntry.changeable = true;
+						}
+						
+						subCategory.permissions.add(permissionEntry);
+				    }
+				}
 			}
+			
+			// Remove empty categories and subcategories
+			for (String categoryName : new HashSet<>(permissionsCategories.keySet())) {
+				Map<String, PermissionSubCategoryEntry> subcategories = permissionsCategories.get(categoryName).getSubCategories();
+				for (String subCategoryName : new HashSet<>(subcategories.keySet())) {
+					if (subcategories.get(subCategoryName) == null || subcategories.get(subCategoryName).getPermissions() == null || subcategories.get(subCategoryName).getPermissions().size() == 0) {
+						subcategories.remove(subCategoryName);
+					}
+				}
+				if (permissionsCategories.get(categoryName) == null || permissionsCategories.get(categoryName).getSubCategories() == null || permissionsCategories.get(categoryName).getSubCategories().size() == 0) {
+					permissionsCategories.remove(categoryName);
+				}
+			}
+			
 			return permissionsCategories;
         }
     
@@ -295,12 +338,7 @@ public class PermissionsOverviewData {
         }
     
         public Map<String, PermissionSubCategoryEntry> getSubCategories() {
-        	Map<String, PermissionSubCategoryEntry> returnMap = new LinkedHashMap<>();
-        	List<String> subCategoryKeys = new ArrayList<>(subCategories.keySet());
-        	for (String subCategory : subCategoryKeys) {
-        		returnMap.put(subCategory, subCategories.get(subCategory));
-        	}
-            return returnMap;
+            return subCategories;
         }
         
         @Override

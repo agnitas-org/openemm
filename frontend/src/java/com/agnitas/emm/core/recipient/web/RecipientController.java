@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -14,11 +14,13 @@ import static com.agnitas.emm.core.Permission.RECIPIENT_PROFILEFIELD_HTML_ALLOWE
 import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_LATEST_DATASOURCE_ID;
 import static org.agnitas.emm.core.recipient.RecipientUtils.MAIN_COLUMNS;
 import static org.agnitas.emm.core.recipient.RecipientUtils.MAX_SELECTED_FIELDS_COUNT;
+import static org.agnitas.service.WebStorage.RECIPIENT_OVERVIEW;
 import static org.agnitas.web.forms.FormSearchParams.RESET_PARAM_NAME;
 import static org.agnitas.web.forms.FormSearchParams.RESTORE_PARAM_NAME;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +30,7 @@ import java.util.stream.Collectors;
 
 import org.agnitas.beans.BindingEntry;
 import org.agnitas.beans.impl.PaginatedListImpl;
+import org.agnitas.dao.UserStatus;
 import org.agnitas.emm.core.blacklist.service.BlacklistService;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
@@ -48,7 +51,8 @@ import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.http.HttpHeaders;
 import org.springframework.ui.Model;
@@ -68,10 +72,13 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.PollingUid;
 import com.agnitas.beans.ProfileField;
+import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.emm.core.delivery.service.DeliveryService;
 import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.emm.core.recipient.converter.RecipientDtoToRecipientFormConverter;
+import com.agnitas.emm.core.recipient.dto.BindingAction;
 import com.agnitas.emm.core.recipient.dto.RecipientBindingDto;
 import com.agnitas.emm.core.recipient.dto.RecipientBindingsDto;
 import com.agnitas.emm.core.recipient.dto.RecipientColumnDefinition;
@@ -89,9 +96,12 @@ import com.agnitas.emm.core.recipient.forms.RecipientSimpleActionForm;
 import com.agnitas.emm.core.recipient.forms.RecipientsFormSearchParams;
 import com.agnitas.emm.core.recipient.service.FieldsSaveResults;
 import com.agnitas.emm.core.recipient.service.RecipientLogService;
+import com.agnitas.emm.core.target.eql.EqlValidatorService;
 import com.agnitas.emm.core.target.eql.emm.querybuilder.EqlToQueryBuilderConversionException;
 import com.agnitas.emm.core.target.eql.emm.querybuilder.EqlToQueryBuilderConverter;
 import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderFilterListBuilder;
+import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderToEqlConversionException;
+import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderToEqlConverter;
 import com.agnitas.emm.core.target.eql.parser.EqlParserException;
 import com.agnitas.emm.core.target.service.ComTargetService;
 import com.agnitas.messages.Message;
@@ -102,13 +112,12 @@ import com.agnitas.web.dto.BooleanResponseDto;
 import com.agnitas.web.mvc.Pollable;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.XssCheckAware;
-import com.agnitas.web.perm.annotations.PermissionMapping;
 
 import net.sf.json.JSONObject;
 
 @SuppressWarnings("all")
 public class RecipientController implements XssCheckAware {
-	private static final Logger logger = Logger.getLogger(RecipientController.class);
+	private static final Logger logger = LogManager.getLogger(RecipientController.class);
 
 	private static final String RECIPIENT_LIST_KEY = "recipientList";
 
@@ -128,6 +137,9 @@ public class RecipientController implements XssCheckAware {
 	private ConfigService configService;
 	private BlacklistService blacklistService;
 	private EqlToQueryBuilderConverter eqlToQueryBuilderConverter;
+	private QueryBuilderToEqlConverter queryBuilderToEqlConverter;
+	private ComCompanyDao companyDao;
+	private EqlValidatorService eqlValidatorService;
 
 	public RecipientController(RecipientService recipientService,
 							   RecipientLogService recipientLogService,
@@ -142,7 +154,10 @@ public class RecipientController implements XssCheckAware {
 							   ColumnInfoService columnInfoService,
 							   ConfigService configService,
 							   BlacklistService blacklistService,
-							   EqlToQueryBuilderConverter eqlToQueryBuilderConverter) {
+							   EqlToQueryBuilderConverter eqlToQueryBuilderConverter,
+							   QueryBuilderToEqlConverter queryBuilderToEqlConverter,
+							   ComCompanyDao companyDao,
+							   EqlValidatorService eqlValidatorService) {
 		this.recipientService = recipientService;
 		this.recipientLogService = recipientLogService;
 		this.mailinglistApprovalService = mailinglistApprovalService;
@@ -157,17 +172,23 @@ public class RecipientController implements XssCheckAware {
 		this.configService = configService;
 		this.blacklistService = blacklistService;
 		this.eqlToQueryBuilderConverter = eqlToQueryBuilderConverter;
+		this.queryBuilderToEqlConverter = queryBuilderToEqlConverter;
+		this.companyDao = companyDao;
+		this.eqlValidatorService = eqlValidatorService;
 	}
 
+	// Please, keep RedirectAttributes to avoid 414 "Request URI too long".
+    // Spring passes model attributes to url by default.
+    // Using RedirectAttributes we control which attributes to add explicitly. GWUA-4956
 	@RequestMapping("/list.action")
-	@PermissionMapping("listNew")
 	public Object list(ComAdmin admin, @ModelAttribute("form") RecipientListForm form, Model model, Popups popups, @RequestHeader HttpHeaders headers,
 					   @RequestParam(value = RESET_PARAM_NAME, required = false) boolean resetSearchParams,
 					   @RequestParam(value = RESTORE_PARAM_NAME, required = false) boolean restoreSearchParams,
 					   @RequestParam(value = "latestDataSourceId", required = false, defaultValue = "0") int dataSourceId,
-					   @ModelAttribute RecipientsFormSearchParams recipientsFormSearchParams) throws Exception {
-
+					   @ModelAttribute RecipientsFormSearchParams recipientsFormSearchParams, RedirectAttributes ra,
+                       @ModelAttribute("loadRecipients") String loadRecipientsStr) throws Exception {
 		int companyId = admin.getCompanyID();
+        boolean loadRecipients = isLoadRecipients(admin, loadRecipientsStr);
 
 		if (resetSearchParams) {
 			FormUtils.resetSearchParams(recipientsFormSearchParams, form);
@@ -178,14 +199,20 @@ public class RecipientController implements XssCheckAware {
 		addDataSourceIdRuleIfNecessary(admin, form, dataSourceId, model);
 
 		if (form.getSelectedFields().size() > MAX_SELECTED_FIELDS_COUNT) {
-			logger.error("Error in RecipientAction: error.maximum.recipient.columns: count > " + MAX_SELECTED_FIELDS_COUNT);
+			logger.error("Error getting list of recipients: error.maximum.recipient.columns: count > " + MAX_SELECTED_FIELDS_COUNT);
 			popups.alert("error.maximum.recipient.columns");
 			return "messages";
 		}
 
+		form.setEql(queryBuilderToEqlConverter.convertQueryBuilderJsonToEql(form.getSearchQueryBuilderRules(), companyId));
+
+		if (!validateSearchParams(admin, form, popups)) {
+			return "messages";
+		}
+
 		//sync selected fields to display
-		FormUtils.syncNumberOfRows(webStorage, ComWebStorage.RECIPIENT_OVERVIEW, form);
-		syncSelectedFields(form);
+		FormUtils.syncNumberOfRows(webStorage, RECIPIENT_OVERVIEW, form);
+		RecipientUtils.syncSelectedFields(webStorage, RECIPIENT_OVERVIEW, form);
 
 		AgnUtils.setAdminDateTimeFormatPatterns(admin, model);
 
@@ -201,48 +228,64 @@ public class RecipientController implements XssCheckAware {
 		model.addAttribute("fieldsMap", fields);
 		model.addAttribute("hasAnyDisabledMailingLists", mailinglistApprovalService.hasAnyDisabledMailingListsForAdmin(companyId, admin.getAdminID()));
 		model.addAttribute("mailinglists", mailinglistApprovalService.getEnabledMailinglistsForAdmin(admin));
-		model.addAttribute("targets", targetService.getTargetLights(admin));
-
+		model.addAttribute("loadRecipients", loadRecipients);
+		model.addAttribute("isSearchExtended", isSearchExtended(admin));
+        addTargetsModelAttrs(admin, model);
 
 		Callable<ModelAndView> worker = () -> {
-			try {
-				RecipientSearchParamsDto searchParamsDto = conversionService.convert(form, RecipientSearchParamsDto.class);
-				PaginatedListImpl<RecipientDto> paginatedList = recipientService.getPaginatedRecipientList(
-						admin,
-						searchParamsDto,
-						form.getSort(),
-						form.getOrder(),
-						form.getPage(),
-						form.getNumberOfRows(), fields);
-
-				FormUtils.setPaginationParameters(form, paginatedList);
-				model.addAttribute(RECIPIENT_LIST_KEY, paginatedList);
-
-				// check the max recipients for company and change visualisation if needed
-				int maxRecipients = AgnUtils.getCompanyMaxRecipients(admin);
-				if (paginatedList.getFullListSize() > maxRecipients) {
-					model.addAttribute("deactivatePagination", true);
-					model.addAttribute("countOfRecipients", maxRecipients);
-
-				} else {
-					model.addAttribute("deactivatePagination", false);
-				}
-			} catch (Exception e) {
-                logger.error("Getting recipients failed!", e);
-                popups.alert("error.exception", configService.getValue(ConfigValue.SupportEmergencyUrl));
-			}
-
+		    if (loadRecipients) {
+                tryGetRecipientsList(admin, form, model, popups, fields);
+            }
 			writeUserActivityLog(admin, "recipient overview", "active tab - recipient search");
-
-			return new ModelAndView("recipient_list_new", model.asMap());
+			return new ModelAndView("recipient_list", model.asMap());
 		};
 
 		return new Pollable<>(pollingUid, Pollable.LONG_TIMEOUT, new ModelAndView("redirect:/recipient/list.action", form.toMap()), worker);
 	}
 
+    protected boolean isSearchExtended(ComAdmin admin) {
+        return false; // overwritten in extended file
+    }
+
+    protected boolean isLoadRecipients(ComAdmin admin, String loadRecipientsStr) {
+        return true; // overwritten in extended file
+    }
+
+    protected void addTargetsModelAttrs(ComAdmin admin, Model model) {
+        model.addAttribute("targets", targetService.getTargetLights(admin));
+    }
+
+    private void tryGetRecipientsList(ComAdmin admin, RecipientListForm form, Model model, Popups popups, Map<String, String> fields) {
+        try {
+            RecipientSearchParamsDto searchParamsDto = conversionService.convert(form, RecipientSearchParamsDto.class);
+            PaginatedListImpl<RecipientDto> paginatedList = recipientService.getPaginatedRecipientList(
+                    admin,
+                    searchParamsDto,
+                    form.getSort(),
+                    form.getOrder(),
+                    form.getPage(),
+                    form.getNumberOfRows(), fields);
+
+            FormUtils.setPaginationParameters(form, paginatedList);
+            model.addAttribute(RECIPIENT_LIST_KEY, paginatedList);
+
+            // check the max recipients for company and change visualisation if needed
+            int maxRecipients = AgnUtils.getCompanyMaxRecipients(admin);
+            if (paginatedList.getFullListSize() > maxRecipients) {
+                model.addAttribute("deactivatePagination", true);
+                model.addAttribute("countOfRecipients", maxRecipients);
+
+            } else {
+                model.addAttribute("deactivatePagination", false);
+            }
+        } catch (Exception e) {
+            logger.error("Getting recipients failed!", e);
+            popups.alert("error.exception", configService.getValue(ConfigValue.SupportEmergencyUrl));
+        }
+	}
+
 	@PostMapping("/search.action")
-	@PermissionMapping("searchNew")
-	public ModelAndView search(ComAdmin admin, @ModelAttribute("form") RecipientListForm form,
+	public String search(ComAdmin admin, @ModelAttribute RecipientListForm form,
 							   @RequestParam(value = RESET_PARAM_NAME, required = false) boolean resetSearchParams,
 							   @ModelAttribute RecipientsFormSearchParams recipientsFormSearchParams,
 							   RedirectAttributes model, Popups popups) throws Exception {
@@ -252,7 +295,10 @@ public class RecipientController implements XssCheckAware {
 			FormUtils.syncSearchParams(recipientsFormSearchParams, form, false);
 		}
 
-		return new ModelAndView("redirect:/recipient/list.action", form.toMap());
+		model.addFlashAttribute("loadRecipients", true);
+		model.addFlashAttribute("form", form);
+
+		return "redirect:/recipient/list.action";
 	}
 
 	private void addDataSourceIdRuleIfNecessary(ComAdmin admin, RecipientListForm form, int dataSourceId, Model model) {
@@ -318,12 +364,19 @@ public class RecipientController implements XssCheckAware {
 		form.setLastname(recipientsFormSearchParams.getLastName());
 		form.setEmail(recipientsFormSearchParams.getEmail());
 
+		int companyID = admin.getCompanyID();
+
+		if (configService.getBooleanValue(ConfigValue.AnonymizeAllRecipients, companyID)) {
+			boolean needToAnonymize = true;
+			form.setTrackingVeto(needToAnonymize);
+			model.addAttribute("disableTrackingVeto", needToAnonymize);
+		}
+
 		loadViewData(admin, model);
-		return "recipient_view_new";
+		return "recipient_view";
 	}
 
     @GetMapping("/{id:\\d+}/view.action")
-	@PermissionMapping("viewNew")
     public String view(ComAdmin admin, @PathVariable int id, @ModelAttribute("form") RecipientForm form, Model model) throws RejectAccessByTargetGroupLimit {
 		targetService.checkRecipientTargetGroupAccess(admin, id);
 
@@ -335,13 +388,28 @@ public class RecipientController implements XssCheckAware {
 			return "recirect:/recipient/create.action";
 		}
 
-		form = conversionService.convert(recipient, RecipientForm.class);
+		form = RecipientDtoToRecipientFormConverter.convert(recipient, admin);
 
 		loadBindingsData(admin, id, form.getBindingsListForm());
 		model.addAttribute("form", form);
 		loadViewData(admin, model);
 
-		return "recipient_view_new";
+		return "recipient_view";
+	}
+
+	private boolean validateSearchParams(ComAdmin admin, RecipientListForm form, Popups popups) throws QueryBuilderToEqlConversionException {
+		String eql = form.getEql();
+
+		if (!eql.isBlank()){
+			Collection<Message> messages = eqlValidatorService.validateEql(admin, eql);
+
+			if (!messages.isEmpty()) {
+				messages.forEach(popups::alert);
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 	private void loadBindingsData(ComAdmin admin, int recipientId, RecipientBindingListForm form) {
@@ -436,20 +504,21 @@ public class RecipientController implements XssCheckAware {
 	}
 
 	@PostMapping("/save.action")
-	@PermissionMapping("saveNew")
     public String save(ComAdmin admin, @ModelAttribute("form") RecipientForm form, Popups popups) {
 		if (saveRecipient(admin, form, popups)) {
 			return "redirect:/recipient/" + form.getId() + "/view.action";
+		} else {
+			return "messages";
 		}
-		return "messages";
 	}
 
 	@PostMapping("/saveAndBackToList.action")
     public String saveAndBackToList(ComAdmin admin, @ModelAttribute("form") RecipientForm form, Popups popups) {
 		if (saveRecipient(admin, form, popups)) {
 			return String.format("redirect:/recipient/list.action?%s=true", RESTORE_PARAM_NAME);
+		} else {
+			return "messages";
 		}
-		return "messages";
 	}
 
 	private boolean saveRecipient(ComAdmin admin, RecipientForm form, Popups popups) {
@@ -462,7 +531,16 @@ public class RecipientController implements XssCheckAware {
 				isNewEmailBlacklisted = blacklistService.blacklistCheck(form.getEmail(), companyId);
 			}
 
+			if (recipientOld.getId() == 0 && configService.getBooleanValue(ConfigValue.AnonymizeAllRecipients, companyId)) {
+				form.setTrackingVeto(true);
+			}
+
 			SaveRecipientDto recipient = conversionService.convert(form, SaveRecipientDto.class);
+			int datasourceId = companyDao.getCompanyDatasource(companyId);
+			if (recipientOld.getId() == 0) {
+				recipient.getFieldsToSave().put("datasource_id", Integer.toString(datasourceId));
+			}
+			recipient.getFieldsToSave().put("latest_datasource_id", Integer.toString(datasourceId));
 			List<UserAction> userActions = new ArrayList<>();
 			ServiceResult<Integer> saveResult = recipientService.saveRecipient(admin, recipient, userActions);
 
@@ -471,27 +549,19 @@ public class RecipientController implements XssCheckAware {
 				return false;
 			}
 
-			int recipientId = saveResult.getResult();
-
-			recipient.setId(recipientId);
-			form.setId(recipientId);
+			form.setId(recipient.getId());
 			writeLogs(recipient, recipientOld, admin);
 			if (logger.isInfoEnabled()){
-				logger.info("save recipient: save recipient " + recipientId);
+				logger.info("save recipient: save recipient " + recipient.getId());
 			}
 
 			RecipientBindingsDto bindings = conversionService.convert(form.getBindingsListForm(), RecipientBindingsDto.class);
 			bindings.setOldBlacklistedEmail(isOldEmailBlacklisted);
 			bindings.setNewBlacklistedEmail(isNewEmailBlacklisted);
-			ServiceResult<List<String>> result = recipientService.saveRecipientBindings(admin, recipientId, bindings);
+			ServiceResult<List<BindingAction>> result = recipientService.saveRecipientBindings(admin, recipient.getId(), bindings, UserStatus.AdminOut);
 
 			if (result.isSuccess()) {
-				String action = recipientOld == null ? "create recipient bindings" : "update recipient bindings";
-				String description = String.format("%s%n%s",
-						RecipientUtils.getRecipientDescription(recipientId, recipient.getFirstname(), recipient.getLastname(), recipient.getEmail()),
-						StringUtils.join(result.getResult(), "\n"));
-
-				writeUserActivityLog(admin, new UserAction(action, description));
+				writeBindingsChangesLog(admin, recipient, result);
 			} else {
 				popups.warning("error.recipient.bindings.save");
 			}
@@ -501,6 +571,32 @@ public class RecipientController implements XssCheckAware {
 		}
 
 		return false;
+	}
+
+	private void writeBindingsChangesLog(ComAdmin admin, SaveRecipientDto recipient, ServiceResult<List<BindingAction>> result) {
+		List<BindingAction> bindingSaveActions = new ArrayList<>();
+		List<BindingAction> bindingUpdateActions = new ArrayList<>();
+
+		for (BindingAction bindingAction : result.getResult()) {
+			if (bindingAction.getType().equals(BindingAction.Type.CREATE)) {
+				bindingSaveActions.add(bindingAction);
+			} else if (bindingAction.getType().equals(BindingAction.Type.UPDATE)) {
+				bindingUpdateActions.add(bindingAction);
+			}
+		}
+
+		writeBindingsLog(admin, recipient, "create recipient bindings", bindingSaveActions);
+		writeBindingsLog(admin, recipient, "update recipient bindings", bindingUpdateActions);
+	}
+
+	private void writeBindingsLog(ComAdmin admin, SaveRecipientDto recipient, String action, List<BindingAction> actions) {
+		if (!actions.isEmpty()) {
+			String description = String.format("%s%n%s",
+					RecipientUtils.getRecipientDescription(recipient.getId(), recipient.getFirstname(), recipient.getLastname(), recipient.getEmail()),
+					actions.stream().map(bindingAction -> bindingAction.getDescription()).collect(Collectors.joining("\n")));
+
+			writeUserActivityLog(admin, new UserAction(action, description));
+		}
 	}
 
 	private boolean validate(ComAdmin admin, RecipientForm form, Popups popups) {
@@ -555,7 +651,7 @@ public class RecipientController implements XssCheckAware {
 			form.setId(id);
 			form.setShortname(recipient.getFirstname() + " " + recipient.getLastname());
 			form.setEmail(recipient.getEmail());
-			return "recipient_delete_new";
+			return "recipient_delete";
 		}
 
 		popups.alert("error.access.limit.mailinglist");
@@ -563,7 +659,6 @@ public class RecipientController implements XssCheckAware {
 	}
 
 	@RequestMapping(value = "/delete.action", method = {RequestMethod.POST, RequestMethod.DELETE})
-	@PermissionMapping("deleteNew")
     public String delete(ComAdmin admin, @ModelAttribute("form") RecipientSimpleActionForm form, Popups popups) {
         int id = form.getId();
         if(id > 0 && !mailinglistApprovalService.hasAnyDisabledRecipientBindingsForAdmin(admin, id)){
@@ -668,6 +763,26 @@ public class RecipientController implements XssCheckAware {
 		return "messages";
 	}
 
+	@GetMapping("/{recipientId:\\d+}/mailing/{mailingId:\\d+}/successfulDeliveryHistory.action")
+	public String successfulDeliveryHistory(ComAdmin admin, @PathVariable int recipientId, @PathVariable int mailingId, Model model, Popups popups) throws RejectAccessByTargetGroupLimit {
+		int companyID = admin.getCompanyID();
+		targetService.checkRecipientTargetGroupAccess(admin, recipientId);
+
+		try {
+			AgnUtils.setAdminDateTimeFormatPatterns(admin, model);
+
+			model.addAttribute("deliveryHistoryJson", deliveryService.getSuccessfulDeliveriesInfo(companyID, mailingId, recipientId));
+			model.addAttribute("mailingShortname", mailingBaseService.getMailingName(mailingId, companyID));
+
+			return "mailing_successful_delivery_info";
+		} catch (Exception e) {
+			logger.error("Could not load recipient tab data for companyID: " + companyID, e);
+			popups.alert("Error");
+		}
+
+		return "messages";
+	}
+
 	@GetMapping("/{recipientId:\\d+}/statusChangesHistory.action")
 	public String statusChangesHistory(ComAdmin admin, @PathVariable int recipientId, PaginationForm form, Model model, Popups popups) throws RejectAccessByTargetGroupLimit {
 		return processRecipientHistoryTab(() -> {
@@ -675,7 +790,7 @@ public class RecipientController implements XssCheckAware {
 
 			model.addAttribute("statusChangesHistoryJson", recipientService.getRecipientStatusChangesHistory(admin, recipientId));
 
-			return "recipient_history_new";
+			return "recipient_history";
 		}, admin, recipientId, model, popups, "view recipient status history");
 	}
 
@@ -697,17 +812,6 @@ public class RecipientController implements XssCheckAware {
 		}
 
 		return "messages";
-	}
-
-	private void syncSelectedFields(RecipientListForm form) {
-		webStorage.access(ComWebStorage.RECIPIENT_OVERVIEW, storage -> {
-			int columnsCount = form.getSelectedFields().size();
-			if (columnsCount < 1 || columnsCount > MAX_SELECTED_FIELDS_COUNT) {
-				form.setSelectedFields(storage.getSelectedFields());
-			} else {
-				storage.setSelectedFields(form.getSelectedFields());
-			}
-		});
 	}
 
 	private boolean isValidTargetSaving(ComAdmin admin, RecipientSaveTargetForm form, Popups popups) {

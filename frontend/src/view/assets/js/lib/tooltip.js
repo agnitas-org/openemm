@@ -114,6 +114,14 @@
     }
   };
 
+  Tooltip.setShown = function($e, isShown) {
+    if (isShown || isShown === undefined) {
+      $e.bsTooltip('show');
+    } else {
+      $e.bsTooltip('hide');
+    }
+  };
+
   Tooltip.createTip = function($e, text, style) {
     Tooltip.create($e, getTooltipOptions(text, style));
   };

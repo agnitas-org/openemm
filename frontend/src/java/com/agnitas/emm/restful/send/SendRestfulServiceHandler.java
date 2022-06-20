@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -32,12 +32,15 @@ import org.agnitas.beans.Recipient;
 import org.agnitas.beans.impl.BindingEntryImpl;
 import org.agnitas.beans.impl.RecipientImpl;
 import org.agnitas.dao.MailinglistDao;
+import org.agnitas.dao.SourceGroupType;
 import org.agnitas.dao.UserStatus;
 import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.commons.util.DateUtil;
 import org.agnitas.emm.core.mailing.beans.LightweightMailing;
 import org.agnitas.emm.core.recipient.service.RecipientService;
 import org.agnitas.emm.core.useractivitylog.dao.UserActivityLogDao;
+import org.agnitas.preview.Page;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.HttpUtils.RequestMethod;
@@ -45,7 +48,8 @@ import org.agnitas.util.MailoutClient;
 import org.agnitas.util.importvalues.Gender;
 import org.agnitas.util.importvalues.MailType;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComAdmin;
@@ -54,8 +58,9 @@ import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MediatypeEmail;
 import com.agnitas.beans.impl.MaildropEntryImpl;
 import com.agnitas.dao.ComBindingEntryDao;
-import com.agnitas.dao.ComDatasourceDescriptionDao;
 import com.agnitas.dao.ComMailingDao;
+import com.agnitas.dao.DatasourceDescriptionDao;
+import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.maildrop.MaildropStatus;
 import com.agnitas.emm.core.maildrop.service.MaildropService;
@@ -63,7 +68,6 @@ import com.agnitas.emm.core.mailing.service.MailgunOptions;
 import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.emm.core.mailing.service.SendActionbasedMailingService;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import com.agnitas.emm.core.report.enums.fields.MailingTypes;
 import com.agnitas.emm.restful.BaseRequestResponse;
 import com.agnitas.emm.restful.ErrorCode;
 import com.agnitas.emm.restful.JsonRequestResponse;
@@ -87,7 +91,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * https://<system.url>/restful/send
  */
 public class SendRestfulServiceHandler implements RestfulServiceHandler {
-	private static final transient Logger logger = Logger.getLogger(SendRestfulServiceHandler.class);
+	private static final transient Logger logger = LogManager.getLogger(SendRestfulServiceHandler.class);
 	
 	public static final String NAMESPACE = "send";
 
@@ -101,7 +105,7 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler {
 	protected SendActionbasedMailingService sendActionbasedMailingService;
 	protected ConfigService configService;
 	protected MailingPreviewService mailingPreviewService;
-	protected ComDatasourceDescriptionDao datasourceDescriptionDao;
+	protected DatasourceDescriptionDao datasourceDescriptionDao;
 	protected ComBindingEntryDao bindingEntryDao;
 
 	@Required
@@ -155,7 +159,7 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler {
 	}
 
 	@Required
-	public void setDatasourceDescriptionDao(final ComDatasourceDescriptionDao datasourceDescriptionDao) {
+	public void setDatasourceDescriptionDao(final DatasourceDescriptionDao datasourceDescriptionDao) {
 		this.datasourceDescriptionDao = datasourceDescriptionDao;
 	}
 
@@ -222,7 +226,7 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler {
 		String customerEmail = null;
 		boolean alwaysCreateRecipient = false;
 		List<String> keyColumns = new ArrayList<>(Arrays.asList(new String[] { "email" }));
-		int userStatus = 0;
+		UserStatus userStatus = null;
 		
 		JsonObject profileData = null;
 		
@@ -272,13 +276,19 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler {
 							}
 						} else if ("email".equals(entry.getKey())) {
 							if (entry.getValue() != null && entry.getValue() instanceof String && AgnUtils.isEmailValid((String) entry.getValue())) {
-								customerEmail = AgnUtils.normalizeEmail((String) entry.getValue());
+
+								// Normalize email, if configured so
+								if (!configService.getBooleanValue(ConfigValue.AllowUnnormalizedEmails, admin.getCompanyID())) {
+									customerEmail = AgnUtils.normalizeEmail((String) entry.getValue());
+								} else {
+									customerEmail = (String) entry.getValue();
+								}
 							} else {
 								throw new RestfulClientException("Invalid data type for 'email'. Email address expected");
 							}
 						} else if ("user_status".equals(entry.getKey())) {
 							if (entry.getValue() != null && entry.getValue() instanceof Integer) {
-								userStatus = (Integer) entry.getValue();
+								userStatus = UserStatus.getUserStatusByID((Integer) entry.getValue());
 							} else {
 								throw new RestfulClientException("Invalid data type for 'user_status'. Integer expected");
 							}
@@ -318,14 +328,14 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler {
 		}
 		
 		if (maildropStatus == null) {
-			MailingTypes mailingType = MailingTypes.getByCode(mailingDao.getMailingType(mailingID));
-			if (mailingType == MailingTypes.NORMAL) {
+			MailingType mailingType = mailingDao.getMailingType(mailingID);
+			if (mailingType == MailingType.NORMAL) {
 				maildropStatus = MaildropStatus.WORLD;
-			} else if (mailingType == MailingTypes.ACTION_BASED) {
+			} else if (mailingType == MailingType.ACTION_BASED) {
 				maildropStatus = MaildropStatus.ACTION_BASED;
-			} else if (mailingType == MailingTypes.DATE_BASED) {
+			} else if (mailingType == MailingType.DATE_BASED) {
 				maildropStatus = MaildropStatus.DATE_BASED;
-			} else if (mailingType == MailingTypes.INTERVAL) {
+			} else if (mailingType == MailingType.INTERVAL) {
 				maildropStatus = MaildropStatus.ON_DEMAND;
 			} else {
 				throw new RestfulClientException("Missing property value for 'send_type'. String 'W', 'A', 'T', 'E' or 'R' expected");
@@ -352,7 +362,7 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler {
 		return sendMailing(admin, maildropStatus, mailingID, sendDate, stepping, blockSize, customerID, userStatus, profileData);
 	}
 
-	protected String sendMailing(ComAdmin admin, MaildropStatus maildropStatus, int mailingID, Date sendDate, int stepping, int blockSize, int customerID, int userStatus, JsonObject profileData) throws Exception {
+	protected String sendMailing(ComAdmin admin, MaildropStatus maildropStatus, int mailingID, Date sendDate, int stepping, int blockSize, int customerID, UserStatus userStatus, JsonObject profileData) throws Exception {
 		boolean adminSend = false;
 		boolean testSend = false;
 		boolean worldSend = false;
@@ -430,13 +440,14 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler {
 		}
 
 		// check syntax of mailing by generating dummy preview
-		preview = this.mailingPreviewService.renderTextPreview(mailing.getId(), customerID);
+        final Page previewPage = this.mailingPreviewService.renderPreview(mailing.getId(), customerID);
+		preview = previewPage.getText();
 		if (StringUtils.isBlank(preview)) {
 			if (mailingService.isTextVersionRequired(admin.getCompanyID(), mailingID)) {
 				throw new RestfulClientException("Mandatory TEXT version is missing in mailing");
 			}
 		}
-		preview = this.mailingPreviewService.renderHtmlPreview(mailing.getId(), customerID);
+		preview = previewPage.getHTML();
 		boolean isHtmlMailing = false;
 		MediatypeEmail emailMediaType = (MediatypeEmail) mailing.getMediatypes().get(MediaTypes.EMAIL.getMediaCode());
 		if (emailMediaType != null && (emailMediaType.getMailFormat() == MailType.HTML.getIntValue() || emailMediaType.getMailFormat() == MailType.HTML_OFFLINE.getIntValue())) {
@@ -473,14 +484,14 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler {
 			
 			if (customerID > 0) {
 				try {
-					List<Integer> userStatusList = null;
-					if (userStatus > 0) {
+					List<UserStatus> userStatusList = null;
+					if (userStatus != null) {
 						userStatusList = new ArrayList<>();
 	
-						if (userStatus == UserStatus.Active.getStatusCode() || userStatus == UserStatus.WaitForConfirm.getStatusCode()) {
+						if (userStatus == UserStatus.Active || userStatus == UserStatus.WaitForConfirm) {
 							// This block is for backward compatibility only!
-							userStatusList.add(UserStatus.Active.getStatusCode());
-							userStatusList.add(UserStatus.WaitForConfirm.getStatusCode());
+							userStatusList.add(UserStatus.Active);
+							userStatusList.add(UserStatus.WaitForConfirm);
 						} else {
 							userStatusList.add(userStatus);
 						}
@@ -536,7 +547,7 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler {
 			}
 
 			if (!DateUtil.isDateForImmediateGeneration(genDate)
-					&& ((mailing.getMailingType() == MailingTypes.NORMAL.getCode()) || (mailing.getMailingType() == MailingTypes.FOLLOW_UP.getCode()))) {
+					&& ((mailing.getMailingType() == MailingType.NORMAL) || (mailing.getMailingType() == MailingType.FOLLOW_UP))) {
 				startGen = 0;
 			}
 			
@@ -579,6 +590,12 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler {
 
 		String title = (String) profileData.get("title");
 		String email = (String) profileData.get("email");
+
+		// Normalize email, if configured so
+		if (!configService.getBooleanValue(ConfigValue.AllowUnnormalizedEmails, companyID)) {
+			email = AgnUtils.normalizeEmail(email);
+		}
+		
 		String firstName = (String) profileData.get("firstname");
 		String lastName = (String) profileData.get("lastname");
 
@@ -617,7 +634,11 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler {
 
 		// Create new customer
 		int datasourceID = 0;
-		final DatasourceDescription datasourceDescription = datasourceDescriptionDao.getByDescription(1, companyID, "RestfulService");
+		DatasourceDescription datasourceDescription = datasourceDescriptionDao.getByDescription(SourceGroupType.RestfulService, companyID, "RestfulService");
+		if (datasourceDescription == null) {
+			// Use fallback datasource for companyid 0
+			datasourceDescription = datasourceDescriptionDao.getByDescription(SourceGroupType.RestfulService, 0, "RestfulService");
+		}
 		if (datasourceDescription != null) {
 			datasourceID = datasourceDescription.getId();
 		}
@@ -631,6 +652,7 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler {
 		recipient.getCustParameters().put("gender", Integer.toString(gender));
 		recipient.getCustParameters().put("mailtype", "1");
 		recipient.getCustParameters().put("datasource_id", Integer.toString(datasourceID));
+		recipient.getCustParameters().put("latest_datasource_id", Integer.toString(datasourceID));
 		recipient.getCustParameters().put("mailing_id", mailingID);
 
 		// set all other optional data

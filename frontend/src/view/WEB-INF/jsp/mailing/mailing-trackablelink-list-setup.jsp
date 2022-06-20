@@ -1,6 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 <%@ page import="com.agnitas.web.ComTrackableLinkAction" %>
-<%@ page import="org.agnitas.web.MailingBaseAction" %>
+<%@ page import="com.agnitas.web.MailingBaseAction" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean"%>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html"%>
@@ -53,12 +53,16 @@
 <c:choose>
     <c:when test="${trackableLinkForm.isTemplate}">
         <c:set var="agnNavigationKey" 		value="templateView" 										scope="request" />
-        <c:set var="agnNavHrefAppend" 		value="&mailingID=${trackableLinkForm.mailingID}&init=true"	scope="request" />
         <c:set var="agnTitleKey" 			value="Template" 											scope="request" />
         <c:set var="agnSubtitleKey" 		value="Template" 											scope="request" />
         <c:set var="sidemenu_active" 		value="Mailings" 											scope="request" />
         <c:set var="sidemenu_sub_active"	value="Templates" 											scope="request" />
 
+        <emm:instantiate var="agnNavHrefParams" type="java.util.LinkedHashMap" scope="request">
+            <c:set target="${agnNavHrefParams}" property="mailingID" value="${mailingBaseForm.mailingID}"/>
+            <c:set target="${agnNavHrefParams}" property="init" value="true"/>
+        </emm:instantiate>
+        
         <emm:instantiate var="agnBreadcrumbs" type="java.util.LinkedHashMap" scope="request">
             <emm:instantiate var="agnBreadcrumb" type="java.util.LinkedHashMap">
                 <c:set target="${agnBreadcrumbs}" property="0" value="${agnBreadcrumb}"/>

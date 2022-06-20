@@ -6,7 +6,8 @@
 - made document.body as Element prototype to prevent wkhtmltopdf errors
 
 2) ace/worker-html.js
-- removed error emit for 'almost-standards-doctype'.
+- removed error emit for 'almost-standards-doctype'. [EMMGUI-600]
+- fixed false negative validation result (unexpected case sensitivity) [EMMGUI-600]
 
 3) bootstrap-tooltip-3.4.1.js
 - changed an order of statements to make sure that placement function is able to get an actual balloon's dimensions
@@ -26,7 +27,7 @@
 - added a click event handler to a backdrop so a click outside a <div class="modal"></div> also hides a dialog.
 
 8) ace.js
-- introduced custom implementation of trim method which does not rely on regular expressions.
+- introduced custom implementation of trim method which does not rely on regular expressions. [GWUA-3583]
 
 9) query-builder.js
 - update QB version from 2.3.2 to 2.5.2
@@ -53,3 +54,6 @@
 
 15) bootstrap-popover-3.4.1.js
 - changed jQuery fn tooltip namespace to bsTooltip
+
+16) ace.js
+- changed adding 'style' element from head of 'head' element to end [GWUA-5036]

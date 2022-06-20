@@ -99,12 +99,20 @@
                             </label>
                         </div>
                         <div class="col-md-12">
-                            <mvc:text path="dateFrom.date" id="search_dateFrom"
-                                      cssClass="form-control datepicker-input js-datepicker js-datepicker-period-start"
-                                      value="${not empty userActivityLogForm.dateFrom.date ? userActivityLogForm.dateFrom.date : defaultDate}"
-                                      datepicker-period-id="0"
-                                      data-datepicker-options="format: '${fn:toLowerCase(adminDateFormat)}', formatSubmit: '${fn:toLowerCase(adminDateFormat)}'"/>
-
+                            <div class="input-group">
+                                <div class="input-group-controls">
+                                    <mvc:text path="dateFrom.date" id="search_dateFrom"
+                                              cssClass="form-control datepicker-input js-datepicker js-datepicker-period-start"
+                                              value="${not empty userActivityLogForm.dateFrom.date ? userActivityLogForm.dateFrom.date : defaultDate}"
+                                              datepicker-period-id="0"
+                                              data-datepicker-options="format: '${fn:toLowerCase(adminDateFormat)}', formatSubmit: '${fn:toLowerCase(adminDateFormat)}'"/>
+                                </div>
+                                <div class="input-group-btn">
+                                    <button type="button" class="btn btn-regular btn-toggle js-open-datepicker" tabindex="-1">
+                                        <i class="icon icon-calendar-o"></i>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -116,11 +124,20 @@
                             </label>
                         </div>
                         <div class="col-md-12">
-                            <mvc:text path="dateTo.date" id="search_dateTo"
-                                      cssClass="form-control datepicker-input js-datepicker js-datepicker-period-end"
-                                      value="${not empty userActivityLogForm.dateTo.date ? userActivityLogForm.dateTo.date : defaultDate}"
-                                      datepicker-period-id="0"
-                                      data-datepicker-options="format: '${fn:toLowerCase(adminDateFormat)}', formatSubmit: '${fn:toLowerCase(adminDateFormat)}'"/>
+                            <div class="input-group">
+                                <div class="input-group-controls">
+                                    <mvc:text path="dateTo.date" id="search_dateTo"
+                                              cssClass="form-control datepicker-input js-datepicker js-datepicker-period-end"
+                                              value="${not empty userActivityLogForm.dateTo.date ? userActivityLogForm.dateTo.date : defaultDate}"
+                                              datepicker-period-id="0"
+                                              data-datepicker-options="format: '${fn:toLowerCase(adminDateFormat)}', formatSubmit: '${fn:toLowerCase(adminDateFormat)}'"/>
+                                </div>
+                                <div class="input-group-btn">
+                                    <button type="button" class="btn btn-regular btn-toggle js-open-datepicker" tabindex="-1">
+                                        <i class="icon icon-calendar-o"></i>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

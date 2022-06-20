@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -206,7 +206,7 @@ public class JsonSerializer {
 			} else if (value instanceof JsonObject) {
 				String className = (String) jsonObject.get("class");
 				Class<?> clazz = Class.forName(className);
-				Object object = clazz.newInstance();
+				Object object = clazz.getConstructor().newInstance();
 				for (Entry<String, Object> entry : ((JsonObject) value).entrySet()) {
 					if (!(entry.getValue() instanceof JsonObject)) {
 						throw new Exception("Invalid value type serialization value");
@@ -238,7 +238,7 @@ public class JsonSerializer {
 					Object[] array = (Object[]) Array.newInstance(clazz.getComponentType(), listOfItems.size());
 					return listOfItems.toArray(array);
 				} else {
-					Object object = clazz.newInstance();
+					Object object = clazz.getConstructor().newInstance();
 					if (object instanceof Collection) {
 						for (Object item : listOfItems) {
 							@SuppressWarnings("unchecked")

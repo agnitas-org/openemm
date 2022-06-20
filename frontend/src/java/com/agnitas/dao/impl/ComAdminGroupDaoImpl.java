@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -24,10 +24,10 @@ import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.impl.PaginatedBaseDaoImpl;
 import org.agnitas.dao.impl.mapper.IntegerRowMapper;
 import org.agnitas.dao.impl.mapper.StringRowMapper;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.RowMapper;
@@ -42,7 +42,8 @@ import com.agnitas.emm.core.Permission;
  */
 public class ComAdminGroupDaoImpl extends PaginatedBaseDaoImpl implements ComAdminGroupDao  {
 	
-	private static final transient Logger logger = Logger.getLogger(ComAdminGroupDaoImpl.class);
+	/** The logger. */
+	private static final transient Logger logger = LogManager.getLogger(ComAdminGroupDaoImpl.class);
     
     /** DAO for accessing company data. */
 	protected ComCompanyDao companyDao;
@@ -58,8 +59,8 @@ public class ComAdminGroupDaoImpl extends PaginatedBaseDaoImpl implements ComAdm
     }
 
 	@Override
-	public AdminGroup getAdminGroup(int groupID, int companyToLimitPremiumPermissionsFor) {
-		return selectObjectDefaultNull(logger, "SELECT admin_group_id, company_id, shortname, description FROM admin_group_tbl WHERE admin_group_id = ?", new AdminGroupRowMapper(companyToLimitPremiumPermissionsFor), groupID);
+	public AdminGroup getAdminGroup(int adminGroupID, int companyToLimitPremiumPermissionsFor) {
+		return selectObjectDefaultNull(logger, "SELECT admin_group_id, company_id, shortname, description FROM admin_group_tbl WHERE admin_group_id = ?", new AdminGroupRowMapper(companyToLimitPremiumPermissionsFor), adminGroupID);
 	}
 
 	private AdminGroup getAdminGroup(int groupID, int companyToLimitPremiumPermissionsFor, Stack<Integer> cycleDetectionGroupIds) {
@@ -74,13 +75,13 @@ public class ComAdminGroupDaoImpl extends PaginatedBaseDaoImpl implements ComAdm
 	}
     
     @Override
-	public List<AdminGroup> getAdminGroupsByCompanyId(@VelocityCheck int companyId) {
+	public List<AdminGroup> getAdminGroupsByCompanyId(int companyId) {
 		List<AdminGroup> groupList = select(logger, "SELECT admin_group_id, company_id, shortname, description FROM admin_group_tbl WHERE company_id = ? ORDER BY admin_group_id", new AdminGroupRowMapper(companyId), companyId);
 		return groupList;
     }
     
     @Override
-    public List<AdminGroup> getAdminGroupsByCompanyIdAndDefault(@VelocityCheck int companyId, List<Integer> additionalAdminGroupIds) {
+    public List<AdminGroup> getAdminGroupsByCompanyIdAndDefault(int companyId, List<Integer> additionalAdminGroupIds) {
     	if (companyId == 1) {
     		return select(logger, "SELECT admin_group_id, company_id, shortname, description FROM admin_group_tbl ORDER BY admin_group_id", new AdminGroupRowMapper(companyId));
     	} else {
@@ -93,7 +94,7 @@ public class ComAdminGroupDaoImpl extends PaginatedBaseDaoImpl implements ComAdm
 	}
     
     @Override
-    public PaginatedListImpl<AdminGroup> getAdminGroupsByCompanyIdInclCreator(@VelocityCheck int companyId, int adminId, String sortColumn, String sortDirection, int pageNumber, int pageSize) {
+    public PaginatedListImpl<AdminGroup> getAdminGroupsByCompanyIdInclCreator(int companyId, int adminId, String sortColumn, String sortDirection, int pageNumber, int pageSize) {
     	if (StringUtils.isBlank(sortColumn)) {
     		sortColumn = "shortname";
         }
@@ -154,6 +155,8 @@ public class ComAdminGroupDaoImpl extends PaginatedBaseDaoImpl implements ComAdm
 		saveAdminGroupPermissions(groupId, adminGroup.getGroupPermissions());
 		saveAdminGroupParentGroups(groupId, adminGroup.getParentGroups());
 		
+		adminGroup.setGroupID(groupId);
+		
 		return groupId;
 	}
 
@@ -194,7 +197,7 @@ public class ComAdminGroupDaoImpl extends PaginatedBaseDaoImpl implements ComAdm
 
 	@Override
 	@DaoUpdateReturnValueCheck
-    public int delete(@VelocityCheck int companyId, int adminGroupId) {
+    public int delete(int companyId, int adminGroupId) {
     	if (companyId > 0) {
     		update(logger, "DELETE FROM group_to_group_tbl WHERE admin_group_id = ?", adminGroupId);
     		update(logger, "DELETE FROM admin_group_permission_tbl WHERE admin_group_id = ?", adminGroupId);
@@ -206,7 +209,7 @@ public class ComAdminGroupDaoImpl extends PaginatedBaseDaoImpl implements ComAdm
     }
     
     @Override
-    public int adminGroupExists(@VelocityCheck int companyId, String groupname) {
+    public int adminGroupExists(int companyId, String groupname) {
 		String sql = "SELECT admin_group_id FROM admin_group_tbl WHERE (company_id = ? or company_id = 1) AND shortname = ?";
 		return selectInt(logger, sql, companyId, groupname);
 	}
@@ -258,13 +261,13 @@ public class ComAdminGroupDaoImpl extends PaginatedBaseDaoImpl implements ComAdm
 	}
 
 	@Override
-	public List<String> getAdminsOfGroup(@VelocityCheck int companyId, int groupId) {
-		return select(logger, "SELECT adm.username FROM admin_tbl adm WHERE adm.company_id = ? AND EXISTS (SELECT 1 FROM admin_to_group_tbl grp WHERE grp.admin_id = adm.admin_id AND grp.admin_group_id = ?)", new StringRowMapper(), companyId, groupId);
+	public List<String> getAdminsOfGroup(int companyId, int groupId) {
+		return select(logger, "SELECT adm.username FROM admin_tbl adm WHERE adm.company_id = ? AND EXISTS (SELECT 1 FROM admin_to_group_tbl grp WHERE grp.admin_id = adm.admin_id AND grp.admin_group_id = ?)", StringRowMapper.INSTANCE, companyId, groupId);
 	}
 
 	@Override
-	public List<String> getGroupNamesUsingGroup(@VelocityCheck int companyId, int groupId) {
-		return select(logger, "SELECT grp1.shortname FROM admin_group_tbl grp1 WHERE grp1.company_id = ? AND EXISTS (SELECT 1 FROM group_to_group_tbl grp2 WHERE grp2.admin_group_id = grp1.admin_group_id AND grp2.member_of_admin_group_id = ?)", new StringRowMapper(), companyId, groupId);
+	public List<String> getGroupNamesUsingGroup(int companyId, int groupId) {
+		return select(logger, "SELECT grp1.shortname FROM admin_group_tbl grp1 WHERE grp1.company_id = ? AND EXISTS (SELECT 1 FROM group_to_group_tbl grp2 WHERE grp2.admin_group_id = grp1.admin_group_id AND grp2.member_of_admin_group_id = ?)", StringRowMapper.INSTANCE, companyId, groupId);
 	}
 	
 	@Override
@@ -276,7 +279,7 @@ public class ComAdminGroupDaoImpl extends PaginatedBaseDaoImpl implements ComAdm
     public Set<String> getGroupPermissionsTokens(int adminGroupId) {
     	Set<String> returnSet = new HashSet<>();
     	
-    	returnSet.addAll(select(logger, "SELECT permission_name FROM admin_group_permission_tbl WHERE admin_group_id = ?", new StringRowMapper(), adminGroupId));
+    	returnSet.addAll(select(logger, "SELECT permission_name FROM admin_group_permission_tbl WHERE admin_group_id = ?", StringRowMapper.INSTANCE, adminGroupId));
         
         returnSet.addAll(getParentGroupsPermissionTokens(adminGroupId));
         
@@ -285,7 +288,7 @@ public class ComAdminGroupDaoImpl extends PaginatedBaseDaoImpl implements ComAdm
     
     @Override
     public List<Integer> getParentGroupIds(int adminGroupId) {
-        return select(logger, "SELECT member_of_admin_group_id FROM group_to_group_tbl WHERE admin_group_id = ? ORDER BY member_of_admin_group_id", new IntegerRowMapper(), adminGroupId);
+        return select(logger, "SELECT member_of_admin_group_id FROM group_to_group_tbl WHERE admin_group_id = ? ORDER BY member_of_admin_group_id", IntegerRowMapper.INSTANCE, adminGroupId);
     }
     
     @Override
@@ -293,7 +296,7 @@ public class ComAdminGroupDaoImpl extends PaginatedBaseDaoImpl implements ComAdm
     	Set<String> returnSet = new HashSet<>();
     	
         for (int parentGroupId : getParentGroupIds(adminGroupId)) {
-        	returnSet.addAll(select(logger, "SELECT permission_name FROM admin_group_permission_tbl WHERE admin_group_id = ?", new StringRowMapper(), parentGroupId));
+        	returnSet.addAll(select(logger, "SELECT permission_name FROM admin_group_permission_tbl WHERE admin_group_id = ?", StringRowMapper.INSTANCE, parentGroupId));
         }
         
         return returnSet;

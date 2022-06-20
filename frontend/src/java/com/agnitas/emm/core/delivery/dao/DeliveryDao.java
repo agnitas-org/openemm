@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -12,13 +12,21 @@ package com.agnitas.emm.core.delivery.dao;
 
 import java.util.List;
 
-import com.agnitas.emm.core.delivery.beans.DeliveryInfo;
+import com.agnitas.emm.core.delivery.beans.SuccessfulDeliveryInfo;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
-public interface DeliveryDao {
+import com.agnitas.emm.core.delivery.beans.DeliveryInfo;
 
+public interface DeliveryDao {
     List<DeliveryInfo> getDeliveriesInfo(@VelocityCheck int companyId, int mailingId, int customerId);
+
+    List<SuccessfulDeliveryInfo> getSuccessfulDeliveriesInfo(int companyId, int mailingId, int recipientId);
 
     boolean checkIfDeliveryTableExists(@VelocityCheck int companyId);
 
+	boolean dropDeliveryTbl(int companyID);
+
+	boolean createDeliveryTbl(int companyID);
+
+	boolean cleanDeliveryTbl(int companyID);
 }

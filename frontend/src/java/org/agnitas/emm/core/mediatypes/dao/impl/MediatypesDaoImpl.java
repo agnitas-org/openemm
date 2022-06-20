@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -16,23 +16,24 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-import com.agnitas.beans.MediatypeEmail;
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import com.agnitas.util.SpecialCharactersWorker;
-import org.agnitas.beans.Mediatype;
 import org.agnitas.dao.impl.BaseDaoImpl;
 import org.agnitas.emm.core.mediatypes.dao.MediatypesDao;
 import org.agnitas.emm.core.mediatypes.dao.MediatypesDaoException;
 import org.agnitas.emm.core.mediatypes.factory.MediatypeFactory;
-import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.jdbc.core.RowCallbackHandler;
 
+import com.agnitas.beans.Mediatype;
+import com.agnitas.beans.MediatypeEmail;
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.util.SpecialCharactersWorker;
+
 public class MediatypesDaoImpl extends BaseDaoImpl implements MediatypesDao {
     /** The logger. */
-    private static final transient Logger logger = Logger.getLogger(MediatypesDaoImpl.class);
+    private static final transient Logger logger = LogManager.getLogger(MediatypesDaoImpl.class);
 
     protected MediatypeFactory mediatypeFactory;
 
@@ -51,6 +52,8 @@ public class MediatypesDaoImpl extends BaseDaoImpl implements MediatypesDao {
                     subject = SpecialCharactersWorker.processString(subject, mediatypeEmail.getCharset());
                     mediatypeEmail.setSubject(subject);
                 }
+                
+                validateParam(mediatype.getParam());
 
                 String sql = "SELECT COUNT(mediatype) FROM mailing_mt_tbl WHERE mailing_id = ? AND mediatype = ?";
                 int total = selectInt(logger, sql, mailingId, type);
@@ -67,7 +70,7 @@ public class MediatypesDaoImpl extends BaseDaoImpl implements MediatypesDao {
     }
 
     @Override
-    public Map<Integer, Mediatype> loadMediatypes(int mailingId, @VelocityCheck int companyId) throws MediatypesDaoException {
+    public Map<Integer, Mediatype> loadMediatypes(int mailingId, int companyId) throws MediatypesDaoException {
         Map<Integer, Mediatype> mediatypes = new HashMap<>();
 
         String sql = "SELECT mediatype, priority, status, param FROM mailing_mt_tbl WHERE mailing_id = ?";
@@ -101,7 +104,7 @@ public class MediatypesDaoImpl extends BaseDaoImpl implements MediatypesDao {
 
             if (mediatypeFactory.isTypeSupported(type)) {
                 try {
-                    Mediatype mediatype = mediatypeFactory.create(type);
+                	Mediatype mediatype = mediatypeFactory.create(type);
 
                     mediatype.setCompanyID(companyId);
                     mediatype.setPriority(rs.getInt("priority"));
@@ -115,4 +118,10 @@ public class MediatypesDaoImpl extends BaseDaoImpl implements MediatypesDao {
             }
         }
     }
+    
+    private void validateParam(String param) {
+		if (param != null && param.length() > 1000) {
+			throw new RuntimeException("Value for mailing_mt_tbl.param is to long (Maximum: 1000, Current: " + param.length() + ")");
+		}
+	}
 }

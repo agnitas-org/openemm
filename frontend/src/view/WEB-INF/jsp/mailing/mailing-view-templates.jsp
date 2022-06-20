@@ -1,14 +1,28 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
-<%@ page import="com.agnitas.web.ComMailingBaseAction" %>
+<%@ page import="com.agnitas.web.MailingBaseAction" %>
+<%@ page import="org.agnitas.util.AgnUtils"%>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
 <%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
 <%@ taglib uri="http://displaytag.sf.net" prefix="display" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
-<c:set var="ACTION_NEW" value="<%= ComMailingBaseAction.ACTION_NEW %>"/>
+<c:set var="ACTION_NEW" value="<%= MailingBaseAction.ACTION_NEW %>"/>
 <emm:setAbsolutePath var="absoluteImagePath" path="${emmLayoutBase.imagesURL}"/>
+
+<c:set var="SESSION_CONTEXT_KEYNAME_ADMIN" value="<%= AgnUtils.SESSION_CONTEXT_KEYNAME_ADMIN%>" />
+
+<%--@elvariable id="admin" type="com.agnitas.beans.ComAdmin"--%>
+<%--@elvariable id="localeDatePattern" type="java.lang.String"--%>
+
+<c:set var="admin" value="${sessionScope[SESSION_CONTEXT_KEYNAME_ADMIN]}" />
+
+<c:set var="aZone" value="${admin.adminTimezone}" />
+<c:set var="adminLocale" value="${admin.locale}" />
+
+<c:set var="aLocale" value="${admin.getLocale()}" />
 
 <agn:agnForm action="/mailingbase.do?action=${ACTION_NEW}&mailingID=0&isTemplate=false" method="GET" data-form="resource">
     <html:hidden property="keepForward" value="${not empty workflowId and workflowId gt 0 ? true : false}"/>
@@ -42,13 +56,17 @@
             <div id="tab-templates-list" class="hidden" data-sizing="scroll">
                 <ul class="link-list">
                     <c:forEach var="template" items="${mailingBaseForm.templateMailingBases}">
+                        <c:set value="${template.creationDate}" var="creationDateTimeStamp" />
+                        <fmt:parseDate value="${creationDateTimeStamp}" var="creationDateParsed" pattern="yyyy-MM-dd HH:mm:ss" />
+                        <fmt:formatDate value="${creationDateParsed}" var="creationDateFormatted" pattern="${localeDatePattern}" timeZone="${aZone}" />
+                        
                         <li>
                             <a href="#" data-form-submit  class="link-list-item" data-form-set="templateID: ${template.id}" data-layout-id="${template.id}" data-action="select-layout">
                                 <p class="headline">${template.shortname}</p>
                                 <p class="description">
                                     <span data-tooltip="<bean:message key="default.creationDate"/>">
                                         <i class="icon icon-calendar-o"></i>
-                                        <strong>${template.creationDate}</strong>
+                                        <strong>${creationDateFormatted}</strong>
                                     </span>
                                 </p>
                             </a>
@@ -60,6 +78,10 @@
             <div id="tab-templates-preview" class="card-panel" data-sizing="scroll">
                 <div class="row flexbox">
                     <c:forEach var="template" items="${mailingBaseForm.templateMailingBases}">
+                        <c:set value="${template.creationDate}" var="creationDateTimeStamp" />
+                        <fmt:parseDate value="${creationDateTimeStamp}" var="creationDateParsed" pattern="yyyy-MM-dd HH:mm:ss" />
+                        <fmt:formatDate value="${creationDateParsed}" var="creationDateFormatted" pattern="${localeDatePattern}" timeZone="${aZone}" />
+                        
                         <div class="col-xs-6 col-sm-4 col-md-3 card-content">
                             <a href="#" class="card old-cards" data-form-submit data-action="select-layout" data-form-set="templateID: ${template.id}" data-layout-id="${template.id}" data-action="select-layout">
                                 <c:choose>
@@ -82,7 +104,7 @@
                                     <p class="description">
                                     <span data-tooltip="<bean:message key="default.creationDate"/>">
                                         <i class="icon icon-calendar-o"></i>
-                                        <strong>${template.creationDate}</strong>
+                                        <strong>${creationDateFormatted}</strong>
                                     </span>
                                     </p>
                                 </div>

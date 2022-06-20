@@ -12,7 +12,7 @@
 <c:set var="agnHighlightKey" 		value="default.Overview" 			scope="request" />
 <c:set var="isBreadcrumbsShown" 	value="true" 						scope="request" />
 <c:set var="agnBreadcrumbsRootKey" 	value="ImportExport" 				scope="request" />
-<c:set var="agnHelpKey" 			value="DateSource" 			        scope="request" />
+<c:set var="agnHelpKey" 			value="dataSourceList" 				scope="request" />
 <c:set var="agnNavigationKey" 		value="datasource" 		   		    scope="request" />
 
 <emm:instantiate var="agnBreadcrumbs" type="java.util.LinkedHashMap" scope="request">

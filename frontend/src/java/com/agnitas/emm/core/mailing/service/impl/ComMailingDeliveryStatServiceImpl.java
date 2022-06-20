@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -15,23 +15,24 @@ import java.util.Objects;
 
 import org.agnitas.dao.MailingDao;
 import org.agnitas.util.DateUtilities;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.DeliveryStat;
 import com.agnitas.beans.MaildropEntry;
 import com.agnitas.beans.impl.MailingBackendLog;
 import com.agnitas.dao.DeliveryStatDao;
+import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.maildrop.MaildropGenerationStatus;
 import com.agnitas.emm.core.maildrop.MaildropStatus;
 import com.agnitas.emm.core.mailing.service.ComMailingDeliveryStatService;
 import com.agnitas.emm.core.mailing.service.MailingStopService;
-import com.agnitas.emm.core.report.enums.fields.MailingTypes;
 import com.agnitas.post.TriggerdialogService;
 
 public class ComMailingDeliveryStatServiceImpl implements ComMailingDeliveryStatService {
 
-    private static final Logger logger = Logger.getLogger(ComMailingDeliveryStatServiceImpl.class);
+    private static final Logger logger = LogManager.getLogger(ComMailingDeliveryStatServiceImpl.class);
 
     private DeliveryStatDao deliveryStatDao;
     private MailingDao mailingDao;
@@ -43,7 +44,7 @@ public class ComMailingDeliveryStatServiceImpl implements ComMailingDeliveryStat
     private TriggerdialogService triggerdialogService = null;
 
     @Override
-    public DeliveryStat getDeliveryStats(int companyID, int mailingID, int mailingType) {
+    public DeliveryStat getDeliveryStats(int companyID, int mailingID, MailingType mailingType) {
         if (triggerdialogService != null && triggerdialogService.isPostMailing(mailingDao.getMailing(mailingID, companyID))) {
         	DeliveryStat deliveryStatistic;
 			try {
@@ -254,10 +255,9 @@ public class ComMailingDeliveryStatServiceImpl implements ComMailingDeliveryStat
     	
     }
     
-    private String getStatusField(int mailingType) {
-        MailingTypes type = MailingTypes.getByCode(mailingType);
-        if (type != null) {
-            switch (type) {
+    private String getStatusField(MailingType mailingType) {
+        if (mailingType != null) {
+            switch (mailingType) {
                 case NORMAL:
                     return MaildropStatus.WORLD.getCodeString();
         

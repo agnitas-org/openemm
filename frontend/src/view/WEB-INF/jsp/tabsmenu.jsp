@@ -91,6 +91,7 @@
                         <c:param name="featureNameKey" value="${_navigation_navMsg}"/>
                         <c:param name="navigationKey" value="${agnNavigationKey}"/>
                         <c:param name="extraParams" value="${forwardedParams}"/>
+                        <c:param name="navigationLink" value="${navigationLink}"/>
                     </c:url>
 
                     <li class="${_navigation_isHighlightKey ? 'active' : ''}">

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,13 +10,11 @@
 
 package com.agnitas.emm.core.mailing.service;
 
-import java.text.DateFormat;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Future;
 
 import javax.sql.DataSource;
 
@@ -27,8 +25,6 @@ import org.agnitas.dao.UserStatus;
 import org.agnitas.emm.core.mailing.beans.LightweightMailing;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.service.MailingRecipientExportWorker;
-import org.agnitas.util.Tuple;
-import org.apache.commons.beanutils.DynaBean;
 import org.apache.struts.action.ActionMessages;
 import org.springframework.context.ApplicationContext;
 
@@ -36,10 +32,10 @@ import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.DynamicTag;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MailingsListProperties;
+import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.mailing.TooManyTargetGroupsInMailingException;
 import com.agnitas.emm.core.mailing.bean.MailingRecipientStatRow;
 import com.agnitas.emm.core.mailing.dto.CalculationRecipientsConfig;
-import com.agnitas.emm.core.report.enums.fields.MailingTypes;
 import com.agnitas.service.SimpleServiceResult;
 
 
@@ -96,23 +92,6 @@ public interface ComMailingBaseService {
     PaginatedListImpl<Map<String, Object>> getPaginatedMailingsData(ComAdmin admin, MailingsListProperties props);
     
     /**
-     * An asynchronous version of {@link #getMailingRecipients(int, int, int, int, int, String, boolean, java.util.List)} method.
-     *
-     * @param mailingId an identifier of the target mailing
-     * @param companyId an identifier of current user's company
-     * @param filterType recipients to retrieve. Allowed values:
-     * {@link MailingRecipientExportWorker#MAILING_RECIPIENTS_ALL}, {@link MailingRecipientExportWorker#MAILING_RECIPIENTS_OPENED},
-     * {@link MailingRecipientExportWorker#MAILING_RECIPIENTS_CLICKED}, {@link MailingRecipientExportWorker#MAILING_RECIPIENTS_BOUNCED},
-     * {@link MailingRecipientExportWorker#MAILING_RECIPIENTS_UNSUBSCRIBED}.
-     * @param pageNumber a sequential number of a page
-     * @param rowsPerPage a maximal entries count shown at a page
-     * @param sortCriterion column name to sort by
-     * @param sortAscending sort direction
-     * @return a future object to access a result of long running query.
-     */
-    Future<PaginatedListImpl<DynaBean>> getMailingRecipientsLongRunning(int mailingId, @VelocityCheck int companyId, int filterType, int pageNumber, int rowsPerPage, String sortCriterion, boolean sortAscending, List<String> columns, DateFormat dateFormat);
-
-    /**
      * A shortcut for {@link #getDynamicTags(int, int, boolean)} passing {@code false} as {@code resetIds} argument.
      */
     List<DynamicTag> getDynamicTags(int mailingId, @VelocityCheck int companyId);
@@ -153,7 +132,7 @@ public interface ComMailingBaseService {
      * @return distinct number of recipients for referenced mailinglist and other settings.
      * @throws Exception if calculation is impossible or some data is corrupted.
      */
-    int calculateRecipients(@VelocityCheck int companyId, int mailingListId, int splitId, Collection<Integer> targetGroupIds, boolean conjunction) throws Exception;
+    int calculateRecipients(@VelocityCheck int companyId, int mailingListId, int splitId, Collection<Integer> altgIds, Collection<Integer> targetGroupIds, boolean conjunction) throws Exception;
 
     /**
      * Get distinct number of recipients for referenced mailinglist and other settings.
@@ -201,17 +180,6 @@ public interface ComMailingBaseService {
 	boolean isLimitedRecipientOverview(ComAdmin admin, int mailingId);
 
     /**
-     * Evaluate mailing content structure and calculate the maximum possible size (in bytes) of a mail that mailing can
-     * ever produce. Keep in mind that calculations could be a little bit inaccurate because an algorithm never assumes
-     * any sort of connection between target groups. Although the same dyn-tag is replaced with the same content all over the mailing
-     * (if used in multiple placed) because otherwise an inaccuracy could be that high so calculations get completely useless and untrustful.
-     *
-     * @param mailing the mailing entity to evaluate.
-     * @return the tuple of maximum possible mail sizes in bytes (first - without external images, second - with external images).
-     */
-    Tuple<Long, Long> calculateMaxSize(Mailing mailing);
-
-    /**
      * Check if the given mailing content is blank (resolve all the dyn-tags (if any) and check if mail contains at least
      * one non-whitespace character).
      * Notice that an algorithm is recursive so if content refers some dynamic block that refers another one then
@@ -238,12 +206,12 @@ public interface ComMailingBaseService {
     
     Map<Integer, String> getMailingNames(List<Integer> mailingIds, @VelocityCheck int companyId);
 
-	List<LightweightMailing> getMailingsByType(MailingTypes type, @VelocityCheck int companyId);
-	List<LightweightMailing> getMailingsByType(MailingTypes type, @VelocityCheck int companyId, boolean includeInactive);
+	List<LightweightMailing> getMailingsByType(MailingType type, @VelocityCheck int companyId);
+	List<LightweightMailing> getMailingsByType(MailingType type, @VelocityCheck int companyId, boolean includeInactive);
     
     MailingSendStatus getMailingSendStatus(int mailingId, @VelocityCheck int companyId);
     
-    int getMailingType(int mailingId);
+    MailingType getMailingType(int mailingId) throws Exception;
 
     Date getMailingLastSendDate(int mailingId);
 
@@ -254,6 +222,5 @@ public interface ComMailingBaseService {
      */
     SimpleServiceResult checkContentNotBlank(Mailing mailing);
 
-    boolean activateTrackingLinksOnEveryPosition(ComAdmin admin, Mailing mailing, Set<Integer> bulkLinks, ApplicationContext context) throws Exception;
-
+    void activateTrackingLinksOnEveryPosition(ComAdmin admin, Mailing mailing, ApplicationContext context) throws Exception;
 }

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -16,6 +16,7 @@ import static com.agnitas.emm.core.usergroup.web.UserGroupController.NEW_USER_GR
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -24,16 +25,18 @@ import java.util.stream.Collectors;
 
 import org.agnitas.beans.AdminGroup;
 import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.AgnUtils;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.dao.ComAdminGroupDao;
 import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.PermissionInfo;
+import com.agnitas.emm.core.PermissionType;
 import com.agnitas.emm.core.admin.service.PermissionFilter;
 import com.agnitas.emm.core.admin.web.PermissionsOverviewData;
 import com.agnitas.emm.core.company.service.ComCompanyService;
@@ -45,7 +48,7 @@ import com.agnitas.service.ExtendedConversionService;
 
 public class UserGroupServiceImpl implements UserGroupService {
     
-    private static final Logger logger = Logger.getLogger(UserGroupServiceImpl.class);
+    private static final Logger logger = LogManager.getLogger(UserGroupServiceImpl.class);
 
     private static final int USER_FORM_NAME_MAX_LENGTH = 99;
 
@@ -92,7 +95,8 @@ public class UserGroupServiceImpl implements UserGroupService {
         if (adminGroup == null) {
             return null;
         }
-        
+
+        LinkedHashMap<String, PermissionInfo> permissionInfos = permissionService.getPermissionInfos();
         UserGroupDto userGroupDto = conversionService.convert(adminGroup, UserGroupDto.class);
         List<String> allowedPermissionsCategories = getUserGroupPermissionCategories(userGroupDto.getUserGroupId(), userGroupDto.getCompanyId(), admin);
         if (!allowedPermissionsCategories.isEmpty()) {
@@ -100,7 +104,7 @@ public class UserGroupServiceImpl implements UserGroupService {
             Set<Permission> companyPermissions = companyService.getCompanyPermissions(admin.getCompanyID());
             
             Set<String> permissionGranted = permissionService.getAllPermissions().stream()
-                    .filter(permission -> allowedPermissionsCategories.contains(permission.getCategory()))
+                    .filter(permission -> allowedPermissionsCategories.contains(permissionInfos.get(permission.getTokenString()).getCategory()))
                     .filter(permission -> Permission.permissionAllowed(groupPermissions, companyPermissions, permission))
                     .map(Permission::toString)
                     .collect(Collectors.toSet());
@@ -126,15 +130,15 @@ public class UserGroupServiceImpl implements UserGroupService {
         
         List<String> addedPermissions = ListUtils.removeAll(selectedPermissions, groupPermissions);
         List<String> removedPermissions = ListUtils.removeAll(groupPermissions, selectedPermissions);
-        
+
+        LinkedHashMap<String, PermissionInfo> permissionInfos = permissionService.getPermissionInfos();
         for (String permissionToken: removedPermissions) {
             Permission permission = Permission.getPermissionByToken(permissionToken);
             if (!allChangeablePermissions.contains(permissionToken) && permission != null) {
-                String category = permission.getCategory();
-                if (StringUtils.equals(Permission.CATEGORY_KEY_SYSTEM, category)) {
+                if (permission.getPermissionType() == PermissionType.System) {
                     // User is not allowed to change this permission of special category and may also not see it in GUI, so keep it unchanged
                     selectedPermissions.add(permissionToken);
-                } else if (permission.isPremium() && !companyPermissions.contains(permission)) {
+                } else if (permission.getPermissionType() == PermissionType.Premium && !companyPermissions.contains(permission)) {
                     // Current users company does not have this right, but usergroup to edit has it.
                     // This happens only for the emm-master user, who makes changes in some foreign company
                     // Just leave it unchanged
@@ -149,7 +153,7 @@ public class UserGroupServiceImpl implements UserGroupService {
         for (String permissionToken: addedPermissions) {
             if (!allChangeablePermissions.contains(permissionToken)) {
                 Permission permission = Permission.getPermissionByToken(permissionToken);
-                String category = permission.getCategory();
+                String category = permissionInfos.get(permission.getTokenString()).getCategory();
                 if ((StringUtils.equals(Permission.CATEGORY_KEY_SYSTEM, category))) {
                     // User is not allowed to change this permission of special category and may also not see it in GUI, so keep it unchanged
                     selectedPermissions.remove(permissionToken);
@@ -191,19 +195,20 @@ public class UserGroupServiceImpl implements UserGroupService {
     
     @Override
     public boolean isUserGroupPermissionChangeable(ComAdmin admin, Permission permission, Set<Permission> companyPermissions) {
-        if (permission.isPremium()) {
+        if (permission.getPermissionType() == PermissionType.Premium) {
             return companyPermissions.contains(permission);
-        } else if (Permission.CATEGORY_KEY_SYSTEM.equals(permission.getCategory())) {
-            return admin.permissionAllowed(permission) ||
-                    admin.permissionAllowed(Permission.MASTER_SHOW) ||
-                    admin.getAdminID() == ROOT_ADMIN_ID;
+        } else if (permission.getPermissionType() == PermissionType.System) {
+            return companyPermissions.contains(permission)
+            		&& (admin.permissionAllowed(permission) ||
+	                    admin.permissionAllowed(Permission.MASTER_SHOW) ||
+	                    admin.getAdminID() == ROOT_ADMIN_ID);
         } else {
         	return true;
         }
     }
     
     @Override
-    public List<String> getAdminNamesOfGroup(int userGroupId, @VelocityCheck int companyId) {
+    public List<String> getAdminNamesOfGroup(int userGroupId, int companyId) {
         if (userGroupId > -1 && companyId > 0) {
             return userGroupDao.getAdminsOfGroup(companyId, userGroupId);
         } else {
@@ -212,7 +217,7 @@ public class UserGroupServiceImpl implements UserGroupService {
     }
     
     @Override
-    public List<String> getGroupNamesUsingGroup(int userGroupId, @VelocityCheck int companyId) {
+    public List<String> getGroupNamesUsingGroup(int userGroupId, int companyId) {
         if (userGroupId > -1 && companyId > 0) {
         	return userGroupDao.getGroupNamesUsingGroup(companyId, userGroupId);
         } else {
@@ -244,13 +249,15 @@ public class UserGroupServiceImpl implements UserGroupService {
         builder.setGroupToEdit(userGroupDao.getAdminGroup(groupId, groupCompanyId));
         builder.setCompanyPermissions(companyService.getCompanyPermissions(groupCompanyId));
         builder.setVisiblePermissions(permissionFilter.getAllVisiblePermissions());
+		builder.setPermissionInfos(permissionService.getPermissionInfos());
     
         return builder.build().getPermissionsCategories();
     }
     
     private Set<String> getAllChangeablePermissions(List<String> permissionCategories, Set<Permission> companyPermissions, ComAdmin admin) {
+        LinkedHashMap<String, PermissionInfo> permissionInfos = permissionService.getPermissionInfos();
         return permissionService.getAllPermissions().stream()
-                .filter(permission -> permissionCategories.contains(permission.getCategory()))
+                .filter(permission -> permissionCategories.contains(permissionInfos.get(permission.getTokenString()).getCategory()))
                 .filter(permission -> isUserGroupPermissionChangeable(admin, permission, companyPermissions))
                 .map(Permission::toString)
                 .collect(Collectors.toSet());
@@ -280,11 +287,12 @@ public class UserGroupServiceImpl implements UserGroupService {
 
         group.setUserGroupId(NEW_USER_GROUP_ID);
         group.setShortname(generateUserGroupCopyName(group.getShortname(), admin.getCompanyID(), admin.getLocale()));
+        group.setCompanyId(admin.getCompanyID());
         return saveUserGroup(admin, group);
     }
 
     private String generateUserGroupCopyName(String name, int companyId, Locale locale) {
-        return AgnUtils.getUniqueCloneName(name, I18nString.getLocaleString("mailing.CopyOf", locale) + " ", 
+        return AgnUtils.getUniqueCloneName(name, I18nString.getLocaleString("mailing.CopyOf", locale) + " ",
                 USER_FORM_NAME_MAX_LENGTH, newName -> userGroupDao.adminGroupExists(companyId, newName) > 0);
     }
 }

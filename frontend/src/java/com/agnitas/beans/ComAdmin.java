@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -19,13 +19,13 @@ import java.util.Locale;
 import java.util.Set;
 
 import org.agnitas.beans.AdminGroup;
-import org.agnitas.beans.Company;
 
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.supervisor.beans.Supervisor;
 
-public interface ComAdmin {
+import org.apache.commons.collections4.CollectionUtils;
 
+public interface ComAdmin {
     String getStatEmail();
     void setStatEmail(String statEmail);
 
@@ -165,8 +165,8 @@ public interface ComAdmin {
     int getDefaultImportProfileID();
     void setDefaultImportProfileID(int defaultImportProfileID);
     
-    public String getAdminPhone();
-	public void setAdminPhone(String adminPhone);
+    String getAdminPhone();
+	void setAdminPhone(String adminPhone);
     
 	SimpleDateFormat getDateFormat();
 	DateTimeFormatter getDateFormatter();
@@ -178,16 +178,30 @@ public interface ComAdmin {
 	
 	void setCompanyPermissions(Set<Permission> companyPermissions);
 		
-	public int getAccessLimitingTargetGroupID();
+	int getAccessLimitingTargetGroupID();
 	
-	public void setAccessLimitingTargetGroupID(final int id);
+	void setAccessLimitingTargetGroupID(final int id);
 	
-	public default boolean isAccessLimitedByTargetGroup() {
+    Set<Integer> getAltgIds();
+
+    void setAltgIds(Set<Integer> altgIds);
+
+    default boolean isAccessLimitedByTargetGroups() {
+        return CollectionUtils.isNotEmpty(getAltgIds());
+    }
+	
+	default boolean isAccessLimitedByTargetGroup() {
 		return getAccessLimitingTargetGroupID() > 0;
 	}
 	
 	boolean permissionAllowedByGroups(Permission... permission);
 	
-	public Date getLastLoginDate();
-	public void setLastLoginDate(final Date date);
+	Date getLastLoginDate();
+	void setLastLoginDate(final Date date);
+	
+	boolean isRestful();
+	void setRestful(boolean restful);
+	
+    String getEmployeeID();
+    void setEmployeeID(String employeeID);
 }

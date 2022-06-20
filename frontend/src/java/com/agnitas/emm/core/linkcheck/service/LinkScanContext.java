@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -15,7 +15,7 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 
 import com.agnitas.beans.ComTrackableLink;
-import com.agnitas.emm.core.linkcheck.service.LinkService.ErrorneousLink;
+import com.agnitas.emm.core.linkcheck.service.LinkService.ErroneousLink;
 import com.agnitas.emm.core.linkcheck.service.LinkService.LinkWarning;
 
 final class LinkScanContext {
@@ -26,8 +26,8 @@ final class LinkScanContext {
 	private final List<ComTrackableLink> foundTrackableLinks;
 	private final List<String> foundImages;
 	private final List<String> foundNotTrackableLinks;
-	private final List<ErrorneousLink> foundErrorneousLinks;
-	private final List<ErrorneousLink> localLinks;
+	private final List<ErroneousLink> foundErroneousLinks;
+	private final List<ErroneousLink> localLinks;
 	private final List<LinkWarning> linkWarnings;
 	
 	private String fullTextWithTagsReplaced;
@@ -37,14 +37,14 @@ final class LinkScanContext {
 	private boolean protocolSchemaPresent;
 	private String protocolSchema;
 	
-	public LinkScanContext(final String fullText, final int start, final int end, final List<ComTrackableLink> foundTrackableLinks, final List<String> foundImages, final List<String> foundNotTrackableLinks, final List<ErrorneousLink> foundErrorneousLinks, final List<ErrorneousLink> localLinks, final List<LinkWarning> linkWarnings) {
+	public LinkScanContext(final String fullText, final int start, final int end, final List<ComTrackableLink> foundTrackableLinks, final List<String> foundImages, final List<String> foundNotTrackableLinks, final List<ErroneousLink> foundErroneousLinks, final List<ErroneousLink> localLinks, final List<LinkWarning> linkWarnings) {
 		this.fullText = Objects.requireNonNull(fullText);
 		this.start = start;
 		this.end = end;
 		this.foundTrackableLinks = Objects.requireNonNull(foundTrackableLinks);
 		this.foundImages = Objects.requireNonNull(foundImages);
 		this.foundNotTrackableLinks = Objects.requireNonNull(foundNotTrackableLinks);
-		this.foundErrorneousLinks = Objects.requireNonNull(foundErrorneousLinks);
+		this.foundErroneousLinks = Objects.requireNonNull(foundErroneousLinks);
 		this.localLinks = Objects.requireNonNull(localLinks);
 		this.linkWarnings = Objects.requireNonNull(linkWarnings);
 		this.protocolSchemaPresent = false;
@@ -70,11 +70,11 @@ final class LinkScanContext {
 		return foundNotTrackableLinks;
 	}
 
-	public final List<ErrorneousLink> getFoundErrorneousLinks() {
-		return foundErrorneousLinks;
+	public final List<ErroneousLink> getFoundErroneousLinks() {
+		return foundErroneousLinks;
 	}
 
-	public final List<ErrorneousLink> getLocalLinks() {
+	public final List<ErroneousLink> getLocalLinks() {
 		return localLinks;
 	}
 

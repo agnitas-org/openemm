@@ -107,27 +107,37 @@
                                                         <bean:message key="HTML"/>
                                                     </a>
                                                 </li>
-                                                <li>
-                                                    <a href="#" data-toggle-tab="#tab-content-wysiwyg" style="line-height: 28px;">
-                                                        <bean:message key="mailingContentHTMLEditor"/>
-                                                    </a>
-                                                </li>
+                                                <emm:HideByPermission token="mailing.editor.hide">
+                                                    <li>
+                                                        <a href="#" data-toggle-tab="#tab-content-wysiwyg" style="line-height: 28px;">
+                                                            <bean:message key="mailingContentHTMLEditor"/>
+                                                        </a>
+                                                    </li>
+                                                </emm:HideByPermission>
                                             </ul>
                                             {{ } }}
                                         </div>
                                     </div>
                                 </div>
                                 <div class="fixed-body">
-                                    <div id="tab-content-html" class="{{- showHTMLEditor ? 'hidden' : ''}} full-height">
-                                        <div id="contentEditor" class="form-control" {{- readonly }}></div>
-                                    </div>
-                                    <div id="tab-content-wysiwyg" class="{{- showHTMLEditor ? '' : 'hidden'}} full-height" >
+                                    <emm:ShowByPermission token="mailing.editor.hide">
+                                        <div id="tab-content-html" class="{{- showHTMLEditor ? 'hidden' : ''}} full-height" data-tab-show="true">
+                                            <div id="contentEditor" class="form-control" {{- readonly }}></div>
+                                            <textarea id="content" class="form-control js-editor" {{- readonly }}></textarea>
+                                        </div>
+                                    </emm:ShowByPermission>
+                                    <emm:HideByPermission token="mailing.editor.hide">
+                                        <div id="tab-content-html" class="{{- showHTMLEditor ? 'hidden' : ''}} full-height">
+                                            <div id="contentEditor" class="form-control" {{- readonly }}></div>
+                                        </div>
+                                        <div id="tab-content-wysiwyg" class="{{- showHTMLEditor ? '' : 'hidden'}} full-height" >
                                             <textarea id="content"
                                                       name="content"
                                                       class="form-control js-editor js-wysiwyg full-height"
                                                       data-editor-options="isFullHtml: {{- isFullHtmlTags }}, browseMailingId: ${mailingId}"
                                                       {{- readonly }}></textarea>
-                                    </div>
+                                        </div>
+                                    </emm:HideByPermission>
                                 </div>
                             </div>
                         </div>

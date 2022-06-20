@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -28,6 +28,7 @@ import java.util.regex.Pattern;
 import org.agnitas.backend.dao.TagDAO;
 import org.agnitas.backend.tags.Tag;
 import org.agnitas.util.Log;
+import org.agnitas.util.Str;
 import org.agnitas.util.Title;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
@@ -787,7 +788,7 @@ public class EMMTag {
 		EscapedInEscapedQuotedValue
 	}
 
-	private List<String> splitTag(Data data) throws EMMTagException {
+	private List<String> splitTag(Data data) {
 		int tlen;
 		String tagString;
 
@@ -981,22 +982,15 @@ public class EMMTag {
 	}
 
 	private String substitute(Data data, String id) {
-		if (id.equals("licence-id")) {
-			return Integer.toString(data.licenceID());
+		switch (id) {
+			case "licence-id":	return Integer.toString(data.licenceID());
+			case "company-id":	return Long.toString(data.company.id());
+			case "company-token":	return data.company.token ();
+			case "mailinglist-id":	return Long.toString(data.mailinglist.id());
+			case "mailing-id":	return Long.toString(data.mailing.id());
+			case "rdir-domain":	return data.rdirDomain;
+			default:		return null;
 		}
-		if (id.equals("company-id")) {
-			return Long.toString(data.company.id());
-		}
-		if (id.equals("mailinglist-id")) {
-			return Long.toString(data.mailinglist.id());
-		}
-		if (id.equals("mailing-id")) {
-			return Long.toString(data.mailing.id());
-		}
-		if (id.equals("rdir-domain")) {
-			return data.rdirDomain;
-		}
-		return null;
 	}
 
 	/**
@@ -1643,7 +1637,7 @@ public class EMMTag {
 						}
 					}
 				}
-				mTagValue = swyn.build(StringOps.atob(pBare, false), (pSize == null ? "default" : pSize), networks, pTitle, pLink, pSelector);
+				mTagValue = swyn.build(Str.atob(pBare, false), (pSize == null ? "default" : pSize), networks, pTitle, pLink, pSelector);
 				fixedValue = true;
 				break;
 			case TI_SENDDATE:

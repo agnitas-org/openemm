@@ -334,6 +334,17 @@ body.dark-theme #session-time-layout {
       display: none;
     }
   }
+  #internet-indicator {
+    width: 100%;
+    i {
+      color:$c-green-38;
+    }
+  }
+  
+  .logout-area {
+    display: flex; 
+    flex-direction: column-reverse;
+  }
 }
 
 body.wide-sidebar .l-sidebar .l-info-section {
@@ -368,6 +379,16 @@ body.wide-sidebar .l-sidebar .l-info-section {
     .logout-text {
       display: inline;
     }
+  }
+  #internet-indicator {
+    margin-right: 10px;
+    width: 10%;
+  }
+  
+  .logout-area {
+    display: flex; 
+    flex-direction: row;
+    justify-content: space-between;
   }
 }
 

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -22,8 +22,8 @@ import java.util.Set;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.agnitas.reporting.birt.external.beans.LightMailing;
 import com.agnitas.reporting.birt.external.beans.LightTarget;
@@ -34,7 +34,7 @@ import com.agnitas.reporting.birt.external.beans.SendStatWithMailingIdRow;
 import com.agnitas.reporting.birt.external.utils.BirtReporUtils;
 
 public class MailingStatisticDataSet extends BIRTDataSet {
-	private static final transient Logger logger = Logger.getLogger(MailingStatisticDataSet.class);
+	private static final transient Logger logger = LogManager.getLogger(MailingStatisticDataSet.class);
 
     private final MailingSummaryDataSet mailingSummaryDataSet = new MailingSummaryDataSet();
     private final MailingURLClicksDataSet mailingURLClicksDataSet = new MailingURLClicksDataSet();
@@ -49,9 +49,8 @@ public class MailingStatisticDataSet extends BIRTDataSet {
         try {
 			int tempTableId = mailingSummaryDataSet.createTempTable();
 			List<LightTarget> targets = getTargets(targetsStr, companyId);
-			final int hiddenTargetId = NumberUtils.toInt(hiddenTargetIdStr, -1);
-            final LightTarget hiddenTarget = hiddenTargetId > 0 ? getTarget(hiddenTargetId, companyId) : null;
-
+            String hiddenTargetSql = getTargetSqlString(hiddenTargetIdStr, companyId);
+			
 			// @todo: what should we do with options html/text/offlineHtml ?
 
 			boolean mailingTrackingAvailable = isTrackingExists(mailingId, companyId);
@@ -59,16 +58,16 @@ public class MailingStatisticDataSet extends BIRTDataSet {
 			if (dateFormats == null) {
 			    dateFormats = new DateFormats();
 			}
-			mailingSummaryDataSet.insertSendIntoTempTable(mailingId, tempTableId, companyId, targets, hiddenTarget, recipientType, dateFormats);
+			mailingSummaryDataSet.insertSendIntoTempTable(mailingId, tempTableId, companyId, targets, hiddenTargetSql, recipientType, dateFormats);
 			mailingSummaryDataSet.insertRecipientsNumberToTemplate(mailingDataSet, mailingId, tempTableId, dateFormats);
 
 			if (figures.contains(BirtReporUtils.BirtReportFigure.OPENERS_MEASURED)
 			    || figures.contains(BirtReporUtils.BirtReportFigure.OPENERS_AFTER_DEVICE)) {
-			    mailingSummaryDataSet.insertOpenersIntoTempTable(mailingId, tempTableId, companyId, targets, hiddenTarget, recipientType, true, false, dateFormats);
+			    mailingSummaryDataSet.insertOpenersIntoTempTable(mailingId, tempTableId, companyId, targets, hiddenTargetSql, recipientType, true, false, dateFormats);
 			}
 			if (figures.contains(BirtReporUtils.BirtReportFigure.OPENERS_INVISIBLE)
                     || figures.contains(BirtReporUtils.BirtReportFigure.OPENERS_TOTAL)) {
-			    mailingSummaryDataSet.insertOpenedInvisibleIntoTempTable(mailingId, tempTableId, companyId, targets, hiddenTarget, recipientType, dateFormats);
+			    mailingSummaryDataSet.insertOpenedInvisibleIntoTempTable(mailingId, tempTableId, companyId, targets, hiddenTargetSql, recipientType, dateFormats);
 			}
 
 			if (figures.contains(BirtReporUtils.BirtReportFigure.OPENINGS_ANONYMOUS)) {
@@ -76,22 +75,22 @@ public class MailingStatisticDataSet extends BIRTDataSet {
 			}
 			if (figures.contains(BirtReporUtils.BirtReportFigure.CLICKERS_TOTAL)
 			    || figures.contains(BirtReporUtils.BirtReportFigure.CLICKERS_AFTER_DEVICE)) {
-			    mailingSummaryDataSet.insertClickersIntoTempTable(mailingId, tempTableId, companyId, targets, hiddenTarget, recipientType, true, dateFormats);
+			    mailingSummaryDataSet.insertClickersIntoTempTable(mailingId, tempTableId, companyId, targets, hiddenTargetSql, recipientType, true, dateFormats);
 			}
 			if (figures.contains(BirtReporUtils.BirtReportFigure.CLICKS_ANONYMOUS)) {
 			    mailingSummaryDataSet.insertClicksAnonymousIntoTempTable(mailingId, tempTableId, companyId, dateFormats);
 			}
 			if (figures.contains(BirtReporUtils.BirtReportFigure.SIGNED_OFF)) {
-			    mailingSummaryDataSet.insertOptOutsIntoTempTable(mailingId, tempTableId, companyId, targets, hiddenTarget, recipientType, dateFormats);
+			    mailingSummaryDataSet.insertOptOutsIntoTempTable(mailingId, tempTableId, companyId, targets, hiddenTargetSql, recipientType, dateFormats);
 			}
 			if (figures.contains(BirtReporUtils.BirtReportFigure.HARDBOUNCES) || figures.contains(BirtReporUtils.BirtReportFigure.SOFTBOUNCES)) {
-			    mailingSummaryDataSet.insertBouncesIntoTempTable(mailingId, tempTableId, companyId, targets, hiddenTarget, recipientType, true, dateFormats);
+			    mailingSummaryDataSet.insertBouncesIntoTempTable(mailingId, tempTableId, companyId, targets, hiddenTargetSql, recipientType, true, dateFormats);
 			}
 
-			mailingSummaryDataSet.insertDeliveredIntoTempTable(tempTableId, mailingId, companyId, targets, hiddenTarget, recipientType, dateFormats);
+			mailingSummaryDataSet.insertDeliveredIntoTempTable(tempTableId, mailingId, companyId, targets, hiddenTargetSql, recipientType, dateFormats);
 
 			if (figures.contains(BirtReporUtils.BirtReportFigure.REVENUE)) {
-			    mailingSummaryDataSet.insertRevenueIntoTempTable(mailingId, tempTableId, companyId, targets, hiddenTarget, dateFormats);
+			    mailingSummaryDataSet.insertRevenueIntoTempTable(mailingId, tempTableId, companyId, targets, hiddenTargetSql, dateFormats);
 			}
 
 			// now we need to remove mobile/tablet/multiple_device data if it is not selected by user

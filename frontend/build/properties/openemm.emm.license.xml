@@ -11,12 +11,17 @@
 	<maximumNumberOfCustomers>-1</maximumNumberOfCustomers>
 	<maximumNumberOfProfileFields>-1</maximumNumberOfProfileFields>
 	<allowedPremiumFeatures>
-		restful.allowed
 		webservice.user.change
 		webservice.user.create
 		webservice.user.show
+		restfulUser.change
+		restfulUser.delete
+		restfulUser.new
+		restfulUser.show
 		server.status
 	</allowedPremiumFeatures>
 	<maximumNumberOfReferenceTables>-1</maximumNumberOfReferenceTables>
 	<allowMailingSendForMasterCompany>true</allowMailingSendForMasterCompany>
+	<maximumNumberOfAccessLimitingMailinglistsPerCompany>0</maximumNumberOfAccessLimitingMailinglistsPerCompany>
+	<maximumNumberOfAccessLimitingTargetgroupsPerCompany>0</maximumNumberOfAccessLimitingTargetgroupsPerCompany>
 </emm.license>

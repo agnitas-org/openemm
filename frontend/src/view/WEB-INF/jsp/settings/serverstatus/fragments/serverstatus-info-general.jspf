@@ -57,5 +57,9 @@
 			<td><mvc:message code="serverStatus.general.dbUrl" /></td>
 			<td>${serverStatus.dbUrl}</td>
 		</tr>
+		<tr>
+			<td><mvc:message code="serverStatus.general.dbVersion" /></td>
+			<td>${serverStatus.dbVersion}</td>
+		</tr>
 	</table>
 </div>

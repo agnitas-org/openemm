@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -20,19 +20,22 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.agnitas.emm.core.trackablelinks.dto.ExtensionProperty;
+
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.Tuple;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.agnitas.beans.LinkProperty;
 
 import bsh.StringUtil;
 
 public class LinkUtils {
-	private static final Logger logger = Logger.getLogger(LinkUtils.class);
+	private static final Logger logger = LogManager.getLogger(LinkUtils.class);
 
 	public static final int KEEP_UNCHANGED = -1;
 
@@ -145,6 +148,22 @@ public class LinkUtils {
 		}
 		return directLink;
 	}
+	
+    public static String getFullUrlWithDtoExtensions(String linkString, List<ExtensionProperty> extensions) {
+  		String directLink = linkString;
+  		try {
+  			for (ExtensionProperty extension : extensions) {
+                String value = replaceHashTagsByEmptyString(extension.getValue());
+
+                // Extend link properly (watch out for html-anchors etc.)
+                directLink = AgnUtils.addUrlParameter(directLink, extension.getName(), StringUtils.defaultString(value), "UTF-8");
+  			}
+  			return StringEscapeUtils.escapeHtml4(directLink);
+  		} catch (UnsupportedEncodingException e) {
+  			logger.warn("Creating directory link with optional extension without user data failed, cause: " + e.getMessage());
+  		}
+  		return directLink;
+  	}
 
 	private static String replaceHashTagsByEmptyString(String hashTagString) {
 		if (StringUtils.isBlank(hashTagString)) {

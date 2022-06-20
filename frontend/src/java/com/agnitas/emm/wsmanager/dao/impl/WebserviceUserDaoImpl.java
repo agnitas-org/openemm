@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -23,7 +23,8 @@ import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.impl.PaginatedBaseDaoImpl;
 import org.agnitas.dao.impl.mapper.IntegerRowMapper;
 import org.agnitas.dao.impl.mapper.StringRowMapper;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.jdbc.core.RowMapper;
 
 import com.agnitas.emm.wsmanager.common.UnknownWebserviceUsernameException;
@@ -42,7 +43,7 @@ import com.agnitas.emm.wsmanager.service.WebserviceUserAlreadyExistsException;
  */
 public class WebserviceUserDaoImpl extends PaginatedBaseDaoImpl implements WebserviceUserDao {
 	/** The logger. */
-	private static final transient Logger logger = Logger.getLogger(WebserviceUserDaoImpl.class);
+	private static final transient Logger logger = LogManager.getLogger(WebserviceUserDaoImpl.class);
 
 	/** Row mapper for list items. */
 	private static final WebserviceUserListItemRowMapper LIST_ITEM_ROWMAPPER = new WebserviceUserListItemRowMapper();
@@ -143,8 +144,8 @@ public class WebserviceUserDaoImpl extends PaginatedBaseDaoImpl implements Webse
 		}
 
 		try {
-			update(logger, "INSERT INTO webservice_user_tbl (username, company_id, default_data_source_id, bulk_size_limit, password_encrypted, active, contact_email) VALUES (?,?,?,?,?,1,?)",
-					username, user.getCompanyID(), user.getDefaultDatasourceID(), bulkSizeLimit, user.getPasswordHash(), user.getContactEmail());
+			update(logger, "INSERT INTO webservice_user_tbl (username, company_id, default_data_source_id, bulk_size_limit, password_encrypted, active, contact_email, contact_info) VALUES (?, ?, ?, ?, ?, 1, ?, ?)",
+					username, user.getCompanyID(), user.getDefaultDatasourceID(), bulkSizeLimit, user.getPasswordHash(), user.getContactEmail(), user.getContact());
 		} catch(Exception e) {
 			logger.error("Error creating new webservice user", e);
 
@@ -194,13 +195,13 @@ public class WebserviceUserDaoImpl extends PaginatedBaseDaoImpl implements Webse
 	private final Set<String> loadGrantedPermissions(final String username) {
 		final String sql = "SELECT endpoint FROM webservice_permission_tbl WHERE username=?";
 		
-		return new HashSet<>(select(logger, sql, new StringRowMapper(), username));
+		return new HashSet<>(select(logger, sql, StringRowMapper.INSTANCE, username));
 	}
 	
 	private final Set<Integer> loadGrantedPermissionGroups(final String username) {
 		final String sql = "SELECT group_ref FROM webservice_user_group_tbl WHERE username=?";
 		
-		return new HashSet<>(select(logger, sql, new IntegerRowMapper(), username));
+		return new HashSet<>(select(logger, sql, IntegerRowMapper.INSTANCE, username));
 	}
 
 	@Override
@@ -234,5 +235,12 @@ public class WebserviceUserDaoImpl extends PaginatedBaseDaoImpl implements Webse
 		final String sql = "UPDATE webservice_user_tbl SET last_login_date=? WHERE username=?";
 		
 		update(logger, sql, Date.from(loginDate.toInstant()), username);
+	}
+
+	@Override
+	public boolean deleteWebserviceUser(String username) {
+		update(logger, "DELETE FROM webservice_user_group_tbl WHERE username = ?", username);
+		update(logger, "DELETE FROM webservice_permission_tbl WHERE username = ?", username);
+		return update(logger, "DELETE FROM webservice_user_tbl WHERE username = ?", username) == 1;
 	}
 }

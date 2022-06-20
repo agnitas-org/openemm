@@ -37,7 +37,11 @@
 
 <c:set var="isMailingGrid" value="${mailingContentForm.gridTemplateId > 0}" scope="request"/>
 
-<jsp:include page="/${emm:ckEditorPath(pageContext.request)}/ckeditor-emm-helper.jsp"/>
+<emm:HideByPermission token="mailing.editor.hide">
+    <jsp:include page="/${emm:ckEditorPath(pageContext.request)}/ckeditor-emm-helper.jsp">
+        <jsp:param name="toolbarType" value="${emm:isCKEditorTrimmed(pageContext.request) ? 'Trimmed' : 'EMM'}"/>
+    </jsp:include>
+</emm:HideByPermission>                                    
 
 <tiles:insert page="template.jsp">
     <tiles:put name="header" type="string">

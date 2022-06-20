@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -15,7 +15,7 @@ import java.util.List;
 
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.dao.ConcurrencyFailureException;
 import org.springframework.jdbc.support.KeyHolder;
@@ -30,8 +30,6 @@ import org.springframework.jdbc.support.KeyHolder;
  * This class especially retries updates and inserts in tables, if they where temporarily blocked by other processes
  */
 public abstract class RetryUpdateBaseDaoImpl extends BaseDaoImpl {
-	@SuppressWarnings("unused")
-	private static final transient Logger retryUpdateBaseDaoImplLogger = Logger.getLogger(RetryUpdateBaseDaoImpl.class);
 	
 	protected ConfigService configService;
 	
@@ -48,7 +46,7 @@ public abstract class RetryUpdateBaseDaoImpl extends BaseDaoImpl {
 			} catch (ConcurrencyFailureException e) {
 				int maxRetryCount = configService.getIntegerValue(ConfigValue.DbMaximumDeadlockRetries, companyID);
 				
-				if (retryCount <= maxRetryCount) {
+				if (retryCount < maxRetryCount) {
 					retryCount++;
 					logSqlRetry(e, retryCount, maxRetryCount, logger, statement, parameter);
 					int retryWaitSeconds = configService.getIntegerValue(ConfigValue.DbDeadlockRetriesWaitSeconds, companyID);
@@ -72,7 +70,7 @@ public abstract class RetryUpdateBaseDaoImpl extends BaseDaoImpl {
 			} catch (ConcurrencyFailureException e) {
 				int maxRetryCount = configService.getIntegerValue(ConfigValue.DbMaximumDeadlockRetries, companyID);
 				
-				if (retryCount <= maxRetryCount) {
+				if (retryCount < maxRetryCount) {
 					retryCount++;
 					logSqlRetry(e, retryCount, maxRetryCount, logger, statement, parameter);
 					int retryWaitSeconds = configService.getIntegerValue(ConfigValue.DbDeadlockRetriesWaitSeconds, companyID);
@@ -97,7 +95,7 @@ public abstract class RetryUpdateBaseDaoImpl extends BaseDaoImpl {
 			} catch (ConcurrencyFailureException e) {
 				int maxRetryCount = configService.getIntegerValue(ConfigValue.DbMaximumDeadlockRetries, companyID);
 				
-				if (retryCount <= maxRetryCount) {
+				if (retryCount < maxRetryCount) {
 					retryCount++;
 					logSqlRetry(e, retryCount, maxRetryCount, logger, statement, parameter);
 					int retryWaitSeconds = configService.getIntegerValue(ConfigValue.DbDeadlockRetriesWaitSeconds, companyID);
@@ -122,7 +120,7 @@ public abstract class RetryUpdateBaseDaoImpl extends BaseDaoImpl {
 			} catch (ConcurrencyFailureException e) {
 				int maxRetryCount = configService.getIntegerValue(ConfigValue.DbMaximumDeadlockRetries, companyID);
 				
-				if (retryCount <= maxRetryCount) {
+				if (retryCount < maxRetryCount) {
 					retryCount++;
 					logSqlRetry(e, retryCount, maxRetryCount, logger, statement, parameter);
 					int retryWaitSeconds = configService.getIntegerValue(ConfigValue.DbDeadlockRetriesWaitSeconds, companyID);
@@ -147,7 +145,7 @@ public abstract class RetryUpdateBaseDaoImpl extends BaseDaoImpl {
 			} catch (ConcurrencyFailureException e) {
 				int maxRetryCount = configService.getIntegerValue(ConfigValue.DbMaximumDeadlockRetries, companyID);
 				
-				if (retryCount <= maxRetryCount) {
+				if (retryCount < maxRetryCount) {
 					retryCount++;
 					logSqlRetry(e, retryCount, maxRetryCount, logger, statement, parameter);
 					int retryWaitSeconds = configService.getIntegerValue(ConfigValue.DbDeadlockRetriesWaitSeconds, companyID);
@@ -171,7 +169,7 @@ public abstract class RetryUpdateBaseDaoImpl extends BaseDaoImpl {
 			} catch (ConcurrencyFailureException e) {
 				int maxRetryCount = configService.getIntegerValue(ConfigValue.DbMaximumDeadlockRetries, companyID);
 				
-				if (retryCount <= maxRetryCount) {
+				if (retryCount < maxRetryCount) {
 					retryCount++;
 					logSqlRetry(e, retryCount, maxRetryCount, logger, statement);
 					int retryWaitSeconds = configService.getIntegerValue(ConfigValue.DbDeadlockRetriesWaitSeconds, companyID);
@@ -195,7 +193,7 @@ public abstract class RetryUpdateBaseDaoImpl extends BaseDaoImpl {
 			} catch (ConcurrencyFailureException e) {
 				int maxRetryCount = configService.getIntegerValue(ConfigValue.DbMaximumDeadlockRetries, companyID);
 				
-				if (retryCount <= maxRetryCount) {
+				if (retryCount < maxRetryCount) {
 					retryCount++;
 					logSqlRetry(e, retryCount, maxRetryCount, logger, statement);
 					int retryWaitSeconds = configService.getIntegerValue(ConfigValue.DbDeadlockRetriesWaitSeconds, companyID);
@@ -219,7 +217,7 @@ public abstract class RetryUpdateBaseDaoImpl extends BaseDaoImpl {
 			} catch (ConcurrencyFailureException e) {
 				int maxRetryCount = configService.getIntegerValue(ConfigValue.DbMaximumDeadlockRetries, companyID);
 				
-				if (retryCount <= maxRetryCount) {
+				if (retryCount < maxRetryCount) {
 					retryCount++;
 					logSqlRetry(e, retryCount, maxRetryCount, logger, statement);
 					int retryWaitSeconds = configService.getIntegerValue(ConfigValue.DbDeadlockRetriesWaitSeconds, companyID);
@@ -243,7 +241,7 @@ public abstract class RetryUpdateBaseDaoImpl extends BaseDaoImpl {
 			} catch (ConcurrencyFailureException e) {
 				int maxRetryCount = configService.getIntegerValue(ConfigValue.DbMaximumDeadlockRetries, companyID);
 				
-				if (retryCount <= maxRetryCount) {
+				if (retryCount < maxRetryCount) {
 					retryCount++;
 					logSqlRetry(e, retryCount, maxRetryCount, logger, statement, parameter);
 					int retryWaitSeconds = configService.getIntegerValue(ConfigValue.DbDeadlockRetriesWaitSeconds, companyID);
@@ -267,7 +265,7 @@ public abstract class RetryUpdateBaseDaoImpl extends BaseDaoImpl {
 			} catch (ConcurrencyFailureException e) {
 				int maxRetryCount = configService.getIntegerValue(ConfigValue.DbMaximumDeadlockRetries, companyID);
 				
-				if (retryCount <= maxRetryCount) {
+				if (retryCount < maxRetryCount) {
 					retryCount++;
 					logSqlRetry(e, retryCount, maxRetryCount, logger, statement, parameter);
 					int retryWaitSeconds = configService.getIntegerValue(ConfigValue.DbDeadlockRetriesWaitSeconds, companyID);

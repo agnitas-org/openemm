@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -27,21 +27,27 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.agnitas.emm.core.recipient.dto.RecipientLightDto;
+import org.agnitas.emm.core.recipient.dto.RecipientOverviewWebStorageEntry;
+import org.agnitas.service.WebStorage;
+import org.agnitas.service.WebStorageBundle;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.DbUtilities;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.ProfileField;
+import com.agnitas.dao.impl.ComCompanyDaoImpl;
+import com.agnitas.emm.core.recipient.forms.RecipientListBaseForm;
 import com.agnitas.util.MapUtils;
 
 public class RecipientUtils {
     
-    private static final Logger logger = Logger.getLogger(RecipientUtils.class);
+    private static final Logger logger = LogManager.getLogger(RecipientUtils.class);
     
     private static final int MAX_DESCRIPTION_LENGTH = 500;
     
@@ -61,7 +67,7 @@ public class RecipientUtils {
     public static final String COLUMN_FREQUENCY_COUNT_MONTH = "freq_count_month";
 
     public static final String COLUMN_DO_NOT_TRACK = "sys_tracking_veto";
-	public static final String COLUMN_BOUNCELOAD = "bounceload";
+	public static final String COLUMN_ENCRYPTED_SENDING = "sys_encrypted_sending";
 
     public static final String COLUMN_TIMESTAMP = "timestamp";
     public static final String COLUMN_CREATION_DATE = "creation_date";
@@ -92,7 +98,8 @@ public class RecipientUtils {
             COLUMN_DATASOURCE_ID,
 
             COLUMN_DO_NOT_TRACK,
-            COLUMN_BOUNCELOAD,
+            ComCompanyDaoImpl.STANDARD_FIELD_BOUNCELOAD,
+            COLUMN_ENCRYPTED_SENDING,
 
             COLUMN_FREQUENCY_COUNT_DAY,
             COLUMN_FREQUENCY_COUNTER_WEEK,
@@ -323,5 +330,16 @@ public class RecipientUtils {
             default:
                 return "not set";
         }
+    }
+
+    public static void syncSelectedFields(WebStorage webStorage, WebStorageBundle<RecipientOverviewWebStorageEntry> bundle, RecipientListBaseForm form) {
+        webStorage.access(bundle, storage -> {
+            int columnsCount = form.getSelectedFields().size();
+            if (columnsCount < 1 || columnsCount > MAX_SELECTED_FIELDS_COUNT) {
+				form.setSelectedFields(storage.getSelectedFields());
+            } else {
+				storage.setSelectedFields(form.getSelectedFields());
+            }
+        });
     }
 }

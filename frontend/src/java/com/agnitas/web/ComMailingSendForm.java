@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -32,6 +32,9 @@ public class ComMailingSendForm extends MailingSendForm {
 
 	private String statusmailRecipients = "";
 	private boolean statusmailOnErrorOnly = false;
+	private Integer clearanceThreshold;
+	private String clearanceEmail = "";
+	private boolean thresholdClearanceExceeded;
 	private String followupFor = "";
 	private String followUpType = "";
 	private String reportSendEmail;
@@ -395,5 +398,29 @@ public class ComMailingSendForm extends MailingSendForm {
 
 	public String[] getFilterTypes() {
 		return filterTypes;
+	}
+
+	public Integer getClearanceThreshold() {
+		return clearanceThreshold;
+	}
+
+	public void setClearanceThreshold(Integer thresholdValue) {
+		this.clearanceThreshold = thresholdValue;
+	}
+
+	public void setClearanceEmail(String clearanceEmail) {
+		this.clearanceEmail = clearanceEmail;
+	}
+
+	public String getClearanceEmail() {
+		return clearanceEmail;
+	}
+
+	public boolean isThresholdClearanceExceeded() {
+		return thresholdClearanceExceeded;
+	}
+
+	public void setThresholdClearanceExceeded(boolean thresholdClearanceExceeded) {
+		this.thresholdClearanceExceeded = thresholdClearanceExceeded;
 	}
 }

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -16,7 +16,8 @@ import java.util.List;
 
 import org.agnitas.dao.impl.BaseDaoImpl;
 import org.agnitas.dao.impl.mapper.DateRowMapper;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.agnitas.emm.core.serverprio.bean.ServerPrio;
 import com.agnitas.emm.core.serverprio.dao.ServerPrioDao;
@@ -25,7 +26,7 @@ import com.agnitas.util.db.InsertStatementBuilder;
 public final class ServerPrioDaoImpl extends BaseDaoImpl implements ServerPrioDao {
 	
 	/** The logger. */
-	private static final Logger LOGGER = Logger.getLogger(ServerPrioDaoImpl.class);
+	private static final Logger LOGGER = LogManager.getLogger(ServerPrioDaoImpl.class);
 
 	@Override
 	public final boolean insertServerPrio(final ServerPrio serverPrio) {
@@ -34,13 +35,8 @@ public final class ServerPrioDaoImpl extends BaseDaoImpl implements ServerPrioDa
 				.withPlaceholder("mailing_id", serverPrio.getMailingID())
 				.withPlaceholder("priority", serverPrio.getPrio().orElse(null));
 		
-		if(serverPrio.getStartDate().isPresent()) {
-			builder.withPlaceholder("start_date", serverPrio.getStartDate().get());
-		}
-		
-		if(serverPrio.getEndDate().isPresent()) {
-			builder.withPlaceholder("end_date", serverPrio.getEndDate().get());
-		}
+		serverPrio.getStartDate().ifPresent(date -> builder.withPlaceholder("start_date", date));
+		serverPrio.getEndDate().ifPresent(date -> builder.withPlaceholder("end_date", date));
 		
 		final int inserted = update(LOGGER, builder.buildStatement(), builder.buildParameters());
 		
@@ -93,6 +89,6 @@ public final class ServerPrioDaoImpl extends BaseDaoImpl implements ServerPrioDa
 	public Date getDeliveryPauseDate(final int companyId, final int mailingId) {
 		final String sql = "SELECT start_date FROM serverprio_tbl WHERE (company_id = 0 OR company_id = ?) AND mailing_Id = ? AND priority = 0";
 
-		return selectObject(LOGGER, sql, new DateRowMapper(), companyId, mailingId);
+		return selectObject(LOGGER, sql, DateRowMapper.INSTANCE, companyId, mailingId);
 	}
 }

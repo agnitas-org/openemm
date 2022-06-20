@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -17,7 +17,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.web.forms.StrutsFormBase;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
@@ -25,7 +26,7 @@ import org.apache.struts.action.ActionMessage;
 public class ComMailingParameterForm extends StrutsFormBase {
 	private static final long serialVersionUID = 6617476371226706266L;
 
-	private static final transient Logger logger = Logger.getLogger(ComMailingParameterForm.class);
+	private static final transient Logger logger = LogManager.getLogger(ComMailingParameterForm.class);
 
 	protected String action;
 	private int mailingInfoID = 0;				//increasing number

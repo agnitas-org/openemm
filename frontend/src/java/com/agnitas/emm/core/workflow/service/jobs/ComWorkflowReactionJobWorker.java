@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -20,10 +20,13 @@ import java.util.Map;
 import java.util.Set;
 
 import org.agnitas.beans.CompaniesConstraints;
+import org.agnitas.dao.UserStatus;
+
 import com.agnitas.beans.Mailing;
 import org.agnitas.service.JobWorker;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.agnitas.beans.MaildropEntry;
 import com.agnitas.dao.ComMailingDao;
@@ -48,7 +51,7 @@ import com.agnitas.emm.core.workflow.service.util.WorkflowUtils;
  * Handles start-icon reactions
  */
 public class ComWorkflowReactionJobWorker extends JobWorker {
-    private static final transient Logger logger = Logger.getLogger(ComWorkflowReactionJobWorker.class);
+    private static final transient Logger logger = LogManager.getLogger(ComWorkflowReactionJobWorker.class);
 
     private enum SendingType {
         NONE,
@@ -169,7 +172,7 @@ public class ComWorkflowReactionJobWorker extends JobWorker {
         recipients = recipientDao.filterRecipientsByMailinglistAndTarget(recipients, reaction.getCompanyId(), mailing.getMailinglistID(), sqlTargetExpression, false, checkForActive);
 
         if (!recipients.isEmpty()) {
-            final List<Integer> userStatusList = workflowService.getProperUserStatusList(reaction);
+            final List<UserStatus> userStatusList = workflowService.getProperUserStatusList(reaction);
             for (final int recipientId : recipients) {
                 try {
                 	final MailgunOptions mailgunOptions = new MailgunOptions();

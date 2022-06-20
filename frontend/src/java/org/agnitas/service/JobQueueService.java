@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,6 +10,7 @@
 
 package org.agnitas.service;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -21,7 +22,8 @@ import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.context.ApplicationContext;
@@ -35,7 +37,7 @@ import com.agnitas.service.MailNotificationService;
 import com.agnitas.service.impl.ServiceLookupFactory;
 
 public class JobQueueService implements ApplicationContextAware {
-	private static final transient Logger logger = Logger.getLogger(JobQueueService.class);
+	private static final transient Logger logger = LogManager.getLogger(JobQueueService.class);
 	
 	private JobQueueDao jobQueueDao;
 	private ConfigTableDao configDao;
@@ -214,8 +216,8 @@ public class JobQueueService implements ApplicationContextAware {
 		}
 	}
 
-	private JobWorker createJobWorker(JobDto jobToStart) throws InstantiationException, IllegalAccessException, ClassNotFoundException {
-		JobWorker worker = (JobWorker) Class.forName(jobToStart.getRunClass()).newInstance();
+	private JobWorker createJobWorker(JobDto jobToStart) throws InstantiationException, IllegalAccessException, ClassNotFoundException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException {
+		JobWorker worker = (JobWorker) Class.forName(jobToStart.getRunClass()).getConstructor().newInstance();
 		worker.setJob(jobToStart);
 		worker.setJobQueueService(this);
 		worker.setApplicationContext(applicationContext);
@@ -311,7 +313,7 @@ public class JobQueueService implements ApplicationContextAware {
 	}
 
 	public boolean isStatusOK() {
-		return jobQueueDao.selectErrorneousJobs().size() == 0;
+		return jobQueueDao.selectErroneousJobs().size() == 0;
 	}
 
 	public boolean isJobQueueRunning() {
@@ -322,16 +324,16 @@ public class JobQueueService implements ApplicationContextAware {
 		return jobQueueDao.getAllActiveJobs();
 	}
 
-	public List<JobDto> selectErrorneousJobs() {
-		return jobQueueDao.selectErrorneousJobs();
+	public List<JobDto> selectErroneousJobs() {
+		return jobQueueDao.selectErroneousJobs();
 	}
 
 	public boolean isReportOK() {
-		return birtReportDao.selectErrorneousReports().size() == 0;
+		return birtReportDao.selectErroneousReports().size() == 0;
 	}
 
-	public void acknowledgeErrorneousJob(int idToAcknowledge) {
-		jobQueueDao.acknowledgeErrorneousJob(idToAcknowledge);
+	public void acknowledgeErroneousJob(int idToAcknowledge) {
+		jobQueueDao.acknowledgeErroneousJob(idToAcknowledge);
 	}
 	
 	public JobDto getJob(int id) {

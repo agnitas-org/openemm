@@ -1,7 +1,7 @@
+<%@page import="com.agnitas.emm.common.MailingType"%>
 <%@ page language="java" contentType="text/html; charset=utf-8"  errorPage="/error.do" %>
-<%@ page import="com.agnitas.emm.core.report.enums.fields.MailingTypes" %>
 <%@ page import="com.agnitas.beans.Mailing" %>
-<%@ page import="org.agnitas.web.MailingWizardAction" %>
+<%@ page import="com.agnitas.web.MailingWizardAction" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
@@ -60,7 +60,7 @@
                     <div class="col-sm-offset-4 col-sm-8">
                         <div class="radio">
                             <label>
-                                <html:radio property="mailing.mailingType" value="<%= Integer.toString(MailingTypes.NORMAL.getCode()) %>"/>
+                                <html:radio property="mailing.mailingTypeCode" value="<%= Integer.toString(MailingType.NORMAL.getCode()) %>"/>
                                 <bean:message key="Normal_Mailing"/>
                             </label>
                         </div>
@@ -70,7 +70,7 @@
                     <div class="col-sm-offset-4 col-sm-8">
                         <div class="radio">
                             <label>
-                                <html:radio property="mailing.mailingType" value="<%= Integer.toString(MailingTypes.ACTION_BASED.getCode()) %>"/>
+                                <html:radio property="mailing.mailingTypeCode" value="<%= Integer.toString(MailingType.ACTION_BASED.getCode()) %>"/>
                                 <bean:message key="mailing.action.based.mailing"/>
                             </label>
                         </div>
@@ -80,7 +80,7 @@
                     <div class="col-sm-offset-4 col-sm-8">
                         <div class="radio">
                             <label>
-                                <html:radio property="mailing.mailingType" value="<%= Integer.toString(MailingTypes.DATE_BASED.getCode()) %>"/>
+                                <html:radio property="mailing.mailingTypeCode" value="<%= Integer.toString(MailingType.DATE_BASED.getCode()) %>"/>
                                 <bean:message key="mailing.Rulebased_Mailing"/>
                             </label>
                         </div>

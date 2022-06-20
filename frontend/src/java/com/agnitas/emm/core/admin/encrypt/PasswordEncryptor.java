@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -21,7 +21,8 @@ import java.nio.charset.StandardCharsets;
 
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComAdmin;
@@ -35,7 +36,7 @@ import com.agnitas.emm.core.commons.encoder.Sha512Encoder;
 public class PasswordEncryptor {
 	
 	/** The logger. */
-	private static final transient Logger logger = Logger.getLogger(PasswordEncryptor.class);
+	private static final transient Logger LOGGER = LogManager.getLogger(PasswordEncryptor.class);
 	
 	/** Fixed charset used to read salt from file. */
 	private static final String SALT_CHARSET = "ISO8859_1";
@@ -106,7 +107,7 @@ public class PasswordEncryptor {
 			}
 			return toPasswordHexString(encoder.encode(plus(passwordBytes, encryptSalt(obfuscatingValue, encoding))));
 		} catch (UnsupportedEncodingException e) {
-			logger.error("Cannot encrypt user password: " + e.getMessage(), e);
+			LOGGER.error("Cannot encrypt user password: " + e.getMessage(), e);
 			throw new Exception("Cannot encrypt user password");
 		}
 	}
@@ -135,7 +136,7 @@ public class PasswordEncryptor {
 					hexSaltBytes = hexSalt.getBytes();
 				}
 			} catch( IOException e) {
-				logger.fatal( "unable to read salt from file: " + saltFilePath);
+				LOGGER.fatal( "unable to read salt from file: " + saltFilePath);
 				
 				throw e;
 			}
@@ -216,8 +217,8 @@ public class PasswordEncryptor {
 		final String encryptedPasswordToCheck_UtfEncoding = encrypt(password, admin.getAdminID(), "UTF-8", encoder);
 		final String encryptedPasswordToCheck_IsoEncoding = encrypt(password, admin.getAdminID(), "ISO-8859-15", encoder);
 
-		if(logger.isDebugEnabled()) {
-			logger.debug("Hash for (admin) password typed by user: " + encryptedPasswordToCheck_SystemEncoding + "/" + encryptedPasswordToCheck_UtfEncoding + "/" + encryptedPasswordToCheck_IsoEncoding);
+		if(LOGGER.isDebugEnabled()) {
+			LOGGER.debug("Hash for (admin) password typed by user: " + encryptedPasswordToCheck_SystemEncoding + "/" + encryptedPasswordToCheck_UtfEncoding + "/" + encryptedPasswordToCheck_IsoEncoding);
 		}
 
 		return encryptedPasswordToCheck_SystemEncoding.equalsIgnoreCase(admin.getSecurePasswordHash())

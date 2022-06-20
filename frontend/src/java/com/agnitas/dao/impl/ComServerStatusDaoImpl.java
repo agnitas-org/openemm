@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -32,7 +32,8 @@ import org.agnitas.util.CsvWriter;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.DbUtilities;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.dao.DataAccessException;
 
@@ -43,7 +44,8 @@ import com.agnitas.dao.ComServerStatusDao;
  * This class is compatible with oracle and mysql datasources and databases
  */
 public class ComServerStatusDaoImpl extends BaseDaoImpl implements ComServerStatusDao {
-	private static final transient Logger logger = Logger.getLogger(ComServerStatusDaoImpl.class);
+	/** The logger.. */
+	private static final transient Logger logger = LogManager.getLogger(ComServerStatusDaoImpl.class);
 	
 	private static final String DB_VERSION_TABLE = "agn_dbversioninfo_tbl";
 	
@@ -129,6 +131,11 @@ public class ComServerStatusDaoImpl extends BaseDaoImpl implements ComServerStat
 		return DbUtilities.getDbUrl(getDataSource());
 	}
 
+	@Override
+	public String getDbVersion() throws Exception {
+		return DbUtilities.getDbVersion(getDataSource());
+	}
+
     @Override
     public String getDbVendor() {
 		DataSource dataSource = getDataSource();
@@ -136,8 +143,11 @@ public class ComServerStatusDaoImpl extends BaseDaoImpl implements ComServerStat
 			return "Oracle";
 		} else if (DbUtilities.checkDbVendorIsMariaDB(dataSource)) {
 			return "MariaDB";
+		} else if (DbUtilities.checkDbVendorIsMySQL(dataSource)) {
+			return "MySQL";
+		} else {
+			return "N/A";
 		}
-		return "N/A";
     }
 
     @Override
@@ -198,13 +208,13 @@ public class ComServerStatusDaoImpl extends BaseDaoImpl implements ComServerStat
 	@Override
 	public List<String> getErrorJobsStatuses() {
 		String sql = "SELECT description FROM job_queue_tbl WHERE deleted = 0 AND ((lastresult != 'OK' AND lastresult IS NOT NULL) OR nextstart < ? OR (running = 1 AND laststart < ?))";
-		return select(logger, sql, new StringRowMapper(), DateUtilities.getDateOfMinutesAgo(15), DateUtilities.getDateOfHoursAgo(5));
+		return select(logger, sql, StringRowMapper.INSTANCE, DateUtilities.getDateOfMinutesAgo(15), DateUtilities.getDateOfHoursAgo(5));
 	}
 
 	@Override
 	public List<String> getDKIMKeys() {
 		if (DbUtilities.checkIfTableExists(getDataSource(), "dkim_key_tbl")) {
-			return select(logger, "SELECT DISTINCT domain FROM dkim_key_tbl WHERE valid_end IS NULL OR valid_end > CURRENT_TIMESTAMP ORDER BY domain", new StringRowMapper());
+			return select(logger, "SELECT DISTINCT domain FROM dkim_key_tbl WHERE valid_end IS NULL OR valid_end > CURRENT_TIMESTAMP ORDER BY domain", StringRowMapper.INSTANCE);
 		} else {
 			return new ArrayList<>();
 		}
@@ -213,7 +223,7 @@ public class ComServerStatusDaoImpl extends BaseDaoImpl implements ComServerStat
 	@Override
 	public List<String> killRunningImports() {
 		List<String> killedImportTables = new ArrayList<>();
-		for (String tableName : select(logger, "SELECT temporary_table_name FROM import_temporary_tables", new StringRowMapper())) {
+		for (String tableName : select(logger, "SELECT temporary_table_name FROM import_temporary_tables", StringRowMapper.INSTANCE)) {
 			try {
 				DbUtilities.dropTable(getDataSource(), tableName);
 				update(logger, "DELETE FROM import_temporary_tables WHERE temporary_table_name = ?", tableName);
@@ -234,27 +244,46 @@ public class ComServerStatusDaoImpl extends BaseDaoImpl implements ComServerStat
 			try (Statement stmt = connection.createStatement()) {
 				try (ResultSet rs = stmt.executeQuery(dbStatement)) {
 					File outputFile = File.createTempFile(AgnUtils.getTempDir() + "/" + tableName + "_", ".csv");
-					FileOutputStream outputStream = new FileOutputStream(outputFile);
-					try (CsvWriter csvWriter = new CsvWriter(outputStream)) {
-						ResultSetMetaData rsmd = rs.getMetaData();
-						List<String> headerList = new ArrayList<>();
-						for(int i = 1; i <= rsmd.getColumnCount(); i++) {
-							headerList.add(rsmd.getColumnLabel(i));
-						}
-						csvWriter.writeValues(headerList);
-						int columnNumber = rsmd.getColumnCount();
-						while (rs.next()) {
-							List<String> valueList = new ArrayList<>();
-							for (int i = 1; i <= columnNumber; i++) {
-								
-								valueList.add(rs.getString(i));
+					try(FileOutputStream outputStream = new FileOutputStream(outputFile)) {
+						try (CsvWriter csvWriter = new CsvWriter(outputStream)) {
+							ResultSetMetaData rsmd = rs.getMetaData();
+							List<String> headerList = new ArrayList<>();
+							for(int i = 1; i <= rsmd.getColumnCount(); i++) {
+								headerList.add(rsmd.getColumnLabel(i));
 							}
-							csvWriter.writeValues(valueList);
+							csvWriter.writeValues(headerList);
+							int columnNumber = rsmd.getColumnCount();
+							while (rs.next()) {
+								List<String> valueList = new ArrayList<>();
+								for (int i = 1; i <= columnNumber; i++) {
+									
+									valueList.add(rs.getString(i));
+								}
+								csvWriter.writeValues(valueList);
+							}
 						}
 					}
 					return outputFile;
 				}
 			}
 		}
+	}
+
+	@Override
+	public List<String> getErroneousImports() {
+		return select(logger,
+			"SELECT shortname || ' (CID ' || company_id || ' / AutoImportId ' || auto_import_id || ')' FROM auto_import_tbl WHERE running = 1 AND laststart < ?"
+			+ " UNION ALL "
+			+ "SELECT description || ' (Table ' || import_table_name || ')' FROM import_temporary_tables WHERE creation_date < ?",
+			StringRowMapper.INSTANCE,
+			DateUtilities.getDateOfHoursAgo(1), DateUtilities.getDateOfHoursAgo(1));
+	}
+
+	@Override
+	public List<String> getErroneousExports() {
+		return select(logger,
+			"SELECT shortname || ' (CID ' || company_id || ' / AutoExportId ' || auto_export_id || ')' FROM auto_export_tbl WHERE running = 1 AND laststart < ?",
+			StringRowMapper.INSTANCE,
+			DateUtilities.getDateOfHoursAgo(1));
 	}
 }

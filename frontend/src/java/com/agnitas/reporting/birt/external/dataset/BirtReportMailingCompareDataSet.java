@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -29,8 +29,8 @@ import org.agnitas.util.DateUtilities;
 import org.agnitas.util.importvalues.MailType;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.jdbc.core.RowMapper;
 
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
@@ -42,7 +42,7 @@ import com.agnitas.reporting.birt.external.utils.BirtReporUtils;
 import com.agnitas.reporting.birt.external.utils.FormatTools;
 
 public class BirtReportMailingCompareDataSet extends BIRTDataSet {
-	private static final transient Logger logger = Logger.getLogger(BirtReportMailingCompareDataSet.class);
+	private static final transient Logger logger = LogManager.getLogger(BirtReportMailingCompareDataSet.class);
 
     private Map<Integer, Integer> categoriesByTable = new HashMap<>();
 
@@ -122,15 +122,14 @@ public class BirtReportMailingCompareDataSet extends BIRTDataSet {
         final DateFormats dateFormats = new DateFormats();
 
         final List<LightTarget> targets = getTargets(targetsStr, companyId);
-
-        final int hiddenTargetId = NumberUtils.toInt(hiddenTargetIdStr, -1);
-        final LightTarget hiddenTarget = hiddenTargetId > 0 ? getTarget(hiddenTargetId, companyId) : null;
+        
+        String hiddenTargetSql = getTargetSqlString(hiddenTargetIdStr, companyId);
 
 		for (Integer mailingId : mailingIds) {
 			int tempTableId = mailingSummaryDataSet.createTempTable();
-			mailingSummaryDataSet.insertSendIntoTempTable(mailingId, tempTableId, companyId, targets, hiddenTarget, recipientType, dateFormats);
-			mailingSummaryDataSet.insertDeliveredIntoTempTable(tempTableId, mailingId, companyId, targets, hiddenTarget, recipientType, dateFormats);
-            mailingSummaryDataSet.insertClickersIntoTempTable(mailingId, tempTableId, companyId, targets, hiddenTarget, recipientType, true, dateFormats);
+			mailingSummaryDataSet.insertSendIntoTempTable(mailingId, tempTableId, companyId, targets, hiddenTargetSql, recipientType, dateFormats);
+			mailingSummaryDataSet.insertDeliveredIntoTempTable(tempTableId, mailingId, companyId, targets, hiddenTargetSql, recipientType, dateFormats);
+            mailingSummaryDataSet.insertClickersIntoTempTable(mailingId, tempTableId, companyId, targets, hiddenTargetSql, recipientType, true, dateFormats);
             if (figures.contains(BirtReporUtils.BirtReportFigure.CLICKS_ANONYMOUS)) {
                 mailingSummaryDataSet.insertClicksAnonymousIntoTempTable(mailingId, tempTableId, companyId, dateFormats);
             }
@@ -138,16 +137,16 @@ public class BirtReportMailingCompareDataSet extends BIRTDataSet {
                 mailingSummaryDataSet.insertOpenedAnonymousIntoTempTable(mailingId, tempTableId, companyId, dateFormats);
             }
             if (figures.contains(BirtReporUtils.BirtReportFigure.HARDBOUNCES)) {
-                mailingSummaryDataSet.insertBouncesIntoTempTable(mailingId, tempTableId, companyId, targets, hiddenTarget, recipientType, false, dateFormats);
+                mailingSummaryDataSet.insertBouncesIntoTempTable(mailingId, tempTableId, companyId, targets, hiddenTargetSql, recipientType, false, dateFormats);
             }
             if (figures.contains(BirtReporUtils.BirtReportFigure.SIGNED_OFF)) {
-                mailingSummaryDataSet.insertOptOutsIntoTempTable(mailingId, tempTableId, companyId, targets, hiddenTarget, recipientType, dateFormats);
+                mailingSummaryDataSet.insertOptOutsIntoTempTable(mailingId, tempTableId, companyId, targets, hiddenTargetSql, recipientType, dateFormats);
             }
             if (figures.contains(BirtReporUtils.BirtReportFigure.REVENUE)) {
-                mailingSummaryDataSet.insertRevenueIntoTempTable(mailingId, tempTableId, companyId, targets, hiddenTarget, dateFormats);
+                mailingSummaryDataSet.insertRevenueIntoTempTable(mailingId, tempTableId, companyId, targets, hiddenTargetSql, dateFormats);
             }
-        	mailingSummaryDataSet.insertOpenersIntoTempTable(mailingId, tempTableId, companyId, targets, hiddenTarget, recipientType, true, false, dateFormats);
-			mailingSummaryDataSet.insertOpenedInvisibleIntoTempTable(mailingId, tempTableId, companyId, targets, hiddenTarget, recipientType, false, dateFormats);
+        	mailingSummaryDataSet.insertOpenersIntoTempTable(mailingId, tempTableId, companyId, targets, hiddenTargetSql, recipientType, true, false, dateFormats);
+			mailingSummaryDataSet.insertOpenedInvisibleIntoTempTable(mailingId, tempTableId, companyId, targets, hiddenTargetSql, recipientType, false, dateFormats);
 
             if (!figures.contains(BirtReporUtils.BirtReportFigure.OPENERS_AFTER_DEVICE)) {
                 mailingSummaryDataSet.removeCategoryData(tempTableId, CommonKeys.OPENERS_MOBILE_INDEX);

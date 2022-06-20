@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -17,6 +17,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.regex.Matcher;
 
 import org.agnitas.beans.Recipient;
@@ -33,7 +34,8 @@ import org.agnitas.emm.core.recipient.service.RecipientService;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.dao.ComCompanyDao;
@@ -41,6 +43,8 @@ import com.agnitas.dao.ComMailingDao;
 import com.agnitas.dao.ComTitleDao;
 import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
 import com.agnitas.emm.core.commons.uid.UIDFactory;
+import com.agnitas.emm.core.company.service.CompanyTokenService;
+import com.agnitas.emm.core.servicemail.UnknownCompanyIdException;
 import com.agnitas.service.AgnTagResolver;
 import com.agnitas.service.AgnTagResolverFactory;
 
@@ -58,6 +62,7 @@ public class AgnTagResolverFactoryImpl implements AgnTagResolverFactory {
     private ComTitleDao titleDao;
     private TagDao tagDao;
     private ConfigService configService;
+    private CompanyTokenService companyTokenService;
 
     @Override
     public AgnTagResolver create(@VelocityCheck int companyId, int mailingId, int mailingListId, int customerId) {
@@ -108,9 +113,14 @@ public class AgnTagResolverFactoryImpl implements AgnTagResolverFactory {
     public final void setConfigService(final ConfigService service) {
     	this.configService = Objects.requireNonNull(service, "Config Service cannot be null");
     }
+    
+    @Required
+    public final void setCompanyTokenService(final CompanyTokenService service) {
+    	this.companyTokenService = Objects.requireNonNull(service, "companyTokenService is null");
+    }
 
     private class AgnTagResolverImpl implements AgnTagResolver {
-        private final Logger logger = Logger.getLogger(AgnTagResolverImpl.class);
+        private final Logger logger = LogManager.getLogger(AgnTagResolverImpl.class);
 
         private int companyId;
         private int mailingId;
@@ -234,7 +244,27 @@ public class AgnTagResolverFactoryImpl implements AgnTagResolverFactory {
         }
 
         private String resolveAgnForm(String formName) {
-            return getRedirectDomain() + "/form.action?agnCI=" + companyId + "&agnFN=" + formName + "&agnUID=##AGNUID##";
+    		final Optional<String> companyTokenOpt = readCompanyToken();
+
+    		return companyTokenOpt.isPresent()
+    				? String.format(
+    						"%s/form.action?agnCTOKEN=%s&agnFN=%s&agnUID=##AGNUID##",
+    						getRedirectDomain(),
+    						companyTokenOpt.get(),
+    						formName)
+    				: String.format(
+    						"%s/formaction?agnCI=%d&agnFN=%s&agnUID=##AGNUID##",
+    						getRedirectDomain(),
+    						companyId,
+    						formName);
+        }
+        
+        private final Optional<String> readCompanyToken() {
+        	try {
+        		return companyTokenService.getCompanyToken(this.companyId);
+        	} catch(final UnknownCompanyIdException e) {
+        		return Optional.empty();
+        	}
         }
 
         /**

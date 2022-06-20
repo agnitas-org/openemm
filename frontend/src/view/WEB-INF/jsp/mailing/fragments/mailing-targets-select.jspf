@@ -1,6 +1,7 @@
 
 <%--@elvariable id="isWorkflowDriven" type="java.lang.Boolean"--%>
 <%--@elvariable id="editWithCampaignManagerLink" type="java.lang.String"--%>
+<%--@elvariable id="target" type="com.agnitas.beans.TargetLight"--%>
 <%--@elvariable id="altgId" type="java.lang.Integer"--%>
 <c:set var="allSubscribersMessage"><bean:message key="statistic.all_subscribers"/></c:set>
 <c:set var="editWithCampaignManagerMessage" scope="request"><bean:message key="mailing.EditWithCampaignManager"/></c:set>
@@ -47,8 +48,12 @@
 
         <div class="form-group">
             <div class="col-sm-offset-4 col-sm-8">
-                <%-- Target groups aren't editable if mailing has complex target expression or is managed by campaign --%>
-                <agn:agnHidden styleId="assignTargetGroups" property="assignTargetGroups" value="false"/>
+                <c:set var="isNewMailingFromCampaign" value="${isWorkflowDriven and mailingBaseForm.mailingID == 0}"/>
+                <%-- Target groups aren't editable if mailing has complex target expression or is managed by campaign except new one created from campaing--%>
+                <agn:agnHidden styleId="assignTargetGroups" property="assignTargetGroups" value="${isNewMailingFromCampaign ? true : false}"/>
+                <c:if test="${isNewMailingFromCampaign}">
+                    <agn:agnHidden property="targetExpression"/>
+                </c:if>
 
                 <agn:agnSelect styleId="targetGroupIds" property="targetGroupIds"
                                styleClass="form-control js-select"

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -30,7 +30,7 @@ public class BindingModel {
 	private int customerId;
 	private int mailinglistId;
 	private int mediatype;
-	private int status;
+	private int status;					// TODO Change status to type UserStatus
 	private String userType;
 	private String remark;
 	private int exitMailingId;
@@ -68,10 +68,12 @@ public class BindingModel {
 		this.mediatype = mediatype;
 	}
 
+	// TODO Change return type to org.agnitas.dao.UserStatus
 	public int getStatus() {
 		return status;
 	}
 
+	// TODO Change parameter to org.agnitas.dao.UserStatus
 	public void setStatus(int status) {
 		this.status = status;
 	}

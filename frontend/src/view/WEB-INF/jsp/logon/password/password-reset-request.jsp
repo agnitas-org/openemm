@@ -13,7 +13,7 @@
             <div class="col-sm-4">
                 <label for="username" class="control-label">
                     <i class="icon icon-user"></i>
-                    <s:message code="logon.username"/>
+                    <mvc:message code="logon.username"/>
                 </label>
             </div>
             <div class="col-sm-8">
@@ -25,7 +25,7 @@
             <div class="col-sm-4">
                 <label for="email" class="control-label">
                     <i class="icon icon-envelope"></i>
-                    <s:message code="mailing.MediaType.0"/>
+                    <mvc:message code="mailing.MediaType.0"/>
                 </label>
             </div>
             <div class="col-sm-8">
@@ -36,7 +36,7 @@
         <div class="form-group">
             <div class="col-sm-offset-4 col-sm-8">
                 <button type="button" class="btn btn-primary btn-large btn-block" data-form-submit="">
-                    <s:message code="logon.password_reset"/> <i class="icon icon-angle-right"></i>
+                    <mvc:message code="logon.password_reset"/> <i class="icon icon-angle-right"></i>
                 </button>
             </div>
         </div>

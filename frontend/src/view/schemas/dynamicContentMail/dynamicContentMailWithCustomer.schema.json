@@ -1,0 +1,68 @@
+{
+	"$schema": "http:\/\/json-schema.org\/draft-04\/schema#",
+	"type": "object",
+	"properties":
+		{
+			"sendMailingID":
+				{
+					"type": "number"
+				},
+			"templateMailingID":
+				{
+					"type": "number"
+				},
+			"customer":
+				{
+					"type": "object",
+					"properties":
+						{
+							"firstname":
+								{
+									"type": "string"
+								},
+							"lastname":
+								{
+									"type": "string"
+								},
+							"email":
+								{
+									"type": "string"
+								}
+						},
+					"required":
+						[
+							"firstname",
+							"lastname",
+							"email"
+						],
+					"additionalProperties": true
+				},
+			"mailFrom":
+				{
+					"type": "string"
+				},
+			"replyTo":
+				{
+					"type": "string"
+				},
+			"subject":
+				{
+					"type": "string"
+				},
+			"attachmentFileName":
+				{
+					"type": "string"
+				},
+			"attachment":
+				{
+					"type": "string"
+				}
+		},
+	"required":
+		[
+			"sendMailingID",
+			"templateMailingID",
+			"customer"
+		],
+	"additionalProperties": true
+}

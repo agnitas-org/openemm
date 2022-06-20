@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -12,14 +12,16 @@ package org.agnitas.emm.springws.endpoint.mailing;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import org.agnitas.emm.core.mailing.service.MailingModel;
-import org.agnitas.emm.core.mailinglist.service.impl.MailinglistException;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.springws.endpoint.BaseEndpoint;
 import org.agnitas.emm.springws.endpoint.Utils;
 import org.agnitas.emm.springws.jaxb.UpdateTemplateRequest;
 import org.agnitas.emm.springws.jaxb.UpdateTemplateResponse;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.ws.server.endpoint.annotation.Endpoint;
@@ -27,24 +29,31 @@ import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
 import org.springframework.ws.server.endpoint.annotation.RequestPayload;
 import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
+import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.mailing.service.MailingService;
+import com.agnitas.emm.core.thumbnails.service.ThumbnailService;
 
 @Endpoint
 public class UpdateTemplateEndpoint extends BaseEndpoint {
 
+	private static final transient Logger LOGGER = LogManager.getLogger(AddMailingFromTemplateEndpoint.class);
+
+	private final ThumbnailService thumbnailService;
 	private MailingService mailingService;
 
 	@Autowired
-	public UpdateTemplateEndpoint(@Qualifier("MailingService") MailingService mailingService) {
+	public UpdateTemplateEndpoint(@Qualifier("MailingService") MailingService mailingService, final ThumbnailService thumbnailService) {
 		this.mailingService = mailingService;
+		this.thumbnailService = Objects.requireNonNull(thumbnailService);
 	}
 
 	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "UpdateTemplateRequest")
-	public @ResponsePayload UpdateTemplateResponse updateTemplate(@RequestPayload UpdateTemplateRequest request) throws MailinglistException {
-		UpdateTemplateResponse response = new UpdateTemplateResponse();
-		MailingModel model = new MailingModel();
+	public @ResponsePayload UpdateTemplateResponse updateTemplate(@RequestPayload UpdateTemplateRequest request) throws Exception {
+		final int companyID = Utils.getUserCompany();
+		
+		final MailingModel model = new MailingModel();
 		model.setMailingId(request.getTemplateID());
-		model.setCompanyId(Utils.getUserCompany());
+		model.setCompanyId(companyID);
 		model.setShortname(request.getShortname());
 		model.setDescription(request.getDescription());
 		model.setMailinglistId(request.getMailinglistID());
@@ -54,7 +63,7 @@ public class UpdateTemplateEndpoint extends BaseEndpoint {
 			model.setTargetIDList(targetIDList.getTargetID());
 		}
 		model.setTargetMode(request.getMatchTargetGroups());
-		model.setMailingType(request.getMailingType());
+		model.setMailingType(MailingType.fromWebserviceCode(request.getMailingType()));
 		model.setSubject(request.getSubject());
 		model.setSenderName(request.getSenderName());
 		model.setSenderAddress(request.getSenderAddress());
@@ -71,6 +80,13 @@ public class UpdateTemplateEndpoint extends BaseEndpoint {
 		mailingService.updateMailing(model, userActions);
 		Utils.writeLog(userActivityLogService, userActions);
 
+		try {
+			this.thumbnailService.updateMailingThumbnailByWebservice(companyID, request.getTemplateID());
+		} catch(final Exception e) {
+			LOGGER.error(String.format("Error updating thumbnail of template %d", request.getTemplateID()), e);
+		}
+
+		final UpdateTemplateResponse response = new UpdateTemplateResponse();
 		return response;
 	}
 }

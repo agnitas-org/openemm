@@ -383,7 +383,13 @@ return false;
                                     <property name="style">table-head</property>
                                     <property name="textAlign">left</property>
                                     <text-data id="702">
-                                        <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString('statistic.device_name', reportContext.getLocale())</expression>
+                                        <expression name="valueExpr">
+                                        if(params["statisticType"] == 1) {
+                                            Packages.com.agnitas.messages.I18nString.getLocaleString('statistic.device_name', reportContext.getLocale())
+                                        }else{
+                                            Packages.com.agnitas.messages.I18nString.getLocaleString('statistic.user_name', reportContext.getLocale())
+                                        }
+                                        </expression>
                                         <property name="contentType">html</property>
                                     </text-data>
                                 </cell>

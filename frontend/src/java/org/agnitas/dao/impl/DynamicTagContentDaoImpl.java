@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -25,7 +25,8 @@ import org.agnitas.beans.impl.DynamicTagContentImpl;
 import org.agnitas.dao.DynamicTagContentDao;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.AgnUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.jdbc.core.RowMapper;
 
@@ -34,7 +35,7 @@ import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.util.SpecialCharactersWorker;
 
 public class DynamicTagContentDaoImpl extends BaseDaoImpl implements DynamicTagContentDao {
-	private static final transient Logger logger = Logger.getLogger(DynamicTagContentDaoImpl.class);
+	private static final transient Logger logger = LogManager.getLogger(DynamicTagContentDaoImpl.class);
 
 	private final RowMapper<DynamicTagContent> dynContentRowMapper = (resultSet, rowNum) -> {
 		DynamicTagContent content = new DynamicTagContentImpl();
@@ -148,6 +149,12 @@ public class DynamicTagContentDaoImpl extends BaseDaoImpl implements DynamicTagC
 	@Override
     @DaoUpdateReturnValueCheck
     public void saveDynamicTagContent(int companyID, int mailingID, String encodingCharset, List<DynamicTag> dynamicTags) throws Exception {
+		saveDynamicTagContent(companyID, mailingID, encodingCharset, dynamicTags, false);
+	}
+	
+	@Override
+    @DaoUpdateReturnValueCheck
+    public void saveDynamicTagContent(int companyID, int mailingID, String encodingCharset, List<DynamicTag> dynamicTags, final boolean removeUnusedContent) throws Exception {
         Map<Integer, List<Integer>> existingDynContentForDynName = getExistingDynContentForDynName(companyID, mailingID, dynamicTags.stream().map(DynamicTag::getId).collect(Collectors.toList()));
 
         for (DynamicTag dynamicTag : dynamicTags) {
@@ -159,13 +166,15 @@ public class DynamicTagContentDaoImpl extends BaseDaoImpl implements DynamicTagC
                 });
             }
 
-            saveDynContent(dynamicTag, dynamicTag.getDynContent(), existingDynContentForDynName.getOrDefault(dynamicTag.getId(), Collections.emptyList()));
+            saveDynContent(dynamicTag, dynamicTag.getDynContent(), existingDynContentForDynName.getOrDefault(dynamicTag.getId(), Collections.emptyList()), removeUnusedContent);
         }
     }
 
-    private void saveDynContent(DynamicTag dynTag, Map<Integer, DynamicTagContent> contents, final List<Integer> existingContentIds) throws Exception {
+    private void saveDynContent(DynamicTag dynTag, Map<Integer, DynamicTagContent> contents, final List<Integer> existingContentIds, final boolean removeUnusedContent) throws Exception {
         List<DynamicTagContent> tagContentForUpdate = new ArrayList<>();
         List<DynamicTagContent> tagContentForCreation = new ArrayList<>();
+        
+        List<Integer> contentIdsToRemove = new ArrayList<>(existingContentIds);
 
         contents.values().forEach(entry -> {
             entry.setCompanyID(dynTag.getCompanyID());
@@ -176,10 +185,19 @@ public class DynamicTagContentDaoImpl extends BaseDaoImpl implements DynamicTagC
             } else {
                 tagContentForCreation.add(entry);
             }
+            
+            contentIdsToRemove.remove(Integer.valueOf(entry.getId()));
         });
 
         batchUpdateDynContent(tagContentForUpdate);
         batchInsertDynContent(tagContentForCreation);
+        
+        if(removeUnusedContent) {
+	        // Remove all unused contents
+	        for(final int contentId : contentIdsToRemove) {
+	        	this.deleteContent(dynTag.getCompanyID(), contentId);
+	        }
+        }
     }
 
     private void batchInsertDynContent(List<DynamicTagContent> dynamicTagContents) throws Exception {

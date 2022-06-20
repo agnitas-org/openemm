@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -29,11 +29,10 @@ import org.agnitas.util.DateUtilities;
 import org.agnitas.util.importvalues.Separator;
 import org.agnitas.util.importvalues.TextRecognitionChar;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.ComCompany;
+import com.agnitas.beans.Company;
 import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.dao.ComTargetDao;
 import com.agnitas.emm.core.JavaMailService;
@@ -43,9 +42,6 @@ import com.agnitas.emm.core.recipientsreport.service.RecipientsReportService;
 import com.agnitas.messages.I18nString;
 
 public class RecipientExportReporter {
-	/** The logger. */
-	@SuppressWarnings("unused")
-	private static final transient Logger logger = Logger.getLogger(RecipientExportReporter.class);
 	
 	private RecipientsReportService recipientsReportService;
 	
@@ -107,7 +103,7 @@ public class RecipientExportReporter {
 		Set<String> emailRecipients = new HashSet<>();
 		
 		String additionalContent = "";
-		ComCompany comp = companyDao.getCompany(admin.getCompanyID());
+		Company comp = companyDao.getCompany(admin.getCompanyID());
 		if (comp.getExportNotifyAdmin() > 0) {
 			final ComAdmin notifyAdmin = adminService.getAdmin(comp.getExportNotifyAdmin(), admin.getCompanyID());
 
@@ -135,7 +131,7 @@ public class RecipientExportReporter {
 
 		if (!emailRecipients.isEmpty()) {
 			Locale locale = admin.getLocale();
-			ComCompany company = companyDao.getCompany(exportWorker.getExportProfile().getCompanyID());
+			Company company = companyDao.getCompany(exportWorker.getExportProfile().getCompanyID());
 			
 			String subject;
 			if (StringUtils.isEmpty(exportWorker.getExportProfile().getShortname())) {
@@ -155,7 +151,7 @@ public class RecipientExportReporter {
 
 		reportContent += I18nString.getLocaleString("decode.licenseID", locale) + ": " + configService.getValue(ConfigValue.System_Licence) + "\n";
 		
-		ComCompany company = companyDao.getCompany(exportWorker.getExportProfile().getCompanyID());
+		Company company = companyDao.getCompany(exportWorker.getExportProfile().getCompanyID());
 		reportContent += I18nString.getLocaleString("Company", locale) + ": " + (company == null ? "Unknown" : company.getShortname() + " (ID: " + company.getId() + ")") + "\n";
 		
 		if (exportWorker.getAutoExport() != null) {
@@ -303,7 +299,7 @@ public class RecipientExportReporter {
 		
 		htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("decode.licenseID", locale), configService.getValue(ConfigValue.System_Licence)));
 
-		ComCompany company = companyDao.getCompany(exportWorker.getExportProfile().getCompanyID());
+		Company company = companyDao.getCompany(exportWorker.getExportProfile().getCompanyID());
 		htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("Company", locale), (company == null ? "Unknown" : company.getShortname() + " (ID: " + company.getId() + ")")));
 		
 		if (exportWorker.getAutoExport() != null) {
@@ -408,7 +404,7 @@ public class RecipientExportReporter {
 		Set<String> emailRecipients = new HashSet<>();
 
 		String additionalContent = "";
-		ComCompany comp = companyDao.getCompany(admin.getCompanyID());
+		Company comp = companyDao.getCompany(admin.getCompanyID());
 		if (comp.getExportNotifyAdmin() > 0) {
 			final ComAdmin notifyAdmin = adminService.getAdmin(comp.getExportNotifyAdmin(), admin.getCompanyID());
 
@@ -444,7 +440,7 @@ public class RecipientExportReporter {
 
 		if (!emailRecipients.isEmpty()) {
 			Locale locale = admin.getLocale();
-			ComCompany company = companyDao.getCompany(exportWorker.getExportProfile().getCompanyID());
+			Company company = companyDao.getCompany(exportWorker.getExportProfile().getCompanyID());
 			
 			String subject;
 			if (StringUtils.isEmpty(exportWorker.getExportProfile().getShortname())) {

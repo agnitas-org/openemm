@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,7 +10,6 @@
 
 package org.agnitas.emm.core.commons.util;
 
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,16 +17,17 @@ import java.util.Map;
 import org.agnitas.dao.impl.BaseDaoImpl;
 import org.agnitas.util.AgnUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * This class is intended to simplify access to the company_info_tbl
  */
 public class CompanyInfoDao extends BaseDaoImpl {
 	/** The logger. */
-	private static final transient Logger logger = Logger.getLogger(CompanyInfoDao.class);
+	private static final transient Logger logger = LogManager.getLogger(CompanyInfoDao.class);
 	
-	public Map<String, Map<Integer, String>> getAllEntriesForThisHost() throws SQLException {
+	public Map<String, Map<Integer, String>> getAllEntriesForThisHost() {
 		String sql;
 		if (isOracleDB()) {
 			sql = "SELECT cname, company_id, hostname, cvalue FROM company_info_tbl WHERE hostname IS NULL OR TRIM(hostname) IS NULL OR hostname = ? ORDER BY cname, company_id, hostname";

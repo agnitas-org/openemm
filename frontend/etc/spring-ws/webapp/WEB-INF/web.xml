@@ -94,4 +94,13 @@
 	<session-config>
 		<session-timeout>1</session-timeout>
 	</session-config>
+	
+	<!-- listener for resetting jobqueue entries on host startup after crash -->
+	<listener>
+		<listener-class>com.agnitas.util.ResetJobQueueContextListener</listener-class>
+	</listener>
+	
+ 	<error-page>
+          <location>/WEB-INF/jsp/error-page.jsp</location>
+    </error-page>
 </web-app>

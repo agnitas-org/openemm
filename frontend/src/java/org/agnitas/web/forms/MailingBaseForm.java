@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -17,20 +17,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import jakarta.mail.internet.InternetAddress;
-import jakarta.servlet.http.HttpServletRequest;
-
 import org.agnitas.beans.MailingBase;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.beans.MediaTypeStatus;
-import org.agnitas.beans.Mediatype;
 import org.agnitas.emm.core.mediatypes.factory.MediatypeFactory;
 import org.agnitas.util.AgnUtils;
-import org.agnitas.web.MailingBaseAction;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
@@ -38,18 +34,22 @@ import org.apache.struts.action.ActionMessages;
 
 import com.agnitas.beans.Campaign;
 import com.agnitas.beans.Mailing;
+import com.agnitas.beans.Mediatype;
 import com.agnitas.beans.MediatypeEmail;
 import com.agnitas.beans.TargetLight;
+import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import com.agnitas.emm.core.report.enums.fields.MailingTypes;
 import com.agnitas.emm.core.target.beans.TargetComplexityGrade;
-import com.agnitas.emm.core.target.eql.codegen.resolver.MailingType;
 import com.agnitas.service.AgnTagService;
+import com.agnitas.web.MailingBaseAction;
+
+import jakarta.mail.internet.InternetAddress;
+import jakarta.servlet.http.HttpServletRequest;
 
 public class MailingBaseForm extends StrutsFormBase {
 	
 	/** The logger. */
-	private static final transient Logger logger = Logger.getLogger(MailingBaseForm.class);
+	private static final transient Logger logger = LogManager.getLogger(MailingBaseForm.class);
     
 	/** Serial version UID. */
     private static final long serialVersionUID = 8995916091799817822L;
@@ -338,6 +338,8 @@ public class MailingBaseForm extends StrutsFormBase {
      * Holds list of targets.
      */
     protected List<TargetLight> targets;
+    
+    private Collection<Integer> altgs = new ArrayList<>();
 
     /**
      * Holds list of targets selected by ids from targetGroups.
@@ -371,7 +373,7 @@ public class MailingBaseForm extends StrutsFormBase {
         this.mailinglistID = 0;
         this.templateID = 0;
         this.campaignID = 0;
-        this.mailingType = MailingTypes.NORMAL.getCode();
+        this.mailingType = MailingType.NORMAL.getCode();
         
         this.shortname = "";
         this.description = "";
@@ -399,6 +401,7 @@ public class MailingBaseForm extends StrutsFormBase {
         this.archived = false;
         this.needsTarget = false;
         this.targetMode = Mailing.TARGET_MODE_AND;
+        this.altgs = new ArrayList<>();
 
         if (!keepContainerVisibilityState) {
             this.templateContainerVisible = false;
@@ -431,6 +434,7 @@ public class MailingBaseForm extends StrutsFormBase {
      * @param mapping The mapping used to select this instance
      * @param request The servlet request we are processing
      * @return errors
+     * @throws Exception
      */
     @Override
     public ActionErrors formSpecificValidate(ActionMapping mapping, HttpServletRequest request) {
@@ -463,11 +467,17 @@ public class MailingBaseForm extends StrutsFormBase {
                 this.emailReplytoFullname = getSenderFullname();
             }
             
-            if (this.targetGroups == null && this.mailingType == MailingTypes.DATE_BASED.getCode()) {
+            MailingType mailingTypeToCheck;
+			try {
+				mailingTypeToCheck = MailingType.fromCode(mailingType);
+			} catch (Exception e1) {
+				throw new RuntimeException("Invalid MailingType code: " + mailingType);
+			}
+            if (this.targetGroups == null && mailingTypeToCheck == MailingType.DATE_BASED) {
                 actionErrors.add("global", new ActionMessage("error.mailing.rulebased_without_target"));
             }
             
-            if (this.targetGroups == null && this.mailingType == MailingTypes.INTERVAL.getCode()) {
+            if (this.targetGroups == null && mailingTypeToCheck == MailingType.INTERVAL) {
                 actionErrors.add("global", new ActionMessage("error.mailing.rulebased_without_target"));
             }
 
@@ -707,7 +717,7 @@ public class MailingBaseForm extends StrutsFormBase {
      * @return Value of property mailingType.
      */
     public int getMailingType() {
-        return this.mailingType;
+        return mailingType;
     }
     
     /**
@@ -881,6 +891,26 @@ public class MailingBaseForm extends StrutsFormBase {
 	public void setTargetGroupIds(Integer[] targetGroupIds) {
 		targetGroups = new ArrayList<>(Arrays.asList(targetGroupIds));
 	}
+	
+    public Collection<Integer> getAltgs() {
+        return altgs;
+    }
+    
+    public void setAltgs(Collection<Integer> altgs) {
+        this.altgs = altgs;
+    }
+    
+    public Integer[] getAltgIds() {
+   		if (CollectionUtils.isNotEmpty(altgs)) {
+   			return altgs.toArray(new Integer[altgs.size()]);
+   		} else {
+   			return ArrayUtils.EMPTY_INTEGER_OBJECT_ARRAY;
+   		}
+   	}
+   
+   	public void setAltgIds(Integer[] altgIds) {
+   		altgs = new ArrayList<>(Arrays.asList(altgIds));
+   	}
 
     /**
      * Getter for property isTemplate.
@@ -1098,7 +1128,7 @@ public class MailingBaseForm extends StrutsFormBase {
     }
 
     public Mediatype getMedia(int id) {
-        Mediatype media = getMediatypes().get(id);
+    	Mediatype media = getMediatypes().get(id);
 
         if (media == null) {
             MediatypeFactory factory = getWebApplicationContext().getBean("MediatypeFactory", MediatypeFactory.class);

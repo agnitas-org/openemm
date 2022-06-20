@@ -1,4 +1,4 @@
 <HelpBalloon>
     <title><![CDATA[Threshold]]></title>
-    <content><![CDATA[You can name a specific value for the field Threshold. If this value is reached by one of the test mailings this mailing will be sent before the final send date. For this filed only absolute numbers are allowed, no percentage values.]]></content>
+    <content><![CDATA[You can name a specific value for the field Threshold. If this value is reached by one of the test mailings this mailing will be sent before the final send date. For this field only absolute numbers are allowed, no percentage values.]]></content>
 </HelpBalloon>

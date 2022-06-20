@@ -2,15 +2,13 @@ AGN.Lib.Controller.new('exportwizard-view', function () {
   var adminHasOwnColumnPermission;
   var columnMappingRowTemplate;
   var bounceUserStatusCode;
-  var profileFieldColumns;
   var $columnMappingTable;
 
   this.addDomInitializer('exportwizard-view', function () {
     adminHasOwnColumnPermission = this.config.adminHasOwnColumnPermission;
+    bounceUserStatusCode = this.config.bounceUserStatusCode;
+    updateBouncesColumnOptionVisibility();
     if (adminHasOwnColumnPermission) {
-      profileFieldColumns = this.config.profileFieldColumns;
-      bounceUserStatusCode = this.config.bounceUserStatusCode;
-      updateBouncesColumnOptionVisibility();
       initColumnMappingTable(getColumnMappingsSortedByName(this.config.columnMappings));
     }
   });
@@ -23,18 +21,24 @@ AGN.Lib.Controller.new('exportwizard-view', function () {
     submitForm();
   });
 
-  this.addAction({change: 'add-bounce-col-to-choose'}, function () {
-    if (adminHasOwnColumnPermission) {
-      updateBouncesColumnOptionVisibility();
-    }
-  });
+  this.addAction({change: 'add-bounce-col-to-choose'}, updateBouncesColumnOptionVisibility);
 
   this.addAction({click: 'add-column-mapping', enterdown: 'mapping-enterdown'}, function () {
+    var form = AGN.Lib.Form.get($('#exportWizardForm'));
+    var $lastRowNameInput = getMappingTableLastRow().find('[data-column-name]');
     this.event.preventDefault();
-    if (lastRowCanBeAddedToTable()) {
-      replaceNewButtonWithDeleteButton();
-      appendRowToColumnMappingTable('', '');
-      getMappingTableLastRow().find('[data-column-name]').focus();
+    
+    if (form.valid({})) {
+      if ($lastRowNameInput.val()) {
+        form.cleanErrors();
+        replaceNewButtonWithDeleteButton();
+        appendRowToColumnMappingTable('', '');
+        getMappingTableLastRow().find('[data-column-name]').focus();
+      } else {
+        $lastRowNameInput.focus();
+      }
+    } else {
+      form.handleErrors();
     }
   });
 
@@ -68,40 +72,6 @@ AGN.Lib.Controller.new('exportwizard-view', function () {
     btn.after("<a href='#' class='btn btn-regular btn-alert' data-action='delete-column-mapping'>" +
       "<i class='icon icon-trash-o'></i></a>");
     btn.remove();
-  }
-
-  function lastRowCanBeAddedToTable() {
-    var name = getColumnName(getMappingTableLastRow());
-    return name && isColumnNameValid(name) && isColumnNameUnique(name);
-  }
-
-  function isColumnNameUnique(name) {
-    var rows = $columnMappingTable.find('[data-column-mapping-row]').toArray();
-    for (var i = 0; i < rows.length - 1; i++) {
-      if (name == getColumnName($(rows[i]))) {
-        AGN.Lib.Messages(t("defaults.error"), t("export.columnMapping.error.duplicate"), 'alert');
-        return false;
-      }
-    }
-    if (profileFieldColumns.map(function (profileField) {
-      return profileField.column.toLowerCase();
-    }).indexOf(name.toLowerCase()) >= 0) {
-      AGN.Lib.Messages(t("defaults.error"), t("export.columnMapping.error.exist"), 'alert');
-      return false;
-    }
-    return true;
-  }
-
-  function isColumnNameValid(name) {
-    if (name.trim().length < 3) {
-      AGN.Lib.Messages(t("defaults.error"), t("export.columnMapping.error.nameToShort"), 'alert');
-      return false;
-    }
-    if (!/^[a-zA-Z0-9_]{3,}$/.test(name.trim())) {
-      AGN.Lib.Messages(t("defaults.error"), t("export.columnMapping.error.invalidColName"), 'alert');
-      return false;
-    }
-    return true;
   }
 
   function getMappingTableLastRow() {
@@ -159,21 +129,14 @@ AGN.Lib.Controller.new('exportwizard-view', function () {
       $bounceOption.attr('disabled', 'disabled');
     }
   }
-
-  function isLastColumnMappingValid() {
-    var lastColName = getColumnName(getMappingTableLastRow());
-    return lastColName == '' || isColumnNameValid(lastColName) && isColumnNameUnique(lastColName);
-  }
-
-  function isFormValid() {
-    return isLastColumnMappingValid();
-  }
-
+  
   function submitForm() {
-    if (isFormValid()) {
-      var form = AGN.Lib.Form.get($('#exportWizardForm'));
+    var form = AGN.Lib.Form.get($('#exportWizardForm'));
+    if (form.valid({})) {
       setColumnMappingsToForm(form);
       form.submit();
+    } else {
+      form.handleErrors();
     }
   }
 });

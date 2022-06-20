@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -16,7 +16,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.httpclient.HttpClient;
-import org.apache.log4j.Logger;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.logging.log4j.Logger;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.emm.core.birtreport.bean.ComBirtReport;
@@ -79,7 +80,7 @@ public interface BirtStatisticsService {
 	 */
 	Map<String, String> getReportStatisticsUrlMap(List<ComBirtReportSettings> reportSettings, Date currentDate, ComBirtReport report, int companyId, Integer accountId) throws Exception;
 
-	String generateUrlWithParams(Map<String, Object> parameters, boolean internalAccess);
+	String generateUrlWithParams(Map<String, Object> parameters, boolean internalAccess, final int companyID);
 
     String getRecipientStatisticUrlWithoutFormat(ComAdmin admin, String sessionId, RecipientStatisticDto recipientStatistic) throws Exception;
 
@@ -89,9 +90,15 @@ public interface BirtStatisticsService {
     
     String getMailingComparisonStatisticUrl(ComAdmin admin, String sessionId, MailingComparisonDto mailingComparisonDto) throws Exception;
 	
-	File getBirtMailingComparisonTmpFile(String birtURL, MailingComparisonDto mailingComparisonDto) throws Exception;
+	File getBirtMailingComparisonTmpFile(String birtURL, MailingComparisonDto mailingComparisonDto, final int companyId) throws Exception;
 	
+	/**
+	 * @see #getBirtReportTmpFile(int, String, CloseableHttpClient, Logger)
+	 */
+	@Deprecated
 	File getBirtReportTmpFile(int birtReportId, String birtUrl, HttpClient httpClient, Logger logger);
+	
+	File getBirtReportTmpFile(final int birtReportId, final String birtUrl, final CloseableHttpClient httpClient, final Logger logger);
 	
 	String getRecipientStatusStatisticUrl(ComAdmin admin, String sessionId, RecipientStatusStatisticDto recipientStatusDto) throws Exception;
 

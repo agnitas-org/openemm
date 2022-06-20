@@ -1,7 +1,7 @@
 /*doc
 ---
-title: PasswordPolicies
-name: passwordPolicies
+title: Password Policies
+name: password-policies
 category: Javascripts - Password Policies
 ---
 

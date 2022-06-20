@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -15,6 +15,7 @@ import java.util.Date;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.text.StringEscapeUtils;
 
 public class AutoImport extends AutoImportLight {
 	public static final String INTERVALPATTERN_ONCE = "ONCE";
@@ -24,7 +25,8 @@ public class AutoImport extends AutoImportLight {
 	 */
 	public enum AutoImportType {
 		Recipient("Recipient"),
-		ReferenceTable("ReferenceTable");
+		ReferenceTable("ReferenceTable"),
+		HtmlContent("HtmlContent");
 		
 		/**
 		  * Instantiates a new AutoImportType.
@@ -68,7 +70,7 @@ public class AutoImport extends AutoImportLight {
 	private int importCsvDescriptionID;
 	private int importReferenceTableID;
 	private String description;
-	private String filePath;
+	private String filePath = "";
 	private String fileServer;
     private String privateKey;
 	private boolean allowUnknownHostKeys = false;
@@ -93,6 +95,8 @@ public class AutoImport extends AutoImportLight {
 	private boolean importMultipleFiles = false;
 	private boolean removeImportedFiles = false;
 	private String timeZone;
+	private int mailingID;
+	private int contentSourceID;
 
 	private List<Integer> mailinglists = new ArrayList<>();
 	
@@ -135,9 +139,9 @@ public class AutoImport extends AutoImportLight {
 
 	public String getFileServerWithoutCredentials() {
 		if (StringUtils.isNotBlank(fileServer) && fileServer.contains("@")) {
-			return fileServer.substring(fileServer.indexOf("@") + 1);
+			return StringEscapeUtils.escapeHtml4(fileServer.substring(fileServer.indexOf("@") + 1));
 		} else {
-			return fileServer;
+			return StringEscapeUtils.escapeHtml4(fileServer);
 		}
 	}
 
@@ -429,6 +433,22 @@ public class AutoImport extends AutoImportLight {
 
 	public void setAlwaysReport(boolean alwaysReport) {
 		this.alwaysReport = alwaysReport;
+	}
+
+	public int getMailingID() {
+		return mailingID;
+	}
+
+	public void setMailingID(int mailingID) {
+		this.mailingID = mailingID;
+	}
+
+	public int getContentSourceID() {
+		return contentSourceID;
+	}
+
+	public void setContentSourceID(int contentSourceID) {
+		this.contentSourceID = contentSourceID;
 	}
 
 	public static class UsedFile {

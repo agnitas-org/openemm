@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -13,12 +13,13 @@ package org.agnitas.backend.dao;
 import	java.sql.SQLException;
 import	java.sql.Timestamp;
 import	java.util.Date;
+import	java.util.HashMap;
 import	java.util.List;
 import	java.util.Map;
 
 import	org.agnitas.backend.DBase;
 import	org.agnitas.util.Log;
-import org.apache.log4j.Logger;
+import	org.agnitas.util.Systemconfig;
 
 /**
  * Accesses all maildrop status relevant information from the database
@@ -27,9 +28,6 @@ import org.apache.log4j.Logger;
  * No caching here as we have to ensure to always access the real data
  */
 public class MaildropStatusDAO {
-
-    private static final Logger logger = Logger.getLogger(MaildropStatusDAO.class);
-
 	private long		statusID;
 	private long		companyID;
 	private long		mailingID;
@@ -42,11 +40,14 @@ public class MaildropStatusDAO {
 	private long		adminTestTargetID;
 	private String		optimizeMailGeneration;
 	private boolean		selectedTestRecipients;
+	private boolean		dependsOnAutoImportID;
+	private boolean		autoImportOK;
 	private long		realSendDateStatusID;
 	private Date		realSendDate;
 		
 	public MaildropStatusDAO (DBase dbase, long forStatusID, long forMailingID) throws SQLException {
-		Map <String, Object>	row;
+		List <Map <String, Object>>	rq;
+		Map <String, Object>		row;
 	
 		try (DBase.With with = dbase.with ()) {
 			row = dbase.querys (with.jdbc (),
@@ -72,6 +73,18 @@ public class MaildropStatusDAO {
 				adminTestTargetID = dbase.asLong (row.get ("admin_test_target_id"));
 				optimizeMailGeneration = dbase.asString (row.get ("optimize_mail_generation"));
 				selectedTestRecipients = dbase.asInt (row.get ("selected_test_recipients")) == 1;
+				rq = dbase.query (with.jdbc (),
+						  "SELECT auto_import_id, status_ok " +
+						  "FROM mailing_import_lock_tbl " +
+						  "WHERE maildrop_status_id = :statusID",
+						  "statusID", forStatusID);
+				if (rq.size () > 0) {
+					dependsOnAutoImportID = true;
+					autoImportOK = rq.stream ().filter (r -> dbase.asInt (r.get ("status_ok")) == 1).count () == rq.size ();
+				} else {
+					dependsOnAutoImportID = false;
+					autoImportOK = false;
+				}
 			} else {
 				statusID = 0;
 				if (forMailingID > 0) {
@@ -123,6 +136,12 @@ public class MaildropStatusDAO {
 	}
 	public boolean selectedTestRecipients () {
 		return selectedTestRecipients;
+	}
+	public boolean dependsOnAutoImportID () {
+		return dependsOnAutoImportID;
+	}
+	public boolean autoImportOK () {
+		return autoImportOK;
 	}
 	public Date realSendDate () {
 		return realSendDate;
@@ -268,22 +287,27 @@ public class MaildropStatusDAO {
 			DBase.Retry <Integer>	r = dbase.new Retry <> ("genstatus", dbase, with.jdbc ()) {
 				@Override
 				public void execute () throws SQLException {
-					if (fromStatus > 0) {
-						priv = dbase.update (jdbc,
-								     "UPDATE maildrop_status_tbl " +
-								     "SET genchange = CURRENT_TIMESTAMP, genstatus = :toStatus " +
-								     "WHERE status_id = :statusID AND genstatus = :fromStatus",
-								     "toStatus", toStatus,
-								     "statusID", statusID,
-								     "fromStatus", fromStatus);
+					Map <String, Object>	parameter = new HashMap <> ();
+					String			query =
+					     "UPDATE maildrop_status_tbl " +
+					     "SET genchange = CURRENT_TIMESTAMP, genstatus = :toStatus";
+					String			clause =
+					     "WHERE status_id = :statusID";
+					
+					parameter.put ("toStatus", toStatus);
+					parameter.put ("statusID", statusID);
+					if (toStatus == 2) {
+						query += ", processed_by = :processedBy";
 					} else {
-						priv = dbase.update (jdbc,
-								     "UPDATE maildrop_status_tbl " +
-								     "SET genchange = CURRENT_TIMESTAMP, genstatus = :toStatus " +
-								     "WHERE status_id = :statusID ",
-								     "toStatus", toStatus,
-								     "statusID", statusID);
+						clause += " AND processed_by = :processedBy";
 					}
+					parameter.put ("processedBy", Systemconfig.fqdn);
+					if (fromStatus > 0) {
+						clause += " AND genstatus = :fromStatus";
+						parameter.put ("fromStatus", fromStatus);
+					}
+					query += " " + clause;
+					priv = dbase.update (jdbc, query, parameter);
 					if (priv == 1) {
 						Map <String, Object>	rq;
 						
@@ -292,41 +316,26 @@ public class MaildropStatusDAO {
 								   "FROM maildrop_status_tbl " +
 								   "WHERE status_id = :statusID",
 								   "statusID", statusID);
+						genStatus = -1;
 						if (rq == null) {
 							dbase.logging (Log.ERROR, "genstatus", "Failed to query maildrop_status_tbl.status_id = " + statusID);
 						} else {
 							Object	obj = rq.get ("genstatus");
-							int	genstatus = -1;
-							
+
 							if (obj == null) {
 								dbase.logging (Log.ERROR, "genstatus", "genstatus IS NULL for status_id " + statusID + " but should be " + toStatus);
 							} else {
-								genstatus = dbase.asInt (obj);
-								if (genstatus != toStatus) {
-									dbase.logging (Log.ERROR, "genstatus", "genstatus = " + genstatus + " but should be " + toStatus + " for status_id " + statusID);
+								genStatus = dbase.asInt (obj);
+								if (genStatus != toStatus) {
+									dbase.logging (Log.ERROR, "genstatus", "genStatus = " + genStatus + " but should be " + toStatus + " for status_id " + statusID);
 								} else {
-									dbase.logging (Log.INFO, "genstatus", "genstatus = " + genstatus + " as expected for status_id " + statusID);
-								}
-							}
-							if (genstatus != toStatus) {
-								int	updatedLines = dbase.update (jdbc,
-										      "UPDATE maildrop_status_tbl " +
-										      "SET genstatus = :toStatus, genchange = CURRENT_TIMESTAMP " +
-										      "WHERE status_id = :statusID",
-										      "toStatus", toStatus,
-										      "statusID", statusID);
-								if (updatedLines != 1) {
-									dbase.logging (Log.ERROR, "genstatus", "Failed to retry update genstatus to " + toStatus + " for status_id " + statusID);
-								} else {
-									genstatus = dbase.queryInt (jdbc,
-												    "SELECT genstatus " +
-												    "FROM maildrop_status_tbl " +
-												    "WHERE status_id = :statusID",
-												    "statusID", statusID);
-									if (genstatus != toStatus) {
-										dbase.logging (Log.ERROR, "genstatus", "Even failed setting genstatus to " + toStatus + " for status_id " + statusID + " in retry");
-									} else {
-										dbase.logging (Log.INFO, "genstatus", "Retry setting genstatus to " + toStatus + " for status_id " + statusID + " seems to have succeeded");
+									dbase.logging (Log.INFO, "genstatus", "genStatus = " + genStatus + " as expected for status_id " + statusID);
+									if (toStatus == 1) {
+										dbase.update (jdbc,
+											      "UPDATE mailing_import_lock_tbl " +
+											      "SET status_ok = 0 " + 
+											      "WHERE maildrop_status_id = :statusID",
+											      "statusID", statusID);
 									}
 								}
 							}
@@ -354,10 +363,7 @@ public class MaildropStatusDAO {
 	 */
 	public boolean remove (DBase dbase) throws SQLException {
 		try (DBase.With with = dbase.with ()) {
-            logger.error(String.format(
-                    "Removing maildrop status id = %d; companyId = %d; mailingId = %d; statusField = %s; getStatus = %d", 
-                    statusID, companyID, mailingID, statusField, genStatus), new Exception());
-            return dbase.update (with.jdbc (),
+			return dbase.update (with.jdbc (),
 					     "DELETE FROM maildrop_status_tbl " +
 					     "WHERE status_id = :statusID",
 					     "statusID", statusID) == 1;

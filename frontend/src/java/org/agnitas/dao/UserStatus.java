@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -26,7 +26,7 @@ public enum UserStatus {
 	Suspend(7); // Sometimes also referred to as status "supended" or "pending"
 	
 	/*
-	 *  Status 7 is used for single test delivery, when 
+	 *  Status 7 is used for single test delivery, when
 	 *  - a customer has been created by entering an unknown mail address or
 	 *  - when a mail address of an existing customer is entered, but the customer
 	 *    doesn't have a binding on the mailinglist of the mailing
@@ -51,7 +51,7 @@ public enum UserStatus {
 		throw new UnknownUserStatusException(id);
 	}
 	
-	public static UserStatus getUserStatusByName(String name) throws UnknownUserStatusException {
+	public static UserStatus getUserStatusByName(String name) {
 		for (UserStatus userStatus : UserStatus.values()) {
 			if (userStatus.name().equalsIgnoreCase(name)) {
 				return userStatus;
@@ -60,7 +60,15 @@ public enum UserStatus {
 		return null;
 	}
 	
+	/**
+	 * @see #getAvailableStatusCodes()
+	 */
+	@Deprecated
 	public static List<Integer> getAvailableStatusCodeList() {
 		return Arrays.stream(UserStatus.values()).map(UserStatus::getStatusCode).collect(Collectors.toList());
+	}
+	
+	public static List<UserStatus> getAvailableStatusCodes() {
+		return Arrays.asList(UserStatus.values());
 	}
 }

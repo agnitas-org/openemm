@@ -43,7 +43,7 @@
                 <div class="col-sm-4">
                     <label for="archive-name" class="control-label">
                         <c:set var="nameMsg"><bean:message key="default.Name"/></c:set>
-                        ${nameMsg}
+                        ${nameMsg}*
                     </label>
                 </div>
                 <div class="col-sm-8">

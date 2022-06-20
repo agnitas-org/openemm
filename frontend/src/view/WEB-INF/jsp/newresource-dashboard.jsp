@@ -1,11 +1,11 @@
 <%@ page language="java" contentType="text/html; charset=utf-8"%>
-<%@ page import="com.agnitas.web.ComMailingBaseAction"%>
+<%@ page import="com.agnitas.web.MailingBaseAction"%>
 <%@ taglib prefix="bean" uri="http://struts.apache.org/tags-bean" %>
 <%@ taglib prefix="html" uri="http://struts.apache.org/tags-html" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
-<c:set var="ACTION_MAILING_IMPORT" value="<%= ComMailingBaseAction.ACTION_MAILING_IMPORT %>"    scope="request"/>
+<c:set var="ACTION_MAILING_IMPORT" value="<%= MailingBaseAction.ACTION_MAILING_IMPORT %>"    scope="request"/>
 
 <emm:include page="newresource-dashboard-news.jsp"/>
 

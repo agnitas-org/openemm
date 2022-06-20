@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,16 +10,20 @@
 
 package com.agnitas.web;
 
+import static org.agnitas.util.DateUtilities.DD_MM_YYYY;
+import static org.agnitas.util.DateUtilities.DD_MM_YYYY_HH_MM;
+
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -45,7 +49,8 @@ import org.agnitas.util.importvalues.TextRecognitionChar;
 import org.agnitas.web.ImportBaseFileAction;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
@@ -82,7 +87,7 @@ public class ImportProfileColumnsAction extends ImportBaseFileAction {
     public static final int ACTION_BULK_REMOVE = ACTION_LAST + 5;
     public static final int ACTION_SAVE_AND_START = ACTION_LAST + 6;
 
-    private static final transient Logger logger = Logger.getLogger(ImportProfileColumnsAction.class);
+    private static final transient Logger logger = LogManager.getLogger(ImportProfileColumnsAction.class);
     private static final String UAL_ACTION = "edit import profile";
     private static final String NO_VALUE = "<no value>";
     private static final String LOG_HEAD = "%s (%d), csv column %s (%d)";
@@ -340,7 +345,8 @@ public class ImportProfileColumnsAction extends ImportBaseFileAction {
                 }
                 
                 DbColumnType dbColumnType = profileFieldDao.getColumnType(aForm.getProfile().getCompanyId(), dbColumnName);
-                if (!DbUtilities.isAllowedValueForDataType(profileFieldDao.isOracleDB(), dbColumnType, defaultValue)) {
+                String dateFormat = DbColumnType.SimpleDataType.DateTime.equals(dbColumnType.getSimpleDataType()) ? DD_MM_YYYY_HH_MM : DD_MM_YYYY;
+                if (!DbUtilities.checkAllowedDefaultValue(dbColumnType.getTypeName(), defaultValue, new SimpleDateFormat(dateFormat))) {
                     errors.add("global", new ActionMessage("error.import.invalidDataForField", dbColumnName));
                     return true;
                 }
@@ -511,7 +517,7 @@ public class ImportProfileColumnsAction extends ImportBaseFileAction {
      * @param aForm a form
      */
     protected void addColumn(ImportProfileColumnsForm aForm) {
-        String columnValue = aForm.getNewColumnMappingValue();
+        String columnValue = aForm.getNewColumnMapping().getDefaultValue();
         if ("value".equalsIgnoreCase(aForm.getValueType())) {
         	if (columnValue.length() >= 2 && columnValue.startsWith("'") && columnValue.endsWith("'")) {
         		columnValue = "'" + columnValue.substring(1, columnValue.length() - 1) + "'";
@@ -521,14 +527,11 @@ public class ImportProfileColumnsAction extends ImportBaseFileAction {
         		columnValue = "'" + columnValue + "'";
         	}
         }
-        ColumnMappingImpl mapping = new ColumnMappingImpl();
-        mapping.setFileColumn("");
-        mapping.setDatabaseColumn(aForm.getNewColumnMappingName());
-        mapping.setProfileId(aForm.getProfileId());
-        mapping.setMandatory(false);
-        mapping.setDefaultValue(columnValue);
-        aForm.getProfile().getColumnMapping().add(mapping);
-        aForm.setNewColumnMappingValue("");
+        aForm.getNewColumnMapping().setFileColumn("");
+        aForm.getNewColumnMapping().setProfileId(aForm.getProfileId());
+        aForm.getNewColumnMapping().setDefaultValue(columnValue);
+        aForm.getProfile().getColumnMapping().add(aForm.getNewColumnMapping());
+        aForm.setNewColumnMapping(new ColumnMappingImpl());
     }
 
     /**
@@ -539,15 +542,20 @@ public class ImportProfileColumnsAction extends ImportBaseFileAction {
      * @throws Exception
      */
     protected void loadDbColumns(ImportProfileColumnsForm aForm, HttpServletRequest request) throws Exception {
-        CaseInsensitiveMap<String, CsvColInfo> dbColumns = recipientDao.readDBColumns(AgnUtils.getCompanyID(request));
-        ImportUtils.removeHiddenColumns(dbColumns, AgnUtils.getAdmin(request));
-        List<String> lKeySet = new ArrayList<>(dbColumns.keySet());
-        Collections.sort(lKeySet);
-        aForm.setDbColumns(lKeySet.toArray(new String[0]));
+        ComAdmin admin = AgnUtils.getAdmin(request);
+        aForm.setProfileFields(new TreeMap<>(profileFieldDao.getProfileFieldsMap(admin.getCompanyID(), admin.getAdminID())));
+        filterHiddenColumns(aForm.getProfileFields(), admin);
+
         // load DB columns default values
         List<ProfileField> profileFields = profileFieldDao.getProfileFields(AgnUtils.getCompanyID(request));
         for (ProfileField profileField : profileFields) {
             aForm.getDbColumnsDefaults().put(profileField.getColumn(), profileField.getDefaultValue());
+        }
+    }
+    
+    private void filterHiddenColumns(Map<String, ProfileField> profileFields, ComAdmin admin) {
+        for (String hiddenColumn : ImportUtils.getHiddenColumns(admin)) {
+            profileFields.remove(hiddenColumn);
         }
     }
 
@@ -570,7 +578,7 @@ public class ImportProfileColumnsAction extends ImportBaseFileAction {
 			    return;
 			}
 			
-			if (!ImportUtils.checkIfImportFileHasData(file, profile.isZipped(), profile.getZipPassword())) {
+			if (!ImportUtils.checkIfImportFileHasData(file, profile.getZipPassword())) {
 				errors.add("global", new ActionMessage("autoimport.error.emptyFile", getCurrentFileName(request)));
 				return;
 			}
@@ -728,8 +736,8 @@ public class ImportProfileColumnsAction extends ImportBaseFileAction {
 		}
     }
     
-    private InputStream getImportInputStream(ImportProfile profile, File file) throws FileNotFoundException {
-    	if (profile.isZipped()) {
+    private InputStream getImportInputStream(ImportProfile profile, File file) throws Exception {
+    	if (AgnUtils.isZipArchiveFile(file)) {
 	    	try {
 	            if (profile.getZipPassword() == null) {
 	            	InputStream dataInputStream = ZipUtilities.openZipInputStream(new FileInputStream(file));

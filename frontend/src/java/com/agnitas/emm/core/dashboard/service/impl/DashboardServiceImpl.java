@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -22,7 +22,8 @@ import java.util.Objects;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.MailingStatus;
 import org.agnitas.util.SafeString;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComAdmin;
@@ -36,7 +37,9 @@ import com.agnitas.reporting.birt.external.dataset.MailingSummaryDataSet;
 import net.sf.json.JSONObject;
 
 public class DashboardServiceImpl implements DashboardService {
-    private Logger logger = Logger.getLogger(DashboardServiceImpl.class);
+	
+	/** The logger. */
+    private Logger logger = LogManager.getLogger(DashboardServiceImpl.class);
     
     private static final int DEFAULT_STATISTIC_VALUE = 0;
 
@@ -67,12 +70,12 @@ public class DashboardServiceImpl implements DashboardService {
 
     @Override
     public PaginatedListImpl<Map<String, Object>> getMailings(ComAdmin admin, String sort, String direction, int rownums) {
-        return mailingDao.getDashboardMailingList(admin.getCompanyID(), admin.getAdminID(), sort, direction, rownums);
+        return mailingDao.getDashboardMailingList(admin, sort, direction, rownums);
     }
 
     @Override
     public List<Map<String, Object>> getLastSentWorldMailings(ComAdmin admin, int rownums) {
-        return mailingDao.getLastSentWorldMailings(admin.getCompanyID(), admin.getAdminID(), rownums);
+        return mailingDao.getLastSentWorldMailings(admin, rownums);
     }
 
     @Override

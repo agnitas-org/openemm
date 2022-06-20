@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -21,7 +21,8 @@ import org.agnitas.util.HttpUtils;
 import org.agnitas.web.forms.FormUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -48,7 +49,10 @@ import com.agnitas.web.perm.annotations.PermissionMapping;
 @RequestMapping("/recipientsreport")
 @PermissionMapping("recipientsreport")
 public class RecipientsReportController {
-    private static final transient Logger logger = Logger.getLogger(RecipientsReportController.class);
+	
+	/** The logger. */
+    private static final transient Logger logger = LogManager.getLogger(RecipientsReportController.class);
+    
     private RecipientsReportService recipientsReportService;
     private WebStorage webStorage;
     private UserActivityLogService userActivityLogService;
@@ -99,6 +103,7 @@ public class RecipientsReportController {
         model.addAttribute("reportId", reportId);
         // Escape all text, even html, so it can be viewed in an iframe as docsource
         model.addAttribute("reportContentEscaped", StringEscapeUtils.escapeHtml4(reportContent));
+        model.addAttribute("datasourceId", recipientsReportService.getReport(admin.getCompanyID(), reportId).getDatasourceId());
         
         writeUserActivityLog(admin, "Import/Export logs view", "Report ID: " + reportId);
     

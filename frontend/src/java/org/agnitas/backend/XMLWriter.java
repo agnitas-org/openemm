@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -292,6 +292,16 @@ public class XMLWriter {
 		c.add(param);
 		return c;
 	}
+	
+	/**
+	 * Open a new node using a creator
+	 *
+	 * @param simple if this is true, this is a simple node, it is closed directly
+	 * @param c      the creator to be used to build the node from
+	 */
+	public void open (boolean simple, Creator c) {
+		vopen (simple, c.name, c.getVariables (), c.getValues ());
+	}
 
 	/**
 	 * Open a new node using a creator without closing it directly
@@ -299,7 +309,7 @@ public class XMLWriter {
 	 * @param c the creator to be used to build the node from
 	 */
 	public void opennode(Creator c) {
-		vopen(false, c.name, c.getVariables(), c.getValues());
+		open (false, c);
 	}
 
 	/**
@@ -308,7 +318,7 @@ public class XMLWriter {
 	 * @param c the creator to be used to build the node from
 	 */
 	public void openclose(Creator c) {
-		vopen(true, c.name, c.getVariables(), c.getValues());
+		open (true, c);
 	}
 
 	/**

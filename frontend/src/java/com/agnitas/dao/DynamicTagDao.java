@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -13,8 +13,6 @@ package com.agnitas.dao;
 import java.util.List;
 import java.util.Map;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
-
 import com.agnitas.beans.DynamicTag;
 import com.agnitas.beans.Mailing;
 
@@ -26,19 +24,19 @@ public interface DynamicTagDao {
      * @param mailingId The id of the mailing
      * @return List of DynamicTag
      */
-	List<DynamicTag> getNameList( @VelocityCheck int companyId, int mailingId);
+	List<DynamicTag> getNameList(int companyId, int mailingId);
 
-	void markNameAsDeleted( int mailingID, String name);
-	void markNamesAsDeleted( int mailingID, List<String> names);
+	void markNameAsDeleted(int mailingID, String name);
+	void markNamesAsDeleted(int mailingID, List<String> names);
 
 	void markNameAsUsed(int mailingID, String name);
 	void markNamesAsUsed(int mailingID, List<String> names);
 
 	void deleteDynamicTagsMarkAsDeleted(int retentionTime);
 
-	String getDynamicTagInterestGroup(@VelocityCheck int companyId, int mailingId, int dynTagId);
+	String getDynamicTagInterestGroup(int companyId, int mailingId, int dynTagId);
 
-	boolean deleteDynamicTagsByCompany(@VelocityCheck int companyID);
+	boolean deleteDynamicTagsByCompany(int companyID);
 
 	/**
 	 * Dynamic tag id if exists.
@@ -48,7 +46,7 @@ public interface DynamicTagDao {
 	 * @param dynTagName - the dyn tag name of the tag.
 	 * @return Dynamic tag id or {@code 0} in case of there is no such a record.
 	 */
-	int getId(@VelocityCheck int companyId, int mailingId, String dynTagName);
+	int getId(int companyId, int mailingId, String dynTagName);
 	
 	/**
 	 * Dynamic tag id if exists.
@@ -58,9 +56,9 @@ public interface DynamicTagDao {
 	 * @param dynTagId - the dyn tag id of the content.
 	 * @return Dynamic tag name or {@code empty string} in case of there is no such a record.
 	 */
-	String getDynamicTagName(@VelocityCheck int companyId, int mailingId, int dynTagId);
+	String getDynamicTagName(int companyId, int mailingId, int dynTagId);
     
-    Map<String, Integer> getDynTagIdsByName(@VelocityCheck int companyId, int mailingId, List<String> dynNames);
+    Map<String, Integer> getDynTagIdsByName(int companyId, int mailingId, List<String> dynNames);
 
 	DynamicTag getDynamicTag(int dynNameId, int companyId);
 
@@ -98,6 +96,7 @@ public interface DynamicTagDao {
 	void createDynamicTags(int companyID, int mailingID, String encodingCharset, List<DynamicTag> dynamicTags) throws Exception;
 
 	void saveDynamicTags(Mailing mailing, Map<String, DynamicTag> dynTags) throws Exception;
+	void saveDynamicTags(Mailing mailing, Map<String, DynamicTag> dynTags, final boolean removeUnusedContent) throws Exception;
 
 	void removeAbsentDynContent(DynamicTag oldDynamicTag, DynamicTag newDynamicTag);
 }

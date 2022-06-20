@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -19,13 +19,12 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import jakarta.annotation.Resource;
-
 import org.agnitas.service.FormImportResult;
 import org.agnitas.service.UserFormImporter;
 import org.agnitas.util.DateUtilities;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.agnitas.beans.LinkProperty;
 import com.agnitas.beans.LinkProperty.PropertyType;
@@ -41,9 +40,11 @@ import com.agnitas.userform.bean.impl.UserFormImpl;
 import com.agnitas.userform.trackablelinks.bean.ComTrackableUserFormLink;
 import com.agnitas.userform.trackablelinks.bean.impl.ComTrackableUserFormLinkImpl;
 
+import jakarta.annotation.Resource;
+
 public class UserFormImporterImpl extends ActionImporter implements UserFormImporter {
 	/** The logger. */
-	private static final transient Logger logger = Logger.getLogger(UserFormImporterImpl.class);
+	private static final transient Logger logger = LogManager.getLogger(UserFormImporterImpl.class);
 	
 	@Resource(name="UserFormDao")
 	protected UserFormDao userFormDao;
@@ -55,12 +56,12 @@ public class UserFormImporterImpl extends ActionImporter implements UserFormImpo
 	protected ComUserformService userFormService;
 
 	@Override
-	public FormImportResult importUserForm(int companyID, InputStream input, Locale locale) throws Exception {
-		return importUserForm(companyID, input, null, null, locale);
+	public FormImportResult importUserForm(int companyID, InputStream input, Locale locale, Map<Integer, Integer> actionIdReplacements) throws Exception {
+		return importUserForm(companyID, input, null, null, locale, actionIdReplacements);
 	}
 
 	@Override
-	public FormImportResult importUserForm(int companyID, InputStream input, String formName, String description, Locale locale) throws Exception {
+	public FormImportResult importUserForm(int companyID, InputStream input, String formName, String description, Locale locale, Map<Integer, Integer> actionIdReplacements) throws Exception {
 		try (JsonReader reader = new JsonReader(input, "UTF-8")) {
 			JsonNode jsonNode = reader.read();
 
@@ -74,7 +75,15 @@ public class UserFormImporterImpl extends ActionImporter implements UserFormImpo
 			Map<Integer, Integer> actionIdMappings = new HashMap<>();
 			if (jsonObject.containsPropertyKey("actions")) {
 				for (Object actionObject : (JsonArray) jsonObject.get("actions")) {
-					importAction(companyID, (JsonObject) actionObject, actionIdMappings);
+					Integer actionObjectId = (Integer) ((JsonObject) actionObject).get("id");
+					if (actionIdReplacements != null && actionObjectId != null && actionIdReplacements.containsKey(actionObjectId)) {
+						actionIdMappings.put(actionObjectId, actionIdReplacements.get(actionObjectId));
+					} else {
+						int importedActionId = importAction(companyID, (JsonObject) actionObject);
+						if (actionObjectId != null) {
+	            			actionIdMappings.put(actionObjectId, importedActionId);
+	            		}
+					}
 				}
 			}
 
@@ -103,8 +112,8 @@ public class UserFormImporterImpl extends ActionImporter implements UserFormImpo
 				links = getUserFormLinks(jsonObject, actionIdMappings);
 			}
 
-			if (StringUtils.isEmpty(description)) {
-				// Mark mailing as newly imported
+			if (description == null) {
+				// Mark userform as newly imported
 				String importDescription = "Imported at " + new SimpleDateFormat(DateUtilities.DD_MM_YYYY_HH_MM).format(new Date());
 				userForm.setDescription(importDescription);
 			}
@@ -148,8 +157,18 @@ public class UserFormImporterImpl extends ActionImporter implements UserFormImpo
 				List<LinkProperty> linkProperties = new ArrayList<>();
 				for (Object propertyObject : (JsonArray) linkJsonObject.get("properties")) {
 					JsonObject propertyJsonObject = (JsonObject) propertyObject;
-					LinkProperty linkProperty = new LinkProperty(PropertyType.parseString((String) propertyJsonObject.get("type")), (String) propertyJsonObject.get("name"), (String) propertyJsonObject.get("value"));
-					linkProperties.add(linkProperty);
+					String propertyName = (String) propertyJsonObject.get("name");
+					if (propertyName == null) {
+						propertyName = "";
+					}
+					String propertyValue = (String) propertyJsonObject.get("value");
+					if (propertyValue == null) {
+						propertyValue = "";
+					}
+					if (StringUtils.isNotEmpty(propertyName) || StringUtils.isNotEmpty(propertyValue)) {
+						LinkProperty linkProperty = new LinkProperty(PropertyType.parseString((String) propertyJsonObject.get("type")), propertyName, propertyValue);
+						linkProperties.add(linkProperty);
+					}
 				}
 				trackableLink.setProperties(linkProperties);
 			}

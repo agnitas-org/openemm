@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -32,30 +32,31 @@ import org.agnitas.beans.impl.CompanyStatus;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.Tuple;
+import org.agnitas.util.preferences.PreferenceItem;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
+import com.agnitas.beans.AdminPreferences;
 import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.ComAdminPreferences;
-import com.agnitas.beans.ComCompany;
+import com.agnitas.beans.Company;
+import com.agnitas.beans.impl.AdminPreferencesImpl;
 import com.agnitas.beans.impl.ComAdminImpl;
-import com.agnitas.beans.impl.ComAdminPreferencesImpl;
+import com.agnitas.dao.AdminPreferencesDao;
 import com.agnitas.dao.ComAdminDao;
 import com.agnitas.dao.ComAdminGroupDao;
-import com.agnitas.dao.ComAdminPreferencesDao;
 import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.dao.ComEmmLayoutBaseDao;
 import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.PermissionType;
 import com.agnitas.emm.core.admin.AdminException;
 import com.agnitas.emm.core.admin.form.AdminForm;
-import com.agnitas.emm.core.admin.form.AdminPreferences;
 import com.agnitas.emm.core.admin.service.AdminPasswordChangedNotifier;
 import com.agnitas.emm.core.admin.service.AdminSavingResult;
 import com.agnitas.emm.core.admin.service.AdminService;
@@ -76,7 +77,7 @@ import com.agnitas.service.ServiceResult;
 public class AdminServiceImpl implements AdminService {
 	
 	/** The logger. */
-	private static final transient Logger logger = Logger.getLogger(AdminServiceImpl.class);
+	private static final transient Logger logger = LogManager.getLogger(AdminServiceImpl.class);
 
 	protected ComAdminDao adminDao;
 	
@@ -84,7 +85,7 @@ public class AdminServiceImpl implements AdminService {
 	@Deprecated
 	protected ComSupervisorDao supervisorDao;
 	protected ComCompanyDao companyDao;
-	protected ComAdminPreferencesDao adminPreferencesDao;
+	protected AdminPreferencesDao adminPreferencesDao;
 	protected ComAdminGroupDao adminGroupDao;
 	protected GrantedSupervisorLoginDao grantedSupervisorLoginDao;
 	protected ConfigService configService;
@@ -115,7 +116,7 @@ public class AdminServiceImpl implements AdminService {
 	}
 
 	@Required
-	public void setAdminPreferencesDao(ComAdminPreferencesDao adminPreferencesDao) {
+	public void setAdminPreferencesDao(AdminPreferencesDao adminPreferencesDao) {
 		this.adminPreferencesDao = adminPreferencesDao;
 	}
 
@@ -207,8 +208,8 @@ public class AdminServiceImpl implements AdminService {
 			throw new AdminException(msg);
 		}
 			
-		// Reject login for supvisors without department
-		if(supervisor.getDepartment() == null) {
+		// Reject login for supervisors without department
+		if (supervisor.getDepartment() == null) {
 			final String msg = String.format("Access for supervisor '%s' denied. No department set.", supervisorName);
 			
 			if (logger.isInfoEnabled()) {
@@ -303,7 +304,7 @@ public class AdminServiceImpl implements AdminService {
 	}
 
 	@Override
-	public Map<Integer, String> getAdminsNamesMap(@VelocityCheck int companyId) {
+	public Map<Integer, String> getAdminsNamesMap(int companyId) {
 		return adminDao.getAdminsNamesMap(companyId);
 	}
 
@@ -313,7 +314,7 @@ public class AdminServiceImpl implements AdminService {
 		if(admin == null) {
 			return ServiceResult.error();
 		}
-		final ComCompany company = (ComCompany) admin.getCompany();
+		final Company company = admin.getCompany();
 		if(company != null && company.getStatAdmin() == adminId && CompanyStatus.ACTIVE == company.getStatus()) {
 			return new ServiceResult<>(admin, false, Message.of("error.admin.delete.executive", company.getShortname()));
 		}
@@ -360,13 +361,13 @@ public class AdminServiceImpl implements AdminService {
 	}
 
 	@Override
-	public AdminSavingResult saveAdmin(AdminForm form, ComAdmin editorAdmin) {
+	public AdminSavingResult saveAdmin(AdminForm form, boolean restfulUser, ComAdmin editorAdmin) {
 		int savingAdminID = form.getAdminID();
 		int savingCompanyID = form.getCompanyID();
 		int editorCompanyID = editorAdmin.getCompanyID();
 
 		if (savingCompanyID != editorCompanyID) {
-			List<ComCompany> allowedCompanies = companyDao.getCreatedCompanies(editorCompanyID);
+			List<Company> allowedCompanies = companyDao.getCreatedCompanies(editorCompanyID);
 
 			boolean validCompany = allowedCompanies.stream().anyMatch(comCompany -> comCompany.getId() == savingCompanyID);
 
@@ -376,14 +377,14 @@ public class AdminServiceImpl implements AdminService {
 		}
 
 		ComAdmin savingAdmin;
-		ComAdminPreferences savingAdminPreferences;
+		AdminPreferences savingAdminPreferences;
 		boolean isNew = savingAdminID == 0;
 		boolean isPasswordChanged = false;
 
 		if (isNew) {
 			savingAdmin = new ComAdminImpl();
 			savingAdmin.setCompany(companyDao.getCompany(savingCompanyID));
-			savingAdminPreferences = new ComAdminPreferencesImpl();
+			savingAdminPreferences = new AdminPreferencesImpl();
 		} else {
 			savingAdmin = adminDao.getAdmin(savingAdminID, savingCompanyID);
 
@@ -410,20 +411,25 @@ public class AdminServiceImpl implements AdminService {
 		savingAdmin.setGroups(adminGroups);
 		map(savingAdmin, form, editorAdmin);
 
-		final AdminPreferences formAdminPreferences = form.getAdminPreferences();
-		savingAdminPreferences.setMailingContentView(formAdminPreferences.getMailingContentView());
-		savingAdminPreferences.setDashboardMailingsView(formAdminPreferences.getDashboardMailingsView());
-		savingAdminPreferences.setMailingSettingsView(formAdminPreferences.getMailingSettingsView());
-		savingAdminPreferences.setLivePreviewPosition(formAdminPreferences.getLivePreviewPosition());
-		savingAdminPreferences.setStatisticLoadType(formAdminPreferences.getStatisticLoadType());
-
 		final boolean passwordChanged = savingAdmin.getAdminID() != 0 && savingAdmin.getPasswordForStorage() != null;
+		
+		savingAdmin.setRestful(restfulUser);
+		
 		try {
 			adminDao.save(savingAdmin);
 		} catch (Exception e) {
 			logger.error("Error saving admin", e);
 			return AdminSavingResult.error(new Message("error.admin.save"));
 		}
+
+		final AdminPreferences formAdminPreferences = form.getAdminPreferences();
+
+		savingAdminPreferences.setAdminID(savingAdmin.getAdminID());
+		savingAdminPreferences.setMailingContentView(formAdminPreferences.getMailingContentView());
+		savingAdminPreferences.setDashboardMailingsView(formAdminPreferences.getDashboardMailingsView());
+		savingAdminPreferences.setMailingSettingsView(formAdminPreferences.getMailingSettingsView());
+		savingAdminPreferences.setLivePreviewPosition(formAdminPreferences.getLivePreviewPosition());
+		savingAdminPreferences.setStatisticLoadType(formAdminPreferences.getStatisticLoadType());
 
 		adminPreferencesDao.save(savingAdminPreferences);
 
@@ -454,10 +460,10 @@ public class AdminServiceImpl implements AdminService {
 			
 			if (savingAdmin.permissionAllowedByGroups(permission)) {
 				isChangeable = false;
-			} else if (permission.isPremium()) {
+			} else if (permission.getPermissionType() == PermissionType.Premium) {
 				isChangeable = companyPermissions.contains(permission);
-			} else if (Permission.CATEGORY_KEY_SYSTEM.equals(permission.getCategory())) {
-				isChangeable = editorAdmin.permissionAllowed(permission) || editorAdmin.permissionAllowed(Permission.MASTER_SHOW) || editorAdmin.getAdminID() == 1;
+			} else if (permission.getPermissionType() == PermissionType.System) {
+				isChangeable = companyPermissions.contains(permission) && (editorAdmin.permissionAllowed(permission) || editorAdmin.permissionAllowed(Permission.MASTER_SHOW) || editorAdmin.getAdminID() == 1);
 			} else {
 				isChangeable = true;
 			}
@@ -473,14 +479,13 @@ public class AdminServiceImpl implements AdminService {
 			String permissionToken = removedPermissions.get(i);
 			if (!permissionChangeable.getOrDefault(permissionToken, false)) {
 				Permission permission = Permission.getPermissionByToken(permissionToken);
-				String category = permission.getCategory();
-				if (Permission.CATEGORY_KEY_SYSTEM.equals(category)) {
+				if (permission.getPermissionType() == PermissionType.System) {
 					// User is not allowed to change this permission of special category and may also not see it in GUI, so keep it unchanged
 					removedPermissions.remove(permissionToken);
 				} else if (savingAdmin.permissionAllowedByGroups(permission)) {
 					// Group permissions must be changed via group GUI, so they are visible but not disabled in admin GUI, so keep it unchanged
 					removedPermissions.remove(permissionToken);
-				} else if (permission.isPremium() && !companyPermissions.contains(permission)) {
+				} else if (permission.getPermissionType() == PermissionType.Premium && !companyPermissions.contains(permission)) {
 					// Current users company does not have this right, but user to edit has it.
 					// This happens only for the emm-master user, who makes changes in some foreign company
 					// Just leave it unchanged
@@ -496,8 +501,7 @@ public class AdminServiceImpl implements AdminService {
 			String permissionToken = addedPermissions.get(i);
 			if (!permissionChangeable.getOrDefault(permissionToken, false)) {
 				Permission permission = Permission.getPermissionByToken(permissionToken);
-				String category = permission.getCategory();
-				if (Permission.CATEGORY_KEY_SYSTEM.equals(category)) {
+				if (permission.getPermissionType() == PermissionType.System) {
 					// User is not allowed to change this permission of special category and may also not see it in GUI, so keep it unchanged
 					addedPermissions.remove(permissionToken);
 				} else {
@@ -523,7 +527,7 @@ public class AdminServiceImpl implements AdminService {
 	}
 
 	@Override
-	public String getAdminName(int adminID, @VelocityCheck int companyID){
+	public String getAdminName(int adminID, int companyID){
 		return adminDao.getAdminName(adminID, companyID);
 	}
 
@@ -538,7 +542,7 @@ public class AdminServiceImpl implements AdminService {
 	}
 	
 	@Override
-	public boolean adminLimitReached(@VelocityCheck int companyID) {
+	public boolean adminLimitReached(int companyID) {
 		return adminDao.getNumberOfAdmins(companyID) >= configService.getIntegerValue(ConfigValue.UserAllowed, companyID);
 	}
 
@@ -557,7 +561,7 @@ public class AdminServiceImpl implements AdminService {
 			String direction,
 			int pageNumber,
 			int pageSize){
-		return adminDao.getAdminList(companyID, searchFirstName, searchLastName, searchEmail, searchCompanyName, filterCompanyId, filterAdminGroupId, filterMailinglistId, filterLanguage, sort, direction, pageNumber, pageSize);
+		return adminDao.getAdminList(companyID, searchFirstName, searchLastName, searchEmail, searchCompanyName, filterCompanyId, filterAdminGroupId, filterMailinglistId, filterLanguage, sort, direction, pageNumber, pageSize, false);
 	}
 	
 	@Override
@@ -575,17 +579,17 @@ public class AdminServiceImpl implements AdminService {
 	}
 
 	@Override
-	public List<AdminGroup> getAdminGroups(@VelocityCheck int companyID, ComAdmin admin) {
+	public List<AdminGroup> getAdminGroups(int companyID, ComAdmin admin) {
 		return adminGroupDao.getAdminGroupsByCompanyIdAndDefault(companyID, admin.getGroupIds());
 	}
 	
 	@Override
-	public List<ComCompany> getCreatedCompanies(@VelocityCheck int companyID) {
+	public List<Company> getCreatedCompanies(int companyID) {
 		return companyDao.getCreatedCompanies(companyID);
 	}
 
 	@Override
-	public int adminGroupExists(@VelocityCheck int companyId, String groupname) {
+	public int adminGroupExists(int companyId, String groupname) {
 		return adminGroupDao.adminGroupExists(companyId, groupname);
 	}
 	
@@ -647,7 +651,7 @@ public class AdminServiceImpl implements AdminService {
 	}
 
 	@Override
-	public boolean setPassword(int adminId, @VelocityCheck int companyId, String password) {
+	public boolean setPassword(int adminId, int companyId, String password) {
 		ComAdmin admin = adminDao.getAdmin(adminId, companyId);
 
 		if (admin == null) {
@@ -669,6 +673,15 @@ public class AdminServiceImpl implements AdminService {
 	}
 
 	@Override
+	public void setDefaultPreferencesSettings(AdminPreferences preferences) {
+		preferences.setDashboardMailingsView(PreferenceItem.DASHBOARD_MAILING.getDefaultValue());
+		preferences.setLivePreviewPosition(PreferenceItem.MAILING_LIVE_PREVIEW.getDefaultValue());
+		preferences.setMailingContentView(PreferenceItem.CONTENTBLOCKS.getDefaultValue());
+		preferences.setMailingSettingsView(PreferenceItem.MAILING_SETTINGS.getDefaultValue());
+		preferences.setStatisticLoadType(PreferenceItem.STATISTIC_LOADTYPE.getDefaultValue());
+	}
+
+	@Override
 	public boolean checkBlacklistedAdminNames(String username) {
 		return adminDao.checkBlacklistedAdminNames(username);
 	}
@@ -679,18 +692,20 @@ public class AdminServiceImpl implements AdminService {
 		builder.setAdmin(admin);
 		builder.setAdminToEdit(adminToEdit);
 		builder.setVisiblePermissions(permissionFilter.getAllVisiblePermissions());
+		builder.setLicenseType(configService.getValue(ConfigValue.System_License_Type));
 		builder.setCompanyPermissions(companyDao.getCompanyPermissions(adminToEdit.getCompanyID()));
+		builder.setPermissionInfos(permissionService.getPermissionInfos());
 		
 		return builder.build().getPermissionsCategories();
     }
 
 	@Override
-	public ComAdminPreferences getAdminPreferences(final int adminId) {
+	public AdminPreferences getAdminPreferences(final int adminId) {
 		return adminPreferencesDao.getAdminPreferences(adminId);
 	}
 
 	@Override
-	public List<EmmLayoutBase> getEmmLayoutsBase(@VelocityCheck final int companyID) {
+	public List<EmmLayoutBase> getEmmLayoutsBase(final int companyID) {
 		return emmLayoutBaseDao.getEmmLayoutsBase(companyID);
 	}
 
@@ -701,7 +716,7 @@ public class AdminServiceImpl implements AdminService {
 	}
 
 	@Override
-	public final List<AdminEntry> listAdminsByCompanyID(@VelocityCheck final int companyID) {
+	public final List<AdminEntry> listAdminsByCompanyID(final int companyID) {
 		return adminDao.getAllAdminsByCompanyIdOnly(companyID);
 	}
 
@@ -749,6 +764,7 @@ public class AdminServiceImpl implements AdminService {
 		target.setUsername(sourceForm.getUsername());
 		target.setFullname(sourceForm.getFullname());
 		target.setFirstName(sourceForm.getFirstname());
+		target.setEmployeeID(sourceForm.getEmployeeID());
 		target.setAdminCountry(sourceForm.getAdminLocale().getCountry());
 		target.setAdminLang(sourceForm.getAdminLocale().getLanguage());
 		target.setAdminTimezone(sourceForm.getAdminTimezone());
@@ -769,6 +785,11 @@ public class AdminServiceImpl implements AdminService {
 	}
 
 	@Override
+    public boolean isExtendedAltgEnabled(ComAdmin admin) {
+        return false;
+    }
+
+    @Override
 	public int getAdminWelcomeMailingId(String language) {
 		return adminDao.getAdminWelcomeMailingId(language);
 	}
@@ -790,5 +811,36 @@ public class AdminServiceImpl implements AdminService {
 		this.adminDao.updateLoginDate(adminID, now);
 	}
 	
-	
+	@Override
+	public PaginatedListImpl<AdminEntry> getRestfulUserList(
+			int companyID,
+			String searchFirstName,
+			String searchLastName,
+			String searchEmail,
+			String searchCompanyName,
+			Integer filterCompanyId,
+			Integer filterAdminGroupId,
+			Integer filterMailinglistId,
+			String filterLanguage,
+			String sort,
+			String direction,
+			int pageNumber,
+			int pageSize){
+		return adminDao.getAdminList(companyID, searchFirstName, searchLastName, searchEmail, searchCompanyName, filterCompanyId, filterAdminGroupId, filterMailinglistId, filterLanguage, sort, direction, pageNumber, pageSize, true);
+	}
+
+	@Override
+	public List<ComAdmin> getAdmins(int companyID, boolean restful) {
+		return adminDao.getAdmins(companyID, restful);
+	}
+
+	@Override
+	public boolean isDisabledMailingListsSupported() {
+		return adminDao.isDisabledMailingListsSupported();
+	}
+
+	@Override
+	public List<Integer> getAccessLimitingAdmins(int accessLimitingTargetGroupID) {
+		return null;
+	}
 }

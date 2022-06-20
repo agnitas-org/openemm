@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -17,6 +17,7 @@ import java.io.ByteArrayInputStream;
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -70,8 +71,6 @@ import java.util.stream.Collectors;
 
 import javax.crypto.Cipher;
 
-import org.agnitas.beans.AdminPreferences;
-import org.agnitas.beans.Company;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.web.forms.WorkflowParameters;
@@ -82,7 +81,8 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.velocity.exception.MethodInvocationException;
 import org.apache.velocity.exception.ParseErrorException;
 import org.apache.velocity.exception.ResourceNotFoundException;
@@ -90,8 +90,9 @@ import org.springframework.ui.Model;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
+import com.agnitas.beans.AdminPreferences;
 import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.ComCompany;
+import com.agnitas.beans.Company;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.commons.encoder.Sha512Encoder;
 import com.agnitas.emm.core.commons.validation.AgnitasEmailValidator;
@@ -111,7 +112,7 @@ public class AgnUtils {
 	public static final Pattern APPLICATION_VERSION_PATTERN = Pattern.compile(APPLICATION_VERSION_REGEX);
 
 	/** The logger. */
-	private static final transient Logger logger = Logger.getLogger(AgnUtils.class);
+	private static final transient Logger logger = LogManager.getLogger(AgnUtils.class);
 
 	public static final String DEFAULT_MAILING_HTML_DYNNAME = "HTML-Version";
 	public static final String DEFAULT_MAILING_TEXT_DYNNAME = "Text";
@@ -127,7 +128,8 @@ public class AgnUtils {
 
 	private static String HOSTNAME = null;
 
-	private static TimeoutLRUMap<Integer, String> CKEDITOR_PATH_CACHE = new TimeoutLRUMap<>(100, 5);
+	private static final TimeoutLRUMap<Integer, String> CKEDITOR_PATH_CACHE = new TimeoutLRUMap<>(100, 5);
+	private static final TimeoutLRUMap<Integer, String> ACE_EDITOR_PATH_CACHE = new TimeoutLRUMap<>(100, 5);
 
 	private static String BROWSER_CACHE_MARKER = null;
 
@@ -276,7 +278,7 @@ public class AgnUtils {
 	 */
 	public static int getStatStartYearForCompany(ComAdmin admin, int initialYear) {
 		GregorianCalendar startDate = new GregorianCalendar();
-		ComCompany company = (ComCompany) AgnUtils.getCompany(admin);
+		Company company = AgnUtils.getCompany(admin);
 		assert (company != null);
 		Date creationDate = company.getCreationDate();
 
@@ -1034,25 +1036,29 @@ public class AgnUtils {
 	}
 
 	public static String addUrlParameter(String url, String parameterName, String parameterValue, String encodingCharSet) throws UnsupportedEncodingException {
-		StringBuilder escapedParameterNameAndValue = new StringBuilder();
-
-		if (StringUtils.isEmpty(encodingCharSet)) {
-			escapedParameterNameAndValue.append(parameterName);
+		if (parameterName == null) {
+			return url;
 		} else {
-			escapedParameterNameAndValue.append(URLEncoder.encode(parameterName, encodingCharSet));
+			StringBuilder escapedParameterNameAndValue = new StringBuilder();
+	
+			if (StringUtils.isEmpty(encodingCharSet)) {
+				escapedParameterNameAndValue.append(parameterName);
+			} else {
+				escapedParameterNameAndValue.append(URLEncoder.encode(parameterName, encodingCharSet));
+			}
+	
+			escapedParameterNameAndValue.append('=');
+	
+			if (StringUtils.isEmpty(encodingCharSet)) {
+				escapedParameterNameAndValue.append(parameterValue);
+			} else {
+				escapedParameterNameAndValue.append(URLEncoder.encode(parameterValue, encodingCharSet));
+			}
+			return addUrlParameter(url, escapedParameterNameAndValue.toString());
 		}
-
-		escapedParameterNameAndValue.append('=');
-
-		if (StringUtils.isEmpty(encodingCharSet)) {
-			escapedParameterNameAndValue.append(parameterValue);
-		} else {
-			escapedParameterNameAndValue.append(URLEncoder.encode(parameterValue, encodingCharSet));
-		}
-		return addUrlParameter(url, escapedParameterNameAndValue.toString());
 	}
 
-	public static String addUrlParameter(String url, String escapedParameterNameAndValue) throws UnsupportedEncodingException {
+	public static String addUrlParameter(String url, String escapedParameterNameAndValue) {
 		StringBuilder newUrl = new StringBuilder();
 
 		// Find html link anchor but ignore agnHashTags
@@ -2799,61 +2805,93 @@ public class AgnUtils {
 	/**
 	 * Searches for the current ckEditor installation with the highest version number.
 	 * The result is cached.
-	 *
-	 * @return
-	 * @throws Exception
 	 */
 	public static String getCkEditorPath(HttpServletRequest request) throws Exception {
 		ComAdmin admin = getAdmin(request);
 		int companyID = 0;
+
 		if (admin != null) {
 			companyID = admin.getCompanyID();
 		}
-		String ckEditorPath = CKEDITOR_PATH_CACHE.get(companyID);
-		if (ckEditorPath == null) {
+
+		String cachedPath = CKEDITOR_PATH_CACHE.get(companyID);
+		File ckEditorRootDir = getLibraryRootDir("/../../js/lib/ckeditor");
+		boolean shouldUseLatestVersion = ConfigService.getInstance().getBooleanValue(ConfigValue.UseLatestCkEditor, companyID);
+
+		String editorPath = getLibraryPath("CkEditor", cachedPath, "ckeditor-", ckEditorRootDir, shouldUseLatestVersion);
+
+		if (cachedPath == null) {
+			editorPath = "js/lib/ckeditor/" + editorPath;
+			CKEDITOR_PATH_CACHE.put(companyID, editorPath);
+		}
+
+		return editorPath;
+	}
+
+	public static String getAceEditorPath(HttpServletRequest request) throws Exception {
+		ComAdmin admin = getAdmin(request);
+		int companyID = 0;
+
+		if (admin != null) {
+			companyID = admin.getCompanyID();
+		}
+
+		String cachedPath = ACE_EDITOR_PATH_CACHE.get(companyID);
+		File aceEditorRootDir = getLibraryRootDir("/../../js/lib/ace");
+		boolean shouldUseLatestVersion = ConfigService.getInstance().getBooleanValue(ConfigValue.UseLatestAceEditor, companyID);
+
+		String editorPath = getLibraryPath("AceEditor", cachedPath, "ace_", aceEditorRootDir, shouldUseLatestVersion);
+
+		if (cachedPath == null) {
+			editorPath = "js/lib/ace/" + editorPath;
+			ACE_EDITOR_PATH_CACHE.put(companyID, editorPath);
+		}
+
+		return editorPath;
+	}
+
+	private static String getLibraryPath(String libName, String cachedPath, String dirNamePrefix, File rootDir, boolean useLastVersion) throws Exception {
+		String libraryPath = cachedPath;
+		if (libraryPath == null) {
 			try {
-				String ckeditorPathNamePrefix = "ckeditor-";
-				Version ckEditorVersion = new Version("0.0.0");
-				for (File subFile : getCkeditorLibsPath().listFiles()){
-					if (subFile.isDirectory() && subFile.getName().startsWith(ckeditorPathNamePrefix)) {
-						String versionString = subFile.getName().substring(ckeditorPathNamePrefix.length());
+				Version libraryVersion = new Version("0.0.0");
+				for (File subFile : rootDir.listFiles()){
+					if (subFile.isDirectory() && subFile.getName().startsWith(dirNamePrefix)) {
+						String versionString = subFile.getName().substring(dirNamePrefix.length());
 						Version nextVersion = new Version(versionString);
-						if (ckEditorPath == null) {
-							ckEditorVersion = nextVersion;
-							ckEditorPath = subFile.getName();
+						if (libraryPath == null) {
+							libraryVersion = nextVersion;
+							libraryPath = subFile.getName();
 						} else {
-							if (ConfigService.getInstance().getBooleanValue(ConfigValue.UseLatestCkEditor, companyID)) {
-								if (nextVersion.compareTo(ckEditorVersion) > 0) {
-									ckEditorVersion = nextVersion;
-									ckEditorPath = subFile.getName();
+							if (useLastVersion) {
+								if (nextVersion.compareTo(libraryVersion) > 0) {
+									libraryVersion = nextVersion;
+									libraryPath = subFile.getName();
 								}
 							} else {
-								if (nextVersion.compareTo(ckEditorVersion) < 0) {
-									ckEditorVersion = nextVersion;
-									ckEditorPath = subFile.getName();
+								if (nextVersion.compareTo(libraryVersion) < 0) {
+									libraryVersion = nextVersion;
+									libraryPath = subFile.getName();
 								}
 							}
 						}
 					}
 				}
 
-				if (ckEditorPath != null) {
-					ckEditorPath = "js/lib/ckeditor/" + ckEditorPath;
-
-					CKEDITOR_PATH_CACHE.put(companyID, ckEditorPath);
-					return ckEditorPath;
-				} else {
-					throw new Exception("Cannot find CkEditor directory");
+				if (libraryPath != null) {
+					return libraryPath;
 				}
+
+				throw new Exception("Cannot find " + libName + " directory");
 			} catch (Exception e) {
-				throw new Exception("Cannot find CkEditor directory: " + e.getMessage(), e);
+				throw new Exception("Cannot find " + libName + " directory: " + e.getMessage(), e);
 			}
-		} else {
-			return ckEditorPath;
 		}
+
+		return libraryPath;
 	}
 
-	private static File getCkeditorLibsPath() throws Exception {
+	private static File getLibraryRootDir(String libRelativePath) throws Exception {
 		String applicationInstallPath = AgnUtils.class.getClassLoader().getResource("/").getFile();
 		if (applicationInstallPath != null && applicationInstallPath.endsWith("/")) {
 			applicationInstallPath = applicationInstallPath.substring(0, applicationInstallPath.length() - 1);
@@ -2862,7 +2900,7 @@ public class AgnUtils {
 		if (StringUtils.isBlank(applicationInstallPath)) {
 			throw new Exception("Cannot find application install directory");
 		} else {
-			applicationInstallPath += "/../../js/lib/ckeditor";
+			applicationInstallPath += libRelativePath;
 			try {
 				return new File(applicationInstallPath).getCanonicalFile();
 			} catch (Exception e) {
@@ -3647,4 +3685,35 @@ public class AgnUtils {
 		});
 		return list;
 	}
+	
+    public static String getNormalizedDecimalNumber(String number, Locale locale) {
+	    number = number.trim();
+	    DecimalFormatSymbols decimalFormatSymbols = new DecimalFormatSymbols(locale);
+        String groupingSeparator = Character.toString(decimalFormatSymbols.getGroupingSeparator());
+        String decimalSeparator = Character.toString(decimalFormatSymbols.getDecimalSeparator());
+        if (number.contains(groupingSeparator)
+                && !isValidNumberWithGroupingSeparator(number, groupingSeparator, decimalSeparator)) {
+            return "";
+        }
+        return AgnUtils.normalizeNumber(decimalSeparator, groupingSeparator, number);
+	}
+	
+    private static boolean isValidNumberWithGroupingSeparator(String number, String groupingSeparator, String decimalSeparator) {
+        return number.matches(String.format("^[+-]?[0-9]{1,3}(%s[0-9]{3})*(\\%s[0-9]+)?$", groupingSeparator, decimalSeparator));
+    }
+    
+    public static boolean isValidNumberWithGroupingSeparator(String number, Locale locale) {
+    	DecimalFormatSymbols decimalFormatSymbols = new DecimalFormatSymbols(locale);
+        String groupingSeparator = Character.toString(decimalFormatSymbols.getGroupingSeparator());
+        String decimalSeparator = Character.toString(decimalFormatSymbols.getDecimalSeparator());
+        return isValidNumberWithGroupingSeparator(number, groupingSeparator, decimalSeparator);
+    }
+    
+    public static boolean isZipArchiveFile(File potentialZipFile) throws FileNotFoundException, IOException {
+        try (FileInputStream inputStream = new FileInputStream(potentialZipFile)) {
+            byte[] magicBytes = new byte[4];
+            int readBytes = inputStream.read(magicBytes);
+            return readBytes == 4 && magicBytes[0] == 0x50 && magicBytes[1] == 0x4B && magicBytes[2] == 0x03 && magicBytes[3] == 0x04;
+        }
+    }
 }

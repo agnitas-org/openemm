@@ -163,7 +163,7 @@
                                             <agn:agnText property="linkItemName[${link.id}]" styleClass="form-control"/>
                                         </display:column>
 
-                                        <display:column class="align-top" titleKey="Trackable" sortable="false">
+                                        <display:column class="align-top" titleKey="LinkTracking" sortable="false">
                                             <c:choose>
                                                 <c:when test="${link.usage ge 0}">
                                                     <agn:agnSelect property="linkItemTrackable[${link.id}]" styleClass="form-control">
@@ -205,7 +205,7 @@
                                         </c:if>
 
                                         <c:set var="deepTrackingTitle">
-                                            <bean:message key="deeptracking"/>
+                                            <bean:message key="stat.impression.retargeting"/>
                                             <button class="icon icon-help" data-help="help_${helplanguage}/mailing/trackable_links/TrackingCookie.xml" tabindex="-1" type="button"></button>
                                         </c:set>
 

@@ -51,7 +51,7 @@ echo
 
 # getVersionNumber (textWithVersion)
 function getVersionNumber {
-	local version=`echo "${1}" | grep -oE "[0-9]+\.[0-9]+\.[0-9]+(-hf[0-9]+)?" | tail -1`
+	local version=`echo "${1}" | grep -oE "[0-9]+\.[0-9]+\.[0-9]+((\.|-hf)[0-9]+)?" | tail -1`
 	echo ${version}
 }
 

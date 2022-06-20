@@ -9,10 +9,13 @@ AGN.Lib.Controller.new('recipient-view', function() {
 
   var checker;
   var isActiveSaveSubmenu = false;
+  var config;
 
   this.addDomInitializer('recipient-view', function($e) {
     var form = Form.get($e);
     var self = this;
+
+    config = this.config;
 
     checker = new AddressChecker(self.config.urls.CHECK_ADDRESS, function(result) {
       var status = result.status;
@@ -22,7 +25,7 @@ AGN.Lib.Controller.new('recipient-view', function() {
           break;
 
         case RESULT_USED:
-          var btnUrl = self.config.urls.EXISTING_USER_URL_PATTERN.replace('{recipient-ID}', result.recipientID);
+          var btnUrl = self.config.urls.EXISTING_USER_URL_PATTERN.replace('{recipientID}', result.recipientID);
           var messageErrorInUseUser =
           '<div style="display: flex; width: 100%; justify-content: space-between; align-items: center;">' +
             t('error.inUse') +
@@ -80,6 +83,26 @@ AGN.Lib.Controller.new('recipient-view', function() {
     var form = Form.get(this.el);
     var address = $('#recipient-email').val();
     this.event.preventDefault();
+    var checkAltgMatchCallback = function() {
+      $.post(config.urls.CHECK_MATCH_ALTG, form.params())
+        .done(function(response) {
+          if (response.popups && response.popups.alert && response.popups.alert.length > 0) {
+            AGN.Lib.JsonMessages(response.popups);
+          } else if (!response.success || response.success.length === 0) {
+            Confirm.create(Template.text('hide-recipient-confirmation-modal'))
+              .done(function () {
+                form.setActionOnce(config.urls.SAVE_AND_BACK_TO_LIST);
+                form.submit();
+              })
+          } else {
+            form.submit();
+          }
+        })
+        .fail(function() {
+          form.submit();
+        })
+    }
+
     if (checker && address && address.trim()) {
       checker.jqxhr(address.trim())
         .done(function(resp) {
@@ -88,22 +111,20 @@ AGN.Lib.Controller.new('recipient-view', function() {
               .done(function() {
                 if (resp.inUse === true) {
                   Confirm.create(Template.text('email-confirmation-modal', {question: t('recipient.duplicate.question')}))
-                    .done(function() { form.submit(); });
+                    .done(checkAltgMatchCallback);
                 } else {
-                  form.submit();
+                  checkAltgMatchCallback();
                 }
               });
           } else if (resp.inUse === true) {
             Confirm.create(Template.text('email-confirmation-modal', {question: t('recipient.duplicate.question')}))
-              .done(function() { form.submit(); });
+              .done(checkAltgMatchCallback);
           } else {
-            form.submit();
+            checkAltgMatchCallback();
           }
-        }).fail(function() {
-          form.submit();
-        });
+        }).fail(checkAltgMatchCallback);
     } else {
-      form.submit();
+      checkAltgMatchCallback();
     }
   });
 
@@ -176,5 +197,4 @@ AGN.Lib.Controller.new('recipient-view', function() {
       }
     }
   };
-
 });

@@ -168,6 +168,10 @@ parent: media_object
   margin: 0 0 5px;
 }
 
+body.dark-theme .media-heading {
+  color: $c-white;
+}
+
 
 // Media image alignment
 // -------------------------

@@ -1,10 +1,10 @@
-<%@ page import="com.agnitas.web.ComMailingBaseAction" %>
+<%@ page import="com.agnitas.web.MailingBaseAction" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="html" uri="http://struts.apache.org/tags-html" %>
 
-<c:set var="ACTION_MAILING_IMPORT" value="<%= ComMailingBaseAction.ACTION_MAILING_IMPORT %>" />
+<c:set var="ACTION_MAILING_IMPORT" value="<%= MailingBaseAction.ACTION_MAILING_IMPORT %>" />
 
 <c:set var="isTabsMenuShown"        value="false"               scope="request"/>
 <c:set var="sidemenu_active"        value="grid.layout.builder" scope="request" />

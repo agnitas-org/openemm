@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -22,11 +22,12 @@ import org.agnitas.beans.BindingEntry.UserType;
 import org.agnitas.beans.impl.BindingEntryImpl;
 import org.agnitas.dao.MailinglistDao;
 import org.agnitas.dao.UserStatus;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.useractivitylog.dao.UserActivityLogDao;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.HttpUtils.RequestMethod;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComAdmin;
@@ -59,8 +60,6 @@ import jakarta.servlet.http.HttpServletResponse;
  * https://<system.url>/restful/binding
  */
 public class BindingRestfulServiceHandler implements RestfulServiceHandler {
-	@SuppressWarnings("unused")
-	private static final transient Logger logger = Logger.getLogger(BindingRestfulServiceHandler.class);
 	
 	public static final String NAMESPACE = "binding";
 
@@ -69,6 +68,7 @@ public class BindingRestfulServiceHandler implements RestfulServiceHandler {
 	private ComBindingEntryDao bindingEntryDao;
 	private MailinglistDao mailinglistDao;
 	private ComEmmActionService emmActionService;
+	private ConfigService configService;
 
 	@Required
 	public void setUserActivityLogDao(UserActivityLogDao userActivityLogDao) {
@@ -99,6 +99,11 @@ public class BindingRestfulServiceHandler implements RestfulServiceHandler {
 	public RestfulServiceHandler redirectServiceHandlerIfNeeded(ServletContext context, HttpServletRequest request, String restfulSubInterfaceName) throws Exception {
 		// No redirect needed
 		return this;
+	}
+
+	@Required
+	public void setConfigService(ConfigService configService) {
+		this.configService = configService;
 	}
 
 	@Override
@@ -140,7 +145,12 @@ public class BindingRestfulServiceHandler implements RestfulServiceHandler {
 				throw new RestfulNoDataFoundException("No data found");
 			}
 		} else {
-			requestedCustomerID = recipientDao.findByColumn(admin.getCompanyID(), "email", restfulContext[0]);
+			String requestedRecipientKeyValue = restfulContext[0];
+			// Normalize email, if configured so
+			if (!configService.getBooleanValue(ConfigValue.AllowUnnormalizedEmails, admin.getCompanyID())) {
+				requestedRecipientKeyValue = AgnUtils.normalizeEmail(requestedRecipientKeyValue);
+			}
+			requestedCustomerID = recipientDao.findByColumn(admin.getCompanyID(), "email", requestedRecipientKeyValue);
 			if (requestedCustomerID <= 0) {
 				throw new RestfulNoDataFoundException("No data found");
 			}
@@ -191,7 +201,7 @@ public class BindingRestfulServiceHandler implements RestfulServiceHandler {
 			
 			// Show binding entries for an email or customerID for a specific mailinglist
 			userActivityLogDao.addAdminUseOfFeature(admin, "restful/binding", new Date());
-			userActivityLogDao.writeUserActivityLog(admin, "restful/binding GET", requestedCustomerID + " MID: " + requestedMailinglistID);
+			userActivityLogDao.writeUserActivityLog(admin, "restful/binding GET", requestedCustomerID + " MLID: " + requestedMailinglistID);
 			
 			JsonArray bindingsJsonArray = new JsonArray();
 			
@@ -251,7 +261,12 @@ public class BindingRestfulServiceHandler implements RestfulServiceHandler {
 				throw new RestfulNoDataFoundException("No data found");
 			}
 		} else {
-			requestedCustomerID = recipientDao.findByColumn(admin.getCompanyID(), "email", restfulContext[0]);
+			String requestedRecipientKeyValue = restfulContext[0];
+			// Normalize email, if configured so
+			if (!configService.getBooleanValue(ConfigValue.AllowUnnormalizedEmails, admin.getCompanyID())) {
+				requestedRecipientKeyValue = AgnUtils.normalizeEmail(requestedRecipientKeyValue);
+			}
+			requestedCustomerID = recipientDao.findByColumn(admin.getCompanyID(), "email", requestedRecipientKeyValue);
 			if (requestedCustomerID <= 0) {
 				throw new RestfulNoDataFoundException("No data found");
 			}
@@ -309,7 +324,12 @@ public class BindingRestfulServiceHandler implements RestfulServiceHandler {
 				throw new RestfulNoDataFoundException("No data found");
 			}
 		} else {
-			requestedCustomerID = recipientDao.findByColumn(admin.getCompanyID(), "email", restfulContext[0]);
+			String requestedRecipientKeyValue = restfulContext[0];
+			// Normalize email, if configured so
+			if (!configService.getBooleanValue(ConfigValue.AllowUnnormalizedEmails, admin.getCompanyID())) {
+				requestedRecipientKeyValue = AgnUtils.normalizeEmail(requestedRecipientKeyValue);
+			}
+			requestedCustomerID = recipientDao.findByColumn(admin.getCompanyID(), "email", requestedRecipientKeyValue);
 			if (requestedCustomerID <= 0) {
 				throw new RestfulNoDataFoundException("No data found");
 			}
@@ -502,7 +522,12 @@ public class BindingRestfulServiceHandler implements RestfulServiceHandler {
 				throw new RestfulNoDataFoundException("No data found");
 			}
 		} else {
-			requestedCustomerID = recipientDao.findByColumn(admin.getCompanyID(), "email", restfulContext[0]);
+			String requestedRecipientKeyValue = restfulContext[0];
+			// Normalize email, if configured so
+			if (!configService.getBooleanValue(ConfigValue.AllowUnnormalizedEmails, admin.getCompanyID())) {
+				requestedRecipientKeyValue = AgnUtils.normalizeEmail(requestedRecipientKeyValue);
+			}
+			requestedCustomerID = recipientDao.findByColumn(admin.getCompanyID(), "email", requestedRecipientKeyValue);
 			if (requestedCustomerID <= 0) {
 				throw new RestfulNoDataFoundException("No data found");
 			}

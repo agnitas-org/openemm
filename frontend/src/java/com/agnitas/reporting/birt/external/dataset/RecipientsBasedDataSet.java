@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -15,18 +15,20 @@ import java.sql.SQLException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
+import java.util.stream.Stream;
+
+import com.agnitas.reporting.birt.external.beans.LightTarget;
 
 import org.agnitas.dao.UserStatus;
 import org.agnitas.dao.exception.UnknownUserStatusException;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.jdbc.core.RowMapper;
 
-import com.agnitas.reporting.birt.external.beans.LightTarget;
-
 public abstract class RecipientsBasedDataSet extends BIRTDataSet {
-    private static final transient Logger logger = Logger.getLogger(RecipientsBasedDataSet.class);
+    private static final transient Logger logger = LogManager.getLogger(RecipientsBasedDataSet.class);
 	
     protected static String getCustomerBindingTableName(int companyId) {
 		return "customer_" + companyId + "_binding_tbl";
@@ -193,11 +195,18 @@ public abstract class RecipientsBasedDataSet extends BIRTDataSet {
 	}
 }
 
-	protected String getHiddenTargetSql(final LightTarget currentTarget, final LightTarget hiddenTarget) {
-		if(Objects.isNull(hiddenTarget) || currentTarget.getId() == hiddenTarget.getId()) {
+	protected String getHiddenTargetSql(int companyId, final LightTarget currentTarget, String hiddenTargetStr) {
+		if (StringUtils.isBlank(hiddenTargetStr) 
+                || (currentTarget != null && hiddenTargetStrContainCurrentTarget(currentTarget, hiddenTargetStr))) {
 			return null;
 		}
-		return hiddenTarget.getTargetSQL();
+		return getTargetSqlString(hiddenTargetStr, companyId);
 	}
-
+	
+	private boolean hiddenTargetStrContainCurrentTarget(LightTarget currentTarget, String hiddenTargetStr) {
+	    return Stream.of(hiddenTargetStr.split(","))
+                .filter(StringUtils::isNotBlank)
+                .map(targetIdStr -> NumberUtils.toInt(targetIdStr, -1))
+                .anyMatch(targetId -> targetId == currentTarget.getId());
+    }
 }

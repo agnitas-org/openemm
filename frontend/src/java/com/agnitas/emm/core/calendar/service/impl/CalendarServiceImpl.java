@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -35,7 +35,6 @@ import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MaildropEntry;
 import com.agnitas.dao.ComMailingDao;
-import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.calendar.service.CalendarService;
 import com.agnitas.emm.core.maildrop.MaildropGenerationStatus;
 import com.agnitas.emm.core.maildrop.MaildropStatus;
@@ -46,7 +45,6 @@ import net.sf.json.JSONObject;
 
 public class CalendarServiceImpl implements CalendarService {
     private ComMailingDao mailingDao;
-    private AdminService adminService;
 
     private static final String DATE_FORMAT = "dd-MM-yyyy";
     private static final String TIME_FORMAT = "HH:mm";
@@ -57,23 +55,18 @@ public class CalendarServiceImpl implements CalendarService {
         this.mailingDao = mailingDao;
     }
 
-    @Required
-    public void setAdminService(AdminService adminService) {
-        this.adminService = adminService;
-    }
-
     protected ComMailingDao getMailingDao() {
         return mailingDao;
     }
 
     @Override
     public PaginatedListImpl<Map<String, Object>> getUnsentMailings(ComAdmin admin, int listSize) {
-       return mailingDao.getUnsentMailings(admin.getCompanyID(), admin.getAdminID(), adminService.getAccessLimitTargetId(admin), listSize);
+        return mailingDao.getUnsentMailings(admin, listSize);
     }
 
     @Override
     public PaginatedListImpl<Map<String, Object>> getPlannedMailings(ComAdmin admin, int listSize) {
-        return mailingDao.getPlannedMailings(admin.getCompanyID(), admin.getAdminID(), adminService.getAccessLimitTargetId(admin), listSize);
+        return mailingDao.getPlannedMailings(admin, listSize);
     }
 
     @Override
@@ -104,7 +97,8 @@ public class CalendarServiceImpl implements CalendarService {
     }
 
     protected List<Map<String, Object>> getPlannedMailings(final ComAdmin admin, final Date startDate, final Date endDate) {
-        List<Map<String, Object>> plannedMailings = mailingDao.getPlannedMailings(admin.getCompanyID(), admin.getAdminID(), startDate, endDate, adminService.getAccessLimitTargetId(admin));
+        List<Map<String, Object>> plannedMailings;
+        plannedMailings = mailingDao.getPlannedMailings(admin, startDate, endDate);
         return addSomeFieldsToPlannedMailings(plannedMailings, AgnUtils.getZoneId(admin));
     }
 
@@ -120,7 +114,8 @@ public class CalendarServiceImpl implements CalendarService {
     }
 
     protected List<Map<String, Object>> getMailings(final ComAdmin admin, Date startDate, Date endDate) {
-        List<Map<String, Object>> mailings = mailingDao.getSentAndScheduled(admin.getCompanyID(), admin.getAdminID(), startDate, endDate, adminService.getAccessLimitTargetId(admin));
+        List<Map<String, Object>> mailings;
+        mailings = mailingDao.getSentAndScheduled(admin, startDate, endDate);
 
         return addSomeFieldsToSentAndScheduledMailings(mailings);
     }

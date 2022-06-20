@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -25,10 +25,11 @@ import org.agnitas.emm.core.recipient.service.RecipientModel;
 import org.agnitas.emm.core.recipient.service.RecipientService;
 import org.agnitas.emm.core.userforms.UserformService;
 import org.agnitas.exceptions.FormNotFoundException;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.ComCompany;
+import com.agnitas.beans.Company;
 import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
 import com.agnitas.emm.core.commons.uid.UIDFactory;
 import com.agnitas.emm.core.company.service.CompanyTokenService;
@@ -43,7 +44,7 @@ import com.agnitas.userform.bean.UserForm;
 public final class FullviewServiceImpl implements FullviewService {
 
 	/** The logger. */
-	private static final transient Logger logger = Logger.getLogger(FullviewServiceImpl.class);
+	private static final transient Logger logger = LogManager.getLogger(FullviewServiceImpl.class);
 	
 	private CompanyService companyService;
 	private UserformService formService;
@@ -60,7 +61,7 @@ public final class FullviewServiceImpl implements FullviewService {
 			logger.info(String.format("Creating personalized fullview URL (company ID %d, mailing ID %d, customer ID %d)", companyID, mailingID, customerID));
 		}
 		
-		final ComCompany company = this.companyService.getCompany(companyID);
+		final Company company = this.companyService.getCompany(companyID);
 		final Optional<String> companyToken = this.companyTokenService.getCompanyToken(companyID);
 		final MailingModel mailingModel = new MailingModel();
 		mailingModel.setCompanyId(companyID);

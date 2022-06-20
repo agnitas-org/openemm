@@ -13,10 +13,18 @@
         </h2>
         <ul class="tile-header-actions">
             <li>
-                <a href="<html:rewrite page="/optimize.do?method=newOptimization&campaignID=${optimizationForm.campaignID}"/>" class="btn btn-regular btn-primary">
-                    <i class="icon icon-plus"></i>
-                    <span class="text"><bean:message key="button.New"/></span>
-                </a>
+                <emm:HideByPermission token="campaign.migration">
+                    <a href="<html:rewrite page="/optimize.do?method=newOptimization&campaignID=${optimizationForm.campaignID}"/>" class="btn btn-regular btn-primary">
+                        <i class="icon icon-plus"></i>
+                        <span class="text"><bean:message key="button.New"/></span>
+                    </a>
+                </emm:HideByPermission>
+                <emm:ShowByPermission token="campaign.migration">
+                    <a href="<html:rewrite page="/optimize.do?method=newOptimization&campaignID=${optimizationForm.campaignID}&campaignName=${optimizationForm.campaignName}"/>" class="btn btn-regular btn-primary">
+                        <i class="icon icon-plus"></i>
+                        <span class="text"><bean:message key="button.New"/></span>
+                    </a>
+                </emm:ShowByPermission>
             </li>
         </ul>
     </div>

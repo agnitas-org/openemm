@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -16,22 +16,18 @@ import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Optional;
 
-import jakarta.servlet.http.HttpServletRequest;
-
 import org.agnitas.emm.core.logintracking.bean.LoginData;
 import org.agnitas.emm.core.logintracking.service.LoginTrackService;
 import org.agnitas.emm.core.logintracking.service.LoginTrackServiceException;
-import org.apache.log4j.Logger;
 
 import com.agnitas.beans.ComAdmin;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 /**
  * Helper class to save login data in HTTP request.
  */
 public class LoginTrackServiceRequestHelper {
-	/** The logger. */
-	@SuppressWarnings("unused")
-	private static final transient Logger logger = Logger.getLogger( LoginTrackServiceRequestHelper.class);
 		
 	/** Default value for minimum period of days for login data. */
 	public static final int DEFAULT_LOGIN_MIN_PERIOD_DAYS = 14;

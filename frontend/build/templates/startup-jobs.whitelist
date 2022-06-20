@@ -8,9 +8,11 @@
 #
 
 # Jobs already present (and in common also already executed)
-com.agnitas.startuplistener.startupjobs.LastLoginMigrationStartupJob
+
+# (Check for removal in LTS 22.04)
 com.agnitas.startuplistener.startupjobs.TargetGroupUsageDataStartupJob
-com.agnitas.startuplistener.startupjobs.PasswordConversionStartupJob
+
+# (Check for removal in LTS 22.04)
 com.agnitas.startuplistener.startupjobs.LoginTrackSettingsMigrationStartupJob
 
 # Add new jobs here. Leave a comment on each job (JIRA issue, short description, ...)
@@ -18,5 +20,6 @@ com.agnitas.startuplistener.startupjobs.LoginTrackSettingsMigrationStartupJob
 #
 # Assigns random tokens to companies without one.
 # EMM-8238
+# (Check for removal in LTS 23.04)
 #
 com.agnitas.startuplistener.startupjobs.AssignCompanyTokenStartupJob

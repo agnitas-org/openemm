@@ -28,7 +28,11 @@ AGN.Lib.Controller.new('mailinglist-list', function() {
         deferred.reject();
       });
 
-      AGN.Lib.Confirm.request(jqxhr).then(deferred.resolve, deferred.reject);
+      AGN.Lib.Confirm.request(jqxhr)
+        .done(function(resp) {
+          AGN.Lib.Page.render(resp);
+        })
+        .then(deferred.resolve, deferred.reject);
     } else {
       deferred.reject();
       AGN.Lib.Messages(t("Error"), t("messages.error.nothing_selected"), "alert");

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -16,10 +16,21 @@ import java.sql.SQLException;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.springframework.jdbc.core.RowMapper;
 
+// TODO Unused class?
 public class CaseInsensitiveMapRowMapper implements RowMapper<CaseInsensitiveMap<String, Object>> {
 	
-	// TODO Performance improvement: Introduce static constant INSTANCE and reduce visibility of constructor to private.
+	/** Singleton instance. */
+	public static final CaseInsensitiveMapRowMapper INSTANCE = new CaseInsensitiveMapRowMapper();
 
+	/**
+	 * Creates a new instance.
+	 * 
+	 * @see #INSTANCE
+	 */
+	private CaseInsensitiveMapRowMapper() {
+		// Empty
+	}
+	
 	@Override
 	public CaseInsensitiveMap<String, Object> mapRow(ResultSet resultSet, int row) throws SQLException {
 		CaseInsensitiveMap<String, Object> returnMap = new CaseInsensitiveMap<>();

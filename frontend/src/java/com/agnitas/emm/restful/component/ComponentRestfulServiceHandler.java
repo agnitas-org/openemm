@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -25,7 +25,6 @@ import org.agnitas.emm.core.useractivitylog.dao.UserActivityLogDao;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.HttpUtils.RequestMethod;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComAdmin;
@@ -34,6 +33,7 @@ import com.agnitas.dao.ComMailingComponentDao;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.dao.ComTargetDao;
 import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.thumbnails.service.ThumbnailService;
 import com.agnitas.emm.restful.BaseRequestResponse;
 import com.agnitas.emm.restful.ErrorCode;
 import com.agnitas.emm.restful.JsonRequestResponse;
@@ -56,8 +56,6 @@ import jakarta.servlet.http.HttpServletResponse;
  * https://<system.url>/restful/component
  */
 public class ComponentRestfulServiceHandler implements RestfulServiceHandler {
-	@SuppressWarnings("unused")
-	private static final transient Logger logger = Logger.getLogger(ComponentRestfulServiceHandler.class);
 	
 	public static final String NAMESPACE = "component";
 
@@ -68,6 +66,7 @@ public class ComponentRestfulServiceHandler implements RestfulServiceHandler {
 	private ComMailingComponentDao mailingComponentDao;
 	private ComTargetDao targetDao;
 	private ComCompanyDao companyDao;
+	private ThumbnailService thumbnailService;
 
 	@Required
 	public void setUserActivityLogDao(UserActivityLogDao userActivityLogDao) {
@@ -92,6 +91,11 @@ public class ComponentRestfulServiceHandler implements RestfulServiceHandler {
 	@Required
 	public void setCompanyDao(ComCompanyDao companyDao) {
 		this.companyDao = companyDao;
+	}
+
+	@Required
+	public void setThumbnailService(ThumbnailService thumbnailService) {
+		this.thumbnailService = thumbnailService;
 	}
 
 	@Override
@@ -256,6 +260,7 @@ public class ComponentRestfulServiceHandler implements RestfulServiceHandler {
 			throw new RestfulClientException("Component already exists: " + newMailingComponent.getComponentName());
 		} else {
 			mailingComponentDao.saveMailingComponent(newMailingComponent);
+			thumbnailService.updateMailingThumbnailByWebservice(admin.getCompanyID(), mailingID);
 			return createComponentJsonObject(mailingComponentDao.getMailingComponent(mailingID, newMailingComponent.getId(), admin.getCompanyID()));
 		}
 	}
@@ -298,6 +303,7 @@ public class ComponentRestfulServiceHandler implements RestfulServiceHandler {
 			}
 			
 			mailingComponentDao.saveMailingComponent(newMailingComponent);
+			thumbnailService.updateMailingThumbnailByWebservice(admin.getCompanyID(), mailingID);
 			return createComponentJsonObject(mailingComponentDao.getMailingComponentByName(mailingID, admin.getCompanyID(), newMailingComponent.getComponentName()));
 		} else {
 			// Update component of a mailing by name or component_id
@@ -327,6 +333,8 @@ public class ComponentRestfulServiceHandler implements RestfulServiceHandler {
 			newMailingComponent.setId(existingMailingComponent.getId());
 			
 			mailingComponentDao.saveMailingComponent(newMailingComponent);
+			
+			thumbnailService.updateMailingThumbnailByWebservice(admin.getCompanyID(), mailingID);
 			
 			MailingComponent storedComponent = mailingComponentDao.getMailingComponent(mailingID, newMailingComponent.getId(), admin.getCompanyID());
 			
@@ -448,6 +456,11 @@ public class ComponentRestfulServiceHandler implements RestfulServiceHandler {
 									data = AgnUtils.decodeZippedBase64((String) entry.getValue());
 								} catch (IOException e) {
 									throw new RestfulClientException("Invalid value for 'bin_block'. String(Base64) expected");
+								}
+								if (data.length == 0 && ((String) entry.getValue()).length() > 0) {
+									// Data was not zipped before base64, so AgnUtils.decodeZippedBase64 returned an empty byte[]
+									// Gracefully allow unzipped base64 in that case
+									data = AgnUtils.decodeBase64((String) entry.getValue());
 								}
 								if (jsonObject.get("mimetype") != null && jsonObject.get("mimetype") instanceof String) {
 									mailingComponent.setBinaryBlock(data, (String) jsonObject.get("mimetype"));

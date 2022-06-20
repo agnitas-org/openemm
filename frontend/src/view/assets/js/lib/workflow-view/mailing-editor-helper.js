@@ -29,7 +29,7 @@
             this.$dropdown = data.$dropdown;
         }
         //follow up base mailing settings for aadvertising content type
-        this.isChangeDecisionOptions = data.isEnableTrackingVeto && data.isFollowUpBaseMailing;
+        this.isChangeDecisionOptions = data.isFollowUpBaseMailing;
         this.followUpContainer = data.followUpContainer;
         this.advertisingAdditionalOptions = data.advertisingAdditionalOptions;
         this.advertisingUrl = data.advertisingUrl;
@@ -554,6 +554,29 @@
                     }
                 }
             }
+            
+            if (Def.constants.isAltgExtended) {
+              var configuredAltgs = configuredMailingData.altgs;
+              var mailingAltgs = mailingData.altgIds;
+
+              if (mailingAltgs == null || mailingAltgs.length == 0) {
+                paramsToBeOverridden.push(Def.MAILING_PARAM_ALTGS);
+              } else {
+                if (configuredAltgs == null || configuredAltgs.length == 0) {
+                  // Transfer
+                  paramsToBeTransferred.push(Def.MAILING_PARAM_ALTGS);
+                } else {
+                  if (!equalAltgs(configuredMailingData, mailingData)) {
+                    if (askAmbiguous) {
+                      // Dialog
+                      paramsToBeAsked.push(Def.MAILING_PARAM_TARGET_GROUPS);
+                    } else {
+                      paramsToBeTransferred.push(Def.MAILING_PARAM_TARGET_GROUPS);
+                    }
+                  }
+                }
+              }
+            }
 
             var parameterValue = mailingEditorBase.getParameterValue(mailingData.splitBase, mailingData.splitPart);
 
@@ -649,6 +672,9 @@
 
                     case Def.MAILING_PARAM_TARGET_GROUPS:
                         mailingData.targetGroupIds = configuredMailingData.targets;
+                        break;
+                    case Def.MAILING_PARAM_ALTGS:
+                        mailingData.altgIds = configuredMailingData.altgs;
                         break;
 
                     case Def.MAILING_PARAM_ARCHIVE:
@@ -807,7 +833,16 @@
 
                     if (paramsToTransfer.includes(Def.MAILING_PARAM_TARGET_GROUPS)) {
                         data.targets = mailingData.targetGroupIds;
-                        data.targetsOption = Def.constants.accessLimitTargetId > 0 ? 'ALL_TARGETS_REQUIRED' : 'ONE_TARGET_REQUIRED';
+                        if (Def.constants.isAltgExtended) {
+                          data.targetsOption = 'ONE_TARGET_REQUIRED';
+                        } else {
+                          data.targetsOption = Def.constants.accessLimitTargetId > 0 ? 'ALL_TARGETS_REQUIRED' : 'ONE_TARGET_REQUIRED';
+                        }
+                    }
+                    if (Def.constants.isAltgExtended) {
+                      if (paramsToTransfer.includes(Def.MAILING_PARAM_ALTGS)) {
+                        data.altgs = mailingData.altgIds;
+                      }
                     }
                 });
             }
@@ -1056,6 +1091,26 @@
             }
             return true;
         };
+        
+      var equalAltgs = function(configuredMailingData, mailingData) {
+          var configuredAltgs = configuredMailingData.altgs;
+          var mailingAltgs = mailingData.altgIds;
+
+          if (configuredAltgs == null && mailingAltgs == null) {
+              return true;
+          }
+
+          if (configuredAltgs.length != mailingAltgs.length) {
+              return false;
+          }
+
+          for (var i = 0; i < mailingAltgs.length; i++) {
+              if (!contains(configuredAltgs, mailingAltgs[i])) {
+                  return false;
+              }
+          }
+          return true;
+      };
 
         var contains = function(array, item) {
             return array.indexOf(item) != -1;

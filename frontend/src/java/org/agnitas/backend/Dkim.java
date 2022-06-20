@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -19,6 +19,7 @@ import java.sql.SQLException;
 import org.agnitas.backend.dao.DkimDAO;
 import org.agnitas.util.DNS;
 import org.agnitas.util.Log;
+import org.agnitas.util.Str;
 import org.agnitas.util.TimeoutLRUMap;
 
 /**
@@ -33,7 +34,7 @@ public class Dkim {
 		dkimReportCache = new TimeoutLRUMap<>(5000, 30 * 60 * 1000); // max. 5000 entries for 30 Minutes
 
 		String salt = "C'est la vie";
-		String path = StringOps.makePath("${home}", "lib", "dkim.key");
+		String path = Str.makePath("$home", "lib", "dkim.key");
 		File fd = new File(path);
 
 		if (fd.exists()) {
@@ -83,8 +84,8 @@ public class Dkim {
 	public boolean check (EMail email) throws SQLException {
 		DkimDAO		dkimDAO = new DkimDAO (data.dbase, data.company.id (), secretKey);
 		DkimDAO.DKIM	dkim = dkimDAO.find (email,
-						     StringOps.atob (data.company.info ("dkim-local-key"), false),
-						     StringOps.atob (data.company.info ("dkim-global-key"), false));
+						     Str.atob (data.company.info ("dkim-local-key"), false),
+						     Str.atob (data.company.info ("dkim-global-key"), false));
 		if (dkim == null) {
 			return false;
 		}

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -240,7 +240,7 @@ CREATE TABLE admin_group_tbl (
 
 CREATE TABLE admin_group_permission_tbl (
 	admin_group_id             INT(11) COMMENT 'references to admin_group_tbl (FK, on delete cascade)',
-	security_token             VARCHAR(50) DEFAULT '' COMMENT 'permissions of the user',
+	bk_security_token          VARCHAR(50) DEFAULT '' COMMENT 'permissions of the user',
 	permission_name            VARCHAR(40) COMMENT 'name of the permission granted by this entry',
 	KEY admin_group_idx (admin_group_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'assign permissions to admin_groups';
@@ -257,7 +257,7 @@ CREATE TABLE admin_tbl (
 	admin_lang_variant         VARCHAR(10) DEFAULT '' COMMENT 'additional information on the language setting',
 	admin_timezone             VARCHAR(50) DEFAULT 'Europe/Berlin' COMMENT 'timezone, used for any date / timebased actions to bring in line with users local time',
 	pwdchange_date             TIMESTAMP NULL COMMENT 'last password - change to check for expired passwords',
-	admin_group_id             INT(11) DEFAULT 0 COMMENT 'assigned Admin_group',
+	bk_admin_group_id          INT(11) DEFAULT 0 COMMENT 'assigned Admin_group',
 	default_import_profile_id  INT(11) DEFAULT 0 COMMENT 'Preference setting which import profile to be used by default',
 	creation_date              TIMESTAMP NULL COMMENT 'user created',
 	timestamp                  TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'user last changed',
@@ -271,10 +271,11 @@ CREATE TABLE admin_tbl (
 	title                      VARCHAR(300) COMMENT 'Admins optional title',
 	news_date                  TIMESTAMP NULL COMMENT 'Date of last news entry shown to admin',
 	message_date               TIMESTAMP NULL COMMENT 'Date of last message entry shown to admin',
-	is_one_time_pass           INT(1) NULL DEFAULT 0 COMMENT 'Flag that indicates about a temporary password set',
+	bk_is_one_time_pass        INT(1) NULL DEFAULT 0 COMMENT 'Flag that indicates about a temporary password set',
 	phone_number               VARCHAR(100) COMMENT 'Phone number of admin in case for any queries',
 	limiting_target_id         INT(11) UNSIGNED DEFAULT NULL COMMENT 'Id of access limiting target group.',
 	last_login_date            TIMESTAMP NULL COMMENT 'Timestamp of last successful login',
+	restful                    INTEGER NOT NULL DEFAULT 0 COMMENT 'User may utilize the restful webservices',
 	PRIMARY KEY (admin_id),
 	UNIQUE KEY username (username),
 	UNIQUE KEY admin_tbl$username$uq (username),
@@ -283,7 +284,7 @@ CREATE TABLE admin_tbl (
 
 CREATE TABLE admin_permission_tbl (
 	admin_id                   INT(11) DEFAULT 0 COMMENT 'references to admin_tbl (FK, on delete cascade)',
-	security_token             VARCHAR(40) COMMENT 'name of the security token',
+	bk_security_token          VARCHAR(40) COMMENT 'name of the security token',
 	permission_name            VARCHAR(40) COMMENT 'name of the permission granted by this entry',
 	KEY admin_idx (admin_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'assign permissions to users';
@@ -291,7 +292,7 @@ ALTER TABLE admin_permission_tbl ADD CONSTRAINT adminperm$adminid$fk FOREIGN KEY
 
 CREATE TABLE company_permission_tbl (
 	company_id                 INTEGER NOT NULL COMMENT 'Client id this permission is for',
-	security_token             VARCHAR(50) NULL COMMENT 'Permission name which is granted',
+	bk_security_token          VARCHAR(50) NULL COMMENT 'Permission name which is granted',
 	permission_name            VARCHAR(40) COMMENT 'name of the permission granted by this entry',
 	description                VARCHAR(100) COMMENT 'Information why this premium permission is granted and by whom',
 	creation_date              TIMESTAMP NULL COMMENT 'Date of permission grant action'
@@ -480,9 +481,11 @@ CREATE TABLE company_tbl (
 	default_datasource_id      INT(7) COMMENT 'default datasource, would be set, if no explizit datasource_ID is given. references datasource_description_tbl',
 	priority_count             INTEGER COMMENT 'max number of mails a recipient may receive per day for mailings with priority',
 	contact_tech               VARCHAR(400) COMMENT 'Emails list separated by [,; ] for technical contact',
+	company_token              VARCHAR(64) COMMENT 'Company token',
 	PRIMARY KEY (company_id)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT '[private_data] stores tenant data and partly tenant settings';
 CREATE UNIQUE INDEX comp$name$idx ON company_tbl (shortname);
+ALTER TABLE company_tbl ADD CONSTRAINT comp$status$val CHECK (status in ('active', 'locked', 'todelete', 'deleted', 'deletion in progress', 'toreset')); 
 
 CREATE TABLE component_tbl (
 	company_id                 INT(10) UNSIGNED NOT NULL DEFAULT 0 COMMENT 'tenant - ID (company_tbl)',
@@ -552,7 +555,8 @@ CREATE TABLE customer_1_tbl (
 	latest_datasource_id       INT(11) COMMENT 'latest souce of changes on recipient data, should be filled always!',
 	lastsend_date              TIMESTAMP NULL COMMENT 'latest mailing sent to this recipient, filled / updated during mail-sending',
 	sys_tracking_veto          INTEGER(1) COMMENT 'DSGVO tracking veto',
-	cleaned_date               TIMESTAMP NULL COMMENT 'latest date, when field content of recipients (without active binding) were emptied ',
+	cleaned_date               TIMESTAMP NULL COMMENT 'latest date, when field content of recipients (without active binding) were emptied',
+	sys_encrypted_sending      INT(1) DEFAULT 1,
 	PRIMARY KEY (customer_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT '[private_data] stores recipient data, only default columns documented more might be created by EMM-users';
 CREATE INDEX cust1$email$idx ON customer_1_tbl (email);
@@ -584,7 +588,7 @@ CREATE TABLE hst_customer_1_binding_tbl (
 	exit_mailing_id            INT COMMENT 'mailingID causing state-change to bounce or opt-out',
 	mediatype                  INT COMMENT 'mediatype: 0 = Email, 1 = Fax, 2 = Print, 3 = MMS, 4 = SMS',
 	change_type                INT COMMENT '0 = deleted, 1 = updated',
-	timestamp_change           TIMESTAMP NULL COMMENT 'timestamp of update / delete that is overwriting deleting this dataset',
+	timestamp_change           TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'timestamp of update / delete that is overwriting deleting this dataset',
 	client_info                VARCHAR(150) COMMENT 'client who made this changes, e.g. console (frontend)',
 	email                      VARCHAR(100) COMMENT '[private_data] recipients email in order to trace deleted recipients',
 	referrer                   VARCHAR(4000) COMMENT 'Http referrer header value if set in subscription request',
@@ -595,8 +599,7 @@ CREATE INDEX hstcb1$mlidcidl$idx ON hst_customer_1_binding_tbl (mailinglist_id, 
 CREATE INDEX hstcb1$tsch$idx ON hst_customer_1_binding_tbl (timestamp_change);
 
 INSERT INTO company_info_tbl (company_id, cname, cvalue, description, creation_date, timestamp) VALUES
-	(1, 'recipient.binding_history.rebuild_trigger_on_startup', 'true', NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-	(0, 'webservice.default_api_call_limits', '864000/PT1D;2400/PT1M', 'Default settings for API rate limit', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+	(1, 'recipient.binding_history.rebuild_trigger_on_startup', 'true', NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 CREATE TABLE interval_track_1_tbl (
 	customer_id                INTEGER UNSIGNED NOT NULL COMMENT 'Customer reference',
@@ -604,6 +607,8 @@ CREATE TABLE interval_track_1_tbl (
 	send_date                  TIMESTAMP NOT NULL COMMENT 'Send date of this interval mailing to a specific customer'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE INDEX intervtrack$1mid$idx ON interval_track_1_tbl (mailing_id) COMMENT 'stores mailtracking data for interval-mailings';
+CREATE INDEX intervtrack$1$cid$idx ON interval_track_1_tbl (customer_id);
+CREATE INDEX intervtrack$1$sendd$idx ON interval_track_1_tbl (send_date);
 
 CREATE TABLE success_1_tbl (
 	customer_id                INTEGER UNSIGNED COMMENT 'Customer reference',
@@ -662,7 +667,7 @@ ALTER TABLE customer_field_permission_tbl ADD CONSTRAINT customer_field_permissi
 
 CREATE TABLE datasource_description_tbl (
 	datasource_id              INT(11) NOT NULL AUTO_INCREMENT COMMENT 'unique ID',
-	description                VARCHAR(1000) NOT NULL DEFAULT '' COMMENT 'data source description',
+	description                VARCHAR(400) NOT NULL DEFAULT '' COMMENT 'data source description',
 	company_id                 INT(11) UNSIGNED NOT NULL DEFAULT 0 COMMENT 'tenant - ID (company_tbl), use 0 for global sources',
 	sourcegroup_id             INT(11) UNSIGNED DEFAULT 0 COMMENT 'source-group (references source_group_tbl)',
 	timestamp                  TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'source creation / registration date',
@@ -672,6 +677,8 @@ CREATE TABLE datasource_description_tbl (
 	KEY company_id (company_id),
 	KEY sourcegroup_id (sourcegroup_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'defines a source for new recipients / recipient updates, FK to company_tbl dropped in order to allow global settings';
+CREATE INDEX datasource_desc$cidsrid$idx ON datasource_description_tbl (company_id, sourcegroup_id);
+CREATE INDEX datasource_desc$desc$idx ON datasource_description_tbl (description);
 
 CREATE TABLE date_tbl (
 	type                       INT(11) NOT NULL COMMENT 'unique ID - no sequence set',
@@ -884,7 +891,7 @@ CREATE TABLE import_profile_tbl (
 	text_delimiter             INT(10) UNSIGNED NOT NULL COMMENT 'delimiter used in import-file',
 	file_charset               INT(10) UNSIGNED NOT NULL COMMENT 'charset used in import-file',
 	date_format                INT(10) UNSIGNED NOT NULL COMMENT 'date format used in import-file',
-	import_mode                INT(10) UNSIGNED NOT NULL COMMENT '0=add, 1=add+update, 2=update only, 3=unsubscribe(profile only), 4=bounce(profile only), 5=blacklist(profile only), 6=bouncereactivate(profile only)',
+	import_mode                INT(10) UNSIGNED NOT NULL COMMENT '0=add, 1=add+update, 2=update only, 3=unsubscribe(profile only), 4=bounce(profile only), 5=blacklist(profile only), 6=bouncereactivate(profile only), 7=MARK_SUSPENDED, 8=ADD_AND_UPDATE_FORCED, 9=ADD_AND_UPDATE_EXCLUSIVE, 10=REACTIVATE_SUSPENDED, 11=SPECIAL_4ER_BLOCK, 12=BLACKLIST_EXCLUSIVE',
 	null_values_action         INT(10) UNSIGNED NOT NULL COMMENT '0 = dont_ignore_null_values, 1 = ignore_null_values',
 	key_column                 VARCHAR(255) NOT NULL COMMENT 'import keycolumn',
 	report_email               VARCHAR(255) COMMENT '[private_data] report recipient adress(es)',
@@ -902,7 +909,7 @@ CREATE TABLE import_profile_tbl (
 	zip_password_encr          VARCHAR(100) COMMENT 'Optional password for csv import zip files',
 	error_email                VARCHAR(400) COMMENT 'List of email addresses to inform on erroneous imports',
 	automapping                INTEGER COMMENT 'Use all csv columns as db column, exactly name by name',
-	mediatype                  INTEGER DEFAULT 0 COMMENT 'Mediatype code to import for (0=Email)',
+	bk_mediatype               INTEGER DEFAULT 0 COMMENT 'Mediatype code to import for (0=Email)',
 	datatype                   VARCHAR(32) DEFAULT 'CSV',
 	mailinglists_all           INT(1) DEFAULT 0 COMMENT 'Import works an all existing mailinglists',
 	PRIMARY KEY (id)
@@ -1061,7 +1068,7 @@ CREATE TABLE mailing_tbl (
 	auto_url                   VARCHAR(200) COMMENT 'basic link URL (from mailinglist-settings)',
 	mailing_type               INT(10) UNSIGNED DEFAULT 0 COMMENT '0=world-mailing, 1=event-based, 3=rule-based, 4=follow up',
 	action_id                  INT(10) UNSIGNED DEFAULT 0 COMMENT 'legacy PROJ-711',
-	deleted                    INT(1) NOT NULL DEFAULT 0 COMMENT '1=yes, not shown in EMM, 0=no',
+	deleted                    INT(1) NOT NULL DEFAULT 0 COMMENT '1=yes, not shown in EMM, 0=no, 2=mailing data deleted, not shown in EMM',
 	campaign_id                INT(11) UNSIGNED DEFAULT 0 COMMENT 'Archive this mailing belongs to',
 	test_lock                  INT(11) UNSIGNED DEFAULT 0 COMMENT 'locked during test-sending in order to avoid cascade-effects',
 	work_status                VARCHAR(80) COMMENT 'e.g.: mailing.status.scheduled, mailing.status.new, mailing.status.sent (not considered by backend)',
@@ -1084,6 +1091,9 @@ CREATE TABLE mailing_tbl (
 	locking_expire_timestamp   TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'if set: the timestamp when a locking is not valid anymore',
 	freq_counter_disabled      INTEGER(1) COMMENT 'Disable frequency counting, if it is enabled for the assigned mailinglist',
 	mailerset                  VARCHAR(100) COMMENT 'per mailing specific mailerset, if differs from default mailerset of company',
+	is_grid                    INTEGER DEFAULT 0 COMMENT '0 = classic mailing, 1 = grid mailing',
+	clearance_email            VARCHAR(500) COMMENT 'email address(es) to be informed if a rule based mailing exceeds clearance_threshold',
+	clearance_threshold        INT(11) COMMENT 'threshold, when rulebased mailing exceeds this value an email is sent to clearance_email and the generated mails are not sent',
 	PRIMARY KEY (mailing_id),
 	KEY mailingtbl$mlid$idx (mailinglist_id),
 	KEY mailing_tbl$mid_mlid$idx (mailing_id, mailinglist_id)
@@ -1160,7 +1170,7 @@ CREATE TABLE onepixellog_1_tbl (
 	customer_id                INTEGER UNSIGNED NOT NULL COMMENT 'references recipient (customer_xxx_tbl.customer_id)',
 	mailing_id                 INT(10) NOT NULL COMMENT 'references mailing (mailing_tbl.mailing_id)',
 	company_id                 INT(10) NOT NULL COMMENT 'tenant - ID (company_tbl)',
-	ip_adr                     VARCHAR(50) NOT NULL COMMENT 'IP where the opening came from',
+	ip_adr                     VARCHAR(50) COMMENT 'IP where the opening came from',
 	timestamp                  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '(last) open timestamp',
 	open_count                 INT(10) COMMENT 'sum of all openings (per mailing, per recipient)',
 	mobile_count               INT(11) COMMENT 'sum of all mobile openings (per mailing, per recipient)',
@@ -1256,7 +1266,7 @@ CREATE TABLE rdirlog_1_tbl (
 	url_id                     INT(10) COMMENT 'references url (rdir_url_tbl.url_id)',
 	company_id                 INT(10) COMMENT 'tenant - ID (company_tbl)',
 	timestamp                  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'click timestamp',
-	ip_adr                     VARCHAR(50) NOT NULL COMMENT 'IP where the click came from',
+	ip_adr                     VARCHAR(50) COMMENT 'IP where the click came from',
 	mailing_id                 INT(10) COMMENT'references mailing (mailing_tbl.mailing_id)',
 	device_id                  INT(11) COMMENT 'references device (device_tbl.device_id)',
 	device_class_id            INT(2) COMMENT '1=DESKTOP, 2=MOBILE, 3=TABLET, 4=SMARTTV',
@@ -1269,7 +1279,7 @@ CREATE INDEX rlog1$tmst$idx ON rdirlog_1_tbl (timestamp);
 CREATE TABLE rdirlog_1_val_num_tbl (
 	company_id                 INT(11) NOT NULL COMMENT 'tenant - ID (company_tbl)',
 	customer_id                INTEGER UNSIGNED COMMENT 'references recipient (customer_xxx_tbl.customer_id)',
-	ip_adr                     VARCHAR(15) COMMENT 'IP where the trackingdata came from',
+	ip_adr                     VARCHAR(50) COMMENT 'IP where the trackingdata came from',
 	mailing_id                 INT(11) COMMENT 'references mailing (mailing_tbl.mailing_id)',
 	session_id                 INT(11) COMMENT 'cookie - sessionID',
 	`timestamp` timestamp      DEFAULT CURRENT_TIMESTAMP COMMENT 'entry timestamp',
@@ -1285,7 +1295,7 @@ CREATE TABLE rdirlog_userform_1_tbl (
 	url_id                     INT(11) COMMENT 'references url (rdir_url_tbl.url_id)',
 	company_id                 INT(11) COMMENT 'tenant - ID (company_tbl)',
 	timestamp                  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'entry last change',
-	ip_adr                     VARCHAR(15) COMMENT 'entry IP-address',
+	ip_adr                     VARCHAR(50) COMMENT 'entry IP-address',
 	mailing_id                 INT(11) COMMENT 'references mailing (mailing_tbl.mailing_id)',
 	device_id                  INT(11) COMMENT 'references device (device_tbl.device_id)',
 	device_class_id            INT(2) COMMENT '1=DESKTOP, 2=MOBILE, 3=TABLET, 4=SMARTTV',
@@ -1295,8 +1305,14 @@ CREATE TABLE rdirlog_userform_1_tbl (
 
 CREATE TABLE rulebased_sent_tbl (
 	mailing_id                 INT(11) NOT NULL COMMENT 'Mailing_ID (references mailing_tbl)',
-	lastsent                   TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'last sending timestamp'
+	lastsent                   TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'last sending timestamp',
+	creation_date              TIMESTAMP NULL COMMENT 'entry creation date',
+	change_date                TIMESTAMP NULL COMMENT 'entry last change',
+	clearance                  INT(1) NOT NULL DEFAULT 1 COMMENT 'if set to a value larger than 0, sending of this mailing is allowed, otherwise sending is blocked',
+	clearance_change           TIMESTAMP NULL COMMENT 'last change of clearance flag',
+	clearance_origin           VARCHAR(128) COMMENT 'host which made the last change on clearance'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'stores last sending time for any rule based mailing';
+ALTER TABLE rulebased_sent_tbl ADD CONSTRAINT rulebase$mid$pk PRIMARY KEY (mailing_id);
 
 CREATE TABLE softbounce_email_tbl (
 	email                      VARCHAR(200) NOT NULL DEFAULT '' COMMENT '[secret_data] bounced address',
@@ -1579,7 +1595,7 @@ CREATE TABLE csv_imexport_description_tbl (
 CREATE TABLE rdirlog_val_num_dupl_tbl (
 	company_id                 INT(10) COMMENT 'Referenced client',
 	customer_id                INTEGER UNSIGNED COMMENT 'Referenced customer',
-	ip_adr                     VARCHAR(15) COMMENT 'IP of customer when creating this data',
+	ip_adr                     VARCHAR(50) COMMENT 'IP of customer when creating this data',
 	mailing_id                 INT(10) COMMENT 'Referenced mailing',
 	session_id                 INT(10) COMMENT 'Seesion id of customer when creation this data',
 	timestamp                  TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Creation date for this data entry',
@@ -2009,7 +2025,7 @@ ALTER TABLE webservice_user_tbl ADD CONSTRAINT websuser$dds$fk FOREIGN KEY (defa
 CREATE TABLE recipients_report_tbl (
 	recipients_report_id       INT(11) UNSIGNED AUTO_INCREMENT COMMENT 'Reference key',
 	report_date                TIMESTAMP NOT NULL COMMENT 'Date of import or export',
-	filename                   VARCHAR(100) NOT NULL COMMENT 'Imported filename',
+	filename                   VARCHAR(500) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Imported filename',
 	datasource_id              INTEGER COMMENT 'Used datasource id for import',
 	admin_id                   INTEGER NOT NULL COMMENT 'admin which executed the import or export',
 	company_id                 INTEGER NOT NULL COMMENT 'Referenced client',
@@ -2068,11 +2084,6 @@ CREATE TABLE birtreport_parameter_tbl (
 	CONSTRAINT birtreport_parameter_tbl_ibfk_1 FOREIGN KEY (report_id) REFERENCES birtreport_tbl (report_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'Stores additional configuration for birt reports of birtreport_tbl';
 CREATE INDEX birtrptprm$rid$idx ON birtreport_parameter_tbl (report_id);
-
-CREATE TABLE birt_report_tmp_tbl_seq (
-	value                      INT(11) NOT NULL DEFAULT 1
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-INSERT INTO birt_report_tmp_tbl_seq (value) VALUES (1);
 
 CREATE TABLE mimetype_whitelist_tbl (
 	mimetype                   VARCHAR(100) NOT NULL COMMENT 'Mimetype pattern (can include asterisk)',
@@ -2358,7 +2369,6 @@ INSERT INTO permission_category_tbl (category_name, sort_order) VALUES ('Actions
 INSERT INTO permission_category_tbl (category_name, sort_order) VALUES ('Administration', 11);
 INSERT INTO permission_category_tbl (category_name, sort_order) VALUES ('System', 13);
 
-
 CREATE TABLE permission_subcategory_tbl (
 	category_name              VARCHAR(32) COMMENT 'Technical name of the parent category of this subcategory',
 	subcategory_name           VARCHAR(32) COMMENT 'Technical name of this subcategory',
@@ -2426,20 +2436,95 @@ CREATE TABLE webhook_url_tbl (
 	CONSTRAINT webhook_url$cid$fk FOREIGN KEY (company_ref) REFERENCES company_tbl (company_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT 'Configured webhook URLs';
 
-INSERT INTO permission_subcategory_tbl (category_name, subcategory_name, sort_order) VALUES ('Mailing', 'Settings', 1);
-INSERT INTO permission_subcategory_tbl (category_name, subcategory_name, sort_order) VALUES ('Mailing', 'mailing.searchContent', 2);
-INSERT INTO permission_subcategory_tbl (category_name, subcategory_name, sort_order) VALUES ('Mailing', 'Delivery', 3);
-INSERT INTO permission_subcategory_tbl (category_name, subcategory_name, sort_order) VALUES ('Mailing', 'settings.FormsOfAddress', 4);
-INSERT INTO permission_subcategory_tbl (category_name, subcategory_name, sort_order) VALUES ('Mailing', 'Campaigns', 5);
-INSERT INTO permission_subcategory_tbl (category_name, subcategory_name, sort_order) VALUES ('Mailing', 'Template', 6);
+CREATE TABLE actop_unsubscribe_mlist_tbl (
+    action_operation_id        INTEGER NOT NULL COMMENT 'references actop_tbl.action_operation_id',
+    mailinglist_id             INT(10) UNSIGNED NOT NULL COMMENT 'references mailinglist_tbl.mailinglist_id',
+    PRIMARY KEY (action_operation_id, mailinglist_id),
+    FOREIGN KEY actop_unsubscribe_mlist_tbl_mlid_fk (mailinglist_id) REFERENCES mailinglist_tbl (mailinglist_id) ON DELETE CASCADE
+);
 
-INSERT INTO permission_subcategory_tbl (category_name, subcategory_name, sort_order) VALUES ('Subscriber-Editor', 'default.extensions', 1);
-INSERT INTO permission_subcategory_tbl (category_name, subcategory_name, sort_order) VALUES ('Subscriber-Editor', 'recipient.fields', 2);
-INSERT INTO permission_subcategory_tbl (category_name, subcategory_name, sort_order) VALUES ('Subscriber-Editor', 'Mailinglist', 3);
-INSERT INTO permission_subcategory_tbl (category_name, subcategory_name, sort_order) VALUES ('Subscriber-Editor', 'recipient.Blacklist', 4);
+CREATE TABLE bounce_rule_tbl (
+	company_id		           INT(11) UNSIGNED NOT NULL COMMENT 'reference to company_tbl.company_id, if 0 and rid=0, then this is a global setting',
+	rid				           INT(11) UNSIGNED NOT NULL COMMENT 'reference to mailloop_tbl.rid, if 0 and company_id=0, then this is a global setting',
+	definition			       LONGTEXT NOT NULL COMMENT 'the rule definition as a json object',
+	creation_date			   TIMESTAMP COMMENT 'timestamp of creation',
+	change_date			       TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'timestamp of last change',
+	PRIMARY KEY (company_id, rid)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'Rule set for delayed bounces, replaces ~/lib/bav.rule';
 
-INSERT INTO permission_subcategory_tbl (category_name, subcategory_name, sort_order) VALUES ('ImportExport', 'import.mode', 1);
-INSERT INTO permission_subcategory_tbl (category_name, subcategory_name, sort_order) VALUES ('ImportExport', 'import.settings', 2);
+CREATE TABLE bounce_config_tbl (
+	company_id			       INT(11) UNSIGNED NOT NULL COMMENT 'reference to company_tbl.company_id, if 0 and rid=0, then this is a global setting',
+	rid				           INT(11) UNSIGNED NOT NULL COMMENT 'reference to mailloop_tbl.rid, if 0 and company_id=0, then this is a global setting',
+	name				       VARCHAR(100) NOT NULL COMMENT 'the name of the configuration entry',
+	value				       LONGTEXT NOT NULL COMMENT 'the value as a json object',
+	description			       VARCHAR(500) COMMENT 'optional description for this value',
+	creation_date		       TIMESTAMP COMMENT 'timestamp of creation',
+	change_date			       TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'timestamp of last change',
+	PRIMARY KEY (company_id, rid, name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'Configuration for bouncemanagement';
+
+CREATE TABLE bounce_ar_lastsent_tbl (
+	rid				           INT(11) UNSIGNED NOT NULL COMMENT 'reference to mailloop_tbl.rid',
+	customer_id			       INTEGER UNSIGNED NOT NULL COMMENT 'the customer_id we keep track last sent autoresponder mail',
+	lastsent			       TIMESTAMP NOT NULL COMMENT 'the timestamp of the last sent autoresponder mail',
+	PRIMARY KEY (rid, customer_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'Keep track of last sent timestamp when an autoresponder mail had been sent to a customer';
+
+CREATE TABLE actop_unsubscribe_customer_tbl(
+	action_operation_id        INT(11) NOT NULL COMMENT 'references actop_tbl.action_operation_id',
+	all_mailinglists_selected  TINYINT(1) NOT NULL COMMENT '1 = unsubscribe from all mailinglists, 0 = user can select mailinglists to unsubscribe',
+	PRIMARY KEY (action_operation_id),
+	CONSTRAINT actop_unsubscribe_customer_actopid_fk FOREIGN KEY (action_operation_id) REFERENCES actop_tbl(action_operation_id) ON DELETE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8 COLLATE = utf8_unicode_ci;
+ALTER TABLE actop_unsubscribe_mlist_tbl ADD FOREIGN KEY actop_unsubscribe_mlist_tbl_actopid_fk (action_operation_id) REFERENCES actop_unsubscribe_customer_tbl (action_operation_id) ON DELETE CASCADE;
+
+CREATE TABLE restful_quota_tbl (
+	admin_id                   INTEGER(11) NOT NULL COMMENT 'Reference id to admin_tbl',
+	quota                      VARCHAR(100) NOT NULL COMMENT 'Quota specificaions'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'Stores admin-specific Restful quotas';
+
+CREATE TABLE restful_api_costs_tbl (
+	company_id                 INT(11) UNSIGNED NOT NULL COMMENT 'Reference to company table',
+	name                       VARCHAR(100) NOT NULL COMMENT 'Name of Restful service',
+	costs                      INTEGER(4) NOT NULL COMMENT 'Costs for invocation'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'Stores invocation costs for Restful API';
+
+CREATE TABLE export_column_mapping_tbl (
+	id                         INT(11) NOT NULL AUTO_INCREMENT COMMENT 'unique ID',
+	export_predef_id           INT(11) NOT NULL COMMENT 'references export_predef_tbl',
+	db_column                  VARCHAR(255) COMMENT 'matching column in database',
+	file_column                VARCHAR(255) COMMENT 'matching column in file',
+	default_value              VARCHAR(255) DEFAULT '' COMMENT 'default (for this column and this export)',
+	encrypted                  INT(11) DEFAULT 0 COMMENT '1 = yes',
+	PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'settings saving a mapping on database-columns to file-columns in an export-profile';
+ALTER TABLE export_column_mapping_tbl ADD CONSTRAINT exportcolmap$exppredef$fk FOREIGN KEY (export_predef_id) REFERENCES export_predef_tbl (export_predef_id);
+ALTER TABLE prevent_table_drop ADD CONSTRAINT lock$export_col_map_tbl FOREIGN KEY (signed_id) REFERENCES export_column_mapping_tbl (id);
+
+INSERT INTO permission_subcategory_tbl (category_name, subcategory_name, sort_order, creation_date) VALUES ('Mailing', 'Settings', 1, CURRENT_TIMESTAMP);
+INSERT INTO permission_subcategory_tbl (category_name, subcategory_name, sort_order, creation_date) VALUES ('Mailing', 'mailing.searchContent', 2, CURRENT_TIMESTAMP);
+INSERT INTO permission_subcategory_tbl (category_name, subcategory_name, sort_order, creation_date) VALUES ('Mailing', 'Delivery', 3, CURRENT_TIMESTAMP);
+INSERT INTO permission_subcategory_tbl (category_name, subcategory_name, sort_order, creation_date) VALUES ('Mailing', 'settings.FormsOfAddress', 4, CURRENT_TIMESTAMP);
+INSERT INTO permission_subcategory_tbl (category_name, subcategory_name, sort_order, creation_date) VALUES ('Mailing', 'Campaigns', 5, CURRENT_TIMESTAMP);
+INSERT INTO permission_subcategory_tbl (category_name, subcategory_name, sort_order, creation_date) VALUES ('Mailing', 'Template', 6, CURRENT_TIMESTAMP);
+
+INSERT INTO permission_subcategory_tbl (category_name, subcategory_name, sort_order, creation_date) VALUES ('Subscriber-Editor', 'default.extensions', 1, CURRENT_TIMESTAMP);
+INSERT INTO permission_subcategory_tbl (category_name, subcategory_name, sort_order, creation_date) VALUES ('Subscriber-Editor', 'recipient.fields', 2, CURRENT_TIMESTAMP);
+INSERT INTO permission_subcategory_tbl (category_name, subcategory_name, sort_order, creation_date) VALUES ('Subscriber-Editor', 'Mailinglist', 3, CURRENT_TIMESTAMP);
+INSERT INTO permission_subcategory_tbl (category_name, subcategory_name, sort_order, creation_date) VALUES ('Subscriber-Editor', 'recipient.Blacklist', 4, CURRENT_TIMESTAMP);
+
+INSERT INTO permission_subcategory_tbl (category_name, subcategory_name, sort_order, creation_date) VALUES ('ImportExport', 'import.mode', 1, CURRENT_TIMESTAMP);
+INSERT INTO permission_subcategory_tbl (category_name, subcategory_name, sort_order, creation_date) VALUES ('ImportExport', 'import.settings', 2, CURRENT_TIMESTAMP);
+
+INSERT INTO permission_subcategory_tbl (category_name, subcategory_name, sort_order, creation_date) VALUES ('Statistics', 'General', 1, CURRENT_TIMESTAMP);
+INSERT INTO permission_subcategory_tbl (category_name, subcategory_name, sort_order, creation_date) VALUES ('Statistics', 'Mailing', 2, CURRENT_TIMESTAMP);
+INSERT INTO permission_subcategory_tbl (category_name, subcategory_name, sort_order, creation_date) VALUES ('Statistics', 'Reports', 3, CURRENT_TIMESTAMP);
+
+INSERT INTO permission_subcategory_tbl (category_name, subcategory_name, sort_order, creation_date) VALUES ('Administration', 'settings.Admin', 1, CURRENT_TIMESTAMP);
+INSERT INTO permission_subcategory_tbl (category_name, subcategory_name, sort_order, creation_date) VALUES ('Administration', 'settings.Usergroups', 2, CURRENT_TIMESTAMP);
+INSERT INTO permission_subcategory_tbl (category_name, subcategory_name, sort_order, creation_date) VALUES ('Administration', 'Company', 3, CURRENT_TIMESTAMP);
+INSERT INTO permission_subcategory_tbl (category_name, subcategory_name, sort_order, creation_date) VALUES ('Administration', 'settings.Mailloop', 4, CURRENT_TIMESTAMP);
+INSERT INTO permission_subcategory_tbl (category_name, subcategory_name, sort_order, creation_date) VALUES ('Administration', 'ContentSource', 5, CURRENT_TIMESTAMP);
 
 ALTER TABLE prevent_table_drop ADD CONSTRAINT lock$admin_group_tbl FOREIGN KEY (signed_id) REFERENCES admin_group_tbl (admin_group_id);
 ALTER TABLE prevent_table_drop ADD CONSTRAINT lock$admin_group_perm_tbl FOREIGN KEY (signed_id) REFERENCES admin_group_permission_tbl (admin_group_id);
@@ -2530,7 +2615,6 @@ INSERT INTO config_tbl (class, name, value, creation_date, change_date, descript
 INSERT INTO config_tbl (class, name, value, creation_date, change_date, description) VALUES ('logon', 'iframe.url.en', 'https://www.agnitas.de/en/openemm-login/', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'initial setting fulldb');
 INSERT INTO config_tbl (class, name, value, creation_date, change_date, description) VALUES ('logon', 'iframe.url.de', 'https://www.agnitas.de/openemm-login/', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'initial setting fulldb');
 INSERT INTO config_tbl (class, name, value, creation_date, change_date, description) VALUES ('birt', 'url', '[to be defined]', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'initial setting fulldb');
-INSERT INTO config_tbl (class, name, value, creation_date, change_date, description) VALUES ('birt', 'drilldownurl', '[to be defined]', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'initial setting fulldb');
 INSERT INTO config_tbl (class, name, value, creation_date, change_date, description) VALUES ('birt', 'privatekey', '[to be defined]', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'initial setting fulldb');
 INSERT INTO config_tbl (class, name, value, creation_date, change_date, description) VALUES ('birt', 'publickey', '[to be defined]', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'initial setting fulldb');
 INSERT INTO config_tbl (class, name, value, creation_date, change_date, description) VALUES ('webservices', 'url', '[to be defined]', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'initial setting fulldb');
@@ -2561,25 +2645,26 @@ INSERT INTO config_tbl (class, name, value, creation_date, change_date, descript
 INSERT INTO config_tbl (class, name, value, creation_date, change_date, description) VALUES ('upselling', 'moreInfo.url.de', 'https://www.agnitas.de/e-marketing-manager/funktionsumfang/unterschiede-emminhouse-openemm/', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'initial setting fulldb');
 INSERT INTO config_tbl (class, name, value, creation_date, change_date, description) VALUES ('upselling', 'moreInfo.url.en', 'https://www.agnitas.de/en/e-marketing_manager/functions/differences-emminhouse-openemm/', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'initial setting fulldb');
 
-INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('company.force.sending', 'Administration', 'Account', 3, NULL);
-INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('admin.sendWelcome', 'Administration', NULL, 6, NULL);
-INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('actions.change', 'Administration', 'Account', 13, NULL);
-INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('actions.delete', 'Administration', 'Account', 14, NULL);
-INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('actions.show', 'Administration', 'Account', 15, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('actions.show', 'Administration', 'Account', 1, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('actions.change', 'Administration', 'Account', 2, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('actions.delete', 'Administration', 'Account', 3, NULL);
 
-INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('admin.change', 'Administration', NULL, 1, NULL);
-INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('admin.delete', 'Administration', NULL, 2, NULL);
-INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('adminlog.show', 'Administration', NULL, 3, NULL);
-INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('admin.new', 'Administration', NULL, 4, NULL);
-INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('admin.setgroup', 'Administration', NULL, 6, NULL);
-INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('admin.setpermission', 'Administration', NULL, 7, NULL);
-INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('admin.show', 'Administration', NULL, 8, NULL);
-INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('mailloop.change', 'Administration', NULL, 12, NULL);
-INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('mailloop.delete', 'Administration', NULL, 13, NULL);
-INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('mailloop.show', 'Administration', NULL, 14, NULL);
-INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('role.change', 'Administration', NULL, 15, NULL);
-INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('role.delete', 'Administration', NULL, 17, NULL);
-INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('role.show', 'Administration', NULL, 18, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('mailloop.show', 'Administration', 'settings.Mailloop', 1, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('mailloop.change', 'Administration', 'settings.Mailloop', 2, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('mailloop.delete', 'Administration', 'settings.Mailloop', 3, NULL);
+
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('admin.new', 'Administration', 'settings.Admin', 1, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('admin.show', 'Administration', 'settings.Admin', 2, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('admin.change', 'Administration', 'settings.Admin', 3, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('admin.delete', 'Administration', 'settings.Admin', 4, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('admin.setgroup', 'Administration', 'settings.Admin', 5, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('admin.setpermission', 'Administration', 'settings.Admin', 6, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('admin.sendWelcome', 'Administration', 'settings.Admin', 7, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('adminlog.show', 'Administration', 'settings.Admin', 8, NULL);
+
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('role.show', 'Administration', 'settings.Usergroups', 1, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('role.change', 'Administration', 'settings.Usergroups', 2, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('role.delete', 'Administration', 'settings.Usergroups', 3, NULL);
 
 INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('campaign.show', 'Mailing', 'Campaigns', 1, NULL);
 INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('campaign.change', 'Mailing', 'Campaigns', 2, NULL);
@@ -2602,9 +2687,14 @@ INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order,
 INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) values ('workflow.change', 'General', NULL, 12, NULL);
 
 INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('wizard.import', 'ImportExport', NULL, 1, NULL);
-INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('wizard.importclassic', 'ImportExport', NULL, 2, NULL);
-INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('recipient.change.bulk', 'ImportExport', NULL, 3, NULL);
-INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('wizard.export', 'ImportExport', NULL, 4, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) values ('import.change', 'ImportExport', NULL, 2, NULL); 
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) values ('import.delete', 'ImportExport', NULL, 3, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('wizard.importclassic', 'ImportExport', NULL, 4, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('recipient.change.bulk', 'ImportExport', NULL, 5, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('export.ownColumns', 'ImportExport', NULL, 6, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('wizard.export', 'ImportExport', NULL, 6, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) values ('export.change', 'ImportExport', NULL, 7, NULL); 
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) values ('export.delete', 'ImportExport', NULL, 8, NULL);
 
 INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('import.mode.add', 'ImportExport', 'import.mode', 1, NULL);
 INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('import.mode.add_update', 'ImportExport', 'import.mode', 2, NULL);
@@ -2655,14 +2745,16 @@ INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order,
 INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('mailing.import', 'Mailing', NULL, 4, NULL);
 INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('mailing.export', 'Mailing', NULL, 5, NULL);
 
-INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('statistic.load.specific', 'Statistics', NULL, 6, NULL);
-INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('statistic.softbounces.show', 'Statistics', NULL, 7, NULL);
-INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('stats.domains', 'Statistics', NULL, 9, NULL);
-INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('stats.ecs', 'Statistics', NULL, 10, NULL);
-INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('stats.mailing', 'Statistics', NULL, 11, NULL);
-INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('stats.month', 'Statistics', NULL, 12, NULL);
 INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('stats.show', 'Statistics', NULL, 15, NULL);
-INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('stats.userform', 'Statistics', NULL, 17, NULL);
+
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('stats.mailing', 'Statistics', 'General', 1, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('stats.domains', 'Statistics', 'General', 3, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('stats.month', 'Statistics', 'General', 4, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('stats.userform', 'Statistics', 'General', 6, NULL);
+
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('stats.ecs', 'Statistics', 'Mailing', 1, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('statistic.softbounces.show', 'Statistics', 'Mailing', 5, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('statistic.load.specific', 'Statistics', 'Mailing', 6, NULL);
 
 INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('recipient.show', 'Subscriber-Editor', NULL, 1, NULL);
 INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('recipient.change', 'Subscriber-Editor', NULL, 2, NULL);
@@ -2677,24 +2769,26 @@ INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order,
 
 INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('recipient.history', 'Subscriber-Editor', 'default.extensions', 1, NULL);
 
-INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('company.authentication', 'System', NULL, 3, NULL);
-INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('forms.creator', 'System', NULL, 6, NULL);
-INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('mailing.content.change.always', 'System', NULL, 7, NULL);
-INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('mailing.expire', 'System', NULL, 8, NULL);
-INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('master.companies.show', 'System', NULL, 9, NULL);
-INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('actions.rollback', 'System', NULL, 10, NULL);
-INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('masterlog.show', 'System', NULL, 10, NULL);
-INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('master.show', 'System', NULL, 11, NULL);
-INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('restful.allowed', 'System', NULL, 17, NULL);
-INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('server.status', 'System', NULL, 18, NULL);
-INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('user.xpress', 'System', NULL, 24, NULL);
-INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('webservice.user.change', 'System', NULL, 25, NULL);
-INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('webservice.user.create', 'System', NULL, 26, NULL);
-INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('webservice.user.show', 'System', NULL, 27, NULL);
-INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('temp.alpha', 'System', NULL, 28, NULL);
-INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('temp.beta', 'System', NULL, 29, NULL);
-INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('temp.gamma', 'System', NULL, 30, NULL);
 INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('editor.mediapool.images.load', 'System', NULL, 36, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('datasource_id.overview.js_table', 'System', NULL, 49, NULL);
+
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('master.companies.show', 'System', 'Company', 1, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('company.authentication', 'System', 'Company', 2, NULL);
+
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('forms.creator', 'System', 'settings.features', 1, NULL);
+
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('master.show', 'System', 'settings.menu.master', 1, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('user.xpress', 'System', 'settings.menu.master', 6, NULL);
+
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('server.status', 'System', 'others', 2, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('masterlog.show', 'System', 'others', 3, NULL);
+
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('webservice.user.show', 'System', 'settings.webservice', 1, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('webservice.user.create', 'System', 'settings.webservice', 2, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('webservice.user.change', 'System', 'settings.webservice', 3, NULL);
+
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('mailing.content.change.always', 'System', 'Mailing', 1, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('mailing.expire', 'System', 'Mailing', 2, NULL);
 
 INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('targets.show', 'Target-Groups', NULL, 1, NULL);
 INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('targets.change', 'Target-Groups', NULL, 2, NULL);
@@ -2705,6 +2799,15 @@ INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order,
 INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('template.show', 'Mailing', 'Template', 1, NULL);
 INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('template.change', 'Mailing', 'Template', 2, NULL);
 INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('template.delete', 'Mailing', 'Template', 3, NULL);
+
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('inbox.migration', 'System', 'Migration', 48, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('stats.ecs.migration', 'System', 'Migration', 50, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('actions.rollback', 'System', 'Migration', 10, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('workflow.jsplumb2.rollback', 'System', 'Migration', 49, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('datasource_id.overview.js_table.rollback', 'System', 'Migration', 49, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('recipient.contact.history.rollback', 'System', 'Migration', 50, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('recipient.history.tracking.rollback', 'System', 'Migration', 50, NULL);
+INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('stats.ecs.rollback', 'System', 'Migration', 50, NULL);
 
 -- Permissions of category "attachment"
 INSERT INTO webservice_permissions_tbl (endpoint, category) VALUES ('GetAttachment', 'attachment');
@@ -2813,7 +2916,9 @@ INSERT INTO sourcegroup_tbl (sourcegroup_id, sourcegroup_type, description, time
 	(3, 'O', 'Other', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 	(4, 'FO', 'Autoinsert Forms', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 	(5, 'DD', 'default datasource for companies', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-	(6, 'WS', 'Webservices 2.0 - Spring', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+	(6, 'WS', 'Webservices 2.0 - Spring', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+	(7, 'V', 'Velocity', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+	(8, 'RS', 'RestfulService', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 INSERT INTO company_tbl (company_id, rdir_domain, shortname, description, status, mailtracking, creator_company_id, mailerset, customer_type, pricing_id, send_immediately, offpeak, notification_email, mailloop_domain, stat_admin, creation_date, timestamp, sector, business_field, secret_key, mails_per_day, uid_version, max_recipients, auto_mailing_report_active, salutation_extended, enabled_uid_version, export_notify)
 	VALUES (1, 'http://[to be defined]', 'EMM-Master', 'EMM-Master', 'active', 1, 1, 0, 'UNKNOWN', NULL, 0, 0, NULL, '[to be defined]', 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL, NULL, 'SecretKeyToBeDefined', NULL, NULL, 10000, 0, 0, 3, 0);
@@ -2823,7 +2928,7 @@ UPDATE admin_group_tbl SET admin_group_id = 0 WHERE shortname = 'No permissions'
 ALTER TABLE admin_group_tbl AUTO_INCREMENT = 1;
 INSERT INTO admin_group_tbl (admin_group_id, company_id, shortname, description) VALUES (1, 1, 'Administrator', 'Administrator');
 
-INSERT INTO admin_tbl (admin_id, username, company_id, admin_group_id, admin_lang, admin_country, fullname, firstname, email, company_name) VALUES (1, 'emm-master', 1, 1, 'en', 'US', 'Master', 'EMM', '[to be defined]', 'EMM Master');
+INSERT INTO admin_tbl (admin_id, username, company_id, admin_lang, admin_country, fullname, firstname, email, company_name) VALUES (1, 'emm-master', 1, 'en', 'US', 'Master', 'EMM', '[to be defined]', 'EMM Master');
 INSERT INTO admin_to_group_tbl (admin_id, admin_group_id) VALUES ((SELECT admin_id FROM admin_tbl WHERE username = 'emm-master'), 1);
 
 INSERT INTO datasource_description_tbl (description, company_id, sourcegroup_id)
@@ -2832,6 +2937,12 @@ UPDATE company_tbl SET default_datasource_id = (SELECT datasource_id FROM dataso
 
 INSERT INTO datasource_description_tbl (description, company_id, sourcegroup_id)
 	VALUES ('Bulk recipient update', 0, (SELECT sourcegroup_id FROM sourcegroup_tbl WHERE sourcegroup_type = 'O'));
+
+INSERT INTO datasource_description_tbl (description, company_id, sourcegroup_id)
+	VALUES ('Velocity', 0, (SELECT sourcegroup_id FROM sourcegroup_tbl WHERE sourcegroup_type = 'V'));
+
+INSERT INTO datasource_description_tbl (description, company_id, sourcegroup_id)
+	VALUES ('RestfulService', 0, (SELECT sourcegroup_id FROM sourcegroup_tbl WHERE sourcegroup_type = 'RS'));
 
 INSERT INTO company_info_tbl (company_id, cname, cvalue, description, creation_date, timestamp) VALUES
 	(0, 'keep-xml-files', 'true', 'Admin-/Testmail XML Files nicht loeschen', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
@@ -2853,7 +2964,7 @@ INSERT INTO actop_get_archive_mailing_tbl (action_operation_id, expire_day, expi
 	VALUES ((SELECT action_operation_id FROM actop_tbl WHERE company_id = 1 AND action_id = (SELECT action_id FROM rdir_action_tbl WHERE action_type = 1 AND shortname = 'Web-View_SAMPLE' AND company_id = 1)), 0, 0, 0);
 
 INSERT INTO userform_tbl (company_id, formname, description, startaction_id, endaction_id, success_template, error_template,  creation_date, success_url, error_url, error_use_url, success_use_url)
-	VALUES (1, 'webview_SAMPLE', 'Shows email in browser', (SELECT action_id FROM rdir_action_tbl WHERE action_type = 1 AND shortname = 'Web-View_SAMPLE' AND company_id = 1), 0, '$archiveHtml', 'An error occured - we cannot show you the email in the browser.', NULL, NULL, NULL, (SELECT action_id FROM rdir_action_tbl WHERE company_id = 1 AND shortname = 'GetArchiveMailing'), 0);
+	VALUES (1, 'fullview', 'Shows email in browser', (SELECT action_id FROM rdir_action_tbl WHERE action_type = 1 AND shortname = 'Web-View_SAMPLE' AND company_id = 1), 0, '$archiveHtml', 'An error occured - we cannot show you the email in the browser.', NULL, NULL, NULL, (SELECT action_id FROM rdir_action_tbl WHERE company_id = 1 AND shortname = 'GetArchiveMailing'), 0);
 
 INSERT INTO emm_layout_base_tbl (layout_base_id, base_url, creation_date, change_date, company_id, shortname) VALUES (1, 'assets/core', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, 'default');
 UPDATE emm_layout_base_tbl SET layout_base_id = 0 WHERE layout_base_id = 1;
@@ -3253,9 +3364,7 @@ INSERT INTO tag_tbl (tagname, selectvalue, type, company_id, description) VALUES
 INSERT INTO tag_tbl (tagname, selectvalue, type, company_id, description, deprecated) VALUES
 	('agnALTER', 'TIMESTAMPDIFF(YEAR, cust.{column}, CURRENT_TIMESTAMP)', 'COMPLEX', 0, 'Returns years from column value until now', 1),
 	('agnALTERCALC', 'TIMESTAMPDIFF(YEAR, cust.{column}, CURRENT_TIMESTAMP) {op} {value}', 'COMPLEX', 0, 'like agnALTER with operator and value', 1),
-	('agnAUTOURL', 'cust.mailtype', 'COMPLEX', 0, '', 1),
 	('agnCALC', 'cust.{column} {op} {value}', 'COMPLEX', 0, 'calculate with NUM-Field', 1),
-	('agnCALC2', '{value} {op} cust.{column}', 'COMPLEX', 0, 'Calculate with NUM-Fields', 1),
 	('agnCUSTOMDATE', 'DATE_FORMAT(DATE_ADD(CURRENT_TIMESTAMP, INTERVAL {offset} DAY), ''{format}'')', 'COMPLEX', 0, 'Adds an offset in days to the sysdate value and returns the formatted date', 1),
 	('agnCUSTOMDATE_DE', 'DATE_FORMAT(DATE_ADD(CURRENT_TIMESTAMP, INTERVAL {offset} DAY), ''{format}'')', 'COMPLEX', 0, 'Adds an offset in days to the sysdate value and returns the formatted date in german lang', 1),
 	('agnCUSTOMERID', 'cust.customer_id', 'SIMPLE', 0, '', 1),
@@ -3263,12 +3372,8 @@ INSERT INTO tag_tbl (tagname, selectvalue, type, company_id, description, deprec
 	('agnDATEDB_DE', 'rtrim(ltrim(to_char(cust.{column}, ''{format}'', ''nls_date_language = german'')))', 'COMPLEX', 0, 'Returns date in column custom formatted in german lang', 1),
 	('agnDATEDB_LANG', 'to_char(cust.{column}, ''{format}'', ''nls_date_language = {lang}'')', 'COMPLEX', 0, 'Returns date in column custom formatted in given language', 1),
 	('agnDAYS_UNTIL', 'DATEDIFF(cust.{column}, CURRENT_TIMESTAMP)', 'COMPLEX', 0, 'Returns days until endday (endday MUST lie in future!!!)', 0),
-	('agnDBV', '', 'COMPLEX', 0, 'Selects a virtual column not existing in DB', 1),
 	('agnFIRSTNAME', 'cust.firstname', 'SIMPLE', 0, '', 1),
-	('agnITAS', '''Hello World''', 'SIMPLE', 0, '', 1),
 	('agnLASTNAME', 'cust.lastname', 'SIMPLE', 0, '', 1),
-	('agnNULL', '''''', 'FUNCTION', 0, 'Created by script-tag', 1),
-	('agnTITLE_SHORT', 'title_short({type}, cust.gender)', 'COMPLEX', 0, 'Returns title without Names', 1),
 	('agnYEARCALC', 'to_char (cust.{field}, ''YYYY'') {op} {value}', 'COMPLEX', 0, 'to calculate with column', 1),
 	('agnYEARCALC_F', 'to_char (cust.{column}, ''{format}'') {op} {value}', 'COMPLEX', 0, 'like agnYEARCALC with formating the date', 1);
 
@@ -3385,342 +3490,6 @@ END;
 DELIMITER ;
 CALL createIndices;
 DROP PROCEDURE createIndices;
-
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.00.004', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.00.012', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.00.029', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.00.066', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.00.097', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.00.111', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.00.129', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.00.160', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.00.181', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.00.182', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.00.188', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.00.191', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.00.228', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.00.234', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.00.260', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.00.297', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.00.299', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.00.303', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.00.311', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.00.316', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.00.321', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.00.322', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.00.328', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.00.333', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.00.346', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.00.364', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.00.386', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.00.398', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.00.404', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.00.406', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.00.445', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.00.454', CURRENT_USER, CURRENT_TIMESTAMP);
-
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.04.006', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.04.008', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.04.014', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.04.015', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.04.029', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.04.061', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.04.124', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.04.129', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.04.149', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.04.151', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.04.177', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.04.210', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.04.240', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.04.270', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.04.328', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.04.344', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.04.349', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.04.366', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.04.369', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.04.392', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.04.398', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.04.404', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.04.413', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.04.421', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.04.451', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.04.452', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.04.490', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.04.492', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.04.493', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.04.497', CURRENT_USER, CURRENT_TIMESTAMP);
-
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.07.148', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.07.191', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.07.194', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.07.274', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.07.284', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.07.322', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.07.355', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.07.361', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.07.390', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.07.428', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.07.490', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.07.540', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.07.564', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.07.583', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.07.608', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.07.640', CURRENT_USER, CURRENT_TIMESTAMP);
-
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.10.000', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.10.039', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.10.041', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.10.060', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.10.068', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.10.074', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.10.111', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.10.134', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.10.146', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.10.147', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.10.180', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.10.199', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.10.263', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.10.268', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.10.286', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.10.287', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.10.357', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.10.369', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.10.381', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.10.415', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.10.474', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('18.10.493', CURRENT_USER, CURRENT_TIMESTAMP);
-
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('19.01.013', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('19.01.038', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('19.01.140', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('19.01.155', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('19.01.234', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('19.01.241', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('19.01.243', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('19.01.255', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('19.01.303', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('19.01.432', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('19.01.433', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('19.01.550', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('19.01.634', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('19.01.635', CURRENT_USER, CURRENT_TIMESTAMP);
-
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('19.04.156', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('19.04.300', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('19.04.378', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('19.04.405', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('19.04.491', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('19.04.492', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('19.04.557', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('19.04.568', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('19.04.580', CURRENT_USER, CURRENT_TIMESTAMP);
-
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('19.07.007', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('19.07.174', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('19.07.215', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('19.07.217', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('19.07.232', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('19.07.235', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('19.07.283', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('19.07.325', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('19.07.355', current_user, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('19.07.359', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('19.07.369', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('19.07.371', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('19.07.383', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('19.07.387', current_user, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('19.07.388', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('19.07.410', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('19.07.420', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('19.07.478', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('19.07.501', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('19.07.503', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('19.07.506', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('19.07.559', CURRENT_USER, CURRENT_TIMESTAMP);
-
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('19.10.001', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('19.10.002', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('19.10.087', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('19.10.088', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('19.10.105', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('19.10.121', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('19.10.181', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('19.10.196', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('19.10.205', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('19.10.236', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('19.10.270', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('19.10.275', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('19.10.295', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('19.10.319', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('19.10.355', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('19.10.422', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('19.10.432', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('19.10.448', CURRENT_USER, CURRENT_TIMESTAMP);
-INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('19.10.467', CURRENT_USER, CURRENT_TIMESTAMP);
 
 INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
 	VALUES ('20.01.008', CURRENT_USER, CURRENT_TIMESTAMP);
@@ -3972,5 +3741,109 @@ INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timesta
 	VALUES ('21.01.616', CURRENT_USER, CURRENT_TIMESTAMP);
 INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
 	VALUES ('21.01.617', CURRENT_USER, CURRENT_TIMESTAMP);
+
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('21.04.000.079', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('21.04.014', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('21.04.018', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('21.04.023', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('21.04.037', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('21.04.078', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('21.04.101', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('21.04.110', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('21.04.111', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('21.04.121', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('21.04.125', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('21.04.138', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('21.04.141', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('21.04.163', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('21.04.169', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('21.04.197', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('21.04.248', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('21.04.274', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('21.04.277', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('21.04.315', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('21.04.329', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('21.04.334', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('21.04.382', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('21.04.389', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('21.04.440', CURRENT_USER, CURRENT_TIMESTAMP);
+
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('21.07.093', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('21.07.098', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('21.07.120', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+    VALUES ('21.07.138', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+    VALUES ('21.07.177', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+    VALUES ('21.07.198', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+    VALUES ('21.07.205', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+    VALUES ('21.07.206', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+    VALUES ('21.07.207', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+    VALUES ('21.07.209', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+    VALUES ('21.07.210', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+    VALUES ('21.07.211', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+    VALUES ('21.07.212', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+    VALUES ('21.07.213', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+    VALUES ('21.07.214', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+    VALUES ('21.07.215', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+    VALUES ('21.07.245', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('21.07.325', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+    VALUES ('21.07.358', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+    VALUES ('21.07.363', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+    VALUES ('21.07.402', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+    VALUES ('21.07.416', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('21.07.421', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+    VALUES ('21.07.424', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+    VALUES ('21.07.435', CURRENT_USER, CURRENT_TIMESTAMP);
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+    VALUES ('21.07.449', CURRENT_USER, CURRENT_TIMESTAMP);
 
 COMMIT;

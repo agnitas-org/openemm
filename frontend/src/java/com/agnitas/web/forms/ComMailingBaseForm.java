@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -27,20 +27,18 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.agnitas.beans.MediaTypeStatus;
-import org.agnitas.beans.Mediatype;
 import org.agnitas.emm.core.mailing.beans.LightweightMailingWithMailingList;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.DbUtilities;
-import org.agnitas.web.MailingBaseAction;
 import org.agnitas.web.forms.MailingBaseForm;
 import org.agnitas.web.forms.WorkflowParametersHelper;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
@@ -49,15 +47,15 @@ import org.apache.struts.upload.FormFile;
 
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MailingContentType;
+import com.agnitas.beans.Mediatype;
 import com.agnitas.beans.TargetLight;
+import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.mailing.bean.ComMailingParameter;
 import com.agnitas.emm.core.mailing.dao.ComMailingParameterDao;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import com.agnitas.emm.core.report.enums.fields.MailingTypes;
-import com.agnitas.emm.core.target.eql.codegen.resolver.MailingType;
 import com.agnitas.service.AgnTagService;
 import com.agnitas.service.ComMailingLightService;
-import com.agnitas.web.ComMailingBaseAction;
+import com.agnitas.web.MailingBaseAction;
 
 import jakarta.mail.internet.InternetAddress;
 import jakarta.servlet.http.HttpServletRequest;
@@ -68,14 +66,14 @@ import jakarta.servlet.http.HttpServletRequest;
 public class ComMailingBaseForm extends MailingBaseForm {
 
 	/** The logger. */
-	private static final transient Logger logger = Logger.getLogger(ComMailingBaseForm.class);
+	private static final transient Logger logger = LogManager.getLogger(ComMailingBaseForm.class);
 	private int adminID;
 
 	public final int getCompanyID() {
 		return companyID;
 	}
 
-	public final void setCompanyID(@VelocityCheck int companyID) {
+	public final void setCompanyID(int companyID) {
 		this.companyID = companyID;
 	}
 
@@ -217,15 +215,15 @@ public class ComMailingBaseForm extends MailingBaseForm {
 
 	@Override
 	public void reset(ActionMapping map, HttpServletRequest request) {
-		setAction(ComMailingBaseAction.ACTION_LIST);
+		setAction(MailingBaseAction.ACTION_LIST);
 
 		dynamicTemplate = false;
 		super.reset(map, request);
 		clearBulkIds();
 
 		int actionID = NumberUtils.toInt(request.getParameter("action"));
-		if (actionID == ComMailingBaseAction.ACTION_SAVE
-			|| actionID == ComMailingBaseAction.ACTION_SAVE_MAILING_GRID) {
+		if (actionID == MailingBaseAction.ACTION_SAVE
+			|| actionID == MailingBaseAction.ACTION_SAVE_MAILING_GRID) {
 			parameterMap.clear();
 		}
 
@@ -240,6 +238,7 @@ public class ComMailingBaseForm extends MailingBaseForm {
 		importTemplateOverwrite = false;
 
 		setTargetGroups(Collections.emptyList());
+		setAltgs(Collections.emptyList());
 		setTargetExpression(StringUtils.EMPTY);
 		assignTargetGroups = false;
 	}
@@ -363,7 +362,7 @@ public class ComMailingBaseForm extends MailingBaseForm {
 
 		ActionErrors actionErrors = new ActionErrors();
 
-		if (action == ComMailingBaseAction.ACTION_SAVE || action == ComMailingBaseAction.ACTION_SAVE_MAILING_GRID) {
+		if (action == MailingBaseAction.ACTION_SAVE || action == MailingBaseAction.ACTION_SAVE_MAILING_GRID) {
 			if (shortname.length() >= 100) {
 				actionErrors.add("shortname", new ActionMessage("error.shortname_too_long"));
 			}
@@ -494,7 +493,7 @@ public class ComMailingBaseForm extends MailingBaseForm {
         }
 
 		// check if we have a follow-Up mailing. If not, reset the follow-Up parameters
-		if (mailingType != MailingTypes.FOLLOW_UP.getCode()) {
+		if (mailingType != MailingType.FOLLOW_UP.getCode()) {
 			parentMailing = 0;
 			followUpMailingType = "";
 			followMailing = "";
@@ -1210,7 +1209,7 @@ public class ComMailingBaseForm extends MailingBaseForm {
         }
     }
 
-    private String getIntervalWeekdailyPattern(int weekdayOrdinal, boolean[] days, String timePattern) {
+    private static String getIntervalWeekdailyPattern(int weekdayOrdinalParam, boolean[] days, String timePattern) {
         StringBuilder intervalPatternString = new StringBuilder();
         if (days != null) {
             int count = Math.min(days.length, 7);
@@ -1220,7 +1219,7 @@ public class ComMailingBaseForm extends MailingBaseForm {
                 	if (intervalPatternString.length() > 0) {
                 		intervalPatternString.append(";");
                 	}
-                	intervalPatternString.append(weekdayOrdinal);
+                	intervalPatternString.append(weekdayOrdinalParam);
                 	intervalPatternString.append(DateUtilities.getWeekdayShortnameIgnoreOtherLocale(i + 1));
                 	intervalPatternString.append(":" + timePattern);
                 }

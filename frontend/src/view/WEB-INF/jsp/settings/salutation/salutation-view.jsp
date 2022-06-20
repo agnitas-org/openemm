@@ -1,115 +1,125 @@
-<%@ page import="org.agnitas.web.SalutationAction"  errorPage="/error.do" %>
 <%@ page language="java" contentType="text/html; charset=utf-8" %>
-<%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
-<%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
-<%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ page import="org.agnitas.util.importvalues.Gender" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
-<c:set var="ACTION_VIEW" value="<%= SalutationAction.ACTION_VIEW%>" scope="page"/>
-<c:set var="ACTION_LIST" value="<%= SalutationAction.ACTION_LIST%>" scope="page"/>
+<%--@elvariable id="form" type="com.agnitas.emm.core.salutation.form.SalutationForm"--%>
+<%--@elvariable id="salutationCompanyId" type="java.lang.Integer"--%>
+<%--@elvariable id="id" type="java.lang.Integer"--%>
 
-<agn:agnForm action="/salutation" id="salutationForm" data-form="resource">
-    <html:hidden property="salutationID"/>
-    <html:hidden property="action"/>
-    <input type="hidden" id="save" name="save" value=""/>
+<c:set var="MALE_GENDER" value="<%= Gender.MALE.getStorageValue() %>"/>
+<c:set var="FEMALE_GENDER" value="<%= Gender.FEMALE.getStorageValue() %>"/>
+<c:set var="UNKNOWN_GENDER" value="<%= Gender.UNKNOWN.getStorageValue() %>"/>
+<c:set var="PRAXIS_GENDER" value="<%= Gender.PRAXIS.getStorageValue() %>"/>
+<c:set var="COMPANY_GENDER" value="<%= Gender.COMPANY.getStorageValue() %>"/>
+
+<c:set var="genderLabelMsg"><mvc:message code="Gender"/></c:set>
+<c:set var="genderLabelMsgUC" value="${fn:toUpperCase(genderLabelMsg)}"/>
+
+<c:if test="${empty id}">
+    <c:set var="id" value="0"/>
+</c:if>
+
+<mvc:form servletRelativeAction="/salutation/${id}/save.action" id="form" modelAttribute="form" data-form="resource">
     <c:choose>
-    	<c:when test="${salutationForm.salutationCompanyID ne 0}">
-	        <c:set var="dontEdit" value="false"/>
-    	</c:when>
-    	<c:otherwise>
-        	<c:set var="dontEdit" value="true"/>
-    	</c:otherwise>
+    	<c:when test="${salutationCompanyId eq 0}">
+            <c:set var="readOnly" value="true"/>
+        </c:when>
+        <c:otherwise>
+            <c:set var="readOnly" value="false"/>
+        </c:otherwise>
 	</c:choose>
     <div class="tile">
         <div class="tile-header">
             <h2 class="headline">
                 <c:choose>
-                    <c:when test="${salutationForm.salutationID eq 0}">
-                        <bean:message key="default.salutation.shortname"/>
+                    <c:when test="${empty id or id == 0}">
+                        <mvc:message code="default.salutation.shortname"/>
                     </c:when>
                     <c:otherwise>
-                        <bean:message key="settings.EditFormOfAddress"/>
+                        <mvc:message code="settings.EditFormOfAddress"/>
                     </c:otherwise>
                 </c:choose>
             </h2>
         </div>
         <div class="tile-content tile-content-forms">
-            <c:if test="${salutationForm.salutationID ne 0}">
+            <c:if test="${id ne 0}">
                 <div class="form-group">
                     <div class="col-sm-4">
-                        <label for="" class="control-label">
+                        <label class="control-label">
                             ID:
                         </label>
                     </div>
                     <div class="col-sm-8">
-                        <p class="form-control-static">${salutationForm.salutationID}</p>
+                        <p class="form-control-static">${id}</p>
                     </div>
                 </div>
             </c:if>
             <div class="form-group">
                 <div class="col-sm-4">
-                    <label for="recipient-salutation-description" class="control-label">
-                        <bean:message key="Description"/>
+                    <label for="salutation-description" class="control-label">
+                        <mvc:message code="Description"/>
                     </label>
                 </div>
                 <div class="col-sm-8">
-                    <html:text readonly="${dontEdit}" styleId="recipient-salutation-description" styleClass="form-control" property="shortname" />
+                    <mvc:text path="description" readonly="${readOnly}" id="salutation-description" cssClass="form-control"/>
                 </div>
             </div>
             <div class="form-group">
                 <div class="col-sm-4">
-                    <label for="recipient-salutation-male" class="control-label">
-                        GENDER=0 (<bean:message key="Male"/>)
+                    <label for="salutation-male" class="control-label">
+                        ${genderLabelMsgUC}=${MALE_GENDER} (<mvc:message code="Male"/>)
                     </label>
                 </div>
                 <div class="col-sm-8">
-                    <html:text readonly="${dontEdit}" styleId="recipient-salutation-male" styleClass="form-control" property="salMale" />
+                    <mvc:text path="genderMapping[${MALE_GENDER}]" readonly="${readOnly}" id="salutation-male" cssClass="form-control"/>
                 </div>
             </div>
             <div class="form-group">
                 <div class="col-sm-4">
-                    <label for="recipient-salutation-female" class="control-label">
-                        GENDER=1 (<bean:message key="Female"/>)
+                    <label for="salutation-female" class="control-label">
+                        ${genderLabelMsgUC}=${FEMALE_GENDER} (<mvc:message code="Female"/>)
                     </label>
                 </div>
                 <div class="col-sm-8">
-                    <html:text readonly="${dontEdit}" styleId="recipient-salutation-female" styleClass="form-control" property="salFemale" />
+                    <mvc:text path="genderMapping[${FEMALE_GENDER}]" readonly="${readOnly}" id="salutation-female" cssClass="form-control"/>
                 </div>
             </div>
             <div class="form-group">
                 <div class="col-sm-4">
-                    <label for="recipient-salutation-unknown" class="control-label">
-                        GENDER=2 (<bean:message key="Unknown"/>)
+                    <label for="salutation-unknown" class="control-label">
+                        ${genderLabelMsgUC}=${UNKNOWN_GENDER} (<mvc:message code="Unknown"/>)
                     </label>
                 </div>
                 <div class="col-sm-8">
-                    <html:text readonly="${dontEdit}" styleId="recipient-salutation-unknown" styleClass="form-control" property="salUnknown" />
+                    <mvc:text path="genderMapping[${UNKNOWN_GENDER}]" readonly="${readOnly}" id="salutation-unknown" cssClass="form-control"/>
                 </div>
             </div>
 
             <emm:ShowByPermission token="recipient.gender.extended">
                 <div class="form-group">
                     <div class="col-sm-4">
-                        <label for="recipient-salutation-practice" class="control-label">
-                            GENDER=4 (<bean:message key="PracticeShort"/>)
+                        <label for="salutation-practice" class="control-label">
+                            ${genderLabelMsgUC}=${PRAXIS_GENDER} (<mvc:message code="PracticeShort"/>)
                         </label>
                     </div>
                     <div class="col-sm-8">
-                        <html:text readonly="${dontEdit}" styleId="recipient-salutation-practice" styleClass="form-control" property="salPractice" />
+                        <mvc:text path="genderMapping[${PRAXIS_GENDER}]" readonly="${readOnly}" id="salutation-practice" cssClass="form-control" />
                     </div>
                 </div>
                 <div class="form-group">
                     <div class="col-sm-4">
-                        <label for="recipient-salutation-company" class="control-label">
-                            GENDER=5 (<bean:message key="recipient.gender.5.short"/>)
+                        <label for="salutation-company" class="control-label">
+                            ${genderLabelMsgUC}=${COMPANY_GENDER} (<mvc:message code="recipient.gender.5.short"/>)
                         </label>
                     </div>
                     <div class="col-sm-8">
-                        <html:text readonly="${dontEdit}" styleId="recipient-salutation-company" styleClass="form-control" property="salCompany" />
+                        <mvc:text path="genderMapping[${COMPANY_GENDER}]" readonly="${readOnly}" id="salutation-company" cssClass="form-control" />
                     </div>
                 </div>
             </emm:ShowByPermission>
         </div>
     </div>
-</agn:agnForm>
+</mvc:form>

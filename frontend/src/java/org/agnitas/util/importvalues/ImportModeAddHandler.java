@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -24,13 +24,15 @@ import org.agnitas.dao.ImportRecipientsDao;
 import org.agnitas.dao.UserStatus;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.emm.core.recipient.RecipientUtils;
 import org.agnitas.service.ImportException;
 import org.agnitas.util.DbColumnType;
 import org.agnitas.util.DbUtilities;
 import org.agnitas.util.ImportUtils.ImportErrorType;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.dao.impl.ComCompanyDaoImpl;
@@ -39,7 +41,7 @@ import com.agnitas.emm.core.action.service.EmmActionService;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 
 public class ImportModeAddHandler implements ImportModeHandler {
-    private static final transient Logger logger = Logger.getLogger(ImportModeAddHandler.class);
+    private static final transient Logger logger = LogManager.getLogger(ImportModeAddHandler.class);
     
     private ImportRecipientsDao importRecipientsDao;
     private ConfigService configService;
@@ -110,20 +112,30 @@ public class ImportModeAddHandler implements ImportModeHandler {
 	
 	@Override
 	public void handlePreProcessing(EmmActionService emmActionService, ImportStatus status, ImportProfile importProfile, String temporaryImportTableName, int datasourceId, List<Integer> mailingListIdsToAssign) throws Exception {
-		// Do nothing
+		// Do not not remove!!!
 	}
 
 	@Override
 	public void handleNewCustomers(ImportStatus status, ImportProfile importProfile, String temporaryImportTableName, String duplicateIndexColumn, List<String> transferDbColumns, int datasourceId) throws Exception {
+		int companyId = importProfile.getCompanyId();
+
+		if (configService.getBooleanValue(ConfigValue.AnonymizeAllRecipients, companyId)) {
+			importRecipientsDao.updateColumnOfTemporaryCustomerImportTable(temporaryImportTableName, RecipientUtils.COLUMN_DO_NOT_TRACK, 1);
+
+			if (!transferDbColumns.contains(RecipientUtils.COLUMN_DO_NOT_TRACK)) {
+				transferDbColumns.add(RecipientUtils.COLUMN_DO_NOT_TRACK);
+			}
+		}
+
 		// Insert customer data
 		// Check if customer limit is reached
 		int numberOfCustomersLimit = this.configService.getIntegerValue(ConfigValue.System_License_MaximumNumberOfCustomers);
 		// Check global license maximum first
 		if (numberOfCustomersLimit < 0) {
-			numberOfCustomersLimit = this.configService.getIntegerValue(ConfigValue.System_License_MaximumNumberOfCustomers, importProfile.getCompanyId());
+			numberOfCustomersLimit = this.configService.getIntegerValue(ConfigValue.System_License_MaximumNumberOfCustomers, companyId);
 		}
 		if (numberOfCustomersLimit >= 0) {
-			int currentNumberOfCustomers = importRecipientsDao.getAllRecipientsCount(importProfile.getCompanyId());
+			int currentNumberOfCustomers = importRecipientsDao.getAllRecipientsCount(companyId);
     		int numberOfInsertableItems = importRecipientsDao.getNumberOfEntriesForInsert(temporaryImportTableName, duplicateIndexColumn);
     		int numberOfCustomersAfterImport = currentNumberOfCustomers + numberOfInsertableItems;
     		if (numberOfCustomersAfterImport > numberOfCustomersLimit) {
@@ -134,10 +146,10 @@ public class ImportModeAddHandler implements ImportModeHandler {
 			}
 		}
 		
-		int invalidNullValueEntries = importRecipientsDao.removeNewCustomersWithInvalidNullValues(importProfile.getCompanyId(), temporaryImportTableName, "customer_" + importProfile.getCompanyId() + "_tbl", importProfile.getKeyColumns(), transferDbColumns, duplicateIndexColumn, importProfile.getColumnMapping());
+		int invalidNullValueEntries = importRecipientsDao.removeNewCustomersWithInvalidNullValues(companyId, temporaryImportTableName, "customer_" + companyId + "_tbl", importProfile.getKeyColumns(), transferDbColumns, duplicateIndexColumn, importProfile.getColumnMapping());
 		status.setInvalidNullValues(invalidNullValueEntries);
 		
-		int insertedEntries = importRecipientsDao.insertNewCustomers(importProfile.getCompanyId(), temporaryImportTableName, "customer_" + importProfile.getCompanyId() + "_tbl", importProfile.getKeyColumns(), transferDbColumns, duplicateIndexColumn, datasourceId, importProfile.getDefaultMailType(), importProfile.getColumnMapping(), importProfile.getCompanyId());
+		int insertedEntries = importRecipientsDao.insertNewCustomers(companyId, temporaryImportTableName, "customer_" + companyId + "_tbl", importProfile.getKeyColumns(), transferDbColumns, duplicateIndexColumn, datasourceId, importProfile.getDefaultMailType(), importProfile.getColumnMapping(), companyId);
 		status.setInserted(insertedEntries);
 	}
 

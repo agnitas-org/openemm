@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -25,6 +25,7 @@ import java.util.TimeZone;
 
 import org.agnitas.dao.UserStatus;
 import org.agnitas.util.Log;
+import org.agnitas.util.Str;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -476,7 +477,7 @@ public class BC {
 	}
 
 	private void getExtensions(List<String> collect) {
-		if (StringOps.atob(data.company.info("use-extended-usertypes"), true)) {
+		if (Str.atob(data.company.info("use-extended-usertypes"), true)) {
 			String userType = null;
 
 			if (data.maildropStatus.isWorldMailing()) {
@@ -940,6 +941,13 @@ public class BC {
 									query = "DELETE FROM " + ctable + " LIMIT :limitRecv";
 								}
 								data.dbase.update(query, "limitRecv", data.maildropStatus.limitReceivers());
+								try {
+									data.logging (Log.INFO, "bc", "Create index on temp.table " + ctable);
+									data.dbase.execute ("CREATE INDEX " + ctable + "$cid$idx ON " + ctable + " (customer_id)");
+									data.logging (Log.INFO, "bc", "Index on temp.table " + ctable + " created");
+								} catch (Exception e) {
+									data.logging (Log.WARNING, "bc", "Failed to create index on temp.table " + ctable + ": " + e.toString ());
+								}
 								cnt = data.dbase.update("DELETE FROM " + table + " WHERE customer_id IN (SELECT customer_id FROM " + ctable + ")");
 								data.logging(Log.INFO, "bc", "Removed " + cnt + " due to receiver limitation to " + data.maildropStatus.limitReceivers());
 							} catch (Exception e) {
@@ -1103,8 +1111,8 @@ public class BC {
 		boolean ok = true;
 
 		if (data.references != null) {
-			boolean legacy = StringOps.atob (data.company.info ("legacy-bulk-voucher-assign", data.mailing.id ()), false);
-			int	voucherChunkSize = StringOps.atoi (data.company.info ("voucher-assign-chunk-size", data.mailing.id ()), 50000);
+			boolean legacy = Str.atob (data.company.info ("legacy-bulk-voucher-assign", data.mailing.id ()), false);
+			int	voucherChunkSize = Str.atoi (data.company.info ("voucher-assign-chunk-size", data.mailing.id ()), 50000);
 			
 			String stmt = "";
 			try {
@@ -1351,7 +1359,7 @@ public class BC {
 			Date	oldest = data.ahvOldestEntryToReactivate ();
 			NamedParameterJdbcTemplate
 				jdbc = null;
-			boolean	dryrun = StringOps.atob (data.company.info ("ahv:dryrun"), false);
+			boolean	dryrun = Str.atob (data.company.info ("ahv:dryrun"), false);
 			String	logid = dryrun ? "ahv-dryrun" : "ahv";
 			
 			try {
@@ -1368,7 +1376,7 @@ public class BC {
 					if (n == 0) {
 						temp = data.company.info("ahv:limit-absolute");
 						if (temp != null) {
-							value = StringOps.atoi(temp, -1);
+							value = Str.atoi(temp, -1);
 							if (value == -1) {
 								data.logging(Log.ERROR, logid, "Failed to parse absolute limit: " + temp);
 							} else {
@@ -1378,7 +1386,7 @@ public class BC {
 					} else if (n == 1) {
 						temp = data.company.info("ahv:limit-percent");
 						if (temp != null) {
-							double percent = StringOps.atof(temp, -1.0);
+							double percent = Str.atof(temp, -1.0);
 
 							if (percent == 0.0) {
 								value = 0;

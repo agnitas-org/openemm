@@ -1,0 +1,4 @@
+<HelpBalloon>
+	<title>Datums- und Zeitformat</title>
+	<content><![CDATA[W&#xE4;hlen Sie das Datumsformat, das f&#xFC;r den Export Ihrer Felder vom Typ "Datum mit Zeit" angewendet werden soll und das Sie zur Weiterverarbeitung ben&#xF6;tigen. Die Angabe des Datumsformats erfolgt nach dem JAVA SimpleDateFormat. Dabei stehen beispielsweise folgende Zeichenfolgen zur Auswahl: yyyy (Jahreszahl, z.B. 1986), MM (Monat, z.B. 07), dd (Tag innerhalb eines Monats, z.B. 10), HH (Stunde innerhalb eines Tages, z.B. 04), mm (Minute innerhalb einer Stunde, z.B. 30), ss (Sekunde innerhalb einer Minute, z.B. 20). Die Formatangabe yyyy-MM-dd, HH:mm k&#xF6;nnte demnach f&#xFC;r folgende Zeitangabe stehen 2021-01-10, 08:30.]]></content>
+</HelpBalloon>

@@ -38,5 +38,4 @@
 		<constructor-arg type="java.lang.String" value="validator-rules.xml" />
 		<constructor-arg type="java.lang.String" value="validator-messages" />
 	</bean>
-	
 </beans>

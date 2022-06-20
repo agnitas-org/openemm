@@ -485,8 +485,8 @@ $c-chart-border: $c-dt-tile-border;
 $c-chart-text: $c-dt-primary-text;
 $c-chart-tooltip-text: $c-black;
 
-$c-dt-dropdown-background: $c-dt-base-light-background;
-$c-dt-dropdown-text: $c-gray-80;
+$c-dt-dropdown-background: $c-gray-80;
+$c-dt-dropdown-text: $c-gray-20;
 $c-dt-dropdown-border: $c-gray-27;
 $c-dt-dropdown-divider: $c-dt-dropdown-border;
 $c-dt-dropdown-toggle-text: $c-dt-secondary-text;
@@ -495,6 +495,7 @@ $c-dt-dropzone-background: $c-gray-70;
 $c-dt-dropzone-border: $c-black;
 $c-dt-dropzone-text: $c-dt-secondary-text;
 
+$c-dt-grid-background: $c-dt-base-light-background;
 $c-dt-grid-text: $c-dt-primary-text;
 $c-dt-grid-gutters: #596941;
 $c-dt-grid-gutters-button: #38481e;

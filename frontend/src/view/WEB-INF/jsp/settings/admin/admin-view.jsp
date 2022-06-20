@@ -1,11 +1,12 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
-<%@ page import="com.agnitas.beans.ComAdminPreferences" %>
+<%@ page import="com.agnitas.beans.AdminPreferences" %>
 
 <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags"   prefix="agn" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core"      prefix="c" %>
-<%@ taglib uri="https://emm.agnitas.de/jsp/jsp/common"  prefix="emm"%>
+<%@ taglib uri="https://emm.agnitas.de/jsp/jsp/common"  prefix="emm" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jsp/spring"  prefix="mvc" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
+<%@ taglib uri="http://www.springframework.org/tags"    prefix="s" %>
 
 <%--@elvariable id="adminForm" type="com.agnitas.emm.core.admin.form.AdminForm"--%>
 <%--@elvariable id="createdCompanies" type="java.util.List"--%>
@@ -14,24 +15,23 @@
 <%--@elvariable id="availableTimeZones" type="java.util.List"--%>
 <%--@elvariable id="layouts" type="java.util.List"--%>
 
-<c:set var="MAILING_CONTENT_HTML_EDITOR" value="<%= ComAdminPreferences.MAILING_CONTENT_HTML_EDITOR %>"/>
-<c:set var="MAILING_CONTENT_HTML_CODE" value="<%= ComAdminPreferences.MAILING_CONTENT_HTML_CODE %>"/>
+<c:set var="MAILING_CONTENT_HTML_EDITOR" value="<%=AdminPreferences.MAILING_CONTENT_HTML_EDITOR%>"/>
+<c:set var="MAILING_CONTENT_HTML_CODE" value="<%=AdminPreferences.MAILING_CONTENT_HTML_CODE%>"/>
 
-<c:set var="DASHBOARD_MAILINGS_LIST" value="<%= ComAdminPreferences.DASHBOARD_MAILINGS_LIST %>"/>
-<c:set var="DASHBOARD_MAILINGS_PREVIEW" value="<%= ComAdminPreferences.DASHBOARD_MAILINGS_PREVIEW %>"/>
+<c:set var="DASHBOARD_MAILINGS_LIST" value="<%=AdminPreferences.DASHBOARD_MAILINGS_LIST%>"/>
+<c:set var="DASHBOARD_MAILINGS_PREVIEW" value="<%=AdminPreferences.DASHBOARD_MAILINGS_PREVIEW%>"/>
 
-<c:set var="MAILING_SETTINGS_EXPANDED" value="<%= ComAdminPreferences.MAILING_SETTINGS_EXPANDED %>"/>
-<c:set var="MAILING_SETTINGS_COLLAPSED" value="<%= ComAdminPreferences.MAILING_SETTINGS_COLLAPSED %>"/>
+<c:set var="MAILING_SETTINGS_EXPANDED" value="<%=AdminPreferences.MAILING_SETTINGS_EXPANDED%>"/>
+<c:set var="MAILING_SETTINGS_COLLAPSED" value="<%=AdminPreferences.MAILING_SETTINGS_COLLAPSED%>"/>
 
-<c:set var="LIVE_PREVIEW_RIGHT" value="<%= ComAdminPreferences.LIVE_PREVIEW_RIGHT %>"/>
-<c:set var="LIVE_PREVIEW_BOTTOM" value="<%= ComAdminPreferences.LIVE_PREVIEW_BOTTOM %>"/>
-<c:set var="LIVE_PREVIEW_DEACTIVATE" value="<%= ComAdminPreferences.LIVE_PREVIEW_DEACTIVATE %>"/>
+<c:set var="LIVE_PREVIEW_RIGHT" value="<%=AdminPreferences.LIVE_PREVIEW_RIGHT%>"/>
+<c:set var="LIVE_PREVIEW_BOTTOM" value="<%=AdminPreferences.LIVE_PREVIEW_BOTTOM%>"/>
+<c:set var="LIVE_PREVIEW_DEACTIVATE" value="<%=AdminPreferences.LIVE_PREVIEW_DEACTIVATE%>"/>
 
-<c:set var="STATISTIC_LOADTYPE_ON_CLICK" value="<%= ComAdminPreferences.STATISTIC_LOADTYPE_ON_CLICK %>"/>
-<c:set var="STATISTIC_LOADTYPE_IMMEDIATELY" value="<%= ComAdminPreferences.STATISTIC_LOADTYPE_IMMEDIATELY %>"/>
+<c:set var="STATISTIC_LOADTYPE_ON_CLICK" value="<%=AdminPreferences.STATISTIC_LOADTYPE_ON_CLICK%>"/>
+<c:set var="STATISTIC_LOADTYPE_IMMEDIATELY" value="<%=AdminPreferences.STATISTIC_LOADTYPE_IMMEDIATELY%>"/>
 
-
-<mvc:form servletRelativeAction="/admin/${adminForm.adminID}/view.action" data-form-focus="username" modelAttribute="adminForm" accept-charset="UTF-8" data-form="${adminForm.adminID <= 0 ? 'resource' :''}">
+<mvc:form servletRelativeAction="/admin/${adminForm.adminID}/view.action" data-form-focus="username" modelAttribute="adminForm" accept-charset="UTF-8" data-form="resource">
     <input type="hidden" name="delete" value=""/>
     <input type="hidden" name="save" value=""/>
 
@@ -78,6 +78,14 @@
                 </div>
                 <div class="col-sm-8">
                     <mvc:text id="last_name" cssClass="form-control" path="fullname" maxlength="99" size="32"/>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-sm-4">
+                    <label class="control-label" for="employee_id"><mvc:message code="EmployeeID"/></label>
+                </div>
+                <div class="col-sm-8">
+                    <mvc:text id="employee_id" cssClass="form-control" path="employeeID" maxlength="99" size="32"/>
                 </div>
             </div>
             <div class="form-group">
@@ -257,8 +265,8 @@
                     </mvc:select>
                 </div>
             </div>
-
-            <%@include file="./fragments/access-limiting-target-group-input-frugment.jspf"%>
+            
+			<%@include file="./fragments/access-limiting-target-group-input-fragment.jspf"%>
             <label class="control-label"><mvc:message code="default.mark.required"/></label>
         </div>
     </div>

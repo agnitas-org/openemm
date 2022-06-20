@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -17,22 +17,19 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.TimeZone;
 
-import jakarta.servlet.http.HttpServletRequest;
-
-import com.agnitas.beans.Mailing;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.web.forms.StrutsFormBase;
-import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 
 import com.agnitas.beans.DeliveryStat;
+import com.agnitas.beans.Mailing;
 import com.agnitas.web.PreviewForm;
 
+import jakarta.servlet.http.HttpServletRequest;
+
 public class MailingSendForm extends StrutsFormBase {
-	@SuppressWarnings("unused")
-	private static final transient Logger logger = Logger.getLogger(MailingSendForm.class);
 
     private static final long serialVersionUID = -2753995761202472679L;
 
@@ -168,6 +165,8 @@ public class MailingSendForm extends StrutsFormBase {
     private int blocksize = 0;
     
     private String bounceFilterNames;
+
+    private int autoImportId;
     
     /**
      * Reset all properties to their default values.
@@ -788,5 +787,13 @@ public class MailingSendForm extends StrutsFormBase {
     
     public PreviewForm getPreviewForm() {
         return previewForm;
+    }
+
+    public int getAutoImportId() {
+        return autoImportId;
+    }
+
+    public void setAutoImportId(int autoImportId) {
+        this.autoImportId = autoImportId;
     }
 }

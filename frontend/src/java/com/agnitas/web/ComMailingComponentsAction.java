@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,6 +10,7 @@
 
 package com.agnitas.web;
 
+import static org.agnitas.beans.MailingComponentType.HostedImage;
 import static org.agnitas.beans.impl.MailingComponentImpl.COMPONENT_NAME_MAX_LENGTH;
 
 import java.io.File;
@@ -21,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -57,7 +59,8 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.net.util.Base64;
 import org.apache.commons.text.StringEscapeUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
@@ -84,7 +87,7 @@ import com.agnitas.web.forms.ComMailingComponentsForm;
 
 public class ComMailingComponentsAction extends StrutsActionBase {
 	/** The logger. */
-	private static final transient Logger logger = Logger.getLogger(ComMailingComponentsAction.class);
+	private static final transient Logger logger = LogManager.getLogger(ComMailingComponentsAction.class);
 	
 	public static final int ACTION_SAVE_COMPONENTS = ACTION_LAST + 1;
 
@@ -234,6 +237,10 @@ public class ComMailingComponentsAction extends StrutsActionBase {
                         destination = mapping.findForward("messages");
                         break;
                     }
+                    if (isImagesCantBeDeleted(new HashSet<>(aForm.getBulkIds()), aForm.getMailingID(), admin.getCompanyID(), errors)) {
+                        destination = mapping.findForward("messages");
+                        break;
+                    }
                     
                     aForm.setAction(ACTION_BULK_DELETE);
                     destination = mapping.findForward("bulk_delete_confirm");
@@ -241,6 +248,10 @@ public class ComMailingComponentsAction extends StrutsActionBase {
                     
                 case ACTION_BULK_DELETE:
                     try {
+                        if (isImagesCantBeDeleted(new HashSet<>(aForm.getBulkIds()), aForm.getMailingID(), admin.getCompanyID(), errors)) {
+                            destination = mapping.findForward("messages");
+                            break;
+                        }
                         if (mailingComponentService.deleteImages(companyId, aForm.getMailingID(), aForm.getBulkIds())) {
                             previewImageService.generateMailingPreview(admin, request.getSession().getId(), aForm.getMailingID(), true);
                         }
@@ -742,5 +753,19 @@ public class ComMailingComponentsAction extends StrutsActionBase {
             }
         }
         return tempZipFile;
+    }
+
+    private boolean isImageCantBeDeleted(MailingComponent image, ActionMessages errors) {
+        if (image != null && (image.getType() == HostedImage || image.getPresent() == 0)) {
+            return false;
+        }
+        errors.add(ActionMessages.GLOBAL_MESSAGE, 
+                new ActionMessage("error.mailing.image.delete", image == null ? "" : image.getComponentName()));
+        return true;
+    }
+
+    private boolean isImagesCantBeDeleted(Set<Integer> imageIds, int mailingId, int companyId, ActionMessages errors) {
+        return mailingComponentService.getComponents(companyId, mailingId, new HashSet<>(imageIds))
+                .stream().anyMatch(image -> isImageCantBeDeleted(image, errors));
     }
 }

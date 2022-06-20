@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -38,7 +38,8 @@ import org.agnitas.web.forms.SimpleActionForm;
 import org.agnitas.web.forms.WorkflowParameters;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -55,7 +56,6 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.agnitas.beans.ComAdmin;
-import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.action.service.ComEmmActionService;
 import com.agnitas.emm.core.company.service.CompanyTokenService;
 import com.agnitas.emm.core.linkcheck.service.LinkService;
@@ -77,9 +77,9 @@ import com.agnitas.web.perm.annotations.PermissionMapping;
 @RequestMapping("/webform")
 @PermissionMapping("userform")
 public class UserFormController {
-	
-	private static final Logger logger = Logger.getLogger(UserFormController.class);
-	
+
+	private static final Logger logger = LogManager.getLogger(UserFormController.class);
+
 	private WebStorage webStorage;
 	private ComUserformService userformService;
 	private ComEmmActionService emmActionService;
@@ -112,13 +112,14 @@ public class UserFormController {
 		try {
 			AgnUtils.setAdminDateTimeFormatPatterns(admin, model);
 			FormUtils.syncNumberOfRows(webStorage, WebStorage.USERFORM_OVERVIEW, form);
-			
+
 			model.addAttribute("webformListJson", userformService.getUserFormsJson(admin));
+			model.addAttribute("companyToken", companyTokenForAdmin(admin).orElse(null));
 		} catch (Exception e) {
 			logger.error("Getting user form list failed!", e);
 			popups.alert("error.exception", configService.getValue(ConfigValue.SupportEmergencyUrl));
 		}
-		
+
 		return "userform_list";
 	}
 
@@ -126,7 +127,7 @@ public class UserFormController {
 		model.addAttribute("userFormURLPattern", userformService.getUserFormUrlPattern(admin, formName, false, companyToken));
 		model.addAttribute("userFormFullURLPattern", userformService.getUserFormUrlPattern(admin, formName, true, companyToken));
 	}
-	
+
 	private void loadUserformUrlPatternsAllTestRecipients(ComAdmin admin, final String formName, Model model, final Optional<String> companyToken) {
 		model.addAttribute("userFormURLPattern", userformService.getUserFormUrlPattern(admin, formName, false, companyToken));
 		model.addAttribute("userFormFullURLPatterns", userformService.getUserFormUrlForAllAdminAndTestRecipients(admin, formName, companyToken));
@@ -144,10 +145,10 @@ public class UserFormController {
 		} else {
 			popups.alert("Error");
 		}
-		
+
 		return new BooleanResponseDto(popups, result);
 	}
-	
+
 	@GetMapping(value = {"/new.action", "/0/view.action"})
 	public String create(ComAdmin admin, @ModelAttribute("form") UserFormForm form, Model model, WorkflowParameters workflowParams) {
 		int forwardedId = workflowParams.getTargetItemId();
@@ -156,18 +157,16 @@ public class UserFormController {
         }
 
 		final Optional<String> companyToken = companyTokenForAdmin(admin);
-        
+
 		loadUserFormUrlPatterns(admin, "", model, companyToken);
 		List<EmmAction> emmActions = emmActionService.getEmmNotLinkActions(admin.getCompanyID(), false);
 		model.addAttribute("emmActions", emmActions);
 
-		if(admin.permissionAllowed(Permission.FORMS_CREATOR)) {
-			loadFormBuilderData(admin, model);
-		}
-		
+		loadFormBuilderData(admin, model);
+
 		return "userform_view";
 	}
-	
+
 	@GetMapping("/{id:\\d+}/view.action")
 	public String view(ComAdmin admin, @PathVariable int id,
 			@ModelAttribute("form") UserFormForm form, Model model, Popups popups, WorkflowParameters workflowParams) {
@@ -185,9 +184,7 @@ public class UserFormController {
 			List<EmmAction> emmActions = emmActionService.getEmmNotLinkActions(admin.getCompanyID(), false);
 			model.addAttribute("emmActions", emmActions);
 
-			if(admin.permissionAllowed(Permission.FORMS_CREATOR)) {
-				loadFormBuilderData(admin, model);
-			}
+			loadFormBuilderData(admin, model);
 
 			writeUserActivityLog(admin, "view user form", String.format("%s (ID:%d)", userForm.getName(), userForm.getId()));
 		} catch (Exception e) {
@@ -195,7 +192,7 @@ public class UserFormController {
 		}
 		return "userform_view";
 	}
-	
+
 	@PostMapping("/save.action")
 	public String save(ComAdmin admin, @ModelAttribute("form") UserFormForm form, Model model, Popups popups, WorkflowParameters workflowParams) {
 		try {
@@ -247,7 +244,7 @@ public class UserFormController {
 
         return errors;
     }
-	
+
 	private boolean validate(ComAdmin admin, UserFormForm form, Popups popups) throws Exception {
 		if (!userformService.isValidFormName(form.getFormName())) {
 			popups.alert("error.form.invalid_name");
@@ -260,7 +257,7 @@ public class UserFormController {
 
 		return !popups.hasAlertPopups();
 	}
-	
+
 	@GetMapping("/import.action")
 	@PermissionMapping("import")
 	public String importFormView(ComAdmin admin, @RequestParam(value = "importTemplate", required = false) boolean templateOverview) {
@@ -280,7 +277,7 @@ public class UserFormController {
         FormImportResult result;
         try (InputStream input = uploadFile.getInputStream()) {
             // Import userform data from upload file
-            result = userFormImporter.importUserForm(admin.getCompanyID(), input, admin.getLocale());
+            result = userFormImporter.importUserForm(admin.getCompanyID(), input, admin.getLocale(), null);
 
             if (result.isSuccess()) {
             	popups.success("userform.imported");
@@ -326,7 +323,7 @@ public class UserFormController {
                 .header(HttpHeaders.CONTENT_DISPOSITION, HttpUtils.getContentDispositionAttachment(downloadFileName))
                 .body(new DeleteFileAfterSuccessReadResource(exportedFile));
 	}
-	
+
 	@GetMapping("/{id:\\d+}/clone.action")
 	public String clone(ComAdmin admin, @PathVariable int id, Popups popups) {
 		try {
@@ -354,7 +351,7 @@ public class UserFormController {
 		popups.alert("Error");
 		return "messages";
 	}
-	
+
 	@PostMapping("/confirmBulkDelete.action")
 	public String confirmBulkDelete(@ModelAttribute("bulkDeleteForm") BulkActionForm form, Popups popups) {
 		if (CollectionUtils.isEmpty(form.getBulkIds())) {
@@ -386,7 +383,7 @@ public class UserFormController {
         popups.alert("Error");
         return "messages";
     }
-	
+
 	@GetMapping("/{id:\\d+}/confirmDelete.action")
 	public String confirmDelete(ComAdmin admin, @PathVariable int id, @ModelAttribute("simpleActionForm") SimpleActionForm form, Popups popups) {
 		UserFormDto userForm = userformService.getUserForm(admin.getCompanyID(), id);
@@ -413,17 +410,18 @@ public class UserFormController {
         return "messages";
     }
 
-    private final Optional<String> companyTokenForAdmin(final ComAdmin admin) {
+    private Optional<String> companyTokenForAdmin(final ComAdmin admin) {
     	try {
     		return this.companyTokenService.getCompanyToken(admin.getCompanyID());
     	} catch(final UnknownCompanyIdException e) {
     		return Optional.empty();
     	}
     }
+
 	private void writeUserActivityLog(ComAdmin admin, String action, String description) {
 		writeUserActivityLog(admin, new UserAction(action, description));
 	}
-	
+
 	private void writeUserActivityLog(ComAdmin admin, UserAction userAction) {
 		if (userActivityLogService != null) {
 			userActivityLogService.writeUserActivityLog(admin, userAction, logger);

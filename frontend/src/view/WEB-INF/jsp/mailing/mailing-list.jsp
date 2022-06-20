@@ -1,8 +1,8 @@
-<%@ page import="org.agnitas.dao.MailingStatus" %>
+<%@page import="com.agnitas.emm.common.MailingType"%>
 <%@ page language="java" contentType="text/html; charset=utf-8" buffer="32kb" errorPage="/error.do" %>
+<%@ page import="org.agnitas.dao.MailingStatus" %>
 <%@ page import="org.agnitas.web.*, com.agnitas.web.forms.*" %>
-<%@ page import="com.agnitas.emm.core.report.enums.fields.MailingTypes" %>
-<%@ page import="com.agnitas.web.ComMailingBaseAction" %>
+<%@ page import="com.agnitas.web.MailingBaseAction" %>
 <%@ page import="org.agnitas.emm.core.commons.util.Constants" %>
 <%@ page import="com.agnitas.beans.Mailing" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
@@ -17,14 +17,29 @@
 <%--@elvariable id="mailingBaseForm" type="com.agnitas.web.forms.ComMailingBaseForm"--%>
 <%--@elvariable id="mailinglist" type="org.agnitas.beans.impl.PaginatedListImpl"--%>
 
+<c:set var="MAILING_STATUS_NEW" value="<%= MailingStatus.NEW.getDbKey() %>" />
+<c:set var="MAILING_STATUS_EDIT" value="<%= MailingStatus.EDIT.getDbKey() %>" />
+<c:set var="MAILING_STATUS_READY" value="<%= MailingStatus.READY.getDbKey() %>" />
+<c:set var="MAILING_STATUS_ADMIN" value="<%= MailingStatus.ADMIN.getDbKey() %>" />
+<c:set var="MAILING_STATUS_TEST" value="<%= MailingStatus.TEST.getDbKey() %>" />
+<c:set var="MAILING_STATUS_SCHEDULED" value="<%= MailingStatus.SCHEDULED.getDbKey() %>" />
+<c:set var="MAILING_STATUS_SENT" value="<%= MailingStatus.SENT.getDbKey() %>" />
+<c:set var="MAILING_STATUS_NORECIPIENTS" value="<%= MailingStatus.NORECIPIENTS.getDbKey() %>" />
+<c:set var="MAILING_STATUS_CANCELED" value="<%= MailingStatus.CANCELED.getDbKey() %>" />
+<c:set var="MAILING_STATUS_SENDING" value="<%= MailingStatus.SENDING.getDbKey() %>" />
+<c:set var="MAILING_STATUS_ACTIVE" value="<%= MailingStatus.ACTIVE.getDbKey() %>" />
+<c:set var="MAILING_STATUS_DISABLE" value="<%= MailingStatus.DISABLE.getDbKey() %>" />
+<c:set var="MAILING_STATUS_IN_GENERATION" value="<%= MailingStatus.IN_GENERATION.getDbKey() %>" />
+<c:set var="MAILING_STATUS_GENERATION_FINISHED" value="<%= MailingStatus.GENERATION_FINISHED.getDbKey() %>" />
+
 <c:set var="ACTION_VIEW" value="<%= MailingBaseAction.ACTION_VIEW %>"/>
 <c:set var="ACTION_LIST" value="<%= MailingBaseAction.ACTION_LIST %>"/>
 <c:set var="ACTION_VIEW_TABLE_ONLY" value="<%= MailingBaseAction.ACTION_VIEW_TABLE_ONLY %>"/>
 <c:set var="ACTION_USED_ACTIONS" value="<%= MailingBaseAction.ACTION_USED_ACTIONS %>"/>
 <c:set var="ACTION_CONFIRM_DELETE" value="<%= MailingBaseAction.ACTION_CONFIRM_DELETE %>"/>
-<c:set var="ACTION_BULK_CONFIRM_DELETE" value="<%= ComMailingBaseAction.ACTION_BULK_CONFIRM_DELETE %>"/>
+<c:set var="ACTION_BULK_CONFIRM_DELETE" value="<%= MailingBaseAction.ACTION_BULK_CONFIRM_DELETE %>"/>
 
-<c:set var="MAILING_TYPE_NORMAL" value="<%= MailingTypes.NORMAL.getCode() %>"/>
+<c:set var="MAILING_TYPE_NORMAL" value="<%= MailingType.NORMAL.getCode() %>"/>
 
 <c:choose>
     <c:when test="${mailingBaseForm.isTemplate}">
@@ -344,46 +359,46 @@
 
                     <c:forEach var="filterStatusName" items="${mailingBaseForm.filterStatus}">
                         <c:choose>
-                            <c:when test="${filterStatusName eq 'new'}">
+                            <c:when test="${filterStatusName eq MAILING_STATUS_NEW}">
                                 <c:set var="filterStatusSelectedNew" value="checked"/>
                             </c:when>
-                            <c:when test="${filterStatusName eq 'edit'}">
+                            <c:when test="${filterStatusName eq MAILING_STATUS_EDIT}">
                                 <c:set var="filterStatusSelectedEdit" value="checked"/>
                             </c:when>
-                            <c:when test="${filterStatusName eq 'ready'}">
+                            <c:when test="${filterStatusName eq MAILING_STATUS_READY}">
                                 <c:set var="filterStatusSelectedReady" value="checked"/>
                             </c:when>
-                            <c:when test="${filterStatusName eq 'admin'}">
+                            <c:when test="${filterStatusName eq MAILING_STATUS_ADMIN}">
                                 <c:set var="filterStatusSelectedAdmin" value="checked"/>
                             </c:when>
-                            <c:when test="${filterStatusName eq 'test'}">
+                            <c:when test="${filterStatusName eq MAILING_STATUS_TEST}">
                                 <c:set var="filterStatusSelectedTest" value="checked"/>
                             </c:when>
-                            <c:when test="${filterStatusName eq 'scheduled'}">
+                            <c:when test="${filterStatusName eq MAILING_STATUS_SCHEDULED}">
                                 <c:set var="filterStatusSelectedScheduled" value="checked"/>
                             </c:when>
-                            <c:when test="${filterStatusName eq 'sent'}">
+                            <c:when test="${filterStatusName eq MAILING_STATUS_SENT}">
                                 <c:set var="filterStatusSelectedSent" value="checked"/>
                             </c:when>
-                            <c:when test="${filterStatusName eq 'norecipients'}">
+                            <c:when test="${filterStatusName eq MAILING_STATUS_NORECIPIENTS}">
                                 <c:set var="filterStatusSelectedNorecipients" value="checked"/>
                             </c:when>
-                            <c:when test="${filterStatusName eq 'canceled'}">
+                            <c:when test="${filterStatusName eq MAILING_STATUS_CANCELED}">
                                 <c:set var="filterStatusSelectedCanceled" value="checked"/>
                             </c:when>
-                            <c:when test="${filterStatusName eq 'sending'}">
+                            <c:when test="${filterStatusName eq MAILING_STATUS_SENDING}">
                                 <c:set var="filterStatusSelectedSending" value="checked"/>
                             </c:when>
-                            <c:when test="${filterStatusName eq 'active'}">
+                            <c:when test="${filterStatusName eq MAILING_STATUS_ACTIVE}">
                                 <c:set var="filterStatusSelectedActive" value="checked"/>
                             </c:when>
-                            <c:when test="${filterStatusName eq 'disable'}">
+                            <c:when test="${filterStatusName eq MAILING_STATUS_DISABLE}">
                                 <c:set var="filterStatusSelectedDisable" value="checked"/>
                             </c:when>
-                            <c:when test="${filterStatusName eq 'in-generation'}">
+                            <c:when test="${filterStatusName eq MAILING_STATUS_IN_GENERATION}">
 			                   <c:set var="filterStatusSelectedInGeneration" value="checked" />
                             </c:when>
-                            <c:when test="${filterStatusName eq 'generation-finished'}">
+                            <c:when test="${filterStatusName eq MAILING_STATUS_GENERATION_FINISHED}">
             			        <c:set var="filterStatusSelectedGenerated" value="checked" />
                             </c:when>
                         </c:choose>
@@ -392,38 +407,38 @@
                     <ul class="dropdown-menu dropdown-menu-left">
                         <li>
                             <label class="label">
-                                <input type="checkbox" name="filterStatus" value="new" data-field-filter="" ${filterStatusSelectedNew}>
+                                <input type="checkbox" name="filterStatus" value="${MAILING_STATUS_NEW}" data-field-filter="" ${filterStatusSelectedNew}>
                                 <bean:message key="<%= MailingStatus.NEW.getMessageKey() %>"/>
                             </label>
                         </li>
                         <li>
                             <label class="label">
-                                <input type="checkbox" name="filterStatus" value="edit" data-field-filter="" ${filterStatusSelectedEdit}>
+                                <input type="checkbox" name="filterStatus" value="${MAILING_STATUS_EDIT}" data-field-filter="" ${filterStatusSelectedEdit}>
                                 <bean:message key="<%= MailingStatus.EDIT.getMessageKey() %>"/>
                             </label>
                         </li>
                         <li>
                             <label class="label">
-                                <input type="checkbox" name="filterStatus" value="ready" data-field-filter="" ${filterStatusSelectedReady}>
+                                <input type="checkbox" name="filterStatus" value="${MAILING_STATUS_READY}" data-field-filter="" ${filterStatusSelectedReady}>
                                 <bean:message key="<%= MailingStatus.READY.getMessageKey() %>"/>
                             </label>
                         </li>
                         <li>
                             <label class="label">
-                                <input type="checkbox" name="filterStatus" value="admin" data-field-filter="" ${filterStatusSelectedAdmin}>
+                                <input type="checkbox" name="filterStatus" value="${MAILING_STATUS_ADMIN}" data-field-filter="" ${filterStatusSelectedAdmin}>
                                 <bean:message key="<%= MailingStatus.ADMIN.getMessageKey() %>"/>
                             </label>
                         </li>
                         <li>
                             <label class="label">
-                                <input type="checkbox" name="filterStatus" value="test" data-field-filter="" ${filterStatusSelectedTest}>
+                                <input type="checkbox" name="filterStatus" value="${MAILING_STATUS_TEST}" data-field-filter="" ${filterStatusSelectedTest}>
                                 <bean:message key="<%= MailingStatus.TEST.getMessageKey() %>"/>
                             </label>
                         </li>
                         <c:if test="${mailingBaseForm.mailingTypeNormal or mailingBaseForm.mailingTypeFollowup}">
                             <li>
                                 <label class="label">
-                                    <input type="checkbox" name="filterStatus" value="scheduled" data-field-filter="" ${filterStatusSelectedScheduled}>
+                                    <input type="checkbox" name="filterStatus" value="${MAILING_STATUS_SCHEDULED}" data-field-filter="" ${filterStatusSelectedScheduled}>
                                     <bean:message key="<%= MailingStatus.SCHEDULED.getMessageKey() %>"/>
                                 </label>
                             </li>
@@ -431,13 +446,13 @@
 							<c:if test="${mailingBaseForm.mailingTypeNormal}">
 	                            <li>
 	                                <label class="label">
-	                                    <input type="checkbox" name="filterStatus" value="in-generation" data-field-filter="" ${filterStatusSelectedInGeneration}>
+	                                    <input type="checkbox" name="filterStatus" value="${MAILING_STATUS_IN_GENERATION}" data-field-filter="" ${filterStatusSelectedInGeneration}>
 	                                    <bean:message key="<%= MailingStatus.IN_GENERATION.getMessageKey() %>"/>
 	                                </label>
 	                            </li>
 	                            <li>
 	                                <label class="label">
-	                                    <input type="checkbox" name="filterStatus" value="generation-finished" data-field-filter="" ${filterStatusSelectedGenerated}>
+	                                    <input type="checkbox" name="filterStatus" value="${MAILING_STATUS_GENERATION_FINISHED}" data-field-filter="" ${filterStatusSelectedGenerated}>
 	                                    <bean:message key="<%= MailingStatus.GENERATION_FINISHED.getMessageKey() %>"/>
 	                                </label>
 	                            </li>
@@ -445,25 +460,25 @@
 
                             <li>
                                 <label class="label">
-                                    <input type="checkbox" name="filterStatus" value="sent" data-field-filter="" ${filterStatusSelectedSent}>
+                                    <input type="checkbox" name="filterStatus" value="${MAILING_STATUS_SENT}" data-field-filter="" ${filterStatusSelectedSent}>
                                     <bean:message key="<%= MailingStatus.SENT.getMessageKey() %>"/>
                                 </label>
                             </li>
                             <li>
                                 <label class="label">
-                                    <input type="checkbox" name="filterStatus" value="norecipients" data-field-filter="" ${filterStatusSelectedNorecipients}>
+                                    <input type="checkbox" name="filterStatus" value="${MAILING_STATUS_NORECIPIENTS}" data-field-filter="" ${filterStatusSelectedNorecipients}>
                                     <bean:message key="<%= MailingStatus.NORECIPIENTS.getMessageKey() %>"/>
                                 </label>
                             </li>
                             <li>
                                 <label class="label">
-                                    <input type="checkbox" name="filterStatus" value="canceled" data-field-filter="" ${filterStatusSelectedCanceled}>
+                                    <input type="checkbox" name="filterStatus" value="${MAILING_STATUS_CANCELED}" data-field-filter="" ${filterStatusSelectedCanceled}>
                                     <bean:message key="<%= MailingStatus.CANCELED.getMessageKey() %>"/>
                                 </label>
                             </li>
                             <li>
                                 <label class="label">
-                                    <input type="checkbox" name="filterStatus" value="sending" data-field-filter="" ${filterStatusSelectedSending}>
+                                    <input type="checkbox" name="filterStatus" value="${MAILING_STATUS_SENDING}" data-field-filter="" ${filterStatusSelectedSending}>
                                     <bean:message key="<%= MailingStatus.SENDING.getMessageKey() %>"/>
                                 </label>
                             </li>
@@ -471,13 +486,13 @@
                         <c:if test="${mailingBaseForm.mailingTypeEvent or mailingBaseForm.mailingTypeDate or mailingBaseForm.mailingTypeInterval}">
                             <li>
                                 <label class="label">
-                                    <input type="checkbox" name="filterStatus" value="active" data-field-filter="" ${filterStatusSelectedActive}>
+                                    <input type="checkbox" name="filterStatus" value="${MAILING_STATUS_ACTIVE}" data-field-filter="" ${filterStatusSelectedActive}>
                                     <bean:message key="<%= MailingStatus.ACTIVE.getMessageKey() %>"/>
                                 </label>
                             </li>
                             <li>
                                 <label class="label">
-                                    <input type="checkbox" name="filterStatus" value="disable" data-field-filter="" ${filterStatusSelectedDisable}>
+                                    <input type="checkbox" name="filterStatus" value="${MAILING_STATUS_DISABLE}" data-field-filter="" ${filterStatusSelectedDisable}>
                                     <bean:message key="<%= MailingStatus.DISABLE.getMessageKey() %>"/>
                                 </label>
                             </li>

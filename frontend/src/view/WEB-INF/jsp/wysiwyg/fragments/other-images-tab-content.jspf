@@ -1,6 +1,6 @@
 <%@ page import="org.agnitas.emm.core.commons.util.ConfigService" %>
 <%@ page import="com.agnitas.beans.ComAdmin" %>
-<%@ page import="org.agnitas.beans.Company" %>
+<%@ page import="com.agnitas.beans.Company" %>
 <%@ page import="org.agnitas.util.AgnUtils" %>
 <%@ page import="org.apache.commons.lang3.math.NumberUtils" %>
 

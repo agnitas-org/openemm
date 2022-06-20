@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -31,7 +31,8 @@ import org.agnitas.util.ServerCommand.Server;
 import org.agnitas.util.SqlPreparedStatementManager;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.agnitas.dao.ConfigTableDao;
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
@@ -42,7 +43,7 @@ import com.agnitas.util.Version;
  */
 public class ConfigTableDaoImpl extends BaseDaoImpl implements ConfigTableDao {
 	/** The logger. */
-	private static final transient Logger logger = Logger.getLogger(ConfigTableDaoImpl.class);
+	private static final transient Logger logger = LogManager.getLogger(ConfigTableDaoImpl.class);
 
 	@Override
 	public Map<String, Map<Integer, String>> getAllEntriesForThisHost() {
@@ -119,25 +120,20 @@ public class ConfigTableDaoImpl extends BaseDaoImpl implements ConfigTableDao {
 	@Override
 	public int getJobqueueHostStatus(String hostName) {
 		// Do not read this value by configservice, so it is not cached
-		List<Map<String, Object>> legacyValues = select(logger, "SELECT MIN(value) AS value FROM config_tbl WHERE class = ? AND name = ?", "system", hostName + ".IsActive");
-		if (legacyValues.size() > 0 && legacyValues.get(0).get("value") != null) {
-			return Integer.parseInt((String) legacyValues.get(0).get("value"));
-		} else {
-			String configValueName = ConfigValue.JobQueueExecute.toString();
-			String classValue = configValueName.substring(0, configValueName.indexOf("."));
-			String nameValue = configValueName.substring(configValueName.indexOf(".") + 1);
-			int returnValueWithoutExactHostnameMatch = 0;
-			for (Map<String, Object> row : select(logger, "SELECT hostname, value FROM config_tbl WHERE class = ? AND name = ? AND (hostname IS NULL OR TRIM(hostname) IS NULL OR hostname = ?) ORDER BY hostname", classValue, nameValue, AgnUtils.getHostName())) {
-				String hostname = (String) row.get("hostname");
-				int value = Integer.parseInt((String) row.get("value"));
-				if (AgnUtils.getHostName().equals(hostname)) {
-					return value;
-				} else {
-					returnValueWithoutExactHostnameMatch = value;
-				}
+		String configValueName = ConfigValue.JobQueueExecute.toString();
+		String classValue = configValueName.substring(0, configValueName.indexOf("."));
+		String nameValue = configValueName.substring(configValueName.indexOf(".") + 1);
+		int returnValueWithoutExactHostnameMatch = 0;
+		for (Map<String, Object> row : select(logger, "SELECT hostname, value FROM config_tbl WHERE class = ? AND name = ? AND (hostname IS NULL OR TRIM(hostname) IS NULL OR hostname = ?) ORDER BY hostname", classValue, nameValue, AgnUtils.getHostName())) {
+			String hostname = (String) row.get("hostname");
+			int value = Integer.parseInt((String) row.get("value"));
+			if (AgnUtils.getHostName().equals(hostname)) {
+				return value;
+			} else {
+				returnValueWithoutExactHostnameMatch = value;
 			}
-			return returnValueWithoutExactHostnameMatch;
 		}
+		return returnValueWithoutExactHostnameMatch;
 	}
 
 	@Override
@@ -202,9 +198,9 @@ public class ConfigTableDaoImpl extends BaseDaoImpl implements ConfigTableDao {
 			if (runtimeVersion != null) {
 				String lastStartedRuntimeVersion;
 				if (ConfigService.isOracleDB()) {
-					lastStartedRuntimeVersion = selectObjectDefaultNull(logger, "SELECT * FROM (SELECT version_number FROM release_log_tbl WHERE host_name = ? AND application_name = ? ORDER BY startup_timestamp DESC) WHERE rownum <= 1", new StringRowMapper(), AgnUtils.getHostName(), "RUNTIME");
+					lastStartedRuntimeVersion = selectObjectDefaultNull(logger, "SELECT * FROM (SELECT version_number FROM release_log_tbl WHERE host_name = ? AND application_name = ? ORDER BY startup_timestamp DESC) WHERE rownum <= 1", StringRowMapper.INSTANCE, AgnUtils.getHostName(), "RUNTIME");
 				} else {
-					lastStartedRuntimeVersion = selectObjectDefaultNull(logger, "SELECT version_number FROM release_log_tbl WHERE host_name = ? AND application_name = ? ORDER BY startup_timestamp DESC LIMIT 1", new StringRowMapper(), AgnUtils.getHostName(), "RUNTIME");
+					lastStartedRuntimeVersion = selectObjectDefaultNull(logger, "SELECT version_number FROM release_log_tbl WHERE host_name = ? AND application_name = ? ORDER BY startup_timestamp DESC LIMIT 1", StringRowMapper.INSTANCE, AgnUtils.getHostName(), "RUNTIME");
 				}
 				if (!runtimeVersion.toString().equals(lastStartedRuntimeVersion)) {
 					update(logger, "INSERT INTO release_log_tbl (host_name, application_name, version_number, build_time, build_host, build_user, startup_timestamp) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)", AgnUtils.getHostName(), "RUNTIME", runtimeVersion.toString(), null, null, null);
@@ -228,9 +224,9 @@ public class ConfigTableDaoImpl extends BaseDaoImpl implements ConfigTableDao {
 			if (manualVersion != null) {
 				String lastStartedManualVersion;
 				if (ConfigService.isOracleDB()) {
-					lastStartedManualVersion = selectObjectDefaultNull(logger, "SELECT * FROM (SELECT version_number FROM release_log_tbl WHERE host_name = ? AND application_name = ? ORDER BY startup_timestamp DESC) WHERE rownum <= 1", new StringRowMapper(), AgnUtils.getHostName(), "MANUAL");
+					lastStartedManualVersion = selectObjectDefaultNull(logger, "SELECT * FROM (SELECT version_number FROM release_log_tbl WHERE host_name = ? AND application_name = ? ORDER BY startup_timestamp DESC) WHERE rownum <= 1", StringRowMapper.INSTANCE, AgnUtils.getHostName(), "MANUAL");
 				} else {
-					lastStartedManualVersion = selectObjectDefaultNull(logger, "SELECT version_number FROM release_log_tbl WHERE host_name = ? AND application_name = ? ORDER BY startup_timestamp DESC LIMIT 1", new StringRowMapper(), AgnUtils.getHostName(), "MANUAL");
+					lastStartedManualVersion = selectObjectDefaultNull(logger, "SELECT version_number FROM release_log_tbl WHERE host_name = ? AND application_name = ? ORDER BY startup_timestamp DESC LIMIT 1", StringRowMapper.INSTANCE, AgnUtils.getHostName(), "MANUAL");
 				}
 				if (!manualVersion.toString().equals(lastStartedManualVersion)) {
 					update(logger, "INSERT INTO release_log_tbl (host_name, application_name, version_number, build_time, build_host, build_user, startup_timestamp) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)", AgnUtils.getHostName(), "MANUAL", manualVersion.toString(), null, null, null);

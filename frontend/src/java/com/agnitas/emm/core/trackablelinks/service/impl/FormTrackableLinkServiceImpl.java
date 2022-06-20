@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -23,7 +23,8 @@ import org.agnitas.beans.BaseTrackableLink;
 import org.agnitas.util.Tuple;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.text.StringEscapeUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComAdmin;
@@ -48,7 +49,7 @@ import com.agnitas.util.LinkUtils;
 
 public class FormTrackableLinkServiceImpl implements FormTrackableLinkService {
 
-	private static final transient Logger logger = Logger.getLogger(FormTrackableLinkServiceImpl.class);
+	private static final transient Logger logger = LogManager.getLogger(FormTrackableLinkServiceImpl.class);
 
 	private FormTrackableLinkDao trackableLinkDao;
 	private LinkService linkService;
@@ -222,10 +223,10 @@ public class FormTrackableLinkServiceImpl implements FormTrackableLinkService {
 					new Object[]{ type, StringEscapeUtils.escapeHtml4(notTrackableLinks.get(0)) }));
 		}
 
-		List<LinkService.ErrorneousLink> erroneousLinks = links.getErrorneousLinks();
+		List<LinkService.ErroneousLink> erroneousLinks = links.getErroneousLinks();
 		if (CollectionUtils.isNotEmpty(erroneousLinks)) {
-			LinkService.ErrorneousLink firstErroneousLink = erroneousLinks.get(0);
-			errors.add(new Message("error.mailing.links.errorneous",
+			LinkService.ErroneousLink firstErroneousLink = erroneousLinks.get(0);
+			errors.add(new Message("error.mailing.links",
 					new Object[]{ erroneousLinks.size(), type,
 							StringEscapeUtils.escapeHtml4(firstErroneousLink.getLinkText()),
 							I18nString.getLocaleString(firstErroneousLink.getErrorMessageKey(), admin.getLocale())

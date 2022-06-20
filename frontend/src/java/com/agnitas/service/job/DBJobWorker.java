@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -29,7 +29,8 @@ import org.agnitas.util.SFtpHelper;
 import org.agnitas.util.TextTable;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.agnitas.emm.core.JavaMailAttachment;
@@ -59,7 +60,7 @@ import com.jcraft.jsch.ChannelSftp;
  *     VALUES ((SELECT id FROM job_queue_tbl WHERE description = 'PeriodicalDbChange'), 'infoMailSubject', 'PeriodicalDbChange');
  */
 public class DBJobWorker extends JobWorker {
-	private static final transient Logger logger = Logger.getLogger(DBJobWorker.class);
+	private static final transient Logger logger = LogManager.getLogger(DBJobWorker.class);
 
 	@Override
 	public String runJob() throws Exception {
@@ -143,6 +144,8 @@ public class DBJobWorker extends JobWorker {
 								sftpHelper.setAllowUnknownHostKeys(true);
 								sftpHelper.connect();
 								sftpHelper.put(exportDataFile.getAbsolutePath(), sftpFileName, ChannelSftp.OVERWRITE, true);
+							} catch (Exception e) {
+								throw new Exception("Cannot upload file top SFTP server: " + e.getMessage(), e);
 							}
 
 							infoMailContent.append("Export data file '" + sftpFileName + "' transfered to SFTP server<br />\n");

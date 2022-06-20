@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -17,11 +17,13 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.agnitas.beans.impl.PaginatedListImpl;
+import org.agnitas.dao.SourceGroupType;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue.Webservices;
 import org.agnitas.util.AgnUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -54,7 +56,7 @@ import com.agnitas.service.ExtendedConversionService;
 public class WebserviceUserServiceImpl implements WebserviceUserService {
 
 	/** The logger. */
-	private static final transient Logger logger = Logger.getLogger(WebserviceUserServiceImpl.class);
+	private static final transient Logger logger = LogManager.getLogger(WebserviceUserServiceImpl.class);
 
 	private static final String USER_DESCRIPTION_PATTERN = "WS2-User \"%s\"";
     private static final String DATA_SOURCE_URI = "";
@@ -117,10 +119,9 @@ public class WebserviceUserServiceImpl implements WebserviceUserService {
 			WebserviceUserCredential convertedUser = conversionService.convert(user, WebserviceUserCredential.class);
 
 			int companyId = convertedUser.getCompanyID();
-			int dsGroup = configService.getIntegerValue(Webservices.WebserviceDatasourceGroupId);
 			String dsDescription = String.format(USER_DESCRIPTION_PATTERN, username);
 			
-			dataSourceId = datasourceService.createDataSource(companyId, dsGroup, dsDescription, DATA_SOURCE_URI);
+			dataSourceId = datasourceService.createDataSource(companyId, SourceGroupType.SoapWebservices, dsDescription, DATA_SOURCE_URI);
 			
 			((WebserviceUserCredentialImpl)convertedUser).setDefaultDatasourceID(dataSourceId);
 
@@ -230,5 +231,15 @@ public class WebserviceUserServiceImpl implements WebserviceUserService {
 	@Override
 	public final void updateLastLoginDate(final String username) {
 		this.webserviceUserDao.updateLastLoginDate(username, ZonedDateTime.now());
+	}
+
+	@Override
+	public boolean deleteWebserviceUser(String username) {
+		return webserviceUserDao.deleteWebserviceUser(username);
+	}
+
+	@Override
+	public boolean webserviceUserExists(String username) {
+		return webserviceUserDao.webserviceUserExists(username);
 	}
 }

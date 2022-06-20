@@ -160,14 +160,15 @@
 		background-image: url("/assets/core/images/logonPageOffline/Version.jpg");
 		background-position: 100% 100%;
 		background-repeat: no-repeat;
-		background-size: cover;
-		align-items: center;
+		background-size: contain;
+		background-color: #000;
+		align-items: start;
 		padding-top: 3em;
 	}
 	
 	.version__text {
 		color: #FFFFFF;
-		padding: 2em 50% 2em 0;
+		padding: 2em 38% 2em 0;
 	}
 	
 	.version__text--headline {

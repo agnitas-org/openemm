@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,8 +10,8 @@
 
 package org.agnitas.util;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.StringReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.Charset;
@@ -26,31 +26,10 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.Stack;
 import java.util.stream.Collectors;
-
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
-import org.apache.xerces.parsers.DOMParser;
-import org.cyberneko.html.HTMLConfiguration;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Attributes;
-import org.jsoup.parser.SaxParser;
-import org.jsoup.parser.SaxParsingHandler;
-import org.jsoup.select.Elements;
-import org.w3c.dom.Document;
-import org.w3c.dom.DocumentType;
-import org.w3c.dom.Element;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
-import org.xml.sax.SAXNotRecognizedException;
-import org.xml.sax.SAXNotSupportedException;
+import javax.xml.parsers.ParserConfigurationException;
 
 import com.agnitas.messages.I18nString;
 import com.agnitas.util.ParsingException;
-
 import cz.vutbr.web.css.CSSException;
 import cz.vutbr.web.css.CSSFactory;
 import cz.vutbr.web.css.Declaration;
@@ -61,15 +40,42 @@ import cz.vutbr.web.css.RuleMedia;
 import cz.vutbr.web.css.RuleSet;
 import cz.vutbr.web.css.StyleSheet;
 import cz.vutbr.web.css.Term;
+import cz.vutbr.web.css.TermFunction;
+import cz.vutbr.web.css.TermIdent;
+import cz.vutbr.web.css.TermInteger;
 import cz.vutbr.web.css.TermURI;
 import cz.vutbr.web.csskit.OutputUtil;
-import cz.vutbr.web.csskit.TermIntegerImpl;
 import cz.vutbr.web.domassign.Analyzer;
 import cz.vutbr.web.domassign.DeclarationMap;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.htmlcleaner.CleanerProperties;
+import org.htmlcleaner.ConfigFileTagProvider;
+import org.htmlcleaner.DomSerializer;
+import org.htmlcleaner.HtmlCleaner;
+import org.htmlcleaner.TagNode;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Attributes;
+import org.jsoup.parser.SaxParser;
+import org.jsoup.parser.SaxParsingHandler;
+import org.jsoup.select.Elements;
+import org.springframework.util.ResourceUtils;
+import org.w3c.dom.Document;
+import org.w3c.dom.DocumentType;
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
 public class HtmlUtils {
-    private static final Logger logger = Logger.getLogger(HtmlUtils.class);
+    private static final Logger logger = LogManager.getLogger(HtmlUtils.class);
 
+    private static final ConfigFileTagProvider configFileTagProvider = getConfigFileTagProvider();
+    
     private static final Set<String> STANDALONE_NODE_NAMES = new CaseInsensitiveSet(Arrays.asList(
             "area",
             "base",
@@ -92,23 +98,23 @@ public class HtmlUtils {
      * @param encoding an encoding to use for a parser.
      * @return a parsed document representation.
      */
-    public static Document parseDocument(String document, String encoding) throws IOException, SAXException {
-        DOMParser parser = new DOMParser(new HTMLConfiguration());
+    public static Document parseDocument(String document, String encoding) throws IOException, ParserConfigurationException {
+        // In case, when you need to make changes here, please check bugs GWUA-5042, GWUA-5052, GWUA-5062 
+        CleanerProperties props = new CleanerProperties();
+        props.setUseCdataForScriptAndStyle(false);
+        props.setTranslateSpecialEntities(false);
+        props.setDeserializeEntities(true);
+        HtmlCleaner cleaner = new HtmlCleaner(configFileTagProvider, props);
+        TagNode node = cleaner.clean(IOUtils.toInputStream(document, encoding), encoding);
+        return new DomSerializer(props, false).createDOM(node);
+    }
 
+    private static ConfigFileTagProvider getConfigFileTagProvider() {
         try {
-            // These URLs are predefined parameters' names (check org.cyberneko.html.HTMLConfiguration for more information)
-            parser.setProperty("http://cyberneko.org/html/properties/names/elems", "lower");
-            parser.setProperty("http://cyberneko.org/html/properties/default-encoding", encoding);
-        } catch (SAXNotRecognizedException | SAXNotSupportedException e) {
-            logger.error("Unexpected parser configuration error occurred: " + e.getMessage());
+            return new ConfigFileTagProvider(ResourceUtils.getFile("classpath:html-cleaner/tag-ruleset.xml"));
+        } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
         }
-
-        StringReader reader = new StringReader(document);
-        InputSource source = new InputSource(reader);
-        parser.parse(source);
-
-        return parser.getDocument();
     }
 
     /**
@@ -230,7 +236,9 @@ public class HtmlUtils {
             return;
         }
 
-        termUri.setValue(HttpUtils.resolveRelativeUri(base, value));
+        if (!AgnTagUtils.containsAnyEncodedInnerAgnTag(value)) {
+            termUri.setValue(HttpUtils.resolveRelativeUri(base, value));
+        }
     }
 
     /**
@@ -300,14 +308,27 @@ public class HtmlUtils {
         StringBuilder sb = new StringBuilder();
         sb.append(declaration.getProperty()).append(OutputUtil.PROPERTY_OPENING);
         for (Term<?> term : declaration.asList()) {
-            if (term instanceof TermIntegerImpl) {
+            if (term instanceof TermInteger) {
                 Term.Operator operator = term.getOperator();
                 if (operator != null) {
                     sb.append(operator.value());
                 }
-                sb.append(term.toString());
+                sb.append(term);
+            } else if (term instanceof TermFunction) {
+                TermFunction termFunction = (TermFunction) term;
+                if ("agn".equals(termFunction.getFunctionName())) {
+                    TermIdent termIdent = (TermIdent) termFunction.get(0);
+                    termIdent.setValue(AgnTagUtils.decodeInnerAgnTag(termIdent.getValue()));
+                    sb.append(termIdent);
+                }
+            } else if (term instanceof TermURI) {
+                TermURI termUri = (TermURI) term;
+                if (AgnTagUtils.containsAnyEncodedInnerAgnTag(termUri.getValue())) {
+                    termUri.setValue(AgnTagUtils.decodeInnerAgnTags(termUri.getValue()));
+                }
+                sb.append(term);
             } else {
-                sb.append(term.toString());
+                sb.append(term);
             }
         }
         if (declaration.isImportant()) {
@@ -528,9 +549,21 @@ public class HtmlUtils {
             }
         }
 
+        String inlineStyles = element.getAttribute("style");
+
+        if (AgnTagUtils.isEncodedInnerAgnTag(inlineStyles)) {
+            inlineStyles = AgnTagUtils.decodeInnerAgnTags(inlineStyles);
+        } else {
+            inlineStyles = "";
+        }
+
         List<Declaration> declarations = styleMap.get(element);
 
-        if (CollectionUtils.isNotEmpty(declarations)) {
+        if (CollectionUtils.isEmpty(declarations)) {
+            if (StringUtils.isNotEmpty(inlineStyles)) {
+                builder.append(" style=\"").append(inlineStyles).append('"');
+            }
+        } else {
             String styles = declarations.stream()
                     .map(declaration -> {
                         resolveUris(declaration);
@@ -555,7 +588,35 @@ public class HtmlUtils {
                 }
             }
 
-            builder.append(" style=\"").append(styles).append('\"');
+            builder.append(" style=\"");
+            if (StringUtils.isNotEmpty(inlineStyles)) {
+                builder.append(inlineStyles).append("; ");
+            }
+            builder.append(styles);
+            builder.append('"');
+        }
+    }
+
+    public static void encodeAgnTagsInInnerStyles(Node node) {
+        encodeAgnTagsInInnerStyleIfExist(node);
+
+        NodeList nodeList = node.getChildNodes();
+        for (int i = 0; i < nodeList.getLength(); i++) {
+            Node currentNode = nodeList.item(i);
+            if (currentNode.getNodeType() == Node.ELEMENT_NODE) {
+                encodeAgnTagsInInnerStyles(currentNode);
+            }
+        }
+    }
+
+    private static void encodeAgnTagsInInnerStyleIfExist(Node node) {
+        Node style = node.getAttributes().getNamedItem("style");
+        if (style != null) {
+            String val = style.getNodeValue();
+            if (AgnTagUtils.containsAnyAgnTag(val)) {
+                val = AgnTagUtils.encodeInnerAgnTags(val);
+                style.setNodeValue(val);
+            }
         }
     }
 
@@ -659,11 +720,11 @@ public class HtmlUtils {
     }
 
     public static class StylesEmbeddingOptions {
-        private Charset encoding;
-        private URL baseUrl;
-        private String mediaType;
-        private boolean escapeAgnTags;
-        private boolean prettyPrint;
+        private final Charset encoding;
+        private final URL baseUrl;
+        private final String mediaType;
+        private final boolean escapeAgnTags;
+        private final boolean prettyPrint;
 
         private StylesEmbeddingOptions(StylesEmbeddingOptionsBuilder builder) {
             this.encoding = builder.encoding;
@@ -736,8 +797,8 @@ public class HtmlUtils {
     }
 
     private static class HtmlParsingHandler implements SaxParsingHandler {
-        private Locale locale;
-        private Stack<String> stack = new Stack<>();
+        private final Locale locale;
+        private final Stack<String> stack = new Stack<>();
 
         public HtmlParsingHandler(Locale locale) {
             this.locale = locale;

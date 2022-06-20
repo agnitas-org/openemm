@@ -114,7 +114,7 @@
                 <div class="tile-header">
                     <a href="#" class="headline" data-toggle-tile="form-trackable-links-bulk-edit">
                         <i class="tile-toggle icon icon-angle-up"></i>
-                        <mvc:message code="TrackableLink.edit.all"/>
+                        <mvc:message code="Settings"/>
                     </a>
                 </div>
 

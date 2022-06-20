@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -12,10 +12,10 @@ package com.agnitas.emm.springws;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.security.GeneralSecurityException;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
@@ -28,7 +28,6 @@ import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.util.AgnUtils;
 import org.apache.commons.io.FileUtils;
-import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
 /**
@@ -38,21 +37,21 @@ import org.springframework.beans.factory.annotation.Required;
  * This WebservicePasswordEncryptor helps to not store the clear password in servers database.
  */
 public final class WebservicePasswordEncryptor {
-	@SuppressWarnings("unused")
-	private static final transient Logger logger = Logger.getLogger(WebservicePasswordEncryptor.class);
+
+	/** Name of algorithm used for password encryption. */
+	private static final String ALGORITHM_VERSION = "PBEWithHmacSHA256AndAES_256";
 	
-	private static final String ALGORITHM_VERSION_1 = "PBEWithMD5AndDES";
-	private static final String ALGORITHM_VERSION_2 = "PBEWithHmacSHA256AndAES_256";
-	
+	/** Password for encryption. */
 	private char[] encryptorPasswordChars;
 	
+	/** Service handling configuration. */
 	private ConfigService configService;
 	
 	private String saltFilePathOverride = null;
 	
 	@Required
-	public void setConfigService(ConfigService configService) {
-		this.configService = configService;
+	public void setConfigService(final ConfigService configService) {
+		this.configService = Objects.requireNonNull(configService, "configService is null");
 	}
 	
 	public void setSaltFilePathOverride(String saltFilePathOverride) {
@@ -60,12 +59,13 @@ public final class WebservicePasswordEncryptor {
 	}
 	
 	/**
-	 * Only the files first line of text is used as password
+	 * Only the files first line of text is used as salt
 	 * 
-	 * @param passwordFile
-	 * @throws IOException
+	 * @throws IOException on errors reading salt file
+	 * 
+	 * @return salt
 	 */
-	private char[] getEncryptorPasswordChars() throws IOException {
+	private char[] getEncryptorSaltChars() throws IOException {
 		if (encryptorPasswordChars == null) {
 			String saltFilePath;
 			if (saltFilePathOverride != null) {
@@ -73,7 +73,7 @@ public final class WebservicePasswordEncryptor {
 			} else {
 				saltFilePath = configService.getValue(ConfigValue.SystemSaltFile);
 			}
-			final List<String> lines = FileUtils.readLines(new File(saltFilePath), "UTF-8");
+			final List<String> lines = FileUtils.readLines(new File(saltFilePath), StandardCharsets.UTF_8);
 			final String encryptorPasswordString = lines.get(0).replace("“", "\""); // Replace some not allowed non-ascii password chars
 			encryptorPasswordChars = encryptorPasswordString.toCharArray();
 		}
@@ -81,63 +81,49 @@ public final class WebservicePasswordEncryptor {
 	}
 	
 	public final String encrypt(final String username, final String password) throws Exception {
+		// When migrating to a newer algorithm, implement fallback here
 		return encryptVersion2(username, password);
+		
 	}
 	
 	private final String encryptVersion2(final String username, final String password) throws Exception {
 		final byte[] saltBytes = create8ByteSalt(username);
 		
-        final SecretKeyFactory keyFactory = SecretKeyFactory.getInstance(ALGORITHM_VERSION_2);
-        final SecretKey key = keyFactory.generateSecret(new PBEKeySpec(getEncryptorPasswordChars()));
-        final Cipher pbeCipher = Cipher.getInstance(ALGORITHM_VERSION_2);
+        final SecretKeyFactory keyFactory = SecretKeyFactory.getInstance(ALGORITHM_VERSION);
+        final SecretKey key = keyFactory.generateSecret(new PBEKeySpec(getEncryptorSaltChars()));
+        final Cipher pbeCipher = Cipher.getInstance(ALGORITHM_VERSION);
         
         final IvParameterSpec ivParamSpec = new IvParameterSpec(Arrays.copyOf(saltBytes, 16));
         
         pbeCipher.init(Cipher.ENCRYPT_MODE, key, new PBEParameterSpec(saltBytes, 20, ivParamSpec));
         
-        return AgnUtils.encodeBase64(pbeCipher.doFinal(password.getBytes("UTF-8")));
+        return AgnUtils.encodeBase64(pbeCipher.doFinal(password.getBytes(StandardCharsets.UTF_8)));
     }
 
 	public final String decrypt(final String username, final String encryptedPasswordBase64) throws Exception {
-		try {
-			return decryptVersion2(username, encryptedPasswordBase64);
-		} catch(final GeneralSecurityException e) {
-			// Cannot decrypt with stronger cipher, falling back to old one
-			return decryptVersion1(username, encryptedPasswordBase64);
-		}
+		// When migrating to a newer algorithm, implement fallback here
+		return decryptVersion2(username, encryptedPasswordBase64);
     }
 	
 	private final String decryptVersion2(final String username, final String encryptedPasswordBase64) throws Exception {
 		final byte[] saltBytes = create8ByteSalt(username);
 		
-        final SecretKeyFactory keyFactory = SecretKeyFactory.getInstance(ALGORITHM_VERSION_2);
-        final SecretKey key = keyFactory.generateSecret(new PBEKeySpec(getEncryptorPasswordChars()));
-        final Cipher pbeCipher = Cipher.getInstance(ALGORITHM_VERSION_2);
+        final SecretKeyFactory keyFactory = SecretKeyFactory.getInstance(ALGORITHM_VERSION);
+        final SecretKey key = keyFactory.generateSecret(new PBEKeySpec(getEncryptorSaltChars()));
+        final Cipher pbeCipher = Cipher.getInstance(ALGORITHM_VERSION);
         
         final IvParameterSpec ivParamSpec = new IvParameterSpec(Arrays.copyOf(saltBytes, 16));
         
         pbeCipher.init(Cipher.DECRYPT_MODE, key, new PBEParameterSpec(saltBytes, 20, ivParamSpec));
         
-        return new String(pbeCipher.doFinal(AgnUtils.decodeBase64(encryptedPasswordBase64)), "UTF-8");
+        return new String(pbeCipher.doFinal(AgnUtils.decodeBase64(encryptedPasswordBase64)), StandardCharsets.UTF_8);
 	}
 	
-	private final String decryptVersion1(final String username, final String encryptedPasswordBase64) throws Exception {
-		final byte[] saltBytes = create8ByteSalt(username);
-		
-        final SecretKeyFactory keyFactory = SecretKeyFactory.getInstance(ALGORITHM_VERSION_1);
-        final SecretKey key = keyFactory.generateSecret(new PBEKeySpec(getEncryptorPasswordChars()));
-        final Cipher pbeCipher = Cipher.getInstance(ALGORITHM_VERSION_1);
-        
-        pbeCipher.init(Cipher.DECRYPT_MODE, key, new PBEParameterSpec(saltBytes, 20));
-        
-        return new String(pbeCipher.doFinal(AgnUtils.decodeBase64(encryptedPasswordBase64)), "UTF-8");
-	}
-	
-	private static final byte[] create8ByteSalt(final String username) throws UnsupportedEncodingException {
+	private static final byte[] create8ByteSalt(final String username) {
 		if (username.length() < 8) {
-			return (username + AgnUtils.repeatString("=", 8 - username.length())).getBytes("UTF-8");
+			return (username + AgnUtils.repeatString("=", 8 - username.length())).getBytes(StandardCharsets.UTF_8);
 		} else {
-			return username.substring(0, 8).getBytes("UTF-8");
+			return username.substring(0, 8).getBytes(StandardCharsets.UTF_8);
 		}
 	}
 }

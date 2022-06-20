@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -13,7 +13,8 @@ package com.agnitas.emm.core.hashtag.service;
 
 import java.util.Objects;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.emm.core.hashtag.HashTag;
@@ -23,7 +24,7 @@ import com.agnitas.emm.core.hashtag.exception.HashTagException;
 public final class HashTagEvaluationServiceImpl implements HashTagEvaluationService {
 	
 	/** The logger. */
-	private static final transient Logger LOGGER = Logger.getLogger(HashTagEvaluationServiceImpl.class);
+	private static final transient Logger LOGGER = LogManager.getLogger(HashTagEvaluationServiceImpl.class);
 	
 	private HashTagRegistry registry;
 	private HashTag fallbackHashTag;

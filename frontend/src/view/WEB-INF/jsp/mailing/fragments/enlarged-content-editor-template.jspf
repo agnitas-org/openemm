@@ -16,25 +16,35 @@
                                 <bean:message key="HTML"/>
                             </a>
                         </li>
-                        <li class="active">
-                            <a href="#" data-toggle-tab="#tab-enlargedContent-wysiwyg">
-                                <bean:message key="mailingContentHTMLEditor"/>
-                            </a>
-                        </li>
+                        <emm:HideByPermission token="mailing.editor.hide">
+                            <li class="active">
+                                <a href="#" data-toggle-tab="#tab-enlargedContent-wysiwyg">
+                                    <bean:message key="mailingContentHTMLEditor"/>
+                                </a>
+                            </li>
+                        </emm:HideByPermission>
                     </ul>
                 </div>
                 {{ } }}
                 <div class="modal-fixed-body">
-                    <div id="tab-enlargedContent-html" class="{{- showHTMLEditor ? 'hidden' : ''}} full-height">
-                        <div id="enlargedContentEditor" class="form-control" {{- readonly }}></div>
-                    </div>
-                    <div id="tab-enlargedContent-wysiwyg" class="{{- showHTMLEditor ? '' : 'hidden'}} full-height" >
-                        <textarea id="enlargedContent"
-                                  name="enlargedContent"
-                                  class="form-control js-editor js-wysiwyg full-height"
-                                  data-editor-options="isFullHtml: {{- isFullHtmlTags }}, browseMailingId: ${mailingId}"
-                                  {{- readonly }}>{{-content}}</textarea>
-                    </div>
+                    <emm:ShowByPermission token="mailing.editor.hide">
+                        <div id="tab-enlargedContent-html" class="{{- showHTMLEditor ? 'hidden' : ''}} full-height" data-tab-show="true">
+                            <div id="enlargedContentEditor" class="form-control" {{- readonly }}></div>
+                            <textarea id="enlargedContent" class="form-control js-editor" {{- readonly }}>{{-content}}</textarea>
+                         </div>
+                    </emm:ShowByPermission>                    
+                    <emm:HideByPermission token="mailing.editor.hide">
+                        <div id="tab-enlargedContent-html" class="{{- showHTMLEditor ? 'hidden' : ''}} full-height">
+                            <div id="enlargedContentEditor" class="form-control" {{- readonly }}></div>
+                        </div>
+                        <div id="tab-enlargedContent-wysiwyg" class="{{- showHTMLEditor ? '' : 'hidden'}} full-height">
+                            <textarea id="enlargedContent"
+                                      name="enlargedContent"
+                                      class="form-control js-editor js-wysiwyg full-height"
+                                      data-editor-options="isFullHtml: {{- isFullHtmlTags }}, browseMailingId: ${mailingId}"
+                                      {{- readonly }}>{{-content}}</textarea>
+                        </div>
+                    </emm:HideByPermission>
                 </div>
                 <div class="modal-fixed-footer standard-footer">
                     <div class="btn-group">

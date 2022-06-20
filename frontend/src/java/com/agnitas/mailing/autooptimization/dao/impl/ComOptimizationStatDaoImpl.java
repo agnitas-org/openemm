@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -16,14 +16,15 @@ import org.agnitas.beans.BindingEntry.UserType;
 import org.agnitas.dao.UserStatus;
 import org.agnitas.dao.impl.BaseDaoImpl;
 import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-import com.agnitas.emm.core.report.enums.fields.MailingTypes;
+import com.agnitas.emm.common.MailingType;
 import com.agnitas.mailing.autooptimization.dao.ComOptimizationStatDao;
 import com.agnitas.reporting.birt.external.dataset.CommonKeys;
 
 public class ComOptimizationStatDaoImpl extends BaseDaoImpl implements ComOptimizationStatDao {
-	private static final transient Logger logger = Logger.getLogger(ComOptimizationStatDaoImpl.class);
+	private static final transient Logger logger = LogManager.getLogger(ComOptimizationStatDaoImpl.class);
 	
 	@Override
 	public int getBounces(int mailingID, @VelocityCheck int companyID) {
@@ -105,9 +106,9 @@ public class ComOptimizationStatDaoImpl extends BaseDaoImpl implements ComOptimi
                 .append("   AND (' x.status_field = 'A' OR x.status_field = 'T')");
         } else if (CommonKeys.TYPE_WORLDMAILING.equals(recipientsType)) {
             queryBuilder
-                .append("   AND ((m.mailing_type = ").append(MailingTypes.DATE_BASED.getCode()).append(" AND x.status_field = 'R') OR (x.status_field = 'W')) ");
+                .append("   AND ((m.mailing_type = ").append(MailingType.DATE_BASED.getCode()).append(" AND x.status_field = 'R') OR (x.status_field = 'W')) ");
         }
-        return select(logger, queryBuilder.toString(), Integer.class, mailingId, MailingTypes.ACTION_BASED.getCode(), MailingTypes.ACTION_BASED.getCode());
+        return select(logger, queryBuilder.toString(), Integer.class, mailingId, MailingType.ACTION_BASED.getCode(), MailingType.ACTION_BASED.getCode());
     }
 
     @Override

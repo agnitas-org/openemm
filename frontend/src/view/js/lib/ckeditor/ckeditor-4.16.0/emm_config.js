@@ -207,17 +207,18 @@ CKEDITOR.editorConfig = function(config) {
     /*FCKConfig.ToolbarSets["EMC"]*/
     config.toolbar_EMC = [
         ['Cut', 'Copy'],
-        ['Undo','Redo','-','Find','Replace','-','SelectAll'],
-        ['Scayt', '-', 'Link', 'Unlink', '-', 'SpecialChar'],
-        ['Bold', 'Italic', 'Underline', '-', 'JustifyLeft', 'JustifyCenter', 'JustifyRight', 'JustifyBlock']
+        ['Undo','Redo','-','Find','Replace', '-', 'SelectAll'],
+        ['Scayt', '-', 'Link', 'Unlink', 'SpecialChar', 'AGNTag', 'Format'],
+        ['TextColor', 'BGColor', '-', 'Bold', 'Italic', 'Underline', 'Strike', 'Subscript', 'Superscript', 'RemoveFormat']
     ];
-
+  
     /*features available in toolbar "Classic"*/
-    /*FCKConfig.ToolbarSets["Classic"]*/
-    config.toolbar_Classic = [
+    /*FCKConfig.ToolbarSets["Trimmed"]*/
+    config.toolbar_Trimmed = [
         ['Cut', 'Copy'],
-        ['Undo', 'Redo', '-', 'Find', 'Replace', '-', 'SelectAll', '-', 'Scayt', '-', 'Link', 'Unlink', '-', 'Image', 'SpecialChar'],
-        ['FontSize', '-', 'TextColor', '-', 'Bold', 'Italic', 'Underline', '-', 'JustifyLeft', 'JustifyCenter', 'JustifyRight', 'JustifyBlock'],
-        ['NumberedList', 'BulletedList', '-', 'Blockquote']
+        ['Undo', 'Redo', '-', 'Find', 'Replace', '-', 'Scayt', '-', 'Link', 'Unlink', '-', 'SpecialChar', 'AGNTag'],
+        '/',
+        ['Bold', 'Italic', 'Underline', 'Subscript', 'Superscript', 'RemoveFormat', '-', 'JustifyLeft', 'JustifyCenter', 'JustifyRight'],
+        ['NumberedList', 'BulletedList', '-', 'Outdent', 'Indent']
     ];
 };

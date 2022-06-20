@@ -2,14 +2,15 @@
 <%@page import="java.text.MessageFormat"%>
 <%@page import="java.util.Enumeration"%>
 <%@page import="com.agnitas.messages.I18nString, org.agnitas.emm.core.commons.util.ConfigService, org.agnitas.util.AgnUtils"%>
-<%@page import="org.apache.log4j.Logger"%>
+<%@page import="org.apache.logging.log4j.Logger"%>
+<%@page import="org.apache.logging.log4j.LogManager"%>
 <%@ page isErrorPage="true" language="java" pageEncoding="UTF-8" import="org.springframework.web.context.support.WebApplicationContextUtils" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
 <%@ taglib prefix="tiles" uri="http://struts.apache.org/tags-tiles" %>
 
 <%
-    Logger logger = Logger.getLogger("error.jsp");
+    Logger logger = LogManager.getLogger("error.jsp");
 
 	ConfigService configService = (ConfigService) WebApplicationContextUtils.getRequiredWebApplicationContext(request.getSession().getServletContext()).getBean("ConfigService");
 
@@ -80,7 +81,7 @@
                 </div>
 
                 <div class="notification-content">
-                    <p><%= MessageFormat.format(I18nString.getLocaleString("error.global.message", request.getLocale()), configService.getValue(ConfigValue.SupportEmergencyUrl)) %></p>
+					<p><bean:message key="error.global.headline" arg0="<%= configService.getValue(ConfigValue.SupportEmergencyUrl) %>"/></p>
 
                     <a href="#" class="btn btn-regular btn-primary vspace-top-10" onclick="location.reload();">
                         <i class="icon icon-repeat"></i>

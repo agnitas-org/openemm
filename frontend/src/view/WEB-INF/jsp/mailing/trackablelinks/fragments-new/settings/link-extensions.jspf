@@ -1,0 +1,26 @@
+
+<emm:ShowByPermission token="mailing.extend_trackable_links">
+    <div class="form-group">
+        <div class="col-sm-4">
+            <label for="settings_modifyLinkExtensions" class="control-label">
+                <mvc:message code="mailing.trackablelinks.extensions.change"/>
+            </label>
+        </div>
+        <div class="col-sm-8">
+            <label class="toggle">
+                <input type="checkbox" name="modifyAllLinksExtensions" id="settings_modifyLinkExtensions"/>
+                <div class="toggle-control"></div>
+            </label>
+        </div>
+    </div>
+
+    <div id="settingsExtensions" data-initializer="trackable-link-extensions" data-show-by-checkbox="#settings_modifyLinkExtensions">
+        <script id="config:trackable-link-extensions" type="application/json">
+            {
+                "extensions": ${emm:toJson(allLinksExtensions)}
+            }
+        </script>
+        <c:set var="extensionTableTitle" value=""/>
+        <%@ include file="../extensions-table.jspf" %>
+    </div>
+</emm:ShowByPermission>

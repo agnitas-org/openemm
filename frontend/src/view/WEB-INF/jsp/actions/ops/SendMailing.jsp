@@ -1,6 +1,10 @@
 
 <emm:instantiate var="delaysMap" type="java.util.LinkedHashMap">
     <c:set target="${delaysMap}" property="0"><mvc:message code="action.No_Delay"/></c:set>
+    <c:set target="${delaysMap}" property="1">1&nbsp;<mvc:message code="workflow.deadline.Minute"/></c:set>
+    <c:set target="${delaysMap}" property="5">5&nbsp;<mvc:message code="minutes"/></c:set>
+    <c:set target="${delaysMap}" property="15">15&nbsp;<mvc:message code="minutes"/></c:set>
+    <c:set target="${delaysMap}" property="30">30&nbsp;<mvc:message code="minutes"/></c:set>
     <c:set target="${delaysMap}" property="60">1&nbsp;<mvc:message code="Hour"/></c:set>
     <c:set target="${delaysMap}" property="360">6&nbsp;<mvc:message code="Hours"/></c:set>
     <c:set target="${delaysMap}" property="720">12&nbsp;<mvc:message code="Hours"/></c:set>
@@ -54,7 +58,26 @@
             <div class="col-sm-8">
                 <input type="text" name="modules[].bcc" id="module_{{- index}}.bcc" class="form-control" value="{{- bcc}}">
             </div>
+        </div>
+        {{var visibilityClass = ${isForceSendingEnabled} ? 'hidden' : ''}}
 
+        <div class="form-group {{- visibilityClass}}">
+            <div class="col-sm-4">
+                <label class="control-label" for="module_{{- index}}.forActiveRecipients">
+                    <mvc:message code="action.send.doi.active"/>
+                </label>
+            </div>
+
+            <div class="col-sm-8">
+                <label class="toggle">
+                    {{ if (forActiveRecipients) { }}
+                        <input type="checkbox" name="modules[].forActiveRecipients" id="module_{{- index}}.forActiveRecipients" checked="checked">
+                    {{ } else { }}
+                        <input type="checkbox" name="modules[].forActiveRecipients" id="module_{{- index}}.forActiveRecipients">
+                    {{ } }}
+                    <div class="toggle-control"></div>
+                </label>
+            </div>
         </div>
     </div>
     <div class="inline-tile-footer">

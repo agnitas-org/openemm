@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -17,9 +17,10 @@ import java.util.List;
 import org.agnitas.beans.ExportPredef;
 import org.agnitas.emm.core.autoexport.bean.AutoExport;
 import org.agnitas.emm.core.autoexport.bean.AutoExport.AutoExportType;
-import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.agnitas.emm.core.autoexport.bean.AutoExportWsJobState;
 
 import com.agnitas.beans.ComAdmin;
+import com.agnitas.emm.core.autoexport.beans.AutoExportJobStatus;
 import com.agnitas.emm.core.referencetable.beans.ComReferenceTable;
 import com.agnitas.emm.core.workflow.beans.Workflow;
 import com.agnitas.service.CsvImportExportDescription;
@@ -33,27 +34,27 @@ public interface AutoExportService {
 
     AutoExportStatus doExportMailingRecipientsData(AutoExport autoExport) throws Exception;
 
-    List<Workflow> getDependentWorkflows(int autoExportId, @VelocityCheck int companyId, boolean exceptInactive);
+    List<Workflow> getDependentWorkflows(int autoExportId, int companyId, boolean exceptInactive);
 
-    int getWorkflowId(int autoExportId, @VelocityCheck int companyId);
+    int getWorkflowId(int autoExportId, int companyId);
 
-    void setAutoActivationDateAndActivate(@VelocityCheck int companyId, int autoExportId, Date date, boolean isWmDriven) throws Exception;
+    void setAutoActivationDateAndActivate(int companyId, int autoExportId, Date date, boolean isWmDriven) throws Exception;
 
-    void deactivateAutoExport(@VelocityCheck int companyId, int autoExportId) throws Exception;
+    void deactivateAutoExport(int companyId, int autoExportId) throws Exception;
 
     void saveAutoExport(AutoExport autoExport) throws Exception;
 
-    void changeAutoExportActiveStatus(int autoExportId, @VelocityCheck int companyId, boolean active);
+    void changeAutoExportActiveStatus(int autoExportId, int companyId, boolean active);
 
-    AutoExport getAutoExport(int autoExportId, @VelocityCheck int companyId);
+    AutoExport getAutoExport(int autoExportId, int companyId);
 
     List<ExportPredef> getExportProfiles(ComAdmin admin);
 
-    boolean deleteAutoExport(int autoExportId, @VelocityCheck int companyId);
+    boolean deleteAutoExport(int autoExportId, int companyId);
 
-    List<CsvImportExportDescription> getCsvImportExportDescriptions(@VelocityCheck int companyId, String tableName);
+    List<CsvImportExportDescription> getCsvImportExportDescriptions(int companyId, String tableName);
 
-    List<ComReferenceTable> getReferencetable(@VelocityCheck int companyId);
+    List<ComReferenceTable> getReferencetable(int companyId);
 
     AutoExportStatus doExportReferenceTableData(AutoExport autoExport) throws Exception;
 
@@ -63,9 +64,9 @@ public interface AutoExportService {
 
     void finishMailingAutoExport(AutoExport autoExport);
 
-    List<AutoExport> getAutoExports(@VelocityCheck int companyId, boolean active);
+    List<AutoExport> getAutoExports(int companyId, boolean active);
     
-    List<AutoExport> getMailingAutoExports(@VelocityCheck int companyId, boolean active);
+    List<AutoExport> getMailingAutoExports(int companyId, boolean active);
     
     void saveMailingAutoExport(ComAdmin admin, int autoExportId, int mailingId, Date activationAutoExportDate);
 
@@ -78,11 +79,20 @@ public interface AutoExportService {
      *
      * @return null or file (can exist or not)
      */
-    File getSavedAutoExportFile(@VelocityCheck int companyId, AutoExportType exportType, String fileName);
+    File getSavedAutoExportFile(int companyId, AutoExportType exportType, String fileName);
 
     AutoExportStatus doExportReactionsData(AutoExport autoExport) throws Exception;
 
     AutoExport copyAutoExport(ComAdmin admin, int autoExportId) throws Exception;
 
 	AutoExportStatus doExportBlacklistData(AutoExport autoExport) throws Exception;
+	
+    int saveNewWsJobState(int companyId, int autoExportId, AutoExportJobStatus status, int expirationTimeout);
+
+	void saveWsJobState(int jobId, int companyID, AutoExportWsJobState state, int expirationTimeoutDefaultSeconds);
+
+	AutoExportWsJobState getWsJobState(int jobId, int companyId);
+	
+	void removeExpiredWsJobs();
+
 }

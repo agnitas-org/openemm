@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -9,6 +9,9 @@
 */
 
 package com.agnitas.emm.core.company.dto;
+
+import java.util.Arrays;
+import java.util.List;
 
 public class CompanySettingsDto {
 
@@ -23,11 +26,10 @@ public class CompanySettingsDto {
     private String language;
     private String timeZone;
     private boolean hasForceSending;
-    private boolean hasRecipientsCleanup;
     private boolean hasTrackingVeto;
     private int sector;
     private int business;
-    private int maxAdminMails;
+    private int maxAdminMails = -1;
     private boolean hasTwoFactorAuthentication;
     private int recipientAnonymization;
     private int recipientCleanupTracking;
@@ -36,8 +38,32 @@ public class CompanySettingsDto {
     private String passwordPolicyName;
     private int passwordExpireDays;
     private int hostauthCookieExpireDays;
+    private boolean sendPasswordChangedNotification;
+    private String defaultLinkExtension;
+    private int linkcheckerLinktimeout;
+    private int linkcheckerThreadcount;
+    private int mailingUndoLimit;
+    private boolean prefillCheckboxSendDuplicateCheck;
+    private String fullviewFormName;
+    private boolean deleteSuccessfullyImportedFiles;
+	private String importAlwaysInformEmail;
+	private String exportAlwaysInformEmail;
+	private boolean anonymizeAllRecipients;
+	private boolean cleanRecipientsWithoutBinding;
+	private boolean recipientEmailInUseWarning;
+	private boolean allowEmailWithWhitespace;
+	private boolean allowEmptyEmail;
+	private int expireStatistics;
+	private int expireOnePixel;
+	private int expireSuccess;
+	private int expireRecipient;
+	private int expireBounce;
+	private int expireUpload;
+	private boolean writeCustomerOpenOrClickField;
+	private boolean trackingVetoAllowTransactionTracking;
+	private List<Integer> optionsMaxAdminMails = Arrays.asList(25, 50, 100);
 
-    public boolean isHasMailTracking() {
+	public boolean isHasMailTracking() {
         return hasMailTracking;
     }
 
@@ -125,14 +151,6 @@ public class CompanySettingsDto {
         this.hasForceSending = hasForceSending;
     }
 
-    public boolean isHasRecipientsCleanup() {
-        return hasRecipientsCleanup;
-    }
-
-    public void setHasRecipientsCleanup(boolean hasRecipientsCleanup) {
-        this.hasRecipientsCleanup = hasRecipientsCleanup;
-    }
-    
 	public boolean isHasTrackingVeto() {
         return hasTrackingVeto;
     }
@@ -227,5 +245,193 @@ public class CompanySettingsDto {
 
 	public void setRecipientDeletion(int recipientDeletion) {
 		this.recipientDeletion = recipientDeletion;
+	}
+
+    public boolean isSendPasswordChangedNotification() {
+		return sendPasswordChangedNotification;
+	}
+
+	public void setSendPasswordChangedNotification(boolean sendPasswordChangedNotification) {
+		this.sendPasswordChangedNotification = sendPasswordChangedNotification;
+	}
+
+	public String getDefaultLinkExtension() {
+		return defaultLinkExtension;
+	}
+
+	public void setDefaultLinkExtension(String defaultLinkExtension) {
+		this.defaultLinkExtension = defaultLinkExtension;
+	}
+
+	public int getLinkcheckerLinktimeout() {
+		return linkcheckerLinktimeout;
+	}
+
+	public void setLinkcheckerLinktimeout(int linkcheckerLinktimeout) {
+		this.linkcheckerLinktimeout = linkcheckerLinktimeout;
+	}
+
+	public int getLinkcheckerThreadcount() {
+		return linkcheckerThreadcount;
+	}
+
+	public void setLinkcheckerThreadcount(int linkcheckerThreadcount) {
+		this.linkcheckerThreadcount = linkcheckerThreadcount;
+	}
+
+	public int getMailingUndoLimit() {
+		return mailingUndoLimit;
+	}
+
+	public void setMailingUndoLimit(int mailingUndoLimit) {
+		this.mailingUndoLimit = mailingUndoLimit;
+	}
+
+	public boolean isPrefillCheckboxSendDuplicateCheck() {
+		return prefillCheckboxSendDuplicateCheck;
+	}
+
+	public void setPrefillCheckboxSendDuplicateCheck(boolean prefillCheckboxSendDuplicateCheck) {
+		this.prefillCheckboxSendDuplicateCheck = prefillCheckboxSendDuplicateCheck;
+	}
+
+	public String getFullviewFormName() {
+		return fullviewFormName;
+	}
+
+	public void setFullviewFormName(String fullviewFormName) {
+		this.fullviewFormName = fullviewFormName;
+	}
+
+	public boolean isDeleteSuccessfullyImportedFiles() {
+		return deleteSuccessfullyImportedFiles;
+	}
+
+	public void setDeleteSuccessfullyImportedFiles(boolean deleteSuccessfullyImportedFiles) {
+		this.deleteSuccessfullyImportedFiles = deleteSuccessfullyImportedFiles;
+	}
+
+	public String getImportAlwaysInformEmail() {
+		return importAlwaysInformEmail;
+	}
+
+	public void setImportAlwaysInformEmail(String importAlwaysInformEmail) {
+		this.importAlwaysInformEmail = importAlwaysInformEmail;
+	}
+
+	public String getExportAlwaysInformEmail() {
+		return exportAlwaysInformEmail;
+	}
+
+	public void setExportAlwaysInformEmail(String exportAlwaysInformEmail) {
+		this.exportAlwaysInformEmail = exportAlwaysInformEmail;
+	}
+
+	public boolean isAnonymizeAllRecipients() {
+		return anonymizeAllRecipients;
+	}
+
+	public void setAnonymizeAllRecipients(boolean anonymizeAllRecipients) {
+		this.anonymizeAllRecipients = anonymizeAllRecipients;
+	}
+
+	public boolean isCleanRecipientsWithoutBinding() {
+		return cleanRecipientsWithoutBinding;
+	}
+
+	public void setCleanRecipientsWithoutBinding(boolean cleanRecipientsWithoutBinding) {
+		this.cleanRecipientsWithoutBinding = cleanRecipientsWithoutBinding;
+	}
+
+	public boolean isRecipientEmailInUseWarning() {
+		return recipientEmailInUseWarning;
+	}
+
+	public void setRecipientEmailInUseWarning(boolean recipientEmailInUseWarning) {
+		this.recipientEmailInUseWarning = recipientEmailInUseWarning;
+	}
+
+	public boolean isAllowEmailWithWhitespace() {
+		return allowEmailWithWhitespace;
+	}
+
+	public void setAllowEmailWithWhitespace(boolean allowEmailWithWhitespace) {
+		this.allowEmailWithWhitespace = allowEmailWithWhitespace;
+	}
+
+	public boolean isAllowEmptyEmail() {
+		return allowEmptyEmail;
+	}
+
+	public void setAllowEmptyEmail(boolean allowEmptyEmail) {
+		this.allowEmptyEmail = allowEmptyEmail;
+	}
+
+	public int getExpireStatistics() {
+		return expireStatistics;
+	}
+
+	public void setExpireStatistics(int expireStatistics) {
+		this.expireStatistics = expireStatistics;
+	}
+
+	public int getExpireOnePixel() {
+		return expireOnePixel;
+	}
+
+	public void setExpireOnePixel(int expireOnePixel) {
+		this.expireOnePixel = expireOnePixel;
+	}
+
+	public int getExpireSuccess() {
+		return expireSuccess;
+	}
+
+	public void setExpireSuccess(int expireSuccess) {
+		this.expireSuccess = expireSuccess;
+	}
+
+	public int getExpireRecipient() {
+		return expireRecipient;
+	}
+
+	public void setExpireRecipient(int expireRecipient) {
+		this.expireRecipient = expireRecipient;
+	}
+
+	public int getExpireBounce() {
+		return expireBounce;
+	}
+
+	public void setExpireBounce(int expireBounce) {
+		this.expireBounce = expireBounce;
+	}
+
+	public int getExpireUpload() {
+		return expireUpload;
+	}
+
+	public void setExpireUpload(int expireUpload) {
+		this.expireUpload = expireUpload;
+	}
+
+	public boolean isWriteCustomerOpenOrClickField() {
+		return writeCustomerOpenOrClickField;
+	}
+
+	public void setWriteCustomerOpenOrClickField(boolean writeCustomerOpenOrClickField) {
+		this.writeCustomerOpenOrClickField = writeCustomerOpenOrClickField;
+	}
+
+	public boolean isTrackingVetoAllowTransactionTracking() {
+		return trackingVetoAllowTransactionTracking;
+	}
+
+	public void setTrackingVetoAllowTransactionTracking(boolean trackingVetoAllowTransactionTracking) {
+		this.trackingVetoAllowTransactionTracking = trackingVetoAllowTransactionTracking;
+	}
+
+	public List<Integer> getOptionsMaxAdminMails() {
+		return optionsMaxAdminMails;
 	}
 }

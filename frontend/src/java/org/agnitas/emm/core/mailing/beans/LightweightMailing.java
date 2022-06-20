@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -14,6 +14,7 @@ import java.util.Optional;
 
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MailingContentType;
+import com.agnitas.emm.common.MailingType;
 
 /**
  * Light-weight mailing containing only data used in lists, tables, etc.
@@ -33,13 +34,13 @@ public class LightweightMailing {
 	private final String shortname;
 	
 	/** Mailing type. */
-	private final int mailingType;
+	private final MailingType mailingType;
 	
 	private final Optional<String> workStatus;
 	
 	private final MailingContentType mailingContentType;
 	
-	public LightweightMailing(final int companyID, final int mailingID, final String shortname, final String description, final int mailingType, final String workStatusOrNull, final MailingContentType mailingContentType) {
+	public LightweightMailing(final int companyID, final int mailingID, final String shortname, final String description, final MailingType mailingType, final String workStatusOrNull, final MailingContentType mailingContentType) {
 		this.companyID = companyID;
 		this.mailingID = mailingID;
 		this.shortname = shortname;
@@ -100,16 +101,15 @@ public class LightweightMailing {
 	 * 
 	 * @return mailing type
 	 */
-	public int getMailingType() {
-		return this.mailingType;
+	public MailingType getMailingType() {
+		return mailingType;
 	}
 	
 	public Optional<String> getWorkStatus() {
-		return this.workStatus;
+		return workStatus;
 	}
 
 	public final MailingContentType getMailingContentType() {
 		return mailingContentType;
 	}
-	
 }

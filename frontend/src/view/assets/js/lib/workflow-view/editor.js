@@ -1313,6 +1313,58 @@
                 });
             } else if (Def.NODE_TYPE_RECIPIENT == node.getType()) {
                 this.processRecipientsChains();
+            } else if (Def.NODE_TYPE_PARAMETER == node.getType()) {
+                this.getNodeOutgoingChains(node).forEach(function(outgoingChain) {
+                    // Find non-editable parameter node in the outgoing chain (it represents a final send out of A/B test).
+                    var dependentParameterNode = outgoingChain.find(function(nextNode, index) {
+                        return index > 0 && Def.NODE_TYPE_PARAMETER == nextNode.getType() && !nextNode.isEditable();
+                    });
+
+                    if (dependentParameterNode) {
+                        var optimizationParameterNodes = [];
+
+                        // Find all parameter nodes in all incoming chains (their sum must be lest that 100%).
+                        self.getNodeIncomingChains(dependentParameterNode).forEach(function(incomingChain) {
+                            var optimizationParameterNode = incomingChain.find(function(previousNode, index) {
+                                return index > 0 && Def.NODE_TYPE_PARAMETER == previousNode.getType();
+                            });
+
+                            if (optimizationParameterNode) {
+                                optimizationParameterNodes.push(optimizationParameterNode);
+                            }
+                        });
+
+                        var canDependentParameterBeInferred;
+                        var sum = 0;
+
+                        if (optimizationParameterNodes.length) {
+                            canDependentParameterBeInferred = true;
+
+                            for (var index = 0; index < optimizationParameterNodes.length; index++) {
+                                var optimizationParameterNode = optimizationParameterNodes[index];
+                                if (optimizationParameterNode.isFilled()) {
+                                    sum += parseInt(optimizationParameterNode.getData().value);
+                                } else {
+                                    canDependentParameterBeInferred = false;
+                                    break;
+                                }
+                            }
+                        } else {
+                            // There are no parameters in incoming chains so the value of dependent parameter cannot be inferred.
+                            canDependentParameterBeInferred = false;
+                        }
+
+                        EditorsHelper.modify(dependentParameterNode, function(n) {
+                            if (canDependentParameterBeInferred) {
+                                n.setFilled(sum > 0 && sum < 100);
+                                n.getData().value = 100 - sum;
+                            } else {
+                                n.setFilled(false);
+                                n.getData().value = 0;
+                            }
+                        });
+                    }
+                });
             }
         } else {
             // Deadline icon is required right after an import icon (import -> deadline).
@@ -1872,8 +1924,10 @@
     Editor.prototype.editIcon = function(node) {
         if (this.drag == null) {
             if (node) {
-                this.deselectAll();
-                EditorsHelper.showEditDialog(node, Utils.checkActivation());
+                if(node.editable) {
+                    this.deselectAll();
+                    EditorsHelper.showEditDialog(node, Utils.checkActivation());
+                }
             } else {
                 var $nodes = this.getSelection();
                 if ($nodes.length == 1) {

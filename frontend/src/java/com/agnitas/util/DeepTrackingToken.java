@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -13,15 +13,12 @@ package com.agnitas.util;
 import java.security.MessageDigest;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 /**
  * See Wiki for DeepTracking documentation:
  * http://wiki.agnitas.local/doku.php?id=support:howtos:shopmessung
  */
 public class DeepTrackingToken {
-	@SuppressWarnings("unused")
-	private static final transient Logger logger = Logger.getLogger(DeepTrackingToken.class);
 	
 	/**
 	 * Secret key for hash generation and data validation

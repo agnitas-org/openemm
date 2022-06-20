@@ -16,7 +16,7 @@
     <div class="tile">
         <div class="tile-header">
             <h2 class="headline">
-                <bean:message key="export.Wizard"/>
+                <bean:message key="export"/>
             </h2>
         </div>
         <div class="tile-content">

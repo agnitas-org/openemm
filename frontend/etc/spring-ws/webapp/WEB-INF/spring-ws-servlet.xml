@@ -140,4 +140,5 @@
 		<property name="methodArgumentResolvers" ref="marshallingPayloadMethodProcessor"/>
 		<property name="methodReturnValueHandlers" ref="marshallingPayloadMethodProcessor"/>
 	</bean>
+	
 </beans>

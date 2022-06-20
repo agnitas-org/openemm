@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -11,7 +11,9 @@
 
 package org.agnitas.emm.springws.jaxb;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
@@ -61,6 +63,17 @@ import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
  *                     &lt;/complexType&gt;
  *                   &lt;/element&gt;
  *                   &lt;element name="mailingStatus" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/&gt;
+ *                   &lt;element name="mailingStatusList" minOccurs="0"&gt;
+ *                     &lt;complexType&gt;
+ *                       &lt;complexContent&gt;
+ *                         &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType"&gt;
+ *                           &lt;sequence&gt;
+ *                             &lt;element name="mailingStatus" type="{http://www.w3.org/2001/XMLSchema}string" maxOccurs="unbounded"/&gt;
+ *                           &lt;/sequence&gt;
+ *                         &lt;/restriction&gt;
+ *                       &lt;/complexContent&gt;
+ *                     &lt;/complexType&gt;
+ *                   &lt;/element&gt;
  *                 &lt;/all&gt;
  *               &lt;/restriction&gt;
  *             &lt;/complexContent&gt;
@@ -144,6 +157,17 @@ public class ListMailingsRequest {
      *           &lt;/complexType&gt;
      *         &lt;/element&gt;
      *         &lt;element name="mailingStatus" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/&gt;
+     *         &lt;element name="mailingStatusList" minOccurs="0"&gt;
+     *           &lt;complexType&gt;
+     *             &lt;complexContent&gt;
+     *               &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType"&gt;
+     *                 &lt;sequence&gt;
+     *                   &lt;element name="mailingStatus" type="{http://www.w3.org/2001/XMLSchema}string" maxOccurs="unbounded"/&gt;
+     *                 &lt;/sequence&gt;
+     *               &lt;/restriction&gt;
+     *             &lt;/complexContent&gt;
+     *           &lt;/complexType&gt;
+     *         &lt;/element&gt;
      *       &lt;/all&gt;
      *     &lt;/restriction&gt;
      *   &lt;/complexContent&gt;
@@ -161,6 +185,7 @@ public class ListMailingsRequest {
         protected ListMailingsRequest.Filter.SentBefore sentBefore;
         protected ListMailingsRequest.Filter.SentAfter sentAfter;
         protected String mailingStatus;
+        protected ListMailingsRequest.Filter.MailingStatusList mailingStatusList;
 
         /**
          * Gets the value of the sentBefore property.
@@ -232,6 +257,90 @@ public class ListMailingsRequest {
          */
         public void setMailingStatus(String value) {
             this.mailingStatus = value;
+        }
+
+        /**
+         * Gets the value of the mailingStatusList property.
+         * 
+         * @return
+         *     possible object is
+         *     {@link ListMailingsRequest.Filter.MailingStatusList }
+         *     
+         */
+        public ListMailingsRequest.Filter.MailingStatusList getMailingStatusList() {
+            return mailingStatusList;
+        }
+
+        /**
+         * Sets the value of the mailingStatusList property.
+         * 
+         * @param value
+         *     allowed object is
+         *     {@link ListMailingsRequest.Filter.MailingStatusList }
+         *     
+         */
+        public void setMailingStatusList(ListMailingsRequest.Filter.MailingStatusList value) {
+            this.mailingStatusList = value;
+        }
+
+
+        /**
+         * <p>Java class for anonymous complex type.
+         * 
+         * <p>The following schema fragment specifies the expected content contained within this class.
+         * 
+         * <pre>
+         * &lt;complexType&gt;
+         *   &lt;complexContent&gt;
+         *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType"&gt;
+         *       &lt;sequence&gt;
+         *         &lt;element name="mailingStatus" type="{http://www.w3.org/2001/XMLSchema}string" maxOccurs="unbounded"/&gt;
+         *       &lt;/sequence&gt;
+         *     &lt;/restriction&gt;
+         *   &lt;/complexContent&gt;
+         * &lt;/complexType&gt;
+         * </pre>
+         * 
+         * 
+         */
+        @XmlAccessorType(XmlAccessType.FIELD)
+        @XmlType(name = "", propOrder = {
+            "mailingStatus"
+        })
+        public static class MailingStatusList {
+
+            @XmlElement(required = true)
+            protected List<String> mailingStatus;
+
+            /**
+             * Gets the value of the mailingStatus property.
+             * 
+             * <p>
+             * This accessor method returns a reference to the live list,
+             * not a snapshot. Therefore any modification you make to the
+             * returned list will be present inside the Jakarta XML Binding object.
+             * This is why there is not a <CODE>set</CODE> method for the mailingStatus property.
+             * 
+             * <p>
+             * For example, to add a new item, do as follows:
+             * <pre>
+             *    getMailingStatus().add(newItem);
+             * </pre>
+             * 
+             * 
+             * <p>
+             * Objects of the following type(s) are allowed in the list
+             * {@link String }
+             * 
+             * 
+             */
+            public List<String> getMailingStatus() {
+                if (mailingStatus == null) {
+                    mailingStatus = new ArrayList<String>();
+                }
+                return this.mailingStatus;
+            }
+
         }
 
 

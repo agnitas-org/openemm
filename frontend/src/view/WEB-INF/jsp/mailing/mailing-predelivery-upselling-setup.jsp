@@ -1,5 +1,5 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
-<%@ page import="org.agnitas.web.MailingBaseAction" %>
+<%@ page import="com.agnitas.web.MailingBaseAction" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 
@@ -14,6 +14,9 @@
 <c:set var="BASE_ACTION_VIEW" value="<%= MailingBaseAction.ACTION_VIEW %>" />
 
 <c:set var="mailingID" value="${upsellingForm.extraParamsMap.mailingID}"/>
+<c:if test="${empty mailingID}">
+    <c:set var="mailingID" value="${upsellingForm.mailingIdFromSpringUrl}"/>
+</c:if>
 <c:set var="templateId" value="${upsellingForm.extraParamsMap.templateId}"/>
 
 <c:if test="${not empty predeliveryForm}">

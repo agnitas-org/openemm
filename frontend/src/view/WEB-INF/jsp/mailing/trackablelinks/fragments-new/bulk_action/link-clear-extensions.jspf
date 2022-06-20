@@ -1,0 +1,24 @@
+<mvc:hidden path="bulkIds"/>
+
+<div class="modal-body">
+    <mvc:message code="bulkAction.delete.trackablelink.extension.question"/>
+    <div class="element-inline">
+        <ul>
+            <c:forEach var="extension" items="${extensionsToDelete}">
+                <li><label>${extension.propertyName}=${extension.propertyValue}</label></li>
+            </c:forEach>
+        </ul>
+    </div>
+</div>
+<div class="modal-footer">
+    <div class="btn-group">
+        <button type="button" class="btn btn-default btn-large js-confirm-negative" data-dismiss="modal">
+            <i class="icon icon-times"></i>
+            <span class="text"><mvc:message code="default.No"/></span>
+        </button>
+        <button type="button" class="btn btn-primary btn-large js-confirm-positive" data-dismiss="modal">
+            <i class="icon icon-check"></i>
+            <span class="text"><mvc:message code="default.Yes"/></span>
+        </button>
+    </div>
+</div>

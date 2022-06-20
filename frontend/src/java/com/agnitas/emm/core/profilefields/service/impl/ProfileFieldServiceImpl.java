@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -19,7 +19,8 @@ import java.util.stream.Collectors;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComAdmin;
@@ -40,7 +41,7 @@ public final class ProfileFieldServiceImpl implements ProfileFieldService {
     /**
      * The logger.
      */
-    private static final transient Logger logger = Logger.getLogger(ProfileFieldServiceImpl.class);
+    private static final transient Logger logger = LogManager.getLogger(ProfileFieldServiceImpl.class);
 
     private ComProfileFieldDao profileFieldDao;
     private ComColumnInfoService columnInfoService;
@@ -156,7 +157,7 @@ public final class ProfileFieldServiceImpl implements ProfileFieldService {
     }
 
     @Override
-    public int getMaximumSpecificFieldCount(@VelocityCheck int companyId) {
+    public int getMaximumCompanySpecificFieldCount(@VelocityCheck int companyId) {
         try {
             return profileFieldDao.getMaximumCompanySpecificFieldCount(companyId);
         } catch (Exception e) {
@@ -382,5 +383,10 @@ public final class ProfileFieldServiceImpl implements ProfileFieldService {
 	@Override
 	public boolean isReservedKeyWord(String fieldname) {
 		return profileFieldDao.isReservedKeyWord(fieldname);
+	}
+
+	@Override
+	public int getMaximumNumberOfCompanySpecificProfileFields() throws Exception {
+		return profileFieldDao.getMaximumNumberOfCompanySpecificProfileFields();
 	}
 }

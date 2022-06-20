@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Configuration name="EMM" packages="">
+	<Appenders>
+		<Console name="ROOT_CONSOLE" target="SYSTEM_OUT">
+			<PatternLayout pattern="%d: %-5p [%t] %c - %m%n" />
+			<ThresholdFilter level="warn" onMatch="ACCEPT" onMisMatch="DENY" />
+		</Console>
+		
+		<RollingFile name="APPLICATIONLOGFILE" fileName="${sys:user.home}/logs/webapps/emm.log" filePattern="${sys:user.home}/logs/webapps/emm.log.%d{yyyy-MM-dd}">
+			<PatternLayout pattern="%d: %-5p [%t] %c - %m%n" />
+			<ThresholdFilter level="warn" onMatch="ACCEPT" onMisMatch="DENY" />
+			<TimeBasedTriggeringPolicy />
+		</RollingFile>
+		
+		<RollingFile name="APPLICATIONERRORLOGFILE" fileName="${sys:user.home}/logs/webapps/emm_error.log" filePattern="${sys:user.home}/logs/webapps/emm_error.log.%d{yyyy-MM-dd}">
+			<PatternLayout pattern="%d: %-5p [%t] %c - %m%n" />
+			<ThresholdFilter level="error" onMatch="ACCEPT" onMisMatch="DENY" />
+			<TimeBasedTriggeringPolicy />
+		</RollingFile>
+		
+		<RollingFile name="VELOCITY_SECURITY_LOGFILE" fileName="${sys:user.home}/logs/webapps/emm_velocity-security.log" filePattern="${sys:user.home}/logs/webapps/emm_velocity-security.log.%d{yyyy-MM-dd}">
+			<PatternLayout pattern="%d: %-5p [%t] %c - %m%n" />
+			<ThresholdFilter level="warn" onMatch="ACCEPT" onMisMatch="DENY" />
+			<TimeBasedTriggeringPolicy />
+		</RollingFile>
+		
+		<RollingFile name="EQLLOGFILE" fileName="${sys:user.home}/logs/webapps/eql.log" filePattern="${sys:user.home}/logs/webapps/eql.log.%d{yyyy-MM-dd}">
+			<PatternLayout pattern="%d: %-5p [%t] %c - %m%n" />
+			<ThresholdFilter level="info" onMatch="ACCEPT" onMisMatch="DENY" />
+			<TimeBasedTriggeringPolicy />
+		</RollingFile>
+		
+		<RollingFile name="WEBPUSH" fileName="${sys:user.home}/logs/webapps/webpush.log" filePattern="${sys:user.home}/logs/webapps/webpush.log.%d{yyyy-MM-dd}">
+			<PatternLayout pattern="%d: %-5p [%t] %c - %m%n" />
+			<ThresholdFilter level="info" onMatch="ACCEPT" onMisMatch="DENY" />
+			<TimeBasedTriggeringPolicy />
+		</RollingFile>
+		
+		<RollingFile name="THIRDPARTYLOGFILE" fileName="${sys:user.home}/logs/webapps/third-party.log" filePattern="${sys:user.home}/logs/webapps/third-party.log.%d{yyyy-MM-dd}">
+			<PatternLayout pattern="%d: %-5p [%t] %c - %m%n" />
+			<ThresholdFilter level="warn" onMatch="ACCEPT" onMisMatch="DENY" />
+			<TimeBasedTriggeringPolicy />
+		</RollingFile>
+		
+		<RollingFile name="HOST_AUTH" fileName="${sys:user.home}/logs/webapps/host-auth.log" filePattern="${sys:user.home}/logs/webapps/host-auth.log.%d{yyyy-MM-dd}">
+			<PatternLayout pattern="%d: %-5p [%t] %c - %m%n" />
+			<ThresholdFilter level="debug" onMatch="ACCEPT" onMisMatch="DENY" />
+			<TimeBasedTriggeringPolicy />
+		</RollingFile>
+		
+		<RollingFile name="VALIDATE" fileName="${sys:user.home}/logs/webapps/validate.log" filePattern="${sys:user.home}/logs/webapps/validate.log.%d{yyyy-MM-dd}">
+			<PatternLayout pattern="%d: %-5p [%t] %c - %m%n" />
+			<ThresholdFilter level="debug" onMatch="ACCEPT" onMisMatch="DENY" />
+			<TimeBasedTriggeringPolicy />
+		</RollingFile>
+		
+		<RollingFile name="BIRT_REPORTING" fileName="${sys:user.home}/logs/webapps/birt-reporting.log" filePattern="${sys:user.home}/logs/webapps/birt-reporting.log.%d{yyyy-MM-dd}">
+			<PatternLayout pattern="%d: %-5p [%t] %c - %m%n" />
+			<ThresholdFilter level="debug" onMatch="ACCEPT" onMisMatch="DENY" />
+			<TimeBasedTriggeringPolicy />
+		</RollingFile>
+		
+		<RollingFile name="FACEBOOKLOG" fileName="${sys:user.home}/logs/webapps/facebook.log" filePattern="${sys:user.home}/logs/webapps/facebook.log.%d{yyyy-MM-dd}">
+			<PatternLayout pattern="%d: %-5p [%t] %c - %m%n" />
+			<ThresholdFilter level="debug" onMatch="ACCEPT" onMisMatch="DENY" />
+			<TimeBasedTriggeringPolicy />
+		</RollingFile>
+		
+		<RollingFile name="CLEANLOG" fileName="${sys:user.home}/logs/webapps/clean.log" filePattern="${sys:user.home}/logs/webapps/clean.log.%d{yyyy-MM-dd}">
+			<PatternLayout pattern="%d: %-5p [%t] %c - %m%n" />
+			<ThresholdFilter level="debug" onMatch="ACCEPT" onMisMatch="DENY" />
+			<TimeBasedTriggeringPolicy />
+		</RollingFile>
+		
+		<RollingFile name="INBOX_PREVIEW" fileName="${sys:user.home}/logs/inbox-preview.log" filePattern="${sys:user.home}/logs/inbox-preview.log.%d{yyyy-MM-dd}">
+			<PatternLayout pattern="%d: %-5p [%t] %c - %m%n" />
+			<ThresholdFilter level="debug" onMatch="ACCEPT" onMisMatch="DENY" />
+			<TimeBasedTriggeringPolicy />
+		</RollingFile>
+		
+		<RollingFile name="MEDIAPOOL_TIMING_LOG" fileName="${sys:user.home}/logs/webapps/timing.mediapool.log" filePattern="${sys:user.home}/logs/webapps/timing.mediapool.log.%d{yyyy-MM-dd}">
+			<PatternLayout pattern="%d: %-5p [%t] %c - %m%n" />
+			<ThresholdFilter level="debug" onMatch="ACCEPT" onMisMatch="DENY" />
+			<TimeBasedTriggeringPolicy />
+		</RollingFile>
+	</Appenders>
+	
+	<Loggers>
+		<Root level="warn">
+			<AppenderRef ref="ROOT_CONSOLE" />
+			<AppenderRef ref="APPLICATIONLOGFILE" />
+			<AppenderRef ref="APPLICATIONERRORLOGFILE" />
+		</Root>
+		
+		<Logger name="org.agnitas.emm.core.velocity" level="warn">
+			<AppenderRef ref="VELOCITY_SECURITY_LOGFILE" />
+			<AppenderRef ref="APPLICATIONLOGFILE" />
+		</Logger>
+		
+		<Logger name="com.agnitas.emm.core.velocity" level="warn">
+			<AppenderRef ref="VELOCITY_SECURITY_LOGFILE" />
+			<AppenderRef ref="APPLICATIONLOGFILE" />
+		</Logger>
+		
+		<Logger name="cz.vutbr.web" level="warn">
+			<AppenderRef ref="THIRDPARTYLOGFILE" />
+		</Logger>
+		
+		<Logger name="c.v.web" level="warn">
+			<AppenderRef ref="THIRDPARTYLOGFILE" />
+		</Logger>
+		
+		<Logger name="c.v.w" level="warn">
+			<AppenderRef ref="THIRDPARTYLOGFILE" />
+		</Logger>
+		
+		<Logger name="com.agnitas.dao.impl.ComTargetDaoImpl" level="info">
+			<AppenderRef ref="EQLLOGFILE" />
+		</Logger>
+		
+		<Logger name="com.agnitas.emm.core.target.eql" level="info">
+			<AppenderRef ref="EQLLOGFILE" />
+		</Logger>
+		
+		<Logger name="com.agnitas.emm.push" level="debug">
+			<AppenderRef ref="WEBPUSH" />
+		</Logger>
+		
+		<Logger name="com.agnitas.emm.pushsend" level="debug">
+			<AppenderRef ref="WEBPUSH" />
+		</Logger>
+		
+		<Logger name="com.agnitas.emm.core.push" level="debug">
+			<AppenderRef ref="WEBPUSH" />
+		</Logger>
+		
+		<Logger name="com.agnitas.emm.core.logon.LogonUtil" level="debug">
+			<AppenderRef ref="HOST_AUTH" />
+		</Logger>
+		
+		<Logger name="com.agnitas.emm.core.logon.web.ComLogonAction" level="debug">
+			<AppenderRef ref="HOST_AUTH" />
+		</Logger>
+		
+		<Logger name="org.agnitas.emm.core.validator.ModelValidator" level="debug">
+			<AppenderRef ref="VALIDATE" />
+		</Logger>
+
+		<Logger name="com.agnitas.reporting.birt.external.scheduler.service.ReportSendWorker" level="debug">
+			<AppenderRef ref="BIRT_REPORTING" />			
+		</Logger>		
+
+		<Logger name="com.agnitas.emm.facebook" level="debug">
+			<AppenderRef ref="FACEBOOKLOG" />
+		</Logger>		
+		
+		<Logger name="com.agnitas.dao.impl.CleanDBDaoImpl" level="debug">
+			<AppenderRef ref="CLEANLOG" />
+		</Logger>
+		
+		<Logger name="com.agnitas.predelivery" level="warn">
+			<AppenderRef ref="INBOX_PREVIEW" />
+		</Logger>
+		
+		<Logger name="com.agnitas.dev.logging.TimingLogger" level="debug">
+			<AppenderRef ref="MEDIAPOOL_TIMING_LOG" />
+		</Logger>
+	</Loggers>
+</Configuration>

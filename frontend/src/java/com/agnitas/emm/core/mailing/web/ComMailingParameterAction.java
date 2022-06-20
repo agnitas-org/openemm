@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -12,9 +12,6 @@ package com.agnitas.emm.core.mailing.web;
 
 import java.util.List;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-
 import org.agnitas.emm.core.mailing.beans.LightweightMailing;
 import org.agnitas.service.WebStorage;
 import org.agnitas.util.AgnUtils;
@@ -24,7 +21,6 @@ import org.agnitas.web.StrutsActionBase;
 import org.agnitas.web.forms.FormUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
@@ -41,10 +37,11 @@ import com.agnitas.emm.core.mailing.service.MailingParameterLogService;
 import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.service.ComWebStorage;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+
 public class ComMailingParameterAction extends BaseDispatchAction {
-	/** The logger. */
-	@SuppressWarnings("unused")
-	private static final transient Logger logger = Logger.getLogger(ComMailingParameterAction.class);
+
 	private ComMailingParameterService mailingParameterService;
 	private MailingService mailingService;
 	private WebStorage webStorage;

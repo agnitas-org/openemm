@@ -1,12 +1,15 @@
 
 AGN.Lib.Controller.new('wysiwyg-image-browser', function() {
 
-    var config = this.config;
+    var config;
 
     var funcNum = getUrlParam('CKEditorFuncNum');
     var mailingId = getUrlParam('mailingID');
 
-    updateImg();
+    this.addDomInitializer("wysiwyg-image-browser", function() {
+        config = this.config;
+        updateImg();
+    });
 
     this.addAction({click: 'submit-image'}, function() {
         var activeImageTab = $('li[image-tab-name].active').attr('image-tab-name');

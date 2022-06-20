@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -11,14 +11,17 @@
 package com.agnitas.emm.core.mobile.dao.impl;
 
 import org.agnitas.dao.impl.BaseDaoImpl;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.emm.core.mobile.bean.ComAccessData;
 import com.agnitas.emm.core.mobile.dao.ComAccessDataDao;
 
 public class ComAccessDataDaoImpl extends BaseDaoImpl implements ComAccessDataDao {
-	private static final transient Logger logger = Logger.getLogger(ComAccessDataDaoImpl.class);
+	
+	/** The logger. */
+	private static final transient Logger logger = LogManager.getLogger(ComAccessDataDaoImpl.class);
 	
 	public static final int MAXIMUM_USERAGENT_STORAGESIZE = 2200;
 	public static final int MAXIMUM_REFERRER_STORAGESIZE = 2000;

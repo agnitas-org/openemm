@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -20,7 +20,8 @@ import org.agnitas.dao.JobQueueDao;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.util.AgnUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.context.ApplicationContext;
 
 import com.agnitas.beans.BeanLookupFactory;
@@ -42,7 +43,7 @@ public abstract class JobWorker implements Runnable {
 	/**
 	 * Logger of the JobWorker class. The implementing classes should have their own logger
 	 */
-	private static final transient Logger logger = Logger.getLogger(JobWorker.class);
+	private static final transient Logger logger = LogManager.getLogger(JobWorker.class);
 	
 	/**
 	 * Service instance having control on this JobWorker object
@@ -144,12 +145,14 @@ public abstract class JobWorker implements Runnable {
 	public void run() {
 		previousJobStart = job.getLastStart();
 		
-		Date runStart = new Date();
+		final Date runStart = new Date();
 		job.setRunning(true);
 		job.setLastStart(runStart);
 		jobQueueDao.updateJob(job);
 
-		logger.info("Starting JobWorker: " + job.getDescription() + " (" + job.getId() + ")");
+		if(logger.isInfoEnabled()) {
+			logger.info(String.format("Starting JobWorker: %s (%d)", job.getDescription(), job.getId()));
+		}
 		
 		String resultText;
 		try {
@@ -160,23 +163,38 @@ public abstract class JobWorker implements Runnable {
 			}
 			
 			job.setLastResult("OK");
-		} catch (Throwable t) {
-			logger.error("Error in " + this.getClass().getName() + ": " + t.getMessage(), t);
-			// Watchout: NullpointerExceptions have Message "null", which would result in another jobrun, so enter some additional text (classname)
-			job.setLastResult(t.getClass().getSimpleName() + ": " + t.getMessage() + "\n" + AgnUtils.getStackTraceString(t));
-			if (StringUtils.isNotBlank(job.getEmailOnError())) {
-				String subject = "Error in JobQueue Job " + job.getDescription() + "(" + job.getId() + ") on host '" + AgnUtils.getHostName() + "'";
-				String errorText = t.getClass().getSimpleName() + ": " + t.getMessage() + "\n" + AgnUtils.getStackTraceString(t);
-				try {
-					mailNotificationService.sendNotificationMailWithDuplicateRetention(0, job.getEmailOnError(), subject, errorText);
-				} catch (Exception e) {
-					logger.error("Cannot send email with jobqueue error:\n" + subject + "\n" + errorText, e);
-				}
+		} catch (final JobStopException e) {
+			if(logger.isInfoEnabled()) {
+				logger.info(String.format(
+						"Job worker %s (%d) received STOP signal", 
+						this.getClass().getName(),
+						job.getId()
+						));
 			}
+			
+			resultText = "OK";
+			job.setLastResult("OK");
+		} catch (final Throwable t) {
+			logger.error(String.format(
+					"Error in %s: %s", 
+					this.getClass().getName(), 
+					t.getMessage()), 
+					t);
+
+			// Watchout: NullpointerExceptions have Message "null", which would result in another jobrun, so enter some additional text (classname)
+			job.setLastResult(String.format(
+					"%s: %s%n%s", 
+					t.getClass().getSimpleName(), 
+					t.getMessage(), 
+					AgnUtils.getStackTraceString(t)));
+			
+			sendErrorMail(job, t);
 			resultText = job.getLastResult();
 		}
-		
-		logger.info("JobWorker done: " + job.getDescription() + " (" + job.getId() + ")");
+
+		if(logger.isInfoEnabled()) {
+			logger.info(String.format("JobWorker done: %s (%d)", job.getDescription(), job.getId()));
+		}
 		
 		job.setRunning(false);
 		job.setLastDuration((int) (new Date().getTime() - runStart.getTime()) / 1000);
@@ -187,6 +205,19 @@ public abstract class JobWorker implements Runnable {
 
 		// show report ended
 		jobQueueService.showJobEnd(this);
+	}
+	
+	private final void sendErrorMail(final JobDto jobDto, final Throwable t) {
+		if (StringUtils.isNotBlank(jobDto.getEmailOnError())) {
+			final String subject = "Error in JobQueue Job " + jobDto.getDescription() + "(" + jobDto.getId() + ") on host '" + AgnUtils.getHostName() + "'";
+			final String errorText = t.getClass().getSimpleName() + ": " + t.getMessage() + "\n" + AgnUtils.getStackTraceString(t);
+			
+			try {
+				mailNotificationService.sendNotificationMailWithDuplicateRetention(0, jobDto.getEmailOnError(), subject, errorText);
+			} catch (Exception e) {
+				logger.error("Cannot send email with jobqueue error:\n" + subject + "\n" + errorText, e);
+			}
+		}
 	}
 
 	/**

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -13,6 +13,7 @@ package com.agnitas.emm.grid.grid.beans;
 import java.util.Map;
 
 import com.agnitas.beans.MediatypeEmail;
+import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.mailing.bean.ComMailingParameter;
 
 public interface ComTemplateSettings {
@@ -25,8 +26,8 @@ public interface ComTemplateSettings {
     void setCampaignId(int campaignId);
     int getMailingListId();
     void setMailingListId(int mailingListId);
-    int getMailingType();
-    void setMailingType(int mailingType);
+    MailingType getMailingType();
+    void setMailingType(MailingType mailingType);
     boolean isArchived();
     void setArchived(boolean archived);
     String getParam();
@@ -44,6 +45,8 @@ public interface ComTemplateSettings {
 
     String[] getTargets();
     void setTargets(String[] targets);
+    String[] getAltgs();
+    void setAltgs(String[] altgs);
     int getCompanyID();
     void setCompanyID(int companyID);
     String getFollowUpMailingType();

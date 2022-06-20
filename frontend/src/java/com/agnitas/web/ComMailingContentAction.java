@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -21,12 +21,10 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-import org.agnitas.beans.AdminPreferences;
 import org.agnitas.beans.DynamicTagContent;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.factory.DynamicTagContentFactory;
 import org.agnitas.beans.factory.MailingFactory;
-import org.agnitas.dao.AdminPreferencesDao;
 import org.agnitas.dao.EmmActionDao;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
@@ -38,7 +36,8 @@ import org.agnitas.util.AgnUtils;
 import org.agnitas.util.CharacterEncodingValidator;
 import org.agnitas.web.StrutsActionBase;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
@@ -49,10 +48,12 @@ import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
 import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.AdminPreferences;
 import com.agnitas.beans.DynamicTag;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.TargetLight;
+import com.agnitas.dao.AdminPreferencesDao;
 import com.agnitas.dao.ComMailingComponentDao;
 import com.agnitas.dao.ComProfileFieldDao;
 import com.agnitas.dao.DynamicTagDao;
@@ -70,7 +71,7 @@ import com.agnitas.util.preview.PreviewImageService;
 
 public class ComMailingContentAction extends StrutsActionBase {
 	/** The logger. */
-	private static final transient Logger logger = Logger.getLogger(ComMailingContentAction.class);
+	private static final transient Logger logger = LogManager.getLogger(ComMailingContentAction.class);
 
 	public static final int ACTION_VIEW_CONTENT = ACTION_LAST + 1;
 	public static final int ACTION_IMPORT_CONTENT = ACTION_LAST + 2;
@@ -259,9 +260,12 @@ public class ComMailingContentAction extends StrutsActionBase {
 		form.setIsTemplate(mailing.isIsTemplate());
 		form.setMailinglistID(mailing.getMailinglistID());
 		form.setMailingID(mailing.getId());
-		form.setMailFormat(mailing.getEmailParam().getMailFormat());
 		form.setTags(mailing.getDynTags(), true);
 		form.setWorldMailingSend(this.maildropService.isActiveMailing(mailing.getId(), mailing.getCompanyID()));
+		
+		if(mailing.getEmailParam() != null) {
+			form.setMailFormat(mailing.getEmailParam().getMailFormat());
+		}
 
 		form.setMailingContentView(adminPreferences.getMailingContentView());
 		form.setDynTagNames(mailingBaseService.getDynamicTagNames(mailing));

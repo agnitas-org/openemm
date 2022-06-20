@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -21,6 +21,7 @@ import jakarta.servlet.http.HttpServletRequest;
 
 import org.agnitas.beans.ColumnMapping;
 import org.agnitas.beans.ImportProfile;
+import org.agnitas.beans.impl.ColumnMappingImpl;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.ImportUtils;
 import org.agnitas.web.StrutsActionBase;
@@ -30,6 +31,7 @@ import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 
+import com.agnitas.beans.ProfileField;
 import com.agnitas.emm.core.upload.bean.UploadData;
 import com.agnitas.web.ImportProfileColumnsAction;
 
@@ -39,9 +41,8 @@ public class ImportProfileColumnsForm extends ImportBaseFileForm {
     protected int action;
     protected int profileId;
     protected ImportProfile profile;
-    protected String[] dbColumns;
-    private String newColumnMappingName;
-    private String newColumnMappingValue;
+    private Map<String, ProfileField> profileFields;
+    private ColumnMapping newColumnMapping = new ColumnMappingImpl();
     protected String valueType;
     protected Map<String, String> dbColumnsDefaults;
     private List<UploadData> csvFiles;
@@ -79,22 +80,6 @@ public class ImportProfileColumnsForm extends ImportBaseFileForm {
         this.action = action;
     }
 
-    public String[] getDbColumns() {
-        return dbColumns;
-    }
-
-    public void setDbColumns(String[] dbColumns) {
-        this.dbColumns = dbColumns;
-    }
-
-    public String getNewColumnMappingValue() {
-        return newColumnMappingValue;
-    }
-
-    public void setNewColumnMappingValue(String newColumnMappingValue) {
-        this.newColumnMappingValue = ImportUtils.fixEncoding(newColumnMappingValue);
-    }
-
     public String getValueType() {
         return valueType;
     }
@@ -105,8 +90,7 @@ public class ImportProfileColumnsForm extends ImportBaseFileForm {
 
     public void resetFormData() {
         profile = null;
-        newColumnMappingValue = "";
-        dbColumns = new String[0];
+        newColumnMapping = new ColumnMappingImpl();
         dbColumnsDefaults = new HashMap<>();
         columnIndexes.clear();
     }
@@ -121,7 +105,7 @@ public class ImportProfileColumnsForm extends ImportBaseFileForm {
         if ((action == StrutsActionBase.ACTION_SAVE || action == ImportProfileColumnsAction.ACTION_SAVE_AND_START) &&
                 !ImportUtils.hasNoEmptyParameterStartsWith(request, "removeMapping")) {
             if (AgnUtils.parameterNotEmpty(request, "add")) {
-                if (!StringUtils.isEmpty(newColumnMappingName) && columnExists(newColumnMappingName, profile.getColumnMapping())) {
+                if (!StringUtils.isEmpty(newColumnMapping.getDatabaseColumn()) && columnExists(newColumnMapping.getDatabaseColumn(), profile.getColumnMapping())) {
                     errors.add("newColumn", new ActionMessage("error.import.column.duplicate"));
                 }
             } else {
@@ -218,11 +202,19 @@ public class ImportProfileColumnsForm extends ImportBaseFileForm {
         }
     }
 
-    public String getNewColumnMappingName() {
-        return newColumnMappingName;
+    public ColumnMapping getNewColumnMapping() {
+        return newColumnMapping;
     }
 
-    public void setNewColumnMappingName(String newColumnMappingName) {
-        this.newColumnMappingName = newColumnMappingName;
+    public void setNewColumnMapping(ColumnMapping newColumnMapping) {
+        this.newColumnMapping = newColumnMapping;
+    }
+
+    public Map<String, ProfileField> getProfileFields() {
+        return profileFields;
+    }
+
+    public void setProfileFields(Map<String, ProfileField> profileFields) {
+        this.profileFields = profileFields;
     }
 }

@@ -113,7 +113,7 @@
                     "field": "creationDate",
                     "type": "dateColumn",
                     "cellRenderer": "DateCellRenderer",
-                    "cellRendererParams": { "optionDateFormat": "${fn:toUpperCase(dateFormatPattern)}" }
+                    "cellRendererParams": { "optionDateFormat": "${fn:replace(fn:replace(adminDateFormat, "d", "D"), "y", "Y")}" }
                 },
                 {
                     "headerName": "<mvc:message code='default.changeDate'/>",
@@ -121,7 +121,7 @@
                     "field": "changeDate",
                     "type": "dateColumn",
                     "cellRenderer": "DateCellRenderer",
-                    "cellRendererParams": { "optionDateFormat": "${fn:toUpperCase(dateFormatPattern)}" }
+                    "cellRendererParams": { "optionDateFormat": "${fn:replace(fn:replace(adminDateFormat, "d", "D"), "y", "Y")}" }
                 },
                 {
                     "headerName": "<mvc:message code='mailinglist.frequency.counter'/>",

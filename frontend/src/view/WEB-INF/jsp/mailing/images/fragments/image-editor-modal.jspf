@@ -1,0 +1,80 @@
+<script id="image-editor-modal" type="text/x-mustache-template">
+    <div class="modal modal-adaptive">
+        <div class="modal-dialog">
+            <div class="modal-content" data-controller="image-editor">
+                <div class="modal-header">
+                    <button type="button" class="close-icon close" data-dismiss="modal">
+                        <i aria-hidden="true" class="icon icon-times-circle"></i>
+                    </button>
+                    <h4 class="modal-title"><mvc:message code="grid.mediapool.images.edit"/></h4>
+                </div>
+                <c:url var="actionUrl" value="/mailing/${mailingId}/images/{id}/edit.action" />
+                {{ var action = '${actionUrl}'.replace('{id}', imageId); }}
+                <form id="l-editor-form" action="{{- action}}" data-form="static" method="POST" enctype="multipart/form-data">
+                    <input type="hidden" name="imgBase64" id="editor-result"/>
+                    <div class="modal-body">
+                        <div id="l-img-editor" data-initializer="img-editor-init">
+                            <ul id="l-img-editor-tools">
+                                <li><label><mvc:message code="default.image.width"/></label></li>
+                                <li>
+                                    <input id="l-editor-img-width" value="" class="form-control"
+                                           data-action="changeSize"
+                                           onkeypress="return event.charCode >= 48 && event.charCode <= 57"
+                                           onfocus="$(this).select()">
+                                </li>
+                                <li><label><mvc:message code="grid.mediapool.image.sizes.height"/></label></li>
+                                <li>
+                                    <input id="l-editor-img-height" value="" class="form-control"
+                                           data-action="changeSize"
+                                           onkeypress="return event.charCode >= 48 && event.charCode <= 57"
+                                           onfocus="$(this).select()">
+                                </li>
+                                <li><label><mvc:message code="image.editor.inpercent"/></label></li>
+                                <li>
+                                    <input id="l-editor-img-percent" value="" class="form-control"
+                                           data-action="pcChangeSize"
+                                           onkeypress="return event.charCode >= 48 && event.charCode <= 57"
+                                           onfocus="$(this).select()">
+                                </li>
+                                <li>
+                                    <div>
+                                        <button type="button" class="btn" id="editor-lock-btn"
+                                                data-tooltip="<mvc:message code="image.editor.keep.proportions"/>"
+                                                data-action="blockSizes">
+                                            <i class="icon icon-lock"></i>
+                                        </button>
+                                        <button type="button" class="btn"
+                                                data-tooltip="<mvc:message code="image.editor.rotate"/>"
+                                                data-action="rotateImage">
+                                            <i class="icon icon-rotate-right"></i>
+                                        </button>
+                                        <button type="button" id="editor-crop-btn" class="btn"
+                                                data-tooltip="<mvc:message code="image.editor.crop"/>"
+                                                data-action="cropImage">
+                                            <i class="icon icon-crop"></i>
+                                        </button>
+                                    </div>
+                                </li>
+                            </ul>
+                            <div id="canvas-editor-area">
+                                <canvas id="editor-canvas"></canvas>
+                                <img class="hidden" id="editor-img" src="{{= src }}" data-content-type="{{= contentType }}"/>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-regular" data-action="saveCrop">
+                            <i class="icon icon-crop"></i><span class="text"><mvc:message code="image.editor.crop"/></span>
+                        </button>
+                        <button type="button" class="btn btn-regular" data-dismiss="modal">
+                            <i class="icon icon-times"></i><span class="text"><mvc:message code="button.Cancel"/></span>
+                        </button>
+                        <button type="button" class="btn btn-primary btn-regular" data-form-submit="">
+                            <i class="icon icon-save"></i><span class="text"><mvc:message code="button.Save"/></span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</script>

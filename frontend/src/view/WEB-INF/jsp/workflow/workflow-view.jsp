@@ -22,6 +22,7 @@
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
 <%--@elvariable id="workflowForm" type="com.agnitas.emm.core.workflow.web.forms.WorkflowForm"--%>
+<%--delete after GWUA-4957 has been successfully tested--%>
 <%--@elvariable id="accessLimitTargetId" type="java.lang.Integer"--%>
 
 <c:set var="operators" value="<%= WorkflowDecision.DECISION_OPERATORS %>"/>
@@ -103,7 +104,6 @@
       window.addEventListener('DOMMouseScroll', function(e) { if (e.ctrlKey == true) {e.preventDefault();}}, { passive: false });
     })();
 </script>
-
 
 <div data-controller="workflow-view">
 
@@ -206,7 +206,8 @@
 	            },
                 "imagePath": "${absoluteImagePath}/campaignManager/",
                 "initialWorkflowStatus": "${workflowForm.status}",
-                "localeDateTimePattern": "${localeDateTimePattern}"
+                "localeDateTimePattern": "${localeDateTimePattern}",
+                "isAltgExtended" : ${isExtendedAltgEnabled}
 	        },
             "accessLimitTargetId": ${accessLimitTargetId}
         }
@@ -418,7 +419,7 @@
                     <div class="form-group">
                         <label for="name" class="form-label">
                             <mvc:message var="nameMsg" code="default.Name"/>
-                            ${nameMsg}
+                            ${nameMsg} *
                         </label>
                         <mvc:text path="shortname" cssClass="form-control" id="name" placeholder="${nameMsg}"/>
                     </div>
@@ -542,8 +543,6 @@
                         <div class="iconPanelRow">
                             <div id="arrowButton" class="toolbarButton" title="<bean:message key="workflow.icon.chaining"/>" data-action="chain-mode"></div>
                             <div class="toolbarButton js-draggable-button" data-type="deadline" title="<bean:message key="workflow.icon.deadline"/>"></div>
-
-                            <%@include file="fragments/workflow-view-birt-report-icon.jspf" %>
                         </div>
                     </div>
 

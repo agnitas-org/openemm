@@ -1,66 +1,52 @@
-AGN.Lib.Controller.new('mailing-attachments', function() {
-  var self = this,
-      clearAttachment,
-      updateFilename,
-      updatePdfFilename;
+AGN.Lib.Controller.new('mailing-upload-attachment', function() {
 
-
-  clearAttachment = function() {
-    $('#newAttachmentName').val('');
-    $('attachmentTargetID').prop("selectedIndex", 0);
-  }
-
-  updateFilename = function() {
-    var filename = $("#newAttachment").val().match(/[^\\\/]+$/);
-
-    $("#newAttachmentName").val(filename);
-  }
-
-  updatePdfFilename = function() {
-    var filename = $("#attachmentPdfFileID").find(':selected').attr('title');
-
-    $("#newAttachmentName").val(filename);
-  }
-
+  this.addDomInitializer('mailing-upload-attachment', function() {
+    resetFields();
+  });
 
   this.addAction({
     'change': 'use-pdf'
   }, function(){
-    self.runInitializer('AttachmentUsePdf');
+    updateFields($(this.elem).prop('checked'));
   });
 
   this.addAction({
-    'change': 'update-filename'
+    'change': 'change-attachment-file'
   }, function(){
-    updateFilename();
+    updateFilename(false);
   })
 
   this.addAction({
-    'change': 'update-pdf-filename'
+    'change': 'change-upload-file'
   }, function(){
-    updatePdfFilename();
-    clearAttachment();
+    updateFilename(true);
   });
 
-  this.addInitializer('AttachmentUsePdf', function($scope) {
-    if (!$scope) {
-      $scope = $(document);
-    }
+  function resetFields() {
+    $('#attachment').val('');
+    $('#attachmentName').val('');
+    $('#backgroundAttachment').val('');
+    $('#targetId').select2('val', 0)
+    AGN.Lib.Select.get($('#type')).selectFirstValue();
+  }
 
-    var $trigger = $scope.find('[data-action="use-pdf"]');
-
-    if ( $trigger.prop('checked') ) {
-      $('#attachmentPdfFileID').prop('disabled', false);
-      $('#newAttachment').prop('disabled', true);
-      updatePdfFilename();
+  function updateFilename(useUploadActivated) {
+    var attachmentName = '';
+    if (useUploadActivated) {
+      attachmentName = $('#pdfUploadId').select2('val');
     } else {
-      $('#attachmentPdfFileID').prop('disabled', true);
-      $('#newAttachment').prop('disabled', false);
+      var files = $('#attachment').prop('files');
+
+      if (files && files.length) {
+        attachmentName = files[0].name;
+      }
     }
 
-    clearAttachment();
+    $('#attachmentName').val(attachmentName);
+  }
 
-  });
-
-
+  function updateFields(useUploadActivated) {
+    resetFields();
+    updateFilename(useUploadActivated)
+  }
 });

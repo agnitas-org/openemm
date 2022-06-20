@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -15,10 +15,8 @@ import java.text.DateFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Callable;
 
-import jakarta.servlet.http.HttpServletRequest;
-
+import com.agnitas.emm.core.recipient.dto.BindingAction;
 import org.agnitas.beans.BindingEntry;
 import org.agnitas.beans.Recipient;
 import org.agnitas.beans.impl.PaginatedListImpl;
@@ -27,8 +25,6 @@ import org.agnitas.emm.core.recipient.dto.RecipientLightDto;
 import org.agnitas.emm.core.recipient.service.impl.ProfileFieldNotExistException;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.agnitas.web.RecipientForm;
-import org.apache.commons.beanutils.DynaBean;
 import org.springframework.cache.annotation.Cacheable;
 
 import com.agnitas.beans.ComAdmin;
@@ -101,11 +97,9 @@ public interface RecipientService {
 	
 	boolean deleteRecipients(ComAdmin admin, Set<Integer> bulkIds);
 
-	Callable<PaginatedListImpl<DynaBean>> getRecipientWorker(HttpServletRequest request, RecipientForm form, Set<String> recipientDbColumns, String sort, String direction, int pageNumber, int rownums) throws Exception;
-
 	PaginatedListImpl<RecipientDto> getPaginatedRecipientList(ComAdmin admin, RecipientSearchParamsDto searchParams, String sort, String order, int page, int rownums, Map<String, String> fields) throws Exception;
 
-	PaginatedListImpl<DynaBean> getPaginatedDuplicateList(ComAdmin admin, String searchFieldName, String sort, String order, int page, int rownums, Map<String, String> fields) throws Exception;
+	PaginatedListImpl<RecipientDto> getPaginatedDuplicateList(ComAdmin admin, String searchFieldName, boolean caseSensitive, String sort, String order, int page, int rownums, Map<String, String> fields) throws Exception;
 	
 	List<Integer> listRecipientIdsByTargetGroup(final int targetId, final int companyId);
 
@@ -162,7 +156,7 @@ public interface RecipientService {
 
 	SimpleServiceResult isRecipientMatchAltgTarget(ComAdmin admin, SaveRecipientDto recipient);
 
-	ServiceResult<List<String>> saveRecipientBindings(ComAdmin admin, int recipientId, RecipientBindingsDto bindings);
+	ServiceResult<List<BindingAction>> saveRecipientBindings(ComAdmin admin, int recipientId, RecipientBindingsDto bindings, UserStatus newStatusForUnsubscribing);
 
 	int getRecipientIdByAddress(ComAdmin admin, int recipientId, String email);
 

@@ -10,16 +10,30 @@
 <c:set var="ACTION_BULK_REMOVE" value="<%= ImportProfileColumnsAction.ACTION_BULK_REMOVE %>"/>
 <c:set var="ACTION_UPLOAD" value="<%= ImportProfileColumnsAction.ACTION_UPLOAD %>"/>
 
-<agn:agnForm action="/importprofile_columns" id="importProfileColumnsForm" enctype="multipart/form-data" data-form="static">
+<agn:agnForm action="/importprofile_columns" id="importProfileColumnsForm" enctype="multipart/form-data" data-form="static"
+             data-controller="importprofile-fields"
+             data-initializer="importprofile-fields"   
+             data-validator="importprofile-fields/form">
 	<html:hidden property="profileId"/>
 	<html:hidden property="action"/>
 
+    <script type="application/json" id="config:importprofile-fields-validator">
+        {
+            "columns": ${emm:toJson(importProfileColumnsForm.profileFields)}
+        }
+    </script>    
+    
+    <script type="application/json" id="config:importprofile-fields">
+        {
+            "columns" : ${emm:toJson(importProfileColumnsForm.profileFields)}
+        }
+    </script>    
+    
 	<%--@elvariable id="importProfileColumnsForm" type="com.agnitas.web.forms.ImportProfileColumnsForm"--%>
 	<c:forEach var="columnsDefaults" items="${importProfileColumnsForm.dbColumnsDefaults}">
 		<input type="hidden" id="default.${columnsDefaults.key}" value="${columnsDefaults.value}"/>
 	</c:forEach>
 
-	<input type="hidden" name="add" value=""/>
 	<input type="hidden" name="save" value=""/>
 	<input type="hidden" id="upload_file" name="upload_file" value=""/>
 
@@ -103,8 +117,8 @@
 						</div>
 					</c:if>
 
-					<div class="table-responsive">
-						<table class="table table-bordered table-striped table-form">
+					<div>
+						<table id="columnMappings" class="table table-bordered table-striped table-form">
 							<thead>
 								<tr>
 									<c:if test="${not isReadonly}">
@@ -138,11 +152,11 @@
 													<div class="list-group-item disabled">${mapping.databaseColumn}</div>
 												</c:when>
 												<c:otherwise>
-													<select name="dbColumn_${column_index}" id="id_dbColumn_${column_index}" class="form-control js-select">
+													<select name="dbColumn_${column_index}" id="id_dbColumn_${column_index}" class="form-control js-select" data-action="changeExistColName">
 														<option value="<%= ColumnMapping.DO_NOT_IMPORT %>">
 															<bean:message key="import.column.skip"/>
 														</option>
-														<c:forEach var="dbColumn" items="${importProfileColumnsForm.dbColumns}">
+														<c:forEach var="dbColumn" items="${importProfileColumnsForm.profileFields.keySet()}">
 															<c:if test="${dbColumn == mapping.databaseColumn}">
 																<option value="${dbColumn}" selected="selected">${dbColumn}</option>
 															</c:if>
@@ -183,7 +197,7 @@
 												<input type="text" name="default_value_${column_index}" id="id_default_value_${column_index}" class="form-control" value="${mapping.defaultValue}">
 											</td>
 											<td class="table-actions">
-												<button type="button" class="btn btn-regular btn-alert" data-tooltip="<bean:message key='button.Delete'/>" data-form-set="removeMapping_${column_index}: '${column_index}'" data-form-submit>
+												<button type="button" class="btn btn-regular btn-alert" data-tooltip="<bean:message key='button.Delete'/>" data-col_index="${column_index}" data-action="deleteMapping">
 													<i class="icon icon-trash-o"></i>
 												</button>
 											</td>
@@ -197,57 +211,100 @@
 							</tbody>
 						</table>
 					</div>
-
-					<div class="vspacer-10"></div>
-
-				</c:if>
-
-				<c:if test="${not isReadonly}">
-                    <label class="control-label">
-                        <bean:message key="profile.import.additionalDefaults"/>
-                    </label>
-					<div class="table-responsive">
-						<table class="table table-bordered table-form">
-							<thead>
-								<tr>
-									<th></th>
-                                    <th><bean:message key="import.DbColumn"/></th>
-                                    <th><bean:message key="settings.Default_Value"/></th>
-                                    <th></th>
-                                </tr>
-							</thead>
-							<tbody>
-								<td>
-									<html:select property="valueType">
-										<html:option value="value">=</html:option>
-										<html:option value="function"><bean:message key="function"/></html:option>
-									</html:select>
-								</td>
-                                <td>
-                                    <select name="newColumnMappingName" class="form-control js-select">
-                                        <option value="<%= ColumnMapping.DO_NOT_IMPORT %>">
-                                            <bean:message key="import.column.skip"/>
-                                        </option>
-                                        <c:forEach var="dbColumn" items="${importProfileColumnsForm.dbColumns}">
-                                            <c:if test="${dbColumn != mapping.databaseColumn}">
-                                                <option value="${dbColumn}">${dbColumn}</option>
-                                            </c:if>
-                                        </c:forEach>
-                                    </select>
-                                </td>
-								<td>
-									<html:text styleId="recipient-import-new-column" styleClass="form-control" property="newColumnMappingValue" />
-								</td>
-								<td class="table-actions">
-									<button type="button" class="btn btn-regular btn-secondary" data-form-persist="add: 'add'" data-form-submit-static>
-										<i class="icon icon-plus"></i>
-									</button>
-								</td>
-							</tbody>
-						</table>
-					</div>
 				</c:if>
 			</div>
 		</div>
 	</div>
 </agn:agnForm>
+
+<script id="new-mapping-row" type="text/x-mustache-template">
+    <c:if test="${not isReadonly}">
+        <tr>
+            <td></td>
+            <td></td>
+            <td>
+                <select name="newColumnMapping.databaseColumn" class="form-control js-select" data-action="changeNewColName">
+                    <option value="<%= ColumnMapping.DO_NOT_IMPORT %>">
+                        <bean:message key="import.column.skip"/>
+                    </option>
+                    <c:forEach var="dbColumn" items="${importProfileColumnsForm.profileFields.keySet()}">
+                        <option value="${dbColumn}">${dbColumn}</option>
+                    </c:forEach>
+                </select>
+            </td>
+            <td>
+                <label class="toggle">
+                    <input name="newColumnMapping.mandatory" type="checkbox" />
+                    <div class="toggle-control"></div>
+                </label>
+            </td>
+            <emm:ShowByPermission token="recipient.import.encrypted">
+                <td>
+                    <label class="toggle">
+                        <input name="newColumnMapping.encrypted" type="checkbox" />
+                        <div class="toggle-control"></div>
+                    </label>
+                </td>
+            </emm:ShowByPermission>
+            <td>
+                <input class="form-control" name="newColumnMapping.defaultValue" />
+            </td>
+            <td class="table-actions">
+                <button type="button" class="btn btn-regular btn-secondary" data-action="addMapping">
+                    <i class="icon icon-plus"></i>
+                </button>
+            </td>
+        </tr>
+    </c:if>
+</script>
+
+<script id="date-def-val-input" type="text/x-mustache-template">
+    <div class="row">
+        <div class="col-sm-2" style="text-align: center">
+            <label class="checkbox-inline">
+                <input type="checkbox" data-action="changeDateInput">
+                <span class="text">
+                    {{ if (withTime) { }}
+                        <bean:message key="now"/>
+                    {{ } else { }}
+                        <bean:message key="calendar.today.button"/>
+                    {{ } }}
+                </span>
+            </label>
+        </div>
+        <div class="col-sm-10" id="dateInput">
+        {{ if (withTime) { }}
+            <div data-type="datetime" class="js-datetime-field" data-field="datetime"
+                 data-property="newColumnMapping.defaultValue"
+                 data-field-options="value: {{- val}}, dateFormat: 'dd.mm.yyyy'"></div>
+        {{ } else { }}
+            <div data-type="date" class="input-group">
+                <div class="input-group-controls">
+                    <input type="text" name="newColumnMapping.defaultValue"
+                           data-value="{{- val}}"
+                           class="form-control datepicker-input js-datepicker"
+                           data-datepicker-options="format: 'dd.mm.yyyy'"/>
+                </div>
+                <div class="input-group-btn">
+                  <button type="button" class="btn btn-regular btn-toggle js-open-datepicker" tabindex="-1">
+                      <i class="icon icon-calendar-o"></i>
+                  </button>
+                </div>
+            </div>
+        {{ } }}
+        </div>
+        
+        <div class="col-sm-10" id="daysInput" style="display: none;">
+            <div class="col-sm-11">
+                <input class="form-control" type="text" id="daysCount" value="+0">
+            </div>
+            <div class="col-sm-1">
+                <div class="form-badge"><bean:message key="days"/></div>
+            </div>
+        </div>
+    </div>
+</script>
+
+<script id="text-def-val-input" type="text/x-mustache-template">
+    <div data-type="text"><input class="form-control" name="newColumnMapping.defaultValue"/></div>
+</script>

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -50,7 +50,8 @@ import org.agnitas.util.DbColumnType.SimpleDataType;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tomcat.util.http.fileupload.ByteArrayOutputStream;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.util.CollectionUtils;
@@ -59,10 +60,12 @@ import com.agnitas.json.JsonArray;
 import com.agnitas.json.JsonObject;
 import com.agnitas.json.JsonWriter;
 
+import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
+
 public class DbUtilities {
 
 	/** The logger. */
-	private static final transient Logger logger = Logger.getLogger(DbUtilities.class);
+	private static final transient Logger logger = LogManager.getLogger(DbUtilities.class);
 
 	/** Number format with 2 digits. */
 	private static final NumberFormat TWO_DIGIT_FORMAT = new DecimalFormat("00");
@@ -367,40 +370,45 @@ public class DbUtilities {
 						JsonObject jsonObject = new JsonObject();
 						for (int i = 1; i <= metaData.getColumnCount(); i++) {
 							String propertyName = dataColumns.get(i -1);
-							SimpleDataType simpleDataType = DbColumnType.getSimpleDataType(metaData.getColumnTypeName(i), metaData.getScale(i));
-							if (metaData.getColumnType(i) == Types.BLOB
-									|| metaData.getColumnType(i) == Types.BINARY
-									|| metaData.getColumnType(i) == Types.VARBINARY
-									|| metaData.getColumnType(i) == Types.LONGVARBINARY) {
-								Blob blob = resultSet.getBlob(i);
-								if (resultSet.wasNull()) {
-									jsonObject.add(propertyName, null);
-								} else {
-									try (InputStream input = blob.getBinaryStream()) {
-										byte[] data = IOUtils.toByteArray(input);
-										jsonObject.add(propertyName, Base64.getEncoder().encodeToString(data));
-									}
-								}
-							} else if (simpleDataType == SimpleDataType.Date) {
-								if ("0000-00-00 00:00:00".equals(resultSet.getString(i))) {
-									jsonObject.add(propertyName, null);
-								} else {
-									Date value = resultSet.getTimestamp(i);
-									jsonObject.add(propertyName, value);
-								}
-							} else if (simpleDataType == SimpleDataType.DateTime) {
-								if ("0000-00-00 00:00:00".equals(resultSet.getString(i))) {
-									jsonObject.add(propertyName, null);
-								} else {
-									Date value = resultSet.getTimestamp(i);
-									jsonObject.add(propertyName, value);
-								}
-							} else if (simpleDataType == SimpleDataType.Float) {
-								jsonObject.add(propertyName, resultSet.getBigDecimal(i).doubleValue());
-							} else if (simpleDataType == SimpleDataType.Numeric) {
-								jsonObject.add(propertyName, resultSet.getBigDecimal(i).intValue());
+							resultSet.getObject(i);
+							if (resultSet.wasNull()) {
+								jsonObject.add(propertyName, null);
 							} else {
-								jsonObject.add(propertyName, resultSet.getString(i));
+								SimpleDataType simpleDataType = DbColumnType.getSimpleDataType(metaData.getColumnTypeName(i), metaData.getScale(i));
+								if (metaData.getColumnType(i) == Types.BLOB
+										|| metaData.getColumnType(i) == Types.BINARY
+										|| metaData.getColumnType(i) == Types.VARBINARY
+										|| metaData.getColumnType(i) == Types.LONGVARBINARY) {
+									Blob blob = resultSet.getBlob(i);
+									if (resultSet.wasNull()) {
+										jsonObject.add(propertyName, null);
+									} else {
+										try (InputStream input = blob.getBinaryStream()) {
+											byte[] data = IOUtils.toByteArray(input);
+											jsonObject.add(propertyName, Base64.getEncoder().encodeToString(data));
+										}
+									}
+								} else if (simpleDataType == SimpleDataType.Date) {
+									if ("0000-00-00 00:00:00".equals(resultSet.getString(i))) {
+										jsonObject.add(propertyName, null);
+									} else {
+										Date value = resultSet.getTimestamp(i);
+										jsonObject.add(propertyName, value);
+									}
+								} else if (simpleDataType == SimpleDataType.DateTime) {
+									if ("0000-00-00 00:00:00".equals(resultSet.getString(i))) {
+										jsonObject.add(propertyName, null);
+									} else {
+										Date value = resultSet.getTimestamp(i);
+										jsonObject.add(propertyName, value);
+									}
+								} else if (simpleDataType == SimpleDataType.Float) {
+									jsonObject.add(propertyName, resultSet.getBigDecimal(i).doubleValue());
+								} else if (simpleDataType == SimpleDataType.Numeric) {
+									jsonObject.add(propertyName, resultSet.getBigDecimal(i).intValue());
+								} else {
+									jsonObject.add(propertyName, resultSet.getString(i));
+								}
 							}
 						}
 						jsonArray.add(jsonObject);
@@ -438,6 +446,19 @@ public class DbUtilities {
 		}
 	}
 
+	public static boolean checkDbVendorIsMySQL(DataSource dataSource) {
+		if (dataSource == null) {
+			throw new RuntimeException("Cannot detect db vendor: dataSource is null");
+		}
+
+		try (final Connection connection = dataSource.getConnection()) {
+			return checkDbVendorIsMySQL(connection);
+		} catch (Exception e) {
+			logger.error("Cannot detect db vendor: " + e.getMessage(), e);
+			throw new RuntimeException("Cannot detect db vendor: " + e.getMessage(), e);
+		}
+	}
+
 	public static boolean checkDbVendorIsOracle(Connection connection) {
 		if (connection == null) {
 			throw new RuntimeException("Cannot detect db vendor: connection is null");
@@ -447,11 +468,7 @@ public class DbUtilities {
 			DatabaseMetaData databaseMetaData = connection.getMetaData();
 			if (databaseMetaData != null) {
 				String productName = databaseMetaData.getDatabaseProductName();
-				if ("oracle".equalsIgnoreCase(productName)) {
-					return true;
-				} else {
-					return false;
-				}
+				return "oracle".equalsIgnoreCase(productName);
 			} else {
 				return false;
 			}
@@ -473,6 +490,31 @@ public class DbUtilities {
 				if ("maria".equalsIgnoreCase(productName)
 						|| "mariadb".equalsIgnoreCase(productName)
 						|| databaseMetaData.getURL().toLowerCase().startsWith("jdbc:mariadb:")) {
+					return true;
+				} else {
+					return false;
+				}
+			} else {
+				return false;
+			}
+		} catch (Exception e) {
+			logger.error("Cannot detect db vendor: " + e.getMessage(), e);
+			throw new RuntimeException("Cannot detect db vendor: " + e.getMessage(), e);
+		}
+	}
+
+	public static boolean checkDbVendorIsMySQL(Connection connection) {
+		if (connection == null) {
+			throw new RuntimeException("Cannot detect db vendor: connection is null");
+		}
+
+		try {
+			DatabaseMetaData databaseMetaData = connection.getMetaData();
+			if (databaseMetaData != null) {
+				String productName = databaseMetaData.getDatabaseProductName();
+				if ("mysql".equalsIgnoreCase(productName)
+						|| "mysqldb".equalsIgnoreCase(productName)
+						|| databaseMetaData.getURL().toLowerCase().startsWith("jdbc:mysql:")) {
 					return true;
 				} else {
 					return false;
@@ -823,8 +865,6 @@ public class DbUtilities {
 
 								if (resultSet.wasNull() || dataType.toUpperCase().contains("DATE") || dataType.toUpperCase().contains("TIMESTAMP") || dataType.toUpperCase().contains("BLOB")) {
 									characterLength = -1;
-								} else if (dataType.toUpperCase().contains("TINYTEXT") || dataType.toUpperCase().contains("MEDIUMTEXT") || dataType.toUpperCase().contains("TEXT") || dataType.toUpperCase().contains("LONGTEXT")) {
-									characterLength = resultSet.getLong("character_maximum_length");
 								} else {
 									characterLength = resultSet.getLong("character_maximum_length");
 								}
@@ -949,8 +989,6 @@ public class DbUtilities {
 								long characterLength;
 								if (resultSet.wasNull() || dataType.toUpperCase().contains("DATE") || dataType.toUpperCase().contains("TIMESTAMP") || dataType.toUpperCase().contains("BLOB")) {
 									characterLength = -1;
-								} else if (dataType.toUpperCase().contains("TINYTEXT") || dataType.toUpperCase().contains("MEDIUMTEXT") || dataType.toUpperCase().contains("TEXT") || dataType.toUpperCase().contains("LONGTEXT")) {
-									characterLength = resultSet.getLong("character_maximum_length");
 								} else {
 									characterLength = resultSet.getLong("character_maximum_length");
 								}
@@ -1144,8 +1182,6 @@ public class DbUtilities {
 		} else if (!tablename.equalsIgnoreCase(SafeString.getSafeDbTableName(tablename))) {
 			logger.error("Cannot create db column: Invalid tablename " + tablename);
 			return false;
-		} else if (StringUtils.isBlank(fieldname)) {
-			return false;
 		}  else if (!fieldname.equalsIgnoreCase(SafeString.getSafeDbColumnName(fieldname))) {
 			logger.error("Cannot create db column: Invalid fieldname " + fieldname);
 			return false;
@@ -1258,8 +1294,6 @@ public class DbUtilities {
 		} else if (!tablename.equalsIgnoreCase(SafeString.getSafeDbTableName(tablename))) {
 			logger.error("Cannot drop db column: Invalid tablename " + tablename);
 			return false;
-		} else if (StringUtils.isBlank(fieldname)) {
-			return false;
 		}  else if (!fieldname.equalsIgnoreCase(SafeString.getSafeDbTableName(fieldname))) {
 			logger.error("Cannot drop db column: Invalid fieldname " + fieldname);
 			return false;
@@ -1289,8 +1323,6 @@ public class DbUtilities {
 			return false;
 		} else if (!tablename.equalsIgnoreCase(SafeString.getSafeDbTableName(tablename))) {
 			logger.error("Cannot create db column: Invalid tablename " + tablename);
-			return false;
-		} else if (StringUtils.isBlank(fieldname)) {
 			return false;
 		}  else if (!fieldname.equalsIgnoreCase(SafeString.getSafeDbTableName(fieldname))) {
 			logger.error("Cannot create db column: Invalid fieldname " + fieldname);
@@ -1916,7 +1948,7 @@ public class DbUtilities {
 		}
 	}
 
-	public static CaseInsensitiveSet getPrimaryKeyColumns(Connection connection, String tableName) throws SQLException {
+	public static CaseInsensitiveSet getPrimaryKeyColumns(Connection connection, String tableName) {
 		if (StringUtils.isBlank(tableName)) {
 			return null;
 		} else {
@@ -2512,6 +2544,53 @@ public class DbUtilities {
 			}
 		}
 	}
+	
+    public static String getAltgRestrictionsSqlIfNeeded(Set<Integer> adminAltgIds, Collection<Integer> altgIdsWithoutAdminAltgIds, List<Object> params, boolean isOracle) {
+        return getAltgRestrictionsSqlIfNeeded(adminAltgIds, altgIdsWithoutAdminAltgIds, params, null, isOracle);
+    }
+
+    /**
+     * Should return restriction that leaves mailings that contains any of admin ALTG (1st step)
+     * and not contains any ALTG that not assigned to the admin (2nd step).
+     * 
+     * The approach for 2nd step:
+     * 1. We take all existing ALTGs;
+     * 2. We subtract ALTGs assigned to current admin from (1) {@code altgIdsWithoutAdminAltgIds};
+     * 3. We search for all the mailings that don't have anything from (2).
+     * @param adminAltgIds ALTGs assigned to the admin
+     * @param altgIdsWithoutAdminAltgIds all ALTGs minus the ones assigned to the admin
+     */
+    public static String getAltgRestrictionsSqlIfNeeded(Set<Integer> adminAltgIds, Collection<Integer> altgIdsWithoutAdminAltgIds, List<Object> params, String tableAlias, boolean isOracle) {
+        String restriction = "";
+        if (isNotEmpty(adminAltgIds)) {
+            restriction = " AND (" + createTargetsExpressionRestriction(adminAltgIds, params, tableAlias, isOracle) + ") ";
+            if (isNotEmpty(altgIdsWithoutAdminAltgIds)) {
+                restriction += " AND NOT (" + getContainsOnlyAdminAltgRestriction(altgIdsWithoutAdminAltgIds, params, tableAlias, isOracle) + ") ";
+            }
+        }
+        return restriction;
+    }
+	    
+    // user cannot see a mailing if it uses at least one ALTG for which he has no permissions
+    private static String getContainsOnlyAdminAltgRestriction(Collection<Integer> altgIdsWithoutAdminAltgIds, List<Object> params, String tableAlias, boolean isOracle) {
+        if (isNotEmpty(altgIdsWithoutAdminAltgIds)) {
+            return createTargetsExpressionRestriction(altgIdsWithoutAdminAltgIds, params, tableAlias, isOracle);
+        }
+        return "";
+    }
+    
+    public static String createTargetsExpressionRestriction(Set<Integer> targetIds, List<Object> params, final boolean isOracle) {
+        return createTargetsExpressionRestriction(targetIds, params, null, isOracle);
+    }    
+    
+    public static String createTargetsExpressionRestriction(Collection<Integer> targetIds, List<Object> params, String mailingTableName, final boolean isOracle) {
+        List<String> targetRestrictions = new ArrayList<>();
+        targetIds.forEach(targetId -> {
+            targetRestrictions.add(createTargetExpressionRestriction(isOracle, mailingTableName));
+            params.add(targetId);
+        });
+        return StringUtils.join(targetRestrictions, " OR ");
+    }
 
 	public static String createTargetExpressionRestriction(final boolean isOracle) {
 		return createTargetExpressionRestriction(isOracle, null);
@@ -2643,6 +2722,42 @@ public class DbUtilities {
 			case Blob:
 			default:
 				return false;
+		}
+	}
+
+	public static String getDbVersion(DataSource dataSource) throws Exception {
+		try (final Connection connection = dataSource.getConnection()) {
+			return getDbVersion(connection);
+		}
+	}
+
+	public static String getDbVersion(Connection connection) {
+		try {
+			if (checkDbVendorIsOracle(connection)) {
+				String sql = "SELECT banner FROM V$VERSION";
+				try (final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+					try (final ResultSet resultSet = preparedStatement.executeQuery()) {
+						if (resultSet.next()) {
+							return resultSet.getString(1);
+						} else {
+							throw new Exception("Invalid data for: getDbVersion");
+						}
+					}
+				}
+	    	} else {
+	    		String sql = "SELECT VERSION()";
+	    		try (final PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+					try (final ResultSet resultSet = preparedStatement.executeQuery()) {
+						if (resultSet.next()) {
+							return resultSet.getString(1);
+						} else {
+							throw new Exception("Invalid data for: getDbVersion");
+						}
+					}
+				}
+	    	}
+		} catch (Exception e) {
+			return "Unknown";
 		}
 	}
 }

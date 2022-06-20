@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -13,6 +13,8 @@ package org.agnitas.service;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.agnitas.beans.Mailing;
+
 public class ImportResult {
 	public static Builder builder() {return new Builder();}
 	
@@ -20,6 +22,8 @@ public class ImportResult {
 	private boolean isTemplate;
 	private int gridTemplateID;
 	private boolean isSuccess = false;
+    private boolean needsAltg;
+    private Mailing importedMailing;
 	private Map<String, Object[]> warnings = new HashMap<>();
 	private Map<String, Object[]> errors = new HashMap<>();
 
@@ -48,7 +52,19 @@ public class ImportResult {
 	public int getGridTemplateID() {
 		return gridTemplateID;
 	}
-	
+
+    public Mailing getImportedMailing() {
+        return importedMailing;
+    }
+
+    public boolean isNeedsAltg() {
+        return needsAltg;
+    }
+
+    public void setNeedsAltg(boolean needsAltg) {
+        this.needsAltg = needsAltg;
+    }
+
 	public static class Builder {
 		private ImportResult options = new ImportResult();
 
@@ -102,7 +118,17 @@ public class ImportResult {
 		public ImportResult.Builder setIsTemplate(boolean isTemplate) {
 			options.isTemplate = isTemplate;
 			return this;
+		}		
+		
+		public ImportResult.Builder setNeedsAltg(boolean needsAltg) {
+			options.needsAltg = needsAltg;
+			return this;
 		}
+
+        public ImportResult.Builder setImportedMailing(Mailing importedMailing) {
+            options.importedMailing = importedMailing;
+            return this;
+        }
 
 		public ImportResult build() {
 			ImportResult result = options;

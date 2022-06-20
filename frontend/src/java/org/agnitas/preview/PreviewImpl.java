@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -14,13 +14,10 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.Set;
-import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -715,7 +712,7 @@ public class PreviewImpl implements Preview {
 
 	/******************** deprecated part ********************/
 	@Override
-	@Deprecated
+	@Deprecated(forRemoval = true)
 	public Map<String, Object> createPreview(long mailingID, long customerID, String selector, String text, boolean anon, boolean convertEntities, boolean ecsUIDs, boolean createAll, boolean cachable) {
 		Page p = makePreview(mailingID, customerID, selector, text, anon, convertEntities, ecsUIDs, createAll, cachable);
 
@@ -730,26 +727,10 @@ public class PreviewImpl implements Preview {
 
 	@Override
 	@Deprecated
-	public Map<String, Object> createPreview(long mailingID, long customerID, String selector, String text, boolean anon, boolean cachable) {
-		return createPreview(mailingID, customerID, selector, text, anon, false, false, cachable);
-	}
-
-	@Override
-	@Deprecated
 	public Map<String, Object> createPreview(long mailingID, long customerID, String selector, boolean anon, boolean cachable) {
 		return createPreview(mailingID, customerID, selector, null, anon, false, false, cachable);
 	}
 
-	@Override
-	@Deprecated
-	public Map<String, Object> createPreview(long mailingID, long customerID, boolean cachable) {
-		return createPreview(mailingID, customerID, null, null, false, false, false, cachable);
-	}
-
-	/**
-	 * Pattern to find entities to escape
-	 */
-	static private Pattern textReplace = Pattern.compile("[&<>'\"]");
 	/**
 	 * Values to escape found entities
 	 */
@@ -761,335 +742,6 @@ public class PreviewImpl implements Preview {
 		textReplacement.put(">", "&gt;");
 		textReplacement.put("'", "&apos;");
 		textReplacement.put("\"", "&quot;");
-	}
-
-	/**
-	 * escapeEntities
-	 * This method escapes the HTML entities to be displayed
-	 * in a HTML context
-	 *
-	 * @param s the input string
-	 * @return null, if input string had been null,
-	 * the escaped version of s otherwise
-	 */
-	private String escapeEntities(String s) {
-		if (s != null) {
-			int slen = s.length();
-			Matcher m = textReplace.matcher(s);
-			StringBuffer buf = new StringBuffer(slen + 128);
-			int pos = 0;
-
-			while (m.find(pos)) {
-				int next = m.start();
-				String ch = m.group();
-
-				if (pos < next) {
-					buf.append(s, pos, next);
-				}
-				buf.append(textReplacement.get(ch));
-				pos = m.end();
-			}
-			if (pos != 0) {
-				if (pos < slen) {
-					buf.append(s.substring(pos));
-				}
-				s = buf.toString();
-			}
-		}
-		return s;
-	}
-
-	/**
-	 * encode
-	 * Encodes a string to a byte stream using the given character set,
-	 * if escape is true, HTML entities are escaped prior to encoding
-	 *
-	 * @param s       the string to encode
-	 * @param charset the character set to convert the string to
-	 * @param escape  if HTML entities should be escaped
-	 * @return the coded string as a byte stream
-	 */
-	private byte[] encode(String s, String charset, boolean escape) {
-		if (escape && (s != null)) {
-			s = "<pre>\n" + escapeEntities(s) + "</pre>\n";
-		}
-		try {
-			return s == null ? null : s.getBytes(charset);
-		} catch (java.io.UnsupportedEncodingException e) {
-			return null;
-		}
-	}
-
-	/**
-	 * get
-	 * a null input save conversion variant
-	 *
-	 * @param s      the input string
-	 * @param escape to escape HTML entities
-	 * @return the converted string
-	 */
-	private String convert(String s, boolean escape) {
-		if (escape && (s != null)) {
-			return escapeEntities(s);
-		}
-		return s;
-	}
-
-	/**
-	 * Get header-, text- or HTML-part from hashtable created by
-	 * createPreview as byte stream
-	 */
-	@Override
-	@Deprecated
-	public byte[] getHeaderPart(Map<String, Object> output, String charset, boolean escape) {
-		return encode((String) output.get(ID_HEAD), charset, escape);
-	}
-
-	@Override
-	@Deprecated
-	public byte[] getHeaderPart(Map<String, Object> output, String charset) {
-		return getHeaderPart(output, charset, false);
-	}
-
-	@Override
-	@Deprecated
-	public byte[] getTextPart(Map<String, Object> output, String charset, boolean escape) {
-		return encode((String) output.get(ID_TEXT), charset, escape);
-	}
-
-	@Override
-	@Deprecated
-	public byte[] getTextPart(Map<String, Object> output, String charset) {
-		return getTextPart(output, charset, false);
-	}
-
-	@Override
-	@Deprecated
-	public byte[] getHTMLPart(Map<String, Object> output, String charset, boolean escape) {
-		return encode((String) output.get(ID_HTML), charset, escape);
-	}
-
-	@Override
-	@Deprecated
-	public byte[] getHTMLPart(Map<String, Object> output, String charset) {
-		return getHTMLPart(output, charset, false);
-	}
-
-	/**
-	 * Get header-, text- or HTML-part as strings
-	 */
-	@Override
-	@Deprecated
-	public String getHeader(Map<String, Object> output, boolean escape) {
-		return convert((String) output.get(ID_HEAD), escape);
-	}
-
-	@Override
-	@Deprecated
-	public String getHeader(Map<String, Object> output) {
-		return getHeader(output, false);
-	}
-
-	@Override
-	@Deprecated
-	public String getText(Map<String, Object> output, boolean escape) {
-		return convert((String) output.get(ID_TEXT), escape);
-	}
-
-	@Override
-	@Deprecated
-	public String getText(Map<String, Object> output) {
-		return getText(output, false);
-	}
-
-	@Override
-	@Deprecated
-	public String getHTML(Map<String, Object> output, boolean escape) {
-		return convert((String) output.get(ID_HTML), escape);
-	}
-
-	@Override
-	@Deprecated
-	public String getHTML(Map<String, Object> output) {
-		return getHTML(output, false);
-	}
-
-	/**
-	 * Get attachment names and content
-	 */
-	private boolean isAttachment(String name) {
-		return (!name.startsWith("__")) && (!name.endsWith("__"));
-	}
-
-	@Override
-	@Deprecated
-	public String[] getAttachmentNames(Map<String, Object> output) {
-		ArrayList<String> collect = new ArrayList<>();
-
-		for (String name : output.keySet()) {
-			if (isAttachment(name)) {
-				collect.add(name);
-			}
-		}
-		return collect.toArray(new String[collect.size()]);
-	}
-
-	@Override
-	@Deprecated
-	public byte[] getAttachment(Map<String, Object> output, String name) {
-		if ((!isAttachment(name)) || (!output.containsKey(name))) {
-			return null;
-		}
-
-		byte[] rc = null;
-		String coded = (String) output.get(name);
-
-		if (coded != null) {
-			String valid = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-			byte[] temp = new byte[coded.length()];
-			int tlen = 0;
-			long val;
-			int count;
-			int pad;
-			byte pos;
-
-			val = 0;
-			count = 0;
-			pad = 0;
-			for (int n = 0; n < coded.length(); ++n) {
-				char ch = coded.charAt(n);
-
-				if (ch == '=') {
-					++pad;
-					++count;
-				} else if ((pos = (byte) valid.indexOf(ch)) != -1) {
-					switch (count++) {
-						case 0:
-							val = pos << 18;
-							break;
-						case 1:
-							val |= pos << 12;
-							break;
-						case 2:
-							val |= pos << 6;
-							break;
-						case 3:
-							val |= pos;
-							break;
-						default:
-							break;
-					}
-				}
-				if (count == 4) {
-					temp[tlen] = (byte) ((val >> 16) & 0xff);
-					temp[tlen + 1] = (byte) ((val >> 8) & 0xff);
-					temp[tlen + 2] = (byte) (val & 0xff);
-					tlen += 3 - pad;
-					count = 0;
-					if (pad > 0) {
-						break;
-					}
-				}
-			}
-			rc = Arrays.copyOf(temp, tlen);
-		}
-		return rc;
-	}
-
-	/**
-	 * Get individual lines from the header
-	 */
-	@Override
-	@Deprecated
-	@SuppressWarnings("unchecked")
-	public String[] getHeaderField(Map<String, Object> output, String field) {
-		String[] rc = null;
-
-		synchronized (output) {
-			Map<String, String[]> header = (Map<String, String[]>) output.get(ID_HDETAIL);
-
-			if (header == null) {
-				String head = (String) output.get(ID_HEAD);
-
-				header = new HashMap<>();
-				if (head != null) {
-					String[] lines = head.split("\r?\n");
-					String cur = null;
-
-					for (int n = 0; n <= lines.length; ++n) {
-						String line = (n < lines.length ? lines[n] : null);
-
-						if ((line == null) || ((line.indexOf(' ') != 0) && (line.indexOf('\t') != 0))) {
-							if (cur != null) {
-								String[] parsed = cur.split(": +", 2);
-
-								if (parsed.length == 2) {
-									String key = parsed[0].toLowerCase();
-									String[] content = header.get(key);
-									int nlen = (content == null ? 1 : content.length + 1);
-									String[] ncontent = new String[nlen];
-
-									if (content != null) {
-										for (int m = 0; m < content.length; ++m) {
-											ncontent[m] = content[m];
-										}
-									}
-									ncontent[nlen - 1] = parsed[1];
-									header.put(key, ncontent);
-								}
-							}
-							cur = line;
-						} else if (cur != null) {
-							cur += '\n' + line;
-						}
-					}
-				}
-				output.put(ID_HDETAIL, header);
-			}
-			rc = header.get(field.toLowerCase());
-		}
-		return rc;
-	}
-
-	@Override
-	@Deprecated
-	public String getPartOfHeader(Map<String, Object> output, boolean escape, String headerKeyword) {
-		String rc = null;
-		String[] head = getHeaderField(output, headerKeyword);
-
-		if ((head != null) && (head.length > 0)) {
-			rc = escape ? escapeEntities(head[0]) : head[0];
-		}
-		return rc;
-	}
-
-	// well, we could create a global Hashmap containing all the values for this preview
-	// but the part-Method is called not very often, so its more efficient to parse
-	// the header if we need it.
-	// As parameter give the "Keyword" you will get then the appropriate return String.
-	// Possible Values for the Header are:
-	// "Return-Path", "Received", "Message-ID", "Date", "From", "To", "Subject", "X-Mailer", "MIME-Version"
-	// warning! We do a "startswith" comparison, that means, if you give "Re" as parameter, you will
-	// get either "Return-Path" or "Received", depending on what comes at last.
-	@Override
-	@Deprecated
-	public String getPartOfHeader(Map<String, Object> output, String charset, boolean forHTML, String headerKeyword) throws Exception {
-		String returnString = null;
-		String tmpLine = null;
-		// use just \n as line delimiter. Warning, if you use Windows, that will not work...
-		StringTokenizer st = new StringTokenizer(new String(getHeaderPart(output, charset, forHTML), StandardCharsets.UTF_8), "\n");
-		while (st.hasMoreElements()) {
-			// get next line and cut the leading and trailing whitespaces of.
-			tmpLine = ((String) st.nextElement()).trim();
-			// convert Header String to lower and compare with lower-case given String
-			if (tmpLine.toLowerCase().startsWith(headerKeyword.toLowerCase())) {
-				// get index of first :
-				int endOfHeaderKeyword = tmpLine.indexOf(':') + 1;
-				// return everything from first ":" and remove trailing whitespaces..
-				returnString = tmpLine.substring(endOfHeaderKeyword).trim();
-			}
-		}
-		return returnString;
 	}
 
 	@Deprecated

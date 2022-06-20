@@ -350,6 +350,9 @@
             generatedHtml = $renderContainer.html();
         }
         $renderContainer.remove();
+
+        generatedHtml = addNewLinesAfterTags(generatedHtml);
+
         return generatedHtml;
     }
 
@@ -489,6 +492,13 @@
 
     function createTemplateName(templateName) {
         return t('userform.formBuilder.template.template') + ': ' + templateName;
+    }
+
+    function addNewLinesAfterTags(html) {
+        if(!html || html.length <= 0) {
+            return html;
+        }
+        return html.replace(/<\/.*?>/g, "$&\n");
     }
 
     AGN.Lib.FormBuilder.FormBuilder = FormBuilder;

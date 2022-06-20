@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -30,6 +30,8 @@ import java.util.zip.GZIPOutputStream;
 
 import org.agnitas.util.Bit;
 import org.agnitas.util.Log;
+import org.agnitas.util.Str;
+import org.agnitas.util.Systemconfig;
 import org.agnitas.util.XMLRPCClient;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -104,7 +106,7 @@ public class MailWriterMeta extends MailWriter {
 		multi = null;
 		setup();
 
-		keepATmails = StringOps.atob(data.company.info("keep-xml-files"), false);
+		keepATmails = Str.atob(data.company.info("keep-xml-files"), false);
 	}
 
 	/**
@@ -215,7 +217,7 @@ public class MailWriterMeta extends MailWriter {
 	@Override
 	public void startBlock() throws Exception {
 		super.startBlock();
-		fname = StringOps.makePath(data.targetPath(), filenamePattern);
+		fname = Str.makePath(data.targetPath(), filenamePattern);
 		if (data.maildropStatus.isAdminMailing() || data.maildropStatus.isTestMailing()) {
 			pathname = fname + ".xml";
 			out = new FileOutputStream(pathname);
@@ -939,7 +941,8 @@ public class MailWriterMeta extends MailWriter {
 			"Mailing-Name: " + data.mailing.name () + "\n" +
 			"Subscriber-Count: " + data.totalSubscribers + "\n" +
 			"Receiver-Count: " + data.totalReceivers + "\n" +
-			"Count: " + inBlockCount + "\n";
+			"Count: " + inBlockCount + "\n" +
+			"Origin: " + Systemconfig.fqdn + "\n";
 	}
 
 	private String getFinalMessage() {
@@ -1017,6 +1020,8 @@ public class MailWriterMeta extends MailWriter {
 			writer.data (b.content);
 		} else if (b.binary != null) {
 			writer.data (b.binary);
+		} else {
+			writer.data ("");
 		}
 		writer.close("content");
 		if ((b.binary != null) && (b.binary.length > 3)) {
@@ -1097,14 +1102,22 @@ public class MailWriterMeta extends MailWriter {
 	 */
 	private void emitDescription() {
 		writer.openclose("licence", "id", data.licenceID());
-		writer.open(!data.company.infoAvailable(), "company", "id", data.company.id(), "name", data.company.name());
-		if (data.company.infoAvailable()) {
+		XMLWriter.Creator c = writer.create ("company", "id", data.company.id (), "name", data.company.name ());
+		String token = data.company.token ();
+		
+		if (token != null) {
+			c.add ("token", token);
+		}
+		if (data.company.infoAvailable ()) {
+			writer.opennode (c);
 			for (String name : data.company.infoKeys()) {
 				String value = data.company.infoValue(name);
 
 				writer.single("info", value, "name", name);
 			}
 			writer.close("company");
+		} else {
+			writer.openclose (c);
 		}
 		mailingInfo();
 		SimpleDateFormat fmt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -34,10 +34,11 @@ import org.agnitas.util.DateUtilities;
 import org.apache.catalina.connector.ClientAbortException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
-import com.agnitas.beans.ComCompany;
+import com.agnitas.beans.Company;
 import com.agnitas.dao.ComMailingComponentDao;
 import com.agnitas.emm.core.mobile.bean.DeviceClass;
 import com.agnitas.emm.core.mobile.service.ComDeviceService;
@@ -51,7 +52,7 @@ import com.agnitas.util.ImageUtils;
  */
 public class ShowImageServlet extends HttpServlet {
 	/** The logger. */
-	private static final transient Logger logger = Logger.getLogger(ShowImageServlet.class);
+	private static final transient Logger logger = LogManager.getLogger(ShowImageServlet.class);
 
     /**
      * Dummy object to be stored in cache for not found images.
@@ -357,7 +358,7 @@ public class ShowImageServlet extends HttpServlet {
 					}
 				}
 			} else {
-				ComCompany company = getCompanyDaoCache().getItem(companyID);
+				Company company = getCompanyDaoCache().getItem(companyID);
 				if (company == null) {
 					if (logger.isDebugEnabled()) {
 						logger.debug("image not found for not existing company: " + cacheKey);

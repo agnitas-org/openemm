@@ -1,6 +1,5 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
-<%@ page import="org.agnitas.web.MailingBaseAction" %>
-<%@ page import="com.agnitas.web.ComMailingBaseAction" %>
+<%@ page import="com.agnitas.web.MailingBaseAction" %>
 <%@ page import="org.agnitas.web.MailingSendAction" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib prefix="bean" uri="http://struts.apache.org/tags-bean" %>
@@ -16,10 +15,10 @@
 <c:set var="ACTION_LIST" 				value="<%= MailingBaseAction.ACTION_LIST %>" 				scope="page" />
 <c:set var="ACTION_VIEW" 				value="<%= MailingBaseAction.ACTION_VIEW %>" 				scope="page" />
 <c:set var="ACTION_VIEW_SEND" 			value="<%= MailingSendAction.ACTION_VIEW_SEND %>"			scope="page" />
-<c:set var="ACTION_CONFIRM_UNDO" 		value="<%= ComMailingBaseAction.ACTION_CONFIRM_UNDO %>" 	scope="page" />
+<c:set var="ACTION_CONFIRM_UNDO" 		value="<%= MailingBaseAction.ACTION_CONFIRM_UNDO %>" 	scope="page" />
 <c:set var="ACTION_CONFIRM_DELETE" 		value="<%= MailingBaseAction.ACTION_CONFIRM_DELETE %>" 		scope="page" />
 <c:set var="ACTION_CLONE_AS_MAILING" 	value="<%= MailingBaseAction.ACTION_CLONE_AS_MAILING %>"  	scope="page" />
-<c:set var="ACTION_CREATE_FOLLOW_UP" 	value="<%= ComMailingBaseAction.ACTION_CREATE_FOLLOW_UP %>" scope="page" />
+<c:set var="ACTION_CREATE_FOLLOW_UP" 	value="<%= MailingBaseAction.ACTION_CREATE_FOLLOW_UP %>" scope="page" />
 
 <c:set var="isMailingGrid" value="${mailingSendForm.isMailingGrid}" scope="page"/>
 

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -17,12 +17,14 @@ import org.agnitas.emm.core.commons.uid.builder.impl.exception.UIDStringBuilderE
 import org.agnitas.emm.core.commons.uid.parser.exception.MailingNotFoundParseException;
 import org.agnitas.emm.core.commons.uid.parser.exception.UIDParseException;
 import org.agnitas.emm.core.commons.uid.parser.impl.BaseExtensibleUIDParser;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComRdirMailingData;
 import com.agnitas.emm.core.commons.encoder.UIDBase64;
 import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
+import com.agnitas.emm.core.commons.uid.ExtensibleUidVersion;
 import com.agnitas.emm.core.commons.uid.UIDFactory;
 import com.agnitas.emm.core.commons.uid.daocache.impl.ComRdirMailingDataDaoCache;
 
@@ -46,8 +48,8 @@ import com.agnitas.emm.core.commons.uid.daocache.impl.ComRdirMailingDataDaoCache
  */
 public class V2Sha512ComExtensibleUIDParserImpl extends BaseExtensibleUIDParser {
 
-
-    private static final transient Logger logger = Logger.getLogger(V2Sha512ComExtensibleUIDParserImpl.class);
+	/** The logger. */
+    private static final transient Logger logger = LogManager.getLogger(V2Sha512ComExtensibleUIDParserImpl.class);
 
     private static final int PREFIX_GROUP = 0;
     private static final int LICENSE_ID_GROUP = 2;
@@ -124,4 +126,11 @@ public class V2Sha512ComExtensibleUIDParserImpl extends BaseExtensibleUIDParser 
         return (parts.length == MIN_GROUPS_LENGTH || parts.length == MAX_GROUPS_LENGTH)
                 && parts[parts.length - 1].length() == SIGNATURE_LENGTH;
     }
+
+	@Override
+	public final ExtensibleUidVersion getHandledUidVersion() {
+		return ExtensibleUidVersion.XUID_WITH_SHA512;
+	}
+    
+    
 }

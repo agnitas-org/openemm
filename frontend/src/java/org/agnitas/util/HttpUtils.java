@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -41,8 +41,6 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
@@ -50,7 +48,8 @@ import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.http.HttpHeaders;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -59,6 +58,8 @@ import com.agnitas.emm.core.commons.filter.OriginUriFilter;
 import com.agnitas.json.JsonUtilities;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import net.sf.json.JSON;
 
 public class HttpUtils {
@@ -69,7 +70,7 @@ public class HttpUtils {
 		DELETE
 	}
 	
-	private static final transient Logger logger = Logger.getLogger(HttpUtils.class);
+	private static final transient Logger logger = LogManager.getLogger(HttpUtils.class);
 
 	public static final String CONTENT_TYPE_JAVASCRIPT = "application/javascript";
 	public static final String SECURE_HTTP_PROTOCOL_SIGN = "https://";
@@ -416,7 +417,7 @@ public class HttpUtils {
 		response.sendRedirect(response.encodeRedirectURL(uriBuilder.build().encode().toString()));
 	}
 
-	public static void sendImage(byte[] imageData, HttpServletResponse response) throws IOException {
+	public static void sendImage(byte[] imageData, HttpServletResponse response) {
 		try (OutputStream stream = response.getOutputStream()) {
 			response.setContentType(IMAGE_CONTENT_TYPE);
 			stream.write(imageData);

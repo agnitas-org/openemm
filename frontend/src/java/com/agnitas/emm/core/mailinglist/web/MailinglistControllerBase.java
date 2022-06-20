@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -16,7 +16,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.emm.core.commons.util.ConfigService;
@@ -30,7 +29,8 @@ import org.agnitas.web.forms.BulkActionForm;
 import org.agnitas.web.forms.FormUtils;
 import org.agnitas.web.forms.PaginationForm;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.ui.Model;
 import org.springframework.ui.ModelMap;
@@ -45,9 +45,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.Mailing;
-import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.admin.service.AdminService;
-import com.agnitas.emm.core.birtreport.bean.ComLightweightBirtReport;
 import com.agnitas.emm.core.birtstatistics.monthly.dto.RecipientProgressStatisticDto;
 import com.agnitas.emm.core.birtstatistics.service.BirtStatisticsService;
 import com.agnitas.emm.core.mailinglist.dto.MailinglistDto;
@@ -62,10 +60,11 @@ import net.sf.json.JSONArray;
 
 
 public class MailinglistControllerBase {
-	private static final Logger logger = Logger.getLogger(MailinglistControllerBase.class);
+	private static final Logger logger = LogManager.getLogger(MailinglistControllerBase.class);
 
 	private static final String YEAR_LIST = "yearlist";
 	private static final String MONTH_LIST = "monthList";
+	private static final String MESSAGES_VIEW = "messages";
 	private static final String BIRT_STATISTIC_URL_WITHOUT_FORMAT = "birtStatisticUrlWithoutFormat";
 
 	protected final ComMailinglistService mailinglistService;
@@ -104,7 +103,7 @@ public class MailinglistControllerBase {
 		}
 
 		model.addAttribute("mailingListsJson", mailingListsJson);
-		model.addAttribute("dateFormatPattern", admin.getDateFormat().toPattern());
+		AgnUtils.setAdminDateTimeFormatPatterns(admin, model);
 
 		return "mailinglist_list";
 	}
@@ -154,7 +153,7 @@ public class MailinglistControllerBase {
 		int companyId = admin.getCompanyID();
 
 		if (!isValid(companyId, form, popups)) {
-			return "messages";
+			return MESSAGES_VIEW;
 		}
 
 		int id = mailinglistService.saveMailinglist(companyId, conversionService.convert(form, MailinglistDto.class));
@@ -170,25 +169,15 @@ public class MailinglistControllerBase {
 	}
 	
 	@GetMapping("/{id:\\d+}/confirmDelete.action")
-	public String confirmDelete(ComAdmin admin, @PathVariable("id") int mailinglistId, MailinglistForm form, Model model, Popups popups) {
-		return admin.permissionAllowed(Permission.UPDATE_MAILINGLIST_ALLOW_DELETION)
-                ? confirmDeleteWithMailingsStatusCheck(admin, mailinglistId, model, popups)
-                : confirmDeleteWithoutMailingsStatusCheck(admin, mailinglistId, form, model, popups);
-	}
-
-    /**
-     * after GWUA-4783 has been successfully tested
-     * place method code to {@link #confirmDelete(ComAdmin, int, MailinglistForm, Model, Popups)}
-     */
-    private String confirmDeleteWithMailingsStatusCheck(ComAdmin admin, int mailinglistId, Model model, Popups popups) {
+	public String confirmDelete(ComAdmin admin, @PathVariable("id") int mailinglistId, Model model, Popups popups) {
         int companyId = admin.getCompanyID();
         Mailinglist mailinglist = mailinglistService.getMailinglist(mailinglistId, companyId);
         if (mailinglist == null) {
             popups.alert("Error");
-            return "messages";
+            return MESSAGES_VIEW;
         }
         if (isMailinglistsDependent(Collections.singleton(mailinglistId), companyId, model)) {
-            return "messages";
+            return MESSAGES_VIEW;
         }
         model.addAttribute("mailinglistId", mailinglist.getId());
         model.addAttribute("mailinglistShortname", mailinglist.getShortname());
@@ -197,57 +186,15 @@ public class MailinglistControllerBase {
         return "mailinglist_delete";
     }
 
-    // remove this method after GWUA-4783 has been successfully tested
-    private String confirmDeleteWithoutMailingsStatusCheck(ComAdmin admin, int mailinglistId, MailinglistForm form, Model model, Popups popups) {
-		int companyId = admin.getCompanyID();
-
-		if (isMailinglistIndependent(mailinglistId, companyId, model)) {
-			Mailinglist mailinglist = mailinglistService.getMailinglist(mailinglistId, companyId);
-			
-			if (mailinglist == null) {
-				model.addAttribute("excludeDialog", true);
-				popups.alert("Error");
-			} else {
-				form.setId(mailinglist.getId());
-				form.setShortname(mailinglist.getShortname());
-			}
-		} else {
-			model.addAttribute("excludeDialog", true);
-		}
-
-		return "mailinglist_delete";
-	}
-
     @PostMapping("/confirmBulkDelete.action")
     public String confirmBulkDelete(ComAdmin admin, @ModelAttribute("bulkDeleteForm") BulkActionForm form, Model model, Popups popups) {
-        return admin.permissionAllowed(Permission.UPDATE_MAILINGLIST_ALLOW_DELETION)
-                ? confirmBulkDeleteWithMailingsStatusCheck(admin, form, model, popups)
-                : confirmBulkDeleteWithoutMailingsStatusCheck(admin, form, model, popups);
-    }
-    
-    /** 
-     * after GWUA-4783 has been successfully tested
-     * place method code to {@link #confirmBulkDelete(ComAdmin, BulkActionForm, Model, Popups)}
-     */
-    private String confirmBulkDeleteWithMailingsStatusCheck(ComAdmin admin, BulkActionForm form, Model model, Popups popups) {
         Set<Integer> bulkIds = new HashSet<>(form.getBulkIds());
         if (bulkIds.isEmpty() || bulkIds.stream().anyMatch(id -> id <= 0)) {
             popups.alert("bulkAction.nothing.mailinglist");
-            return "messages";
+            return MESSAGES_VIEW;
         }
         if (isMailinglistsDependent(bulkIds, admin.getCompanyID(), model)) {
-            return "messages";
-        }
-
-        return "mailinglist_bulk_delete";
-    }
-    
-    // remove this method after GWUA-4783 has been successfully tested
-    private String confirmBulkDeleteWithoutMailingsStatusCheck(ComAdmin admin, BulkActionForm form, Model model, Popups popups) {
-        if (form.getBulkIds().size() == 0) {
-            popups.alert("bulkAction.nothing.mailinglist");
-        } else if (!isMailinglistsIndependent(form.getBulkIds(), admin.getCompanyID(), model)) {
-			model.addAttribute("excludeDialog", true);
+            return MESSAGES_VIEW;
         }
 
         return "mailinglist_bulk_delete";
@@ -255,58 +202,26 @@ public class MailinglistControllerBase {
 
 	@RequestMapping("/{id:\\d+}/delete.action")
 	public String delete(ComAdmin admin, @PathVariable("id") int mailinglistId, Model model, Popups popups) {
-        return admin.permissionAllowed(Permission.UPDATE_MAILINGLIST_ALLOW_DELETION)
-                ? deleteWithMailingsStatusCheck(admin, mailinglistId, model, popups)
-                : deleteWithoutMailingsStatusCheck(admin, mailinglistId, popups);
-	}
-
-    /**
-     * after GWUA-4783 has been successfully tested
-     * place method code to {@link #delete(ComAdmin, int, Model, Popups)}
-     */
-    private String deleteWithMailingsStatusCheck(ComAdmin admin, int mailinglistId, Model model, Popups popups) {
         int companyId = admin.getCompanyID();
         if (isMailinglistsDependent(Collections.singleton(mailinglistId), companyId, model)) {
-            return "messages";
+            return MESSAGES_VIEW;
         }
-        if (mailinglistService.deleteMailinglistWithReportsCleaning(mailinglistId, companyId)) {
+        if (mailinglistService.deleteMailinglist(mailinglistId, companyId)) {
             popups.success("default.selection.deleted");
             userActivityLogService.writeUserActivityLog(admin, "delete mailing list", getDescription(mailinglistId, companyId));
         } else {
             popups.alert("error.mailinglist.cannot_delete");
-            return "messages";
+            return MESSAGES_VIEW;
         }
         return "redirect:/mailinglist/list.action";
     }
-
-    // remove this method after GWUA-4783 has been successfully tested
-    private String deleteWithoutMailingsStatusCheck(ComAdmin admin, @PathVariable("id") int mailinglistId, Popups popups) {
-		if(mailinglistService.deleteMailinglist(mailinglistId, admin.getCompanyID())) {
-			popups.success("default.selection.deleted");
-			userActivityLogService.writeUserActivityLog(admin, "delete mailing list", getDescription(mailinglistId, admin.getCompanyID()));
-		} else {
-			popups.alert("error.mailinglist.cannot_delete");
-		}
-		
-		return "redirect:/mailinglist/list.action";
-	}
 	
 	@PostMapping("/bulkDelete.action")
-	public String bulkDelete(ComAdmin admin, BulkActionForm form, RedirectAttributes model, Popups popups) {
-		return admin.permissionAllowed(Permission.UPDATE_MAILINGLIST_ALLOW_DELETION) 
-                ? bulkDeleteWithMailingsStatusCheck(admin, form, model, popups) 
-                : bulkDeleteWithoutMailingsStatusCheck(admin, form, model, popups);
-	}
-
-    /**
-     * after GWUA-4783 has been successfully tested
-     * place method code to {@link #bulkDelete(ComAdmin, BulkActionForm, RedirectAttributes, Popups)}
-     */
-    private String bulkDeleteWithMailingsStatusCheck(ComAdmin admin, BulkActionForm form, RedirectAttributes model, Popups popups) {
+	public String bulkDelete(ComAdmin admin, BulkActionForm form, Model model, Popups popups) {
         int companyId = admin.getCompanyID();
         Set<Integer> bulkIds = new HashSet<>(form.getBulkIds());
         if (isMailinglistsDependent(bulkIds, companyId, model)) {
-            return "messages";
+            return MESSAGES_VIEW;
         }
         mailinglistService.bulkDelete(bulkIds, companyId);
 
@@ -318,27 +233,6 @@ public class MailinglistControllerBase {
         popups.success("default.selection.deleted");
         return "redirect:/mailinglist/list.action";
     }
-
-    // remove this method after GWUA-4783 has been successfully tested
-    private String bulkDeleteWithoutMailingsStatusCheck(ComAdmin admin, BulkActionForm form, RedirectAttributes model, Popups popups) {
-		int companyId = admin.getCompanyID();
-		if(isMailinglistsIndependent(form.getBulkIds(), companyId, model)) {
-			List<UserAction> userActions = form.getBulkIds().stream()
-					.map(id -> getDescription(id, companyId))
-					.map(description -> new UserAction("delete mailinglist", description))
-					.collect(Collectors.toList());
-			
-			mailinglistService.bulkDelete(new HashSet<>(form.getBulkIds()), companyId);
-			
-			for (UserAction action: userActions) {
-				userActivityLogService.writeUserActivityLog(admin, action, logger);
-			}
-			
-			popups.success("default.selection.deleted");
-		}
-		
-		return "redirect:/mailinglist/list.action";
-	}
 
 	@PostMapping("/recipientsDelete.action")
 	public String recipientsDelete(ComAdmin admin, @ModelAttribute("deleteForm") MailinglistRecipientDeleteForm form, Popups popups) {
@@ -409,45 +303,6 @@ public class MailinglistControllerBase {
 		form.setStatistic(statistic);
 	}
 
-    // remove this method after GWUA-4783 has been successfully tested
-	protected boolean isMailinglistsIndependent(List<Integer> bulkMailinglistIds, int companyId, Model model) {
-		List<Mailing> dependedMailings = mailinglistService.getAllDependedMailing(new HashSet<>(bulkMailinglistIds), companyId);
-
-		if (!dependedMailings.isEmpty()) {
-			if(model instanceof RedirectAttributes) {
-				RedirectAttributes attributes = (RedirectAttributes) model;
-				attributes.addFlashAttribute("affectedMailingsMessageType", GuiConstants.MESSAGE_TYPE_ALERT);
-				attributes.addFlashAttribute("affectedMailingsMessageKey", "error.mailinglist.cannot_delete_mailinglists");
-				attributes.addFlashAttribute("affectedMailings", dependedMailings);
-			} else {
-				model.addAttribute("affectedMailingsMessageType", GuiConstants.MESSAGE_TYPE_ALERT);
-				model.addAttribute("affectedMailingsMessageKey","error.mailinglist.cannot_delete_mailinglists");
-				model.addAttribute("affectedMailings", dependedMailings);
-			}
-			return false;
-		}
-
-		return true;
-	}
-
-    // remove this method after GWUA-4783 has been successfully tested
-	protected boolean isMailinglistIndependent(int mailinglistId, int companyId, Model model) {
-		if (!isMailinglistsIndependent(Collections.singletonList(mailinglistId), companyId, model)) {
-			return false;
-		}
-
-		List<ComLightweightBirtReport> affectedReports =  mailinglistService.getConnectedBirtReportList(mailinglistId, companyId);
-		if (!affectedReports.isEmpty()) {
-			model.addAttribute("affectedReportsMessageType", GuiConstants.MESSAGE_TYPE_ALERT);
-			model.addAttribute("affectedReportsMessageKey", "warning.mailinglist.affectedBirtReports");
-			model.addAttribute("affectedReports", affectedReports);
-			
-			return false;
-		}
-
-		return true;
-	}
-	
     private boolean isMailinglistsDependent(Set<Integer> mailinglistIds, int companyId, Model model) {
         List<Mailing> affectedMailinglists = mailinglistService.getUsedMailings(mailinglistIds, companyId);
         if (!affectedMailinglists.isEmpty()) {
@@ -458,7 +313,7 @@ public class MailinglistControllerBase {
     }
 
     private void addAffectedMailingsToModel(Model model, List<Mailing> affectedMailings) {
-        if(model instanceof RedirectAttributes) {
+        if (model instanceof RedirectAttributes) {
             RedirectAttributes attributes = (RedirectAttributes) model;
             attributes.addFlashAttribute("affectedMailingsMessageType", GuiConstants.MESSAGE_TYPE_ALERT);
             attributes.addFlashAttribute("affectedMailingsMessageKey", "error.mailinglist.cannot_delete_mailinglists");

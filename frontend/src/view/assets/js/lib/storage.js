@@ -3,8 +3,6 @@
   var get,
       set,
       deleteByKey,
-      deleteByNamespace,
-      getFromRealStorage,
       saveChosenFields,
       restoreChosenFields,
       currentStorage,
@@ -143,42 +141,10 @@
 
   deleteByKey = function(key) {
     try {
-      currentStorage.removeItem(key);
+      currentStorage.removeItem(generateKeyForAdmin(key));
     } catch (e) {
       console.warn("Could not remove Storage key:" + key + " cause: " + e);
     }
-  };
-
-  deleteByNamespace = function(namespace) {
-    var namespaceLength = namespace.length;
-
-    _.each(currentStorage, function(value, key) {
-      if ( key.substring(0, namespaceLength) == namespace ) {
-        deleteByKey(key);
-      }
-    })
-  };
-
-  getFromRealStorage = function(key) {
-    var result;
-    try {
-      if (!window.localStorage) {
-        result = currentStorage.getItem(key, true);
-      } else {
-        result = currentStorage.getItem(key);
-      }
-    } catch(e) {
-      result = currentStorage.getItem(key, true);
-    }
-
-    try {
-      if (result) {
-        return JSON.parse(result);
-      }
-    } catch (e) {
-      console.warn("Could not parse (key:value) " + key + ': ' + result, e);
-    }
-    return undefined;
   };
 
   /**
@@ -223,7 +189,7 @@
     });
     return wasChanged;
   }
-  
+
   function saveStoredField(field){
     var scope = field.data("stored-field") | "";
     var property = field.prop("name");
@@ -236,7 +202,7 @@
         value = field.val();
       }
       if (value != undefined){
-        set(createStoredFieldKey(property, scope),  value);
+        set(generateStoredFieldKeyForAdmin(property, scope),  value);
       }
     }
   }
@@ -248,10 +214,20 @@
 
     if (property != undefined){
       var type = field.prop("type") || field.prop("type");
-      var value = get(createStoredFieldKey(property, scope));
+      var value = get(generateStoredFieldKeyForAdmin(property, scope));
 
-      if (value === undefined){
-        return false;
+      if (value === undefined) {
+        // For backward compatibility try to get a value by old-fashion key.
+        value = get(generateStoredFieldKey(property, scope));
+
+        if (value === undefined) {
+          return false;
+        }
+
+        // Migrate to new-fashion key.
+        // The old-fashion key still have to stay in a storage for some time
+        // to make sure migration is complete for all possible admins.
+        set(generateStoredFieldKeyForAdmin(property, scope),  value);
       }
 
       if(type == "radio"){
@@ -311,16 +287,29 @@
     return wasChanged;
   }
 
-  function createStoredFieldKey(property, scope) {
+  function generateStoredFieldKey(property, scope) {
     var key = "stored_field_";
-    if (property){
+
+    if (property) {
       key = key + property;
     }
-    if (scope){
+
+    if (scope) {
       key = key + "_" + scope;
       return key;
     }
+
     return undefined;
+  }
+
+  function generateStoredFieldKeyForAdmin(property, scope) {
+    var key = generateStoredFieldKey(property, scope);
+
+    if (key) {
+      return generateKeyForAdmin(key);
+    } else {
+      return key;
+    }
   }
 
   function generateKeyForAdmin(key) {
@@ -335,8 +324,6 @@
     get: get,
     set: set,
     delete: deleteByKey,
-    deleteByNamespace: deleteByNamespace,
-    getFromRealStorage: getFromRealStorage,
     saveChosenFields: saveChosenFields,
     restoreChosenFields: restoreChosenFields
   }

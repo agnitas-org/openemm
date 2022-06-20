@@ -60,9 +60,26 @@ AGN.Lib.Controller.new('mailing-send', function() {
   });
 
   this.addAction({
-    'click': 'start-delivery'
+    'click': 'send-admin'
   }, function() {
     var action = this.el.data('action-value'),
+        actionUrl = this.el.data('base-url'),
+        form   = Form.get(this.el);
+
+    Helpers.disableSendButtons();
+
+    var jqxhr = $.post(actionUrl, {action:action, mailingID:form.getValue('mailingID')});
+
+    jqxhr.done(function (resp) {
+      form.updateHtml(resp);
+    });
+  });
+
+  this.addAction({
+    'click': 'send-test'
+  }, function() {
+    var action = this.el.data('action-value'),
+        actionUrl = this.el.data('base-url'),
         form   = Form.get(this.el);
 
     if ($('#adminTargetGroupSelect').val() == ADMIN_TARGET_SINGLE_RECIPIENT) {
@@ -82,19 +99,60 @@ AGN.Lib.Controller.new('mailing-send', function() {
     }
 
     Helpers.disableSendButtons();
+
     form.setValue('action', action);
-    form.submit();
+
+    var jqxhr = $.post(actionUrl, $('#testDeliveryForm').serialize());
+
+    jqxhr.done(function (resp) {
+      form.updateHtml(resp);
+    });
   });
+
+  this.addAction({
+    'click': 'send-world'
+  }, function() {
+    handleMailingAction(this.el);
+  });
+
+  this.addAction({
+    'click': 'cancel-mailing'
+  }, function() {
+    handleMailingAction(this.el);
+  });
+
+  this.addAction({
+    'click': 'resume-mailing'
+  }, function() {
+    handleMailingAction(this.el);
+  });
+
+  function handleMailingAction($el) {
+    var baseUrl = $el.data('base-url'),
+        form   = Form.get($el);
+
+    form.jqxhr().done(function(resp) {
+      form.updateHtml(resp);
+
+      var History = window.history;
+      History.replaceState(History.state || {}, document.title, baseUrl);
+    });
+  }
 
   this.addAction({
     'click': 'check-links'
   }, function() {
     var action = this.el.data('action-value'),
+        actionUrl = this.el.data('base-url'),
         form   = Form.get(this.el);
 
-    Helpers.disableSendButtons();
     form.setValue('action', action);
-    form.submit();
+    Helpers.disableSendButtons();
+
+    var jqxhr = $.post(actionUrl, $('#testDeliveryForm').serialize());
+    jqxhr.done(function (resp) {
+      form.updateHtml(resp);
+    });
   });
 
   this.addAction({
@@ -210,39 +268,63 @@ AGN.Lib.Controller.new('mailing-send', function() {
     }
   }
 
-  this.addAction({change: 'prioritization-toggle'}, function() {
-    var $toggle = this.el;
-    var isChecked = $toggle.prop('checked');
+  var STORAGE_TIME_OF_SETTINGS_CACHE_MS = 60000;
+  var settingsReceiptDate;
+  var settingsResponse;
 
-    // Disable toggle button until changes are saved.
-    $toggle.prop('disabled', true);
+  this.addAction({click: 'save-security-settings'}, function() {
+    var form = AGN.Lib.Form.get(this.el);
+    var requiredAutoImportId = form.getValue('autoImportId');
 
-    function failed() {
-      // Failed to save changes, revert initial toggle button state.
-      $toggle.prop('checked', !isChecked);
-      AGN.Lib.Messages(t('defaults.error'), t('defaults.error'), 'alert');
-    }
-
-    $.ajax({
-      type: 'POST',
-      url: $toggle.data('url'),
-      data: {
-        isPrioritizationDisallowed: $toggle.is(':checked')
-      }
-    }).done(function(resp) {
-      if (resp && resp.success) {
-        AGN.Lib.Messages(t('defaults.success'), t('defaults.saved'), 'success');
+    form.submit().done(function(resp) {
+      if(resp.success === true) {
+        AGN.Lib.JsonMessages(resp.popups);
+        $('#close-security-settings').click();
+        settingsReceiptDate -= STORAGE_TIME_OF_SETTINGS_CACHE_MS;
       } else {
-        failed();
+        AGN.Lib.JsonMessages(resp.popups, true);
       }
-    }).fail(failed).always(function() {
-      // Enable toggle button back.
-      $toggle.prop('disabled', false);
+
+      $("#activateMailingForm input[name='autoImportId']").val(requiredAutoImportId);
     });
+  });
+
+  this.addAction({click: 'load-security-settings'}, function() {
+    var currentDate = new Date();
+
+    if (!settingsReceiptDate || currentDate - settingsReceiptDate >= STORAGE_TIME_OF_SETTINGS_CACHE_MS) {
+      var href = $(this.el).attr('href');
+
+      if (href) {
+        var jqxhr = $.get(href);
+        jqxhr.done(function(resp) {
+          Page.render(resp);
+          settingsResponse = resp;
+          settingsReceiptDate = new Date();
+
+          initializeFormFields($('#security-settings-form'));
+        });
+      }
+    } else {
+      Page.render(settingsResponse);
+      initializeFormFields($('#security-settings-form'));
+    }
+  });
+
+  function initializeFormFields($form) {
+    var form = AGN.Lib.Form.get($form);
+    form.initFields();
+  }
+
+  this.addAction({change: 'prioritization-toggle'}, function() {
+    toggleButton($(this.el), 'isPrioritizationDisallowed')
   });
 
   this.addAction({change: 'sendStatusOnErrorOnly-toggle'}, function() {
-    var $toggle = this.el;
+    toggleButton($(this.el), 'statusOnErrorEnabled')
+  });
+
+  function toggleButton($toggle, propertyName) {
     var isChecked = $toggle.prop('checked');
 
     // Disable toggle button until changes are saved.
@@ -254,12 +336,13 @@ AGN.Lib.Controller.new('mailing-send', function() {
       AGN.Lib.Messages(t('defaults.error'), t('defaults.error'), 'alert');
     }
 
+    var data = {};
+    data[propertyName] = $toggle.is(':checked')
+
     $.ajax({
       type: 'POST',
       url: $toggle.data('url'),
-      data: {
-    	  statusmailOnErrorOnly: $toggle.is(':checked')
-      }
+      data: data
     }).done(function(resp) {
       if (resp && resp.success) {
         AGN.Lib.Messages(t('defaults.success'), t('defaults.saved'), 'success');
@@ -270,5 +353,5 @@ AGN.Lib.Controller.new('mailing-send', function() {
       // Enable toggle button back.
       $toggle.prop('disabled', false);
     });
-  });
+  }
 });

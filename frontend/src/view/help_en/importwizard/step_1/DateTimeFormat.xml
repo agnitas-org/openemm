@@ -1,0 +1,4 @@
+<HelpBalloon>
+	<title>Datetime format</title>
+	<content><![CDATA[Select the date format to be used for the export of your fields of the type "Date with time" and which you need for further processing. The date format is specified according to the JAVA SimpleDateFormat. For example, the following strings are available: yyyy (year, e.g. 1986), MM (month, e.g. 07), dd (day within a month, e.g. 10), HH (hour within a day, e.g. 04), mm (minute within an hour, e.g. 30), ss (second within a minute, e.g. 20). The format yyyy-MM-dd, HH:mm could therefore stand for the following time 2021-01-10, 08:30.]]></content>
+</HelpBalloon>

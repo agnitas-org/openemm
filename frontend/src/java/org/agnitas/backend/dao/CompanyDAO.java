@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -20,7 +20,8 @@ import	java.util.regex.Matcher;
 import	java.util.regex.Pattern;
 
 import	org.agnitas.backend.DBase;
-import	org.agnitas.backend.StringOps;
+import	org.agnitas.backend.Data;
+import	org.agnitas.util.Str;
 
 /**
  * Accesses all company relevant information from the database
@@ -28,8 +29,6 @@ import	org.agnitas.backend.StringOps;
  */
 public class CompanyDAO {
 	private long		companyID;
-	private String		savedUser;
-	private String[]	savedHostnames;
 	private String		shortName;
 	private boolean		mailTracking;
 	private boolean		mailTrackingExtended;
@@ -40,21 +39,21 @@ public class CompanyDAO {
 	private String		status;
 	private String		mailsPerDay;
 	private int		priorityCount;
+	private String		token;
 	private Map <String, String>
 				info;
 	private long		companyBaseID;
 		
 	static private Pattern	searchBase = Pattern.compile ("from .*cust(omer_?)?([0-9]+)_(master_)?tbl", Pattern.CASE_INSENSITIVE);
-	public CompanyDAO (DBase dbase, long forCompanyID, String user, String ... hostnames) throws SQLException {
+	public CompanyDAO (DBase dbase, long forCompanyID) throws SQLException {
 		List <Map <String, Object>>	rq;
 		Map <String, Object>		row;
 
-		savedUser = user;
-		savedHostnames = hostnames;
 		try (DBase.With with = dbase.with ()) {
 			row = dbase.querys (with.jdbc (),
 					    "SELECT company_id, shortname, mailtracking, secret_key, enabled_uid_version, " +
-					    "       rdir_domain, mailloop_domain, status, mails_per_day, priority_count " + 
+					    "       rdir_domain, mailloop_domain, status, mails_per_day, priority_count, " +
+					    "       company_token " +
 					    "FROM company_tbl WHERE company_id = :companyID",
 					    "companyID", forCompanyID);
 			if (row != null) {
@@ -68,6 +67,7 @@ public class CompanyDAO {
 				status = dbase.asString (row.get ("status"));
 				mailsPerDay = dbase.asString (row.get ("mails_per_day"));
 				priorityCount = dbase.asInt (row.get ("priority_count"));
+				token = dbase.asString (row.get ("company_token"));
 				info = new HashMap <> ();
 				Set <String>	seenByHost = new HashSet <> ();
 				rq = dbase.query (with.jdbc (),
@@ -82,7 +82,7 @@ public class CompanyDAO {
 					String	value = dbase.asString (row.get ("cvalue"));
 					String	hostname = dbase.asString (row.get ("hostname"));
 					
-					if ((name != null) && ((hostname == null) || Tools.isin (hostname, user, hostnames))) {
+					if ((name != null) && ((hostname == null) || Data.selection.match (hostname))) {
 						String	key = Integer.toString (cid) + ":" + name;
 						
 						if ((hostname != null) || (! seenByHost.contains (key))) {
@@ -93,7 +93,7 @@ public class CompanyDAO {
 						}
 					}
 				}
-				mailTrackingExtended = mailTracking && StringOps.atob (info.get ("mailtrack-extended"), false);
+				mailTrackingExtended = mailTracking && Str.atob (info.get ("mailtrack-extended"), false);
 
 				companyBaseID = companyID;
 
@@ -130,7 +130,7 @@ public class CompanyDAO {
 						Matcher	m = searchBase.matcher (text.replaceAll ("[ \t\n\r\f]+", " "));
 						
 						if (m.find ()) {
-							companyBaseID = StringOps.atol (m.group (2), companyBaseID);
+							companyBaseID = Str.atol (m.group (2), companyBaseID);
 						}
 					}
 				}
@@ -185,6 +185,9 @@ public class CompanyDAO {
 	public int priorityCount () {
 		return priorityCount;
 	}
+	public String token () {
+		return token;
+	}
 	public Map <String, String> info () {
 		return info;
 	}
@@ -192,6 +195,6 @@ public class CompanyDAO {
 		return companyBaseID;
 	}
 	public CompanyDAO baseCompany (DBase dbase) throws SQLException {
-		return companyBaseID == companyID ? this : new CompanyDAO (dbase, companyBaseID, savedUser, savedHostnames);
+		return companyBaseID == companyID ? this : new CompanyDAO (dbase, companyBaseID);
 	}
 }

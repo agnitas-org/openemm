@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -19,16 +19,17 @@ import org.agnitas.emm.core.commons.daocache.CompanyDaoCache;
 import org.agnitas.emm.core.commons.uid.builder.ExtensibleUIDStringBuilder;
 import org.agnitas.emm.core.commons.uid.builder.impl.exception.RequiredInformationMissingException;
 import org.agnitas.emm.core.commons.uid.builder.impl.exception.UIDStringBuilderException;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-import com.agnitas.beans.ComCompany;
+import com.agnitas.beans.Company;
 import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
 import com.agnitas.emm.core.commons.uid.ExtensibleUidVersion;
 
 public final class ComExtensibleUIDStringBuilderChain implements ExtensibleUIDStringBuilder {
 
 	/** Logger. */
-	private static final transient Logger logger = Logger.getLogger( ComExtensibleUIDStringBuilderChain.class);
+	private static final transient Logger logger = LogManager.getLogger( ComExtensibleUIDStringBuilderChain.class);
 	
 	// ------------------------------------------------------------------------------ Dependency Injection
 	
@@ -75,7 +76,7 @@ public final class ComExtensibleUIDStringBuilderChain implements ExtensibleUIDSt
 	 * 
 	 * @return UID version enabled for given company 
 	 */
-	private static final ExtensibleUidVersion enabledUidVersionFromCompany(final ComCompany company) {
+	private static final ExtensibleUidVersion enabledUidVersionFromCompany(final Company company) {
 		try {
 			final ExtensibleUidVersion version = ExtensibleUidVersion.fromVersionNumber(company.getEnabledUIDVersion());
 			
@@ -93,7 +94,7 @@ public final class ComExtensibleUIDStringBuilderChain implements ExtensibleUIDSt
 	@Override
 	public String buildUIDString(final ComExtensibleUID extensibleUID) throws UIDStringBuilderException, RequiredInformationMissingException {
 		// Read the company for the UID to determine, which is the first string builder we try to use for UID generation.
-		final ComCompany company = this.companyDaoCache.getItem(extensibleUID.getCompanyID());
+		final Company company = this.companyDaoCache.getItem(extensibleUID.getCompanyID());
 		
 		// Determine the UID version that is enabled for this company
 		final ExtensibleUidVersion enabledUidversion = enabledUidVersionFromCompany(company);

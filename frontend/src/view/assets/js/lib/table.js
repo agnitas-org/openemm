@@ -36,6 +36,7 @@
       enableFilter: true,
       enableColResize: true,
       pagination: true,
+      showRecordsCount: true,
       filtersDescription: {
         enabled: false,
         templateName: '',
@@ -164,6 +165,9 @@
       localeText: window.I18n.tables
     }, options || {});
 
+    if (!this.gridOptions.showRecordsCount && !this.gridOptions.pagination) {
+      this.$el.find('.ag-theme-bootstrap').height(this.$el.parent().height());
+    }
 
     this.grid = new agGrid.Grid(this.$el.find('.ag-theme-bootstrap').get(0), this.gridOptions);
     this.api = this.gridOptions.api;
@@ -199,6 +203,7 @@
 
     paginationData = {
       pagination: this.gridOptions.pagination,
+      showRecordsCount: this.gridOptions.showRecordsCount,
       currentPage: currentPage,
       totalPages: totalPages,
       itemStart: (api.paginationGetPageSize() * (currentPage - 1)) + 1,

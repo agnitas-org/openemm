@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -36,7 +36,7 @@ public interface EmmActionService {
 
 	boolean executeActions(int actionID, @VelocityCheck int companyID, Map<String, Object> params, final EmmActionOperationErrors errors) throws Exception;
 
-	int copyEmmAction(EmmAction emmAction, int toCompanyId);
+	int copyEmmAction(EmmAction emmAction, int toCompanyId, Map<Integer, Integer> mailingIdReplacements) throws Exception;
 
 	int saveEmmAction(int companyId, EmmAction action);
 
@@ -46,8 +46,6 @@ public interface EmmActionService {
 	EmmAction getEmmAction(int actionID, int companyID);
 
 	boolean deleteEmmAction(int actionID, int companyID);
-
-	int copyActionOperations(int sourceActionCompanyID, int sourceActionID, int destinationActionCompanyId, int destinationActionID);
 
 	List<Integer> getReferencedMailinglistsFromAction(int companyID, int actionID);
 

@@ -1,6 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" buffer="64kb" %>
 <%@ page import="com.agnitas.web.forms.ComMailingBaseForm" errorPage="/error.do" %>
-<%@ page import="com.agnitas.web.ComMailingBaseAction" errorPage="/error.do" %>
+<%@ page import="com.agnitas.web.MailingBaseAction" errorPage="/error.do" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
@@ -10,8 +10,8 @@
 
 <%--@elvariable id="mailingBaseForm" type="com.agnitas.web.forms.ComMailingBaseForm"--%>
 
-<c:set var="ACTION_MOVE_MEDIA_DOWN" value="<%= ComMailingBaseAction.ACTION_MOVE_MEDIA_DOWN %>"/>
-<c:set var="ACTION_MOVE_MEDIA_UP" value="<%= ComMailingBaseAction.ACTION_MOVE_MEDIA_UP %>"/>
+<c:set var="ACTION_MOVE_MEDIA_DOWN" value="<%= MailingBaseAction.ACTION_MOVE_MEDIA_DOWN %>"/>
+<c:set var="ACTION_MOVE_MEDIA_UP" value="<%= MailingBaseAction.ACTION_MOVE_MEDIA_UP %>"/>
 
 <c:if test="${not mailingBaseForm.isMailingGrid}">
     <div class="tile" data-action="scroll-to">

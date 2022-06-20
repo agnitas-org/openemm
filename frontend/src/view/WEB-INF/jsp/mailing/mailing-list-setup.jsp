@@ -1,13 +1,13 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" buffer="32kb" errorPage="/error.do"%>
-<%@ page import="com.agnitas.web.ComMailingBaseAction" %>
+<%@ page import="com.agnitas.web.MailingBaseAction" %>
 <%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
-<c:set var="ACTION_NEW" 			value="<%= ComMailingBaseAction.ACTION_NEW %>"				scope="request" />
-<c:set var="ACTION_MAILING_IMPORT" 	value="<%= ComMailingBaseAction.ACTION_MAILING_IMPORT %>"	scope="request" />
+<c:set var="ACTION_NEW" 			value="<%= MailingBaseAction.ACTION_NEW %>"				scope="request" />
+<c:set var="ACTION_MAILING_IMPORT" 	value="<%= MailingBaseAction.ACTION_MAILING_IMPORT %>"	scope="request" />
 
 <emm:CheckLogon/>
 

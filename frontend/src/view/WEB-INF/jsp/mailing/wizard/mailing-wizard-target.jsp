@@ -1,6 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=utf-8"  errorPage="/error.do" %>
 <%@ page import="com.agnitas.beans.MediatypeEmail" %>
-<%@ page import="com.agnitas.web.ComMailingWizardAction" %>
+<%@ page import="com.agnitas.web.MailingWizardAction" %>
 <%@ page import="com.agnitas.beans.Mailing" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
@@ -14,10 +14,12 @@
 <%--@elvariable id="targetComplexities" type="Map<java.lang.Integer, com.agnitas.emm.core.target.beans.TargetComplexityGrade>"--%>
 <%--@elvariable id="targets" type="java.util.List"--%>
 <%--@elvariable id="altgId" type="java.lang.Integer"--%>
+<%--@elvariable id="adminAltgIds" type="java.util.Set<java.lang.Integer>"--%>
+<%--@elvariable id="complexTargetExpression" type="java.lang.Boolean"--%>
 
-<c:set var="ACTION_TARGET" value="<%= ComMailingWizardAction.ACTION_TARGET %>" />
-<c:set var="ACTION_NEW_TARGET" value="<%= ComMailingWizardAction.ACTION_NEW_TARGET %>"/>
-<c:set var="ACTION_MAILTYPE" value="<%= ComMailingWizardAction.ACTION_MAILTYPE %>"/>
+<c:set var="ACTION_TARGET" value="<%=MailingWizardAction.ACTION_TARGET%>" />
+<c:set var="ACTION_NEW_TARGET" value="<%=MailingWizardAction.ACTION_NEW_TARGET%>"/>
+<c:set var="ACTION_MAILTYPE" value="<%=MailingWizardAction.ACTION_MAILTYPE%>"/>
 
 <c:set var="TARGET_MODE_OR" value="<%= Mailing.TARGET_MODE_OR%>"/>
 <c:set var="TARGET_MODE_AND" value="<%= Mailing.TARGET_MODE_AND%>"/>
@@ -144,22 +146,21 @@
                 </jsp:include>
 
                 <html:hidden property="__STRUTS_CHECKBOX_targetGroupIds" value="[]"/>
-                <c:set var="complexTargetExpression" value="${mailingWizardForm.mailing.hasComplexTargetExpression()}" scope="page" />
                 <%@include file="../fragments/mailing-targets-select.jspf" %>
 
-                <c:if test="${not (mailingWizardForm.mailing.hasComplexTargetExpression() or (isWorkflowDriven and fn:length(mailingWizardForm.mailing.targetGroups) <= 1))}">
+                <c:if test="${not (complexTargetExpression or (isWorkflowDriven and fn:length(mailingWizardForm.mailing.targetGroups) <= 1))}">
                     <div class="form-group" style="${fn:length(mailingWizardForm.mailing.targetGroups) <= 1 ? 'display: none;' : ''}">
                         <div class="col-sm-offset-4 col-sm-8">
                             <html:hidden property="__STRUTS_CHECKBOX_mailing.targetMode" value="${TARGET_MODE_OR}"/>
                             <div class="checkbox">
                                 <label>
-                                    <html:checkbox styleId="targetModeCheck" property="mailing.targetMode" value="${TARGET_MODE_AND}" disabled="${isWorkflowDriven or altgId > 0}" />
+                                    <html:checkbox styleId="targetModeCheck" property="mailing.targetMode" value="${TARGET_MODE_AND}" disabled="${isWorkflowDriven or (not empty adminAltgIds and adminAltgIds.size() > 0) or (not empty altgId and altgId > 0)}" />
                                     <bean:message key="mailing.targetmode.and"/>
                                 </label>
                             </div>
                         </div>
                     </div>
-                </c:if>
+                </c:if>                    
 
                 <c:if test="${not isWorkflowDriven}">
                     <div class="form-group">

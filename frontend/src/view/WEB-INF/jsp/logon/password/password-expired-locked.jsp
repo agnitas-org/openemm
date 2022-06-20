@@ -15,10 +15,10 @@
 
 <div class="system-tile-content">
     <div class="align-center">
-        <s:message code="password.change.notification.expired" arguments="${expirationDate}"/>
+        <mvc:message code="password.change.notification.expired" arguments="${expirationDate}"/>
         <c:if test="${not isSupervisor}">
             <br>
-            <s:message code="password.finally.expired.info"/>
+            <mvc:message code="password.finally.expired.info"/>
         </c:if>
     </div>
 </div>
@@ -29,7 +29,7 @@
         <s:message var="logonHintMessage" code="logon.security" arguments="${supportMailAddress}" htmlEscape="true"/>
 
         <a href="#" data-msg-system="system" data-msg="${logonHint}" data-msg-content="${logonHintMessage}">
-            <s:message code="logon.hint"/>
+            <mvc:message code="logon.hint"/>
         </a>
     </div>
 </div>

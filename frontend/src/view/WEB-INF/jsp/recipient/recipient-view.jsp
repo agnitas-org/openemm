@@ -1,100 +1,72 @@
-<%@page import="java.text.SimpleDateFormat"%>
-<%@page import="org.agnitas.beans.BindingEntry"%>
-<%@page import="org.agnitas.beans.Mailinglist"%>
-<%@page import="org.agnitas.beans.Recipient"%>
-<%@page import="org.agnitas.dao.UserStatus"%>
-<%@ page language="java"
-         import="org.agnitas.util.AgnUtils, org.agnitas.util.DateUtilities, org.agnitas.util.DbColumnType, org.agnitas.web.RecipientAction, org.springframework.web.context.WebApplicationContext, org.springframework.web.context.support.WebApplicationContextUtils"
-         contentType="text/html; charset=utf-8"  errorPage="/error.do" %>
+<%@ page language="java" contentType="text/html; charset=utf-8"  errorPage="/error.do" %>
+<%@ page import="org.agnitas.util.importvalues.MailType" %>
 <%@ page import="com.agnitas.beans.ProfileField" %>
-<%@ page import="com.agnitas.web.ComRecipientAction" %>
-<%@ page import="com.agnitas.web.ComRecipientForm" %>
+<%@ page import="org.agnitas.util.DbColumnType" %>
 <%@ page import="org.agnitas.emm.core.recipient.RecipientUtils" %>
-<%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
-<%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
-<%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
-<%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@page import="org.agnitas.dao.UserStatus"%>
+<%@ page import="com.agnitas.emm.core.mediatypes.common.MediaTypes" %>
+<%@ page import="org.agnitas.beans.BindingEntry" %>
+<%@ page import="org.agnitas.util.importvalues.Gender" %>
+
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 
-<%--@elvariable id="recipientForm" type="org.agnitas.web.RecipientForm"--%>
 <%--@elvariable id="isRecipientEmailInUseWarningEnabled" type="java.lang.Boolean"--%>
+<%--@elvariable id="mailinglists" type="java.util.List"--%>
+<%--@elvariable id="adminDateFormat" type="java.lang.String"--%>
+<%--@elvariable id="adminDateTimeFormat" type="java.lang.String"--%>
 <%--@elvariable id="adminDateTimeFormatWithSeconds" type="java.lang.String"--%>
-<%--@elvariable id="mailingLists" type="java.util.List<org.agnitas.beans.Mailinglist>"--%>
+<%--@elvariable id="form" type="com.agnitas.emm.core.recipient.forms.RecipientForm"--%>
+<%--@elvariable id="allowedEmptyEmail" type="java.lang.Boolean"--%>
 
-<c:set var="GENERIC_TYPE_DATE" value="<%= DbColumnType.GENERIC_TYPE_DATE %>"/>
-<c:set var="GENERIC_TYPE_DATETIME" value="<%= DbColumnType.GENERIC_TYPE_DATETIME %>"/>
-<c:set var="GENERIC_TYPE_VARCHAR" value="<%= DbColumnType.GENERIC_TYPE_VARCHAR %>"/>
+<c:set var="GENERIC_TYPE_DATE" value="<%= DbColumnType.SimpleDataType.Date %>"/>
+<c:set var="GENERIC_TYPE_DATETIME" value="<%= DbColumnType.SimpleDataType.DateTime %>"/>
+<c:set var="GENERIC_TYPE_VARCHAR" value="<%= DbColumnType.SimpleDataType.Characters %>"/>
+<c:set var="COLUMN_CUSTOMER_ID" value="<%= RecipientUtils.COLUMN_CUSTOMER_ID %>"/>
+<c:set var="COLUMN_DATASOURCE_ID" value="<%= RecipientUtils.COLUMN_DATASOURCE_ID %>"/>
+<c:set var="COLUMN_LATEST_DATASOURCE_ID" value="<%= RecipientUtils.COLUMN_LATEST_DATASOURCE_ID %>"/>
+<c:set var="COLUMN_TIMESTAMP" value="<%= RecipientUtils.COLUMN_TIMESTAMP %>"/>
 
-<c:set var="allowedValueDatePattern" value="<%= new SimpleDateFormat(DateUtilities.DD_MM_YYYY).toPattern() %>"/>
-<c:set var="columnValueDatePattern" value="<%= new SimpleDateFormat(DateUtilities.ISO_8601_DATETIME_FORMAT).toPattern() %>"/>
-
-<c:set var="MAILTYPE_TEXT" value="<%= Recipient.MAILTYPE_TEXT%>" scope="page"/>
-<c:set var="MAILTYPE_HTML" value="<%= Recipient.MAILTYPE_HTML%>" scope="page"/>
-<c:set var="MAILTYPE_HTML_OFFLINE" value="<%= Recipient.MAILTYPE_HTML_OFFLINE%>" scope="page"/>
+<c:set var="MAILTYPE_TEXT" value="<%= MailType.TEXT %>" scope="page"/>
+<c:set var="MAILTYPE_HTML" value="<%= MailType.HTML %>" scope="page"/>
+<c:set var="MAILTYPE_HTML_OFFLINE" value="<%= MailType.HTML_OFFLINE %>" scope="page"/>
 
 <c:set var="MODE_EDIT_EDITABLE" value="<%= ProfileField.MODE_EDIT_EDITABLE %>"/>
 <c:set var="MODE_EDIT_READONLY" value="<%= ProfileField.MODE_EDIT_READONLY %>"/>
 <c:set var="MODE_EDIT_NOT_VISIBLE" value="<%= ProfileField.MODE_EDIT_NOT_VISIBLE %>"/>
 
-<c:set var="ACTION_CONFIRM_DELETE" value="<%= RecipientAction.ACTION_CONFIRM_DELETE %>"     scope="page" />
-<c:set var="ACTION_CHECK_ADDRESS" value="<%= ComRecipientAction.ACTION_CHECK_ADDRESS %>"    scope="page" />
-<c:set var="ACTION_VIEW" value="<%= ComRecipientAction.ACTION_VIEW %>"                      scope="page" />
+<c:set var="USER_STATUS_ACTIVE" value="<%= UserStatus.Active %>"/>
+<c:set var="USER_STATUS_ADMIN_OUT" value="<%= UserStatus.AdminOut %>"/>
+<c:set var="USER_STATUS_USER_OUT" value="<%= UserStatus.UserOut %>"/>
+
+<c:set var="USER_TYPE_ADMIN" value="<%= BindingEntry.UserType.Admin.getTypeCode() %>"/>
+<c:set var="USER_TYPE_TEST" value="<%= BindingEntry.UserType.TestUser.getTypeCode() %>"/>
+<c:set var="USER_TYPE_NORMAL" value="<%= BindingEntry.UserType.World.getTypeCode() %>"/>
+<c:set var="USER_TYPE_TEST_VIP" value="<%= BindingEntry.UserType.TestVIP.getTypeCode() %>"/>
+<c:set var="USER_TYPE_NORMAL_VIP" value="<%= BindingEntry.UserType.WorldVIP.getTypeCode() %>"/>
+
+<c:set var="GENDER_MALE" value="<%= Gender.MALE %>"/>
+<c:set var="GENDER_FEMALE" value="<%= Gender.FEMALE %>"/>
+<c:set var="GENDER_UNKNOWN" value="<%= Gender.UNKNOWN %>"/>
+<c:set var="GENDER_PRAXIS" value="<%= Gender.PRAXIS %>"/>
+<c:set var="GENDER_COMPANY" value="<%= Gender.COMPANY %>"/>
+
 
 <fmt:setLocale value="${sessionScope['emm.admin'].locale}"/>
-
-<c:choose>
-    <c:when test="${recipientForm.recipientID == 0}">
-        <c:set var="headline" scope="page">
-            <bean:message key="recipient.NewRecipient"/>
-        </c:set>
-    </c:when>
-    <c:otherwise>
-        <c:set var="headline" scope="page">
-            <bean:message key="recipient.RecipientEdit"/>
-        </c:set>
-    </c:otherwise>
-</c:choose>
-
-<script type="text/javascript">
-    $(document).ready(function() {
-        _.each($('.js-show-tile-if-checked'), function(trigger) {
-            var $trigger    = $(trigger),
-                $target     = $(document).find($trigger.data('toggle-tile')),
-                $checkboxes = $target.find('input[type="checkbox"]:checked');
-
-            if ($checkboxes.length) {
-                AGN.Lib.Tile.show($trigger);
-            }
-        })
-    });
-</script>
-
-<agn:agnForm action="/recipient" id="recipientForm" data-form="resource" data-controller="recipient-view" data-action="recipient-save">
-    <html:hidden property="action"/>
-    <html:hidden property="recipientID"/>
-    <html:hidden property="user_type"/>
-    <html:hidden property="user_status"/>
-    <html:hidden property="listID"/>
-    <html:hidden property="targetID"/>
-
-    <c:url var="checkAddressLink" value="/recipient.do">
-        <c:param name="action" value="${ACTION_CHECK_ADDRESS}"/>
-        <c:param name="recipientID" value="${recipientForm.recipientID}"/>
-    </c:url>
-
-    <c:url var="userViewLinkPattern" value="/recipient.do?recipientID={recipient-ID}">
-        <c:param name="action" value="${ACTION_VIEW}"/>
-    </c:url>
+<mvc:form servletRelativeAction="/recipient/save.action" id="recipientForm" modelAttribute="form" data-form="resource" data-controller="recipient-view" data-action="recipient-save">
+    <mvc:hidden path="id"/>
 
     <c:if test="${isRecipientEmailInUseWarningEnabled}">
-        <script type="application/json" data-initializer="recipient-view">
+        <script data-initializer="recipient-view" type="application/json">
             {
               "urls": {
-                "CHECK_ADDRESS": "${checkAddressLink}",
-                "EXISTING_USER_URL_PATTERN": "${userViewLinkPattern}"
+                "CHECK_ADDRESS": "<c:url value='/recipient/${form.id}/checkAddress.action'/>",
+                "CHECK_MATCH_ALTG": "<c:url value='/recipient/checkAltgMatch.action'/>",
+                "SAVE_AND_BACK_TO_LIST": "<c:url value='/recipient/saveAndBackToList.action'/>",
+                "EXISTING_USER_URL_PATTERN": "<c:url value='/recipient/{recipientID}/view.action'/>"
               }
             }
         </script>
@@ -102,75 +74,91 @@
 
     <div class="row">
         <div class="col-md-6">
-
+            <%-- Edit main recipient fields --%>
             <div class="tile">
-
                 <div class="tile-header">
-                    <h2 class="headline">${headline}</h2>
+                    <h2 class="headline">
+                        <c:choose>
+                            <c:when test="${form.id gt 0}">
+                                <mvc:message code="recipient.RecipientEdit"/>
+                            </c:when>
+
+                            <c:otherwise>
+                                <mvc:message code="recipient.NewRecipient"/>
+                            </c:otherwise>
+                        </c:choose>
+                    </h2>
                 </div>
                 <div class="tile-content">
                     <div class="tile-content-forms">
-
                         <div class="form-group">
                             <div class="col-sm-4">
-                              <label for="recipient-salutation" class="control-label">
-                                  <bean:message key="recipient.Salutation"/>
-                              </label>
+                                <label for="recipient-salutation" class="control-label">
+                                    <mvc:message code="recipient.Salutation"/>
+                                </label>
                             </div>
                             <div class="col-sm-8">
-                                <html:select styleId="recipient-salutation" property="gender" styleClass="js-select form-control">
-                                    <html:option value="0"><bean:message key="recipient.gender.0.short"/></html:option>
-                                    <html:option value="1"><bean:message key="recipient.gender.1.short"/></html:option>
+                                <mvc:select path="gender" id="recipient-salutation" cssClass="js-select form-control">
+                                    <mvc:option value="${GENDER_MALE}"><mvc:message code="recipient.gender.0.short"/></mvc:option>
+                                    <mvc:option value="${GENDER_FEMALE}"><mvc:message code="recipient.gender.1.short"/></mvc:option>
                                     <emm:ShowByPermission token="recipient.gender.extended">
-                                        <html:option value="4"><bean:message key="recipient.gender.4.short"/></html:option>
-                                        <html:option value="5"><bean:message key="recipient.gender.5.short"/></html:option>
+                                        <mvc:option value="${GENDER_PRAXIS}"><mvc:message code="recipient.gender.4.short"/></mvc:option>
+                                        <mvc:option value="${GENDER_COMPANY}"><mvc:message code="recipient.gender.5.short"/></mvc:option>
                                     </emm:ShowByPermission>
-                                    <html:option value="2"><bean:message key="recipient.gender.2.short"/></html:option>
-                                </html:select>
+                                    <mvc:option value="${GENDER_UNKNOWN}"><mvc:message code="recipient.gender.2.short"/></mvc:option>
+                                </mvc:select>
                             </div>
                         </div>
 
                         <div class="form-group">
                             <div class="col-sm-4">
                               <label for="recipient-title" class="control-label">
-                                  <bean:message key="Title"/>
+                                  <mvc:message code="Title"/>
                               </label>
                             </div>
                             <div class="col-sm-8">
-                                <html:text styleId="recipient-title" styleClass="form-control" property="title"/>
+                                <mvc:text path="title" id="recipient-title" cssClass="form-control"
+                                          data-field-validator="length" data-validator-options="required: false, max: 100"/>
                             </div>
                         </div>
 
                         <div class="form-group">
                             <div class="col-sm-4">
                               <label for="recipient-firstname" class="control-label">
-                                  <bean:message key="Firstname"/>
+                                  <mvc:message code="Firstname"/>
                               </label>
                             </div>
                             <div class="col-sm-8">
-                                <html:text styleId="recipient-firstname" styleClass="form-control" property="firstname"/>
+                                <mvc:text path="firstname" id="recipient-firstname" cssClass="form-control"
+                                          data-field-validator="length" data-validator-options="required: false, max: 100"/>
                             </div>
                         </div>
 
                         <div class="form-group">
                             <div class="col-sm-4">
                               <label for="recipient-lastname" class="control-label">
-                                  <bean:message key="Lastname"/>
+                                  <mvc:message code="Lastname"/>
                               </label>
                             </div>
                             <div class="col-sm-8">
-                                <html:text styleId="recipient-lastname" styleClass="form-control" property="lastname"/>
+                                <mvc:text path="lastname" id="recipient-lastname" cssClass="form-control"
+                                          data-field-validator="length" data-validator-options="required: false, max: 100"/>
                             </div>
                         </div>
 
-                        <div class="form-group">
+                        <div class="form-group" ${not allowedEmptyEmail ? 'data-field="required"' : ''}>
                             <div class="col-sm-4">
                               <label for="recipient-email" class="control-label">
-                                  <bean:message key="mailing.MediaType.0"/>
+                                  <mvc:message code="mailing.MediaType.0"/> * 
                               </label>
                             </div>
                             <div class="col-sm-8">
-                                <agn:agnText styleId="recipient-email" styleClass="form-control" property="email"/>
+                                <c:if test="${allowedEmptyEmail}">
+                                    <mvc:text path="email" id="recipient-email" cssClass="form-control"/>
+                                </c:if>
+                                <c:if test="${not allowedEmptyEmail}">
+                                    <mvc:text path="email" id="recipient-email" cssClass="form-control" data-field-required=""/>
+                                </c:if>
                             </div>
                         </div>
 
@@ -178,42 +166,43 @@
 						<div class="form-group">
                             <div class="col-sm-4">
                               <label for="trackingVeto" class="control-label">
-                                  <bean:message key="recipient.trackingVeto"/>
+                                  <mvc:message code="recipient.trackingVeto"/>
                               </label>
                             </div>
                             <div class="col-sm-8">
-                				<html:hidden property="__STRUTS_CHECKBOX_trackingVeto" value="false"/>
   								<label class="toggle">
-  									<html:checkbox property="trackingVeto" styleId="trackingVeto"/>
+  									<%--@elvariable id="disableTrackingVeto" type="java.lang.Boolean"--%>
+  									<mvc:checkbox path="trackingVeto" id="trackingVeto" disabled="${disableTrackingVeto}"/>
                           			<div class="toggle-control"></div>
   								</label>
             				</div>
                         </div>
                         </emm:ShowByPermission>
+
                         <div class="form-group">
                             <div class="col-sm-4">
                                 <label class="control-label">
-                                    <bean:message key="Mailtype"/>
+                                    <mvc:message code="Mailtype"/>
                                 </label>
                             </div>
                             <div class="col-sm-8">
                                 <ul class="list-group">
                                     <li class="list-group-item">
                                         <label class="radio-inline">
-                                            <html:radio property="mailtype" value="${MAILTYPE_TEXT}"/>
-                                            <bean:message key="MailType.0"/>
+                                            <mvc:radiobutton path="mailtype" value="${MAILTYPE_TEXT}"/>
+                                            <mvc:message code="${MAILTYPE_TEXT.messageKey}"/>
                                         </label>
                                     </li>
                                     <li class="list-group-item">
                                         <label class="radio-inline">
-                                            <html:radio property="mailtype" value="${MAILTYPE_HTML}"/>
-                                            <bean:message key="MailType.1"/>
+                                            <mvc:radiobutton path="mailtype" value="${MAILTYPE_HTML}"/>
+                                            <mvc:message code="${MAILTYPE_HTML.messageKey}"/>
                                         </label>
                                     </li>
                                     <li class="list-group-item">
                                         <label class="radio-inline">
-                                            <html:radio property="mailtype" value="${MAILTYPE_HTML_OFFLINE}"/>
-                                            <bean:message key="MailType.2"/>
+                                            <mvc:radiobutton path="mailtype" value="${MAILTYPE_HTML_OFFLINE}"/>
+                                            <mvc:message code="${MAILTYPE_HTML_OFFLINE.messageKey}"/>
                                         </label>
                                     </li>
                                 </ul>
@@ -222,342 +211,253 @@
 
                         <%@include file="recipient-freq-counter.jspf" %>
 
-	                </div>
+                    </div>
                 </div>
-
             </div>
 
-
+            <%-- Edit additional recipient fields --%>
             <div class="tile">
-
                 <div class="tile-header">
-                    <h2 class="headline"><bean:message key="recipient.More_Profile_Data"/></h2>
+                    <h2 class="headline"><mvc:message code="recipient.More_Profile_Data"/></h2>
                 </div>
                 <div class="tile-content">
                     <div class="tile-content-forms">
-                        <emm:ShowColumnInfo id="agnTbl" table="<%= AgnUtils.getCompanyID(request) %>" useCustomSorting="true"
-                            hide="email, title, gender, mailtype, firstname, lastname, change_date, bounceload, facebook_status, foursquare_status, google_status, xing_status, twitter_status, sys_tracking_veto, cleaned_date, facebook_status, foursquare_status, google_status, twitter_status, xing_status, freq_count_day, freq_count_week, freq_count_month">
+                        <%--@elvariable id="columnDefinitions" type="java.util.List<com.agnitas.emm.core.recipient.dto.RecipientColumnDefinition>"--%>
+                        <c:forEach items="${columnDefinitions}" var="definition">
+                            <c:set var="hasFixedValues" value="${not empty definition.fixedValues}"/>
+                            <c:set var="propName" value="additionalColumns[${definition.columnName}]"/>
+                            <c:set var="isMainColumn" value="${definition.mainColumn}"/>
 
-                            <%--@elvariable id="_agnTbl_data_type" type="java.lang.String"--%>
-                            <%--@elvariable id="_agnTbl_column_name" type="java.lang.String"--%>
-                            <%--@elvariable id="_agnTbl_column" type="java.lang.String"--%>
-                            <%--@elvariable id="_agnTbl_data_length" type="java.lang.Integer"--%>
-                            <%--@elvariable id="_agnTbl_shortname" type="java.lang.String"--%>
-                            <%--@elvariable id="_agnTbl_editable" type="java.lang.Integer"--%>
-                            <%--@elvariable id="_agnTbl_line" type="java.lang.Integer"--%>
-                            <%--@elvariable id="_agnTbl_allowed_values" type="java.lang.String[]"--%>
-                            <%--@elvariable id="_agnTbl_nullable" type="java.lang.Integer"--%>
+                            <c:if test="${definition.readable}">
+                                <c:if test="${isMainColumn}">
 
-                            <c:set var="column_name" value="${_agnTbl_column_name}"/>
-                            <c:if test="${empty column_name}">
-                                <c:set var="column_name" value="${_agnTbl_column}"/>
-                            </c:if>
-
-                            <c:set var="propName" value="column(${column_name})"/>
-
-                            <c:choose>
-                                <c:when test="${_agnTbl_editable == MODE_EDIT_EDITABLE}">
-                                    <c:set var="isReadable" value="true"/>
-                                    <c:set var="isWritable" value="true"/>
-                                </c:when>
-                                <c:when test="${_agnTbl_editable == MODE_EDIT_READONLY}">
-                                    <c:set var="isReadable" value="true"/>
-                                    <c:set var="isWritable" value="false"/>
-                                </c:when>
-                                <c:when test="${_agnTbl_editable == MODE_EDIT_NOT_VISIBLE}">
-                                    <c:set var="isReadable" value="false"/>
-                                    <c:set var="isWritable" value="false"/>
-                                </c:when>
-                            </c:choose>
-
-                            <c:if test="${isReadable}">
-                                <c:choose>
-                                    <c:when test="${_agnTbl_data_type == GENERIC_TYPE_DATE}">
+                                    <c:if test="${definition.shortname eq COLUMN_CUSTOMER_ID}">
                                         <div class="form-group">
                                             <div class="col-sm-4">
-                                                <label class="control-label multiline-auto">${_agnTbl_shortname}:</label>
-                                            </div>
-                                            <c:choose>
-                                                <c:when test="${not empty _agnTbl_allowed_values and isWritable}">
-                                                    <div class="col-sm-8" data-field="date-split">
-                                                        <c:set var="selectedDateIso"><bean:write name="recipientForm" property="${propName}"/></c:set>
-                                                        <c:set var="selectedDateStr" value="${RecipientUtils.formatRecipientDateValue(sessionScope['emm.admin'], selectedDateIso)}"/>
-
-                                                        <agn:agnSelect property="${propName}" value="${selectedDateStr}" styleClass="form-control js-select" data-field-date-split="">
-                                                            <c:if test="${_agnTbl_nullable == 1}">
-                                                                <html:option value="">NULL</html:option>
-                                                            </c:if>
-
-                                                            <c:set var="selectedDateIsAllowed" value="false"/>
-                                                            <c:forEach var="allowedValue" items="${_agnTbl_allowed_values}">
-                                                                <c:set var="formattedValue" value="${RecipientUtils.formatRecipientDateValue(sessionScope['emm.admin'], allowedValue)}"/>
-                                                                <html:option value="${formattedValue}">${fn:escapeXml(formattedValue)}</html:option>
-
-                                                                <c:if test="${selectedDateStr eq formattedValue}">
-                                                                    <c:set var="selectedDateIsAllowed" value="true"/>
-                                                                </c:if>
-                                                            </c:forEach>
-
-                                                            <!-- If a selected (currently stored in DB) date value isn't present among allowed values -->
-                                                            <c:if test="${not selectedDateIsAllowed}">
-                                                                <html:option value="${selectedDateStr}">${selectedDateStr}</html:option>
-                                                            </c:if>
-                                                        </agn:agnSelect>
-                                                    </div>
-                                                </c:when>
-                                                <c:otherwise>
-	                                                <div class="col-sm-8">
-	                                               		<c:choose>
-		                                                	<c:when test="${isWritable}">
-		                                                		<c:set var="currentValue"><bean:write name="recipientForm" property="${propName}"/></c:set>
-		                                                		<input name="${propName}" value="${currentValue}" class="form-control datepicker-input js-datepicker" data-datepicker-options="format: '${fn:toLowerCase(adminDateFormat)}', formatSubmit: '${fn:toLowerCase(adminDateFormat)}'"/>
-			                                                </c:when>
-			                                                <c:otherwise>
-			                                                	<html:text property="${propName}" styleClass="form-control" readonly="${not isWritable}" />
-			                                                </c:otherwise>
-	                                                	</c:choose>
-													</div>
-                                                </c:otherwise>
-                                            </c:choose>
-                                        </div>
-                                    </c:when>
-                                    <c:when test="${_agnTbl_data_type == GENERIC_TYPE_DATETIME}">
-                                        <div class="form-group">
-                                            <div class="col-sm-4">
-                                                <label class="control-label multiline-auto">${_agnTbl_shortname}:</label>
-                                            </div>
-                                            <c:choose>
-                                                <c:when test="${not empty _agnTbl_allowed_values and isWritable}">
-                                                    <div class="col-sm-8" data-field="date-split">
-                                                        <c:set var="selectedDateIso"><bean:write name="recipientForm" property="${propName}"/></c:set>
-                                                        <c:set var="selectedDateStr" value="${RecipientUtils.formatRecipientDateTimeValue(sessionScope['emm.admin'], selectedDateIso)}"/>
-
-                                                        <agn:agnSelect property="${propName}" value="${selectedDateStr}" styleClass="form-control js-select" data-field-date-split="">
-                                                            <c:if test="${_agnTbl_nullable == 1}">
-                                                                <html:option value="">NULL</html:option>
-                                                            </c:if>
-
-                                                            <c:set var="selectedDateIsAllowed" value="false"/>
-                                                            <c:forEach var="allowedValue" items="${_agnTbl_allowed_values}">
-                                                                <c:set var="formattedValue" value="${RecipientUtils.formatRecipientDateTimeValue(sessionScope['emm.admin'], allowedValue)}"/>
-                                                                <html:option value="${formattedValue}">${fn:escapeXml(formattedValue)}</html:option>
-
-                                                                <c:if test="${selectedDateStr eq formattedValue}">
-                                                                    <c:set var="selectedDateIsAllowed" value="true"/>
-                                                                </c:if>
-                                                            </c:forEach>
-
-                                                            <!-- If a selected (currently stored in DB) date value isn't present among allowed values -->
-                                                            <c:if test="${not selectedDateIsAllowed}">
-                                                                <html:option value="${selectedDateStr}">${selectedDateStr}</html:option>
-                                                            </c:if>
-                                                        </agn:agnSelect>
-                                                    </div>
-                                                </c:when>
-                                                <c:otherwise>
-	                                                <div class="col-sm-8">
-                                                        <c:set var="selectedDateTime"><bean:write name="recipientForm" property="${propName}"/></c:set>
-                                                        <c:set var="formattedDateTime" value="${RecipientUtils.formatRecipientDateTimeValue(sessionScope['emm.admin'], selectedDateTime)}"/>
-                                                        <input type="text" name="${propName}" value="${formattedDateTime}" class="form-control" ${not isWritable ? 'readonly="readonly"' : ''}/>
-													</div>
-                                                </c:otherwise>
-                                            </c:choose>
-                                        </div>
-                                    </c:when>
-                                    <c:otherwise>
-                                        <div class="form-group">
-                                            <div class="col-sm-4">
-                                                <label class="control-label multiline-auto">${_agnTbl_shortname}:</label>
+                                                <label class="control-label multiline-auto">${COLUMN_CUSTOMER_ID}:</label>
                                             </div>
                                             <div class="col-sm-8">
-                                                <c:choose>
-                                                    <c:when test="${not empty _agnTbl_allowed_values and isWritable}">
-                                                        <c:set var="selectedValue"><bean:write name="recipientForm" property="${propName}"/></c:set>
-
-                                                        <agn:agnSelect property="${propName}" styleClass="form-control js-select">
-                                                            <c:if test="${_agnTbl_nullable == 1}">
-                                                                <html:option value="">NULL</html:option>
-                                                            </c:if>
-
-                                                            <c:set var="selectedValueIsAllowed" value="false"/>
-                                                            <c:forEach var="allowedValue" items="${_agnTbl_allowed_values}">
-                                                                <html:option value="${fn:escapeXml(allowedValue)}">${fn:escapeXml(allowedValue)}</html:option>
-                                                                <c:if test="${allowedValue == selectedValue}">
-                                                                    <c:set var="selectedValueIsAllowed" value="true"/>
-                                                                </c:if>
-                                                            </c:forEach>
-
-                                                            <!-- If a selected (currently stored in DB) value isn't present among allowed values -->
-                                                            <c:if test="${not selectedValueIsAllowed}">
-                                                                <html:option value="${fn:escapeXml(selectedValue)}">${fn:escapeXml(selectedValue)}</html:option>
-                                                            </c:if>
-                                                        </agn:agnSelect>
-                                                    </c:when>
-                                                    <c:when test="${_agnTbl_data_type == GENERIC_TYPE_VARCHAR}">
-                                                        <html:text property="${propName}" styleClass="form-control" maxlength="${_agnTbl_data_length}" readonly="${not isWritable}"/>
-                                                    </c:when>
-                                                   <c:when test="${_agnTbl_column_name == 'DATASOURCE_ID' or _agnTbl_column_name == 'datasource_id' or _agnTbl_column_name == 'latest_datasource_id' or _agnTbl_column_name == 'LATEST_DATASOURCE_ID'}">
-                                                       <c:set var="importExportUrl" value="importexport/datasource/list.action"/>
-                                                        <a href="${importExportUrl}"><html:text property="${propName}" styleClass="form-control" style="cursor: pointer" readonly="${not isWritable}"/></a>
-                                                    </c:when>
-                                                    <c:otherwise>
-                                                        <html:text property="${propName}" styleClass="form-control" readonly="${not isWritable}"/>
-                                                    </c:otherwise>
-                                                </c:choose>
+                                                <mvc:text path="id" cssClass="form-control" readonly="true"/>
                                             </div>
                                         </div>
-                                    </c:otherwise>
-                                </c:choose>
+                                    </c:if>
 
-                                <c:if test="${_agnTbl_line eq 1}">
+                                    <c:if test="${definition.shortname eq COLUMN_DATASOURCE_ID}">
+                                        <div class="form-group">
+                                            <div class="col-sm-4">
+                                                <label class="control-label multiline-auto">${COLUMN_DATASOURCE_ID}:</label>
+                                            </div>
+                                            <div class="col-sm-8">
+                                            	<mvc:text path="dataSourceId" cssClass="form-control" readonly="true"/>
+                                            </div>
+                                        </div>
+                                    </c:if>
+
+                                    <c:if test="${definition.shortname eq COLUMN_LATEST_DATASOURCE_ID}">
+                                        <div class="form-group">
+                                            <div class="col-sm-4">
+                                                <label class="control-label multiline-auto">${COLUMN_LATEST_DATASOURCE_ID}:</label>
+                                            </div>
+                                            <div class="col-sm-8">
+                                            	<mvc:text path="latestDataSourceId" cssClass="form-control" readonly="true"/>
+                                            </div>
+                                        </div>
+                                    </c:if>
+                                    
+                                    <c:if test="${definition.shortname eq COLUMN_TIMESTAMP}">
+                                        <div class="form-group">
+                                            <div class="col-sm-4">
+                                                <label class="control-label multiline-auto">${COLUMN_TIMESTAMP}:</label>
+                                            </div>
+                                            <div class="col-sm-8">
+                                                <mvc:text path="${propName}" cssClass="form-control" readonly="true"/>
+                                            </div>
+                                        </div>
+                                    </c:if>
+
+                                </c:if>
+
+                                <c:if test="${not isMainColumn}">
+                                    <div class="form-group">
+                                        <div class="col-sm-4">
+                                            <label class="control-label multiline-auto">${definition.shortname}:</label>
+                                        </div>
+                                        <%-- display field with fixed values list--%>
+                                        <c:if test="${definition.writable and hasFixedValues}">
+                                            <div class="col-sm-8">
+                                                <mvc:select path="${propName}" cssClass="form-control" readonly="${not definition.writable}">
+
+                                                    <c:if test="${definition.nullable}">
+                                                        <mvc:option value="">NULL</mvc:option>
+                                                    </c:if>
+                                                    <c:if test="${not empty definition.defaultValue}">
+                                                        <mvc:option value="${definition.defaultValue}">${definition.defaultValue}</mvc:option>
+                                                    </c:if>
+                                                    <c:forEach items="${definition.fixedValues}" var="fixedValue">
+                                                        <mvc:option value="${fixedValue}">${fixedValue}</mvc:option>
+                                                    </c:forEach>
+                                                </mvc:select>
+                                            </div>
+                                        </c:if>
+
+                                        <c:if test="${not hasFixedValues}">
+                                            <div class="col-sm-8">
+                                                <c:choose>
+                                                    <c:when test="${definition.dataType eq GENERIC_TYPE_DATETIME and definition.writable}">
+                                                        <mvc:hidden path="${propName}"/>
+                                                        <div class="js-datetime-field" data-field="datetime"
+                                                             data-property="${propName}"
+                                                             data-field-options="value: '${form.additionalColumns[definition.columnName]}',
+                                                                                 dateFormat: '${fn:toLowerCase(adminDateFormat)}',
+                                                                                 defaultValue: '${definition.defaultValue}'">
+                                                        </div>
+                                                    </c:when>
+                                                    <c:when test="${definition.dataType eq GENERIC_TYPE_DATE and definition.writable}">
+                                                        <div class="input-group">
+                                                            <div class="input-group-controls">
+                                                                <mvc:text path="${propName}"
+                                                                          cssClass="form-control datepicker-input js-datepicker"
+                                                                          data-datepicker-options="format: '${fn:toLowerCase(adminDateFormat)}', formatSubmit: '${fn:toLowerCase(adminDateFormat)}'"
+                                                                          readonly="${not definition.writable}"/>
+                                                                    </div>
+                                                                    <div class="input-group-btn">
+                                                                <button type="button" class="btn btn-regular btn-toggle js-open-datepicker" tabindex="-1">
+                                                                    <i class="icon icon-calendar-o"></i>
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </c:when>
+                                                    <c:when test="${definition.dataType eq GENERIC_TYPE_VARCHAR}">
+                                                        <mvc:text path="${propName}" cssClass="form-control"
+                                                              maxlength="${definition.maxSize}" readonly="${not definition.writable}"/>
+                                                    </c:when>
+                                                    <c:otherwise>
+                                                        <mvc:text path="${propName}" cssClass="form-control" readonly="${not definition.writable}"/>
+                                                    </c:otherwise>
+                                                </c:choose>
+                                            </div>                                             
+                                        </c:if>
+                                    </div>
+                                </c:if>
+
+                                <c:if test="${definition.lineAfter}">
                                     <div class="tile-separator"></div>
                                 </c:if>
+
                             </c:if>
-                        </emm:ShowColumnInfo>
+                        </c:forEach>
                     </div>
                 </div>
-
             </div>
-
         </div>
-
-        <%--for emm:ShowByPermission keys --%>
-        <c:set var="statusesKeys" value='${["email", "fax", "post", "mms", "sms"]}' />
-        <c:set var="ACTIVE_STATUS" value="<%= UserStatus.Active.getStatusCode() %>" />
-        <c:set var="ADMIN_OUT_STATUS" value="<%= UserStatus.AdminOut.getStatusCode() %>" />
-        <c:set var="USER_OUT_STATUS" value="<%= UserStatus.UserOut.getStatusCode() %>" />
-
         <div class="col-md-6">
+            <c:set var="editable" value="false"/>
+            <emm:ShowByPermission token="recipient.change">
+                    <c:set var="editable" value="true"/>
+                </emm:ShowByPermission>
             <div class="tile">
-
-
                 <div class="tile-header">
-                    <h2 class="headline"><bean:message key="recipient.Mailinglists"/></h2>
+                    <h2 class="headline"><mvc:message code="recipient.Mailinglists"/></h2>
                 </div>
-
                 <div class="tile-content tile-content-forms">
+                    <%--@elvariable id="bindingsListForm" type="com.agnitas.emm.core.recipient.forms.RecipientBindingListForm"--%>
+                    <c:set var="bindingsListForm" value="${form.bindingsListForm}"/>
 
-                    <%
-                        WebApplicationContext wac = WebApplicationContextUtils.getWebApplicationContext(application);
-                        ComRecipientForm recipientForm = (ComRecipientForm) session.getAttribute("recipientForm");
-                        if (recipientForm == null) {
-                            recipientForm = new ComRecipientForm();
-                        }
-                        recipientForm.getAllBindings().clear();
-
-                        Recipient customer = wac.getBean("Recipient", Recipient.class);
-                        customer.setCustomerID(recipientForm.getRecipientID());
-                        customer.setCompanyID(AgnUtils.getCompanyID(request));
-
-                        pageContext.setAttribute("customer", customer);
-                    %>
-                    <c:set var="editingPermitted" value="false"/>
-                    <emm:ShowByPermission token="recipient.change">
-                        <c:set var="editingPermitted" value="true"/>
-                    </emm:ShowByPermission>
-
-                    <c:forEach items="${mailinglists}" var="mailinglist">
+                    <c:forEach items="${mailinglists}" var="mlist">
+                        <%--@elvariable id="mailinglistBindings" type="com.agnitas.emm.core.recipient.forms.RecipientBindingForm"--%>
+                        <c:set var="mailinglistBindings" value="${bindingsListForm.getListBinding(mlist.id)}"/>
 
                         <div class="tile">
                             <div class="tile-header">
-                                <a href="#" class="headline js-show-tile-if-checked" data-toggle-tile="#tile-recipient-mailinglist-${mailinglist.id}">
+                                <a href="#" class="headline js-show-tile-if-checked" data-toggle-tile="#tile-recipient-mailinglist-${mlist.id}">
                                     <i class="tile-toggle icon icon-angle-down"></i>
-                                    ${mailinglist.shortname}
+                                    ${mlist.shortname}
                                 </a>
                             </div>
-                            <div class="tile-content tile-content-forms hidden" id="tile-recipient-mailinglist-${mailinglist.id}">
-                                <c:set var="mlid" value="${mailinglist.id}"/>
-                                <c:forEach items="${statusesKeys}" var="statusKey" varStatus="loopStatus">
+                            <div class="tile-content tile-content-forms hidden" id="tile-recipient-mailinglist-${mlist.id}">
+                                <%--@elvariable id="mediaType" type="com.agnitas.emm.core.mediatypes.common.MediaTypes"--%>
+                                <c:forEach items="${MediaTypes.values()}" var="mediaType">
+                                    <emm:ShowByPermission token="${mediaType.requiredPermission.tokenString}">
+                                        <%--@elvariable id="binding" type="com.agnitas.emm.core.recipient.dto.RecipientBindingDto"--%>
+                                        <c:set var="binding" value="${mailinglistBindings.getBinding(mediaType)}"/>
 
-                                    <c:set var="mlBinding" value="${customer.getBindingsByMailinglist(mailinglist.id, loopStatus.index)}"/>
+                                        <c:set var="propertyName" value="bindingsListForm.mailinglistBindings[${mlist.id}].mediatypeBindings[${mediaType}]"/>
+                                        <mvc:hidden path="${propertyName}.mediaType" value="${mediaType}"/>
+                                        <mvc:hidden path="${propertyName}.mailinglistId" value="${mlist.id}"/>
+                                        <mvc:hidden path="${propertyName}.referrer"/>
+                                        <mvc:hidden path="${propertyName}.exitMailingId"/>
 
-                                    <emm:ShowByPermission token="mediatype.${statusKey}">
-                                    <%
-                                        int mti = (int)pageContext.getAttribute("mlid");
-                                        BindingEntry tmpStatusEntry = (BindingEntry) pageContext.getAttribute("mlBinding");
-                                        recipientForm.setBindingEntry(mti, tmpStatusEntry);
-                                    %>
-
-                                    <div class="form-group">
-                                        <div class="col-sm-2"></div>
-                                        <div class="col-sm-3 control-label-left">
-                                            <label class="checkbox-inline control-label">
-                                                <agn:agnCheckbox property="${statusKey}Entry[${mlid}].userStatus" value="1" disabled="${not editingPermitted}"/>
-                                                <bean:message key="mailing.MediaType.${loopStatus.index}"/>
-                                                <input type="hidden"
-                                                        name="__STRUTS_CHECKBOX_${statusKey}Entry[${mlid}].userStatus"
-                                                       value="${mlBinding.userStatus == ACTIVE_STATUS ? ADMIN_OUT_STATUS : mlBinding.userStatus}">
-                                            </label>
-                                        </div>
-
-                                         <div class="col-sm-7">
-                                            <agn:agnSelect styleClass="form-control js-warn-on-change" property="${statusKey}Entry[${mlid}].userType" disabled="${not editingPermitted}">
-                                                <html:option value="A"><bean:message key="recipient.Administrator"/></html:option>
-                                                <html:option value="T"><bean:message key="TestSubscriber"/></html:option>
-                                                <%@include file="recipient-novip-test.jspf" %>
-                                                <html:option value="W"><bean:message key="NormalSubscriber"/></html:option>
-                                                <%@include file="recipient-novip-normal.jspf" %>
-                                            </agn:agnSelect>
-                                         </div>
-                                    </div>
-
-                                    <c:if test="${mlBinding.userStatus gt 0 and mlBinding.userStatus le 7}">
                                         <div class="form-group">
                                             <div class="col-sm-2"></div>
                                             <div class="col-sm-3 control-label-left">
-                                                <label class="control-label">
-                                                    <bean:message key="recipient.Status"/>
+                                                <label class="checkbox-inline control-label">
+                                                    <mvc:checkbox path="${propertyName}.status" value="${USER_STATUS_ACTIVE}" disabled="${not editable}"/>
+                                                    <mvc:message code="mailing.MediaType.${mediaType.mediaCode}"/>
                                                 </label>
                                             </div>
                                             <div class="col-sm-7">
-                                                <p class="form-control-static"><bean:message key="recipient.MailingState${mlBinding.userStatus}"/></p>
+                                                <mvc:select path="${propertyName}.userType" cssClass="form-control" disabled="${not editable}" multiple="false">
+                                                    <mvc:option value="${USER_TYPE_ADMIN}"><mvc:message code="recipient.Administrator"/></mvc:option>
+                                                    <mvc:option value="${USER_TYPE_TEST}"><mvc:message code="TestSubscriber"/></mvc:option>
+                                                    <%@include file="/WEB-INF/jsp/recipient/recipient-novip-test.jspf" %>
+                                                    <mvc:option value="${USER_TYPE_NORMAL}"><mvc:message code="NormalSubscriber"/></mvc:option>
+                                                    <%@include file="/WEB-INF/jsp/recipient/recipient-novip-normal.jspf" %>
+                                                </mvc:select>
                                             </div>
+                                            <c:if test="${not empty binding.status}">
+                                                <div class="form-group">
+                                                    <div class="col-sm-2"></div>
+                                                    <div class="col-sm-3 control-label-left">
+                                                        <label class="control-label">
+                                                            <mvc:message code="recipient.Status"/>
+                                                        </label>
+                                                    </div>
+                                                    <div class="col-sm-7">
+                                                        <p class="form-control-static"><mvc:message code="recipient.MailingState${binding.status.statusCode}"/></p>
+                                                    </div>
+                                                </div>
+                                            </c:if>
+
+
+                                            <c:set var="statusRemark" value="${binding.userRemark}"/>
+                                            <c:if test="${not empty binding.referrer}">
+                                                <c:set var="statusRemark" value="${binding.userRemark} Ref: ${emm:abbreviate(binding.referrer, 15)}"/>
+                                            </c:if>
+                                            <c:if test="${binding.status eq USER_STATUS_USER_OUT}">
+                                                <c:set var="statusRemark" value="${statusRemark}<br>Opt-Out-Mailing: ${binding.exitMailingId}"/>
+                                            </c:if>
+
+                                            <c:if test="${not empty statusRemark}">
+                                                <div class="form-group">
+                                                    <div class="col-sm-2"></div>
+                                                    <div class="col-sm-3 control-label-left">
+                                                        <label class="control-label">
+                                                            <mvc:message code="recipient.Remark"/>
+                                                        </label>
+                                                    </div>
+                                                    <div class="col-sm-7">
+                                                        <p class="form-control-static">${statusRemark}</p>
+
+                                                        <c:if test="${not empty binding.changeDate}">
+                                                            <p class="form-control-static">
+                                                                <fmt:formatDate value="${binding.changeDate}" pattern="${adminDateTimeFormatWithSeconds}"/>
+                                                            </p>
+                                                        </c:if>
+                                                    </div>
+                                                </div>
+                                            </c:if>
+
                                         </div>
-                                    </c:if>
-
-                                    <c:set var="statusRemark" value="${mlBinding.userRemark}"/>
-                                    <c:if test="${not empty mlBinding.referrer}">
-                                        <c:set var="statusRemark" value="${mlBinding.userRemark} Ref: ${emm:abbreviate(mlBinding.referrer, 15)}"/>
-                                    </c:if>
-                                    <c:if test="${mlBinding.userStatus == USER_OUT_STATUS}">
-                                        <c:set var="statusRemark" value="${statusRemark}<br>Opt-Out-Mailing: ${mlBinding.exitMailingID}"/>
-                                    </c:if>
-
-                                    <c:if test="${fn:length(statusRemark) gt 0}">
-                                        <div class="form-group">
-                                            <div class="col-sm-2"></div>
-                                            <div class="col-sm-3 control-label-left">
-                                                <label class="control-label">
-                                                    <bean:message key="recipient.Remark"/>
-                                                </label>
-                                            </div>
-                                            <div class="col-sm-7">
-                                                <p class="form-control-static">${statusRemark}</p>
-
-                                                <c:if test="${not empty mlBinding.changeDate}">
-                                                    <p class="form-control-static">
-                                                        <fmt:formatDate value="${mlBinding.changeDate}" pattern="${adminDateTimeFormatWithSeconds}"/>
-                                                    </p>
-                                                </c:if>
-                                            </div>
-                                        </div>
-                                    </c:if>
-
-                                    <div class="tile-separator"></div>
+                                        <div class="tile-separator"></div>
                                     </emm:ShowByPermission>
-                                </c:forEach>
 
+                                </c:forEach>
                             </div>
                         </div>
-
                     </c:forEach>
                 </div>
-
-
             </div>
         </div>
-
-
     </div>
 
     <script id="email-confirmation-modal" type="text/x-mustache-template">
@@ -567,7 +467,7 @@
                     <div class="modal-header">
                         <button type="button" class="close-icon close js-confirm-negative" data-dismiss="modal"><i aria-hidden="true" class="icon icon-times-circle"></i></button>
                         <h4 class="modal-title">
-                            <bean:message key="warning"/>
+                            <mvc:message code="warning"/>
                         </h4>
                     </div>
 
@@ -580,14 +480,14 @@
                             <button type="button" class="btn btn-default btn-large js-confirm-negative" data-dismiss="modal">
                                 <i class="icon icon-times"></i>
                                 <span class="text">
-                                    <bean:message key="button.Cancel"/>
+                                    <mvc:message code="button.Cancel"/>
                                 </span>
                             </button>
 
                             <button type="button" class="btn btn-primary btn-large js-confirm-positive" data-dismiss="modal">
                                 <i class="icon icon-check"></i>
                                 <span class="text">
-                                    <bean:message key="button.Proceed"/>
+                                    <mvc:message code="button.Proceed"/>
                                 </span>
                             </button>
                         </div>
@@ -597,4 +497,33 @@
         </div>
     </script>
 
-</agn:agnForm>
+    <script id="hide-recipient-confirmation-modal" type="text/x-mustache-template">
+        <div class="modal">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close-icon close js-confirm-negative" data-dismiss="modal">
+                            <i aria-hidden="true" class="icon icon-times-circle"></i><span class="sr-only"><mvc:message code="button.Cancel"/></span>
+                        </button>
+                        <h4 class="modal-title"><mvc:message code="Recipient"/></h4>
+                    </div>
+                    <div class="modal-body">
+                        <mvc:message code="recipient.hide.question"/>
+                    </div>
+                    <div class="modal-footer">
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-default btn-large js-confirm-negative" data-dismiss="modal">
+                                <i class="icon icon-times"></i>
+                                <span class="text"><mvc:message code="button.Cancel"/></span>
+                            </button>
+                            <button type="button" class="btn btn-primary btn-large js-confirm-positive" data-dismiss="modal">
+                                <i class="icon icon-check"></i>
+                                <span class="text"><mvc:message code="button.Save"/></span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </script>
+</mvc:form>

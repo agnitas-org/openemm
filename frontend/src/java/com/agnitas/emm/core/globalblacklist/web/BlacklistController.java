@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -16,14 +16,13 @@ import java.util.Locale;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
-import jakarta.servlet.http.HttpSession;
-
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.emm.core.blacklist.service.BlacklistService;
 import org.agnitas.service.UserActivityLogService;
 import org.agnitas.service.WebStorage;
 import org.agnitas.web.forms.FormUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
@@ -58,6 +57,8 @@ import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.perm.NotAllowedActionException;
 import com.agnitas.web.perm.annotations.PermissionMapping;
 
+import jakarta.servlet.http.HttpSession;
+
 @Controller
 @RequestMapping("/recipients/blacklist")
 @PermissionMapping("blacklist")
@@ -69,7 +70,7 @@ public class BlacklistController {
     private static final String BLACKLIST_DELETE_FORM_KEY = "blacklistDeleteForm";
     private static final String DATE_TIME_FORMAT_KEY = "dateTimeFormat";
 
-    private static final Logger logger = Logger.getLogger(BlacklistController.class);
+    private static final Logger logger = LogManager.getLogger(BlacklistController.class);
 
     private UserActivityLogService userActivityLogService;
     private BlacklistService blacklistService;

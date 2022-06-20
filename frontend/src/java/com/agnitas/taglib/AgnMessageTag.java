@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -12,8 +12,6 @@ package com.agnitas.taglib;
 
 import java.util.Locale;
 
-import jakarta.servlet.jsp.JspException;
-
 import org.agnitas.util.AgnUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.struts.Globals;
@@ -23,6 +21,8 @@ import org.apache.taglibs.standard.functions.Functions;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.messages.I18nString;
+
+import jakarta.servlet.jsp.JspException;
 
 /**
  * The same as bean:message tag, but:
@@ -132,7 +132,7 @@ public class AgnMessageTag extends MessageTag {
 		arg9 = null;
 	}
 
-	private String translate(String code, Locale locale, Object[] args) throws JspException {
+	private String translate(String code, Locale locale, Object[] args) {
 		return I18nString.getLocaleString(code, locale, args);
 	}
 

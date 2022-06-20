@@ -8,10 +8,10 @@
 <emm:Permission token="mailing.components.show"/>
 
 <div class="tile" data-sizing="container" data-controller="wysiwyg-image-browser">
-    <script id="config:dashboard-news-counters" type="application/json">
+    <script data-initializer="wysiwyg-image-browser" type="application/json">
         {
             "rdirDomain": "${rdirDomain}",
-            "companyId": "${companyId}
+            "companyId": "${companyId}"
         }
     </script>
     <div class="tile-header" data-sizing="top">

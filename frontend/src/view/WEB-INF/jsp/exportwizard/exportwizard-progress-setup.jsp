@@ -12,19 +12,19 @@
 	<c:param name="action" value="${ACTION_START_WIZARD}" />
 </c:url>
 
-<c:set var="agnNavigationKey" 		value="subscriber_export" scope="request" />
-<c:set var="agnTitleKey" 			value="export" scope="request" />
-<c:set var="sidemenu_active" 		value="ImportExport" scope="request" />
-<c:set var="sidemenu_sub_active" 	value="export" scope="request" />
-<c:set var="agnHighlightKey" 		value="export.Wizard" scope="request" />
-<c:set var="isBreadcrumbsShown" 	value="true" scope="request" />
-<c:set var="agnBreadcrumbsRootKey"	value="ImportExport" scope="request" />
-<c:set var="agnHelpKey" 			value="export" scope="request" />
+<c:set var="agnNavigationKey" 		value="subscriber_export" 	scope="request" />
+<c:set var="agnTitleKey" 			value="export" 				scope="request" />
+<c:set var="sidemenu_active" 		value="ImportExport" 		scope="request" />
+<c:set var="sidemenu_sub_active" 	value="export" 				scope="request" />
+<c:set var="agnHighlightKey" 		value="export" 				scope="request" />
+<c:set var="isBreadcrumbsShown" 	value="true" 				scope="request" />
+<c:set var="agnBreadcrumbsRootKey"	value="ImportExport" 		scope="request" />
+<c:set var="agnHelpKey" 			value="export" 				scope="request" />
 
 <emm:instantiate var="agnBreadcrumbs" type="java.util.LinkedHashMap" scope="request">
 	<emm:instantiate var="agnBreadcrumb" type="java.util.LinkedHashMap">
 		<c:set target="${agnBreadcrumbs}" property="0" value="${agnBreadcrumb}" />
-		<c:set target="${agnBreadcrumb}" property="textKey" value="export.Wizard" />
+		<c:set target="${agnBreadcrumb}" property="textKey" value="export" />
 		<c:set target="${agnBreadcrumb}" property="url" value="${exportWizardStartLink}" />
 	</emm:instantiate>
 

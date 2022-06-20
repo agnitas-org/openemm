@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,6 +10,8 @@
 
 package org.agnitas.beans.impl;
 
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.Date;
@@ -18,17 +20,27 @@ import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.MailingComponentType;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.NetworkUtil;
-import org.apache.commons.httpclient.Header;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpStatus;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.tomcat.jakartaee.commons.io.IOUtils;
 
 import com.agnitas.util.ImageUtils;
 
 public class MailingComponentImpl implements MailingComponent {
-	private static final transient Logger logger = Logger.getLogger( MailingComponentImpl.class);
+	
+	/** The logger. */
+	private static final transient Logger logger = LogManager.getLogger( MailingComponentImpl.class);
 
+	/** Maximum length of component name. Must match column size in database. */
 	public static final int COMPONENT_NAME_MAX_LENGTH = 500;
 	
 	protected int id;
@@ -181,49 +193,50 @@ public class MailingComponentImpl implements MailingComponent {
 
 	@Override
 	public boolean loadContentFromURL() {
-		boolean returnValue = true;
-
-		// return false;
-
 		if ((type != MailingComponentType.Image) && (type != MailingComponentType.Attachment)) {
 			return false;
 		}
-		
-		HttpClient httpClient = new HttpClient();
-		String encodedURI = encodeURI(componentName);
-		GetMethod get = new GetMethod(encodedURI);
-		get.setFollowRedirects(true);
-		
-		try {
-			NetworkUtil.setHttpClientProxyFromSystem(httpClient, encodedURI);
-			
-			httpClient.getParams().setParameter("http.connection.timeout", 5000);
 
-			if (httpClient.executeMethod(get) == 200) {
-				get.getResponseHeaders();
+		final String encodedURI = encodeURI(componentName);
+		
+		final RequestConfig.Builder requestConfigBuilder = RequestConfig
+				.custom()
+				.setConnectTimeout(5000);
+		
+		final HttpClientBuilder httpClientBuilder = HttpClients.custom()
+				.setDefaultRequestConfig(requestConfigBuilder.build());
+		
+		try(final CloseableHttpClient httpClient = httpClientBuilder.build()) {
+			final HttpGet request = new HttpGet(encodedURI);
+			
+			NetworkUtil.setHttpClientProxyFromSystem(request, encodedURI);
+			request.setHeader("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.54 Safari/537.36");	// TODO Use configured user agent
+			
+			try(final CloseableHttpResponse httpResponse = httpClient.execute(request)) {
+				final int httpStatusCode = httpResponse.getStatusLine().getStatusCode();
 				
-				// TODO: Due to data types of DB columns binblock and emmblock, replacing getResponseBody() cannot be replaced by safer getResponseBodyAsStream(). Better solutions?
-				Header contentType = get.getResponseHeader("Content-Type");
-				String contentTypeValue = "";
-				if(contentType != null) {
-					contentTypeValue = contentType.getValue();
-				} else {
-					logger.debug("No content-type in response from: " + encodedURI);
+				if(httpStatusCode == HttpStatus.SC_OK) {
+					final org.apache.http.Header contentTypeHeader = httpResponse.getFirstHeader("Content-Type");
+					final String contentTypeValue = contentTypeHeader != null ? contentTypeHeader.getValue() : "";
+					
+					final HttpEntity responseEntity = httpResponse.getEntity();
+					
+					try(final InputStream in = responseEntity.getContent()) {
+						try(final ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+							IOUtils.copy(in, out);
+
+							setBinaryBlock(out.toByteArray(), contentTypeValue);
+							
+							return true;
+						}
+					}
 				}
-				setBinaryBlock(get.getResponseBody(), contentTypeValue);
 			}
-		} catch (Exception e) {
-			logger.error("loadContentFromURL: " + encodedURI, e);
-			returnValue = false;
-		} finally {
-			get.releaseConnection();
+		} catch(final Throwable e) {
+			logger.error(String.format("Error loading content from url '%s'", encodedURI), e);
 		}
 		
-		if( logger.isInfoEnabled()) {
-			logger.info("loadContentFromURL: loaded " + componentName);
-		}
-		
-		return returnValue;
+		return false;
 	}
 
 	@Override

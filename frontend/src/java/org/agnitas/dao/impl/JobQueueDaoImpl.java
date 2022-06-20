@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -22,7 +22,8 @@ import org.agnitas.dao.impl.mapper.StringRowMapper;
 import org.agnitas.service.JobDto;
 import org.agnitas.util.AgnUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.RowMapper;
 
@@ -33,7 +34,7 @@ import com.agnitas.dao.DaoUpdateReturnValueCheck;
  */
 public class JobQueueDaoImpl extends BaseDaoImpl implements JobQueueDao {
 	/** The logger. */
-	private static final transient Logger logger = Logger.getLogger(JobQueueDaoImpl.class);
+	private static final transient Logger logger = LogManager.getLogger(JobQueueDaoImpl.class);
 	
 	@Override
 	public List<JobDto> readUpcomingJobsForExecution() {
@@ -207,7 +208,7 @@ public class JobQueueDaoImpl extends BaseDaoImpl implements JobQueueDao {
 	}
 
 	@Override
-	public List<JobDto> selectErrorneousJobs() {
+	public List<JobDto> selectErroneousJobs() {
 		try {
 			if (isOracleDB()) {
 				return select(logger, "SELECT * FROM job_queue_tbl WHERE deleted <= 0 AND ((lastResult IS NOT NULL AND lastResult != 'OK') OR (nextStart IS NOT NULL AND nextStart < CURRENT_TIMESTAMP - 0.05) OR interval IS NULL OR runClass IS NULL)", new Job_RowMapper());
@@ -215,7 +216,7 @@ public class JobQueueDaoImpl extends BaseDaoImpl implements JobQueueDao {
 				return select(logger, "SELECT * FROM job_queue_tbl WHERE deleted <= 0 AND ((lastResult IS NOT NULL AND lastResult != 'OK') OR (nextStart IS NOT NULL AND nextStart < DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 24 * 60 * 0.05 MINUTE)) OR `interval` IS NULL OR runClass IS NULL)", new Job_RowMapper());
 			}
 		} catch (Exception e) {
-			throw new RuntimeException("Error while reading errorneous jobs from database", e);
+			throw new RuntimeException("Error while reading erroneous jobs from database", e);
 		}
 	}
 
@@ -262,7 +263,7 @@ public class JobQueueDaoImpl extends BaseDaoImpl implements JobQueueDao {
 	
 	@Override
 	public int getStartCompanyForCleanup() {
-		String result = selectObjectDefaultNull(logger, "SELECT parameter_value FROM job_queue_parameter_tbl WHERE parameter_name = 'startcompany' AND job_id = (SELECT id FROM job_queue_tbl WHERE runclass = 'org.agnitas.util.quartz.DBCleanerJobWorker')", new StringRowMapper());
+		String result = selectObjectDefaultNull(logger, "SELECT parameter_value FROM job_queue_parameter_tbl WHERE parameter_name = 'startcompany' AND job_id = (SELECT id FROM job_queue_tbl WHERE runclass = 'org.agnitas.util.quartz.DBCleanerJobWorker')", StringRowMapper.INSTANCE);
 		if (StringUtils.isNotEmpty(result)) {
 			return Integer.parseInt(result);
 		} else {
@@ -319,7 +320,7 @@ public class JobQueueDaoImpl extends BaseDaoImpl implements JobQueueDao {
 	}
 
 	@Override
-	public void acknowledgeErrorneousJob(int idToAcknowledge) {
+	public void acknowledgeErroneousJob(int idToAcknowledge) {
 		update(logger, "UPDATE job_queue_tbl SET acknowledged = 1 WHERE id = ?", idToAcknowledge);
 	}
 	

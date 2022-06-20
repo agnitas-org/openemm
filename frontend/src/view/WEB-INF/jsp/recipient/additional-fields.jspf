@@ -1,59 +1,42 @@
-<c:forEach var="selectedField" items="${recipientForm.selectedFields}" varStatus="rowCounter">
-    <c:forEach var="field" items="${fieldsMap}" varStatus="rowCounter">
+<emm:instantiate type="org.apache.commons.collections4.map.CaseInsensitiveMap" var="titles">
+    <c:set target="${titles}" property="gender" value="recipient.Salutation"/>
+    <c:set target="${titles}" property="firstname" value="Firstname"/>
+    <c:set target="${titles}" property="lastname" value="Lastname"/>
+    <c:set target="${titles}" property="creation_date" value="default.creationDate"/>
+    <c:set target="${titles}" property="timestamp" value="default.changeDate"/>
+</emm:instantiate>
 
-        <c:if test="${field.key == selectedField}">
-            <c:choose>
-                <c:when test="${field.key == 'gender' or field.key == 'GENDER'}">
-                    <c:set var="gender"><bean:write name="recipient" property="gender"/></c:set>
-                    <display:column class="recipient_title" headerClass="js-table-sort"
-                                    titleKey="recipient.Salutation" sortable="true"
-                                    sortProperty="gender">
-                        <bean:message key="recipient.gender.${gender}.short"/>
-                    </display:column>
-                </c:when>
-                
-                <c:when test="${field.key == 'firstname' or field.key == 'FIRSTNAME'}">
-                    <display:column class="recipient_firstname"
-                                    headerClass="js-table-sort" titleKey="Firstname"
-                                    sortable="true" sortProperty="firstname">
-                        <c:set var="firstname"><bean:write name="recipient" property="firstname"/></c:set>
-                        ${firstname}
-                    </display:column>
-                </c:when>
-                
-                <c:when test="${field.key == 'lastname' or field.key == 'LASTNAME'}">
-                    <display:column class="recipient_lastname"
-                                    headerClass="js-table-sort" titleKey="Lastname"
-                                    sortable="true" sortProperty="lastname">
-                        <c:set var="lastname"><bean:write name="recipient" property="lastname"/></c:set>
-                        ${lastname}
-                    </display:column>
-                </c:when>
+<c:forEach var="field" items="${fieldsMap}">
+    <c:set var="column" value="${field.key}"/>
+    <c:if test="${form.isSelectedColumn(column)}">
 
-                <c:when test="${field.key == 'creation_date' or field.key == 'CREATION_DATE'}">
-                    <display:column headerClass="js-table-sort" sortable="true"
-                                    titleKey="default.creationDate"
-                                    sortProperty="creation_date">
-						<c:set var="creation_date"><bean:write name="recipient" property="creation_date"/></c:set>
-                        ${creation_date}
-                    </display:column>
-                </c:when>
+        <%--@elvariable id="recipient" type="com.agnitas.emm.core.recipient.dto.RecipientDto"--%>
+        <c:set var="value" value="${recipient.getValue(column)}"/>
+        <c:set var="formattedValue" value="${recipient.getColumnFormattedValue(admin, column)}"/>
 
-                <c:when test="${field.key == 'timestamp' or field.key == 'TIMESTAMP'}">
-                    <display:column headerClass="js-table-sort" sortable="true"
-                                    titleKey="default.changeDate"
-                                    sortProperty="timestamp">
-						<c:set var="timestamp"><bean:write name="recipient" property="timestamp"/></c:set>
-                        ${timestamp}
-                    </display:column>
-                </c:when>
-                
-                <c:otherwise>
-                    <display:column class="recipient_title" headerClass="js-table-sort"
-                                    title="${field.value}" property="${field.key}"
-                                    sortable="true" sortProperty="${field.key}"/>
-                </c:otherwise>
-            </c:choose>
-        </c:if>
-    </c:forEach>
+        <c:choose>
+            <c:when test="${fn:toLowerCase(column) eq 'gender'}">
+                <display:column class="recipient_title" headerClass="js-table-sort"
+                                titleKey="recipient.Salutation" sortable="true"
+                                sortProperty="gender">
+                    <mvc:message code="recipient.gender.${value}.short"/>
+                </display:column>
+            </c:when>
+
+            <c:otherwise>
+                <c:set var="titleKey" value="${titles.get(column)}"/>
+                <c:set var="title" value="${field.value}"/>
+                <c:if test="${not empty titleKey}">
+                    <mvc:message var="title" code="${titleKey}"/>
+                </c:if>
+                <display:column class="recipient_title"
+                                headerClass="js-table-sort"
+                                title="${title}"
+                                sortable="true" sortProperty="${column}">
+                    ${formattedValue}
+                </display:column>
+            </c:otherwise>
+        </c:choose>
+
+    </c:if>
 </c:forEach>

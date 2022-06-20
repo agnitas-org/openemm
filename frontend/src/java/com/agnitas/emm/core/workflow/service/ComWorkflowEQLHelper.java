@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -25,7 +25,8 @@ import org.agnitas.util.DateUtilities;
 import org.agnitas.util.DbColumnType;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.agnitas.beans.ProfileField;
@@ -42,7 +43,7 @@ import com.agnitas.emm.core.workflow.service.util.WorkflowUtils;
 @Component("WorkflowEQLHelper")
 public class ComWorkflowEQLHelper {
     
-    private static final Logger logger = Logger.getLogger(ComWorkflowEQLHelper.class);
+    private static final Logger logger = LogManager.getLogger(ComWorkflowEQLHelper.class);
  
 	private static final String DATE_CURRENT_TIMESTAMP = "CURRENT_TIMESTAMP";
 	private static final String DATE_SYSDATE = "SYSDATE";
@@ -95,18 +96,13 @@ public class ComWorkflowEQLHelper {
         return generateRuleEQL(companyId, decision.getRules(), decision.getProfileField(), decision.getDateFormat(), disableThreeValuedLogic);
     }
     
-    public String generateRuleEQL(int companyId, List<WorkflowRule> rules, String profileField, String dateFormat, boolean disableThreeValuedLogic) {
+    private String generateRuleEQL(int companyId, List<WorkflowRule> rules, String profileField, String dateFormat, boolean disableThreeValuedLogic) {
         try {
             final EmmProfileFieldResolver profileFieldResolver = profileFieldResolverFactory.newInstance(companyId);
             
-            String type = "unknownType";
-            try {
-                ProfileField field = columnInfoService.getColumnInfo(companyId, profileField);
-                type = StringUtils.defaultString(field.getDataType(), type);
-            } catch (Exception e) {
-                logger.error("Cannot find field type for companyId " + companyId + " and column '" + profileField + "'", e);
-            }
+            String type = identifyColumnType(companyId, profileField);
             String fieldName = profileFieldResolver.resolveProfileFieldColumnName(profileField);
+
             return generateRuleEQL(fieldName, profileField, type, rules, dateFormat, disableThreeValuedLogic);
             
         } catch (ProfileFieldResolveException | EQLCreationException e) {
@@ -114,6 +110,29 @@ public class ComWorkflowEQLHelper {
         }
         
         return "";
+    }
+
+    public String generateRuleSQL(int companyId, List<WorkflowRule> rules, String dbProfileField, String dateFormat, boolean disableThreeValuedLogic) {
+        try {
+            String type = identifyColumnType(companyId, dbProfileField);
+            return generateRuleEQL(dbProfileField, dbProfileField, type, rules, dateFormat, disableThreeValuedLogic);
+        } catch (EQLCreationException e) {
+            logger.error("Cannot generate rule SQL", e);
+        }
+
+        return "";
+    }
+
+    private String identifyColumnType(int companyId, String profileField) {
+        String type = "unknownType";
+        try {
+            ProfileField field = columnInfoService.getColumnInfo(companyId, profileField);
+            type = StringUtils.defaultString(field.getDataType(), type);
+        } catch (Exception e) {
+            logger.error("Cannot find field type for companyId " + companyId + " and column '" + profileField + "'", e);
+        }
+
+        return type;
     }
     
     public String generateNumericEQL(int companyId, String field, int operator, String value, int operator2, String value2, boolean disableThreeValuedLogic) {
@@ -308,7 +327,7 @@ public class ComWorkflowEQLHelper {
 					//nothing to do
 			}
 			
-			if(rule.getParenthesisClosed() == 1) {
+			if (rule.getParenthesisClosed() == 1) {
                 expression.append(")");
             }
             
@@ -317,5 +336,4 @@ public class ComWorkflowEQLHelper {
         
         return StringUtils.join(expressions, " ");
     }
-    
 }

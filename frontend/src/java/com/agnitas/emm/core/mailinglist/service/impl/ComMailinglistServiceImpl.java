@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -263,26 +263,9 @@ public class ComMailinglistServiceImpl implements ComMailinglistService {
                 || !mailinglistDao.mailinglistExists(newShortname, companyId);
     }
     
-    /**
-     * after GWUA-4783 has been successfully tested
-     * replace method code with code from {@link #deleteMailinglistWithReportsCleaning(int, int)}
-     */
-    @Override
-    public boolean deleteMailinglist(int mailinglistId, @VelocityCheck int companyId) {
-        if(mailinglistId == 0 || mailinglistDao.checkMailinglistInUse(mailinglistId, companyId)) {
-            return false;
-        }
-        
-        return mailinglistDao.deleteMailinglist(mailinglistId, companyId);
-    }
-
-    /**
-     * after GWUA-4783 has been successfully tested
-     * place method code to {@link #deleteMailinglist(int, int)}
-     */
     @Override
     @Transactional
-    public boolean deleteMailinglistWithReportsCleaning(int mailinglistId, int companyId) {
+    public boolean deleteMailinglist(int mailinglistId, int companyId) {
         if (mailinglistDao.canBeMarkedAsDeleted(mailinglistId, companyId)) {
             deleteMailinglistFromReports(mailinglistId, companyId);
             return mailinglistDao.deleteMailinglist(mailinglistId, companyId);

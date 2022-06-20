@@ -1,0 +1,47 @@
+<%-- Show the value at least in KB since the byte number is inaccurate anyway --%>
+<c:set var="approximateMaxSizeWithoutExternalImages" value="${emm:formatBytes(mailingSendForm.approximateMaxSizeWithoutExternalImages, 1, 'iec', emm:getLocale(pageContext.request))}" />
+<c:set var="approximateMaxSize" value="${emm:formatBytes(mailingSendForm.approximateMaxSize, 1, 'iec', emm:getLocale(pageContext.request))}" />
+<c:set var="sizeMessage">${approximateMaxSizeWithoutExternalImages}</c:set>
+<c:set var="externalSizeMessage">${approximateMaxSize}</c:set>
+
+<div class="form-group">
+	<div class="col-sm-4">
+		<label class="control-label">
+			<bean:message key="mailing.size" />
+			<button type="button" class="icon icon-help" tabindex="-1"
+					data-help="help_${helplanguage}/mailing/MailingMaxSize.xml"></button>
+		</label>
+        <c:choose>
+            <c:when test="${approximateMaxSize ne approximateMaxSizeWithoutExternalImages}">
+                <label class="control-label">
+                    <bean:message key="mailing.size.external" />
+                </label>
+            </c:when>
+        </c:choose>
+	</div>
+	<div class="col-sm-8">
+		<p class="form-control-static">
+			<c:choose>
+				<c:when test="${mailingSendForm.approximateMaxSize < mailingSendForm.sizeWarningThreshold}">
+					${sizeMessage}
+				</c:when>
+				<c:otherwise>
+					<span style="color: red; font-weight: bold;">${sizeMessage}</span>
+				</c:otherwise>
+			</c:choose>
+            <c:choose>
+                <%-- Compare rounded values, not the accurate values in bytes --%>
+                <c:when test="${approximateMaxSize ne approximateMaxSizeWithoutExternalImages}">
+                    <c:choose>
+                        <c:when test="${mailingSendForm.approximateMaxSize < mailingSendForm.sizeWarningThreshold}">
+                            <p>${externalSizeMessage}</p>
+                        </c:when>
+                        <c:otherwise>
+                            <p style="color: red; font-weight: bold;">${externalSizeMessage}</p>
+                        </c:otherwise>
+                    </c:choose>
+                </c:when>
+            </c:choose>
+		</p>
+    </div>
+</div>

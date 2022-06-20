@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -11,6 +11,7 @@
 package com.agnitas.emm.core.mailing.service;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
@@ -21,6 +22,7 @@ import java.util.stream.Stream;
 import jakarta.mail.internet.InternetAddress;
 
 import org.agnitas.backend.Mailgun;
+import org.agnitas.dao.UserStatus;
 import org.agnitas.util.AgnUtils;
 
 /**
@@ -121,14 +123,10 @@ public final class MailgunOptions {
 	 * 
 	 * @return this instance
 	 */
-	public final MailgunOptions withAllowedUserStatus(final int... statusList) {
-		if(statusList.length > 0) {
-			for(final int s : statusList) {
-				if(!this.userStatusList.contains(s)) {
-					this.userStatusList.add(s);
-				}
-			}
-		}
+	public final MailgunOptions withAllowedUserStatus(final UserStatus... userStatuses) {
+		if (userStatuses != null) {
+			withAllowedUserStatus(Arrays.asList(userStatuses));
+		} 
 		
 		return this;
 	}
@@ -140,15 +138,19 @@ public final class MailgunOptions {
 	 * 
 	 * @return this instance
 	 */
-	public final MailgunOptions withAllowedUserStatus(final List<Integer> statusList) {
-		if(statusList != null) {
-			for(final int s : statusList) {
-				if(!this.userStatusList.contains(s)) {
-					this.userStatusList.add(s);
+	public final MailgunOptions withAllowedUserStatus(final List<UserStatus> userStatuses) {
+		if (userStatuses != null) {
+			if (userStatuses.contains(null)) {
+				throw new IllegalArgumentException("User status list contains null value");
+			}
+			
+			for (final UserStatus status : userStatuses) {
+				if (!this.userStatusList.contains(status.getStatusCode())) {
+					this.userStatusList.add(status.getStatusCode());
 				}
 			}
 		}
-		
+			
 		return this;
 	}
 	

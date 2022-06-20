@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -25,7 +25,7 @@ import org.apache.xmlrpc.client.XmlRpcLiteHttpTransportFactory;
  * to the caller but can be collected by implementing a
  * class using the "interface Report".
  * 
- * For convinient it also provides a class method for
+ * For convenient it also provides a class method for
  * a single invokation of a remote message which contains
  * all the setup and teardown for the remote call.
  */
@@ -145,7 +145,7 @@ public class XMLRPCClient {
 	}
 
 	/**
-	 * Convinient method for a single call. Collection exceptions are
+	 * Convenient method for a single call. Collection exceptions are
 	 * thrown in the case of an error occures
 	 * 
 	 * @param host    the host to connect to

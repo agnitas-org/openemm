@@ -1,4 +1,5 @@
 AGN.Lib.Controller.new('action-view', function() {
+  var activeModules = [];
   var moduleList;
   var operationTypes = {};
 
@@ -59,6 +60,10 @@ AGN.Lib.Controller.new('action-view', function() {
       module.remove();
       separator.remove();
       this.$container.trigger("remove-module");
+
+      activeModules = activeModules.filter(function (module) {
+        return module.index !== index;
+      });
     }
   };
 
@@ -112,6 +117,7 @@ AGN.Lib.Controller.new('action-view', function() {
         data.mailingID = 0;
         data.delayMinutes = 0;
         data.bcc = '';
+        data.forActiveRecipients = true;
         break;
       case 'ServiceMail':
         data.toAddress = '';
@@ -214,14 +220,37 @@ AGN.Lib.Controller.new('action-view', function() {
     form.loader().hide();
   });
 
+  function getModulesByType(targetType) {
+    return activeModules.filter(function (module) {
+      return module.type === targetType;
+    });
+  }
+
   this.addAction({click: 'add-new-module'}, function() {
     var $elem = $(this.el);
     var config = _.merge({}, {}, AGN.Lib.Helpers.objFromString($elem.data('config')));
     var typeSelector = $(config.moduleTypeSelector);
 
-    moduleList.addModule(Module.create(typeSelector.val()));
+    var module = Module.create(typeSelector.val());
+
+    if (module.type === 'SendMailing') {
+      if (getModulesByType('ActivateDoubleOptIn').length > 0) {
+        module.data.forActiveRecipients = false;
+      }
+    }
+
+    moduleList.addModule(module);
+    activeModules.push(module);
 
     AGN.Lib.Form.get($elem).initFields();
+
+    if (module.type === 'ActivateDoubleOptIn') {
+      var sendMailingModules = getModulesByType('SendMailing');
+
+      sendMailingModules.forEach(function (module) {
+        document.getElementById('module_' + module.index + '.forActiveRecipients').checked = false;
+      });
+    }
   });
 
   this.addAction({click: 'action-delete-module'}, function() {

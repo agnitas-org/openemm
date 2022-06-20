@@ -72,7 +72,8 @@ AGN.Lib.Controller.new('image-editor', function() {
                 context.drawImage(imageObj, x, y, selectedWidth, selectedHeight, 0, 0, selectedWidth, selectedHeight);
                 context.restore();
 
-                var newSrc = canvas.toDataURL();
+                var contentType = $('#editor-img').data('content-type');
+                var newSrc = canvas.toDataURL(contentType);
                 $('#editor-img').attr('src', newSrc);
                 $('#editor-canvas').css('width', selectedWidth);
                 $('#editor-canvas').css('height', selectedHeight);
@@ -93,7 +94,8 @@ AGN.Lib.Controller.new('image-editor', function() {
         var canvas = document.getElementById('editor-canvas');
         var context = canvas.getContext('2d');
 
-        var newSrc = canvas.toDataURL();
+        var contentType = $('#editor-img').data('content-type');
+        var newSrc = canvas.toDataURL(contentType);
         var imageObj = new Image();
         imageObj.src = newSrc;
         $('#editor-img').attr('src', newSrc);
@@ -200,13 +202,15 @@ AGN.Lib.Controller.new('image-editor', function() {
 
     function getLastImageState() {
         var canvas = document.getElementById('editor-canvas');
-        var newSrc = canvas.toDataURL();
+        var contentType = $('#editor-img').data('content-type');
+        var newSrc = canvas.toDataURL(contentType);
         $('#editor-img').attr('src', newSrc);
     }
 
     function updateOriginalImage() {
         var canvas = document.getElementById('editor-canvas');
-        var newSrc = canvas.toDataURL();
+        var contentType = $('#editor-img').data('content-type');
+        var newSrc = canvas.toDataURL(contentType);
         var $result = $('#editor-result');
 
         // Cut off a meta data prefix.

@@ -59,6 +59,8 @@
 		<property name="mailingPreviewService" ref="MailingPreviewService" />
 		<property name="mailingStatisticsDao" ref="MailingStatisticsDao" />
 		<property name="mailingParameterDao" ref="MailingParameterDao" />
+        <property name="mailingSizeCalculationService" ref="mailingSizeCalculationService"/>
+		<property name="mailingDeliveryLockService" ref="MailingDeliveryLockService"/>
 	</bean>
 
 	<bean name="/importprofile" class="org.agnitas.web.ImportProfileAction">
@@ -87,32 +89,6 @@
 		<property name="recipientExportWorkerFactory" ref="RecipientExportWorkerFactory" />
         <property name="columnInfoService" ref="ColumnInfoService"/>
 	</bean>
-
-	<bean name="/recipient" class="com.agnitas.web.ComRecipientAction">
-		<property name="mailinglistService" ref="MailinglistService" />
-		<property name="configService" ref="ConfigService" />
-		<property name="recipientDao" ref="RecipientDao" />
-		<property name="futureHolder" ref="futureHolder" />
-		<property name="workerExecutorService" ref="WorkerExecutorService" />
-		<property name="columnInfoService" ref="ColumnInfoService" />
-		<property name="recipientFactory" ref="RecipientFactory" />
-		<property name="bindingEntryFactory" ref="BindingEntryFactory" />
-		<property name="userActivityLogService" ref="UserActivityLogService" />
-		<property name="companyDao" ref="CompanyDao" />
-		<property name="targetService" ref="targetService" />
-		<property name="targetFactory" ref="TargetFactory" />
-		<property name="eqlFacade" ref="EqlFacade" />
-		<property name="webStorage" ref="WebStorage" />
-        <property name="blacklistService" ref="BlacklistService"/>
-		<property name="recipientService" ref="recipientService"/>
-		<property name="deliveryService" ref="deliveryService"/>
-		<property name="adminService" ref="AdminService"/>
-		<property name="mailingService" ref="MailingService" />
-		<property name="filterListBuilder" ref="TargetGroupQueryBuilderFilterListBuilder" />
-		<property name="queryBuilderToEqlConverter" ref="QueryBuilderToEqlConverter" />
-		<property name="targetEqlQueryBuilder" ref="TargetEqlQueryBuilder" />
-		<property name="eqlToQueryBuilderConverter" ref="EqlToQueryBuilderConverter" />
-    </bean>
 
 	<bean name="/importprofile_columns" class="com.agnitas.web.ImportProfileColumnsAction">
 		<property name="userActivityLogService" ref="UserActivityLogService" />

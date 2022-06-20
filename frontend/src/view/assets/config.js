@@ -37,6 +37,9 @@ window.agnResolveRelativeUrl = function(relativeUrl, excludeSessionId) {
 /* <c:set var="adminId" value="${agn:getAdminId(pageContext.request)}"/> */
         window.adminId = '${adminId}';
 
+/* <c:set var="aceEditorPath" value="${emm:aceEditorPath(pageContext.request)}"/> */
+        window.aceEditorPath = '${aceEditorPath}';
+
 /* <c:set var="SESSION_CONTEXT_KEYNAME_ADMIN" value="<%= AgnUtils.SESSION_CONTEXT_KEYNAME_ADMIN%>" />
    <c:set var="adminLocale" value="${sessionScope[SESSION_CONTEXT_KEYNAME_ADMIN].locale}" />*/
 /* <c:choose>

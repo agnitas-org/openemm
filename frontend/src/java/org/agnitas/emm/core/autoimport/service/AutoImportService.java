@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -18,6 +18,7 @@ import org.agnitas.beans.Mailinglist;
 import org.agnitas.emm.core.autoimport.bean.AutoImport;
 import org.agnitas.emm.core.autoimport.bean.AutoImportLight;
 import org.agnitas.emm.core.autoimport.bean.AutoImportWsJobState;
+import org.agnitas.emm.core.mailing.beans.LightweightMailing;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.beans.ComAdmin;
@@ -27,6 +28,8 @@ import com.agnitas.service.CsvImportExportDescription;
 
 public interface AutoImportService {
     List<Mailinglist> getMailinglists(@VelocityCheck int companyId);
+
+    List<LightweightMailing> getAvailableMailings(ComAdmin admin);
 
     List<ImportProfile> getImportProfiles(@VelocityCheck int companyId);
 
@@ -54,6 +57,8 @@ public interface AutoImportService {
 
     AutoImportResult doImportReferenceTableData(AutoImport autoImport) throws Exception;
 
+    AutoImportResult doImportHtmlContentData(AutoImport autoImport) throws Exception;
+
     void setAutoActivationDateAndActivate(@VelocityCheck int companyId, int autoImportId, Date date, boolean isWmDriven) throws Exception;
 
     void deactivateAutoImport(@VelocityCheck int companyId, int autoImportId) throws Exception;
@@ -80,5 +85,5 @@ public interface AutoImportService {
 
     void removeExpiredWsJobs();
     
-    List<AutoImport> getAutoImportsOverview(@VelocityCheck int companyId, String[] filters);
+    List<AutoImport> getAutoImportsOverview(ComAdmin admin, String[] filters);
 }

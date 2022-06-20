@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -20,18 +20,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import jakarta.servlet.http.HttpServletRequest;
-
 import org.agnitas.emm.core.recipient.RecipientUtils;
-import org.agnitas.util.AgnUtils;
 import org.agnitas.util.importvalues.Gender;
 import org.agnitas.util.importvalues.MailType;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
-import org.apache.log4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
-import org.springframework.core.convert.converter.Converter;
-import org.springframework.stereotype.Component;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.ProfileField;
@@ -39,17 +33,10 @@ import com.agnitas.emm.core.recipient.dto.FrequencyCounter;
 import com.agnitas.emm.core.recipient.dto.RecipientDto;
 import com.agnitas.emm.core.recipient.forms.RecipientForm;
 
-@Component
-public class RecipientDtoToRecipientFormConverter implements Converter<RecipientDto, RecipientForm> {
-
-    private static final Logger logger = Logger.getLogger(RecipientDtoToRecipientFormConverter.class);
-
-    @Lazy
-    @Autowired
-    private HttpServletRequest request;
-
-    @Override
-    public RecipientForm convert(RecipientDto recipientDto) {
+public class RecipientDtoToRecipientFormConverter {
+    private static final Logger logger = LogManager.getLogger(RecipientDtoToRecipientFormConverter.class);
+    
+    public static RecipientForm convert(RecipientDto recipientDto, ComAdmin admin) {
         RecipientForm form = new RecipientForm();
 
         form.setId(recipientDto.getId());
@@ -79,26 +66,22 @@ public class RecipientDtoToRecipientFormConverter implements Converter<Recipient
 
         Set<ProfileField> recipientFields = recipientDto.getDbColumns().values().stream()
                     .sorted(Comparator.comparing(ProfileField::getSort)).collect(Collectors.toCollection(LinkedHashSet::new));
-        form.setAdditionalColumns(collectAdditionalFields(recipientDto, recipientFields));
-
-        return form;
-    }
-
-    private Map<String, String> collectAdditionalFields(RecipientDto dto, Set<ProfileField> recipientFields) {
-        ComAdmin admin = AgnUtils.getAdmin(request);
+        
         Map<String, String> columnData = new CaseInsensitiveMap<>();
         try {
             for (ProfileField field : recipientFields) {
                 String columnName = field.getColumn();
                 // ignore fields with supplemental suffix
                 if (!RecipientUtils.hasSupplementalSuffix(columnName)) {
-                    columnData.put(columnName, dto.getColumnFormattedValue(admin, columnName));
+                    columnData.put(columnName, recipientDto.getColumnFormattedValue(admin, columnName));
                 }
             }
         } catch (Exception e) {
             logger.error("Could not collect additional fields value: ", e);
         }
+        
+        form.setAdditionalColumns(columnData);
 
-        return columnData;
+        return form;
     }
 }

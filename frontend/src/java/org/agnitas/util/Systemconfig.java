@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -14,9 +14,22 @@ import	java.io.File;
 import	java.io.FileInputStream;
 import	java.io.IOException;
 import	java.io.InputStream;
+import	java.net.InetAddress;
+import	java.net.UnknownHostException;
 import	java.nio.charset.Charset;
+import	java.nio.charset.StandardCharsets;
+import	java.util.ArrayList;
 import	java.util.HashMap;
+import	java.util.HashSet;
+import	java.util.List;
 import	java.util.Map;
+import	java.util.ResourceBundle;
+import	java.util.Set;
+import	java.util.regex.Matcher;
+import	java.util.regex.Pattern;
+import	java.util.stream.Stream;
+
+import	org.apache.commons.lang3.StringUtils;
 
 import	com.fasterxml.jackson.core.JsonFactory;
 import	com.fasterxml.jackson.core.JsonParser;
@@ -34,36 +47,145 @@ public class Systemconfig {
 	static final private String	SYSTEM_CONFIG_PATH = "/opt/agnitas.com/etc/system.cfg";
 	static final private String	SYSTEM_CONFIG_PATH_ENV = "SYSTEM_CONFIG_PATH";
 	static final private String	SYSTEM_CONFIG_ENV = "SYSTEM_CONFIG";
-	private Map <String, String> cfg;
+	public static String		fqdn, hostname, user, home, version;
+	static {
+		try {
+			InetAddress i = InetAddress.getLocalHost ();
+
+			fqdn = i.getHostName ().toLowerCase ();
+			hostname = fqdn.split ("\\.", 2)[0];
+		} catch (UnknownHostException e) {
+			fqdn = hostname = "localhost";
+		}
+		user = System.getProperty ("user.name", "");
+		home = System.getProperty ("user.home", ".");
+		version = System.getenv ("VERSION");
+		if (version == null) {
+			version = "unknown";
+		}
+		try {
+			File	buildSpec = new File (Str.makePath (home, "scripts", "build.spec"));
+			if (buildSpec.exists ()) {
+				try (FileInputStream fd = new FileInputStream (buildSpec)) {
+					byte[]		raw = new byte[(int) buildSpec.length ()];
+					fd.read (raw);
+					String[]	elements = (new String (raw, StandardCharsets.UTF_8).trim ()).split (";");
+					if (elements.length > 0) {
+						version = elements[0];
+					}
+				} catch (IOException e) {
+					// do nothing
+				}
+			}
+			if ("unknown".equals (version)) {
+				Pattern versionPattern = Pattern.compile("[0-9]{2}\\.(01|04|07|10)\\.[0-9]{3}(\\.[0-9]{3})?$");
+				List<String> seen = new ArrayList<>();
+
+				version = Stream.of((System.getProperty("java.class.path", "") + ":" + System.getenv().getOrDefault("CLASSPATH", ""))
+						.split(File.pathSeparator))
+						.map(File::new)
+						.map(f -> f.isFile() ? f.getParentFile() : f)
+						.distinct()
+						.map(f -> {
+							try {
+								return f.getCanonicalPath();
+							} catch (IOException e) {
+								return f.getAbsolutePath();
+							}
+						})
+						.distinct()
+						.flatMap(p -> Stream.of(p.split(File.separator)))
+						.distinct()
+						.filter(f -> f.length() > 0).peek(seen::add)
+						.map(versionPattern::matcher)
+						.filter(Matcher::find)
+						.map(Matcher::group)
+						.findFirst().orElse(version);
+				if ("unknown".equals(version)) {
+					try {
+						ResourceBundle rsc = ResourceBundle.getBundle("emm");
+						String appVersion = rsc.getString("ApplicationVersion");
+
+						if (StringUtils.isNotEmpty(appVersion)) {
+							version = appVersion;
+						}
+					} catch (Exception e) {
+						// do nothing
+					}
+					if ("unknown".equals(version)) {
+						Log log = new Log("version", Log.INFO, 0);
+
+						log.out(Log.ERROR, "retrieve", "Failed to retrieve version in:");
+						for (String v : seen) {
+							log.out(Log.ERROR, "retrieve", "\t\"" + v + "\"");
+						}
+					}
+				}
+			}
+		} catch (Exception e) {
+			Log log = new Log ("version", Log.INFO, 0);
+			log.out (Log.ERROR, "retrieve", "Failed to retrieve version: " + e.toString(), e);
+		}
+	}
+	public static class Selection {
+		private List <String>	selections;
+		private Set <String>	selectionsSet;
+		public Selection (String user, String fqdn, String host) {
+			selections = new ArrayList <> ();
+			selections.add (user + "@" + fqdn);
+			selections.add (user + "@" + host);
+			selections.add (user + "@");
+			selections.add (fqdn);
+			selections.add (host);
+			selectionsSet = new HashSet <> ();
+			selectionsSet.addAll (selections);
+		}
+		
+		public boolean match (String hostnameToCheck) {
+			return hostnameToCheck != null && selectionsSet.contains(hostnameToCheck.toLowerCase ());
+		}
+		
+		public String pick (Map <String, String> source, String key) {
+			String	value;
+			
+			for (String selection : selections) {
+				if ((value = source.get (key + "[" + selection + "]")) != null) {
+					return value;
+				}
+			}
+			return source.get (key);
+		}
+	}
+
+	private Map <String, String>	cfg;
+	private String			path;
+	private long			lastModified;
+	private Selection		selection;
 
 	public Systemconfig (String systemConfigPath) {
 		String	content = System.getenv (SYSTEM_CONFIG_ENV);
 		
-		if (content == null) {
-			String	path = systemConfigPath != null ? systemConfigPath : System.getenv (SYSTEM_CONFIG_PATH_ENV);
+		cfg = new HashMap <> ();
+		if (content != null) {
+			parseSystemconfig (content);
+		} else {
+			path = systemConfigPath != null ? systemConfigPath : System.getenv (SYSTEM_CONFIG_PATH_ENV);
 			if (path == null) {
 				path = SYSTEM_CONFIG_PATH;
 				if ((! fileExists (path)) && fileExists (SYSTEM_CONFIG_LEGACY_PATH)) {
 					path = SYSTEM_CONFIG_LEGACY_PATH;
 				}
 			}
-
-			if ((! path.equals ("-")) && fileExists (path)) {
-				File	file = new File (path);
-				
-				try (InputStream fd = new FileInputStream (file)) {
-					byte[]	buffer = new byte[(int) file.length ()];
-				
-					if (fd.read (buffer) == file.length ()) {
-						content = new String (buffer, Charset.forName ("UTF-8"));
-					}
-				} catch (IOException e) {
-					// do nothing
-				}
+			if (path.equals ("-")) {
+				path = null;
+			} else {
+				lastModified = 0;
+				check ();
 			}
 		}
-		parseSystemconfig (content);
+		selection = selection ();
 	}
+	
 	public Systemconfig () {
 		this (null);
 	}
@@ -72,6 +194,7 @@ public class Systemconfig {
 	 * get whole configuration
 	 */
 	public Map <String, String> get () {
+		check ();
 		return cfg;
 	}
 	
@@ -79,7 +202,8 @@ public class Systemconfig {
 	 * get a configuration value, null if not existing
 	 */
 	public String get (String key) {
-		return cfg.get (key);
+		check ();
+		return selection.pick (cfg, key);
 	}
 	
 	/**
@@ -102,14 +226,60 @@ public class Systemconfig {
 		}
 		return dflt;
 	}
+	public double get (String key, double dflt) {
+		String	rc = get (key);
+		
+		if (rc != null) {
+			try {
+				return Double.parseDouble (rc);
+			} catch (Exception e) {
+				// do nothing
+			}
+		}
+		return dflt;
+	}
+	public boolean get (String key, boolean dflt) {
+		String	rc = get (key);
+		
+		if (rc != null) {
+			return Str.atob (rc, dflt);
+		}
+		return dflt;
+	}
 	
-	private boolean fileExists (String path) {
-		return (new File (path)).exists ();
+	public Selection selection () {
+		return new Selection (Systemconfig.user, Systemconfig.fqdn, Systemconfig.hostname);
+	}
+
+	private boolean fileExists (String filePath) {
+		return (new File(filePath)).exists ();
+	}
+
+	private synchronized void check () {
+		if (path != null) {
+			File	file = new File (path);
+			
+			if (file.exists ()) {
+				if ((lastModified == 0) || (file.lastModified () > lastModified)) {
+					try (InputStream fd = new FileInputStream (file)) {
+						byte[]	buffer = new byte[(int) file.length ()];
+					
+						if (fd.read (buffer) == file.length ()) {
+							parseSystemconfig (new String (buffer, Charset.forName ("UTF-8")));
+						}
+						lastModified = file.lastModified ();
+					} catch (IOException e) {
+						cfg.clear ();
+					}
+				}
+			} else {
+				cfg.clear ();
+			}
+		}
 	}
 
 	private void parseSystemconfig (String content) {
-		cfg = new HashMap <> ();
-		
+		cfg.clear ();
 		if (content != null) {
 			if (! parseJson (content)) {
 				parsePlain (content);

@@ -1,6 +1,5 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" buffer="64kb" errorPage="/error.do" %>
-<%@ page import="org.agnitas.web.MailingBaseAction" %>
-<%@ page import="com.agnitas.web.ComMailingBaseAction" %>
+<%@ page import="com.agnitas.web.MailingBaseAction" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
@@ -13,10 +12,10 @@
 
 <c:set var="ACTION_LIST" value="<%= MailingBaseAction.ACTION_LIST %>"/>
 <c:set var="ACTION_VIEW" value="<%= MailingBaseAction.ACTION_VIEW %>"/>
-<c:set var="ACTION_CONFIRM_UNDO" value="<%= ComMailingBaseAction.ACTION_CONFIRM_UNDO %>"/>
+<c:set var="ACTION_CONFIRM_UNDO" value="<%= MailingBaseAction.ACTION_CONFIRM_UNDO %>"/>
 <c:set var="ACTION_CONFIRM_DELETE" value="<%= MailingBaseAction.ACTION_CONFIRM_DELETE %>"/>
 <c:set var="ACTION_CLONE_AS_MAILING" value="<%= MailingBaseAction.ACTION_CLONE_AS_MAILING %>"/>
-<c:set var="ACTION_CREATE_FOLLOW_UP" value="<%= ComMailingBaseAction.ACTION_CREATE_FOLLOW_UP %>"/>
+<c:set var="ACTION_CREATE_FOLLOW_UP" value="<%= MailingBaseAction.ACTION_CREATE_FOLLOW_UP %>"/>
 
 <c:url var="mailingsOverviewLink" value="/mailingbase.do">
     <c:param name="action" value="${ACTION_LIST}"/>
@@ -59,9 +58,13 @@
 						<c:set var="agnNavigationKey" value="templateView" scope="request" />
 					</c:otherwise>
 				</c:choose>
-				<c:set var="agnNavHrefAppend" 	value="&mailingID=${mailingBaseForm.mailingID}&init=true"	scope="request" />
 				<c:set var="agnHighlightKey" 	value="Template" 											scope="request" />
 
+                <emm:instantiate var="agnNavHrefParams" type="java.util.LinkedHashMap" scope="request">
+                    <c:set target="${agnNavHrefParams}" property="mailingID" value="${mailingBaseForm.mailingID}"/>
+                    <c:set target="${agnNavHrefParams}" property="init" value="true"/>
+                </emm:instantiate>
+                
                 <emm:instantiate var="agnBreadcrumbs" type="java.util.LinkedHashMap" scope="request">
                     <emm:instantiate var="agnBreadcrumb" type="java.util.LinkedHashMap">
                         <c:set target="${agnBreadcrumbs}" property="0" value="${agnBreadcrumb}"/>

@@ -28,7 +28,7 @@
                 <div class="col-sm-4">
                     <label for="shortname" class="control-label">
                         <mvc:message var="nameMsg" code="default.Name"/>
-                        ${nameMsg}
+                        ${nameMsg}*
                     </label>
                 </div>
                 <div class="col-sm-8">

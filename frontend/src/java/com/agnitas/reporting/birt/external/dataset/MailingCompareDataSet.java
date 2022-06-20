@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -46,21 +46,21 @@ import org.agnitas.util.DbUtilities;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.emm.core.report.enums.fields.MailingTypes;
+import com.agnitas.emm.common.MailingType;
 import com.agnitas.reporting.birt.external.beans.CompareStatCsvRow;
 import com.agnitas.reporting.birt.external.beans.CompareStatRow;
 import com.agnitas.reporting.birt.external.beans.LightTarget;
 import com.agnitas.reporting.birt.external.dao.ComCompanyDao;
 import com.agnitas.reporting.birt.external.dao.impl.ComCompanyDaoImpl;
 
-
 public class MailingCompareDataSet extends ComparisonBirtDataSet  {
-	private static final transient Logger logger = Logger.getLogger(MailingCompareDataSet.class);
+	private static final transient Logger logger = LogManager.getLogger(MailingCompareDataSet.class);
 
     public static final int TARGET_NAME_LENGTH_MAX = 28;
     
@@ -193,9 +193,10 @@ public class MailingCompareDataSet extends ComparisonBirtDataSet  {
     }
 
     public int getTargetNum(String targetsStr) {
-        if (targetsStr != null && !"".equals(targetsStr)) {
+        if (targetsStr != null && !targetsStr.isEmpty()) {
             return targetsStr.split(",").length;
         }
+
         return 0;
     }
 
@@ -218,7 +219,6 @@ public class MailingCompareDataSet extends ComparisonBirtDataSet  {
 		List<CompareStatRow> summaryData = getResultsFromTempTable(tempTableID, locale);
 		return summaryData;
 	}
-
 
     public List<CompareStatCsvRow> getCsvSummaryData(int tempTableID, Locale locale) throws Exception {
         Map<String, CompareStatCsvRow> summaryCsvData = new HashMap<>();
@@ -271,8 +271,6 @@ public class MailingCompareDataSet extends ComparisonBirtDataSet  {
                     }
                 }
                 summaryCsvData.put(key, statCsvRow);
-            } else {
-                continue;
             }
         }
 		return new ArrayList<>(summaryCsvData.values());
@@ -307,7 +305,7 @@ public class MailingCompareDataSet extends ComparisonBirtDataSet  {
 			        .append("       WHERE cust.customer_id = succ.customer_id ")
 			        .append("         AND succ.mailing_id IN (<MAILING_IDS>) ")
 			        .append("         AND succ.mailing_id = m.mailing_id ")
-			        .append("         AND m.mailing_type <> ").append(MailingTypes.INTERVAL.getCode())
+			        .append("         AND m.mailing_type <> ").append(MailingType.INTERVAL.getCode())
 			        .append("       UNION ALL ")
 			        .append("      SELECT cust.*, x.mailing_id AS sys_mailing_id ")
 			        .append("        FROM customer_<COMPANYID>_tbl cust ")
@@ -316,7 +314,7 @@ public class MailingCompareDataSet extends ComparisonBirtDataSet  {
 			        .append("       WHERE cust.customer_id = x.customer_id ")
 			        .append("         AND x.mailing_id IN (<MAILING_IDS>) ")
 			        .append("         AND x.mailing_id = m.mailing_id ")
-			        .append("         AND m.mailing_type = ").append(MailingTypes.INTERVAL.getCode())
+			        .append("         AND m.mailing_type = ").append(MailingType.INTERVAL.getCode())
 			    .append(" ) cust ) main_data GROUP BY mailing_id");
 			
             insertCategoryDataToTempTable(mailingIds, companyID, queryBuilder.toString(), tempTableID,
@@ -478,7 +476,7 @@ public class MailingCompareDataSet extends ComparisonBirtDataSet  {
                 "WHERE company_id = ? and mailing_id in (" + mailingIds + ") ORDER BY days_between DESC";
         JdbcTemplate template = new JdbcTemplate(getDataSource());
         HashMap<Integer, Integer> bounceMap = new HashMap<>();
-		List<Map<String, Object>> result = template.queryForList(query, new Object[]{companyID});
+		List<Map<String, Object>> result = template.queryForList(query, companyID);
         for (Map<String, Object> row : result) {
             int mailingId = ((Number) row.get("mailing_id")).intValue();
             if (bounceMap.get(mailingId) == null) {
@@ -775,7 +773,7 @@ public class MailingCompareDataSet extends ComparisonBirtDataSet  {
 
         if(CommonKeys.TYPE_ADMIN_AND_TEST.equals(recipientsType)) {
             customerTable = "(SELECT cust.* FROM customer_<COMPANYID>_binding_tbl bind JOIN customer_<COMPANYID>_tbl cust " +
-                    "ON( cust.customer_id = bind.customer_id) WHERE user_type IN '" + UserType.Admin.getTypeCode() + "', '" + UserType.TestUser.getTypeCode() + "', '" + UserType.TestVIP.getTypeCode() + "') AND mailinglist_id IN (SELECT mailinglist_id FROM mailing_tbl WHERE mailing_id IN (<MAILING_IDS>) ))";
+                    "ON( cust.customer_id = bind.customer_id) WHERE user_type IN ('" + UserType.Admin.getTypeCode() + "', '" + UserType.TestUser.getTypeCode() + "', '" + UserType.TestVIP.getTypeCode() + "') AND mailinglist_id IN (SELECT mailinglist_id FROM mailing_tbl WHERE mailing_id IN (<MAILING_IDS>) ))";
         }
 
         queryBuilder.append(" FROM ( SELECT cust.*, rdir.num_parameter AS sys_num_parameter, rdir.mailing_id AS sys_mailing_id FROM rdirlog_<COMPANYID>_val_num_tbl rdir LEFT JOIN " +customerTable + " cust " +
@@ -864,7 +862,7 @@ public class MailingCompareDataSet extends ComparisonBirtDataSet  {
 
 			if(CommonKeys.TYPE_WORLDMAILING.equals(recipientsType)) {
 				customerTable = "(SELECT cust.* FROM customer_<COMPANYID>_binding_tbl bind JOIN customer_<COMPANYID>_tbl " +
-                        "cust ON( cust.customer_id = bind.customer_id) WHERE IN ('" + UserType.World.getTypeCode() + "', '" + UserType.WorldVIP.getTypeCode() + "')  AND mailinglist_id IN (SELECT " +
+                        "cust ON( cust.customer_id = bind.customer_id) WHERE user_type IN ('" + UserType.World.getTypeCode() + "', '" + UserType.WorldVIP.getTypeCode() + "')  AND mailinglist_id IN (SELECT " +
                         "mailinglist_id FROM mailing_tbl WHERE mailing_id IN (<MAILING_IDS>) ))";
 			}
 
@@ -888,7 +886,7 @@ public class MailingCompareDataSet extends ComparisonBirtDataSet  {
 			query = "SELECT count(DISTINCT(customer_id)) category_value, mailing_id " +
 			"FROM onepixellog_<COMPANYID>_tbl o " +
 			"WHERE mailing_id IN (<MAILING_IDS>) AND EXISTS " +
-			"(SELECT 1 FROM customer_<COMPANYID>_binding_tbl bind WHERE IN ('" + UserType.World.getTypeCode() + "', '" + UserType.WorldVIP.getTypeCode() + "') " +
+			"(SELECT 1 FROM customer_<COMPANYID>_binding_tbl bind WHERE user_type IN ('" + UserType.World.getTypeCode() + "', '" + UserType.WorldVIP.getTypeCode() + "') " +
 			"AND o.customer_id = bind.customer_id " +
 			"AND mailinglist_id IN (SELECT mailinglist_id FROM mailing_tbl WHERE mailing_id IN (<MAILING_IDS>) ) ) GROUP BY mailing_id";
 		}

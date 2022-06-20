@@ -1,0 +1,4 @@
+<HelpBalloon>
+	<title>Zeitzone</title>
+	<content><![CDATA[W&#xE4;hlen Sie die Zeitzone, die den zu exportierenden Daten zugrunde liegen soll, da die Daten standardm&#xE4;&#xDF;ig mit der Zeitzone Europe/Berlin erfasst werden. W&#xE4;hlen Sie eine davon abweichende Zeitzone aus, dann werden die Daten umgerechnet und entsprechend der gew&#xE4;hlten Zeitzone (+/- X Stunden) ausgegeben.]]></content>
+</HelpBalloon>

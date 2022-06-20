@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -19,6 +19,8 @@ import java.util.Map;
 
 import org.agnitas.backend.dao.MailingDAO;
 import org.agnitas.util.Log;
+import org.agnitas.util.Str;
+import org.agnitas.util.Systemconfig;
 
 /**
  * Thes class keeps track of all mailing related
@@ -54,6 +56,12 @@ public class Mailing {
 	 * used block size
 	 */
 	private int blockSize;
+	/**
+	 * minimal/maximum dynamic blocksize and divisor
+	 */
+	private int dynBlockSizeMin;
+	private int dynBlockSizeMax;
+	private int dynBlockDivisor;
 	/**
 	 * steps in seconds to delay sending of each blocksize
 	 */
@@ -141,17 +149,20 @@ public class Mailing {
 		defaultEncoding = "quoted-printable";
 		defaultCharset = "UTF-8";
 		blockSize = 0;
+		dynBlockSizeMin = 50;
+		dynBlockSizeMax = 1000;
+		dynBlockDivisor = 500;
 		stepping = 0;
 		blocksPerStep = 1;
 		startBlockForStep = 1;
-		domain = Data.fqdn;
+		domain = Systemconfig.fqdn;
 		boundary = "AGNITAS";
 		mailer = "Agnitas AG";
 		outputDirectories = new HashMap<>();
-		spoolDirectory = StringOps.makePath ("$home", "var", "spool");
-		accountLogfile = StringOps.makePath ("$home", "log", "account.log");
-		bounceLogfile = StringOps.makePath ("$home", "log", "extbounce.log");
-		mailtrackLogfile = StringOps.makePath ("$home", "log", "mailtrack.log");
+		spoolDirectory = Str.makePath ("$home", "var", "spool");
+		accountLogfile = Str.makePath ("$home", "log", "account.log");
+		bounceLogfile = Str.makePath ("$home", "log", "extbounce.log");
+		mailtrackLogfile = Str.makePath ("$home", "log", "mailtrack.log");
 		outputDirectories.put ("meta", spool ("META"));
 		outputDirectories.put ("direct", spool ("DIRECT"));
 		outputDirectories.put ("mail", spool ("mailer"));
@@ -211,6 +222,10 @@ public class Mailing {
 
 	public long splitID() {
 		return exists() ? mailing.splitID() : 0L;
+	}
+	
+	public long deliveryRestrictID () {
+		return exists () ? mailing.deliveryRestrictID () : 0L;
 	}
 
 	public int mailingType() {
@@ -285,13 +300,31 @@ public class Mailing {
 	}
 
 	public int blockSize() {
-		return blockSize > 0 ? blockSize : (int) Long.min (1000, Long.max (50, receiverCount / 500));
+		return blockSize > 0 ? blockSize : (int) Long.min (dynBlockSizeMax, Long.max (dynBlockSizeMin, receiverCount / dynBlockDivisor));
 	}
 
 	public void blockSize(int nBlockSize) {
 		if ((nBlockSize > 0) && (nBlockSize != blockSize)) {
 			blockSize = nBlockSize;
 			blocksPerStep = 1;
+		}
+	}
+	
+	public void dynBlockSizeMin (int newSize) {
+		if (newSize > 0) {
+			dynBlockSizeMin = newSize;
+		}
+	}
+	
+	public void dynBlockSizeMax (int newSize) {
+		if (newSize > 0) {
+			dynBlockSizeMax = newSize;
+		}
+	}
+	
+	public void dynBlockDivisor (int newSize) {
+		if (newSize > 0) {
+			dynBlockDivisor = newSize;
 		}
 	}
 
@@ -588,6 +621,7 @@ public class Mailing {
 			data.logging(Log.DEBUG, "init", "\tmailing.creationDate = " + mailing.creationDate());
 			data.logging(Log.DEBUG, "init", "\tmailing.targetExpression = " + mailing.targetExpression());
 			data.logging(Log.DEBUG, "init", "\tmailing.splitID = " + mailing.splitID());
+			data.logging(Log.DEBUG, "init", "\tmailing.deliveryRestrictID = " + mailing.deliveryRestrictID());
 			data.logging(Log.DEBUG, "init", "\tmailing.mailingType = " + mailing.mailingType());
 			data.logging(Log.DEBUG, "init", "\tmailing.workStatus = " + mailing.workStatus());
 			data.logging(Log.DEBUG, "init", "\tmailing.priority = " + mailing.priority());
@@ -601,6 +635,10 @@ public class Mailing {
 		data.logging(Log.DEBUG, "init", "\tmailing.defaultEncoding = " + defaultEncoding);
 		data.logging(Log.DEBUG, "init", "\tmailing.defaultCharset = " + defaultCharset);
 		data.logging(Log.DEBUG, "init", "\tmailing.blockSize = " + blockSize);
+		data.logging(Log.DEBUG, "init", "\tmailing.dynBlockSizeMin = " + dynBlockSizeMin);
+		data.logging(Log.DEBUG, "init", "\tmailing.dynBlockSizeMax = " + dynBlockSizeMax);
+		data.logging(Log.DEBUG, "init", "\tmailing.dynBlockDivisor = " + dynBlockDivisor);
+		data.logging(Log.DEBUG, "init", "\tmailing.realBlocksize = " + blockSize ());
 		data.logging(Log.DEBUG, "init", "\tmailing.stepping = " + stepping);
 		data.logging(Log.DEBUG, "init", "\tmailing.blocksPerStep = " + blocksPerStep);
 		data.logging(Log.DEBUG, "init", "\tmailing.startBlockForStep = " + startBlockForStep);
@@ -647,6 +685,6 @@ public class Mailing {
 	}
 
 	private String spool (String directory) {
-		return StringOps.makePath (spoolDirectory, directory);
+		return Str.makePath (spoolDirectory, directory);
 	}
 }

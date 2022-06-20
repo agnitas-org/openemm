@@ -752,7 +752,7 @@ Use `data-disable-controls="*"` to refer all the elements having `data-controls-
     //print errors
     _.each(errors, function(error) {
       var $field = error.field;
-      $field.parents('.form-group').addClass('has-alert has-feedback js-form-error');
+      markFieldInRed($field);
       appendFeedbackMessage($field, error.msg);
     });
 
@@ -839,4 +839,12 @@ Use `data-disable-controls="*"` to refer all the elements having `data-controls-
 
   AGN.Lib.Form = Form;
 
+  function markFieldInRed($field) {
+    var $td = $field.closest("td");
+    if ($td.length && $td.parents('.table-form').length) {
+      $td.addClass('has-alert js-form-error')
+    } else {
+      $field.parents('.form-group').addClass('has-alert has-feedback js-form-error');
+    }
+  }
 })();

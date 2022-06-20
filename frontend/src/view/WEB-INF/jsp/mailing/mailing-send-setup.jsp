@@ -1,7 +1,7 @@
+<%@page import="com.agnitas.emm.common.MailingType"%>
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 <%@ page import="com.agnitas.beans.Mailing" %>
-<%@ page import="com.agnitas.emm.core.report.enums.fields.MailingTypes" %>
-<%@ page import="org.agnitas.web.MailingBaseAction" %>
+<%@ page import="com.agnitas.web.MailingBaseAction" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 <%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
@@ -17,8 +17,8 @@
 <c:set var="BASE_ACTION_LIST" value="<%= MailingBaseAction.ACTION_LIST %>"/>
 <c:set var="BASE_ACTION_VIEW" value="<%= MailingBaseAction.ACTION_VIEW %>" />
 
-<c:set var="TYPE_NORMAL" value="<%= MailingTypes.NORMAL.getCode() %>" scope="request"/>
-<c:set var="TYPE_FOLLOWUP" value="<%= MailingTypes.FOLLOW_UP.getCode() %>" scope="request"/>
+<c:set var="TYPE_NORMAL" value="<%= MailingType.NORMAL.getCode() %>" scope="request"/>
+<c:set var="TYPE_FOLLOWUP" value="<%= MailingType.FOLLOW_UP.getCode() %>" scope="request"/>
 
 <c:set var="isMailingGrid" value="${mailingSendForm.isMailingGrid}"/>
 <c:set var="mailingId" value="${mailingSendForm.mailingID}" scope="request"/>
@@ -58,11 +58,15 @@
 
 <logic:equal name="mailingSendForm" property="isTemplate" value="true">
     <c:set var="agnNavigationKey" 		value="templateView" 						scope="request" />
-    <c:set var="agnNavHrefAppend" 		value="&mailingID=${mailingId}&init=true"	scope="request" />
     <c:set var="agnTitleKey" 			value="Template" 							scope="request" />
     <c:set var="agnSubtitleKey" 		value="Template" 							scope="request" />
     <c:set var="sidemenu_sub_active"	value="Templates" 							scope="request" />
     <c:set var="agnHighlightKey" 		value="template.testing" 					scope="request" />
+
+    <emm:instantiate var="agnNavHrefParams" type="java.util.LinkedHashMap" scope="request">
+        <c:set target="${agnNavHrefParams}" property="mailingID" value="${mailingBaseForm.mailingID}"/>
+        <c:set target="${agnNavHrefParams}" property="init" value="true"/>
+    </emm:instantiate>
 </logic:equal>
 
 <logic:equal name="mailingSendForm" property="isTemplate" value="false">

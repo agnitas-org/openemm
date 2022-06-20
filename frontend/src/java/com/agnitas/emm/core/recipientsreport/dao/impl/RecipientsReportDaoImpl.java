@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -27,7 +27,8 @@ import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DbUtilities;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.jdbc.core.RowMapper;
 
 import com.agnitas.emm.core.recipientsreport.bean.RecipientsReport;
@@ -35,7 +36,8 @@ import com.agnitas.emm.core.recipientsreport.dao.RecipientsReportDao;
 
 public class RecipientsReportDaoImpl extends PaginatedBaseDaoImpl implements RecipientsReportDao {
 
-    private static final transient Logger logger = Logger.getLogger(RecipientsReportDaoImpl.class);
+	/** The logger. */
+    private static final transient Logger logger = LogManager.getLogger(RecipientsReportDaoImpl.class);
 
     private static final ReportRowsMapper REPORT_ROWS_MAPPER = new ReportRowsMapper();
 
@@ -163,7 +165,7 @@ public class RecipientsReportDaoImpl extends PaginatedBaseDaoImpl implements Rec
         String typeValue = selectObjectDefaultNull(logger,
                 "SELECT type FROM recipients_report_tbl ir INNER JOIN admin_tbl a ON a.admin_id = ir.admin_id "
                 	+ "WHERE ir.company_id = ? AND ir.recipients_report_id = ?",
-                new StringRowMapper(), companyId, reportId);
+                StringRowMapper.INSTANCE, companyId, reportId);
         return typeValue != null ? RecipientsReport.RecipientReportType.valueOf(typeValue) : null;
     }
     

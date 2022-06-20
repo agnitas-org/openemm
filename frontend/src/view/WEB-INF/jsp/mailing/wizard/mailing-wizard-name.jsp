@@ -1,12 +1,11 @@
 <%@ page language="java" contentType="text/html; charset=utf-8"  errorPage="/error.do" %>
-<%@ page import="org.agnitas.web.MailingWizardAction" %>
+<%@ page import="com.agnitas.web.MailingWizardAction" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 
 <%--@elvariable id="helplanguage" type="java.lang.String"--%>
-<%--@elvariable id="isEnableTrackingVeto" type="java.lang.Boolean"--%>
 <%--@elvariable id="ACTION_NAME" type="java.lang.Boolean"--%>
 
 <c:set var="ACTION_NAME" value="<%= MailingWizardAction.ACTION_NAME %>"/>
@@ -79,7 +78,6 @@
                         <agn:agnTextarea styleId="mailing.description" styleClass="form-control v-resizable" property="mailing.description" placeholder="${descriptionMsg}"/>
                     </div>
                 </div>
-                <c:if test="${isEnableTrackingVeto}">
                     <div class="form-group">
                         <div class="col-sm-4">
                             <label class="control-label" for="mailingContentTypeAdvertising">
@@ -95,7 +93,6 @@
                             </label>
                         </div>
                     </div>
-                </c:if>
             </div>
             <div class="tile-footer">
                 <a href="${previous}" class="btn btn-large pull-left">

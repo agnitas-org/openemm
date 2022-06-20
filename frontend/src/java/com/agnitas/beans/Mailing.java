@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -20,16 +20,14 @@ import java.util.Vector;
 import org.agnitas.actions.EmmAction;
 import org.agnitas.beans.MailingBase;
 import org.agnitas.beans.MailingComponent;
-import org.agnitas.beans.Mediatype;
 import org.agnitas.beans.TrackableLink;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.preview.AgnTagError;
 import org.apache.struts.action.ActionMessages;
 import org.springframework.context.ApplicationContext;
 
+import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.mailing.bean.ComMailingParameter;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import com.agnitas.emm.core.target.eql.codegen.resolver.MailingType;
 
 public interface Mailing extends MailingBase {
     int TARGET_MODE_OR = 0;
@@ -68,7 +66,7 @@ public interface Mailing extends MailingBase {
 
     int getMailTemplateID();
 
-    int getMailingType();
+    MailingType getMailingType();
 
     Date getCreationDate();
 
@@ -123,7 +121,9 @@ public interface Mailing extends MailingBase {
 
     void setMailTemplateID(int id);
 
-    void setMailingType(int mailingType);
+    void setMailingTypeCode(int mailingTypeCode);
+
+    int getMailingTypeCode();
 
     void setMailingType(MailingType mailingType);
 
@@ -162,7 +162,7 @@ public interface Mailing extends MailingBase {
     Map<String, ComTrackableLink> getTrackableLinks();
     void setTrackableLinks(Map<String, ComTrackableLink> trackableLinks);
 
-    void init( @VelocityCheck int companyID, ApplicationContext con);
+    void init(int companyID, ApplicationContext con);
 
     DynamicTag getDynamicTagById(int dynId);
 
@@ -230,7 +230,14 @@ public interface Mailing extends MailingBase {
 
     boolean isStatusmailOnErrorOnly();
     void setStatusmailOnErrorOnly(boolean statusmailOnErrorOnly);
-    
+
+    Integer getClearanceThreshold();
+    void setClearanceThreshold(Integer clearanceThreshold);
+
+
+    void setClearanceEmail(String clearanceEmail);
+    String getClearanceEmail();
+
     String getFollowUpType();
 	void setFollowUpType(String followUpType);
 	
@@ -260,4 +267,5 @@ public interface Mailing extends MailingBase {
 	MailingContentType getMailingContentType();
 	void setMailingContentType(MailingContentType mailingContentType);
 	Set<Integer> getAllReferencedTargetGroups();
+
 }

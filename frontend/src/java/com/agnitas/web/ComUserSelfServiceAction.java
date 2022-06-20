@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -24,10 +24,6 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
-
 import org.agnitas.beans.AdminGroup;
 import org.agnitas.emm.core.commons.password.PasswordCheck;
 import org.agnitas.emm.core.commons.password.PasswordCheckHandler;
@@ -42,7 +38,8 @@ import org.agnitas.service.WebStorage;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.web.forms.FormUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
@@ -51,10 +48,10 @@ import org.apache.struts.action.ActionMessages;
 import org.apache.struts.actions.DispatchAction;
 import org.springframework.beans.factory.annotation.Required;
 
+import com.agnitas.beans.AdminPreferences;
 import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.ComAdminPreferences;
+import com.agnitas.dao.AdminPreferencesDao;
 import com.agnitas.dao.ComAdminGroupDao;
-import com.agnitas.dao.ComAdminPreferencesDao;
 import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.dao.ComEmmLayoutBaseDao;
 import com.agnitas.emm.core.Permission;
@@ -62,20 +59,24 @@ import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.logon.service.ComLogonService;
 import com.agnitas.service.ComWebStorage;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
+
 /**
  * Implementation of <strong>Action</strong> that lets an user change his password and other profiledata.
  */
 public class ComUserSelfServiceAction extends DispatchAction {
 	
 	/** The logger. */
-	private static final transient Logger logger = Logger.getLogger(ComUserSelfServiceAction.class);
+	private static final transient Logger logger = LogManager.getLogger(ComUserSelfServiceAction.class);
 
 	// ----------------------------------------------------------------------------------------------------------------
 	// Dependency Injection
 
 	protected AdminService adminService;
 	protected ComAdminGroupDao adminGroupDao;
-    protected ComAdminPreferencesDao adminPreferencesDao;
+    protected AdminPreferencesDao adminPreferencesDao;
 	protected ComCompanyDao companyDao;
 	protected ComEmmLayoutBaseDao layoutBaseDao;
 	private LoginTrackServiceRequestHelper loginTrackHelper;
@@ -97,7 +98,7 @@ public class ComUserSelfServiceAction extends DispatchAction {
 	}
 
     @Required
-    public void setAdminPreferencesDao(ComAdminPreferencesDao adminPreferencesDao){
+    public void setAdminPreferencesDao(AdminPreferencesDao adminPreferencesDao){
         this.adminPreferencesDao = adminPreferencesDao;
     }
 
@@ -163,7 +164,7 @@ public class ComUserSelfServiceAction extends DispatchAction {
 		loginTrackHelper.setLoginTrackingDataToRequest(request, admin, LoginTrackServiceRequestHelper.DEFAULT_LOGIN_MIN_PERIOD_DAYS);
 		loginTrackHelper.removeFailedLoginWarningFromRequest( request);
 
-        ComAdminPreferences adminPreferences = adminPreferencesDao.getAdminPreferences(admin.getAdminID());
+        AdminPreferences adminPreferences = adminPreferencesDao.getAdminPreferences(admin.getAdminID());
         fillAdminFormWithOriginalValues((ComAdminForm) form, adminPreferences, admin);
         fillRequestWithOriginalValues(request, admin);
         
@@ -189,7 +190,7 @@ public class ComUserSelfServiceAction extends DispatchAction {
 
             ComAdminForm adminForm = (ComAdminForm) form;
 
-            ComAdminPreferences adminPreferences = adminPreferencesDao.getAdminPreferences(admin.getAdminID());
+            AdminPreferences adminPreferences = adminPreferencesDao.getAdminPreferences(admin.getAdminID());
             FormUtils.syncNumberOfRows(webStorage, ComWebStorage.ADMIN_LOGIN_LOG_OVERVIEW, adminForm);
 			loginTrackHelper.setLoginTrackingDataToRequest(request, admin, LoginTrackServiceRequestHelper.DEFAULT_LOGIN_MIN_PERIOD_DAYS);
 
@@ -218,6 +219,11 @@ public class ComUserSelfServiceAction extends DispatchAction {
                 // Set new Firstname
                 if (StringUtils.isNotBlank(adminForm.getFirstname())) {
                     admin.setFirstName(adminForm.getFirstname());
+                }
+
+                // Set new EmployeeID
+                if (StringUtils.isNotBlank(adminForm.getEmployeeID())) {
+                    admin.setEmployeeID(adminForm.getEmployeeID());
                 }
 
 				// Set new UserCompanyName
@@ -394,7 +400,7 @@ public class ComUserSelfServiceAction extends DispatchAction {
      * @param adminPreferences existed admin preferences data
      * @param admin            existed admin account data
      */
-	protected void fillAdminFormWithOriginalValues(ComAdminForm comAdminForm, ComAdminPreferences adminPreferences, ComAdmin admin) {
+	protected void fillAdminFormWithOriginalValues(ComAdminForm comAdminForm, AdminPreferences adminPreferences, ComAdmin admin) {
         comAdminForm.setGender(admin.getGender());
         comAdminForm.setAdminID(admin.getAdminID());
         comAdminForm.setUsername(admin.getUsername());
@@ -415,6 +421,7 @@ public class ComUserSelfServiceAction extends DispatchAction {
         comAdminForm.setLayoutBaseId(admin.getLayoutBaseID());
 		comAdminForm.setInitialCompanyName(companyDao.getCompany(admin.getCompanyID()).getShortname());
         comAdminForm.setFirstname(admin.getFirstName());
+        comAdminForm.setEmployeeID(admin.getEmployeeID());
         comAdminForm.setMailingContentView(adminPreferences.getMailingContentView());
         comAdminForm.setDashboardMailingsView(adminPreferences.getDashboardMailingsView());
         comAdminForm.setMailingSettingsView(adminPreferences.getMailingSettingsView());
@@ -571,7 +578,7 @@ public class ComUserSelfServiceAction extends DispatchAction {
      * @param adminPreferences existed admin preferences data
      * @param adminForm        the data passed from the jsp
      */
-    private void writeUserPreferencesChangesLog(ComAdmin admin, ComAdminPreferences adminPreferences, ComAdminForm adminForm){
+    private void writeUserPreferencesChangesLog(ComAdmin admin, AdminPreferences adminPreferences, ComAdminForm adminForm){
         try {
             String userName = admin.getUsername();
 

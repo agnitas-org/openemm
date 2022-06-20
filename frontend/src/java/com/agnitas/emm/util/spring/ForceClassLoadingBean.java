@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -12,13 +12,14 @@ package com.agnitas.emm.util.spring;
 
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
 public final class ForceClassLoadingBean {
 	
 	/** The logger. */
-	private static final transient Logger LOGGER = Logger.getLogger(ForceClassLoadingBean.class);
+	private static final transient Logger LOGGER = LogManager.getLogger(ForceClassLoadingBean.class);
 
 	@Required
 	public final void setClassesToLoad(final List<String> names) throws Throwable {

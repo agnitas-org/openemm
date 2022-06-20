@@ -1,0 +1,10 @@
+
+[data-copyable] {
+  cursor: pointer;
+
+  &:hover {
+    .icon-copy {
+      color: black;
+    }
+  }
+}

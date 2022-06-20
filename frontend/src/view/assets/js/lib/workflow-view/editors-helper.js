@@ -198,6 +198,19 @@
             }
         };
 
+        this.modify = function(node, callback) {
+            options.getUndoManager().operation('nodeDataUpdated', node, _.cloneDeep(node));
+            callback(node);
+
+            if (options.supplement) {
+                options.supplement(node);
+            }
+
+            if (options.onChange) {
+                options.onChange(node);
+            }
+        };
+
         this.isNodeIsMailing = function(node) {
             return Def.NODE_TYPES_MAILING.includes(node.getType());
         };

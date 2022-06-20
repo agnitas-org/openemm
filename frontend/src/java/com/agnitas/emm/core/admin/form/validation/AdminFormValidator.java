@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -44,11 +44,13 @@ public class AdminFormValidator {
 
 	private static boolean validateUsername(final AdminForm adminForm, final Popups popups) {
 		final String username = adminForm.getUsername();
-		if (StringUtils.length(username) < 3) {
+		if (StringUtils.trimToNull(username) == null) {
+			popups.field(USERNAME_INPUT_NAME, "error.username.blank");
+			return false;
+		} else if (StringUtils.trimToNull(username).length() < 3) {
 			popups.field(USERNAME_INPUT_NAME, "error.username.tooShort");
 			return false;
-		}
-		if(StringUtils.length(username) > 180) {
+		} else if(StringUtils.length(username) > 180) {
 			popups.field(USERNAME_INPUT_NAME,"error.username.tooLong");
 			return false;
 		}
@@ -57,25 +59,23 @@ public class AdminFormValidator {
 
 	private static boolean validateFullName(final AdminForm adminForm, final Popups popups) {
 		final String fullname = adminForm.getFullname();
-		if (StringUtils.length(fullname) < 2) {
-			popups.field(FULLNAME_INPUT_NAME, "error.name.too.short");
+		if (StringUtils.trimToNull(fullname) == null) {
+			popups.field(FULLNAME_INPUT_NAME, "error.fullname.blank");
 			return false;
-		}
-		if (StringUtils.length(fullname) > 100) {
-			popups.alert(FULLNAME_INPUT_NAME, "error.name.too.long");
+		} else if (StringUtils.length(fullname) > 100) {
+			popups.field(FULLNAME_INPUT_NAME, "error.fullname.tooLong");
 			return false;
 		}
 		return true;
 	}
 
 	private static boolean validateFirstname(final AdminForm adminForm, final Popups popups) {
-		final String firstName = adminForm.getFirstname();
-		if (StringUtils.length(firstName) < 2) {
-			popups.field(FIRSTNAME_INPUT_NAME, "error.name.too.short");
+		final String firstname = adminForm.getFirstname();
+		if (StringUtils.trimToNull(firstname) == null) {
+			popups.field(FIRSTNAME_INPUT_NAME, "error.firstname.blank");
 			return false;
-		}
-		if (StringUtils.length(firstName) > 100) {
-			popups.field(FIRSTNAME_INPUT_NAME, "error.name.too.long");
+		} else if (StringUtils.length(firstname) > 100) {
+			popups.field(FIRSTNAME_INPUT_NAME, "error.firstname.tooLong");
 			return false;
 		}
 		return true;
@@ -83,11 +83,13 @@ public class AdminFormValidator {
 
 	private static boolean validateCompanyName(final AdminForm adminForm, final Popups popups) {
 		final String companyName = adminForm.getCompanyName();
-		if(StringUtils.length(companyName) < 2) {
+		if (StringUtils.trimToNull(companyName) == null) {
+			popups.field(COMPANY_NAME_INPUT_NAME, "error.company.blank");
+			return false;
+		} else if(StringUtils.length(companyName) < 2) {
 			popups.field(COMPANY_NAME_INPUT_NAME, "error.company.tooShort");
 			return false;
-		}
-		if (StringUtils.length(companyName) > 100) {
+		} else if (StringUtils.length(companyName) > 100) {
 			popups.field(COMPANY_NAME_INPUT_NAME, "error.company.tooLong");
 			return false;
 		}

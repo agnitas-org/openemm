@@ -814,6 +814,13 @@ input[type="month"] {
 // Designed to help with the organization and spacing of vertical forms. For
 // horizontal forms, use the predefined grid classes.
 
+.form-group-header {
+  @extend .form-group;
+  display: flex;
+  align-items: center;
+  float: right;
+}
+
 .form-group {
   margin-bottom: 10px;
 }

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -61,16 +61,17 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.text.StringEscapeUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.MaildropEntry;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.dao.ComProfileFieldDao;
 import com.agnitas.dao.ComTargetDao;
+import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.maildrop.MaildropGenerationStatus;
 import com.agnitas.emm.core.maildrop.MaildropStatus;
-import com.agnitas.emm.core.report.enums.fields.MailingTypes;
 import com.agnitas.emm.core.target.TargetExpressionUtils;
 import com.agnitas.emm.core.workflow.beans.Workflow;
 import com.agnitas.emm.core.workflow.beans.WorkflowConnection;
@@ -101,7 +102,7 @@ import com.agnitas.emm.core.workflow.service.util.WorkflowUtils.StartType;
 import com.agnitas.messages.Message;
 
 public class ComWorkflowValidationService {
-    private static final Logger logger = Logger.getLogger(ComWorkflowValidationService.class);
+    private static final Logger logger = LogManager.getLogger(ComWorkflowValidationService.class);
 
     private static final String VALID_NUMBER_TOKEN_REGEX = "\\d+|\\(\\s*\\d+|\\d+\\s*\\)";
 
@@ -176,20 +177,20 @@ public class ComWorkflowValidationService {
     public static class MailingTrackingUsageError {
         private MailingTrackingUsageErrorType errorType;
         private int mailingId;
-        private int mailingType;
+        private MailingType mailingType;
         private String mailingName;
 
         public MailingTrackingUsageError(MailingTrackingUsageErrorType errorType, int mailingId) {
-            this(errorType, mailingId, MailingTypes.NORMAL.getCode());
+            this(errorType, mailingId, MailingType.NORMAL);
         }
 
-        public MailingTrackingUsageError(MailingTrackingUsageErrorType errorType, int mailingId, int mailingType) {
+        public MailingTrackingUsageError(MailingTrackingUsageErrorType errorType, int mailingId, MailingType mailingType) {
             this.errorType = errorType;
             this.mailingId = mailingId;
             this.mailingType = mailingType;
         }
 
-        public MailingTrackingUsageError(MailingTrackingUsageErrorType errorType, int mailingId, int mailingType, String mailingName) {
+        public MailingTrackingUsageError(MailingTrackingUsageErrorType errorType, int mailingId, MailingType mailingType, String mailingName) {
             this.errorType = errorType;
             this.mailingId = mailingId;
             this.mailingType = mailingType;
@@ -208,11 +209,11 @@ public class ComWorkflowValidationService {
             this.mailingId = mailingId;
         }
 
-        public int getMailingType() {
+        public MailingType getMailingType() {
             return mailingType;
         }
 
-        public void setMailingType(int mailingType) {
+        public void setMailingType(MailingType mailingType) {
             this.mailingType = mailingType;
         }
 
@@ -510,7 +511,7 @@ public class ComWorkflowValidationService {
         if (entry.getStatus() == MaildropStatus.WORLD.getCode()) {
             result = true;
         } else if (entry.getStatus() == MaildropStatus.TEST.getCode() || entry.getStatus() == MaildropStatus.ADMIN.getCode()) {
-            if (entry.getGenStatus() != MaildropGenerationStatus.FINISHED.getCode()) {
+            if (!MaildropGenerationStatus.isFinalState(entry.getGenStatus())) {
                 return true;
             }
         }
@@ -844,8 +845,9 @@ public class ComWorkflowValidationService {
      * external mailings check validity of a mailtracking use.
      * @param icons workflow icons to process.
      * @param trackingDays mailtracking data expiration period (or 0 when a mailtracking is disabled).
+     * @throws Exception
      */
-    public List<MailingTrackingUsageError> checkMailingsReferencedInDecisions(List<WorkflowIcon> icons, @VelocityCheck int companyId, int trackingDays) {
+    public List<MailingTrackingUsageError> checkMailingsReferencedInDecisions(List<WorkflowIcon> icons, @VelocityCheck int companyId, int trackingDays) throws Exception {
         List<MailingTrackingUsageError> errors = new ArrayList<>();
         WorkflowGraph workflowGraph = new WorkflowGraph();
         if (!workflowGraph.build(icons)) {
@@ -921,7 +923,7 @@ public class ComWorkflowValidationService {
                             } else {
                                 String baseStatus = (String) baseMailing.get("work_status");
                                 Date baseSendDate = (Date) baseMailing.get("senddate");
-                                int mailingType = ((Number) baseMailing.get("mailing_type")).intValue();
+                                MailingType mailingType = MailingType.fromCode(((Number) baseMailing.get("mailing_type")).intValue());
 
                                 if (baseSendDate != null && FOLLOWED_MAILING_STATUSES.contains(baseStatus)) {
                                     // Calculate the max possible send date for a mailings dependent on decision
@@ -978,13 +980,13 @@ public class ComWorkflowValidationService {
         return errors;
     }
 
-    private MailingTrackingUsageError errorMailingDisordered(WorkflowMailingAware icon, @VelocityCheck int companyId) {
+    private MailingTrackingUsageError errorMailingDisordered(WorkflowMailingAware icon, @VelocityCheck int companyId) throws Exception {
         Map<String, Object> data = mailingDao.getMailingWithWorkStatus(icon.getMailingId(), companyId);
 
         return new MailingTrackingUsageError(
                 MailingTrackingUsageErrorType.DECISION_MAILING_DISORDERED,
                 icon.getMailingId(),
-                ((Number) data.get("mailing_type")).intValue(),
+                MailingType.fromCode(((Number) data.get("mailing_type")).intValue()),
                 (String) data.get("shortname")
         );
     }
@@ -1516,7 +1518,7 @@ public class ComWorkflowValidationService {
         return true;
     }
 
-    public List<MailingTrackingUsageError> checkFollowupMailing(List<WorkflowIcon> workflowIcons, @VelocityCheck int companyId, int trackingDays) {
+    public List<MailingTrackingUsageError> checkFollowupMailing(List<WorkflowIcon> workflowIcons, @VelocityCheck int companyId, int trackingDays) throws Exception {
         List<MailingTrackingUsageError> errors = new ArrayList<>();
         List<WorkflowFollowupMailing> followupMailingIcons = workflowService.getFollowupMailingIcon(workflowIcons);
         Map<Integer, WorkflowMailingAware> workflowMailings = new HashMap<>();
@@ -1546,7 +1548,7 @@ public class ComWorkflowValidationService {
                         errors.add(new MailingTrackingUsageError(
                                 MailingTrackingUsageErrorType.BASE_MAILING_DISORDERED,
                                 icon.getMailingId(),
-                                ((Number) baseMailing.get("mailing_type")).intValue(),
+                                MailingType.fromCode(((Number) baseMailing.get("mailing_type")).intValue()),
                                 (String)baseMailing.get("shortname")
                         ));
                     } else {

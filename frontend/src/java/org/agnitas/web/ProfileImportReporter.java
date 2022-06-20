@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -24,8 +24,8 @@ import java.util.Set;
 import java.util.TimeZone;
 
 import org.agnitas.beans.ColumnMapping;
-import org.agnitas.beans.ImportStatus;
 import org.agnitas.beans.ImportProfile;
+import org.agnitas.beans.ImportStatus;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.dao.ImportRecipientsDao;
 import org.agnitas.dao.MailinglistDao;
@@ -50,11 +50,12 @@ import org.agnitas.util.importvalues.TextRecognitionChar;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.ComCompany;
+import com.agnitas.beans.Company;
 import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.emm.core.JavaMailService;
 import com.agnitas.emm.core.Permission;
@@ -66,7 +67,7 @@ import com.agnitas.web.forms.ComNewImportWizardForm;
 
 public class ProfileImportReporter {
 	/** The logger. */
-	private static final transient Logger logger = Logger.getLogger(ProfileImportReporter.class);
+	private static final transient Logger logger = LogManager.getLogger(ProfileImportReporter.class);
 	
 	private RecipientsReportService recipientsReportService;
 	
@@ -198,7 +199,7 @@ public class ProfileImportReporter {
 		if (!emailRecipients.isEmpty()) {
 			Locale emailLocale = admin != null ? admin.getLocale() : null;
 			
-			ComCompany company = companyDao.getCompany(profileImportWorker.getImportProfile().getCompanyId());
+			Company company = companyDao.getCompany(profileImportWorker.getImportProfile().getCompanyId());
 			
 			String subject = I18nString.getLocaleString("import.recipients.report", emailLocale) + " \"" + profileImportWorker.getImportProfile().getName() + "\" (" + I18nString.getLocaleString("Company", emailLocale) + ": " + company.getShortname() + ")";
 			String bodyHtml = generateLocalizedImportHtmlReport(profileImportWorker, admin, true);
@@ -219,7 +220,7 @@ public class ProfileImportReporter {
 
 		reportContent += I18nString.getLocaleString("decode.licenseID", admin.getLocale()) + ": " + configService.getValue(ConfigValue.System_Licence) + "\n";
 		
-		ComCompany company = companyDao.getCompany(profileImportWorker.getImportProfile().getCompanyId());
+		Company company = companyDao.getCompany(profileImportWorker.getImportProfile().getCompanyId());
 		reportContent += I18nString.getLocaleString("Company", admin.getLocale()) + ": " + (company == null ? "Unknown" : company.toString()) + "\n";
 		
 		if (profileImportWorker.getAutoImport() != null) {
@@ -239,7 +240,7 @@ public class ProfileImportReporter {
 			}
 			
 			profileContent += I18nString.getLocaleString("csv.ContainsHeaders", admin.getLocale()) + ": " + !profileImportWorker.getImportProfile().isNoHeaders() + "\n";
-			profileContent += I18nString.getLocaleString("import.zipped", admin.getLocale()) + ": " + profileImportWorker.getImportProfile().isZipped() + "\n";
+			profileContent += I18nString.getLocaleString("import.zipped", admin.getLocale()) + ": " + AgnUtils.isZipArchiveFile(profileImportWorker.getImportFile().getLocalFile()) + "\n";
 			profileContent += I18nString.getLocaleString("import.zipPassword", admin.getLocale()) + ": " + (profileImportWorker.getImportProfile().getZipPassword() != null) + "\n";
 			
 			profileContent += I18nString.getLocaleString("import.autoMapping", admin.getLocale()) + ": " + profileImportWorker.getImportProfile().isAutoMapping() + "\n";
@@ -396,7 +397,7 @@ public class ProfileImportReporter {
 
 		reportContent += I18nString.getLocaleString("decode.licenseID", admin.getLocale()) + ": " + configService.getValue(ConfigValue.System_Licence) + "\n";
 		
-		ComCompany company = companyDao.getCompany(importProfile.getCompanyId());
+		Company company = companyDao.getCompany(importProfile.getCompanyId());
 		reportContent += I18nString.getLocaleString("Company", admin.getLocale()) + ": " + (company == null ? "Unknown" : company.toString()) + "\n";
 		
 		reportContent += "AutoImport: " + autoImport.toString() + "\n";
@@ -414,7 +415,6 @@ public class ProfileImportReporter {
 			}
 			
 			profileContent += I18nString.getLocaleString("csv.ContainsHeaders", admin.getLocale()) + ": " + !importProfile.isNoHeaders() + "\n";
-			profileContent += I18nString.getLocaleString("import.zipped", admin.getLocale()) + ": " + importProfile.isZipped() + "\n";
 			profileContent += I18nString.getLocaleString("import.zipPassword", admin.getLocale()) + ": " + (importProfile.getZipPassword() != null) + "\n";
 			
 			profileContent += I18nString.getLocaleString("import.autoMapping", admin.getLocale()) + ": " + importProfile.isAutoMapping() + "\n";
@@ -687,7 +687,7 @@ public class ProfileImportReporter {
 		
 		htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("decode.licenseID", locale), configService.getValue(ConfigValue.System_Licence)));
 
-		ComCompany company = companyDao.getCompany(importWorker.getImportProfile().getCompanyId());
+		Company company = companyDao.getCompany(importWorker.getImportProfile().getCompanyId());
 		htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("Company", locale), (company == null ? "Unknown" : company.toString())));
 		
 		if (importWorker.getAutoImport() != null) {
@@ -711,7 +711,7 @@ public class ProfileImportReporter {
 			}
 			
 			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("csv.ContainsHeaders", locale), I18nString.getLocaleString(!importWorker.getImportProfile().isNoHeaders() ? "default.Yes" : "No", locale)));
-			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("import.zipped", locale), I18nString.getLocaleString(importWorker.getImportProfile().isZipped() ? "default.Yes" : "No", locale)));
+			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("import.zipped", locale), I18nString.getLocaleString(AgnUtils.isZipArchiveFile(importWorker.getImportFile().getLocalFile()) ? "default.Yes" : "No", locale)));
 			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("import.zipPassword", locale), I18nString.getLocaleString(importWorker.getImportProfile().getZipPassword() != null ? "default.Yes" : "No", locale)));
 			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("import.autoMapping", locale), I18nString.getLocaleString(importWorker.getImportProfile().isAutoMapping() ? "default.Yes" : "No", locale)));
 
@@ -869,7 +869,7 @@ public class ProfileImportReporter {
 		
 		htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("decode.licenseID", locale), configService.getValue(ConfigValue.System_Licence)));
 
-		ComCompany company = companyDao.getCompany(importProfile.getCompanyId());
+		Company company = companyDao.getCompany(importProfile.getCompanyId());
 		htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("Company", locale), (company == null ? "Unknown" : company.toString())));
 		
 		if (autoImport != null) {
@@ -889,7 +889,6 @@ public class ProfileImportReporter {
 			}
 			
 			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("csv.ContainsHeaders", locale), I18nString.getLocaleString(!importProfile.isNoHeaders() ? "default.Yes" : "No", locale)));
-			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("import.zipped", locale), I18nString.getLocaleString(importProfile.isZipped() ? "default.Yes" : "No", locale)));
 			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("import.zipPassword", locale), I18nString.getLocaleString(importProfile.getZipPassword() != null ? "default.Yes" : "No", locale)));
 			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("import.autoMapping", locale), I18nString.getLocaleString(importProfile.isAutoMapping() ? "default.Yes" : "No", locale)));
 
@@ -1188,7 +1187,7 @@ public class ProfileImportReporter {
 		}
 
 		if (!emailRecipients.isEmpty()) {
-			ComCompany company = companyDao.getCompany(profileImportWorker.getImportProfile().getCompanyId());
+			Company company = companyDao.getCompany(profileImportWorker.getImportProfile().getCompanyId());
 			
 			String subject = "Import-ERROR: " + I18nString.getLocaleString("import.recipients.report", admin.getLocale()) + ": " + " \"" + profileImportWorker.getImportProfile().getName() + "\" (" + I18nString.getLocaleString("Company", admin.getLocale()) + ": " + company.getShortname() + ")";
 			String bodyHtml = generateLocalizedImportHtmlReport(profileImportWorker, admin, true);
@@ -1216,7 +1215,7 @@ public class ProfileImportReporter {
 		if (!emailRecipients.isEmpty()) {
 			Locale emailLocale = admin != null ? admin.getLocale() : null;
 			
-			ComCompany company = companyDao.getCompany(importProfile.getCompanyId());
+			Company company = companyDao.getCompany(importProfile.getCompanyId());
 			
 			String subject = I18nString.getLocaleString("import.recipients.report", emailLocale) + " \"" + importProfile.getName() + "\" (" + I18nString.getLocaleString("Company", emailLocale) + ": " + company.getShortname() + ")";
 			String bodyHtml = generateLocalizedImportHtmlReportForAlreadyImportedFile(alreadyImportedFile, autoImport, importProfile, admin, true);

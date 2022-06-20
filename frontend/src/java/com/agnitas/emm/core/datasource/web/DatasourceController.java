@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,18 +10,16 @@
 
 package com.agnitas.emm.core.datasource.web;
 
-import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.service.UserActivityLogService;
 import org.agnitas.service.WebStorage;
 import org.agnitas.web.forms.FormUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import com.agnitas.beans.ComAdmin;
-import com.agnitas.emm.core.Permission;
-import com.agnitas.emm.core.datasource.bean.DataSource;
 import com.agnitas.emm.core.datasource.form.DatasourceForm;
 import com.agnitas.service.ComWebStorage;
 import com.agnitas.service.DataSourceService;
@@ -32,7 +30,9 @@ import com.agnitas.web.perm.annotations.PermissionMapping;
 @RequestMapping("/importexport/datasource")
 @PermissionMapping("datasource")
 public class DatasourceController {
-    private static final Logger logger = Logger.getLogger(DatasourceController.class);
+	
+	/** The logger. */
+    private static final Logger logger = LogManager.getLogger(DatasourceController.class);
 
     private UserActivityLogService userActivityLogService;
     private DataSourceService dataSourceService;
@@ -50,17 +50,7 @@ public class DatasourceController {
     public String list(ComAdmin admin, DatasourceForm form, Model model, Popups popups) {
         try {
             FormUtils.syncNumberOfRows(webStorage, ComWebStorage.DATASOURCE_OVERVIEW, form);
-            if (!admin.permissionAllowed(Permission.DATASOURCE_ID_OVERVIEW_JS_TABLE_ROLLBACK)) {
-                model.addAttribute("datasources", dataSourceService.getDataSourcesJson(admin.getCompanyID()));
-            } else {
-                PaginatedListImpl<DataSource> dataSources = dataSourceService.getPaginatedDataSources(
-                        admin.getCompanyID(),
-                        form.getSort(),
-                        form.getPage(),
-                        form.getNumberOfRows(),
-                        form.getDir());
-                model.addAttribute("datasources", dataSources);
-            }
+            model.addAttribute("datasources", dataSourceService.getDataSourcesJson(admin.getCompanyID()));
             userActivityLogService.writeUserActivityLog(admin, "datasource list", "show datasource IDs");
         } catch (Exception e) {
             logger.error("Error occurred: " + e.getMessage(), e);

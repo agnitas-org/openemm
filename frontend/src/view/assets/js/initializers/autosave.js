@@ -23,9 +23,9 @@ The simplest way to use an autosave feature is as follows:
 ``` html
 <div class="tile" data-autosave-scope="bundle2">
   ...
-  <input type="text" name="firstName" data-autosave="firstName">
+  <input type="text" name="firstName" data-autosave="first-name">
   ...
-  <input type="text" name="lastName" data-autosave="lastName">
+  <input type="text" name="lastName" data-autosave="last-name">
   ...
 </div>
 ```

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -24,7 +24,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
 import com.agnitas.dao.ComEmmLayoutBaseDao;
@@ -37,7 +38,7 @@ public class LayoutServlet extends HttpServlet {
 	private static final long serialVersionUID = -6593446000401010425L;
 
 	/** The logger. */
-	private static final transient Logger logger = Logger.getLogger(LayoutServlet.class);
+	private static final transient Logger logger = LogManager.getLogger(LayoutServlet.class);
 
 	protected LayoutDao layoutDao;
 	

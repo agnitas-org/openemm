@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -27,6 +27,7 @@ import org.agnitas.beans.MailingComponentType;
 import org.agnitas.util.Bit;
 import org.agnitas.util.Const;
 import org.agnitas.util.Log;
+import org.agnitas.util.Str;
 
 /**
  * Holds all Blocks of a Mailing
@@ -101,7 +102,7 @@ public class BlockCollection {
 	public void setupBlockCollection(Data nData, String customText) throws Exception {
 		data = nData;
 		componentDao = new ComponentDAO(data.company.id(), data.mailing.id());
-		maskEnvelopeFrom = StringOps.atob(data.company.info("mask-envelope-from", data.mailing.id()), true);
+		maskEnvelopeFrom = Str.atob(data.company.info("mask-envelope-from", data.mailing.id()), true);
 
 		setupAdminTestmailingMarks(data.mailing.id());
 		setupAllBlocks(customText);
@@ -353,7 +354,7 @@ public class BlockCollection {
 	}
 
 	private void setupTextblocksFromMailingInfo() {
-		if (StringOps.atob(data.company.info("extended-mailing-info", data.mailing.id()), false) && (data.mailingInfo != null)) {
+		if (Str.atob(data.company.info("extended-mailing-info", data.mailing.id()), false) && (data.mailingInfo != null)) {
 			String prefix = data.company.info("extended-mailing-info-prefix", data.mailing.id());
 
 			if (prefix != null) {
@@ -556,7 +557,7 @@ public class BlockCollection {
 	}
 
 	private String envelopeFrom() {
-		if (StringOps.atob(data.company.info("dkim-native-return-path"), false)) {
+		if (Str.atob(data.company.info("dkim-native-return-path"), false)) {
 			return returnPath();
 		}
 		return envelope("MFROM");
@@ -603,7 +604,7 @@ public class BlockCollection {
 			if (data.rdirDomain != null) {
 				String rdirContextLink = data.company.info("rdir.UseRdirContextLinks");
 
-				if ((rdirContextLink != null) && StringOps.atob(rdirContextLink, false)) {
+				if ((rdirContextLink != null) && Str.atob(rdirContextLink, false)) {
 					link = "<" + data.rdirDomain + "/uq/[agnUID]/uq.html>";
 				} else {
 					link = "<" + data.rdirDomain + "/uq.html?uid=[agnUID]>";

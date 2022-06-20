@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -174,6 +174,8 @@ public class MaildropStatus {
 		data.logging(Log.DEBUG, "init", "\tmaildropStatus.adminTestTargetSQL = " + (adminTestTargetSQL == null ? "*unset*" : adminTestTargetSQL.getSQL(true)));
 		data.logging(Log.DEBUG, "init", "\tmaildropStatus.optimizeMailGeneration = " + (optimizeMailGeneration == null ? "*unset*" : optimizeMailGeneration));
 		data.logging(Log.DEBUG, "init", "\tmaildropStatus.selectedTestRecipients = " + selectedTestRecipients);
+		data.logging(Log.DEBUG, "init", "\tmaildropStatus.dependsOnAutoImportID = " + (exists () ? maildrop.dependsOnAutoImportID () : "*unset*"));
+		data.logging(Log.DEBUG, "init", "\tmaildropStatus.autoImportOK = " + (exists () ? maildrop.autoImportOK () : "*unset*"));
 	}
 
 	/**
@@ -192,7 +194,32 @@ public class MaildropStatus {
 		if (!exists()) {
 			throw new Exception("No entry for statusID " + id + " in maildrop status table found");
 		}
-		
+		if (maildrop.genStatus() != 1) {
+			throw new Exception("Generation state is not 1, but " + maildrop.genStatus());
+		}
+		if (maildrop.dependsOnAutoImportID () && (! maildrop.autoImportOK ())) {
+			if (isAdminMailing () || isTestMailing () || isWorldMailing ()) {
+				try {
+					setGenerationStatus (1, 3);
+				} catch (Exception e) {
+					data.logging (Log.ERROR, "retrieve", "Failed to update gneration status: " + e.toString ());
+				}
+			}
+			throw new Exception ("Dependency on auto import(s) is not fullfilled");
+		}
+		for (int retry = 0; retry < 2; ++retry) {
+			if (isAdminMailing() || isTestMailing() || isWorldMailing() || isRuleMailing() || isOnDemandMailing()) {
+				try {
+					setGenerationStatus(1, 2);
+					break;
+				} catch (Exception e) {
+					data.logging (retry == 0 ? Log.INFO : Log.ERROR, "retrieve", "Failed to update generation status from 1 to 2: " + e.toString ());
+					if (maildrop.genStatus () != 2) {
+						throw new Exception ("After failing setting generation status from 1 to 2 it is now " + maildrop.genStatus ());
+					}
+				}
+			}
+		}
 		data.company.id (maildrop.companyID ());
 		data.mailing.id (maildrop.mailingID ());
 		statusField (maildrop.statusField ());
@@ -214,12 +241,6 @@ public class MaildropStatus {
 			data.mailing.blockSize(maildrop.blockSize());
 		}
 		data.mailing.stepping(maildrop.step());
-		if (maildrop.genStatus() != 1) {
-			throw new Exception("Generation state is not 1, but " + maildrop.genStatus());
-		}
-		if (isAdminMailing() || isTestMailing() || isWorldMailing() || isRuleMailing() || isOnDemandMailing()) {
-			setGenerationStatus(1, 2);
-		}
 	}
 
 	/**
@@ -331,6 +352,8 @@ public class MaildropStatus {
 			if (!maildrop.updateGenStatus(data.dbase, fromStatus, toStatus)) {
 				throw new Exception("failed to update genstatus for " + id);
 			}
+		} else {
+			throw new Exception("status entry for id " + id + " does not exist");
 		}
 	}
 

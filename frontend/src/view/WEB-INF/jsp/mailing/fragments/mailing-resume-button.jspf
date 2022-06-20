@@ -1,0 +1,15 @@
+<emm:ShowByPermission token="mailing.send.world">
+    <c:choose>
+        <c:when test="${not mailingSendForm.hasDeletedTargetGroups}">
+            <div class="form-group">
+                <div class="col-sm-offset-4 col-sm-8">
+                    <c:url var="resumeSendingLink" value="/mailingsend.do?action=${ACTION_RESUME_SENDING}&mailingID=${tmpMailingID}"/>
+                    <button class="btn btn-regular btn-primary" data-action="resume-sending" data-link="${resumeSendingLink}">
+                        <i class="icon icon-paper-plane"></i>
+                        <span class="text"><bean:message key="mailing.ResumeDelivery" /></span>
+                    </button>
+                </div>
+            </div>
+        </c:when>
+    </c:choose>
+</emm:ShowByPermission>

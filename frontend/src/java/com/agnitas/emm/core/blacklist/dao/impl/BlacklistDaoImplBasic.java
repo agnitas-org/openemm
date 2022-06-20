@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -35,7 +35,8 @@ import org.agnitas.util.DbColumnType.SimpleDataType;
 import org.agnitas.util.DbUtilities;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.RowMapper;
@@ -44,7 +45,9 @@ import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.emm.core.blacklist.dao.ComBlacklistDao;
 
 public class BlacklistDaoImplBasic extends BaseDaoImpl implements ComBlacklistDao {
-	private static final transient Logger logger = Logger.getLogger(BlacklistDaoImplBasic.class);
+	
+	/** The logger. */
+	private static final transient Logger logger = LogManager.getLogger(BlacklistDaoImplBasic.class);
 
 	private static final String[] SUPPORTED_COLUMNS = new String[]{"email", "reason", "timestamp"};
 
@@ -108,7 +111,7 @@ public class BlacklistDaoImplBasic extends BaseDaoImpl implements ComBlacklistDa
 	public Set<String> loadBlackList(@VelocityCheck int companyID) throws Exception {
 		Set<String> blacklist = new HashSet<>();
 		try {
-			List<String> blacklistCompany = select(logger, "SELECT email FROM cust" + companyID + "_ban_tbl", new StringRowMapper());
+			List<String> blacklistCompany = select(logger, "SELECT email FROM cust" + companyID + "_ban_tbl", StringRowMapper.INSTANCE);
 			for (String email : blacklistCompany) {
 				blacklist.add(email.toLowerCase());
 			}
@@ -288,7 +291,7 @@ public class BlacklistDaoImplBasic extends BaseDaoImpl implements ComBlacklistDa
 
 	@Override
 	@DaoUpdateReturnValueCheck
-	public void updateBlacklistedBindings( @VelocityCheck int companyId, String email, List<Integer> mailinglistIds, int userStatus) {
+	public void updateBlacklistedBindings( @VelocityCheck int companyId, String email, List<Integer> mailinglistIds, UserStatus userStatus) {
 		if (mailinglistIds.size() == 0) {
 			if (logger.isInfoEnabled()) {
 				logger.info("List of mailinglist IDs is empty - doing nothing");
@@ -308,7 +311,7 @@ public class BlacklistDaoImplBasic extends BaseDaoImpl implements ComBlacklistDa
 				logger.debug( email + ": updating user status for mailinglist " + mailinglistId);
 			}
 			
-			update(logger, update, userStatus, email, UserStatus.Blacklisted.getStatusCode(), mailinglistId);
+			update(logger, update, userStatus.getStatusCode(), email, UserStatus.Blacklisted.getStatusCode(), mailinglistId);
 		}
 	}
 	

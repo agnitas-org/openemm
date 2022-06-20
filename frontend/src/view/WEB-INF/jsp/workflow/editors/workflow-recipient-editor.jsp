@@ -7,11 +7,16 @@
 <%@ taglib uri="http://displaytag.sf.net" prefix="display" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
+<%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
 <%--@elvariable id="workflowForm" type="com.agnitas.emm.core.workflow.web.forms.ComWorkflowForm"--%>
 <%--@elvariable id="allMailinglists" type="java.util.List"--%>
 <%--@elvariable id="allTargets" type="java.util.List"--%>
 <%--@elvariable id="accessLimitTargetId" type="java.lang.Integer"--%>
+<%--@elvariable id="regularTargets" type="java.util.List<com.agnitas.beans.TargetLight>"--%>
+<%--@elvariable id="adminAltgs" type="java.util.List<com.agnitas.beans.TargetLight>"--%>
+<%--@elvariable id="allAltgs" type="java.util.List<com.agnitas.beans.TargetLight>"--%>
+<%--@elvariable id="isExtendedAltgEnabled" type="java.lang.Boolean"--%>
 
 <c:set var="FORWARD_TARGETGROUP_CREATE" value="<%= WorkflowController.FORWARD_TARGETGROUP_CREATE_QB%>"/>
 <c:set var="FORWARD_TARGETGROUP_EDIT" value="<%= WorkflowController.FORWARD_TARGETGROUP_EDIT_QB%>"/>
@@ -46,10 +51,19 @@
 
             <div class="col-sm-8">
                 <select class="form-control js-select" multiple="" id="recipientTargetSelect">
-                    <c:forEach var="target" items="${allTargets}" varStatus="rowCounter">
-                        <option value="${target.id}" data-editable="${not target.accessLimitation}"
-                                data-locked="${target.id eq accessLimitTargetId}">${target.targetName}</option>
-                    </c:forEach>
+                    <c:choose>
+                        <c:when test="${isExtendedAltgEnabled}">
+                            <c:forEach var="target" items="${regularTargets}" varStatus="rowCounter">
+                                <option value="${target.id}" data-editable="${not target.accessLimitation}">${target.targetName}</option>
+                            </c:forEach>                            
+                        </c:when>
+                        <c:otherwise>
+                            <c:forEach var="target" items="${allTargets}" varStatus="rowCounter">
+                                <option value="${target.id}" data-editable="${not target.accessLimitation}"
+                                        data-locked="${target.id eq accessLimitTargetId}">${target.targetName}</option>
+                            </c:forEach>
+                        </c:otherwise>
+                    </c:choose>
                 </select>
             </div>
         </div>
@@ -67,8 +81,15 @@
                 <ul class="list-group">
                     <li class="list-group-item">
                         <label class="radio-inline">
-                            <input name="targetsOption" type="radio" checked="checked" value="${ONE_TARGET_REQUIRED}" id="oneTargetRequired"
-                                   ${accessLimitTargetId gt 0 ? 'disabled' : ''}/>
+                            <c:choose>
+                                <c:when test="${isExtendedAltgEnabled}">
+                                    <input name="targetsOption" type="radio" checked="checked" value="${ONE_TARGET_REQUIRED}" id="oneTargetRequired"/>
+                                </c:when>
+                                <c:otherwise>
+                                    <input name="targetsOption" type="radio" checked="checked" value="${ONE_TARGET_REQUIRED}" id="oneTargetRequired"
+                                           ${accessLimitTargetId gt 0 ? 'disabled' : ''}/>
+                                </c:otherwise>
+                            </c:choose>
                             <bean:message key="workflow.recipient.oneTargetRequired"/> "&cup;"
                         </label>
                     </li>
@@ -80,15 +101,22 @@
                     </li>
                     <li class="list-group-item">
                         <label class="radio-inline">
-                            <input name="targetsOption" type="radio" value="${NOT_IN_TARGETS}" id="notInTargets"
-                                  ${accessLimitTargetId gt 0 ? 'disabled' : ''}/>
+                            <c:choose>
+                                <c:when test="${isExtendedAltgEnabled}">
+                                    <input name="targetsOption" type="radio" value="${NOT_IN_TARGETS}" id="notInTargets"/>
+                                </c:when>
+                                <c:otherwise>
+                                    <input name="targetsOption" type="radio" value="${NOT_IN_TARGETS}" id="notInTargets"
+                                          ${accessLimitTargetId gt 0 ? 'disabled' : ''}/>
+                                </c:otherwise>
+                            </c:choose>
                             <bean:message key="workflow.recipient.notInTargets"/> "&ne;"
                         </label>
                     </li>
                 </ul>
             </div>
         </div>
-
+        <%@include file="../fragments/workflow-recipient-editor-altg-select.jspf" %>
         <hr>
 
         <div class="form-group">

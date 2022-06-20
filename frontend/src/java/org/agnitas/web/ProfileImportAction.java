@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -11,6 +11,7 @@
 package org.agnitas.web;
 
 import static com.agnitas.emm.core.workflow.service.util.WorkflowUtils.updateForwardParameters;
+import static org.agnitas.web.forms.StrutsFormBase.DEFAULT_REFRESH_MILLIS;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -39,6 +40,7 @@ import org.agnitas.beans.impl.DatasourceDescriptionImpl;
 import org.agnitas.beans.impl.ImportStatusImpl;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.ImportRecipientsDao;
+import org.agnitas.dao.SourceGroupType;
 import org.agnitas.emm.core.autoimport.service.RemoteFile;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.service.ImportException;
@@ -62,7 +64,8 @@ import org.agnitas.util.importvalues.TextRecognitionChar;
 import org.agnitas.web.forms.FormUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
@@ -72,8 +75,8 @@ import org.springframework.beans.factory.annotation.Required;
 import org.springframework.http.MediaType;
 
 import com.agnitas.beans.ComAdmin;
-import com.agnitas.dao.ComDatasourceDescriptionDao;
 import com.agnitas.dao.ComRecipientDao;
+import com.agnitas.dao.DatasourceDescriptionDao;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.action.service.EmmActionService;
 import com.agnitas.emm.core.mailinglist.service.ComMailinglistService;
@@ -97,7 +100,7 @@ import jakarta.servlet.http.HttpSession;
  */
 public class ProfileImportAction extends ImportBaseFileAction {
 	/** The logger. */
-	private static final transient Logger logger = Logger.getLogger(ProfileImportAction.class);
+	private static final transient Logger logger = LogManager.getLogger(ProfileImportAction.class);
 	
 	public static final String PROFILEIMPORTWORKER_SESSIONKEY = "PROFILEIMPORT_WORKER";
 	
@@ -137,7 +140,7 @@ public class ProfileImportAction extends ImportBaseFileAction {
 
 	private ImportProfileService importProfileService;
 
-	private ComDatasourceDescriptionDao datasourceDescriptionDao;
+	private DatasourceDescriptionDao datasourceDescriptionDao;
 
 	private ExecutorService workerExecutorService;
 
@@ -182,7 +185,7 @@ public class ProfileImportAction extends ImportBaseFileAction {
 	}
 
 	@Required
-	public void setDatasourceDescriptionDao(ComDatasourceDescriptionDao datasourceDescriptionDao) {
+	public void setDatasourceDescriptionDao(DatasourceDescriptionDao datasourceDescriptionDao) {
 		this.datasourceDescriptionDao = datasourceDescriptionDao;
 	}
 
@@ -352,7 +355,7 @@ public class ProfileImportAction extends ImportBaseFileAction {
 				
 				ImportProfile importPreviewProfile = importProfileService.getImportProfileById(aForm.getDefaultProfileId());
 				
-				if (!ImportUtils.checkIfImportFileHasData(getCurrentFile(request), importPreviewProfile.isZipped(), importPreviewProfile.getZipPassword())) {
+				if (!ImportUtils.checkIfImportFileHasData(getCurrentFile(request), importPreviewProfile.getZipPassword())) {
 					errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("autoimport.error.emptyFile", aForm.getCsvFile().getFileName()));
 					destination = mapping.findForward("start");
 					break;
@@ -502,7 +505,7 @@ public class ProfileImportAction extends ImportBaseFileAction {
 						errors.add(aForm.getErrorsDuringImport());
 						clearSessionsProfileImportWorker(request);
 						aForm.setDefaultProfileId(profileImportWorker.getImportProfileId());
-						aForm.setRefreshMillis(RecipientForm.DEFAULT_REFRESH_MILLIS);
+						aForm.setRefreshMillis(DEFAULT_REFRESH_MILLIS);
 						aForm.setErrorsDuringImport(null);
 						destination = mapping.findForward("preview");
 					} else if (profileImportWorker.getError() != null) {
@@ -520,7 +523,7 @@ public class ProfileImportAction extends ImportBaseFileAction {
 						errors.add(ActionMessages.GLOBAL_MESSAGE, message);
 						clearSessionsProfileImportWorker(request);
 						aForm.setDefaultProfileId(profileImportWorker.getImportProfileId());
-						aForm.setRefreshMillis(RecipientForm.DEFAULT_REFRESH_MILLIS);
+						aForm.setRefreshMillis(DEFAULT_REFRESH_MILLIS);
 						destination = mapping.findForward("preview");
 					} else if (profileImportWorker.isWaitingForInteraction()) {
 						if (aForm.getAction() == ACTION_IGNORE_ERRORS) {
@@ -547,7 +550,7 @@ public class ProfileImportAction extends ImportBaseFileAction {
 
 						destination = mapping.findForward("result_page");
 					}
-					aForm.setRefreshMillis(RecipientForm.DEFAULT_REFRESH_MILLIS);
+					aForm.setRefreshMillis(DEFAULT_REFRESH_MILLIS);
 				} else if (profileImportWorker == null) {
 					throw new Exception("Invalid state");
 				} else {
@@ -694,7 +697,7 @@ public class ProfileImportAction extends ImportBaseFileAction {
 						destination = mapping.findForward(FORWARDKEY_ERROREDIT);
 						aForm.setAll(future.get().getFullListSize());
 						futureHolder.remove(futureKeyList);
-						aForm.setRefreshMillis(RecipientForm.DEFAULT_REFRESH_MILLIS);
+						aForm.setRefreshMillis(DEFAULT_REFRESH_MILLIS);
 					} else {
 						if (aForm.getRefreshMillis() < 1000) {
 							// raise the refresh time
@@ -782,7 +785,7 @@ public class ProfileImportAction extends ImportBaseFileAction {
 			if (!importRecipientsDao.isKeyColumnIndexed(importProfile.getCompanyId(), columnsToCheck)) {
 				int unindexedLimit = configService.getIntegerValue(ConfigValue.MaximumContentLinesForUnindexedImport, importProfile.getCompanyId());
 				if (unindexedLimit >= 0 && importRecipientsDao.getResultEntriesCount("SELECT COUNT(*) FROM customer_" + importProfile.getCompanyId() + "_tbl") > unindexedLimit) {
-					errors.add(GuiConstants.ACTIONMESSAGE_CONTAINER_WARNING, new ActionMessage("warning.import.keyColumn.index"));
+					errors.add(GuiConstants.ACTIONMESSAGE_CONTAINER_WARNING, new ActionMessage("error.import.keyColumn.index"));
 				} else {
 					messages.add(GuiConstants.ACTIONMESSAGE_CONTAINER_WARNING, new ActionMessage("warning.import.keyColumn.index"));
 				}
@@ -928,7 +931,7 @@ public class ProfileImportAction extends ImportBaseFileAction {
 		DatasourceDescription dsDescription = new DatasourceDescriptionImpl();
 		dsDescription.setId(0);
 		dsDescription.setCompanyID(admin.getCompanyID());
-		dsDescription.setSourcegroupID(2);
+		dsDescription.setSourceGroupType(SourceGroupType.File);
 		dsDescription.setCreationDate(new Date());
 		dsDescription.setDescription((String) request.getSession().getAttribute(CSV_ORIGINAL_FILE_NAME_KEY));
 		dsDescription.setDescription2("EMM-Import (ProfileImport)");

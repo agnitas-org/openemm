@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,13 +10,13 @@
 
 package com.agnitas.emm.core.trackablelinks.service;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import org.agnitas.emm.core.mailinglist.service.MailinglistNotExistException;
 import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.Mailing;
@@ -61,9 +61,9 @@ public interface ComTrackableLinkService {
 	boolean isUrlEditingAllowed(ComAdmin admin, int mailingID);
 
     void addExtensions(Mailing aMailing, Set<Integer> linksIds, List<LinkProperty> extensions, List<UserAction> userActions);
-	
+
 	void removeLegacyMailingLinkExtension(Mailing aMailing, Set<Integer> bulkLinkIds);
-	
+
 	void setMailingLinkExtension(Mailing aMailing, String linkExtension);
 
     void setLegacyLinkExtensionMarker(Mailing aMailing, Map<Integer, Boolean> linksToExtends);
@@ -79,7 +79,7 @@ public interface ComTrackableLinkService {
      * @return list of trackable links. Returns empty list if mailing doesn't belong to the company or
 	 * trackable links don't exist for the company and mailing.
      */
-    List<TrackableLinkListItem> getMailingLinks(int mailingID, @VelocityCheck int companyId);
+    List<TrackableLinkListItem> getMailingLinks(int mailingID, int companyId);
 
 	/**
 	 * Gets trackable links
@@ -88,23 +88,25 @@ public interface ComTrackableLinkService {
      * @return list of trackable links. Returns empty list when mailing for the company doesn't have trackable links.
 	 * @throws MailinglistNotExistException if mailing doesn't belong to the company.
      */
-	List<TrackableLinkListItem> getTrackableLinkItems(int mailingID, @VelocityCheck int companyId);
+	List<TrackableLinkListItem> getTrackableLinkItems(int mailingID, int companyId);
 
-	List<ComTrackableLink> getTrackableLinks(int mailingId, @VelocityCheck int companyId);
+	List<ComTrackableLink> getTrackableLinks(int mailingId, int companyId);
 
-	List<ComTrackableLink> getTrackableLinks(@VelocityCheck int companyId, List<Integer> urlIds);
+	List<ComTrackableLink> getTrackableLinks(int companyId, List<Integer> urlIds);
 
 	int saveTrackableLink(ComTrackableLink trackableLink);
 
-	ComTrackableLink getTrackableLink(@VelocityCheck int companyId, int linkId);
+	ComTrackableLink getTrackableLink(int companyId, int linkId);
 
-	TrackableLinkSettings getTrackableLinkSettings(int linkID, @VelocityCheck int companyId);
+	TrackableLinkSettings getTrackableLinkSettings(int linkID, int companyId);
 	
-    void bulkClearExtensions(@VelocityCheck int mailingId, int companyId, Set<Integer> bulkIds) throws ClearLinkExtensionsException;
+    void bulkClearExtensions(int mailingId, int companyId, Set<Integer> bulkIds) throws ClearLinkExtensionsException;
 
 	void updateTrackableLinkSettings(TrackableLinkModel trackableLinkModel);
 
-	boolean isTrackingOnEveryPositionAvailable(@VelocityCheck int companyId, int mailingId);
+	boolean isTrackingOnEveryPositionAvailable(int companyId, int mailingId);
 
     List<LinkProperty> getCommonExtensions(int mailingId, int companyId, Set<Integer> bulkIds);
+
+    List<LinkProperty> getCommonLinkExtensions(Collection<ComTrackableLink> trackableLinks);
 }

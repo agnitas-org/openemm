@@ -1,0 +1,4 @@
+<HelpBalloon>
+	<title>Fuseau horaire</title>
+	<content><![CDATA[S&#xE9;lectionnez le fuseau horaire sur lequel doivent se baser les donn&#xE9;es &#xE0; exporter, car les donn&#xE9;es sont saisies par d&#xE9;faut avec le fuseau horaire Europe/Berlin. Si vous choisissez un fuseau horaire diff&#xE9;rent, les donn&#xE9;es seront converties et &#xE9;dit&#xE9;es en fonction du fuseau horaire choisi (+/- X heures).]]></content>
+</HelpBalloon>

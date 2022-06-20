@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -26,11 +26,11 @@ import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DynTagNameComparator;
 import org.agnitas.web.forms.StrutsFormBase;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionMapping;
 
-import com.agnitas.beans.ComContentSource;
 import com.agnitas.beans.DynamicTag;
 import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.TargetLight;
@@ -40,7 +40,7 @@ import com.agnitas.emm.core.maildrop.service.MaildropService;
 public class ComMailingContentForm extends StrutsFormBase {
     private static final long serialVersionUID = -2580120975819583381L;
 
-    private static final transient Logger logger = Logger.getLogger(ComMailingContentForm.class);
+    private static final transient Logger logger = LogManager.getLogger(ComMailingContentForm.class);
 
     private final Pattern dynamicContentParameterPattern = Pattern.compile("^dynContent\\(\\d+\\)$");
 
@@ -53,7 +53,6 @@ public class ComMailingContentForm extends StrutsFormBase {
 
     private List<TargetLight> availableTargetGroups;
     private List<ProfileField> availableInterestGroups;
-    private List<ComContentSource> availableContentSources;
     
     private Map<String, String[]> variabletypes = new HashMap<>();
 
@@ -74,7 +73,7 @@ public class ComMailingContentForm extends StrutsFormBase {
     private String newContent;
     private Map<String, DynamicTag> tags;
     private Map<Integer, DynamicTagContent> content;
-    private int contentID;
+    private String contentID;
 //    private int previewFormat;
 //    private int previewSize;
 //    private int previewCustomerID;
@@ -357,7 +356,7 @@ public class ComMailingContentForm extends StrutsFormBase {
      *
      * @return Value of property contentID.
      */
-    public int getContentID() {
+    public String getContentID() {
         return this.contentID;
     }
 
@@ -366,7 +365,7 @@ public class ComMailingContentForm extends StrutsFormBase {
      *
      * @param contentID New value of property contentID.
      */
-    public void setContentID(int contentID) {
+    public void setContentID(String contentID) {
         this.contentID = contentID;
     }
 
@@ -556,14 +555,6 @@ public class ComMailingContentForm extends StrutsFormBase {
         this.availableInterestGroups = availableInterestGroups;
     }
 
-    public List<ComContentSource> getAvailableContentSources() {
-        return availableContentSources;
-    }
-
-    public void setAvailableContentSources(List<ComContentSource> availableContentSources) {
-        this.availableContentSources = availableContentSources;
-    }
-
     public String getDynInterestGroup() {
         return dynInterestGroup;
     }
@@ -584,7 +575,7 @@ public class ComMailingContentForm extends StrutsFormBase {
     public void reset(ActionMapping mapping, HttpServletRequest request) {
         mailingID = 0;
         shortname = "";
-        contentID = 0;
+        contentID = null;
         newContent = "";
         newTargetID = 0;
 

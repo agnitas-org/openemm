@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -10,6 +10,9 @@
 
 package com.agnitas.emm.core.action.service.impl;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -20,6 +23,8 @@ import org.agnitas.dao.EmmActionDao;
 import org.agnitas.dao.EmmActionOperationDao;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.agnitas.service.impl.ActionExporter;
+import org.agnitas.service.impl.ActionImporter;
 import org.agnitas.util.DateUtilities;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.ListUtils;
@@ -36,6 +41,9 @@ import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
 import com.agnitas.emm.core.action.service.EmmActionOperationService;
 import com.agnitas.emm.core.action.service.EmmActionService;
 import com.agnitas.emm.core.commons.ActivenessStatus;
+import com.agnitas.json.JsonObject;
+import com.agnitas.json.JsonReader;
+import com.agnitas.json.JsonWriter;
 import com.agnitas.messages.I18nString;
 import com.agnitas.service.ExtendedConversionService;
 
@@ -52,6 +60,9 @@ public class EmmActionServiceImpl implements EmmActionService {
     private EmmActionOperationService emmActionOperationService;
 
     private ExtendedConversionService conversionService;
+    
+	private ActionExporter actionExporter;
+	private ActionImporter actionImporter;
 
 	@Required
 	public void setEmmActionDao(EmmActionDao emmActionDao) {
@@ -76,6 +87,16 @@ public class EmmActionServiceImpl implements EmmActionService {
 	@Required
 	public void setConversionService(ExtendedConversionService conversionService) {
 		this.conversionService = conversionService;
+	}
+
+	@Required
+	public void setActionExporter(ActionExporter actionExporter) {
+		this.actionExporter = actionExporter;
+	}
+
+	@Required
+	public void setActionImporter(ActionImporter actionImporter) {
+		this.actionImporter = actionImporter;
 	}
 
 	@Override
@@ -103,30 +124,27 @@ public class EmmActionServiceImpl implements EmmActionService {
 	
 	@Override
 	@Transactional
-	public int copyEmmAction(EmmAction emmAction, int toCompanyId) {
-		List<AbstractActionOperationParameters> ops
-			= emmActionOperationDao.getOperations(emmAction.getId(), emmAction.getCompanyID());
-		for (AbstractActionOperationParameters op : ops) {
-			op.setId(0);
-			op.setCompanyId(toCompanyId);
+	public int copyEmmAction(EmmAction emmAction, int toCompanyId, Map<Integer, Integer> mailingIdReplacements) throws Exception {
+		File actionTempFile = File.createTempFile("ActionTempFile_", ".json");
+		try {
+			try (JsonWriter jsonWriter = new JsonWriter(new FileOutputStream(actionTempFile))) {
+				actionExporter.exportAction(emmAction.getCompanyID(), emmAction.getId(), jsonWriter);
+			}
+
+			int newActionId;
+			try (JsonReader jsonReader = new JsonReader(new FileInputStream(actionTempFile))) {
+				JsonObject actionJsonObject = (JsonObject) jsonReader.read().getValue();
+				newActionId = actionImporter.importAction(toCompanyId, actionJsonObject, mailingIdReplacements);
+			}
+			
+			return newActionId;
+		} catch (Exception e) {
+			throw new Exception("Could not copy action (" + emmAction.getId() + ") for new company (" + toCompanyId + "): " + e.getMessage(), e);
+		} finally {
+			if (actionTempFile.exists()) {
+				actionTempFile.delete();
+			}
 		}
-		emmAction.setActionOperations(ops);
-		emmAction.setId(0);
-		emmAction.setCompanyID(toCompanyId);
-		return saveEmmAction(toCompanyId, emmAction);
-	}
-	
-	@Override
-	@Transactional
-	public int copyActionOperations(int sourceActionCompanyID, int sourceActionID, int destinationActionCompanyId, int destinationActionID) {
-		EmmAction subscribeAction = getEmmAction(destinationActionID, destinationActionCompanyId);
-		List<AbstractActionOperationParameters> ops = emmActionOperationDao.getOperations(sourceActionID, sourceActionCompanyID);
-		for (AbstractActionOperationParameters op : ops) {
-			op.setId(0);
-			op.setCompanyId(destinationActionCompanyId);
-		}
-		subscribeAction.setActionOperations(ops);
-		return saveEmmAction(destinationActionCompanyId, subscribeAction);
 	}
 
 	@Transactional

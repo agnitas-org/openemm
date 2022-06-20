@@ -25,11 +25,11 @@
 
 	<bean id="AdminGroup" class="org.agnitas.beans.impl.AdminGroupImpl" scope="prototype" />
 
-	<bean id="AdminPreferences" class="com.agnitas.beans.impl.ComAdminPreferencesImpl" scope="prototype" />
+	<bean id="AdminPreferences" class="com.agnitas.beans.impl.AdminPreferencesImpl" scope="prototype" />
 
 	<bean id="AdminGroupFactory" class="org.agnitas.beans.factory.impl.AdminGroupFactoryImpl" />
 
-	<bean id="AdminPreferencesFactory" class="com.agnitas.beans.factory.impl.ComAdminPreferencesFactoryImpl" />
+	<bean id="AdminPreferencesFactory" class="com.agnitas.beans.factory.impl.AdminPreferencesFactoryImpl" />
 
 <!-- ============================================================================================================================== Auto Optimization -->
 	<bean id="Optimization" class="com.agnitas.mailing.autooptimization.beans.impl.ComOptimizationImpl" scope="prototype" />
@@ -76,7 +76,7 @@
 		<property name="companyDao" ref="CompanyDao" />
 	</bean>
 
-	<bean id="Company" class="com.agnitas.beans.impl.ComCompanyImpl" scope="prototype" />
+	<bean id="Company" class="com.agnitas.beans.impl.CompanyImpl" scope="prototype" />
 
 <!-- ============================================================================================================================== Content Source -->
 	<bean id="ContentSource" class="com.agnitas.beans.impl.ComContentSourceImpl" scope="prototype" />
@@ -262,9 +262,6 @@
 		<property name="stringBuilder" ref="UID_2_SHA512_StringBuilder" />
 		<property name="companyDaoCache" ref="CompanyDaoCache" />
 		<property name="rdirMailingDataDaoCache" ref="RdirMailingDataDaoCache" />
-		<property name="handledUidVersion">
-			<util:constant static-field="com.agnitas.emm.core.commons.uid.ExtensibleUidVersion.XUID_WITH_SHA512"/>
-		</property>
 	</bean>
 
 	<bean id="UID_3_StringBuilder" class="com.agnitas.emm.core.commons.uid.builder.impl.V3ComExtensibleUIDStringBuilderImpl">
@@ -278,9 +275,15 @@
 		<property name="stringBuilder" ref="UID_3_StringBuilder" />
 		<property name="companyDaoCache" ref="CompanyDaoCache" />
 		<property name="rdirMailingDataDaoCache" ref="RdirMailingDataDaoCache" />
-		<property name="handledUidVersion">
-			<util:constant static-field="com.agnitas.emm.core.commons.uid.ExtensibleUidVersion.UID_WITH_BITFIELD_USING_SHA512"/>
-		</property>
+	</bean>
+	
+	<bean id="UID_4_StringBuilder" class="com.agnitas.emm.core.commons.uid.builder.impl.V4ExtensibleUIDStringBuilderImpl">
+		<property name="companyDaoCache" ref="CompanyDaoCache" />
+	</bean>
+
+	<bean id="UID_4_Parser" class="com.agnitas.emm.core.commons.uid.parser.impl.V4ExtensibleUIDParserImpl">
+		<property name="stringBuilder" ref="UID_4_StringBuilder" />
+		<property name="companyDaoCache" ref="CompanyDaoCache" />
 	</bean>
 
 	<bean id="ExtensibleUIDStringBuilder" class="com.agnitas.emm.core.commons.uid.builder.impl.ComExtensibleUIDStringBuilderChain">
@@ -288,6 +291,8 @@
 		<property name="stringBuilderList">
 			<list>
 				<!-- Add builder for new UID versions at start of list -->
+				
+				<ref bean="UID_4_StringBuilder" />
 				<ref bean="UID_3_StringBuilder" />
 				<ref bean="UID_2_SHA512_StringBuilder" />
 			</list>
@@ -295,6 +300,8 @@
 	</bean>
 
 	<util:list id="extensibleUIDParsers" value-type="org.agnitas.emm.core.commons.uid.parser.ExtensibleUIDParser">
+		<!-- Add parser for new UID versions at start of list -->
+		<ref bean="UID_4_Parser" />
 		<ref bean="UID_3_Parser" />
 		<ref bean="UID_2_SHA512_Parser" />
 	</util:list>
@@ -700,4 +707,5 @@ Euer freundlicher EMM
     <bean id="contentModelValidator" class="com.agnitas.emm.core.dyncontent.service.validation.ContentModelValidator">
         <constructor-arg value="validator-messages"/>
     </bean>
+    
 </beans>

@@ -1,0 +1,17 @@
+
+<div class="form-group">
+    <div class="col-sm-4">
+        <label for="globalUsage" class="control-label">
+            <mvc:message code="LinkTracking" />
+        </label>
+    </div>
+    <div class="col-sm-8">
+        <select name="bulkUsage" id="globalUsage" class="form-control">
+            <option value="${KEEP_UNCHANGED}"><mvc:message code="KeepUnchanged"/></option>
+            <option value="0"><mvc:message code="mailing.Not_Trackable" /></option>
+            <option value="1"><mvc:message code="Only_Text_Version" /></option>
+            <option value="2"><mvc:message code="Only_HTML_Version" /></option>
+            <option value="3"><mvc:message code="Text_and_HTML_Version" /></option>
+        </select>
+    </div>
+</div>

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -18,6 +18,7 @@ import static com.agnitas.emm.core.workflow.service.util.WorkflowUtils.TESTING_M
 import static com.agnitas.emm.core.workflow.service.util.WorkflowUtils.asDeadline;
 import static java.util.stream.Collectors.toList;
 
+import java.lang.reflect.InvocationTargetException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -62,7 +63,8 @@ import org.agnitas.util.SafeString;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -81,6 +83,7 @@ import com.agnitas.dao.ComProfileFieldDao;
 import com.agnitas.dao.ComTargetDao;
 import com.agnitas.dao.ComTrackableLinkDao;
 import com.agnitas.dao.UserFormDao;
+import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.birtreport.bean.ComLightweightBirtReport;
 import com.agnitas.emm.core.birtreport.dao.ComBirtReportDao;
@@ -90,7 +93,6 @@ import com.agnitas.emm.core.mailing.service.MailgunOptions;
 import com.agnitas.emm.core.mailing.service.SendActionbasedMailingException;
 import com.agnitas.emm.core.mailing.service.SendActionbasedMailingService;
 import com.agnitas.emm.core.reminder.service.ComReminderService;
-import com.agnitas.emm.core.report.enums.fields.MailingTypes;
 import com.agnitas.emm.core.target.TargetExpressionUtils;
 import com.agnitas.emm.core.target.service.ComTargetService;
 import com.agnitas.emm.core.workflow.beans.ComWorkflowReaction;
@@ -167,7 +169,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
     //how many hours we will wait
     private static final int DELAY_FOR_SENDING_MAILING = 12; //hours
 
-    private static final transient Logger logger = Logger.getLogger(ComWorkflowServiceImpl.class);
+    private static final transient Logger logger = LogManager.getLogger(ComWorkflowServiceImpl.class);
 
 	private ComColumnInfoService columnInfoService;
 	private ComMailingSendService mailingSendService;
@@ -574,28 +576,28 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
 
     @Override
     public List<Workflow> getWorkflowsOverview(ComAdmin admin) {
-        return workflowDao.getWorkflowsOverview(admin.getCompanyID(), admin.getAdminID(), adminService.getAccessLimitTargetId(admin));
+        return workflowDao.getWorkflowsOverview(admin);
     }
 
     @Override
 	public List<LightweightMailing> getAllMailings(ComAdmin admin) {
-        return mailingDao.getMailingsDateSorted(admin.getCompanyID(), admin.getAdminID());
+        return mailingDao.getMailingsDateSorted(admin);
 	}
 
     @Override
     public List<LightweightMailing> getAllMailingsSorted(ComAdmin admin, String sortFiled, String sortDirection) {
-        return mailingDao.getAllMailingsSorted(admin.getCompanyID(), admin.getAdminID(), sortFiled, sortDirection);
+        return mailingDao.getAllMailingsSorted(admin, sortFiled, sortDirection);
     }
 
     @Override
-	public List<Map<String, Object>> getAllMailings(ComAdmin admin, List<Integer> mailingTypes, String status,
+	public List<Map<String, Object>> getAllMailings(ComAdmin admin, List<MailingType> mailingTypes, String status,
                                                     String mailingStatus, boolean takeMailsForPeriod, String sort,
                                                     String order) {
         if(StringUtils.equals(status, "all")){
             status = null;
         }
 
-        return mailingDao.getMailingsNamesByStatus(admin.getCompanyID(), admin.getAdminID(), mailingTypes, status, mailingStatus, takeMailsForPeriod, sort, order, 0);
+        return mailingDao.getMailingsNamesByStatus(admin, mailingTypes, status, mailingStatus, takeMailsForPeriod, sort, order);
 	}
 
     @Override
@@ -797,19 +799,19 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
         return minDate;
     }
 
-    private int getMailingType(WorkflowMailingAware mailingIcon, int defaultType) {
+    private MailingType getMailingType(WorkflowMailingAware mailingIcon, MailingType defaultType) {
         switch (mailingIcon.getType()) {
             case WorkflowIconType.Constants.MAILING_ID:
-                return MailingTypes.NORMAL.getCode();
+                return MailingType.NORMAL;
 
             case WorkflowIconType.Constants.FOLLOWUP_MAILING_ID:
-                return MailingTypes.FOLLOW_UP.getCode();
+                return MailingType.FOLLOW_UP;
 
             case WorkflowIconType.Constants.DATE_BASED_MAILING_ID:
-                return MailingTypes.DATE_BASED.getCode();
+                return MailingType.DATE_BASED;
 
             case WorkflowIconType.Constants.ACTION_BASED_MAILING_ID:
-                return MailingTypes.ACTION_BASED.getCode();
+                return MailingType.ACTION_BASED;
 
 			default:
 		        return defaultType;
@@ -970,7 +972,11 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
                     if (!isOwnIconProcessed || !withOwnNodes) {
                         WorkflowRecipient recipientIcon = (WorkflowRecipient) workflowIcon;
                         mailing.setMailinglistID(recipientIcon.getMailinglistId());
-                        mailing.setTargetExpression(TargetExpressionUtils.makeTargetExpression(recipientIcon.getTargets(), recipientIcon.getTargetsOption()));
+                        if (CollectionUtils.isNotEmpty(recipientIcon.getAltgs())) {
+                            mailing.setTargetExpression(TargetExpressionUtils.makeTargetExpressionWithAltgs(recipientIcon.getAltgs(), recipientIcon.getTargets(), recipientIcon.getTargetsOption()));
+                        } else {
+                            mailing.setTargetExpression(TargetExpressionUtils.makeTargetExpression(recipientIcon.getTargets(), recipientIcon.getTargetsOption()));
+                        }
                     }
                     break;
 
@@ -1109,11 +1115,11 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
 
     private WorkflowIcon getEmptyIcon(WorkflowIcon icon) {
         try {
-            WorkflowIcon newIcon = icon.getClass().newInstance();
+            WorkflowIcon newIcon = icon.getClass().getConstructor().newInstance();
             newIcon.setX(icon.getX());
             newIcon.setY(icon.getY());
             return newIcon;
-        } catch (InstantiationException | IllegalAccessException e) {
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             throw new RuntimeException(e);
         }
     }
@@ -1909,13 +1915,13 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
     }
 
     @Override
-    public List<Integer> getProperUserStatusList(ComWorkflowReaction reaction) {
+    public List<UserStatus> getProperUserStatusList(ComWorkflowReaction reaction) {
         switch (reaction.getReactionType()) {
             case OPT_OUT:
-                return new ArrayList<>(Arrays.asList(UserStatus.UserOut.getStatusCode(), UserStatus.AdminOut.getStatusCode()));
+                return new ArrayList<>(Arrays.asList(UserStatus.UserOut, UserStatus.AdminOut));
 
             case WAITING_FOR_CONFIRM:
-                return new ArrayList<>(Collections.singletonList(UserStatus.WaitForConfirm.getStatusCode()));
+                return new ArrayList<>(Collections.singletonList(UserStatus.WaitForConfirm));
 
             default:
                 return null;
@@ -2181,7 +2187,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
         if (schedule.size() > 0) {
             // List of binding statuses (or empty list for default behavior defined by back-end) that the recipient binding
             // should have (otherwise recipient won't receive mails).
-            List<Integer> userStatuses = getProperUserStatusList(reaction);
+            List<UserStatus> userStatuses = getProperUserStatusList(reaction);
 
             // Send mails to recipients according to processed reaction steps.
             schedule.forEach((mailingId, recipientIds) -> send(reaction, mailingId, recipientIds, userStatuses));
@@ -2256,13 +2262,13 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
         }
     }
 
-    private void send(ComWorkflowReaction reaction, int mailingId, List<Integer> recipientIds, List<Integer> allowedUserStatuses) {
+    private void send(ComWorkflowReaction reaction, int mailingId, List<Integer> recipientIds, List<UserStatus> allowedUserStatuses) {
         for (int recipientId : recipientIds) {
             send(reaction, mailingId, recipientId, allowedUserStatuses);
         }
     }
 
-    private void send(ComWorkflowReaction reaction, int mailingId, int recipientId, List<Integer> allowedUserStatuses) {
+    private void send(ComWorkflowReaction reaction, int mailingId, int recipientId, List<UserStatus> allowedUserStatuses) {
         try {
             MailgunOptions options = new MailgunOptions();
             options.withAllowedUserStatus(allowedUserStatuses);
@@ -2607,9 +2613,14 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
             List<String> expressions = new ArrayList<>(recipients.size());
 
             for (WorkflowRecipient recipient : recipients) {
+                List<Integer> altgIds = recipient.getAltgs();
                 List<Integer> targetIds = recipient.getTargets();
-                if (CollectionUtils.isNotEmpty(targetIds)) {
-                    expressions.add(TargetExpressionUtils.makeTargetExpression(targetIds, recipient.getTargetsOption()));
+                if (CollectionUtils.isNotEmpty(altgIds)) {
+                    expressions.add(TargetExpressionUtils.makeTargetExpressionWithAltgs(altgIds, targetIds, recipient.getTargetsOption()));
+                } else {
+                    if (CollectionUtils.isNotEmpty(targetIds)) {
+                        expressions.add(TargetExpressionUtils.makeTargetExpression(targetIds, recipient.getTargetsOption()));
+                    }
                 }
             }
 

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -16,7 +16,10 @@ import java.util.List;
 import javax.sql.DataSource;
 
 import org.agnitas.emm.core.autoexport.bean.AutoExport;
+import org.agnitas.emm.core.autoexport.bean.AutoExportWsJobState;
 import org.agnitas.emm.core.velocity.VelocityCheck;
+
+import com.agnitas.emm.core.autoexport.beans.AutoExportJobStatus;
 
 public interface AutoExportDao {
     List<AutoExport> getAutoExportsToRun(int maximumParallelAutoExports, List<Integer> includedCompanyIds, List<Integer> excludedCompanyIds);
@@ -50,4 +53,14 @@ public interface AutoExportDao {
 	int getRunningAutoExportsByHost(String hostName);
 	
 	List<AutoExport> getMailingAutoExports(@VelocityCheck int companyId, boolean active);
+
+	boolean isExportStalling();
+
+	int saveWsJobState(int companyId, int autoExportId, AutoExportJobStatus status, int expirationTimeout);
+
+	void saveWsJobState(int autoImportJobId, int companyId, AutoExportWsJobState state, int expirationTimeout);
+
+	AutoExportJobStatus getWsJobState(int jobId, int companyId);
+	
+	void removeExpiredWsJobs();
 }

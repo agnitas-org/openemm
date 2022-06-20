@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -24,21 +24,21 @@ import java.util.Map.Entry;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import jakarta.servlet.http.HttpServletRequest;
-
 import org.agnitas.dao.ImportRecipientsDao;
 import org.agnitas.service.ImportException;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.dao.impl.ComCompanyDaoImpl;
 import com.agnitas.emm.core.Permission;
 
+import jakarta.servlet.http.HttpServletRequest;
 import net.lingala.zip4j.ZipFile;
 import net.lingala.zip4j.model.FileHeader;
 
 public class ImportUtils {
-	private static final transient Logger logger = Logger.getLogger(ImportUtils.class);
+	private static final transient Logger logger = LogManager.getLogger(ImportUtils.class);
 
 	public static final String MAIL_TYPE_HTML = "html";
 	public static final String MAIL_TYPE_TEXT = "text";
@@ -103,8 +103,8 @@ public class ImportUtils {
 	
 	public static boolean isFieldValid(String currentFieldName, Map<String, Object> recipient) {
     	boolean fieldIsValid;
-    	String errorneousFieldName = ((String) recipient.get(ImportRecipientsDao.VALIDATOR_RESULT_RESERVED));
-		fieldIsValid = errorneousFieldName != null && !currentFieldName.equals(errorneousFieldName);
+    	String erroneousFieldName = ((String) recipient.get(ImportRecipientsDao.VALIDATOR_RESULT_RESERVED));
+		fieldIsValid = erroneousFieldName != null && !currentFieldName.equals(erroneousFieldName);
     	return fieldIsValid;
 	}
 
@@ -170,6 +170,7 @@ public class ImportUtils {
 		hiddenColumns.add(ComCompanyDaoImpl.STANDARD_FIELD_LASTCLICK_DATE);
 		hiddenColumns.add(ComCompanyDaoImpl.STANDARD_FIELD_LASTSEND_DATE);
 		hiddenColumns.add(ComCompanyDaoImpl.STANDARD_FIELD_CLEANED_DATE);
+		hiddenColumns.add(ComCompanyDaoImpl.STANDARD_FIELD_ENCRYPTED_SENDING);
 		if (!admin.permissionAllowed(Permission.IMPORT_CUSTOMERID)) {
 			hiddenColumns.add(ComCompanyDaoImpl.STANDARD_FIELD_CUSTOMER_ID);
 		}
@@ -179,10 +180,10 @@ public class ImportUtils {
 		return Collections.unmodifiableList(hiddenColumns);
 	}
 
-	public static boolean checkIfImportFileHasData(File importFile, boolean isZipped, String optionalZipPassword) throws IOException {
+	public static boolean checkIfImportFileHasData(File importFile, String optionalZipPassword) throws IOException {
         if (importFile == null) {
             return false;
-        } else if (isZipped) {
+        } else if (AgnUtils.isZipArchiveFile(importFile)) {
 			try {
 				if (optionalZipPassword != null) {
 					ZipFile zipFile = new ZipFile(importFile);

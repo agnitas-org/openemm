@@ -893,13 +893,17 @@
           plannedSendDate: reminder.getPlannedSendDateAsString()
         },
         success: function (data) {
-          reminder.isSendNow = false;
-          if (reminder.id == 0) {
-            reminder.id = data.commentId;
-            addComment(reminder);
-            checkHideCommentIconsVisibility();
+          if (typeof data.commentId == 'undefined') {
+            AGN.Lib.Page.render(data);
           } else {
-            updateComment(reminder);
+            reminder.isSendNow = false;
+            if (reminder.id == 0) {
+              reminder.id = data.commentId;
+              addComment(reminder);
+              checkHideCommentIconsVisibility();
+            } else {
+              updateComment(reminder);
+            }
           }
         }
       });

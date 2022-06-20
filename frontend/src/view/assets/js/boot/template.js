@@ -185,10 +185,13 @@ AGN.Opt.Templates['tooltip-message-with-title'] = '\
 AGN.Opt.Templates['tooltip-message-just-content'] = '<div class="helper-popup-content">{{= content }}</div>';
 
 AGN.Opt.Templates['table-controls-top'] = '\
+{{ if (showRecordsCount || pagination) { }} \
 <div class="table-controls clearfix"> \
+  {{ if (showRecordsCount) { }} \
   <div class="table-control pull-left"> \
     <div class="well">{{= t(\'tables.range\', itemStart, itemEnd, itemTotal) }}</div> \
   </div> \
+  {{ } }}\
   <div class="table-control pull-left" id="filtersDescription"></div> \
   {{ if (pagination) { }} \
   <div class="table-control pull-right"> \
@@ -213,13 +216,16 @@ AGN.Opt.Templates['table-controls-top'] = '\
     </ul> \
   </div> \
   {{ } }}  \
-</div>';
+</div>\
+{{ } }}';
 
 AGN.Opt.Templates['table-controls-bottom'] = '\
 <div class="table-controls clearfix"> \
+  {{ if (showRecordsCount) { }} \
   <div class="table-control pull-left"> \
     <div class="well">{{= t(\'tables.range\', itemStart, itemEnd, itemTotal) }}</div> \
   </div> \
+  {{ } }} \
   {{ if (pagination) { }} \
   <div class="table-control pull-right"> \
     <ul class="pagination"> \
@@ -268,27 +274,50 @@ AGN.Opt.Templates['session-expired'] = '\
 </div>';
 
 AGN.Opt.Templates['datetime-picker'] = '\
-<div class="col-sm-5"> \
-  <div class="input-group"> \
-    <div class="input-group-controls"> \
-      <input type="text" id="{{- property }}_date" class="form-control datepicker-input js-datepicker" \
-        data-value="{{- date}}" data-datepicker-options="format: {{- format}}"/> \
-    </div> \
-    <div class="input-group-btn"> \
-      <button type="button" class="btn btn-regular btn-toggle js-open-datepicker" tabindex="-1"> \
-        <i class="icon icon-calendar-o"></i> \
-      </button> \
+<div class="row">\
+  <div class="col-sm-8"> \
+    <div class="input-group"> \
+      <div class="input-group-controls"> \
+        <input type="text" id="{{- property }}_date" class="form-control datepicker-input js-datepicker" \
+          data-value="{{- date}}" data-datepicker-options="format: {{- dateFormat}}"/> \
+      </div> \
+      <div class="input-group-btn"> \
+        <button type="button" class="btn btn-regular btn-toggle js-open-datepicker" tabindex="-1"> \
+          <i class="icon icon-calendar-o"></i> \
+        </button> \
+      </div> \
     </div> \
   </div> \
-</div> \
-<div class="col-sm-3"> \
-  <div class="input-group"> \
-    <div class="input-group-controls"> \
-      <input type="text" id="{{- property }}_time" class="form-control js-timepicker" value="{{- time}}" \
-           data-timepicker-options=\"mask: \'h:s\'\"/> \
-    </div> \
-    <div class="input-group-addon"> \
-      <span class="addon"><i class="icon icon-clock-o"></i></span> \
+  <div class="col-sm-4"> \
+    <div class="input-group"> \
+      <div class="input-group-controls"> \
+        <input type="text" id="{{- property }}_time" class="form-control js-timepicker" value="{{- time}}" \
+             data-timepicker-options=\"mask: \'h:s\'\"/> \
+      </div> \
+      <div class="input-group-addon"> \
+        <span class="addon"><i class="icon icon-clock-o"></i></span> \
+      </div> \
     </div> \
   </div> \
 </div>';
+
+AGN.Opt.Templates['trackablelink-extension-table-row'] = '\
+<tr data-extension-row="{{- index}}"> \
+    <td> \
+        <input type="text" class="form-control" data-extension-name value="{{- name}}"/> \
+    </td> \
+    <td> \
+        <input type="text" class="form-control" data-extension-value value="{{- value}}"/> \
+    </td> \
+    <td class="table-actions"> \
+        {{ if (name == "" && value == "") { }} \
+            <a href="#" class="btn btn-regular btn-primary" data-extension-add id="newExtensionBtn"> \
+                <i class="icon icon-plus"></i> \
+            </a> \
+        {{ } else { }} \
+            <a href="#" class="btn btn-regular btn-alert" data-extension-delete> \
+                <i class="icon icon-trash-o"></i> \
+            </a> \
+        {{ } }} \
+    </td> \
+</tr>';

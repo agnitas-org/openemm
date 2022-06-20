@@ -1,14 +1,16 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
-<%@ page import="com.agnitas.emm.core.usergroup.dto.UserGroupDto" %>
-<%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ page import="com.agnitas.emm.core.usergroup.web.UserGroupController" %>
+<%@ page import="org.agnitas.util.AgnUtils" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.do" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="logic" uri="http://struts.apache.org/tags-logic" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
 <%--@elvariable id="userGroupForm" type="com.agnitas.emm.core.usergroup.form.UserGroupForm"--%>
-<%--@elvariable id="currentCompanyId" type="java.lang.Integer"--%>
 
-<c:set var="ROOT_COMPANY_ID" value="<%= UserGroupDto.ROOT_COMPANY_ID %>" scope="request"/>
+<c:set var="SESSION_CONTEXT_KEYNAME_ADMIN" value="<%= AgnUtils.SESSION_CONTEXT_KEYNAME_ADMIN %>" />
+<c:set var="admin" value="${sessionScope[SESSION_CONTEXT_KEYNAME_ADMIN]}"/>
+<c:set var="ROOT_COMPANY_ID" value="<%= UserGroupController.ROOT_COMPANY_ID %>" scope="request"/>
 
 <%-- Note: there's a group having id = 0, invalid ids are negative --%>
 <c:set var="userGroupIsNew" value="${userGroupForm.id < 0}"/>
@@ -84,7 +86,7 @@
         </c:when>
         <c:otherwise>
             <logic:notEqual name="groupID" scope="session" value="${userGroupForm.id}">
-            	<c:if test="${userGroupForm.companyId ne ROOT_COMPANY_ID || currentCompanyId eq ROOT_COMPANY_ID}">
+            	<c:if test="${userGroupForm.companyId eq admin.companyID or admin.companyID eq ROOT_COMPANY_ID}">
                 	<emm:ShowByPermission token="role.delete">
                     	<emm:instantiate var="element" type="java.util.LinkedHashMap">
                         	<c:set target="${itemActionsSettings}" property="0" value="${element}"/>
@@ -103,7 +105,7 @@
                 </c:if>
             </logic:notEqual>
 
-			<c:if test="${userGroupForm.companyId ne ROOT_COMPANY_ID || currentCompanyId eq ROOT_COMPANY_ID}">
+			<c:if test="${userGroupForm.companyId eq admin.companyID or admin.companyID eq ROOT_COMPANY_ID}">
             	<emm:ShowByPermission token="role.change">
                 	<emm:instantiate var="element" type="java.util.LinkedHashMap">
                     	<c:set target="${itemActionsSettings}" property="1" value="${element}"/>

@@ -101,7 +101,7 @@
                     "hide": ${not isDeletionAllowed}
                 },
                 {
-                    "headerName": "<mvc:message code='action.Action'/>",
+                    "headerName": "<mvc:message code='userform.usesActions'/>",
                     "editable": false,
                     "cellRenderer": "StringCellRenderer",
                     "field": "shortname"
@@ -128,7 +128,7 @@
                     "field": "creationDate",
                     "type": "dateColumn",
                     "cellRenderer": "DateCellRenderer",
-                    "cellRendererParams": { "optionDateFormat": "${fn:toUpperCase(adminDateFormat)}" }
+                    "cellRendererParams": { "optionDateFormat": "${fn:replace(fn:replace(adminDateFormat, "d", "D"), "y", "Y")}" }
                 },
                 {
                     "headerName": "<mvc:message code='default.changeDate'/>",
@@ -136,7 +136,7 @@
                     "field": "changeDate",
                     "type": "dateColumn",
                     "cellRenderer": "DateCellRenderer",
-                    "cellRendererParams": { "optionDateFormat": "${fn:toUpperCase(adminDateFormat)}" }
+                    "cellRendererParams": { "optionDateFormat": "${fn:replace(fn:replace(adminDateFormat, "d", "D"), "y", "Y")}" }
                 },
                 {
                     "headerName": "<mvc:message code='default.status.active'/>",

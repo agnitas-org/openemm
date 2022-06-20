@@ -66,7 +66,7 @@
                     "field": "sendDate",
                     "type": "dateColumn",
                     "cellRenderer": "DateCellRenderer",
-                    "cellRendererParams": { "optionDateFormat": "${fn:toUpperCase(adminDateFormat)}" }
+                    "cellRendererParams": { "optionDateFormat": "${fn:replace(fn:replace(adminDateFormat, "d", "D"), "y", "Y")}" }
                 },
                 {
                     "headerName": "<mvc:message code='default.Type'/>",
@@ -96,8 +96,16 @@
                     "field": "deliveryDate",
                     "type": "dateColumn",
                     "cellRenderer": "DateCellRenderer",
-                    "cellRendererParams": { "optionDateFormat": "${fn:toUpperCase(adminDateFormat)}" },
+                    "cellRendererParams": { "optionDateFormat": "${fn:replace(fn:replace(adminDateFormat, "d", "D"), "y", "Y")}" },
                     "hide": ${not deliveryDateAvailable}
+                },
+
+                {
+                    "headerName": "<mvc:message code='recipient.Mailing.deliveries'/>",
+                    "editable": false,
+                    "field": "numberOfDeliveries",
+                    "cellRenderer": "RecipientSuccessDeliveryInfoRenderer",
+                    "cellRendererParams": {"deliveryHistoryEnabled": ${deliveryHistoryEnabled}, "recipientId": ${recipient.customerId}}
                 },
                 {
                     "headerName": "<mvc:message code='recipient.Mailings.openings'/>",

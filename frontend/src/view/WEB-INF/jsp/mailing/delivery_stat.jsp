@@ -183,7 +183,7 @@
                     </agn:agnLink>
                 </c:when>
                 <c:otherwise>
-                    <span data-tooltip="<bean:message key='GWUA.mailing.deliveryResuming.isNotPossible' arg0='48'/>">
+                    <span data-tooltip="<bean:message key="error.mailing.delivery.resuming.impossible" arg0='48'/>">
                         <a href="#" class="btn btn-regular btn-primary vspace-top-10 disabled">
                         <i class="icon icon-paper-plane"></i>
                         <span class="text"><bean:message key="mailing.ResumeDelivery"/></span>
@@ -191,21 +191,24 @@
                     </span>
                 </c:otherwise>
             </c:choose>
-	        <c:set var="ACTION_RESUME_MAILING_BY_COPY_REQUEST" value="<%= MailingSendAction.ACTION_RESUME_MAILING_BY_COPY_REQUEST %>"/>
-	        <agn:agnLink styleClass="btn btn-regular btn-warning vspace-top-10" data-confirm="" page="/mailingsend.do?action=${ACTION_RESUME_MAILING_BY_COPY_REQUEST}&mailingID=${mailingSendForm.mailingID}" target="_parent">
-	            <i class="icon icon-copy"></i>
-	            <c:choose>
-            		<c:when test="${mailingSendForm.deliveryStat.deliveryStatus == 3 or mailingSendForm.deliveryStat.deliveryStatus == 4}">
-	            		<span class="text"><bean:message key="mailing.ResumeDeliveryByCopy"/></span>
-	            		<c:set var="SHOW_DELIVERY_INFO" value="true" /> 
-    	            </c:when>
-        	        <c:otherwise>
-		    	        <span class="text"><bean:message key="mailing.ResumeGenerationByCopy"/></span>
-            		</c:otherwise>
-            	</c:choose>
-	        </agn:agnLink>
+            
+            <c:if test="${MAILTRACKING_ENABLED}">
+		        <c:set var="ACTION_RESUME_MAILING_BY_COPY_REQUEST" value="<%= MailingSendAction.ACTION_RESUME_MAILING_BY_COPY_REQUEST %>"/>
+		        <agn:agnLink styleClass="btn btn-regular btn-warning vspace-top-10" data-confirm="" page="/mailingsend.do?action=${ACTION_RESUME_MAILING_BY_COPY_REQUEST}&mailingID=${mailingSendForm.mailingID}" target="_parent">
+		            <i class="icon icon-copy"></i>
+		            <c:choose>
+	            		<c:when test="${mailingSendForm.deliveryStat.deliveryStatus == 3 or mailingSendForm.deliveryStat.deliveryStatus == 4}">
+		            		<span class="text"><bean:message key="mailing.ResumeDeliveryByCopy"/></span>
+		            		<c:set var="SHOW_DELIVERY_INFO" value="true" /> 
+	    	            </c:when>
+	        	        <c:otherwise>
+			    	        <span class="text"><bean:message key="mailing.ResumeGenerationByCopy"/></span>
+	            		</c:otherwise>
+	            	</c:choose>
+		        </agn:agnLink>
+		   </c:if>
 	        
-			<c:if test="${SHOW_DELIVERY_INFO}">
+			<c:if test="${SHOW_DELIVERY_INFO and MAILTRACKING_ENABLED}">
 	            <div class="tile-content-forms form-vertical">
 	                 <div class="form-group">
 						<div class="notification notification-info">

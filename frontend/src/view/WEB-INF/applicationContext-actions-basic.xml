@@ -78,7 +78,7 @@
 		<property name="webStorage" ref="WebStorage" />
 	</bean>
 
-	<bean name="/mwStart, /mwName, /mwTemplate, /mwType, /mwSendaddress, /mwMailtype, /mwSubject, /mwTarget, /mwTextmodules, /mwTextmodule, /mwLinks, /mwLink, /mwAttachment, /mwAttachmentDownload, /mwFinish" class="com.agnitas.web.ComMailingWizardAction">
+	<bean name="/mwStart, /mwName, /mwTemplate, /mwType, /mwSendaddress, /mwMailtype, /mwSubject, /mwTarget, /mwTextmodules, /mwTextmodule, /mwLinks, /mwLink, /mwAttachment, /mwAttachmentDownload, /mwFinish" class="com.agnitas.web.MailingWizardAction">
 		<property name="mailinglistService" ref="MailinglistService" />
 		<property name="mailingDao" ref="MailingDao" />
 		<property name="mailingFactory" ref="MailingFactory" />
@@ -99,23 +99,6 @@
 		<property name="filterListBuilder" ref="TargetGroupQueryBuilderFilterListBuilder"/>
 		<property name="adminService" ref="AdminService"/>
 		<property name="editorContentSynchronizer" ref="TargetGroupEditorContentSynchronizer" />
-	</bean>
-
-	<!-- Same type, same setup as "/target"-->
-	<bean name="/mwNewTarget" parent="/targetQB" />
-
-	<bean name="/targetQB" class="com.agnitas.emm.core.target.web.QueryBuilderTargetGroupAction">
-		<property name="targetService" ref="targetService" />
-		<property name="editorContentSynchronizer" ref="TargetGroupEditorContentSynchronizer" />
-		<property name="targetCopyService" ref="TargetCopyService" />
-		<property name="targetFactory" ref="TargetFactory" />
-		<property name="userActivityLogService" ref="UserActivityLogService" />
-		<property name="eqlFacade" ref="EqlFacade"/>
-		<property name="mailinglistApprovalService" ref="MailinglistApprovalService" />
-		<property name="webStorage" ref="WebStorage" />
-		<property name="gridService" ref="GridServiceWrapper" />
-		<property name="birtStatisticsService" ref="BirtStatisticsService"/>
-		<property name="recipientService" ref="recipientService"/>
 	</bean>
 
 	<bean name="/selfservice" class="com.agnitas.web.ComUserSelfServiceAction">
@@ -166,20 +149,6 @@
 		<property name="profileImportWorkerFactory" ref="ProfileImportWorkerFactory" />
 	</bean>
 
-	<bean name="/mailingattachments" class="com.agnitas.web.ComMailingAttachmentsAction">
-		<property name="mailingDao" ref="MailingDao" />
-		<property name="targetDao" ref="TargetDao" />
-		<property name="configService" ref="ConfigService" />
-		<property name="mailingBaseService" ref="MailingBaseService" />
-		<property name="componentDao" ref="MailingComponentDao" />
-		<property name="uploadDao" ref="UploadDao" />
-		<property name="mailingComponentFactory" ref="MailingComponentFactory" />
-		<property name="userActivityLogService" ref="UserActivityLogService" />
-		<property name="maildropService" ref="MaildropService" />
-		<property name="mimeTypeWhitelistService" ref="MimeTypeWhitelistService" />
-		<property name="mailingPropertiesRules" ref="MailingPropertiesRules" />
-    </bean>
-
 	<bean name="/mailingsend_ajax" class="org.agnitas.mailing.web.MailingSendAjaxAction">
 		<property name="mailingDao" ref="MailingDao" />
 	</bean>
@@ -187,15 +156,6 @@
 	<bean name="/convert_actions" class="com.agnitas.temporary.actions.ComConvertActionsAction">
 		<property name="emmActionDao" ref="EmmActionDao" />
 		<property name="emmActionService" ref="EmmActionService" />
-	</bean>
-	
-	<bean name="/salutation" class="org.agnitas.web.SalutationAction">
-		<property name="userActivityLogService" ref="UserActivityLogService" />
-		<property name="configService" ref="ConfigService" />
-		<property name="titleDao" ref="TitleDao" />
-		<property name="workerExecutorService" ref="WorkerExecutorService" />
-		<property name="futureHolder" ref="futureHolder" />
-		<property name="webStorage" ref="WebStorage" />
 	</bean>
 
 	<bean name="/sendMailloopAutoresponder" class="com.agnitas.emm.core.mailloop.web.SendAutoresponderMailAction">
@@ -218,7 +178,7 @@
 		<property name="webStorage" ref="WebStorage" />
 	</bean>
 
-	<bean name="/mailingbase" class="com.agnitas.web.ComMailingBaseAction">
+	<bean name="/mailingbase" class="com.agnitas.web.MailingBaseAction">
 		<property name="configService" ref="ConfigService" />
 		<property name="futureHolder" ref="futureHolder" />
 		<property name="workerExecutorService" ref="WorkerExecutorService" />

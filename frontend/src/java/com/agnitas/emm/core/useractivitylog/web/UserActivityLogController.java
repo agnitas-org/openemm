@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -24,8 +24,6 @@ import java.util.TimeZone;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 
-import jakarta.servlet.http.HttpSession;
-
 import org.agnitas.beans.AdminEntry;
 import org.agnitas.beans.FileResponseBody;
 import org.agnitas.beans.factory.UserActivityLogExportWorkerFactory;
@@ -40,7 +38,6 @@ import org.agnitas.util.HttpUtils;
 import org.agnitas.util.UserActivityLogActions;
 import org.agnitas.web.forms.FormUtils;
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -62,14 +59,13 @@ import com.agnitas.service.ComWebStorage;
 import com.agnitas.web.mvc.Pollable;
 import com.agnitas.web.perm.annotations.PermissionMapping;
 
+import jakarta.servlet.http.HttpSession;
+
 
 @Controller
 @RequestMapping("/administration/useractivitylog")
 @PermissionMapping("user.activity.log")
 public class UserActivityLogController {
-
-    @SuppressWarnings("unused")
-    private static final Logger logger = Logger.getLogger(UserActivityLogController.class);
 
     private static final String USER_ACTIVITY_LOG_KEY = "userActivityLogKey";
 

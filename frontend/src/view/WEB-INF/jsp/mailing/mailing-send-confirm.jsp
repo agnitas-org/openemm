@@ -1,3 +1,4 @@
+<%@ page import="com.agnitas.web.ComMailingSendActionBasic" %>
 <%@ page language="java" contentType="text/html; charset=utf-8"  errorPage="/error.do" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
@@ -7,12 +8,14 @@
 
 <%--@elvariable id="mailingSendForm" type="com.agnitas.web.ComMailingSendForm"--%>
 
+<c:set var="actionViewSend" value="<%= ComMailingSendActionBasic.ACTION_VIEW_SEND %>"/>
+
 <c:choose>
     <c:when test="${mailingSendForm.approximateMaxSizeWithoutExternalImages <= mailingSendForm.sizeErrorThreshold}">
         <div class="modal">
             <div class="modal-dialog">
                 <div class="modal-content">
-                    <html:form action="/mailingsend">
+                    <agn:agnForm action="/mailingsend" data-form="resource">
                         <html:hidden property="mailingID"/>
                         <html:hidden property="action"/>
 
@@ -45,6 +48,7 @@
                         <html:hidden property="generationOptimization" />
 
                         <html:hidden property="autoExportId" />
+                        <html:hidden property="autoImportId" />
 
                         <div class="modal-header">
                             <button type="button" class="close-icon close js-confirm-negative" data-dismiss="modal"><i aria-hidden="true" class="icon icon-times-circle"></i><span class="sr-only"><bean:message key="button.Cancel"/></span></button>
@@ -80,13 +84,18 @@
                                     <i class="icon icon-times"></i>
                                     <span class="text"><bean:message key="button.Cancel"/></span>
                                 </button>
-                                <button type="button" class="btn btn-primary btn-large js-confirm-positive" data-dismiss="modal">
+                                <c:url value="/mailingsend.do" var="baseUrl">
+                                    <c:param name="action" value="${actionViewSend}"/>
+                                    <c:param name="mailingID" value="${mailingSendForm.mailingID}"/>
+                                </c:url>
+
+                                <button type="button" class="btn btn-primary btn-large" data-dismiss="modal" data-action="send-world" data-base-url="${baseUrl}">
                                     <i class="icon icon-check"></i>
                                     <span class="text"><bean:message key="button.Send"/></span>
                                 </button>
                             </div>
                         </div>
-                    </html:form>
+                    </agn:agnForm>
                 </div>
             </div>
         </div>

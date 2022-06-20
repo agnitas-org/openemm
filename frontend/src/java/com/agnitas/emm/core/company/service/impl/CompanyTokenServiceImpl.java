@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -19,7 +19,7 @@ import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.agnitas.beans.ComCompany;
+import com.agnitas.beans.Company;
 import com.agnitas.emm.core.commons.tokengen.TokenGenerator;
 import com.agnitas.emm.core.company.dao.CompanyTokenDao;
 import com.agnitas.emm.core.company.service.CompanyTokenService;
@@ -35,7 +35,7 @@ public final class CompanyTokenServiceImpl implements CompanyTokenService {
 	private ConfigService configService;
 	
 	@Override
-	public final ComCompany findCompanyByToken(final String token) throws UnknownCompanyTokenException {
+	public final Company findCompanyByToken(final String token) throws UnknownCompanyTokenException {
 		try {
 			final int companyID = this.companyTokenDao.getCompanyIdByToken(token);
 	

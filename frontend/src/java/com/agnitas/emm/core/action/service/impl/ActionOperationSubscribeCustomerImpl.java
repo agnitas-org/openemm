@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -14,26 +14,27 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 
-import jakarta.servlet.http.HttpServletRequest;
-
 import org.agnitas.beans.DatasourceDescription;
 import org.agnitas.beans.Recipient;
 import org.agnitas.beans.impl.ViciousFormDataException;
+import org.agnitas.dao.SourceGroupType;
 import org.agnitas.emm.core.blacklist.service.BlacklistService;
 import org.agnitas.emm.core.commons.uid.ExtensibleUIDService;
 import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.recipient.service.RecipientService;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.HttpUtils;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.BeanLookupFactory;
-import com.agnitas.beans.ComCompany;
+import com.agnitas.beans.Company;
 import com.agnitas.dao.ComCompanyDao;
-import com.agnitas.dao.ComDatasourceDescriptionDao;
+import com.agnitas.dao.DatasourceDescriptionDao;
 import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationSubscribeCustomerParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationType;
@@ -46,15 +47,18 @@ import com.agnitas.emm.mobilephone.MobilephoneNumber;
 import com.agnitas.emm.mobilephone.service.MobilephoneNumberWhitelist;
 import com.agnitas.emm.push.pushsubscription.service.PushSubscriptionService;
 
+import jakarta.servlet.http.HttpServletRequest;
+
 public class ActionOperationSubscribeCustomerImpl implements EmmActionOperation {
-    private static final Logger logger = Logger.getLogger(ActionOperationSubscribeCustomerImpl.class);
+	/** The logger. */
+    private static final Logger logger = LogManager.getLogger(ActionOperationSubscribeCustomerImpl.class);
     
     public static final String DEFAULT_GENDER = "2";
     public static final String DEFAULT_MAILTYPE = "1";
 
 	private ExtensibleUIDService uidService;
 	private ComCompanyDao companyDao;
-	private ComDatasourceDescriptionDao datasourceDescriptionDao;
+	private DatasourceDescriptionDao datasourceDescriptionDao;
 	private RecipientService recipientService;
 	private PushSubscriptionService pushSubscriptionService;	// Can be set to null
 	private MobilephoneNumberWhitelist mobilephoneNumberWhitelist;
@@ -66,14 +70,14 @@ public class ActionOperationSubscribeCustomerImpl implements EmmActionOperation 
 	
 	private int getDatasourceID(int companyID, String form) {
 		String description = "Form: " + form;
-		DatasourceDescription dsDescription = datasourceDescriptionDao.getByDescription(4, companyID, description);
+		DatasourceDescription dsDescription = datasourceDescriptionDao.getByDescription(SourceGroupType.AutoinsertForms, companyID, description);
 
 		if (dsDescription == null) {
 			dsDescription = beanLookupFactory.getBeanDatasourceDescription();
 
 			dsDescription.setId(0);
 			dsDescription.setCompanyID(companyID);
-			dsDescription.setSourcegroupID(4);
+			dsDescription.setSourceGroupType(SourceGroupType.AutoinsertForms);
 			dsDescription.setCreationDate(new java.util.Date());
 			dsDescription.setDescription(description);
 			dsDescription.setDescription2("ActionOperationSubscribeCustomerImpl");
@@ -192,6 +196,10 @@ public class ActionOperationSubscribeCustomerImpl implements EmmActionOperation 
 			return false;
 		}
 
+		if (configService.getBooleanValue(ConfigValue.AnonymizeAllRecipients, companyID)) {
+			reqParams.put("SYS_TRACKING_VETO", "1");
+		}
+
 		// copy the request parameters into the customer
 		if (!recipientService.importRequestParameters(aCust, reqParams, null)) {
 			return false;
@@ -252,7 +260,7 @@ public class ActionOperationSubscribeCustomerImpl implements EmmActionOperation 
 		if (isNewCust && aCust.getCustomerID() != 0) {
 			// generate new agnUID
 			try {
-				final ComCompany company = companyDao.getCompany(companyID);
+				final Company company = companyDao.getCompany(companyID);
 				
 				final ComExtensibleUID uid = UIDFactory.from(configService.getLicenseID(), aCust);
 
@@ -293,7 +301,7 @@ public class ActionOperationSubscribeCustomerImpl implements EmmActionOperation 
 		this.companyDao = Objects.requireNonNull(dao, "Company DAO cannot be null");
 	}
 
-	public final void setDatasourceDescriptionDao(final ComDatasourceDescriptionDao dao) {
+	public final void setDatasourceDescriptionDao(final DatasourceDescriptionDao dao) {
 		this.datasourceDescriptionDao = Objects.requireNonNull(dao, "Datasource description DAO cannot be null");
 	}
 

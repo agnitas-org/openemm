@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -20,6 +20,7 @@ import java.util.Set;
 
 import org.agnitas.backend.dao.CompanyDAO;
 import org.agnitas.util.Log;
+import org.agnitas.util.Str;
 
 /**
  * This class keeps track of all company related
@@ -61,6 +62,7 @@ public class Company {
 	private long secretTimestamp;
 	private long uidVersion;
 	private int priorityCount;
+	private String token;
 	/**
 	 * if we have a limited number of mails per day per recipient
 	 */
@@ -137,6 +139,10 @@ public class Company {
 	public int priorityCount() {
 		return priorityCount;
 	}
+	
+	public String token () {
+		return token;
+	}
 
 	private static final String mpdAll = "*";
 	private static final String mpdTZ = "TZ";
@@ -162,7 +168,7 @@ public class Company {
 		setupLimitMailsPerDay();
 		String val = mpd.get(mt);
 
-		return val == null ? 0 : StringOps.atoi(val, 0);
+		return val == null ? 0 : Str.atoi(val, 0);
 	}
 
 	public int mailsPerDayLocal() {
@@ -325,6 +331,7 @@ public class Company {
 		data.logging(Log.DEBUG, "init", "\tcompany.baseID = " + baseID);
 		data.logging(Log.DEBUG, "init", "\tcompany.baseMailsPerDay = " + (baseMailsPerDay == null ? "*unset*" : baseMailsPerDay));
 		data.logging(Log.DEBUG, "init", "\tcompany.priorityCount = " + priorityCount);
+		data.logging(Log.DEBUG, "init", "\tcompany.token = " + (token == null ? "*unset*" : token));
 		data.logging(Log.DEBUG, "init", "\tcompany.mailtracking = " + mailtracking);
 		data.logging(Log.DEBUG, "init", "\tcompany.mailtrackingExtended = " + mailtrackingExtended);
 		data.logging(Log.DEBUG, "init", "\tcompany.mailtrackingTable = " + mailtrackingTable);
@@ -343,7 +350,7 @@ public class Company {
 	 * Retrieves all company realted information from available resources
 	 */
 	public void retrieveInformation() throws Exception {
-		CompanyDAO company = new CompanyDAO(data.dbase, id, Data.user, Data.fqdn, Data.hostname);
+		CompanyDAO company = new CompanyDAO(data.dbase, id);
 
 		if (company.companyID() == 0L) {
 			throw new Exception("No database entry for companyID " + id + " found");
@@ -375,9 +382,10 @@ public class Company {
 			}
 		}
 		priorityCount = company.priorityCount();
+		token = company.token ();
 	}
 
-	private void retrieveCompanyDynamicConfiguration(CompanyDAO company) throws SQLException {
+	private void retrieveCompanyDynamicConfiguration(CompanyDAO company) {
 		Map<String, String> companyInfo = company.info();
 
 		if (companyInfo != null) {

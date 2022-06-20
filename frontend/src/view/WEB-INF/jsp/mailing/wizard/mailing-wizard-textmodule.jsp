@@ -1,5 +1,5 @@
 <%@ page language="java" contentType="text/html; charset=utf-8"  errorPage="/error.do" %>
-<%@ page import="org.agnitas.web.MailingWizardAction" %>
+<%@ page import="com.agnitas.web.MailingWizardAction" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
@@ -15,9 +15,11 @@
 <c:set var="ACTION_TEXTMODULE_SAVE" value="<%= MailingWizardAction.ACTION_TEXTMODULE_SAVE %>"/>
 <c:set var="ACTION_FINISH" value="<%= MailingWizardAction.ACTION_FINISH %>" />
 
-<jsp:include page="/${emm:ckEditorPath(pageContext.request)}/ckeditor-emm-helper.jsp">
-    <jsp:param name="toolbarType" value="${emm:isCKEditorTrimmed(pageContext.request) ? 'Classic' : 'EMM'}"/>
-</jsp:include>
+<emm:HideByPermission token="mailing.editor.hide">
+    <jsp:include page="/${emm:ckEditorPath(pageContext.request)}/ckeditor-emm-helper.jsp">
+        <jsp:param name="toolbarType" value="${emm:isCKEditorTrimmed(pageContext.request) ? 'Trimmed' : 'EMM'}"/>
+    </jsp:include>
+</emm:HideByPermission>
 
 <c:set var="MessageMoveUp"><bean:message key="mailing.content.moveUp"/></c:set>
 <c:set var="MessageMoveDown"><bean:message key="mailing.content.moveDown" /></c:set>
@@ -81,11 +83,9 @@
 
                             <html:select styleClass="form-control js-select" property='content[${index}].targetID' size="1">
                                 <html:option value="0"><bean:message key="statistic.all_subscribers"/></html:option>
-                                <logic:notEmpty name="targets" scope="request">
-                                    <c:forEach var="dbTarget" items="${targets}">
+                                    <c:forEach var="dbTarget" items="${mailingWizardForm.target}">
                                         <html:option value="${dbTarget.id}">${dbTarget.targetName}</html:option>
                                     </c:forEach>
-                                </logic:notEmpty>
                             </html:select>
 
                             <logic:equal name="mailingWizardForm" property="showHTMLEditorForDynTag" value="true">
@@ -95,11 +95,13 @@
                                             <bean:message key="HTML"/>
                                         </a>
                                     </li>
-                                    <li>
-                                        <a href="#" data-toggle-tab="#tab-mailingContentViewHtml${index}">
-                                            <bean:message key="mailingContentHTMLEditor"/>
-                                        </a>
-                                    </li>
+                                    <emm:HideByPermission token="mailing.editor.hide">
+                                        <li>
+                                            <a href="#" data-toggle-tab="#tab-mailingContentViewHtml${index}">
+                                                <bean:message key="mailingContentHTMLEditor"/>
+                                            </a>
+                                        </li>
+                                    </emm:HideByPermission>
                                 </ul>
                             </logic:equal>
 
@@ -127,6 +129,19 @@
                         </div>
 
                         <div class="inline-tile-content">
+                            <emm:ShowByPermission token="mailing.editor.hide">
+                                <div id="tab-mailingContentViewCode${index}" data-tab-show="true">
+                                    <div class="row">
+                                        <div class="col-sm-12">
+                                            <div id="${fn:replace(fn:replace(fn:replace(editorId, '[', '_'), ']', '_'), '.', '_')}Editor" class="form-control"></div>
+                                            <textarea id="${fn:replace(fn:replace(fn:replace(editorId, '[', '_'), ']', '_'), '.', '_')}" name="${editorId}"
+                                                      class="form-control js-editor" rows="20" cols="85"
+                                                      data-browse-mailing-id="${mailing.id}">${fn:escapeXml(tag.dynContent)}</textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                            </emm:ShowByPermission>
+                            <emm:HideByPermission token="mailing.editor.hide">
                             <logic:equal name="mailingWizardForm" property="showHTMLEditorForDynTag" value="true">
                                 <div id="tab-mailingContentViewCode${index}">
                                     <div class="row">
@@ -150,6 +165,7 @@
                             <logic:equal name="mailingWizardForm" property="showHTMLEditorForDynTag" value="true">
                                 </div>
                             </logic:equal>
+                            </emm:HideByPermission>
                         </div>
 
                         <div class="inline-tile-footer">
@@ -170,11 +186,9 @@
 
                         <html:select property="newModuleTargetID" size="1" styleId="targetID" styleClass="form-control js-select">
                             <html:option value="0"><bean:message key="statistic.all_subscribers"/></html:option>
-                            <logic:notEmpty name="targets" scope="request">
-                                <c:forEach var="dbTarget" items="${targets}">
+                                <c:forEach var="dbTarget" items="${mailingWizardForm.target}">
                                     <html:option value="${dbTarget.id}">${dbTarget.targetName}</html:option>
                                 </c:forEach>
-                            </logic:notEmpty>
                         </html:select>
 
                         <logic:equal name="mailingWizardForm" property="showHTMLEditorForDynTag" value="true">
@@ -184,11 +198,13 @@
                                         <bean:message key="HTML"/>
                                     </a>
                                 </li>
-                                <li>
-                                    <a href="#" data-toggle-tab="#tab-mailingNewContentViewHtml">
-                                        <bean:message key="mailingContentHTMLEditor"/>
-                                    </a>
-                                </li>
+                                <emm:HideByPermission token="mailing.editor.hide">
+                                    <li>
+                                        <a href="#" data-toggle-tab="#tab-mailingNewContentViewHtml">
+                                            <bean:message key="mailingContentHTMLEditor"/>
+                                        </a>
+                                    </li>
+                                </emm:HideByPermission>
                             </ul>
                         </logic:equal>
 
@@ -197,6 +213,31 @@
                     </div>
 
                     <div class="inline-tile-content">
+                        <emm:ShowByPermission token="mailing.editor.hide">
+                            <c:choose>
+                                <c:when test="${mailingWizardForm.showHTMLEditorForDynTag}">
+                                    <div id="tab-mailingNewContentViewCode" data-tab-show="true">
+                                        <div class="row">
+                                            <div class="col-sm-12">
+                                                <div id="newContentEditor" class="form-control"></div>
+                                                <textarea id="newContent" name="newContent" class="form-control js-editor" rows="20" cols="85"
+                                                          data-browse-mailing-id="${mailing.id}">${fn:escapeXml(mailingWizardForm.newContent)}</textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </c:when>
+                                <c:otherwise>
+                                    <div class="row">
+                                        <div class="col-sm-12">
+                                            <textarea id="newContent" name="newContent" class="form-control js-editor" rows="20" cols="85"
+                                                      data-browse-mailing-id="${mailing.id}">${fn:escapeXml(mailingWizardForm.newContent)}</textarea>
+                                        </div>
+                                    </div>
+                                </c:otherwise>
+                            </c:choose>
+                        </emm:ShowByPermission>
+                        
+                        <emm:HideByPermission token="mailing.editor.hide">
                         <logic:equal name="mailingWizardForm" property="showHTMLEditorForDynTag" value="true">
                             <div id="tab-mailingNewContentViewCode">
                                 <div class="row">
@@ -219,6 +260,7 @@
                             <logic:equal name="mailingWizardForm" property="showHTMLEditorForDynTag" value="true">
                         </div>
                         </logic:equal>
+                        </emm:HideByPermission>
                     </div>
 
                     <div class="inline-tile-footer">

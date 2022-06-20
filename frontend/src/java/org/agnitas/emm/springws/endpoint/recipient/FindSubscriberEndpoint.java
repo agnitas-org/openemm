@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -13,8 +13,10 @@ package org.agnitas.emm.springws.endpoint.recipient;
 import org.agnitas.emm.core.recipient.service.RecipientService;
 import org.agnitas.emm.springws.endpoint.BaseEndpoint;
 import org.agnitas.emm.springws.endpoint.Utils;
+import org.agnitas.emm.springws.exception.MissingKeyColumnOrValueException;
 import org.agnitas.emm.springws.jaxb.FindSubscriberRequest;
 import org.agnitas.emm.springws.jaxb.FindSubscriberResponse;
+import org.apache.bval.util.StringUtils;
 import org.springframework.ws.server.endpoint.annotation.Endpoint;
 import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
 import org.springframework.ws.server.endpoint.annotation.RequestPayload;
@@ -30,8 +32,13 @@ public class FindSubscriberEndpoint extends BaseEndpoint {
 	}
 
 	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "FindSubscriberRequest")
-	public @ResponsePayload FindSubscriberResponse findSubscriber(@RequestPayload FindSubscriberRequest request) {
+	public @ResponsePayload FindSubscriberResponse findSubscriber(@RequestPayload FindSubscriberRequest request) throws MissingKeyColumnOrValueException {
 		FindSubscriberResponse response = new FindSubscriberResponse();
+		
+		if(StringUtils.isBlank(request.getKeyColumn()) || StringUtils.isBlank(request.getValue())) {
+			throw new MissingKeyColumnOrValueException();
+		}
+		
 		response.setValue(recipientService.findSubscriber(Utils.getUserCompany(), request.getKeyColumn(), request.getValue()));
 		return response;
 	}

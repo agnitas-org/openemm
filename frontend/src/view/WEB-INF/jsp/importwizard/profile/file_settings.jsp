@@ -82,7 +82,7 @@
                       <c:forEach var="dateFormat"
                                  items="${importProfileForm.dateFormats}">
                           <html:option value="${dateFormat.intValue}">
-                              <bean:message key="${dateFormat.publicValue}"/>
+                              ${dateFormat.publicValue}
                           </html:option>
                       </c:forEach>
                   </html:select>
@@ -105,21 +105,6 @@
 		</div>
 
 		<%@include file="/WEB-INF/jsp/importwizard/profile/file_settings-nocsvheaders.jspf" %>
-
-        <div class="form-group">
-            <div class="col-sm-4">
-                <label class="control-label"><bean:message key="import.zipped" />
-                    <button class="icon icon-help" data-help="help_${helplanguage}/importwizard/step_1/ImportZipped.xml" tabindex="-1" type="button"></button>
-                </label>
-            </div>
-            <div class="col-sm-8">
-                <html:hidden property="__STRUTS_CHECKBOX_profile.zipped" value="false"/>
-  					<label class="toggle">
-  						<html:checkbox styleId="zipPasswordCheckbox" property="profile.zipped" onclick="toggleZipPasswordVisibility();"/>
-                          <div class="toggle-control"></div>
-  					</label>
-            </div>
-        </div>
         
            <div class="form-group" id="zipPasswordGroup">
                <div class="col-sm-4">

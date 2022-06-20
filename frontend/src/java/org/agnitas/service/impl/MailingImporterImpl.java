@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -14,17 +14,18 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.agnitas.beans.DynamicTagContent;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.MailingComponentType;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.beans.MediaTypeStatus;
-import org.agnitas.beans.Mediatype;
 import org.agnitas.beans.impl.DynamicTagContentImpl;
 import org.agnitas.beans.impl.MailingComponentImpl;
 import org.agnitas.dao.MailinglistDao;
@@ -33,8 +34,11 @@ import org.agnitas.service.ImportResult;
 import org.agnitas.service.MailingImporter;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
+import org.agnitas.util.importvalues.MailType;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.agnitas.beans.Campaign;
 import com.agnitas.beans.ComTarget;
@@ -44,15 +48,18 @@ import com.agnitas.beans.LinkProperty;
 import com.agnitas.beans.LinkProperty.PropertyType;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MailingContentType;
+import com.agnitas.beans.Mediatype;
+import com.agnitas.beans.MediatypeEmail;
 import com.agnitas.beans.impl.ComTrackableLinkImpl;
 import com.agnitas.beans.impl.DynamicTagImpl;
 import com.agnitas.beans.impl.MailingImpl;
+import com.agnitas.beans.impl.MediatypeEmailImpl;
 import com.agnitas.dao.CampaignDao;
 import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.dao.ComTargetDao;
+import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.mailing.bean.ComMailingParameter;
-import com.agnitas.emm.core.target.eql.codegen.resolver.MailingType;
 import com.agnitas.json.JsonArray;
 import com.agnitas.json.JsonNode;
 import com.agnitas.json.JsonObject;
@@ -62,7 +69,7 @@ import jakarta.annotation.Resource;
 
 public class MailingImporterImpl extends ActionImporter implements MailingImporter {
 	/** The logger. */
-	private static final transient Logger logger = Logger.getLogger(MailingImporterImpl.class);
+	private static final transient Logger logger = LogManager.getLogger(MailingImporterImpl.class);
 	
 	@Resource(name="CompanyDao")
 	protected ComCompanyDao companyDao;
@@ -90,19 +97,34 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
      */
 	@Override
 	public ImportResult importMailingFromJson(int companyID, InputStream input, boolean importAsTemplate, boolean overwriteTemplate, boolean isGrid) throws Exception {
-		return importMailingFromJson(companyID, input, importAsTemplate, null, null, overwriteTemplate, isGrid);
+		return importMailingFromJson(companyID, input, importAsTemplate, null, null, overwriteTemplate, isGrid, null);
 	}
+    
+	@Override
+	public ImportResult importMailingFromJson(int companyID, InputStream input, boolean importAsTemplate, boolean overwriteTemplate, boolean isGrid, Set<Integer> adminAltgIds) throws Exception {
+		return importMailingFromJson(companyID, input, importAsTemplate, null, null, overwriteTemplate, isGrid, adminAltgIds);
+	}
+
+    @Override
+    public ImportResult importMailingFromJson(int companyID, InputStream input, boolean importAsTemplate, String shortName, String description, boolean overwriteTemplate, boolean isGrid) throws Exception {
+        return importMailingFromJson(companyID, input, importAsTemplate, shortName, description, overwriteTemplate, isGrid, null);
+    }
 
     /**
      * Import simple mailing or template
      */
 	@Override
-	public ImportResult importMailingFromJson(int companyID, InputStream input, boolean importAsTemplate, String shortName, String description, boolean overwriteTemplate, boolean isGrid) throws Exception {
-		return importMailingFromJson( companyID, input, importAsTemplate, shortName, description, true, overwriteTemplate, isGrid);
+	public ImportResult importMailingFromJson(int companyID, InputStream input, boolean importAsTemplate, String shortName, String description, boolean overwriteTemplate, boolean isGrid, Set<Integer> adminAltgIds) throws Exception {
+		return importMailingFromJson(companyID, input, importAsTemplate, shortName, description, true, overwriteTemplate, isGrid, adminAltgIds);
 	}
 	
 	@Override
 	public ImportResult importMailingFromJson(int companyID, InputStream input, boolean importAsTemplate, String shortName, String description, boolean overwriteTemplate, boolean checkIsTemplate, boolean isGrid) throws Exception {
+        return importMailingFromJson(companyID, input, importAsTemplate, shortName, description, overwriteTemplate, checkIsTemplate, isGrid, null);
+    }
+
+    @Override
+	public ImportResult importMailingFromJson(int companyID, InputStream input, boolean importAsTemplate, String shortName, String description, boolean overwriteTemplate, boolean checkIsTemplate, boolean isGrid, Set<Integer> adminAltgIds) throws Exception {
 		Map<String, Object[]> warnings = new HashMap<>();
 		try (JsonReader reader = new JsonReader(input, "UTF-8")) {
 			JsonNode jsonNode = reader.read();
@@ -117,7 +139,10 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 			Map<Integer, Integer> actionIdMappings = new HashMap<>();
 			if (jsonObject.containsPropertyKey("actions")) {
 				for (Object actionObject : (JsonArray) jsonObject.get("actions")) {
-					importAction(companyID, (JsonObject) actionObject, actionIdMappings);
+					int importedActionId = importAction(companyID, (JsonObject) actionObject);
+					if (((JsonObject) actionObject).get("id") != null && actionIdMappings != null) {
+            			actionIdMappings.put((Integer) ((JsonObject) actionObject).get("id"), importedActionId);
+            		}
 				}
 			}
 			
@@ -134,7 +159,15 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 			Map<Integer, Integer> targetIdMappings = importTargets(companyID, jsonObject, warnings);
 
 			Mailing mailing = new MailingImpl();
-			int importedMailingID = importMailingData(mailing, companyID, isTemplate, shortName, description, warnings, jsonObject, actionIdMappings, targetIdMappings);
+			int importedMailingID = importMailingData(mailing, companyID, isTemplate, shortName, description, warnings, jsonObject, actionIdMappings, targetIdMappings, adminAltgIds);
+			if (importedMailingID == 0 && needsAltg(adminAltgIds, targetIdMappings.values())) {
+                warnings.put("warning.mailing.altg", null);
+                return ImportResult.builder().setSuccess(true)
+     						.setMailingID(0)
+                            .setImportedMailing(mailing)
+     						.setIsTemplate(importAsTemplate)
+     						.addWarnings(warnings).build();
+            }
 			if (importedMailingID <= 0) {
 				logger.error("Cannot save mailing");
 				return ImportResult.builder().addError("error.mailing.import").build();
@@ -150,7 +183,11 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 		}
 	}
 
-	protected int importMailingData(Mailing mailing, int companyID, boolean importAsTemplate, String shortName, String description, Map<String, Object[]> warnings, JsonObject jsonObject, Map<Integer, Integer> actionIdMappings, Map<Integer, Integer> targetIdMappings) throws Exception, IOException {
+    private boolean needsAltg(Set<Integer> adminAltgIds, Collection<Integer> targetIds) {
+        return CollectionUtils.isNotEmpty(adminAltgIds) && CollectionUtils.intersection(targetIds, adminAltgIds).isEmpty();
+    }
+
+    protected int importMailingData(Mailing mailing, int companyID, boolean importAsTemplate, String shortName, String description, Map<String, Object[]> warnings, JsonObject jsonObject, Map<Integer, Integer> actionIdMappings, Map<Integer, Integer> targetIdMappings, Set<Integer> adminAltgIds) throws Exception, IOException {
 		String rdirDomain = companyDao.getRedirectDomain(companyID);
 		
 		mailing.setCompanyID(companyID);
@@ -240,7 +277,10 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 				MailingComponent mailingComponent = new MailingComponentImpl();
 				mailingComponent.setComponentName((String) componentJsonObject.get("name"));
 				mailingComponent.setDescription((String) componentJsonObject.get("description"));
-				if (componentJsonObject.get("type") instanceof String) {
+				if (!componentJsonObject.containsPropertyKey("type")) {
+					// Default value is Template
+					mailingComponent.setType(MailingComponentType.Template);
+				} else if (componentJsonObject.get("type") instanceof String) {
 					mailingComponent.setType(MailingComponentType.getMailingComponentTypeByName((String) componentJsonObject.get("type")));
 				} else {
 					mailingComponent.setType(MailingComponentType.getMailingComponentTypeByCode((Integer) componentJsonObject.get("type")));
@@ -248,7 +288,11 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 				if (componentJsonObject.containsPropertyKey("emm_block")) {
 					String emmBlock = (String) componentJsonObject.get("emm_block");
 					emmBlock = emmBlock.replace("[COMPANY_ID]", Integer.toString(companyID)).replace("[RDIR_DOMAIN]", rdirDomain);
-					mailingComponent.setEmmBlock(emmBlock, (String) componentJsonObject.get("mimetype"));
+					if (componentJsonObject.containsPropertyKey("mimetype")) {
+						mailingComponent.setEmmBlock(emmBlock, (String) componentJsonObject.get("mimetype"));
+					} else {
+						mailingComponent.setEmmBlock(emmBlock, "text/html");
+					}
 				}
 				if (componentJsonObject.containsPropertyKey("target_id")) {
 					Integer targetID = targetIdMappings.get(componentJsonObject.get("target_id"));
@@ -324,7 +368,11 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 					trackableLink.setAdminLink((Boolean) linkJsonObject.get("administrative"));
 				}
 				
-				if(linkJsonObject.containsPropertyKey("create_substitute_link")) {
+				if (linkJsonObject.containsPropertyKey("static")) {
+					trackableLink.setStaticValue((Boolean) linkJsonObject.get("static"));
+				}
+				
+				if (linkJsonObject.containsPropertyKey("create_substitute_link")) {
 					trackableLink.setCreateSubstituteLinkForAgnDynMulti((Boolean) linkJsonObject.get("create_substitute_link"));
 				}
 
@@ -332,8 +380,18 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 					List<LinkProperty> linkProperties = new ArrayList<>();
 					for (Object propertyObject : (JsonArray) linkJsonObject.get("properties")) {
 						JsonObject propertyJsonObject = (JsonObject) propertyObject;
-						LinkProperty linkProperty = new LinkProperty(PropertyType.parseString((String) propertyJsonObject.get("type")), (String) propertyJsonObject.get("name"), (String) propertyJsonObject.get("value"));
-						linkProperties.add(linkProperty);
+						String propertyName = (String) propertyJsonObject.get("name");
+						if (propertyName == null) {
+							propertyName = "";
+						}
+						String propertyValue = (String) propertyJsonObject.get("value");
+						if (propertyValue == null) {
+							propertyValue = "";
+						}
+						if (StringUtils.isNotEmpty(propertyName) || StringUtils.isNotEmpty(propertyValue)) {
+							LinkProperty linkProperty = new LinkProperty(PropertyType.parseString((String) propertyJsonObject.get("type")), propertyName, propertyValue);
+							linkProperties.add(linkProperty);
+						}
 					}
 					trackableLink.setProperties(linkProperties);
 				}
@@ -343,14 +401,15 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 			mailing.setTrackableLinks(trackableLinks);
 		}
 
-		if (StringUtils.isEmpty(mailing.getDescription())) {
+		if (mailing.getDescription() == null) {
 			// Mark mailing as newly imported
 			mailing.setDescription("Imported at " + new SimpleDateFormat(DateUtilities.DD_MM_YYYY_HH_MM).format(new Date()));
 		}
 
-		final int id = mailingDao.saveMailing(mailing, false);
-		
-		return id;
+		if (needsAltg(adminAltgIds, targetIdMappings.values())) {
+		    return 0;
+        }
+        return mailingDao.saveMailing(mailing, false);
 	}
 
 	protected Map<Integer, Integer> importTargets(int companyID, JsonObject jsonObject, Map<String, Object[]> warnings) {
@@ -408,13 +467,31 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 
 	protected void readMediatypes(Mailing mailing, JsonObject jsonObject) throws Exception {
 		final Map<Integer, Mediatype> mediatypes = new HashMap<>();
-		for (Object mediatypeObject : (JsonArray) jsonObject.get("mediatypes")) {
-			final JsonObject mediatypeJsonObject = (JsonObject) mediatypeObject;
-			final Mediatype mediatype = mediatypeFactory.createMediatypeFromJson(mediatypeJsonObject);
-			mediatype.setPriority((Integer) mediatypeJsonObject.get("priority"));
-			mediatype.setStatus(MediaTypeStatus.getMediaTypeStatusByName((String) mediatypeJsonObject.get("status")).getCode());
+		if (jsonObject.containsPropertyKey("mediatypes")) {
+			for (Object mediatypeObject : (JsonArray) jsonObject.get("mediatypes")) {
+				final JsonObject mediatypeJsonObject = (JsonObject) mediatypeObject;
+				final Mediatype mediatype = mediatypeFactory.createMediatypeFromJson(mediatypeJsonObject);
+	
+				mediatypes.put(mediatype.getMediaType().getMediaCode(), mediatype);
+			}
+		}
+		if (mediatypes.isEmpty()) {
+			// if no mediatype is set, we assume email as mediatype and fill it with minimal example data
+			final MediatypeEmail mediatype = new MediatypeEmailImpl();
+			
+			mediatype.setSubject("Subject text");
+			mediatype.setFromEmail("sender@example.com");
+			mediatype.setFromFullname(null);
+			mediatype.setReplyEmail("replyto@example.com");
+			mediatype.setReplyFullname(null);
+			mediatype.setCharset("UTF-8");
+			mediatype.setMailFormat(MailType.getFromString("HTML_OFFLINE"));
+			mediatype.setOnepixel("top");
+			mediatype.setLinefeed(72);
+			mediatype.setStatus(MediaTypeStatus.Active.getCode());
 
 			mediatypes.put(mediatype.getMediaType().getMediaCode(), mediatype);
+			
 		}
 		mailing.setMediatypes(mediatypes);
 	}

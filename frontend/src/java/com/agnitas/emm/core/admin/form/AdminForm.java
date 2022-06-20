@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -11,19 +11,27 @@
 package com.agnitas.emm.core.admin.form;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import com.agnitas.beans.AdminPreferences;
+import com.agnitas.beans.impl.AdminPreferencesImpl;
 
 public class AdminForm {
 
-    private static final transient Logger LOGGER = Logger.getLogger(AdminForm.class);
+	/** The logger. */
+    private static final transient Logger LOGGER = LogManager.getLogger(AdminForm.class);
 
     private String username;
     private String fullname;
     private String firstname;
+    private String employeeID;
     private String companyName;
     private String email;
     private String statEmail;
@@ -41,10 +49,11 @@ public class AdminForm {
     private int gender = 2;
     private String title;
     private String language;
-    private AdminPreferences adminPreferences = new AdminPreferences();
-    private int altgId;
+    private AdminPreferences adminPreferences = new AdminPreferencesImpl();
+    private int altgId; // delete after GWUA-4957 has been successfully tested
+    private Set<Integer> altgIds = new HashSet<>();
 
-    public String getUsername() {
+	public String getUsername() {
         return StringUtils.trimToNull(username);
     }
 
@@ -222,5 +231,21 @@ public class AdminForm {
 
     public void setAltgId(int altgId) {
         this.altgId = altgId;
+    }
+
+    public Set<Integer> getAltgIds() {
+        return altgIds;
+    }
+
+    public void setAltgIds(Set<Integer> altgIds) {
+        this.altgIds = altgIds;
+    }
+    
+	public String getEmployeeID() {
+		return employeeID;
+	}
+
+    public void setEmployeeID(String employeeID) {
+        this.employeeID = employeeID;
     }
 }

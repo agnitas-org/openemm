@@ -1,0 +1,34 @@
+<div class="form-group">
+    <div class="well block">
+        <logic:equal name="mailingSendForm" property="worldMailingSend" value="true">
+            <c:choose>
+                <c:when test="${mailingSendForm.deliveryStat.deliveryStatus eq STATUS_SENT}">
+                    <bean:message key="mailing.send.finished" />
+                </c:when>
+                <c:otherwise>
+                    <bean:message key="mailing.send.scheduled" />
+                </c:otherwise>
+            </c:choose>
+        </logic:equal>
+
+        <logic:equal name="mailingSendForm" property="worldMailingSend" value="false">
+            <bean:message key="mailing.send.ready" />
+        </logic:equal>
+    </div>
+</div>
+
+<logic:equal name="mailingSendForm" property="isTemplate" value="false">
+
+    <%@ include file="mailing-send-prioritization.jspf" %>
+    <%@ include file="mailing-send-size.jspf" %>
+
+    <%-- Configure button --%>
+    <%@ include file="fragments/mailing-configure-button.jspf" %>
+
+    <%-- Approve button --%>
+    <%@ include file="fragments/mailing-approve-button.jspf" %>
+</logic:equal>
+
+<c:if test="${mailingSendForm.worldMailingSend && not mailingSendForm.isTemplate}">
+    <%@ include file="fragments/mailing-notification-settings.jspf" %>
+</c:if>

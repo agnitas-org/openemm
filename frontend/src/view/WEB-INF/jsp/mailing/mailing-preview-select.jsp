@@ -174,7 +174,7 @@
         </li>
         <li class="${mailingSendForm.previewForm.modeType == TARGET_GROUP_MODE ? 'active' : ''}">
             <a href="#" data-toggle-tab="#preview-targetModeContent" data-action="toggle-tab-targetGroupMode">
-                <bean:message key="mailing.preview.mode.target"/>
+                <bean:message key="target.Target"/>
             </a>
         </li>
     </c:set>

@@ -53,6 +53,9 @@ window.I18n = {
         recipient: {
             restricted: '<agn:agnMessage key="error.access.limit.targetgroup" />'
         },
+        statistic: {
+            period_format: '<agn:agnMessage key="error.period.format" />'
+        }
     },
     date: {
         firstDayOfWeek: 1,
@@ -529,6 +532,16 @@ window.I18n = {
           duplicate: '<agn:agnMessage key="error.import.gender.number.duplicate"/>',
           empty: '<agn:agnMessage key="error.import.gender.empty"/>'
         }
+      },
+      columnMapping: {
+        error: {
+          duplicate: '<agn:agnMessage key="error.import.column.duplicate"/>',
+          data: '<agn:agnMessage key="error.import.invalidDataForField"/>',
+          type: '<agn:agnMessage key="error.import.dataType" arg0="%s"/>',
+          length: '<agn:agnMessage key="error.import.dataLength" arg0="%s"/>',
+          dateFormat: '<agn:agnMessage key="error.profiledb.invalidDefaultValue" arg0="%s"/>',
+          func: '<agn:agnMessage key="error.import.functions"/>'
+        }
       }
     },
     export: {
@@ -627,5 +640,15 @@ window.I18n = {
 	    	no_special 					: '<agn:agnMessage key="error.password_no_special_chars" />',
 	    	generic_error				: '<agn:agnMessage key="error.password.general" />'
     	}
+    },
+    clipboard: {
+        copied: {
+            tooltip: '<agn:agnMessage key="tooltip.copy.clipboard"/>'
+        }
+    },
+    contentSource: {
+        error: {
+            block_not_set: '<agn:agnMessage key="GWUA.empty.content.block" />'
+        }
     }
 };

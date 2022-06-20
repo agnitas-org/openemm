@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -16,7 +16,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import org.agnitas.beans.Recipient;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.exception.target.TargetGroupPersistenceException;
 import org.agnitas.emm.core.target.exception.TargetGroupException;
@@ -34,6 +33,7 @@ import com.agnitas.beans.TargetLight;
 import com.agnitas.emm.core.beans.Dependent;
 import com.agnitas.emm.core.recipient.dto.RecipientSaveTargetDto;
 import com.agnitas.emm.core.recipient.web.RejectAccessByTargetGroupLimit;
+import com.agnitas.emm.core.target.AltgMode;
 import com.agnitas.emm.core.target.beans.TargetComplexityGrade;
 import com.agnitas.emm.core.target.beans.TargetGroupDependentType;
 import com.agnitas.emm.core.target.complexity.bean.TargetComplexityEvaluationCache;
@@ -48,10 +48,10 @@ public interface ComTargetService {
 	/**
 	 * Delete target group.
 	 * 
-	 * @param targetGroupID target group ID to be deleted 
+	 * @param targetGroupID target group ID to be deleted
 	 * @param companyID company ID of target group
 	 * @throws TargetGroupException on errors during processing
-	 * @throws TargetGroupPersistenceException on errors during processing 
+	 * @throws TargetGroupPersistenceException on errors during processing
 	 */
 	
 	void deleteTargetGroup(int targetGroupID, @VelocityCheck int companyID) throws TargetGroupException, TargetGroupPersistenceException;
@@ -95,9 +95,6 @@ public interface ComTargetService {
 
 	@Deprecated // Use getTargetGroup(int, int) and ComTarget.getTargetSQL() instead
 	String getTargetSQL(int targetId, @VelocityCheck int companyId);
-	
-	@Deprecated // Use getTargetGroup(int, int) and ComTarget.getTargetSQL() instead
-	String getTargetSQLWithSimpleIfNotExists(int targetId, @VelocityCheck int companyId);
 	
 	@Deprecated // Use getTargetGroup(int, int) and ComTarget.getTargetSQL() instead
 	String getTargetSQL(int targetId, @VelocityCheck int companyId, boolean isPositive);
@@ -183,7 +180,7 @@ public interface ComTargetService {
 	String getTargetSplitName(int splitId);
 
 	/**
-	 * Lists all target groups of the given company ID that reference the given profile field. 
+	 * Lists all target groups of the given company ID that reference the given profile field.
 	 * 
 	 * @param fieldNameOnDatabase database name of the profile field
 	 * @param companyID company ID
@@ -201,7 +198,7 @@ public interface ComTargetService {
 	 * @param companyID company ID of customer
 	 * 
 	 * @return matcher
-	 * @throws Exception on errors creating the matcher 
+	 * @throws Exception on errors creating the matcher
 	 */
  	RecipientTargetGroupMatcher createRecipientTargetGroupMatcher(final int customerID, final int companyID) throws Exception;
 
@@ -223,16 +220,24 @@ public interface ComTargetService {
 
 	void initializeComplexityIndex(@VelocityCheck int companyId);
 
-	List<TargetLight> getAccessLimitationTargetLights(@VelocityCheck ComAdmin admin);
+	List<TargetLight> getAccessLimitationTargetLights(int companyId);
+
+    List<TargetLight> getNoAccessLimitationTargetLights(int companyId);
+
+    List<TargetLight> extractAdminAltgsFromTargetLights(List<TargetLight> targets, ComAdmin admin);
+
+    List<TargetLight> filterTargetLightsByAltgMode(List<TargetLight> targets, AltgMode mode);
 
 	boolean isBasicFullTextSearchSupported();
-
-	boolean isRecipientMatchTarget(ComAdmin admin, int targetGroupId, Recipient recipient);
 
 	boolean isRecipientMatchTarget(ComAdmin admin, int targetGroupId, int customerId);
 
 	void checkRecipientTargetGroupAccess(ComAdmin admin, int customerId) throws RejectAccessByTargetGroupLimit;
 	
+	boolean isAltg(int targetId);
+
+    Set<Integer> getAltgIdsWithoutAdminAltgIds(int companyId, Set<Integer> adminAltgIds);
+
 	boolean isValid(int companyId, int targetId);
 
 	boolean isLocked(int companyId, int targetId);
@@ -242,4 +247,10 @@ public interface ComTargetService {
     void addToFavorites(int targetId, int companyId);
 
     void removeFromFavorites(int targetId, int companyId);
+
+	void deleteWorkflowTargetConditions(int companyID);
+
+	List<TargetLight> getTargetLights(int fromCompanyID, boolean b);
+
+	int getAccessLimitingTargetgroupsAmount(int companyId);
 }

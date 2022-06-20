@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -15,9 +15,7 @@ import static com.agnitas.emm.core.maildrop.MaildropStatus.WORLD;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.URLEncoder;
-import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -33,12 +31,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.TimeZone;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Stream;
 
 import org.agnitas.backend.dao.ConfigDAO;
 import org.agnitas.backend.dao.RecipientDAO;
@@ -52,16 +46,16 @@ import org.agnitas.util.Bit;
 import org.agnitas.util.Blacklist;
 import org.agnitas.util.DBConfig;
 import org.agnitas.util.Log;
+import org.agnitas.util.Str;
 import org.agnitas.util.Substitute;
 import org.agnitas.util.Systemconfig;
 import org.agnitas.util.Title;
 import org.agnitas.util.importvalues.MailType;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.emm.core.target.eql.codegen.resolver.MailingType;
+import com.agnitas.emm.common.MailingType;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
@@ -91,11 +85,12 @@ public class Data {
 	 * The global system configuration
 	 */
 	public static Systemconfig syscfg;
+	public static Systemconfig.Selection selection;
 	public static DBConfig dbcfg;
 	/**
 	 * fqdn, hostname, user, etc.
 	 */
-	public static String defaultDBID, fqdn, hostname, user, home, version;
+	public static String defaultDBID;
 	/**
 	 * incarnation of invokation to create unique filenames
 	 */
@@ -494,88 +489,11 @@ public class Data {
 
 	static {
 		syscfg = new Systemconfig ();
+		selection = syscfg.selection ();
 		dbcfg = new DBConfig ();
 		String[]	dbids = dbcfg.ids ();
 		defaultDBID = (dbids != null) && (dbids.length == 1) ? dbids[0] : "emm";
-		try {
-			InetAddress i = InetAddress.getLocalHost();
-
-			fqdn = i.getHostName().toLowerCase();
-			hostname = fqdn.split("\\.", 2)[0];
-		} catch (UnknownHostException e) {
-			fqdn = hostname = "localhost";
-		}
-		user = System.getProperty("user.name", "");
-		home = System.getProperty("user.home", ".");
-		version = System.getenv ("VERSION");
-		if (version == null) {
-			version = "unknown";
-		}
-		try {
-			File	buildSpec = new File (StringOps.makePath (home, "scripts", "build.spec"));
-			if (buildSpec.exists ()) {
-				try (FileInputStream fd = new FileInputStream (buildSpec)) {
-					byte[]		raw = new byte[(int) buildSpec.length ()];
-					fd.read (raw);
-					String[]	elements = (new String (raw, StandardCharsets.UTF_8).trim ()).split (";");
-					if (elements.length > 0) {
-						version = elements[0];
-					}
-				} catch (IOException e) {
-					// do nothing
-				}
-			}
-			if ("unknown".equals (version)) {
-				Pattern versionPattern = Pattern.compile("[0-9]{2}\\.(01|04|07|10)\\.[0-9]{3}(\\.[0-9]{3})?$");
-				List<String> seen = new ArrayList<>();
-
-				version = Stream.of((System.getProperty("java.class.path", "") + ":" + System.getenv().getOrDefault("CLASSPATH", ""))
-						.split(File.pathSeparator))
-						.map(File::new)
-						.map(f -> f.isFile() ? f.getParentFile() : f)
-						.distinct()
-						.map(f -> {
-							try {
-								return f.getCanonicalPath();
-							} catch (IOException e) {
-								return f.getAbsolutePath();
-							}
-						})
-						.distinct()
-						.flatMap(p -> Stream.of(p.split(File.separator)))
-						.distinct()
-						.filter(f -> f.length() > 0).peek(seen::add)
-						.map(versionPattern::matcher)
-						.filter(Matcher::find)
-						.map(Matcher::group)
-						.findFirst().orElse(version);
-				if ("unknown".equals(version)) {
-					try {
-						ResourceBundle rsc = ResourceBundle.getBundle("emm");
-						String appVersion = rsc.getString("ApplicationVersion");
-
-						if (StringUtils.isNotEmpty(appVersion)) {
-							version = appVersion;
-						}
-					} catch (Exception e) {
-						// do nothing
-					}
-					if ("unknown".equals(version)) {
-						Log log = new Log("version", Log.INFO, 0);
-
-						log.out(Log.ERROR, "retrieve", "Failed to retrieve version in:");
-						for (String v : seen) {
-							log.out(Log.ERROR, "retrieve", "\t\"" + v + "\"");
-						}
-					}
-				}
-			}
-		} catch (Exception e) {
-			Log log = new Log("version", Log.INFO, 0);
-			log.out(Log.ERROR, "retrieve", "Failed to retrieve version: " + e.toString(), e);
-		}
 	}
-
 	protected Data() {
 		//nothing do
 	}
@@ -761,6 +679,7 @@ public class Data {
 		logging(Log.DEBUG, "init", "\tfollowupMethod = " + (followupMethod == null ? "*non-opener*" : followupMethod));
 		logging(Log.DEBUG, "init", "\tremoveDuplicateEMails = " + removeDuplicateEMails);
 		logging(Log.DEBUG, "init", "\tsendEncrypted = " + sendEncrypted);
+		logging(Log.DEBUG, "init", "\tmailID = " + getFilenameMailingID());
 		company.logSettings();
 		mailinglist.logSettings();
 		maildropStatus.logSettings();
@@ -810,14 +729,12 @@ public class Data {
 				temp.setup();
 				temp.initialize();
 				if (configDao == null) {
-					configDao = new ConfigDAO(temp, user, fqdn, hostname);
+					configDao = new ConfigDAO (temp);
 				}
-				logging(Log.DEBUG, "cfg", "Retrieving configuration from database for \"" + fqdn + "\" and \"" + hostname + "\" for version \"" + version + "\"");
+				logging(Log.DEBUG, "cfg", "Retrieving configuration from database for \"" + Systemconfig.fqdn + "\" and \"" + Systemconfig.hostname + "\" for version \"" + Systemconfig.version + "\"");
 				Map<String, String> entry = configEntry("mailout");
 
 				if (entry != null) {
-					Map <String, String>	pure = new HashMap <> ();
-					
 					for (Map.Entry<String, String> kv : entry.entrySet()) {
 						String name = kv.getKey();
 						String value = kv.getValue();
@@ -825,13 +742,8 @@ public class Data {
 						if ((name != null) && (value != null)) {
 							if (name.toLowerCase().startsWith("ini.")) {
 								cfg.set(name.substring(4), value);
-							} else {
-								pure.put (name, value);
 							}
 						}
-					}
-					for (Map.Entry<String, String> kv : pure.entrySet()) {
-						cfg.set (kv.getKey (), kv.getValue ());
 					}
 
 					Map <String, String>	updated = cfg.copy ();
@@ -843,12 +755,12 @@ public class Data {
 						String	dbkey = "ini." + key;
 						
 						if ((! entry.containsKey (key)) && (! entry.containsKey (dbkey))) {
-							configDao.add (temp, "mailout", key, value, user + "@" + fqdn, "set from legacy configuration file (" + user + "@" + fqdn +" in version " + version + ")");
+							configDao.add (temp, "mailout", key, value, Systemconfig.user + "@" + Systemconfig.fqdn, "set from legacy configuration file (" + Systemconfig.user + "@" + Systemconfig.fqdn +" in version " + Systemconfig.version + ")");
 							changed = true;
 						}
 					}
 					if (changed) {
-						configDao.reread (temp, user, fqdn, hostname);
+						configDao.reread (temp);
 					}
 				}
 			} finally {
@@ -870,7 +782,7 @@ public class Data {
 				throw new Exception("Loglevel must be a known string or a numerical value, not " + logLevelConfig, e);
 			}
 		}
-		xmlBack = cfg.cget("xmlback", StringOps.makePath("$home", "bin", xmlBack));
+		xmlBack = cfg.cget("xmlback", Str.makePath("$home", "bin", xmlBack));
 		xmlValidate = cfg.cget("xmlvalidate", xmlValidate);
 		if (((sampleEmails = cfg.cget("sample_emails", sampleEmails)) != null) && ((sampleEmails.length() == 0) || sampleEmails.equals("-"))) {
 			sampleEmails = null;
@@ -1087,6 +999,7 @@ public class Data {
 		company.secretTimestamp(creation != null ? creation.getTime() : 0);
 		targetExpression.expression(mailing.targetExpression());
 		targetExpression.splitID(mailing.splitID());
+		targetExpression.deliveryRestrictID (mailing.deliveryRestrictID ());
 		if (maildropStatus.isPreviewMailing()) {
 			targetExpression.clear();
 		}
@@ -1128,7 +1041,7 @@ public class Data {
 		String value = configValue("system", "licence");
 
 		if (value != null) {
-			return StringOps.atoi(value, licenceID);
+			return Str.atoi(value, licenceID);
 		}
 		return 0;
 	}
@@ -1258,7 +1171,7 @@ public class Data {
 		}
 		mailing.setEnvelopeFrom();
 		company.infoAdd("_envelope_from", mailing.getEnvelopeFrom());
-		company.infoAdd("_envelope_forced", StringOps.btoa (mailing.envelopeForced ()));
+		company.infoAdd("_envelope_forced", Str.btoa (mailing.envelopeForced ()));
 		mailing.setEncoding();
 		mailing.setCharset();
 	}
@@ -1346,7 +1259,7 @@ public class Data {
 	private void finalizeConfiguration() throws Exception {
 		setupSubstitution();
 
-		if (StringOps.atob(company.info("opt-in-mailing", mailing.id()), false)) {
+		if (Str.atob(company.info("opt-in-mailing", mailing.id()), false)) {
 			defaultUserStatus = UserStatus.WaitForConfirm.getStatusCode();
 		}
 
@@ -1418,25 +1331,34 @@ public class Data {
 			mailing.mailer(temp);
 		}
 		if ((temp = company.info("block-size", mailing.id())) != null) {
-			mailing.blockSize(StringOps.atoi(temp, -1));
+			mailing.blockSize(Str.atoi(temp, -1));
 		}
 		if ((temp = company.info("block-step", mailing.id())) != null) {
-			mailing.stepping(StringOps.atoi(temp, -1));
+			mailing.stepping(Str.atoi(temp, -1));
+		}
+		if ((temp = company.info ("dynblock-size-min", mailing.id ())) != null) {
+			mailing.dynBlockSizeMin (Str.atoi (temp, -1));
+		}
+		if ((temp = company.info ("dynblock-size-max", mailing.id ())) != null) {
+			mailing.dynBlockSizeMax (Str.atoi (temp, -1));
+		}
+		if ((temp = company.info ("dynblock-divisor", mailing.id ())) != null) {
+			mailing.dynBlockDivisor (Str.atoi (temp, -1));
 		}
 		if ((temp = company.info("force-sending", mailing.id())) != null) {
-			defaultCampaignForceSending = StringOps.atob(temp, defaultCampaignForceSending);
+			defaultCampaignForceSending = Str.atob(temp, defaultCampaignForceSending);
 		}
 		if ((temp = company.info("campaign-enable-target-groups", mailing.id())) != null) {
-			defaultCampaignEnableTargetGroups = StringOps.atob(temp, defaultCampaignEnableTargetGroups);
+			defaultCampaignEnableTargetGroups = Str.atob(temp, defaultCampaignEnableTargetGroups);
 		}
 		if ((temp = company.info("limit-block-operations", mailing.id())) != null) {
-			limitBlockOperations = StringOps.atoi(temp, 0);
+			limitBlockOperations = Str.atoi(temp, 0);
 		}
 		if ((temp = company.info("limit-block-operations-max", mailing.id())) != null) {
-			limitBlockOperationsMax = StringOps.atoi(temp, 0);
+			limitBlockOperationsMax = Str.atoi(temp, 0);
 		}
 		if ((temp = company.info ("enforce-test-vip", mailing.id ())) != null) {
-			enforceTestVIP = StringOps.atob (temp, false);
+			enforceTestVIP = Str.atob (temp, false);
 		}
 
 		setupUrlAndTags(mailing.id ());
@@ -1715,7 +1637,7 @@ public class Data {
 		if (mailloopDomain != null) {
 			company.infoAdd("_mailloop_domain", mailloopDomain);
 		}
-		directPath = StringOps.atob(company.info("direct-path", MailingID), false);
+		directPath = Str.atob(company.info("direct-path", MailingID), false);
 		if (rdirDomain != null) {
 			if (autoURL == null) {
 				autoURL = rdirDomain + autoTag;
@@ -1733,10 +1655,12 @@ public class Data {
 		substitute = new Substitute("status-id", maildropStatus.id(),
 					    "licence-id", licenceID,
 					    "company-id", company.id(),
+					    "company-token", company.token(),
 					    "base-company-id", company.baseID(),
 					    "mailinglist-id", mailinglist.id(),
 					    "mailtemplate-id", mailing.mailtemplateID(),
 					    "mailing-id", mailing.id(),
+					    "mail-id", getFilenameMailingID(),
 					    "status-field", maildropStatus.statusField(),
 					    "mailing-name", mailing.name(),
 					    "company-name", company.name(),
@@ -1818,7 +1742,11 @@ public class Data {
 		String enableReferenceAliases;
 		String refAliases;
 
-		if (((enableReferenceAliases = company.info("ref:enable-reference-aliases")) != null) && StringOps.atob(enableReferenceAliases, false) && (references != null) && (mailingInfo != null) && ((refAliases = mailingInfo.get("ref:aliases")) != null)) {
+		if (((enableReferenceAliases = company.info("ref:enable-reference-aliases")) != null) &&
+		    Str.atob(enableReferenceAliases, false) &&
+		    (references != null) &&
+		    (mailingInfo != null) &&
+		    ((refAliases = mailingInfo.get("ref:aliases")) != null)) {
 			Map<String, String> aliases = new HashMap<>();
 
 			for (String elem : refAliases.split(", *")) {
@@ -2000,7 +1928,7 @@ public class Data {
 
 	public Map<String, String> configEntry(String configClass) throws SQLException {
 		if (configDao == null) {
-			configDao = new ConfigDAO(dbase, user, fqdn, hostname);
+			configDao = new ConfigDAO (dbase);
 		}
 		return configDao.getClassEntry(configClass);
 	}
@@ -2190,8 +2118,15 @@ public class Data {
 		logging(Log.DEBUG, "start", "\ttotalSubscribers = " + totalSubscribers);
 		logging(Log.DEBUG, "start", "\ttotalReceivers = " + totalReceivers);
 		if (maildropStatus.isWorldMailing() || maildropStatus.isRuleMailing() || maildropStatus.isOnDemandMailing()) {
-			logging("generate", "company=" + company.id() + "\tmailinglist=" + mailinglist.id() + "\tmailing=" + mailing.id() +
-			"\tcount=" + totalReceivers + "\tstatus_field=" + maildropStatus.statusField() + "\ttimestamp=" + dateFormater.format (new Date ()));
+			logging("generate",
+				"company=" + company.id() +
+				"\tmailinglist=" + mailinglist.id() +
+				"\tmailing=" + mailing.id() +
+				"\tmailid=" + getFilenameMailingID() +
+				"\tcount=" + totalReceivers +
+				"\tstatus_field=" + maildropStatus.statusField() +
+				"\ttimestamp=" + dateFormater.format (new Date ())
+			);
 		}
 	}
 
@@ -2723,17 +2658,18 @@ public class Data {
 	}
 
 	protected String defaultImageLink(String name, String source, boolean use, boolean nocache) {
-		Image image = null;
-		String template = null;
+		String	filename;
+		Image	image = null;
+		String	template = null;
 
 		if (name == null) {
 			return name;
 		}
 
 		try {
-			name = URLEncoder.encode(name, "UTF-8");
+			filename = URLEncoder.encode(name, "UTF-8");
 		} catch (java.io.UnsupportedEncodingException e) {
-			// should never happen
+			filename = name;
 		}
 		setupImagepool();
 		if (source == null) {
@@ -2746,12 +2682,12 @@ public class Data {
 				break;
 			case Imagepool.MAILING:
 				template = nocache ? imageTemplateNoCache : imageTemplate;
-				image = imagepool.findImage(name, isMobilePreview);
+				image = imagepool.findImage(name, filename, isMobilePreview);
 				break;
 			case Imagepool.MEDIAPOOL:
 			case Imagepool.MEDIAPOOL_BACKGROUND:
 				template = nocache ? mediapoolTemplateNoCache : mediapoolTemplate;
-				image = imagepool.findMediapoolImage(name, isMobilePreview);
+				image = imagepool.findMediapoolImage(name, filename, isMobilePreview);
 				break;
 		}
 		if ((image != null) && (template != null)) {
@@ -3290,15 +3226,10 @@ public class Data {
 	}
 
 	public String getFilenameMailingID() {
-		if (maildropStatus.isOnDemandMailing()) {
-			if (inc == 0) {
-				inc = getIncarnation();
-			}
-			return inc + "D" + mailing.id();
-		} else if (maildropStatus.isRuleMailing ()) {
-			return "R" + mailing.id ();
+		if (inc == 0) {
+			inc = getIncarnation();
 		}
-		return Long.toString(mailing.id());
+		return inc + maildropStatus.statusField () + mailing.id ();
 	}
 
 	public String ahvTable() {
@@ -3311,10 +3242,15 @@ public class Data {
 	public boolean ahvEnabled() {
 		if (ahvEnabled == null) {
 			try {
-				if ((maildropStatus.isCampaignMailing() || maildropStatus.isRuleMailing() || maildropStatus.isOnDemandMailing() || maildropStatus.isWorldMailing()) && StringOps.atob(company.info("ahv:is-enabled", mailing.id())) && dbase.tableExists(ahvTable())) {
+				if ((maildropStatus.isCampaignMailing() ||
+				     maildropStatus.isRuleMailing() ||
+				     maildropStatus.isOnDemandMailing() ||
+				     maildropStatus.isWorldMailing()) &&
+				    Str.atob(company.info("ahv:is-enabled", mailing.id())) &&
+				    dbase.tableExists(ahvTable())) {
 					ahvEnabled = true;
 
-					long maxAge = StringOps.atol(company.info("ahv:max-age"), 180);
+					long maxAge = Str.atol(company.info("ahv:max-age"), 180);
 
 					if (maxAge > 0) {
 						long ref = (currentSendDate != null ? currentSendDate : new Date()).getTime();
@@ -3349,9 +3285,13 @@ public class Data {
 		if (omgEnabled == null) {
 			omgEnabled = false;
 			try {
-				if ((maildropStatus.isRuleMailing() || maildropStatus.isWorldMailing()) && (maildropStatus.optimizeMailGeneration() != null) && StringOps.atob(company.info("omg:is-enabled", mailing.id())) && dbase.tableExists(omgTable())) {
+				if ((maildropStatus.isRuleMailing() ||
+				     maildropStatus.isWorldMailing()) &&
+				    (maildropStatus.optimizeMailGeneration() != null) &&
+				    Str.atob(company.info("omg:is-enabled", mailing.id())) &&
+				    dbase.tableExists(omgTable())) {
 					omgEnabled = true;
-					omgOffset = StringOps.atoi(company.info("omg:offset", mailing.id()), omgOffset);
+					omgOffset = Str.atoi(company.info("omg:offset", mailing.id()), omgOffset);
 				}
 			} catch (Exception e) {
 				logging(Log.ERROR, "omg", "Failed to setup omg: " + e.toString(), e);
@@ -3552,6 +3492,9 @@ public class Data {
 	public URL requestURL(String rqurl, String name, boolean isAdminLink) {
 		URL url;
 
+		if (URLlist == null) {
+			URLlist = new ArrayList<>();
+		}
 		if (URLTable == null) {
 			URLTable = new HashMap<>();
 
@@ -3581,6 +3524,10 @@ public class Data {
 						urlID = dbase.asLong(row.get("url_id"));
 					}
 					if (urlID == 0) {
+						if (name != null && name.length() > 1000) {
+							throw new Exception("Value for rdir_url_tbl.shortname is to long (Maximum: 1000, Current: " + name.length() + ")");
+						}
+						
 						if (dbase.isOracle()) {
 							query = "SELECT rdir_url_tbl_seq.nextval FROM dual";
 							urlID = dbase.queryLong(jdbc, query);

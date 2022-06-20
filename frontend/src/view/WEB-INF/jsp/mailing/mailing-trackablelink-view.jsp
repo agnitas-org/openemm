@@ -133,7 +133,7 @@
                             <div class="form-group">
                                 <div class="col-sm-4">
                                     <label class="control-label" for="trackable">
-                                        <bean:message key="Trackable" />
+                                        <bean:message key="LinkTracking" />
                                     </label>
                                 </div>
                                 <div class="col-sm-8">

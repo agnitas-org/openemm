@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -63,6 +63,9 @@ public interface Preview {
 	 * The ID for the HTML part
 	 */
 	String ID_HTML = "__html__";
+	
+	final String ID_SMS = "__sms__";
+	
 	/**
 	 * The ID for an error, if one had occured
 	 */
@@ -146,83 +149,6 @@ public interface Preview {
 	Map<String, Object> createPreview(long mailingID, long customerID, String selector, String text, boolean anon, boolean convertEntities, boolean ecsUIDs, boolean cachable);
 
 	@Deprecated
-	Map<String, Object> createPreview(long mailingID, long customerID, String selector, String text, boolean anon, boolean cachable);
-
-	@Deprecated
 	Map<String, Object> createPreview(long mailingID, long customerID, String selector, boolean anon, boolean cachable);
 
-	@Deprecated
-	Map<String, Object> createPreview(long mailingID, long customerID, boolean cachable);
-
-	/**
-	 * Get header-, text- or HTML-part from hashtable created by
-	 * createPreview as byte stream
-	 */
-	@Deprecated
-	byte[] getHeaderPart(Map<String, Object> output, String charset, boolean escape);
-
-	@Deprecated
-	byte[] getHeaderPart(Map<String, Object> output, String charset);
-
-	@Deprecated
-	byte[] getTextPart(Map<String, Object> output, String charset, boolean escape);
-
-	@Deprecated
-	byte[] getTextPart(Map<String, Object> output, String charset);
-
-	@Deprecated
-	byte[] getHTMLPart(Map<String, Object> output, String charset, boolean escape);
-
-	@Deprecated
-	byte[] getHTMLPart(Map<String, Object> output, String charset);
-
-	/**
-	 * Get header-, text- or HTML-part as strings
-	 */
-	@Deprecated
-	String getHeader(Map<String, Object> output, boolean escape);
-
-	@Deprecated
-	String getHeader(Map<String, Object> output);
-
-	@Deprecated
-	String getText(Map<String, Object> output, boolean escape);
-
-	@Deprecated
-	String getText(Map<String, Object> output);
-
-	@Deprecated
-	String getHTML(Map<String, Object> output, boolean escape);
-
-	@Deprecated
-	String getHTML(Map<String, Object> output);
-
-	/**
-	 * Get individual lines from the header
-	 */
-	@Deprecated
-	String[] getHeaderField(Map<String, Object> output, String field);
-
-	@Deprecated
-	String getPartOfHeader(Map<String, Object> output, boolean escape, String headerKeyword);
-
-	/**
-	 * Get attachment names and content
-	 */
-	@Deprecated
-	String[] getAttachmentNames(Map<String, Object> output);
-
-	@Deprecated
-	byte[] getAttachment(Map<String, Object> output, String name);
-
-	// well, we could create a global Hashmap containing all the values for this preview
-	// but the part-Method is called not very often, so its more efficient to parse
-	// the header if we need it.
-	// As parameter give the "Keyword" you will get then the appropriate return String.
-	// Possible Values for the Header are:
-	// "Return-Path", "Received", "Message-ID", "Date", "From", "To", "Subject", "X-Mailer", "MIME-Version"
-	// warning! We do a "startswith" comparison, that means, if you give "Re" as parameter, you will
-	// get either "Return-Path" or "Received", depending on what comes at last.
-	@Deprecated
-	String getPartOfHeader(Map<String, Object> output, String charset, boolean forHTML, String headerKeyword) throws Exception;
 }

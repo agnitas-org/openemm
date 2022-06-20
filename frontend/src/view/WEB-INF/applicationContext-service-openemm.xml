@@ -79,13 +79,11 @@
 		<property name="maildropService" ref="MaildropService"/>
 		<property name="agnTagService" ref="AgnTagService"/>
 		<property name="mailingComponentsService" ref="mailingComponentService"/>
-		<property name="linkService" ref="LinkService"/>
 		<property name="dynamicTagContentFactory" ref="DynamicTagContentFactory"/>
 		<property name="dynamicTagContentDao" ref="DynamicTagContentDao"/>
 		<property name="agnDynTagGroupResolverFactory" ref="AgnDynTagGroupResolverFactory"/>
 		<property name="mailinglistApprovalService" ref="MailinglistApprovalService" />
 		<property name="gridServiceWrapper" ref="GridServiceWrapper"/>
-		<property name="adminService" ref="AdminService"/>
 	</bean>
 
 	<bean id="MailingSendService" class="com.agnitas.service.impl.ComMailingSendServiceImpl">
@@ -123,6 +121,7 @@
 		<property name="recipientDao" ref="RecipientDao" />
         <property name="eqlHelper" ref="WorkflowEQLHelper"/>
 		<property name="adminService" ref="AdminService"/>
+        <property name="targetService" ref="targetService"/>
     </bean>
 
 <!-- ============================================================================================================================== Mailing content -->
@@ -200,5 +199,13 @@
 		<property name="mailingPreviewService" ref="MailingPreviewService" />
 		<property name="bindingEntryDao" ref="BindingEntryDao" />
 		<property name="datasourceDescriptionDao" ref="DatasourceDescriptionDao" />
+	</bean>
+	
+	<bean id="RestfulServiceHandler_target" class="com.agnitas.emm.restful.target.TargetRestfulServiceHandler">
+		<property name="userActivityLogDao" ref="UserActivityLogDao"/>
+		<property name="targetService" ref="targetService" />
+		<property name="targetDao" ref="TargetDao" />
+		<property name="recipientDao" ref="RecipientDao" />
+        <property name="columnInfoService" ref="ColumnInfoService" />
 	</bean>
 </beans>

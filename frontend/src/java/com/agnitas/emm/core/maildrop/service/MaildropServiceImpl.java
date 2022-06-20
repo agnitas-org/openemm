@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -17,24 +17,24 @@ import java.util.List;
 import org.agnitas.dao.MaildropStatusDao;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.agnitas.beans.MaildropEntry;
 import com.agnitas.dao.ComMailingDao;
+import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.maildrop.InvalidMailingTypeException;
 import com.agnitas.emm.core.maildrop.MaildropException;
 import com.agnitas.emm.core.maildrop.MaildropGenerationStatus;
 import com.agnitas.emm.core.maildrop.MaildropStatus;
 import com.agnitas.emm.core.maildrop.MailingAlreadySentException;
-import com.agnitas.emm.core.maildrop.UnknownMailingException;
-import com.agnitas.emm.core.target.eql.codegen.resolver.MailingType;
 
 public class MaildropServiceImpl implements MaildropService {
 
 	/** The logger. */
-	private static final transient Logger logger = Logger.getLogger(MaildropServiceImpl.class);
+	private static final transient Logger logger = LogManager.getLogger(MaildropServiceImpl.class);
 
 	private SteppingAndBlocksizeComputer steppingAndBlocksizeComputer;
 	
@@ -157,13 +157,7 @@ public class MaildropServiceImpl implements MaildropService {
 	 * @throws Exception
 	 */
 	private final void checkMailtype(final int mailingID, final MailingType expectedMailingType) throws Exception {
-		final int currentMailingTypeCode = this.mailingDao.getMailingType(mailingID);
-		
-		if (currentMailingTypeCode == -1) {
-			throw new UnknownMailingException(mailingID);
-		}
-		
-		MailingType currentMailingType = MailingType.fromCode(currentMailingTypeCode);
+		final MailingType currentMailingType = mailingDao.getMailingType(mailingID);
 		
 		if (!expectedMailingType.equals(currentMailingType)) {
 			throw new InvalidMailingTypeException(expectedMailingType, currentMailingType);

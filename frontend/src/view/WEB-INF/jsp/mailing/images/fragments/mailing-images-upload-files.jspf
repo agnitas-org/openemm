@@ -1,0 +1,95 @@
+<mvc:form servletRelativeAction="/mailing/${mailingId}/images/upload.action"
+          enctype="multipart/form-data"
+          data-form="resource"
+          class="form-vertical"
+          data-custom-loader=""
+          data-initializer="upload">
+    <div id="tab-imageUploadSingleImage">
+        <div class="tile-content-forms">
+            <div class="dropzone" data-upload-dropzone="">
+                <div class="dropzone-text">
+                    <strong>
+                        <i class="icon icon-reply"></i>&nbsp;<mvc:message code="upload_dropzone.title"/>
+                    </strong>
+                    <span class="btn btn-regular btn-primary btn-upload">
+                        <i class="icon icon-cloud-upload"></i>
+                        <span class="text"><mvc:message code="button.multiupload.select"/></span>
+                        <input type="file" name="images[].file" multiple="multiple" data-upload=""/>
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="hidden" data-upload-add="">
+            <div class="actions actions-top">
+                <div class="action-left">
+                    <button type="button" class="btn btn-regular" data-upload-reset>
+                        <i class="icon icon-times"></i>
+                        <span class="text">
+                                <mvc:message code="button.Cancel"/>
+                            </span>
+                    </button>
+                </div>
+                <div class="action-right">
+                    <button type="button" class="btn btn-regular btn-primary" data-form-submit>
+                        <i class="icon icon-cloud-upload"></i>
+                        <span class="text">
+                                <mvc:message code="button.Upload"/>
+                            </span>
+                    </button>
+                </div>
+            </div>
+
+            <table class="table table-bordered table-striped">
+                <thead>
+                <tr>
+                    <th class="squeeze-column"><mvc:message code="mailing.Preview"/></th>
+                    <th><mvc:message code="Description"/></th>
+                    <th><mvc:message code="ComponentLink"/></th>
+                    <th><mvc:message code="mailing.Graphics_Component.sourceForMobile"/></th>
+                </tr>
+                </thead>
+                <tbody data-upload-add-template="upload-image-template-add"></tbody>
+            </table>
+
+            <div class="actions">
+                <div class="action-left">
+                    <button type="button" class="btn btn-regular" data-upload-reset="">
+                        <i class="icon icon-times"></i>
+                        <span class="text">
+                            <mvc:message code="button.Cancel"/>
+                        </span>
+                    </button>
+                </div>
+                <div class="action-right">
+                    <button type="button" class="btn btn-regular btn-primary" data-form-submit="">
+                        <i class="icon icon-cloud-upload"></i>
+                        <span class="text">
+                            <mvc:message code="button.Upload"/>
+                        </span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="hidden" data-upload-progress="">
+            <div class="actions actions-top actions-bottom">
+                <div class="action-right">
+                    <button type="button" class="btn btn-regular" data-form-abort="">
+                        <i class="icon icon-times"></i>
+                        <span class="text"><mvc:message code="button.Cancel"/></span>
+                    </button>
+                </div>
+            </div>
+            <div class="progress-wrapper" data-upload-progress-template="upload-template-progress"></div>
+            <div class="actions actions-top">
+                <div class="action-right">
+                    <button type="button" class="btn btn-regular" data-form-abort="">
+                        <i class="icon icon-times"></i>
+                        <span class="text"><mvc:message code="button.Cancel"/></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</mvc:form>

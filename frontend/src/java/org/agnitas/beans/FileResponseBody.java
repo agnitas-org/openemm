@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -16,11 +16,12 @@ import java.io.OutputStream;
 import java.util.Objects;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 public class FileResponseBody implements StreamingResponseBody {
-    private static final Logger logger = Logger.getLogger(FileResponseBody.class);
+    private static final Logger logger = LogManager.getLogger(FileResponseBody.class);
 
     private File file;
     private boolean autoRemove;

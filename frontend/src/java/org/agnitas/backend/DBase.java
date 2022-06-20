@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -30,18 +30,13 @@ import java.util.regex.Pattern;
 import javax.sql.DataSource;
 
 import org.agnitas.util.Log;
+import org.agnitas.util.Str;
 import org.apache.commons.dbcp.ConnectionFactory;
 import org.apache.commons.dbcp.DriverManagerConnectionFactory;
 import org.apache.commons.dbcp.PoolableConnectionFactory;
 import org.apache.commons.dbcp.PoolingDataSource;
 import org.apache.commons.pool.ObjectPool;
 import org.apache.commons.pool.impl.GenericObjectPool;
-import org.apache.log4j.Appender;
-import org.apache.log4j.AppenderSkeleton;
-import org.apache.log4j.BasicConfigurator;
-import org.apache.log4j.Level;
-import org.apache.log4j.spi.Filter;
-import org.apache.log4j.spi.LoggingEvent;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -85,62 +80,6 @@ public class DBase {
 	private NamedParameterJdbcTemplate jdbcTmpl = null;
 
 	/**
-	 * Wrap backend logging into a log4j appender and just log
-	 * non informal messages
-	 */
-	static class DBaseFilter extends Filter {
-		@Override
-		public int decide(LoggingEvent e) {
-			Level l = e.getLevel();
-
-			if ((l == Level.WARN) || (l == Level.ERROR) || (l == Level.FATAL)) {
-				return Filter.ACCEPT;
-			}
-			return Filter.NEUTRAL;
-		}
-	}
-
-	static class DBaseAppender extends AppenderSkeleton {
-		private Log log;
-
-		public DBaseAppender(Log nLog) {
-			super();
-			log = nLog;
-		}
-
-		@Override
-		public boolean requiresLayout() {
-			return false;
-		}
-
-		@Override
-		public void close() {
-			// nothing to do
-		}
-
-		@Override
-		protected void append(LoggingEvent e) {
-			Level l = e.getLevel();
-			int lvl = -1;
-
-			if (l == Level.WARN) {
-				lvl = Log.WARNING;
-			} else if (l == Level.ERROR) {
-				lvl = Log.ERROR;
-			} else if (l == Level.FATAL) {
-				lvl = Log.FATAL;
-			}
-			if (lvl != -1) {
-				String loggerName = e.getLoggerName();
-
-				if ((loggerName == null) || loggerName.startsWith("org.springframework.jdbc")) {
-					log.out(lvl, "jdbc", e.getRenderedMessage());
-				}
-			}
-		}
-	}
-
-	/**
 	 * Wrapper to create a data source and enforce auto commitment
 	 */
 	static class DBDatasource {
@@ -152,11 +91,6 @@ public class DBase {
 			cache = new HashMap<>();
 			seen = new HashSet<>();
 			log = new Log("jdbc", Log.INFO, 0);
-
-			Appender app = new DBaseAppender(log);
-
-			app.addFilter(new DBaseFilter());
-			BasicConfigurator.configure(app);
 		}
 
 		public DataSource newDataSource(String driver, String connect, String login, String password) {
@@ -383,7 +317,7 @@ public class DBase {
 					Matcher	m = versionPattern.matcher (banner);
 
 					if (m.find ()) {
-						dbVersion = StringOps.atoi (m.group (1));
+						dbVersion = Str.atoi (m.group (1));
 						data.logging (Log.DEBUG, "db", "Found Oracle major version " + dbVersion + " in banner " + banner);
 						break;
 					}

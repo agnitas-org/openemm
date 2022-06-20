@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -20,10 +20,12 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.TimeZone;
 
+import com.agnitas.web.mvc.XssCheckAware;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -48,11 +50,13 @@ import net.sf.json.JSONObject;
 
 @Controller
 @PermissionMapping("calendar")
-public class CalendarController {
+public class CalendarController implements XssCheckAware {
     public static final int SELECTOR_START_YEAR_NUM = 2009;
     public static final int SECONDS_BEFORE_WAIT_MESSAGE = 2;
 
-    private static final Logger logger = Logger.getLogger(CalendarController.class);
+    /** The logger. */
+    private static final Logger logger = LogManager.getLogger(CalendarController.class);
+    
     private static final int UNSENT_MAILS_LIST_SIZE = 10;
     private static final int PLANNED_MAILS_LIST_SIZE = 10;
     private static final String DATE_FORMAT = "dd-MM-yyyy";

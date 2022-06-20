@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -27,15 +27,14 @@ import org.agnitas.util.DbUtilities;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.agnitas.reporting.birt.external.beans.LightMailingList;
 import com.agnitas.reporting.birt.external.beans.LightTarget;
 
 public class RecipientsDetailedStatisticDataSet extends RecipientsBasedDataSet {
-    private static final transient Logger logger = Logger.getLogger(RecipientsDetailedStatisticDataSet.class);
-
-    private static final SimpleDateFormat REPORT_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
+    private static final transient Logger logger = LogManager.getLogger(RecipientsDetailedStatisticDataSet.class);
 
     private final List<RecipientsDetailedStatisticsRow> statList = new ArrayList<>();
     private final List<RecipientsDetailedStatisticsRow> dynamicStatList = new ArrayList<>();
@@ -50,16 +49,13 @@ public class RecipientsDetailedStatisticDataSet extends RecipientsBasedDataSet {
                                         String selectedTargetsAsString, String startDate, String stopDate, final String hiddenFilterTargetIdStr)
             throws Exception {
 
-        final int hiddenTargetId = NumberUtils.toInt(hiddenFilterTargetIdStr, -1);
-        final LightTarget hiddenTarget = hiddenTargetId <= 0 ? null : getTarget(hiddenTargetId, companyId);
-
         List<Integer> mailingListIds = new ArrayList<>();
         for (String mailingListIdString : selectedMailingLists.split(",")) {
             mailingListIds.add(NumberUtils.toInt(mailingListIdString));
         }
 
-        Date dateStart = REPORT_DATE_FORMAT.parse(startDate);
-        Date dateStop = REPORT_DATE_FORMAT.parse(stopDate);
+        Date dateStart = new SimpleDateFormat("yyyy-MM-dd").parse(startDate);
+        Date dateStop = new SimpleDateFormat("yyyy-MM-dd").parse(stopDate);
 
         int mailinglistIndex = 0;
         for (LightMailingList mailinglist : getMailingLists(mailingListIds, companyId)) {
@@ -68,12 +64,12 @@ public class RecipientsDetailedStatisticDataSet extends RecipientsBasedDataSet {
 
             int targetGroupIndex = CommonKeys.ALL_SUBSCRIBERS_INDEX;
             insertStatistic(companyId, mailinglistID, mailinglistIndex, null, targetGroupIndex, dateStart,
-                    dateStop, hiddenTarget);
+                    dateStop, hiddenFilterTargetIdStr);
 
             for (LightTarget target : getTargets(selectedTargetsAsString, companyId)) {
                 targetGroupIndex++;
                 insertStatistic(companyId, mailinglistID, mailinglistIndex, target, targetGroupIndex, dateStart,
-                        dateStop, hiddenTarget);
+                        dateStop, hiddenFilterTargetIdStr);
             }
         }
     }
@@ -86,17 +82,13 @@ public class RecipientsDetailedStatisticDataSet extends RecipientsBasedDataSet {
      */
     public void initRecipientsDynamicStatistic(@VelocityCheck int companyId, String selectedMailingLists,
                                                String selectedTargetsAsString, String startDate, String stopDate, final String hiddenFilterTargetIdStr) throws Exception {
-
-        final int hiddenTargetId = NumberUtils.toInt(hiddenFilterTargetIdStr, -1);
-        final LightTarget hiddenTarget = hiddenTargetId <= 0 ? null : getTarget(hiddenTargetId, companyId);
-
         List<Integer> mailingListIds = new ArrayList<>();
         for (String mailingListIdString : selectedMailingLists.split(",")) {
             mailingListIds.add(NumberUtils.toInt(mailingListIdString));
         }
 
-        Date dateStart = REPORT_DATE_FORMAT.parse(startDate);
-        Date dateStop = REPORT_DATE_FORMAT.parse(stopDate);
+        Date dateStart = new SimpleDateFormat("yyyy-MM-dd").parse(startDate);
+        Date dateStop = new SimpleDateFormat("yyyy-MM-dd").parse(stopDate);
 
         int mailinglistIndex = 0;
         for (LightMailingList mailinglist : getMailingLists(mailingListIds, companyId)) {
@@ -105,31 +97,31 @@ public class RecipientsDetailedStatisticDataSet extends RecipientsBasedDataSet {
 
             int targetGroupIndex = CommonKeys.ALL_SUBSCRIBERS_INDEX;
             insertDynamicStatistic(companyId, mailinglistID, mailinglistIndex, null, targetGroupIndex, dateStart,
-                    dateStop, hiddenTarget);
+                    dateStop, hiddenFilterTargetIdStr);
 
             for (LightTarget target : getTargets(selectedTargetsAsString, companyId)) {
                 targetGroupIndex++;
                 insertDynamicStatistic(companyId, mailinglistID, mailinglistIndex, target, targetGroupIndex, dateStart,
-                        dateStop, hiddenTarget);
+                        dateStop, hiddenFilterTargetIdStr);
             }
         }
     }
 
     private void insertDynamicStatistic(int companyId, int mailinglistID, int mailinglistIndex, LightTarget target,
-                                        int targetGroupIndex, Date startDate, Date endDate, final LightTarget hiddenTarget) {
+                                        int targetGroupIndex, Date startDate, Date endDate, String hiddenFilterTargetIdStr) {
         String mailinglistName = getMailinglistName(companyId, mailinglistID);
 
         List<RecipientsDetailedStatisticsRow> data = getRecipientDetailedOverallStatAmountForEachDay(companyId, mailinglistID, mailinglistName,
-                mailinglistIndex, target, targetGroupIndex, startDate, endDate, hiddenTarget);
+                mailinglistIndex, target, targetGroupIndex, startDate, endDate, hiddenFilterTargetIdStr);
 
         dynamicStatList.addAll(data);
     }
 
     private void insertStatistic(int companyId, int mailinglistID, int mailinglistIndex, LightTarget target,
-                                 int targetGroupIndex, Date dateStart, Date dateStop, final LightTarget hiddenTarget) {
+                                 int targetGroupIndex, Date dateStart, Date dateStop, String hiddenFilterTargetIdStr) {
         String mailinglistName = getMailinglistName(companyId, mailinglistID);
         statList.addAll(getRecipientDetailedStat(companyId, mailinglistID, mailinglistName, mailinglistIndex, target,
-                targetGroupIndex, dateStart, dateStop, hiddenTarget));
+                targetGroupIndex, dateStart, dateStop, hiddenFilterTargetIdStr));
     }
 
     public List<RecipientsDetailedStatisticsRow> getStatistic() {
@@ -142,12 +134,12 @@ public class RecipientsDetailedStatisticDataSet extends RecipientsBasedDataSet {
 
     private List<RecipientsDetailedStatisticsRow> getRecipientDetailedStat(@VelocityCheck int companyId, int mailinglistId,
                                                                            String mailinglistName, int mailinglistIndex, LightTarget target, int targetGroupIndex, Date startDate, Date endDate,
-                                                                           final LightTarget hiddenTarget) {
+                                                                           String hiddenFilterTargetIdStr) {
         try {
             TreeMap<String, RecipientsDetailedStatisticsRow> dataMap = new TreeMap<>();
             target = getDefaultTarget(target);
 
-            final String filterTargetSql = getHiddenTargetSql(target, hiddenTarget);
+            final String filterTargetSql = getHiddenTargetSql(companyId, target, hiddenFilterTargetIdStr);
 
             // Create a RecipientsDetailedStatisticsRow entry for each day within the given time period
             Date datePoint = startDate;
@@ -156,7 +148,7 @@ public class RecipientsDetailedStatisticDataSet extends RecipientsBasedDataSet {
                         new RecipientsDetailedStatisticsRow(datePoint,
                                 mailinglistId, mailinglistName, mailinglistIndex,
                                 target.getId(), target.getName(), targetGroupIndex);
-                String datePointFormatted = REPORT_DATE_FORMAT.format(datePoint);
+                String datePointFormatted = new SimpleDateFormat("yyyy-MM-dd").format(datePoint);
                 dataMap.put(datePointFormatted, datePointDetailedStatisticsRow);
 
                 datePoint = DateUtilities.addDaysToDate(datePoint, 1);
@@ -215,12 +207,12 @@ public class RecipientsDetailedStatisticDataSet extends RecipientsBasedDataSet {
 
     private List<RecipientsDetailedStatisticsRow> getRecipientDetailedOverallStatAmountForEachDay(@VelocityCheck int companyId, int mailinglistId,
                                                                                                   String mailinglistName, int mailinglistIndex, LightTarget target, int targetGroupIndex, Date startDate, Date endDate,
-                                                                                                  final LightTarget hiddenTarget) {
+                                                                                                  String hiddenFilterTargetIdStr) {
         try {
             TreeMap<String, RecipientsDetailedStatisticsRow> dataMap = new TreeMap<>();
             target = getDefaultTarget(target);
 
-            final String filterTargetSql = getHiddenTargetSql(target, hiddenTarget);
+            final String filterTargetSql = getHiddenTargetSql(companyId, target, hiddenFilterTargetIdStr);
 
             // Create a RecipientsDetailedStatisticsRow entry for each day within the given time period
             Date datePoint = startDate;
@@ -229,7 +221,7 @@ public class RecipientsDetailedStatisticDataSet extends RecipientsBasedDataSet {
                         new RecipientsDetailedStatisticsRow(datePoint,
                                 mailinglistId, mailinglistName, mailinglistIndex,
                                 target.getId(), target.getName(), targetGroupIndex);
-                String datePointFormatted = REPORT_DATE_FORMAT.format(datePoint);
+                String datePointFormatted = new SimpleDateFormat("yyyy-MM-dd").format(datePoint);
                 dataMap.put(datePointFormatted, datePointDetailedStatisticsRow);
 
                 datePoint = DateUtilities.addDaysToDate(datePoint, 1);
@@ -287,7 +279,7 @@ public class RecipientsDetailedStatisticDataSet extends RecipientsBasedDataSet {
 
     private static void calculateAmount(final Map<String, Object> resultRow, final TreeMap<String, RecipientsDetailedStatisticsRow> dataMap) {
         final Date entryDate = (Date) resultRow.get("changedate");
-        final RecipientsDetailedStatisticsRow row = dataMap.get(REPORT_DATE_FORMAT.format(entryDate));
+        final RecipientsDetailedStatisticsRow row = dataMap.get(new SimpleDateFormat("yyyy-MM-dd").format(entryDate));
         final int userStatusCode = ((Number) resultRow.get("user_status")).intValue();
         final int amount = ((Number) resultRow.get("amount")).intValue();
         final UserStatus status = getUserStatus(userStatusCode);

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -21,20 +21,20 @@ import java.util.Set;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.dao.MailinglistApprovalDao;
 import org.agnitas.dao.impl.mapper.MailinglistRowMapper;
-import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class MailinglistApprovalDaoImpl extends PaginatedBaseDaoImpl implements MailinglistApprovalDao {
 	
 	/** The logger. */
-	private static final transient Logger logger = Logger.getLogger(MailinglistApprovalDaoImpl.class);
+	private static final transient Logger logger = LogManager.getLogger(MailinglistApprovalDaoImpl.class);
 
 	public static final Set<String> SORTABLE_FIELDS = Collections.unmodifiableSet(new HashSet<>(Arrays.asList("mailinglist_id", "shortname", "description", "creation_date", "change_date")));
 
 	public static final MailinglistRowMapper MAILINGLIST_ROW_MAPPER = new MailinglistRowMapper();
 
 	@Override
-	public List<Mailinglist> getEnabledMailinglistsNamesForAdmin(@VelocityCheck int companyId, int adminId){
+	public List<Mailinglist> getEnabledMailinglistsNamesForAdmin(int companyId, int adminId){
 		final String sql = "SELECT m.mailinglist_id, m.company_id, m.shortname, m.description, m.creation_date, m.change_date " +
 				"FROM mailinglist_tbl m " +
 				"WHERE m.deleted = 0 AND m.company_id = ? " +
@@ -44,7 +44,7 @@ public class MailinglistApprovalDaoImpl extends PaginatedBaseDaoImpl implements 
 	}
 
 	@Override
-	public List<Mailinglist> getEnabledMailinglistsForAdmin(@VelocityCheck int companyId, int adminId) {
+	public List<Mailinglist> getEnabledMailinglistsForAdmin(int companyId, int adminId) {
 		final String sql = "SELECT m.mailinglist_id, m.company_id, m.shortname, m.description, m.creation_date, m.change_date " +
 				"FROM mailinglist_tbl m " +
 				"WHERE m.deleted = 0 AND m.company_id = ? " +
@@ -64,17 +64,17 @@ public class MailinglistApprovalDaoImpl extends PaginatedBaseDaoImpl implements 
 	}
 
 	@Override
-	public boolean isAdminHaveAccess(@VelocityCheck int companyId, int adminId, int mailingListId) {
+	public boolean isAdminHaveAccess(int companyId, int adminId, int mailingListId) {
 		return true;
 	}
 
 	@Override
-	public boolean hasAnyDisabledMailingListsForAdmin(@VelocityCheck int companyId, int adminId) {
+	public boolean hasAnyDisabledMailingListsForAdmin(int companyId, int adminId) {
 		return false;
 	}
 
 	@Override
-	public boolean hasAnyDisabledRecipientBindingsForAdmin(@VelocityCheck int companyId, int adminId, int recipientId) {
+	public boolean hasAnyDisabledRecipientBindingsForAdmin(int companyId, int adminId, int recipientId) {
 		return false;
 	}
 
@@ -105,6 +105,11 @@ public class MailinglistApprovalDaoImpl extends PaginatedBaseDaoImpl implements 
 
 	@Override
 	public void allowAllAdminsToUseMailinglist(int companyId, int mailinglistId){
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
+	public boolean deleteDisabledMailinglistsByCompany(int companyId){
 		throw new UnsupportedOperationException();
 	}
 

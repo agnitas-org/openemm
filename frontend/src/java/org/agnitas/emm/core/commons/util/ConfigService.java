@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -56,23 +56,29 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 import org.w3c.dom.Document;
 
 import com.agnitas.dao.ComAdminDao;
 import com.agnitas.dao.ComCompanyDao;
+import com.agnitas.dao.ComProfileFieldDao;
 import com.agnitas.dao.ComServerMessageDao;
 import com.agnitas.dao.ConfigTableDao;
 import com.agnitas.dao.LicenseDao;
 import com.agnitas.dao.PermissionDao;
+import com.agnitas.dao.impl.ComProfileFieldDaoImpl;
 import com.agnitas.dao.impl.ComServerMessageDaoImpl;
 import com.agnitas.dao.impl.ConfigTableDaoImpl;
 import com.agnitas.dao.impl.LicenseDaoImpl;
 import com.agnitas.dao.impl.PermissionDaoImpl;
 import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.PermissionType;
 import com.agnitas.emm.core.permission.service.PermissionService;
 import com.agnitas.emm.core.permission.service.PermissionServiceImpl;
+import com.agnitas.emm.core.profilefields.service.ProfileFieldService;
+import com.agnitas.emm.core.profilefields.service.impl.ProfileFieldServiceImpl;
 import com.agnitas.emm.core.supervisor.dao.ComSupervisorDao;
 import com.agnitas.emm.wsmanager.dao.WebserviceUserDao;
 import com.agnitas.service.LicenseError;
@@ -93,7 +99,7 @@ import jakarta.servlet.http.HttpServletRequest;
 public class ConfigService {
 	
 	/** The logger. */
-	private static final transient Logger logger = Logger.getLogger(ConfigService.class);
+	private static final transient Logger logger = LogManager.getLogger(ConfigService.class);
 
 	private static final String PUBLIC_LICENSE_KEYSTRING = "-----BEGIN PUBLIC KEY-----\nMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCcdArGIy/hseE9bz53siYnClOQ\nABrRFRVs/zdN8HpweXxpFqa4SUcp9SFIjqgQ5l/FRdEE9EFc865oGZI1H2RK9Jl1\nb7NxFBwu6S4kWFpy+0Xlp+FCLMXVkBDxLB3vv96VR714n2bFh11/UanlfptqMYPQ\nq7gZCmP5Bc06ORaxrQIDAQAB\n-----END PUBLIC KEY-----";
 
@@ -139,6 +145,8 @@ public class ConfigService {
 	
 	/** DAO for access server_command_tbl table. */
 	protected ComServerMessageDao serverMessageDao;
+	
+	protected ProfileFieldService profileFieldService;
 
 	private static Boolean IS_ORACLE_DB = null;
 	private static Map<String, Map<Integer, String>> LICENSE_VALUES = null;
@@ -186,6 +194,12 @@ public class ConfigService {
 			PermissionService permissionService = new PermissionServiceImpl();
 			((PermissionServiceImpl) permissionService).setPermissionDao(permissionDao);
 			instance.setPermissionService(permissionService);
+			
+			ComProfileFieldDao profileFieldDao = new ComProfileFieldDaoImpl();
+			((ComProfileFieldDaoImpl) profileFieldDao).setDataSource(dataSource);
+			ProfileFieldService profileFieldService = new ProfileFieldServiceImpl();
+			((ProfileFieldServiceImpl) profileFieldService).setProfileFieldDao(profileFieldDao);
+			instance.setProfileFieldService(profileFieldService);
 		}
 		return instance;
 	}
@@ -312,6 +326,16 @@ public class ConfigService {
 	@Required
 	public void setServerMessageDao(ComServerMessageDao serverMessageDao) {
 		this.serverMessageDao = serverMessageDao;
+	}
+	
+	/**
+	 * Set ProfileFieldService
+	 * 
+	 * @param profileFieldService
+	 */
+	@Required
+	public void setProfileFieldService(ProfileFieldService profileFieldService) {
+		this.profileFieldService = profileFieldService;
 	}
 	
 	// ----------------------------------------------------------------------------------------------------------------
@@ -639,15 +663,41 @@ public class ConfigService {
 			// Check maximum number of profile fields
 			int maximumNumberOfProfileFields = NumberUtils.toInt(LICENSE_VALUES.get(ConfigValue.System_License_MaximumNumberOfProfileFields.toString()).get(0));
 			if (maximumNumberOfProfileFields >= 0) {
-				int numberOfProfileFields;
+				int numberOfCompanySpecificProfileFields;
 				try {
-					numberOfProfileFields = companyDao.getMaximumNumberOfProfileFields();
+					numberOfCompanySpecificProfileFields = profileFieldService.getMaximumNumberOfCompanySpecificProfileFields();
 				} catch (Exception e) {
 					throw new LicenseError("Cannot detect number of profileFields: " + e.getMessage(), e);
 				}
-			 	if (numberOfProfileFields > maximumNumberOfProfileFields) {
-			 		throw new LicenseError("Invalid Number of profileFields", maximumNumberOfProfileFields, numberOfProfileFields);
+			 	if (numberOfCompanySpecificProfileFields > maximumNumberOfProfileFields) {
+			 		throw new LicenseError("Invalid Number of profileFields", maximumNumberOfProfileFields, numberOfCompanySpecificProfileFields);
 			 	}
+			}
+		
+			// Check maximum number of AccessLimitingMailingLists (ALML) per company
+			int highestNumberOfAccessLimitingMailinglistsPerCompany = licenseDao.getHighestAccessLimitingMailinglistsPerCompany();
+			int licenseMaximumOfAccessLimitingMailinglistsPerCompany;
+	        Map<Integer, String> licenseStringValuesMaximumOfAccessLimitingMailinglistsPerCompany = LICENSE_VALUES.get(ConfigValue.System_License_MaximumNumberOfAccessLimitingMailinglistsPerCompany.toString());
+	        if (licenseStringValuesMaximumOfAccessLimitingMailinglistsPerCompany != null && licenseStringValuesMaximumOfAccessLimitingMailinglistsPerCompany.get(0) != null) {
+	        	licenseMaximumOfAccessLimitingMailinglistsPerCompany = NumberUtils.toInt(licenseStringValuesMaximumOfAccessLimitingMailinglistsPerCompany.get(0));
+	        } else {
+	        	licenseMaximumOfAccessLimitingMailinglistsPerCompany = NumberUtils.toInt(ConfigValue.System_License_MaximumNumberOfAccessLimitingMailinglistsPerCompany.getDefaultValue());
+	        }
+			if (licenseMaximumOfAccessLimitingMailinglistsPerCompany >= 0 && licenseMaximumOfAccessLimitingMailinglistsPerCompany < highestNumberOfAccessLimitingMailinglistsPerCompany) {
+				throw new LicenseError("Invalid Number of AccessLimitingMailingLists", licenseMaximumOfAccessLimitingMailinglistsPerCompany, highestNumberOfAccessLimitingMailinglistsPerCompany);
+			}
+		
+			// Check maximum number of AccessLimitingTargetgroups (ALTG) per company
+			int highestNumberOfAccessLimitingTargetgroupsPerCompany = licenseDao.getHighestAccessLimitingTargetgroupsPerCompany();
+			int licenseMaximumOfAccessLimitingTargetgroupsPerCompany;
+	        Map<Integer, String> licenseStringValuesMaximumOfAccessLimitingTargetgroupsPerCompany = LICENSE_VALUES.get(ConfigValue.System_License_MaximumNumberOfAccessLimitingTargetgroupsPerCompany.toString());
+	        if (licenseStringValuesMaximumOfAccessLimitingTargetgroupsPerCompany != null && licenseStringValuesMaximumOfAccessLimitingTargetgroupsPerCompany.get(0) != null) {
+	        	licenseMaximumOfAccessLimitingTargetgroupsPerCompany = NumberUtils.toInt(licenseStringValuesMaximumOfAccessLimitingTargetgroupsPerCompany.get(0));
+	        } else {
+	        	licenseMaximumOfAccessLimitingTargetgroupsPerCompany = NumberUtils.toInt(ConfigValue.System_License_MaximumNumberOfAccessLimitingTargetgroupsPerCompany.getDefaultValue());
+	        }
+			if (licenseMaximumOfAccessLimitingTargetgroupsPerCompany >= 0 && licenseMaximumOfAccessLimitingTargetgroupsPerCompany < highestNumberOfAccessLimitingTargetgroupsPerCompany) {
+				throw new LicenseError("Invalid Number of AccessLimitingTargetgroups", licenseMaximumOfAccessLimitingTargetgroupsPerCompany, highestNumberOfAccessLimitingTargetgroupsPerCompany);
 			}
 		
 			// Check allowed premium features
@@ -659,10 +709,18 @@ public class ConfigService {
 					allowedPremiumFeatures.add(allowedPremiumFeature.trim());
 				}
 			}
+			
+			// Also load extended Permissions if available (OpenEMM has no PermissionExtended class)
+			try {
+				Class.forName("com.agnitas.emm.core.PermissionExtended");
+			} catch (ClassNotFoundException e) {
+				// do nothing
+			}
+			
 			if (!allowedPremiumFeatures.contains("all") && !allowedPremiumFeatures.contains("ALL")) {
 				// Check and set or reset premium features
 				for (Permission permission : permissionService.getAllPermissions()) {
-					if (permission.isPremium() && !allowedPremiumFeatures.contains(permission.toString())) {
+					if (permission.getPermissionType() == PermissionType.Premium && !allowedPremiumFeatures.contains(permission.toString())) {
 						unAllowedPremiumFeatures.add(permission.toString());
 					}
 				}
@@ -846,19 +904,6 @@ public class ConfigService {
 		String value = getValue(configurationValueID, companyID);
 		
 		return AgnUtils.interpretAsBoolean(value);
-	}
-	
-	public int getBooleanAsInteger(ConfigValue configurationValueID, @VelocityCheck int companyID, int valueForTrue, int valueForFalse) {
-		try {
-			return getIntegerValue(configurationValueID, companyID);
-		} catch (Exception e) {
-			boolean value = getBooleanValue(configurationValueID, companyID);
-			if (value) {
-				return valueForTrue;
-			} else {
-				return valueForFalse;
-			}
-		}
 	}
 	
 	public <E extends Enum<E>> Optional<E> getEnum(final ConfigValue configValue, final int companyID, final Class<E> enumClass) {
@@ -1148,19 +1193,13 @@ public class ConfigService {
 	public String getPushNotificationOpenTrackingUrl(final int companyID) {
 		return getValue(ConfigValue.PushNotificationOpenTrackingUrl, companyID);
 	}
-	
-	public final int getPushNotificationMaxRedirectTokenGenerationAttempts(final int companyID) {
-		return getIntegerValue(ConfigValue.PushNotificationMaxRedirectTokenGenerationAttempts, companyID);
+
+	public boolean isConfigValueExists(ConfigValue configurationValueID, int companyId) {
+		refreshValues();
+		Map<Integer, String> companyValuesMap = CONFIGURATIONVALUES.get(configurationValueID.toString());
+		return companyValuesMap != null && companyValuesMap.containsKey(companyId);
 	}
-	
-	public final int getPushNotificationMaxRedirectTokenAge() {
-		return getIntegerValue(ConfigValue.PushNotificationMaxRedirectTokenAge);
-	}
-	
-	public final int getPushNotificationMaxTrackingIdGenerationAttempts(final int companyID) {
-		return getIntegerValue(ConfigValue.PushNotificationMaxTrackingIdGenerationAttempts, companyID);
-	}
-	
+
 	public static Date getBuildTime() {
 		try {
 	        URL resource = ConfigService.class.getResource(ConfigService.class.getSimpleName() + ".class");

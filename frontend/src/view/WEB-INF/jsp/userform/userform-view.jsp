@@ -15,6 +15,7 @@
 <%--@elvariable id="companyId" type="java.lang.Integer"--%>
 
 <c:url var="actionEditUrlPattern" value="/action/{action-ID}/view.action"/>
+<c:set var="labMsq"><mvc:message code="lab.message"/></c:set>
 
 <mvc:form servletRelativeAction="/webform/save.action" id="userFormForm" modelAttribute="form" data-form="resource"
           data-autosave-scope="action-form/${form.formId}"
@@ -26,20 +27,18 @@
         }
     </script>
 
-    <emm:ShowByPermission token="forms.creator">
-        <script id="config:formbuilderCommon" type="application/json">
-            {
-                "companyId": ${companyId},
-                "confirmationModal": "warning-html-generation-modal",
-                "namesJson": ${emm:toJson(names)},
-                "mediapoolImages": ${emm:toJson(mediapoolImages)},
-                "textProfileFields": ${emm:toJson(textProfileFields)},
-                "dateProfileFields": ${emm:toJson(dateProfileFields)},
-                "numberProfileFields": ${emm:toJson(numberProfileFields)},
-                "cssUrl": "${formCssLocation}/css/bootstrap.min.css"
-            }
-        </script>
-    </emm:ShowByPermission>
+   <script id="config:formbuilderCommon" type="application/json">
+   		{
+			"companyId": ${companyId},
+            "confirmationModal": "warning-html-generation-modal",
+            "namesJson": ${emm:toJson(names)},
+            "mediapoolImages": ${emm:toJson(mediapoolImages)},
+            "textProfileFields": ${emm:toJson(textProfileFields)},
+            "dateProfileFields": ${emm:toJson(dateProfileFields)},
+            "numberProfileFields": ${emm:toJson(numberProfileFields)},
+            "cssUrl": "${formCssLocation}/css/bootstrap.min.css"
+		}
+	</script>
 
     <mvc:hidden path="formId"/>
     <emm:workflowParameters />
@@ -203,13 +202,11 @@
                                             </a>
                                         </li>
                                     </c:if>
-                                    <emm:ShowByPermission token="forms.creator">
-                                        <li>
-                                            <a href="#" data-toggle-tab="#tab-success-template-form-builder">
-                                                <mvc:message code="userform.builder"/>
-                                            </a>
-                                        </li>
-                                    </emm:ShowByPermission>
+                                    <li>
+                                        <a href="#" data-toggle-tab="#tab-success-template-form-builder" data-tooltip="${labMsq}">
+                                            <mvc:message code="userform.builder"/> <i class="icon icon-flask"></i>
+                                        </a>
+                                    </li>
                                 </ul>
                                 <ul class="inline-tile-header-actions">
                                     <li>
@@ -242,20 +239,18 @@
                                     </div>
                                 </div>
 
-                                <emm:ShowByPermission token="forms.creator">
-                                    <!-- FORM BUILDER -->
-                                    <div id="tab-success-template-form-builder" class="hidden" data-initializer="formbuilder">
-                                        <script id="config:formbuilder" type="application/json">
+                                <!-- FORM BUILDER -->
+                                <div id="tab-success-template-form-builder" class="hidden" data-initializer="formbuilder">
+                                    <script id="config:formbuilder" type="application/json">
                                             {
                                                 "formName": "${empty form.formName ? "new form" : form.formName}${'(success)'}",
                                                 "data": ${empty form.successSettings.formBuilderJson ? "\"\"" : form.successSettings.formBuilderJson}
                                             }
                                         </script>
-                                        <div class="row">
-                                            <div id="successFormBuilder" class="js-form-builder" data-target="#successTemplate"></div>
-                                        </div>
+                                    <div class="row">
+                                        <div id="successFormBuilder" class="js-form-builder" data-target="#successTemplate"></div>
                                     </div>
-                                </emm:ShowByPermission>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -343,13 +338,11 @@
                                             </a>
                                         </li>
                                     </c:if>
-                                    <emm:ShowByPermission token="forms.creator">
-                                        <li>
-                                            <a href="#" data-toggle-tab="#tab-error-template-form-builder">
-                                                <mvc:message code="userform.builder"/>
-                                            </a>
-                                        </li>
-                                    </emm:ShowByPermission>
+                                    <li>
+                                        <a href="#" data-toggle-tab="#tab-error-template-form-builder" data-tooltip="${labMsq}">
+                                            <mvc:message code="userform.builder"/> <i class="icon icon-flask"></i>
+                                        </a>
+                                    </li>
                                 </ul>
                                 <ul class="inline-tile-header-actions">
                                     <li>
@@ -382,20 +375,18 @@
                                     </div>
                                 </div>
 
-                                <emm:ShowByPermission token="forms.creator">
-                                    <!-- FORM BUILDER -->
-                                    <div id="tab-error-template-form-builder" class="hidden" data-initializer="formbuilder">
-                                        <script id="config:formbuilder" type="application/json">
+                                <!-- FORM BUILDER -->
+                                <div id="tab-error-template-form-builder" class="hidden" data-initializer="formbuilder">
+                                    <script id="config:formbuilder" type="application/json">
                                             {
                                                 "formName": "${empty form.formName ? "new form" : form.formName}${'(error)'}",
                                                 "data": ${empty form.errorSettings.formBuilderJson ? "\"\"" : form.errorSettings.formBuilderJson}
                                             }
                                         </script>
-                                        <div class="row">
-                                            <div id="errorFormBuilder" class="js-form-builder" data-target="#errorTemplate"></div>
-                                        </div>
+                                    <div class="row">
+                                        <div id="errorFormBuilder" class="js-form-builder" data-target="#errorTemplate"></div>
                                     </div>
-                                </emm:ShowByPermission>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -442,13 +433,11 @@
                                 <mvc:message code="mailingContentHTMLEditor"/>
                             </a>
                         </li>
-                        <emm:ShowByPermission token="forms.creator">
-                            <li>
-                                <a href="#" data-toggle-tab="#tab-modal-template-formbuilder">
-                                    <mvc:message code="userform.builder"/>
-                                </a>
-                            </li>
-                        </emm:ShowByPermission>
+                        <li>
+                        	<a href="#" data-toggle-tab="#tab-modal-template-formbuilder" data-tooltip="${labMsq}" data-tooltip-options="placement: 'bottom'">
+                            	<mvc:message code="userform.builder"/> <i class="icon icon-flask"></i>
+                            </a>
+                        </li>
                     </ul>
                 </div>
                 <div class="modal-body">
@@ -460,15 +449,12 @@
                                   data-editor-options="allowExternalScript: true, isFullHtml: true"
                                   data-sync="{{= target }}" class="form-control js-editor js-wysiwyg hidden"></textarea>
                     </div>
-                    <emm:ShowByPermission token="forms.creator">
-                        <div id="tab-modal-template-formbuilder" {{ (showFormBuilder) ? print('data-tab-show') : print('data-tab-hide') }}>
-                            <!-- FORM BUILDER -->
-                            <div class="row" data-initializer="formbuilder">
-                                <div id="modalFormBuilder" class="modal-js-form-builder" data-target-formbuilder="{{= targetFormBuilder }}"></div>
-                            </div>
+                    <div id="tab-modal-template-formbuilder" {{ (showFormBuilder) ? print('data-tab-show') : print('data-tab-hide') }}>
+                    	<!-- FORM BUILDER -->
+                        <div class="row" data-initializer="formbuilder">
+                        	<div id="modalFormBuilder" class="modal-js-form-builder" data-target-formbuilder="{{= targetFormBuilder }}"></div>
                         </div>
-                    </emm:ShowByPermission>
-
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <div class="btn-group">
@@ -547,7 +533,7 @@
                         <div class="form-group">
                             <div class="row">
                                 <div class="col-sm-8 col-sm-offset-2">
-                                    <mvc:message code="GWUA.warning.userform.severalContentTabsChanged"/>
+                                    <mvc:message code="warning.userform.change.code"/>
                                 </div>
                             </div>
                             <div class="row"></div>

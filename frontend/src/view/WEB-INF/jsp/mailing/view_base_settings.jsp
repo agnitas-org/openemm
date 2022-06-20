@@ -1,12 +1,11 @@
+<%@page import="com.agnitas.emm.common.MailingType"%>
 <%@ page language="java" contentType="text/html; charset=utf-8" buffer="64kb" errorPage="/error.do" %>
 <%@page import="org.agnitas.dao.FollowUpType"%>
-<%@ page import="com.agnitas.beans.ComAdminPreferences" %>
+<%@ page import="com.agnitas.beans.AdminPreferences" %>
 <%@ page import="com.agnitas.beans.Mailing" %>
 <%@ page import="com.agnitas.beans.TargetLight" %>
-<%@ page import="com.agnitas.emm.core.report.enums.fields.MailingTypes" %>
 <%@ page import="com.agnitas.beans.Mailing" %>
-<%@ page import="org.agnitas.web.MailingBaseAction" %>
-<%@ page import="com.agnitas.web.ComMailingBaseAction" %>  <%-- Required for view_base_settings-follow3.jspf --%>
+<%@ page import="com.agnitas.web.MailingBaseAction" %>  <%-- Required for view_base_settings-follow3.jspf --%>
 <%@ page import="com.agnitas.emm.core.target.beans.TargetComplexityGrade" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
@@ -20,10 +19,8 @@
 <%--@elvariable id="mailingBaseForm" type="com.agnitas.web.forms.ComMailingBaseForm"--%>
 <%--@elvariable id="helplanguage" type="java.lang.String"--%>
 
-<c:set var="ACTION_REMOVE_TARGET" value="<%=MailingBaseAction.ACTION_REMOVE_TARGET%>" scope="page"/>
-
-<c:set var="MAILING_SETTINGS_EXPANDED" value="<%=ComAdminPreferences.MAILING_SETTINGS_EXPANDED%>"/>
-<c:set var="MAILING_SETTINGS_COLLAPSED" value="<%=ComAdminPreferences.MAILING_SETTINGS_COLLAPSED%>"/>
+<c:set var="MAILING_SETTINGS_EXPANDED" value="<%=AdminPreferences.MAILING_SETTINGS_EXPANDED%>"/>
+<c:set var="MAILING_SETTINGS_COLLAPSED" value="<%=AdminPreferences.MAILING_SETTINGS_COLLAPSED%>"/>
 
 <c:set var="TARGET_MODE_OR" value="<%=Mailing.TARGET_MODE_OR%>"/>
 <c:set var="TARGET_MODE_AND" value="<%=Mailing.TARGET_MODE_AND%>"/>
@@ -31,11 +28,11 @@
 <c:set var="LIST_SPLIT_PREFIX" value="<%= TargetLight.LIST_SPLIT_PREFIX %>"/>
 <c:set var="LIST_SPLIT_CM_PREFIX" value="<%= TargetLight.LIST_SPLIT_CM_PREFIX %>"/>
 
-<c:set var="MAILING_TYPE_NORMAL" value="<%= MailingTypes.NORMAL.getCode() %>"/>
-<c:set var="MAILING_TYPE_FOLLOWUP" value="<%= MailingTypes.FOLLOW_UP.getCode() %>"/>
-<c:set var="MAILING_TYPE_ACTIONBASED" value="<%= MailingTypes.ACTION_BASED.getCode() %>"/>
-<c:set var="MAILING_TYPE_DATEBASED" value="<%= MailingTypes.DATE_BASED.getCode() %>"/>
-<c:set var="MAILING_TYPE_INTERVAL" value="<%= MailingTypes.INTERVAL.getCode() %>"/>
+<c:set var="MAILING_TYPE_NORMAL" value="<%= MailingType.NORMAL.getCode() %>"/>
+<c:set var="MAILING_TYPE_FOLLOWUP" value="<%= MailingType.FOLLOW_UP.getCode() %>"/>
+<c:set var="MAILING_TYPE_ACTIONBASED" value="<%= MailingType.ACTION_BASED.getCode() %>"/>
+<c:set var="MAILING_TYPE_DATEBASED" value="<%= MailingType.DATE_BASED.getCode() %>"/>
+<c:set var="MAILING_TYPE_INTERVAL" value="<%= MailingType.INTERVAL.getCode() %>"/>
 
 <c:set var="FOLLOWUP_TYPE_OPENER" value="<%= FollowUpType.TYPE_FOLLOWUP_OPENER.getKey() %>"/>
 <c:set var="FOLLOWUP_TYPE_NON_OPENER" value="<%= FollowUpType.TYPE_FOLLOWUP_NON_OPENER.getKey() %>"/>
@@ -116,7 +113,7 @@
         <div class="form-group" data-field="validator">
             <div class="col-sm-4">
                 <label class="control-label">
-                    <label for="settingsGeneralMailingList"><bean:message key="Mailinglist"/></label>
+                    <label for="settingsGeneralMailingList"><bean:message key="Mailinglist"/>*</label>
                     <button class="icon icon-help" data-help="help_${helplanguage}/mailing/view_base/MailingListMsg.xml" tabindex="-1" type="button"></button>
                     <c:if test="${not isMailinglistEditable}">
                         <div class="icon icon-warning" data-tooltip="<bean:message key="warning.mailinglist.disabled"/>"></div>
@@ -127,7 +124,6 @@
                 <div class="input-group">
                     <div class="input-group-controls">
                         <c:set var="isMailinglistDenied" value="${not isMailinglistEditable or not IS_MAILING_EDITABLE or not isEmailSettingsEditable or isWorkflowDriven}"/>
-                        <emm:ShowByPermission token="update.mailinglist.allowDeletion">
                             <agn:agnSelect styleId="settingsGeneralMailingList" styleClass="form-control js-select" property="mailinglistID" size="1"
                                            data-action="save-mailing-list-id"
                                            disabled="${isMailinglistDenied}"
@@ -141,18 +137,6 @@
                                     <agn:agnOption value="${mailinglist.id}" styleId="${mailinglist.id}-mailinglist">${mailinglist.shortname}</agn:agnOption>
                                 </logic:iterate>
                             </agn:agnSelect>
-                        </emm:ShowByPermission>
-                        <emm:HideByPermission token="update.mailinglist.allowDeletion">
-                            <agn:agnSelect styleId="settingsGeneralMailingList" styleClass="form-control js-select" property="mailinglistID" size="1"
-                                           data-action="save-mailing-list-id"
-                                           disabled="${isMailinglistDenied}" data-field-validator="required-id">
-                                <agn:agnOption value="0" styleId="0-mailinglist">--</agn:agnOption>
-
-                                <logic:iterate id="mailinglist" name="mailingBaseForm" property="mailingLists">
-                                    <agn:agnOption value="${mailinglist.id}" styleId="${mailinglist.id}-mailinglist">${mailinglist.shortname}</agn:agnOption>
-                                </logic:iterate>
-                            </agn:agnSelect>
-                        </emm:HideByPermission>
                     </div>
                     <c:if test="${isWorkflowDriven}">
                         <div class="input-group-btn">
@@ -252,6 +236,8 @@
         </emm:ShowByPermission>
     </div>
 </div>
+
+<%@include file="fragments/access-limiting-target-groups-tile.jspf" %>
 
 <div id="mailingTargets" class="tile" data-action="change-mailing-settings" >
     <div class="tile-header">

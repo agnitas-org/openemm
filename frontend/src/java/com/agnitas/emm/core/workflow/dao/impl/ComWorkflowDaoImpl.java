@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
+import com.agnitas.beans.ComAdmin;
 import org.agnitas.beans.CompaniesConstraints;
 import org.agnitas.dao.impl.BaseDaoImpl;
 import org.agnitas.dao.impl.mapper.IntegerRowMapper;
@@ -33,11 +34,14 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.PredicateUtils;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Required;
 import org.springframework.jdbc.core.RowMapper;
 
 import com.agnitas.beans.Mailing;
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.emm.core.target.service.ComTargetService;
 import com.agnitas.emm.core.workflow.beans.Workflow;
 import com.agnitas.emm.core.workflow.beans.Workflow.WorkflowStatus;
 import com.agnitas.emm.core.workflow.beans.WorkflowDependency;
@@ -48,8 +52,12 @@ import com.agnitas.emm.core.workflow.beans.WorkflowStop;
 import com.agnitas.emm.core.workflow.dao.ComWorkflowDao;
 
 public class ComWorkflowDaoImpl extends BaseDaoImpl implements ComWorkflowDao {
-	private static final transient Logger logger = Logger.getLogger(ComWorkflowDaoImpl.class);
+	
+	/** The logger. */
+	private static final transient Logger logger = LogManager.getLogger(ComWorkflowDaoImpl.class);
 
+    protected ComTargetService targetService;
+	
     @Override
     public boolean exists(int workflowId, @VelocityCheck int companyId) {
         String sqlGetCount = "SELECT COUNT(*) FROM workflow_tbl WHERE workflow_id = ? AND company_id = ?";
@@ -64,7 +72,7 @@ public class ComWorkflowDaoImpl extends BaseDaoImpl implements ComWorkflowDao {
 	@Override
     public String getSchema(int workflowId, @VelocityCheck int companyId) {
 	    String sqlGetSchema = "SELECT workflow_schema FROM workflow_tbl WHERE workflow_id = ? AND company_id = ?";
-	    return selectObjectDefaultNull(logger, sqlGetSchema, new StringRowMapper(), workflowId, companyId);
+	    return selectObjectDefaultNull(logger, sqlGetSchema, StringRowMapper.INSTANCE, workflowId, companyId);
     }
 
     @Override
@@ -267,43 +275,32 @@ public class ComWorkflowDaoImpl extends BaseDaoImpl implements ComWorkflowDao {
     }
 
     @Override
-    public List<Workflow> getWorkflowsOverview(@VelocityCheck int companyId, int adminId) {
-        return getWorkflowsOverview(companyId, adminId, 0);
-    }
-
-    @Override
-    public List<Workflow> getWorkflowsOverview(@VelocityCheck int companyId, int adminId, int altgId) {
+    public List<Workflow> getWorkflowsOverview(ComAdmin admin) {
         List<Object> parameters = new ArrayList<>();
 		String query = "SELECT wf.workflow_id, wf.company_id, wf.shortname, wf.description, wf.status, wf.editor_position_left," +
 				" wf.editor_position_top, wf.is_inner, wf.general_start_date, wf.general_end_date, wf.end_type, wf.general_start_reaction, " +
 				" wf.general_start_event, wf.workflow_schema FROM workflow_tbl wf" +
 				" WHERE wf.company_id = ? AND  wf.is_inner = 0 ";
-		parameters.add(companyId);
+		parameters.add(admin.getCompanyID());
 
-		if (adminId > 0 && isDisabledMailingListsSupported()) {
+		if (admin.getAdminID() > 0 && isDisabledMailingListsSupported()) {
 			query += "AND wf.workflow_id NOT IN (SELECT workflow_id FROM workflow_dependency_tbl WHERE company_id = wf.company_id AND type = ? AND " +
 					" entity_id IN (SELECT mailinglist_id FROM disabled_mailinglist_tbl WHERE admin_id = ?))";
 			parameters.add(WorkflowDependencyType.MAILINGLIST.getId());
-			parameters.add(adminId);
+			parameters.add(admin.getAdminID());
 		}
 
-		if(altgId > 0) {
-			query += "AND wf.workflow_id NOT IN "
-					+ "(SELECT DISTINCT idep.workflow_id "
-					+ "FROM workflow_dependency_tbl idep JOIN mailing_tbl im ON idep.entity_id = im.mailing_id AND im.company_id = idep.company_id "
-					+ "WHERE idep.type IN (?, ?, ?) AND im.company_id = ? AND (im.target_expression IS NULL OR NOT " + DbUtilities.createTargetExpressionRestriction(isOracleDB(), "im") + ")) ";
-			parameters.add(WorkflowDependencyType.MAILING_DELIVERY.getId());
-			parameters.add(WorkflowDependencyType.MAILING_LINK.getId());
-			parameters.add(WorkflowDependencyType.MAILING_REFERENCE.getId());
-			parameters.add(companyId);
-			parameters.add(altgId);
-		}
+        query += getWorkflowOverviewAdditionalRestrictions(admin, parameters);
 
 		query += " ORDER BY CASE WHEN  wf.status = 2 THEN 3 WHEN  wf.status = 3 THEN 2 WHEN  wf.status = 1 OR  wf.status = 4 THEN  wf.status END, " +
 				" CASE WHEN  wf.status = 2 OR  wf.status = 3 OR  wf.status = 4 THEN  wf.general_start_date WHEN  wf.status = 1 THEN  wf.created END DESC";
 
 
 		return select(logger, query, new WorkflowRowMapper(), parameters.toArray());
+    }
+
+    protected String getWorkflowOverviewAdditionalRestrictions(ComAdmin admin, List<Object> params) {
+        return StringUtils.EMPTY;
     }
 
     @Override
@@ -350,7 +347,7 @@ public class ComWorkflowDaoImpl extends BaseDaoImpl implements ComWorkflowDao {
                 "JOIN workflow_dependency_tbl dep ON dep.workflow_id = w.workflow_id AND dep.company_id = w.company_id " +
                 "WHERE w.company_id = ? AND dep.type = ? AND dep.entity_id = ?";
 
-        return select(logger, sqlGetDependentIds, new IntegerRowMapper(), companyId, WorkflowDependencyType.MAILING_DELIVERY.getId(), mailingId);
+        return select(logger, sqlGetDependentIds, IntegerRowMapper.INSTANCE, companyId, WorkflowDependencyType.MAILING_DELIVERY.getId(), mailingId);
     }
 
     @Override
@@ -537,13 +534,13 @@ public class ComWorkflowDaoImpl extends BaseDaoImpl implements ComWorkflowDao {
         List<Integer> targetConditionsInUse = new ArrayList<>();
     
         List<Integer> targetIdsUsedByReactionDecl =
-                select(logger, "SELECT target_id FROM workflow_reaction_decl_tbl WHERE company_id = ? AND target_id <> 0", new IntegerRowMapper(), companyId);
+                select(logger, "SELECT target_id FROM workflow_reaction_decl_tbl WHERE company_id = ? AND target_id <> 0", IntegerRowMapper.INSTANCE, companyId);
         
         List<Integer> targetIdsUsedByOptimization =
-                select(logger, "SELECT target_id FROM auto_optimization_tbl WHERE company_id = ? AND target_id <> 0", new IntegerRowMapper(), companyId);
+                select(logger, "SELECT target_id FROM auto_optimization_tbl WHERE company_id = ? AND target_id <> 0", IntegerRowMapper.INSTANCE, companyId);
         
         List<Integer> targetIdsUsedByExportPredef =
-                select(logger, "SELECT target_id FROM export_predef_tbl WHERE company_id = ? AND target_id <> 0", new IntegerRowMapper(), companyId);
+                select(logger, "SELECT target_id FROM export_predef_tbl WHERE company_id = ? AND target_id <> 0", IntegerRowMapper.INSTANCE, companyId);
     
         targetConditionsInUse.addAll(targetIdsUsedByReactionDecl);
         targetConditionsInUse.addAll(targetIdsUsedByOptimization);
@@ -610,4 +607,9 @@ public class ComWorkflowDaoImpl extends BaseDaoImpl implements ComWorkflowDao {
 			return workflow;
 		}
 	}
+	
+    @Required
+    public void setTargetService(ComTargetService targetService) {
+        this.targetService = targetService;
+    }
 }

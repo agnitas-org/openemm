@@ -536,9 +536,11 @@ AGN.Lib.Controller.new('workflow-view', function() {
     });
 
     this.addDomInitializer('recipient-editor-initializer', function() {
+        var isAltgExtended = Def.constants.isAltgExtended;
         var nodeEditor = EditorsHelper.registerEditor('recipient', {
             formName: 'recipientForm',
             targetSelector: '#recipientTargetSelect',
+            altgSelector: '#recipientAltgSelect',
             safeToSave: true,
 
             getTargetFieldSelect: function() {
@@ -554,6 +556,13 @@ AGN.Lib.Controller.new('workflow-view', function() {
                                 return target.text;
                             }
                         }
+                    })
+                );
+            },
+            getAltgFieldSelect: function() {
+                return new Select(
+                    $(this.altgSelector).select2({
+                        formatSelection: function(target) { return target.text; }
                     })
                 );
             },
@@ -573,10 +582,11 @@ AGN.Lib.Controller.new('workflow-view', function() {
 
             fillEditor: function(node) {
                 var data = node.getData();
-
-                if (Def.constants.accessLimitTargetId > 0) {
-                    data.targets = _.union([Def.constants.accessLimitTargetId], data.targets);
-                    data.targetsOption = 'ALL_TARGETS_REQUIRED';
+                if (!isAltgExtended) {
+                  if (Def.constants.accessLimitTargetId > 0) {
+                      data.targets = _.union([Def.constants.accessLimitTargetId], data.targets);
+                      data.targetsOption = 'ALL_TARGETS_REQUIRED';
+                  }
                 }
 
                 var $form = $('form[name="' + this.formName + '"]');
@@ -585,11 +595,17 @@ AGN.Lib.Controller.new('workflow-view', function() {
                 EditorsHelper.fillFormFromObject(this.formName, data, '');
 
                 this.getTargetFieldSelect().selectValue(data.targets);
+                if (isAltgExtended) {
+                  this.getAltgFieldSelect().selectValue(data.altgs);
+                }
             },
 
             saveEditor: function() {
                 var data = EditorsHelper.formToObject(this.formName);
                 data.targets = this.getTargetFieldSelect().getSelectedValue();
+                if (isAltgExtended) {
+                  data.altgs = this.getAltgFieldSelect().getSelectedValue();
+                }
                 return data;
             }
         });
@@ -599,7 +615,17 @@ AGN.Lib.Controller.new('workflow-view', function() {
         });
 
         controller.addAction({click: 'recipient-editor-save'}, function() {
-            EditorsHelper.saveCurrentEditorWithUndo();
+            if (isAltgExtended) {
+              var form = AGN.Lib.Form.get($('#' + nodeEditor.formName));
+              if (form.valid({})) {
+                form.cleanErrors();
+                EditorsHelper.saveCurrentEditorWithUndo();
+              } else {
+                form.handleErrors();
+              }
+            } else {
+              EditorsHelper.saveCurrentEditorWithUndo();
+            }
         });
 
         controller.addAction({click: 'recipient-editor-target-edit'}, function() {

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -15,21 +15,25 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.util.AgnUtils;
+import org.agnitas.util.DateUtilities;
 import org.agnitas.util.HttpUtils;
 import org.agnitas.util.HttpUtils.RequestMethod;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
 import com.agnitas.beans.ComAdmin;
-import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.logon.service.ComLogonService;
 import com.agnitas.emm.core.logon.web.LogonFailedException;
 import com.agnitas.emm.util.quota.api.QuotaLimitExceededException;
@@ -54,7 +58,7 @@ public class RestfulServiceServlet extends BaseRequestServlet {
 	private static final long serialVersionUID = -126080706211654654L;
 
 	/** The logge.r */
-	private static final transient Logger logger = Logger.getLogger(RestfulServiceServlet.class);
+	private static final transient Logger logger = LogManager.getLogger(RestfulServiceServlet.class);
 
 	/**
 	 * Do not use directly. Use getComLogonService() instead
@@ -77,6 +81,8 @@ public class RestfulServiceServlet extends BaseRequestServlet {
 	protected void doService(HttpServletRequest request, HttpServletResponse response, RequestMethod requestMethod) throws Exception {
 		BaseRequestResponse restfulResponse = new JsonRequestResponse(); // Default response type is json
 		RestfulServiceHandler serviceHandler;
+
+		ComAdmin admin = null;
 		
 		try {
 			// Read restful interface to be called
@@ -137,8 +143,6 @@ public class RestfulServiceServlet extends BaseRequestServlet {
 				String username = StringUtils.isNotBlank(basicAuthorizationUsername) ? basicAuthorizationUsername : getRequestParameter(request, "username", true);
 				String password = StringUtils.isNotBlank(basicAuthorizationPassword) ? basicAuthorizationPassword : getRequestParameter(request, "password", true);
 				
-				ComAdmin admin = null;
-				
 				try {
 					if (StringUtils.isBlank(username)) {
 						throw new RestfulAuthentificationException("Authentification failed: username is missing");
@@ -174,8 +178,8 @@ public class RestfulServiceServlet extends BaseRequestServlet {
 				
 				try {
 					// Check authorization
-					if (!admin.permissionAllowed(Permission.RESTFUL_ALLOWED)) {
-						throw new RestfulClientException("User not authorized for: " + Permission.RESTFUL_ALLOWED.toString());
+					if (!admin.isRestful()) {
+						throw new RestfulClientException("User not authorized for Restful webservices");
 					}
 				} catch (RestfulClientException e) {
 					restfulResponse.setClientError(new Exception("Authorization failed: " + e.getMessage(), e), ErrorCode.USER_AUTHORIZATION_ERROR);
@@ -193,7 +197,7 @@ public class RestfulServiceServlet extends BaseRequestServlet {
 				boolean extendedLogging = configService.getBooleanValue(ConfigValue.ExtendedRestfulLogging, admin.getCompanyID());
 				if (extendedLogging && getRequestData(request) != null) {
 					// Store requestData in a temp file for logging purpose, even if it was small enough to be kept it in memory only
-					File tempFile = File.createTempFile("Request_", ".requestData", AgnUtils.createDirectory(TEMP_FILE_DIRECTORY));
+					File tempFile = File.createTempFile("Request_", wasMultiPartRequest(request) ? ".multipart.requestData": ".requestData", AgnUtils.createDirectory(TEMP_FILE_DIRECTORY));
 					try (FileOutputStream outputStream = new FileOutputStream(tempFile)) {
 						try (ByteArrayInputStream inputStream = new ByteArrayInputStream(getRequestData(request))) {
 							IOUtils.copy(inputStream, outputStream);
@@ -204,17 +208,68 @@ public class RestfulServiceServlet extends BaseRequestServlet {
 				writeResponse(response, restfulResponse);
 			}
 		} catch (RestfulNoDataFoundException e) {
+			// do not write an errorlogfile
 			restfulResponse.setNoDataFoundError(e);
 			writeResponse(response, restfulResponse);
 		} catch (RestfulClientException e) {
+			writeErrorLogFile(request, requestMethod, admin, e);
 			restfulResponse.setClientError(e);
 			writeResponse(response, restfulResponse);
 		} catch (QuotaLimitExceededException e) {
+			// do not write an errorlogfile
 			restfulResponse.setClientError(e, ErrorCode.MAX_LOAD_EXCEED_ERROR);
 			writeResponse(response, restfulResponse);
 		} catch (Exception e) {
+			writeErrorLogFile(request, requestMethod, admin, e);
 			restfulResponse.setError(e);
 			writeResponse(response, restfulResponse);
+		}
+	}
+
+	private void writeErrorLogFile(HttpServletRequest request, RequestMethod requestMethod, ComAdmin admin, Exception errorToLog) {
+		try {
+			if (admin != null) {
+				final File companyLogfileDirectory = new File(AgnUtils.getTempDir() + File.separator + "Restful" + File.separator + admin.getCompanyID() + File.separator + new SimpleDateFormat(DateUtilities.YYYYMMDD).format(new Date()));
+				if (!companyLogfileDirectory.exists()) {
+					companyLogfileDirectory.mkdirs();
+				}
+				final String requestUUID = AgnUtils.generateNewUUID().toString().replace("-", "").toUpperCase();
+				final String dateString = new SimpleDateFormat(DateUtilities.YYYY_MM_DD_HH_MM_SS_FORFILENAMES).format(new Date());
+				final String logOutputFilePrefix = "RestfulData_" + dateString + "_" + requestUUID;
+				final File tempFile = new File(companyLogfileDirectory, logOutputFilePrefix + "_error.log");
+				byte[] requestData = getRequestData(request);
+				String requestDataFile = getRequestDataTempFile(request);
+				if ((requestData != null && requestData.length > 0)) {
+					try (FileOutputStream out = new FileOutputStream(tempFile)) {
+						out.write(("Username: " + admin.getUsername() + "\n").getBytes("UTF-8"));
+						out.write(("RequestURI: " + request.getRequestURI() + "\n").getBytes("UTF-8"));
+						out.write(("RequestMethod: " + requestMethod.name() + "\n").getBytes("UTF-8"));
+						out.write(("ErrorMessage: " + errorToLog.getMessage() + "\n").getBytes(StandardCharsets.UTF_8));
+						out.write(("RequestData:\n").getBytes("UTF-8"));
+						out.write(requestData);
+					}
+				} else if (requestDataFile != null) {
+					try (FileOutputStream out = new FileOutputStream(tempFile);
+							FileInputStream in = new FileInputStream(requestDataFile)) {
+						out.write(("Username: " + admin.getUsername() + "\n").getBytes("UTF-8"));
+						out.write(("RequestURI: " + request.getRequestURI() + "\n").getBytes("UTF-8"));
+						out.write(("RequestMethod: " + requestMethod.name() + "\n").getBytes("UTF-8"));
+						out.write(("ErrorMessage: " + errorToLog.getMessage() + "\n").getBytes(StandardCharsets.UTF_8));
+						out.write(("RequestData:\n").getBytes("UTF-8"));
+						IOUtils.copy(in, out);
+					}
+				} else {
+					try (FileOutputStream out = new FileOutputStream(tempFile)) {
+						out.write(("Username: " + admin.getUsername() + "\n").getBytes("UTF-8"));
+						out.write(("RequestURI: " + request.getRequestURI() + "\n").getBytes("UTF-8"));
+						out.write(("RequestMethod: " + requestMethod.name() + "\n").getBytes("UTF-8"));
+						out.write(("ErrorMessage: " + errorToLog.getMessage() + "\n").getBytes(StandardCharsets.UTF_8));
+						out.write(("RequestData: <empty>\n").getBytes("UTF-8"));
+					}
+				}
+			}
+		} catch (Exception e) {
+			logger.error("Cannot write errorlogfile: " + e.getMessage(), e);
 		}
 	}
 	

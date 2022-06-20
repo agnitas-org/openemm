@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -18,6 +18,7 @@ import java.util.function.Function;
 import org.agnitas.util.DbUtilities;
 import org.apache.commons.lang3.StringUtils;
 
+import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.target.eql.ast.AbstractAtomEqlNode;
 import com.agnitas.emm.core.target.eql.ast.AbstractBooleanEqlNode;
 import com.agnitas.emm.core.target.eql.ast.AbstractExpressionalEqlNode;
@@ -60,7 +61,6 @@ import com.agnitas.emm.core.target.eql.codegen.UnknownReferenceTableColumnFaulty
 import com.agnitas.emm.core.target.eql.codegen.UnknownReferenceTableFaultyCodeException;
 import com.agnitas.emm.core.target.eql.codegen.UnsupportedOperatorForDataTypeException;
 import com.agnitas.emm.core.target.eql.codegen.resolver.MailingResolverException;
-import com.agnitas.emm.core.target.eql.codegen.resolver.MailingType;
 import com.agnitas.emm.core.target.eql.codegen.resolver.MailingTypeResolver;
 import com.agnitas.emm.core.target.eql.codegen.resolver.ProfileFieldNameResolver;
 import com.agnitas.emm.core.target.eql.codegen.resolver.ProfileFieldResolveException;
@@ -990,7 +990,9 @@ public class DefaultCommonSqlCodeGeneratorCallback implements SqlCodeGeneratorCa
 		codeStack.push(new CodeFragment(sqlDialect.today(), DataType.DATE, null));
 	}
 
-
+	/**
+	 * @throws ReferenceTableResolveException
+	 */
 	protected String makeReferenceTableFrame(String condition, Set<String> referenceTableNames) throws ReferenceTableResolveException {
 		throw new UnsupportedOperationException();
 	}
@@ -1010,15 +1012,15 @@ public class DefaultCommonSqlCodeGeneratorCallback implements SqlCodeGeneratorCa
 	 * @param timestampColumnName name of column containing timestamp (optional with table name prefix)
 	 * @param location location of timestamp expression in EQL code
 	 * 
-	 * @throws CodeGeneratorException 
+	 * @throws CodeGeneratorException
 	 */
 	public final CodeFragment timestampExpression(final EqlDateFormat dateFormat, final RelationalInfixOperator operator, final String timestampColumnName, final CodeLocation location) throws CodeGeneratorException {
 		assert (codeStack.size() >= 1);
 		final CodeFragment expressionCodeFragment = codeStack.pop();
 		
 		final CodeFragment timestampCodeFragment = new CodeFragment(
-				timestampColumnName, 
-				DataType.DATE, 
+				timestampColumnName,
+				DataType.DATE,
 				null);
 		
 		binaryRelationalOperationWithOperandTransformation(operator, location, timestampCodeFragment, getDateTransformFunction(timestampCodeFragment, dateFormat), expressionCodeFragment, getDateTransformFunction(expressionCodeFragment, dateFormat));

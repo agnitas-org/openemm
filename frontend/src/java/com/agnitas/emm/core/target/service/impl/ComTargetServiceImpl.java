@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -12,7 +12,17 @@ package com.agnitas.emm.core.target.service.impl;
 
 import static com.agnitas.beans.Mailing.NONE_SPLIT_ID;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -20,7 +30,6 @@ import java.util.stream.Collectors;
 import org.agnitas.beans.DynamicTagContent;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.MailingComponentType;
-import org.agnitas.beans.Recipient;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.MailingComponentDao;
 import org.agnitas.dao.exception.target.TargetGroupPersistenceException;
@@ -38,7 +47,8 @@ import org.agnitas.util.beanshell.BeanShellInterpreterFactory;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.springframework.beans.factory.annotation.Required;
@@ -59,6 +69,7 @@ import com.agnitas.emm.core.profilefields.ProfileFieldException;
 import com.agnitas.emm.core.profilefields.service.ProfileFieldService;
 import com.agnitas.emm.core.recipient.dto.RecipientSaveTargetDto;
 import com.agnitas.emm.core.recipient.web.RejectAccessByTargetGroupLimit;
+import com.agnitas.emm.core.target.AltgMode;
 import com.agnitas.emm.core.target.TargetExpressionUtils;
 import com.agnitas.emm.core.target.TargetUtils;
 import com.agnitas.emm.core.target.beans.RawTargetGroup;
@@ -69,6 +80,7 @@ import com.agnitas.emm.core.target.complexity.bean.impl.TargetComplexityEvaluati
 import com.agnitas.emm.core.target.complexity.service.TargetComplexityEvaluator;
 import com.agnitas.emm.core.target.eql.EqlAnalysisResult;
 import com.agnitas.emm.core.target.eql.EqlFacade;
+import com.agnitas.emm.core.target.eql.EqlValidatorService;
 import com.agnitas.emm.core.target.eql.codegen.CodeGeneratorException;
 import com.agnitas.emm.core.target.eql.codegen.resolver.ProfileFieldResolveException;
 import com.agnitas.emm.core.target.eql.codegen.resolver.ReferenceTableResolveException;
@@ -96,7 +108,7 @@ public class ComTargetServiceImpl implements ComTargetService {
 	/**
 	 * The logger.
 	 */
-	private static final transient Logger logger = Logger.getLogger(ComTargetServiceImpl.class);
+	private static final transient Logger logger = LogManager.getLogger(ComTargetServiceImpl.class);
 
 	private static final Pattern GENDER_EQUATION_PATTERN = Pattern.compile("(?:cust\\.gender\\s*(?:=|<>|>|>=|<|<=)\\s*(-?\\d+))|(?:mod\\(cust\\.gender,\\s+(\\d+)\\))");
 
@@ -119,7 +131,7 @@ public class ComTargetServiceImpl implements ComTargetService {
     private TargetGroupLocator targetGroupLocator;
 
 	/** DAO for accessing recipient data. */
-	private ComRecipientDao recipientDao;
+	protected ComRecipientDao recipientDao;
 
 	/** Facade for EQL logic. */
 	private EqlFacade eqlFacade;
@@ -140,6 +152,8 @@ public class ComTargetServiceImpl implements ComTargetService {
 	private TargetFactory targetFactory;
 
 	private QueryBuilderToEqlConverter queryBuilderToEqlConverter;
+
+    private EqlValidatorService eqlValidatorService;
 
 	// ---------------------------------------------------------------------------------------- Business Code
 
@@ -361,7 +375,7 @@ public class ComTargetServiceImpl implements ComTargetService {
             newTarget.setId(0);
         }
 
-        Collection<Message> validationErrors = validateTarget(admin, newTarget.getEQL());
+        Collection<Message> validationErrors = eqlValidatorService.validateEql(admin, newTarget.getEQL());
         if(CollectionUtils.isNotEmpty(validationErrors)) {
             errors.addAll(validationErrors);
             return 0;
@@ -507,18 +521,6 @@ public class ComTargetServiceImpl implements ComTargetService {
 	}
 
 	@Override
-	public String getTargetSQLWithSimpleIfNotExists(int targetId, @VelocityCheck int companyId) {
-    	String sql = TargetExpressionUtils.SIMPLE_TARGET_EXPRESSION;
-		if (targetId > 0) {
-			ComTarget targetGroup = targetDao.getTarget(targetId, companyId);
-			if (targetGroup != null) {
-				sql = targetGroup.getTargetSQL();
-			}
-		}
-		return sql;
-	}
-
-	@Override
 	public String getTargetSQL(int targetId, @VelocityCheck int companyId, boolean isPositive) {
 		String sql = getTargetSQL(targetId, companyId);
 
@@ -639,7 +641,7 @@ public class ComTargetServiceImpl implements ComTargetService {
 
 	@Override
 	public List<TargetLight> getWsTargetLights(final int companyId) {
-		return this.targetDao.getTargetLights(companyId);
+		return targetDao.getTargetLights(companyId);
 	}
 
 	@Override
@@ -667,7 +669,7 @@ public class ComTargetServiceImpl implements ComTargetService {
 
 	@Override
 	public List<TargetLight> getTargetLights(final ComAdmin admin,  boolean includeDeleted, boolean worldDelivery, boolean adminTestDelivery, boolean content) {
-		return getTargetLights(admin.getCompanyID(), includeDeleted,worldDelivery, adminTestDelivery, content); 
+		return getTargetLights(admin.getCompanyID(), includeDeleted,worldDelivery, adminTestDelivery, content);
 	}
 
 	@Override
@@ -935,28 +937,41 @@ public class ComTargetServiceImpl implements ComTargetService {
 	}
 
 	@Override
-	public List<TargetLight> getAccessLimitationTargetLights(final ComAdmin admin) {
+	public List<TargetLight> getAccessLimitationTargetLights(int companyId) {
 		return Collections.emptyList();
 	}
+	
+    @Override
+    public List<TargetLight> getNoAccessLimitationTargetLights(int companyId) {
+        TargetLightsOptions options = TargetLightsOptions.builder()
+ 				.setCompanyId(companyId)
+ 				.setWorldDelivery(true)
+ 				.setAdminTestDelivery(true)
+ 				.setAltgMode(AltgMode.NO_ALTG)
+ 				.build();
+ 		return getTargetLights(options);
+    }
+    
+    @Override
+    public List<TargetLight> extractAdminAltgsFromTargetLights(List<TargetLight> targets, ComAdmin admin) {
+        return Collections.emptyList();
+    }
+    
+    @Override
+    public List<TargetLight> filterTargetLightsByAltgMode(List<TargetLight> targets, AltgMode mode) {
+	    switch (mode) {
+            case ALTG_ONLY:
+                return targets.stream().filter(TargetLight::isAccessLimitation).collect(Collectors.toList());
+            case NO_ALTG:
+                return targets.stream().filter(target -> !target.isAccessLimitation()).collect(Collectors.toList());
+            default:
+                return targets;
+        }
+    }
 
 	@Override
 	public boolean isBasicFullTextSearchSupported(){
 		return targetDao.isBasicFullTextSearchSupported();
-	}
-
-	@Override
-	public boolean isRecipientMatchTarget(ComAdmin admin, int targetGroupId, Recipient recipient) {
-		try {
-			String targetExpression = targetDao.getTargetSQL(targetGroupId, admin.getCompanyID());
-			if (StringUtils.isEmpty(targetExpression)) {
-				return true;
-			}
-			return recipientDao.isNotSavedRecipientDataMatchTarget(admin.getCompanyID(), targetExpression, recipient);
-		} catch (Exception e) {
-			logger.error("Error occurs while checking if recipient match target group: " + e.getMessage(), e);
-		}
-
-		return false;
 	}
 
 	@Override
@@ -976,27 +991,22 @@ public class ComTargetServiceImpl implements ComTargetService {
 
 	@Override
 	public void checkRecipientTargetGroupAccess(ComAdmin admin, int customerId) throws RejectAccessByTargetGroupLimit {
-		int altgId = adminService.getAccessLimitTargetId(admin);
-		boolean isAllowed = false;
-
-		try {
-			int companyId = admin.getCompanyID();
-			String targetExpression = targetDao.getTargetSQL(altgId, companyId);
-
-			if (StringUtils.isEmpty(targetExpression)) {
-				return;
-			}
-
-			isAllowed = recipientDao.isRecipientMatchTarget(companyId, targetExpression, customerId);
-		} catch (Exception e) {
-			logger.error("Error occurs while checking if recipient match target group: " + e.getMessage(), e);
-		}
-
-		if (!isAllowed) {
-			logger.warn("Recipient with id: " + customerId + " is not allowed for ALTG: " + altgId);
-			throw new RejectAccessByTargetGroupLimit(admin.getAdminID(), customerId);
-		}
+        // nothing to do
+    }
+    
+    @Override
+    public boolean isAltg(int targetId) {
+        return targetDao.isAltg(targetId);
 	}
+
+    @Override
+    public Set<Integer> getAltgIdsWithoutAdminAltgIds(int companyId, Set<Integer> adminAltgIds) {
+        Collection<Integer> altgIds = CollectionUtils.emptyIfNull(adminAltgIds);
+        return CollectionUtils.emptyIfNull(getAccessLimitationTargetLights(companyId)).stream()
+                .map(TargetLight::getId)
+                .filter(id -> !altgIds.contains(id))
+                .collect(Collectors.toSet());
+    }
 
     @Override
     public boolean isValid(final int companyId, final int targetId) {
@@ -1148,6 +1158,11 @@ public class ComTargetServiceImpl implements ComTargetService {
 		this.queryBuilderToEqlConverter = queryBuilderToEqlConverter;
 	}
 
+    @Required
+    public void setEqlValidatorService(EqlValidatorService eqlValidatorService) {
+        this.eqlValidatorService = eqlValidatorService;
+    }
+
 	private int getMaxGenderValue(ComAdmin admin) {
 		if (admin.permissionAllowed(Permission.RECIPIENT_GENDER_EXTENDED)) {
 			return ConfigService.MAX_GENDER_VALUE_EXTENDED;
@@ -1155,22 +1170,6 @@ public class ComTargetServiceImpl implements ComTargetService {
 			return ConfigService.MAX_GENDER_VALUE_BASIC;
 		}
 	}
-
-    private Collection<Message> validateTarget(ComAdmin admin, String eql) {
-        String sql;
-        try {
-            sql = eqlFacade.convertEqlToSql(eql, admin.getCompanyID()).getSql();
-        } catch (Exception e) {
-            logger.error("Error occurred: " + e.getMessage(), e);
-            return Collections.singleton(Message.of("error.target.definition"));
-        }
-
-        if(!validateGender(admin, sql)) {
-            return Collections.singleton(Message.of("error.gender.invalid", getMaxGenderValue(admin)));
-        }
-
-        return Collections.emptyList();
-    }
 
 	private boolean validateTargetDefinition(int companyId, String eql) {
 		try {
@@ -1303,25 +1302,6 @@ public class ComTargetServiceImpl implements ComTargetService {
 		return !Objects.equals(newTarget.getEQL(), oldTarget.getEQL());
 	}
 
-    private boolean validateGender(ComAdmin admin, String targetSql) {
-        if (targetSql.contains("cust.gender")) {
-            final int maxGenderValue = getMaxGenderValue(admin);
-
-            Matcher matcher = GENDER_EQUATION_PATTERN.matcher(targetSql);
-            while (matcher.find()) {
-                int genderValue = NumberUtils.toInt(matcher.group(1));
-                if (genderValue < 0 || genderValue > maxGenderValue) {
-                    return false;
-                }
-                genderValue = NumberUtils.toInt(matcher.group(2));
-				if (genderValue < 0 || genderValue > maxGenderValue) {
-					return false;
-				}
-            }
-        }
-        return true;
-    }
-
 	private List<String> postValidation(ComTarget target) {
 		if (target.getTargetSQL().equals("1=0")) {
 			return Collections.singletonList("error.target.definition");
@@ -1349,5 +1329,19 @@ public class ComTargetServiceImpl implements ComTargetService {
 
 		return Collections.emptyList();
 	}
+	
+	@Override
+	public List<TargetLight> getTargetLights(final int companyId, boolean includeDeleted) {
+		return targetDao.getTargetLights(companyId, includeDeleted);
+	}
 
+	@Override
+	public void deleteWorkflowTargetConditions(int companyID) {
+		targetDao.deleteWorkflowTargetConditions(companyID);
+	}
+
+	@Override
+	public int getAccessLimitingTargetgroupsAmount(int companyId) {
+		return 0;
+	}
 }

@@ -1,0 +1,5 @@
+<HelpBalloon>
+	<title><![CDATA[Threshold]]></title>
+	<content><![CDATA[With the threshold value you define a safety limit with which you can prevent the mailing from being sent to too many recipients by mistake, e.g. because the target group used was subsequently changed.
+If the threshold value is reached or exceeded, the mailing is automatically deactivated and must be manually released for sending again. The status mail recipient receives a notification when this occurs. However, the threshold value should also not be set too low so that your mail dispatch is not interrupted too frequently. Tip: Evaluate 5 samples and plan a buffer of a few percent on the largest sample.]]></content>
+</HelpBalloon>

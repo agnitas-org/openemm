@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -36,7 +36,8 @@ import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
 import jakarta.servlet.ServletException;
@@ -45,10 +46,13 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 public abstract class BaseRequestServlet extends HttpServlet {
+	private static final int REQUEST_DATA_KEEP_IN_MEMORY_LIMIT = 8192;
+
 	private static final long serialVersionUID = 6817178588854693746L;
 
-	private static final transient Logger logger = Logger.getLogger(BaseRequestServlet.class);
+	private static final transient Logger logger = LogManager.getLogger(BaseRequestServlet.class);
 
+	private static final String REQUEST_ATTRIBUTE_REQUEST_WAS_MULTIPART = "wasMultiPart";
 	private static final String REQUEST_ATTRIBUTE_REQUEST_DATA_IN_MEMORY = "requestData";
 	private static final String REQUEST_ATTRIBUTE_REQUEST_DATA_TEMP_FILE = "requestDataTempFile";
 	private static final String REQUEST_ATTRIBUTE_PARAMETER_MAP = "parameterMap";
@@ -175,16 +179,47 @@ public abstract class BaseRequestServlet extends HttpServlet {
 					throw new Exception("Error in MultiPart-Decoding", e);
 				}
 			} else {
-				if (getRequestDataTempFile(request) != null) {
+				if (getRequestData(request) != null || getRequestDataTempFile(request) != null) {
 					throw new IllegalStateException("Error parsing request. Multiple data entries found");
-				}
-				File tempFile = File.createTempFile("Request_", ".requestData", AgnUtils.createDirectory(TEMP_FILE_DIRECTORY));
-				try (FileOutputStream outputStream = new FileOutputStream(tempFile)) {
-					try (InputStream inputStream = part.getInputStream()) {
-						IOUtils.copy(inputStream, outputStream);
+				} else {
+					try {
+						// Do not trust in request header "Content-Length", because it might be invalid or even missing
+						try (InputStream inputStream = part.getInputStream()) {
+							boolean createRequestDataTempFile = false;
+							
+							byte[] data = null;
+							try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+								long count = 0;
+								int bytesRead;
+								byte[] buffer = new byte[1024];
+								while ((bytesRead = inputStream.read(buffer)) != -1) {
+									outputStream.write(buffer, 0, bytesRead);
+									count += bytesRead;
+									if (count > REQUEST_DATA_KEEP_IN_MEMORY_LIMIT) {
+										createRequestDataTempFile = true;
+										break;
+									}
+								}
+								data = outputStream.toByteArray();
+							}
+							
+							if (createRequestDataTempFile) {
+								// requestData is too big to be kept in memory, so write already read data in temp file and upcoming data too
+								File tempFile = File.createTempFile("Request_", ".multipart.requestData", AgnUtils.createDirectory(TEMP_FILE_DIRECTORY));
+								try (FileOutputStream outputStream = new FileOutputStream(tempFile)) {
+									outputStream.write(data);
+									IOUtils.copy(inputStream, outputStream);
+								}
+								request.setAttribute(REQUEST_ATTRIBUTE_REQUEST_DATA_TEMP_FILE, tempFile.getAbsolutePath());
+							} else {
+								request.setAttribute(REQUEST_ATTRIBUTE_REQUEST_DATA_IN_MEMORY, data);
+							}
+							request.setAttribute(REQUEST_ATTRIBUTE_REQUEST_WAS_MULTIPART, true);
+						}
+					} catch (IOException e) {
+						throw new Exception("Error while reading request data", e);
 					}
 				}
-				request.setAttribute(REQUEST_ATTRIBUTE_REQUEST_DATA_TEMP_FILE, tempFile.getAbsolutePath());
 			}
 		}
 	}
@@ -203,7 +238,7 @@ public abstract class BaseRequestServlet extends HttpServlet {
 					while ((bytesRead = inputStream.read(buffer)) != -1) {
 						outputStream.write(buffer, 0, bytesRead);
 						count += bytesRead;
-						if (count > 4096) {
+						if (count > REQUEST_DATA_KEEP_IN_MEMORY_LIMIT) {
 							createRequestDataTempFile = true;
 							break;
 						}
@@ -275,6 +310,11 @@ public abstract class BaseRequestServlet extends HttpServlet {
 				throw new Exception("Error while reading request data: " + e.getMessage(), e);
 			}
 		}
+	}
+
+	protected boolean wasMultiPartRequest(HttpServletRequest request) {
+		Boolean attribute = (Boolean) request.getAttribute(REQUEST_ATTRIBUTE_REQUEST_WAS_MULTIPART);
+		return attribute != null && attribute;
 	}
 
 	protected byte[] getRequestData(HttpServletRequest request) {

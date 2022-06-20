@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -12,14 +12,15 @@ package com.agnitas.emm.core.target.eql.emm.resolver;
 
 import org.agnitas.util.DbColumnType;
 import org.agnitas.util.DbColumnType.SimpleDataType;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.agnitas.emm.core.target.eql.codegen.DataType;
 
 public class DbTypeMapper {
 	
 	/** The logger. */
-	private static final transient Logger logger = Logger.getLogger(DbTypeMapper.class);
+	private static final transient Logger logger = LogManager.getLogger(DbTypeMapper.class);
 	
 	public static DataType mapDbType(DbColumnType columnType) {
 		SimpleDataType simpleDataType = DbColumnType.getSimpleDataType(columnType.getTypeName(), columnType.getNumericScale());

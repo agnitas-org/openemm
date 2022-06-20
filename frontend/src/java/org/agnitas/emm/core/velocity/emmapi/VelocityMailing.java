@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -24,7 +24,7 @@ public interface VelocityMailing {
 	 * 
 	 * <p>
 	 *   <b>Note:</b> This method was found in the Velocity documentation of EMM, but was never
-	 *   used. Real Velocity scripts use {@link #getMailingID()} instead.  
+	 *   used. Real Velocity scripts use {@link #getMailingID()} instead.
 	 * </p>
 	 * 
 	 * @return ID of mailing
@@ -36,7 +36,7 @@ public interface VelocityMailing {
 	 * 
 	 * <p>
 	 *   <b>Note:</b> This method was found in the Velocity documentation of EMM, but was never
-	 *   used. Real Velocity scripts use {@link #setMailingID(int)} instead.  
+	 *   used. Real Velocity scripts use {@link #setMailingID(int)} instead.
 	 * </p>
 	 * 
 	 * @param id mailing ID
@@ -47,7 +47,7 @@ public interface VelocityMailing {
 	 * Returns the mailing ID.
 	 * 
 	 * <p>
-	 *   <b>Note:</b> This method is used by real Velocity scripts use {@link #getMailingID()}, but is not documented.  
+	 *   <b>Note:</b> This method is used by real Velocity scripts use {@link #getMailingID()}, but is not documented.
 	 * </p>
 	 * 
 	 * @return ID of mailing
@@ -58,7 +58,7 @@ public interface VelocityMailing {
 	 * Sets the mailing ID.
 	 * 
 	 * <p>
-	 *   <b>Note:</b> This method is used by real Velocity scripts use {@link #setId(int)}, but is not documented.  
+	 *   <b>Note:</b> This method is used by real Velocity scripts use {@link #setId(int)}, but is not documented.
 	 * </p>
 	 * 
 	 * @param id mailing ID

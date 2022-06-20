@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -32,7 +32,8 @@ import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DataEncryptor;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.RowMapper;
@@ -49,7 +50,7 @@ import com.agnitas.emm.core.mediatypes.common.MediaTypes;
  * This class is compatible with oracle and mysql datasources and databases
  */
 public class ImportProfileDaoImpl extends BaseDaoImpl implements ImportProfileDao {
-	private static final transient Logger logger = Logger.getLogger(ImportProfileDaoImpl.class);
+	private static final transient Logger logger = LogManager.getLogger(ImportProfileDaoImpl.class);
 
 	protected DataEncryptor dataEncryptor;
 
@@ -82,8 +83,8 @@ public class ImportProfileDaoImpl extends BaseDaoImpl implements ImportProfileDa
 			update(logger,
 				"INSERT INTO import_profile_tbl (id, company_id, admin_id, shortname, column_separator, text_delimiter"
 					+ ", file_charset, date_format, import_mode, null_values_action, key_column, report_email, error_email, check_for_duplicates"
-					+ ", mail_type, update_all_duplicates, pre_import_action, decimal_separator, action_for_new_recipients, noheaders, zip, zip_password_encr, automapping, datatype, mailinglists_all, creation_date, change_date)"
-					+ " VALUES (" + AgnUtils.repeatString("?", 25, ", ") + ", CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+					+ ", mail_type, update_all_duplicates, pre_import_action, decimal_separator, action_for_new_recipients, noheaders, zip_password_encr, automapping, datatype, mailinglists_all, creation_date, change_date)"
+					+ " VALUES (" + AgnUtils.repeatString("?", 24, ", ") + ", CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
 				profileId,
 				importProfile.getCompanyId(),
 				importProfile.getAdminId(),
@@ -104,7 +105,6 @@ public class ImportProfileDaoImpl extends BaseDaoImpl implements ImportProfileDa
 				Character.toString(importProfile.getDecimalSeparator()),
 				importProfile.getActionForNewRecipients(),
 				importProfile.isNoHeaders() ? 1 : 0,
-				importProfile.isZipped() ? 1 : 0,
 				StringUtils.isEmpty(importProfile.getZipPassword()) ? null : dataEncryptor.encrypt(importProfile.getZipPassword()),
 				importProfile.isAutoMapping() ? 1 : 0,
 				importProfile.getDatatype(),
@@ -114,8 +114,8 @@ public class ImportProfileDaoImpl extends BaseDaoImpl implements ImportProfileDa
 			profileId = insertIntoAutoincrementMysqlTable(logger, "id",
 				"INSERT INTO import_profile_tbl (company_id, admin_id, shortname, column_separator, text_delimiter"
 					+ ", file_charset, date_format, import_mode, null_values_action, key_column, report_email, error_email, check_for_duplicates"
-					+ ", mail_type, update_all_duplicates, pre_import_action, decimal_separator, action_for_new_recipients, noheaders, zip, zip_password_encr, automapping, datatype, mailinglists_all, creation_date, change_date)"
-					+ " VALUES (" + AgnUtils.repeatString("?", 24, ", ") + ", CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+					+ ", mail_type, update_all_duplicates, pre_import_action, decimal_separator, action_for_new_recipients, noheaders, zip_password_encr, automapping, datatype, mailinglists_all, creation_date, change_date)"
+					+ " VALUES (" + AgnUtils.repeatString("?", 23, ", ") + ", CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
         		importProfile.getCompanyId(),
 				importProfile.getAdminId(),
 				importProfile.getName(),
@@ -135,7 +135,6 @@ public class ImportProfileDaoImpl extends BaseDaoImpl implements ImportProfileDa
 				Character.toString(importProfile.getDecimalSeparator()),
 				importProfile.getActionForNewRecipients(),
 				importProfile.isNoHeaders() ? 1 : 0,
-				importProfile.isZipped() ? 1 : 0,
 				StringUtils.isEmpty(importProfile.getZipPassword()) ? null : dataEncryptor.encrypt(importProfile.getZipPassword()),
 				importProfile.isAutoMapping() ? 1 : 0,
 				importProfile.getDatatype(),
@@ -155,7 +154,9 @@ public class ImportProfileDaoImpl extends BaseDaoImpl implements ImportProfileDa
 	@DaoUpdateReturnValueCheck
 	public void updateImportProfile(ImportProfile importProfile) throws Exception {
 		update(logger,
-			"UPDATE import_profile_tbl SET company_id = ?, admin_id = ?, shortname = ?, column_separator = ?, text_delimiter = ?, file_charset = ?, date_format = ?, import_mode = ?, null_values_action = ?, key_column = ?, report_email = ?, error_email = ?, check_for_duplicates = ?, mail_type = ?, update_all_duplicates = ?, pre_import_action = ?, decimal_separator = ?, action_for_new_recipients = ?, noheaders = ?, zip = ?, zip_password_encr = ?, automapping = ?, datatype = ?, mailinglists_all = ?, change_date = CURRENT_TIMESTAMP WHERE id = ?",
+			"UPDATE import_profile_tbl SET company_id = ?, admin_id = ?, shortname = ?, column_separator = ?, text_delimiter = ?, file_charset = ?, date_format = ?, import_mode = ?"
+					+ ", null_values_action = ?, key_column = ?, report_email = ?, error_email = ?, check_for_duplicates = ?, mail_type = ?, update_all_duplicates = ?, pre_import_action = ?"
+					+ ", decimal_separator = ?, action_for_new_recipients = ?, noheaders = ?, zip_password_encr = ?, automapping = ?, datatype = ?, mailinglists_all = ?, change_date = CURRENT_TIMESTAMP WHERE id = ?",
 			importProfile.getCompanyId(),
 			importProfile.getAdminId(),
 			importProfile.getName(),
@@ -175,7 +176,6 @@ public class ImportProfileDaoImpl extends BaseDaoImpl implements ImportProfileDa
 			Character.toString(importProfile.getDecimalSeparator()),
 			importProfile.getActionForNewRecipients(),
 			importProfile.isNoHeaders() ? 1 : 0,
-			importProfile.isZipped() ? 1 : 0,
 			StringUtils.isEmpty(importProfile.getZipPassword()) ? null : dataEncryptor.encrypt(importProfile.getZipPassword()),
 			importProfile.isAutoMapping() ? 1 : 0,
 			importProfile.getDatatype(),
@@ -319,12 +319,12 @@ public class ImportProfileDaoImpl extends BaseDaoImpl implements ImportProfileDa
 	@Override
 	public List<Integer> getSelectedMailingListIds(int id, @VelocityCheck int companyId) {
 		String sqlGetMailingListIds = "SELECT mailinglist_id FROM import_profile_mlist_bind_tbl WHERE import_profile_id = ? AND company_id = ?";
-		return select(logger, sqlGetMailingListIds, new IntegerRowMapper(), id, companyId);
+		return select(logger, sqlGetMailingListIds, IntegerRowMapper.INSTANCE, id, companyId);
 	}
 
 	private Set<MediaTypes> getMediatypes(int profileId) {
 		Set<MediaTypes> returnSet = new HashSet<>();
-		for (int mediatypeCode : select(logger, "SELECT mediatype FROM import_profile_mediatype_tbl WHERE import_profile_id = ?", new IntegerRowMapper(), profileId)) {
+		for (int mediatypeCode : select(logger, "SELECT mediatype FROM import_profile_mediatype_tbl WHERE import_profile_id = ?", IntegerRowMapper.INSTANCE, profileId)) {
 			returnSet.add(MediaTypes.getMediaTypeForCode(mediatypeCode));
 		}
 		if (returnSet.size() == 0) {
@@ -404,8 +404,6 @@ public class ImportProfileDaoImpl extends BaseDaoImpl implements ImportProfileDa
 	        	}
 	            
 	            profile.setNoHeaders(resultSet.getBoolean("noheaders"));
-	            
-	            profile.setZipped(resultSet.getBoolean("zip"));
 	            
 	            profile.setAutoMapping(resultSet.getBoolean("automapping"));
 	            

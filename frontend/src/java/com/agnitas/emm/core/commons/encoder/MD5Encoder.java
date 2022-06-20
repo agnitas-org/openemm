@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -16,7 +16,8 @@ import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Utility class for MD5 hashing.
@@ -26,11 +27,11 @@ import org.apache.log4j.Logger;
  * @see Sha1Encoder
  * @see Sha512Encoder
  */
-@Deprecated
+@Deprecated // TODO Used in existing code due to customer specification. Do not use for new code.
 public class MD5Encoder implements ByteArrayEncoder {
 	
 	/** The logger. */
-	private static final transient Logger logger = Logger.getLogger( MD5Encoder.class);
+	private static final transient Logger logger = LogManager.getLogger( MD5Encoder.class);
 
 	public static final int DIGEST_HEX_LENGTH = 32;
 

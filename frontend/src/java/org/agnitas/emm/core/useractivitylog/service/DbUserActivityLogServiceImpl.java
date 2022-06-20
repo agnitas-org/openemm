@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -23,7 +23,7 @@ import org.agnitas.emm.core.useractivitylog.dao.UserActivityLogDao;
 import org.agnitas.service.UserActivityLogService;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComAdmin;
@@ -33,9 +33,6 @@ import com.agnitas.beans.ComAdmin;
  * This implementation accesses the activity data in database.
  */
 public class DbUserActivityLogServiceImpl implements UserActivityLogService {
-	/** The logger. */
-	@SuppressWarnings("unused")
-	private static final transient Logger logger = Logger.getLogger( DbUserActivityLogServiceImpl.class);
 	
 	/** Name of property holding date of user activity. */
 	public static final String DATE_PROPERTY = "date";
@@ -44,7 +41,7 @@ public class DbUserActivityLogServiceImpl implements UserActivityLogService {
 	public static final String USER_PROPERTY = "username";
 	
 	/** Name of property holding action of user activity. */
-	public static final String ACTION_PROPERTY = "action"; 
+	public static final String ACTION_PROPERTY = "action";
 	
 	/** Name of property holding description of user activity. */
 	public static final String DESCRIPTION_PROPERTY = "description";

@@ -1,6 +1,6 @@
 /*
 
-    Copyright (C) 2019 AGNITAS AG (https://www.agnitas.org)
+    Copyright (C) 2022 AGNITAS AG (https://www.agnitas.org)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
@@ -13,12 +13,13 @@ package org.agnitas.beans.impl;
 import java.util.Date;
 
 import org.agnitas.beans.DatasourceDescription;
+import org.agnitas.dao.SourceGroupType;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public class DatasourceDescriptionImpl implements DatasourceDescription {
 	protected int id = -1;
 	protected int companyID = -1;
-	protected int sourcegroupID;
+	protected SourceGroupType sourceGroupType;
 	protected String description;
 	protected String description2;
 	protected Date creationDate = null;
@@ -38,8 +39,8 @@ public class DatasourceDescriptionImpl implements DatasourceDescription {
     }
 
 	@Override
-	public void setSourcegroupID(int sourcegroup) {
-		this.sourcegroupID = sourcegroup;
+	public void setSourceGroupType(SourceGroupType sourceGroupType) {
+		this.sourceGroupType = sourceGroupType;
 	}
 
 	@Override
@@ -76,8 +77,8 @@ public class DatasourceDescriptionImpl implements DatasourceDescription {
 	}
 
 	@Override
-	public int getSourcegroupID() {
-		return sourcegroupID;
+	public SourceGroupType getSourceGroupType() {
+		return sourceGroupType;
 	}
 
 	@Override

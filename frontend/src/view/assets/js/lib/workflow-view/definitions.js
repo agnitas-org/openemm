@@ -568,6 +568,7 @@
         MAILING_PARAM_LIST_SPLIT: 4,
         MAILING_PARAM_PLANNED_DATE: 5,
         MAILING_PARAM_SEND_DATE: 6,
+        MAILING_PARAM_ALTGS: 7,
 
         // Make sure to keep in sync with WorkflowDependencyType enum.
         DEPENDENCY_TYPE_ARCHIVE: 1,
