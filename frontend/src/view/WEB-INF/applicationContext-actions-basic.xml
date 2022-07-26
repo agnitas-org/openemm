@@ -147,6 +147,7 @@
 		<property name="mailinglistService" ref="MailinglistService"/>
 		<property name="mailinglistApprovalService" ref="MailinglistApprovalService" />
 		<property name="profileImportWorkerFactory" ref="ProfileImportWorkerFactory" />
+		<property name="profileFieldDao" ref="ProfileFieldDao" />
 	</bean>
 
 	<bean name="/mailingsend_ajax" class="org.agnitas.mailing.web.MailingSendAjaxAction">

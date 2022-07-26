@@ -1,4 +1,5 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" buffer="32kb" errorPage="/error.do"%>
+<%@ page import="com.agnitas.emm.core.birtstatistics.enums.StatisticType" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags"   prefix="agn" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core"      prefix="c" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
@@ -22,6 +23,11 @@
 <%--@elvariable id="yearlist" type="java.util.List<java.lang.Integer>"--%>
 <%--@elvariable id="mailtrackingExpirationDays" type="java.lang.Integer"--%>
 <%--@elvariable id="isTotalAutoOpt" type="java.lang.Boolean"--%>
+
+<c:set var="SUMMARY" value="<%= StatisticType.SUMMARY %>" />
+<c:set var="CLICK_STATISTICS_PER_LINK" value="<%= StatisticType.CLICK_STATISTICS_PER_LINK %>" />
+<c:set var="PROGRESS_OF_OPENINGS" value="<%= StatisticType.PROGRESS_OF_OPENINGS %>" />
+<c:set var="PROGRESS_OF_CLICKS" value="<%= StatisticType.PROGRESS_OF_CLICKS %>" />
 
 <c:set var="isReportCanBeShown" value="true"/>
 <c:if test="${mailingStatisticForm.statisticType eq 'TOP_DOMAINS' && isEverSent eq false}">
@@ -188,6 +194,23 @@
 
                             <div class="tile-content" data-form-content>
 
+                                <c:if test="${fn:contains([SUMMARY, CLICK_STATISTICS_PER_LINK, PROGRESS_OF_OPENINGS, PROGRESS_OF_CLICKS], mailingStatisticForm.statisticType) }">
+                                    <c:set var="endDeviceAndModelsNotification">
+                                        <div class="tile-controls">
+                                            <div class="notification notification-info">
+                                                <div class="notification-header">
+                                                    <p class="headline">
+                                                        <i class="icon icon-state-info"></i>
+                                                        <span class="text"><mvc:message code="GWUA.info.statistics.endDeviceAndModels"/></span>
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </c:set>
+                                    <%@ include file="end-device-and-models-notification-extended.jspf" %>
+                                    ${endDeviceAndModelsNotification}
+                                </c:if>
+                                
                                 <c:if test="${isReportCanBeShown && (mailingStatisticForm.dateSelectMode ne 'NONE')}">
 
                                     <c:if test="${mailingStatisticForm.dateSelectMode == 'SELECT_DAY'}">

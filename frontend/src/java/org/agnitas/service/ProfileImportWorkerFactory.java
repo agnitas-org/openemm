@@ -26,15 +26,21 @@ import com.agnitas.beans.ComAdmin;
 import com.agnitas.emm.core.Permission;
 
 public class ProfileImportWorkerFactory {
-	ConfigService configService;
-	MailinglistDao mailinglistDao;
-	ProfileImportReporter profileImportReporter;
-	ImportModeHandlerFactory importModeHandlerFactory;
-	ImportRecipientsDao importRecipientsDao;
+	private ConfigService configService;
+	private MailinglistDao mailinglistDao;
+	private ProfileImportReporter profileImportReporter;
+	private ImportModeHandlerFactory importModeHandlerFactory;
+	private ImportRecipientsDao importRecipientsDao;
+	private ColumnInfoService columnInfoService;
 	
 	@Required
 	public void setConfigService(ConfigService configService) {
 		this.configService = configService;
+	}
+	
+	@Required
+	public void setColumnInfoService(ColumnInfoService columnInfoService) {
+		this.columnInfoService = columnInfoService;
 	}
 	
 	@Required
@@ -64,6 +70,7 @@ public class ProfileImportWorkerFactory {
 		profileImportWorker.setProfileImportReporter(profileImportReporter);
 		profileImportWorker.setImportModeHandlerFactory(importModeHandlerFactory);
 		profileImportWorker.setImportRecipientsDao(importRecipientsDao);
+		profileImportWorker.setColumnInfoService(columnInfoService);
 
 		profileImportWorker.setSessionId(sessionId);
 		profileImportWorker.setInteractiveMode(interactiveMode);

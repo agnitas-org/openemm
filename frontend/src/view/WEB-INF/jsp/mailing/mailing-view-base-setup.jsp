@@ -20,7 +20,6 @@
 <c:url var="mailingsOverviewLink" value="/mailingbase.do">
     <c:param name="action" value="${ACTION_LIST}"/>
     <c:param name="isTemplate" value="false"/>
-    <c:param name="page" value="1"/>
 </c:url>
 
 <c:set var="mailingExists" value="${mailingBaseForm.mailingID ne 0}"/>

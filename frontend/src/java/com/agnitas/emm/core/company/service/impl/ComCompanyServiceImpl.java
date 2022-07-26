@@ -274,7 +274,7 @@ public class ComCompanyServiceImpl implements ComCompanyService {
         company.setBusiness(settingsDto.getBusiness());
     }
 
-    private void saveConfigValues(ComAdmin admin, int companyId, CompanySettingsDto settings) {
+    protected void saveConfigValues(ComAdmin admin, int companyId, CompanySettingsDto settings) {
         if (admin.permissionAllowed(Permission.COMPANY_AUTHENTICATION)) {
             // Write 2FA settings
             writeHostAuthSettings(settings, companyId, admin);
@@ -377,6 +377,7 @@ public class ComCompanyServiceImpl implements ComCompanyService {
 	        checkChangeAndLogCompanyInfoIntegerValue(ConfigValue.ExpireUpload, companyId, admin, settings.getExpireUpload());
 	        
 	        checkChangeAndLogCompanyInfoBooleanValue(ConfigValue.WriteCustomerOpenOrClickField, companyId, admin, settings.isWriteCustomerOpenOrClickField());
+	        
         }
     }
     
@@ -448,7 +449,7 @@ public class ComCompanyServiceImpl implements ComCompanyService {
 		}
 	}
 
-	private void checkChangeAndLogCompanyInfoBooleanValue(ConfigValue configValue, final int companyId, final ComAdmin admin, boolean newValue) {
+	protected void checkChangeAndLogCompanyInfoBooleanValue(ConfigValue configValue, final int companyId, final ComAdmin admin, boolean newValue) {
 		boolean currentValue = configService.getBooleanValue(configValue, companyId);
 		if (currentValue != newValue) {
 			configService.writeOrDeleteIfDefaultValue(configValue, companyId, newValue ? "true" : "false", "Changed by: " + admin.getUsername() + (admin.isSupervisor() ? "/" + admin.getSupervisor().getSupervisorName() : ""));
@@ -456,7 +457,7 @@ public class ComCompanyServiceImpl implements ComCompanyService {
 		}
 	}
 
-	private void checkChangeAndLogCompanyInfoIntegerValue(ConfigValue configValue, final int companyId, final ComAdmin admin, int newValue) {
+	protected void checkChangeAndLogCompanyInfoIntegerValue(ConfigValue configValue, final int companyId, final ComAdmin admin, int newValue) {
 		int currentValue = configService.getIntegerValue(configValue, companyId);
 		if (currentValue != newValue) {
 			configService.writeOrDeleteIfDefaultValue(configValue, companyId, Integer.toString(newValue), "Changed by: " + admin.getUsername() + (admin.isSupervisor() ? "/" + admin.getSupervisor().getSupervisorName() : ""));

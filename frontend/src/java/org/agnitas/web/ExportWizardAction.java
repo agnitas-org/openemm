@@ -60,6 +60,7 @@ import org.apache.struts.action.ActionMessages;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.ProfileField;
 import com.agnitas.emm.core.JavaMailService;
 import com.agnitas.emm.core.export.util.ExportWizardUtils;
 import com.agnitas.emm.core.mailinglist.service.ComMailinglistService;
@@ -261,7 +262,10 @@ public class ExportWizardAction extends StrutsActionBase {
                     req.setAttribute("availableDateFormats", org.agnitas.util.importvalues.DateFormat.values());
                     req.setAttribute("availableDateTimeFormats", org.agnitas.util.importvalues.DateFormat.values());
                     req.setAttribute("availableTimeZones", TimeZone.getAvailableIDs());
-                    req.setAttribute("availableColumns", columnInfoService.getComColumnInfos(companyID, admin.getAdminID()));
+                    
+                    req.setAttribute("availableColumns", columnInfoService.getComColumnInfos(companyID, admin.getAdminID()).stream()
+                    	.filter(t -> t.getModeEdit() == ProfileField.MODE_EDIT_EDITABLE || t.getModeEdit() == ProfileField.MODE_EDIT_READONLY)
+                    	.collect(Collectors.toList()));
 
                     aForm.setTargetGroups(targetService.getTargetLights(admin));
                     aForm.setMailinglistObjects(mailinglistApprovalService.getEnabledMailinglistsForAdmin(admin));
@@ -318,7 +322,10 @@ public class ExportWizardAction extends StrutsActionBase {
                     req.setAttribute("availableDateFormats", org.agnitas.util.importvalues.DateFormat.values());
                     req.setAttribute("availableDateTimeFormats", org.agnitas.util.importvalues.DateFormat.values());
                     req.setAttribute("availableTimeZones", TimeZone.getAvailableIDs());
-                    req.setAttribute("availableColumns", columnInfoService.getComColumnInfos(companyID, admin.getAdminID()));
+
+                    req.setAttribute("availableColumns", columnInfoService.getComColumnInfos(companyID, admin.getAdminID()).stream()
+                    	.filter(t -> t.getModeEdit() == ProfileField.MODE_EDIT_EDITABLE || t.getModeEdit() == ProfileField.MODE_EDIT_READONLY)
+                    	.collect(Collectors.toList()));
                     
                     aForm.setTargetGroups(targetService.getTargetLights(admin));
                     aForm.setMailinglistObjects(mailinglistApprovalService.getEnabledMailinglistsForAdmin(admin));

@@ -24,6 +24,7 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
@@ -224,7 +225,13 @@ public class RecipientController implements XssCheckAware {
 		model.addAttribute("mailTrackingAvailable", AgnUtils.isMailTrackingAvailable(admin));
 
 		CaseInsensitiveMap<String, ProfileField> columnInfoMap = columnInfoService.getColumnInfoMap(companyId, admin.getAdminID());
-		Map<String, String> fields = RecipientUtils.getSortedFieldsMap(columnInfoMap);
+		CaseInsensitiveMap<String, ProfileField> columnsVisible = new CaseInsensitiveMap<String, ProfileField>();
+		for (Entry<String, ProfileField> column : columnInfoMap.entrySet()) {
+			if (column.getValue().getModeEdit() == ProfileField.MODE_EDIT_EDITABLE || column.getValue().getModeEdit() == ProfileField.MODE_EDIT_READONLY) {
+				columnsVisible.put(column.getKey(), column.getValue());
+			}
+		}
+		Map<String, String> fields = RecipientUtils.getSortedFieldsMap(columnsVisible);
 		model.addAttribute("fieldsMap", fields);
 		model.addAttribute("hasAnyDisabledMailingLists", mailinglistApprovalService.hasAnyDisabledMailingListsForAdmin(companyId, admin.getAdminID()));
 		model.addAttribute("mailinglists", mailinglistApprovalService.getEnabledMailinglistsForAdmin(admin));
@@ -700,7 +707,7 @@ public class RecipientController implements XssCheckAware {
 	}
 
     @PostMapping("/bulkSave.action")
-    public String bulkSave(ComAdmin admin, RecipientBulkForm form, RedirectAttributes model, Popups popups) {
+    public String bulkSave(ComAdmin admin, RecipientBulkForm form, RedirectAttributes model, Popups popups) throws Exception {
 		if (mailinglistApprovalService.isAdminHaveAccess(admin, form.getMailinglistId())) {
 			// saving in case current admin have permission on manage this mailing list
 
@@ -711,6 +718,15 @@ public class RecipientController implements XssCheckAware {
 			ServiceResult<FieldsSaveResults> saveResult =
 					recipientService.saveBulkRecipientFields(admin, form.getTargetId(), form.getMailinglistId(), fieldChanges);
 
+			CaseInsensitiveMap<String, ProfileField> profilefields = columnInfoService.getColumnInfoMap(admin.getCompanyID(), admin.getAdminID());
+			for (String columnName : fieldChanges.keySet()) {
+				if (!profilefields.containsKey(columnName)) {
+					popups.alert("error.import.dbColumnUnknown", columnName);
+				} else if (profilefields.get(columnName).getModeEdit() != ProfileField.MODE_EDIT_EDITABLE) {
+					popups.alert("error.import.dbColumnNotEditable", columnName);
+				}
+			}
+			
 			if (saveResult.isSuccess()) {
 				writeRecipientBulkChangesLog(admin, form.getTargetId(), form.getMailinglistId(), saveResult.getResult().getAffectedFields());
 

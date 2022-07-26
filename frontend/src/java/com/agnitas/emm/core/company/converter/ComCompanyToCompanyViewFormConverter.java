@@ -121,6 +121,7 @@ public class ComCompanyToCompanyViewFormConverter implements Converter<Company, 
         settingsDto.setExpireBounce(configService.getIntegerValue(ConfigValue.ExpireBounce, comCompany.getId()));
         settingsDto.setExpireUpload(configService.getIntegerValue(ConfigValue.ExpireUpload, comCompany.getId()));
         settingsDto.setWriteCustomerOpenOrClickField(configService.getBooleanValue(ConfigValue.WriteCustomerOpenOrClickField, comCompany.getId()));
+        settingsDto.setDefaultCompanyLinkTrackingMode(configService.getIntegerValue(ConfigValue.TrackableLinkDefaultTracking, comCompany.getId()));
         
         return settingsDto;
     }

@@ -35,7 +35,6 @@
 <c:url var="mailingsOverviewLink" value="/mailingbase.do">
     <c:param name="action" value="${ACTION_LIST}"/>
     <c:param name="isTemplate" value="false"/>
-    <c:param name="page" value="1"/>
 </c:url>
 
 <c:url var="mailingViewLink" value="/mailingbase.do">
@@ -51,14 +50,15 @@
     <c:param name="init" value="true"/>
 </c:url>
 
-<c:set var="agnTitleKey" 			value="Mailing" 			scope="request" />
-<c:set var="agnSubtitleKey" 		value="Mailing" 			scope="request" />
-<c:set var="sidemenu_active" 		value="Mailings" 			scope="request" />
-<c:set var="sidemenu_sub_active" 	value="none" 				scope="request" />
-<c:set var="agnHighlightKey" 		value="Send_Mailing" 		scope="request" />
-<c:set var="isBreadcrumbsShown" 	value="true" 				scope="request" />
-<c:set var="agnBreadcrumbsRootKey"	value="Mailings" 			scope="request" />
-<c:set var="agnHelpKey" 			value="sendMailing"	        scope="request" />
+<c:set var="agnTitleKey" 			value="Mailing" 			    scope="request" />
+<c:set var="agnSubtitleKey" 		value="Mailing" 			    scope="request" />
+<c:set var="sidemenu_active" 		value="Mailings" 			    scope="request" />
+<c:set var="sidemenu_sub_active" 	value="none" 				    scope="request" />
+<c:set var="agnHighlightKey" 		value="Send_Mailing" 		    scope="request" />
+<c:set var="isBreadcrumbsShown" 	value="true" 				    scope="request" />
+<c:set var="agnBreadcrumbsRootKey"	value="Mailings" 			    scope="request" />
+<c:set var="agnBreadcrumbsRootUrl"	value="${mailingsOverviewLink}"	scope="request" />
+<c:set var="agnHelpKey" 			value="sendMailing"	            scope="request" />
 
 <c:choose>
     <c:when test="${isMailingGrid}">

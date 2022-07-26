@@ -30,7 +30,6 @@
 <c:url var="mailingsOverviewLink" value="/mailingbase.do">
     <c:param name="action" value="${BASE_ACTION_LIST}"/>
     <c:param name="isTemplate" value="false"/>
-    <c:param name="page" value="1"/>
 </c:url>
 
 <c:url var="templatesOverviewLink" value="/mailingbase.do">
@@ -51,10 +50,11 @@
     <c:param name="mailingID" value="${mailingId}"/>
 </c:url>
 
-<c:set var="sidemenu_active" 		value="Mailings"	scope="request" />
-<c:set var="isBreadcrumbsShown" 	value="true" 		scope="request" />
-<c:set var="agnBreadcrumbsRootKey"	value="Mailings" 	scope="request" />
-<c:set var="agnHelpKey" 			value="preview" 	scope="request" />
+<c:set var="sidemenu_active" 		value="Mailings"	            scope="request" />
+<c:set var="isBreadcrumbsShown" 	value="true" 		            scope="request" />
+<c:set var="agnBreadcrumbsRootKey"	value="Mailings" 	            scope="request" />
+<c:set var="agnBreadcrumbsRootUrl"	value="${mailingsOverviewLink}"	scope="request" />
+<c:set var="agnHelpKey" 			value="preview" 	            scope="request" />
 
 <logic:equal name="mailingSendForm" property="isTemplate" value="true">
     <c:set var="agnNavigationKey" 		value="templateView" 						scope="request" />

@@ -2866,6 +2866,10 @@ public class MailingBaseAction extends StrutsActionBase {
         }
 	}
 
+	/* TODO During migration to Spring, have a look at GWUA-5149.
+	   Currently page number persists in session form, 
+	   but after migration pageNumber should be added to storage and synchronized with a new form.
+    */ 
     protected void prepareListParameters(MailingBaseForm mailingBaseForm) {
 	    ComMailingBaseForm form = (ComMailingBaseForm) mailingBaseForm;
 

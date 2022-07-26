@@ -372,7 +372,7 @@ public class ImportProfileAction extends StrutsActionBase {
             }
         }
         
-        if(destination != null && StringUtils.equalsIgnoreCase("view", destination.getName())) {
+        if (destination != null && StringUtils.equalsIgnoreCase("view", destination.getName())) {
         	setUpViewPageVariables(request, aForm, admin);
         }
 

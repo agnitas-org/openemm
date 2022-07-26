@@ -4334,4 +4334,16 @@ public class ComMailingDaoImpl extends PaginatedBaseDaoImpl implements ComMailin
         final int returnValue = mailingStatisticsDao.getFollowUpStat(comFollowUpStats.getFollowupID(), comFollowUpStats.getBasemailID(), followUpType, comFollowUpStats.getCompanyID(), useTargetGroups);
         return returnValue;
     }
+    
+	@Override
+	public void removeApproval(final Mailing mailing) {
+		removeApproval(mailing.getId(), mailing.getCompanyID());
+		mailing.setLocked(1);
+	}
+
+	@Override
+	public void removeApproval(int mailingID, int companyID) {
+		final String sql = "UPDATE mailing_tbl SET test_lock=? WHERE mailing_id=? AND company_id=?";
+		update(logger, sql, 1, mailingID, companyID);
+	}
 }

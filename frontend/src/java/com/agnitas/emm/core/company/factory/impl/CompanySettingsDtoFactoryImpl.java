@@ -24,6 +24,7 @@ import com.agnitas.emm.core.company.dto.CompanySettingsDto;
 import com.agnitas.emm.core.company.enums.LoginlockSettings;
 import com.agnitas.emm.core.company.factory.CompanySettingsDtoFactory;
 import com.agnitas.emm.core.logon.common.HostAuthenticationCookieExpirationSettings;
+import com.agnitas.emm.core.trackablelinks.common.LinkTrackingMode;
 
 public class CompanySettingsDtoFactoryImpl implements CompanySettingsDtoFactory {
 
@@ -75,6 +76,7 @@ public class CompanySettingsDtoFactoryImpl implements CompanySettingsDtoFactory 
         companySettingsDto.setExpireBounce(Integer.parseInt(ConfigValue.ExpireBounce.getDefaultValue()));
         companySettingsDto.setExpireUpload(Integer.parseInt(ConfigValue.ExpireUpload.getDefaultValue()));
         companySettingsDto.setWriteCustomerOpenOrClickField(AgnUtils.interpretAsBoolean(ConfigValue.WriteCustomerOpenOrClickField.getDefaultValue()));
+        companySettingsDto.setDefaultCompanyLinkTrackingMode(LinkTrackingMode.getDefault().getMode());
 
         return companySettingsDto;
     }

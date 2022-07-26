@@ -16,6 +16,8 @@ import java.util.List;
 import org.agnitas.emm.core.commons.password.policy.PasswordPolicies;
 import org.agnitas.util.AgnUtils;
 
+import com.agnitas.emm.core.trackablelinks.common.LinkTrackingMode;
+
 /**
  * For internal detailed documentation see:
  * http://wiki.agnitas.local/doku.php?id=abteilung:technik:entwicklung:produkt:agnitas:dbdetails
@@ -410,6 +412,12 @@ public class ConfigValue {
 	// Introduced by LTS-736
 	public static final ConfigValue RedirectMakeAgnDynMultiLinksTrackable = new ConfigValue("rdir.agnDynMulti.makeLinksTrackable", "false");
 	
+	/**
+	 * Default tracking mode for new trackable links.
+	 */
+	// Introduced by LTS-911
+	public static final ConfigValue TrackableLinkDefaultTracking = new ConfigValue("trackableLinks.defaultTracking", Integer.toString(LinkTrackingMode.getDefault().getMode()));
+	
 
 	/** Url of the birt statistic application to be used for internal purposes like email reports only by birt itself when behind firewall **/
 	public static final ConfigValue BirtUrlIntern = new ConfigValue("birt.url.intern");
@@ -419,7 +427,6 @@ public class ConfigValue {
 	public static final ConfigValue ManualInstallPath = new ConfigValue("manual_install_path", "${HOME}/webapps/manual");
 
 	public static final ConfigValue DBCleaner_Send_Statistics_Mail = new ConfigValue("dbcleaner.send_statistics_mail", "true");
-	public static final ConfigValue CleanMasterCompany = new ConfigValue("clean.mastercompany", "false");
 	public static final ConfigValue CompanyDSGVOCleaner = new ConfigValue("company.dsgvocleaner", "-1");
 	
 	/** Enables web push notifications. */

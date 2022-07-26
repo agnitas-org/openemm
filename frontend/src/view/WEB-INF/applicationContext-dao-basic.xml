@@ -321,6 +321,7 @@
 		<property name="javaMailService" ref="JavaMailService" />
 		<property name="trackableLinkDao" ref="TrackableLinkDao" />
 		<property name="mailingComponentFactory" ref="MailingComponentFactory" />
+		<property name="configService" ref="ConfigService" />
 	</bean>
 
 <!-- ============================================================================================================================== Mailing parameter -->

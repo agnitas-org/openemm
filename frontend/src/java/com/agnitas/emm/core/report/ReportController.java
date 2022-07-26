@@ -82,7 +82,7 @@ public class ReportController {
     }
 
     @PermissionMapping("recipients")
-    @GetMapping(value = "/recipients")
+    @GetMapping(value = "/recipients.action")
     public ResponseEntity<Resource> getRecipientReport(@RequestParam("id") @VelocityCheck int recipientId, ComAdmin admin) {
 
         Locale locale = admin.getLocale();

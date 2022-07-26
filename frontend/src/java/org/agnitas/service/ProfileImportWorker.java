@@ -78,6 +78,7 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.dao.DataAccessException;
 
 import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.ProfileField;
 import com.agnitas.dao.ImportProcessActionDao;
 import com.agnitas.emm.core.action.service.EmmActionService;
 import com.agnitas.emm.core.commons.encrypt.ProfileFieldEncryptor;
@@ -111,6 +112,7 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 
 	private ConfigService configService;
     private ImportRecipientsDao importRecipientsDao;
+    private ColumnInfoService columnInfoService;
     private ImportProcessActionDao importProcessActionDao = null;
     private EmmActionService emmActionService = null;
 	private ProfileFieldEncryptor profileFieldEncryptor = null;
@@ -174,6 +176,10 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 	
 	public void setImportRecipientsDao(ImportRecipientsDao importRecipientsDao) {
 		this.importRecipientsDao = importRecipientsDao;
+	}
+	
+	public void setColumnInfoService(ColumnInfoService columnInfoService) {
+		this.columnInfoService = columnInfoService;
 	}
 
 	public void setImportProcessActionDao(ImportProcessActionDao importProcessActionDao) {
@@ -605,15 +611,19 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 	}
 
 	private void importValidationCheck() throws Exception {
-		CaseInsensitiveMap<String, DbColumnType> customerDbFields = importRecipientsDao.getCustomerDbFields(importProfile.getCompanyId());
+		CaseInsensitiveMap<String, ProfileField> profilefields = columnInfoService.getColumnInfoMap(importProfile.getCompanyId(), admin.getAdminID());
 		Set<String> mappedDbColumns = new HashSet<>();
 		for (ColumnMapping mapping : importProfile.getColumnMapping()) {
 			if (!ColumnMapping.DO_NOT_IMPORT.equals(mapping.getDatabaseColumn())) {
-				if (!customerDbFields.containsKey(mapping.getDatabaseColumn())) {
-					throw new ImportException(false, "error.import.dbColumnUnknown", mapping.getDatabaseColumn());
-				} else if (!mappedDbColumns.add(mapping.getDatabaseColumn())) {
-					throw new ImportException(false, "error.import.dbColumnMappedMultiple", mapping.getDatabaseColumn());
-				}
+				if (!profilefields.containsKey(mapping.getDatabaseColumn())) {
+ 					throw new ImportException(false, "error.import.dbColumnUnknown", mapping.getDatabaseColumn());
+				} else if (profilefields.get(mapping.getDatabaseColumn()).getModeEdit() == ProfileField.MODE_EDIT_NOT_VISIBLE) {
+					throw new ImportException(false, "error.import.dbColumnNotVisible", mapping.getDatabaseColumn());
+				} else if (profilefields.get(mapping.getDatabaseColumn()).getModeEdit() == ProfileField.MODE_EDIT_READONLY && !importProfile.getKeyColumns().contains(mapping.getDatabaseColumn())) {
+					throw new ImportException(false, "error.import.dbColumnNotEditable", mapping.getDatabaseColumn());
+ 				} else if (!mappedDbColumns.add(mapping.getDatabaseColumn())) {
+ 					throw new ImportException(false, "error.import.dbColumnMappedMultiple", mapping.getDatabaseColumn());
+ 				}
 			}
 		}
 

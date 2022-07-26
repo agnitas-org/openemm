@@ -543,8 +543,7 @@ public class ImportProfileColumnsAction extends ImportBaseFileAction {
      */
     protected void loadDbColumns(ImportProfileColumnsForm aForm, HttpServletRequest request) throws Exception {
         ComAdmin admin = AgnUtils.getAdmin(request);
-        aForm.setProfileFields(new TreeMap<>(profileFieldDao.getProfileFieldsMap(admin.getCompanyID(), admin.getAdminID())));
-        filterHiddenColumns(aForm.getProfileFields(), admin);
+        aForm.setProfileFields(filterHiddenColumns(new TreeMap<>(profileFieldDao.getProfileFieldsMap(admin.getCompanyID(), admin.getAdminID())), admin));
 
         // load DB columns default values
         List<ProfileField> profileFields = profileFieldDao.getProfileFields(AgnUtils.getCompanyID(request));
@@ -553,10 +552,13 @@ public class ImportProfileColumnsAction extends ImportBaseFileAction {
         }
     }
     
-    private void filterHiddenColumns(Map<String, ProfileField> profileFields, ComAdmin admin) {
+    private Map<String, ProfileField> filterHiddenColumns(Map<String, ProfileField> profileFields, ComAdmin admin) {
         for (String hiddenColumn : ImportUtils.getHiddenColumns(admin)) {
             profileFields.remove(hiddenColumn);
         }
+
+        // User may also map readonly columns, but in import action, those are are checked to be only used as keycolumns
+        return profileFields.entrySet().stream().filter(e -> e.getValue().getModeEdit() != ProfileField.MODE_EDIT_NOT_VISIBLE).collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
     }
 
     /**

@@ -311,7 +311,9 @@ public class ImportProfileImpl implements ImportProfile {
     @Override
 	public void setKeyColumn(String keyColumn) {
     	keyColumns.clear();
-    	keyColumns.add(keyColumn.toLowerCase());
+    	if (StringUtils.isNotBlank(keyColumn)) {
+    		keyColumns.add(keyColumn.toLowerCase());
+    	}
     }
 
     @Override

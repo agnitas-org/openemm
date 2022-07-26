@@ -30,6 +30,7 @@ public final class ComTargetCopyServiceImpl implements TargetCopyService {
 		destination.setTargetName(source.getTargetName());
 		destination.setTargetSQL(source.getTargetSQL());
 		destination.setValid(source.isValid());
+		destination.setAccessLimitation(source.isAccessLimitation());
 		
 		return destination;
 	}

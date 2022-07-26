@@ -12,6 +12,7 @@ package org.agnitas.dao;
 
 import java.text.SimpleDateFormat;
 import java.util.List;
+import java.util.Map;
 
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
@@ -109,4 +110,8 @@ public interface ProfileFieldDao {
      * @throws Exception
      */
     void removeProfileField(@VelocityCheck int companyID, String fieldname) throws ProfileFieldException;
+
+	Map<Integer, Integer> getProfileFieldAdminPermissions(int companyID, String columnName);
+
+	void storeProfileFieldAdminPermissions(int companyID, String columnName, List<Integer> readOnlyUsers, List<Integer> notVisibleUsers);
 }

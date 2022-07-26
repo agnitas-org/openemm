@@ -389,4 +389,9 @@ public final class ProfileFieldServiceImpl implements ProfileFieldService {
 	public int getMaximumNumberOfCompanySpecificProfileFields() throws Exception {
 		return profileFieldDao.getMaximumNumberOfCompanySpecificProfileFields();
 	}
+
+	@Override
+	public ProfileField getProfileFieldByShortname(int companyID, String shortname) throws Exception {
+		return profileFieldDao.getProfileFieldByShortname(companyID, shortname);
+	}
 }

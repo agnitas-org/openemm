@@ -17,6 +17,11 @@
 <emm:CheckLogon/>
 <emm:Permission token="stats.mailing"/>
 
+<c:url var="mailingsOverviewLink" value="/mailingbase.do">
+    <c:param name="action" value="${BASE_ACTION_LIST}"/>
+    <c:param name="isTemplate" value="false"/>
+</c:url>
+
 <c:set var="agnTitleKey" 			value="Mailing" 				scope="request" />
 <c:set var="agnSubtitleKey" 		value="Mailing" 				scope="request" />
 <c:set var="sidemenu_active" 		value="Mailings" 				scope="request" />
@@ -92,12 +97,6 @@
 <c:if test="${empty agnHelpKey}">
     <c:set var="agnHelpKey" value="Statistics" scope="request"/>
 </c:if>
-
-<c:url var="mailingsOverviewLink" value="/mailingbase.do">
-    <c:param name="action" value="${BASE_ACTION_LIST}"/>
-    <c:param name="isTemplate" value="false"/>
-    <c:param name="page" value="1"/>
-</c:url>
 
 <c:url var="mailingViewLink" value="/mailingbase.do">
     <c:param name="action" value="${BASE_ACTION_VIEW}"/>

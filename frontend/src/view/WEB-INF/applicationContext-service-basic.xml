@@ -1136,6 +1136,11 @@
 		<property name="configService" ref="ConfigService" />
 	</bean>
 	
+	<bean id="SubscriberLimitCheck" class="org.agnitas.emm.core.recipient.service.impl.SubscriberLimitCheckImpl">
+		<constructor-arg ref="ConfigService" />
+		<constructor-arg ref="RecipientDao" />
+	</bean>
+	
 	<bean id="RestfulServiceHandler_recipient" class="com.agnitas.emm.restful.recipient.RecipientRestfulServiceHandler">
 		<property name="userActivityLogDao" ref="UserActivityLogDao"/>
 		<property name="recipientDao" ref="RecipientDao" />
@@ -1146,6 +1151,7 @@
 		<property name="datasourceDescriptionDao" ref="DatasourceDescriptionDao" />
 		<property name="fullviewService" ref="FullviewService"/>
 		<property name="configService" ref="ConfigService" />
+		<property name="subscriberLimitCheck" ref="SubscriberLimitCheck" />
 	</bean>
 	
 	<bean id="RestfulServiceHandler_mailinglist" class="com.agnitas.emm.restful.mailinglist.MailinglistRestfulServiceHandler">
@@ -1238,5 +1244,13 @@
 	
 	<bean id="ThumbnailService" class="com.agnitas.emm.core.thumbnails.service.ThumbnailServiceImpl">
 		<property name="mailingComponentDao" ref="MailingComponentDao" />
+	</bean>
+	
+	<bean id="RestfulServiceHandler_profilefield" class="com.agnitas.emm.restful.profilefield.ProfilefieldRestfulServiceHandler">
+		<property name="userActivityLogDao" ref="UserActivityLogDao"/>
+		<property name="columnInfoService" ref="ColumnInfoService" />
+		<property name="profileFieldService" ref="ProfileFieldService" />
+		<property name="adminService" ref="AdminService" />
+		<property name="profileFieldValidationService" ref="profileValidationService" />
 	</bean>
 </beans>

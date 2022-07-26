@@ -22,8 +22,20 @@ public interface BaseTrackableLink {
 	/**
 	 *  link should not be tracked
 	 */
-    int TRACKABLE_NO = 0;
+	/*
+	 * TODO Check this constant.
+	 * 
+	 * This constant is used by BackTrackableLink.getUsage() and .setUsage(), but
+	 * seems to be colliding with TrackableLink.NONE.
+	 */
+    int TRACKABLE_NO = 0;											
     
+	/*
+	 * TODO Check this constant.
+	 * 
+	 * This constant is used by BackTrackableLink.getUsage() and .setUsage(), but
+	 * seems to be colliding with TrackableLink.TEXT.
+	 */
     /**
 	 * link should be tracked
 	 */
@@ -32,11 +44,23 @@ public interface BaseTrackableLink {
 	/**
 	 * link should be tracked with mailing information(when applicable)
 	 */
+	/*
+	 * TODO Check this constant.
+	 * 
+	 * This constant is used by BackTrackableLink.getUsage() and .setUsage(), but
+	 * seems to be colliding with TrackableLink.HTML.
+	 */
     int TRACKABLE_YES_WITH_MAILING_INFO = 2;
 	
 	/**
 	 * link should be tracked with mailing information(when applicable) and
 	 * user(when applicable)
+	 */
+	/*
+	 * TODO Check this constant.
+	 * 
+	 * This constant is used by BackTrackableLink.getUsage() and .setUsage(), but
+	 * seems to be colliding with TrackableLink.TEXT_HTML.
 	 */
     int TRACKABLE_YES_WITH_MAILING_AND_USER_INFO = 3;
     

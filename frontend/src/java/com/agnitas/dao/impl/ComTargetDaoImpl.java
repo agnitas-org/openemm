@@ -354,6 +354,14 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 					target.getId(),
 					target.getCompanyID()
 					);
+				
+				if (!getAdditionalExtendedColumns().isEmpty()) {
+					String sqlSetPart = StringUtils.join(getAdditionalExtendedColumns(), " = ?, ") + " = ?";
+					List<Object> params = new ArrayList<>(getAdditionalExtendedParams(target));
+					params.add(target.getId());
+					params.add(target.getCompanyID());
+	                update(logger, "UPDATE dyn_target_tbl SET " + sqlSetPart + " WHERE target_id = ? AND company_id = ?", params.toArray(new Object[0]));
+				}
 
 			}
 		} catch (Exception e) {

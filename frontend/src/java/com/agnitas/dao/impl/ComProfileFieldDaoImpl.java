@@ -17,8 +17,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
@@ -96,16 +98,7 @@ public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFie
     
     protected static final String DELETE_PROFILEFIELD_BY_COLUMNNAME = "DELETE FROM " + TABLE + " WHERE " + FIELD_COMPANY_ID + " = ? AND UPPER(" + FIELD_COLUMN_NAME + ") = UPPER(?)";
 
-	private static final String TABLE_PERMISSION = "customer_field_permission_tbl";
-	
-	private static final String FIELD_PERMISSION_COMPANY_ID = "company_id";
-	private static final String FIELD_PERMISSION_COLUMN_NAME = "column_name";
-	private static final String FIELD_PERMISSION_ADMIN_ID = "admin_id";
-	private static final String FIELD_PERMISSION_MODE_EDIT = "mode_edit";
-	
-	private static final String[] FIELD_NAMES_PERMISSION = new String[] { FIELD_PERMISSION_COMPANY_ID, FIELD_PERMISSION_COLUMN_NAME, FIELD_PERMISSION_ADMIN_ID, FIELD_PERMISSION_MODE_EDIT };
-	
-	private static final String SELECT_PROFILEFIELDPERMISSION = "SELECT " + StringUtils.join(FIELD_NAMES_PERMISSION, ", ") + " FROM " + TABLE_PERMISSION + " WHERE " + FIELD_PERMISSION_COMPANY_ID + " = ? AND UPPER(" + FIELD_PERMISSION_COLUMN_NAME + ") = UPPER(?) AND " + FIELD_PERMISSION_ADMIN_ID + " = ?";
+	private static final String SELECT_PROFILEFIELDPERMISSION = "SELECT company_id, column_name, admin_id, mode_edit FROM customer_field_permission_tbl WHERE company_id = ? AND LOWER(column_name) = ? AND admin_id = ?";
 
 	private static final Set<String> HIDDEN_COLUMNS = AgnUtils.getCaseInsensitiveSet(
 		ComCompanyDaoImpl.STANDARD_FIELD_CREATION_DATE,
@@ -208,7 +201,7 @@ public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFie
             if (profileField == null) {
             	return null;
             } else {
-            	List<ComProfileFieldPermission> profileFieldPermissionList = select(logger, SELECT_PROFILEFIELDPERMISSION, new ComProfileFieldPermission_RowMapper(), companyID, profileField.getColumn(), adminID);
+            	List<ComProfileFieldPermission> profileFieldPermissionList = select(logger, SELECT_PROFILEFIELDPERMISSION, new ComProfileFieldPermission_RowMapper(), companyID, profileField.getColumn().toLowerCase(), adminID);
             	if (profileFieldPermissionList == null || profileFieldPermissionList.size() < 1) {
     				return profileField;
     			} else if (profileFieldPermissionList.size() > 1) {
@@ -265,7 +258,7 @@ public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFie
             if (profileField == null) {
             	return null;
             } else {
-            	List<ComProfileFieldPermission> profileFieldPermissionList = select(logger, SELECT_PROFILEFIELDPERMISSION, new ComProfileFieldPermission_RowMapper(), companyID, profileField.getColumn(), adminID);
+            	List<ComProfileFieldPermission> profileFieldPermissionList = select(logger, SELECT_PROFILEFIELDPERMISSION, new ComProfileFieldPermission_RowMapper(), companyID, profileField.getColumn().toLowerCase(), adminID);
             	if (profileFieldPermissionList == null || profileFieldPermissionList.size() < 1) {
     				return profileField;
     			} else if (profileFieldPermissionList.size() > 1) {
@@ -549,7 +542,7 @@ public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFie
 			CaseInsensitiveMap<String, ProfileField> comProfileFieldMap = getComProfileFieldsMap(companyID, noNotNullConstraintCheck);
 			CaseInsensitiveMap<String, ProfileField> returnMap = new CaseInsensitiveMap<>();
 			for (ProfileField comProfileField : comProfileFieldMap.values()) {
-				List<ComProfileFieldPermission> profileFieldPermissionList = select(logger, SELECT_PROFILEFIELDPERMISSION, new ComProfileFieldPermission_RowMapper(), companyID, comProfileField.getColumn(), adminID);
+				List<ComProfileFieldPermission> profileFieldPermissionList = select(logger, SELECT_PROFILEFIELDPERMISSION, new ComProfileFieldPermission_RowMapper(), companyID, comProfileField.getColumn().toLowerCase(), adminID);
             	if (profileFieldPermissionList != null && profileFieldPermissionList.size() > 1) {
     				throw new RuntimeException("Invalid number of permission entries found in getProfileFields: " + profileFieldPermissionList.size());
     			} else if (profileFieldPermissionList != null && profileFieldPermissionList.size() == 1) {
@@ -588,7 +581,7 @@ public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFie
 					comProfileField.setNumericScale(columnType.getNumericScale());
 					comProfileField.setNullable(columnType.isNullable());
 					
-					List<ComProfileFieldPermission> profileFieldPermissionList = select(logger, SELECT_PROFILEFIELDPERMISSION, new ComProfileFieldPermission_RowMapper(), companyID, comProfileField.getColumn(), adminID);
+					List<ComProfileFieldPermission> profileFieldPermissionList = select(logger, SELECT_PROFILEFIELDPERMISSION, new ComProfileFieldPermission_RowMapper(), companyID, comProfileField.getColumn().toLowerCase(), adminID);
 	            	if (profileFieldPermissionList != null && profileFieldPermissionList.size() > 1) {
 	    				throw new RuntimeException("Invalid number of permission entries found in getProfileFieldsWithIndividualSortOrder: " + profileFieldPermissionList.size());
 	    			} else if (profileFieldPermissionList != null && profileFieldPermissionList.size() == 1) {
@@ -632,7 +625,7 @@ public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFie
 					comProfileField.setNumericScale(columnType.getNumericScale());
 					comProfileField.setNullable(columnType.isNullable());
 					
-					List<ComProfileFieldPermission> profileFieldPermissionList = select(logger, SELECT_PROFILEFIELDPERMISSION, new ComProfileFieldPermission_RowMapper(), companyID, comProfileField.getColumn(), adminID);
+					List<ComProfileFieldPermission> profileFieldPermissionList = select(logger, SELECT_PROFILEFIELDPERMISSION, new ComProfileFieldPermission_RowMapper(), companyID, comProfileField.getColumn().toLowerCase(), adminID);
 	            	if (profileFieldPermissionList != null && profileFieldPermissionList.size() > 1) {
 	    				throw new RuntimeException("Invalid number of permission entries found in getProfileFieldsWithIndividualSortOrder: " + profileFieldPermissionList.size());
 	    			} else if (profileFieldPermissionList != null && profileFieldPermissionList.size() == 1) {
@@ -1045,10 +1038,10 @@ public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFie
 		public ComProfileFieldPermission mapRow(ResultSet resultSet, int row) throws SQLException {
 			ComProfileFieldPermission readProfileFieldPermission = new ComProfileFieldPermission();
 			
-			readProfileFieldPermission.setCompanyId(resultSet.getInt(FIELD_PERMISSION_COMPANY_ID));
-			readProfileFieldPermission.setColumnName(resultSet.getString(FIELD_PERMISSION_COLUMN_NAME));
-			readProfileFieldPermission.setAdminId(resultSet.getInt(FIELD_PERMISSION_ADMIN_ID));
-			readProfileFieldPermission.setModeEdit(resultSet.getInt(FIELD_PERMISSION_MODE_EDIT));
+			readProfileFieldPermission.setCompanyId(resultSet.getInt("company_id"));
+			readProfileFieldPermission.setColumnName(resultSet.getString("column_name"));
+			readProfileFieldPermission.setAdminId(resultSet.getInt("admin_id"));
+			readProfileFieldPermission.setModeEdit(resultSet.getInt("mode_edit"));
 			
 			return readProfileFieldPermission;
 		}
@@ -1174,5 +1167,36 @@ public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFie
 			}
 		}
 		return maximumNumberOfProfileFields;
+	}
+
+	@Override
+	public Map<Integer, Integer> getProfileFieldAdminPermissions(int companyID, String columnName) {
+		Map<Integer, Integer> resultMap = new HashMap<>();
+		List<Map<String, Object>> result = select(logger, "SELECT admin_id, mode_edit FROM customer_field_permission_tbl WHERE company_id = ? AND LOWER(column_name) = ?", companyID, columnName.toLowerCase());
+		for (Map<String, Object> row : result) {
+			resultMap.put(((Number) row.get("admin_id")).intValue(), ((Number) row.get("mode_edit")).intValue());
+		}
+		return resultMap;
+	}
+
+	@Override
+	public void storeProfileFieldAdminPermissions(int companyID, String columnName, List<Integer> readOnlyUsers, List<Integer> notVisibleUsers) {
+		List<Object[]> parameterList = new ArrayList<>();
+		if (readOnlyUsers != null) {
+			update(logger, "DELETE FROM customer_field_permission_tbl WHERE company_id = ? AND LOWER(column_name) = ? AND mode_edit = ?", companyID, columnName, ProfileField.MODE_EDIT_READONLY);
+	        for (Integer adminID : readOnlyUsers) {
+	        	parameterList.add(new Object[] { companyID, columnName.toUpperCase(), adminID, ProfileField.MODE_EDIT_READONLY });
+	        }
+		}
+		if (notVisibleUsers != null) {
+			update(logger, "DELETE FROM customer_field_permission_tbl WHERE company_id = ? AND LOWER(column_name) = ? AND mode_edit = ?", companyID, columnName, ProfileField.MODE_EDIT_NOT_VISIBLE);
+	        for (Integer adminID : notVisibleUsers) {
+	        	parameterList.add(new Object[] { companyID, columnName.toUpperCase(), adminID, ProfileField.MODE_EDIT_NOT_VISIBLE });
+	        }
+		}
+
+		if (!parameterList.isEmpty()) {
+	        batchupdate(logger, "INSERT INTO customer_field_permission_tbl (company_id, column_name, admin_id, mode_edit) VALUES (?, ?, ?, ?)", parameterList);
+		}
 	}
 }

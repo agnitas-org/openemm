@@ -22,15 +22,17 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.MailingComponentType;
-import org.agnitas.beans.TrackableLink;
 import org.agnitas.beans.factory.MailingComponentFactory;
 import org.agnitas.dao.impl.BaseDaoImpl;
 import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DbUtilities;
 import org.apache.commons.collections4.CollectionUtils;
@@ -60,6 +62,8 @@ public class ComMailingComponentDaoImpl extends BaseDaoImpl implements ComMailin
 	
 	private ComTrackableLinkDao comTrackableLinkDao;
 	
+	private ConfigService configService;
+	
 	/**
 	 * Set factory to create new mailing components.
 	 *
@@ -72,6 +76,11 @@ public class ComMailingComponentDaoImpl extends BaseDaoImpl implements ComMailin
 	@Required
 	public void setTrackableLinkDao(ComTrackableLinkDao comTrackableLinkDao) {
 		this.comTrackableLinkDao = comTrackableLinkDao;
+	}
+	
+	@Required
+	public final void setConfigService(final ConfigService service) {
+		this.configService = Objects.requireNonNull(service, "configService");
 	}
 
 	@Override
@@ -187,6 +196,7 @@ public class ComMailingComponentDaoImpl extends BaseDaoImpl implements ComMailin
 	@Override
 	@DaoUpdateReturnValueCheck
 	public void saveMailingComponent(MailingComponent mailingComponent) throws Exception {
+		
 		// TODO: What are these defaultvalues for? They are only written to DB on the first insert and will not be read again
 		int mailtemplateID = 0;
 		int comppresent = 1;
@@ -201,7 +211,7 @@ public class ComMailingComponentDaoImpl extends BaseDaoImpl implements ComMailin
 					newTrackableLink.setCompanyID(mailingComponent.getCompanyID());
 					newTrackableLink.setFullUrl(mailingComponent.getLink());
 					newTrackableLink.setMailingID(mailingComponent.getMailingID());
-					newTrackableLink.setUsage(TrackableLink.TRACKABLE_TEXT_HTML);
+					newTrackableLink.setUsage(this.configService.getIntegerValue(ConfigValue.TrackableLinkDefaultTracking, mailingComponent.getCompanyID()));
 					newTrackableLink.setActionID(0);
 					comTrackableLinkDao.saveTrackableLink(newTrackableLink);
 					mailingComponent.setUrlID(newTrackableLink.getId());

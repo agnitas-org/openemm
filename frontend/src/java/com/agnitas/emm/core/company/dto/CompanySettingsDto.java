@@ -62,6 +62,7 @@ public class CompanySettingsDto {
 	private boolean writeCustomerOpenOrClickField;
 	private boolean trackingVetoAllowTransactionTracking;
 	private List<Integer> optionsMaxAdminMails = Arrays.asList(25, 50, 100);
+    private int defaultCompanyLinkTrackingMode;
 
 	public boolean isHasMailTracking() {
         return hasMailTracking;
@@ -434,4 +435,13 @@ public class CompanySettingsDto {
 	public List<Integer> getOptionsMaxAdminMails() {
 		return optionsMaxAdminMails;
 	}
+
+	public int getDefaultCompanyLinkTrackingMode() {
+		return defaultCompanyLinkTrackingMode;
+	}
+
+	public void setDefaultCompanyLinkTrackingMode(int defaultCompanyLinkTrackingMode) {
+		this.defaultCompanyLinkTrackingMode = defaultCompanyLinkTrackingMode;
+	}
+	
 }

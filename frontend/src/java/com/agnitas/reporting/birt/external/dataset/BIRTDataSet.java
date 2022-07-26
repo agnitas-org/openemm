@@ -625,6 +625,8 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
     protected int getNumberSentMailings(int companyID, int mailingID, String recipientsType, String targetSql, String startDateString, String endDateString) throws Exception {
     	Date startDate = null;
     	Date endDate = null;
+    	boolean useTargetGroup = (targetSql != null && StringUtils.isNotBlank(targetSql) && !targetSql.replace(" ", "").equals("1=1"));
+    	
         if (StringUtils.isNotBlank(startDateString) && StringUtils.isNotBlank(endDateString)) {
         	startDate = parseStatisticDate(startDateString);
         	endDate = parseStatisticEndDate(endDateString);
@@ -652,7 +654,7 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
     			queryBuilder.append(" AND cust.customer_id = track.customer_id");
     		}
     		
-    		if (targetSql != null && StringUtils.isNotBlank(targetSql) && !targetSql.replace(" ", "").equals("1=1")) {
+    		if (useTargetGroup) {
     			queryBuilder.append(" AND (").append(targetSql).append(")");
     		}
             
@@ -680,13 +682,13 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
         			queryBuilder.append(" AND cust.customer_id = track.customer_id");
         		}
         		
-        		if (targetSql != null && StringUtils.isNotBlank(targetSql) && !targetSql.replace(" ", "").equals("1=1")) {
+        		if (useTargetGroup) {
         			queryBuilder.append(" AND (").append(targetSql).append(")");
         		}
                 
         		int numberSentMailingsByMailTrack = selectIntWithDefaultValue(logger, queryBuilder.toString(), 0, parameters.toArray(new Object[0]));
         		
-        		if (numberSentMailingsByMailTrack == 0 || targetSql == null || StringUtils.isBlank(targetSql) || targetSql.replace(" ", "").equals("1=1")) {
+        		if (numberSentMailingsByMailTrack == 0 && !useTargetGroup) {
         			// Fallback for newly activated automationpackage with newly created and therefor empty mailtrack table
         			StringBuilder queryBuilderMailingAccount = new StringBuilder("SELECT SUM(no_of_mailings) FROM mailing_account_tbl WHERE mailing_id = ?");
             		List<Object> parametersMailingAccount = new ArrayList<>();
@@ -710,7 +712,7 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
         		} else {
         			return numberSentMailingsByMailTrack;
         		}
-        	} else if (targetSql == null || StringUtils.isBlank(targetSql) || targetSql.replace(" ", "").equals("1=1")) {
+        	} else if (!useTargetGroup) {
         		// mailing_account_tbl has no customerids and therefor cannot be used for targetgroup specific numbers
                 StringBuilder queryBuilder = new StringBuilder("SELECT SUM(no_of_mailings) FROM mailing_account_tbl WHERE mailing_id = ?");
         		List<Object> parameters = new ArrayList<>();
@@ -768,8 +770,9 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 			parameters.add(parseStatisticDate(startDateString));
 			parameters.add(parseStatisticEndDate(endDateString));
 		}
-		
-		if (targetSql != null && StringUtils.isNotBlank(targetSql) && !targetSql.replace(" ", "").equals("1=1")) {
+
+    	boolean useTargetGroup = (targetSql != null && StringUtils.isNotBlank(targetSql) && !targetSql.replace(" ", "").equals("1=1"));
+		if (useTargetGroup) {
 			queryBuilder.append(" AND (").append(targetSql).append(")");
 		}
 

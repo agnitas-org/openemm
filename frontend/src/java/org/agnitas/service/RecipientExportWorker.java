@@ -32,10 +32,13 @@ import org.agnitas.emm.core.autoimport.service.RemoteFile;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.importvalues.DateFormat;
+import org.agnitas.web.ExportException;
+import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 
 import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.ProfileField;
 import com.agnitas.dao.impl.ComCompanyDaoImpl;
 import com.agnitas.emm.core.export.util.ExportWizardUtils;
 import com.agnitas.emm.core.target.service.ComTargetService;
@@ -148,6 +151,8 @@ public class RecipientExportWorker extends GenericExportWorker {
 			boolean isFirstColumn = true;
             List<ExportColumnMapping> profileFieldsToExport = getProfileFieldsToExport(companyID, adminId);
 
+            CaseInsensitiveMap<String, ProfileField> profilefields = columnInfoService.getColumnInfoMap(companyID, admin.getAdminID());
+            
             for (String columnName : getSplittedColumnNames(profileFieldsToExport)) {
 				if ("mailing_bounce".equalsIgnoreCase(columnName)) {
 					if (exportProfile.getUserStatus() == UserStatus.Bounce.getStatusCode()) {
@@ -162,6 +167,8 @@ public class RecipientExportWorker extends GenericExportWorker {
 							customerTableSql.append("bounce.exit_mailing_id AS ExitMailingID, bounce.mailinglist_id AS Mailinglist, bounce.detail AS BounceDetail");
 						}
 					}
+				} else if (profilefields.get(columnName).getModeEdit() != ProfileField.MODE_EDIT_EDITABLE && profilefields.get(columnName).getModeEdit() != ProfileField.MODE_EDIT_READONLY) {
+					throw new ExportException(false, ExportException.Reason.ColumnNotExportableError, columnName);
 				} else {
 					if (isFirstColumn) {
 						isFirstColumn = false;
@@ -179,7 +186,7 @@ public class RecipientExportWorker extends GenericExportWorker {
 				columnMappings.add(new ExportColumnMapping("Userstate_Mailinglist_" + selectedMailinglistID, "Userstate_Mailinglist_" + selectedMailinglistID, null, false));
 				customerTableSql.append(", m" + selectedMailinglistID + ".timestamp AS Mailinglist_" + selectedMailinglistID + "_Timestamp");
 				columnMappings.add(new ExportColumnMapping("Mailinglist_" + selectedMailinglistID + "_Timestamp", "Mailinglist_" + selectedMailinglistID + "_Timestamp", null, false));
-				customerTableSql.append(", m" + selectedMailinglistID + ".user_remark || CASE WHEN (m" + selectedMailinglistID + ".exit_mailing_id IS NULL OR m" + selectedMailinglistID + ".exit_mailing_id = 0) THEN '' ELSE (' ExitMailingID: ' || m" + selectedMailinglistID + ".exit_mailing_id) END AS Mailinglist_" + selectedMailinglistID + "_UserRemark");
+				customerTableSql.append(", CONCAT(m" + selectedMailinglistID + ".user_remark, CASE WHEN (m" + selectedMailinglistID + ".exit_mailing_id IS NULL OR m" + selectedMailinglistID + ".exit_mailing_id = 0) THEN '' ELSE CONCAT(' ExitMailingID: ', m" + selectedMailinglistID + ".exit_mailing_id) END) AS Mailinglist_" + selectedMailinglistID + "_UserRemark");
 				columnMappings.add(new ExportColumnMapping("Mailinglist_" + selectedMailinglistID + "_UserRemark", "Mailinglist_" + selectedMailinglistID + "_UserRemark", null, false));
 				if (selectBounces) {
 					customerTableSql.append(", m" + selectedMailinglistID + ".exit_mailing_id AS Mailinglist_" + selectedMailinglistID + "_ExitMailID");

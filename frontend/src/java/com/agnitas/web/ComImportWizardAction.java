@@ -12,7 +12,6 @@ package com.agnitas.web;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -41,6 +40,7 @@ import org.agnitas.beans.Mailinglist;
 import org.agnitas.beans.impl.ColumnMappingImpl;
 import org.agnitas.beans.impl.DatasourceDescriptionImpl;
 import org.agnitas.beans.impl.ImportProfileImpl;
+import org.agnitas.dao.ProfileFieldDao;
 import org.agnitas.dao.SourceGroupType;
 import org.agnitas.emm.core.autoimport.service.RemoteFile;
 import org.agnitas.emm.core.commons.util.ConfigService;
@@ -82,8 +82,9 @@ import org.apache.struts.action.ActionMessages;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComAdmin;
-import com.agnitas.dao.DatasourceDescriptionDao;
+import com.agnitas.beans.ProfileField;
 import com.agnitas.dao.ComRecipientDao;
+import com.agnitas.dao.DatasourceDescriptionDao;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.mailinglist.service.ComMailinglistService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
@@ -92,7 +93,6 @@ import com.agnitas.emm.core.upload.bean.UploadData;
 import com.agnitas.emm.core.upload.dao.ComUploadDao;
 import com.agnitas.messages.I18nString;
 
-import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -158,6 +158,7 @@ public final class ComImportWizardAction extends StrutsActionBase {
         
 	protected DataSource dataSource;
 	protected ConfigService configService;
+	protected ProfileFieldDao profileFieldDao;
 	protected ComRecipientDao recipientDao;
 	protected DatasourceDescriptionDao datasourceDescriptionDao;
 	protected ImportWizardService importWizardService;
@@ -184,7 +185,12 @@ public final class ComImportWizardAction extends StrutsActionBase {
 	public void setConfigService(ConfigService configService) {
 		this.configService = configService;
 	}
-
+	
+	@Required
+	public void setProfileFieldDao(ProfileFieldDao profileFieldDao) {
+		this.profileFieldDao = profileFieldDao;
+	}
+	
 	@Required
 	public void setRecipientDao(ComRecipientDao recipientDao) {
 		this.recipientDao = recipientDao;
@@ -285,7 +291,7 @@ public final class ComImportWizardAction extends StrutsActionBase {
     }
     
     @Override
-	public ActionForward execute(ActionMapping mapping, ActionForm form, HttpServletRequest req, HttpServletResponse response) throws IOException, ServletException {
+	public ActionForward execute(ActionMapping mapping, ActionForm form, HttpServletRequest req, HttpServletResponse response) throws Exception {
 		ComImportWizardForm aForm = (ComImportWizardForm) form;
 		ActionMessages errors = new ActionMessages();
         ActionMessages messages = new ActionMessages();
@@ -874,8 +880,10 @@ public final class ComImportWizardAction extends StrutsActionBase {
 		}
 	}
 
-	public ActionErrors formValidate(ComImportWizardForm form, HttpServletRequest request) {
+	public ActionErrors formValidate(ComImportWizardForm form, HttpServletRequest request) throws Exception {
 		ActionErrors errors = new ActionErrors();
+		
+		ComAdmin admin = AgnUtils.getAdmin(request);
 
 		if (logger.isInfoEnabled()) {
 			logger.info("validate: " + form.getAction());
@@ -900,6 +908,13 @@ public final class ComImportWizardAction extends StrutsActionBase {
 				        for (String hiddenColumn : ImportUtils.getHiddenColumns(AgnUtils.getAdmin(request))) {
 				        	dbColumnsAvailable.remove(hiddenColumn);
 				        }
+				        
+						for (Entry<String, ProfileField> profilefieldEntry : profileFieldDao.getProfileFieldsMap(admin.getCompanyID(), admin.getAdminID()).entrySet()) {
+							if (profilefieldEntry.getValue().getModeEdit() != ProfileField.MODE_EDIT_EDITABLE) {
+								dbColumnsAvailable.remove(profilefieldEntry.getKey());
+							}
+						}
+
 				        form.getImportWizardHelper().setDbAllColumns(dbColumnsAvailable);
 				        
 						importWizardService.parseFirstLine(form.getImportWizardHelper());

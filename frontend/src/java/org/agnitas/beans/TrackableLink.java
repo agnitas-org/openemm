@@ -10,12 +10,21 @@
 
 package org.agnitas.beans;
 
+import com.agnitas.emm.core.trackablelinks.common.LinkTrackingMode;
+
 public interface TrackableLink extends BaseTrackableLink {
 
-    int TRACKABLE_NONE = 0;
-    int TRACKABLE_ONLY_TEXT = 1;
-    int TRACKABLE_ONLY_HTML = 2;
-    int TRACKABLE_TEXT_HTML = 3;
+	@Deprecated // See LinkTrackingMode.NONE
+    int TRACKABLE_NONE = LinkTrackingMode.NONE.getMode();	
+
+	@Deprecated // See LinkTrackingMode.TEXT_ONLY
+    int TRACKABLE_ONLY_TEXT = LinkTrackingMode.TEXT_ONLY.getMode();
+
+	@Deprecated // See LinkTrackingMode.HTML_ONLY
+    int TRACKABLE_ONLY_HTML = LinkTrackingMode.HTML_ONLY.getMode();
+
+	@Deprecated // See LinkTrackingMode.TEXT_AND_HTML
+    int TRACKABLE_TEXT_HTML = LinkTrackingMode.TEXT_AND_HTML.getMode();
 
     int DEEPTRACKING_NONE = 0;
     int DEEPTRACKING_ONLY_COOKIE = 1;

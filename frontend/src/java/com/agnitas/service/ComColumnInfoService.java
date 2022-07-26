@@ -11,6 +11,7 @@
 package com.agnitas.service;
 
 import java.util.List;
+import java.util.Map;
 
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.service.ColumnInfoService;
@@ -33,4 +34,8 @@ public interface ComColumnInfoService extends ColumnInfoService {
     CaseInsensitiveMap<String, ProfileField> getComColumnInfoMap(@VelocityCheck int companyID) throws Exception;
     
 	CaseInsensitiveMap<String, ProfileField> getComColumnInfoMap(@VelocityCheck int companyID, int adminId) throws Exception;
+
+	Map<Integer, Integer> getProfileFieldAdminPermissions(int companyID, String columnName);
+
+	void storeProfileFieldAdminPermissions(int companyID, String column, List<Integer> readOnlyUsers, List<Integer> notVisibleUsers);
 }

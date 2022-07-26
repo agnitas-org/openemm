@@ -387,4 +387,7 @@ public interface ComMailingDao extends MailingDao {
 	boolean resumeDateBasedSending(int mailingId);
 
 	boolean isThresholdClearanceExceeded(int mailingId);
+
+	void removeApproval(Mailing mailing);
+	void removeApproval(int mailingID, int companyID);
 }

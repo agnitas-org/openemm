@@ -46,6 +46,8 @@ import org.agnitas.emm.core.autoimport.service.RemoteFile;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.recipient.RecipientUtils;
+import org.agnitas.emm.core.recipient.service.SubscriberLimitCheck;
+import org.agnitas.emm.core.recipient.service.SubscriberLimitExceededException;
 import org.agnitas.emm.core.useractivitylog.dao.UserActivityLogDao;
 import org.agnitas.service.ColumnInfoService;
 import org.agnitas.service.ProfileImportWorker;
@@ -114,6 +116,7 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 	private DatasourceDescriptionDao datasourceDescriptionDao;
 	private FullviewService fullviewService;
 	private ConfigService configService;
+	private SubscriberLimitCheck subscriberLimitCheck;
 
 	@Required
 	public void setUserActivityLogDao(UserActivityLogDao userActivityLogDao) {
@@ -158,6 +161,11 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 	@Required
 	public void setConfigService(ConfigService configService) {
 		this.configService = configService;
+	}
+
+	@Required
+	public void setSubscriberLimitCheck(SubscriberLimitCheck subscriberLimitCheck) {
+		this.subscriberLimitCheck = subscriberLimitCheck;
 	}
 
 	@Override
@@ -449,7 +457,9 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 					
 					List<String> hiddenColumns = ImportUtils.getHiddenColumns(admin);
 					for (String key : jsonObject.keySet()) {
-						if (hiddenColumns.contains(key)) {
+						if ("customer_id".equalsIgnoreCase(key)) {
+							throw new RestfulClientException("Invalid recipient data for new recipient. Internal key field " + key + " is included");
+						} else if (hiddenColumns.contains(key)) {
 							throw new RestfulClientException("Invalid recipient data for new recipient. Internal key field " + key + " is included");
 						}
 					}
@@ -489,6 +499,12 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 					}
 					
 					recipient.setChangeFlag(true);
+					
+					try {
+						subscriberLimitCheck.checkSubscriberLimit(admin.getCompanyID(), 1);
+					} catch (SubscriberLimitExceededException e) {
+						throw new RestfulClientException("Number of customer entries allowed is going to be exceeded. Number of existing customers would be " + e.getActual() + ". Maximum customer number limit is " + e.getMaximum() + ".");
+					}
 					
 					try {
 						if (!recipientDao.updateInDbWithException(recipient, false)) {
@@ -554,7 +570,7 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 					
 					File temporaryImportFile = new File(importTempFileDirectory.getAbsolutePath() + "/Recipientimportjson_" + requestUUID + ".json");
 					ImportMode importMode = ImportMode.ADD;
-					String keyColumn = "email";
+					String keyColumn = null;
 					
 					int foundItems = 0;
 					// Read recipient data entries and write them to a importable json file
@@ -764,7 +780,9 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 							
 							List<String> hiddenColumns = ImportUtils.getHiddenColumns(admin);
 							for (String key : jsonObject.keySet()) {
-								if (hiddenColumns.contains(key.toLowerCase())) {
+								if ("customer_id".equalsIgnoreCase(key)) {
+									throw new RestfulClientException("Invalid recipient data for new recipient. Internal key field " + key + " is included");
+								} else if (hiddenColumns.contains(key.toLowerCase())) {
 									throw new RestfulClientException("Invalid recipient data for new recipient. Internal key field " + key + " is included");
 								}
 							}
@@ -802,7 +820,9 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 
 							List<String> hiddenColumns = ImportUtils.getHiddenColumns(admin);
 							for (String key : jsonObject.keySet()) {
-								if (hiddenColumns.contains(key.toLowerCase())) {
+								if ("customer_id".equalsIgnoreCase(key)) {
+									throw new RestfulClientException("Invalid recipient data for new recipient. Internal key field " + key + " is included");
+								} else if (hiddenColumns.contains(key.toLowerCase())) {
 									throw new RestfulClientException("Invalid recipient data for new recipient. Internal key field " + key + " is included");
 								}
 							}
@@ -897,6 +917,14 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 						}
 						
 						recipient.setChangeFlag(true);
+						
+						if (customerID <= 0) {
+							try {
+								subscriberLimitCheck.checkSubscriberLimit(admin.getCompanyID(), 1);
+							} catch (SubscriberLimitExceededException e) {
+								throw new RestfulClientException("Number of customer entries allowed is going to be exceeded. Number of existing customers would be " + e.getActual() + ". Maximum customer number limit is " + e.getMaximum() + ".");
+							}
+						}
 						
 						try {
 							if (!recipientDao.updateInDbWithException(recipient, false)) {

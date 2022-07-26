@@ -3,7 +3,7 @@
   "info" : {
     "title" : "EMM Restful API",
     "description" : "This is the EMM Restful API.<br /><br />Authorization is done via username and password as URL parameters or via Basic Auth (see https://en.wikipedia.org/wiki/Basic_access_authentication).<br />Use username and password of an EMM GUI user with permission \"utilize the RESTful interface\".<br /><br />Example for request via wget with URL parameters:<br /><pre>wget -S -O - --content-on-error \"https://&lt;emm_system_url>/restful/mailing/1?username=&lt;UrlencodedUserName>&password=&lt;UrlencodedPassword>\" > test.txt; cat test.txt</pre><br />Example for request via wget with BASIC AUTH:<br /><pre>wget -S -O - --content-on-error --auth-no-challenge --http-user=\"&lt;UrlencodedUserName>\" --http-password=\"&lt;UrlencodedPassword>\" \"https://&lt;emm_system_url>/restful/mailing/1\" > test.txt; cat test.txt</pre>",
-    "version" : "1.1.0",
+    "version" : "1.2.0",
     "contact" : {
       "email" : "info@agnitas.ag"
     }
@@ -6624,8 +6624,11 @@
           "defaultImportProfileID" : {
             "type" : "integer"
           },
-          "accessLimitingTargetGroupID" : {
-            "type" : "integer"
+          "accessLimitingTargetGroupIds" : {
+            "type" : "array",
+            "items" : {
+              "type" : "integer"
+            }
           },
           "disabledMailingLists" : {
             "type" : "array",
@@ -6695,8 +6698,11 @@
           "defaultImportProfileID" : {
             "type" : "integer"
           },
-          "accessLimitingTargetGroupID" : {
-            "type" : "integer"
+          "accessLimitingTargetGroupIds" : {
+            "type" : "array",
+            "items" : {
+              "type" : "integer"
+            }
           },
           "disabledMailingLists" : {
             "type" : "array",
@@ -6767,8 +6773,11 @@
           "defaultImportProfileID" : {
             "type" : "integer"
           },
-          "accessLimitingTargetGroupID" : {
-            "type" : "integer"
+          "accessLimitingTargetGroupIds" : {
+            "type" : "array",
+            "items" : {
+              "type" : "integer"
+            }
           },
           "disabledMailingLists" : {
             "type" : "array",
@@ -6842,8 +6851,11 @@
           "defaultImportProfileID" : {
             "type" : "integer"
           },
-          "accessLimitingTargetGroupID" : {
-            "type" : "integer"
+          "accessLimitingTargetGroupIds" : {
+            "type" : "array",
+            "items" : {
+              "type" : "integer"
+            }
           },
           "disabledMailingLists" : {
             "type" : "array",
@@ -6917,8 +6929,11 @@
           "defaultImportProfileID" : {
             "type" : "integer"
           },
-          "accessLimitingTargetGroupID" : {
-            "type" : "integer"
+          "accessLimitingTargetGroupIds" : {
+            "type" : "array",
+            "items" : {
+              "type" : "integer"
+            }
           },
           "disabledMailingLists" : {
             "type" : "array",
@@ -6995,8 +7010,11 @@
           "defaultImportProfileID" : {
             "type" : "integer"
           },
-          "accessLimitingTargetGroupID" : {
-            "type" : "integer"
+          "accessLimitingTargetGroupIds" : {
+            "type" : "array",
+            "items" : {
+              "type" : "integer"
+            }
           },
           "disabledMailingLists" : {
             "type" : "array",
@@ -7066,8 +7084,11 @@
           "defaultImportProfileID" : {
             "type" : "integer"
           },
-          "accessLimitingTargetGroupID" : {
-            "type" : "integer"
+          "accessLimitingTargetGroupIds" : {
+            "type" : "array",
+            "items" : {
+              "type" : "integer"
+            }
           },
           "disabledMailingLists" : {
             "type" : "array",
@@ -7138,8 +7159,11 @@
           "defaultImportProfileID" : {
             "type" : "integer"
           },
-          "accessLimitingTargetGroupID" : {
-            "type" : "integer"
+          "accessLimitingTargetGroupIds" : {
+            "type" : "array",
+            "items" : {
+              "type" : "integer"
+            }
           },
           "disabledMailingLists" : {
             "type" : "array",
@@ -7210,8 +7234,11 @@
           "defaultImportProfileID" : {
             "type" : "integer"
           },
-          "accessLimitingTargetGroupID" : {
-            "type" : "integer"
+          "accessLimitingTargetGroupIds" : {
+            "type" : "array",
+            "items" : {
+              "type" : "integer"
+            }
           },
           "disabledMailingLists" : {
             "type" : "array",
@@ -7282,8 +7309,11 @@
           "defaultImportProfileID" : {
             "type" : "integer"
           },
-          "accessLimitingTargetGroupID" : {
-            "type" : "integer"
+          "accessLimitingTargetGroupIds" : {
+            "type" : "array",
+            "items" : {
+              "type" : "integer"
+            }
           },
           "disabledMailingLists" : {
             "type" : "array",

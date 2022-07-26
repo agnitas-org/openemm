@@ -38,7 +38,7 @@ import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * This restful service is available at:
- * https://<system.url>/restful/recipient
+ * https://<system.url>/restful/altg
  */
 public class AccessLimitingTargetGroupsServiceHandler implements RestfulServiceHandler {
 	

@@ -368,9 +368,9 @@
                         <c:set var="mailinglistBindings" value="${bindingsListForm.getListBinding(mlist.id)}"/>
 
                         <div class="tile">
-                            <div class="tile-header">
+                            <div class="tile-header" style="padding-bottom: 15px; height: auto;">
                                 <a href="#" class="headline js-show-tile-if-checked" data-toggle-tile="#tile-recipient-mailinglist-${mlist.id}">
-                                    <i class="tile-toggle icon icon-angle-down"></i>
+                                    <i class="tile-toggle icon icon-angle-down" style="padding-right: 5px;"></i>
                                     ${mlist.shortname}
                                 </a>
                             </div>

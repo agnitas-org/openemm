@@ -429,6 +429,11 @@ public class QueryBuilderTargetController {
         // Update editable properties
         FormHelper.formPropertiesToTargetGroup(newTarget, form);
         
+        if (oldTarget != null) {
+        	// Set AccessLimitation for existing targetgroup as it was set before, because the GUI form does not send the value again
+        	newTarget.setAccessLimitation(oldTarget.isAccessLimitation());
+        }
+        
         if(form.isAccessLimitation()) {
 	        int accessLimitingTargetgroupsAmount = targetService.getAccessLimitingTargetgroupsAmount(companyId);
 	        int licenseMaximumOfAccessLimitingTargetgroupsPerCompany = configService.getIntegerValue(ConfigValue.System_License_MaximumNumberOfAccessLimitingTargetgroupsPerCompany);

@@ -236,6 +236,9 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 
 	@Override
 	public Vector<String> scanForLinks(String text, String textModuleName, ApplicationContext applicationContext, ActionMessages warnings, ActionMessages errors, ComAdmin admin) throws Exception {
+		final int defaultTrackingMode = readDefaultLinkTrackingMode(applicationContext, companyID);
+		
+		
 		try {
 			if (text != null) {
 				Vector<String> foundLinkUrls = new Vector<>();
@@ -257,7 +260,7 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 					if (!trackableLinks.containsKey(linkFound.getFullUrl())) {
 						linkFound.setCompanyID(companyID);
 						linkFound.setMailingID(id);
-						linkFound.setUsage(TrackableLink.TRACKABLE_TEXT_HTML);
+						linkFound.setUsage(defaultTrackingMode);
 
 						// Extend new links with the default company extension if set
 						setDefaultExtension(linkFound, applicationContext);
@@ -1620,4 +1623,10 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
     	}
     	return linkService;
     }
+
+    private final int readDefaultLinkTrackingMode(final ApplicationContext applicationContext, final int companyId) {
+    	final ConfigService configService = applicationContext.getBean("ConfigService", ConfigService.class);
+    	return configService.getIntegerValue(ConfigValue.TrackableLinkDefaultTracking, companyId);
+    }
+    
 }

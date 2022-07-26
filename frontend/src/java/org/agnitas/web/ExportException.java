@@ -24,7 +24,9 @@ public class ExportException extends RuntimeException {
 	
 	public enum Reason {
 		FileTransferError("error.filetransfer.createFile"),
-		ConnectionError("error.connection.fileserver");
+		ConnectionError("error.connection.fileserver"),
+		DefinitionError("error.definition"),
+		ColumnNotExportableError("error.import.dbColumnNotVisible");
 		
 		private String messageKey;
 		

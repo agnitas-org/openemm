@@ -16,7 +16,6 @@ import java.util.Objects;
 
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.MailingComponentType;
-import org.agnitas.beans.TrackableLink;
 import org.agnitas.beans.impl.MailingComponentImpl;
 import org.agnitas.dao.MailingDao;
 import org.agnitas.dao.TrackableLinkDao;
@@ -108,6 +107,8 @@ public class AddMailingImageEndpoint extends BaseEndpoint {
     }
 
     private int saveTrackableLink(AddMailingImageRequest req) {
+    	final int defaultLinkTrackingMode = this.configService.getIntegerValue(ConfigValue.TrackableLinkDefaultTracking, Utils.getUserCompany());
+    	
         String imageUrl = req.getURL();
         int urlId = 0;
         if (StringUtils.isNotBlank(imageUrl)) {
@@ -115,7 +116,7 @@ public class AddMailingImageEndpoint extends BaseEndpoint {
             trackableLink.setCompanyID(Utils.getUserCompany());
             trackableLink.setMailingID(req.getMailingID());
             trackableLink.setFullUrl(imageUrl);
-            trackableLink.setUsage(TrackableLink.TRACKABLE_TEXT_HTML);
+            trackableLink.setUsage(defaultLinkTrackingMode);
             trackableLink.setActionID(0);
             urlId = trackableLinkDao.saveTrackableLink(trackableLink);
         }

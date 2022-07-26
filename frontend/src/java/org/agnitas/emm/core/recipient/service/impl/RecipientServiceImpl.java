@@ -714,7 +714,12 @@ public class RecipientServiceImpl implements RecipientService {
 	@Override
 	public int calculateRecipient(ComAdmin admin, int targetId, int mailinglistId) {
 		int companyId = admin.getCompanyID();
-		String targetExpression = getTargetGroupExpressionOrDefault(targetId, companyId);
+		String targetExpression;
+		if (targetId > 0) {
+			targetExpression = getTargetGroupExpressionOrDefault(targetId, companyId);
+		} else {
+			targetExpression = "1=1";
+		}
 		return recipientDao.getRecipientsAmountForTargetGroup(companyId, admin.getAdminID(), mailinglistId, targetExpression);
 	}
 

@@ -72,4 +72,6 @@ public interface ProfileFieldService {
 	boolean isReservedKeyWord(String fieldname);
 
 	int getMaximumNumberOfCompanySpecificProfileFields() throws Exception;
+
+	ProfileField getProfileFieldByShortname(int companyID, String shortname) throws Exception;
 }
