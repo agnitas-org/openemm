@@ -53,6 +53,9 @@ public class ImportMode {
 	/** Insert and update recipient data and subscribe them if without binding, but also re-subscribe admin-out and user-out recipients **/
 	public static final ImportMode ADD_AND_UPDATE_FORCED = new ImportMode(8, "import.mode.add_update_forced", "ImportModeAddAndUpdateForcedHandler");
 	
+	/** Insert and update customers, but unsubscribe all existing customers, that are not included in the current import data */
+	public static final ImportMode ADD_AND_UPDATE_EXCLUSIVE = new ImportMode(9, "import.mode.add_update_exclusive", "ImportModeExclusiveHandler");
+	
 	/** Reactivate recipients from suspended to active**/
 	public static final ImportMode REACTIVATE_SUSPENDED = new ImportMode(10, "import.mode.reactivateSuspended", "ImportModeReactivateSuspendedHandler");
 

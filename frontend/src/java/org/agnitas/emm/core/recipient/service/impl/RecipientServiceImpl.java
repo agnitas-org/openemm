@@ -112,6 +112,7 @@ import com.agnitas.dao.ComBindingEntryDao;
 import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.dao.ComProfileFieldDao;
 import com.agnitas.dao.ComRecipientDao;
+import com.agnitas.dao.ComTargetDao;
 import com.agnitas.dao.impl.ComCompanyDaoImpl;
 import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.admin.service.AdminService;
@@ -134,6 +135,9 @@ import com.agnitas.emm.core.recipient.service.DuplicatedRecipientsExportWorker;
 import com.agnitas.emm.core.recipient.service.FieldsSaveResults;
 import com.agnitas.emm.core.recipient.service.RecipientWorkerFactory;
 import com.agnitas.emm.core.report.enums.fields.RecipientMutableFields;
+import com.agnitas.emm.core.target.eql.EqlFacade;
+import com.agnitas.emm.core.target.eql.codegen.sql.SqlCode;
+import com.agnitas.emm.core.target.eql.parser.EqlParserException;
 import com.agnitas.emm.core.target.service.ComTargetService;
 import com.agnitas.messages.I18nString;
 import com.agnitas.messages.Message;
@@ -177,6 +181,8 @@ public class RecipientServiceImpl implements RecipientService {
 	protected ComBindingEntryDao bindingEntryDao;
 	protected BindingEntryFactory bindingEntryFactory;
 	protected ExtendedConversionService conversionService;
+	protected ComTargetDao targetDao;
+	protected EqlFacade eqlFacade;
 
 	@Required
 	public void setMailinglistDao(MailinglistDao mailinglistDao) {
@@ -201,6 +207,16 @@ public class RecipientServiceImpl implements RecipientService {
 	@Required
 	public void setRecipientWorkerFactory(RecipientWorkerFactory recipientWorkerFactory) {
 		this.recipientWorkerFactory = recipientWorkerFactory;
+	}
+    
+    @Required
+	public void setTargetDao(ComTargetDao targetDao) {
+		this.targetDao = targetDao;
+	}
+
+    @Required
+	public void setEqlFacade(EqlFacade eqlFacade) {
+		this.eqlFacade = eqlFacade;
 	}
 
 	@Override
@@ -791,32 +807,78 @@ public class RecipientServiceImpl implements RecipientService {
         // nothing to do
     }
 	
+
+	
 	@Override
-	public PaginatedListImpl<RecipientDto> getPaginatedRecipientList(ComAdmin admin, RecipientSearchParamsDto searchParams, String sort, String order, int page, int rownums, Map<String, String> fields) throws Exception {
-		sort = StringUtils.defaultIfEmpty(sort, "email");
-		RecipientSqlOptions options = getRecipientOptions(admin, sort, order, searchParams);
-		final SqlPreparedStatementManager sqlStatementManagerForDataSelect = recipientQueryBuilder.getRecipientListSQLStatementNew(admin, options, true);
+	public PaginatedListImpl<RecipientDto> getPaginatedRecipientList(ComAdmin admin, RecipientSearchParamsDto searchParams, String sortColumn, String order, int page, int rownums, Map<String, String> fields) throws Exception {
+		String sort = StringUtils.defaultIfEmpty(sortColumn, "email");
+		RecipientSqlOptions options = getRecipientOptions(admin, StringUtils.defaultIfEmpty(sort, "email"), order, searchParams);
+		
+		final int companyID = admin.getCompanyID();
 
-		String selectDataStatement = sqlStatementManagerForDataSelect.getPreparedSqlString().replaceAll("cust[.]bind", "bind");
-		logger.info("Recipient Select data SQL statement: " + selectDataStatement);
+        SqlPreparedStatementManager sqlStatementManagerForDataSelect;
+        try {
+            sqlStatementManagerForDataSelect = new SqlPreparedStatementManager("SELECT * FROM customer_" + companyID + "_tbl cust");
+            
+            sqlStatementManagerForDataSelect.addWhereClause(ComCompanyDaoImpl.STANDARD_FIELD_BOUNCELOAD + " = 0");
 
-		if (!fields.containsKey("customer_id")) {
-			try {
-				throw new RuntimeException("EMM-4435: customer_id is missing");
-			} catch(Exception e) {
-				logger.error(String.format("Missing customer_id property (company ID %d, page %d, %d rows, sorting criterion \"%s\", sorting %s, sql \"%s\", column \"%s\")",
-						admin.getCompanyID(),
-						page,
-						rownums,
-						sort,
-						order,
-						selectDataStatement,
-						fields), e);
-			}
-		}
+            boolean respectHideSign = configService.getBooleanValue(ConfigValue.RespectHideDataSign, companyID);
+            if (respectHideSign) {
+            	sqlStatementManagerForDataSelect.addWhereClause("hide <= 0 OR hide IS NULL");
+            }
+            
+            addExtendedSearchOptions(admin, sqlStatementManagerForDataSelect);
 
-		PaginatedListImpl<Map<String, Object>> paginatedList = recipientDao.getPaginatedRecipientsData(admin.getCompanyID(), fields.keySet(), selectDataStatement,
-				sqlStatementManagerForDataSelect.getPreparedSqlParameters(), sort, AgnUtils.sortingDirectionToBoolean(order), page, rownums);
+            if (options.getTargetId() > 0) {
+            	sqlStatementManagerForDataSelect.addWhereClause(targetDao.getTarget(options.getTargetId(), companyID).getTargetSQL());
+            }
+
+            final String eql = options.getTargetEQL();
+            if (StringUtils.isNotEmpty(eql)) {
+                final SqlCode sqlCode = eqlFacade.convertEqlToSql(eql, companyID);
+
+                if (sqlCode != null) {
+                    sqlStatementManagerForDataSelect.addWhereClause(sqlCode.getSql());
+                }
+            }
+
+            if (options.getListId() != 0 || options.getUserStatus() != 0 || StringUtils.isNotBlank(options.getUserType())) {
+            	SqlPreparedStatementManager sqlCheckBinding = new SqlPreparedStatementManager("SELECT 1 FROM customer_" + companyID + "_binding_tbl bind");
+                sqlCheckBinding.addWhereClause("bind.customer_id = cust.customer_id");
+
+                if (options.getListId() != 0) {
+                    sqlCheckBinding.addWhereClause("bind.mailinglist_id = ?", options.getListId());
+                }
+                    
+                if (options.getUserStatus() != 0) {
+                    // Check for valid UserStatus code
+                    UserStatus.getUserStatusByID(options.getUserStatus());
+
+                    sqlCheckBinding.addWhereClause("bind.user_status = ?", options.getUserStatus());
+                }
+
+                if (StringUtils.isNotBlank(options.getUserType())) {
+                    // Check for valid UserType code
+                	BindingEntry.UserType.getUserTypeByString(options.getUserType());
+                	
+                    sqlCheckBinding.addWhereClause("bind.user_type = ?", options.getUserType());
+                }
+
+                sqlStatementManagerForDataSelect.addWhereClause("EXISTS (" + sqlCheckBinding.getPreparedSqlString() + ")", sqlCheckBinding.getPreparedSqlParameters());
+            }
+        } catch (final EqlParserException e) {
+            logger.error("Unable to create SQL statement for recipient search", e);
+
+            // In case of an error, return a statement that won't show recipients
+            sqlStatementManagerForDataSelect = new SqlPreparedStatementManager("SELECT * FROM customer_" + companyID + "_tbl cust ");
+            sqlStatementManagerForDataSelect.addWhereClause("1 = 0");
+        }
+
+		PaginatedListImpl<Map<String, Object>> paginatedList = 
+			recipientDao.getPaginatedRecipientsData(companyID, fields.keySet(),
+				sqlStatementManagerForDataSelect.getPreparedSqlString().replaceAll("cust\\.bind", "bind"),
+				sqlStatementManagerForDataSelect.getPreparedSqlParameters(),
+				sort, AgnUtils.sortingDirectionToBoolean(order), page, rownums);
 
 		return getRecipientDtoPaginatedList(admin, paginatedList);
 	}
@@ -2119,5 +2181,9 @@ public class RecipientServiceImpl implements RecipientService {
 	@Override
 	public BindingEntry getMailinglistBinding(int companyID, int customerID, int mailinglistID, int mediaCode) throws Exception {
 		return recipientDao.getMailinglistBinding(companyID, customerID, mailinglistID, mediaCode);
+	}
+
+	public void addExtendedSearchOptions(ComAdmin admin, SqlPreparedStatementManager sqlStatement) throws Exception {
+		// Do nothing
 	}
 }

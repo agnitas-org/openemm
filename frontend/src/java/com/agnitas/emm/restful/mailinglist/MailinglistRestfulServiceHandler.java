@@ -138,6 +138,7 @@ public class MailinglistRestfulServiceHandler implements RestfulServiceHandler {
 				JsonObject mailinglistJsonObject = new JsonObject();
 				mailinglistJsonObject.add("mailinglist_id", mailinglist.getId());
 				mailinglistJsonObject.add("name", mailinglist.getShortname());
+				mailinglistJsonObject.add("description", mailinglist.getDescription());
 				mailinglistsJsonArray.add(mailinglistJsonObject);
 			}
 			

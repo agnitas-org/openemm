@@ -2989,7 +2989,7 @@ AGN.Lib.Controller.new('workflow-view', function() {
             if (icon.type === Def.NODE_TYPE_START && icon.filled) {
                 var type = 'UNKNOWN';
 
-                switch (icon.startType) {
+                switch (icon.data.startType) {
                     case Def.constants.startTypeDate:
                         type = 'DATE';
                         break;

@@ -2231,6 +2231,243 @@
         }
       }
     },
+    "/profilefield" : {
+      "get" : {
+        "summary" : "Read all existing profilefields",
+        "tags" : [ "Profilefield" ],
+        "operationId" : "getProfilefield",
+        "description" : "Read existing profilefields",
+        "responses" : {
+          "200" : {
+            "description" : "search results matching criteria",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/ProfilefieldItem"
+                  }
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid mailing id or not existing mailing"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "post" : {
+        "summary" : "Write new target data",
+        "tags" : [ "Profilefield" ],
+        "operationId" : "postProfilefield",
+        "description" : "Write new profilefield data. Does not update existing profilefield objects.",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ProfilefieldItem"
+              }
+            }
+          },
+          "description" : "profilefield to add"
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Stored data of profilefield",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProfilefieldItem"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "invalid input, object invalid"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "put" : {
+        "summary" : "Create or update target data",
+        "tags" : [ "Profilefield" ],
+        "requestBody" : {
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ProfilefieldItem"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Stored data of profilefield",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProfilefieldItem"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid target id or not existing target"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    },
+    "/profilefield/{profilefield_name}" : {
+      "get" : {
+        "summary" : "Read a single existing target item",
+        "tags" : [ "Profilefield" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "profilefield_name",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          },
+          "description" : "Name of the profilefield to get"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "target item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProfilefieldItem"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid target id or not existing target"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "delete" : {
+        "summary" : "Delete single existing target content",
+        "tags" : [ "Profilefield" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "profilefield_name",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          },
+          "description" : "Name of the profilefield to delete"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Simple confirmation text",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid id or not existing item"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "put" : {
+        "summary" : "Create or update target",
+        "tags" : [ "Profilefield" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "profilefield_name",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          },
+          "description" : "Name of the profilefield to create or update"
+        } ],
+        "requestBody" : {
+          "description" : "New data for existing profilefield item",
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ProfilefieldItem"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Stored data of updated target item",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProfilefieldItem"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid id or not existing item"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    },
     "/recipient" : {
       "post" : {
         "summary" : "Create new recipient entry (no update)",
@@ -2357,6 +2594,27 @@
                 }
               }
             }
+          },
+          "400" : {
+            "description" : "Any client side error"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "delete" : {
+        "summary" : "Bulk delete of existing recipient and their subscriptions. For RequestBody see \"#/components/schemas/RecipientBulkDelete\"",
+        "tags" : [ "Recipient" ],
+        "responses" : {
+          "200" : {
+            "description" : "Text with number of deleted recipients"
           },
           "400" : {
             "description" : "Any client side error"
@@ -3217,6 +3475,61 @@
                 }
               }
             }
+          },
+          "400" : {
+            "description" : "Any client side error"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    },
+    "/binding" : {
+      "put" : {
+        "summary" : "Bulk change of existing subscriptions",
+        "tags" : [ "Binding" ],
+        "requestBody" : {
+          "description" : "Information data to change in subscriptions",
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/BindingBulkChange"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Text with number of changed subscriptions"
+          },
+          "400" : {
+            "description" : "Any client side error"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "delete" : {
+        "summary" : "Bulk deletion of existing subscriptions. For RequestBody see \"#/components/schemas/BindingBulkDelete\"",
+        "tags" : [ "Binding" ],
+        "responses" : {
+          "200" : {
+            "description" : "Text with number of deleted subscriptions"
           },
           "400" : {
             "description" : "Any client side error"
@@ -4145,6 +4458,136 @@
                     "type" : "object",
                     "description" : "Optional profile data to override in ACTION_BASED mailing",
                     "example" : "{'voucher_code': 4711, 'price': '10.000 €'}"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Simple information text"
+          },
+          "400" : {
+            "description" : "Any client side error like invalid id or not existing item"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    },
+    "/send/{dynamicContentMailingSchemaName}" : {
+      "put" : {
+        "summary" : "Send an exiting actionbased mailing with dynamic content (templateMailingID, sendMailingID)",
+        "tags" : [ "Send" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "dynamicContentMailingSchemaName",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          },
+          "description" : "Name of the existing json schema in EMM"
+        } ],
+        "requestBody" : {
+          "description" : "Dynamic data for mailing send",
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "object",
+                "required" : [ "send_type" ],
+                "properties" : {
+                  "sendMailingID" : {
+                    "type" : "integer",
+                    "description" : "Mailing ID of mailing for actionbased send purpose"
+                  },
+                  "templateMailingID" : {
+                    "type" : "integer",
+                    "description" : "Mailing ID of mailing for actionbased delivery containing the template content with placeholders"
+                  },
+                  "otherProperties" : {
+                    "type" : "string",
+                    "description" : "Other optional placeholdervalues defined by used JSON schema dynamicContentMailingSchemaName"
+                  },
+                  "attachmentFileName" : {
+                    "type" : "string",
+                    "description" : "Optional attachment file name"
+                  },
+                  "attachment" : {
+                    "type" : "string",
+                    "description" : "Optional file content, base64 encoded"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Simple information text"
+          },
+          "400" : {
+            "description" : "Any client side error like invalid id or not existing item"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "post" : {
+        "summary" : "Send an existing mailing",
+        "tags" : [ "Send" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "dynamicContentMailingSchemaName",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          },
+          "description" : "Name of the existing json schema in EMM"
+        } ],
+        "requestBody" : {
+          "description" : "Dynamic data for mailing send",
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "object",
+                "required" : [ "send_type" ],
+                "properties" : {
+                  "sendMailingID" : {
+                    "type" : "integer",
+                    "description" : "Mailing ID of mailing for actionbased send purpose"
+                  },
+                  "templateMailingID" : {
+                    "type" : "integer",
+                    "description" : "Mailing ID of mailing for actionbased delivery containing the template content with placeholders"
+                  },
+                  "otherProperties" : {
+                    "type" : "string",
+                    "description" : "Other optional placeholdervalues defined by used JSON schema dynamicContentMailingSchemaName"
+                  },
+                  "attachmentFileName" : {
+                    "type" : "string",
+                    "description" : "Optional attachment file name"
+                  },
+                  "attachment" : {
+                    "type" : "string",
+                    "description" : "Optional file content, base64 encoded"
                   }
                 }
               }
@@ -6070,6 +6513,183 @@
           }
         }
       }
+    },
+    "/statistics/mailing/{mailing_id}" : {
+      "get" : {
+        "summary" : "Statistics of a single mailing like emails sent, openings, clicks",
+        "tags" : [ "Statistics" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "mailing_id",
+          "required" : true,
+          "schema" : {
+            "type" : "integer"
+          },
+          "description" : "Numeric ID of the mailing to get the contents for"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "All the statistics items of the given mailing",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid mailing id or not existing mailing"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    },
+    "/statistics" : {
+      "get" : {
+        "summary" : "List of currently available statistic types",
+        "tags" : [ "Statistics" ],
+        "responses" : {
+          "200" : {
+            "description" : "All the currently available statistic types",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid mailing id or not existing mailing"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    },
+    "/statistics/customers" : {
+      "get" : {
+        "summary" : "Statistics of the clients customer structure",
+        "tags" : [ "Statistics" ],
+        "responses" : {
+          "200" : {
+            "description" : "All the statistics items of the client",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid mailing id or not existing mailing"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    },
+    "/statistics/mailinglist/{mailing_id}" : {
+      "get" : {
+        "summary" : "Statistics of a single mailinglist like active subscribers",
+        "tags" : [ "Statistics" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "mailing_id",
+          "required" : true,
+          "schema" : {
+            "type" : "integer"
+          },
+          "description" : "Numeric ID of the mailing to get the contents for"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "All the statistics items of the given mailing",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid mailing id or not existing mailing"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    },
+    "/statistics/bounces/{mailing_id}" : {
+      "get" : {
+        "summary" : "Bounce statistics of a single mailing",
+        "tags" : [ "Statistics" ],
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "mailing_id",
+          "required" : true,
+          "schema" : {
+            "type" : "integer"
+          },
+          "description" : "Numeric ID of the mailing to get the contents for"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "All the bounce statistics items of the given mailing",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid mailing id or not existing mailing"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
     }
   },
   "components" : {
@@ -6328,6 +6948,65 @@
             "items" : {
               "$ref" : "#/components/schemas/RecipientItem"
             }
+          }
+        }
+      },
+      "ProfilefieldItem" : {
+        "type" : "object",
+        "required" : [ "name", "eql" ],
+        "properties" : {
+          "name" : {
+            "type" : "string",
+            "description" : "Name of profilefield"
+          },
+          "type" : {
+            "type" : "string",
+            "description" : "Datatype of this profilefield like Characters, Date, Datetime, Integer, Float, Blob"
+          },
+          "nullable" : {
+            "type" : "boolean",
+            "description" : "Optional nullable of this profilefield (Default true)"
+          },
+          "historized" : {
+            "type" : "boolean",
+            "description" : "Optional historized of this profilefield (Default false)"
+          },
+          "length" : {
+            "type" : "integer",
+            "description" : "Datatype length of this profilefield only for datatype Characters"
+          },
+          "shortname" : {
+            "type" : "string",
+            "example" : "Optional shortname of profilefield for GUI display purposes"
+          },
+          "description" : {
+            "type" : "string",
+            "example" : "Description of profilefield"
+          },
+          "defaultValue" : {
+            "type" : "string",
+            "example" : "Optional defaultValue of profilefield"
+          },
+          "allowedValues" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "Optional list of strings of allowed values"
+          },
+          "notVisibleUsers" : {
+            "type" : "array",
+            "items" : {
+              "type" : "integer"
+            },
+            "description" : "Optional list of admin ids of notVisibleUsers"
+          },
+          "readOnlyUsers" : {
+            "type" : "array",
+            "items" : {
+              "type" : "integer"
+            },
+            "description" : "Optional list of admin ids of readOnlyUsers"
           }
         }
       },
@@ -6635,6 +7314,20 @@
             "items" : {
               "type" : "integer"
             }
+          },
+          "readOnlyProfileFields" : {
+            "description" : "Optional. List of read-only profilefields. (When empty, the profilefield default behaviour effects)",
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "NotVisibleProfileFields" : {
+            "description" : "Optional. List of not-visibleprofilefields. (When empty, the profilefield default behaviour effects)",
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
           }
         }
       },
@@ -6710,6 +7403,20 @@
               "type" : "integer"
             }
           },
+          "readOnlyProfileFields" : {
+            "description" : "Optional. List of read-only profilefields. (When empty, the profilefield default behaviour effects)",
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "NotVisibleProfileFields" : {
+            "description" : "Optional. List of not-visibleprofilefields. (When empty, the profilefield default behaviour effects)",
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
           "password" : {
             "type" : "string",
             "description" : "Needed for new users. Not needed when SSO is used."
@@ -6783,6 +7490,20 @@
             "type" : "array",
             "items" : {
               "type" : "integer"
+            }
+          },
+          "readOnlyProfileFields" : {
+            "description" : "Optional. List of read-only profilefields. (When empty, the profilefield default behaviour effects)",
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "NotVisibleProfileFields" : {
+            "description" : "Optional. List of not-visibleprofilefields. (When empty, the profilefield default behaviour effects)",
+            "type" : "array",
+            "items" : {
+              "type" : "string"
             }
           },
           "password" : {
@@ -6863,6 +7584,20 @@
               "type" : "integer"
             }
           },
+          "readOnlyProfileFields" : {
+            "description" : "Optional. List of read-only profilefields. (When empty, the profilefield default behaviour effects)",
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "NotVisibleProfileFields" : {
+            "description" : "Optional. List of not-visibleprofilefields. (When empty, the profilefield default behaviour effects)",
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
           "password" : {
             "type" : "string",
             "description" : "Optional. Needed for new users. Not needed when SSO is used."
@@ -6939,6 +7674,20 @@
             "type" : "array",
             "items" : {
               "type" : "integer"
+            }
+          },
+          "readOnlyProfileFields" : {
+            "description" : "Optional. List of read-only profilefields. (When empty, the profilefield default behaviour effects)",
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "NotVisibleProfileFields" : {
+            "description" : "Optional. List of not-visibleprofilefields. (When empty, the profilefield default behaviour effects)",
+            "type" : "array",
+            "items" : {
+              "type" : "string"
             }
           },
           "password" : {
@@ -7021,6 +7770,20 @@
             "items" : {
               "type" : "integer"
             }
+          },
+          "readOnlyProfileFields" : {
+            "description" : "Optional. List of read-only profilefields. (When empty, the profilefield default behaviour effects)",
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "NotVisibleProfileFields" : {
+            "description" : "Optional. List of not-visibleprofilefields. (When empty, the profilefield default behaviour effects)",
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
           }
         }
       },
@@ -7094,6 +7857,20 @@
             "type" : "array",
             "items" : {
               "type" : "integer"
+            }
+          },
+          "readOnlyProfileFields" : {
+            "description" : "Optional. List of read-only profilefields. (When empty, the profilefield default behaviour effects)",
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "NotVisibleProfileFields" : {
+            "description" : "Optional. List of not-visibleprofilefields. (When empty, the profilefield default behaviour effects)",
+            "type" : "array",
+            "items" : {
+              "type" : "string"
             }
           },
           "password" : {
@@ -7171,6 +7948,20 @@
               "type" : "integer"
             }
           },
+          "readOnlyProfileFields" : {
+            "description" : "Optional. List of read-only profilefields. (When empty, the profilefield default behaviour effects)",
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "NotVisibleProfileFields" : {
+            "description" : "Optional. List of not-visibleprofilefields. (When empty, the profilefield default behaviour effects)",
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
           "password" : {
             "type" : "string",
             "description" : "Needed for new users. Not needed when SSO is used."
@@ -7246,6 +8037,20 @@
               "type" : "integer"
             }
           },
+          "readOnlyProfileFields" : {
+            "description" : "Optional. List of read-only profilefields. (When empty, the profilefield default behaviour effects)",
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "NotVisibleProfileFields" : {
+            "description" : "Optional. List of not-visibleprofilefields. (When empty, the profilefield default behaviour effects)",
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
           "password" : {
             "type" : "string",
             "description" : "Optional. Needed for new users. Not needed when SSO is used."
@@ -7319,6 +8124,20 @@
             "type" : "array",
             "items" : {
               "type" : "integer"
+            }
+          },
+          "readOnlyProfileFields" : {
+            "description" : "Optional. List of read-only profilefields. (When empty, the profilefield default behaviour effects)",
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "NotVisibleProfileFields" : {
+            "description" : "Optional. List of not-visibleprofilefields. (When empty, the profilefield default behaviour effects)",
+            "type" : "array",
+            "items" : {
+              "type" : "string"
             }
           },
           "password" : {
@@ -7606,6 +8425,57 @@
             "type" : "string"
           }
         }
+      },
+      "BindingBulkChange" : {
+        "type" : "object",
+        "required" : [ "mailinglists", "status", "customers" ],
+        "properties" : {
+          "mailinglists" : {
+            "type" : "array",
+            "items" : {
+              "type" : "integer"
+            },
+            "description" : "List of mailinglist ids"
+          },
+          "status" : {
+            "type" : "integer",
+            "description" : "New Subscription status of recipients. (Active(1), Bounce(2), AdminOut(3), UserOut(4), WaitForConfirm(5), Blacklisted(6), Suspend(7))"
+          },
+          "customers" : {
+            "type" : "array",
+            "items" : {
+              "type" : "integer"
+            },
+            "description" : "List of customer ids or customer email addresses"
+          }
+        }
+      },
+      "BindingBulkDelete" : {
+        "type" : "object",
+        "required" : [ "mailinglists", "customers" ],
+        "properties" : {
+          "mailinglists" : {
+            "type" : "array",
+            "items" : {
+              "type" : "integer"
+            },
+            "description" : "List of mailinglist ids"
+          },
+          "customers" : {
+            "type" : "array",
+            "items" : {
+              "type" : "integer"
+            },
+            "description" : "List of customer ids or customer email addresses"
+          }
+        }
+      },
+      "RecipientBulkDelete" : {
+        "type" : "array",
+        "items" : {
+          "type" : "integer"
+        },
+        "description" : "List of customer ids or customer email addresses"
       }
     }
   }

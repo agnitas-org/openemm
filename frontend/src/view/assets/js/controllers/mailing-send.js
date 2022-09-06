@@ -35,6 +35,19 @@ AGN.Lib.Controller.new('mailing-send', function() {
   });
 
   this.addAction({
+    'click': 'resume-sending'
+  }, function() {
+    var $e = this.el;
+    var link = $e.data("link");
+
+    var jqxhr = $.post(link);
+    jqxhr.done(function (resp) {
+      Page.render(resp);
+      $e.closest('.form-group').remove();
+    });
+  });
+
+  this.addAction({
     'click': 'configure-delivery-mailing-size-warning'
   }, function() {
     var $e = this.el;

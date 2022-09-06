@@ -417,7 +417,12 @@ public class ConfigValue {
 	 */
 	// Introduced by LTS-911
 	public static final ConfigValue TrackableLinkDefaultTracking = new ConfigValue("trackableLinks.defaultTracking", Integer.toString(LinkTrackingMode.getDefault().getMode()));
-	
+
+	/**
+	 * Default bcc address for all mailings.
+	 */
+	// Introduced by LTS-824
+	public static final ConfigValue DefaultBccEmail = new ConfigValue("company.mailing.bcc");
 
 	/** Url of the birt statistic application to be used for internal purposes like email reports only by birt itself when behind firewall **/
 	public static final ConfigValue BirtUrlIntern = new ConfigValue("birt.url.intern");
@@ -528,6 +533,9 @@ public class ConfigValue {
 	public static final ConfigValue LocaleLanguage = new ConfigValue("locale-language");
 	public static final ConfigValue LocaleCountry = new ConfigValue("locale-country");
 	public static final ConfigValue LocaleTimezone = new ConfigValue("locale-timezone");
+
+	/** UID version used when new company is created. */
+	public static final ConfigValue UidVersionForNewCompanies = new ConfigValue("company.create.uidVersion", "4");
 
 	/** Version of currently enabled UID. */
 	public static final ConfigValue EnabledUIDVersion = new ConfigValue("company.enabledUIDVersion", "3");

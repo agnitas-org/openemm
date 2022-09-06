@@ -8,27 +8,8 @@
 
 */
 
-package org.agnitas.emm.core.mediatypes.dao;
+INSERT INTO job_queue_tbl (description, created, laststart, running, lastresult, startaftererror, lastduration, `interval`, nextstart, hostname, runclass, criticality, deleted)
+	VALUES ('AnonymizeStatistics', CURRENT_TIMESTAMP, null, 0, 'OK', 0, 0, '0000', CURRENT_TIMESTAMP, null, 'com.agnitas.service.job.AnonymizeStatisticsJobWorker', 1, 0);
 
-import java.util.Map;
-
-import com.agnitas.beans.Mediatype;
-
-/**
- * Interface for accessing media types of mailings.
- */
-public interface MediatypesDao {
-	void saveMediatypes(int companyID, int mailingID, Map<Integer, Mediatype> mediatypes) throws Exception;
-	
-	/**
-	 * Read all mediatypes for given mailing.
-	 * 
-	 * @param mailingId mailing ID
-	 * @param companyId company ID
-	 * 
-	 * @return mapping from media type code to media type
-	 * 
-	 * @throws MediatypesDaoException on errors during reading media types
-	 */
-	Map<Integer, Mediatype> loadMediatypes(int mailingId, int companyId) throws MediatypesDaoException;
-}
+INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)
+	VALUES ('22.07.127', CURRENT_USER, CURRENT_TIMESTAMP);

@@ -822,4 +822,40 @@ public class ImportRecipientsDaoImpl extends RetryUpdateBaseDaoImpl implements I
 	public void updateColumnOfTemporaryCustomerImportTable(String temporaryImportTableName, String columnName, Object value) {
 		update(logger, "UPDATE " + temporaryImportTableName + " SET " + columnName + "= ?", value);
 	}
+
+	@Override
+	public int changeStatusInMailingListNotFoundInData(String temporaryImportTableName, List<String> keyColumns, int companyId, int mailingListId, int currentStatus, int updateStatus, List<UserType> inclusiveUserTypes, List<UserType> exclusiveUserTypes, String remark) throws Exception {
+		// Check for valid UserStatus code
+		UserStatus.getUserStatusByID(updateStatus);
+		
+		List<String> keycolumnParts = new ArrayList<>();
+		for (String keyColumn : keyColumns) {
+			keycolumnParts.add("src." + keyColumn + " = dst." + keyColumn + " AND src." + keyColumn + " IS NOT NULL");
+		}
+		
+		String inclusiveUserTypesPart = "";
+		if (inclusiveUserTypes != null && inclusiveUserTypes.size() > 0) {
+			for (UserType userType : inclusiveUserTypes) {
+				if (inclusiveUserTypesPart.length() > 0) {
+					inclusiveUserTypesPart += ", ";
+				}
+				inclusiveUserTypesPart += "'" + userType.getTypeCode() + "'";
+			}
+			inclusiveUserTypesPart = " AND user_type IN (" + inclusiveUserTypesPart + ")";
+		}
+		
+		String exclusiveUserTypesPart = "";
+		if (exclusiveUserTypes != null && exclusiveUserTypes.size() > 0) {
+			for (UserType userType : exclusiveUserTypes) {
+				if (exclusiveUserTypesPart.length() > 0) {
+					exclusiveUserTypesPart += ", ";
+				}
+				exclusiveUserTypesPart += "'" + userType.getTypeCode() + "'";
+			}
+			exclusiveUserTypesPart = " AND user_type NOT IN (" + exclusiveUserTypesPart + ")";
+		}
+		
+		return retryableUpdate(companyId, logger, "UPDATE customer_" + companyId + "_binding_tbl SET user_status = ?, user_remark = ?, timestamp = CURRENT_TIMESTAMP WHERE user_status = ?" + inclusiveUserTypesPart + exclusiveUserTypesPart + " AND mailinglist_id = ? AND customer_id NOT IN ("
+			+ "SELECT dst.customer_id FROM " + temporaryImportTableName + " src, customer_" + companyId + "_tbl dst WHERE " + StringUtils.join(keycolumnParts, " AND ") + ")", updateStatus, remark, currentStatus, mailingListId);
+	}
 }

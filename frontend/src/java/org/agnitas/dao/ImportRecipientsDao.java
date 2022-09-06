@@ -15,6 +15,7 @@ import java.util.Map;
 
 import javax.sql.DataSource;
 
+import org.agnitas.beans.BindingEntry.UserType;
 import org.agnitas.beans.ColumnMapping;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.velocity.VelocityCheck;
@@ -126,4 +127,6 @@ public interface ImportRecipientsDao {
 	void changeEmailColumnCollation(String temporaryImportTableName, String collation);
 
 	void updateColumnOfTemporaryCustomerImportTable(String temporaryImportTableName, String columnName, Object value);
+
+	int changeStatusInMailingListNotFoundInData(String temporaryImportTableName, List<String> keyColumns, int companyId, int mailingListId, int currentStatus, int updateStatus, List<UserType> inclusiveUserTypes, List<UserType> exclusiveUserTypes, String remark) throws Exception;
 }

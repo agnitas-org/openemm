@@ -45,6 +45,8 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.stream.Collectors;
 
+import com.agnitas.emm.core.workflow.beans.impl.WorkflowDateBasedMailingImpl;
+import com.agnitas.emm.core.workflow.beans.impl.WorkflowRecipientImpl;
 import org.agnitas.dao.MaildropStatusDao;
 import org.agnitas.dao.MailingStatus;
 import org.agnitas.emm.core.autoexport.bean.AutoExport;
@@ -601,6 +603,17 @@ public class ComWorkflowValidationService {
         return false;
     }
 
+    public boolean isAnyTargetForDateBased(List<WorkflowIcon> workflowIcons) {
+        WorkflowGraph graph = new WorkflowGraph(workflowIcons);
+
+        return workflowIcons.stream()
+                .filter(icon -> WorkflowIconType.fromId(icon.getType()) == WorkflowIconType.DATE_BASED_MAILING)
+                .map(WorkflowDateBasedMailingImpl.class::cast)
+                .map(icon -> graph.getPreviousIconByType(icon, WorkflowIconType.RECIPIENT.getId(), new HashSet<>()))
+                .map(WorkflowRecipientImpl.class::cast)
+                .allMatch(icon -> CollectionUtils.isNotEmpty(icon.getTargets()) || CollectionUtils.isNotEmpty(icon.getAltgs()));
+    }
+    
     public boolean checkMailingTypesCompatible(List<WorkflowIcon> icons) {
         Set<Integer> mailingTypes = new HashSet<>();
 

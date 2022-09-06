@@ -148,6 +148,12 @@ public class JavaMailServiceImpl implements JavaMailService {
 	public boolean sendEmail(int dkimCompanyID, String toAddressList, String fromAddress, String replyToAddress, String subject, String bodyText, String bodyHtml, JavaMailAttachment... attachments) {
 		return sendEmail(dkimCompanyID, fromAddress, null, replyToAddress, null, null, toAddressList, null, subject, bodyText, bodyHtml, null, attachments);
 	}
+	
+	@Override
+	public boolean sendEmail(int dkimCompanyID, String fromAddress, String fromName, String replyToAddress, String replyToName, String bounceAddress, String toAddressList, String ccAddressList, String subject, String bodyText, String bodyHtml, String charset, JavaMailAttachment... attachments) {
+		return sendEmail(dkimCompanyID, fromAddress, fromName, replyToAddress, replyToName, bounceAddress, toAddressList, ccAddressList, null, subject, bodyText, bodyHtml, charset, attachments);
+		
+	}
 
 	/**
 	 * Sends an email via Java (not via EMM Backend)
@@ -157,7 +163,7 @@ public class JavaMailServiceImpl implements JavaMailService {
 	 * For pure textmails leave bodyHtml empty or null
 	 */
 	@Override
-	public boolean sendEmail(int dkimCompanyID, String fromAddress, String fromName, String replyToAddress, String replyToName, String bounceAddress, String toAddressList, String ccAddressList, String subject, String bodyText, String bodyHtml, String charset, JavaMailAttachment... attachments) {
+	public boolean sendEmail(int dkimCompanyID, String fromAddress, String fromName, String replyToAddress, String replyToName, String bounceAddress, String toAddressList, String ccAddressList, String bccAddressList, String subject, String bodyText, String bodyHtml, String charset, JavaMailAttachment... attachments) {
 		String smtpMailRelayHostname = configService.getValue(ConfigValue.SmtpMailRelayHostname);
 		if (StringUtils.isBlank(smtpMailRelayHostname)) {
 			logger.error("smtpMailRelayHostname is missing, so no mail was sent. emailSubject: " + subject);
@@ -248,6 +254,12 @@ public class JavaMailServiceImpl implements JavaMailService {
 			InternetAddress[] ccAddresses = getEmailAddressesFromList(ccAddressList);
 			if (ccAddresses.length > 0) {
 				mimeMessage.setRecipients(Message.RecipientType.CC, ccAddresses);
+			}
+
+			// Set bcc-recipient email addresses
+			InternetAddress[] bccAddresses = getEmailAddressesFromList(bccAddressList);
+			if (bccAddresses.length > 0) {
+				mimeMessage.setRecipients(Message.RecipientType.BCC, bccAddresses);
 			}
 
 			if (attachments == null || attachments.length <= 0) {
@@ -345,11 +357,11 @@ public class JavaMailServiceImpl implements JavaMailService {
 		}
 	}
 
-	private static InternetAddress[] getEmailAddressesFromList(String listString) {
+	private static InternetAddress[] getEmailAddressesFromList(String listString) throws Exception {
 		List<InternetAddress> emailAddresses = new ArrayList<>();
 		for (String address : AgnUtils.splitAndNormalizeEmails(listString)) {
 			address = StringUtils.trimToEmpty(address);
-			if(AgnUtils.isEmailValid(address)) {
+			if (AgnUtils.isEmailValid(address)) {
 				try {
 					InternetAddress nextAddress = new InternetAddress(address);
 					nextAddress.validate();
@@ -357,6 +369,8 @@ public class JavaMailServiceImpl implements JavaMailService {
 				} catch (AddressException e) {
 					logger.error("Invalid Emailaddress found: " + address);
 				}
+			} else {
+				throw new Exception("Invalid email address: " + address);
 			}
 		}
 

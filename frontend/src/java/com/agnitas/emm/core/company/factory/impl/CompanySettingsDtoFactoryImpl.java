@@ -62,6 +62,7 @@ public class CompanySettingsDtoFactoryImpl implements CompanySettingsDtoFactory 
         companySettingsDto.setDeleteSuccessfullyImportedFiles(AgnUtils.interpretAsBoolean(ConfigValue.DeleteSuccessfullyImportedFiles.getDefaultValue()));
         companySettingsDto.setImportAlwaysInformEmail(ConfigValue.ImportAlwaysInformEmail.getDefaultValue());
         companySettingsDto.setExportAlwaysInformEmail(ConfigValue.ExportAlwaysInformEmail.getDefaultValue());
+        companySettingsDto.setBccEmail(ConfigValue.DefaultBccEmail.getDefaultValue());
         companySettingsDto.setAnonymizeAllRecipients(AgnUtils.interpretAsBoolean(ConfigValue.AnonymizeAllRecipients.getDefaultValue()));
         companySettingsDto.setCleanRecipientsWithoutBinding(AgnUtils.interpretAsBoolean(ConfigValue.CleanRecipientsWithoutBinding.getDefaultValue()));
         companySettingsDto.setRecipientCleanupTracking(Integer.parseInt(ConfigValue.CleanTrackingData.getDefaultValue()));

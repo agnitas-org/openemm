@@ -48,6 +48,7 @@ public class CompanySettingsDto {
     private boolean deleteSuccessfullyImportedFiles;
 	private String importAlwaysInformEmail;
 	private String exportAlwaysInformEmail;
+	private String bccEmail;
 	private boolean anonymizeAllRecipients;
 	private boolean cleanRecipientsWithoutBinding;
 	private boolean recipientEmailInUseWarning;
@@ -326,6 +327,14 @@ public class CompanySettingsDto {
 
 	public void setExportAlwaysInformEmail(String exportAlwaysInformEmail) {
 		this.exportAlwaysInformEmail = exportAlwaysInformEmail;
+	}
+	
+	public String getBccEmail() {
+		return bccEmail;
+	}
+
+	public void setBccEmail(String bccEmail) {
+		this.bccEmail = bccEmail;
 	}
 
 	public boolean isAnonymizeAllRecipients() {

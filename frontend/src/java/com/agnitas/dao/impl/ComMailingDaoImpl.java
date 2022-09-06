@@ -998,7 +998,7 @@ public class ComMailingDaoImpl extends PaginatedBaseDaoImpl implements ComMailin
             updateClearanceLastSendDate(mailing.getId());
             comTrackableLinkDao.batchSaveTrackableLinks(companyId, mailing.getId(), mailing.getTrackableLinks(), !preserveTrackableLinks);
             saveComponents(companyId, mailing.getId(), mailing.getComponents(), errorTolerant);
-            mediatypesDao.saveMediatypes(mailing.getId(), mailing.getMediatypes());
+            mediatypesDao.saveMediatypes(companyId, mailing.getId(), mailing.getMediatypes());
             dynamicTagDao.saveDynamicTags(mailing, mailing.getDynTags(), removeUnusedContent);
 
             /*

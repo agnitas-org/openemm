@@ -10,17 +10,24 @@
 
 package com.agnitas.emm.util.html.xssprevention.http;
 
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import jakarta.servlet.http.HttpServletRequest;
 
 import com.agnitas.emm.util.html.xssprevention.HtmlCheckError;
 import com.agnitas.emm.util.html.xssprevention.HtmlXSSPreventer;
 import com.agnitas.emm.util.html.xssprevention.XSSHtmlException;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.support.DefaultMultipartHttpServletRequest;
 
 public class RequestParameterXssPreventerHelper {
 
@@ -42,26 +49,38 @@ public class RequestParameterXssPreventerHelper {
 		while (parameterNames.hasMoreElements()) {
 			final String paramName = parameterNames.nextElement();
 
-			if (!isParameterExcludedFromCheck.apply(paramName)) {
-				getHtmlCheckErrors(paramName, request.getParameterValues(paramName), htmlErrors);
+			if (Boolean.FALSE.equals(isParameterExcludedFromCheck.apply(paramName))) {
+				htmlErrors.addAll(getHtmlCheckErrors(request.getParameterValues(paramName)));
 			}
 		}
-
-		return htmlErrors;
+        htmlErrors.addAll(collectMultipartFilesHtmlErrors(request));
+        return htmlErrors;
 	}
 	
-	private final void getHtmlCheckErrors(final String paramName, final String[] textArray, final Set<HtmlCheckError> errors) {
-		for(final String text : textArray) { 
-			getHtmlCheckErrors(paramName, text, errors);
-		}
+	private Collection<HtmlCheckError> getHtmlCheckErrors(final String[] textArray) {
+	    return Arrays.stream(textArray).map(this::getHtmlCheckErrors)
+                .flatMap(Collection::stream)
+                .collect(Collectors.toList());
 	}
 	
-	private final void getHtmlCheckErrors(final String paramName, final String text, final Set<HtmlCheckError> errors) {
+	private Collection<HtmlCheckError> getHtmlCheckErrors(final String text) {
 		try {
 			HtmlXSSPreventer.checkString(text);
-		} catch(final XSSHtmlException e) {
-			errors.addAll(e.getErrors());
+			return Collections.emptyList();
+		} catch (final XSSHtmlException e) {
+			return e.getErrors();
 		}
 	}
 
+    private Collection<HtmlCheckError> collectMultipartFilesHtmlErrors(HttpServletRequest request) {
+        if (!StringUtils.startsWith(request.getContentType(), "multipart/form-data")) {
+            return Collections.emptyList();
+        }
+        return ((DefaultMultipartHttpServletRequest) request)
+                .getMultiFileMap().toSingleValueMap().values().stream()
+                .map(MultipartFile::getOriginalFilename)
+                .map(this::getHtmlCheckErrors)
+                .flatMap(Collection::stream)
+                .collect(Collectors.toList());
+    }
 }

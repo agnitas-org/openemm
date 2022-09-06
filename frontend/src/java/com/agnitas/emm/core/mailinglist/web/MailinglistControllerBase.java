@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
+import com.agnitas.web.mvc.XssCheckAware;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
@@ -59,7 +60,7 @@ import com.agnitas.web.mvc.Popups;
 import net.sf.json.JSONArray;
 
 
-public class MailinglistControllerBase {
+public class MailinglistControllerBase implements XssCheckAware {
 	private static final Logger logger = LogManager.getLogger(MailinglistControllerBase.class);
 
 	private static final String YEAR_LIST = "yearlist";

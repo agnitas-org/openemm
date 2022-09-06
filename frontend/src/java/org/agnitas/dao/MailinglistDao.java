@@ -127,4 +127,6 @@ public interface MailinglistDao {
     boolean mailinglistDeleted(int mailinglistId, int companyId);
 
     Mailinglist getDeletedMailinglist(int mailinglistId, int companyId);
+
+	List<Mailinglist> getMailinglists(int companyId, int adminID);
 }

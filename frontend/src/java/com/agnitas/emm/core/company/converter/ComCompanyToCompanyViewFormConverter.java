@@ -110,6 +110,7 @@ public class ComCompanyToCompanyViewFormConverter implements Converter<Company, 
         settingsDto.setDeleteSuccessfullyImportedFiles(configService.getBooleanValue(ConfigValue.DeleteSuccessfullyImportedFiles, comCompany.getId()));
         settingsDto.setImportAlwaysInformEmail(configService.getValue(ConfigValue.ImportAlwaysInformEmail, comCompany.getId()));
         settingsDto.setExportAlwaysInformEmail(configService.getValue(ConfigValue.ExportAlwaysInformEmail, comCompany.getId()));
+        settingsDto.setBccEmail(configService.getValue(ConfigValue.DefaultBccEmail, comCompany.getId()));
         settingsDto.setAnonymizeAllRecipients(configService.getBooleanValue(ConfigValue.AnonymizeAllRecipients, comCompany.getId()));
         settingsDto.setRecipientEmailInUseWarning(configService.getBooleanValue(ConfigValue.RecipientEmailInUseWarning, comCompany.getId()));
         settingsDto.setAllowEmailWithWhitespace(configService.getBooleanValue(ConfigValue.AllowEmailWithWhitespace, comCompany.getId()));

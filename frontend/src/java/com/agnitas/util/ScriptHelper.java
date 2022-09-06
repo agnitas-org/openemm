@@ -421,7 +421,7 @@ public class ScriptHelper {
 	 * @return
 	 */
 	public boolean sendEmail(final String from_adr, final String to_adr, final String to_cc_adr, final String subject, final String body_text, final String body_html, final String charset) {
-		final boolean success = javaMailService.sendEmail(companyID, from_adr, null, null, null, null, to_adr, to_cc_adr, subject, body_text, body_html, charset);
+		final boolean success = javaMailService.sendEmail(companyID, from_adr, null, null, null, null, to_adr, to_cc_adr, configService.getValue(ConfigValue.DefaultBccEmail, companyID), subject, body_text, body_html, charset);
 		if (success) {
 			// Create log Entry
 			scripthelperEmailLogDao.writeLogEntry(companyID, mailingID, formID, from_adr, to_adr, to_cc_adr, subject);

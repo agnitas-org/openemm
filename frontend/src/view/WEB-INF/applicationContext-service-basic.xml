@@ -338,6 +338,7 @@
 		<property name="beanLookupFactory" ref="beanLookupFactory" />
 		<property name="blacklistService" ref="BlacklistService" />
 		<property name="recipientService" ref="recipientService"/>
+		<property name="configService" ref="ConfigService" />
 	</bean>
 
 	<bean id="actionOperationGetArchiveList" class="com.agnitas.emm.core.action.service.impl.ActionOperationGetArchiveListImpl">
@@ -624,6 +625,8 @@
 		<property name="bindingEntryFactory" ref="BindingEntryFactory"/>
 		<property name="conversionService" ref="conversionService"/>
 		<property name="mailinglistDao" ref="MailinglistDao"/>
+		<property name="targetDao" ref="TargetDao" />
+		<property name="eqlFacade" ref="EqlFacade" />
 	</bean>
 
 	<bean id="recipientBulkService" class="org.agnitas.emm.core.recipient.service.impl.RecipientBulkServiceImpl">

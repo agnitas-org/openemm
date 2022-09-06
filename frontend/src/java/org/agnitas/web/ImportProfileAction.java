@@ -466,16 +466,19 @@ public class ImportProfileAction extends StrutsActionBase {
      * Loads the list of allowed import modes for current user.
      *
      * @param request request
-     * @throws Exception
      */
-    private List<ImportMode> getAvailableImportModes(HttpServletRequest request) throws Exception {
-        List<ImportMode> allowedModes = new ArrayList<>();
-        for (ImportMode mode : ImportMode.values()) {
-            if (AgnUtils.allowed(request, Permission.getPermissionsByToken(mode.getMessageKey()))) {
-                allowedModes.add(mode);
-            }
+    private List<ImportMode> getAvailableImportModes(HttpServletRequest request) {
+        return ImportMode.values().stream()
+                .filter(mode -> isImportModeAllowed(mode, request))
+                .collect(Collectors.toList());
+    }
+    
+    private boolean isImportModeAllowed(ImportMode mode, HttpServletRequest request) {
+        try {
+            return AgnUtils.allowed(request, Permission.getPermissionsByToken(mode.getMessageKey()));
+        } catch (Exception e) {
+            return false;
         }
-        return allowedModes;
     }
     
     private void setImportModes(ImportProfileForm aForm, HttpServletRequest request) throws Exception {

@@ -423,6 +423,7 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 		try {
 			MediatypesDaoImpl mediatypesDao = new MediatypesDaoImpl();
 			mediatypesDao.setDataSource(getDataSource());
+			mediatypesDao.setConfigService(getConfigService());
 			mediatypesDao.setMediatypeFactory(new MediatypeFactoryImpl());
 			Map<Integer, Mediatype> mediaTypeMap = mediatypesDao.loadMediatypes(mailingId, companyId);
 			Mediatype mediatype = mediaTypeMap.get(MediaTypes.EMAIL.getMediaCode());

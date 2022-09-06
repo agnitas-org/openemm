@@ -1338,6 +1338,10 @@ public class WorkflowController {
                 messages.add(Message.of("error.workflow.dateBased.invalid.delay"));
             }
         }
+        
+        if (!validationService.isAnyTargetForDateBased(icons)) {
+            messages.add(Message.of("error.mailing.rulebased_without_target"));
+        }
 
         if (workflowService.hasDeletedMailings(icons, companyId)) {
             messages.add(Message.of("error.workflow.containsDeletedContent"));

@@ -206,6 +206,11 @@ public class MailinglistDaoImpl extends PaginatedBaseDaoImpl implements Mailingl
 	}
 
 	@Override
+	public List<Mailinglist> getMailinglists(@VelocityCheck int companyId, int adminID) {
+		return getMailinglists(companyId);
+	}
+
+	@Override
 	public List<Integer> getMailinglistIds(@VelocityCheck int companyId) {
 		return select(logger,
 				"SELECT mailinglist_id FROM mailinglist_tbl " +

@@ -284,7 +284,7 @@ public class ComMailinglistServiceImpl implements ComMailinglistService {
     public JSONArray getMailingListsJson(ComAdmin admin) {
         JSONArray mailingListsJson = new JSONArray();
 
-        for (Mailinglist mailinglist : mailinglistDao.getMailinglists(admin.getCompanyID())) {
+        for (Mailinglist mailinglist : mailinglistDao.getMailinglists(admin.getCompanyID(), admin.getAdminID())) {
             JSONObject entry = new JSONObject();
 
             entry.element("id", mailinglist.getId());

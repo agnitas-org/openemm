@@ -14,9 +14,12 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import org.agnitas.beans.Recipient;
 import org.agnitas.emm.core.blacklist.service.BlacklistService;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.recipient.service.RecipientService;
 import org.agnitas.emm.core.velocity.VelocityResult;
 import org.agnitas.emm.core.velocity.VelocityWrapper;
@@ -42,6 +45,7 @@ public class ActionOperationServiceMailImpl implements EmmActionOperation {
 	private static final Logger logger = LogManager.getLogger(ActionOperationServiceMailImpl.class);
 
 	private JavaMailService javaMailService;
+	private ConfigService configService;
 
 	private BeanLookupFactory beanLookupFactory;
 	
@@ -224,7 +228,7 @@ public class ActionOperationServiceMailImpl implements EmmActionOperation {
 				emailhtml = emailHtmlWriter.toString();
 			}
 
-			return javaMailService.sendEmail(companyID, fromAddress, null, replyAddress, null, null, toAddress, null, subject, emailtext, emailhtml, "iso-8859-1");
+			return javaMailService.sendEmail(companyID, fromAddress, null, replyAddress, null, null, toAddress, null, configService.getValue(ConfigValue.DefaultBccEmail, companyID), subject, emailtext, emailhtml, "iso-8859-1");
 		} catch (Exception e) {
 			logger.error("Velocity error", e);
 			actionOperationErrors.addErrorCode(ErrorCode.GENERAL_ERROR);
@@ -269,5 +273,10 @@ public class ActionOperationServiceMailImpl implements EmmActionOperation {
 	@Required
 	public void setRecipientService(RecipientService recipientService) {
 		this.recipientService = recipientService;
+	}
+	
+	@Required
+	public final void setConfigService(final ConfigService service) {
+		this.configService = Objects.requireNonNull(service, "ConfigService is null");
 	}
 }

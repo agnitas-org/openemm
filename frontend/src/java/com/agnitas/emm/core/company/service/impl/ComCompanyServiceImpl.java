@@ -61,6 +61,7 @@ import com.agnitas.emm.core.logon.common.HostAuthenticationCookieExpirationSetti
 import com.agnitas.emm.core.recipient.service.RecipientProfileHistoryService;
 import com.agnitas.emm.premium.web.SpecialPremiumFeature;
 import com.agnitas.service.ExtendedConversionService;
+import com.agnitas.service.LicenseError;
 import com.agnitas.web.mvc.Popups;
 
 public class ComCompanyServiceImpl implements ComCompanyService {
@@ -151,6 +152,7 @@ public class ComCompanyServiceImpl implements ComCompanyService {
         company.setStatus(CompanyStatus.ACTIVE);
         company.setRdirDomain(configService.getValue(ConfigValue.DefaultRdirDomain));
         company.setMailloopDomain(configService.getValue(ConfigValue.DefaultMailloopDomain));
+        company.setEnabledUIDVersion(configService.getIntegerValue(ConfigValue.UidVersionForNewCompanies));
 
         setupInfo(company, form.getCompanyInfoDto());
         setupSettings(company, form.getCompanySettingsDto());
@@ -222,6 +224,15 @@ public class ComCompanyServiceImpl implements ComCompanyService {
     public boolean reactivateCompany(int companyIdForReactivation) {
         Company company = companyDao.getCompany(companyIdForReactivation);
         if (Objects.nonNull(company) && (company.getStatus() == CompanyStatus.TODELETE || company.getStatus() == CompanyStatus.LOCKED)) {
+        	// Check maximum number of companies
+    		int maximumNumberOfCompanies = configService.getIntegerValue(ConfigValue.System_License_MaximumNumberOfCompanies);
+    		if (maximumNumberOfCompanies >= 0) {
+    			int numberOfCompanies = getNumberOfCompanies();
+    			if (numberOfCompanies >= maximumNumberOfCompanies) {
+    				throw new LicenseError("Invalid Number of accounts", maximumNumberOfCompanies, numberOfCompanies);
+    			}
+    		}
+    		
             companyDao.updateCompanyStatus(company.getId(), CompanyStatus.ACTIVE);
             if (logger.isInfoEnabled()) {
                 logger.info("Company: " + companyIdForReactivation + " reactivated");
@@ -435,7 +446,7 @@ public class ComCompanyServiceImpl implements ComCompanyService {
     	checkChangeAndLogCompanyInfoIntegerValue(ConfigValue.HostAuthenticationHostIdCookieExpireDays, companyId, admin, cookieExpireSettings.getExpireDays());
     }
 
-	private void checkChangeAndLogCompanyInfoValue(ConfigValue configValue, final int companyId, final ComAdmin admin, String newValue) {
+    protected void checkChangeAndLogCompanyInfoValue(ConfigValue configValue, final int companyId, final ComAdmin admin, String newValue) {
 		String currentValue = configService.getValue(configValue, companyId);
 		if (currentValue == null) {
 			currentValue = "";
@@ -647,5 +658,10 @@ public class ComCompanyServiceImpl implements ComCompanyService {
 	@Required
 	public final void setCompanyTokenService(final CompanyTokenService service) {
 		this.companyTokenService = Objects.requireNonNull(service, "CompanyTokenService is null");
+	}
+
+	@Override
+	public int getNumberOfCompanies() {
+		return companyDao.getNumberOfCompanies();
 	}
 }

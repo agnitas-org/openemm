@@ -15,11 +15,15 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 import org.agnitas.dao.impl.BaseDaoImpl;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.mediatypes.dao.MediatypesDao;
 import org.agnitas.emm.core.mediatypes.dao.MediatypesDaoException;
 import org.agnitas.emm.core.mediatypes.factory.MediatypeFactory;
+import org.agnitas.util.AgnUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
@@ -36,10 +40,12 @@ public class MediatypesDaoImpl extends BaseDaoImpl implements MediatypesDao {
     private static final transient Logger logger = LogManager.getLogger(MediatypesDaoImpl.class);
 
     protected MediatypeFactory mediatypeFactory;
+    
+    private ConfigService configService;
 
     @Override
     @DaoUpdateReturnValueCheck
-    public void saveMediatypes(int mailingId, Map<Integer, Mediatype> mediatypes) throws Exception {
+    public void saveMediatypes(int companyID, int mailingId, Map<Integer, Mediatype> mediatypes) throws Exception {
         for (Map.Entry<Integer, Mediatype> entry : mediatypes.entrySet()) {
             Integer type = entry.getKey();
             Mediatype mediatype = entry.getValue();
@@ -51,19 +57,29 @@ public class MediatypesDaoImpl extends BaseDaoImpl implements MediatypesDao {
                     String subject = mediatypeEmail.getSubject();
                     subject = SpecialCharactersWorker.processString(subject, mediatypeEmail.getCharset());
                     mediatypeEmail.setSubject(subject);
+                    
+                	// Add default bcc email addresses if not already included
+                	Set<String> currentBccEmailAddresses = AgnUtils.splitAndNormalizeEmails(mediatypeEmail.getBccRecipients());
+                	Set<String> defaultBccEmailAddresses = AgnUtils.splitAndNormalizeEmails(configService.getValue(ConfigValue.DefaultBccEmail, companyID));
+                	for (String defaultBccEmailAddress : defaultBccEmailAddresses) {
+                		if (!currentBccEmailAddresses.contains(defaultBccEmailAddress)) {
+                			mediatypeEmail.setBccRecipients(mediatypeEmail.getBccRecipients() + ", " + defaultBccEmailAddress);
+                		}
+                	}
                 }
                 
-                validateParam(mediatype.getParam());
+                String param = mediatype.getParam();
+				validateParam(param);
 
                 String sql = "SELECT COUNT(mediatype) FROM mailing_mt_tbl WHERE mailing_id = ? AND mediatype = ?";
                 int total = selectInt(logger, sql, mailingId, type);
 
                 if (total > 0) {
                     sql = "UPDATE mailing_mt_tbl SET priority = ?, status = ?, param = ? WHERE mailing_id = ? AND mediatype = ?";
-                    update(logger, sql, mediatype.getPriority(), mediatype.getStatus(), mediatype.getParam(), mailingId, type);
+                    update(logger, sql, mediatype.getPriority(), mediatype.getStatus(), param, mailingId, type);
                 } else {
                     sql = "INSERT INTO mailing_mt_tbl (mailing_id, mediatype, priority, status, param) VALUES (?, ?, ?, ?, ?)";
-                    update(logger, sql, mailingId, type, mediatype.getPriority(), mediatype.getStatus(), mediatype.getParam());
+                    update(logger, sql, mailingId, type, mediatype.getPriority(), mediatype.getStatus(), param);
                 }
             }
         }
@@ -87,6 +103,11 @@ public class MediatypesDaoImpl extends BaseDaoImpl implements MediatypesDao {
     @Required
     public void setMediatypeFactory(MediatypeFactory mediatypeFactory) {
         this.mediatypeFactory = mediatypeFactory;
+    }
+
+    @Required
+    public void setConfigService(ConfigService configService) {
+        this.configService = configService;
     }
 
     private class MediatypeMapRowCallbackHandler implements RowCallbackHandler {

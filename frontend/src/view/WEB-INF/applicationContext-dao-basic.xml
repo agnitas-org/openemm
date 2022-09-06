@@ -360,6 +360,7 @@
 		<property name="dataSource" ref="dataSource" />
 		<property name="javaMailService" ref="JavaMailService" />
 		<property name="mediatypeFactory" ref="MediatypeFactory" />
+		<property name="configService" ref="ConfigService" />
 	</bean>
 
 <!-- ============================================================================================================================== Messages -->

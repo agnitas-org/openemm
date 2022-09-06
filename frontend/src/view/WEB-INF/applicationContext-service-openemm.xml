@@ -178,6 +178,7 @@
 		<property name="importModeHandlerFactory" ref="ImportModeHandlerFactory" />
 		<property name="importRecipientsDao" ref="ImportRecipientsDao" />
 		<property name="mailinglistDao" ref="MailinglistDao" />
+        <property name="columnInfoService" ref="ColumnInfoService" />
 	</bean>
 
 	<bean id="mailingDeliveryStatService" class="com.agnitas.emm.core.mailing.service.impl.ComMailingDeliveryStatServiceImpl">

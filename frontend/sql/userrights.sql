@@ -21,6 +21,7 @@ INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT
 INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT admin_group_id, 'campaign.show' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT admin_group_id, 'charset.use.iso_8859_15' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT admin_group_id, 'charset.use.utf_8' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
+INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT admin_group_id, 'datasource.show' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT admin_group_id, 'export.change' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT admin_group_id, 'export.delete' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT admin_group_id, 'forms.change' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
@@ -136,6 +137,7 @@ INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'campaig
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'campaign.show');
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'charset.use.iso_8859_15');
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'charset.use.utf_8');
+INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'datasource.show');
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'export.change');
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'export.delete');
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'forms.change');

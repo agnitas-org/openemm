@@ -79,4 +79,6 @@ public interface ComCompanyService {
 	boolean reactivateCompany(int companyIdForDeactivation);
 
 	int getCompanyDatasource(@VelocityCheck int companyId);
+
+	int getNumberOfCompanies();
 }

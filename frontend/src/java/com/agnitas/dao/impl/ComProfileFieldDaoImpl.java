@@ -1181,6 +1181,20 @@ public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFie
 
 	@Override
 	public void storeProfileFieldAdminPermissions(int companyID, String columnName, List<Integer> readOnlyUsers, List<Integer> notVisibleUsers) {
+		boolean profileFieldEntryExists = selectInt(logger, "SELECT COUNT(*) FROM customer_field_tbl WHERE company_id = ? AND col_name = ?", companyID, columnName.toUpperCase()) > 0;
+		if (!profileFieldEntryExists) {
+			update(logger, "INSERT INTO customer_field_tbl (company_id, col_name, admin_id, shortname, description, default_value, mode_edit, mode_insert) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+				companyID,
+				columnName.toUpperCase(),
+				0,
+				columnName,
+				null,
+				null,
+				0,
+				0
+			);
+		}
+		
 		List<Object[]> parameterList = new ArrayList<>();
 		if (readOnlyUsers != null) {
 			update(logger, "DELETE FROM customer_field_permission_tbl WHERE company_id = ? AND LOWER(column_name) = ? AND mode_edit = ?", companyID, columnName, ProfileField.MODE_EDIT_READONLY);
