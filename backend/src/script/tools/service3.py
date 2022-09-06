@@ -23,7 +23,7 @@ from	io import StringIO
 from	agn3.config import Config
 from	agn3.db import DB
 from	agn3.daemon import Signal
-from	agn3.definitions import licence, base, fqdn, user
+from	agn3.definitions import licence, base, fqdn, user, syscfg
 from	agn3.emm.activator import Activator
 from	agn3.emm.build import spec
 from	agn3.exceptions import error
@@ -163,6 +163,9 @@ class Service:
 		return rc
 	
 	def active (self, name: str, skip_failure: bool = False) -> bool:
+		if (syscfg_key := self.cfg.get ('syscfg')) is not None:
+			if not syscfg.bget (syscfg_key, default = False):
+				return False
 		try:
 			if not Activator ().check ([name]):
 				self.out ('%s: marked as inactive' % name)

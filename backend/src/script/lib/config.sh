@@ -36,7 +36,7 @@ export	SYSTEM_CONFIG='{
 }'
 export	DBCFG_PATH="$BASE/etc/dbcfg"
 #
-version="22.04.000.124"
+version="22.04.000.194"
 licence="`$BASE/bin/config-query licence`"
 system="`uname -s`"
 host="`uname -n | cut -d. -f1`"
@@ -482,7 +482,7 @@ active() {
 		0)
 			;;
 		1)
-			error "Service $service is marked as inactive."
+			error "Service $@ is marked as inactive."
 			exit 0
 			;;
 		*)
