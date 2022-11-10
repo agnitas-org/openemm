@@ -13,8 +13,11 @@ package org.agnitas.beans;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.antlr.v4.runtime.misc.Nullable;
@@ -29,20 +32,22 @@ public interface BindingEntry extends Serializable {
 
 	enum UserType {
 		/** deprecated, do not use **/
-		ALL("E", "All"),
+		ALL("E", "All", false),
 		
-    	Admin("A", "Administrator"),
-    	TestUser("T", "Test recipient"),
-    	TestVIP("t", "Test VIP"),
-    	World("W", "Normal recipient"),
-    	WorldVIP("w", "Normal VIP recipient");
+    	Admin("A", "Administrator", false),
+    	TestUser("T", "Test recipient", false),
+    	TestVIP("t", "Test VIP", true),
+    	World("W", "Normal recipient", false),
+    	WorldVIP("w", "Normal VIP recipient", true);
     	
     	private String typeCode;
 		private String readableName;
+		private boolean isVip;
 
-    	UserType(String typeCode, String readableName) {
+    	UserType(String typeCode, String readableName, boolean isVip) {
     		this.typeCode = typeCode;
 			this.readableName = readableName;
+			this.isVip = isVip;
     	}
     	
     	public String getTypeCode() {
@@ -51,6 +56,10 @@ public interface BindingEntry extends Serializable {
 
 		public String getReadableName() {
 			return readableName;
+		}
+
+		public boolean isVip() {
+			return isVip;
 		}
 
 		public static UserType getUserTypeByString(String typeCode) throws Exception {
@@ -69,6 +78,12 @@ public interface BindingEntry extends Serializable {
 					.findFirst();
 
 			return readableNameOptional.isPresent() ? readableNameOptional.get().getReadableName() : null;
+		}
+
+		public static List<UserType> getVipTypes() {
+    		return Stream.of(UserType.values())
+					.filter(UserType::isVip)
+					.collect(Collectors.toList());
 		}
     }
 

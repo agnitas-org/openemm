@@ -1225,7 +1225,7 @@ public class DbUtilities {
 			}
 
 			String addColumnStatement = "ALTER TABLE " + tablename + " ADD (" + fieldname.toLowerCase() + " " + dbType;
-			if (fieldType.equalsIgnoreCase("VARCHAR")) {
+			if ("VARCHAR".equalsIgnoreCase(fieldType)) {
 				if (length <= 0) {
 					length = 100;
 				}
@@ -1237,15 +1237,15 @@ public class DbUtilities {
 
 			// Default Value
 			if (StringUtils.isNotEmpty(fieldDefault)) {
-				if (fieldType.equalsIgnoreCase("VARCHAR")) {
+				if ("VARCHAR".equalsIgnoreCase(fieldType)) {
 					addColumnStatement += " DEFAULT '" + fieldDefault + "'";
-				} else if (fieldType.equalsIgnoreCase("DATE") || fieldType.equalsIgnoreCase("DATETIME")) {
+				} else if ("DATE".equalsIgnoreCase(fieldType) || "DATETIME".equalsIgnoreCase(fieldType)) {
 					addColumnStatement += " DEFAULT " + getDateDefaultValue(fieldDefault, fieldDefaultDateFormat, isOracle);
 				} else {
 					addColumnStatement += " DEFAULT " + fieldDefault;
 				}
 			} else {
-				if(fieldType.equalsIgnoreCase("DATETIME")) {
+				if("DATETIME".equalsIgnoreCase(fieldType)) {
 					if(!notNull) {
 						addColumnStatement += " DEFAULT null";
 					}
@@ -1256,7 +1256,7 @@ public class DbUtilities {
 			if (notNull) {
 				addColumnStatement += " NOT NULL";
 			} else {
-				if(fieldType.equalsIgnoreCase("DATETIME")) {
+				if("DATETIME".equalsIgnoreCase(fieldType)) {
 					addColumnStatement += " NULL";
 				}
 			}

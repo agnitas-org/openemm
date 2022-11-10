@@ -18,6 +18,8 @@ import org.agnitas.actions.EmmAction;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
+import com.agnitas.beans.ComAdmin;
+
 
 public interface ComEmmActionService extends EmmActionService {
 
@@ -30,4 +32,7 @@ public interface ComEmmActionService extends EmmActionService {
 	List<EmmAction> getEmmNotLinkActions(@VelocityCheck int companyId, boolean includeInactive);
 
     List<EmmAction> getEmmNotFormActions(int companyId, boolean includeInactive);
+    
+    boolean canUserSaveAction(final ComAdmin admin, final int actionId);
+    boolean canUserSaveAction(final ComAdmin admin, final EmmAction action);
 }

@@ -331,7 +331,7 @@ public class ProfileImportCsvPreviewLoader {
 								}
 								previewParsedContent.add(columnsList);
 							}
-							initColumnsNullableCheck(columns);
+							initColumnsNullableCheck(columns, importProfile.getKeyColumns());
 						}
 	
 						final LinkedList<String> linelinkedList = new LinkedList<>();
@@ -470,8 +470,8 @@ public class ProfileImportCsvPreviewLoader {
 		}
 	}
 
-	private void initColumnsNullableCheck(CSVColumnState[] cols) {
-		Map<String, CsvColInfo> columnsInfo = recipientDao.readDBColumns(importProfile.getCompanyId());
+	private void initColumnsNullableCheck(CSVColumnState[] cols, List<String> keyColumns) {
+		Map<String, CsvColInfo> columnsInfo = recipientDao.readDBColumns(importProfile.getCompanyId(), importProfile.getAdminId(), keyColumns);
 		for (CSVColumnState columnState : cols) {
 			CsvColInfo columnInfo = columnsInfo.get(columnState.getColName());
 			if (columnInfo != null) {

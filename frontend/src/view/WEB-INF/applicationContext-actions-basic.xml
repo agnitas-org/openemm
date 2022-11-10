@@ -30,11 +30,12 @@
 		<property name="eqlToQueryBuilderConverter" ref="EqlToQueryBuilderConverter" />
 		<property name="queryBuilderToEqlConverter" ref="QueryBuilderToEqlConverter" />
 		<property name="queryBuilderFilterListBuilder" ref="TargetGroupQueryBuilderFilterListBuilder" />
-	</bean>
+        <property name="targetService" ref="targetService"/>
+    </bean>
 
 	<bean name="TargetGroupQueryBuilderFilterListBuilder" class="com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderFilterListBuilder">
-		<property name="profileFieldDao" ref="ProfileFieldDao" />
 		<property name="queryBuilderConfiguration" ref="QueryBuilderConfiguration"/>
+		<property name="profileFieldService" ref="ProfileFieldService"/>
 	</bean>
 
 	<!-- Action beans -->

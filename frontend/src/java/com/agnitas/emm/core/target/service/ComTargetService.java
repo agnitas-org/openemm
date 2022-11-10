@@ -238,6 +238,8 @@ public interface ComTargetService {
 
     Set<Integer> getAltgIdsWithoutAdminAltgIds(int companyId, Set<Integer> adminAltgIds);
 
+    boolean isEqlContainsInvisibleFields(String eql, int companyId, int adminId);
+
 	boolean isValid(int companyId, int targetId);
 
 	boolean isLocked(int companyId, int targetId);

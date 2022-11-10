@@ -98,8 +98,10 @@
                     <display:setProperty name="basic.msg.empty_list_row" value=" "/>
 
 					<display:column headerClass="js-table-sort" class="field_shortname"
-                                    property="shortname" titleKey="settings.FieldName"
-                                    sortable="true" sortProperty="shortname"/>
+                                    titleKey="settings.FieldName"
+                                    sortable="true" sortProperty="shortname">
+						${column.column}
+					</display:column>
 
 					<display:column headerClass="js-table-sort" class="field_type"
                                     titleKey="default.Type"

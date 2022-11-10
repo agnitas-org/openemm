@@ -221,7 +221,7 @@ public class RecipientController implements XssCheckAware {
 				.arguments(form.toArray())
 				.build();
 
-		model.addAttribute("queryBuilderFilters", filterListBuilder.buildFilterListJson(admin));
+		model.addAttribute("queryBuilderFilters", filterListBuilder.buildFilterListJson(admin, true));
 		model.addAttribute("mailTrackingAvailable", AgnUtils.isMailTrackingAvailable(admin));
 
 		CaseInsensitiveMap<String, ProfileField> columnInfoMap = columnInfoService.getColumnInfoMap(companyId, admin.getAdminID());
@@ -323,9 +323,8 @@ public class RecipientController implements XssCheckAware {
 	}
 
 	@PostMapping("/createTargetGroup.action")
-	public String createTargetGroup(ComAdmin admin, RecipientSaveTargetForm form, Popups popups,
-								  @ModelAttribute RecipientsFormSearchParams recipientsFormSearchParams,
-								  Model model) {
+	public String createTargetGroup(ComAdmin admin, RecipientSaveTargetForm form, Popups popups, Model model,
+									@ModelAttribute RecipientsFormSearchParams recipientsFormSearchParams) {
 
 		if (isValidTargetSaving(admin, form, popups)) {
 			int targetGroupId = saveTargetGroupFromQueryBuilder(form, admin, popups);
@@ -682,7 +681,7 @@ public class RecipientController implements XssCheckAware {
 
 	@RequestMapping("/bulkView.action")
     public String bulkView(ComAdmin admin, RecipientBulkForm form, Model model) {
-		List<ProfileField> recipientColumns = recipientService.getRecipientBulkFields(admin.getCompanyID());
+		List<ProfileField> recipientColumns = recipientService.getRecipientBulkFields(admin.getCompanyID(), admin.getAdminID());
 		form.setRecipientFieldChanges(recipientColumns.stream().map(ProfileField::getColumn).collect(Collectors.toList()));
 
 		model.addAttribute("recipientColumns", recipientColumns);

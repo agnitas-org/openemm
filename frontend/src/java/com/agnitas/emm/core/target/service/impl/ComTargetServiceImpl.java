@@ -27,6 +27,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import com.agnitas.beans.ProfileField;
+import com.agnitas.emm.core.target.eql.emm.querybuilder.EqlReferenceItemsExtractor;
 import org.agnitas.beans.DynamicTagContent;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.MailingComponentType;
@@ -105,10 +107,7 @@ import bsh.Interpreter;
  */
 public class ComTargetServiceImpl implements ComTargetService {
 
-	/**
-	 * The logger.
-	 */
-	private static final transient Logger logger = LogManager.getLogger(ComTargetServiceImpl.class);
+	private static final Logger logger = LogManager.getLogger(ComTargetServiceImpl.class);
 
 	private static final Pattern GENDER_EQUATION_PATTERN = Pattern.compile("(?:cust\\.gender\\s*(?:=|<>|>|>=|<|<=)\\s*(-?\\d+))|(?:mod\\(cust\\.gender,\\s+(\\d+)\\))");
 
@@ -140,6 +139,8 @@ public class ComTargetServiceImpl implements ComTargetService {
 	private ProfileFieldService profileFieldService;
 
 	private TargetComplexityEvaluator complexityEvaluator;
+
+	private EqlReferenceItemsExtractor eqlReferenceItemsExtractor;
 
 	private BeanShellInterpreterFactory beanShellInterpreterFactory;
 
@@ -475,7 +476,7 @@ public class ComTargetServiceImpl implements ComTargetService {
 		// with targetSQL; boolean operators - with SQL boolean operators)
 		Pattern pattern = Pattern.compile(targetExpressionRegex);
 		Matcher matcher = pattern.matcher(targetExpression);
-		StringBuilder sqlExpression = new StringBuilder("");
+		StringBuilder sqlExpression = new StringBuilder();
 
 		while (matcher.find()) {
 			String token = matcher.group();
@@ -690,7 +691,7 @@ public class ComTargetServiceImpl implements ComTargetService {
 		if (CollectionUtils.isNotEmpty(targets)) {
 			return targets.stream()
 					.map(TargetLight::toListSplit)
-					.filter(split -> split != null)
+					.filter(Objects::nonNull)
 					.sorted((s1, s2) -> {
 						// Primary sorting criteria
 						int d = s1.getParts().length - s2.getParts().length;
@@ -776,7 +777,7 @@ public class ComTargetServiceImpl implements ComTargetService {
 	}
 
 	@Deprecated // TODO Remove when reference data is present for all target groups
-	private final List<TargetLight> listTargetGroupsUsingProfileFieldByDatabaseNameLegacy(final String visibleShortname, @VelocityCheck final int companyID) {
+	private List<TargetLight> listTargetGroupsUsingProfileFieldByDatabaseNameLegacy(final String visibleShortname, final int companyID) {
 		final List<RawTargetGroup> list = targetDao.listRawTargetGroups(companyID, visibleShortname);
 
 		return list.stream()
@@ -798,7 +799,7 @@ public class ComTargetServiceImpl implements ComTargetService {
 	 * @return TargetLight created from raw target group
 	 */
 	@Deprecated // Use RawTargetGroup.toTargetLight() instead
-	private static final TargetLight rawToTargetLight(final RawTargetGroup raw) {
+	private static TargetLight rawToTargetLight(final RawTargetGroup raw) {
 		return raw.toTargetLight();
 	}
 
@@ -811,14 +812,16 @@ public class ComTargetServiceImpl implements ComTargetService {
 	 *
 	 * @return <code>true</code> if target group references given profile field
 	 */
-	private final boolean checkTargetGroupReferencesProfileField(final RawTargetGroup targetGroup, final String fieldShortname, final int companyID) {
+	private boolean checkTargetGroupReferencesProfileField(final RawTargetGroup targetGroup, final String fieldShortname, final int companyID) {
 		try {
 			final String eql = normalizeToEQL(targetGroup.getEql(), companyID);
 			final SimpleReferenceCollector collector = new SimpleReferenceCollector();
 
 			this.eqlFacade.convertEqlToSql(eql, companyID, collector);
 
-			return collector.getReferencedProfileFields().stream().anyMatch(fieldShortname::equalsIgnoreCase);
+			return collector.getReferencedProfileFields()
+					.stream()
+					.anyMatch(fieldShortname::equalsIgnoreCase);
 		} catch(final EqlParserException |
                 CodeGeneratorException |
                 ProfileFieldResolveException |
@@ -1052,6 +1055,22 @@ public class ComTargetServiceImpl implements ComTargetService {
 		return targetId;
 	}
 
+	@Override
+	public boolean isEqlContainsInvisibleFields(String eql, int companyId, int adminId) {
+		try {
+			Set<String> referencedProfileFields = eqlReferenceItemsExtractor.collectReferences(eql)
+					.getReferencedProfileFields();
+
+			return referencedProfileFields.stream()
+					.map(pf -> profileFieldService.getProfileField(companyId, pf, adminId))
+					.filter(Objects::nonNull)
+					.anyMatch(pf -> pf.getModeEdit() == (ProfileField.MODE_EDIT_NOT_VISIBLE));
+		} catch (EqlParserException e) {
+			logger.error("Could not retrieve profile fields from EQL.", e);
+			return false;
+		}
+	}
+
 	// -------------------------------------------------------------- Dependency Injection
 	/**
 	 * Set DAO for accessing target group data.
@@ -1131,6 +1150,11 @@ public class ComTargetServiceImpl implements ComTargetService {
 	@Required
 	public void setTargetComplexityEvaluator(TargetComplexityEvaluator complexityEvaluator) {
 		this.complexityEvaluator = complexityEvaluator;
+	}
+
+	@Required
+	public void setEqlReferenceItemsExtractor(EqlReferenceItemsExtractor eqlReferenceItemsExtractor) {
+		this.eqlReferenceItemsExtractor = eqlReferenceItemsExtractor;
 	}
 
 	@Required
@@ -1298,7 +1322,7 @@ public class ComTargetServiceImpl implements ComTargetService {
 	 *
 	 * @return <code>true</code> if target groups differ
 	 */
-	private static final boolean isEqlModified(final ComTarget newTarget, final ComTarget oldTarget) {
+	private static boolean isEqlModified(final ComTarget newTarget, final ComTarget oldTarget) {
 		return !Objects.equals(newTarget.getEQL(), oldTarget.getEQL());
 	}
 

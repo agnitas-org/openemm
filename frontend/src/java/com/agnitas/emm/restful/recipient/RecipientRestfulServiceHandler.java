@@ -179,7 +179,7 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 		if (requestMethod == RequestMethod.GET) {
 			((JsonRequestResponse) restfulResponse).setJsonResponseData(new JsonNode(getCustomerData(request, admin)));
 		} else if (requestMethod == RequestMethod.DELETE) {
-			((JsonRequestResponse) restfulResponse).setJsonResponseData(new JsonNode(deleteCustomer(request, admin)));
+			((JsonRequestResponse) restfulResponse).setJsonResponseData(new JsonNode(deleteCustomer(request, requestData, requestDataFile, admin)));
 		} else if ((requestData == null || requestData.length == 0) && (requestDataFile == null || requestDataFile.length() <= 0)) {
 			restfulResponse.setError(new RestfulClientException("Missing request data"), ErrorCode.REQUEST_DATA_ERROR);
 		} else if (requestMethod == RequestMethod.POST) {
@@ -241,13 +241,16 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 			for (CaseInsensitiveMap<String, Object> customerDataMap : recipientDao.getCustomersData(customerIDs, admin.getCompanyID())) {
 				JsonObject customerJsonObject = new JsonObject();
 				for (String key : AgnUtils.sortCollectionWithItemsFirst(customerDataMap.keySet(), "customer_id", "email")) {
-					if (profileFields.get(key) != null && profileFields.get(key).getSimpleDataType() == SimpleDataType.Date && customerDataMap.get(key) instanceof Date) {
-						customerJsonObject.add(key.toLowerCase(), new SimpleDateFormat(DateUtilities.ISO_8601_DATE_FORMAT_NO_TIMEZONE).format(customerDataMap.get(key)));
-					} else if (profileFields.get(key) != null && profileFields.get(key).getSimpleDataType() == SimpleDataType.DateTime && customerDataMap.get(key) instanceof Date) {
-						ZonedDateTime systemZonedDateTime = ZonedDateTime.ofInstant(((Date) customerDataMap.get(key)).toInstant(), ZoneId.systemDefault());
-						customerJsonObject.add(key.toLowerCase(), dateTimeFormatter.format(systemZonedDateTime));
-					} else {
-						customerJsonObject.add(key.toLowerCase(), customerDataMap.get(key));
+					ProfileField profileField = profileFields.get(key);
+					if (profileField != null && profileField.getModeEdit() != ProfileField.MODE_EDIT_NOT_VISIBLE) {
+						if (profileField.getSimpleDataType() == SimpleDataType.Date && customerDataMap.get(key) instanceof Date) {
+							customerJsonObject.add(key.toLowerCase(), new SimpleDateFormat(DateUtilities.ISO_8601_DATE_FORMAT_NO_TIMEZONE).format(customerDataMap.get(key)));
+						} else if (profileField.getSimpleDataType() == SimpleDataType.DateTime && customerDataMap.get(key) instanceof Date) {
+							ZonedDateTime systemZonedDateTime = ZonedDateTime.ofInstant(((Date) customerDataMap.get(key)).toInstant(), ZoneId.systemDefault());
+							customerJsonObject.add(key.toLowerCase(), dateTimeFormatter.format(systemZonedDateTime));
+						} else {
+							customerJsonObject.add(key.toLowerCase(), customerDataMap.get(key));
+						}
 					}
 				}
 				if (showReceivedMailings) {
@@ -260,13 +263,16 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 			CaseInsensitiveMap<String, Object> customerDataMap = recipientDao.getCustomerData(admin.getCompanyID(), customerIDs.get(0));
 			JsonObject customerJsonObject = new JsonObject();
 			for (String key : AgnUtils.sortCollectionWithItemsFirst(customerDataMap.keySet(), "customer_id", "email")) {
-				if (profileFields.get(key) != null && profileFields.get(key).getSimpleDataType() == SimpleDataType.Date && customerDataMap.get(key) instanceof Date) {
-					customerJsonObject.add(key.toLowerCase(), new SimpleDateFormat(DateUtilities.ISO_8601_DATE_FORMAT_NO_TIMEZONE).format(customerDataMap.get(key)));
-				} else if (profileFields.get(key) != null && profileFields.get(key).getSimpleDataType() == SimpleDataType.DateTime && customerDataMap.get(key) instanceof Date) {
-					ZonedDateTime systemZonedDateTime = ZonedDateTime.ofInstant(((Date) customerDataMap.get(key)).toInstant(), ZoneId.systemDefault());
-					customerJsonObject.add(key.toLowerCase(), dateTimeFormatter.format(systemZonedDateTime));
-				} else {
-					customerJsonObject.add(key.toLowerCase(), customerDataMap.get(key));
+				ProfileField profileField = profileFields.get(key);
+				if (profileField != null && profileField.getModeEdit() != ProfileField.MODE_EDIT_NOT_VISIBLE) {
+					if (profileField.getSimpleDataType() == SimpleDataType.Date && customerDataMap.get(key) instanceof Date) {
+						customerJsonObject.add(key.toLowerCase(), new SimpleDateFormat(DateUtilities.ISO_8601_DATE_FORMAT_NO_TIMEZONE).format(customerDataMap.get(key)));
+					} else if (profileField.getSimpleDataType() == SimpleDataType.DateTime && customerDataMap.get(key) instanceof Date) {
+						ZonedDateTime systemZonedDateTime = ZonedDateTime.ofInstant(((Date) customerDataMap.get(key)).toInstant(), ZoneId.systemDefault());
+						customerJsonObject.add(key.toLowerCase(), dateTimeFormatter.format(systemZonedDateTime));
+					} else {
+						customerJsonObject.add(key.toLowerCase(), customerDataMap.get(key));
+					}
 				}
 			}
 			if (showReceivedMailings) {
@@ -312,35 +318,91 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 	 * @return
 	 * @throws Exception
 	 */
-	private Object deleteCustomer(HttpServletRequest request, ComAdmin admin) throws Exception {
+	private Object deleteCustomer(HttpServletRequest request, byte[] requestData, File requestDataFile, ComAdmin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.RECIPIENT_DELETE)) {
 			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.RECIPIENT_DELETE.toString() + "'");
 		}
 		
-		String[] restfulContext = RestfulServiceHandler.getRestfulContext(request, NAMESPACE, 1, 1);
-		
-		String requestedRecipientKeyValue = restfulContext[0];
-		List<Integer> customerIDs;
-		if (AgnUtils.isEmailValid(requestedRecipientKeyValue)) {
-			// Normalize email, if configured so
-			if (!configService.getBooleanValue(ConfigValue.AllowUnnormalizedEmails, admin.getCompanyID())) {
-				requestedRecipientKeyValue = AgnUtils.normalizeEmail(requestedRecipientKeyValue);
+		String[] restfulContext = RestfulServiceHandler.getRestfulContext(request, NAMESPACE, 0, 1);
+		if (restfulContext.length == 1) {
+			// Delete customer by single key value
+			String requestedRecipientKeyValue = restfulContext[0];
+			List<Integer> customerIDs;
+			if (AgnUtils.isEmailValid(requestedRecipientKeyValue)) {
+				// Normalize email, if configured so
+				if (!configService.getBooleanValue(ConfigValue.AllowUnnormalizedEmails, admin.getCompanyID())) {
+					requestedRecipientKeyValue = AgnUtils.normalizeEmail(requestedRecipientKeyValue);
+				}
+				customerIDs = recipientDao.getRecipientIDs(admin.getCompanyID(), "email", requestedRecipientKeyValue);
+			} else if (AgnUtils.isNumber(requestedRecipientKeyValue)) {
+				customerIDs = recipientDao.getRecipientIDs(admin.getCompanyID(), "customer_id", requestedRecipientKeyValue);
+			} else {
+				throw new RestfulClientException("Invalid recipient key for deletion: " + requestedRecipientKeyValue);
 			}
-			customerIDs = recipientDao.getRecipientIDs(admin.getCompanyID(), "email", requestedRecipientKeyValue);
-		} else if (AgnUtils.isNumber(requestedRecipientKeyValue)) {
-			customerIDs = recipientDao.getRecipientIDs(admin.getCompanyID(), "customer_id", requestedRecipientKeyValue);
+			
+			userActivityLogDao.addAdminUseOfFeature(admin, "restful/recipient", new Date());
+			userActivityLogDao.writeUserActivityLog(admin, "restful/recipient DELETE", requestedRecipientKeyValue);
+			
+			if (customerIDs.size() > 0) {
+				recipientDao.deleteRecipients(admin.getCompanyID(), customerIDs);
+				return customerIDs.size() + " customer datasets deleted";
+			} else {
+				throw new RestfulNoDataFoundException("No data found for deletion");
+			}
 		} else {
-			throw new RestfulClientException("Invalid recipient key for deletion: " + requestedRecipientKeyValue);
-		}
-		
-		userActivityLogDao.addAdminUseOfFeature(admin, "restful/recipient", new Date());
-		userActivityLogDao.writeUserActivityLog(admin, "restful/recipient DELETE", requestedRecipientKeyValue);
-		
-		if (customerIDs.size() > 0) {
-			recipientDao.deleteRecipients(admin.getCompanyID(), customerIDs);
-			return customerIDs.size() + " customer datasets deleted";
-		} else {
-			throw new RestfulNoDataFoundException("No data found for deletion");
+			if ((requestData == null || requestData.length == 0) && (requestDataFile == null || requestDataFile.length() <= 0)) {
+				throw new RestfulClientException("Missing request body data");
+			} else {
+				// Normalize email, if configured so
+				boolean normalizeEmails = configService.getBooleanValue(ConfigValue.AllowUnnormalizedEmails, admin.getCompanyID());
+				List<Integer> customerIDs = new ArrayList<>();
+				
+				// Delete a list of customers (bulk)
+				try (InputStream inputStream = RestfulServiceHandler.getRequestDataStream(requestData, requestDataFile)) {
+					try (Json5Reader jsonReader = new Json5Reader(inputStream)) {
+						// Read root JSON element
+						JsonToken readJsonToken = jsonReader.readNextToken();
+						if (JsonToken.JsonArray_Open != readJsonToken) {
+							throw new RestfulClientException("Invalid request body JSON data. Array of Integer or String expected");
+						}
+						while ((readJsonToken = jsonReader.readNextToken()) != null) {
+							if (JsonToken.JsonSimpleValue == readJsonToken) {
+								if (customerIDs.size() >= 1000) {
+									throw new RestfulNoDataFoundException("Too many data for deletion. Only 1000 items per request allowed.");
+								} else {
+									Object recipientKeyValue = jsonReader.getCurrentObject();
+									if (recipientKeyValue != null && recipientKeyValue instanceof String) {
+										String recipientEmail = (String) recipientKeyValue;
+										if (AgnUtils.isEmailValid(recipientEmail)) {
+											if (normalizeEmails) {
+												recipientEmail = AgnUtils.normalizeEmail(recipientEmail);
+											}
+											customerIDs.addAll(recipientDao.getRecipientIDs(admin.getCompanyID(), "email", recipientEmail));
+										}
+									} else if (recipientKeyValue != null && recipientKeyValue instanceof Integer) {
+										customerIDs.add((Integer) recipientKeyValue);
+									} else {
+										throw new RestfulClientException("Invalid recipient key for deletion: " + recipientKeyValue);
+									}
+								}
+							} else if (JsonToken.JsonArray_Close == readJsonToken) {
+								break;
+							} else {
+								throw new RestfulClientException("Invalid request body JSON data. Array of Integer or String expected");
+							}
+						}
+					}
+				}
+				
+				if (customerIDs.size() > 1000) {
+					throw new RestfulNoDataFoundException("Too many data for deletion. Only 1000 items per request allowed.");
+				} else if (customerIDs.size() > 0) {
+					int deletedCustomers = recipientDao.deleteRecipients(admin.getCompanyID(), customerIDs);
+					return deletedCustomers + " customer datasets deleted";
+				} else  {
+					throw new RestfulNoDataFoundException("No data found for deletion");
+				}
+			}
 		}
 	}
 
@@ -539,13 +601,16 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 					CaseInsensitiveMap<String, Object> customerDataMap = recipientDao.getCustomerData(admin.getCompanyID(), recipient.getCustomerID());
 					JsonObject customerJsonObject = new JsonObject();
 					for (String key : AgnUtils.sortCollectionWithItemsFirst(customerDataMap.keySet(), "customer_id", "email")) {
-						if (profileFields.get(key) != null && profileFields.get(key).getSimpleDataType() == SimpleDataType.Date && customerDataMap.get(key) instanceof Date) {
-							customerJsonObject.add(key.toLowerCase(), new SimpleDateFormat(DateUtilities.ISO_8601_DATE_FORMAT_NO_TIMEZONE).format(customerDataMap.get(key)));
-						} else if (profileFields.get(key) != null && profileFields.get(key).getSimpleDataType() == SimpleDataType.DateTime && customerDataMap.get(key) instanceof Date) {
-							ZonedDateTime systemZonedDateTime = ZonedDateTime.ofInstant(((Date) customerDataMap.get(key)).toInstant(), ZoneId.systemDefault());
-							customerJsonObject.add(key.toLowerCase(), dateTimeFormatter.format(systemZonedDateTime));
-						} else {
-							customerJsonObject.add(key.toLowerCase(), customerDataMap.get(key));
+						ProfileField profileField = profileFields.get(key);
+						if (profileField != null && profileField.getModeEdit() != ProfileField.MODE_EDIT_NOT_VISIBLE) {
+							if (profileField.getSimpleDataType() == SimpleDataType.Date && customerDataMap.get(key) instanceof Date) {
+								customerJsonObject.add(key.toLowerCase(), new SimpleDateFormat(DateUtilities.ISO_8601_DATE_FORMAT_NO_TIMEZONE).format(customerDataMap.get(key)));
+							} else if (profileField.getSimpleDataType() == SimpleDataType.DateTime && customerDataMap.get(key) instanceof Date) {
+								ZonedDateTime systemZonedDateTime = ZonedDateTime.ofInstant(((Date) customerDataMap.get(key)).toInstant(), ZoneId.systemDefault());
+								customerJsonObject.add(key.toLowerCase(), dateTimeFormatter.format(systemZonedDateTime));
+							} else {
+								customerJsonObject.add(key.toLowerCase(), customerDataMap.get(key));
+							}
 						}
 					}
 					return customerJsonObject;
@@ -960,13 +1025,16 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 					CaseInsensitiveMap<String, Object> customerDataMap = recipientDao.getCustomerData(admin.getCompanyID(), recipient.getCustomerID());
 					JsonObject customerJsonObject = new JsonObject();
 					for (String key : AgnUtils.sortCollectionWithItemsFirst(customerDataMap.keySet(), "customer_id", "email")) {
-						if (profileFields.get(key) != null && profileFields.get(key).getSimpleDataType() == SimpleDataType.Date && customerDataMap.get(key) instanceof Date) {
-							customerJsonObject.add(key.toLowerCase(), new SimpleDateFormat(DateUtilities.ISO_8601_DATE_FORMAT_NO_TIMEZONE).format(customerDataMap.get(key)));
-						} else if (profileFields.get(key) != null && profileFields.get(key).getSimpleDataType() == SimpleDataType.DateTime && customerDataMap.get(key) instanceof Date) {
-							ZonedDateTime systemZonedDateTime = ZonedDateTime.ofInstant(((Date) customerDataMap.get(key)).toInstant(), ZoneId.systemDefault());
-							customerJsonObject.add(key.toLowerCase(), dateTimeFormatter.format(systemZonedDateTime));
-						} else {
-							customerJsonObject.add(key.toLowerCase(), customerDataMap.get(key));
+						ProfileField profileField = profileFields.get(key);
+						if (profileField != null && profileField.getModeEdit() != ProfileField.MODE_EDIT_NOT_VISIBLE) {
+							if (profileField.getSimpleDataType() == SimpleDataType.Date && customerDataMap.get(key) instanceof Date) {
+								customerJsonObject.add(key.toLowerCase(), new SimpleDateFormat(DateUtilities.ISO_8601_DATE_FORMAT_NO_TIMEZONE).format(customerDataMap.get(key)));
+							} else if (profileField.getSimpleDataType() == SimpleDataType.DateTime && customerDataMap.get(key) instanceof Date) {
+								ZonedDateTime systemZonedDateTime = ZonedDateTime.ofInstant(((Date) customerDataMap.get(key)).toInstant(), ZoneId.systemDefault());
+								customerJsonObject.add(key.toLowerCase(), dateTimeFormatter.format(systemZonedDateTime));
+							} else {
+								customerJsonObject.add(key.toLowerCase(), customerDataMap.get(key));
+							}
 						}
 					}
 					return customerJsonObject;

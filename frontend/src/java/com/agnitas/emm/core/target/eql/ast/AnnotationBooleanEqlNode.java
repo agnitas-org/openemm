@@ -23,7 +23,7 @@ import com.agnitas.emm.core.target.eql.referencecollector.ReferenceCollector;
 
 public final class AnnotationBooleanEqlNode extends AbstractBooleanEqlNode {
 	
-	public static enum AnnotationType {
+	public enum AnnotationType {
 		PARENTHESIS
 	}
 	

@@ -1122,7 +1122,7 @@ public class MailingWizardAction extends StrutsDispatchActionBase {
 
         request.setAttribute("editTargetForm", new TargetEditForm());
 		request.setAttribute("mailTrackingAvailable", AgnUtils.isMailTrackingAvailable(admin));
-		request.setAttribute("queryBuilderFilters", filterListBuilder.buildFilterListJson(admin));
+		request.setAttribute("queryBuilderFilters", filterListBuilder.buildFilterListJson(admin, true));
 
 		return mapping.findForward("newTarget");
 	}

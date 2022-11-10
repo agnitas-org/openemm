@@ -182,7 +182,7 @@
                                            id="recipient"
                                            name="recipientList"
                                            sort="external"
-                                           requestURI="/recipient/list.action"
+                                           requestURI="/recipient/list.action?loadRecipients=true"
                                            partialList="true"
                                            size="${form.numberOfRows}"
                                            excludedParams="*">

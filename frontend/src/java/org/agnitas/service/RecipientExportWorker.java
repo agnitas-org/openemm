@@ -22,6 +22,7 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.TimeZone;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import org.agnitas.beans.ExportColumnMapping;
@@ -417,11 +418,19 @@ public class RecipientExportWorker extends GenericExportWorker {
         List<ExportColumnMapping> profileFieldColumns = ExportWizardUtils
                 .getProfileFieldColumnsFromExport(exportProfile, companyID, adminId, columnInfoService);
         if (profileFieldColumns.isEmpty()) {
-            return columnInfoService.getComColumnInfos(companyID, adminId).stream().map(profileField -> {
-            	ExportColumnMapping columnMapping = new ExportColumnMapping();
-                columnMapping.setDbColumn(profileField.getColumn());
-                return columnMapping;
-            }).collect(Collectors.toList());
+            return columnInfoService.getComColumnInfos(companyID, adminId).stream()
+	            .filter(new Predicate<ProfileField>() {
+					@Override
+					public boolean test(ProfileField profileField) {
+						return profileField.getModeEdit() != ProfileField.MODE_EDIT_NOT_VISIBLE;
+					}
+				})
+	            .map(profileField -> {
+	            	ExportColumnMapping columnMapping = new ExportColumnMapping();
+	                columnMapping.setDbColumn(profileField.getColumn());
+	                return columnMapping;
+	            })
+	            .collect(Collectors.toList());
         } else {
             return profileFieldColumns.stream().map(profileField -> {
             	ExportColumnMapping columnMapping = new ExportColumnMapping();

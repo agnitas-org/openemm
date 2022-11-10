@@ -122,6 +122,7 @@
 		<property name="recipientFactory" ref="RecipientFactory" />
 		<property name="recipientProfileHistoryService" ref="RecipientProfileHistoryService" />
 		<property name="datasourceDescriptionDao" ref="DatasourceDescriptionDao" />
+		<property name="profileFieldDao" ref="ProfileFieldDao" />
 	</bean>
 
 </beans>

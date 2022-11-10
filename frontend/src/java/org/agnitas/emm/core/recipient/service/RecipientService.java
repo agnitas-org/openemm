@@ -91,7 +91,7 @@ public interface RecipientService {
 
 	void confirmEmailAddressChange(ComExtensibleUID uid, String confirmationCode) throws Exception;
 	
-	List<ProfileField> getRecipientBulkFields(@VelocityCheck int companyId);
+	List<ProfileField> getRecipientBulkFields(final int companyID, final int recipientID);
     
     int calculateRecipient(ComAdmin admin, int targetId, int mailinglistId);
 	

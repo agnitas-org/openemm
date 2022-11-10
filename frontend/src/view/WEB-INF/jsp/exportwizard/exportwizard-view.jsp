@@ -180,7 +180,6 @@
             </a>
         </div>
 
-
         <div class="tile-content tile-content-forms" id="recipient-export-tile-columns">
             <div class="form-group">
                 <div class="col-sm-offset-4 col-sm-8">
@@ -221,7 +220,7 @@
                                 </c:otherwise>
                             </c:choose>
                             
-                            <agn:agnOption value="${fn:toUpperCase(column.column)}">${fn:escapeXml(column.shortname)} (${colType})</agn:agnOption>
+                            <agn:agnOption value="${fn:toLowerCase(column.column)}">${fn:escapeXml(column.shortname)} (${colType})</agn:agnOption>
                         </c:forEach>
                         <agn:agnOption styleId="mailing-bounce-column-option" value="MAILING_BOUNCE"><bean:message key="report.bounce.reason"/> (<bean:message key="statistic.alphanumeric"/>)</agn:agnOption>
                     </agn:agnSelect>

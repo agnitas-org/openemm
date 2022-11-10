@@ -13,6 +13,7 @@ package com.agnitas.emm.core.action.service.impl;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import org.agnitas.actions.EmmAction;
@@ -20,12 +21,28 @@ import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.ProfileField;
+import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
+import com.agnitas.emm.core.action.operations.ActionOperationUpdateCustomerParameters;
 import com.agnitas.emm.core.action.service.ComEmmActionService;
+import com.agnitas.service.ComColumnInfoService;
 
 
 public class ComEmmActionServiceImpl extends EmmActionServiceImpl implements ComEmmActionService {
+	
+	/** The logger. */
+	private static final transient Logger LOGGER = LogManager.getLogger(ComEmmActionServiceImpl.class);
+	
+	private final ComColumnInfoService columnInfoService;
+	
+	public ComEmmActionServiceImpl(final ComColumnInfoService columnInfoService) {
+		this.columnInfoService = Objects.requireNonNull(columnInfoService);
+	}
 
     @Override
     public void bulkDelete(Set<Integer> actionIds, @VelocityCheck int companyId) {
@@ -101,4 +118,41 @@ public class ComEmmActionServiceImpl extends EmmActionServiceImpl implements Com
     public List<EmmAction> getEmmNotFormActions(int companyId, boolean includeInactive) {
         return emmActionDao.getEmmNotFormActions(companyId, includeInactive);
     }
+
+	@Override
+	public boolean canUserSaveAction(ComAdmin admin, int actionId) {
+		if(actionId == 0) {	// New actions can always be saved
+			return true;
+		}
+		
+		final EmmAction action = getEmmAction(actionId, admin.getCompanyID());
+		
+		return canUserSaveAction(admin, action);
+	}
+
+	@Override
+	public boolean canUserSaveAction(ComAdmin admin, EmmAction action) {
+		if(action == null) {
+			return true;
+		}
+		
+		for(final AbstractActionOperationParameters params : action.getActionOperations()) {
+			if(params instanceof ActionOperationUpdateCustomerParameters) {
+				final ActionOperationUpdateCustomerParameters actionParameters = (ActionOperationUpdateCustomerParameters) params;
+				
+				try {
+					final ProfileField field = this.columnInfoService.getColumnInfo(admin.getCompanyID(), actionParameters.getColumnName(), admin.getAdminID());
+					
+					if(field == null || field.getModeEdit() == ProfileField.MODE_EDIT_READONLY || field.getModeEdit() == ProfileField.MODE_EDIT_NOT_VISIBLE) {
+						return false;
+					}
+				} catch(final Exception e) {
+					LOGGER.warn(String.format("Error reading meta data for profile field '%s' (company ID %d, admin ID %d)", actionParameters.getColumnName(), admin.getCompanyID(), admin.getAdminID()), e);
+				}
+			}
+		}
+		
+		return true;
+	}
+    
 }

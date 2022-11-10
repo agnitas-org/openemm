@@ -27,6 +27,6 @@ public interface ProfileFieldTypeResolver {
 	 * 
 	 * @throws ProfileFieldResolveException on errors resolving the profile field name
 	 */
-	public DataType resolveProfileFieldType(String profileFieldName) throws ProfileFieldResolveException;
+	DataType resolveProfileFieldType(String profileFieldName) throws ProfileFieldResolveException;
 	
 }

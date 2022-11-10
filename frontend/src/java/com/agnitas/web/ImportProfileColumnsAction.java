@@ -543,22 +543,27 @@ public class ImportProfileColumnsAction extends ImportBaseFileAction {
      */
     protected void loadDbColumns(ImportProfileColumnsForm aForm, HttpServletRequest request) throws Exception {
         ComAdmin admin = AgnUtils.getAdmin(request);
-        aForm.setProfileFields(filterHiddenColumns(new TreeMap<>(profileFieldDao.getProfileFieldsMap(admin.getCompanyID(), admin.getAdminID())), admin));
+        aForm.setProfileFields(filterHiddenColumns(new TreeMap<>(profileFieldDao.getProfileFieldsMap(admin.getCompanyID(), admin.getAdminID())), aForm.getProfile().getKeyColumns(), admin));
 
         // load DB columns default values
         List<ProfileField> profileFields = profileFieldDao.getProfileFields(AgnUtils.getCompanyID(request));
         for (ProfileField profileField : profileFields) {
-            aForm.getDbColumnsDefaults().put(profileField.getColumn(), profileField.getDefaultValue());
+        	if (profileField.getModeEdit() == ProfileField.MODE_EDIT_EDITABLE || (profileField.getModeEdit() == ProfileField.MODE_EDIT_READONLY && aForm.getProfile().getKeyColumns().contains(profileField.getColumn()))) {
+        		aForm.getDbColumnsDefaults().put(profileField.getColumn(), profileField.getDefaultValue());
+        	}
         }
     }
     
-    private Map<String, ProfileField> filterHiddenColumns(Map<String, ProfileField> profileFields, ComAdmin admin) {
+    private Map<String, ProfileField> filterHiddenColumns(Map<String, ProfileField> profileFields, List<String> keyColumns, ComAdmin admin) {
         for (String hiddenColumn : ImportUtils.getHiddenColumns(admin)) {
             profileFields.remove(hiddenColumn);
         }
-
+        
         // User may also map readonly columns, but in import action, those are are checked to be only used as keycolumns
-        return profileFields.entrySet().stream().filter(e -> e.getValue().getModeEdit() != ProfileField.MODE_EDIT_NOT_VISIBLE).collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
+        return profileFields.entrySet().stream()
+    		.filter(e -> e.getValue().getModeEdit() == ProfileField.MODE_EDIT_EDITABLE
+        		|| (e.getValue().getModeEdit() == ProfileField.MODE_EDIT_READONLY && keyColumns.contains(e.getValue().getColumn())))
+        	.collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
     }
 
     /**
@@ -585,7 +590,7 @@ public class ImportProfileColumnsAction extends ImportBaseFileAction {
 				return;
 			}
 
-			Map<String, CsvColInfo> dbColumns = recipientDao.readDBColumns(AgnUtils.getCompanyID(request));
+			Map<String, CsvColInfo> dbColumns = recipientDao.readDBColumns(AgnUtils.getCompanyID(request), AgnUtils.getAdmin(request).getAdminID(), aForm.getProfile().getKeyColumns());
 
 			if ("CSV".equalsIgnoreCase(profile.getDatatype())) {
 				char separator = Separator.getSeparatorById(profile.getSeparator()).getValueChar();

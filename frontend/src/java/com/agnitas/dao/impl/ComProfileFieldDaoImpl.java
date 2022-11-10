@@ -871,6 +871,8 @@ public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFie
 
 			update(logger, "ALTER TABLE customer_" + companyID + "_tbl DROP COLUMN " + SafeString.getSafeDbColumnName(fieldname));
 			
+			update(logger, "DELETE FROM customer_field_permission_tbl WHERE company_id = ? AND LOWER(column_name) = ?", companyID, fieldname.toLowerCase());
+			
 			update(logger, DELETE_PROFILEFIELD_BY_COLUMNNAME, companyID, fieldname);
 			
 			try {
@@ -887,6 +889,7 @@ public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFie
 	
 	@Override
 	public boolean deleteByCompany(@VelocityCheck int companyID) {
+		update(logger, "DELETE FROM customer_field_permission_tbl WHERE company_id = ?", companyID);
 		int touchedLines = update(logger, "DELETE FROM customer_field_tbl WHERE company_id= ?", companyID);
 		if (touchedLines > 0) {
     		return true;
@@ -1180,7 +1183,7 @@ public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFie
 	}
 
 	@Override
-	public void storeProfileFieldAdminPermissions(int companyID, String columnName, List<Integer> readOnlyUsers, List<Integer> notVisibleUsers) {
+	public void storeProfileFieldAdminPermissions(int companyID, String columnName, Set<Integer> readOnlyUsers, Set<Integer> notVisibleUsers) {
 		boolean profileFieldEntryExists = selectInt(logger, "SELECT COUNT(*) FROM customer_field_tbl WHERE company_id = ? AND col_name = ?", companyID, columnName.toUpperCase()) > 0;
 		if (!profileFieldEntryExists) {
 			update(logger, "INSERT INTO customer_field_tbl (company_id, col_name, admin_id, shortname, description, default_value, mode_edit, mode_insert) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
@@ -1197,13 +1200,13 @@ public class ComProfileFieldDaoImpl extends BaseDaoImpl implements ComProfileFie
 		
 		List<Object[]> parameterList = new ArrayList<>();
 		if (readOnlyUsers != null) {
-			update(logger, "DELETE FROM customer_field_permission_tbl WHERE company_id = ? AND LOWER(column_name) = ? AND mode_edit = ?", companyID, columnName, ProfileField.MODE_EDIT_READONLY);
+			update(logger, "DELETE FROM customer_field_permission_tbl WHERE company_id = ? AND LOWER(column_name) = ?", companyID, columnName.toLowerCase());
 	        for (Integer adminID : readOnlyUsers) {
 	        	parameterList.add(new Object[] { companyID, columnName.toUpperCase(), adminID, ProfileField.MODE_EDIT_READONLY });
 	        }
 		}
 		if (notVisibleUsers != null) {
-			update(logger, "DELETE FROM customer_field_permission_tbl WHERE company_id = ? AND LOWER(column_name) = ? AND mode_edit = ?", companyID, columnName, ProfileField.MODE_EDIT_NOT_VISIBLE);
+			update(logger, "DELETE FROM customer_field_permission_tbl WHERE company_id = ? AND LOWER(column_name) = ?", companyID, columnName.toLowerCase());
 	        for (Integer adminID : notVisibleUsers) {
 	        	parameterList.add(new Object[] { companyID, columnName.toUpperCase(), adminID, ProfileField.MODE_EDIT_NOT_VISIBLE });
 	        }

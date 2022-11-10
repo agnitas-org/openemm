@@ -44,6 +44,8 @@ AGN.Lib.Controller.new('recipient-view', function() {
     $('#recipient-email').on('change input', _.debounce(function() {
       checker.check($(this).val());
     }, 300));
+
+    updateBindingsUserTypesProps();
   });
 
   this.addAction({
@@ -127,6 +129,18 @@ AGN.Lib.Controller.new('recipient-view', function() {
       checkAltgMatchCallback();
     }
   });
+
+  function updateBindingsUserTypesProps() {
+    $('.not-allowed-usertype').each(function () {
+      const $el = $(this);
+
+      if ($el.prop('selected')) {
+        $el.parent('select').prop('disabled', true);
+      } else {
+        $el.prop('disabled', true);
+      }
+    });
+  }
 
   function AddressChecker(url, callback) {
     this.url = url;

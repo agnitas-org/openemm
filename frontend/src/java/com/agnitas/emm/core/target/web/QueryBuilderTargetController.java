@@ -360,10 +360,12 @@ public class QueryBuilderTargetController {
     }
 
     private void setupCommonViewPageParams(ComAdmin admin, int targetId, String eql, Model model) {
+        boolean isLocked = targetService.isLocked(admin.getCompanyID(), targetId) || targetService.isEqlContainsInvisibleFields(eql, admin.getCompanyID(), admin.getAdminID());
+
         model.addAttribute("mailinglists", mailinglistApprovalService.getEnabledMailinglistsForAdmin(admin));
         model.addAttribute("complexityGrade", getComplexityGrade(eql, admin.getCompanyID()));
         model.addAttribute("isValid", targetService.isValid(admin.getCompanyID(), targetId));
-        model.addAttribute("isLocked", targetService.isLocked(admin.getCompanyID(), targetId));
+        model.addAttribute("isLocked", isLocked);
     }
 
     private boolean fillFormIfTargetExists(int companyId, TargetEditForm form) {

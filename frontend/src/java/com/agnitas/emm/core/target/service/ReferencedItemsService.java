@@ -31,7 +31,7 @@ public interface ReferencedItemsService {
 	 * @param targetID ID of target group
 	 */
 	@Transactional
-	public void saveReferencedItems(final ReferencedItemsCollection referencedObject, final int companyID, final int targetID);
+	void saveReferencedItems(final ReferencedItemsCollection referencedObject, final int companyID, final int targetID);
 
 	/**
 	 * Removes information on referenced items.
@@ -40,14 +40,14 @@ public interface ReferencedItemsService {
 	 * @param targetID ID of target group
 	 */
 	@Transactional
-	public void removeReferencedItems(final int companyID, final int targetID);
+	void removeReferencedItems(final int companyID, final int targetID);
 
 	
-	public List<TargetLight> listTargetGroupsReferencingProfileFieldByVisibleName(final int companyID, final String visibleShortname);
-	public List<TargetLight> listTargetGroupsReferencingMailing(final int companyID, final int mailingID);
-	public List<TargetLight> listTargetGroupsReferencingLink(final int companyID, final int linkID);
-	public List<TargetLight> listTargetGroupsReferencingAutoImport(final int companyID, final int autoImportID);
-	public List<TargetLight> listTargetGroupsReferencingReferenceTable(final int companyID, final int tableID);
-	public List<TargetLight> listTargetGroupsReferencingReferenceTableColumn(final int companyID, final int tableID, final String columnName);
+	List<TargetLight> listTargetGroupsReferencingProfileFieldByVisibleName(final int companyID, final String visibleShortname);
+	List<TargetLight> listTargetGroupsReferencingMailing(final int companyID, final int mailingID);
+	List<TargetLight> listTargetGroupsReferencingLink(final int companyID, final int linkID);
+	List<TargetLight> listTargetGroupsReferencingAutoImport(final int companyID, final int autoImportID);
+	List<TargetLight> listTargetGroupsReferencingReferenceTable(final int companyID, final int tableID);
+	List<TargetLight> listTargetGroupsReferencingReferenceTableColumn(final int companyID, final int tableID, final String columnName);
 	
 }

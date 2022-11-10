@@ -40,8 +40,7 @@ import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderConfiguratio
  */
 public class EmmProfileFieldResolverImpl implements EmmProfileFieldResolver {
 
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(EmmProfileFieldResolverImpl.class);
+	private static final Logger logger = LogManager.getLogger(EmmProfileFieldResolverImpl.class);
 
 	/** Mapping from short name of profile field to essential profile field data. */
 	private final Map<String, ColumnNameAndType> shortNameToInfoMap;
@@ -108,7 +107,7 @@ public class EmmProfileFieldResolverImpl implements EmmProfileFieldResolver {
 		}
 	}
 	
-	private static final void registerInternalColumnNames(final Map<String, ColumnNameAndType> map) {
+	private static void registerInternalColumnNames(final Map<String, ColumnNameAndType> map) {
 		map.put("$tracking_veto", new ColumnNameAndType("sys_tracking_veto", DataType.NUMERIC));
 	}
 
@@ -222,7 +221,7 @@ public class EmmProfileFieldResolverImpl implements EmmProfileFieldResolver {
 	 * @param name shortname of the profile field
 	 * 
 	 * @return name and type
-	 * 
+	 *
 	 * @throws Exception on errors reading profile field data
 	 */
 	private ColumnNameAndType getProfileFieldData(String name) throws Exception {

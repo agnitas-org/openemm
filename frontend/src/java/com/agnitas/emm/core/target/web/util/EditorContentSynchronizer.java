@@ -10,6 +10,7 @@
 
 package com.agnitas.emm.core.target.web.util;
 
+import com.agnitas.emm.core.target.service.ComTargetService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
@@ -30,14 +31,14 @@ import com.agnitas.emm.core.target.web.TargetgroupViewFormat;
  */
 public class EditorContentSynchronizer {
 
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(EditorContentSynchronizer.class);
+	private static final Logger logger = LogManager.getLogger(EditorContentSynchronizer.class);
 	
-	/** EQL-to-Querybuilder converter. */
 	private EqlToQueryBuilderConverter eqlToQueryBuilderConverter;
-	
+
 	private QueryBuilderToEqlConverter queryBuilderToEqlConverter;
-	
+
+	private ComTargetService targetService;
+
 	/** Builder for QueryBuilder filters. */
 	private QueryBuilderFilterListBuilder filterListBuilder;
 
@@ -58,8 +59,10 @@ public class EditorContentSynchronizer {
 
 	public final void synchronizeEqlToQuerybuilder(final ComAdmin admin, final TargetEditForm form) throws EditorContentSynchronizationException {
 		try {
+			boolean excludeHiddenFields = !targetService.isEqlContainsInvisibleFields(form.getEql(), admin.getCompanyID(), admin.getAdminID());
+
 			form.setQueryBuilderRules(eqlToQueryBuilderConverter.convertEqlToQueryBuilderJson(form.getEql(), admin.getCompanyID()));
-			form.setQueryBuilderFilters(filterListBuilder.buildFilterListJson(admin));
+			form.setQueryBuilderFilters(filterListBuilder.buildFilterListJson(admin, excludeHiddenFields));
 		} catch(final EqlParserException e) {
 			if(logger.isInfoEnabled()) {
 				logger.info("Syntax error in EQL code", e);
@@ -113,7 +116,7 @@ public class EditorContentSynchronizer {
 	public void setEqlToQueryBuilderConverter(final EqlToQueryBuilderConverter converter) {
 		this.eqlToQueryBuilderConverter = converter;
 	}
-	
+
 	@Required
 	public final void setQueryBuilderToEqlConverter(final QueryBuilderToEqlConverter converter) {
 		this.queryBuilderToEqlConverter = converter;
@@ -123,5 +126,9 @@ public class EditorContentSynchronizer {
 	public final void setQueryBuilderFilterListBuilder(final QueryBuilderFilterListBuilder builder) {
 		this.filterListBuilder = builder;
 	}
-	
+
+	@Required
+	public void setTargetService(ComTargetService targetService) {
+		this.targetService = targetService;
+	}
 }

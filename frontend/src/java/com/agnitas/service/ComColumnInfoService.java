@@ -12,6 +12,7 @@ package com.agnitas.service;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.service.ColumnInfoService;
@@ -37,5 +38,5 @@ public interface ComColumnInfoService extends ColumnInfoService {
 
 	Map<Integer, Integer> getProfileFieldAdminPermissions(int companyID, String columnName);
 
-	void storeProfileFieldAdminPermissions(int companyID, String column, List<Integer> readOnlyUsers, List<Integer> notVisibleUsers);
+	void storeProfileFieldAdminPermissions(int companyID, String column, Set<Integer> readOnlyUsers, Set<Integer> notVisibleUsers);
 }

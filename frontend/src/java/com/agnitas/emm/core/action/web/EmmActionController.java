@@ -11,10 +11,13 @@
 package com.agnitas.emm.core.action.web;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 import org.agnitas.actions.EmmAction;
 import org.agnitas.actions.impl.EmmActionImpl;
@@ -44,6 +47,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.ProfileField;
 import com.agnitas.emm.core.action.dto.EmmActionDto;
 import com.agnitas.emm.core.action.form.EmmActionForm;
 import com.agnitas.emm.core.action.form.EmmActionsForm;
@@ -56,6 +60,7 @@ import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
 import com.agnitas.emm.core.userform.service.ComUserformService;
 import com.agnitas.emm.core.workflow.service.ComWorkflowService;
+import com.agnitas.service.ComColumnInfoService;
 import com.agnitas.service.SimpleServiceResult;
 import com.agnitas.web.dto.BooleanResponseDto;
 import com.agnitas.web.mvc.Popups;
@@ -81,8 +86,9 @@ public class EmmActionController {
 	private ActionOperationFactory actionOperationFactory;
 	private ComUserformService userFormService;
 	private MailinglistApprovalService mailinglistApprovalService;
+	private final ComColumnInfoService columnInfoService;
 
-	public EmmActionController(WebStorage webStorage, ComEmmActionService emmActionService, MailingService mailingService, ConfigService configService, ComWorkflowService workflowService, UserActivityLogService userActivityLogService, ConversionService conversionService, ActionOperationParametersParser actionOperationParametersParser, EmmActionValidationServiceImpl validationService, ActionOperationFactory actionOperationFactory, ComUserformService userFormService, MailinglistApprovalService mailinglistApprovalService) {
+	public EmmActionController(WebStorage webStorage, ComEmmActionService emmActionService, MailingService mailingService, ConfigService configService, ComWorkflowService workflowService, UserActivityLogService userActivityLogService, ConversionService conversionService, ActionOperationParametersParser actionOperationParametersParser, EmmActionValidationServiceImpl validationService, ActionOperationFactory actionOperationFactory, ComUserformService userFormService, MailinglistApprovalService mailinglistApprovalService, final ComColumnInfoService columnInfoService) {
 		this.webStorage = webStorage;
 		this.emmActionService = emmActionService;
 		this.mailingService = mailingService;
@@ -95,6 +101,7 @@ public class EmmActionController {
 		this.actionOperationFactory = actionOperationFactory;
 		this.userFormService = userFormService;
         this.mailinglistApprovalService = mailinglistApprovalService;
+        this.columnInfoService = Objects.requireNonNull(columnInfoService, "columnInfoService");
     }
 
 	@RequestMapping("/list.action")
@@ -194,7 +201,7 @@ public class EmmActionController {
 
 	@GetMapping(value = {"/new.action", "/0/view.action"})
 	public String create(ComAdmin admin, @ModelAttribute("form") EmmActionForm form, Model model) {
-		loadViewData(admin, model);
+		loadViewData(admin, model, 0);
 
 		return "actions_view";
 	}
@@ -208,7 +215,7 @@ public class EmmActionController {
 		}
 
 		model.addAttribute("form", conversionService.convert(emmAction, EmmActionForm.class));
-		loadViewData(admin, model);
+		loadViewData(admin, model, id);
 
 		return "actions_view";
 	}
@@ -287,7 +294,7 @@ public class EmmActionController {
 		EmmActionForm form = conversionService.convert(copyOfAction, EmmActionForm.class);
 		model.addAttribute("form", form);
 
-		loadViewData(admin, model);
+		loadViewData(admin, model, originId);
 
 		return "actions_view";
 	}
@@ -300,7 +307,7 @@ public class EmmActionController {
 		return "actions_view_forms";
 	}
 
-	private void loadViewData(ComAdmin admin, Model model) {
+	private void loadViewData(ComAdmin admin, Model model, final int actionId) {
 		model.addAttribute("operationList", actionOperationFactory.getTypesList());
 	    model.addAttribute("isUnsubscribeExtended", true);
 	    model.addAttribute("allowedMailinglists", mailinglistApprovalService.getEnabledMailinglistsNamesForAdmin(admin));
@@ -309,6 +316,20 @@ public class EmmActionController {
 		model.addAttribute("eventBasedMailings", mailingService.getMailingsByStatusE(admin.getCompanyID()));
 		model.addAttribute("archives", workflowService.getCampaignList(admin.getCompanyID(), "shortname", 1));
 		model.addAttribute("isForceSendingEnabled", configService.getBooleanValue(ConfigValue.ForceSending, admin.getCompanyID()));
+		
+		try {
+			final List<ProfileField> profileFields = columnInfoService.getComColumnInfos(admin.getCompanyID(), admin.getAdminID(), false)
+					.stream()
+					.filter(field -> field.getModeEdit() != ProfileField.MODE_EDIT_READONLY)
+					.filter(field -> field.getModeEdit() != ProfileField.MODE_EDIT_NOT_VISIBLE)
+					.collect(Collectors.toList());
+			
+			model.addAttribute("AVAILABLE_PROFILE_FIELDS", profileFields);
+		} catch(final Exception e) {
+			model.addAttribute("AVAILABLE_PROFILE_FIELDS", Collections.EMPTY_LIST);
+		}
+		
+		model.addAttribute("ACTION_READONLY", !this.emmActionService.canUserSaveAction(admin, actionId));
 	}
 
 	private void writeUserActivityLog(ComAdmin admin, UserAction userAction) {

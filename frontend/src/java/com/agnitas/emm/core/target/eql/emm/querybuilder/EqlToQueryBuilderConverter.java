@@ -38,7 +38,7 @@ import net.sf.json.JSONSerializer;
  */
 public class EqlToQueryBuilderConverter {
 
-	private static final transient Logger logger = LogManager.getLogger(EqlToQueryBuilderConverter.class);
+	private static final Logger logger = LogManager.getLogger(EqlToQueryBuilderConverter.class);
 
 	private final EqlParser parser;
 
@@ -64,8 +64,6 @@ public class EqlToQueryBuilderConverter {
 	 *
 	 * @return rules as JSON string
 	 *
-	 * @throws EqlParserException
-	 * @throws EqlToQueryBuilderConversionException
 	 */
 	public final String convertEqlToQueryBuilderJson(final String eql, int companyId) throws EqlParserException, EqlToQueryBuilderConversionException {
 		try {
@@ -83,7 +81,7 @@ public class EqlToQueryBuilderConverter {
 					groupNode.setCondition("AND");
 				}
 
-				if (profileFields.size() > 0) {
+				if (!profileFields.isEmpty()) {
 					validateProfileFields(groupNode, profileFields, emmProfileFieldResolverFactory.newInstance(companyId));
 				}
 

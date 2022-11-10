@@ -117,14 +117,26 @@ public class ConfigValue {
 	public static final ConfigValue System_License_AllowedPremiumFeatures = new ConfigValue("allowedPremiumFeatures");
 	public static final ConfigValue System_License_MaximumNumberOfReferenceTables = new ConfigValue("maximumNumberOfReferenceTables");
 	public static final ConfigValue System_License_AllowMailingSendForMasterCompany = new ConfigValue("allowMailingSendForMasterCompany");
+	
 	/**
 	 * Access Limiting Mailinglists (ALML)
 	 */
 	public static final ConfigValue System_License_MaximumNumberOfAccessLimitingMailinglistsPerCompany = new ConfigValue("maximumNumberOfAccessLimitingMailinglistsPerCompany", "3");
+	
+	/**
+	 * Access Limiting Mailinglists (ALML)
+	 */
+	public static final ConfigValue MaximumAccessLimitingMailinglists = new ConfigValue("mailinglist.maximumAccessLimitingMailinglists", "3");
+	
 	/**
 	 * Access Limiting Targetgroups (ALTG)
 	 */
 	public static final ConfigValue System_License_MaximumNumberOfAccessLimitingTargetgroupsPerCompany = new ConfigValue("maximumNumberOfAccessLimitingTargetgroupsPerCompany", "3");
+	
+	/**
+	 * Access Limiting Targetgroups (ALTG)
+	 */
+	public static final ConfigValue MaximumAccessLimitingTargetgroups = new ConfigValue("altg.maximumAccessLimitingTargetgroups", "3");
 	
 	public static final ConfigValue System_License_OpenEMMMasterCompany = new ConfigValue("openEMMMasterCompany");
 	public static final ConfigValue System_License_OpenEMMLoginUrl = new ConfigValue("openEMMLoginURL");
@@ -875,15 +887,6 @@ public class ConfigValue {
 
 	public static final ConfigValue SendPasswordChangedNotification = new ConfigValue("notifications.sendPasswordChanged", "true");
 
-	/**
-	 * Access Limiting Mailinglists (ALML)
-	 */
-	public static final ConfigValue MaximumAccessLimitingMailinglists = new ConfigValue("mailinglist.maximumAccessLimitingMailinglists", "3");
-	
-	/**
-	 * Access Limiting Targetgroups (ALTG)
-	 */
-	public static final ConfigValue MaximumAccessLimitingTargetgroups = new ConfigValue("altg.maximumAccessLimitingTargetgroups", "3");
 	
 	public static final ConfigValue MailtrackExtended = new ConfigValue("mailtrack-extended", "false");
 

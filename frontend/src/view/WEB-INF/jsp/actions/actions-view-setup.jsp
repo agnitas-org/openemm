@@ -104,14 +104,16 @@
     </c:if>
 
     <emm:ShowByPermission token="actions.change">
-        <emm:instantiate var="element" type="java.util.LinkedHashMap">
-            <c:set target="${itemActionsSettings}" property="1" value="${element}"/>
-            <c:set target="${element}" property="btnCls" value="btn btn-regular btn-inverse"/>
-            <c:set target="${element}" property="extraAttributes" value="data-form-target='#emmActionForm' data-form-submit-event=''"/>
-            <c:set target="${element}" property="iconBefore" value="icon-save"/>
-            <c:set target="${element}" property="name">
-                <mvc:message code="button.Save"/>
-            </c:set>
-        </emm:instantiate>
+        <c:if test="${not ACTION_READONLY}">
+	        <emm:instantiate var="element" type="java.util.LinkedHashMap">
+	            <c:set target="${itemActionsSettings}" property="1" value="${element}"/>
+	            <c:set target="${element}" property="btnCls" value="btn btn-regular btn-inverse"/>
+	            <c:set target="${element}" property="extraAttributes" value="data-form-target='#emmActionForm' data-form-submit-event=''"/>
+	            <c:set target="${element}" property="iconBefore" value="icon-save"/>
+	            <c:set target="${element}" property="name">
+	                <mvc:message code="button.Save"/>
+	            </c:set>
+	        </emm:instantiate>
+	    </c:if>
     </emm:ShowByPermission>
 </emm:instantiate>

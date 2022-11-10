@@ -390,20 +390,6 @@
 		<property name="profileHistoryService" ref="RecipientProfileHistoryService" />
 	</bean>
 	
-<!-- ============================================================================================================================== Recipients -->
-	<bean id="RecipientDao" class="com.agnitas.dao.impl.ComRecipientDaoImpl">
-		<property name="dataSource" ref="dataSource" />
-		<property name="javaMailService" ref="JavaMailService" />
-		<property name="companyDao" ref="CompanyDao" />
-		<property name="columnInfoService" ref="ColumnInfoService" />
-		<property name="bindingEntryDao" ref="BindingEntryDao" />
-		<property name="bindingEntryFactory" ref="BindingEntryFactory" />
-		<property name="configService" ref="ConfigService" />
-		<property name="recipientFactory" ref="RecipientFactory" />
-		<property name="recipientProfileHistoryService" ref="RecipientProfileHistoryService" />
-		<property name="datasourceDescriptionDao" ref="DatasourceDescriptionDao" />
-	</bean>
-	
 <!-- ============================================================================================================================== Reports -->
 	<bean id="BirtReportDao" class="com.agnitas.emm.core.birtreport.dao.impl.ComBirtReportDaoImpl">
 		<property name="dataSource" ref="dataSource" />

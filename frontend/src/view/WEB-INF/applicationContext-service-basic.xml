@@ -270,6 +270,7 @@
 
 <!-- ============================================================================================================================== EMM actions -->
 	<bean id="EmmActionService" class="com.agnitas.emm.core.action.service.impl.ComEmmActionServiceImpl">
+		<constructor-arg ref="ColumnInfoService" />
 		<property name="emmActionDao" ref="EmmActionDao" />
 		<property name="emmActionOperationDao" ref="EmmActionOperationDao" />
 		<property name="emmActionOperationService" ref="EmmActionOperationService" />
@@ -723,6 +724,7 @@
 		<property name="targetFactory" ref="TargetFactory"/>
 		<property name="queryBuilderToEqlConverter" ref="QueryBuilderToEqlConverter"/>
 		<property name="eqlValidatorService" ref="eqlValidatorService"/>
+		<property name="eqlReferenceItemsExtractor" ref="eqlReferenceItemsExtractor"/>
 	</bean>
 
 	<bean id="eqlValidatorService" class="com.agnitas.emm.core.target.eql.EqlValidatorServiceImpl">

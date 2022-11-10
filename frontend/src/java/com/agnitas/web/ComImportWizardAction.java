@@ -904,7 +904,9 @@ public final class ComImportWizardAction extends StrutsActionBase {
 					form.setAction(ComImportWizardAction.ACTION_START);
 				} else {
 					try {
-				        CaseInsensitiveMap<String, CsvColInfo> dbColumnsAvailable = recipientDao.readDBColumns(AgnUtils.getCompanyID(request));
+                    	List<String> keyColumns = new ArrayList<>();
+                    	keyColumns.add(form.getImportWizardHelper().getKeyColumn());
+                        CaseInsensitiveMap<String, CsvColInfo> dbColumnsAvailable = recipientDao.readDBColumns(AgnUtils.getCompanyID(request), AgnUtils.getAdmin(request).getAdminID(), keyColumns);
 				        for (String hiddenColumn : ImportUtils.getHiddenColumns(AgnUtils.getAdmin(request))) {
 				        	dbColumnsAvailable.remove(hiddenColumn);
 				        }

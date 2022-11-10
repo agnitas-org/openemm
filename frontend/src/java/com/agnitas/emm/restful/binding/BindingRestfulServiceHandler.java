@@ -167,7 +167,7 @@ public class BindingRestfulServiceHandler implements RestfulServiceHandler {
 				JsonObject bindingJsonObject = new JsonObject();
 				bindingJsonObject.add("mailinglist_id", bindingEntry.getMailinglistID());
 				if (bindingEntry.getUserType() != RecipientType.NORMAL_RECIPIENT.getLetter()) {
-					bindingJsonObject.add("user_type", RecipientType.getRecipientTypeByLetter(bindingEntry.getUserType()).name());
+					bindingJsonObject.add("user_type", RecipientType.getRecipientTypeByLetter(bindingEntry.getUserType()).getLetter());
 				}
 				if (bindingEntry.getMediaType() != MediaTypes.EMAIL.getMediaCode()) {
 					bindingJsonObject.add("mediatype", MediaTypes.getMediaTypeForCode(bindingEntry.getMediaType()).name());
@@ -210,7 +210,7 @@ public class BindingRestfulServiceHandler implements RestfulServiceHandler {
 					JsonObject bindingJsonObject = new JsonObject();
 					bindingJsonObject.add("mailinglist_id", bindingEntry.getMailinglistID());
 					if (bindingEntry.getUserType() != RecipientType.NORMAL_RECIPIENT.getLetter()) {
-						bindingJsonObject.add("user_type", RecipientType.getRecipientTypeByLetter(bindingEntry.getUserType()).name());
+						bindingJsonObject.add("user_type", RecipientType.getRecipientTypeByLetter(bindingEntry.getUserType()).getLetter());
 					}
 					bindingJsonObject.add("mediatype", bindingEntry.getUserType());
 					if (bindingEntry.getMediaType() != MediaTypes.EMAIL.getMediaCode()) {

@@ -12,6 +12,7 @@ package com.agnitas.service.impl;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
@@ -104,7 +105,7 @@ public class ComColumnInfoServiceImpl implements ComColumnInfoService {
 	}
 
 	@Override
-	public void storeProfileFieldAdminPermissions(int companyID, String columnName, List<Integer> readOnlyUsers, List<Integer> notVisibleUsers) {
+	public void storeProfileFieldAdminPermissions(int companyID, String columnName, Set<Integer> readOnlyUsers, Set<Integer> notVisibleUsers) {
 		profileFieldDao.storeProfileFieldAdminPermissions(companyID, columnName, readOnlyUsers, notVisibleUsers);
 	}
 }

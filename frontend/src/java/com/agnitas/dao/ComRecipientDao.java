@@ -315,7 +315,7 @@ public interface ComRecipientDao {
      * @param companyID the id of the company
      * @param list the list of customer id
      */
-    void deleteRecipients(int companyID, List<Integer> list);
+    int deleteRecipients(int companyID, List<Integer> list);
 
     /**
      * Loads meta information for all columns from database for given customer
@@ -323,7 +323,7 @@ public interface ComRecipientDao {
      * @param companyID the id of the company
      * @return  Map with key/value-pairs as combinations of column name and CsvColInfo Objects
      */
-	CaseInsensitiveMap<String, CsvColInfo> readDBColumns(int companyID);
+	CaseInsensitiveMap<String, CsvColInfo> readDBColumns(int companyID, int adminID, List<String> keyColumns);
 	
     /**
      * Method gets a list of test/admin recipients for preview drop-down list

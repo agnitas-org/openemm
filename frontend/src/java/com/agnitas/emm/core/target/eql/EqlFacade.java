@@ -42,7 +42,7 @@ import com.agnitas.emm.core.target.eql.referencecollector.SimpleReferenceCollect
  */
 public class EqlFacade {
 
-	private static final transient Logger LOGGER = LogManager.getLogger(EqlFacade.class);
+	private static final Logger LOGGER = LogManager.getLogger(EqlFacade.class);
 
 	/** Parser for EQL code. */
 	private final EqlParser eqlParser;
@@ -185,7 +185,6 @@ public class EqlFacade {
 	public final String convertEqlToBeanShellExpression(final ComTarget target) throws EqlParserException, CodeGeneratorException, ProfileFieldResolveException {
 		return convertEqlToBeanShellExpression(target.getEQL(), target.getCompanyID());
 	}
-	
 
 	public EqlAnalysisResult analyseEql(final String eql) throws EqlParserException {
 		final BooleanExpressionTargetRuleEqlNode node = this.eqlParser.parseEql(eql);

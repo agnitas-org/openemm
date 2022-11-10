@@ -41,7 +41,7 @@ public final class ProfileFieldServiceImpl implements ProfileFieldService {
     /**
      * The logger.
      */
-    private static final transient Logger logger = LogManager.getLogger(ProfileFieldServiceImpl.class);
+    private static final Logger logger = LogManager.getLogger(ProfileFieldServiceImpl.class);
 
     private ComProfileFieldDao profileFieldDao;
     private ComColumnInfoService columnInfoService;
@@ -92,8 +92,6 @@ public final class ProfileFieldServiceImpl implements ProfileFieldService {
             throw new ProfileFieldException(msg, e);
         }
     }
-    
-    
 
     @Override
 	public final String translateVisibleNameToDatabaseName(final int companyID, final String visibleName) throws ProfileFieldException {
@@ -118,7 +116,6 @@ public final class ProfileFieldServiceImpl implements ProfileFieldService {
 
         return new ArrayList<>();
     }
-
 
     @Override
     public boolean isAddingNearLimit(@VelocityCheck int companyId) {
@@ -174,6 +171,15 @@ public final class ProfileFieldServiceImpl implements ProfileFieldService {
     public ProfileField getProfileField(@VelocityCheck int companyId, String fieldName) {
         try {
             return columnInfoService.getColumnInfo(companyId, fieldName);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public ProfileField getProfileField(int companyId, String fieldName, int adminId) {
+        try {
+            return columnInfoService.getColumnInfo(companyId, fieldName, adminId);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -243,7 +249,6 @@ public final class ProfileFieldServiceImpl implements ProfileFieldService {
             return false;
         }
     }
-
 
     @Override
     public UserAction getCreateFieldLog(String shortName) {
@@ -375,10 +380,15 @@ public final class ProfileFieldServiceImpl implements ProfileFieldService {
         return field1.isHiddenField() ? -1 : 1;
     }
 
-	@Override
-	public List<ProfileField> listVisibleProfileFields(final int companyID) throws Exception {
-		return this.profileFieldDao.getComProfileFields(companyID);
-	}
+    @Override
+    public List<ProfileField> getProfileFields(int companyId) throws Exception {
+        return profileFieldDao.getComProfileFields(companyId);
+    }
+
+    @Override
+    public List<ProfileField> getProfileFields(int companyId, int adminId) throws Exception {
+        return profileFieldDao.getComProfileFields(companyId, adminId);
+    }
 
 	@Override
 	public boolean isReservedKeyWord(String fieldname) {

@@ -60,6 +60,7 @@ import org.agnitas.beans.impl.BindingEntryImpl;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.beans.impl.RecipientImpl;
 import org.agnitas.beans.impl.ViciousFormDataException;
+import org.agnitas.dao.ProfileFieldDao;
 import org.agnitas.dao.SourceGroupType;
 import org.agnitas.dao.UserStatus;
 import org.agnitas.dao.impl.PaginatedBaseDaoImpl;
@@ -174,6 +175,8 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 	private RecipientProfileHistoryService profileHistoryService;
 
 	private DatasourceDescriptionDao datasourceDescriptionDao;
+	
+    protected ProfileFieldDao profileFieldDao;
 
 	/**
 	 * Set service handling profile field history.
@@ -243,6 +246,11 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 	@Required
 	public void setDatasourceDescriptionDao(final DatasourceDescriptionDao datasourceDescriptionDao) {
 		this.datasourceDescriptionDao = datasourceDescriptionDao;
+	}
+
+	@Required
+	public void setProfileFieldDao(final ProfileFieldDao profileFieldDao) {
+		this.profileFieldDao = profileFieldDao;
 	}
 
 	public static String getCustomerTableName(int companyID) {
@@ -2417,24 +2425,23 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 	}
 
 	@Override
-	public CaseInsensitiveMap<String, CsvColInfo> readDBColumns(@VelocityCheck int companyID) {
+	public CaseInsensitiveMap<String, CsvColInfo> readDBColumns(int companyID, int adminID, List<String> keyColumns) {
 		CaseInsensitiveMap<String, CsvColInfo> dbAllColumns = new CaseInsensitiveMap<>();
 
 		try {
-			CaseInsensitiveMap<String, DbColumnType> columnTypes = DbUtilities.getColumnDataTypes(getDataSource(), getCustomerTableName(companyID));
+			CaseInsensitiveMap<String, ProfileField> profileFields = profileFieldDao.getProfileFieldsMap(companyID, adminID);
 
-			for (String columnName : columnTypes.keySet()) {
-				if (!columnName.equalsIgnoreCase("change_date") && !columnName.equalsIgnoreCase("creation_date") && !columnName.equalsIgnoreCase("datasource_id")) {
-					DbColumnType type = columnTypes.get(columnName);
+			for (ProfileField profileField : profileFields.values()) {
+	        	if (profileField.getModeEdit() == ProfileField.MODE_EDIT_EDITABLE || (profileField.getModeEdit() == ProfileField.MODE_EDIT_READONLY && keyColumns.contains(profileField.getColumn()))) {
 					CsvColInfo csvColInfo = new CsvColInfo();
 
-					csvColInfo.setName(columnName);
-					csvColInfo.setLength(type.getSimpleDataType() == SimpleDataType.Characters ? type.getCharacterLength() : type.getNumericPrecision());
+					csvColInfo.setName(profileField.getColumn());
+					csvColInfo.setLength(profileField.getSimpleDataType() == SimpleDataType.Characters ? profileField.getDataTypeLength() : profileField.getNumericScale());
 					csvColInfo.setActive(false);
-					csvColInfo.setNullable(type.isNullable());
-					csvColInfo.setType(dbTypeToCsvType(type.getSimpleDataType()));
+					csvColInfo.setNullable(profileField.getNullable());
+					csvColInfo.setType(dbTypeToCsvType(profileField.getSimpleDataType()));
 
-					dbAllColumns.put(columnName, csvColInfo);
+					dbAllColumns.put(profileField.getColumn(), csvColInfo);
 				}
 			}
 		} catch (Exception e) {
@@ -2581,7 +2588,7 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 
 	@Override
 	@DaoUpdateReturnValueCheck
-	public void deleteRecipients(@VelocityCheck int companyID, List<Integer> list) {
+	public int deleteRecipients(@VelocityCheck int companyID, List<Integer> list) {
 		if (list == null || list.size() < 1) {
 			throw new RuntimeException("Invalid customerID list size");
 		}
@@ -2589,7 +2596,7 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 		String where = " WHERE " + makeBulkInClauseForInteger("customer_id", list);
 
 		update(logger, "DELETE FROM " + getCustomerBindingTableName(companyID) + where);
-		update(logger, "DELETE FROM " + getCustomerTableName(companyID) + where);
+		return update(logger, "DELETE FROM " + getCustomerTableName(companyID) + where);
 	}
 
 	@Override

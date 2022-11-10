@@ -223,6 +223,10 @@ public class RestfulServiceServlet extends BaseRequestServlet {
 			writeErrorLogFile(request, requestMethod, admin, e);
 			restfulResponse.setError(e);
 			writeResponse(response, restfulResponse);
+		} finally {
+			if (request.getSession() != null) {
+				request.getSession().invalidate();
+			}
 		}
 	}
 

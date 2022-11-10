@@ -51,19 +51,22 @@ public class ReferencedItemsServiceImpl implements ReferencedItemsService {
 		this.referencedItemsDao.removeAllReferencedObjects(companyID, targetID);
 	}
 
-	private static final List<String> toReferencedProfileFieldNameList(final ReferencedItemsCollection items) {
+	private static List<String> toReferencedProfileFieldNameList(final ReferencedItemsCollection items) {
 		return new ArrayList<>(items.getReferencedProfileFields());
 	}
 	
-	private static final List<Integer> toReferencedMailingIdList(final ReferencedItemsCollection items) {
+	private static List<Integer> toReferencedMailingIdList(final ReferencedItemsCollection items) {
 		return new ArrayList<>(items.getReferencedMailingIds());
 	}
 	
-	private static final List<Integer> toReferencedLinkIdList(final ReferencedItemsCollection items) {
-		return items.getReferencedLinkIds().stream().map(link -> link.getLinkId()).collect(Collectors.toList());
+	private static List<Integer> toReferencedLinkIdList(final ReferencedItemsCollection items) {
+		return items.getReferencedLinkIds()
+				.stream()
+				.map(ReferencedItemsCollection.Link::getLinkId)
+				.collect(Collectors.toList());
 	}
 	
-	private static final List<Integer> toReferencedAutoImportIdsList(final ReferencedItemsCollection items) {
+	private static List<Integer> toReferencedAutoImportIdsList(final ReferencedItemsCollection items) {
 		return new ArrayList<>(items.getReferencedAutoImportIds());
 	}
 	

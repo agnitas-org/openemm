@@ -18,6 +18,19 @@
     </emm:ShowColumnInfo>
 </emm:instantiate>
 
+<%-- 
+	List of profile fields never shown in dropdown list.
+	
+	For correct working:
+		1. Names are separated by ","
+		2. No spaces between "," and names
+		3. Each line must start and end with a ","
+ --%>
+<c:set var="HIDDEN_PROFILE_FIELDS">
+	,change_date,timestamp,creation_date,datasource_id,bounceload,email,customer_id,gender,mailtype,firstname,
+	,lastname,title,cleaned_date,facebook_status,foursquare_status,google_status,twitter_status,xing_status,
+</c:set>
+
 <script id="module-UpdateCustomer" type="text/x-mustache-template">
     <div class="inline-tile-content" data-module-content="{{- index}}" data-initializer="update-customer-module">
         <input type="hidden" name="modules[].type" id="module_{{- index}}.type" value="UpdateCustomer"/>
@@ -36,10 +49,15 @@
                         <td>
                             {{ var columnNameToSelect = !!columnName ? columnName.replace('#', '').toLowerCase() : ''; }}
                             <select class="form-control js-select" name="modules[].columnName" id="module_{{- index}}.columnName" size="1">
-                                <c:forEach items="${updateCustomerColumnInfo}" var="columnPair">
-                                    {{ var selectedSign = ('${columnPair.key}' == columnNameToSelect) ? 'selected="selected"' : ''; }}
-                                    <option value="${columnPair.key}" {{- selectedSign}}>${columnPair.value}</option>
-                                </c:forEach>
+								<c:forEach items="${AVAILABLE_PROFILE_FIELDS}" var="PROFILE_FIELD">
+									<c:set var="SEARCH" value=",${fn:toLowerCase(PROFILE_FIELD.column)}," />
+                            		{{ var columnNameToSelect = !!columnName ? columnName.replace('#', '').toLowerCase() : ''; }}
+
+									{{ var selectedSign = ('${fn:toLowerCase(PROFILE_FIELD.column)}' == columnNameToSelect) ? 'selected="selected"' : ''; }}
+									<c:if test="${not fn:contains(HIDDEN_PROFILE_FIELDS, SEARCH)}">
+										<option value="${fn:toLowerCase(PROFILE_FIELD.column)}" {{- selectedSign}}>${PROFILE_FIELD.shortname}</option>
+									</c:if>
+								</c:forEach>
                             </select>
                         </td>
                         <td>

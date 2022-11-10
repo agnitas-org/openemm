@@ -15,7 +15,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.stream.Collectors;
 
+import com.agnitas.emm.core.profilefields.service.ProfileFieldService;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DbColumnType;
 import org.agnitas.util.DbColumnType.SimpleDataType;
@@ -27,7 +29,6 @@ import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ComAdmin;
 import com.agnitas.beans.ProfileField;
-import com.agnitas.dao.ComProfileFieldDao;
 
 import net.sf.json.JSONSerializer;
 
@@ -37,13 +38,11 @@ import net.sf.json.JSONSerializer;
  */
 public class QueryBuilderFilterListBuilder {
 
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(QueryBuilderFilterListBuilder.class);
+	private static final Logger logger = LogManager.getLogger(QueryBuilderFilterListBuilder.class);
 	
-	/** DAO accessing profile fields. */
-	private ComProfileFieldDao profileFieldDao;
-
 	private QueryBuilderConfiguration queryBuilderConfiguration;
+
+	private ProfileFieldService profileFieldService;
 
 	/**
 	 * Creates the filter list as JSON string from profile fields for given company ID.
@@ -52,10 +51,10 @@ public class QueryBuilderFilterListBuilder {
 	 * 
 	 * @return JSON string for the QueryBuilder filter list
 	 * 
-	 * @throws QueryBuilderFilterListBuilderException on errors creating filter list
+	 * @throws Exception
 	 */
-	public String buildFilterListJson(final ComAdmin admin) throws QueryBuilderFilterListBuilderException {
-		final List<ProfileField> profileFields = listProfileFields(admin.getCompanyID());
+	public String buildFilterListJson(ComAdmin admin, boolean excludeHiddenFields) throws Exception {
+		List<ProfileField> profileFields = listProfileFields(admin.getCompanyID(), admin.getAdminID(), excludeHiddenFields);
 		createIndependentFilters(profileFields, admin);
 
 		final List<Map<String, Object>> map = createFilterList(profileFields, admin);
@@ -130,31 +129,31 @@ public class QueryBuilderFilterListBuilder {
 	 * 
 	 * @return list of all known profile fields
 	 * 
-	 * @throws QueryBuilderFilterListBuilderException on errors listing profile fields
+	 * @throws Exception
 	 */
-	private List<ProfileField> listProfileFields(final int companyID) throws QueryBuilderFilterListBuilderException {
+	private List<ProfileField> listProfileFields(int companyID, int adminId, boolean excludeHidden) throws Exception {
+		if (excludeHidden) {
+			return profileFieldService.getProfileFields(companyID, adminId).stream().filter(x -> x.getModeEdit() != ProfileField.MODE_EDIT_NOT_VISIBLE).collect(Collectors.toList());
+		}
+
 		try {
-			return profileFieldDao.getComProfileFields(companyID);
+			return profileFieldService.getProfileFields(companyID);
 		} catch(final Exception e) {
 			logger.error("Error listing profile fields", e);
-			
+
 			throw new QueryBuilderFilterListBuilderException("Error listing profile fields", e);
 		}
 	}
 	
 	// ------------------------------------------------------------------------------------------------------------------ Dependency Injection
-	/**
-	 * Set DAO accessing profile field data.
-	 * 
-	 * @param dao DAO accessing profile field data
-	 */
-	@Required
-	public void setProfileFieldDao(final ComProfileFieldDao dao) {
-		this.profileFieldDao = dao;
-	}
 
 	@Required
 	public void setQueryBuilderConfiguration(QueryBuilderConfiguration queryBuilderConfiguration) {
 		this.queryBuilderConfiguration = queryBuilderConfiguration;
+	}
+
+	@Required
+	public void setProfileFieldService(ProfileFieldService profileFieldService) {
+		this.profileFieldService = profileFieldService;
 	}
 }

@@ -482,7 +482,7 @@ public class RecipientServiceImpl implements RecipientService {
 						} else {
 							value = (String) parameters.get(entry.getKey());
 							oldValue = (String) entry.getValue();
-							if (!value.equals(oldValue)) {
+							if (!Objects.equals(value, oldValue)) {
 								description.setLength(0);
 								description
 										.append("Recipient ")
@@ -548,14 +548,15 @@ public class RecipientServiceImpl implements RecipientService {
 				// Special Integer field (WATCH OUT!!!: typeName is null)
 				if (StringUtils.isNotEmpty(value) && !AgnUtils.isNumber(value)) {
 					throw new InvalidDataException("Invalid data for integer field '" + name + "': '" + value + "'");
-				} else if (!value.equals(oldValue)) {
+				} else if (!Objects.equals(value, oldValue)) {
 					aCust.setCustParameters(name, value);
 				}
 			} else if (StringUtils.isBlank(typeName)) {
 				throw new InvalidDataException("Unknown data field '" + name + "'");
 			} else if (typeName.toUpperCase().startsWith("VARCHAR") || typeName.toUpperCase().startsWith("CHAR") || typeName.toUpperCase().startsWith("CLOB")) {
 				// Alphanumeric field
-				if (!value.equals(oldValue)) {
+
+				if(!Objects.equals(value, oldValue)) {		// Objects.equals() is true if value and oldValue are null or value.equals(oldValue)
 					aCust.setCustParameters(name, value);
 				}
 			} else if (DbColumnType.GENERIC_TYPE_DATE.equalsIgnoreCase(typeName)
@@ -592,7 +593,7 @@ public class RecipientServiceImpl implements RecipientService {
 				// Numeric field
 				if (StringUtils.isNotEmpty(value) && !AgnUtils.isDouble(value)) {
 					throw new InvalidDataException("Invalid data for " + typeName + " field '" + name + "': '" + value + "'");
-				} else if (!value.equals(oldValue)) {
+				} else if (!Objects.equals(value, oldValue)) {
 					aCust.setCustParameters(name, value);
 				}
 			}
@@ -709,11 +710,11 @@ public class RecipientServiceImpl implements RecipientService {
 	}
 
 	@Override
-	public List<ProfileField> getRecipientBulkFields(int companyId) {
+	public List<ProfileField> getRecipientBulkFields(final int companyID, final int recipientID) {
 		List<ProfileField> profileFields = Collections.emptyList();
 		try {
 			Set<String> immutableField = new CaseInsensitiveSet(Arrays.asList(ComCompanyDaoImpl.GUI_BULK_IMMUTABALE_FIELDS));
-			List<ProfileField> allFields = profileFieldDao.getComProfileFields(companyId);
+			List<ProfileField> allFields = profileFieldDao.getComProfileFields(companyID, recipientID);
 			if (allFields != null) {
 				profileFields = allFields.stream()
 						.filter(field -> field.getModeEdit() == ProfileField.MODE_EDIT_EDITABLE &&
@@ -826,8 +827,8 @@ public class RecipientServiceImpl implements RecipientService {
             if (respectHideSign) {
             	sqlStatementManagerForDataSelect.addWhereClause("hide <= 0 OR hide IS NULL");
             }
-            
-            addExtendedSearchOptions(admin, sqlStatementManagerForDataSelect);
+
+            addExtendedSearchOptions(admin, sqlStatementManagerForDataSelect, options);
 
             if (options.getTargetId() > 0) {
             	sqlStatementManagerForDataSelect.addWhereClause(targetDao.getTarget(options.getTargetId(), companyID).getTargetSQL());
@@ -1037,7 +1038,12 @@ public class RecipientServiceImpl implements RecipientService {
 		if (success) {
 			try {
 				int companyId = admin.getCompanyID();
-				String targetExpression = getTargetGroupExpressionOrDefault(targetId, companyId);
+				String targetExpression;
+				if (targetId > 0) {
+					targetExpression = getTargetGroupExpressionOrDefault(targetId, companyId);
+				} else {
+					targetExpression = null;
+				}
 
 				int affectedRecipients = recipientDao.bulkUpdateEachRecipientsFields(companyId, admin.getAdminID(),
 						mailinglistId, targetExpression, valuesForUpdate);
@@ -1780,6 +1786,8 @@ public class RecipientServiceImpl implements RecipientService {
                             .getOrDefault(bindingDto.getMailinglistId(), new HashMap<>())
 							.get(bindingDto.getMediaType().getMediaCode());
 
+					changeBindingUserTypeIfNeeded(bindingDto, bindingForSave, admin);
+
 					if (bindingForSave == null) {
                         if (bindingDto.isActiveStatus()) {
 							UserStatus newUserStatus = getNewUserStatus(bindingDto.getStatus(), newStatusForUnsubscribing,
@@ -1815,6 +1823,10 @@ public class RecipientServiceImpl implements RecipientService {
 			logger.error("Saving bindings failed: ", e);
 		}
 		return ServiceResult.error(Collections.emptyList());
+	}
+
+	protected void changeBindingUserTypeIfNeeded(RecipientBindingDto binding, BindingEntry existingBinding, ComAdmin admin) {
+		// empty
 	}
 
     private void updateBinding(BindingEntry bindingToUpdate, RecipientBindingDto bindingDto, int recipientId,
@@ -2183,7 +2195,7 @@ public class RecipientServiceImpl implements RecipientService {
 		return recipientDao.getMailinglistBinding(companyID, customerID, mailinglistID, mediaCode);
 	}
 
-	public void addExtendedSearchOptions(ComAdmin admin, SqlPreparedStatementManager sqlStatement) throws Exception {
+	public void addExtendedSearchOptions(ComAdmin admin, SqlPreparedStatementManager sqlStatement, RecipientSqlOptions options) throws Exception {
 		// Do nothing
 	}
 }

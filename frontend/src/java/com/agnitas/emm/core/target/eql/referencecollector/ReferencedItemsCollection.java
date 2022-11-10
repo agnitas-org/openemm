@@ -14,7 +14,7 @@ import java.util.Set;
 
 public interface ReferencedItemsCollection {
 
-	public static final class Link {
+	final class Link {
 		private final int mailingId;
 		private final int linkId;
 		
@@ -51,7 +51,7 @@ public interface ReferencedItemsCollection {
 		}
 	}
 	
-	public static final class RefTableColumn {
+	final class RefTableColumn {
 		private final String table;
 		private final String column;
 		

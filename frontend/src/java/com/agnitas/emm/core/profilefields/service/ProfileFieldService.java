@@ -45,6 +45,8 @@ public interface ProfileFieldService {
 
     ProfileField getProfileField(@VelocityCheck int companyId, String fieldName);
 
+    ProfileField getProfileField(int companyId, String fieldName, int adminId);
+
     List<String> getDependentWorkflows(@VelocityCheck int companyId, String fieldName);
 
     String getTrackingDependentWorkflows(@VelocityCheck int companyId, String fieldName);
@@ -66,10 +68,12 @@ public interface ProfileFieldService {
     UserAction getEmmChangeLog(ProfileField field, ProfileFieldForm form);
 
     List<Dependent<ProfileFieldDependentType>> getDependents(@VelocityCheck int companyId, String fieldName);
-    
-    List<ProfileField> listVisibleProfileFields(final int companyID) throws Exception;
 
-	boolean isReservedKeyWord(String fieldname);
+    List<ProfileField> getProfileFields(int companyId) throws Exception;
+
+    List<ProfileField> getProfileFields(int companyId, int adminId) throws Exception;
+
+    boolean isReservedKeyWord(String fieldname);
 
 	int getMaximumNumberOfCompanySpecificProfileFields() throws Exception;
 

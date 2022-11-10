@@ -399,9 +399,9 @@
                                                 <mvc:select path="${propertyName}.userType" cssClass="form-control" disabled="${not editable}" multiple="false">
                                                     <mvc:option value="${USER_TYPE_ADMIN}"><mvc:message code="recipient.Administrator"/></mvc:option>
                                                     <mvc:option value="${USER_TYPE_TEST}"><mvc:message code="TestSubscriber"/></mvc:option>
-                                                    <%@include file="/WEB-INF/jsp/recipient/recipient-novip-test.jspf" %>
+                                                    <%@include file="recipient-test-vip-user-type.jspf" %>
                                                     <mvc:option value="${USER_TYPE_NORMAL}"><mvc:message code="NormalSubscriber"/></mvc:option>
-                                                    <%@include file="/WEB-INF/jsp/recipient/recipient-novip-normal.jspf" %>
+                                                    <%@include file="recipient-normal-vip-user-type.jspf" %>
                                                 </mvc:select>
                                             </div>
                                             <c:if test="${not empty binding.status}">

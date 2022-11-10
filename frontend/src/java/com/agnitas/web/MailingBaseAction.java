@@ -486,8 +486,9 @@ public class MailingBaseAction extends StrutsActionBase {
 	                    break;
 	
 					case ACTION_CREATE_FOLLOW_UP:
-	                    int mailinglistID = mailingBaseForm.getMailinglistID();
-	                    if (mailingBaseForm.getMailinglistID() <= 0 || !mailinglistService.exist(mailinglistID, companyId)) {
+						int mailinglistID = mailingDao.getMailinglistId(mailingBaseForm.getMailingID(), companyId);
+						mailingBaseForm.setMailinglistID(mailinglistID);
+	                    if (mailinglistID <= 0 || !mailinglistService.exist(mailinglistID, companyId)) {
 	                        errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.mailing.noMailinglist"));
 	                        destination = mapping.findForward("view");
 	                        break;
