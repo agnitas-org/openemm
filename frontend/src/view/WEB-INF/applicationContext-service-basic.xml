@@ -1258,4 +1258,10 @@
 		<property name="adminService" ref="AdminService" />
 		<property name="profileFieldValidationService" ref="profileValidationService" />
 	</bean>
+	
+	<bean id="RestfulServiceHandler_form" class="com.agnitas.emm.restful.form.FormRestfulServiceHandler">
+		<property name="userActivityLogDao" ref="UserActivityLogDao"/>
+		<property name="userFormDao" ref="UserFormDao" />
+		<property name="UserFormExporter" ref="UserFormExporter" />
+	</bean>
 </beans>

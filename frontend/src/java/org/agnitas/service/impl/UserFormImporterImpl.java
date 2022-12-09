@@ -103,7 +103,9 @@ public class UserFormImporterImpl extends ActionImporter implements UserFormImpo
 			importResult.setUserFormName(userFormName);
 			userForm.setFormName(userFormName);
 			userForm.setDescription(description);
-			userForm.setActive((boolean) jsonObject.get("active"));
+			if (jsonObject.containsPropertyKey("active")) {
+				userForm.setActive((boolean) jsonObject.get("active"));
+			}
 
 			importFormSettings(userForm, jsonObject, actionIdMappings);
 

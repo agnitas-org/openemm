@@ -15,6 +15,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 
 import org.agnitas.dao.impl.PaginatedBaseDaoImpl;
@@ -68,7 +69,7 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 
 	@Override
 	public UserForm getUserForm(int formID, @VelocityCheck int companyID) {
-		String sql = "SELECT form_id, company_id, formName, description, success_template, error_template, success_mimetype, error_mimetype, startaction_id, endaction_id, success_url, error_url, success_use_url, error_use_url, active, success_builder_json, error_builder_json "
+		String sql = "SELECT form_id, company_id, formName, description, success_template, error_template, success_mimetype, error_mimetype, startaction_id, endaction_id, success_url, error_url, success_use_url, error_use_url, active, success_builder_json, error_builder_json, creation_date, change_date "
 				+ " FROM userform_tbl WHERE form_id = ? AND company_id = ?";
 		return selectObjectDefaultNull(logger, sql, new UserForm_RowMapper(), formID, companyID);
 	}
@@ -78,7 +79,7 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 		if (name == null || companyID == 0) {
 			return null;
 		} else {
-			String sql = "SELECT form_id, company_id, formName, description, success_template, error_template, success_mimetype, error_mimetype, startaction_id, endaction_id, success_url, error_url, success_use_url, error_use_url, active, success_builder_json, error_builder_json FROM userform_tbl WHERE formname = ? AND company_id = ?";
+			String sql = "SELECT form_id, company_id, formName, description, success_template, error_template, success_mimetype, error_mimetype, startaction_id, endaction_id, success_url, error_url, success_use_url, error_use_url, active, success_builder_json, error_builder_json, creation_date, change_date FROM userform_tbl WHERE formname = ? AND company_id = ?";
 
 			List<UserForm> userFormList = select(logger, sql, new UserForm_RowMapper(), name, companyID);
 			if (userFormList == null || userFormList.size() < 1) {
@@ -107,8 +108,9 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 	@DaoUpdateReturnValueCheck
 	public int storeUserForm(UserForm userForm) throws Exception {
 		if (getUserForm(userForm.getId(), userForm.getCompanyID()) != null) {
-			String sql = "UPDATE userform_tbl SET formname = ?, description = ?, success_template = ?, error_template = ?, success_mimetype = ?, error_mimetype = ?, startaction_id = ?, endaction_id = ?, success_url = ?, error_url = ?, success_use_url = ?, error_use_url = ?, active = ?, change_date = CURRENT_TIMESTAMP WHERE form_id = ? AND company_id = ?";
-			update(logger, sql, userForm.getFormName(), userForm.getDescription(), userForm.getSuccessTemplate(), userForm.getErrorTemplate(), userForm.getSuccessMimetype(), userForm.getErrorMimetype(), userForm.getStartActionID(), userForm.getEndActionID(), userForm.getSuccessUrl(), userForm.getErrorUrl(), userForm.isSuccessUseUrl() ? 1 : 0, userForm.isErrorUseUrl() ? 1 : 0, userForm.isActive() ? 1 : 0, userForm.getId(), userForm.getCompanyID());
+			userForm.setChangeDate(new Date());
+			String sql = "UPDATE userform_tbl SET formname = ?, description = ?, success_template = ?, error_template = ?, success_mimetype = ?, error_mimetype = ?, startaction_id = ?, endaction_id = ?, success_url = ?, error_url = ?, success_use_url = ?, error_use_url = ?, active = ?, change_date = ? WHERE form_id = ? AND company_id = ?";
+			update(logger, sql, userForm.getFormName(), userForm.getDescription(), userForm.getSuccessTemplate(), userForm.getErrorTemplate(), userForm.getSuccessMimetype(), userForm.getErrorMimetype(), userForm.getStartActionID(), userForm.getEndActionID(), userForm.getSuccessUrl(), userForm.getErrorUrl(), userForm.isSuccessUseUrl() ? 1 : 0, userForm.isErrorUseUrl() ? 1 : 0, userForm.isActive() ? 1 : 0, userForm.getChangeDate(), userForm.getId(), userForm.getCompanyID());
 			// add/update trackable links
 			if (userForm.getTrackableLinks() != null) {
 				for (ComTrackableUserFormLink link : userForm.getTrackableLinks().values()) {
@@ -120,12 +122,16 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 			if (isFormNameInUse(userForm.getFormName(), userForm.getId(), userForm.getCompanyID())) {
 				throw new Exception("name of userform is already in use");
 			}
+
+			userForm.setCreationDate(new Date());
+			userForm.setChangeDate(new Date());
+			
 			if (isOracleDB()) {
 				userForm.setId(selectInt(logger, "SELECT userform_tbl_seq.NEXTVAL FROM DUAL"));
-				String sql = "INSERT INTO userform_tbl (form_id, company_id, formname, description, success_template, error_template, success_mimetype, error_mimetype, startaction_id, endaction_id, success_url, error_url, success_use_url, error_use_url, active) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-				update(logger, sql, userForm.getId(), userForm.getCompanyID(), userForm.getFormName(), userForm.getDescription(), userForm.getSuccessTemplate(), userForm.getErrorTemplate(), userForm.getSuccessMimetype(), userForm.getErrorMimetype(), userForm.getStartActionID(), userForm.getEndActionID(), userForm.getSuccessUrl(), userForm.getErrorUrl(), userForm.isSuccessUseUrl() ? 1 : 0, userForm.isErrorUseUrl() ? 1 : 0, userForm.isActive() ? 1 : 0);
+				String sql = "INSERT INTO userform_tbl (form_id, company_id, formname, description, success_template, error_template, success_mimetype, error_mimetype, startaction_id, endaction_id, success_url, error_url, success_use_url, error_use_url, active, creation_date, change_date) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+				update(logger, sql, userForm.getId(), userForm.getCompanyID(), userForm.getFormName(), userForm.getDescription(), userForm.getSuccessTemplate(), userForm.getErrorTemplate(), userForm.getSuccessMimetype(), userForm.getErrorMimetype(), userForm.getStartActionID(), userForm.getEndActionID(), userForm.getSuccessUrl(), userForm.getErrorUrl(), userForm.isSuccessUseUrl() ? 1 : 0, userForm.isErrorUseUrl() ? 1 : 0, userForm.isActive() ? 1 : 0, userForm.getCreationDate(), userForm.getChangeDate());
 			} else {
-				int targetID = insertIntoAutoincrementMysqlTable(logger, "form_id", "INSERT INTO userform_tbl (company_id, formname, description, success_template, error_template, success_mimetype, error_mimetype, startaction_id, endaction_id, success_url, error_url, success_use_url, error_use_url, active) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+				int targetID = insertIntoAutoincrementMysqlTable(logger, "form_id", "INSERT INTO userform_tbl (company_id, formname, description, success_template, error_template, success_mimetype, error_mimetype, startaction_id, endaction_id, success_url, error_url, success_use_url, error_use_url, active, creation_date, change_date) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
 					userForm.getCompanyID(),
 					userForm.getFormName(),
 					userForm.getDescription(),
@@ -139,7 +145,9 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 					userForm.getErrorUrl(),
 					userForm.isSuccessUseUrl() ? 1 : 0,
 					userForm.isErrorUseUrl() ? 1 : 0,
-					userForm.isActive() ? 1 : 0
+					userForm.isActive() ? 1 : 0,
+					userForm.getCreationDate(),
+					userForm.getChangeDate()
 				);
 				userForm.setId(targetID);
 			}
@@ -167,6 +175,9 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 	
 	@Override
 	public int createUserForm(@VelocityCheck int companyId, UserForm userForm) {
+		userForm.setCreationDate(new Date());
+		userForm.setChangeDate(new Date());
+		
     	int userFormId;
 		if (isOracleDB()) {
 			userFormId = selectInt(logger, "SELECT userform_tbl_seq.NEXTVAL FROM DUAL");
@@ -182,8 +193,9 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 					+ "success_use_url, "
 					+ "error_use_url, "
 					+ "active, "
-					+ "success_builder_json, error_builder_json) "
-					+ "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+					+ "success_builder_json, error_builder_json, "
+					+ "creation_date, change_date) "
+					+ "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 			update(logger, sql,
 					userFormId,
 					companyId,
@@ -196,7 +208,8 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 					BooleanUtils.toInteger(userForm.isSuccessUseUrl()),
 					BooleanUtils.toInteger(userForm.isErrorUseUrl()),
 					BooleanUtils.toInteger(userForm.isActive()),
-					userForm.getSuccessFormBuilderJson(), userForm.getErrorFormBuilderJson()
+					userForm.getSuccessFormBuilderJson(), userForm.getErrorFormBuilderJson(),
+					userForm.getCreationDate(), userForm.getChangeDate()
 			);
 		} else {
 			userFormId = insertIntoAutoincrementMysqlTable(logger, "form_id",
@@ -211,8 +224,9 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 							+ "success_use_url, "
 							+ "error_use_url, "
 							+ "active, "
-							+ "success_builder_json, error_builder_json) "
-							+ "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+							+ "success_builder_json, error_builder_json, "
+							+ "creation_date, change_date) "
+							+ "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
 				companyId,
 				userForm.getFormName(),
 				userForm.getDescription(),
@@ -223,7 +237,8 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 				BooleanUtils.toInteger(userForm.isSuccessUseUrl()),
 				BooleanUtils.toInteger(userForm.isErrorUseUrl()),
 				BooleanUtils.toInteger(userForm.isActive()),
-				userForm.getSuccessFormBuilderJson(), userForm.getErrorFormBuilderJson()
+				userForm.getSuccessFormBuilderJson(), userForm.getErrorFormBuilderJson(),
+				userForm.getCreationDate(), userForm.getChangeDate()
 			);
 		}
 		return userFormId;
@@ -231,6 +246,8 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 	
 	@Override
 	public void updateUserForm(@VelocityCheck int companyId, UserForm userForm) {
+		userForm.setChangeDate(new Date());
+		
 		String sql = "UPDATE userform_tbl SET formname = ?, description = ?, "
 				+ "success_template = ?, error_template = ?, "
 				+ "success_mimetype = ?, error_mimetype = ?, "
@@ -239,7 +256,7 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 				+ "success_use_url = ?, error_use_url = ?, "
 				+ "active = ?, "
 				+ "success_builder_json = ?, error_builder_json = ?, "
-				+ "change_date = CURRENT_TIMESTAMP WHERE form_id = ? AND company_id = ?";
+				+ "change_date = ? WHERE form_id = ? AND company_id = ?";
 		update(logger, sql, userForm.getFormName(), userForm.getDescription(),
 					userForm.getSuccessTemplate(), userForm.getErrorTemplate(),
 					userForm.getSuccessMimetype(), userForm.getErrorMimetype(),
@@ -249,6 +266,7 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 					BooleanUtils.toInteger(userForm.isErrorUseUrl()),
 					BooleanUtils.toInteger(userForm.isActive()),
 					userForm.getSuccessFormBuilderJson(), userForm.getErrorFormBuilderJson(),
+					userForm.getChangeDate(),
 					userForm.getId(), companyId);
 	}
 	
@@ -259,7 +277,7 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 		}
 
     	String ids = StringUtils.join(formIds, ", ");
-    	String query = String.format("UPDATE userform_tbl SET active = ? WHERE company_id = ? AND form_id IN (%s)", ids);
+    	String query = String.format("UPDATE userform_tbl SET active = ?, change_date = CURRENT_TIMESTAMP WHERE company_id = ? AND form_id IN (%s)", ids);
 
     	return update(logger, query, BooleanUtils.toInteger(isActive), companyId);
 	}
@@ -348,6 +366,8 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 			readUserForm.setActive(resultSet.getBoolean("active"));
 			readUserForm.setSuccessFormBuilderJson(resultSet.getString("success_builder_json"));
 			readUserForm.setErrorFormBuilderJson(resultSet.getString("error_builder_json"));
+			readUserForm.setCreationDate(resultSet.getTimestamp("creation_date"));
+			readUserForm.setChangeDate(resultSet.getTimestamp("change_Date"));
 			return readUserForm;
 		}
 	}

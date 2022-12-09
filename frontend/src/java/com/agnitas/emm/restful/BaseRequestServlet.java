@@ -143,10 +143,12 @@ public abstract class BaseRequestServlet extends HttpServlet {
 		response.setStatus(httpStatusCode);
 		response.setContentType(responseMimeType);
 		response.setCharacterEncoding("UTF-8");
-		try (OutputStream outputStream = response.getOutputStream()) {
-			outputStream.write(responseText.getBytes("UTF-8"));
-		} catch (IOException e) {
-			throw new Exception("Error while sending response", e);
+		if (responseText != null) {
+			try (OutputStream outputStream = response.getOutputStream()) {
+				outputStream.write(responseText.getBytes("UTF-8"));
+			} catch (IOException e) {
+				throw new Exception("Error while sending response", e);
+			}
 		}
 	}
 

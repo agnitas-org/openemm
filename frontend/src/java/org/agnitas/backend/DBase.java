@@ -74,6 +74,7 @@ public class DBase {
 	 * Reference to configuration
 	 */
 	private Data data = null;
+	private String schema = null;
 	/**
 	 * Default jdbc access instance
 	 */
@@ -452,19 +453,24 @@ public class DBase {
 	 */
 	public void setupTableOptimizer (String table, int estimatePercent) {
 		try {
-			if (isOracle () && (dbVersion >= 19)) {
+			if (isOracle () && (dbVersion >= 18)) {
 				try (With with = with ()) {
-					execute (with.jdbc (),
-						 "begin\n" +
-						 "    dbms_stats.gather_table_stats(\n" +
-						 "        ownname => 'AGNITAS',\n" +
-						 "        tabname => '" + table + "',\n" +
-						 "        estimate_percent => " + estimatePercent + ",\n" +
-						 "        method_opt => 'for all columns size 254',\n" +
-						 "        cascade => true,\n" +
-						 "        no_invalidate => FALSE\n" +
-						 "    );\n" +
-						 "end;");
+					if (schema == null) {
+						schema = queryString (with.jdbc (), "SELECT user FROM DUAL");
+					}
+					if (schema != null) {
+						execute (with.jdbc (),
+							 "begin\n" +
+							 "    dbms_stats.gather_table_stats(\n" +
+							 "        ownname => '" + schema + "',\n" +
+							 "        tabname => '" + table + "',\n" +
+							 "        estimate_percent => " + estimatePercent + ",\n" +
+							 "        method_opt => 'for all columns size 254',\n" +
+							 "        cascade => true,\n" +
+							 "        no_invalidate => FALSE\n" +
+							 "    );\n" +
+							 "end;");
+					}
 				}
 			}
 		} catch (SQLException e) {

@@ -747,7 +747,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 				File userFormTempFile = File.createTempFile("UserFormTempFile_", ".json");
 				try {
 					try (OutputStream userFormOutputStream = new FileOutputStream(userFormTempFile)) {
-						userFormExporter.exportUserFormToJson(1, sampleFormID, userFormOutputStream);
+						userFormExporter.exportUserFormToJson(1, sampleFormID, userFormOutputStream, true);
 					}
 					
 					replaceTextInFile(userFormTempFile, newCompanyId, mailinglistID, rdirDomain);

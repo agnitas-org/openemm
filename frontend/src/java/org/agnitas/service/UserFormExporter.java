@@ -13,5 +13,5 @@ package org.agnitas.service;
 import java.io.OutputStream;
 
 public interface UserFormExporter {
-	void exportUserFormToJson(int companyID, int formID, OutputStream output) throws Exception;
+	void exportUserFormToJson(int companyID, int formID, OutputStream output, boolean exportVersionSignAndCompanyId) throws Exception;
 }

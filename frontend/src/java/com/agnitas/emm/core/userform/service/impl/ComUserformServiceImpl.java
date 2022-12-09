@@ -288,7 +288,7 @@ public class ComUserformServiceImpl extends UserformServiceImpl implements ComUs
                     String.format("Template_%s_%d_%d", StringUtils.replace(userFormName, "/", "_"), companyId, userFormId),
                     FileUtils.JSON_EXTENSION);
             try (FileOutputStream outputStream = new FileOutputStream(tmpFile)) {
-                userFormExporter.exportUserFormToJson(companyId, userFormId, outputStream);
+                userFormExporter.exportUserFormToJson(companyId, userFormId, outputStream, true);
             }
 
             return tmpFile;

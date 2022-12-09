@@ -2920,8 +2920,8 @@ INSERT INTO sourcegroup_tbl (sourcegroup_id, sourcegroup_type, description, time
 	(7, 'V', 'Velocity', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 	(8, 'RS', 'RestfulService', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
-INSERT INTO company_tbl (company_id, rdir_domain, shortname, description, status, mailtracking, creator_company_id, mailerset, customer_type, pricing_id, send_immediately, offpeak, notification_email, mailloop_domain, stat_admin, creation_date, timestamp, sector, business_field, secret_key, mails_per_day, uid_version, max_recipients, auto_mailing_report_active, salutation_extended, enabled_uid_version, export_notify)
-	VALUES (1, 'http://[to be defined]', 'EMM-Master', 'EMM-Master', 'active', 1, 1, 0, 'UNKNOWN', NULL, 0, 0, NULL, '[to be defined]', 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL, NULL, 'SecretKeyToBeDefined', NULL, NULL, 10000, 0, 0, 3, 0);
+INSERT INTO company_tbl (company_id, rdir_domain, shortname, description, status, mailtracking, creator_company_id, mailerset, customer_type, pricing_id, send_immediately, offpeak, notification_email, mailloop_domain, stat_admin, creation_date, timestamp, sector, business_field, secret_key, mails_per_day, uid_version, max_recipients, auto_mailing_report_active, salutation_extended, enabled_uid_version, export_notify, company_token)
+	VALUES (1, 'http://[to be defined]', 'EMM-Master', 'EMM-Master', 'active', 1, 1, 0, 'UNKNOWN', NULL, 0, 0, NULL, '[to be defined]', 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL, NULL, 'SecretKeyToBeDefined', NULL, NULL, 10000, 0, 0, 3, 0, CONCAT(LOWER(LEFT(MD5(RAND()), 16)), UPPER(LEFT(MD5(RAND()), 16))));
 
 INSERT INTO admin_group_tbl (admin_group_id, company_id, shortname, description) VALUES (0, 1, 'No permissions', 'Standard');
 UPDATE admin_group_tbl SET admin_group_id = 0 WHERE shortname = 'No permissions';

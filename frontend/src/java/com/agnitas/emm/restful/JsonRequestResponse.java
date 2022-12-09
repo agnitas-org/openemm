@@ -30,7 +30,10 @@ public class JsonRequestResponse extends BaseRequestResponse {
 	public String getString() throws Exception {
 		String responseJsonString;
 		
-		if (responseState == State.OK) {
+		if (responseState == State.EXPORTED_TO_STREAM) {
+			// nothing more to do
+			responseJsonString = null;
+		} else if (responseState == State.OK) {
 			if (jsonDataNode != null) {
 				ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 				try (JsonWriter jsonWriter = new JsonWriter(outputStream)) {

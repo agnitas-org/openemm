@@ -36,7 +36,7 @@ export	SYSTEM_CONFIG='{
 }'
 export	DBCFG_PATH="$BASE/etc/dbcfg"
 #
-version="22.04.000.194"
+version="22.04.000.238"
 licence="`$BASE/bin/config-query licence`"
 system="`uname -s`"
 host="`uname -n | cut -d. -f1`"

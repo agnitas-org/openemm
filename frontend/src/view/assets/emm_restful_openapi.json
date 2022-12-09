@@ -3,7 +3,7 @@
   "info" : {
     "title" : "EMM Restful API",
     "description" : "This is the EMM Restful API.<br /><br />Authorization is done via username and password as URL parameters or via Basic Auth (see https://en.wikipedia.org/wiki/Basic_access_authentication).<br />Use username and password of an EMM GUI user with permission \"utilize the RESTful interface\".<br /><br />Example for request via wget with URL parameters:<br /><pre>wget -S -O - --content-on-error \"https://&lt;emm_system_url>/restful/mailing/1?username=&lt;UrlencodedUserName>&password=&lt;UrlencodedPassword>\" > test.txt; cat test.txt</pre><br />Example for request via wget with BASIC AUTH:<br /><pre>wget -S -O - --content-on-error --auth-no-challenge --http-user=\"&lt;UrlencodedUserName>\" --http-password=\"&lt;UrlencodedPassword>\" \"https://&lt;emm_system_url>/restful/mailing/1\" > test.txt; cat test.txt</pre>",
-    "version" : "1.2.0",
+    "version" : "1.3.1",
     "contact" : {
       "email" : "info@agnitas.ag"
     }
@@ -29,6 +29,9 @@
   }, {
     "name" : "Mailinglist",
     "description" : "Everything about mailinglists"
+  }, {
+    "name" : "Userform",
+    "description" : "Everything about userforms"
   }, {
     "name" : "Recipient",
     "description" : "Everything about recipients"
@@ -2455,6 +2458,188 @@
           },
           "400" : {
             "description" : "Any client side error like invalid id or not existing item"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    },
+    "/form" : {
+      "get" : {
+        "summary" : "Get a list of all existing userforms",
+        "tags" : [ "Userform" ],
+        "operationId" : "getUserforms",
+        "responses" : {
+          "200" : {
+            "description" : "list of all existing userforms",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "type" : "object"
+                  }
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid userform id or not existing userform"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "post" : {
+        "summary" : "Write new userform data",
+        "tags" : [ "Userform" ],
+        "operationId" : "postUserform",
+        "description" : "Write new userform data. Does not update existing userform objects.",
+        "requestBody" : {
+          "description" : "Userform data to add. This is the complete EMM userform JSON object",
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UserformItem"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Basic userform information of created userform"
+          },
+          "400" : {
+            "description" : "Any client side error like invalid userform id or not existing userform"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      }
+    },
+    "/form/{userform_id}" : {
+      "get" : {
+        "summary" : "Read existing userform data",
+        "tags" : [ "Userform" ],
+        "operationId" : "getUserformById",
+        "description" : "Read existing userform data",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "userform_id",
+          "required" : true,
+          "schema" : {
+            "type" : "integer"
+          },
+          "description" : "Numeric ID of the userform to get"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Userform data",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error like invalid userform id or not existing userform"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "delete" : {
+        "summary" : "Delete userform",
+        "tags" : [ "Userform" ],
+        "operationId" : "deleteUserform",
+        "description" : "Delete existing userform",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "userform_id",
+          "required" : true,
+          "schema" : {
+            "type" : "integer"
+          },
+          "description" : "Numeric ID of the userform to delete"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Simple information text"
+          },
+          "400" : {
+            "description" : "Any client side error like invalid userform id or not existing userform"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
+      "put" : {
+        "summary" : "Update userform",
+        "tags" : [ "Userform" ],
+        "operationId" : "putUserform",
+        "description" : "Update existing userform data",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "userform_id",
+          "required" : true,
+          "schema" : {
+            "type" : "integer"
+          },
+          "description" : "Numeric ID of the userform to update"
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UserformInfoItem"
+              }
+            }
+          },
+          "description" : "Userform data to update"
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Simple information text"
+          },
+          "400" : {
+            "description" : "Any client side error like invalid userform id or not existing userform"
           },
           "401" : {
             "description" : "Authorization information is missing or invalid"
@@ -7026,10 +7211,67 @@
             "type" : "string",
             "example" : "Lastname"
           },
+          "gender" : {
+            "type" : "integer",
+            "description" : "Gender code of this recipient (0=male, 1=female, 2=unknown)"
+          },
+          "mailtype" : {
+            "type" : "integer",
+            "description" : "Type of preferred mail type by this recipient (0=text, 1=html, 2=offline html)"
+          },
+          "customer_id" : {
+            "type" : "integer",
+            "description" : "Key id for this recipient. Only for read methods."
+          },
+          "datasource_id" : {
+            "type" : "integer",
+            "description" : "Internal index of datasource that created this recipient. Only for read methods."
+          },
+          "latest_datasource_id" : {
+            "type" : "integer",
+            "description" : "Internal index of datasource that changed this recipient. Only for read methods."
+          },
           "creation_date" : {
             "type" : "string",
             "description" : "Date-time of creation (ISO-8601). Only for read methods. Items to create or update may not have a creation_date.",
             "example" : "2017-07-21T17:32:28Z"
+          },
+          "timestamp" : {
+            "type" : "string",
+            "description" : "Date-time of change (ISO-8601). Only for read methods.",
+            "example" : "2017-07-21T17:32:28Z"
+          },
+          "cleaned_date" : {
+            "type" : "string",
+            "description" : "Date-time of DSGVO cleanup (ISO-8601). Only for read methods.",
+            "example" : "2017-07-21T17:32:28Z"
+          },
+          "lastsend_date" : {
+            "type" : "string",
+            "description" : "Date-time of last email sent to this recipient (ISO-8601). Only for read methods.",
+            "example" : "2017-07-21T17:32:28Z"
+          },
+          "lastopen_date" : {
+            "type" : "string",
+            "description" : "Date-time of last email open by this recipient (ISO-8601). Only for read methods.",
+            "example" : "2017-07-21T17:32:28Z"
+          },
+          "lastclick_date" : {
+            "type" : "string",
+            "description" : "Date-time of last email click by this recipient (ISO-8601). Only for read methods.",
+            "example" : "2017-07-21T17:32:28Z"
+          },
+          "sys_encrypted_sending" : {
+            "type" : "integer",
+            "description" : "Recipients mailbox supports encrypted mail delivery (0=unknown, 1=yes))"
+          },
+          "sys_tracking_veto" : {
+            "type" : "integer",
+            "description" : "Recipients did agree to track his email actions (0=yes, 1=no))"
+          },
+          "any_other_customer_system_specific_profile_fields" : {
+            "type" : "string",
+            "description" : "Any other fields that was created on this EMM system for the client"
           }
         }
       },
@@ -7237,6 +7479,67 @@
             "items" : {
               "$ref" : "#/components/schemas/ContentItem"
             }
+          }
+        }
+      },
+      "UserformInfoItem" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "integer",
+            "description" : "Userform id"
+          },
+          "formname" : {
+            "type" : "string",
+            "description" : "Userform name"
+          },
+          "description" : {
+            "type" : "string",
+            "description" : "Userform description"
+          }
+        }
+      },
+      "UserformItem" : {
+        "type" : "object",
+        "required" : [ "formname", "description" ],
+        "properties" : {
+          "version" : {
+            "type" : "string"
+          },
+          "id" : {
+            "type" : "integer"
+          },
+          "formname" : {
+            "type" : "string"
+          },
+          "description" : {
+            "type" : "string"
+          },
+          "creation_date" : {
+            "type" : "string",
+            "description" : "Date-time of creation (ISO-8601). Only for read methods. Items to create or update may not have a creation_date.",
+            "example" : "2017-07-21T17:32:28Z"
+          },
+          "change_date" : {
+            "type" : "string",
+            "description" : "Date-time of latest change (ISO-8601). Only for read methods. Items to create or update may not have a change_date.",
+            "example" : "2017-07-21T17:32:28Z"
+          },
+          "active" : {
+            "type" : "boolean",
+            "example" : false
+          },
+          "success_template" : {
+            "type" : "string"
+          },
+          "success_mimetype" : {
+            "type" : "string"
+          },
+          "error_template" : {
+            "type" : "string"
+          },
+          "error_mimetype" : {
+            "type" : "string"
           }
         }
       },

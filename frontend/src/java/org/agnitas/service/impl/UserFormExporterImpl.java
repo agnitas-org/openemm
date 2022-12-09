@@ -41,16 +41,18 @@ public class UserFormExporterImpl extends ActionExporter implements UserFormExpo
 	protected FormTrackableLinkDao trackableLinkDao;
 
 	@Override
-	public void exportUserFormToJson(int companyID, int formID, OutputStream output) throws Exception {
+	public void exportUserFormToJson(int companyID, int formID, OutputStream output, boolean exportVersionSignAndCompanyId) throws Exception {
 		UserForm userForm = userFormDao.getUserForm(formID, companyID);
 		Set<Integer> actionIDs = new HashSet<>();
 		
 		try (JsonWriter writer = new JsonWriter(output, "UTF-8")) {
 			writer.openJsonObject();
 			
-			writeJsonObjectAttribute(writer, "version", EXPORT_JSON_VERSION);
+			if (exportVersionSignAndCompanyId) {
+				writeJsonObjectAttribute(writer, "version", EXPORT_JSON_VERSION);
 			
-			writeJsonObjectAttribute(writer, "company_id", userForm.getCompanyID());
+				writeJsonObjectAttribute(writer, "company_id", userForm.getCompanyID());
+			}
 			
 			writeJsonObjectAttribute(writer, "id", userForm.getId());
 			
