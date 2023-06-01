@@ -12,19 +12,23 @@
 import	sys, os, logging, argparse, time, signal, json
 from	collections import namedtuple
 from	dataclasses import dataclass
+from	fnmatch import fnmatch
 from	traceback import print_exception
 from	typing import Any, Callable, Optional
 from	typing import Dict, List
 from	.config import Config
 from	.daemon import Daemonic, Watchdog
 from	.definitions import host, program, syscfg
+from	.emm.build import spec
 from	.exceptions import error
 from	.ignore import Ignore
 from	.lock import Lock
 from	.log import log, interactive
 from	.parameter import Parameter
+from	.parser import unit
 from	.process import Processtitle, Parallel
 from	.stream import Stream
+from	.tools import Plugin
 #
 __all__ = ['Runtime', 'CLI']
 #
@@ -83,6 +87,50 @@ agn3.exceptions.error: @(sample): specified enviroment not found
 		else:
 			expanded.append (arg)
 	return expanded
+
+class Frame:
+	"""generalized runtime modification framework"""
+	__slots__ = ['_namespace', '_plugin']
+	def __init__ (self, **kwargs: Any) -> None:
+		framing = syscfg.get (f'frame:{program}')
+		self._namespace = kwargs.copy ()
+		self._plugin: Optional[Plugin] = Plugin (framing, name = program, ns = self._namespace) if framing else None
+		if self._plugin is not None:
+			with Ignore (KeyError):
+				valid_for = self._plugin['valid_for']
+				if valid_for is not None:
+					is_valid = False
+					if isinstance (valid_for, bool):
+						is_valid = valid_for
+					elif isinstance (valid_for, str):
+						is_valid = fnmatch (spec.version, valid_for)
+					elif isinstance (valid_for, tuple) or isinstance (valid_for, list):
+						is_valid = len (list (filter (lambda p: fnmatch (spec.version, p), valid_for))) > 0
+					if not is_valid:
+						with log ('frame'):
+							logger.warning (f'framing not available for current version "{spec.version}"')
+						try:
+							if self._plugin['valid_enforce']:
+								raise error ('framing: validation failed, termination enforced')
+						finally:
+							self._plugin = None
+	
+	def __getitem__ (self, option: str) -> Any:
+		return self._namespace[option]
+		
+	def __setitem__ (self, option: str, value: Any) -> None:
+		self._namesapce[option] = value
+	
+	def __delitem__ (self, option: str) -> None:
+		del self._namespace[option]
+
+	def _na (self, *args: Any, **kwargs: Any) -> None:
+		return None
+		
+	def __getattr__ (self, name: str) -> Any:
+		if self._plugin is not None:
+			return getattr (self._plugin, name)
+		return self._na
 
 class Runtime (Watchdog):
 	"""class Runtime (Watchdog)
@@ -143,7 +191,7 @@ def cleanup (self):
 	The final cleanup entry point before termination.
 
 """
-	__slots__ = ['cfg', 'ctx', 'round']
+	__slots__ = ['cfg', 'ctx', 'frame', 'round']
 	program_description: Optional[str] = None
 	program_epilog: Optional[str] = None
 
@@ -156,8 +204,9 @@ def cleanup (self):
 	class Context:
 		processtitle: Processtitle = Processtitle ()
 		verbose: int = 0
+		debug: bool = False
 		dryrun: bool = False
-		expected_instances: int = 0
+		expected_instances: bool = False
 		lock_lazy: bool = False
 		lock_id: Optional[str] = None
 		background: bool = False
@@ -182,12 +231,14 @@ def cleanup (self):
 				for (option, value) in Parameter (syscfg[f'option:{program}']).items ():
 					self.cfg[option] = value
 		self.ctx = Runtime.Context ()
+		self.frame = Frame (runtime = self, ctx = self.ctx)
 		self.round = 0
 
 	def run (self, *args: Any, **kwargs: Any) -> Any:
 		#
 		self.cfg.push (host)
 		with log ('setup'):
+			self.frame.setup ()
 			self.setup ()
 		with log ('argparse'):
 			self.__argument_parsing ()
@@ -209,6 +260,7 @@ def cleanup (self):
 			logger.info ('Background process started')
 		self.setup_handler (True)
 		with log ('prepare'):
+			self.frame.prepare ()
 			self.prepare ()
 		ok = True
 		with Lock (id = self.ctx.lock_id, lazy = self.ctx.lock_lazy) as lck, log ('main'):
@@ -269,6 +321,7 @@ def cleanup (self):
 			else:
 				logger.info ('Lock exists')
 		with log ('cleanup'):
+			self.frame.cleanup ()
 			self.cleanup ()
 		self.cfg.pop ()
 		return ok
@@ -319,17 +372,18 @@ def cleanup (self):
 		parser.add_argument ('-q', '--quiet', action = 'count', default = 0, help = 'decrease verbosity')
 		parser.add_argument ('--loglevel', action = 'store', help = 'set log level to value')
 		parser.add_argument ('-c', '--config', action = 'store', help = 'read configuration from specified file')
+		parser.add_argument ('-d', '--debug', action = 'store_true', default = self.ctx.debug, help = 'switch on debug mode')
 		if self.supports ('dryrun'):
 			parser.add_argument ('-n', '--dryrun', action = 'store_true', default = self.ctx.dryrun, help = 'switch to dry run mode, if supported')
-		parser.add_argument ('-i', '--expected-instances', action = 'store_true', default = self.ctx.dryrun, help = 'display expected instances for choosen invocation', dest = 'expected_instances')
+		parser.add_argument ('-i', '--expected-instances', action = 'store_true', default = self.ctx.expected_instances, help = 'display expected instances for choosen invocation', dest = 'expected_instances')
 		if self.supports ('background'):
 			parser.add_argument ('-b', '--background', action = 'store_true', default = self.ctx.background, help = 'start process in background')
 		if self.supports ('watchdog'):
 			parser.add_argument ('-w', '--watchdog', action = 'store_true', default = self.ctx.watchdog, help = 'start under watchdog control')
-			parser.add_argument ('-g', '--restart-delay', action = 'store', type = self.unit, default = self.ctx.restart_delay, dest = 'restart_delay')
-			parser.add_argument ('-t', '--termination-delay', action = 'store', type = self.unit, default = self.ctx.termination_delay, dest = 'termination_delay')
+			parser.add_argument ('-g', '--restart-delay', action = 'store', type = unit, default = self.ctx.restart_delay, dest = 'restart_delay')
+			parser.add_argument ('-t', '--termination-delay', action = 'store', type = unit, default = self.ctx.termination_delay, dest = 'termination_delay')
 			parser.add_argument ('-f', '--max-incarnations', action = 'store', type = int, default = self.ctx.max_incarnations, dest = 'max_incarnations')
-			parser.add_argument ('-r', '--heartbeat', action = 'store', type = self.unit, default = self.ctx.heartbeat)
+			parser.add_argument ('-r', '--heartbeat', action = 'store', type = unit, default = self.ctx.heartbeat)
 		parser.add_argument ('-z', '--lock-lazy', action = 'store_true', default = self.ctx.lock_lazy, dest = 'lock_lazy')
 		parser.add_argument ('-l', '--lock-id', action = 'store', default = self.ctx.lock_id, dest = 'lock_id')
 		parser.add_argument ('-o', '--option', action = 'append', default = [], type = lambda v: Option (*tuple (v.split ('=', 1))))
@@ -345,6 +399,7 @@ def cleanup (self):
 		if args.config:
 			self.cfg.clear ()
 			self.cfg.read (args.config)
+		self.ctx.debug = args.debug
 		if self.supports ('dryrun'):
 			self.ctx.dryrun = args.dryrun
 		self.ctx.expected_instances = args.expected_instances

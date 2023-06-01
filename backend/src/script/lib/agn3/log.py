@@ -18,36 +18,49 @@ from	traceback import format_exception
 from	types import TracebackType
 from	typing import Any, Callable, Optional, Union
 from	typing import Dict, Generator, List, Set, TextIO, Tuple, Type
+from	typing import overload
 from	.definitions import base, host, program
 from	.exceptions import error
 from	.ignore import Ignore
 from	.io import create_path
-from	.parser import Unit
+from	.parser import Parsable, unit
 #
 __all__ = ['LogID', 'log', 'mark', 'log_limit', 'interactive']
 #
 class Limiter:
-	__slots__ = ['seen', 'lock']
-	unit = Unit ()
+	__slots__ = ['seen', 'lock', 'enabled']
 	def __init__ (self) -> None:
-		self.seen: Dict[str, Tuple[str, datetime]] = {}
+		self.seen: Dict[str, Tuple[str, datetime, int]] = {}
 		self.lock = threading.Lock ()
+		self.enabled = True
 	
-	def __call__ (self, method: Callable[[str], None], message: str, *, key: Optional[str] = None, duration: Unit.Parsable = None, limit_identical: bool = False) -> None:
-		with self.lock:
-			now = datetime.now ()
-			seen_key = key if key is not None else message
-			with Ignore (KeyError):
-				(previous, expire) = self.seen[seen_key]
-				if expire > now and (not limit_identical or previous == message):
-					return
-			#
+	def __call__ (self, method: Callable[[str], None], message: str, *, key: Optional[str] = None, duration: Parsable = None, limit_identical: bool = False, threshold: int = 0) -> None:
+		if self.enabled:
+			with self.lock:
+				now = datetime.now ()
+				seen_key = key if key is not None else message
+				amount = 0
+				with Ignore (KeyError):
+					(previous, expire, amount) = self.seen[seen_key]
+					if amount > threshold:
+						if expire > now and (not limit_identical or previous == message):
+							return
+						amount = 0
+				#
+				method (message)
+				if duration is None:
+					expire = datetime.fromordinal (now.toordinal () + 1)
+				else:
+					expire = now + timedelta (seconds = unit.parse (duration))
+				self.seen[seen_key] = (message, expire, amount + 1)
+		else:
 			method (message)
-			if duration is None:
-				expire = datetime.fromordinal (now.toordinal () + 1)
-			else:
-				expire = now + timedelta (seconds = self.unit.parse (duration))
-			self.seen[seen_key] = (message, expire)
+	
+	def enable (self) -> None:
+		self.enabled = True
+	
+	def disable (self) -> None:
+		self.enabled = False
 
 log_limit = Limiter ()
 #
@@ -93,8 +106,19 @@ class LogID:
 			self.set_id ()
 		
 class _Log:
-	__slots__ = ['loglevel', 'outlevel', 'outstream', 'verbosity', 'host', 'name', 'path', 'intercept', 'last', 'custom_ids', 'lock']
+	__slots__ = [
+		'loglevel', 'outlevel', 'outstream',
+		'verbosity', 'host', 'name', 'path',
+		'intercept', 'custom_ids', 'lock']
 	log_directories_seen: Set[str] = set ()
+	lognames: Dict[int, str] = {
+		logging.DEBUG:		'DEBUG',
+		logging.INFO:		'INFO',
+		logging.WARNING:	'WARNING',
+		logging.ERROR:		'ERROR',
+		logging.CRITICAL:	'CRITICAL',
+		logging.FATAL:		'FATAL'
+	}
 	def __init__ (self) -> None:
 		self.loglevel = logging.INFO
 		self.outlevel = logging.WARNING
@@ -105,7 +129,6 @@ class _Log:
 		self.path = os.environ.get ('LOG_HOME', os.path.join (base, 'var', 'log'))
 		self.intercept: Optional[Callable[[logging.LogRecord, str], None]] = None
 		#
-		self.last = 0
 		self.custom_ids: Dict[int, Optional[str]] = {}
 		self.lock = threading.RLock ()
 	
@@ -130,24 +153,29 @@ class _Log:
 		with Ignore (KeyError):
 			del self.custom_ids[threading.get_ident ()]
 	custom_id = property (_get_custom_id, _set_custom_id, _del_custom_id)
-		
 
+	_sentinel = object ()
+	@overload
+	def get_loglevel (self, default: str) -> str: ...
+	@overload
+	def get_loglevel (self, default: None) -> Optional[str]: ...
+	def get_loglevel (self, default: Any = _sentinel) -> Any:
+		try:
+			return _Log.lognames[self.loglevel]
+		except KeyError:
+			if default is _Log._sentinel:
+				raise
+		return default
+		
 	def set_loglevel (self, loglevel: str) -> None:
-		loglevel = loglevel.lower ()
-		for (name, level) in [
-			('debug',	logging.DEBUG),
-			('info',	logging.INFO),
-			('warning',	logging.WARNING),
-			('error',	logging.ERROR),
-			('critical',	logging.CRITICAL),
-			('fatal',	logging.FATAL)
-		]:
+		loglevel = loglevel.upper ()
+		for (level, name) in _Log.lognames.items ():
 			if name.startswith (loglevel):
 				self.loglevel = level
 				break
 		else:
 			try:
-				log.loglevel = int (loglevel)
+				self.loglevel = int (loglevel)
 			except ValueError:
 				raise error (f'{loglevel}: unknown logging level')
 	
@@ -202,7 +230,6 @@ passed object."""
 					else:
 						fd.write (str (s) + '\n')
 					fd.close ()
-					self.last = int (time.time ())
 			except Exception as e:
 				directory = os.path.dirname (fname)
 				if directory in self.log_directories_seen:

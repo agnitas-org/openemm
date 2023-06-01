@@ -240,7 +240,11 @@ matching object and the element itself."""
 					seen.add (keyvalue)
 					yield elem
 		return self.new (distincter ())
-		
+
+	def gather (self) -> Stream[T]:
+		"""Gather all input elemnts into a list before further processing, useful if the source is modified i a later stage of the stream"""
+		return self.new (list (self.iterator))
+
 	def sorted (self, key: Optional[Callable[[T], Any]] = None, reverse: bool = False) -> Stream[T]:
 		"""Create a new stream with sorted elements ``key'' and ``reverse'' are passed to sorted()"""
 		return self.new (sorted (cast (Iterable, self.iterator), key = key, reverse = reverse))
@@ -407,18 +411,19 @@ is added unmapped to the new stream."""
 		return self.__checkNo (no, where)
 
 	@overload
-	def first (self, finisher: None = ..., no: T = ...) -> T: ...
+	def first (self, finisher: None = ..., consume: bool = ..., no: T = ...) -> T: ...
 	@overload
-	def first (self, finisher: None = ..., no: Any = ...) -> Any: ...
+	def first (self, finisher: None = ..., consume: bool = ..., no: Any = ...) -> Any: ...
 	@overload
-	def first (self, finisher: Callable[[T], T], no: T = ...) -> T: ...
+	def first (self, finisher: Callable[[T], T], consume: bool = ..., no: T = ...) -> T: ...
 	@overload
-	def first (self, finisher: Callable[[T], O], no: O = ...) -> O: ...
-	def first (self, finisher: Optional[Callable[[T], Any]] = None, no: Any = __sentinel) -> Any:
+	def first (self, finisher: Callable[[T], O], consume: bool = ..., no: O = ...) -> O: ...
+	def first (self, finisher: Optional[Callable[[T], Any]] = None, consume: bool = True, no: Any = __sentinel) -> Any:
 		"""Returns the first element, ``no'' if stream is empty. ``finisher'', if not None, is called on a found element"""
 		try:
 			rc = next (self.iterator)
-			deque (self.iterator, maxlen = 0)
+			if consume:
+				deque (self.iterator, maxlen = 0)
 			return rc if finisher is None else finisher (rc)
 		except StopIteration:
 			return self.__checkNo (no, 'first')

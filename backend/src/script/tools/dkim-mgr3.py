@@ -14,8 +14,8 @@ import	argparse
 import	sys, os, time
 import	DNS
 from	datetime import datetime
-from	typing import Optional
-from	typing import List
+from	typing import Any, Optional
+from	typing import Dict, List
 from	agn3.db import DB
 from	agn3.exceptions import error
 from	agn3.parser import ParseTimestamp
@@ -24,7 +24,7 @@ from	agn3.stream import Stream
 from	agn3.tools import silent_call
 #
 class DKIM (CLI):
-	__slots__ = ['company_id', 'verbose', 'newkey', 'display_key', 'validate_only', 'parameter']
+	__slots__ = ['company_id', 'verbose', 'newkey', 'display_key', 'validate_only', 'dns_options', 'parameter']
 	def add_arguments (self, parser: argparse.ArgumentParser) -> None:
 		parser.add_argument (
 			'-c', '--company-id', action = 'store', type = int, dest = 'company_id',
@@ -47,6 +47,14 @@ class DKIM (CLI):
 			help = 'validate only'
 		)
 		parser.add_argument (
+			'--dns-tcp', action = 'store_true', dest = 'dns_tcp',
+			help = 'use TCP for DNS operations instead of UDP'
+		)
+		parser.add_argument (
+			'--dns-server', action = 'append', default = [], dest = 'dns_server',
+			help = 'use this DNS server instead of system defaults (may be used more than once)'
+		)
+		parser.add_argument (
 			'parameter', nargs = '*'
 		)
 	
@@ -56,6 +64,11 @@ class DKIM (CLI):
 		self.newkey = args.newkey
 		self.display_key = args.display_key
 		self.validate_only = args.validate_only
+		self.dns_options: Dict[str, Any] = {}
+		if args.dns_tcp:
+			self.dns_options['protocol'] = 'TCP'
+		if args.dns_server:
+			self.dns_options['server'] = args.dns_server
 		self.parameter = args.parameter
 	
 	def executor (self) -> bool:
@@ -164,7 +177,7 @@ class DKIM (CLI):
 		try:
 			qtype = 'TXT'
 			dkim_domain = f'{selector}._domainkey.{domain}'
-			answer = DNS.Request ().req (name = dkim_domain, qtype = qtype)
+			answer = DNS.Request (**self.dns_options).req (name = dkim_domain, qtype = qtype)
 			text = (Stream (answer.answers)
 				.filter (lambda a: bool (a['typename'] == qtype))
 				.map_to (List[bytes], lambda a: a['data'])
@@ -192,6 +205,11 @@ class DKIM (CLI):
 						print (f'*** Failed to sign signature for "{dkim_domain}": {e}')
 			else:
 				print (f'*** No {qtype} record for {dkim_domain} found')
+		if self.validate_only:
+			print ('{dkim_domain} validation {status}'.format (
+				dkim_domain = dkim_domain,
+				status = 'successful' if rc else 'failed'
+			))
 		return rc
 	
 	def insert (self, domain: str, selector: str, key: str, start: Optional[datetime], end: Optional[datetime]) -> None:

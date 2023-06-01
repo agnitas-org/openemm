@@ -62,8 +62,7 @@ list with different methods of persistance.
 			d = cast (json.JSONDecoder, ctx['decoder']).decode (s)
 			if type (d) != dict:
 				raise ValueError (f'JSON: input {s} did not lead into a dictionary')
-			for (var, val) in d.items ():
-				target[var] = val
+			target.update (d)
 		def jsonEncode (ctx: Dict[str, Any], source: Dict[str, str]) -> str:
 			return cast (json.JSONEncoder, ctx['encoder']).encode (source)
 		ctx = self.add_method ('json', jsonDecode, jsonEncode)

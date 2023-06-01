@@ -233,7 +233,7 @@ class Sending (Task): #{{{
 					self.in_queue.clear ()
 					self.in_progress.clear ()
 				else:
-					self.title ('try to start %d out of %d mailings' % (parallel - len (self.in_progress), len (self.in_queue)))
+					self.title ('try to start %d out of %d mailings' % (min (len (self.in_queue), parallel - len (self.in_progress)), len (self.in_queue)))
 					for entry in list (self.in_queue.values ()):
 						if self.ref.islocked (entry.company_id) and entry.status_field != 'T':
 							logger.debug ('%s: company %d is locked' % (entry.name, entry.company_id))
@@ -737,7 +737,11 @@ class Worldmailing (Sending): #{{{
 		self.db.sync ()
 #}}}
 class ScheduleGenerate (Schedule): #{{{
-	__slots__ = ['modules', 'oldest', 'processes', 'control', 'deferred', 'config', 'responsibilities', 'locks', 'processtitle']
+	__slots__ = [
+		'modules', 'oldest', 'processes',
+		'control', 'deferred', 'config',
+		'responsibilities', 'responsibility_recheck',
+		'locks', 'processtitle']
 	@dataclass
 	class Pending:
 		description: str
@@ -765,10 +769,14 @@ class ScheduleGenerate (Schedule): #{{{
 		self.control = ScheduleGenerate.Control (Daemonic (), {}, [])
 		self.deferred: List[ScheduleGenerate.Deferred] = []
 		self.config: Dict[str, str] = {}
-		self.responsibilities = Responsibility (reread = '1m')
+		self.responsibilities = Responsibility ()
+		self.responsibility_recheck = True
 		self.locks: Dict[int, int] = {}
 		self.processtitle = Processtitle ('$original [$title]')
-	
+
+	def intercept (self) -> None:
+		self.responsibility_recheck = True
+
 	def read_configuration (self) -> None:
 		self.config = (Stream (EMMConfig (class_names = ['generate']).scan (single_value = True))
 			.map (lambda cv: (cv.name, cv.value))
@@ -787,6 +795,9 @@ class ScheduleGenerate (Schedule): #{{{
 		)
 	
 	def allow (self, company_id: int) -> bool:
+		if self.responsibility_recheck:
+			self.responsibilities.check (force = True)
+			self.responsibility_recheck = False
 		return company_id in self.responsibilities
 
 	def title (self, info: Optional[str] = None) -> None:
@@ -1048,7 +1059,7 @@ class Generate (Runtime):
 				if name not in modules:
 					print ('** %s not known' % name)
 				else:
-					logger.info ('Module found')
+					logger.info (f'Module "{name}" found')
 					module = modules[name] (schedule)
 					rc = module ()
 					schedule.show_status ()

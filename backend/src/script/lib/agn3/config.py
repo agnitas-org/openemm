@@ -23,7 +23,7 @@ from	.definitions import base, host, program
 from	.exceptions import error
 from	.ignore import Ignore
 from	.io import CSVDefault, CSVReader, CSVNamedReader, Line
-from	.parser import Unit, ParseTimestamp
+from	.parser import unit, ParseTimestamp
 from	.stream import Stream
 from	.template import Template
 from	.tools import Plugin, atob, listsplit
@@ -83,7 +83,7 @@ results to
 """
 	__slots__ = [
 		'sections', 'fallback', 'overwrite', 'default_section', 'default_section_stack', 'section_sequence',
-		'ns', 'lang', 'mc', 'unit', 'getter', '_section'
+		'ns', 'lang', 'mc', 'getter', '_section'
 	]
 	comment_pattern = re.compile ('^[ \t]*(#.*)?$')
 	section_pattern = re.compile ('^\\[([^]]+)\\]')
@@ -106,7 +106,6 @@ parametername has no section part."""
 		self.ns: Dict[str, Any] = {}
 		self.lang = None
 		self.mc = None
-		self.unit = Unit ()
 		self.clear ()
 		self.getter = self.__get
 		self._section: Optional[str]
@@ -267,9 +266,12 @@ None to use the default "date"."""
 		except (KeyError, ValueError, TypeError):
 			return default
 	
-	def eget (self, var: str, default: int = 0) -> int:
+	def eget (self, var: str, default: Union[int, str] = 0) -> int:
 		"""Retrieve the value for ``var'' as integer where the value is parsed from a unit string, use ``default'' as default if ``var'' is not found"""
-		rc = self.unit.parse (self.get (var), default)
+		if isinstance (default, str):
+			rc = unit.parse (self.get (var), unit.parse (default))
+		else:
+			rc = unit.parse (self.get (var), default)
 		return rc if rc is not None else default
 	
 	def fget (self, var: str, default: float = 0.0) -> float:

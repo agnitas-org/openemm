@@ -197,10 +197,13 @@ the class must provide these attributes to be used (see register_type for the me
 			
 		def connect (self) -> None:
 			is_new_file = not os.path.isfile (self.filename)
+			config: Dict[str, Any] = {
+				'database': self.filename
+			}
 			if self.extended_types:
-				self.db = self.driver.connect (self.filename, detect_types = sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES)
-			else:
-				self.db = self.driver.connect (self.filename)
+				config['detect_types'] = sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES
+			config.update (self.connect_options)
+			self.db = self.driver.connect (**config)
 			if self.lock_database:
 				try:
 					self.lock_fd = os.open (self.filename, os.O_NOATIME)

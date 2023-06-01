@@ -75,7 +75,7 @@ sort_elements (char **elements, int count)
 static void
 usage (const char *pgm)
 {
-	fprintf (stderr, "Usage: %s [-c] [-n] [-s] <path-expression>\n", pgm);
+	fprintf (stderr, "Usage: %s [-c] [-b] [-n] [-s] <path-expression>\n", pgm);
 }
 int
 main (int argc, char **argv)

@@ -169,8 +169,6 @@ typedef struct { /*{{{*/
 	char		*tname;		/* optional the name part	*/
 	block_t		*content;	/* optional content for blocks	*/
 	char		*multi;		/* != NULL for repeating block	*/
-	void		*ev;		/* != NULL eval. for select	*/
-	void		*on_error;	/* != NULL eval on error	*/
 	/*}}}*/
 }	tagpos_t;
 typedef enum { /*{{{*/
@@ -282,6 +280,8 @@ struct tag { /*{{{*/
 	xmlBufferPtr	value;		/* value of the tag		*/
 	var_t		*parm;		/* parsed parameter		*/
 	bool_t		used;		/* marker to avoid loops	*/
+	void		*filter;	/* != NULL eval for filer	*/
+	void		*on_error;	/* != NULL eval on error	*/
 	void		*proc;		/* optional processing block	*/
 	struct tag	*next;
 	/*}}}*/
@@ -428,6 +428,7 @@ struct blockmail { /*{{{*/
 	int		maildrop_status_id;
 	char		status_field;
 	int		*senddate;
+	time_t		epoch;
 	bool_t		rdir_content_links;
 	/* general part */
 	xmlBufferPtr	auto_url;
@@ -701,7 +702,7 @@ extern void		blockmail_unsync (blockmail_t *b);
 extern bool_t		blockmail_insync (blockmail_t *b, int cid, const char *mediatype, int subtype, int chunks, int bcccount);
 extern bool_t		blockmail_tosync (blockmail_t *b, int cid, const char *mediatype, int subtype, int chunks, long size, int bcccount);
 extern bool_t		blockmail_extract_mediatypes (blockmail_t *b);
-extern void		blockmail_setup_senddate (blockmail_t *b, const char *date);
+extern void		blockmail_setup_senddate (blockmail_t *b, const char *date, time_t epoch);
 extern void		blockmail_setup_company_configuration (blockmail_t *b);
 extern void		blockmail_setup_mfrom (blockmail_t *b);
 extern void		blockmail_setup_dkim (blockmail_t *b);
@@ -740,6 +741,8 @@ extern tag_t		*tag_free (tag_t *t);
 extern tag_t		*tag_free_all (tag_t *t);
 extern void		tag_parse (tag_t *t, blockmail_t *blockmail);
 extern bool_t		tag_match (tag_t *t, const xmlChar *name, int nlen);
+extern bool_t		tag_vfilter (tag_t *t, receiver_t *rec, int timeout, va_list par);
+extern bool_t		tag_filter (tag_t *t, receiver_t *rec, int timeout, ...);
 extern const xmlChar	*tag_content (tag_t *t, blockmail_t *blockmail, receiver_t *rec, int *length);
 extern dyn_t		*dyn_alloc (int did, int order);
 extern dyn_t		*dyn_free (dyn_t *d);
@@ -827,6 +830,7 @@ extern bool_t		encode_8bit (const xmlBufferPtr src, buffer_t *dest);
 extern bool_t		encode_quoted_printable (const xmlBufferPtr src, buffer_t *dest);
 extern bool_t		encode_base64 (const xmlBufferPtr src, buffer_t *dest);
 extern bool_t		encode_encrypted (buffer_t *src, buffer_t *dest);
+extern bool_t		encode_uid_parameter (const byte_t *parameter, size_t size, buffer_t *dest);
 extern bool_t		encode_url (const byte_t *input, int ilen, buffer_t *dest);
 
 # ifndef	__OPTIMIZE__

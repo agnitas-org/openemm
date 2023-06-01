@@ -57,7 +57,7 @@ selected from the database configuration."""
 		else:
 			raise error (f'Missing/unknwon dbms "{dbms}" found')
 		rc = cast (Core, creator.new (cfg))
-		rc.setup ()
+		rc.setup (cfg)
 		return rc
 	
 	@classmethod

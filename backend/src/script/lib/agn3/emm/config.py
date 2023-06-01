@@ -13,18 +13,18 @@ from	__future__ import annotations
 import	logging, time
 from	collections import defaultdict
 from	dataclasses import dataclass, field
+from	datetime import datetime
 from	types import TracebackType
 from	typing import Any, Callable, Iterable, Optional, Sequence, Union
-from	typing import DefaultDict, Dict, Generator, Iterator, List, NamedTuple, Set, Tuple, Type
-from	typing import overload
+from	typing import DefaultDict, Dict, Iterator, List, NamedTuple, Set, Tuple, Type
+from	typing import cast, overload
 from	..db import DB, TempDB
-from	..definitions import syscfg, licence, program
+from	..definitions import syscfg, licence
 from	..ignore import Ignore
-from	..log import log, log_limit
-from	..parser import Unit
+from	..parser import Parsable, unit
 from	..stream import Stream
 from	..systemconfig import Systemconfig
-from	..tools import atob, listsplit, listjoin, Range
+from	..tools import atob, listsplit, listjoin
 #
 __all__ = ['EMMConfig', 'EMMCompany', 'EMMMailerset', 'Responsibility']
 #
@@ -33,10 +33,9 @@ logger = logging.getLogger (__name__)
 class _Config:
 	__slots__ = ['db', 'reread', 'last', 'selection']
 	sentinel = object ()
-	unit = Unit ()
-	def __init__ (self, db: Optional[DB] = None, reread: Unit.Parsable = None, selection: Optional[Systemconfig.Selection] = None) -> None:
+	def __init__ (self, db: Optional[DB] = None, reread: Parsable = None, selection: Optional[Systemconfig.Selection] = None) -> None:
 		self.db = db
-		self.reread: Optional[int] = int (self.unit.parse (reread)) if reread is not None else None
+		self.reread: Optional[int] = int (unit.parse (reread)) if reread is not None else None
 		self.selection: Systemconfig.Selection = selection if selection is not None else syscfg.selection ()
 		self.last: Union[None, int, float] = None
 	
@@ -103,7 +102,7 @@ True
 		name: str
 		value: str
 
-	def __init__ (self, db: Optional[DB] = None, reread: Unit.Parsable = None, selection: Optional[Systemconfig.Selection] = None, class_names: Optional[Sequence[str]] = None) -> None:
+	def __init__ (self, db: Optional[DB] = None, reread: Parsable = None, selection: Optional[Systemconfig.Selection] = None, class_names: Optional[Sequence[str]] = None) -> None:
 		super ().__init__ (db, reread, selection)
 		self.class_names = class_names
 		self.config: Dict[Tuple[str, str], str] = {}
@@ -156,6 +155,18 @@ raised.
 		#
 		raise KeyError ((class_name, name))
 
+	def iget (self, class_name: str, name: str, default: int) -> int:
+		try:
+			return int (self.config[(class_name, name)])
+		except (KeyError, ValueError):
+			return default
+	
+	def fget (self, class_name: str, name: str, default: float) -> float:
+		try:
+			return float (self.config[(class_name, name)])
+		except (KeyError, ValueError):
+			return default
+	
 	def scan (self, class_names: Optional[Sequence[str]] = None, single_value: bool = False) -> Iterator[EMMConfig.Value]:
 		"""Scans the config_tbl, if ``class_names'' is not
 None it is used as an iterable or a str to limit the scan to these
@@ -199,6 +210,45 @@ value is split off by comma. """
 				return True
 		return False
 
+	def read (self, class_name: str, name: str, hostname: Optional[str] = None) -> str:
+		with TempDB (self.db) as db, db.request () as cursor:
+			data, clause, _ = self.__setup_parameter (class_name, name, hostname)
+			rq = cursor.querys (
+				'SELECT value '
+				'FROM config_tbl '
+				f'WHERE {clause}',
+				data
+			)
+			if rq is not None and rq.value is not None:
+				return cast (str, rq.value)
+			raise KeyError (f'{class_name}:{name}' + (f'@{hostname}' if hostname else ''))
+
+	def changed (self, class_name: str, name: str, hostname: Optional[str] = None) -> Optional[datetime]:
+		with TempDB (self.db) as db, db.request () as cursor:
+			data, clause, _ = self.__setup_parameter (class_name, name, hostname)
+			rq = cursor.querys (
+				'SELECT change_date '
+				'FROM config_tbl '
+				f'WHERE {clause}',
+				data
+			)
+			if rq is not None:
+				return cast (Optional[datetime], rq.change_date)
+			raise KeyError (f'{class_name}:{name}' + (f'@{hostname}' if hostname else ''))
+		
+	def touch (self, class_name: str, name: str, hostname: Optional[str] = None) -> bool:
+		with TempDB (self.db) as db, db.request () as cursor:
+			data, clause, _ = self.__setup_parameter (class_name, name, hostname)
+			if cursor.update (
+				'UPDATE config_tbl '
+				'SET change_date = CURRENT_TIMESTAMP '
+				f'WHERE {clause}',
+				data
+			) > 0:
+				db.sync ()
+				return True
+		return False
+		
 	def write (self, class_name: str, name: str, value: str, description: str, hostname: Optional[str] = None) -> bool:
 		with TempDB (self.db) as db, db.request () as cursor:
 			data, clause, hostname_value = self.__setup_parameter (class_name, name, hostname)
@@ -259,7 +309,7 @@ class EMMCompany (_Config):
 		company_id: int
 		name: str
 		value: str
-	def __init__ (self, db: Optional[DB] = None, reread: Unit.Parsable = None, selection: Optional[Systemconfig.Selection] = None, keys: Optional[Sequence[str]] = None) -> None:
+	def __init__ (self, db: Optional[DB] = None, reread: Parsable = None, selection: Optional[Systemconfig.Selection] = None, keys: Optional[Sequence[str]] = None) -> None:
 		super ().__init__ (db, reread, selection)
 		self.keys = keys
 		self.company_id: Optional[int] = None
@@ -423,7 +473,7 @@ class EMMMailerset (_Config):
 		name: str
 		mailers: List[EMMMailerset.Mailer]
 		
-	def __init__ (self, db: Optional[DB] = None, reread: Unit.Parsable = None, selection: Optional[Systemconfig.Selection] = None) -> None:
+	def __init__ (self, db: Optional[DB] = None, reread: Parsable = None, selection: Optional[Systemconfig.Selection] = None) -> None:
 		super ().__init__ (db, reread, selection)
 		self.mailersets: Dict[int, EMMMailerset.Mailerset] = {}
 		self.mailers: Dict[str, EMMMailerset.Mailer] = {}
@@ -496,103 +546,10 @@ class EMMMailerset (_Config):
 		self.check ()
 		return Stream (self.mailersets.values ()).sorted (lambda m: m.id)
 		
-
 class Responsibility (_Config):
-	"""Framework to select the responsibility for companies for a server
-
->>> r = Responsibility ()
->>> r.last = 0
->>> r[None] = '10-20'
->>> r['test'] = '30-40'
->>> 10 in r
-True
->>> 30 in r
-False
->>> for c in range (0, 60, 10):
-...  r.is_responsible_for ('something', c)
-...  r.is_responsible_for ('test', c)
-... 
-False
-False
-True
-False
-True
-False
-False
-True
-False
-True
-False
-False
->>> r.reset ()
->>> r[None] = '*,!20'
->>> 10 in r
-True
->>> 20 in r
-False
->>> 30 in r
-True
->>> r.reset ()
->>> r[None] = '!20'
->>> 10 in r
-True
->>> 20 in r
-False
->>> 30 in r
-True
->>> r.reset ()
->>> r[None] = '!20,*'
->>> 10 in r
-True
->>> 20 in r
-True
->>> 30 in r
-True
-"""
-	__slots__ = ['user', 'log', 'responsibility']
-	def __init__ (self, db: Optional[DB] = None, reread: Unit.Parsable = None, selection: Optional[Systemconfig.Selection] = None, user: Optional[str] = None, log: bool = True) -> None:
-		super ().__init__ (db, reread, selection)
-		self.user: str = user if user is not None else self.selection.user
-		self.log = log
-		self.responsibility: Dict[str, Range] = {}
-
-	def __enter__ (self) -> Responsibility:
-		self.check (True)
-		return self
-		
-	def __exit__ (self, exc_type: Optional[Type[BaseException]], exc_value: Optional[BaseException], traceback: Optional[TracebackType]) -> Optional[bool]:
-		return None
-	
-	def __setitem__ (self, service: Optional[str], value: str) -> None:
-		self.responsibility[f'{self.user}.{service}' if service is not None else self.user] = Range (value)
-	
-	def __contains__ (self, company_id: int) -> bool:
-		return self.is_responsible_for (service = program, company_id = company_id)
-	
-	def __str__ (self) -> str:
-		return Stream (self.responsibility.items ()).map (lambda kv: f'{kv[0]}={kv[1]}').join (', ', finisher = lambda s: s if s else 'all')
-
-	def reset (self) -> None:
-		self.responsibility.clear ()
-
-	def retrieve (self, db: DB) -> None:
-		self.reset ()
-		with EMMConfig (db = db, reread = self.reread, selection = self.selection, class_names = ['responsibility']) as emmcfg:
-			for config_value in emmcfg.scan (single_value = True):
-				self.responsibility[config_value.name] = Range (config_value.value)
-		if self.log:
-			with log ('responsibility'):
-				log_limit (logger.info, f'{program} is responsible for {self}', key = 'responsibility', limit_identical = True)
-	
-	def is_responsible_for (self, service: str, company_id: int, default: bool = True) -> bool:
-		self.check ()
-		for key in self.key_provider (f'{self.user}.{service}'):
-			with Ignore (KeyError):
-				return company_id in self.responsibility[key]
-		return default
-	
-	def key_provider (self, key: str) -> Generator[str, None, None]:
-		parts = key.split ('.')
-		while parts:
-			yield '.'.join (parts)
-			parts.pop ()
+	def __init__ (self, *args: Any, **kws: Any) -> None: pass
+	def __enter__ (self) -> Responsibility: return self
+	def __exit__ (self, exc_type: Optional[Type[BaseException]], exc_value: Optional[BaseException], traceback: Optional[TracebackType]) -> Optional[bool]: return None
+	def __contains__ (self, company_id: int) -> bool: return True
+	def reset (self) -> None: pass
+	def is_responsible_for (self, *args: Any, **kws: Any) -> bool: return True

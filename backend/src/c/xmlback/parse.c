@@ -357,7 +357,9 @@ parse_description (blockmail_t *blockmail, xmlDocPtr doc, xmlNodePtr base) /*{{{
 					st = false;
 			} else if (! xmlstrcmp (node -> name, "send")) {
 				if (ptr = extract_property (blockmail, node, "date")) {
-					blockmail_setup_senddate (blockmail, ptr);
+					if (! extract_numeric_property (blockmail, & val, node, "epoch"))
+						val = 0;
+					blockmail_setup_senddate (blockmail, ptr, val);
 					free (ptr);
 				} else
 					st = false;

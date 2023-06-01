@@ -17,7 +17,7 @@ from	typing import Any, Callable, Final, Optional
 from	typing import DefaultDict, Dict, Generator, NamedTuple, Tuple, Type
 from	.dbm import DBM
 from	.ignore import Ignore
-from	.parser import Unit
+from	.parser import Parsable, unit
 from	.stream import Stream
 #
 __all__ = ['Key', 'Tracker']
@@ -118,10 +118,9 @@ class Tracker:
 		with Ignore (KeyError):
 			del self[key]
 	
-	unit = Unit ()
-	def expire (self, created: Unit.Parsable = None, updated: Unit.Parsable = None, max_count: int = 10000) -> None:
-		created = self.unit.parse (created)
-		updated = self.unit.parse (updated)
+	def expire (self, created: Parsable = None, updated: Parsable = None, max_count: int = 10000) -> None:
+		created = unit.parse (created)
+		updated = unit.parse (updated)
 		if created or updated:
 			db = self.open ()
 			logger.info ('Expire old tracking entries')

@@ -33,7 +33,7 @@ from	agn3.exceptions import error
 from	agn3.ignore import Ignore
 from	agn3.io import which
 from	agn3.log import log_limit, log
-from	agn3.parser import ParseTimestamp, Unit, Line, Field, Lineparser, Tokenparser
+from	agn3.parser import ParseTimestamp, unit, Line, Field, Lineparser, Tokenparser
 from	agn3.runtime import Runtime
 from	agn3.spool import Mailspool
 from	agn3.stream import Stream
@@ -70,27 +70,26 @@ def invoke (url: str, retries: int = 3, **kws: Any) -> Tuple[bool, requests.Resp
 class Autoresponder:
 	__slots__ = ['aid', 'sender']
 	name_autoresponder: Final[str] = 'autoresponder'
-	name_whitelist: Final[str] = 'whitelist'
+	name_allowlist: Final[str] = 'allowlist'
 	name_limit: Final[str] = 'limit'
 	bounce_autoresponder_lastsent_table: Final[str] = 'bounce_ar_lastsent_tbl'
-	unit = Unit ()
 	def __init__ (self, aid: str, sender: str) -> None:
 		self.aid = aid
 		self.sender = sender.lower ()
 	
-	def is_in_whitelist (self, bounce: Bounce, parameter: Line) -> bool:
-		whitelist: Optional[str] = bounce.get_config (
+	def is_in_allowlist (self, bounce: Bounce, parameter: Line) -> bool:
+		allowlist: Optional[str] = bounce.get_config (
 			company_id = parameter.company_id,
 			rid = parameter.rid,
 			name = self.name_autoresponder
-		).get (self.name_whitelist)
-		if whitelist is not None and self.sender in listsplit (whitelist.lower ()):
+		).get (self.name_allowlist)
+		if allowlist is not None and self.sender in listsplit (allowlist.lower ()):
 			return True
 		return False
 	
 	def may_receive (self, db: DB, bounce: Bounce, parameter: Line, cinfo: ParseEMail.Origin, dryrun: bool) -> bool:
 		may_receive = True
-		limit: int = self.unit.parse (bounce.get_config (
+		limit: int = unit.parse (bounce.get_config (
 			company_id = parameter.company_id,
 			rid = parameter.rid,
 			name = self.name_autoresponder
@@ -141,7 +140,7 @@ class Autoresponder:
 		return may_receive
 	
 	def allow (self, db: DB, bounce: Bounce, parameter: Line, cinfo: ParseEMail.Origin, dryrun: bool) -> bool:
-		if self.is_in_whitelist (bounce, parameter):
+		if self.is_in_allowlist (bounce, parameter):
 			return True
 		if not self.may_receive (db, bounce, parameter, cinfo, dryrun):
 			return False
@@ -556,6 +555,7 @@ class BAV:
 		'header_from', 'rid', 'sender', 'rule', 'reason'
 	]
 	x_agn = 'X-AGNMailloop'
+	x_customer = 'X-AGNCustomer'
 	has_spamassassin = which ('spamassassin') is not None
 	save_pattern = os.path.join (base, 'var', 'spool', 'filter', '%s-%s')
 	ext_bouncelog = os.path.join (base, 'log', 'extbounce.log')
@@ -927,6 +927,14 @@ class BAV:
 		if action == 'sent':
 			while BAV.x_agn in self.msg:
 				del self.msg[BAV.x_agn]
+			if (
+				self.cinfo is not None and
+				self.cinfo.valid and
+				self.cinfo.licence_id is not None and self.cinfo.licence_id == licence and
+				self.cinfo.company_id > 0 and self.cinfo.company_id == self.parameter.company_id and
+				self.cinfo.customer_id > 0
+			):
+				self.msg[BAV.x_customer] = str (self.cinfo.customer_id)
 			if fwd is not None:
 				self.sendmail (self.msg, fwd)
 

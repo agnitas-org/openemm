@@ -13,7 +13,7 @@ import	sys, os
 from	.exceptions import error
 from	.systemconfig import Systemconfig
 #
-__all__ = ['syscfg', 'licence', 'fqdn', 'host', 'unique', 'base', 'user', 'home', 'program', 'version']
+__all__ = ['syscfg', 'licence', 'fqdn', 'host', 'unique', 'base', 'user', 'home', 'program', 'version', 'ams']
 #
 syscfg = Systemconfig ()
 licence = syscfg.iget ('licence', -1)
@@ -46,3 +46,4 @@ else:
 	program = 'unset'
 #
 version = os.environ.get ('VERSION', 'unknown')
+ams = False

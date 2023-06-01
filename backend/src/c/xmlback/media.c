@@ -146,6 +146,5 @@ media_typeid (mediatype_t type) /*{{{*/
 	case Mediatype_EMail:
 		return "0";
 	}
-	return "";
 }/*}}}*/
 

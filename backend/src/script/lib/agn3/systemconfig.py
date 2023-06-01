@@ -10,7 +10,7 @@
 ####################################################################################################################################################################################################################################################################
 #
 from	__future__ import annotations
-import	os, json, platform, pwd
+import	os, json, platform, pwd, re
 from	typing import Callable, Final, Optional, TypeVar, Union
 from	typing import Dict, KeysView, List, Set, Tuple
 from	typing import overload
@@ -210,7 +210,8 @@ file, if it is available. """
 					self._parse ()
 			except (OSError, IOError):
 				pass
-	
+
+	pattern_selective = re.compile ('^([^[]+)\\[([^]]+)\\]$')
 	def _parse (self) -> None:
 		self.cfg.clear ()
 		if self.content is not None:
@@ -219,25 +220,39 @@ file, if it is available. """
 				if type (self.cfg) != dict:
 					raise ValueError ('expect json object, not {typ}'.format (typ = type (self.cfg)))
 			except ValueError:
-				cont = None
-				cur: Optional[List[str]] = None
-				for line in (_l.strip () for _l in self.content.split ('\n')):
+				cont: Optional[str] = None
+				cur: List[str] = []
+				for line in self.content.split ('\n'):
+					if line.endswith ('\r'):
+						line = line.rstrip ('\r')
 					if cont is not None:
-						if line == '}':
+						if line.rstrip () == '}':
 							self.cfg[cont] = '\n'.join (cur)
 							cont = None
-						elif line:
+						else:
 							cur.append (line)
 					elif line and not line.startswith ('#'):
 						try:
 							(var, val) = [_v.strip () for _v in line.split ('=', 1)]
 							if val == '{':
 								cont = var
-								cur = []
+								cur.clear ()
 							else:
 								self.cfg[var] = val
 						except ValueError:
 							pass
+			update: Dict[str, str] = {}
+			for (option, value) in self.cfg.items ():
+				mtch = self.pattern_selective.match (option)
+				if mtch is not None:
+					(base_option, indexlist) = mtch.groups ()
+					indexes = list (listsplit (indexlist))
+					if len (indexes) > 1:
+						for index in indexes:
+							simple_option = f'{base_option}[{index}]'
+							if simple_option not in self.cfg:
+								update[simple_option] = value
+			self.cfg.update (update)
 
 	def __str__ (self) -> str:
 		self._check ()
@@ -263,7 +278,6 @@ file, if it is available. """
 			return False
 		else:
 			return True
-		return var in self.cfg
 
 	def keys (self) -> KeysView[str]:
 		"""Returns all available configuration variables"""
@@ -364,23 +378,47 @@ file, if it is available. """
 	def user_lget (self, var: str, default: List[str]) -> List[str]: ...
 	def user_lget (self, var: str, default: Optional[List[str]] = None) -> Optional[List[str]]:
 		return self.__user (var, default, self.lget)
+
+	def has (self, var: str, default: Optional[bool] = None) -> bool:
+		try:
+			return atob (self[var])
+		except KeyError:
+			has_var = f'has-{var}'
+			if default is not None:
+				return self.bget (f'has-{var}', default)
+			return atob (self[has_var])
 	
+	def user_has (self, var: str, default: Optional[bool] = None) -> bool:
+		if (rc := self.user_bget (var)) is not None:
+			return rc
+		return self.has (var, default = default)
+			
+
 	def dump (self) -> None:
 		"""Display current configuration content"""
 		self._check ()
 		for (var, val) in self.cfg.items ():
 			print (f'{var}={val}')
 
-	def sendmail (self, recipients: Union[str, List[str]]) -> List[str]:
+	_sendmail_options = [
+		os.path.join (_home, 'lbin', 'sendmail'),
+		'/usr/sbin/sendmail'
+	] + [_f for _f in [os.path.join (_p, 'sendmail') for _p in os.environ.get ('PATH', '').split (':') if _p] if os.access (_f, os.X_OK)]
+	_sendmail_cli = Stream (_sendmail_options).filter (lambda p: os.access (p, os.X_OK)).limit (1).first (no = _sendmail_options[1])
+	def sendmail (self, recipients: Union[None, str, List[str]] = None, *, sender: Optional[str] = None) -> List[str]:
 		"""Returns sendmail command based on configuration"""
-		cmd = ['/usr/sbin/sendmail']
+		cmd = [self.user_get ('sendmail-cli', default = Systemconfig._sendmail_cli)]
 		if not self.bget ('enable-sendmail-dsn', False):
 			cmd.append ('-NNEVER')
-		cmd.append ('--')
-		if isinstance (recipients, str):
-			cmd.append (recipients)
-		else:
-			cmd += recipients
+		if sender is not None:
+			cmd.append ('-f')
+			cmd.append (sender)
+		if recipients is not None:
+			cmd.append ('--')
+			if isinstance (recipients, str):
+				cmd.append (recipients)
+			else:
+				cmd += recipients
 		return cmd
 
 	def selection (self, user: str = _user, fqdn: str = _fqdn, host: str = _host) -> Systemconfig.Selection:

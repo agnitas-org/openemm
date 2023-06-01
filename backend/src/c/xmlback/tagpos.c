@@ -44,30 +44,6 @@ setup_dyntype (tagpos_t *t, const char *dyntype) /*{{{*/
 		break;
 	}
 }/*}}}*/
-static void
-setup_filter (tagpos_t *t, blockmail_t *blockmail, const char *filter, const char *on_error) /*{{{*/
-{
-	if (filter) {
-		char	*expression;
-		
-		if (expression = ev_lua_convert (blockmail, filter)) {
-			t -> ev = ev_lua_alloc (blockmail, expression);
-			if (! t -> ev)
-				log_out (blockmail -> lg, LV_ERROR, "Failed to interpret filter \"%s\" (%s)", filter, expression);
-			free (expression);
-			if (t -> ev && on_error) {
-				if (expression = ev_lua_convert (blockmail, on_error)) {
-					t -> on_error = ev_lua_alloc (blockmail, expression);
-					if (! t -> on_error)
-						log_out (blockmail -> lg, LV_ERROR, "Failed to interpret on_error \"%s\" (%s)", on_error, expression);
-					free (expression);
-				} else
-					log_out (blockmail -> lg, LV_ERROR, "Failed to convert on_error \"%s\" as expression", on_error);
-			}
-		} else
-			log_out (blockmail -> lg, LV_ERROR, "Failed to convert filter \"%s\" as expression", filter);
-	}
-}/*}}}*/
 tagpos_t *
 tagpos_alloc (void) /*{{{*/
 {
@@ -85,8 +61,6 @@ tagpos_alloc (void) /*{{{*/
 			t -> tname = NULL;
 			t -> content = NULL;
 			t -> multi = NULL;
-			t -> ev = NULL;
-			t -> on_error = NULL;
 		} else {
 			free (t);
 			t = NULL;
@@ -105,10 +79,6 @@ tagpos_free (tagpos_t *t) /*{{{*/
 			block_free (t -> content);
 		if (t -> multi)
 			free (t -> multi);
-		if (t -> ev)
-			ev_lua_free (t -> ev);
-		if (t -> on_error)
-			ev_lua_free (t -> on_error);
 		free (t);
 	}
 	return NULL;
@@ -183,24 +153,15 @@ tagpos_setup_tag (tagpos_t *t, blockmail_t *blockmail) /*{{{*/
 				break;
 			}
 		if (t -> tag && (t -> type & TP_DYNAMIC)) {
-			var_t	*p, *type, *filter, *on_error;
+			var_t	*p, *type;
 			
 			type = NULL;
-			filter = NULL;
-			on_error = NULL;
 			for (p = t -> tag -> parm; p; p = p -> next)
 				if (p -> val && *(p -> val))
 					if ((! type) && (! strcmp (p -> var, "type")))
 						type = p;
-					else if ((! filter) && (! strcmp (p -> var, "filter")))
-						filter = p;
-					else if ((! on_error) && (! strcmp (p -> var, "onerror")))
-						on_error = p;
 			if (type != NULL) {
 				setup_dyntype (t, type -> val);
-			}
-			if (filter != NULL) {
-				setup_filter (t, blockmail, filter -> val, on_error ? on_error -> val : NULL);
 			}
 		}
 		if (t -> content)

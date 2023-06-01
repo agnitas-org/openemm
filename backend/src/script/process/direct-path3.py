@@ -131,7 +131,7 @@ class DirectPath (Worker):
 	def controller_setup (self) -> Any:
 		defaults: Dict[str, Any] = {
 			'xmlrpc.host': 'localhost',
-			'xmlrpc.port':  9400,
+			'xmlrpc.port':  syscfg.iget ('direct-path-port', 9400),
 			'xmlrpc.allow_none': True
 		}
 		for (var, value) in defaults.items ():

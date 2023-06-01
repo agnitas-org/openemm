@@ -13,6 +13,8 @@
 import	sys, os, getopt, time, stat, re
 import	subprocess, fnmatch, tarfile
 from	collections import defaultdict
+from	datetime import datetime
+from	io import BytesIO
 from	typing import Any, Optional
 from	typing import DefaultDict, Dict, List, Tuple
 
@@ -26,6 +28,7 @@ bin mode=0755:
 	src/script/tools/dkim-mgr
 	src/script/tools/script-tag
 	src/script/tools/service.sh
+	src/script/tools/OMT.sh
 
 	src/c/bav/bav
 	src/c/tools/config-query
@@ -49,6 +52,7 @@ scripts mode=0755:
 	src/script/tools/script-tag3.py
 	src/script/tools/service3.py
 	src/script/tools/service3.cfg		mode=0644
+	src/script/tools/OMT.py
 
 scripts/agn3:
 	src/script/lib/agn3/*.*
@@ -65,6 +69,9 @@ scripts/once mode=0755:
 	
 scripts/once/tags:
 	lib/tags/*.lua
+
+scripts/EMT_lib:
+	src/script/tools/EMT_lib/*.*
 """
 
 def toint (s: Any) -> int:
@@ -163,6 +170,19 @@ class Builder:
 				ti.gname = 'openemm'
 				ti.mtime = now
 				tf.addfile (ti)
+			#
+			# on-the-fly created file
+			build_spec = f'{self.version};{datetime.fromtimestamp (now):%Y-%m-%d %H:%M:%S};openemm.org;openemm'.encode ('UTF-8')
+			ti = tarfile.TarInfo (os.path.join (self.directory, 'scripts', 'build.spec'))
+			ti.size = len (build_spec)
+			ti.mtime = now
+			ti.mode = 0o644
+			ti.type = tarfile.REGTYPE
+			ti.uname = 'openemm'
+			ti.gname = 'openemm'
+			ti.uid = 500
+			ti.gid = 500
+			tf.addfile (ti, BytesIO (build_spec))
 			#
 			for directory in directories:
 				target_option = target_options[directory]

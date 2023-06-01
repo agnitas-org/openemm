@@ -51,28 +51,32 @@ class OpenEMM (Sanity):
 	
 	def __db_sanity (self, r: Report) -> None:
 		with DB () as db:
-			key = 'mask-envelope-from'
-			rq = db.querys (
-				'SELECT count(*) AS cnt '
-				'FROM company_info_tbl '
-				'WHERE company_id = 0 AND cname = :cname',
-				{'cname': key}
-			)
-			if rq is None or not rq.cnt:
-				count = db.update (
-					'INSERT INTO company_info_tbl ('
-					'       company_id, cname, cvalue, description, creation_date, timestamp'
-					') VALUES ('
-					'       0, :cname, :cvalue, NULL, current_timestamp, current_timestamp'
-					')', {
-						'cname': key,
-						'cvalue': 'false'
-					}, commit = True
+			for (key, value) in [
+				('mask-envelope-from', 'false'),
+				('direct-path', 'true')
+			]:
+				rq = db.querys (
+					'SELECT count(*) AS cnt '
+					'FROM company_info_tbl '
+					'WHERE company_id = 0 AND cname = :cname',
+					{'cname': key}
 				)
-				if count == 1:
-					logger.info ('Added configuration for envelope address')
-				else:
-					logger.error ('Failed to set configuration for envelope address: %s' % db.last_error ())
+				if rq is None or not rq.cnt:
+					count = db.update (
+						'INSERT INTO company_info_tbl ('
+						'       company_id, cname, cvalue, description, creation_date, timestamp'
+						') VALUES ('
+						'       0, :cname, :cvalue, NULL, current_timestamp, current_timestamp'
+						')', {
+							'cname': key,
+							'cvalue': value
+						}, commit = True
+					)
+					if count == 1:
+						logger.info (f'Added configuration value {value} for {key}')
+					else:
+						logger.error (f'Failed to set configuration value {value} for {key}: {db.last_error ()}')
+			#
 			for (key, value) in [
 				('LOGLEVEL', 'DEBUG'),
 				('MAILDIR', '${home}/var/spool/ADMIN'),

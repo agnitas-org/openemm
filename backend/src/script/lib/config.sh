@@ -24,6 +24,7 @@ export BASE
 #
 export	SYSTEM_CONFIG='{
   "trigger-port": 8450,
+  "direct-path": true,
   "direct-path-incoming": "/home/openemm/var/spool/DIRECT",
   "direct-path-archive": "/home/openemm/var/spool/ARCHIVE",
   "direct-path-recover": "/home/openemm/var/spool/RECOVER",
@@ -32,11 +33,14 @@ export	SYSTEM_CONFIG='{
   "dbid": "openemm",
   "merger-address": "127.0.0.1",
   "filter-name": "localhost",
-  "mailout-server": "localhost"
+  "mailout-server": "localhost",
+  "mailout-port": 8093,
+  "direct-path-server": "localhost",
+  "direct-path-port": 9403
 }'
 export	DBCFG_PATH="$BASE/etc/dbcfg"
 #
-version="22.04.000.238"
+version="`cut '-d;' -f1 ~/scripts/build.spec`"
 licence="`$BASE/bin/config-query licence`"
 system="`uname -s`"
 host="`uname -n | cut -d. -f1`"
@@ -160,9 +164,6 @@ fi
 if [ "$MTA" ]; then
 	export	MTA
 fi
-if [ -x $smctrl ]; then
-	sendmail=$smctrl
-fi
 #
 SENDMAIL_DSN="`$BASE/bin/config-query enable-sendmail-dsn`"
 if [ "$SENDMAIL_DSN" = "true" ]; then
@@ -175,13 +176,7 @@ export SENDMAIL_DSN SENDMAIL_DSN_OPT
 # B.) Routine collection
 #
 messagen() {
-	case "$system" in
-	SunOS|HP-UX)
-		echo "$*\c"
-		;;
-	*)	echo -n "$*"
-		;;
-	esac
+	echo -n "$*"
 }
 message() {
 	echo "$*"
@@ -337,6 +332,7 @@ require() {
 	setupVirtualEnviron || return 1
 	moduleinstalled "$__module"
 	if [ $? -ne 0 ]; then
+		python3 -m pip install -U pip
 		python3 -m pip install "$__name"
 		if [ $? -ne 0 ]; then
 			error "Failed to install $__name"
@@ -539,3 +535,4 @@ export PYTHONPATH
 export VERSION="$version"
 export LICENCE="$licence"
 py3required
+requires msgpack

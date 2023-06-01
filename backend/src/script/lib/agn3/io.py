@@ -29,7 +29,7 @@ from	.stream import Stream
 from	.template import Placeholder
 #
 __all__ = [
-	'relink', 'which', 'mkpath', 'normalize_path', 'create_path',
+	'relink', 'which', 'mkpath', 'expand_path', 'normalize_path', 'create_path',
 	'ArchiveDirectory', 'Filepos', 'Filesystem', 'file_access',
 	'copen', 'cstreamopen', 'gopen', 'fingerprint', 'expand_command',
 	'CSVDialects', 'CSVDefault',
@@ -120,13 +120,16 @@ with leading slash.
 		rc = os.path.sep + rc
 	return os.path.normpath (rc)
 
-def normalize_path (path: str) -> str:
-	"""normalize a relative path to be relative to home directory"""
-	if path is not None and not os.path.isabs (path):
-		path = os.path.expandvars (os.path.expanduser (path))
-		if not os.path.isabs (path):
-			path = os.path.abspath (os.path.join (base, path))
+def expand_path (path: str, base_path: Optional[str] = None) -> str:
+	"""expand and normalize a filesystem path"""
+	path = os.path.expandvars (os.path.expanduser (path))
+	if not os.path.isabs (path):
+		path = os.path.abspath (os.path.join (base_path, path) if base_path is not None else path)
 	return path
+
+def normalize_path (path: str) -> str:
+	"""expand and normalize a filesystem path relative to home directory"""
+	return expand_path (path, base_path = base)
 	
 def create_path (path: str, mode: int = 0o777) -> None:
 	"""create a path and all missing elements"""
@@ -497,7 +500,7 @@ class _CSVBase (csv.Dialect):
 	escapechar = None
 	lineterminator = '\r\n'
 	quotechar = '"'
-	quoting = csv.QUOTE_NONE
+	quoting: int = csv.QUOTE_NONE
 	skipinitialspace = True
 class _CSVSemicolon (_CSVBase):
 	delimiter = ';'
@@ -747,11 +750,7 @@ CSVIO.open (), for availble ``dialect'' values see CSVIO.__doc__,
 ``relaxed'' is True, errors are ignored otherwise raised (as
 implemented by the csv.DictWriter module)"""
 		super ().__init__ (stream, mode, bom_charset, header)
-		if relaxed:
-			extrasaction = 'ignore'
-		else:
-			extrasaction = 'raise'
-		self.writer = csv.DictWriter (self.fd, field_list, dialect = dialect, extrasaction = extrasaction)
+		self.writer = csv.DictWriter (self.fd, field_list, dialect = dialect, extrasaction = 'ignore' if relaxed else 'raise')
 
 class _CSVReader (CSVIO):
 	__slots__ = ['reader']

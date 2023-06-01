@@ -27,14 +27,14 @@ from	.definitions import base
 from	.exceptions import error, Timeout
 from	.ignore import Ignore
 from	.log import log
-from	.parser import Unit
+from	.parser import Parsable, unit
 from	.stream import Stream
 #
 __all__ = ['Signal', 'Timer', 'Daemonic', 'Watchdog', 'EWatchdog', 'Daemon']
 #
 logger = logging.getLogger (__name__)
 #
-T = TypeVar ('T')
+_T = TypeVar ('_T')
 #
 Handler = Union[Callable[[int, Optional[FrameType]], Any], int, Handlers, None]
 class Signal:
@@ -125,13 +125,12 @@ class Signal:
 
 class Timer:
 	__slots__ = ['timeout', 'start']
-	unit = Unit ()
-	def __init__ (self, timeout: Union[None, int, float, str]) -> None:
+	def __init__ (self, timeout: Parsable) -> None:
 		self.timeout: Optional[float]
 		if timeout is None or isinstance (timeout, float):
 			self.timeout = timeout
 		elif isinstance (timeout, str):
-			self.timeout = float (self.unit.parse (timeout))
+			self.timeout = float (unit.parse (timeout))
 		else:
 			self.timeout = float (timeout)
 		self.start: Optional[float] = None
@@ -170,7 +169,7 @@ class Timer:
 		raise error ('Timer: no timeout specified')
 
 	@staticmethod
-	def guard (timeout: int, method: Callable[[], T]) -> T:
+	def guard (timeout: int, method: Callable[[], _T]) -> _T:
 		def handler (sig: int, stack: Optional[FrameType]) -> Any:
 			raise Timeout ()
 		with Signal (signal.SIGALRM, handler):
@@ -192,29 +191,77 @@ should be subclassed and extended for the process to implement."""
 		devnull = os.devnull
 	except AttributeError:
 		devnull = '/dev/null'
-	unit = Unit ()
+
+	class Channel(Generic[_T]):
+		__slots__ = ['_reader', '_writer']
+		def __init__ (self) -> None:
+			self._reader, self._writer = multiprocessing.Pipe (duplex = False)
+			
+		def __del__ (self) -> None:
+			self.close ()
+		
+		def __enter__ (self) -> Daemonic.Channel[_T]:
+			return self
+
+		def __exit__ (self, exc_type: Optional[Type[BaseException]], exc_value: Optional[BaseException], traceback: Optional[TracebackType]) -> Optional[bool]:
+			self.close ()
+			return None
+			
+		def close (self) -> None:
+			self._close_writer ()
+			self._close_reader ()
+
+		def ready (self) -> bool:
+			if not self._reader.closed and self._reader.poll ():
+				return True
+			return False
+
+		def get (self) -> _T:
+			self._close_writer ()
+			try:
+				return cast (_T, self._reader.recv ())
+			finally:
+				self._close_reader ()
+		
+		def put (self, value: _T) -> None:
+			self._close_reader ()
+			try:
+				self._writer.send (value)
+			finally:
+				self._close_writer ()
+		
+		def _close_reader (self) -> None:
+			if not self._reader.closed:
+				self._reader.close ()
+			
+		def _close_writer (self) -> None:
+			if not self._writer.closed:
+				self._writer.close ()
+			
 	@classmethod
 	def call (cls, method: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
 		"""Call a method in a subprocess, return process status"""
-		def wrapper (queue: multiprocessing.Queue[Any], method: Callable[..., Any], *args: Any, **kwargs: Any) -> None:
+		def wrapper (channel: Daemonic.Channel[Any], method: Callable[..., Any], *args: Any, **kwargs: Any) -> None:
 			try:
 				rc = method (*args, **kwargs)
 			except BaseException as e:
 				rc = e
-			queue.put (rc)
-		queue: multiprocessing.Queue[Any] = multiprocessing.Queue ()
-		d = cls ()
-		p = d.join (join_pid = d.spawn (wrapper, queue, method, *args, **kwargs))
-		if p.error is not None:
-			raise p.error
-		if queue.empty ():
-			return None
-		rc = queue.get ()
-		if issubclass (type (rc), BaseException):
-			if type (rc) is SystemExit:
-				return rc.code
-			raise rc
-		return rc
+			channel.put (rc)
+
+		channel: Daemonic.Channel[Any]
+		with Daemonic.Channel () as channel:
+			d = cls ()
+			p = d.join (join_pid = d.spawn (wrapper, channel, method, *args, **kwargs))
+			if p.error is not None:
+				raise p.error
+			if not channel.ready ():
+				return None
+			rc: Any = channel.get ()
+			if issubclass (type (rc), BaseException):
+				if type (rc) is SystemExit:
+					return rc.code
+				raise rc
+			return rc
 
 	def __init__ (self) -> None:
 		self.running = True
@@ -310,7 +357,7 @@ should be subclassed and extended for the process to implement."""
 		signal: Optional[int] = None
 		nochild: bool = False
 		error: Optional[OSError] = None
-	def join (self, join_pid: int = -1, timeout: Union[None, int, float] = None) -> Daemonic.Status:
+	def join (self, join_pid: int = -1, timeout: Parsable = None) -> Daemonic.Status:
 		"""Waits for ``join_pid'' (if -1, then for any child
 process), ``timeout'' is the time in seconds to max. wait. If this is
 ``None'', no timeout is used."""
@@ -366,7 +413,7 @@ group. Currently these states are definied:
 		terminated = 4
 		canceled = 5
 	@dataclass
-	class Member (Generic[T]):
+	class Member (Generic[_T]):
 		"""Daemon Member
 
 This represents one method that is called in a subprocess. The
@@ -381,8 +428,8 @@ had terminated.
 		method: Callable[..., Any]
 		args: Sequence[Any]
 		kwargs: Dict[str, Any]
-		context: T
-		channel: multiprocessing.SimpleQueue[Any] = field (default_factory = lambda: multiprocessing.SimpleQueue ())
+		context: _T
+		channel: Optional[Daemonic.Channel[_T]] = None
 		value: Any = None
 		state: Daemonic.State = field (default_factory = lambda: Daemonic.State.new)
 		status: Optional[Daemonic.Status] = None
@@ -393,12 +440,12 @@ had terminated.
 				return getattr (self.context, attribute)
 			raise AttributeError (attribute)
 	@dataclass
-	class Stats (Generic[T]):
-		scheduled: List[Daemonic.Member[T]]
-		active: List[Daemonic.Member[T]]
-		ended: List[Daemonic.Member[T]]
+	class Stats (Generic[_T]):
+		scheduled: List[Daemonic.Member[_T]]
+		active: List[Daemonic.Member[_T]]
+		ended: List[Daemonic.Member[_T]]
 	@dataclass
-	class Group (Generic[T]):
+	class Group (Generic[_T]):
 		"""Daemon Group
 
 This class allows managing a group of process. Each member of the group
@@ -442,23 +489,23 @@ is called at the exit of the context manager.
 """
 		daemon: Daemonic
 		limit: Optional[int] = None
-		scheduled: Deque[Daemonic.Member[T]] = field (default_factory = deque)
-		active: Dict[int, Daemonic.Member[T]] = field (default_factory = dict)
-		status: List[Daemonic.Member[T]] = field (default_factory = list)
-		log: Optional[Callable[[Daemonic.Member[T], str], None]] = None
-		def __enter__ (self) -> Daemonic.Group[T]:
+		scheduled: Deque[Daemonic.Member[_T]] = field (default_factory = deque)
+		active: Dict[int, Daemonic.Member[_T]] = field (default_factory = dict)
+		status: List[Daemonic.Member[_T]] = field (default_factory = list)
+		log: Optional[Callable[[Daemonic.Member[_T], str], None]] = None
+		def __enter__ (self) -> Daemonic.Group[_T]:
 			return self
 
 		def __exit__ (self, exc_type: Optional[Type[BaseException]], exc_value: Optional[BaseException], traceback: Optional[TracebackType]) -> Optional[bool]:
 			self.run ()
 			return None
 
-		def __iter__ (self) -> Generator[Daemonic.Member[T], None, None]:
+		def __iter__ (self) -> Generator[Daemonic.Member[_T], None, None]:
 			for member in [_s for _s in self.status if _s.state in (Daemonic.State.terminated, Daemonic.State.canceled)]:
 				yield member
 				self.status.remove (member)
 
-		def stats (self) -> Daemonic.Stats[T]:
+		def stats (self) -> Daemonic.Stats[_T]:
 			return Daemonic.Stats (
 				scheduled = list (self.scheduled),
 				active = list (self.active.values ()),
@@ -471,13 +518,13 @@ is called at the exit of the context manager.
 		def is_idle (self) -> bool:
 			return not self.is_active ()
 			
-		def add (self, member: Daemonic.Member[T]) -> Daemonic.Member[T]:
+		def add (self, member: Daemonic.Member[_T]) -> Daemonic.Member[_T]:
 			member.state = Daemonic.State.scheduled
 			self.scheduled.append (member)
 			if self.log: self.log (member, 'added')
 			return member
 		
-		def remove (self, member: Daemonic.Member[T]) -> Daemonic.Member[T]:
+		def remove (self, member: Daemonic.Member[_T]) -> Daemonic.Member[_T]:
 			with Ignore (ValueError):
 				while True:
 					self.scheduled.remove (member)
@@ -492,7 +539,7 @@ is called at the exit of the context manager.
 			return member
 		
 		def start (self) -> int:
-			def starter (member: Daemonic.Member[T]) -> None:
+			def starter (member: Daemonic.Member[_T]) -> None:
 				member.state = Daemonic.State.running
 				member.pid = os.getpid ()
 				member.launched = datetime.now ()
@@ -504,12 +551,16 @@ is called at the exit of the context manager.
 					logger.exception (f'{member}: failed due to: {e}')
 					if self.log: self.log (member, f'terminating by {e}')
 					rc = e
-				member.channel.put (rc)
+				if member.channel is not None:
+					member.channel.put (rc)
+					member.channel.close ()
+					member.channel = None
 				member.state = Daemonic.State.dying
 			#
 			counter = 0
 			while self.scheduled and (self.limit is None or self.limit > len (self.active)):
 				member = self.scheduled.popleft ()
+				member.channel = Daemonic.Channel ()
 				pid = self.daemon.spawn (starter, member)
 				if pid > 0:
 					member.state = Daemonic.State.running
@@ -525,7 +576,7 @@ is called at the exit of the context manager.
 					break
 			return counter
 		
-		def stop (self, member: Daemonic.Member[T], hard: bool = False) -> Daemonic.Member[T]:
+		def stop (self, member: Daemonic.Member[_T], hard: bool = False) -> Daemonic.Member[_T]:
 			if member.state == Daemonic.State.scheduled:
 				with Ignore (ValueError):
 					while True:
@@ -539,7 +590,7 @@ is called at the exit of the context manager.
 					if self.log: self.log (member, 'stop {how}'.format (how = 'hard' if hard else 'soft'))
 			return member
 
-		def wait (self, timeout: Union[None, int, float] = None) -> int:
+		def wait (self, timeout: Parsable = None) -> int:
 			counter = 0
 			with Ignore (Timeout), Timer (timeout) as timer:
 				while self.is_active ():
@@ -549,8 +600,11 @@ is called at the exit of the context manager.
 						if status.pid:
 							with Ignore (KeyError):
 								member = self.active.pop (status.pid)
-								if not member.channel.empty ():
-									member.value = member.channel.get ()
+								if member.channel is not None:
+									if member.channel.ready ():
+										member.value = member.channel.get ()
+									member.channel.close ()
+									member.channel = None
 								member.state = Daemonic.State.terminated
 								member.status = status
 								counter += 1
@@ -566,9 +620,9 @@ is called at the exit of the context manager.
 				self.status.append (member)
 				if self.log: self.log (member, 'canceled')
 			
-		def term (self, hard_kill_delay: Union[None, int, float] = None) -> None:
+		def term (self, hard_kill_delay: Parsable = None) -> None:
 			self.cancel ()
-			signr = signal.SIGTERM if hard_kill_delay and hard_kill_delay > 0.0 else signal.SIGKILL
+			signr = signal.SIGTERM if hard_kill_delay else signal.SIGKILL
 			while self.active:
 				for (pid, member) in list (self.active.items ()):
 					member.state = Daemonic.State.dying
@@ -582,7 +636,7 @@ is called at the exit of the context manager.
 				signr = signal.SIGKILL
 				hard_kill_delay = None
 
-		def run (self, timeout: Union[None, int, float] = None, hard_kill_delay: Union[None, int, float] = None) -> List[Daemonic.Member[T]]:
+		def run (self, timeout: Parsable = None, hard_kill_delay: Parsable = None) -> List[Daemonic.Member[_T]]:
 			try:
 				with Timer (timeout) as timer:
 					while self.daemon.running and self.is_active ():
@@ -594,14 +648,14 @@ is called at the exit of the context manager.
 				self.term (hard_kill_delay)
 			return self.status
 
-	def group (self, limit: Optional[int] = None, *members: Daemonic.Member[T]) -> Daemonic.Group[T]:
+	def group (self, limit: Optional[int] = None, *members: Daemonic.Member[_T]) -> Daemonic.Group[_T]:
 		"""Create a process group, i.e. a controller for
 several in parallel executing subprocesses. Optional the parameter
 ``limit'' definies the maximum number of parallel started
 subprocesses. Every further positonal argument must be an instance of
 ``Daemonic.Member'' and will be added as part of the process group. It
 is possible to add later more processes using the ``add'' method."""
-		group: Daemonic.Group[T] = Daemonic.Group (self, limit = limit)
+		group: Daemonic.Group[_T] = Daemonic.Group (self, limit = limit)
 		Stream (members).each (lambda m: group.add (m))
 		return group
 
@@ -759,8 +813,8 @@ to restrart a subprocess which has terminated unexpected.
 been terminated and is still active to kill it the hard way.
 ``maxIncarnation'', if not None, is the maximum number of restarts for
 a process until the watchdog gives up."""
-		restart_delay = self.unit.parse (restart_delay, 60)
-		termination_delay = self.unit.parse (termination_delay, 10)
+		restart_delay = unit.parse (restart_delay, 60)
+		termination_delay = unit.parse (termination_delay, 10)
 		joblist = [jobs] if isinstance (jobs, self.Job) else jobs
 		hb = None
 		for job in joblist:

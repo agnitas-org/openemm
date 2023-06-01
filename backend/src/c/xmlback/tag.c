@@ -138,23 +138,6 @@ proc_alloc_mfrom (tag_t *t, blockmail_t *blockmail) /*{{{*/
 	return p;
 }/*}}}*/
 
-static struct { /*{{{*/
-	const char	*tname;		/* tagname to be parsed		*/
-	/*}}}*/
-}	parseable[] = { /*{{{*/
-	{	"agnDYN"		},
-	{	"FUNCTION"		},
-	{	"agnSYSINFO"		}
-	/*}}}*/
-};
-enum PType { /*{{{*/
-	P_Dyn,
-	P_Function,
-	P_Sysinfo
-	/*}}}*/
-};
-static int	psize = sizeof (parseable) / sizeof (parseable[0]);
-
 tag_t *
 tag_alloc (void) /*{{{*/
 {
@@ -169,6 +152,8 @@ tag_alloc (void) /*{{{*/
 		t -> value = xmlBufferCreate ();
 		t -> parm = NULL;
 		t -> used = false;
+		t -> filter = NULL;
+		t -> on_error = NULL;
 		t -> proc = NULL;
 		t -> next = NULL;
 		if ((! t -> name) || (! t -> value))
@@ -190,6 +175,10 @@ tag_free (tag_t *t) /*{{{*/
 			xmlBufferFree (t -> value);
 		if (t -> parm)
 			var_free_all (t -> parm);
+		if (t -> filter)
+			ev_lua_free (t -> filter);
+		if (t -> on_error)
+			ev_lua_free (t -> on_error);
 		if (t -> proc)
 			proc_free ((proc_t *) t -> proc);
 		free (t);
@@ -310,16 +299,45 @@ find_quote (const xmlChar *ptr, int len) /*{{{*/
 		}
 	return NULL;
 }/*}}}*/
+static void
+setup_filter (tag_t *t, blockmail_t *blockmail, const char *filter, const char *on_error) /*{{{*/
+{
+	if (filter) {
+		char	*expression;
+		
+		if (expression = ev_lua_convert (blockmail, filter)) {
+			t -> filter = ev_lua_alloc (blockmail, expression);
+			if (! t -> filter)
+				log_out (blockmail -> lg, LV_ERROR, "Failed to interpret filter \"%s\" (%s)", filter, expression);
+			free (expression);
+			if (t -> filter && on_error) {
+				if (expression = ev_lua_convert (blockmail, on_error)) {
+					t -> on_error = ev_lua_alloc (blockmail, expression);
+					if (! t -> on_error)
+						log_out (blockmail -> lg, LV_ERROR, "Failed to interpret on_error \"%s\" (%s)", on_error, expression);
+					free (expression);
+				} else
+					log_out (blockmail -> lg, LV_ERROR, "Failed to convert on_error \"%s\" as expression", on_error);
+			}
+		} else
+			log_out (blockmail -> lg, LV_ERROR, "Failed to convert filter \"%s\" as expression", filter);
+	}
+}/*}}}*/
 void
 tag_parse (tag_t *t, blockmail_t *blockmail) /*{{{*/
 {
 	xmlBufferPtr	temp;
 	
 	if (t -> name && (xmlBufferLength (t -> name) > 0) && (temp = xmlBufferCreateSize (xmlBufferLength (t -> name) + 1))) {
-		xmlChar	*ptr;
-		xmlChar	*name;
-		int	len;
-		int	tid;
+		xmlChar		*ptr;
+		xmlChar		*name;
+		int		len;
+		var_t		*cur, *prev;
+		var_t		*filter, *on_error;
+		xmlChar		*var, *val;
+		xmlChar		quote;
+		int		n;
+		struct quote	*quo;
 		
 		xmlBufferAdd (temp, xmlBufferContent (t -> name), xmlBufferLength (t -> name));
 		ptr = (xmlChar *) xmlBufferContent (temp);
@@ -336,177 +354,165 @@ tag_parse (tag_t *t, blockmail_t *blockmail) /*{{{*/
 		}
 		name = ptr;
 		xmlSkip (& ptr, & len);
-		if (t -> ttype) {
-			for (tid = 0; tid < psize; ++tid)
-				if (! strcmp (t -> ttype, parseable[tid].tname))
-					break;
-		} else
-			tid = psize;
-		if (tid == psize)
-			for (tid = 0; tid < psize; ++tid)
-				if (! xmlstrcmp (name, parseable[tid].tname))
-					break;
-		if (tid < psize) {
-			var_t		*cur, *prev;
-			xmlChar		*var, *val;
-			xmlChar		quote;
-			int		n;
-			struct quote	*quo;
-			
-			for (prev = t -> parm; prev && prev -> next; prev = prev -> next)
-				;
+		for (prev = t -> parm; prev && prev -> next; prev = prev -> next)
+			;
+		filter = NULL;
+		on_error = NULL;
+		while (len > 0) {
+			var = ptr;
 			while (len > 0) {
-				var = ptr;
-				while (len > 0) {
-					n = xmlCharLength (*ptr);
-					if (n == 1) {
-						if (isspace (*ptr) || (*ptr == '='))
-							break;
-						*ptr = tolower (*ptr);
-						++ptr;
-						--len;
-					} else {
-						ptr += n;
-						len -= n;
-					}
-				}
-				if (len > 0) {
-					char	ch = *ptr;
-					
-					*ptr++ = '\0';
+				n = xmlCharLength (*ptr);
+				if (n == 1) {
+					if (isspace (*ptr) || (*ptr == '='))
+						break;
+					*ptr = tolower (*ptr);
+					++ptr;
 					--len;
-					if ((xmlCharLength (*ptr) == 1) && isspace (ch)) {
-						while ((xmlCharLength (*ptr) == 1) && isspace (*ptr))
-							++ptr, --len;
-						if ((len == 0) || (*ptr != '=')) {
-							/* ignore attributes without value for now */
-							continue;
-						}
-						++ptr, --len;
-					}
-					while ((len > 0) && (xmlCharLength (*ptr) == 1) && isspace (*ptr))
-						++ptr, --len;
-				}
-				if (len > 0) {
-					if ((xmlCharLength (*ptr) == 1) && ((*ptr == '"') || (*ptr == '\''))) {
-						quote = *ptr++;
-						--len;
-						val = ptr;
-						while (len > 0) {
-							n = xmlCharLength (*ptr);
-							if ((n == 1) && (*ptr == quote)) {
-								*ptr++ = '\0';
-								--len;
-								xmlSkip (& ptr, & len);
-								break;
-							} else {
-								ptr += n;
-								len -= n;
-							}
-						}
-					} else if (quo = find_quote (ptr, len)) {
-						len -= quo -> olen;
-						ptr += quo -> olen;
-						val = ptr;
-						while (len >= quo -> clen) {
-							n = xmlCharLength (*ptr);
-							if ((((! quo -> multi_char) && (n == quo -> clen)) || (quo -> multi_char && (len >= quo -> clen))) &&
-							    (! memcmp (ptr, quo -> close, quo -> clen))) {
-								*ptr = '\0';
-								ptr += quo -> clen;
-								len -= quo -> clen;
-								xmlSkip (& ptr, & len);
-								if (quo -> multi_char) {
-									entity_resolve (val);
-								}
-								break;
-							} else {
-								ptr += n;
-								len -= n;
-							}
-						}
-					} else {
-						val = ptr;
-						xmlSkip (& ptr, & len);
-					}
-					if (cur = var_alloc (xml2char (var), xml2char (val))) {
-						if (prev)
-							prev -> next = cur;
-						else
-							t -> parm = cur;
-						prev = cur;
-					}
+				} else {
+					ptr += n;
+					len -= n;
 				}
 			}
-			switch ((enum PType) tid) {
-			case P_Dyn:
-				break;
-			case P_Function:
-				t -> proc = proc_alloc_function (t, blockmail);
-				xmlBufferEmpty (t -> value);
-				break;
-			case P_Sysinfo:
-				for (cur = t -> parm; cur; cur = cur -> next)
-					if (! strcmp (cur -> var, "name")) {
-						if (! strcmp (cur -> val, "FQDN")) {
-							const char	*dflt;
+			if (len > 0) {
+				char	ch = *ptr;
+					
+				*ptr++ = '\0';
+				--len;
+				if ((xmlCharLength (*ptr) == 1) && isspace (ch)) {
+					while ((xmlCharLength (*ptr) == 1) && isspace (*ptr))
+						++ptr, --len;
+					if ((len == 0) || (*ptr != '=')) {
+						/* ignore attributes without value for now */
+						continue;
+					}
+					++ptr, --len;
+				}
+				while ((len > 0) && (xmlCharLength (*ptr) == 1) && isspace (*ptr))
+					++ptr, --len;
+			}
+			if (len > 0) {
+				if ((xmlCharLength (*ptr) == 1) && ((*ptr == '"') || (*ptr == '\''))) {
+					quote = *ptr++;
+					--len;
+					val = ptr;
+					while (len > 0) {
+						n = xmlCharLength (*ptr);
+						if ((n == 1) && (*ptr == quote)) {
+							*ptr++ = '\0';
+							--len;
+							xmlSkip (& ptr, & len);
+							break;
+						} else {
+							ptr += n;
+							len -= n;
+						}
+					}
+				} else if (quo = find_quote (ptr, len)) {
+					len -= quo -> olen;
+					ptr += quo -> olen;
+					val = ptr;
+					while (len >= quo -> clen) {
+						n = xmlCharLength (*ptr);
+						if ((((! quo -> multi_char) && (n == quo -> clen)) || (quo -> multi_char && (len >= quo -> clen))) &&
+						    (! memcmp (ptr, quo -> close, quo -> clen))) {
+							*ptr = '\0';
+							ptr += quo -> clen;
+							len -= quo -> clen;
+							xmlSkip (& ptr, & len);
+							if (quo -> multi_char) {
+								entity_resolve (val);
+							}
+							break;
+						} else {
+							ptr += n;
+							len -= n;
+						}
+					}
+				} else {
+					val = ptr;
+					xmlSkip (& ptr, & len);
+				}
+				if (cur = var_alloc (xml2char (var), xml2char (val))) {
+					if ((! filter) && (! strcmp (cur -> var, "filter")))
+						filter = cur;
+					else if ((! on_error) && (! strcmp (cur -> var, "onerror")))
+						on_error = cur;
+					if (prev)
+						prev -> next = cur;
+					else
+						t -> parm = cur;
+					prev = cur;
+				}
+			}
+		}
+		t -> filter = ev_lua_free (t -> filter);
+		t -> on_error = ev_lua_free (t -> on_error);
+		if (filter) {
+			setup_filter (t, blockmail, filter -> val, on_error ? on_error -> val : NULL);
+		}
+		if (t -> ttype && (! strcmp (t -> ttype, "FUNCTION"))) {
+			t -> proc = proc_alloc_function (t, blockmail);
+			xmlBufferEmpty (t -> value);
+		} else if (! xmlstrcmp (name, "agnSYSINFO")) {
+			for (cur = t -> parm; cur; cur = cur -> next)
+				if (! strcmp (cur -> var, "name")) {
+					if (! strcmp (cur -> val, "FQDN")) {
+						const char	*dflt;
 						
-							if (blockmail -> fqdn) {
-								xmlBufferEmpty (t -> value);
-								xmlBufferCCat (t -> value, blockmail -> fqdn);
-							} else if (dflt = find_default (t)) {
-								xmlBufferEmpty (t -> value);
-								xmlBufferCCat (t -> value, dflt);
-							}
-						} else if (! strcmp (cur -> val, "RFCDATE")) {
-							char            dbuf[128];
+						if (blockmail -> fqdn) {
+							xmlBufferEmpty (t -> value);
+							xmlBufferCCat (t -> value, blockmail -> fqdn);
+						} else if (dflt = find_default (t)) {
+							xmlBufferEmpty (t -> value);
+							xmlBufferCCat (t -> value, dflt);
+						}
+					} else if (! strcmp (cur -> val, "RFCDATE")) {
+						char            dbuf[128];
 
-							if (mkRFCdate (blockmail_now (blockmail), dbuf, sizeof (dbuf))) {
-								xmlBufferEmpty (t -> value);
-								xmlBufferCCat (t -> value, dbuf);
-							}
-						} else if (! strcmp (cur -> val, "EPOCH")) {
-							char		dbuf[64];
-							
-							sprintf (dbuf, "%ld", (long) blockmail_now (blockmail));
+						if (mkRFCdate (blockmail_now (blockmail), dbuf, sizeof (dbuf))) {
 							xmlBufferEmpty (t -> value);
 							xmlBufferCCat (t -> value, dbuf);
-						} else if ((! strcmp (cur -> val, "MFROM")) || (! strcmp (cur -> val, "RPATH"))) {
-							const char	*mfrom;
-							
-							if ((mfrom = find_default (t)) && ((! blockmail -> fqdn) || spf_is_valid (blockmail -> spf, mfrom))) {
-								xmlBufferEmpty (t -> value);
-								xmlBufferCCat (t -> value, mfrom);
-							} else {
-								const char	*user;
-								struct passwd	*pw;
-
-								user = NULL;
-								setpwent ();
-								if (pw = getpwuid (getuid ()))
-									user = pw -> pw_name;
-								if (! user)
-									user = getlogin ();
-								if (! user)
-									user = cuserid (NULL);
-								if (! user)
-									user = getenv ("USER");
-								if (! user)
-									user = getenv ("LOGNAME");
-								if (! user)
-									user = "nobody";
-								xmlBufferEmpty (t -> value);
-								xmlBufferCCat (t -> value, user);
-								xmlBufferCCat (t -> value, "@");
-								xmlBufferCCat (t -> value, blockmail -> fqdn);
-								endpwent ();
-							}
-							if (! strcmp (cur -> val, "RPATH"))
-								t -> proc = proc_alloc_mfrom (t, blockmail);
 						}
+					} else if (! strcmp (cur -> val, "EPOCH")) {
+						char		dbuf[64];
+							
+						sprintf (dbuf, "%ld", (long) blockmail_now (blockmail));
+						xmlBufferEmpty (t -> value);
+						xmlBufferCCat (t -> value, dbuf);
+					} else if ((! strcmp (cur -> val, "MFROM")) || (! strcmp (cur -> val, "RPATH"))) {
+						const char	*mfrom;
+							
+						if ((mfrom = find_default (t)) && ((! blockmail -> fqdn) || spf_is_valid (blockmail -> spf, mfrom))) {
+							xmlBufferEmpty (t -> value);
+							xmlBufferCCat (t -> value, mfrom);
+						} else {
+							const char	*user;
+							struct passwd	*pw;
+
+							user = NULL;
+							setpwent ();
+							if (pw = getpwuid (getuid ()))
+								user = pw -> pw_name;
+							if (! user)
+								user = getlogin ();
+							if (! user)
+								user = cuserid (NULL);
+							if (! user)
+								user = getenv ("USER");
+							if (! user)
+								user = getenv ("LOGNAME");
+							if (! user)
+								user = "nobody";
+							xmlBufferEmpty (t -> value);
+							xmlBufferCCat (t -> value, user);
+							xmlBufferCCat (t -> value, "@");
+							xmlBufferCCat (t -> value, blockmail -> fqdn);
+							endpwent ();
+						}
+						if (! strcmp (cur -> val, "RPATH"))
+							t -> proc = proc_alloc_mfrom (t, blockmail);
 					}
-				break;
-			}
+				}
 		}
 		xmlBufferFree (temp);
 	}
@@ -524,6 +530,61 @@ tag_match (tag_t *t, const xmlChar *name, int nlen) /*{{{*/
 			return true;
 	}
 	return false;
+}/*}}}*/
+
+typedef struct { /*{{{*/
+	void		*filter;
+	receiver_t	*rec;
+	void		*par;
+	int		result;
+	/*}}}*/
+}	priv_t;
+static void
+execute_filter (void *pp) /*{{{*/
+{
+	priv_t	*priv = (priv_t *) pp;
+	
+	priv -> result = ev_lua_vevaluate (priv -> filter, priv -> rec, priv -> par);
+}/*}}}*/
+bool_t
+tag_vfilter (tag_t *t, receiver_t *rec, int timeout, va_list par) /*{{{*/
+{
+	bool_t	rc;
+	
+	if (t -> filter) {
+		priv_t	priv;
+		
+		rc = false;
+		priv.filter = t -> filter;
+		priv.rec = rec;
+		priv.par = par;
+		if (timeout_exec (timeout, execute_filter, & priv)) {
+			if ((priv.result == -1) && t -> on_error) {
+				priv.filter = t -> on_error;
+				if (! timeout_exec (timeout, execute_filter, & priv)) {
+					t -> on_error = ev_lua_free (t -> on_error);
+					priv.result = -1;
+				}
+			}
+			if (priv.result == 1)
+				rc = true;
+		} else {
+			t -> filter = ev_lua_free (t -> filter);
+		}
+	} else
+		rc = true;
+	return rc;
+}/*}}}*/
+bool_t
+tag_filter (tag_t *t, receiver_t *rec, int timeout, ...) /*{{{*/
+{
+	va_list	par;
+	bool_t	rc;
+	
+	va_start (par, timeout);
+	rc = tag_vfilter (t, rec, timeout, par);
+	va_end (par);
+	return rc;
 }/*}}}*/
 const xmlChar *
 tag_content (tag_t *t, blockmail_t *blockmail, receiver_t *rec, int *length) /*{{{*/

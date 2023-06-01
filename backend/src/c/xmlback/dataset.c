@@ -139,23 +139,6 @@ scanner_use (scanner_t *s, record_t *r) /*{{{*/
 	return seen < refs ? true : false;
 }/*}}}*/
 
-typedef struct { /*{{{*/
-	void		*ev;
-	receiver_t	*rec;
-	int		avail;
-	int		index;
-	int		count;
-	int		result;
-	/*}}}*/
-}	fipriv_t;
-
-static void
-filter_executor (void *fip) /*{{{*/
-{
-	fipriv_t	*fi = (fipriv_t *) fip;
-	
-	fi -> result = ev_lua_evaluate (fi -> ev, fi -> rec, "i:avail", fi -> avail, "i:index", fi -> index, "i:count", fi -> count, NULL);
-}/*}}}*/
 static int *
 filter_indexes (dataset_t *ds, tagpos_t *tp, receiver_t *rec, int *indexes, int *icount) /*{{{*/
 {
@@ -163,32 +146,13 @@ filter_indexes (dataset_t *ds, tagpos_t *tp, receiver_t *rec, int *indexes, int 
 
 	if (rc = (int *) malloc ((*icount + 1) * sizeof (int))) {
 		record_t	*save;
-		fipriv_t	fi;
 		int		idx, use;
 	
 		save = ds -> cur;
-		fi.rec = rec;
-		fi.avail = *icount;
 		for (idx = 0, use = 0; indexes[idx] != -1; ++idx) {
 			dataset_select_record (ds, indexes[idx]);
-			fi.ev = tp -> ev;
-			fi.index = idx + 1;
-			fi.count = use + 1;
-			if (timeout_exec (10, filter_executor, & fi)) {
-				if ((fi.result == -1) && tp -> on_error) {
-					fi.ev = tp -> on_error;
-					if (! timeout_exec (10, filter_executor, & fi)) {
-						tp -> on_error = ev_lua_free (tp -> on_error);
-						fi.result = -1;
-					}
-				}
-				if (fi.result == 1)
-					rc[use++] = indexes[idx];
-			} else {
-				tp -> ev = ev_lua_free (tp -> ev);
-				use = 0;
-				break;
-			}
+			if (tag_filter (tp -> tag, rec, 10, "i:avail", *icount, "i:index", idx + 1, "i:count", use + 1, NULL))
+				rc[use++] = indexes[idx];
 		}
 		if (use == 0) {
 			free (rc);
@@ -499,7 +463,7 @@ dataset_get_indexes (dataset_t *ds, tagpos_t *tp, receiver_t *rec, int *icount, 
 		}
 	}
 	if (rc && (*icount > 0)) {
-		if (tp -> ev) {
+		if (tp -> tag && tp -> tag -> filter) {
 			if (rc = filter_indexes (ds, tp, rec, rc, icount)) {
 				*dynamic = true;
 			} else {

@@ -13,8 +13,9 @@ from	__future__ import annotations
 import	os, subprocess, logging
 from	typing import Optional
 from	typing import Dict, List
-from	.definitions import base
+from	.definitions import base, syscfg
 from	.io import which
+from	.log import log
 from	.tools import call, listsplit
 #
 __all__ = ['MTA']
@@ -27,12 +28,11 @@ class MTA:
 This class is used to handle different MTAs on a central base. It also
 supports calling xmlback to generate the final mail depending on the
 used MTA."""
-	__slots__ = ['xmlback', 'mta', 'dsnopt', 'conf']
+	__slots__ = ['xmlback', 'mta', 'conf']
 	def __init__ (self, xmlback: Optional[str] = None) -> None:
 		"""``xmlback'' is an alternate path to the executable to call"""
 		self.xmlback = xmlback if xmlback is not None else os.path.join (base, 'bin', 'xmlback')
-		self.mta = os.environ.get ('MTA', 'sendmail')
-		self.dsnopt = os.environ.get ('SENDMAIL_DSN_OPT', '-NNEVER')
+		self.mta = os.environ.get ('MTA', 'postfix')
 		self.conf: Dict[str, str] = {}
 		if self.mta == 'postfix':
 			cmd = self.postfix_command ('postconf')
@@ -95,7 +95,9 @@ instances of mail creation"""
 		]
 		if self.mta == 'postfix':
 			generate += [
-				f'inject=/usr/sbin/sendmail {self.dsnopt} -f %(sender) -- %(recipient)'
+				'inject={sendmail} -f %(sender) -- %(recipient)'.format (
+					sendmail = ' '.join (syscfg.sendmail ())
+				)
 			]
 		else:
 			generate += [
@@ -112,7 +114,7 @@ instances of mail creation"""
 			self.xmlback,
 			'-l',
 			'-o', 'generate:{generate}'.format (generate = ';'.join (generate)),
-			'-L', 'info',
+			'-L', log.get_loglevel (default = 'info'),
 			path
 		]
 		logger.debug (f'{cmd} starting')

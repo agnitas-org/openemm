@@ -22,7 +22,9 @@ from	.exceptions import error
 from	.ignore import Ignore
 from	.stream import Stream
 #
-__all__ = ['ParseTimestamp', 'Period', 'Unit', 'Line', 'Field', 'Lineparser', 'Tokenparser']
+__all__ = ['ParseTimestamp', 'Period', 'Unit', 'unit', 'Line', 'Field', 'Lineparser', 'Tokenparser']
+#
+Parsable = Union[None, int, float, str]
 #
 class ParseTimestamp:
 	"""parses common used timestamps
@@ -192,8 +194,7 @@ convertion values can be added. Examples:
 		"""Sets a unit value ``mult'' for unit ``key''"""
 		self.eunit[key] = mult
 
-	Parsable = Union[None, int, float, str]
-	def __call__ (self, expr: Unit.Parsable, default: int = 0, default_multiply: int = 1) -> int:
+	def __call__ (self, expr: Parsable, default: int = 0, default_multiply: int = 1) -> int:
 		"""Parses a unit string"""
 		if expr is None:
 			return default
@@ -214,6 +215,7 @@ convertion values can be added. Examples:
 			return rc
 		return default
 	parse = __call__
+unit = Unit ()
 
 class Line (Protocol):
 	def __init__ (self, *args: Any, **kws: Any): ...

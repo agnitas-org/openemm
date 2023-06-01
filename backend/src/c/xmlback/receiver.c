@@ -242,6 +242,9 @@ receiver_make_message_id (receiver_t *rec, blockmail_t *blockmail) /*{{{*/
 			snprintf (scratch, sizeof (scratch) - 1, "%d", rec -> customer_id);
 			xmlBufferCCat (rec -> message_id, scratch);
 		} else if (uid = create_uid (blockmail, blockmail -> uid_version, m -> prefix, rec, 0)) {
+			if (blockmail -> status_field == 'V') {
+				xmlBufferCCat (rec -> message_id, "V0-");
+			}
 			xmlBufferCCat (rec -> message_id, uid);
 			free (uid);
 		}

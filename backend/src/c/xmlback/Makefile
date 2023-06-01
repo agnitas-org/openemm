@@ -10,9 +10,9 @@
 ####################################################################################################################################################################################################################################################################
 #
 
-CFLAGS	= '-DEMM_VERSION="OpenEMM 22.04.000.238"' -I. -I../lib -Iinclude
+CFLAGS	= '-DEMM_VERSION="OpenEMM 22.10.000.122"' -I. -I../lib -Iinclude
 LDFLAGS	= -L. -L../lib -Llib
-LIBS	= -lagn -lslang -lopendkim -lbsd -lresolv -llua -lssl -lcrypto -lxml2 -lz -lm
+LIBS	= -lagn -lslang -lopendkim -lbsd -lresolv -llua -lmpack -lssl -lcrypto -lxml2 -lz -lm
 SRCS	= entity.c xmlback.c parse.c create.c replace.c modify.c protect.c convert.c append.c \
 	  blockmail.c block.c tagpos.c tracker.c mailtypedefinition.c links.c blockspec.c fix.c \
 	  postfix.c dcache.c receiver.c tag.c dyn.c media.c columns.c url.c link_resolve.c field.c dataset.c encrypt.c mailtrack.c \
@@ -36,7 +36,7 @@ xmlback.o:	xmlback.c Makefile
 ../lib/libagn.a:
 	$(MAKE) -C ../lib `basename $@`
 
-libs:	lib include lib/libslang.a lib/liblua.a lib/libssl.a lib/libcrypto.a lib/libz.a lib/libxml2.a lib/libbsd.a lib/libopendkim.a
+libs:	lib include lib/libslang.a lib/liblua.a lib/libssl.a lib/libcrypto.a lib/libz.a lib/libxml2.a lib/libbsd.a lib/libopendkim.a lib/libmpack.a
 
 lib include:
 	[ -d $@ ] || mkdir $@
@@ -54,6 +54,8 @@ lib/libbsd.a:	libbsd-0.6.0.tar.gz
 	tar xzf libbsd-0.6.0.tar.gz && ( cd libbsd-0.6.0; ./configure --prefix=`dirname \`pwd\`` --disable-shared; make; mv src/.libs/libbsd.a ../lib; rm -rf ../include/bsd; mv include/bsd ../include; cd ..; rm -rf libbsd-0.6.0 )
 lib/libopendkim.a:	opendkim-2.10.3.tar.gz lib/libbsd.a
 	tar xzf opendkim-2.10.3.tar.gz && ( cd opendkim-2.10.3; patch -p1 < ../opendkim-2.10.3.patch; env "CFLAGS=-I`dirname \`pwd\``/include" "LDFLAGS=-L`dirname \`pwd\``/lib" ./configure "--prefix=`dirname \`pwd\``" --disable-shared --disable-filter --without-milter; make; mv libopendkim/.libs/libopendkim.a ../lib; mkdir -p ../include/opendkim; mv libopendkim/dkim.h ../include/opendkim; cd ..; rm -rf opendkim-2.10.3 )
+lib/libmpack.a:	mpack-amalgamation-1.1.tar.gz
+	tar xzf mpack-amalgamation-1.1.tar.gz && ( cd mpack-amalgamation-1.1; gcc -O3 -Isrc/mpack -c -o mpack.o src/mpack/mpack.c; ar rc ../lib/libmpack.a mpack.o; mv src/mpack/mpack.h ../include; cd ..; rm -rf mpack-amalgamation-1.1 )
 
 grammar/parse.c:	grammar/parse.y grammar/lemon
 	./grammar/lemon -c -s $<

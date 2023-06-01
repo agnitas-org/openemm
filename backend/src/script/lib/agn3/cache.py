@@ -12,7 +12,7 @@
 import	time, collections
 from	typing import Callable, Generic, Optional, TypeVar, Union
 from	typing import Deque, Dict
-from	.parser import Unit
+from	.parser import unit
 #
 __all__ = ['Cache']
 #
@@ -74,7 +74,6 @@ KeyError: "'a': expired"
 0
 """
 	__slots__ = ['limit', 'timeout', 'active', 'count', 'cache', 'cacheline', 'fill']
-	unit = Unit ()
 	class Entry (Generic[E]):
 		"""Represents a single caching entry"""
 		__slots__ = ['created', 'value']
@@ -98,7 +97,7 @@ seconds or as a str using modfiers "s" for seconds, "m" for minutes,
 	2h30m: means 2 hours and 30 minutes
 	2h 30m: dito, spaces are ignored and can be inserted for better readability"""
 		self.limit = limit
-		self.timeout: Union[float, int] = timeout if isinstance (timeout, float) else self.unit.parse (timeout, -1)
+		self.timeout: Union[float, int] = timeout if isinstance (timeout, float) else unit.parse (timeout, -1)
 		self.active = self.timeout >= 0.0
 		self.count = 0
 		self.cache: Dict[K, Cache.Entry[V]] = {}

@@ -245,8 +245,10 @@ code_binary (buffer_t **b, xmlBufferPtr buf) /*{{{*/
 bool_t
 block_match (block_t *b, eval_t *eval, receiver_t *rec) /*{{{*/
 {
+	if ((b -> target_id > 0) && (b -> target_index != -1))
+		return dataset_match (rec -> rvdata, b -> target_index);
 	if (! b -> condition) {
-		return b -> target_index != -1 ? dataset_match (rec -> rvdata, b -> target_index) : true;
+		return true;
 	}
 	return eval_match (eval, SP_BLOCK, b -> bid);
 }/*}}}*/

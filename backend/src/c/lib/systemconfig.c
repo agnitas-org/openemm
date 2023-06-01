@@ -230,8 +230,11 @@ parse_plain (config_t *c, char *buffer) /*{{{*/
 		
 	for (ptr = buffer; ptr; ) {
 		cur = ptr;
-		if (ptr = strchr (ptr, '\n'))
+		if (ptr = strchr (ptr, '\n')) {
+			if ((cur + 1 < ptr) && (*(ptr - 1) == '\r'))
+				*(ptr - 1) = '\0';
 			*ptr++ = '\0';
+		}
 		while (isspace (*cur))
 			++cur;
 		if (cur[0] && (cur[0] != '#')) {

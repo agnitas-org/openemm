@@ -138,6 +138,7 @@ typedef struct { /*{{{*/
 	record_t	*last_record;
 	block_t		*last_base_block;
 	lua_State	*lua;
+	char		*source;
 	
 	void		*local;
 	/*}}}*/
@@ -323,16 +324,26 @@ iflua_makeuid (lua_State *lua) /*{{{*/
 	if (stack > 0) {
 		if (lua_isnumber (il -> lua, 1))
 			url_id = (long) lua_tonumber (il -> lua, 1);
-		if ((stack > 1) && lua_isstring (il -> lua, 2))
-			prefix = lua_tostring (il -> lua, 2);
-		if (stack > 2) {
-			if (lua_isstring (il -> lua, 3)) {
-				const char	*version = lua_tostring (il -> lua, 3);
+		if (stack > 1) {
+			if (lua_isnumber (il -> lua, 2)) {
+				uid_version = (int) lua_tonumber (il -> lua, 2);
+				if ((stack > 2) && lua_isstring (il -> lua, 3)) {
+					prefix = lua_tostring (il -> lua, 3);
+				}
+			} else {
+				if (lua_isstring (il -> lua, 2)) {
+					prefix = lua_tostring (il -> lua, 2);
+				}
+				if (stack > 2) {
+					if (lua_isstring (il -> lua, 3)) {
+						const char	*version = lua_tostring (il -> lua, 3);
 				
-				if (version && *version)
-					uid_version = atoi (*version == 'V' ? version + 1 : version);
-			} else if (lua_isnumber (il -> lua, 3)) {
-				uid_version = (int) lua_tonumber (il -> lua, 3);
+						if (version && *version)
+							uid_version = atoi (*version == 'V' ? version + 1 : version);
+					} else if (lua_isnumber (il -> lua, 3)) {
+						uid_version = (int) lua_tonumber (il -> lua, 3);
+					}
+				}
 			}
 		}
 	}
@@ -574,6 +585,8 @@ static iflua_t *
 iflua_free (iflua_t *il) /*{{{*/
 {
 	if (il) {
+		if (il -> source)
+			free (il -> source);
 		if (il -> lua)
 			lua_close (il -> lua);
 		if (il -> lg)
@@ -595,6 +608,7 @@ iflua_alloc (blockmail_t *blockmail) /*{{{*/
 		il -> last_record = NULL;
 		il -> last_base_block = NULL;
 		il -> local = NULL;
+		il -> source = NULL;
 		if (il -> lua = alua_alloc ()) {
 			iflua_setup_functions (il);
 			iflua_setup_context (il);
@@ -603,6 +617,19 @@ iflua_alloc (blockmail_t *blockmail) /*{{{*/
 	}
 	return il;
 }/*}}}*/
+static void
+iflua_set_source (iflua_t *il, const byte_t *content, int length) /*{{{*/
+{
+	if (il -> source) {
+		free (il -> source);
+		il -> source = NULL;
+	}
+	if (content && (length > 0) && (il -> source = malloc (length + 1))) {
+		memcpy (il -> source, content, length);
+		il -> source[length] = '\0';
+	}
+}/*}}}*/
+		
 static void
 iflua_push_context (iflua_t *il) /*{{{*/
 {
@@ -688,6 +715,7 @@ tf_lua_alloc (const char *func, tag_t *tag, blockmail_t *blockmail) /*{{{*/
 
 	il = NULL;
 	if (tag -> value && (il = iflua_alloc (blockmail))) {
+		iflua_set_source (il, xmlBufferContent (tag -> value), xmlBufferLength (tag -> value));
 		iflua_lgpush (il, func);
 		if (! alua_load (il -> lua, func, xmlBufferContent (tag -> value), xmlBufferLength (tag -> value))) {
 			log_out (blockmail -> lg, LV_WARNING, "Code for tag \"%s\" does not compile: %s", tag -> cname, lua_tostring (il -> lua, -1));
@@ -1043,6 +1071,7 @@ ev_lua_alloc (blockmail_t *blockmail, const char *expression) /*{{{*/
 		char	*frame;
 		int	flen;
 		
+		iflua_set_source (il, (const byte_t *) expression, strlen (expression));
 		if (frame = malloc (strlen (expression) + 256)) {
 			flen = sprintf (frame, "function " EV_FUNC " (ctx, cust)\n\treturn (%s)\nend", expression);
 			if (! alua_load (il -> lua, "__expr__", frame, flen)) {

@@ -388,6 +388,7 @@ valid (const xmlChar *str, const char *pattern) /*{{{*/
 static void
 slang_date_parse (slang_date *sd, const xmlChar *str, int len) /*{{{*/
 {
+	sd -> year = sd -> month = sd -> day = sd -> hour = sd -> min = sd -> sec = 0;
 	if ((len == 19) && valid (str, "0000-00-00 00:00:00")) {
 		sd -> year = cut (str, 0, 4);
 		sd -> month = cut (str, 5, 2);
@@ -399,13 +400,7 @@ slang_date_parse (slang_date *sd, const xmlChar *str, int len) /*{{{*/
 		sd -> year = cut (str, 0, 4);
 		sd -> month = cut (str, 5, 2);
 		sd -> day = cut (str, 8, 2);
-		sd -> hour = 0;
-		sd -> min = 0;
-		sd -> sec = 0;
 	} else if ((len == 8) && valid (str, "00:00:00")) {
-		sd -> year = 0;
-		sd -> month = 0;
-		sd -> day = 0;
 		sd -> hour = cut (str, 0, 2);
 		sd -> min = cut (str, 3, 2);
 		sd -> sec = cut (str, 6, 2);

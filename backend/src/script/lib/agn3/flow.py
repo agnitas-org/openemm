@@ -22,7 +22,7 @@ from	.exceptions import error
 from	.ignore import Ignore
 from	.io import file_access
 from	.log import log
-from	.parser import Unit
+from	.parser import unit
 #
 __all__ = ['Batch', 'Transaction', 'Schedule', 'Jobqueue']
 #
@@ -352,7 +352,6 @@ class Schedule.Job so the housekeeping is working.
 	class Job:
 		"""Single job in Schedule"""
 		__slots__ = ['name', 'repeat', 'delay', 'priority', 'method', 'arguments']
-		unit = Unit ()
 		def __init__ (self,
 			name: str,
 			repeat: bool,
@@ -370,7 +369,7 @@ otherwise the execute() method can be overwritten to implement the
 job."""
 			self.name = name
 			self.repeat = repeat
-			self.delay = self.unit.parse (delay) if isinstance (delay, str) else delay
+			self.delay = unit.parse (delay) if isinstance (delay, str) else delay
 			self.priority = priority
 			self.method = method
 			self.arguments = arguments
@@ -423,7 +422,7 @@ job."""
 			self.intercept ()
 			if self._running:
 				time.sleep (delay)
-		self.log ('delay', 'done' if amount == 0.0 else f'terminated with {amount:.2f} seconds left')
+		self.log ('delay', 'done' if self._running else f'terminated with {amount:.2f} seconds left')
 		
 	def _offset (self, job: Schedule.Job, immediately: bool) -> int:
 		if not immediately and job.repeat and job.delay is not None and job.delay > 0:
@@ -492,7 +491,7 @@ after ``delay'' seconds using ``priority''. Call ``method'' with
 		self._running = False
 		self.log ('term', 'finished')
 
-	def log (self, area: str, what: str) ->None:
+	def log (self, area: str, what: str) -> None:
 		"Hook: logging of scheduling events"
 		
 	def intercept (self) -> None:

@@ -21,7 +21,7 @@ from	..db import DB, TempDB
 from	..definitions import base
 from	..ignore import Ignore
 from	..parameter import Parameter
-from	..parser import Unit
+from	..parser import Parsable, unit
 from	..stream import Stream
 #
 __all__ = ['Bounce']
@@ -42,8 +42,7 @@ class Bounce:
 	name_conversion: Final[str] = 'conversion'
 	name_company_info_conversion: Final[str] = 'bounce-conversion-parameter'
 	epoch: Final[datetime] = datetime (1970, 1, 1)
-	unit = Unit ()
-	def __init__ (self, db: Optional[DB] = None, recheck_interval: Unit.Parsable = '3m') -> None:
+	def __init__ (self, db: Optional[DB] = None, recheck_interval: Parsable = '3m') -> None:
 		self.db = db
 		self.rules: Dict[Tuple[int, int], Dict[str, List[str]]] = {}
 		self.config: DefaultDict[Tuple[int, int], DefaultDict[str, Dict[str, Any]]] = defaultdict (lambda: defaultdict (dict))
@@ -52,7 +51,7 @@ class Bounce:
 		self.rules_latest = self.epoch
 		self.config_latest = self.epoch
 		self.last_check = 0
-		self.recheck_interval = min (60, self.unit.parse (recheck_interval))
+		self.recheck_interval = min (60, unit.parse (recheck_interval))
 	
 	def __enter__ (self) -> Bounce:
 		self.read ()

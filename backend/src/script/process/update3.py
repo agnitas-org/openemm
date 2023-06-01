@@ -15,31 +15,32 @@ import	logging, argparse
 import	os, time, re, errno, pickle
 from	collections import defaultdict
 from	functools import partial
-from	datetime import datetime
+from	datetime import datetime, timedelta
 from	dataclasses import dataclass, field
 from	types import TracebackType
 from	typing import Any, Callable, Final, Optional, Union
-from	typing import DefaultDict, Dict, Iterator, List, Pattern, Set, TextIO, Tuple, Type
+from	typing import DefaultDict, Dict, Iterator, List, NamedTuple, Pattern, Set, TextIO, Tuple, Type
 from	typing import cast
 from	agn3.cache import Cache
 from	agn3.db import DBIgnore, DB, Row
 from	agn3.dbm import DBM
-from	agn3.definitions import base, licence, syscfg, unique
+from	agn3.definitions import program, base, licence, syscfg, unique
 from	agn3.email import EMail
+from	agn3.emm.ams import AMSLock
 from	agn3.emm.columns import Columns
-from	agn3.emm.config import EMMCompany
-from	agn3.emm.types import MediaType, UserStatus
+from	agn3.emm.config import EMMCompany, Responsibility
+from	agn3.emm.types import MediaType, UserStatus, WorkStatus
 from	agn3.exceptions import error
-from	agn3.ignore import Ignore, Experimental
+from	agn3.ignore import Ignore
 from	agn3.io import create_path, cstreamopen
-from	agn3.log import log
+from	agn3.log import log, log_limit
 from	agn3.parameter import Parameter
-from	agn3.parser import Unit, ParseTimestamp, Line, Field, Lineparser, Tokenparser
+from	agn3.parser import Parsable, unit, ParseTimestamp, Line, Field, Lineparser, Tokenparser
 from	agn3.plugin import Plugin, LoggingManager
 from	agn3.runtime import Runtime
 from	agn3.stream import Stream
 from	agn3.template import Template
-from	agn3.tools import atob, atoi
+from	agn3.tools import atob, atoi, listsplit
 from	agn3.tracker import Key, Tracker
 #
 logger = logging.getLogger (__name__)
@@ -202,7 +203,7 @@ class Update: #{{{
 		self.check_for_duplicates = True
 		self.duplicate: Optional[Duplicate] = None
 		self.tracker = Tracker (os.path.join (base, 'var', 'run', f'update-{self.name}.track'))
-		self.tracker_age: Unit.Parsable = None
+		self.tracker_age: Parsable = None
 		self.tracker_expire = 0
 		self._mailings_to_company: Dict[int, Optional[int]] = {}
 
@@ -818,7 +819,7 @@ class UpdateBounce (Update): #{{{
 			for mailing_id in sorted (self.succeeded):
 				db.update ('UPDATE mailing_tbl SET delivered = delivered + :success WHERE mailing_id = :mailing_id', {'success': self.succeeded[mailing_id], 'mailing_id': mailing_id})
 			db.sync ()
-		logger.info ('Found %d hardbounces (%d duplicates), %d softbounces (%d written), %d successes, %d blacklisted, %d revoked, %d ignored in %d lines' % (self.hbcount, self.dupcount, self.sbcount, (self.sbcount - self.ccount), self.sucount, self.blcount, self.rvcount, self.igcount, self.lineno))
+		logger.info ('Found %d hardbounces (%d duplicates), %d softbounces (%d written), %d successes, %d blocklisted, %d revoked, %d ignored in %d lines' % (self.hbcount, self.dupcount, self.sbcount, (self.sbcount - self.ccount), self.sucount, self.blcount, self.rvcount, self.igcount, self.lineno))
 		if self.delayed_processing:
 			with self.delayed_processing:
 				count = 0
@@ -867,9 +868,8 @@ class UpdateBounce (Update): #{{{
 					return True
 				breakdown.timestamp = datetime.now ()
 			#
-			with Experimental ('https://jira.agnitas.de/browse/SAAS-2148'):
-				if breakdown.detail == Detail.Success or breakdown.detail in Detail.Hardbounces:
-					pass
+			if breakdown.detail == Detail.Success or breakdown.detail in Detail.Hardbounces:
+				pass
 			#
 			if breakdown.detail == Detail.Success:
 				self.delayed_processing.drop (record.mailing_id, record.media, record.customer_id)
@@ -932,7 +932,7 @@ class UpdateBounce (Update): #{{{
 						logger.error ('Unable to add bounce %r to database: %s' % (data, e))
 						rc = False
 				if breakdown.detail in Detail.Hardbounces or (breakdown.detail == Detail.Internal and breakdown.bounce_type is not None and breakdown.bounce_remark is not None):
-					if breakdown.bounce_type == UserStatus.BLACKLIST:
+					if breakdown.bounce_type == UserStatus.BLOCKLIST:
 						self.blcount += 1
 					else:
 						self.hbcount += 1
@@ -973,58 +973,56 @@ class UpdateBounce (Update): #{{{
 								'media': record.media
 							}
 							db.update (query, data, commit = True)
-							with Experimental ('EMM-5899'):
-								if (
-									breakdown.bounce_type == UserStatus.BOUNCE
-									and
-									record.media == MediaType.EMAIL.value
-									and
-									self.bounce_mark_duplicate.get (company_id, self.bounce_mark_duplicate.get (0, True))
-								):
-									rq = db.querys (
-										'SELECT email '
-										f'FROM customer_{company_id}_tbl '
-										'WHERE customer_id = :customer_id',
-										{
-											'customer_id': record.customer_id
-										}
-									)
-									if rq is not None and rq.email:
-										email = rq.email
-										try:
-											localpart, domain = email.split ('@', 1)
-										except ValueError:
-											logger.info (f'{record.customer_id}: email "{email}" is not valid for duplicate check')
-										else:
-											#
-											#	find duplicate email addresses, ignoring case
-											#	in domain part, but obey case in local part
-											customer_ids: List[int] = []
-											data['mailing'] = 0
-											data['remark'] += f' (by {record.mailing_id})'
-											for row in db.queryc (
-												'SELECT customer_id, email '
-												f'FROM customer_{company_id}_tbl '
-												'WHERE lower(email) = lower(:email)',
-												{
-													'email': email
-												}
-											):
-												if row.customer_id == record.customer_id:
-													continue
-												check_localpart = row.email.split ('@', 1)[0]
-												if check_localpart != localpart:
-													continue
-												data['customer_id'] = row.customer_id
-												if db.update (query, data) > 0:
-													logger.info (f'{record.customer_id}: marked as hardbounce due email "{row.email}" seems to be a duplicate of "{email}"')
-													customer_ids.append (record.customer_id)
-													self.dupcount += 1
-											db.sync ()
-											#
-											with Experimental ('https://jira.agnitas.de/browse/SAAS-2148'):
-												for customer_id in customer_ids:
-													pass
+							if (
+								breakdown.bounce_type == UserStatus.BOUNCE
+								and
+								record.media == MediaType.EMAIL.value
+								and
+								self.bounce_mark_duplicate.get (company_id, self.bounce_mark_duplicate.get (0, True))
+							):
+								rq = db.querys (
+									'SELECT email '
+									f'FROM customer_{company_id}_tbl '
+									'WHERE customer_id = :customer_id',
+									{
+										'customer_id': record.customer_id
+									}
+								)
+								if rq is not None and rq.email:
+									email = rq.email
+									try:
+										localpart, domain = email.split ('@', 1)
+									except ValueError:
+										logger.info (f'{record.customer_id}: email "{email}" is not valid for duplicate check')
+									else:
+										#
+										#	find duplicate email addresses, ignoring case
+										#	in domain part, but obey case in local part
+										customer_ids: List[int] = []
+										data['mailing'] = 0
+										data['remark'] += f' (by {record.mailing_id})'
+										for row in db.queryc (
+											'SELECT customer_id, email '
+											f'FROM customer_{company_id}_tbl '
+											'WHERE lower(email) = lower(:email)',
+											{
+												'email': email
+											}
+										):
+											if row.customer_id == record.customer_id:
+												continue
+											check_localpart = row.email.split ('@', 1)[0]
+											if check_localpart != localpart:
+												continue
+											data['customer_id'] = row.customer_id
+											if db.update (query, data) > 0:
+												logger.info (f'{record.customer_id}: marked as hardbounce due email "{row.email}" seems to be a duplicate of "{email}"')
+												customer_ids.append (record.customer_id)
+												self.dupcount += 1
+										db.sync ()
+										#
+										for customer_id in customer_ids:
+											pass
 					except error as e:
 						logger.error ('Unable to unsubscribe %r for company %d from database using %s: %s' % (data, company_id, query, e))
 						rc = False
@@ -1040,8 +1038,7 @@ class UpdateBounce (Update): #{{{
 #}}}
 class UpdateAccount (Update): #{{{
 	__slots__ = [
-		'tscheck', 'ignored', 'inserted', 'bccs', 'failed',
-		'status', 'changed',
+		'mailcheck', 'ignored', 'inserted', 'bccs', 'failed',
 		'control_parser', 'data_parser', 'insert_query'
 	]
 	name = 'account'
@@ -1050,36 +1047,306 @@ class UpdateAccount (Update): #{{{
 	track_path: Final[str] = os.path.join (base, 'var', 'run', 'update-account.track')
 	track_section_mailing: Final[str] = 'mailing'
 	track_section_status: Final[str] = 'status'
-	@dataclass
-	class Mailinfo:
-		dirty: bool = True
-		active: bool = True
-		status_id: int = 0
-		mailing_id: int = 0
-		company_id: int = 0
-		in_production: bool = True
-		produced_mails: int = 0
-		created_mails: int = 0
-		skiped_mails: int = 0
-		send_start: int = 0
-		send_last: int = 0
-		send_count: int = 0
-		mail_receiver: str = ''
-		mail_sent: bool = False
-		mail_percent: int = 50
-		def __hash__ (self) -> int:
-			return hash ((self.status_id, self.mailing_id))
+	known_mediatypes = Stream (MediaType.__members__.values ()).map (lambda m: m.value).set ()
+	class Mailcheck:
+		__slots__ = ['workstatus', 'lastcheck', 'total', 'info_sent']
+		persist_path: Final[str] = os.path.join (base, 'var', 'run', 'mailcheck.persist')
+		recheck_workstatus: Final[int] = 60 * 60
+		def __init__ (self) -> None:
+			self.workstatus: Set[int] = set ()
+			self.lastcheck = 0
+			self.total: Dict[int, int] = {}
+			self.info_sent: Set[int] = set ()
+		
+		def setup (self) -> None:
+			with log ('mailcheck'):
+				try:
+					with open (self.persist_path, 'rb') as fd:
+						self.info_sent = pickle.load (fd)
+						logger.info ('read {count:,d} already sent mailings from {path}'.format (
+							count = len (self.info_sent),
+							path = self.persist_path
+						))
+				except Exception as e:
+					self.info_sent = set ()
+					logger.info (f'read no persisted records from {self.persist_path} due to {e}')
+		
+		def done (self) -> None:
+			with Ignore (OSError), log ('mailcheck'):
+				if not self.info_sent:
+					os.unlink (self.persist_path)
+					logger.info (f'removed {self.persist_path} due to no more cached sent information')
+				else:
+					with open (self.persist_path, 'wb') as fd:
+						pickle.dump (self.info_sent, fd)
+						logger.info ('saved {count:,d} already sent mailings to {path}'.format (
+							count = len (self.info_sent),
+							path = self.persist_path
+						))
+		
+		def check_workstatus (self, db: DB, mailing_id: int) -> bool:
+			if mailing_id not in self.workstatus:
+				self.workstatus.add (mailing_id)
+				with log ('mailcheck'):
+					count = db.update (
+						'UPDATE mailing_tbl '
+						'SET work_status = :work_status_sending '
+						'WHERE mailing_id = :mailing_id AND (work_status IS NULL OR work_status = :work_status_finished)',
+						{
+							'work_status_sending': WorkStatus.Sending.value,
+							'work_status_finished': WorkStatus.Finished.value,
+							'mailing_id': mailing_id
+						},
+						commit = True
+					)
+					if count > 0:
+						logger.info (f'{mailing_id}: updated work status to "{WorkStatus.Sending.value}"')
+						return True
+					else:
+						logger.debug (f'{mailing_id}: no need to update workstatus')
+			return False
+
+		class Mailing (NamedTuple):
+			mailing_id: int
+			company_id: int
+			statmail: Optional[str]
+		
+		def update (self) -> None:
+			interval = unit.parse (syscfg.get (f'{program}:mailcheck-interval', '1m'), default = 60)
+			mailcheck_limit = unit.parse (syscfg.get (f'{program}:mailcheck-limit', '7d'), default = 7 * 24 * 60 * 60)
+			now = int (time.time ())
+			if self.lastcheck + interval < now:
+				recheck = bool (not self.lastcheck or self.lastcheck // self.recheck_workstatus != now // self.recheck_workstatus)
+				self.lastcheck = now
+				with DBIgnore (), DB () as db, Responsibility (db = db, log = False) as responsibility, log ('mailcheck'):
+					limit = datetime.now () - timedelta (seconds = mailcheck_limit)
+					if recheck:
+						logger.debug ('Starting recheck')
+						count = 0
+						updated = 0
+						for row in (
+							db.streamc (
+								'SELECT mt.mailing_id, mt.company_id, mt.work_status '
+								'FROM mailing_tbl mt INNER JOIN maildrop_status_tbl mdrop ON mdrop.mailing_id = mt.mailing_id '
+								'WHERE mdrop.status_field = :status_field AND '
+								'      mdrop.senddate >= :limit AND '
+								'      mdrop.genstatus = 3 AND '
+								'      (mt.work_status IS NULL OR mt.work_status = :work_status_finished) AND '
+								'      mt.deleted = 0',
+								{
+									'status_field': 'W',
+									'limit': limit,
+									'work_status_finished': WorkStatus.Finished.value
+								}
+							)
+							.filter (lambda r: r.company_id in responsibility)
+							.sorted (key = lambda r: r.mailing_id)
+						):
+							rq = db.querys (
+								'SELECT count(*) AS cnt '
+								'FROM mailing_account_tbl '
+								'WHERE mailing_id = :mailing_id AND status_field = :status_field',
+								{
+									'mailing_id': row.mailing_id,
+									'status_field': 'W'
+								}
+							)
+							if rq is None or not rq.cnt:
+								log_limit (logger.info, f'{row.mailing_id}: recheck work status "{row.work_status}" not changed as no already sent mailings detected', duration = '1h')
+							elif self.check_workstatus (db, row.mailing_id):
+								logger.info (f'{row.mailing_id}: recheck changed work status from "{row.work_status}" to "{WorkStatus.Sending.value}"')
+								updated += 1
+							count += 1
+						if count > 0:
+							logger.debug (f'rechecked {count:,d} mailings where {updated:,d} are updated')
+					#
+					for mailing in (
+						db.streamc (
+							'SELECT mailing_id, company_id, statmail_recp '
+							'FROM mailing_tbl mt '
+							'WHERE work_status = :work_status AND deleted = 0 AND EXISTS ('
+							'      SELECT 1 FROM maildrop_status_tbl mdrop '
+							'      WHERE mdrop.mailing_id = mt.mailing_id AND '
+							'            mdrop.status_field = :status_field AND '
+							'            mdrop.senddate >= :limit AND '
+							'            mdrop.genstatus = 3 '
+							'      )',
+							{
+								'work_status': WorkStatus.Sending.value,
+								'status_field': 'W',
+								'limit': limit
+							}
+						)
+						.filter (lambda r: r.company_id in responsibility)
+						.sorted (key = lambda r: r.mailing_id)
+						.map_to (UpdateAccount.Mailcheck.Mailing, lambda r: UpdateAccount.Mailcheck.Mailing (
+							mailing_id = r.mailing_id,
+							company_id = r.company_id,
+							statmail = r.statmail_recp
+						))
+					):
+						self.workstatus.add (mailing.mailing_id)
+						amount: Optional[int] = self.total.get (mailing.mailing_id)
+						if amount is None:
+							rq = db.querys (
+								'SELECT current_mails, total_mails '
+								'FROM world_mailing_backend_log_tbl '
+								'WHERE mailing_id = :mailing_id',
+								{
+									'mailing_id': mailing.mailing_id
+								}
+							)
+							if rq is not None and rq.current_mails is not None and rq.total_mails is not None and rq.current_mails == rq.total_mails:
+								amount = self.total[mailing.mailing_id] = rq.total_mails
+						if amount is not None:
+							rq = db.querys (
+								'SELECT sum(no_of_mailings) + sum(skip) AS cnt '
+								'FROM mailing_account_tbl '
+								'WHERE mailing_id = :mailing_id AND status_field = :status_field',
+								{
+									'mailing_id': mailing.mailing_id,
+									'status_field': 'W'
+								}
+							)
+							if rq is not None and rq.cnt is not None:
+								if mailing.mailing_id not in self.info_sent:
+									if not mailing.statmail:
+										self.info_sent.add (mailing.mailing_id)
+									else:
+										try:
+											(percent_str, receiver) = mailing.statmail.split ('%', 1)
+											percent = int (percent_str)
+										except ValueError:
+											percent = 50
+											receiver = mailing.statmail
+										if (
+											percent <= 0
+											or
+											(percent >= 100 and rq.cnt == amount)
+											or
+											(percent > 0 and percent < 100 and float (amount * percent) / 100.0 >= rq.cnt)
+										):
+											self.send_status_mail (db, amount, mailing, receiver.strip ())
+											self.info_sent.add (mailing.mailing_id)
+								#
+								if rq.cnt == amount:
+									rq = db.querys (
+										'SELECT min(timestamp) AS send_date '
+										'FROM mailing_account_tbl '
+										'WHERE mailing_id = :mailing_id AND status_field = :status_field AND timestamp IS NOT NULL',
+										{
+											'mailing_id': mailing.mailing_id,
+											'status_field': 'W'
+										}
+									)
+									send_date = rq.send_date if rq is not None else datetime.now ()
+									db.update (
+										'UPDATE mailing_tbl '
+										'SET work_status = :work_status, send_date = :send_date '
+										'WHERE mailing_id = :mailing_id',
+										{
+											'work_status': WorkStatus.Sent.value,
+											'send_date': send_date,
+											'mailing_id': mailing.mailing_id
+										},
+										commit = True
+									)
+									logger.info (f'{mailing.mailing_id}: set work status to sent')
+									pass
+									with Ignore (KeyError):
+										del self.total[mailing.mailing_id]
+									with Ignore (KeyError):
+										self.info_sent.remove (mailing.mailing_id)
+					db.sync ()
+
+		def send_status_mail (self, db: DB, amount: int, mailing: UpdateAccount.Mailcheck.Mailing, receiver: str) -> None:
+			try:
+				with open (UpdateAccount.status_template) as fd:
+					template = fd.read ()
+			except IOError as e:
+				logger.warning (f'Failed to read template {UpdateAccount.status_template}: {e}')
+			else:
+				sender = syscfg.get ('status-sender')
+				rq = db.querys (
+					'SELECT min(timestamp) AS tstart, max(timestamp) AS tend, sum(no_of_mailings) AS sent, sum(skip) AS skip '
+					'FROM mailing_account_tbl '
+					'WHERE mailing_id = :mailing_id AND status_field = :status_field',
+					{
+						'mailing_id': mailing.mailing_id,
+						'status_field': 'W'
+					}
+				)
+				if rq is None:
+					start = end = datetime.now ()
+					current = 0
+				else:
+					start = rq.tstart
+					end = rq.tend
+					current = rq.sent + rq.skip
+				rq = db.querys (
+					'SELECT shortname '
+					'FROM mailing_tbl '
+					'WHERE mailing_id = :mailing_id',
+					{
+						'mailing_id': mailing.mailing_id
+					}
+				)
+				mailing_name = rq.shortname if rq is not None and rq.shortname else f'MailingID {mailing.mailing_id}'
+				receivers = [_r for _r in listsplit (receiver) if _r]
+				ns = {
+					'sender': sender,
+					'receiver': ', '.join (receivers),
+					'current': current,
+					'count': amount,
+					'start': start,
+					'end': end,
+					'mailing_id': mailing.mailing_id,
+					'mailing_name': mailing_name,
+					'company_id': mailing.company_id,
+					
+					'format': lambda a: f'{a:,d}'
+				}
+				tmpl = Template (template)
+				try:
+					email = tmpl.fill (ns)
+				except error as e:
+					logger.warning (f'Failed to fill template {UpdateAccount.status_template}: {e}')
+				else:
+					mail = EMail ()
+					if sender:
+						mail.set_sender (sender)
+					for (nr, r) in enumerate (receivers):
+						if nr == 0:
+							mail.add_to (r)
+						else:
+							mail.add_cc (r)
+					charset = tmpl.property ('charset')
+					if charset:
+						mail.set_charset (charset)
+					subject = tmpl.property ('subject')
+					if not subject:
+						subject = tmpl['subject']
+						if not subject:
+							subject = f'Status report for mailing {mailing.mailing_id} [{mailing_name}]'
+					else:
+						tmpl = Template (subject)
+						subject = tmpl.fill (ns)
+					mail.set_subject (subject)
+					mail.set_text (email)
+					st = mail.send_mail ()
+					if not st[0]:
+						logger.warning (f'Failed to send status mail to {mailing.statmail}: {st}')
+					else:
+						logger.info (f'Status mail for {mailing_name} ({mailing_name}) sent to {mailing.statmail}')
 
 	def __init__ (self) -> None:
 		super ().__init__ ()
 		self.tracker_age = '90d'
-		self.tscheck = re.compile ('^([0-9]{4})-([0-9]{2})-([0-9]{2}):([0-9]{2}):([0-9]{2}):([0-9]{2})$')
+		self.mailcheck = UpdateAccount.Mailcheck ()
 		self.ignored = 0
 		self.inserted = 0
 		self.bccs = 0
 		self.failed = 0
-		self.status: Dict[int, UpdateAccount.Mailinfo] = {}
-		self.changed: Set[UpdateAccount.Mailinfo] = set ()
 		self.control_parser = Tokenparser (
 			Field ('licence_id', int, source = 'licence'),
 			Field ('owner', int),
@@ -1092,7 +1359,7 @@ class UpdateAccount (Update): #{{{
 			Field ('mailing_id', int, source = 'mailing'),
 			Field ('maildrop_id', int, source = 'maildrop'),
 			'status_field',
-			Field ('mediatype', int),
+			Field ('mediatype', lambda v: atoi (v, default = -1)),
 			Field ('mailtype', int, source = 'subtype'),
 			Field ('no_of_mailings', int, source = 'count'),
 			Field ('no_of_bytes', int, source = 'bytes'),
@@ -1103,198 +1370,17 @@ class UpdateAccount (Update): #{{{
 			Field ('timestamp', ParseTimestamp (), optional = True, default = lambda: datetime.now ())
 		)
 
-	def __mailing_status (self, db: DB, status_id: int, count: int, skip: int, ts: int) -> None:
-		try:
-			minfo = self.status[status_id]
-			if not minfo.active:
-				logger.debug ('Found inactive mailing %d for new accounting information' % minfo.mailing_id)
-			elif not minfo.mailing_id:
-				logger.debug ('Found unset mailing_id for new account information with status %d' % status_id)
-			else:
-				logger.debug ('Found active record with mailing_id %d' % minfo.mailing_id)
-			minfo.skiped_mails += skip
-			minfo.send_start = max (minfo.send_start, ts)
-			minfo.send_last = max (minfo.send_last, ts)
-			minfo.send_count += count
-			minfo.dirty = True
-		except KeyError:
-			minfo = UpdateAccount.Mailinfo (
-				status_id = status_id,
-				skiped_mails = skip,
-				send_start = ts,
-				send_last = ts,
-				send_count = count
-			)
-			with Ignore (KeyError):
-				track = self.tracker[Key (UpdateAccount.track_section_mailing, str (minfo.status_id))]
-				minfo.produced_mails = track['produced']
-				minfo.skiped_mails += track['skiped']
-				minfo.send_count += track['count']
-				logger.debug (f'Loaded entry {track!r}')
-			db.sync ()
-			for r in db.query ('SELECT mailing_id, company_id FROM maildrop_status_tbl WHERE status_id = :status', { 'status': status_id }):
-				minfo.mailing_id = r.mailing_id
-				minfo.company_id = r.company_id
-				break
-			if minfo.mailing_id:
-				for r in db.queryc ('SELECT statmail_recp, deleted FROM mailing_tbl WHERE mailing_id = :mid', {'mid': minfo.mailing_id}):
-					if r[0] is not None:
-						receiver = r[0].strip ()
-						try:
-							(percent, nreceiver) = receiver.split ('%', 1)
-							minfo.mail_receiver = nreceiver.strip ()
-							minfo.mail_percent = int (percent)
-							if minfo.mail_percent < 0 or minfo.mail_percent > 100:
-								raise ValueError ('percent value out of range')
-						except ValueError:
-							minfo.mail_receiver = receiver
-					if r[1]:
-						logger.info ('Mailing with ID %d is marked as deleted, set to inactive' % minfo.mailing_id)
-						minfo.active = False
-				db.update ('UPDATE mailing_tbl SET work_status = \'mailing.status.sending\' WHERE mailing_id = :mid AND (work_status IS NULL OR work_status != \'mailing.status.sending\')', { 'mid': minfo.mailing_id }, commit = True)
-				logger.debug ('Created new record for status_id %d with mailing_id %d' % (minfo.status_id, minfo.mailing_id))
-			else:
-				logger.debug ('Created new record for status_id %d with no assigned mailing_id' % status_id)
-			self.status[status_id] = minfo
-		#
-		if minfo.active and minfo.mailing_id:
-			self.changed.add (minfo)
-
-	def __mailing_send_status (self, db: DB, minfo: UpdateAccount.Mailinfo) -> None:
-		try:
-			with open (UpdateAccount.status_template) as fd:
-				template = fd.read ()
-		except IOError as e:
-			logger.warning ('Failed to read template %s: %s' % (self.status_template, e))
-		else:
-			sender = syscfg.get ('status-sender')
-			if minfo.send_last == minfo.send_start:
-				last = int (time.time ())
-			else:
-				last = minfo.send_last
-			diff = ((last - minfo.send_start) * minfo.created_mails) / minfo.send_count
-			end = minfo.send_start + diff
-			start = time.localtime (minfo.send_start)
-			then = time.localtime (end)
-			rc = db.querys ('SELECT shortname, company_id FROM mailing_tbl WHERE mailing_id = :mid', {'mid': minfo.mailing_id})
-			if not rc is None and not None in rc:
-				mailing_name = rc.shortname
-				company_id = rc.company_id
-			else:
-				mailing_name = ''
-				company_id = 0
-			receiver = [_r for _r in minfo.mail_receiver.split () if _r]
-			ns = {
-				'sender': sender,
-				'receiver': ', '.join (receiver),
-				'current': minfo.send_count,
-				'count': minfo.created_mails,
-				'start': datetime (start[0], start[1], start[2], start[3], start[4], start[5]),
-				'end': datetime (then[0], then[1], then[2], then[3], then[4], then[5]),
-				'mailing_id': minfo.mailing_id,
-				'mailing_name': mailing_name,
-				'company_id': company_id,
-
-				'format': lambda a: f'{a:,d}'
-			}
-			tmpl = Template (template)
-			try:
-				email = tmpl.fill (ns)
-			except error as e:
-				logger.warning ('Failed to fill template %s: %s' % (UpdateAccount.status_template, e))
-			else:
-				mail = EMail ()
-				if sender:
-					mail.set_sender (sender)
-				isTo = True
-				for r in receiver:
-					if isTo:
-						mail.add_to (r)
-						isTo = False
-					else:
-						mail.add_cc (r)
-				charset = tmpl.property ('charset')
-				if charset:
-					mail.set_charset (charset)
-				subject = tmpl.property ('subject')
-				if not subject:
-					subject = tmpl['subject']
-					if not subject:
-						subject = 'Status report for mailing %d [%s]' % (minfo.mailing_id, mailing_name)
-				else:
-					tmpl = Template (subject)
-					subject = tmpl.fill (ns)
-				mail.set_subject (subject)
-				mail.set_text (email)
-				st = mail.send_mail ()
-				if not st[0]:
-					logger.warning ('Failed to send status mail to %s: [%s/%s]' % (minfo.mail_receiver, st[2].strip (), st[3].strip ()))
-				else:
-					logger.info ('Status mail for %s (%d) sent to %s' % (mailing_name, minfo.mailing_id, minfo.mail_receiver))
-
-	def __mailing_reached (self, minfo: UpdateAccount.Mailinfo) -> bool:
-		if minfo.mail_percent == 100:
-			return minfo.created_mails <= minfo.send_count
-		return int (float (minfo.created_mails * minfo.mail_percent) / 100.0) <= minfo.send_count
-
-	def __mailing_summary (self, db: DB) -> None:
-		for minfo in self.status.values ():
-			if minfo.in_production and minfo.active:
-				self.changed.add (minfo)
-		if self.changed:
-			db.sync ()
-			for minfo in self.changed:
-				if minfo.in_production:
-					for r in db.queryc ('SELECT genstatus FROM maildrop_status_tbl WHERE status_id = :status', { 'status': minfo.status_id }):
-						if r.genstatus == 3:
-							for r in db.query ('SELECT total_mails FROM mailing_backend_log_tbl WHERE status_id = :status', { 'status': minfo.status_id }):
-								minfo.in_production = False
-								minfo.produced_mails = r.total_mails
-								logger.debug ('Changed status for mailing_id %d from production to finished with %d mails produced' % (minfo.mailing_id, minfo.produced_mails))
-								break
-						break
-					if minfo.in_production:
-						for r in db.queryc ('SELECT deleted FROM mailing_tbl WHERE mailing_id = :mailing_id', {'mailing_id': minfo.mailing_id}):
-							if r.deleted:
-								logger.info ('Mailing with ID %d had been deleted, mark as inactive' % minfo.mailing_id)
-								minfo.active = False
-				if not minfo.in_production:
-					minfo.created_mails = minfo.produced_mails - minfo.skiped_mails
-					if minfo.mail_receiver and not minfo.mail_sent:
-						if self.__mailing_reached (minfo):
-							key = Key (UpdateAccount.track_section_status, str (minfo.mailing_id))
-							if key not in self.tracker:
-								try:
-									self.__mailing_send_status (db, minfo)
-								except Exception as e:
-									logger.exception ('Failed to send status for %s (%d): %s' % (minfo, minfo.mailing_id, e))
-								self.tracker[key] = {'sent': int (time.time ()), 'receiver': minfo.mail_receiver}
-							minfo.mail_sent = True
-					for r in db.query ('SELECT sum(no_of_mailings) FROM mailing_account_tbl WHERE mailing_id = :mid AND status_field = \'W\'', { 'mid': minfo.mailing_id }):
-						if r[0] == minfo.created_mails:
-							if (count := db.update ('UPDATE mailing_tbl SET work_status = \'mailing.status.sent\' WHERE mailing_id = :mid', { 'mid': minfo.mailing_id }, commit = True)) == 1:
-								logger.info ('Changed work status for mailing_id %d to sent' % minfo.mailing_id)
-								with Experimental ('https://jira.agnitas.de/browse/SAAS-2148'):
-									pass
-							elif count == 0:
-								logger.warning (f'Failed to change work status for mailing_id {minfo.mailing_id}: the mailing seems to be removed')
-							else:
-								logger.error ('Failed to change work status for mailing_id %d to sent: %s' % (minfo.mailing_id, db.last_error ()))
-							minfo.active = False
-							logger.debug ('Changed status for mailing_id %d from active to inactive' % minfo.mailing_id)
-						else:
-							logger.debug ('Mailing %d has currently %d out of %d sent mails' % (minfo.mailing_id, r[0], minfo.created_mails))
-						break
-		#
-		for minfo in self.status.values ():
-			if minfo.dirty:
-				self.tracker[Key (UpdateAccount.track_section_mailing, str (minfo.status_id))] = {
-					'produced': minfo.produced_mails,
-					'skiped': minfo.skiped_mails,
-					'count': minfo.send_count
-				}
-				minfo.dirty = False
-				logger.debug (f'Saved entry {minfo}')
+	def setup (self) -> None:
+		super ().setup ()
+		self.mailcheck.setup ()
+	
+	def done (self) -> None:
+		self.mailcheck.done ()
+		super ().done ()
+		
+	def step (self) -> None:
+		super ().step ()
+		self.mailcheck.update ()
 
 	def update_start (self, db: DB) -> bool:
 		columns = [_f.name for _f in self.data_parser.fields]
@@ -1310,13 +1396,10 @@ class UpdateAccount (Update): #{{{
 		self.inserted = 0
 		self.bccs = 0
 		self.failed = 0
-		self.changed.clear ()
 		return True
 
 	def update_end (self, db: DB) -> bool:
 		logger.info ('Insert %d (%d bccs), failed %d, ignored %d records in %d lines' % (self.inserted, self.bccs, self.failed, self.ignored, self.lineno))
-		self.__mailing_summary (db)
-		self.changed.clear ()
 		return True
 
 	def update_line (self, db: DB, line: str) -> bool:
@@ -1327,31 +1410,33 @@ class UpdateAccount (Update): #{{{
 				self.ignored += 1
 			else:
 				data = self.data_parser (tokens)
-				db.update (self.insert_query, data._asdict (), cleanup = True, commit = True)
-				self.inserted += 1
-				if data.status_field == 'W':
-					self.__mailing_status (db, data.maildrop_id, data.no_of_mailings, data.skip, int (data.timestamp.timestamp ()))
-				if control.bcc_count > 0:
-					db.update (
-						db.qselect (
-							oracle = (
-								'INSERT INTO bcc_mailing_account_tbl '
-								'      (mailing_account_id, no_of_mailings, no_of_bytes) '
-								'VALUES '
-								'      (mailing_account_tbl_seq.currval, :bcc_count, :bcc_bytes)'
-							), mysql = (
-								'INSERT INTO bcc_mailing_account_tbl '
-								'       (mailing_account_id, no_of_mailings, no_of_bytes) '
-								'VALUES '
-								'       (last_insert_id(), :bcc_count, :bcc_bytes)'
-							)
-						), {
-							'bcc_count': control.bcc_count,
-							'bcc_bytes': control.bcc_bytes
-						},
-						commit = True
-					)
-					self.bccs += 1
+				if data.mediatype in self.known_mediatypes:
+					db.update (self.insert_query, data._asdict (), cleanup = True, commit = True)
+					self.inserted += 1
+					if data.status_field == 'W':
+						self.mailcheck.check_workstatus (db, data.mailing_id)
+
+					if control.bcc_count > 0:
+						db.update (
+							db.qselect (
+								oracle = (
+									'INSERT INTO bcc_mailing_account_tbl '
+									'      (mailing_account_id, no_of_mailings, no_of_bytes) '
+									'VALUES '
+									'      (mailing_account_tbl_seq.currval, :bcc_count, :bcc_bytes)'
+								), mysql = (
+									'INSERT INTO bcc_mailing_account_tbl '
+									'       (mailing_account_id, no_of_mailings, no_of_bytes) '
+									'VALUES '
+									'       (last_insert_id(), :bcc_count, :bcc_bytes)'
+								)
+							), {
+								'bcc_count': control.bcc_count,
+								'bcc_bytes': control.bcc_bytes
+							},
+							commit = True
+						)
+						self.bccs += 1
 			return True
 		except (error, ValueError, KeyError) as e:
 			logger.error (f'{self.lineno}: {line!r}: {e}')
@@ -1579,15 +1664,40 @@ class UpdateMailtrack (Update): #{{{
 						logger.debug ('%s: value %s set for company %d results to disable processing' % (UpdateMailtrack.mailtrack_config_key, active, company_id))
 						continue
 				#
-				bulk_update: bool = emmcompany.get (UpdateMailtrack.mailtrack_bulk_update_config_key, company_id = company_id, default = False, convert = atob)
-				bulk_update_chunk: int = emmcompany.get (UpdateMailtrack.mailtrack_bulk_update_chunk_config_key, company_id = company_id, default = 0, convert = atoi)
-				logger.info (f'{company_id}: processing {counter} update mailtracking')
-				self.__update_mailtracking (db, company_id, counter)
-				logger.info (f'{company_id}: processing profile updates (bulk is {bulk_update}, chunk is {bulk_update_chunk})')
-				with db.logging (lambda m: logger.info (f'DB: {m}')):
-					self.__update_profile (db, company_id, bulk_update, bulk_update_chunk, counter)
-				db.sync ()
-				logger.info (f'{company_id}: done')
+				with AMSLock () as amslock:
+					def lock (lockname: str) -> str:
+						first = True
+						start = time.time ()
+						while not amslock.lock (lockname, ttl = 1800):
+							if first:
+								logger.info (f'{company_id}: failed to lock for "{lockname}", retry until succeed')
+							time.sleep (1)
+						diff = int (time.time () - start)
+						logger.info ('{company_id}: locked "{lockname}" after {minute}:{second:02d}'.format (
+							company_id = company_id,
+							lockname = lockname,
+							minute = diff // 60,
+							second = diff % 60
+						))
+						return lockname
+					def unlock (lockname: str) -> None:
+						amslock.unlock (lockname)
+						logger.info (f'{company_id}: unlocked "{lockname}"')
+					#
+					bulk_update: bool = emmcompany.get (UpdateMailtrack.mailtrack_bulk_update_config_key, company_id = company_id, default = False, convert = atob)
+					bulk_update_chunk: int = emmcompany.get (UpdateMailtrack.mailtrack_bulk_update_chunk_config_key, company_id = company_id, default = 0, convert = atoi)
+					logger.info (f'{company_id}: processing {counter} update mailtracking')
+					lockname = lock (f'mailtrack:{company_id}')
+					self.__update_mailtracking (db, company_id, counter)
+					unlock (lockname)
+					logger.info (f'{company_id}: processing profile updates (bulk is {bulk_update}, chunk is {bulk_update_chunk})')
+					#
+					with db.logging (lambda m: logger.info (f'DB: {m}')):
+						lockname = lock (f'customer:{company_id}')
+						self.__update_profile (db, company_id, bulk_update, bulk_update_chunk, counter)
+						unlock (lockname)
+					db.sync ()
+					logger.info (f'{company_id}: done')
 		logger.info ('Added mailtracking for {count} companies'.format (count = len (self.companies)))
 		return True	
 

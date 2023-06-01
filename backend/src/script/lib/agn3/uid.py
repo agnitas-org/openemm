@@ -10,12 +10,13 @@
 ####################################################################################################################################################################################################################################################################
 #
 from	__future__ import annotations
-import	logging, hashlib, base64
+import	logging, hashlib, base64, pickle
+import	msgpack
 from	collections import deque
-from	dataclasses import dataclass, replace
+from	dataclasses import dataclass, field, replace
 from	datetime import datetime
 from	types import TracebackType
-from	typing import ClassVar, Final, Optional, Union
+from	typing import Any, ClassVar, Final, Optional, Union
 from	typing import Deque, Dict, List, NamedTuple, Set, Tuple, Type
 from	.db import DB
 from	.dbconfig import DBConfig
@@ -40,11 +41,23 @@ class UID:
 	url_id: int = 0
 	bit_option: int = 0
 	prefix: Optional[str] = None
+	ctx: Dict[str, Any] = field (default_factory = dict)
 	TRACKING_VETO: ClassVar[int] = 0
 	DISABLE_LINK_EXTENSION: ClassVar[int] = 1
 
 	def __hash__ (self) -> int:
-		return hash ((self.version, self.licence_id, self.company_id, self.mailing_id, self.customer_id, self.url_id, self.bit_option, self.prefix))
+		try:
+			hashable_context: Union[bytes, str] = pickle.dumps (self.ctx)
+		except:
+			hashable_context = str (self.ctx)
+		return hash ((self.version, self.licence_id, self.company_id, self.mailing_id, self.customer_id, self.url_id, self.bit_option, self.prefix, hashable_context))
+	def __getitem__ (self, option: str) -> Any:
+		return self.ctx[option]
+	def __setitem__ (self, option: str, value: Any) -> None:
+		self.ctx[option] = value
+	def __delitem__ (self, option: str) -> None:
+		del self.ctx[option]
+
 	def __bit_is_set (self, bit: int) -> bool:
 		return bool (self.bit_option & (1 << bit))
 	def __bit_set (self, bit: int, value: bool) -> None:
@@ -67,6 +80,37 @@ class UID:
 	def _disable_link_extension_del (self) -> None:
 		self.__bit_set (self.DISABLE_LINK_EXTENSION, False)
 	disable_link_extension = property (_disable_link_extension_get, _disable_link_extension_set, _disable_link_extension_del)
+
+	@property
+	def context (self) -> bytes:
+		def set (key: str, value: Union[None, int, str]) -> None:
+			if value is not None and bool (value):
+				self.ctx[key] = value
+			elif key in self.ctx:
+				del self.ctx[key]
+		set ('_l', self.licence_id)
+		set ('_c', self.company_id)
+		set ('_m', self.mailing_id)
+		set ('_r', self.customer_id)
+		set ('_u', self.url_id)
+		set ('_o', self.bit_option)
+		return msgpack.dumps (Stream (self.ctx.items ()).sorted (key = lambda kv: kv[0]).dict ())
+	
+	def parse (self, content: bytes) -> None:
+		self.ctx = msgpack.loads (content)
+		self.licence_id = self.ctx.get ('_l', self.licence_id)
+		self.company_id = self.ctx.get ('_c', self.company_id)
+		self.mailing_id = self.ctx.get ('_m', self.mailing_id)
+		self.customer_id = self.ctx.get ('_r', self.customer_id)
+		self.url_id = self.ctx.get ('_u', self.url_id)
+		self.bit_option = self.ctx.get ('_o', self.bit_option)
+	
+	@staticmethod
+	def encode (content: bytes) -> str:
+		return base64.urlsafe_b64encode (content).rstrip (b'=').decode ('us-ascii')
+	@staticmethod
+	def decode (content: str) -> bytes:
+		return base64.urlsafe_b64decode (content + '=' * (len (content) % 4))
 	
 class UIDCache:
 	__slots__ = ['instances']
@@ -190,7 +234,7 @@ class UIDCache:
 
 class UIDHandler:
 	__slots__ = ['cache']
-	available_versions: Final[Tuple[int, ...]] = (2, 3, 4)
+	available_versions: Final[Tuple[int, ...]] = (2, 3, 4, 5)
 	default_version: Final[int] = available_versions[-1]
 	symbols: Final[str] = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_'
 	class Credential (NamedTuple):
@@ -232,8 +276,8 @@ class UIDHandler:
 			result += value
 		return result
 
-	def __make_signature (self, version: int, uid: UID, credential: UIDHandler.Credential) -> str:
-		sig: List[Union[int, str]] = []
+	def __make_signature (self, version: int, uid: UID, content: Optional[bytes], credential: UIDHandler.Credential) -> str:
+		sig: List[Union[int, str, bytes]] = []
 		if version == 2:
 			if uid.prefix:
 				sig.append (uid.prefix)
@@ -246,9 +290,13 @@ class UIDHandler:
 			if uid.prefix:
 				sig.append (uid.prefix)
 			sig += [version, uid.licence_id, uid.company_id, uid.mailing_id, uid.customer_id, uid.url_id, uid.bit_option, credential.secret]
+		elif version == 5:
+			if uid.prefix:
+				sig.append (uid.prefix)
+			sig += [version, content if content is not None else uid.context, credential.secret]
 		dig = hashlib.sha512 ()
-		dig.update (Stream (sig).join ('.').encode ('UTF-8'))
-		return base64.urlsafe_b64encode (dig.digest ()).decode ('us-ascii').replace ('=', '')
+		dig.update (b'.'.join (Stream (sig).map (lambda e: e if isinstance (e, bytes) else str (e).encode ('UTF-8'))))
+		return UID.encode (dig.digest ())
 
 	def __select_version (self, version: Optional[int] = None) -> int:
 		if version is None or version == 0:
@@ -274,6 +322,7 @@ returns a newly created UID from the set instance variables."""
 		credential = self.retrieve_credential (uid)
 		uid_version = self.__select_version (version if version is not None else credential.enabled_uid_version)
 		parts: List[str]
+		content: Optional[bytes] = None
 		if uid_version == 2:
 			parts = (
 				([uid.prefix] if uid.prefix else []) +
@@ -310,7 +359,13 @@ returns a newly created UID from the set instance variables."""
 					uid.bit_option
 				)]
 			)
-		parts.append (self.__make_signature (uid_version, uid, credential))
+		elif uid_version == 5:
+			content = uid.context
+			parts = ([uid.prefix] if uid.prefix else []) + [
+				self.__iencode (uid_version),
+				UID.encode (content)
+			]
+		parts.append (self.__make_signature (uid_version, uid, content, credential))
 		return '.'.join (parts)
 
 	def parse (self, uid_str: str, validate: bool = True) -> UID:
@@ -342,12 +397,17 @@ exception is thrown, if it is not valid."""
 							has_prefix = False
 		elif len (elem) == 6:
 			has_prefix = False
+		elif len (elem) == 4:
+			has_prefix = True
+		elif len (elem) == 3:
+			has_prefix = False
 		else:
 			raise error (f'invalid uid {uid_str}')
 		if has_prefix:
 			uid.prefix = elem.pop (0)
 		#
 		uid.version = self.__select_version (self.__idecode (elem[0]))
+		content: Optional[bytes] = None
 		try:
 			if uid.version == 2:
 				uid.licence_id = self.__idecode (elem[1])
@@ -368,6 +428,9 @@ exception is thrown, if it is not valid."""
 				uid.customer_id = self.__idecode (elem[4])
 				uid.url_id = self.__idecode (elem[5])
 				uid.bit_option = self.__idecode (elem[6])
+			elif uid.version == 5:
+				content = UID.decode (elem[1])
+				uid.parse (content)
 		except IndexError:
 			raise error (f'invalid uid {uid_str} for version {uid.version}')
 		#
@@ -388,7 +451,7 @@ exception is thrown, if it is not valid."""
 				raise error (f'{uid}: missing credentials')
 			if credential.minimal_uid_version is not None and credential.minimal_uid_version > uid.version:
 				raise error (f'{uid}: outdated version')
-			if elem[-1] != self.__make_signature (uid.version, uid, credential):
+			if elem[-1] != self.__make_signature (uid.version, uid, content, credential):
 				raise error (f'{uid}: invalid signature')
 		return uid
 	

@@ -128,7 +128,7 @@ write_bounce_log (gen_t *g, blockmail_t *blockmail, receiver_t *rec, const char 
 			ts[0] = '\0';
 		}
 		st = true;
-		if (fprintf (fp, "%s;%d;%d;%d;%d;%s%s\n", dsn, blockmail -> licence_id, blockmail -> mailing_id, (rec -> media ? rec -> media -> type : Mediatype_EMail), rec -> customer_id, ts, reason) < 0) {
+		if (fprintf (fp, "%s;%d;%d;%d;%d;%s%s\n", dsn, blockmail -> licence_id, blockmail -> mailing_id, (rec -> media ? rec -> media -> type : Mediatype_Unspec), rec -> customer_id, ts, reason) < 0) {
 			st = false;
 		}
 		if (fclose (fp) == EOF) {
@@ -151,6 +151,10 @@ create_bcc_head (buffer_t *target, blockmail_t *blockmail, const char *bcc, int 
 	int		len;
 	
 	rc = true;
+	if (blockmail -> status_field == 'V') {
+		/* is already marked to be ignored, so we can skip modifying the message id */
+		found_message_id = true;
+	}
 	buffer_clear (target);
 	while (rc && (length > 0)) {
 		cur = ptr;
@@ -1099,7 +1103,7 @@ sendmail_owrite_spool (sendmail_t *s, gen_t *g, blockmail_t *blockmail, receiver
 			int	n;
 
 			for (n = 0; rec -> bcc[n]; ++n)
-				if (! create_bcc_head (bcc_head, blockmail, rec -> bcc[n], n))
+				if (! create_bcc_head (bcc_head, blockmail, rec -> bcc[n], n + 1))
 					log_out (blockmail -> lg, LV_ERROR, "Unable to create temp. bcc header for %s", rec -> bcc[n]);
 				else {
 					if (rec -> dkim)

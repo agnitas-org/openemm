@@ -28,10 +28,8 @@ start)
 	fi
 	base=${HOME}/JAVA
 	xmlrpc=org.agnitas.backend.MailoutServerXMLRPC
-	logfile=${base}/org/agnitas/backend/BACKEND_`date +%Y%m%d`.LOG
-	if [ ! -f $logfile ]; then
-		touch $logfile
-	fi
+	logfile=${HOME}/log/backend.log
+	> $logfile
 	#
 	#	2.) Start backend
 	echo -n "Starting backend .. "
@@ -45,9 +43,6 @@ start)
 		-- \
 		$java '$memory' $xmlrpc '$host'
 	echo "done."
-	slogfile=${HOME}/log/backend.log
-	rm -f $slogfile
-	ln $logfile $slogfile
 	#
 	#	3.) Start exception watching process
 	if [ -x $HOME/bin/emerg.sh ]; then

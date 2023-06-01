@@ -22,7 +22,7 @@ from	.definitions import program
 from	.exceptions import error
 from	.ignore import Ignore
 from	.io import copen, CSVDefault, CSVWriter
-from	.parser import ParseTimestamp, Unit
+from	.parser import ParseTimestamp, unit
 from	.stream import Stream
 #
 __all__ = ['Row', 'DBIgnore', 'DB', 'TempDB']
@@ -124,7 +124,7 @@ handling."""
 			self.cursor = self.db.cursor ()
 			if self.cursor is None:
 				self.close ()
-		self._tablespace_cache = {}
+		self._tablespace_cache.clear ()
 		return self.cursor is not None
 
 	def isopen (self) -> bool:
@@ -733,7 +733,7 @@ if it had not existed."""
 				if endoffset is not None:
 					offset: int
 					if isinstance (endoffset, str):
-						parsed = Unit ().parse (endoffset, -1)
+						parsed = unit.parse (endoffset, -1)
 						if parsed == -1:
 							raise error (f'{endoffset}: invalid offset expression')
 						offset = parsed

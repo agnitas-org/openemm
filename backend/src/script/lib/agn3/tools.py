@@ -343,33 +343,34 @@ no single expression matched.
 		self.only_inverse: Optional[bool] = None
 		if expr:
 			for e in listsplit (expr):
-				if e.startswith ('!'):
-					inverse = True
-					e = e[1:].lstrip ()
-					if self.only_inverse is None:
-						self.only_inverse = True
-				else:
-					inverse = False
-					self.only_inverse = False
-				parts = [_e.strip () for _e in e.split ('-', 1)]
-				try:
-					if len (parts) == 2:
-						start = int (parts[0]) if parts[0] else low
-						end = int (parts[1]) if parts[1] else high
-						if start is not None and end is not None and start > end:
-							raise error (f'{expr}: start value ({start}) higher than end value ({end}) in {e}')
-					elif e == '*':
-						start = low
-						end = high
-					else:
-						start = int (e)
-						end = start
-					slice = self.Slice (inverse, start, end)
-					self.slices.append (slice)
-				except ValueError:
-					raise error (f'{expr}: invalid expression at: {e}')
-			if self.only_inverse and low is not None and high is not None:
-				self.slices.insert (0, self.Slice (False, low, high))
+				self (e)
+	
+	def __call__ (self, expression: str) -> None:
+		if expression.startswith ('!'):
+			inverse = True
+			expression = expression[1:].lstrip ()
+			if self.only_inverse is None:
+				self.only_inverse = True
+		else:
+			inverse = False
+			self.only_inverse = False
+		parts = [_e.strip () for _e in expression.split ('-', 1)]
+		try:
+			if len (parts) == 2:
+				start = int (parts[0]) if parts[0] else self.low
+				end = int (parts[1]) if parts[1] else self.high
+				if start is not None and end is not None and start > end:
+					raise error (f'{expression}: start value ({start}) higher than end value ({end})')
+			elif expression == '*':
+				start = self.low
+				end = self.high
+			else:
+				start = int (expression)
+				end = start
+			slice = self.Slice (inverse, start, end)
+			self.slices.append (slice)
+		except ValueError:
+			raise error (f'{expression}: invalid expression')
 
 	def __contains__ (self, val: int) -> bool:
 		if (self.low is not None and self.low > val) or (self.high is not None and self.high < val):
@@ -392,6 +393,7 @@ no single expression matched.
 			.map (lambda s: str (s))
 			.join (', ')
 		)
+			
 
 class Config:
 	"""Simple configuration
@@ -507,6 +509,9 @@ itself.
 			if self._st:
 				for token in self._st.pop ():
 					del self._ns[token]
+
+	def __getitem__ (self, option: str) -> Any:
+		return self._ns[option]
 
 	def __setitem__ (self, option: str, value: Any) -> None:
 		"""Set namespace content"""

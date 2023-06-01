@@ -276,6 +276,8 @@ replace_tags (blockmail_t *blockmail, receiver_t *rec, block_t *block,
 						    (xmlEqual (tag -> name, tp -> name)))
 							break;
 				}
+				if (tag && (! tag_filter (tag, rec, 10, NULL)))
+					tag = NULL;
 			}
 			if (tag && (cont = tag_content (tag, blockmail, rec, & n)) && (n > 0)) {
 				if (ispdf) {

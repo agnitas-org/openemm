@@ -20,7 +20,14 @@ class UserStatus (Enum):
 	ADMOUT = 3
 	OPTOUT = 4
 	WAITCONFIRM = 5
-	BLACKLIST = 6
+	BLOCKLIST = 6
 	@classmethod
 	def find_status (cls, name: str) -> UserStatus:
 		return cls.__members__[name.upper ()]
+
+class WorkStatus (Enum):
+	Finished = 'mailing.status.generation-finished'
+	Sending = 'mailing.status.sending'
+	Sent = 'mailing.status.sent'
+	CancelCopy = 'mailing.status.canceledAndCopied'
+

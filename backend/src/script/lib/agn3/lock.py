@@ -15,7 +15,7 @@ from	types import TracebackType
 from	typing import Optional
 from	typing import Type
 from	.definitions import base, program
-from	.exceptions import error
+from	.exceptions import LockError
 from	.ignore import Ignore
 #
 __all__ = ['Lock']
@@ -78,7 +78,7 @@ program is used."""
 							if st.st_size == 0:
 								os.unlink (self.lockpath)
 		if not self.is_locked and not self.lazy:
-			raise error (f'{self.lockpath}: lock exists')
+			raise LockError (f'{self.lockpath}: lock exists')
 		return self.is_locked
 
 	def unlock (self) -> None:

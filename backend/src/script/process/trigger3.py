@@ -333,7 +333,8 @@ class Main (Runtime):
 			for (option, value) in [
 				('xmlrpc.port', str (self.port)),
 				('xmlrpc.server', 'forking'),
-				('merger.port', '8089')
+				('merger.host', syscfg.get ('mailout-server', 'localhost')),
+				('merger.port', syscfg.get ('mailout-port', '8089'))
 			]:
 				if option not in self.cfg:
 					self.cfg[option] = value

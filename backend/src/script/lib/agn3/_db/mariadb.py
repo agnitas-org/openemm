@@ -23,7 +23,9 @@ with Ignore (ImportError):
 	from	.types import Driver
 	from	..dbapi import DBAPI
 	from	..dbcore import Row, Cursor, Core, DBType
+	from	..exceptions import error
 	from	..ignore import Ignore
+	from	..tools import atob
 
 	logger = logging.getLogger (__name__)
 
@@ -36,12 +38,14 @@ with Ignore (ImportError):
 			self.rowmap: List[Callable[[Any], Any]] = []
 
 		def executor (self, statement: str, parameter: Union[None, List[Any], Dict[str, Any]] = None) -> int:
+			last_error: Optional[Exception] = None
 			for state in range (self.tries):
 				if state:
 					time.sleep (state)
 				try:
 					return super ().executor (statement, parameter)
 				except mariadb_driver.Error as e:
+					last_error = e
 					self.db.log (f'Got mariadb error: {e}')
 					try:
 						if e.errno not in {
@@ -74,7 +78,7 @@ with Ignore (ImportError):
 						))
 					except AttributeError:
 						raise e
-			raise
+			raise last_error if last_error is not None else error (f'retry count {self.tries} exceeded')
 
 		def make_row (self, data: List[Any]) -> Row:
 			if self.rowtype is None:
@@ -138,6 +142,10 @@ with Ignore (ImportError):
 			}
 			if port is not None:
 				config['port'] = port
+			config.update (self.connect_options)
+			auto_reconnect = atob (config.pop ('auto_reconnect', False))
 			self.db = self.driver.connect (**config)
+			if auto_reconnect:
+				cast (DBAPI.DriverMariaDB, self.db).auto_reconnect = auto_reconnect
 
 	mariadb = Driver ('mariadb', None, lambda cfg: MariaDB (cfg ('host'), cfg ('user'), cfg ('password'), cfg ('name')))

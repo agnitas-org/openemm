@@ -64,9 +64,10 @@ dyn_free_all (dyn_t *d) /*{{{*/
 bool_t
 dyn_match (const dyn_t *d, eval_t *eval, receiver_t *rec) /*{{{*/
 {
-	/* trivial case */
+	if ((d -> target_id > 0) && (d -> target_index != -1))
+		return dataset_match (rec -> rvdata, d -> target_index);
 	if (! d -> condition) {
-		return d -> target_index != -1 ? dataset_match (rec -> rvdata, d -> target_index) : true;
+		return true;
 	}
 	return eval_match (eval, SP_DYNAMIC, d -> did);
 }/*}}}*/

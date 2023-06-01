@@ -9,6 +9,7 @@
  *                                                                                                                                                                                                                                                                  *
  ********************************************************************************************************************************************************************************************************************************************************************/
 # include	<openssl/sha.h>
+# include	<mpack.h>
 # include	"xmlback.h"
 
 # define	OPTION(flag,value)		((flag) ? (value) : 0)
@@ -91,7 +92,52 @@ encode (char *buf, int buflen, const byte_t *data, int datalen) /*{{{*/
 	}
 	return pos;
 }/*}}}*/
-
+static byte_t *
+create_packed (blockmail_t *blockmail, receiver_t *rec, long url_id, size_t *size) /*{{{*/
+{
+	char		*data;
+	mpack_writer_t	writer;
+	mpack_error_t	rc;
+	long		option;
+	
+	mpack_writer_init_growable (& writer, & data, size);
+	mpack_build_map (& writer);
+	if (blockmail -> company_id) {
+		mpack_write_cstr (& writer, "_c");
+		mpack_write_int (& writer, blockmail -> company_id);
+	}
+	if (blockmail -> licence_id) {
+		mpack_write_cstr (& writer, "_l");
+		mpack_write_int (& writer, blockmail -> licence_id);
+	}
+	if (blockmail -> mailing_id) {
+		mpack_write_cstr (& writer, "_m");
+		mpack_write_int (& writer, blockmail -> mailing_id);
+	}
+	option = OPTION (rec -> tracking_veto, OPTION_TRACKING_VETO) | OPTION (rec -> disable_link_extension, OPTION_DISABLE_LINK_EXTENSION);
+	if (option) {
+		mpack_write_cstr (& writer, "_o");
+		mpack_write_int (& writer, option);
+	}
+	if (rec -> customer_id) {
+		mpack_write_cstr (& writer, "_r");
+		mpack_write_int (& writer, rec -> customer_id);
+	}
+	if (blockmail -> epoch) {
+		mpack_write_cstr (& writer, "_s");
+		mpack_write_int (& writer, blockmail -> epoch);
+	}
+	if (url_id) {
+		mpack_write_cstr (& writer, "_u");
+		mpack_write_int (& writer, url_id);
+	}
+	mpack_complete_map (& writer);
+	rc = mpack_writer_destroy (& writer);
+	if (rc != mpack_ok) {
+		return NULL;
+	}
+	return (byte_t *) data;
+}/*}}}*/
 static char *
 create_xuid (blockmail_t *blockmail, int uid_version, const char *prefix, receiver_t *rec, long url_id) /*{{{*/
 {
@@ -99,14 +145,17 @@ create_xuid (blockmail_t *blockmail, int uid_version, const char *prefix, receiv
 	enum {
 		V2 = 2,
 		V3 = 3,
-		V4 = 4
+		V4 = 4,
+		V5 = 5
 	}		uid_version_used,
-			fallback_version = V4;		/* must always be the most recent one */
+			fallback_version = V5;		/* must be always be the most recent stable one */
 	int		n;
 	unsigned long	vu = 0;
 	long		vs = 0;
 	char		scratch[4096];
 	int		len = 0;
+	byte_t		*packed;
+	size_t		psize;
 	
 	buffer_clear (blockmail -> secret_uid);
 	buffer_clear (blockmail -> secret_sig);
@@ -123,6 +172,7 @@ create_xuid (blockmail_t *blockmail, int uid_version, const char *prefix, receiv
 	case 2:		uid_version_used = V2;			break;
 	case 3:		uid_version_used = V3;			break;
 	case 4:		uid_version_used = V4;			break;
+	case 5:		uid_version_used = V5;			break;
 	}
 	
 	switch (uid_version_used) {
@@ -236,12 +286,28 @@ create_xuid (blockmail_t *blockmail, int uid_version, const char *prefix, receiv
 			buffer_stiffch (blockmail -> secret_sig, '.');
 		}
 		break;
+	case V5:
+		len = iencode (scratch, sizeof (scratch), uid_version_used);
+		buffer_stiffsn (blockmail -> secret_uid, scratch, len);
+		buffer_stiffch (blockmail -> secret_uid, '.');
+		len = snprintf (scratch, sizeof (scratch), "%d", uid_version_used);
+		buffer_stiffsn (blockmail -> secret_sig, scratch, len);
+		buffer_stiffch (blockmail -> secret_sig, '.');
+		if (packed = create_packed (blockmail, rec, url_id, & psize)) {
+			if (encode_uid_parameter (packed, psize, blockmail -> secret_uid))
+				buffer_stiffch (blockmail -> secret_uid, '.');
+			buffer_stiff (blockmail -> secret_sig, packed, psize);
+			buffer_stiffch (blockmail -> secret_sig, '.');
+			MPACK_FREE (packed);
+		}
+		break;
 	}
 	buffer_stiff (blockmail -> secret_sig, xmlBufferContent (blockmail -> secret_key), xmlBufferLength (blockmail -> secret_key));
 	switch (uid_version_used) {
 	case V2:
 	case V3:
 	case V4:
+	case V5:
 		{
 			SHA512_CTX	hash;
 			unsigned char	digest[SHA512_DIGEST_LENGTH];

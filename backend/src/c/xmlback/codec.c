@@ -457,6 +457,11 @@ encode_encrypted (buffer_t *src, buffer_t *dest) /*{{{*/
 	return do_encode_base64 (src -> buffer, src -> length, dest, false, false, false);
 }/*}}}*/
 bool_t
+encode_uid_parameter (const byte_t *parameter, size_t size, buffer_t *dest) /*{{{*/
+{
+	return do_encode_base64 (parameter, size, dest, false, false, false);
+}/*}}}*/
+bool_t
 encode_url (const byte_t *input, int ilen, buffer_t *dest) /*{{{*/
 {
 	static const char

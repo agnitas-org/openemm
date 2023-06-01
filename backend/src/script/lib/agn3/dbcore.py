@@ -10,9 +10,10 @@
 ####################################################################################################################################################################################################################################################################
 #
 from	__future__ import annotations
-import	base64, re, keyword
+import	base64, re, keyword, json
 from	abc import abstractmethod
 from	collections import namedtuple, defaultdict
+from	datetime import datetime
 from	itertools import zip_longest
 from	enum import Enum
 from	types import TracebackType
@@ -20,8 +21,11 @@ from	typing import Any, Callable, Optional, Protocol, TypeVar, Union
 from	typing import DefaultDict, Dict, Iterator, List, NamedTuple, Set, Tuple, Type
 from	typing import cast
 from	.dbapi import DBAPI
+from	.dbconfig import DBConfig
+from	.definitions import syscfg, fqdn, program, base, home, user
 from	.exceptions import error
 from	.ignore import Ignore
+from	.io import expand_path, normalize_path
 from	.stream import Stream
 #
 __all__ = ['Row', 'Cursor', 'DBType', 'Core']
@@ -357,7 +361,7 @@ class Core:
 this is the base class for all database specific drivers and should
 inherit this class. """
 	__slots__ = [
-		'dbms', 'driver', 'cursor_class', 'fallbacks',
+		'dbms', 'driver', 'cursor_class', 'fallbacks', 'connect_options',
 		'db', 'lasterr', 'logger', 'cursors', 'types', 'matches',
 		'cache_reformat', 'cache_variables', 'paramstyle'
 	]
@@ -399,6 +403,7 @@ but can produce lots of output in prdocutive use."""
 		self.driver = driver
 		self.cursor_class = cursor_class
 		self.fallbacks = ['default']
+		self.connect_options: Dict[str, Any] = {}
 		self.db: Optional[DBAPI.Driver] = None
 		self.lasterr: Optional[Exception] = None
 		self.logger: Optional[Callable[[str], None]] = None
@@ -438,9 +443,43 @@ but can produce lots of output in prdocutive use."""
 	def logging (self, log: Optional[Callable[[str], None]]) -> Core.LogState:
 		return Core.LogState (self, log)
 	
-	def setup (self) -> None:
+	def setup (self, cfg: DBConfig.DBRecord) -> None:
 		"""hook to add driver specific setup code"""
-		pass
+		if (connect_config := cfg ('py-connect')) is not None:
+			if connect_config.startswith ('@'):
+				with open (expand_path (connect_config[1:])) as fd:
+					connect_config = fd.read ()
+			try:
+				content = base64.b64decode (connect_config, validate = True).decode ('UTF-8')
+			except:
+				content = connect_config
+			try:
+				value = eval (content, {
+					'driver': self.driver,
+					'datetime': datetime,
+					'expand': expand_path,
+					'normalize': normalize_path,
+					'syscfg': syscfg,
+					'fqdn': fqdn,
+					'program': program,
+					'base': base,
+					'home': home,
+					'user': user
+				})
+			except Exception as e:
+				try:
+					value = json.loads (Stream (content.split ('\n'))
+						.filter (lambda s: not s.lstrip ().startswith ('#'))
+						.join ('\n')
+					)
+				except:
+					raise error (f'py-connect: "{content}" is no valid expiression: {e}')
+			
+			if value:
+				if isinstance (value, dict):
+					self.connect_options.update (value)
+				else:
+					raise error (f'py-connect: "{content}" expected a dict, parsed to a {type (value)}')
 
 	def log (self, message: str) -> None:
 		if self.logger is not None:
@@ -678,7 +717,7 @@ used during logging."""
 				c.set_id (id)
 				self.cursors.append (c)
 				return c
-		raise error ('no database connection')
+		raise error (f'no database connection: {self.last_error ()}')
 
 	def release (self, cursor: Cursor) -> None:
 		"""releases and closes a cursor

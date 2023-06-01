@@ -129,6 +129,7 @@ blockmail_alloc (const char *fname, bool_t syncfile, log_t *lg) /*{{{*/
 		b -> maildrop_status_id = -1;
 		b -> status_field = '\0';
 		b -> senddate = NULL;
+		b -> epoch = 0;
 		b -> rdir_content_links = false;
 		b -> domain = NULL;
 		b -> mailtrack = NULL;
@@ -547,14 +548,7 @@ blockmail_extract_mediatypes (blockmail_t *b) /*{{{*/
 {
 	int	n;
 	bool_t	st;
-	char	minfo[256];
-	
-	snprintf (minfo, sizeof (minfo) - 1, 
-		  "Licence-ID: %d\n"
-		  "Company-ID: %d\n"
-		  "Owner-ID: %d\n"
-		  "Mailing-ID: %d\n",
-		  b -> licence_id, b -> owner_id, b -> company_id, b -> mailing_id);
+
 	st = true;
 	for (n = 0; n < b -> media_count; ++n) {
 		media_t	*m = b -> media[n];
@@ -574,11 +568,30 @@ blockmail_extract_mediatypes (blockmail_t *b) /*{{{*/
 }/*}}}*/
 
 void
-blockmail_setup_senddate (blockmail_t *b, const char *date) /*{{{*/
+blockmail_setup_senddate (blockmail_t *b, const char *date, time_t epoch) /*{{{*/
 {
 	if (b -> senddate)
 		free (b -> senddate);
 	b -> senddate = tf_parse_date (date);
+	if (epoch) {
+		b -> epoch = epoch;
+	} else if (b -> senddate) {
+		struct tm	temp;
+		
+		temp.tm_sec = b -> senddate[5];
+		temp.tm_min = b -> senddate[4];
+		temp.tm_hour = b -> senddate[3];
+		temp.tm_mday = b -> senddate[2];
+		temp.tm_mon = b -> senddate[1] - 1;
+		temp.tm_year = b -> senddate[0] - 1900;
+		temp.tm_isdst = -1;
+		b -> epoch = mktime (& temp);
+		if (b -> epoch == (time_t) -1) {
+			time (& b -> epoch);
+		}
+	} else {
+		time (& b -> epoch);
+	}
 }/*}}}*/
 void
 blockmail_setup_company_configuration (blockmail_t *b) /*{{{*/

@@ -24,7 +24,7 @@ from	agn3.emm.config import Responsibility
 from	agn3.emm.timestamp import Timestamp
 from	agn3.emm.types import UserStatus
 from	agn3.exceptions import error
-from	agn3.ignore import Ignore, Experimental
+from	agn3.ignore import Ignore
 from	agn3.log import log
 from	agn3.runtime import Runtime
 from	agn3.stream import Stream
@@ -496,8 +496,6 @@ class Softbounce (Runtime):
 										'dsn': 599
 									}
 								)
-								with Experimental ('https://jira.agnitas.de/browse/SAAS-2148'):
-									pass
 				else:
 					logger.info (f'Email {email} has matching profile (anymore) -> discarded')
 				self.db.update (

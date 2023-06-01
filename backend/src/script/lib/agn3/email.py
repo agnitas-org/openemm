@@ -12,6 +12,7 @@
 from	__future__ import annotations
 import	sys, os, re, csv, subprocess, base64, logging
 import	socket, mimetypes
+from	collections import defaultdict
 from	datetime import datetime
 from	dataclasses import dataclass
 import	email
@@ -23,14 +24,14 @@ from	email.policy import EmailPolicy, compat32
 from	email.utils import parseaddr
 from	functools import partial
 from	typing import Any, Callable, Optional, Union
-from	typing import Dict, Generator, List, Match, NamedTuple, Pattern, Set, TextIO, Tuple
+from	typing import DefaultDict, Dict, Generator, List, Match, NamedTuple, Pattern, Set, TextIO, Tuple
 from	typing import cast
-from	.db import DB
-from	.definitions import fqdn, user, program
+from	.db import DB, TempDB
+from	.definitions import fqdn, user, program, syscfg
 from	.exceptions import error
 from	.id import IDs
 from	.ignore import Ignore
-from	.io import which, CSVDefault
+from	.io import CSVDefault
 from	.log import log
 from	.parser import ParseTimestamp
 from	.stream import Stream
@@ -67,9 +68,11 @@ class EMail (IDs):
 	@staticmethod
 	def from_string (content: str) -> EmailMessage:
 		return cast (EmailMessage, email.message_from_string (content, policy = email.policy.default))
+
 	@staticmethod
 	def from_bytes (content: bytes) -> EmailMessage:
 		return cast (EmailMessage, email.message_from_bytes (content, policy = email.policy.default))
+
 	nofold_policy = EmailPolicy (refold_source = 'none')
 	@staticmethod
 	def as_string (msg: EmailMessage, unixfrom: bool) -> str:
@@ -86,6 +89,10 @@ class EMail (IDs):
 				return method (unixfrom, policy = EMail.nofold_policy)
 			except Exception:
 				return method (unixfrom, policy = compat32)
+
+	@staticmethod
+	def sign (message: str, sender: Optional[str] = None, company_id: Optional[int] = None) -> str:
+		return message
 
 	class Content:
 		"""Stores one part of a multipart message"""
@@ -360,36 +367,28 @@ class EMail (IDs):
 				attachment.set_message (at, None)
 		for msg in msgs:
 			del msg['MIME-Version']
-		return self.sign (EMail.as_string (root, False) + '\n')
+		return EMail.sign (EMail.as_string (root, False) + '\n', sender = self.sender, company_id = self.company_id)
 	
 	def send_mail (self) -> Tuple[bool, int, str, str]:
 		"""Build and send the mail"""
 		(status, returnCode, out, err) = (False, 0, None, None)
 		mail = self.build_mail ()
-		mfrom: Optional[str]
+		mfrom: Optional[str] = None
 		if self.mfrom is not None:
-			mfrom = self.mfrom
+			if self.mfrom:
+				mfrom = self.mfrom
 		elif self.sender:
 			mfrom = parseaddr (self.sender)[1]
-		else:
-			mfrom = None
-		recvs = [parseaddr (_r[1])[1] for _r in self.receivers]
-		sendmail = which ('sendmail')
-		if not sendmail:
-			sendmail = '/usr/sbin/sendmail'
-		cmd = [sendmail]
-		if mfrom is not None:
-			cmd += ['-f', mfrom]
-		cmd += ['--'] + recvs
+		cmd = syscfg.sendmail (
+			[parseaddr (_r[1])[1] for _r in self.receivers],
+			sender = mfrom
+		)
 		pp = subprocess.Popen (cmd, stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True, errors = 'backslashreplace')
 		(out, err) = pp.communicate (mail)
 		returnCode = pp.returncode
 		if returnCode == 0:
 			status = True
 		return (status, returnCode, out, err)
-	
-	def sign (self, message: str) -> str:
-		return message
 #
 EMail.force_encoding ('UTF-8', 'qp')
 #
@@ -579,6 +578,28 @@ added."""
 		return status
 
 class ParseMessageID:
+	"""Parse a message-id for using as agnUID
+
+>>> from datetime import datetime
+>>> from agn3.uid import UID, UIDCache, UIDHandler
+>>> from agn3.definitions import licence
+>>> uh = UIDHandler (enable_cache = False)
+>>> class SimpleCache:
+...  def done (self): pass
+...  def find (self, uid): return (UIDCache.Company (company_id = 1, secret_key = 'abc123', enabled_uid_version = UIDHandler.default_version, minimal_uid_version = 0), UIDCache.Mailing (mailing_id = 2, company_id = 1, creation_date = datetime (1970, 1, 1)))
+... 
+>>> uh.cache = SimpleCache ()
+>>> prefix = f'Az19700101000000_{licence}'
+>>> domain = 'local.host'
+>>> for version in UIDHandler.available_versions:
+...  uid = uh.create (uid = UID (company_id = 1, mailing_id = 2, customer_id = 3, prefix = prefix), version = version)
+...  print (ParseMessageID.match (f'<{uid}@{domain}>'))
+...
+MessageID(message_id='<Az19700101000000_1.C.B.C.BGD.IeB.ZhspbvIcTKuPiDgoBx0_2R7SryqYhUATnonXUXu9uaefdCsFQpSfsBA6q7Tem37AsN0kfRjilTnr6Bwhp2gw2g@local.host>', is_blind_carbon_copy=False, uid='Az19700101000000_1.C.B.C.BGD.IeB.ZhspbvIcTKuPiDgoBx0_2R7SryqYhUATnonXUXu9uaefdCsFQpSfsBA6q7Tem37AsN0kfRjilTnr6Bwhp2gw2g', timestamp=datetime.datetime(1970, 1, 1, 0, 0), licence_id=1, domain='local.host')
+MessageID(message_id='<Az19700101000000_1.D.B.C.D.A.A.N96H94GDxYWo5_tVOfCZ_gWwmLtyYddOe3U9IROkYewmrE1O4VbMTx3MdmOx5HE5zcSJWeIawiKwaXsM0gh2xA@local.host>', is_blind_carbon_copy=False, uid='Az19700101000000_1.D.B.C.D.A.A.N96H94GDxYWo5_tVOfCZ_gWwmLtyYddOe3U9IROkYewmrE1O4VbMTx3MdmOx5HE5zcSJWeIawiKwaXsM0gh2xA', timestamp=datetime.datetime(1970, 1, 1, 0, 0), licence_id=1, domain='local.host')
+MessageID(message_id='<Az19700101000000_1.E.B.B.C.D.A.A.p3zV5C0s5dyN9d0sCrgzdoeb9vN1-HFPFE_W-H_JJEt1MCmZMIKuxkERcXc1a2qNL-cdk3JV6t6Nz7QOeOjtAw@local.host>', is_blind_carbon_copy=False, uid='Az19700101000000_1.E.B.B.C.D.A.A.p3zV5C0s5dyN9d0sCrgzdoeb9vN1-HFPFE_W-H_JJEt1MCmZMIKuxkERcXc1a2qNL-cdk3JV6t6Nz7QOeOjtAw', timestamp=datetime.datetime(1970, 1, 1, 0, 0), licence_id=1, domain='local.host')
+MessageID(message_id='<Az19700101000000_1.F.hKJfYwGiX2wBol9tAqJfcgM.iwWK8mE4lsSz9ilnSmpYfYTNqTgblGCx1CmhHiQo7lBgJce9i6R6MRpmkNeI0fX2SCLzwVtZGRPgeVrfjotebQ@local.host>', is_blind_carbon_copy=False, uid='Az19700101000000_1.F.hKJfYwGiX2wBol9tAqJfcgM.iwWK8mE4lsSz9ilnSmpYfYTNqTgblGCx1CmhHiQo7lBgJce9i6R6MRpmkNeI0fX2SCLzwVtZGRPgeVrfjotebQ', timestamp=datetime.datetime(1970, 1, 1, 0, 0), licence_id=1, domain='local.host')
+"""
 	class MessageID (NamedTuple):
 		message_id: str
 		is_blind_carbon_copy: bool
@@ -586,7 +607,7 @@ class ParseMessageID:
 		timestamp: Optional[datetime]
 		licence_id: int
 		domain: str
-	pattern_generic = '<(V[^-]*-)?(([a-z]{2})?[0-9]{14}_([0-9]+)(\\.[0-9a-z_-]+){6,8})@([^>]+)>'
+	pattern_generic = '<(V[^-]*-)?(([a-z]{2})?[0-9]{14}_([0-9]+)(\\.[0-9a-z_-]+){3,8})@([^>]+)>'
 	pattern_match = re.compile (f'^{pattern_generic}$', re.IGNORECASE)
 	pattern_search = re.compile (pattern_generic, re.IGNORECASE)
 	@classmethod
@@ -628,7 +649,7 @@ This class can be subclassed and the method parse() can be
 overwritten to implement further logic for resolving the customer."""
 	__slots__ = [
 		'content', 'invalids', 'message', 'uid_handler', 'uid_handler_borrow',
-		'uids', 'nvuids', 'unparsed', 'ignore', 'unsubscribe', 'status', 'feedback'
+		'uids', 'nvuids', 'seen', 'unparsed', 'ignore', 'unsubscribe', 'message_status'
 	]
 	def __init__ (self, content: str, invalids: bool = False, uid_handler: Optional[UIDHandler] = None) -> None:
 		"""Parses EMail found in ``content''"""
@@ -643,11 +664,11 @@ overwritten to implement further logic for resolving the customer."""
 			self.uid_handler_borrow = False
 		self.uids: List[UID] = []
 		self.nvuids: List[UID] = []
+		self.seen: Set[str] = set ()
 		self.unparsed = True
 		self.ignore = False
 		self.unsubscribe = False
-		self.status: List[Dict[str, Union[str, Header]]] = []
-		self.feedback: List[Dict[str, Union[str, Header]]] = []
+		self.message_status: DefaultDict[str, List[Dict[str, Union[str, Header]]]] = defaultdict (list)
 
 	def __del__ (self) -> None:
 		if not self.uid_handler_borrow:
@@ -663,21 +684,23 @@ overwritten to implement further logic for resolving the customer."""
 					yield (valid, uid)
 
 	def __add_uid (self, uid: str) -> None:
-		try:
-			self.uids.append (self.parsed_uid (uid))
-		except error as e1:
-			if self.invalids:
-				try:
-					self.nvuids.append (self.parsed_uid (uid, False))
-				except error as e2:
-					logger.debug (f'Unparsable UID "{uid}" found: {e1}/{e2}')
-			else:
-				logger.debug (f'Unparsable UID "{uid}" found: {e1}')
+		if uid not in self.seen:
+			self.seen.add (uid)
+			try:
+				self.uids.append (self.parsed_uid (uid))
+			except error as e1:
+				if self.invalids:
+					try:
+						self.nvuids.append (self.parsed_uid (uid, False))
+					except error as e2:
+						logger.debug (f'Unparsable UID "{uid}" found: {e1}/{e2}')
+				else:
+					logger.debug (f'Unparsable UID "{uid}" found: {e1}')
 	
-	pattern_link = re.compile ('https?://[^/]+/[^?]*\\?.*uid=(3D)?([0-9a-z_-]+(\\.[0-9a-z_-]+){5,7})', re.IGNORECASE)
-	pattern_subject = re.compile ('unsubscribe:([0-9a-z_-]+(\\.[0-9a-z_-]+){5,7})', re.IGNORECASE)
+	pattern_link = re.compile ('https?://[^/]+/[^?]*\\?.*uid=(3D)?([0-9a-z_-]+(\\.[0-9a-z_-]+){3,8})', re.IGNORECASE)
+	pattern_subject = re.compile ('unsubscribe:([0-9a-z_-]+(\\.[0-9a-z_-]+){3,8})', re.IGNORECASE)
 	pattern_list_unsubscribe_separator = re.compile ('<([^>]*)>')
-	pattern_list_unsubscribe = re.compile ('mailto:[^?]+\\?subject=unsubscribe:([0-9a-z_-]+(\\.[0-9a-z_-]+){5,7})', re.IGNORECASE)
+	pattern_list_unsubscribe = re.compile ('mailto:[^?]+\\?subject=unsubscribe:([0-9a-z_-]+(\\.[0-9a-z_-]+){3,8})', re.IGNORECASE)
 	def __find (self,
 		s: Union[None, str, Header],
 		pattern: Pattern[str],
@@ -749,25 +772,47 @@ overwritten to implement further logic for resolving the customer."""
 				else:
 					self.__find_link (content)
 			else:
-				target: Optional[List[Dict[str, Union[str, Header]]]] = None
-				if ct:
-					ct = ct.lower ()
-					if ct == 'message/feedback-report':
-						target = self.feedback
-					elif ct == 'message/delivery-status':
-						target = self.status
+				store_status = ct.lower ().startswith ('message/') if ct else False
 				for pl in cast (List[Union[str, EmailMessage]], payload.get_payload ()):
 					if isinstance (pl, str):
 						self.__find_link (pl)
-					elif target is not None:
-						target.append (dict (pl.items ()))
 					else:
+						if store_status:
+							try:
+								headers = pl.items ()
+							except Exception as e:
+								logger.debug (f'failed to parse message block due to "{e}", try removing last line')
+								try:
+									headers = getattr (pl, '_headers')
+									try:
+										faulty = headers.pop ()
+										logger.debug (f'remove possible faulty last header line "{faulty}"')
+										headers = pl.items ()
+									except Exception as e:
+										logger.debug (f'failed removing last header and recollect header due to: {e}')
+								except AttributeError:
+									logger.debug (f'no headers (attribute) found in {pl}')
+									headers = []
+							if headers:
+								self.message_status[ct].append (dict (headers))
 						self.__parse_payload (pl, level + 1)
-		
+
+	def __parse_message_status (self) -> None:
+		for (content_type, status_list) in self.message_status.items ():
+			for status_entry in status_list:
+				for (header, content) in status_entry.items ():
+					header = header.lower ()
+					if header == 'message-id':
+						self.__find_message_id (content)
+					elif header == 'list-unsubscribe':
+						self.__find_list_unsubscribe (content)
+
+
 	def parse (self) -> None:
 		self.uids.clear ()
 		self.nvuids.clear ()
 		self.__parse_payload (self.message, 1)
+		self.__parse_message_status ()
 		self.unparsed = False
 
 	@dataclass
@@ -812,57 +857,36 @@ class EMailValidator:
 
 This class allows some basic checks against an email address. This
 includes syntactical correctness as well as consulting available
-blacklists."""
-	__slots__ = ['bad_domains', 'blacklists']
+blocklists."""
+	__slots__ = ['blocklists']
 	special = '][{control}\\()<>,::\'"'.format (control = ''.join ([chr (_n) for _n in range (32)]))
 	pattern_user = re.compile (f'^("[^"]+"|[^{special}]+)$', re.IGNORECASE)
 	pattern_domain_part = re.compile ('[a-z0-9][a-z0-9-]*', re.IGNORECASE)
-	class Blacklist (NamedTuple):
+	class Blocklist (NamedTuple):
 		plain: Set[str]
 		wildcards: List[Tuple[str, Pattern[str]]]
 
 	def __init__ (self) -> None:
-		self.bad_domains: Optional[Set[str]] = None
-		self.blacklists: Optional[Dict[int, EMailValidator.Blacklist]] = None
+		self.blocklists: Optional[Dict[int, EMailValidator.Blocklist]] = None
 	
 	def __call__ (self, email: str, company_id: Optional[int] = None) -> None:
 		"""Validate an ``email'' address for ``company_id''"""
 		self.valid (email, company_id)
 
 	def reset (self) -> None:
-		self.bad_domains = None
-		self.blacklists = None
+		self.blocklists = None
 		
 	def setup (self, db: Optional[DB] = None, company_id: Optional[int] = None) -> None:
 		"""Setup processing ``db'' is an instance of agn3.db.DB or None for ``company_id''"""
-		if self.bad_domains is None or self.blacklists is None or (company_id is not None and company_id not in self.blacklists):
-			try:
-				mydb = db if db is not None else DB ()
-				mydb.check_open ()
-				if self.bad_domains is None:
-					self.bad_domains = set ()
-#
-#################################################################
-#	Blocked by https://jira.agnitas.de/browse/PROJ-672	#
-#################################################################
-#
-#					table = 'domain_clean_tbl'
-#					if mydb.exists (table):
-#						cursor = mydb.request ()
-#						for r in cursor.query (f'SELECT bdomain FROM {table}'):
-#							if r[0]:
-#								self.bad_domains.add (r[0].lower ())
-#						mydb.release (cursor)
-				if self.blacklists is None:
-					self.blacklists = {0: self.__read_blacklist (mydb, 0)}
-				if company_id is not None and company_id not in self.blacklists:
-					self.blacklists[company_id] = self.__read_blacklist (mydb, company_id)
-			finally:
-				if db is None:
-					mydb.done ()
+		if self.blocklists is None or (company_id is not None and company_id not in self.blocklists):
+			with TempDB (db) as mydb:
+				if self.blocklists is None:
+					self.blocklists = {0: self.__read_blocklist (mydb, 0)}
+				if company_id is not None and company_id not in self.blocklists:
+					self.blocklists[company_id] = self.__read_blocklist (mydb, company_id)
 
-	def __read_blacklist (self, db: DB, company_id: int) -> EMailValidator.Blacklist:
-		rc = EMailValidator.Blacklist (plain = set (), wildcards = [])
+	def __read_blocklist (self, db: DB, company_id: int) -> EMailValidator.Blocklist:
+		rc = EMailValidator.Blocklist (plain = set (), wildcards = [])
 		table = 'cust_ban_tbl' if company_id == 0 else f'cust{company_id}_ban_tbl'
 		if db.exists (table):
 			seen: Set[str] = set ()
@@ -892,7 +916,7 @@ blacklists."""
 		(user, domain) = parts
 		self.valid_user (user)
 		self.valid_domain (domain)
-		self.check_blacklist (email, company_id)
+		self.check_blocklist (email, company_id)
 	
 	def valid_user (self, user: str) -> None:
 		"""Validates the local part ``user''"""
@@ -917,23 +941,21 @@ blacklists."""
 				raise error ('domain part is empty')
 			if self.pattern_domain_part.match (p) is None:
 				raise error (f'invalid domain part "{p}"')
-		if self.bad_domains and domain.lower () in self.bad_domains:
-			raise error ('typically mistyped domain detected')
 
-	def check_blacklist (self, email: str, company_id: Optional[int] = None) -> None:
-		if not self.blacklists:
+	def check_blocklist (self, email: str, company_id: Optional[int] = None) -> None:
+		if not self.blocklists:
 			self.setup (company_id = company_id)
-		if self.blacklists:
+		if self.blocklists:
 			email = email.lower ()
 			company_ids = [0]
 			if company_id is not None and company_id > 0:
 				company_ids.append (company_id)
 			for cid in company_ids:
-				if cid in self.blacklists:
+				if cid in self.blocklists:
 					where = 'global' if cid == 0 else 'local'
-					blacklist = self.blacklists[cid]
-					if email in blacklist.plain:
-						raise error (f'matches plain in {where} blacklist')
-					for (wildcard, pattern) in blacklist.wildcards:
+					blocklist = self.blocklists[cid]
+					if email in blocklist.plain:
+						raise error (f'matches plain in {where} blocklist')
+					for (wildcard, pattern) in blocklist.wildcards:
 						if pattern.match (email) is not None:
-							raise error (f'matches wildcard {wildcard} in {where} blacklist')
+							raise error (f'matches wildcard {wildcard} in {where} blocklist')
