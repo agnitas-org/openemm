@@ -10,9 +10,9 @@
 
 package com.agnitas.emm.core.workflow.beans.impl;
 
-import com.agnitas.emm.core.workflow.beans.WorkflowConnection;
-
 import java.util.Objects;
+
+import com.agnitas.emm.core.workflow.beans.WorkflowConnection;
 
 public class WorkflowConnectionImpl implements WorkflowConnection {
 	private static final long serialVersionUID = 6707618090110549465L;
@@ -38,8 +38,12 @@ public class WorkflowConnectionImpl implements WorkflowConnection {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+			return true;
+		}
+        if (o == null || getClass() != o.getClass()) {
+			return false;
+		}
         WorkflowConnectionImpl that = (WorkflowConnectionImpl) o;
         return targetIconId == that.targetIconId;
     }

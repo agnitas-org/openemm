@@ -14,6 +14,7 @@ import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_DATASOURCE_ID
 import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_CUSTOMER_ID;
 import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_DO_NOT_TRACK;
 import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_EMAIL;
+import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_ENCRYPTED_SENDING;
 import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_FIRSTNAME;
 import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_GENDER;
 import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_LASTNAME;
@@ -47,6 +48,7 @@ public class RecipientFormToSaveRecipientDto implements Converter<RecipientForm,
         data.put(COLUMN_EMAIL, form.getEmail());
         data.put(COLUMN_MAILTYPE, String.valueOf(form.getMailtype().getIntValue()));
         data.put(COLUMN_DO_NOT_TRACK, String.valueOf(BooleanUtils.toInteger(form.isTrackingVeto())));
+        data.put(COLUMN_ENCRYPTED_SENDING, String.valueOf(BooleanUtils.toInteger(form.isEncryptedSend())));
         data.put(COLUMN_DATASOURCE_ID, String.valueOf(form.getDataSourceId()));
         data.put(COLUMN_LATEST_DATASOURCE_ID, String.valueOf(form.getLatestDataSourceId()));
         form.getAdditionalColumns().forEach(data::put);

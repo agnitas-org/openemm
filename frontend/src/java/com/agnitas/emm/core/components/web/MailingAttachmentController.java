@@ -18,6 +18,7 @@ import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import com.agnitas.web.mvc.XssCheckAware;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.service.UserActivityLogService;
@@ -34,7 +35,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.components.dto.MailingAttachmentDto;
 import com.agnitas.emm.core.components.dto.UpdateMailingAttachmentDto;
 import com.agnitas.emm.core.components.dto.UploadMailingAttachmentDto;
@@ -56,10 +57,12 @@ import com.agnitas.web.perm.annotations.PermissionMapping;
 @Controller
 @RequestMapping("/mailing")
 @PermissionMapping("mailing.attachment")
-public class MailingAttachmentController {
+public class MailingAttachmentController implements XssCheckAware {
 	
-	/** The logger. */
     private static final Logger logger = LogManager.getLogger(MailingAttachmentController.class);
+
+    private static final String MESSAGES_VIEW = "messages";
+    private static final String ERROR_MSG_KEY = "Error";
 
     private final ComTargetService targetService;
     private final ComMailingBaseService mailingBaseService;
@@ -91,7 +94,7 @@ public class MailingAttachmentController {
     }
 
     @GetMapping("/{mailingId:\\d+}/attachment/list.action")
-    public String list(ComAdmin admin, @PathVariable int mailingId,
+    public String list(Admin admin, @PathVariable int mailingId,
                        @ModelAttribute("form") UpdateMailingAttachmentsForm form,
                        @ModelAttribute UploadMailingAttachmentForm uploadMailingAttachmentForm,
                        Model model) {
@@ -117,7 +120,7 @@ public class MailingAttachmentController {
     }
 
     @PostMapping(value = "/{mailingId:\\d+}/attachment/upload.action", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public String upload(ComAdmin admin, @PathVariable int mailingId, @ModelAttribute UploadMailingAttachmentForm form, Popups popups) {
+    public String upload(Admin admin, @PathVariable int mailingId, @ModelAttribute UploadMailingAttachmentForm form, Popups popups) {
         try {
             if (mailingEditable(admin, mailingId)) {
                 UploadMailingAttachmentDto attachment = conversionService.convert(form, UploadMailingAttachmentDto.class);
@@ -126,20 +129,24 @@ public class MailingAttachmentController {
                 popups.addPopups(result);
 
                 if (result.isSuccess()) {
-                    return String.format("redirect:/mailing/%d/attachment/list.action", mailingId);
+                    return redirectToList(mailingId);
                 }
             } else {
                 popups.alert("status_changed");
             }
         } catch (Exception e) {
             logger.error("Uploading attachment failed: ", e);
-            popups.alert("Error");
+            popups.alert(ERROR_MSG_KEY);
         }
 
-        return "messages";
+        return MESSAGES_VIEW;
     }
 
-    private boolean mailingEditable(ComAdmin admin, int mailingId) {
+    private String redirectToList(@PathVariable int mailingId) {
+        return String.format("redirect:/mailing/%d/attachment/list.action", mailingId);
+    }
+
+    private boolean mailingEditable(Admin admin, int mailingId) {
         if (admin.permissionAllowed(MAILING_CONTENT_CHANGE_ALWAYS)) {
             return true;
         }
@@ -148,7 +155,7 @@ public class MailingAttachmentController {
     }
 
     @PostMapping("/{mailingId:\\d+}/attachment/save.action")
-    public String save(ComAdmin admin, @PathVariable int mailingId, @ModelAttribute("form") UpdateMailingAttachmentsForm form, Popups popups) {
+    public String save(Admin admin, @PathVariable int mailingId, @ModelAttribute("form") UpdateMailingAttachmentsForm form, Popups popups) {
         try {
             if (mailingEditable(admin, mailingId)) {
                 SimpleServiceResult result = mailingComponentsService.updateMailingAttachments(admin, mailingId, convertUpdateMailingsData(form.getAttachments()));
@@ -156,21 +163,21 @@ public class MailingAttachmentController {
                 popups.addPopups(result);
 
                 if (result.isSuccess()) {
-                    return String.format("redirect:/mailing/%d/attachment/list.action", mailingId);
+                    return redirectToList(mailingId);
                 }
             } else {
                 popups.alert("status_changed");
             }
         } catch (Exception e) {
             logger.error("Uploading attachment failed: ", e);
-            popups.alert("Error");
+            popups.alert(ERROR_MSG_KEY);
         }
 
-        return "messages";
+        return MESSAGES_VIEW;
     }
 
     @GetMapping("/{mailingId:\\d+}/attachment/{id:\\d+}/confirmDelete.action")
-    public String confirmDelete(ComAdmin admin, @PathVariable int mailingId, @PathVariable int id,
+    public String confirmDelete(Admin admin, @PathVariable int mailingId, @PathVariable int id,
                                 @ModelAttribute("simpleActionForm") SimpleActionForm form,
                                 Model model, Popups popups) {
         MailingComponent attachment = mailingComponentsService.getComponent(admin.getCompanyID(), mailingId, id);
@@ -183,23 +190,23 @@ public class MailingAttachmentController {
             return "mailing_attachments_delete_ajax";
         }
 
-        popups.alert("Error");
-        return "messages";
+        popups.alert(ERROR_MSG_KEY);
+        return MESSAGES_VIEW;
     }
 
     @RequestMapping(value = "/{mailingId:\\d+}/attachment/delete.action", method = { RequestMethod.POST, RequestMethod.DELETE})
-    public String delete(ComAdmin admin, @PathVariable int mailingId, SimpleActionForm form, Popups popups) {
+    public String delete(Admin admin, @PathVariable int mailingId, SimpleActionForm form, Popups popups) {
         try {
             mailingComponentsService.deleteComponent(admin.getCompanyID(), mailingId, form.getId());
             writeUserActivityLog(admin, "delete attachment",
                     String.format("%s (ID: %d) from mailing ID: %d", form.getShortname(), form.getId(), mailingId));
             popups.success("default.selection.deleted");
-            return String.format("redirect:/mailing/%d/attachment/list.action", mailingId);
+            return redirectToList(mailingId);
         } catch (Exception e) {
-            logger.error("Mailing attachment ID: " + form.getId() + " deletion failed", e);
+            logger.error("Mailing attachment ID: {} deletion failed", form.getId(), e);
         }
-        popups.alert("Error");
-        return "messages";
+        popups.alert(ERROR_MSG_KEY);
+        return MESSAGES_VIEW;
     }
 
     private Map<Integer, UpdateMailingAttachmentDto> convertUpdateMailingsData(List<MailingAttachmentDto> attachments) {
@@ -213,16 +220,15 @@ public class MailingAttachmentController {
                 .collect(Collectors.toMap(UpdateMailingAttachmentDto::getId, Function.identity()));
     }
 
-    private void writeUserActivityLog(ComAdmin admin, String action, String description) {
+    private void writeUserActivityLog(Admin admin, String action, String description) {
         writeUserActivityLog(admin, new UserAction(action, description));
     }
-    private void writeUserActivityLog(ComAdmin admin, UserAction userAction) {
+    private void writeUserActivityLog(Admin admin, UserAction userAction) {
         if (Objects.nonNull(userActivityLogService)) {
             userActivityLogService.writeUserActivityLog(admin, userAction, logger);
         } else {
-            logger.error("Missing userActivityLogService in " + this.getClass().getSimpleName());
-            logger.info(String.format("Userlog: %s %s %s", admin.getUsername(), userAction.getAction(),
-                    userAction.getDescription()));
+            logger.error("Missing userActivityLogService in {}", this.getClass().getSimpleName());
+            logger.info("Userlog: {} {} {}", admin.getUsername(), userAction.getAction(), userAction.getDescription());
         }
     }
 }

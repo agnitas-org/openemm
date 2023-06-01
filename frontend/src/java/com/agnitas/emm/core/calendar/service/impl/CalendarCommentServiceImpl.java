@@ -29,7 +29,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.calendar.beans.ComCalendarComment;
 import com.agnitas.emm.core.calendar.beans.ComCalendarCommentRecipient;
@@ -49,7 +49,7 @@ public class CalendarCommentServiceImpl implements CalendarCommentService {
     private AdminService adminService;
 
     @Override
-    public JSONArray getComments(ComAdmin admin, LocalDate startDate, LocalDate endDate) {
+    public JSONArray getComments(Admin admin, LocalDate startDate, LocalDate endDate) {
         ZoneId zoneId = AgnUtils.getZoneId(admin);
         Date start = DateUtilities.toDate(startDate, zoneId);
         Date end = DateUtilities.toDate(endDate, zoneId);
@@ -57,7 +57,7 @@ public class CalendarCommentServiceImpl implements CalendarCommentService {
         return commentsAsJson(calendarCommentDao.getComments(start, end, admin.getCompanyID()), admin);
     }
 
-    private JSONArray commentsAsJson(List<ComCalendarComment> comments, ComAdmin admin) {
+    private JSONArray commentsAsJson(List<ComCalendarComment> comments, Admin admin) {
         JSONArray array = new JSONArray();
 
         TimeZone timezone = AgnUtils.getTimeZone(admin);

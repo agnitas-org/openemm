@@ -13,7 +13,7 @@ package com.agnitas.emm.core.supervisor.dao;
 import java.util.Date;
 import java.util.List;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.supervisor.beans.SupervisorLoginPermissionTableItem;
 import com.agnitas.emm.core.supervisor.service.UnknownSupervisorLoginPermissionException;
 
@@ -30,7 +30,7 @@ public interface GrantedSupervisorLoginDao {
 	 * 
 	 * @return <code>true</code> if supervisor is allowed to login as EMM user
 	 */
-	boolean isSupervisorLoginGranted(final int supervisorID, final ComAdmin admin);
+	boolean isSupervisorLoginGranted(final int supervisorID, final Admin admin);
 	
 	/**
 	 * Grant permission for supervisors to login as EMM users to all supervisors of given department.

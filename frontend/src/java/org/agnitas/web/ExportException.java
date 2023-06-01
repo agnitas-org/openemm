@@ -20,17 +20,17 @@ public class ExportException extends RuntimeException {
 	/**
 	 * In case of e.g. network errors or auth credential erros, we may retry an autoexport, if set to do so
 	 */
-	private boolean retryable = false;
+	private boolean retryable;
 	
 	public enum Reason {
 		FileTransferError("error.filetransfer.createFile"),
 		ConnectionError("error.connection.fileserver"),
 		DefinitionError("error.definition"),
-		ColumnNotExportableError("error.import.dbColumnNotVisible");
+		ColumnNotExportableError("error.export.dbColumnNotVisible");
 		
 		private String messageKey;
 		
-		private Reason(String messageKey) {
+		Reason(String messageKey) {
 			this.messageKey = messageKey;
 		}
 		
@@ -41,7 +41,7 @@ public class ExportException extends RuntimeException {
 	
 	private Reason reason;
 	
-	private Object[] additionalData = null;
+	private Object[] additionalData;
 
 	public Reason getReason() {
 		return reason;

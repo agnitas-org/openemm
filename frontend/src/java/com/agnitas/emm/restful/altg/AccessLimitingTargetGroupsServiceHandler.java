@@ -19,7 +19,7 @@ import org.agnitas.util.HttpUtils.RequestMethod;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.TargetLight;
 import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.target.service.ComTargetService;
@@ -70,7 +70,7 @@ public class AccessLimitingTargetGroupsServiceHandler implements RestfulServiceH
 	}
 
 	@Override
-	public void doService(HttpServletRequest request, HttpServletResponse response, ComAdmin admin, byte[] requestData, File requestDataFile, BaseRequestResponse restfulResponse, ServletContext context, RequestMethod requestMethod, boolean extendedLogging) throws Exception {
+	public void doService(HttpServletRequest request, HttpServletResponse response, Admin admin, byte[] requestData, File requestDataFile, BaseRequestResponse restfulResponse, ServletContext context, RequestMethod requestMethod, boolean extendedLogging) throws Exception {
 		if (requestMethod == RequestMethod.GET) {
 			((JsonRequestResponse) restfulResponse).setJsonResponseData(new JsonNode(getAltgUsersData(request, admin)));
 		} else {
@@ -86,7 +86,7 @@ public class AccessLimitingTargetGroupsServiceHandler implements RestfulServiceH
 	 * @return
 	 * @throws Exception
 	 */
-	private Object getAltgUsersData(HttpServletRequest request, ComAdmin admin) throws Exception {
+	private Object getAltgUsersData(HttpServletRequest request, Admin admin) throws Exception {
 		RestfulServiceHandler.getRestfulContext(request, NAMESPACE, 0, 0);
 		
 		userActivityLogDao.addAdminUseOfFeature(admin, "restful/altg", new Date());

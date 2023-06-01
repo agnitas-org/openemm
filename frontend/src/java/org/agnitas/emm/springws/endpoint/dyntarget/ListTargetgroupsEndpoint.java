@@ -10,10 +10,13 @@
 
 package org.agnitas.emm.springws.endpoint.dyntarget;
 
+import java.util.Objects;
+
 import org.agnitas.emm.springws.endpoint.BaseEndpoint;
-import org.agnitas.emm.springws.endpoint.Utils;
+import org.agnitas.emm.springws.endpoint.Namespaces;
 import org.agnitas.emm.springws.jaxb.ListTargetgroupsRequest;
 import org.agnitas.emm.springws.jaxb.ListTargetgroupsResponse;
+import org.agnitas.emm.springws.util.SecurityContextAccess;
 import org.springframework.ws.server.endpoint.annotation.Endpoint;
 import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
 import org.springframework.ws.server.endpoint.annotation.RequestPayload;
@@ -25,18 +28,20 @@ import com.agnitas.emm.core.target.service.ComTargetService;
 @Endpoint
 public class ListTargetgroupsEndpoint extends BaseEndpoint {
 
-    private ComTargetService targetService;
+    private final ComTargetService targetService;
+    private final SecurityContextAccess securityContextAccess;
 
-    public ListTargetgroupsEndpoint(ComTargetService targetService) {
-        this.targetService = targetService;
+    public ListTargetgroupsEndpoint(ComTargetService targetService, final SecurityContextAccess securityContextAccess) {
+        this.targetService = Objects.requireNonNull(targetService, "targetService");
+        this.securityContextAccess = Objects.requireNonNull(securityContextAccess, "securityContextAccess");
     }
 
-    @PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "ListTargetgroupsRequest")
+    @PayloadRoot(namespace = Namespaces.AGNITAS_ORG, localPart = "ListTargetgroupsRequest")
     public @ResponsePayload ListTargetgroupsResponse listTargetgroups(@RequestPayload ListTargetgroupsRequest request) {
-        ListTargetgroupsResponse response = new ListTargetgroupsResponse();
+    	final ListTargetgroupsResponse response = new ListTargetgroupsResponse();
 
-        for (TargetLight target : targetService.getWsTargetLights(Utils.getUserCompany())) {
-            ListTargetgroupsResponse.Item targetgroup = new ListTargetgroupsResponse.Item();
+        for (final TargetLight target : targetService.getWsTargetLights(this.securityContextAccess.getWebserviceUserCompanyId())) {
+            final ListTargetgroupsResponse.Item targetgroup = new ListTargetgroupsResponse.Item();
             targetgroup.setId(target.getId());
             targetgroup.setName(target.getTargetName());
             response.getItem().add(targetgroup);

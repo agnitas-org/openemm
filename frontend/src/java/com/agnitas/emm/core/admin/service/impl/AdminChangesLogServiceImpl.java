@@ -26,7 +26,7 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.AdminPreferences;
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.admin.form.AdminForm;
 import com.agnitas.emm.core.admin.service.AdminChangesLogService;
 import com.agnitas.emm.core.admin.service.AdminService;
@@ -40,7 +40,7 @@ public class AdminChangesLogServiceImpl implements AdminChangesLogService {
     private AdminService adminService;
 
     @Override
-    public List<UserAction> getChangesAsUserActions(AdminForm newAdminData, ComAdmin oldAdmin, AdminPreferences oldAdminPreferences) {
+    public List<UserAction> getChangesAsUserActions(AdminForm newAdminData, Admin oldAdmin, AdminPreferences oldAdminPreferences) {
         List<UserAction> userActions = new ArrayList<>();
 
         collectAdminChanges(userActions, newAdminData, oldAdmin);
@@ -56,7 +56,7 @@ public class AdminChangesLogServiceImpl implements AdminChangesLogService {
      * @param newAdminData new admin data
      * @param oldAdmin who will be changed and saved
      */
-    private void collectAdminChanges(List<UserAction> userActions, AdminForm newAdminData, ComAdmin oldAdmin) {
+    private void collectAdminChanges(List<UserAction> userActions, AdminForm newAdminData, Admin oldAdmin) {
         //Open EMM changes
         try {
             String userName = oldAdmin.getUsername();
@@ -159,7 +159,7 @@ public class AdminChangesLogServiceImpl implements AdminChangesLogService {
      * @param oldAdmin - current data
      * @param oldAdminPreferences - current admin preferences
      */
-    private void collectAdminPreferencesChanges(List<UserAction> userActions, AdminForm newAdminData, ComAdmin oldAdmin, AdminPreferences oldAdminPreferences) {
+    private void collectAdminPreferencesChanges(List<UserAction> userActions, AdminForm newAdminData, Admin oldAdmin, AdminPreferences oldAdminPreferences) {
         //EMM preferences
         try {
             String userName = oldAdmin.getUsername();
@@ -224,7 +224,7 @@ public class AdminChangesLogServiceImpl implements AdminChangesLogService {
     }
 
     private boolean passwordChanged(String username, String password) {
-        final Optional<ComAdmin> adminOptional = adminService.findAdminByCredentials(username, password);
+        final Optional<Admin> adminOptional = adminService.findAdminByCredentials(username, password);
 
         return !(StringUtils.isEmpty(password) || (adminOptional.isPresent() && adminOptional.get().getAdminID() > 0));
     }

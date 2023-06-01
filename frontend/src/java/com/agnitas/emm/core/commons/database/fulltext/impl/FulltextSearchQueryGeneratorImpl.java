@@ -22,6 +22,7 @@ import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import org.agnitas.util.FulltextSearchInvalidQueryException;
 import org.agnitas.util.FulltextSearchQueryException;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Required;
@@ -60,15 +61,18 @@ public class FulltextSearchQueryGeneratorImpl implements FulltextSearchQueryGene
     private FulltextSearchReservedLiteralsConfig reservedLiteralsConfig;
 
     @Override
-    public String generateSpecificQuery(String searchQuery) throws FulltextSearchQueryException {
+    public String generateSpecificQuery(String searchQuery) throws FulltextSearchInvalidQueryException, FulltextSearchQueryException {
         searchQuery = sanitize(searchQuery);
         searchQuery = escapeDatabaseSpecificSymbols(searchQuery);
         String[] tokens = getCorrectedTokens(searchQuery);
         return generateSpecificQuery(tokens);
     }
 
-    private String[] getCorrectedTokens(String searchQuery) {
+    private String[] getCorrectedTokens(String searchQuery) throws FulltextSearchInvalidQueryException {
         String[] tokens = searchQuery.split(SPLIT_REGEX);
+
+        reservedLiteralsConfig.validateTokens(tokens);
+
         if (StringUtils.isBlank(searchQuery) || isContainsAnyControlCharacters(searchQuery)) {
             return tokens;
         }
@@ -92,10 +96,9 @@ public class FulltextSearchQueryGeneratorImpl implements FulltextSearchQueryGene
     private String generateSpecificQuery(String[] tokens) throws FulltextSearchQueryException {
         LinkedList<String> operandStack = new LinkedList<>();
         LinkedList<Operator> operatorStack = new LinkedList<>();
-        String token;
         int matchingIndex;
         for (int i = 0; i < tokens.length; i++) {
-            token = tokens[i];
+            String token = tokens[i];
             if (token.equals(OP_PAR)) {
                 matchingIndex = getMatchingIndex(tokens, i, CL_PAR);
                 checkMatchingIndex(i, matchingIndex, PAR_ERROR);
@@ -149,9 +152,8 @@ public class FulltextSearchQueryGeneratorImpl implements FulltextSearchQueryGene
 
     private int getMatchingIndex(String[] tokens, int startFrom, String symbol) {
         int matchingCounter = 0;
-        String current;
         for (int i = startFrom + 1; i < tokens.length; i++) {
-            current = tokens[i];
+            String current = tokens[i];
             if (OP_PAR.equals(current)) {
                 matchingCounter++;
             } else if (current.equals(symbol) && matchingCounter == 0) {

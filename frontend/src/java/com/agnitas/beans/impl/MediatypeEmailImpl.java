@@ -10,14 +10,12 @@
 
 package com.agnitas.beans.impl;
 
+import static org.agnitas.emm.core.mailing.service.MailingModel.Format.OFFLINE_HTML;
+
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import jakarta.mail.internet.InternetAddress;
 
-import com.agnitas.beans.MediatypeEmail;
-import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import com.agnitas.beans.Mailing;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.impl.MediatypeImpl;
 import org.agnitas.util.AgnUtils;
@@ -30,7 +28,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.context.ApplicationContext;
 
-import static org.agnitas.emm.core.mailing.service.MailingModel.Format.OFFLINE_HTML;
+import com.agnitas.beans.Mailing;
+import com.agnitas.beans.MediatypeEmail;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+
+import jakarta.mail.internet.InternetAddress;
 
 public class MediatypeEmailImpl extends MediatypeImpl implements MediatypeEmail {
 	/** The logger. */
@@ -90,6 +92,8 @@ public class MediatypeEmailImpl extends MediatypeImpl implements MediatypeEmail 
 	protected int mailingID;
 	
 	protected String bccRecipients;
+
+	private boolean isEncryptedSend;
 
 	/** Creates a new instance of MediatypeEmailImpl */
 	public MediatypeEmailImpl() {
@@ -479,7 +483,10 @@ public class MediatypeEmailImpl extends MediatypeImpl implements MediatypeEmail 
 
 		String intelliAdStringParam = parameters.get(INTELLIAD_STRING_PARAM);
 		setIntelliAdString(StringUtils.trimToEmpty(intelliAdStringParam));
-		
+
+		String encryptedSendParam = parameters.get(SEND_ENCRYPTED_PARAM);
+		setEncryptedSend(BooleanUtils.toBoolean(encryptedSendParam));
+
 		String bcc = parameters.get(BCC_STRING_PARAM);
 		setBccRecipients(bcc);
 	}
@@ -537,6 +544,12 @@ public class MediatypeEmailImpl extends MediatypeImpl implements MediatypeEmail 
 			result.append(", followup_method=\"");
 			result.append(ParameterParser.escapeValue(followUpMethod));
 			result.append("\"");
+		}
+
+		if (isEncryptedSend) {
+			result.append(", ");
+			result.append(SEND_ENCRYPTED_PARAM);
+			result.append("=\"true\"");
 		}
 
 		if (StringUtils.isNotEmpty(envelopeEmail)) {
@@ -682,7 +695,17 @@ public class MediatypeEmailImpl extends MediatypeImpl implements MediatypeEmail 
 	public void setBccRecipients(String bccRecipients) {
 		this.bccRecipients = bccRecipients;
 	}
-	
+
+	@Override
+	public void setEncryptedSend(boolean isEncryptedSend) {
+		this.isEncryptedSend = isEncryptedSend;
+	}
+
+	@Override
+	public boolean isEncryptedSend() {
+		return this.isEncryptedSend;
+	}
+
 	/**
 	 * Makes a standalone copy of this mediatype without any references to this
 	 * objects data

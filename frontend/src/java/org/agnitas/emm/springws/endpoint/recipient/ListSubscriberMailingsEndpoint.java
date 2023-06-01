@@ -11,14 +11,17 @@
 package org.agnitas.emm.springws.endpoint.recipient;
 
 import java.util.List;
+import java.util.Objects;
 
 import org.agnitas.emm.core.recipient.service.RecipientModel;
 import org.agnitas.emm.core.recipient.service.RecipientService;
 import org.agnitas.emm.springws.endpoint.BaseEndpoint;
+import org.agnitas.emm.springws.endpoint.Namespaces;
 import org.agnitas.emm.springws.endpoint.Utils;
 import org.agnitas.emm.springws.jaxb.ListSubscriberMailingsRequest;
 import org.agnitas.emm.springws.jaxb.ListSubscriberMailingsResponse;
 import org.agnitas.emm.springws.jaxb.Map;
+import org.agnitas.emm.springws.util.SecurityContextAccess;
 import org.springframework.ws.server.endpoint.annotation.Endpoint;
 import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
 import org.springframework.ws.server.endpoint.annotation.RequestPayload;
@@ -28,12 +31,14 @@ import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 public class ListSubscriberMailingsEndpoint extends BaseEndpoint {
 
     private RecipientService recipientService;
+    private SecurityContextAccess securityContextAccess;
 
-    public ListSubscriberMailingsEndpoint(RecipientService recipientService) {
-        this.recipientService = recipientService;
+    public ListSubscriberMailingsEndpoint(final RecipientService recipientService, final SecurityContextAccess securityContextAccess) {
+        this.recipientService = Objects.requireNonNull(recipientService, "recipientService");
+        this.securityContextAccess = Objects.requireNonNull(securityContextAccess, "securityContextAccess");
     }
 
-    @PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "ListSubscriberMailingsRequest")
+    @PayloadRoot(namespace = Namespaces.AGNITAS_ORG, localPart = "ListSubscriberMailingsRequest")
     public @ResponsePayload ListSubscriberMailingsResponse listSubscriberMailings(@RequestPayload ListSubscriberMailingsRequest request) {
         ListSubscriberMailingsResponse response = new ListSubscriberMailingsResponse();
 
@@ -44,9 +49,9 @@ public class ListSubscriberMailingsEndpoint extends BaseEndpoint {
         return response;
     }
 
-    static RecipientModel parseModel(ListSubscriberMailingsRequest request) {
+    RecipientModel parseModel(ListSubscriberMailingsRequest request) {
         RecipientModel model = new RecipientModel();
-        model.setCompanyId(Utils.getUserCompany());
+        model.setCompanyId(this.securityContextAccess.getWebserviceUserCompanyId());
         model.setCustomerId(request.getCustomerID());
         return model;
     }

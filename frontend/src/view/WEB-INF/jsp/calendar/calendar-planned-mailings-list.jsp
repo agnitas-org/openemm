@@ -2,6 +2,7 @@
 <%@ page import="com.agnitas.web.MailingBaseAction" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
 <%--@elvariable id="plannedMails" type="java.util.List"--%>
 
@@ -15,10 +16,15 @@
 <ul class="link-list">
     <c:forEach var="plannedMail" items="${plannedMails}">
         <li>
-            <c:url var="mailingBaseUrl" value="/mailingbase.do">
-                <c:param name="action" value="${ACTION_VIEW}"/>
-                <c:param name="mailingID" value="${plannedMail.mailingid}"/>
-            </c:url>
+            <emm:ShowByPermission token="mailing.settings.migration">
+                <c:url var="mailingBaseUrl" value="/mailing/${plannedMail.mailingid}/settings.action"/>
+            </emm:ShowByPermission>
+            <emm:HideByPermission token="mailing.settings.migration">
+                <c:url var="mailingBaseUrl" value="/mailingbase.do">
+                    <c:param name="action" value="${ACTION_VIEW}"/>
+                    <c:param name="mailingID" value="${plannedMail.mailingid}"/>
+                </c:url>
+            </emm:HideByPermission>
             <a href="${mailingBaseUrl}" class="link-list-item">
                 <p class="headline">
                     <span class="mailing-badge ${plannedMail.workstatus}" data-tooltip="<mvc:message code="${plannedMail.workstatus}"/>"></span>

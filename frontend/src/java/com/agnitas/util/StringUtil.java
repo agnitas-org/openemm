@@ -10,18 +10,26 @@
 
 package com.agnitas.util;
 
+import org.apache.commons.lang3.StringUtils;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+import java.util.StringTokenizer;
+
 public final class StringUtil {
 
-	public static final int firstIndexOf(final String string, final char... values) {
+	public static int firstIndexOf(final String string, final char... values) {
 		return firstIndexOf(string, 0, values);
 	}
 
-	public static final int firstIndexOf(final String string, final int startIndex, final char... values) {
+	public static int firstIndexOf(final String string, final int startIndex, final char... values) {
 		int index = -1;
-		
+
 		for(final char value : values) {
 			final int tempIndex = string.indexOf(value, startIndex);
-			
+
 			if(tempIndex != -1) {
 				if(index == -1) {
 					index = tempIndex;
@@ -30,20 +38,20 @@ public final class StringUtil {
 				}
 			}
 		}
-		
+
 		return index;
 	}
 
-	public static final int firstIndexOf(final String string, final String... values) {
+	public static int firstIndexOf(final String string, final String... values) {
 		return firstIndexOf(string, 0, values);
 	}
-	
-	public static final int firstIndexOf(final String string, final int startIndex, final String... values) {
+
+	public static int firstIndexOf(final String string, final int startIndex, final String... values) {
 		int index = -1;
-		
+
 		for(final String value : values) {
 			final int tempIndex = string.indexOf(value, startIndex);
-			
+
 			if(tempIndex != -1) {
 				if(index == -1) {
 					index = tempIndex;
@@ -52,8 +60,28 @@ public final class StringUtil {
 				}
 			}
 		}
-		
+
 		return index;
 	}
-	
+
+	public static List<Integer> buildListFormCommaSeparatedValueString(String commaSeparatedValues) {
+		List<Integer> valueList = new ArrayList<>();
+
+		if (commaSeparatedValues != null && !commaSeparatedValues.isBlank()) {
+			StringTokenizer tokenizer = new StringTokenizer(commaSeparatedValues,",");
+			while (tokenizer.hasMoreTokens()) {
+				String currentToken = tokenizer.nextToken();
+				valueList.add(Integer.parseInt(currentToken));
+			}
+		}
+
+		return valueList;
+	}
+
+	public static String[] excludeBlank(String[] strings) {
+		return Arrays.stream(strings)
+				.map(StringUtils::trimToNull)
+				.filter(Objects::nonNull)
+				.toArray(String[]::new);
+	}
 }

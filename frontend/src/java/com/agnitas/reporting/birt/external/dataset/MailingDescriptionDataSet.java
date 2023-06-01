@@ -18,78 +18,68 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
 import com.agnitas.messages.I18nString;
 import com.agnitas.reporting.birt.external.utils.EmailParamExtractor;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class MailingDescriptionDataSet extends BIRTDataSet {
 
-	private Log log = LogFactory.getLog( MailingDescriptionDataSet.class );
+    private static final Logger logger = LogManager.getLogger(MailingDescriptionDataSet.class);
 
-	public List<String> getMailingDescription (int mailingID){
-		List<String> mailingDescription = new ArrayList<>();
-		String query = getMailingDescriptionQuery(mailingID);
-        try (Connection connection = getDataSource().getConnection();
-        		Statement statement = connection.createStatement();
-        		ResultSet resultSet = statement.executeQuery(query)) {
-			if (resultSet.next()){
-				mailingDescription.add(resultSet.getString("mailing_name"));
-			}
-		} catch (SQLException e) {
-			log.error(" SQL-Exception ! Mailing-Description-Query is: " + query , e);
-		}
-		return mailingDescription;
-	}
-	
-	/**
-	 * 
-	 * @param mailingID
-	 * @return list of email params
-	 *  1st element  emailFormat[0] value[1]
-	 *  2nd element onepixel enabled[0] value[1]
-	 */
-	public List<String[]> getEmailParams(int mailingID, String language) {
-		if (StringUtils.isBlank(language)) {
-			language="EN";
-		}
-		
-		List<String[]> paramsList = new ArrayList<>();
-		String paramsQuery =  getEmailParamsQuery(mailingID);
-		
-        try (Connection connection = getDataSource().getConnection();
-        		Statement statement = connection.createStatement();
-        		ResultSet resultSet = statement.executeQuery(paramsQuery)) {
-			if (resultSet.next()) {
-				String emailParams = resultSet.getString("param");
-				int mailFormat = Integer.parseInt(EmailParamExtractor.getMailformat(emailParams));
-				String mailFormatStr = (mailFormat == 0 ? I18nString.getLocaleString("only_Text", language): (mailFormat == 1 ? I18nString.getLocaleString("Text_HTML", language):I18nString.getLocaleString("Text_HTML_OfflineHTML", language) ));
-				 
-				String[] mailFormatValueStringArray = new String[]{I18nString.getLocaleString("Format", language), mailFormatStr};
-				paramsList.add(mailFormatValueStringArray);
-				
-				String onepixelEnabled = EmailParamExtractor.getOnepixelParam(emailParams);
-				String[] onePixelValueStringArray = new String[]{I18nString.getLocaleString("openrate.measure", language), I18nString.getLocaleString("openrate."+onepixelEnabled, language) };
-				paramsList.add(onePixelValueStringArray);
-			}
-		} catch (SQLException e) {
-			log.error(" SQL-Exception ! Mailing-Params-Query is: " + paramsQuery , e);
-		} catch (Exception e) {
-			log.error(" Just another exception ?" ,e);
-		}
-		return paramsList;
-	}
+    public List<String> getMailingDescription(int mailingID) {
+        List<String> mailingDescription = new ArrayList<>();
+        String query = "SELECT shortname FROM mailing_tbl WHERE mailing_id = ?";
 
-	private String getMailingDescriptionQuery(int mailingID) {
-		return "select shortname mailing_name from mailing_tbl where mailing_id = " + (Integer.toString(mailingID)) ;
-	}
-	
-	private String getEmailParamsQuery(int mailingID) {
-		return getEmailParamsQueryTemplate().replace("<MAILINGID>",Integer.toString(mailingID));
-	}
-	
-	private String getEmailParamsQueryTemplate() {
-		return "select param  from mailing_mt_tbl where mailing_id = <MAILINGID> and mediatype = 0";
-	}
+        String name = selectWithDefaultValue(logger, query, String.class, "", mailingID);
+
+        if (!name.isBlank()) {
+            mailingDescription.add(name);
+        }
+
+        return mailingDescription;
+    }
+
+    /**
+     * @return list of email params
+     * 1st element  emailFormat[0] value[1]
+     * 2nd element onepixel enabled[0] value[1]
+     */
+    public List<String[]> getEmailParams(int mailingID, String language) {
+        if (StringUtils.isBlank(language)) {
+            language = "EN";
+        }
+
+        List<String[]> paramsList = new ArrayList<>();
+        String paramsQuery = getEmailParamsQuery(mailingID);
+
+        try (Connection connection = getDataSource().getConnection();
+             Statement statement = connection.createStatement();
+             ResultSet resultSet = statement.executeQuery(paramsQuery)) {
+
+            if (resultSet.next()) {
+                String emailParams = resultSet.getString("param");
+                int mailFormat = Integer.parseInt(EmailParamExtractor.getMailformat(emailParams));
+                String mailFormatStr = (mailFormat == 0 ? I18nString.getLocaleString("only_Text", language) : (mailFormat == 1 ? I18nString.getLocaleString("Text_HTML", language) : I18nString.getLocaleString("Text_HTML_OfflineHTML", language)));
+
+                String[] mailFormatValueStringArray = new String[]{I18nString.getLocaleString("Format", language), mailFormatStr};
+                paramsList.add(mailFormatValueStringArray);
+
+                String onepixelEnabled = EmailParamExtractor.getOnepixelParam(emailParams);
+                String[] onePixelValueStringArray = new String[]{I18nString.getLocaleString("openrate.measure", language), I18nString.getLocaleString("openrate." + onepixelEnabled, language)};
+                paramsList.add(onePixelValueStringArray);
+            }
+        } catch (SQLException e) {
+            logger.error(" SQL-Exception ! Mailing-Params-Query is: " + paramsQuery, e);
+        } catch (Exception e) {
+            logger.error(" Just another exception ?", e);
+        }
+
+        return paramsList;
+    }
+
+    private String getEmailParamsQuery(int mailingID) {
+        return String.format("SELECT param FROM mailing_mt_tbl WHERE mailing_id = %d AND mediatype = 0", mailingID);
+    }
 }

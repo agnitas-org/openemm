@@ -254,6 +254,24 @@
     </tag>
 
     <tag>
+        <name>ShowWhenFeatureEnabled</name>
+        <tag-class>org.agnitas.taglib.ShowWhenFeatureEnabledTag</tag-class>
+        <body-content>JSP</body-content>
+        <attribute>
+            <name>feature</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>java.lang.String</type>
+        </attribute>
+        <attribute>
+            <description>Enabled part of JSP when given feature is available to current user</description>
+            <name>ignoreException</name>
+            <required>false</required>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+    </tag>
+
+    <tag>
         <description>
             Formats a date and/or time using the supplied styles and pattern or SimpleDateFormat object
         </description>
@@ -628,6 +646,18 @@
         <function-signature>boolean isCKEditorTrimmed(jakarta.servlet.http.HttpServletRequest)</function-signature>
         <example>
             &lt;c:set var="editorType" value="${emm:isCKEditorTrimmed(pageContext.request) ? 'EMC' : 'EMM'}"/&gt;
+        </example>
+    </function>
+
+    <function>
+        <description>
+            Return the value for the current type for CKEditor.
+        </description>
+        <name>fullPackAllowed</name>
+        <function-class>org.agnitas.util.CKEditorUtils</function-class>
+        <function-signature>boolean fullPackAllowed(jakarta.servlet.http.HttpServletRequest)</function-signature>
+        <example>
+            &lt;c:set var="editorType" value="${emm:fullPackAllowed(pageContext.request) ? 'FULL' : 'EMM'}"/&gt;
         </example>
     </function>
 

@@ -4,6 +4,7 @@
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
 <%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="agn" uri="https://emm.agnitas.de/jsp/jstl/tags" %>
 
 <emm:CheckLogon/>
 
@@ -39,7 +40,7 @@
                 </h4>
             </div>
 
-            <html:form action="/mailingbase">
+            <agn:agnForm action="/mailingbase">
                 <html:hidden property="mailingID"/>
                 <html:hidden property="action"/>
                 <html:hidden property="isTemplate"/>
@@ -87,7 +88,7 @@
                     </div>
                 </div>
 
-            </html:form>
+            </agn:agnForm>
 
         </div>
     </div>

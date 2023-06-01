@@ -4,6 +4,7 @@
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="s" uri="http://www.springframework.org/tags" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
 
 <%--@elvariable id="webStorageBundleNames" type="java.util.List"--%>
 <%--@elvariable id="isFrameShown" type="java.lang.Boolean"--%>
@@ -18,6 +19,7 @@
 
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
+        <sec:csrfMetaTags />
 
         <title><mvc:message code="logon.title"/></title>
 
@@ -26,7 +28,7 @@
         <tiles:insert page="/WEB-INF/jsp/assets.jsp"/>
     </head>
     <body>
-        <form action="${startPageLink}" data-form="static" method="POST" data-initializer="logon-complete">
+        <mvc:form action="${startPageLink}" data-form="static" method="POST" data-initializer="logon-complete">
             <%-- To be populated by JS code --%>
             <input type="hidden" name="webStorageJson" value=""/>
             <script id="config:logon-complete" type="application/json">
@@ -36,6 +38,6 @@
                     "adminId": ${adminId}
                 }
             </script>
-        </form>
+        </mvc:form>
     </body>
 </html>

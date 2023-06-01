@@ -23,6 +23,7 @@ import org.agnitas.emm.core.recipient.service.RecipientModel;
 import org.agnitas.emm.core.recipient.service.RecipientService;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.springws.endpoint.BaseEndpoint;
+import org.agnitas.emm.springws.endpoint.Namespaces;
 import org.agnitas.emm.springws.endpoint.Utils;
 import org.agnitas.emm.springws.jaxb.AddSubscriberRequest;
 import org.agnitas.emm.springws.jaxb.AddSubscriberResponse;
@@ -58,7 +59,7 @@ public class AddSubscriberEndpoint extends BaseEndpoint {
 		this.userActivityLogAccess = Objects.requireNonNull(userActivityLogAccess, "userActivityLogAccess");
 	}
 
-	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "AddSubscriberRequest")
+	@PayloadRoot(namespace = Namespaces.AGNITAS_ORG, localPart = "AddSubscriberRequest")
 	public @ResponsePayload AddSubscriberResponse addSubscriber(@RequestPayload AddSubscriberRequest request) throws Exception {
 		if (classLogger.isInfoEnabled()) {
 			classLogger.info( "Entered AddSubscriberEndpoint.addSubscriber()");

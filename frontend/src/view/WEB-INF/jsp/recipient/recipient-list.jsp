@@ -197,8 +197,21 @@
         
                                     <%@include file="/WEB-INF/jsp/recipient/additional-fields.jspf"%>
         
-                                    <display:column headerClass="js-table-sort" property="email"
-                                                            titleKey="mailing.MediaType.0" sortable="true" sortProperty="email"/>
+                                    <display:column headerClass="js-table-sort" titleKey="mailing.MediaType.0"
+                                                    sortable="true" sortProperty="email">
+                                        <emm:ShowByPermission token="mailing.encrypted.send">
+                                            <c:choose>
+                                                <c:when test="${recipient.encryptedSend}">
+                                                    <img data-tooltip="<mvc:message code="recipient.encrypted.possible"/>" class="icon lock-icon" src="<c:url value="/assets/core/images/lock_icon.svg"/>" alt="">
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <img data-tooltip="<mvc:message code="recipient.encrypted.notpossible"/>" class="icon unlock-icon" src="<c:url value="/assets/core/images/unlock_icon.svg"/>" alt="">
+                                                </c:otherwise>
+                                            </c:choose>
+                                        </emm:ShowByPermission>
+
+                                        ${recipient.email}
+                                    </display:column>
         
                                     <display:column class="table-actions" headerClass="${allowedDeletion ? '' : 'hidden'}" sortable="false">
                                         <span class="hidden" data-recipient-id="${recipient.id}"></span>

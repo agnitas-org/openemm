@@ -1,25 +1,20 @@
 
-<div class="form-group" data-initializer="trackable-link-extensions">
+<%--@elvariable id="extensionTableTitle" type="java.lang.String"--%>
+<%--@elvariable id="hasDefaultLinkExtension" type="java.lang.Boolean"--%>
 
-    <script id="config:trackable-link-extensions" type="application/json">
-        {
-            "bulkExtensions": ${emm:toJson(trackableLinkForm.commonExtensions)},
-            "extensionsForAllLinks": ${emm:toJson(trackableLinkForm.commonLinkExtensions)},
-            "defaultExtensions": ${emm:toJson(defaultExtensions)}
-        }
-    </script>
-    
+<div class="form-group">
     <div class="col-sm-4">
-        <label class="control-label">
-            ${extensionTableTitle}
-        </label>
+        <c:if test="${extensionTableTitle eq null}">
+            <c:set var="extensionTableTitle"><mvc:message code="LinkExtensions" /></c:set>
+        </c:if>
+        <label class="control-label">${extensionTableTitle}</label>
     </div>
     <div class="col-sm-8">
-        <div id="link-common-extensions" class="table-responsive">
-            <table class="table table-bordered table-striped">
+        <div class="table-responsive">
+            <table id="extensions" class="table table-bordered table-striped">
                 <thead>
-                <th><bean:message key="Name"/></th>
-                <th><bean:message key="Value"/></th>
+                <th><mvc:message code="Name"/></th>
+                <th><mvc:message code="Value"/></th>
                 <th></th>
                 </thead>
                 <tbody>
@@ -29,21 +24,19 @@
         </div>
     </div>
 </div>
-
-<div class="form-group">
-    <div class="col-sm-8 col-sm-push-4">
-        <div class="btn-group">
-            <div class="row">
-                <c:if test="${hasDefaultLinkExtension}">
+<c:if test="${hasDefaultLinkExtension}">
+    <div class="form-group">
+        <div class="col-sm-8 col-sm-push-4">
+            <div class="btn-group">
+                <div class="row">
                     <div class="col-sm-12 col-md-4">
-                        <a href="#" data-action="add-default-extensions" class="btn btn-regular btn-block">
+                        <a href="#" data-add-default-extensions class="btn btn-regular btn-block">
                             <i class="icon icon-plus"></i>
-                            <span class="text"><bean:message key="AddDefaultProperties"/></span>
+                            <span class="text"><mvc:message code="AddDefaultProperties"/></span>
                         </a>
                     </div>
-                </c:if>
+                </div>
             </div>
         </div>
     </div>
-</div>
-<%@ include file="extension-row-template.jspf" %>
+</c:if>

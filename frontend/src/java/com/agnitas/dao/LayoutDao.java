@@ -16,4 +16,6 @@ public interface LayoutDao {
 	void saveLayoutData(int companyID, String itemName, byte[] data) throws Exception;
 
 	Map<String, Map<Integer, byte[]>> getLayoutData();
+
+    void updateItemImage(String itemName, byte[] newLogo, int companyId);
 }

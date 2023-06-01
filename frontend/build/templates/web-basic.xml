@@ -14,7 +14,44 @@
 		<param-value>/WEB-INF/applicationContext.xml /WEB-INF/applicationContext-actions-basic.xml /WEB-INF/applicationContext-permissions.xml /WEB-INF/dataAccessContext.xml /WEB-INF/cronContext.xml</param-value>
 	</context-param>
 
+	<!-- Default encoding filter: Sets encoding if request encoding is not set by headers -->
+	<filter>
+		<filter-name>charsetFilter</filter-name>
+		<filter-class>com.agnitas.emm.core.commons.filter.CharacterEncodingFilter</filter-class>
+		<async-supported>true</async-supported>
+		<init-param>
+			<param-name>encoding</param-name>
+			<param-value>${defaultRequestEncoding}</param-value>
+		</init-param>
+		<init-param>
+			<param-name>isoEncodingDomains</param-name>
+			<param-value>${isoEncodingDomains}</param-value>
+		</init-param>
+		<init-param>
+			<param-name>utf8EncodingDomains</param-name>
+			<param-value>${utf8EncodingDomains}</param-value>
+		</init-param>
+		<init-param>
+			<param-name>jpEncodingDomains</param-name>
+			<param-value>${jpEncodingDomains}</param-value>
+		</init-param>
+	</filter>
+	<filter-mapping>
+		<filter-name>charsetFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+
 	<!-- Filters and Mappings (ordered by execution) -->
+	<filter>
+    	<filter-name>MultipartFilter</filter-name>
+    	<filter-class>org.springframework.web.multipart.support.MultipartFilter</filter-class>
+   	 	<async-supported>true</async-supported>
+	</filter>
+
+	<filter-mapping>
+    	<filter-name>MultipartFilter</filter-name>
+    	<url-pattern>*.action</url-pattern>
+	</filter-mapping>	
 
 	<!-- Filter to redirect invalid sessions to active node -->
 	<filter>
@@ -25,6 +62,21 @@
 	<filter-mapping>
 		<filter-name>InvalidSessionToNodeFilter</filter-name>
 		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+
+
+	<filter>
+    	<filter-name>springSecurityFilterChain</filter-name>
+    	<filter-class>org.springframework.web.filter.DelegatingFilterProxy</filter-class>
+		<async-supported>true</async-supported>
+	</filter>
+	<filter-mapping>
+    	<filter-name>springSecurityFilterChain</filter-name>
+    	<url-pattern>*.do</url-pattern>
+	</filter-mapping>
+	<filter-mapping>
+    	<filter-name>springSecurityFilterChain</filter-name>
+    	<url-pattern>*.action</url-pattern>
 	</filter-mapping>
 	
 	<!-- HTTP Security Header -->
@@ -73,10 +125,6 @@
 			<param-name>source.classname</param-name>
 			<param-value>com.agnitas.web.filter.responseheaders.DatabaseHeaderConfigSource</param-value>
 		</init-param>
-		<init-param>
-			<param-name>source.config-file</param-name>
-			<param-value>WEB-INF/http-response-headers</param-value>
-		</init-param>
 	</filter>
 	<filter-mapping>
 		<filter-name>HttpResponseHeaderFilter</filter-name>
@@ -94,32 +142,6 @@
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
 	
-	<!-- Default encoding filter: Sets encoding if request encoding is not set by headers -->
-	<filter>
-		<filter-name>charsetFilter</filter-name>
-		<filter-class>com.agnitas.emm.core.commons.filter.CharacterEncodingFilter</filter-class>
-		<async-supported>true</async-supported>
-		<init-param>
-			<param-name>encoding</param-name>
-			<param-value>${defaultRequestEncoding}</param-value>
-		</init-param>
-		<init-param>
-			<param-name>isoEncodingDomains</param-name>
-			<param-value>${isoEncodingDomains}</param-value>
-		</init-param>
-		<init-param>
-			<param-name>utf8EncodingDomains</param-name>
-			<param-value>${utf8EncodingDomains}</param-value>
-		</init-param>
-		<init-param>
-			<param-name>jpEncodingDomains</param-name>
-			<param-value>${jpEncodingDomains}</param-value>
-		</init-param>
-	</filter>
-	<filter-mapping>
-		<filter-name>charsetFilter</filter-name>
-		<url-pattern>/*</url-pattern>
-	</filter-mapping>
 
 	<!-- interceptor for AjaxAnywhere library -->
 	<filter>

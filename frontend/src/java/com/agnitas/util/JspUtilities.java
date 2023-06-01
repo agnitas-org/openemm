@@ -19,7 +19,7 @@ import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DbColumnType;
 import org.apache.commons.lang3.StringUtils;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 
 public class JspUtilities {
     public static final String JS_TABLE_COLUMN_TYPE_COMMON = "";
@@ -27,7 +27,7 @@ public class JspUtilities {
     public static final String JS_TABLE_COLUMN_TYPE_DATE = "dateColumn";
 
     public static String getTimeZoneId(HttpServletRequest request) {
-        ComAdmin admin = AgnUtils.getAdmin(request);
+        Admin admin = AgnUtils.getAdmin(request);
 
         if (admin == null) {
             return null;
@@ -37,7 +37,7 @@ public class JspUtilities {
     }
 
     public static String getAdminId(HttpServletRequest request){
-        ComAdmin admin = AgnUtils.getAdmin(request);
+        Admin admin = AgnUtils.getAdmin(request);
 
         if (admin == null) {
             return null;

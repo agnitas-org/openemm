@@ -12,12 +12,15 @@ package org.agnitas.emm.springws.endpoint.binding;
 
 import jakarta.xml.bind.JAXBElement;
 
+import java.util.Objects;
+
 import org.agnitas.emm.core.binding.service.BindingModel;
 import org.agnitas.emm.core.binding.service.BindingService;
 import org.agnitas.emm.springws.endpoint.BaseEndpoint;
-import org.agnitas.emm.springws.endpoint.Utils;
+import org.agnitas.emm.springws.endpoint.Namespaces;
 import org.agnitas.emm.springws.jaxb.Binding;
 import org.agnitas.emm.springws.jaxb.GetSubscriberBindingRequest;
+import org.agnitas.emm.springws.util.SecurityContextAccess;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.ws.server.endpoint.annotation.Endpoint;
 import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
@@ -27,15 +30,17 @@ import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 @Endpoint
 public class GetSubscriberBindingEndpoint extends BaseEndpoint {
 
-	private BindingService bindingService;
+	private final BindingService bindingService;
+	private final SecurityContextAccess securityContextAccess;
 
-	public GetSubscriberBindingEndpoint(@Qualifier("BindingService") BindingService bindingService) {
-		this.bindingService = bindingService;
+	public GetSubscriberBindingEndpoint(@Qualifier("BindingService") BindingService bindingService, final SecurityContextAccess securityContextAccess) {
+		this.bindingService = Objects.requireNonNull(bindingService, "bindingService");
+		this.securityContextAccess = Objects.requireNonNull(securityContextAccess, "securityContextAccess");
 	}
 
-	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "GetSubscriberBindingRequest")
+	@PayloadRoot(namespace = Namespaces.AGNITAS_ORG, localPart = "GetSubscriberBindingRequest")
 	public @ResponsePayload JAXBElement<Binding> getSubscriberBinding(@RequestPayload GetSubscriberBindingRequest request) {
-		BindingModel model = parseModel(request);
+		final BindingModel model = parseModel(request, this.securityContextAccess);
         if (request.isUseISODateFormat() == null) {
             request.setUseISODateFormat(false);
         }
@@ -43,12 +48,13 @@ public class GetSubscriberBindingEndpoint extends BaseEndpoint {
 		return objectFactory.createGetSubscriberBindingResponse(new SubscriberBindingResponseBuilder().createResponse(bindingService.getBinding(model), request.isUseISODateFormat()));
 	}
 
-	public static BindingModel parseModel(GetSubscriberBindingRequest request) {
-		BindingModel model = new BindingModel();
+	public static BindingModel parseModel(GetSubscriberBindingRequest request, final SecurityContextAccess securityContextAccess) {
+		final BindingModel model = new BindingModel();
 		model.setCustomerId(request.getCustomerID());
-		model.setCompanyId(Utils.getUserCompany());
+		model.setCompanyId(securityContextAccess.getWebserviceUserCompanyId());
 		model.setMailinglistId(request.getMailinglistID());
 		model.setMediatype(request.getMediatype());
+		
 		return model;
 	}
 

@@ -18,7 +18,6 @@ import com.agnitas.beans.impl.MailingImpl;
 public class ComMailingFactoryImpl implements MailingFactory {
     @Override
     public Mailing newMailing() {
-        MailingImpl mailing = new MailingImpl();
-        return mailing;
+        return new MailingImpl();
     }
 }

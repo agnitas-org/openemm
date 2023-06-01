@@ -8,6 +8,7 @@
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
 <%@ taglib prefix="tiles" uri="http://struts.apache.org/tags-tiles" %>
+<%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
 
 <%
     Logger logger = LogManager.getLogger("error.jsp");
@@ -43,6 +44,7 @@
 <head>
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <sec:csrfMetaTags />
 
     <title><bean:message key="error.global.title"/></title>
     <tiles:insert page="/WEB-INF/jsp/assets.jsp"/>

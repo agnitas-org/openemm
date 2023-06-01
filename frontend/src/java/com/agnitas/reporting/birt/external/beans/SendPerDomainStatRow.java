@@ -11,23 +11,24 @@
 package com.agnitas.reporting.birt.external.beans;
 
 public class SendPerDomainStatRow extends SendStatRow {
-    private String domainname;
-    private int domainnameindex;
 
-    public int getDomainnameindex() {
-        return domainnameindex;
+    private String domainName;
+    private int domainNameIndex;
+
+    public int getDomainNameIndex() {
+        return domainNameIndex;
     }
 
-    public void setDomainnameindex(int domainnameindex) {
-        this.domainnameindex = domainnameindex;
+    public void setDomainNameIndex(int domainNameIndex) {
+        this.domainNameIndex = domainNameIndex;
     }
 
-    public String getDomainname() {
-        return domainname;
+    public String getDomainName() {
+        return domainName;
     }
 
-    public void setDomainname(String domainname) {
-        this.domainname = domainname;
+    public void setDomainName(String domainName) {
+        this.domainName = domainName;
     }
 
     @Override
@@ -37,8 +38,8 @@ public class SendPerDomainStatRow extends SendStatRow {
         builder.append("CategoryIndex: " + getCategoryindex()+ "\n" );
         builder.append("Targetgroup: " + getTargetgroup()+ "\n" );
         builder.append("TargetgroupIndex: " + getTargetgroupindex()+ "\n" );
-        builder.append("DomainName: " + getDomainname()+ "\n" );
-        builder.append("DomainNameIndex: " + getDomainnameindex()+ "\n" );
+        builder.append("DomainName: " + getDomainName()+ "\n" );
+        builder.append("DomainNameIndex: " + getDomainNameIndex()+ "\n" );
         builder.append("Value: " + getCount()+"\n");
         builder.append("Rate: " + getRate()+"\n");
 

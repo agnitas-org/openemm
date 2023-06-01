@@ -10,12 +10,13 @@
 
 package org.agnitas.emm.springws.endpoint.mailinglist;
 
-import org.agnitas.emm.core.mailinglist.service.MailinglistModel;
-import org.agnitas.emm.core.mailinglist.service.MailinglistService;
+import java.util.Objects;
+
 import org.agnitas.emm.springws.endpoint.BaseEndpoint;
-import org.agnitas.emm.springws.endpoint.Utils;
+import org.agnitas.emm.springws.endpoint.Namespaces;
 import org.agnitas.emm.springws.jaxb.UpdateMailinglistRequest;
 import org.agnitas.emm.springws.jaxb.UpdateMailinglistResponse;
+import org.agnitas.emm.springws.util.SecurityContextAccess;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.ws.server.endpoint.annotation.Endpoint;
@@ -23,27 +24,31 @@ import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
 import org.springframework.ws.server.endpoint.annotation.RequestPayload;
 import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
+import com.agnitas.emm.core.mailinglist.dto.MailinglistDto;
+import com.agnitas.emm.core.mailinglist.service.MailinglistService;
+
 @Endpoint
 public class UpdateMailinglistEndpoint extends BaseEndpoint {
 	
-    private MailinglistService mailinglistService;
+    private final MailinglistService mailinglistService;
+    private final SecurityContextAccess securityContextAccess;
 
     @Autowired
-    public UpdateMailinglistEndpoint(@Qualifier("WS_mailinglistService") MailinglistService mailinglistService) {
-        this.mailinglistService = mailinglistService;
+    public UpdateMailinglistEndpoint(@Qualifier("MailinglistService") MailinglistService mailinglistService, final SecurityContextAccess securityContextAccess) {
+        this.mailinglistService = Objects.requireNonNull(mailinglistService, "mailinglistService");
+        this.securityContextAccess = Objects.requireNonNull(securityContextAccess, "securityContextAccess");
     }
 
-    @PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "UpdateMailinglistRequest")
+    @PayloadRoot(namespace = Namespaces.AGNITAS_ORG, localPart = "UpdateMailinglistRequest")
     public @ResponsePayload UpdateMailinglistResponse updateMailinglist(@RequestPayload UpdateMailinglistRequest request) throws Exception {
-        UpdateMailinglistResponse response = new UpdateMailinglistResponse();
+    	final MailinglistDto mailinglist = new MailinglistDto();
+        mailinglist.setId(request.getMailingListId());
+        mailinglist.setShortname(request.getShortname());
+        mailinglist.setDescription(request.getDescription());
 
-        MailinglistModel model = new MailinglistModel();
-        model.setCompanyId(Utils.getUserCompany());
-        model.setMailinglistId(request.getMailingListId());
-        model.setShortname(request.getShortname());
-        model.setDescription(request.getDescription());
-
-        mailinglistService.updateMailinglist(model);
+        mailinglistService.saveMailinglist(this.securityContextAccess.getWebserviceUserCompanyId(), mailinglist);
+        
+        final UpdateMailinglistResponse response = new UpdateMailinglistResponse();
         return response;
     }
 }

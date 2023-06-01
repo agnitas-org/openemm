@@ -13,6 +13,8 @@ package org.agnitas.backend;
 import jakarta.mail.internet.AddressException;
 import jakarta.mail.internet.InternetAddress;
 
+import org.agnitas.util.Str;
+
 /**
  * This class handles emails and there different
  * representations
@@ -170,7 +172,7 @@ public class EMail {
 		pure_puny = null;
 		if (full != null) {
 			pure = extractPureAddress(full);
-			pure_puny = StringOps.punycodeEMail(pure);
+			pure_puny = Str.punycodeEMail(pure);
 
 			int cur = 0;
 			int len = full.length();

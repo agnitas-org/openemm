@@ -35,7 +35,7 @@ public class SecurityTokenGenerator {
 	
 	/**
 	 * Creates a new security token with default length.
-	 * 	
+	 * 
 	 * @return random security token
 	 */
 	public static String generateSecurityToken() {

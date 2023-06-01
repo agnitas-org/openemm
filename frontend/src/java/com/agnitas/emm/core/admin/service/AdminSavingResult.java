@@ -10,23 +10,23 @@
 
 package com.agnitas.emm.core.admin.service;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.messages.Message;
 
 public class AdminSavingResult {
-    private final ComAdmin result;
+    private final Admin result;
     private final boolean success;
     private final boolean isPasswordChanged;
     private final Message error;
 
-    private AdminSavingResult(ComAdmin result, boolean success, boolean isPasswordChanged, Message error) {
+    private AdminSavingResult(Admin result, boolean success, boolean isPasswordChanged, Message error) {
         this.result = result;
         this.success = success;
         this.isPasswordChanged = isPasswordChanged;
         this.error = error;
     }
 
-    private AdminSavingResult(ComAdmin result, boolean isPasswordChanged) {
+    private AdminSavingResult(Admin result, boolean isPasswordChanged) {
         this(result, true, isPasswordChanged, null);
     }
 
@@ -37,7 +37,7 @@ public class AdminSavingResult {
         this.error = error;
     }
 
-    public ComAdmin getResult() {
+    public Admin getResult() {
         return result;
     }
 
@@ -53,7 +53,7 @@ public class AdminSavingResult {
         return error;
     }
 
-    public static AdminSavingResult success(ComAdmin admin, boolean isPasswordChanged) {
+    public static AdminSavingResult success(Admin admin, boolean isPasswordChanged) {
         return new AdminSavingResult(admin, isPasswordChanged);
     }
 

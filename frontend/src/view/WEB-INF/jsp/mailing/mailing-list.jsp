@@ -711,19 +711,29 @@
                                         </c:url>
                                     </emm:ShowByPermission>
                                     <emm:HideByPermission token="stats.mailing">
+                                        <emm:ShowByPermission token="mailing.settings.migration">
+                                            <c:url var="mailingViewLink" value="/mailing/${mailing.mailingid}/settings.action"/>
+                                        </emm:ShowByPermission>
+                                        <emm:HideByPermission token="mailing.settings.migration">
+                                            <c:url var="mailingViewLink" value="/mailingbase.do">
+                                                <c:param name="action" value="${ACTION_VIEW}"/>
+                                                <c:param name="mailingID" value="${mailing.mailingid}"/>
+                                                <c:param name="init" value="true"/>
+                                            </c:url>
+                                        </emm:HideByPermission>
+                                    </emm:HideByPermission>
+                                </c:when>
+                                <c:otherwise>
+                                    <emm:ShowByPermission token="mailing.settings.migration">
+                                        <c:url var="mailingViewLink" value="/mailing/${mailing.mailingid}/settings.action"/>
+                                    </emm:ShowByPermission>
+                                    <emm:HideByPermission token="mailing.settings.migration">
                                         <c:url var="mailingViewLink" value="/mailingbase.do">
                                             <c:param name="action" value="${ACTION_VIEW}"/>
                                             <c:param name="mailingID" value="${mailing.mailingid}"/>
                                             <c:param name="init" value="true"/>
                                         </c:url>
                                     </emm:HideByPermission>
-                                </c:when>
-                                <c:otherwise>
-                                    <c:url var="mailingViewLink" value="/mailingbase.do">
-                                        <c:param name="action" value="${ACTION_VIEW}"/>
-                                        <c:param name="mailingID" value="${mailing.mailingid}"/>
-                                        <c:param name="init" value="true"/>
-                                    </c:url>
                                 </c:otherwise>
                             </c:choose>
 
@@ -750,11 +760,16 @@
                                                     </div>
                                                 </div>
                                                 <div class="input-group-btn">
-                                                    <c:url var="deleteMailingLink" value="/mailingbase.do">
-                                                        <c:param name="action" value="${ACTION_CONFIRM_DELETE}"/>
-                                                        <c:param name="previousAction" value="${ACTION_LIST}"/>
-                                                        <c:param name="mailingID" value="${mailing.mailingid}"/>
-                                                    </c:url>
+                                                    <emm:ShowByPermission token="mailing.settings.migration">
+                                                        <c:url var="deleteMailingLink" value="/mailing/${mailing.mailingid}/confirmDelete.action"/>
+                                                    </emm:ShowByPermission>
+                                                    <emm:HideByPermission token="mailing.settings.migration">
+                                                        <c:url var="deleteMailingLink" value="/mailingbase.do">
+                                                            <c:param name="action" value="${ACTION_CONFIRM_DELETE}"/>
+                                                            <c:param name="previousAction" value="${ACTION_LIST}"/>
+                                                            <c:param name="mailingID" value="${mailing.mailingid}"/>
+                                                        </c:url>
+                                                    </emm:HideByPermission>
 
                                                     <c:set var="mailingDeleteMessage" scope="page">
                                                         <bean:message key="mailing.MailingDelete"/>
@@ -852,19 +867,29 @@
                                 </c:url>
                             </emm:ShowByPermission>
                             <emm:HideByPermission token="stats.mailing">
+                                <emm:ShowByPermission token="mailing.settings.migration">
+                                    <c:url var="mailingViewLink" value="/mailing/${mailing.mailingid}/settings.action"/>
+                                </emm:ShowByPermission>
+                                <emm:HideByPermission token="mailing.settings.migration">
+                                    <c:url var="mailingViewLink" value="/mailingbase.do">
+                                        <c:param name="action" value="${ACTION_VIEW}"/>
+                                        <c:param name="mailingID" value="${mailing.mailingid}"/>
+                                        <c:param name="init" value="true"/>
+                                    </c:url>
+                                </emm:HideByPermission>
+                            </emm:HideByPermission>
+                        </c:when>
+                        <c:otherwise>
+                            <emm:ShowByPermission token="mailing.settings.migration">
+                                <c:url var="mailingViewLink" value="/mailing/${mailing.mailingid}/settings.action"/>
+                            </emm:ShowByPermission>
+                            <emm:HideByPermission token="mailing.settings.migration">
                                 <c:url var="mailingViewLink" value="/mailingbase.do">
                                     <c:param name="action" value="${ACTION_VIEW}"/>
                                     <c:param name="mailingID" value="${mailing.mailingid}"/>
                                     <c:param name="init" value="true"/>
                                 </c:url>
                             </emm:HideByPermission>
-                        </c:when>
-                        <c:otherwise>
-                            <c:url var="mailingViewLink" value="/mailingbase.do">
-                                <c:param name="action" value="${ACTION_VIEW}"/>
-                                <c:param name="mailingID" value="${mailing.mailingid}"/>
-                                <c:param name="init" value="true"/>
-                            </c:url>
                         </c:otherwise>
                     </c:choose>
 

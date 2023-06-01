@@ -25,5 +25,6 @@ public final class FormHelper {
 		target.setTargetDescription(form.getDescription());
 		target.setTargetName(form.getShortname());
 		target.setAccessLimitation(form.isAccessLimitation());
+		target.setFavorite(form.isFavorite());
 	}
 }

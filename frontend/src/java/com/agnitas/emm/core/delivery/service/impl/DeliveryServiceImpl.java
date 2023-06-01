@@ -10,7 +10,7 @@
 
 package com.agnitas.emm.core.delivery.service.impl;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.delivery.beans.DeliveryInfo;
 import com.agnitas.emm.core.delivery.beans.SuccessfulDeliveryInfo;
 import com.agnitas.emm.core.delivery.dao.DeliveryDao;
@@ -56,7 +56,7 @@ public class DeliveryServiceImpl implements DeliveryService {
     }
 
     @Override
-    public boolean isDeliveryHistoryEnabled(ComAdmin admin) {
+    public boolean isDeliveryHistoryEnabled(Admin admin) {
         if (admin != null) {
             return admin.permissionAllowed(RECIPIENT_HISTORY_MAILING_DELIVERY)
                     && deliveryDao.checkIfDeliveryTableExists(admin.getCompanyID());

@@ -13,7 +13,6 @@ package com.agnitas.dao;
 import java.util.List;
 
 import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.beans.ComTrackpointDef;
 
@@ -23,17 +22,17 @@ public interface ComTrackpointDao {
      *
      * @return Value of property trackpoint.
      */
-    ComTrackpointDef get(int id, @VelocityCheck int companyID);
+    ComTrackpointDef get(int id, int companyID);
 
-    int getTrackpointIdByName(@VelocityCheck int companyID, int type, String pagetag, int mailingID);
+    int getTrackpointIdByName(int companyID, int type, String pagetag, int mailingID);
 
     void saveTrackpoint(ComTrackpointDef track);
 
     void deleteTrackpoint(ComTrackpointDef track);
 
-    List<ComTrackpointDef> getAllByCompanyID(@VelocityCheck int companyID);
+    List<ComTrackpointDef> getAllByCompanyID(int companyID);
 
-    PaginatedListImpl<ComTrackpointDef> getAll(@VelocityCheck int companyID, String sort, String direction, int pageNumber, int pageSize);
+    PaginatedListImpl<ComTrackpointDef> getAll(int companyID, String sort, String direction, int pageNumber, int pageSize);
 
-    boolean deleteTrackpointsByCompany(@VelocityCheck int companyId);
+    boolean deleteTrackpointsByCompany(int companyId);
 }

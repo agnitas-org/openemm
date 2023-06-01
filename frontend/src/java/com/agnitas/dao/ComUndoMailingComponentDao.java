@@ -50,8 +50,6 @@ public interface ComUndoMailingComponentDao {
 	List<ComUndoMailingComponent> getAllUndoDataForMailing(int mailingId, int undoId);
 	
 	void deleteUndoData(int undoId);
-
-	void deleteOutdatedUndoData(int lastUndoId);
 	
 	void deleteUndoDataForMailing(int mailingID);
 	

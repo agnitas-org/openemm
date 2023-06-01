@@ -10,6 +10,8 @@
 
 package com.agnitas.emm.core.commons.encoder;
 
+import	org.agnitas.util.ByteBuilder;
+
 public class UIDBase64 {
 	private static final String SYMBOLS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
 	
@@ -110,5 +112,33 @@ public class UIDBase64 {
 			base64 = SYMBOLS.substring( 0, 1);
 
 		return base64;
+	}
+	
+	public byte[] decodeBytes (String base64) {
+		ByteBuilder	bb = new ByteBuilder ();
+		long		chunk = 0;
+		int		size = 0;
+		int		index;
+		
+		for (char ch : base64.toCharArray ()) {
+			if ((index = SYMBOLS.indexOf (ch)) != -1) {
+				chunk = (chunk << 6) | index;
+				size += 1;
+				if (size == 4) {
+					bb.append ((byte) ((chunk >> 16) & 0xff));
+					bb.append ((byte) ((chunk >> 8) & 0xff));
+					bb.append ((byte) (chunk & 0xff));
+					chunk = 0;
+					size = 0;
+				}
+			}
+		}
+		if (size == 2) {
+			bb.append ((byte) ((chunk >> 4) & 0xff));
+		} else if (size == 3) {
+			bb.append ((byte) ((chunk >> 10) & 0xff));
+			bb.append ((byte) ((chunk >> 2) & 0xff));
+		}
+		return bb.value ();
 	}
 }

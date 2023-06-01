@@ -44,7 +44,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.Mailing;
 import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.birtstatistics.monthly.dto.RecipientProgressStatisticDto;
@@ -52,7 +52,7 @@ import com.agnitas.emm.core.birtstatistics.service.BirtStatisticsService;
 import com.agnitas.emm.core.mailinglist.dto.MailinglistDto;
 import com.agnitas.emm.core.mailinglist.form.MailinglistForm;
 import com.agnitas.emm.core.mailinglist.form.MailinglistRecipientDeleteForm;
-import com.agnitas.emm.core.mailinglist.service.ComMailinglistService;
+import com.agnitas.emm.core.mailinglist.service.MailinglistService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
 import com.agnitas.service.ComWebStorage;
 import com.agnitas.web.mvc.Popups;
@@ -68,7 +68,7 @@ public class MailinglistControllerBase implements XssCheckAware {
 	private static final String MESSAGES_VIEW = "messages";
 	private static final String BIRT_STATISTIC_URL_WITHOUT_FORMAT = "birtStatisticUrlWithoutFormat";
 
-	protected final ComMailinglistService mailinglistService;
+	protected final MailinglistService mailinglistService;
 	protected final MailinglistApprovalService mailinglistApprovalService;
 	protected final UserActivityLogService userActivityLogService;
 	private final ConversionService conversionService;
@@ -77,7 +77,7 @@ public class MailinglistControllerBase implements XssCheckAware {
 	protected final AdminService adminService;
 	protected final ConfigService configService;
 
-	public MailinglistControllerBase(ComMailinglistService mailinglistService, UserActivityLogService userActivityLogService,
+	public MailinglistControllerBase(MailinglistService mailinglistService, UserActivityLogService userActivityLogService,
 									 ConversionService conversionService, BirtStatisticsService birtStatisticsService,
 									 WebStorage webStorage, AdminService adminService, ConfigService configService, final MailinglistApprovalService mailinglistApprovalService) {
 		this.mailinglistService = mailinglistService;
@@ -91,7 +91,7 @@ public class MailinglistControllerBase implements XssCheckAware {
 	}
 
 	@RequestMapping("/list.action")
-	public String list(ComAdmin admin, @ModelAttribute("mailinglistsForm") PaginationForm form, Model model, Popups popups) {
+	public String list(Admin admin, @ModelAttribute("mailinglistsForm") PaginationForm form, Model model, Popups popups) {
 		JSONArray mailingListsJson = new JSONArray();
 
 		try {
@@ -110,7 +110,7 @@ public class MailinglistControllerBase implements XssCheckAware {
 	}
 
 	@RequestMapping("/{id:\\d+}/view.action")
-	public String view(ComAdmin admin, @PathVariable int id, ModelMap model) throws Exception {
+	public String view(Admin admin, @PathVariable int id, ModelMap model) throws Exception {
 		if (id == 0) {
 			return "redirect:/mailinglist/create.action";
 		}
@@ -150,7 +150,7 @@ public class MailinglistControllerBase implements XssCheckAware {
 	}
 
 	@PostMapping("/save.action")
-	public String save(ComAdmin admin, MailinglistForm form, RedirectAttributes redirectAttributes, Popups popups) {
+	public String save(Admin admin, MailinglistForm form, RedirectAttributes redirectAttributes, Popups popups) {
 		int companyId = admin.getCompanyID();
 
 		if (!isValid(companyId, form, popups)) {
@@ -170,7 +170,7 @@ public class MailinglistControllerBase implements XssCheckAware {
 	}
 	
 	@GetMapping("/{id:\\d+}/confirmDelete.action")
-	public String confirmDelete(ComAdmin admin, @PathVariable("id") int mailinglistId, Model model, Popups popups) {
+	public String confirmDelete(Admin admin, @PathVariable("id") int mailinglistId, Model model, Popups popups) {
         int companyId = admin.getCompanyID();
         Mailinglist mailinglist = mailinglistService.getMailinglist(mailinglistId, companyId);
         if (mailinglist == null) {
@@ -188,7 +188,7 @@ public class MailinglistControllerBase implements XssCheckAware {
     }
 
     @PostMapping("/confirmBulkDelete.action")
-    public String confirmBulkDelete(ComAdmin admin, @ModelAttribute("bulkDeleteForm") BulkActionForm form, Model model, Popups popups) {
+    public String confirmBulkDelete(Admin admin, @ModelAttribute("bulkDeleteForm") BulkActionForm form, Model model, Popups popups) {
         Set<Integer> bulkIds = new HashSet<>(form.getBulkIds());
         if (bulkIds.isEmpty() || bulkIds.stream().anyMatch(id -> id <= 0)) {
             popups.alert("bulkAction.nothing.mailinglist");
@@ -202,7 +202,7 @@ public class MailinglistControllerBase implements XssCheckAware {
     }
 
 	@RequestMapping("/{id:\\d+}/delete.action")
-	public String delete(ComAdmin admin, @PathVariable("id") int mailinglistId, Model model, Popups popups) {
+	public String delete(Admin admin, @PathVariable("id") int mailinglistId, Model model, Popups popups) {
         int companyId = admin.getCompanyID();
         if (isMailinglistsDependent(Collections.singleton(mailinglistId), companyId, model)) {
             return MESSAGES_VIEW;
@@ -218,7 +218,7 @@ public class MailinglistControllerBase implements XssCheckAware {
     }
 	
 	@PostMapping("/bulkDelete.action")
-	public String bulkDelete(ComAdmin admin, BulkActionForm form, Model model, Popups popups) {
+	public String bulkDelete(Admin admin, BulkActionForm form, Model model, Popups popups) {
         int companyId = admin.getCompanyID();
         Set<Integer> bulkIds = new HashSet<>(form.getBulkIds());
         if (isMailinglistsDependent(bulkIds, companyId, model)) {
@@ -236,7 +236,7 @@ public class MailinglistControllerBase implements XssCheckAware {
     }
 
 	@PostMapping("/recipientsDelete.action")
-	public String recipientsDelete(ComAdmin admin, @ModelAttribute("deleteForm") MailinglistRecipientDeleteForm form, Popups popups) {
+	public String recipientsDelete(Admin admin, @ModelAttribute("deleteForm") MailinglistRecipientDeleteForm form, Popups popups) {
 		int mailinglistId = form.getId();
 		mailinglistService.deleteMailinglistBindingRecipients(admin.getCompanyID(), mailinglistId, form.isOnlyActiveUsers(), form.isNoAdminAndTestUsers());
 
@@ -247,7 +247,7 @@ public class MailinglistControllerBase implements XssCheckAware {
 	}
 
 	@GetMapping("/{id:\\d+}/recipientsDeleteSettings.action")
-	public String recipientsDeleteSettings(ComAdmin admin, @PathVariable("id") int mailinglistId, @ModelAttribute("deleteForm") MailinglistRecipientDeleteForm form) {
+	public String recipientsDeleteSettings(Admin admin, @PathVariable("id") int mailinglistId, @ModelAttribute("deleteForm") MailinglistRecipientDeleteForm form) {
 		form.setId(mailinglistId);
 		String shortname = mailinglistService.getMailinglistName(mailinglistId, admin.getCompanyID());
 		form.setShortname(shortname);
@@ -279,7 +279,7 @@ public class MailinglistControllerBase implements XssCheckAware {
 		return true;
 	}
 
-	private void loadStatistics(ComAdmin admin, RecipientProgressStatisticDto statistic, MailinglistForm form, ModelMap model) throws Exception {
+	private void loadStatistics(Admin admin, RecipientProgressStatisticDto statistic, MailinglistForm form, ModelMap model) throws Exception {
 		if (statistic == null) {
 			statistic = new RecipientProgressStatisticDto();
 		}

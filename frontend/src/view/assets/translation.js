@@ -105,7 +105,8 @@ window.I18n = {
         remember: {
             choice: '<agn:agnMessage key="remember.choice"/>'
         },
-        andMore: '<agn:agnMessage key="error.showNumberOfLeft" arg0="%s"/>'
+        andMore: '<agn:agnMessage key="error.showNumberOfLeft" arg0="%s"/>',
+        previewMode: '<agn:agnMessage key="mailing.preview.mode"/>'
     },
     selects: {
         noMatches: '<agn:agnMessage key="default.noMatchesFor" />',
@@ -347,7 +348,9 @@ window.I18n = {
             autooptimization: '<agn:agnMessage key="mailing.autooptimization"/>',
             action_based: '<agn:agnMessage key="mailing.action.based.mailing"/>',
             date_based: '<agn:agnMessage key="mailing.Rulebased_Mailing"/>',
-            followup: '<agn:agnMessage key="mailing.Followup_Mailing"/>'
+            followup: '<agn:agnMessage key="mailing.Followup_Mailing"/>',
+            "mediatype_sms": '<agn:agnMessage key="UserRight.mediatype.sms"/>',
+            "mediatype_post": '<agn:agnMessage key="UserRight.mediatype.post"/>'
         },
 
         mailinglist: {
@@ -603,7 +606,9 @@ window.I18n = {
             interest_group_name: '<agn:agnMessage key="nointerestgroup"/>',
             dyn_tag_name: '<agn:agnMessage key="statistic.all_subscribers"/>',
             target_group_deleted: '<agn:agnMessage key="target.Deleted"/>',
-            item_referencetable_warning: '<agn:agnMessage key="warning.mailing.items.refencetable.missing"/>'
+            item_referencetable_warning: '<agn:agnMessage key="warning.mailing.items.refencetable.missing"/>',
+            targetmode_and: '<agn:agnMessage key="mailing.targetmode.and"/>',
+            targetmode_or: '<agn:agnMessage key="mailing.targetmode.or"/>'
         },
         remember: {
           choice: '<agn:agnMessage key="remember.choice.mailing"/>'
@@ -650,5 +655,9 @@ window.I18n = {
         error: {
             block_not_set: '<agn:agnMessage key="GWUA.empty.content.block" />'
         }
+    },
+    birtreport: {
+      deactivateAll: '<agn:agnMessage key="report.deactivate.all" />',
+      deactivateAllQuestion: '<agn:agnMessage key="report.deactivate.question" />'
     }
 };

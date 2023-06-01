@@ -105,7 +105,16 @@ public class BlacklistServiceImpl implements BlacklistService {
 
 	@Override
 	public List<String> getEmailList(@VelocityCheck int companyID) throws Exception {
-		return blacklistDao.getBlacklist(companyID);
+		final List<String> result = blacklistDao.getBlacklist(companyID);
+		
+		if(result == null) {
+			final String msg = String.format("Error reading blacklist entries for company %d", companyID);
+			
+			logger.error(msg);
+			throw new Exception(msg);
+		}
+		
+		return result;
 	}
 
     @Override

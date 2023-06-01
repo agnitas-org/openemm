@@ -32,6 +32,9 @@ import java.util.stream.Stream;
  * home directory of the user in var/log
  */
 public class Log {
+	/** non ignorable messages has value < 0 */
+	/** trigger action in external process */
+	final public static int		TRIGGER = -1;
 	/** global error which may harm things beyond the application  */
 	final public static int		GLOBAL = 0;
 	/** fatal error which requires manual correction and termiantes the application */

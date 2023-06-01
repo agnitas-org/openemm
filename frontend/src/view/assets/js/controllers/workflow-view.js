@@ -10,7 +10,8 @@ AGN.Lib.Controller.new('workflow-view', function() {
         Template = AGN.Lib.Template,
         Utils = AGN.Lib.WM.Utils,
         Select = AGN.Lib.Select,
-        DateTimeUtils = AGN.Lib.WM.DateTimeUtils;
+        DateTimeUtils = AGN.Lib.WM.DateTimeUtils,
+        Form = AGN.Lib.Form;
 
     var controller = this;
     var editor;
@@ -988,6 +989,7 @@ AGN.Lib.Controller.new('workflow-view', function() {
                 $('#start-editor input[name="userType"][value=' + userType + ']').prop('checked', true).trigger('change');
 
                 $('#start-editor .editor-error-messages').css('display', 'none');
+                Form.get(editorForm).cleanErrors();
             },
 
             saveEditor: function() {
@@ -1094,7 +1096,7 @@ AGN.Lib.Controller.new('workflow-view', function() {
                 function validateStartEvent() {
                     var event = editorForm.find('select[name="event"]').val();
                     switch (event) {
-                        case Def.constants.startTypeDate:
+                        case Def.constants.startEventDate:
                             var executionDate = editorForm.find('#executionDate').pickadate('picker').get('select').obj;
                             if (executionDate) {
                                 var startTime = editorForm.find('#startTime').val();
@@ -1112,14 +1114,21 @@ AGN.Lib.Controller.new('workflow-view', function() {
                                     messageView.css('display', 'block');
                                 }
                             }
+                            const $dateProfileField = editorForm.find('#dateProfileField');
+                            if (!$.trim($dateProfileField.val())) {
+                                valid = false;
+                                if (showErrors) {
+                                    Form.get($dateProfileField).showFieldError('dateProfileField', t('fields.required.errors.missing'))
+                                }
+                            }
                             break;
 
                         case Def.constants.startEventReaction:
                             var reaction = editorForm.find('select[name="reaction"]').val();
                             switch (reaction) {
                                 case Def.constants.reactionClickedLink:
-                                    var linkId = editorForm.find('select[name="linkId"]').val();
-                                    if (parseInt(linkId, 10) <= 0) {
+                                    const linkId = editorForm.find('select[name="linkId"]').val();
+                                    if (!linkId || parseInt(linkId, 10) <= 0) {
                                         valid = false;
                                         if (showErrors) {
                                             messageView.html(t('error.workflow.noLinkSelected'));
@@ -1129,9 +1138,13 @@ AGN.Lib.Controller.new('workflow-view', function() {
                                 // Fall-through
                                 case Def.constants.reactionOpened:
                                 case Def.constants.reactionClicked:
-                                    var mailingId = editorForm.find('select[name="mailingId"]').val();
+                                    const mailingId = editorForm.find('select[name="mailingId"]').val();
                                     if (parseInt(mailingId, 10) <= 0) {
                                         valid = false;
+                                        if (showErrors) {
+                                            messageView.html(t('error.workflow.noMailing'));
+                                            messageView.css('display', 'block');
+                                        }
                                     }
                                     break;
                                 case Def.constants.reactionChangeOfProfile:
@@ -1139,6 +1152,13 @@ AGN.Lib.Controller.new('workflow-view', function() {
                                         var profileField = editorForm.find('select[name="profileField"]').val();
                                         if (!profileField) {
                                             valid = false;
+                                        }
+                                    }
+                                    const $startProfileField = editorForm.find('#startProfileField');
+                                    if (!$.trim($startProfileField.val())) {
+                                        valid = false;
+                                        if (showErrors) {
+                                            Form.get($startProfileField).showFieldError('profileField', t('fields.required.errors.missing'))
                                         }
                                     }
                                     break;
@@ -1571,6 +1591,7 @@ AGN.Lib.Controller.new('workflow-view', function() {
                             // populate the drop-down list with mailing links
                             $linkSelect.empty();
 
+                          $linkSelect.append($('<option></option>', {value: '', text: Def.EMPTY_OPTION_PLACEHOLDER}));                           
                             $.each(data, function(index, itemUrl) {
                                 $linkSelect.append($('<option></option>', {value: itemUrl.id, text: itemUrl.url}));
                             });
@@ -1771,6 +1792,7 @@ AGN.Lib.Controller.new('workflow-view', function() {
                 }
 
                 $('#decision-editor .editor-error-messages').css('display', 'none');
+                Form.get($form).cleanErrors();
             },
 
             saveEditor: function() {
@@ -1822,8 +1844,15 @@ AGN.Lib.Controller.new('workflow-view', function() {
                     && (linkId == 0 || linkId == null)) {
                     $messages.html(t('error.workflow.noLinkSelected'));
                     $messages.css('display', 'block');
-                } else if (decisionType == Def.constants.decisionTypeDecision && decisionCriteria == Def.constants.decisionProfileField && decisionData.isMailtrackingActive == false) {
-                    // Do nothing
+                } else if (decisionType == Def.constants.decisionTypeDecision && decisionCriteria == Def.constants.decisionProfileField) {
+                    if (decisionData.isMailtrackingActive == 'true') {
+                        const $decisionProfileField = $form.find('#decisionProfileField');
+                        if (!$.trim($decisionProfileField.val())) {
+                            Form.get($form).showFieldError('profileField', t('fields.required.errors.missing'))
+                        } else {
+                          EditorsHelper.saveCurrentEditorWithUndo();
+                        }
+                    }
                 } else if (decisionType == Def.constants.decisionTypeAutoOptimization) {
                     if (threshold) {
                         var thresholdIntValue = parseInt(threshold, 10);
@@ -1893,6 +1922,7 @@ AGN.Lib.Controller.new('workflow-view', function() {
                             // populate the drop-down list with mailing links
                             $linkSelect.empty();
 
+                            $linkSelect.append($('<option></option>', {value: '', text: Def.EMPTY_OPTION_PLACEHOLDER}));
                             $.each(data, function(index, itemUrl) {
                                 $linkSelect.append($('<option></option>', {value: itemUrl.id, text: itemUrl.url}));
                             });
@@ -2474,6 +2504,9 @@ AGN.Lib.Controller.new('workflow-view', function() {
             },
 
             editMailing: function() {
+                var data = baseMailingEditorBase.node.getData();
+                data.baseMailingId = baseMailingEditorBase.getSelectedMailingOption().val();
+                data.decisionCriterion = baseMailingEditorBase.getSelectedDecisionOption().val();
                 followupMailingEditorBase.editMailing(Def.constants.forwardMailingEdit);
             },
 
@@ -2559,6 +2592,156 @@ AGN.Lib.Controller.new('workflow-view', function() {
 
         controller.addAction({click: 'followup-mailing-editor-save'}, function() {
             nodeEditor.validateEditor(nodeEditor.saveWithCheckStatus);
+        });
+    });
+
+    this.addDomInitializer('mailing_mediatype_sms-editor-initializer', function() {
+        const mailingData = this.config;
+        const smsMailingEditorBase = new MailingEditorHelper(mailingData, submitWorkflowForm);
+
+        const nodeEditor = EditorsHelper.registerEditor('mailing_mediatype_sms', {
+            formName: 'smsMailingForm',
+            safeToSave: false,
+
+            getTitle: function () {
+                return t('workflow.mailing.mediatype_sms');
+            },
+
+            fillEditor: function (node) {
+                const $form = $('form[name="' + this.formName + '"]');
+
+                $form.submit(false);
+                $form.get(0).reset();
+
+                EditorsHelper.fillFormFromObject(this.formName, node.getData(), '');
+                smsMailingEditorBase.fillEditorBase(node);
+                $('#mailing_mediatype_sms-editor .editor-error-messages').css('display', 'none');
+            },
+
+            createNewMailing: function () {
+                smsMailingEditorBase.createNewMailing(Def.constants.forwardMailingCreate);
+            },
+
+            editMailing: function () {
+                smsMailingEditorBase.editMailing(Def.constants.forwardMailingEdit);
+            },
+
+            saveEditor: function () {
+                smsMailingEditorBase.setNodeFields();
+                smsMailingEditorBase.disableInputs();
+                return EditorsHelper.formToObject(this.formName);
+            },
+
+            saveWithCheckStatus: function () {
+                const isNotSent = smsMailingEditorBase.showSecurityQuestion();
+                if (isNotSent) {
+                    EditorsHelper.saveCurrentEditorWithUndo(false, smsMailingEditorBase);
+                }
+            },
+
+            copyMailing: function () {
+                smsMailingEditorBase.copyMailing(Def.constants.forwardMailingCopy);
+            }
+        });
+
+        controller.addAction({click: 'sms-mailing-editor-save'}, function() {
+            smsMailingEditorBase.validateEditor(nodeEditor.saveWithCheckStatus);
+        });
+
+        controller.addAction({click: 'action-mailing-editor-base-sort-shortname'}, function() {
+            smsMailingEditorBase.onMailingSortClick('shortname', 'shortname');
+        });
+
+        controller.addAction({click: 'action-mailing-editor-base-sort-data'}, function() {
+            const config = Utils.getConfigData(this.el);
+            smsMailingEditorBase.onMailingSortClick('shortname', config.sortByDate);
+        });
+
+        controller.addAction({change: 'action-mailing-editor-base-status-change'}, function() {
+            smsMailingEditorBase.onMailingsStatusChange(this.el.val());
+        });
+
+        controller.addAction({change: 'action-mailing-editor-base-select-change'}, function() {
+            smsMailingEditorBase.onMailingSelectChange(this.el.val());
+        });
+
+        controller.addAction({click: 'action-mailing-editor-base-secure-cancel'}, function() {
+            smsMailingEditorBase.cancelSecurityDialog();
+        });
+    });
+
+    this.addDomInitializer('mailing_mediatype_post-editor-initializer', function() {
+        const mailingData = this.config;
+        const postMailingEditorBase = new MailingEditorHelper(mailingData, submitWorkflowForm);
+
+        const nodeEditor = EditorsHelper.registerEditor('mailing_mediatype_post', {
+            formName: 'postMailingForm',
+            safeToSave: false,
+
+            getTitle: function () {
+                return t('workflow.mailing.mediatype_post');
+            },
+
+            fillEditor: function (node) {
+                const $form = $('form[name="' + this.formName + '"]');
+
+                $form.submit(false);
+                $form.get(0).reset();
+
+                EditorsHelper.fillFormFromObject(this.formName, node.getData(), '');
+                postMailingEditorBase.fillEditorBase(node);
+                $('#mailing_mediatype_post-editor .editor-error-messages').css('display', 'none');
+            },
+
+            createNewMailing: function () {
+                postMailingEditorBase.createNewMailing(Def.constants.forwardMailingCreate);
+            },
+
+            editMailing: function () {
+                postMailingEditorBase.editMailing(Def.constants.forwardMailingEdit);
+            },
+
+            saveEditor: function () {
+                postMailingEditorBase.setNodeFields();
+                postMailingEditorBase.disableInputs();
+                return EditorsHelper.formToObject(this.formName);
+            },
+
+            saveWithCheckStatus: function () {
+                const isNotSent = postMailingEditorBase.showSecurityQuestion();
+                if (isNotSent) {
+                    EditorsHelper.saveCurrentEditorWithUndo(false, postMailingEditorBase);
+                }
+            },
+
+            copyMailing: function () {
+                postMailingEditorBase.copyMailing(Def.constants.forwardMailingCopy);
+            }
+        });
+
+        controller.addAction({click: 'post-mailing-editor-save'}, function() {
+            postMailingEditorBase.validateEditor(nodeEditor.saveWithCheckStatus);
+        });
+
+        controller.addAction({click: 'action-mailing-editor-base-sort-shortname'}, function() {
+            postMailingEditorBase.onMailingSortClick('shortname', 'shortname');
+        });
+
+        controller.addAction({click: 'action-mailing-editor-base-sort-data'}, function() {
+            const config = Utils.getConfigData(this.el);
+            postMailingEditorBase.onMailingSortClick('shortname', config.sortByDate);
+        });
+
+        controller.addAction({change: 'action-mailing-editor-base-status-change'}, function() {
+            postMailingEditorBase.onMailingsStatusChange(this.el.val());
+        });
+
+        controller.addAction({change: 'action-mailing-editor-base-select-change'}, function() {
+            postMailingEditorBase.onMailingSelectChange(this.el.val());
+        });
+
+        controller.addAction({click: 'action-mailing-editor-base-secure-cancel'}, function() {
+            postMailingEditorBase.cancelSecurityDialog();
         });
     });
 
@@ -3021,6 +3204,8 @@ AGN.Lib.Controller.new('workflow-view', function() {
             switch (icon.type) {
                 case Def.NODE_TYPE_MAILING:
                 case Def.NODE_TYPE_FOLLOWUP_MAILING:
+                case Def.NODE_TYPE_MAILING_MEDIATYPE_SMS:
+                case Def.NODE_TYPE_MAILING_MEDIATYPE_POST:
                     mailingStartTypes['DATE'] = true;
                     break;
 
@@ -3053,4 +3238,41 @@ AGN.Lib.Controller.new('workflow-view', function() {
 
         return false;
     }
+
+    this.addDomInitializer('open-edit-icon-initializer', function($e) {
+        var data = $e.json();
+        var nodeId = data.nodeId;
+        var elementValue = data.elementValue;
+      
+        if (nodeId) {
+            var node = Node.get($('#' + nodeId));
+            if (node && elementValue) {
+                switch (node.type) {
+                    case Def.NODE_TYPE_MAILING:
+                    case Def.NODE_TYPE_ACTION_BASED_MAILING:
+                    case Def.NODE_TYPE_MAILING_MEDIATYPE_SMS:
+                    case Def.NODE_TYPE_MAILING_MEDIATYPE_POST:
+                    case Def.NODE_TYPE_DATE_BASED_MAILING:
+                    case Def.NODE_TYPE_FOLLOWUP_MAILING:
+                        node.data.mailingId = elementValue;
+                        break;
+                    case Def.NODE_TYPE_RECIPIENT:
+                        if (elementValue != "0" && $.inArray(elementValue, node.data.targets) == -1) {
+                          node.data.targets.push(elementValue);
+                        }
+                        break;
+                    case Def.NODE_TYPE_ARCHIVE:
+                        node.data.campaignId = elementValue;
+                        break;
+                    case Def.NODE_TYPE_IMPORT:
+                    case Def.NODE_TYPE_EXPORT:
+                        node.data.importexportId = elementValue;
+                        break;
+                    default:
+                        console.debug("Unknown node type");
+                }
+                editor.editIcon(node);
+            }
+        }
+    });
 });

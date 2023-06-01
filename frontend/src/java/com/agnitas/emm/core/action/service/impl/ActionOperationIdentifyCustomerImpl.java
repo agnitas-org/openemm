@@ -14,9 +14,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
-
 import org.agnitas.beans.Recipient;
 import org.agnitas.emm.core.commons.uid.ExtensibleUIDService;
 import org.agnitas.emm.core.commons.util.ConfigService;
@@ -36,6 +33,9 @@ import com.agnitas.emm.core.action.service.EmmActionOperation;
 import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
 import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
 import com.agnitas.emm.core.commons.uid.UIDFactory;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 
 public class ActionOperationIdentifyCustomerImpl implements EmmActionOperation {
 	

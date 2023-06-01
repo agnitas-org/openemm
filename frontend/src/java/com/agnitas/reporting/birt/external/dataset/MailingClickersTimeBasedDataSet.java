@@ -21,14 +21,13 @@ import org.agnitas.beans.BindingEntry.UserType;
 import org.agnitas.util.DateUtilities;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.dao.DataAccessException;
 import org.springframework.util.StringUtils;
 
 import com.agnitas.emm.core.mobile.bean.DeviceClass;
 import com.agnitas.reporting.birt.external.beans.LightTarget;
 
 public class MailingClickersTimeBasedDataSet extends TimeBasedDataSet {
-	private static final transient Logger logger = LogManager.getLogger(MailingClickersTimeBasedDataSet.class);
+	private static final Logger logger = LogManager.getLogger(MailingClickersTimeBasedDataSet.class);
 	
 	public List<TimeBasedClickStatRow> getData(int tempTableID) throws Exception {
         List<TimeBasedClickStatRow> returnList = new ArrayList<>();
@@ -36,13 +35,13 @@ public class MailingClickersTimeBasedDataSet extends TimeBasedDataSet {
         for (Map<String, Object> row : result) {
 			TimeBasedClickStatRow readItem = new TimeBasedClickStatRow();
 			
-			readItem.setClicks_net(((Number) row.get("net")).intValue());
-			readItem.setClicks_gross(((Number) row.get("gross")).intValue());
-			readItem.setClicks_anonymous(((Number) row.get("anonymous")).intValue());
+			readItem.setClicksNet(((Number) row.get("net")).intValue());
+			readItem.setClicksGross(((Number) row.get("gross")).intValue());
+			readItem.setClicksAnonymous(((Number) row.get("anonymous")).intValue());
 			readItem.setClickTime((Date) row.get("statistic_date"));
 			readItem.setDeviceClass(DeviceClass.fromId(((Number) row.get("device_class")).intValue()));
 			readItem.setTargetgroup((String) row.get("target_group"));
-			readItem.setColumn_index(((Number) row.get("target_group_index")).intValue());
+			readItem.setColumnIndex(((Number) row.get("target_group_index")).intValue());
 			
 			returnList.add(readItem);
         }
@@ -60,7 +59,7 @@ public class MailingClickersTimeBasedDataSet extends TimeBasedDataSet {
 		return "tmp_click_prog_" + tempTableID + "_tbl";
 	}
 	
-	private int createTempTable() throws DataAccessException, Exception {
+	private int createTempTable() throws Exception {
 		int tempTableID = getNextTmpID();
 		executeEmbedded(logger,
 			"CREATE TABLE " + getTempTableName(tempTableID) + " ("

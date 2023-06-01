@@ -17,6 +17,10 @@ public enum MailingStatus {
 	ACTIVE("mailing.status.active", "mailing.status.active"),
 	ADMIN("mailing.status.admin", "mailing.status.admin"),
 	CANCELED("mailing.status.canceled", "mailing.status.canceled"),
+	
+	/** Mailing has been canceled (during sending) and copied. Sending of original mailing cannot be resumed. */
+	CANCELED_AND_COPIED("mailing.status.canceledAndCopied", "mailing.status.canceledAndCopied"),
+	
 	DISABLE("mailing.status.disable", "mailing.status.disable"),
 	EDIT("mailing.status.edit", "mailing.status.edit"),
 	GENERATION_FINISHED("mailing.status.generation-finished", "mailing.status.generation-finished"),

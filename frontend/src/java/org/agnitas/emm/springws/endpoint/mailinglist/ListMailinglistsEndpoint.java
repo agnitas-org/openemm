@@ -10,13 +10,15 @@
 
 package org.agnitas.emm.springws.endpoint.mailinglist;
 
+import java.util.Objects;
+
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.emm.core.mailinglist.service.MailinglistModel;
-import org.agnitas.emm.core.mailinglist.service.MailinglistService;
 import org.agnitas.emm.springws.endpoint.BaseEndpoint;
-import org.agnitas.emm.springws.endpoint.Utils;
+import org.agnitas.emm.springws.endpoint.Namespaces;
 import org.agnitas.emm.springws.jaxb.ListMailinglistsRequest;
 import org.agnitas.emm.springws.jaxb.ListMailinglistsResponse;
+import org.agnitas.emm.springws.util.SecurityContextAccess;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.ws.server.endpoint.annotation.Endpoint;
@@ -24,26 +26,30 @@ import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
 import org.springframework.ws.server.endpoint.annotation.RequestPayload;
 import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
+import com.agnitas.emm.core.mailinglist.service.MailinglistService;
+
 @Endpoint
 public class ListMailinglistsEndpoint extends BaseEndpoint {
 
-    private MailinglistService mailinglistService;
+    private final MailinglistService mailinglistService;
+    private final SecurityContextAccess securityContextAccess;
 
     @Autowired
-	public ListMailinglistsEndpoint(@Qualifier("WS_mailinglistService") MailinglistService mailinglistService) {
-		this.mailinglistService = mailinglistService;
+	public ListMailinglistsEndpoint(@Qualifier("MailinglistService") MailinglistService mailinglistService, final SecurityContextAccess securityContextAccess) {
+		this.mailinglistService = Objects.requireNonNull(mailinglistService, "mailinglistService");
+		this.securityContextAccess = Objects.requireNonNull(securityContextAccess, "securityContextAccess");
 	}
 
-	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "ListMailinglistsRequest")
+	@PayloadRoot(namespace = Namespaces.AGNITAS_ORG, localPart = "ListMailinglistsRequest")
     public @ResponsePayload ListMailinglistsResponse listMailinglists(@RequestPayload ListMailinglistsRequest request) throws Exception {
-        ListMailinglistsResponse response = new ListMailinglistsResponse();
-        
-		MailinglistModel model = new MailinglistModel();
-		model.setCompanyId(Utils.getUserCompany());
+        final MailinglistModel model = new MailinglistModel();
+		model.setCompanyId(this.securityContextAccess.getWebserviceUserCompanyId());
 
-        for (Mailinglist mailinglist : mailinglistService.listMailinglists(Utils.getUserCompany())) {
+		final ListMailinglistsResponse response = new ListMailinglistsResponse();
+        for (final Mailinglist mailinglist : mailinglistService.getMailinglists(this.securityContextAccess.getWebserviceUserCompanyId())) {
 			response.getItem().add(new MailinglistResponseBuilder(mailinglist).createResponse());
 		}
+        
         return response;
     }
 }

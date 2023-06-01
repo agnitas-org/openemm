@@ -14,8 +14,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.agnitas.beans.ImportStatus;
 import org.agnitas.beans.ImportProfile;
+import org.agnitas.beans.ImportStatus;
 import org.agnitas.util.DbColumnType;
 
 import com.agnitas.emm.core.action.service.EmmActionService;
@@ -30,7 +30,7 @@ public interface ImportModeHandler {
 
 	void handleExistingCustomers(ImportStatus status, ImportProfile importProfile, String temporaryImportTableName, String importIndexColumn, List<String> transferDbColumns, int datasourceId) throws Exception;
 
-	Map<Integer, Integer> handlePostProcessing(EmmActionService emmActionService, ImportStatus status, ImportProfile importProfile, String temporaryImportTableName, int datasourceId, List<Integer> mailingListIdsToAssign, Set<MediaTypes> mediatypes) throws Exception;
+	Map<MediaTypes, Map<Integer, Integer>> handlePostProcessing(EmmActionService emmActionService, ImportStatus status, ImportProfile importProfile, String temporaryImportTableName, int datasourceId, List<Integer> mailingListIdsToAssign, Set<MediaTypes> mediatypes) throws Exception;
 
 	int handleBlacklist(ImportProfile importProfile, String temporaryImportTableName);
 	

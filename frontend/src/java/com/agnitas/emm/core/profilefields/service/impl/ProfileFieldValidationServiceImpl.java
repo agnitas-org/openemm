@@ -28,10 +28,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.TargetLight;
-import com.agnitas.dao.ComProfileFieldDao;
+import com.agnitas.dao.ProfileFieldDao;
 import com.agnitas.dao.impl.ComCompanyDaoImpl;
 import com.agnitas.emm.core.profilefields.service.ProfileFieldValidationService;
 import com.agnitas.emm.core.recipient.dto.RecipientFieldDto;
@@ -47,7 +47,7 @@ public class ProfileFieldValidationServiceImpl implements ProfileFieldValidation
     private static final int MAX_VARCHAR_LENGTH = 4000;
 
     private KeywordList databaseKeywordList;
-    private ComProfileFieldDao profileFieldDao;
+    private ProfileFieldDao profileFieldDao;
     private ComTargetService targetService;
     private ConfigService configService;
 
@@ -57,7 +57,7 @@ public class ProfileFieldValidationServiceImpl implements ProfileFieldValidation
     }
 
     @Required
-    public void setProfileFieldDao(ComProfileFieldDao profileFieldDao) {
+    public void setProfileFieldDao(ProfileFieldDao profileFieldDao) {
         this.profileFieldDao = profileFieldDao;
     }
 
@@ -79,7 +79,7 @@ public class ProfileFieldValidationServiceImpl implements ProfileFieldValidation
             return false;
         }
 
-        if (databaseKeywordList.containsKeyWord(fieldName) || fieldName.startsWith("sys_")) {
+        if (databaseKeywordList.containsKeyWord(fieldName) || fieldName.startsWith("sys_") || fieldName.startsWith("agn_")) {
             return false;
         }
 
@@ -194,7 +194,7 @@ public class ProfileFieldValidationServiceImpl implements ProfileFieldValidation
     }
     
     @Override
-    public ServiceResult<Object> validateNewProfileFieldValue(ComAdmin admin, RecipientFieldDto fieldChange) {
+    public ServiceResult<Object> validateNewProfileFieldValue(Admin admin, RecipientFieldDto fieldChange) {
         Locale locale = admin.getLocale();
         String newValue = fieldChange.getNewValue();
         String fieldName = fieldChange.getShortname();

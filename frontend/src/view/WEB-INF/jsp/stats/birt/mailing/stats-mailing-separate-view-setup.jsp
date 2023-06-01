@@ -98,12 +98,19 @@
     <c:set var="agnHelpKey" value="Statistics" scope="request"/>
 </c:if>
 
-<c:url var="mailingViewLink" value="/mailingbase.do">
-    <c:param name="action" value="${BASE_ACTION_VIEW}"/>
-    <c:param name="mailingID" value="${mailingStatisticForm.mailingID}"/>
-    <c:param name="keepForward" value="true"/>
-    <c:param name="init" value="true"/>
-</c:url>
+<emm:ShowByPermission token="mailing.settings.migration">
+    <c:url var="mailingViewLink" value="/mailing/${mailingStatisticForm.mailingID}/settings.action">
+        <c:param name="keepForward" value="true"/>
+    </c:url>
+</emm:ShowByPermission>
+<emm:HideByPermission token="mailing.settings.migration">
+    <c:url var="mailingViewLink" value="/mailingbase.do">
+        <c:param name="action" value="${BASE_ACTION_VIEW}"/>
+        <c:param name="mailingID" value="${mailingStatisticForm.mailingID}"/>
+        <c:param name="keepForward" value="true"/>
+        <c:param name="init" value="true"/>
+    </c:url>
+</emm:HideByPermission>
 
 <emm:instantiate var="agnBreadcrumbs" type="java.util.LinkedHashMap" scope="request">
     <emm:instantiate var="agnBreadcrumb" type="java.util.LinkedHashMap">

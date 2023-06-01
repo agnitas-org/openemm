@@ -16,6 +16,7 @@ import java.util.Locale;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
+import com.agnitas.web.mvc.XssCheckAware;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.emm.core.blacklist.service.BlacklistService;
 import org.agnitas.service.UserActivityLogService;
@@ -40,7 +41,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.PollingUid;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.globalblacklist.beans.BlacklistDto;
@@ -58,11 +59,15 @@ import com.agnitas.web.perm.NotAllowedActionException;
 import com.agnitas.web.perm.annotations.PermissionMapping;
 
 import jakarta.servlet.http.HttpSession;
+import static org.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
+import static org.agnitas.util.Const.Mvc.ERROR_MSG;
+import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
+import static org.agnitas.util.Const.Mvc.SELECTION_DELETED_MSG;
 
 @Controller
 @RequestMapping("/recipients/blacklist")
 @PermissionMapping("blacklist")
-public class BlacklistController {
+public class BlacklistController implements XssCheckAware {
 
     private static final String BLACKLIST_LIST_FORM_KEY = "blacklistListForm";
     private static final String MAILING_LISTS_KEY = "mailinglists";
@@ -72,10 +77,10 @@ public class BlacklistController {
 
     private static final Logger logger = LogManager.getLogger(BlacklistController.class);
 
-    private UserActivityLogService userActivityLogService;
-    private BlacklistService blacklistService;
-    private TableGenerator csvTableGenerator;
-    private WebStorage webStorage;
+    private final UserActivityLogService userActivityLogService;
+    private final BlacklistService blacklistService;
+    private final TableGenerator csvTableGenerator;
+    private final WebStorage webStorage;
 
     private final BlacklistDeleteFormValidator deleteFormValidator = new BlacklistDeleteFormValidator();
     private final BlacklistFormValidator blacklistFormValidator = new BlacklistFormValidator();
@@ -92,7 +97,7 @@ public class BlacklistController {
     }
 
     @RequestMapping(value = "/list.action", method = {RequestMethod.GET, RequestMethod.POST})
-    public Pollable<ModelAndView> list(ComAdmin admin, HttpSession session, Model model,
+    public Pollable<ModelAndView> list(Admin admin, HttpSession session, Model model,
                                        @ModelAttribute(BLACKLIST_LIST_FORM_KEY) BlacklistListForm listForm) {
 
         int companyId = admin.getCompanyID();
@@ -123,8 +128,8 @@ public class BlacklistController {
     }
 
     @PostMapping("/save.action")
-    public @ResponseBody BooleanResponseDto save(ComAdmin admin, BlacklistForm saveForm, Popups popups) {
-        if(!blacklistFormValidator.validate(saveForm, popups)) {
+    public @ResponseBody BooleanResponseDto save(Admin admin, BlacklistForm saveForm, Popups popups) {
+        if (!blacklistFormValidator.validate(saveForm, popups)) {
             return new BooleanResponseDto(popups, false);
         }
 
@@ -137,7 +142,7 @@ public class BlacklistController {
                 popups.alert("error.blacklist.recipient.isalreadyblacklisted", email);
             } else {
                 blacklistService.add(companyId, adminId, email, saveForm.getReason());
-                popups.success("default.changes_saved");
+                popups.success(CHANGES_SAVED_MSG);
 
                 // UAL
                 String activityLogAction = "create blacklist entry";
@@ -146,21 +151,21 @@ public class BlacklistController {
 
                 return new BooleanResponseDto(popups, true);
             }
-		} catch (Exception e) {
-			popups.alert("Error");
-			logger.error("Error adding mail address to blacklist", e);
-		}
+        } catch (Exception e) {
+            popups.alert(ERROR_MSG);
+            logger.error("Error adding mail address to blacklist", e);
+        }
 
         return new BooleanResponseDto(popups, false);
     }
 
     @PostMapping("/update.action")
-    public @ResponseBody BooleanResponseDto update(ComAdmin admin, BlacklistForm saveForm, Popups popups) throws NotAllowedActionException {
-        if(!admin.permissionAllowed(Permission.RECIPIENT_CHANGE)) {
+    public @ResponseBody BooleanResponseDto update(Admin admin, BlacklistForm saveForm, Popups popups) throws NotAllowedActionException {
+        if (!admin.permissionAllowed(Permission.RECIPIENT_CHANGE)) {
             throw new NotAllowedActionException();
         }
 
-        if(!blacklistFormValidator.validate(saveForm, popups)) {
+        if (!blacklistFormValidator.validate(saveForm, popups)) {
             return new BooleanResponseDto(popups, false);
         }
 
@@ -169,12 +174,12 @@ public class BlacklistController {
 
         final boolean isSuccessUpdate = blacklistService.update(companyId, email, saveForm.getReason());
         if (!isSuccessUpdate) {
-            logger.error("Could not update blacklisted recipient with email: " + email + " for company with id: " + companyId);
-            popups.alert("Error");
+            logger.error("Could not update blacklisted recipient with email: {} for company with id: {}", email, companyId);
+            popups.alert(ERROR_MSG);
             return new BooleanResponseDto(popups, false);
         }
 
-        popups.success("default.changes_saved");
+        popups.success(CHANGES_SAVED_MSG);
 
         // UAL
         final String activityLogDescription = "Updated blacklist entry: " + email;
@@ -186,7 +191,7 @@ public class BlacklistController {
 
     @PermissionMapping("confirm.delete")
     @GetMapping("/confirmDelete.action")
-    public String confirmDelete(ComAdmin admin, @RequestParam(value = "email") String email, Model model, @ModelAttribute(BLACKLIST_DELETE_FORM_KEY) BlacklistDeleteForm blacklistDeleteForm) {
+    public String confirmDelete(Admin admin, @RequestParam(value = "email") String email, Model model, @ModelAttribute(BLACKLIST_DELETE_FORM_KEY) BlacklistDeleteForm blacklistDeleteForm) {
         int companyId = admin.getCompanyID();
 
         List<Mailinglist> mailingLists = blacklistService.getBindedMailingLists(companyId, email);
@@ -200,8 +205,8 @@ public class BlacklistController {
     }
 
     @PostMapping("/delete.action")
-    public String delete(ComAdmin admin, BlacklistDeleteForm deleteForm, Popups popups) throws NotAllowedActionException {
-        if(!admin.permissionAllowed(Permission.RECIPIENT_DELETE)) {
+    public String delete(Admin admin, BlacklistDeleteForm deleteForm, Popups popups) throws NotAllowedActionException {
+        if (!admin.permissionAllowed(Permission.RECIPIENT_DELETE)) {
             throw new NotAllowedActionException();
         }
 
@@ -209,22 +214,21 @@ public class BlacklistController {
             int companyID = admin.getCompanyID();
             String email = deleteForm.getEmail();
             if (blacklistService.delete(companyID, deleteForm.getEmail(), deleteForm.getMailingListIdSet())) {
-                popups.success("default.selection.deleted");
+                popups.success(SELECTION_DELETED_MSG);
 
                 // UAL
                 String activityLogAction = "delete from blacklist";
                 String activityLogDescription = "Deleted blacklist entry: " + email;
                 userActivityLogService.writeUserActivityLog(admin, activityLogAction, activityLogDescription);
             } else {
-                popups.alert("Error");
+                popups.alert(ERROR_MSG);
             }
         }
-
-        return "messages";
+        return MESSAGES_VIEW;
     }
 
     @GetMapping("/download.action")
-    public ResponseEntity<Resource> download(ComAdmin admin) throws Exception {
+    public ResponseEntity<Resource> download(Admin admin) throws Exception {
 
         int companyId = admin.getCompanyID();
         Locale locale = admin.getLocale();

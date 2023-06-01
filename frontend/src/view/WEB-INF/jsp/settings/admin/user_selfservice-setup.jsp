@@ -1,17 +1,17 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-<%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
-<emm:CheckLogon/>
+<%--@elvariable id="showSupervisorPermissionManagement" type="java.lang.Boolean"--%>
 
 <c:choose>
-	<c:when test="${SHOW_SUPERVISOR_PERMISSION_MANAGEMENT}">
-		<c:set var="agnNavigationKey"		value="userselfservice_with_sv_login"				scope="request" />
-	</c:when>
-	<c:otherwise>
-		<c:set var="agnNavigationKey"		value="userselfservice"				scope="request" />
-	</c:otherwise>
+    <c:when test="${showSupervisorPermissionManagement}">
+        <c:set var="agnNavigationKey" value="userselfservice_with_sv_login" scope="request" />
+    </c:when>
+    <c:otherwise>
+        <c:set var="agnNavigationKey" value="userselfservice" scope="request" />
+    </c:otherwise>
 </c:choose>
 
 <c:set var="agnTitleKey" 			value="settings.Admin" 				scope="request" />
@@ -25,14 +25,14 @@
     <i class="icon-fa5 icon-fa5-cog"></i> ${sessionScope['userName']}
 </c:set>
 
-<jsp:useBean id="itemActionsSettings" class="java.util.LinkedHashMap" scope="request">
-    <jsp:useBean id="element1" class="java.util.LinkedHashMap" scope="request">
-        <c:set target="${itemActionsSettings}" property="1" value="${element1}"/>
-        <c:set target="${element1}" property="btnCls" value="btn btn-regular btn-inverse"/>
-        <c:set target="${element1}" property="extraAttributes" value="data-form-set='save: save' data-form-target='#adminForm' data-form-submit"/>
-        <c:set target="${element1}" property="iconBefore" value="icon-save"/>
-        <c:set target="${element1}" property="name">
-            <bean:message key="button.Save"/>
+<emm:instantiate var="itemActionsSettings" type="java.util.LinkedHashMap" scope="request">
+    <emm:instantiate var="element" type="java.util.LinkedHashMap">
+        <c:set target="${itemActionsSettings}" property="1" value="${element}"/>
+        <c:set target="${element}" property="btnCls" value="btn btn-regular btn-inverse"/>
+        <c:set target="${element}" property="extraAttributes" value="data-form-target='#selfForm' data-form-submit"/>
+        <c:set target="${element}" property="iconBefore" value="icon-save"/>
+        <c:set target="${element}" property="name">
+            <mvc:message code="button.Save"/>
         </c:set>
-    </jsp:useBean>
-</jsp:useBean>
+    </emm:instantiate>
+</emm:instantiate>

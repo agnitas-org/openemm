@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import com.agnitas.web.mvc.XssCheckAware;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.HttpUtils;
 import org.apache.commons.collections4.CollectionUtils;
@@ -23,11 +24,12 @@ import org.apache.logging.log4j.Logger;
 import org.displaytag.pagination.PaginatedList;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.calendar.web.CalendarController;
 import com.agnitas.emm.core.dashboard.form.DashboardForm;
@@ -39,13 +41,12 @@ import net.sf.json.JSONObject;
 
 @Controller
 @PermissionMapping("dashboard")
-public class DashboardController {
+public class DashboardController implements XssCheckAware {
 	
-	/** The logger. */
     private static final Logger logger = LogManager.getLogger(DashboardController.class);
 
-    private AdminService adminService;
-    private DashboardService dashboardService;
+    private final AdminService adminService;
+    private final DashboardService dashboardService;
 
     public DashboardController(AdminService adminService, DashboardService dashboardService) {
         this.adminService = adminService;
@@ -53,7 +54,7 @@ public class DashboardController {
     }
 
     @RequestMapping("/dashboard.action")
-    public String view(ComAdmin admin, DashboardForm form, Model model) {
+    public String view(Admin admin, DashboardForm form, Model model) {
         PaginatedList mailingList = dashboardService.getMailings(admin, form.getSort(), "", form.getNumberOfRows());
         List<Map<String, Object>> worldMailinglist = dashboardService.getLastSentWorldMailings(admin, form.getNumberOfRows());
 
@@ -72,9 +73,9 @@ public class DashboardController {
         return "dashboard_view";
     }
 
-    @RequestMapping(value = "/dashboard/statistics.action", produces = HttpUtils.APPLICATION_JSON_UTF8)
+    @GetMapping(value = "/dashboard/statistics.action", produces = HttpUtils.APPLICATION_JSON_UTF8)
     public @ResponseBody
-    JSONObject getStatistics(ComAdmin admin, @RequestParam(name = "mailingId") int mailingId) {
+    JSONObject getStatistics(Admin admin, @RequestParam(name = "mailingId") int mailingId) {
         JSONObject result;
 
         try {
@@ -88,7 +89,7 @@ public class DashboardController {
         return result;
     }
 
-    private void loadData(Model model, Locale locale, ComAdmin admin) {
+    private void loadData(Model model, Locale locale, Admin admin) {
         int companyId = admin.getCompanyID();
         Map<String, String> adminsMap = adminService.mapIdToUsernameByCompanyAndEmail(companyId);
 

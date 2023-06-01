@@ -32,7 +32,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.emm.core.action.dto.EmmActionDto;
 import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
@@ -341,7 +341,7 @@ public class EmmActionServiceImpl implements EmmActionService {
 	}
 
     @Override
-    public EmmActionDto getCopyOfAction(ComAdmin admin, int originId) {
+    public EmmActionDto getCopyOfAction(Admin admin, int originId) {
 		EmmAction originAction = emmActionDao.getEmmAction(originId, admin.getCompanyID());
 		if (originAction != null) {
 			String copyShortname = I18nString.getLocaleString("mailing.CopyOf", admin.getLocale()) + " " + originAction.getShortname();
@@ -363,7 +363,7 @@ public class EmmActionServiceImpl implements EmmActionService {
     }
 
     @Override
-    public JSONArray getEmmActionsJson(ComAdmin admin) {
+    public JSONArray getEmmActionsJson(Admin admin) {
         JSONArray actionsJson = new JSONArray();
 		for (EmmAction action: emmActionDao.getEmmActions(admin.getCompanyID())) {
             JSONObject entry = new JSONObject();

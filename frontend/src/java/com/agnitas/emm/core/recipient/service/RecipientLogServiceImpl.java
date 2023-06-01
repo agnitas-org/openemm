@@ -24,7 +24,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Service;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.ProfileField;
 import com.agnitas.emm.core.recipient.dto.RecipientDto;
 import com.agnitas.emm.core.recipient.dto.SaveRecipientDto;
@@ -53,7 +53,7 @@ public class RecipientLogServiceImpl implements RecipientLogService {
     }
 
     @Override
-    public UserAction getRecipientChangesLog(ComAdmin admin, RecipientDto existedRecipient, SaveRecipientDto recipient) {
+    public UserAction getRecipientChangesLog(Admin admin, RecipientDto existedRecipient, SaveRecipientDto recipient) {
         List<String> changes = new ArrayList<>();
         UserAction userAction = null;
         try {

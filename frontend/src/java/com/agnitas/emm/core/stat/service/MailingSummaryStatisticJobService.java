@@ -19,9 +19,14 @@ import com.agnitas.emm.core.stat.beans.MailingStatisticTgtGrp;
 import com.agnitas.emm.core.stat.service.impl.SummaryStatJobNotExistException;
 
 public interface MailingSummaryStatisticJobService {
+
 	int startSummaryStatisticJob(int mailingId, List<Integer> targetList, Integer recipientsType);
+
 	MailingStatJobDescriptor getStatisticJob(int jobId) throws SummaryStatJobNotExistException;
+
 	MailingStatisticTgtGrp getStatisticTgtGrp(int jobId, int targetGroupId) throws DataAccessException;
-	public List<Integer> parseGroupList(String targetGroups) throws NumberFormatException;
+
+	List<Integer> parseGroupList(String targetGroups) throws NumberFormatException;
+
 	void removeExpiredData();
 }

@@ -23,10 +23,12 @@ public class DynContentDtoToDynamicTagContentConverter implements Converter<DynC
     @Override
     public DynamicTagContent convert(DynContentDto dynContentDto) {
         DynamicTagContent dynamicTagContent = new DynamicTagContentImpl();
+
         dynamicTagContent.setId(dynContentDto.getId());
         dynamicTagContent.setDynOrder(dynContentDto.getIndex());
         dynamicTagContent.setTargetID(dynContentDto.getTargetId());
         dynamicTagContent.setDynContent(dynContentDto.getContent());
+
         return dynamicTagContent;
     }
 }

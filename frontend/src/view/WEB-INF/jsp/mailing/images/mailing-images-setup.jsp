@@ -27,22 +27,35 @@
     <c:param name="page" value="1"/>
 </c:url>
 
-<c:url var="templateViewLink" value="/mailingbase.do">
-    <c:param name="action" value="${ACTION_VIEW}"/>
-    <c:param name="mailingID" value="${mailingId}"/>
-</c:url>
+<emm:ShowByPermission token="mailing.settings.migration">
+    <c:url var="templateViewLink" value="/mailing/${mailingId}/settings.action"/>
+</emm:ShowByPermission>
+<emm:HideByPermission token="mailing.settings.migration">
+    <c:url var="templateViewLink" value="/mailingbase.do">
+        <c:param name="action" value="${ACTION_VIEW}"/>
+        <c:param name="mailingID" value="${mailingId}"/>
+    </c:url>
+</emm:HideByPermission>
 
 <c:url var="mailingsOverviewLink" value="/mailingbase.do">
     <c:param name="action" value="${ACTION_LIST}"/>
     <c:param name="isTemplate" value="false"/>
 </c:url>
 
-<c:url var="mailingViewLink" value="/mailingbase.do">
-    <c:param name="action" value="${ACTION_VIEW}"/>
-    <c:param name="mailingID" value="${mailingId}"/>
-    <c:param name="keepForward" value="true"/>
-    <c:param name="init" value="true"/>
-</c:url>
+<emm:ShowByPermission token="mailing.settings.migration">
+    <c:url var="mailingViewLink" value="/mailing/${mailingId}/settings.action">
+        <c:param name="keepForward" value="true"/>
+    </c:url>
+</emm:ShowByPermission>
+<emm:HideByPermission token="mailing.settings.migration">
+    <c:url var="mailingViewLink" value="/mailingbase.do">
+        <c:param name="action" value="${ACTION_VIEW}"/>
+        <c:param name="mailingID" value="${mailingId}"/>
+        <c:param name="keepForward" value="true"/>
+        <c:param name="init" value="true"/>
+    </c:url>
+</emm:HideByPermission>
+
 
 <c:set var="sidemenu_active" 		value="Mailings" 						scope="request" />
 <c:set var="agnHighlightKey" 		value="mailing.Graphics_Components"		scope="request" />
@@ -60,8 +73,14 @@
         <c:set var="sidemenu_sub_active" value="Templates" 				 scope="request" />
 
         <emm:instantiate var="agnNavHrefParams" type="java.util.LinkedHashMap" scope="request">
-            <c:set target="${agnNavHrefParams}" property="mailingID" value="${mailingBaseForm.mailingID}"/>
-            <c:set target="${agnNavHrefParams}" property="init" value="true"/>
+            <emm:ShowByPermission token="mailing.settings.migration">
+                <c:set target="${agnNavHrefParams}" property="mailingID" value="${mailingId}"/>
+                <c:set target="${agnNavHrefParams}" property="init" value="true"/>
+            </emm:ShowByPermission>
+            <emm:HideByPermission token="mailing.settings.migration">
+                <c:set target="${agnNavHrefParams}" property="mailingID" value="${mailingBaseForm.mailingID}"/>
+                <c:set target="${agnNavHrefParams}" property="init" value="true"/>
+            </emm:HideByPermission>
         </emm:instantiate>
         
         <emm:instantiate var="agnBreadcrumbs" type="java.util.LinkedHashMap" scope="request">

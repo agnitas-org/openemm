@@ -15,7 +15,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.List;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.TargetLight;
 import com.agnitas.mailing.autooptimization.beans.ComOptimization;
 import com.agnitas.mailing.autooptimization.beans.impl.AutoOptimizationLight;
@@ -36,25 +36,16 @@ public interface ComOptimizationService {
 
 	/**
 	 * Retrieve all entities except ones created by workflow manager.
-	 * @param campaignID
-	 * @param companyID
-	 * @return
 	 */
 	List<ComOptimization> list(int campaignID, @VelocityCheck int companyID);
 
 	/**
 	 * Retrieve only entries created by workflow manager.
-	 * @param workflowId
-	 * @param companyID
-	 * @return
 	 */
 	List<ComOptimization> listWorkflowManaged(int workflowId, @VelocityCheck int companyID);
 
 	/**
 	 * chooses the mailing with best open- or clickrate , clones it and sends it to the remaining recipients
-	 * @param optimization
-	 * @return
-	 * @throws Exception
 	 */
 	boolean finishOptimization( ComOptimization optimization ) throws Exception;
 
@@ -72,9 +63,6 @@ public interface ComOptimizationService {
 
 	/**
 	 * get a list of available splittypes ( company specific and application common definitions )
-	 * @param companyID
-	 * @param splitType
-	 * @param language
 	 * @return a list of string arrays [0] = split type , [1]  = i18n-key
 	 */
 	List<String[]> getSplitTypeList(@VelocityCheck int companyID, String splitType, String language);
@@ -97,9 +85,6 @@ public interface ComOptimizationService {
 	 *
 	 * ComOptimization.STATUS_FINISHED
 	 * The optimization process is done
-	 *
-	 * @param optimization
-	 * @return
 	 */
 	int getState(ComOptimization optimization);
 
@@ -111,7 +96,7 @@ public interface ComOptimizationService {
 
 	List<ComOptimization> getOptimizationsForCalendar(@VelocityCheck int companyId, Date startDate, Date endDate);
 
-	JSONArray getOptimizationsAsJson(ComAdmin admin, LocalDate startDate, LocalDate endDate, DateTimeFormatter formatter);
+	JSONArray getOptimizationsAsJson(Admin admin, LocalDate startDate, LocalDate endDate, DateTimeFormatter formatter);
 
 	/**
 	 * Returns final_mailing_id for the AutoOptimization which contains mailing with ID = oneOfTheSplitMailingID.
@@ -122,9 +107,6 @@ public interface ComOptimizationService {
 	
 	/**
 	 * Return final_mailing_id for the AutoOptimization
-	 * @param companyId
-	 * @param workflowId
-	 * @return
 	 */
 	int getFinalMailingId(@VelocityCheck int companyId, int workflowId);
 	

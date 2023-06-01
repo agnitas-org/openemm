@@ -10,6 +10,7 @@
 
 package com.agnitas.web.mvc;
 
+import com.agnitas.exception.ValidationException;
 import com.agnitas.emm.util.html.xssprevention.HtmlCheckError;
 import com.agnitas.emm.util.html.xssprevention.XSSHtmlException;
 import org.agnitas.util.HttpUtils;
@@ -24,6 +25,9 @@ import com.agnitas.web.exception.NoPreviewImageException;
 
 @ControllerAdvice
 public class ControllerExceptionHandler {
+
+    private final String MESSAGES_VIEW = "messages";
+
     @ExceptionHandler(HttpStatusCodeException.class)
     public ResponseEntity<?> onHttpStatusCodeException(HttpStatusCodeException exception) {
         return ResponseEntity.status(exception.getStatusCode()).build();
@@ -39,11 +43,11 @@ public class ControllerExceptionHandler {
     public String onBindException(final BindException e, final Popups popups) {
         final FieldError fieldError = e.getFieldError();
         if (fieldError != null && fieldError.getRejectedValue() != null) {
-            popups.alert("error.input.invalid", e.getFieldError().getRejectedValue());
+            popups.alert("error.input.invalid", fieldError.getRejectedValue());
         } else {
             popups.alert("Error");
         }
-        return "messages";
+        return MESSAGES_VIEW;
     }
 
 	@ExceptionHandler(XSSHtmlException.class)
@@ -52,6 +56,12 @@ public class ControllerExceptionHandler {
 			popups.alert(error.toMessage());
 		}
 
-		return "messages";
+		return MESSAGES_VIEW;
 	}
+
+	@ExceptionHandler(ValidationException.class)
+    public String onValidationException(ValidationException e, Popups popups) {
+        e.getErrors().forEach(popups::alert);
+        return MESSAGES_VIEW;
+    }
 }

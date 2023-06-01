@@ -1,4 +1,8 @@
 <HelpBalloon>
-	<title><![CDATA[maximum e-mail size]]></title>
-	<content><![CDATA[This value is calculated by determining the mailing variant with the highest data volume, taking into account all optional and variable content modules as well as images. If a second value is shown in brackets, this value includes external images too.]]></content>
+	<title><![CDATA[Delivery size]]></title>
+	<content><![CDATA[The value "Delivery size" indicates how large the data volume of the mailing (HTML and, if applicable, file attachments) is when it is sent. If you send the mailing in offline HTML, the images are also sent and taken into account here in this value.
+
+Since images are usually not delivered directly, but are only retrieved when the mailing is opened, the value "including images" shows the size of the mailing after the images have been loaded.
+
+Both values are determined taking into account all optional and variable content blocks.]]></content>
 </HelpBalloon>

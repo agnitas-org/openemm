@@ -5,6 +5,7 @@
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
 <%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
 <c:set var="MAILING_TYPE_ACTIONBASED" value="<%=MailingType.ACTION_BASED.getCode()%>" scope="page"/>
 
@@ -12,7 +13,7 @@
 
     <div class="status_error editor-error-messages well" style="display: none;"></div>
 
-        <form action="" id="actionbasedMailingForm" name="actionbasedMailingForm">
+        <mvc:form action="" id="actionbasedMailingForm" name="actionbasedMailingForm">
             <jsp:include page="sort-select-mailing.jsp">
                 <jsp:param name="containerId" value="actionbased_mailing-editor"/>
                 <jsp:param name="selectName" value="mailingId"/>
@@ -26,7 +27,7 @@
                 <jsp:param name="message2" value="default.status.active"/>
                 <jsp:param name="disabledSelection" value="false"/>
             </jsp:include>
-        </form>
+        </mvc:form>
 
         <hr>
 

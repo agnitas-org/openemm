@@ -27,8 +27,7 @@ import com.agnitas.emm.core.action.service.UnknownEmmActionExecutor;
 
 public class EmmActionOperationServiceImpl implements EmmActionOperationService, InitializingBean {
 	
-	/** The logger. */
-	private static final transient Logger LOGGER = LogManager.getLogger(EmmActionOperationServiceImpl.class);
+	private static final Logger LOGGER = LogManager.getLogger(EmmActionOperationServiceImpl.class);
 
 	private List<EmmActionOperation> executors = new ArrayList<>();
 

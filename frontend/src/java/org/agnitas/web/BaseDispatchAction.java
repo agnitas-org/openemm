@@ -23,7 +23,7 @@ import org.apache.struts.action.ActionMessages;
 import org.apache.struts.actions.DispatchAction;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -54,7 +54,7 @@ public class BaseDispatchAction extends DispatchAction {
         saveMessages(request, newMessages);
     }
 
-    protected void writeUserActivityLog(ComAdmin admin, String action, String description)  {
+    protected void writeUserActivityLog(Admin admin, String action, String description)  {
         try {
             if (userActivityLogService != null) {
                 userActivityLogService.writeUserActivityLog(admin, action, description);
@@ -68,7 +68,7 @@ public class BaseDispatchAction extends DispatchAction {
         }
     }
 
-    protected void writeUserActivityLog(ComAdmin admin, String action, int description)  {
+    protected void writeUserActivityLog(Admin admin, String action, int description)  {
         try {
             if (userActivityLogService != null) {
                 userActivityLogService.writeUserActivityLog(admin, action, Integer.toString(description));
@@ -82,7 +82,7 @@ public class BaseDispatchAction extends DispatchAction {
         }
     }
     
-    protected void writeUserActivityLog(ComAdmin admin, UserAction userAction) {
+    protected void writeUserActivityLog(Admin admin, UserAction userAction) {
         if (Objects.nonNull(userActivityLogService)) {
             userActivityLogService.writeUserActivityLog(admin, userAction, logger);
         } else {

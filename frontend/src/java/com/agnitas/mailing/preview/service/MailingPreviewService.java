@@ -27,7 +27,7 @@ public interface MailingPreviewService {
 	 * 
 	 * @throws Exception on errors rendering preview
 	 */
-	public Page renderPreview(final int mailingID, final int customerID) throws Exception;
+	Page renderPreview(final int mailingID, final int customerID) throws Exception;
 	
 	/**
 	 * Renders the HTML preview for given mailing with default preview options.
@@ -39,7 +39,7 @@ public interface MailingPreviewService {
 	 * 
 	 * @throws Exception on errors rendering preview
 	 */
-	public String renderHtmlPreview(final int mailingID, final int customerID) throws Exception;
+	String renderHtmlPreview(final int mailingID, final int customerID) throws Exception;
 
 	/**
 	 * Renders the HTML preview for given mailing using given preview options.
@@ -52,7 +52,7 @@ public interface MailingPreviewService {
 	 * 
 	 * @throws Exception on errors rendering preview
 	 */
-	public String renderHtmlPreview(final int mailingID, final int customerID, final HtmlPreviewOptions options) throws Exception;
+	String renderHtmlPreview(final int mailingID, final int customerID, final HtmlPreviewOptions options) throws Exception;
 
 	/**
 	 * Renders the text preview for given mailing.
@@ -64,9 +64,9 @@ public interface MailingPreviewService {
 	 * 
 	 * @throws Exception on errors rendering preview
 	 */
-	public String renderTextPreview(final int mailingID, final int customerID) throws Exception;
+	String renderTextPreview(final int mailingID, final int customerID) throws Exception;
 
-	public String renderSmsPreview(final int mailingId, final int customerID) throws Exception;
+	String renderSmsPreview(final int mailingId, final int customerID) throws Exception;
 	/**
 	 * Renders the preview for given content fragment based on given mailing.
 	 * 
@@ -77,7 +77,6 @@ public interface MailingPreviewService {
 	 * 
 	 * @throws Exception on errors rendering preview
 	 */
-	public String renderPreviewFor(final int mailingID, final int customerID, final String fragment) throws Exception;
+	String renderPreviewFor(final int mailingID, final int customerID, final String fragment) throws Exception;
 
-	
 }

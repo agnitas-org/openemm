@@ -11,14 +11,18 @@
 package com.agnitas.emm.core.mediatypes.service;
 
 import java.util.List;
+import java.util.Map;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.Mediatype;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public interface MediaTypesService {
     
-    List<MediaTypes> getAllowedMediaTypes(ComAdmin admin);
+    List<MediaTypes> getAllowedMediaTypes(Admin admin);
     
     MediaTypes getActiveMediaType(@VelocityCheck int companyId, int mailingId);
+    
+    void saveMediatypes(int companyID, int mailingId, Map<Integer, Mediatype> mediatypes) throws Exception;
 }

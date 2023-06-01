@@ -1,77 +1,73 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
-<%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
-<%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
-<%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
-<%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://displaytag.sf.net" prefix="display" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
-<%--@elvariable id="SHOW_SUPERVISOR_PERMISSION_MANAGEMENT" type="java.lang.Boolean"--%>
-<%--@elvariable id="SUPERVISOR_LIST" type="java.util.List"--%>
-<%--@elvariable id="supervisorGrantLoginPermissionForm" type="com.agnitas.web.forms.SupervisorGrantLoginPermissionForm"--%>
-<%--@elvariable id="LOCALE_DATE_PATTERN" type="java.lang.String"--%>
+<%--@elvariable id="showSupervisorPermissionManagement" type="java.lang.Boolean"--%>
+<%--@elvariable id="supervisorGrantLoginPermissionForm" type="com.agnitas.emm.core.user.form.SupervisorGrantLoginPermissionForm"--%>
+<%--@elvariable id="localeDatePattern" type="java.lang.String"--%>
+<%--@elvariable id="departmentList" type="java.util.List<com.agnitas.emm.core.departments.beans.Department>"--%>
+<%--@elvariable id="allDepartmentsId" type="java.lang.Integer"--%>
 
 <fmt:setLocale value="${sessionScope['emm.admin'].locale}"/>
 
-<c:if test="${SHOW_SUPERVISOR_PERMISSION_MANAGEMENT}">
-	<agn:agnForm id="supervisorGrantLoginPermissionForm" action="grantSupervisorLoginPermission.do">
-		<div class="tile">
-			<div class="tile-header">
-				<h2 class="headline"><bean:message key="settings.supervisor.manageLoginPermissions"/></h2>		
-				
-				<ul class="tile-header-actions">
-                   	<li>
-                  	     	<button type="button" class="btn btn-regular btn-primary" data-form-persist="isShowStatistic: true" data-form-submit-static>
-                           	<i class="icon icon-plus"></i>
-                           	<span class="text"><bean:message key="settings.supervisor.grantLoginPermission"/></span>
-                       	</button>
-                   	</li>
-              		</ul>						
-			</div>
-			<div class="tile-content tile-content-forms">
-				<div class="form-group">
-					<div class="col-sm-4">
-						<label class="control-label" for="departmentID"><bean:message key="supervisor.department"/></label>
-					</div>
-					<div class="col-sm-8">
-						<select class="form-control js-select" name="departmentID" id="departmentID">
-							<option value="0"><bean:message key="settings.supervisor.chooseDepartment"/></option>
-							<option value="<%= com.agnitas.web.ComUserSelfServiceGrantSupervisorLoginPermissionAction.ALL_DEPARTMENTS_ID %>"><bean:message key="settings.supervisor.allDepartments"/></option>
-							<c:forEach var="department" items="${DEPARTMENT_LIST}">
-								<option value="${department.id}"><bean:message key="department.slugs.${department.slug}" /></option>
-							</c:forEach>
-						</select>
-					</div>
-				</div>
-				<div class="form-group">
-					<div class="col-sm-4">
-						<label class="control-label"><bean:message key="settings.supervisor.loginPermission.validity"/></label>
-					</div>
-					<div class="col-sm-8">
-						<ul class="list-group">
-							<li class="list-group-item">
+<c:if test="${showSupervisorPermissionManagement}">
+    <mvc:form servletRelativeAction="/user/self/supervisor-permission/grant.action" modelAttribute="supervisorLoginForm" data-form="resource">
+        <div class="tile">
+            <div class="tile-header">
+                <h2 class="headline"><mvc:message code="settings.supervisor.manageLoginPermissions"/></h2>
+
+                <ul class="tile-header-actions">
+                    <li>
+                        <button type="button" class="btn btn-regular btn-primary" data-form-persist="isShowStatistic: true" data-form-submit-static>
+                            <i class="icon icon-plus"></i>
+                            <span class="text"><mvc:message code="settings.supervisor.grantLoginPermission"/></span>
+                        </button>
+                    </li>
+                </ul>
+            </div>
+            <div class="tile-content tile-content-forms">
+                <div class="form-group">
+                    <div class="col-sm-4">
+                        <label class="control-label" for="departmentID"><mvc:message code="supervisor.department"/></label>
+                    </div>
+                    <div class="col-sm-8">
+                        <mvc:select path="departmentID" id="departmentID" cssClass="form-control js-select">
+                            <mvc:option value="0"><mvc:message code="settings.supervisor.chooseDepartment"/></mvc:option>
+                            <mvc:option value="${allDepartmentsId}"><mvc:message code="settings.supervisor.allDepartments"/></mvc:option>
+                            <c:forEach var="department" items="${departmentList}">
+                                <mvc:option value="${department.id}"><mvc:message code="department.slugs.${department.slug}"/></mvc:option>
+                            </c:forEach>
+                        </mvc:select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-sm-4">
+                        <label class="control-label"><mvc:message code="settings.supervisor.loginPermission.validity"/></label>
+                    </div>
+                    <div class="col-sm-8">
+                        <ul class="list-group">
+                            <li class="list-group-item">
                                 <div class="form-vertical">
                                     <div class="row">
                                         <div class="col-sm-4">
                                             <label class="radio-inline">
-                                                <agn:agnRadio styleId="limited" property="limit" value="LIMITED" />
-                                                <bean:message key="settings.supervisor.loginPermission.grantedUntilIncluding"/>
+                                                <mvc:radiobutton path="limit" value="LIMITED" cssStyle="limited"/>
+                                                <mvc:message code="settings.supervisor.loginPermission.grantedUntilIncluding"/>
                                             </label>
                                         </div>
                                         <div class="col-sm-8">
                                             <div class="control">
                                                 <div class="input-group">
                                                     <div class="input-group-controls">
-                                                        <input type="text"
-                                                            value="${supervisorGrantLoginPermissionForm.expireDateLocalized}"
-                                                            class="form-control datepicker-input js-datepicker"
-                                                            name="expireDateLocalized"
-                                                            id="expireDateLocalized"
-                                                                data-datepicker-options="format: '${fn:toLowerCase(LOCALE_DATE_PATTERN)}', formatSubmit: '${fn:toLowerCase(LOCALE_DATE_PATTERN)}'"/>
+                                                        <mvc:text path="expireDateLocalized" data-value="${supervisorGrantLoginPermissionForm.expireDateLocalized}"
+                                                                  cssClass="form-control datepicker-input js-datepicker"
+                                                                  data-datepicker-options="format: '${fn:toLowerCase(localeDatePattern)}', formatSubmit: '${fn:toLowerCase(localeDatePattern)}'"/>
                                                     </div>
+
                                                     <div class="input-group-btn">
                                                         <button type="button" class="btn btn-regular btn-toggle js-open-datepicker" tabindex="-1">
                                                             <i class="icon icon-calendar-o"></i>
@@ -82,57 +78,56 @@
                                         </div>
                                     </div>
                                 </div>
-							</li>
-							<li class="list-group-item">
-								<label class="radio-inline">
-									<agn:agnRadio styleId="limited" property="limit" value="UNLIMITED" />
-									<bean:message key="settings.supervisor.loginPermission.grantedUnlimited"/>
-	                           	</label>
-							</li>							
-						</ul>
-					</div>
-				</div>
-			</div>
-			<div class="tile-content">
-           		<div class="table-wrapper table-overflow-visible">
-					<display:table 
-						class="table table-bordered table-striped table-hover js-table"
-                      		id="permissionData"
-                      		name="ACTIVE_LOGIN_PERMISSIONS"
-                      		sort="list"
-                      		excludedParams="*">
-                      		
-                      		<display:column headerClass="head_action" class="action" titleKey="CreationDate"><fmt:formatDate value="${permissionData.granted}" pattern="${adminDateTimeFormatWithSeconds}" timeZone="${adminTimeZone}" /></display:column>
-                      		<display:column headerClass="head_action" class="action" titleKey="date.expiry">
-                      			<c:choose>
-                      				<c:when test="${not empty permissionData.expireDate}">
-	                      				<fmt:formatDate value="${permissionData.expireDate}" pattern="${adminDateTimeFormatWithSeconds}" timeZone="${adminTimeZone}" />
-                      				</c:when>
-                      				<c:otherwise>
-                      					<bean:message key="settings.supervisor.loginPermission.grantedUnlimited" />
-                      				</c:otherwise>
-                      			</c:choose>
-                      		</display:column>
-                      		
-                      		<c:choose>
-                      			<c:when test="${permissionData.allDepartmentsPermission}">
-	                       			<display:column headerClass="head_action" class="action" titleKey="supervisor.department"><bean:message key="settings.supervisor.allDepartments"/></display:column>
-                      			</c:when>
-                      			<c:otherwise>
-	                       			<display:column headerClass="head_action" class="action" titleKey="supervisor.department"><bean:message key="department.slugs.${permissionData.departmentSlugOrNull}" /></display:column>
-	                       		</c:otherwise>
-                      		</c:choose>
-                      		
-                      		<c:url value="revokeSupervisorLoginPermission.do" var="REVOCATION_URL">
-                      			<c:param name="permissionID" value="${permissionData.permissionID}" />
-                      		</c:url>
-                      		
-						<display:column headerClass="table-actions" class="action" titleKey="settings.supervisor.revokeLoginPermission">
-							<agn:agnLink class="btn btn-regular btn-alert js-row-delete" href="${REVOCATION_URL}"><i class="icon icon-trash-o"></i></agn:agnLink>
-						</display:column>                       	
-					</display:table>
-				</div>
-			</div>
-		</div>
-	</agn:agnForm>
+                            </li>
+                            <li class="list-group-item">
+                                <label class="radio-inline">
+                                    <mvc:radiobutton path="limit" value="UNLIMITED" cssStyle="limited"/>
+                                    <mvc:message code="settings.supervisor.loginPermission.grantedUnlimited"/>
+                                </label>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="tile-content">
+                <div class="table-wrapper table-overflow-visible">
+                    <display:table class="table table-bordered table-striped table-hover js-table" id="permissionData" name="activeLoginPermissions"
+                            sort="list" excludedParams="*">
+
+                        <%--@elvariable id="permissionData" type="com.agnitas.emm.core.supervisor.beans.SupervisorLoginPermissionTableItem"--%>
+
+                        <display:column headerClass="head_action" class="action" titleKey="CreationDate">
+                        <fmt:formatDate value="${permissionData.granted}" pattern="${adminDateTimeFormatWithSeconds}" timeZone="${adminTimeZone}" /></display:column>
+                        <display:column headerClass="head_action" class="action" titleKey="date.expiry">
+                            <c:choose>
+                                <c:when test="${not empty permissionData.expireDate}">
+                                    <fmt:formatDate value="${permissionData.expireDate}" pattern="${adminDateTimeFormatWithSeconds}" timeZone="${adminTimeZone}" />
+                                </c:when>
+                                <c:otherwise>
+                                    <mvc:message code="settings.supervisor.loginPermission.grantedUnlimited" />
+                                </c:otherwise>
+                            </c:choose>
+                        </display:column>
+
+                        <c:choose>
+                            <c:when test="${permissionData.allDepartmentsPermission}">
+                                <display:column headerClass="head_action" class="action" titleKey="supervisor.department"><mvc:message code="settings.supervisor.allDepartments"/></display:column>
+                            </c:when>
+                            <c:otherwise>
+                                <display:column headerClass="head_action" class="action" titleKey="supervisor.department"><mvc:message code="department.slugs.${permissionData.departmentSlugOrNull}" /></display:column>
+                            </c:otherwise>
+                        </c:choose>
+
+                        <c:url value="/user/self/supervisor-permission/${permissionData.permissionID}/revoke.action" var="revocationLink"/>
+
+                        <display:column headerClass="table-actions" class="action" titleKey="settings.supervisor.revokeLoginPermission">
+                            <a href="${revocationLink}" class="btn btn-regular btn-alert js-row-delete">
+                                <i class="icon icon-trash-o"></i>
+                            </a>
+                        </display:column>
+                    </display:table>
+                </div>
+            </div>
+        </div>
+    </mvc:form>
 </c:if>

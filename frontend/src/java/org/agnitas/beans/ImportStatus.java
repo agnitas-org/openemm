@@ -20,6 +20,8 @@ import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.service.GenericImportException.ReasonCode;
 import org.agnitas.util.ImportUtils.ImportErrorType;
 
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+
 public interface ImportStatus {
     public static final int DOUBLECHECK_FULL = 0;
 
@@ -324,9 +326,9 @@ public interface ImportStatus {
 	
 	Set<String> getErrorColumns();
 
-	Map<Integer, Integer> getMailinglistStatistics();
+	Map<MediaTypes, Map<Integer, Integer>> getMailinglistStatistics();
 
-	void setMailinglistStatistics(Map<Integer, Integer> mailinglistStatistics);
+	void setMailinglistStatistics(Map<MediaTypes, Map<Integer, Integer>> mailinglistStatistics);
 	
 	void setNearLimit(boolean nearLimit);
 

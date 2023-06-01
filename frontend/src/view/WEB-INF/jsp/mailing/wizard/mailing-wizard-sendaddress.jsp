@@ -54,7 +54,7 @@
             <div class="tile-content tile-content-forms">
                 <div class="form-group">
                     <div class="col-sm-4">
-                        <label class="control-label" for="senderEmail"><bean:message key="mailing.Sender_Adress"/></label>
+                        <label class="control-label" for="senderEmail"><bean:message key="mailing.Sender_Adress"/>*</label>
                     </div>
                     <div class="col-sm-8">
                         <html:text styleId="senderEmail" styleClass="form-control" property="senderEmail" maxlength="99" size="34"/>
@@ -70,7 +70,7 @@
                 </div>
                 <div class="form-group">
                     <div class="col-sm-4">
-                        <label class="control-label" for="replyEmail"><bean:message key="mailing.ReplyEmail"/></label>
+                        <label class="control-label" for="replyEmail"><bean:message key="mailing.ReplyEmail"/>*</label>
                     </div>
                     <div class="col-sm-8">
                         <html:text styleId="replyEmail" styleClass="form-control" property="replyEmail" maxlength="99" size="34"/>

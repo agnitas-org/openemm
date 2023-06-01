@@ -9,6 +9,7 @@
 <%@ taglib prefix="logic" uri="http://struts.apache.org/tags-logic" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
 
 <%--@elvariable id="supportMailAddress" type="java.lang.String"--%>
 <%--@elvariable id="adminMailAddress" type="java.lang.String"--%>
@@ -29,6 +30,7 @@
     <head>
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
+        <sec:csrfMetaTags />
 
         <title>${title}</title>
 

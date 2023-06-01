@@ -15,9 +15,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.agnitas.beans.TrackableLink;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.exception.target.TargetGroupPersistenceException;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.beans.ComTarget;
 import com.agnitas.beans.TargetLight;
@@ -25,7 +25,7 @@ import com.agnitas.emm.core.beans.Dependent;
 import com.agnitas.emm.core.target.beans.RawTargetGroup;
 import com.agnitas.emm.core.target.beans.TargetGroupDependentType;
 import com.agnitas.emm.core.target.service.TargetLightsOptions;
-import com.phloc.commons.collections.pair.Pair;
+import com.helger.collection.pair.Pair;
 
 public interface ComTargetDao {
     /**
@@ -38,7 +38,7 @@ public interface ComTargetDao {
      * @return  true on success.
      * @throws TargetGroupPersistenceException on errors saving target group
      */
-    boolean deleteTarget(int targetID, @VelocityCheck int companyID) throws TargetGroupPersistenceException;
+    boolean deleteTarget(int targetID, int companyID) throws TargetGroupPersistenceException;
 
     /**
      *  Loads target group identified by target id and company id.
@@ -49,7 +49,7 @@ public interface ComTargetDao {
      *          The companyID for the target group.
      * @return The Target or null on failure.
      */
-    ComTarget getTarget(int targetID, @VelocityCheck int companyID);
+    ComTarget getTarget(int targetID, int companyID);
 
     /**
      *  Loads target group identified by target name and company id.
@@ -68,7 +68,7 @@ public interface ComTargetDao {
 	 *
 	 * TODO: Replace this method by a new method that takes list split data as parameters to avoid misuse of this method.
 	 */
-    ComTarget getTargetByName(String targetName, @VelocityCheck int companyID);
+    ComTarget getTargetByName(String targetName, int companyID);
 
     /**
      *  Loads target group identified by list split parameters and company id.
@@ -79,7 +79,7 @@ public interface ComTargetDao {
      *          The companyID for the target group.
      * @return The Target or null on failure.
      */
-    ComTarget getListSplitTarget(String splitType, int index, @VelocityCheck int companyID);
+    ComTarget getListSplitTarget(String splitType, int index, int companyID);
 
     /**
      *  Loads target group identified by list split parameters and company id.
@@ -91,7 +91,7 @@ public interface ComTargetDao {
      *          The companyID for the target group.
      * @return The Target or null on failure.
      */
-    ComTarget getListSplitTarget(String prefix, String splitType, int index, @VelocityCheck int companyID);
+    ComTarget getListSplitTarget(String prefix, String splitType, int index, int companyID);
 
     /**
      * Loads all target groups marked as "deleted" for company id.
@@ -102,7 +102,7 @@ public interface ComTargetDao {
      *
      * @return List of Targets or empty list.
      */
-    List<Integer> getDeletedTargets( @VelocityCheck int companyID);
+    List<Integer> getDeletedTargets(int companyID);
 
     /**
      * Saves or updates target group in database. Target group is visible in lists.
@@ -132,7 +132,7 @@ public interface ComTargetDao {
      *      The companyID for the target groups.
      * @return List of Targets or empty list.
      */
-	Map<Integer, ComTarget>	getAllowedTargets( @VelocityCheck int companyID);
+	Map<Integer, ComTarget>	getAllowedTargets(int companyID);
 
     /**
      * Get a shortname of the target referenced by {@code targetId}.
@@ -142,7 +142,7 @@ public interface ComTargetDao {
      * @return a target name or {@code null} if a {@code targetId} doesn't exist
      * or a referenced target belongs to another company.
      */
-    String getTargetName(int targetId, @VelocityCheck int companyId, boolean includeDeleted);
+    String getTargetName(int targetId, int companyId, boolean includeDeleted);
 
 	/**
 	 * Check if there's a target having given name.
@@ -152,7 +152,7 @@ public interface ComTargetDao {
 	 * @param includeDeleted whether ({@code true}) or not ({@code false}) deleted targets should also be considered.
 	 * @return {@code true} if there's at least one target having given name.
 	 */
-	boolean isTargetNameInUse(@VelocityCheck int companyId, String targetName, boolean includeDeleted);
+	boolean isTargetNameInUse(int companyId, String targetName, boolean includeDeleted);
 
 	/**
 	 * Load list of Target groups names by IDs.
@@ -162,17 +162,17 @@ public interface ComTargetDao {
 	 * @param targetIds the IDs of target groups
 	 * @return the list of names
 	 */
-	List<String> getTargetNamesByIds( @VelocityCheck int companyId, Set<Integer> targetIds);
+	List<String> getTargetNamesByIds(int companyId, Set<Integer> targetIds);
 	
 	String getTargetSplitName(int targetId);
 	
 	int getTargetSplitID(String name);
 
-	String getTargetSQL(int targetId, @VelocityCheck int companyId);
+	String getTargetSQL(int targetId, int companyId);
 
-	List<String> getSplitNames(@VelocityCheck int companyID);
+	List<String> getSplitNames(int companyID);
 	
-	int getSplits(@VelocityCheck int companyID, String shortName);
+	int getSplits(int companyID, String shortName);
 
 	/**
 	 * Safely copy sample target groups from company 1 to selected company.
@@ -181,15 +181,15 @@ public interface ComTargetDao {
 	 */
 	int createSampleTargetGroups(int companyID);
 
-    boolean isTargetGroupLocked(int targetID, @VelocityCheck int companyID);
+    boolean isTargetGroupLocked(int targetID, int companyID);
 
-    void updateTargetLockState(int targetID, @VelocityCheck int companyID, boolean locked);
+    void updateTargetLockState(int targetID, int companyID, boolean locked);
 
-    boolean deleteTargetReally(int targetID, @VelocityCheck int companyId);
+    boolean deleteTargetReally(int targetID, int companyId);
 
-    boolean deleteTargetsReally(@VelocityCheck int companyID);
+    boolean deleteTargetsReally(int companyID);
 
-    List<TargetLight> getTargetLights(@VelocityCheck int companyID);
+    List<TargetLight> getTargetLights(int companyID);
     
     List<TargetLight> getTargetLights(int companyID, boolean includeDeleted);
     
@@ -201,25 +201,25 @@ public interface ComTargetDao {
 
 	List<TargetLight> getTargetLightsBySearchParameters(TargetLightsOptions options);
 
-	List<TargetLight> getUnchoosenTargetLights(@VelocityCheck int companyID, Collection<Integer> targetIds);
+	List<TargetLight> getUnchoosenTargetLights(int companyID, Collection<Integer> targetIds);
 	
 	List<TargetLight> getChoosenTargetLights(String targetExpression, final int companyID);
 	
 	List<TargetLight> getTestAndAdminTargetLights(int companyId);
 	
-    List<TargetLight> getSplitTargetLights(@VelocityCheck int companyID, String splitType);
+    List<TargetLight> getSplitTargetLights(int companyID, String splitType);
 
     boolean isBasicFullTextSearchSupported();
     
-	boolean deleteWorkflowTargetConditions(@VelocityCheck int companyId, int workflowId);
+	boolean deleteWorkflowTargetConditions(int companyId, int workflowId);
 	
-	void deleteWorkflowTargetConditions(@VelocityCheck int companyId);
+	void deleteWorkflowTargetConditions(int companyId);
 	
     // -------------------------------------------------------------------------------------- Deprecated API
 
 	Map<Integer, TargetLight> getAllowedTargetLights(int companyID);
 
-    Set<Integer> getInvalidTargets(@VelocityCheck int companyId, Set<Integer> targets);
+    Set<Integer> getInvalidTargets(int companyId, Set<Integer> targets);
 
     boolean isOracle();
 
@@ -228,19 +228,19 @@ public interface ComTargetDao {
 	 * @param companyId company ID
 	 * @return list of target groups
 	 */
-	List<RawTargetGroup> listRawTargetGroups(@VelocityCheck int companyId, String ...eqlRawFragments);
+	List<RawTargetGroup> listRawTargetGroups(int companyId, String ...eqlRawFragments);
 	
 	List<ComTarget> getTargetByNameAndSQL(int companyId, String targetName, String targetSQL, boolean includeDeleted, boolean worldDelivery, boolean adminTestDelivery);
 
-    PaginatedListImpl<Dependent<TargetGroupDependentType>> getDependents(@VelocityCheck int companyId, int targetId, Set<TargetGroupDependentType> allowedTypes, int pageNumber, int pageSize, String sortColumn, String order);
+    PaginatedListImpl<Dependent<TargetGroupDependentType>> getDependents(int companyId, int targetId, Set<TargetGroupDependentType> allowedTypes, int pageNumber, int pageSize, String sortColumn, String order);
 
-	Map<Integer, Integer> getTargetComplexityIndices(@VelocityCheck int companyId);
+	Map<Integer, Integer> getTargetComplexityIndices(int companyId);
 
-	Integer getTargetComplexityIndex(@VelocityCheck int companyId, int targetId);
+	Integer getTargetComplexityIndex(int companyId, int targetId);
 
-	List<Pair<Integer, String>> getTargetsToInitializeComplexityIndices(@VelocityCheck int companyId);
+	List<Pair<Integer, String>> getTargetsToInitializeComplexityIndices(int companyId);
 
-	void saveComplexityIndices(@VelocityCheck int companyId, Map<Integer, Integer> complexities);
+	void saveComplexityIndices(int companyId, Map<Integer, Integer> complexities);
 
     boolean isValid(int companyId, int targetId);
 
@@ -253,4 +253,6 @@ public interface ComTargetDao {
     boolean isAltg(int targetId);
 
 	int getAccessLimitingTargetgroupsAmount(int companyId);
+
+    boolean isLinkUsedInTarget(TrackableLink link);
 }

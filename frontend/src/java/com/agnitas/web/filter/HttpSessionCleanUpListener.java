@@ -26,7 +26,7 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.grid.grid.service.ComGridTemplateService;
 import com.agnitas.util.FutureHolderMap;
 
@@ -65,7 +65,7 @@ public class HttpSessionCleanUpListener implements HttpSessionListener {
 		downloadService.removeAllDownloadData(session);
 		
 		// Cleanup grid recycle bin
-		ComAdmin admin = (ComAdmin) session.getAttribute(AgnUtils.SESSION_CONTEXT_KEYNAME_ADMIN);
+		Admin admin = (Admin) session.getAttribute(AgnUtils.SESSION_CONTEXT_KEYNAME_ADMIN);
         if (admin != null) {
             ComGridTemplateService gridTemplateService = applicationContext.getBean("GridTemplateService", ComGridTemplateService.class);
             gridTemplateService.deleteRecycledChildren(admin.getCompanyID());

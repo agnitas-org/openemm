@@ -22,7 +22,7 @@ import com.agnitas.emm.core.report.enums.fields.RecipientMutableFields;
  */
 public class RecipientBindingHistoryDirectorImpl implements RecipientBindingHistoryDirector {
 
-    private RecipientBindingHistoryBuilder builder;
+    private final RecipientBindingHistoryBuilder builder;
 
     public RecipientBindingHistoryDirectorImpl(RecipientBindingHistoryBuilder builder) {
         this.builder = builder;

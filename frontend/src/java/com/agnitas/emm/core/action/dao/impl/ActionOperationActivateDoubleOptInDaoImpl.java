@@ -43,20 +43,20 @@ public class ActionOperationActivateDoubleOptInDaoImpl extends AbstractActionOpe
 	@Override
 	@DaoUpdateReturnValueCheck
 	protected void processSaveOperation(ActionOperationActivateDoubleOptInParameters operation) {
-		update(logger, 
-				"INSERT INTO actop_activate_doi_tbl (action_operation_id, for_all_lists, media_type) VALUES (?,?,?)", 
-				operation.getId(), 
-				operation.isForAllLists() ? 1 : 0, 
+		update(logger,
+				"INSERT INTO actop_activate_doi_tbl (action_operation_id, for_all_lists, media_type) VALUES (?,?,?)",
+				operation.getId(),
+				operation.isForAllLists() ? 1 : 0,
 				operation.getMediaType().getMediaCode());
 	}
 
 	@Override
 	@DaoUpdateReturnValueCheck
 	protected void processUpdateOperation(ActionOperationActivateDoubleOptInParameters operation) {
-		update(logger, 
-				"UPDATE actop_activate_doi_tbl SET for_all_lists = ?, media_type = ? WHERE action_operation_id = ?", 
-				operation.isForAllLists() ? 1 : 0, 
-				operation.getMediaType().getMediaCode(), 
+		update(logger,
+				"UPDATE actop_activate_doi_tbl SET for_all_lists = ?, media_type = ? WHERE action_operation_id = ?",
+				operation.isForAllLists() ? 1 : 0,
+				operation.getMediaType().getMediaCode(),
 				operation.getId());
 	}
 

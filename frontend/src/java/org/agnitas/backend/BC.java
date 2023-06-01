@@ -28,7 +28,6 @@ import org.agnitas.util.Log;
 import org.agnitas.util.Str;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.ResultSetExtractor;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 
@@ -75,11 +74,16 @@ public class BC {
 	 * number of real receiver for this run
 	 */
 	private long receiverCount = 0;
+	/**
+	 * column name to check for duplicat email addresses
+	 */
+	private String columnToCheckForDuplicates;
 
 	public BC(Data nData) {
 		data = nData;
 		customerTable = "customer_" + data.company.id() + "_tbl";
 		bindingTable = "customer_" + data.company.id() + "_binding_tbl";
+		columnToCheckForDuplicates = "email";
 	}
 
 	/**
@@ -277,7 +281,7 @@ public class BC {
 	}
 
 	/**
-	 * Removes a recipient from the selected recipient collection, e.g. for blacklisted
+	 * Removes a recipient from the selected recipient collection, e.g. for blocklisted
 	 *
 	 * @param cid the customerID of the recipient
 	 */
@@ -451,6 +455,7 @@ public class BC {
 				if (column != null) {
 					collect.add(column);
 					cmap.put(column, "cust." + column);
+					columnToCheckForDuplicates = column;
 				}
 			}
 		}
@@ -541,19 +546,21 @@ public class BC {
 	private boolean hasDuplicateEntries() {
 		boolean rc = true;
 
-		try {
-			Map<String, Object> row = data.dbase.querys("SELECT count(distinct email) uemail, count(email) aemail FROM " + table + " WHERE user_type IN ('A', 'T', 'W')");
+		if (! data.company.allowUnnormalizedEmails ()) {
+			try {
+				Map<String, Object> row = data.dbase.querys("SELECT count(distinct lower(" + columnToCheckForDuplicates + ")) AS uniquecount, count(" + columnToCheckForDuplicates + ") AS availcount FROM " + table + " WHERE user_type IN ('A', 'T', 'W')");
 
-			if (row != null) {
-				long uniqueEmails = data.dbase.asLong(row.get("uemail")), availableEmails = data.dbase.asLong(row.get("aemail"));
+				if (row != null) {
+					long uniqueCount = data.dbase.asLong(row.get("uniquecount")), availCount = data.dbase.asLong(row.get("availcount"));
 
-				rc = uniqueEmails != availableEmails;
-				data.logging(Log.INFO, "bc", "Duplicate check will " + (rc ? "" : "not ") + "be executed (" + uniqueEmails + " unique of " + availableEmails + " available email addresses)");
-			} else {
-				data.logging(Log.ERROR, "bc", "Failed to determinate if removal of duplicate entries is required");
+					rc = uniqueCount != availCount;
+					data.logging(Log.INFO, "bc", "Duplicate check will " + (rc ? "" : "not ") + "be executed (" + uniqueCount + " unique of " + availCount + " available recipient " + columnToCheckForDuplicates + ")");
+				} else {
+					data.logging(Log.ERROR, "bc", "Failed to determinate if removal of duplicate entries is required");
+				}
+			} catch (Exception e) {
+				data.logging(Log.ERROR, "bc", "Failed to check dups, assume true: " + e.toString(), e);
 			}
-		} catch (Exception e) {
-			data.logging(Log.ERROR, "bc", "Failed to check dups, assume true: " + e.toString(), e);
 		}
 		return rc;
 	}
@@ -680,12 +687,12 @@ public class BC {
 		return tableCreated;
 	}
 
-	static class Filler implements ResultSetExtractor<Object> {
+	static class CollectDuplicates implements ResultSetExtractor<Object> {
 		private Data data;
 		private String fquery;
 		private long count;
 
-		public Filler(Data nData, String nFquery) {
+		public CollectDuplicates(Data nData, String nFquery) {
 			data = nData;
 			fquery = nFquery;
 			count = 0;
@@ -703,12 +710,13 @@ public class BC {
 				try {
 					conn.setAutoCommit(false);
 					try (PreparedStatement prep = conn.prepareStatement(fquery)) {
+						boolean allowUnnormalizedEmails = data.company.allowUnnormalizedEmails ();
 						HashSet<String> seen = new HashSet<>();
-
+							
 						count = 0;
 						while (rset.next()) {
 							long customerID = rset.getLong(1);
-							String email = rset.getString(2);
+							String email = Str.normalizeEMail (rset.getString(2), allowUnnormalizedEmails);
 
 							if (email != null) {
 								if (seen.contains(email)) {
@@ -750,15 +758,15 @@ public class BC {
 				if (ctableCreated) {
 					try {
 						String fquery = "INSERT INTO " + ctable + " (customer_id) VALUES (?)";
-						Filler filler = new Filler(data, fquery);
+						CollectDuplicates collector = new CollectDuplicates (data, fquery);
 						String query = "SELECT customer_id, email FROM " + table + " WHERE user_type IN ('A', 'T', 'W') ORDER BY customer_id";
 						long cnt;
 
-						DBase.Retry<Long> r = data.dbase.new Retry<>("filler", data.dbase, data.dbase.jdbc(query)) {
+						DBase.Retry<Long> r = data.dbase.new Retry<>("collector", data.dbase, data.dbase.cursor(query)) {
 							@Override
 							public void execute() throws SQLException {
-								jdbc.query(query, filler);
-								priv = filler.getCount();
+								cursor.query(query, null, collector);
+								priv = collector.getCount();
 							}
 						};
 						if (data.dbase.retry(r)) {
@@ -1242,10 +1250,10 @@ public class BC {
 										       null);
 							}
 
-							DBase.Retry<Long> rt = data.dbase.new Retry<>("voucher", data.dbase, data.dbase.jdbc(voucher.query())) {
+							DBase.Retry<Long> rt = data.dbase.new Retry<>("voucher", data.dbase, data.dbase.cursor(voucher.query())) {
 								@Override
 								public void execute() throws SQLException {
-									jdbc.query(voucher.query(), voucher);
+									cursor.query(voucher.query(), null, voucher);
 									priv = voucher.getCount();
 								}
 							};
@@ -1352,13 +1360,12 @@ public class BC {
 	
 	private void processReactivation (String partFromPrepare) {
 		if ((partReactivate != null) && (partReactivate.length () > 0) && hasReactivationCandidates ()) {
-			String	query = "SELECT cust.customer_id, agn_ahv.bouncecount " +
-					"FROM " + partFromPrepare + " INNER JOIN " + data.ahvTable () + " agn_ahv ON (cust.customer_id = agn_ahv.customer_id) " +
-					"WHERE agn_ahv.reactivate IS NOT NULL AND agn_ahv.reactivate < :reactivation AND (" + partReactivate + ") " +
-					"ORDER BY agn_ahv.reactivate";
+			String	query =
+				"SELECT cust.customer_id, agn_ahv.bouncecount " +
+				"FROM " + partFromPrepare + " INNER JOIN " + data.ahvTable () + " agn_ahv ON (cust.customer_id = agn_ahv.customer_id) " +
+				"WHERE agn_ahv.reactivate IS NOT NULL AND agn_ahv.reactivate < :reactivation AND (" + partReactivate + ") " +
+				"ORDER BY agn_ahv.reactivate";
 			Date	oldest = data.ahvOldestEntryToReactivate ();
-			NamedParameterJdbcTemplate
-				jdbc = null;
 			boolean	dryrun = Str.atob (data.company.info ("ahv:dryrun"), false);
 			String	logid = dryrun ? "ahv-dryrun" : "ahv";
 			
@@ -1435,49 +1442,48 @@ public class BC {
 							"SET user_status = " + UserStatus.Active.getStatusCode() + ", user_remark = :userRemark, timestamp = CURRENT_TIMESTAMP " +
 							"WHERE customer_id = :customerID AND user_status = " + UserStatus.Bounce.getStatusCode();
 				}
-				jdbc = data.dbase.request(query);
-				if (oldest != null) {
-					rq = data.dbase.query(jdbc, query, "reactivation", data.currentSendDate, "oldest", oldest);
-				} else {
-					rq = data.dbase.query(jdbc, query, "reactivation", data.currentSendDate);
-				}
-				for (int n = 0; (n < rq.size()) && ((limit == -1) || (n < limit)); ++n) {
-					row = rq.get(n);
-
-					long customerID = data.dbase.asLong(row.get("customer_id"));
-					int bounceCount = data.dbase.asInt(row.get("bouncecount"));
-					String userRemark = data.company.info("ahv:user-remark", bounceCount);
-					int count;
-
-					if (dryrun) {
-						count = data.dbase.queryInt(updateAHV, "customerID", customerID);
+				try (DBase.With with = data.dbase.with ()) {
+					if (oldest != null) {
+						rq = data.dbase.query(with.cursor (), query, "reactivation", data.currentSendDate, "oldest", oldest);
 					} else {
-						count = data.dbase.update(updateAHV, "customerID", customerID);
+						rq = data.dbase.query(with.cursor (), query, "reactivation", data.currentSendDate);
 					}
-					if (count == 1) {
-						if (userRemark == null) {
-							userRemark = bounceCount + ". Hardbounce Validation";
-						}
+					for (int n = 0; (n < rq.size()) && ((limit == -1) || (n < limit)); ++n) {
+						row = rq.get(n);
+
+						long customerID = data.dbase.asLong(row.get("customer_id"));
+						int bounceCount = data.dbase.asInt(row.get("bouncecount"));
+						String userRemark = data.company.info("ahv:user-remark", bounceCount);
+						int count;
+
 						if (dryrun) {
-							count = data.dbase.queryInt(updateBinding, "customerID", customerID);
+							count = data.dbase.queryInt(updateAHV, "customerID", customerID);
 						} else {
-							count = data.dbase.update(updateBinding, "userRemark", userRemark, "customerID", customerID);
+							count = data.dbase.update(updateAHV, "customerID", customerID);
 						}
-						if (count > 0) {
-							data.logging(Log.DEBUG, logid, "CustomerID = " + customerID + " reactivated after " + bounceCount + " bounce" + Log.exts(bounceCount));
-							++reactivated;
+						if (count == 1) {
+							if (userRemark == null) {
+								userRemark = bounceCount + ". Hardbounce Validation";
+							}
+							if (dryrun) {
+								count = data.dbase.queryInt(updateBinding, "customerID", customerID);
+							} else {
+								count = data.dbase.update(updateBinding, "userRemark", userRemark, "customerID", customerID);
+							}
+							if (count > 0) {
+								data.logging(Log.DEBUG, logid, "CustomerID = " + customerID + " reactivated after " + bounceCount + " bounce" + Log.exts(bounceCount));
+								++reactivated;
+							} else {
+								data.logging(Log.WARNING, logid, "Even as customerID = " + customerID + " should be reactivated, updated leads to " + count + " results");
+							}
 						} else {
-							data.logging(Log.WARNING, logid, "Even as customerID = " + customerID + " should be reactivated, updated leads to " + count + " results");
+							data.logging(Log.WARNING, logid, "Update of AHV for customerID = " + customerID + " leads to " + count + " updates, not one as expected");
 						}
-					} else {
-						data.logging(Log.WARNING, logid, "Update of AHV for customerID = " + customerID + " leads to " + count + " updates, not one as expected");
 					}
+					data.logging(Log.INFO, logid, "Reactivated " + reactivated + " bounce" + Log.exts(reactivated));
 				}
-				data.logging(Log.INFO, logid, "Reactivated " + reactivated + " bounce" + Log.exts(reactivated));
 			} catch (Exception e) {
 				data.logging(Log.ERROR, logid, "Failed to reactive bounces: " + e.toString(), e);
-			} finally {
-				data.dbase.release(jdbc, query);
 			}
 		}
 	}

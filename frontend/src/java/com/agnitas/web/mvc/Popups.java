@@ -48,6 +48,23 @@ public interface Popups extends Serializable {
      * @return self.
      */
     Popups warning(Message popup);
+    
+    /**
+     * Add a new translatable warning popup.
+     *
+     * @param code a key of the translatable message.
+     * @param arguments an arguments for the translatable message.
+     * @return self.
+     */
+    Popups permanentWarning(String code, Object ...arguments);
+    
+    /**
+     * Add a new permanent warning popup.
+     *
+     * @param popup a popup content representation.
+     * @return self.
+     */
+    Popups permanentWarning(Message popup);
 
     /**
      * Add a new translatable warning popup.

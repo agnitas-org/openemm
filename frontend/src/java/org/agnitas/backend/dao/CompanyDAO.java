@@ -42,6 +42,7 @@ public class CompanyDAO {
 	private String		token;
 	private Map <String, String>
 				info;
+	private Set <String>	permissions;
 	private long		companyBaseID;
 		
 	static private Pattern	searchBase = Pattern.compile ("from .*cust(omer_?)?([0-9]+)_(master_)?tbl", Pattern.CASE_INSENSITIVE);
@@ -50,7 +51,7 @@ public class CompanyDAO {
 		Map <String, Object>		row;
 
 		try (DBase.With with = dbase.with ()) {
-			row = dbase.querys (with.jdbc (),
+			row = dbase.querys (with.cursor (),
 					    "SELECT company_id, shortname, mailtracking, secret_key, enabled_uid_version, " +
 					    "       rdir_domain, mailloop_domain, status, mails_per_day, priority_count, " +
 					    "       company_token " +
@@ -68,9 +69,11 @@ public class CompanyDAO {
 				mailsPerDay = dbase.asString (row.get ("mails_per_day"));
 				priorityCount = dbase.asInt (row.get ("priority_count"));
 				token = dbase.asString (row.get ("company_token"));
+				//
+				// company_info_tbl
 				info = new HashMap <> ();
 				Set <String>	seenByHost = new HashSet <> ();
-				rq = dbase.query (with.jdbc (),
+				rq = dbase.query (with.cursor (),
 						  "SELECT company_id, cname, cvalue, hostname FROM company_info_tbl " +
 						  "WHERE company_id IN (0, :companyID) " + 
 						  "ORDER BY company_id",
@@ -94,14 +97,29 @@ public class CompanyDAO {
 					}
 				}
 				mailTrackingExtended = mailTracking && Str.atob (info.get ("mailtrack-extended"), false);
-
+				//
+				// company_permission_tbl
+				permissions = new HashSet <> ();
+				rq = dbase.query (with.cursor (),
+						  "SELECT permission_name " +
+						  "FROM company_permission_tbl " +
+						  "WHERE company_id IN (0, " + companyID + ")");
+				for (int n = 0; n < rq.size (); ++n) {
+					String	permissionName = dbase.asString (rq.get (n).get ("permission_name"));
+					
+					if (permissionName != null) {
+						permissions.add (permissionName);
+					}
+				}
+				//
+				// find base company ID
 				companyBaseID = companyID;
 
 				String	table = "customer_" + companyID + "_tbl";
 				String	typ = null;
 				
 				if (dbase.isOracle ()) {
-					rq = dbase.query (with.jdbc (),
+					rq = dbase.query (with.cursor (),
 							  "SELECT object_type FROM user_objects WHERE object_name = :tableName",
 							  "tableName", table);
 					for (int n = 0; n < rq.size (); ++n) {
@@ -109,7 +127,7 @@ public class CompanyDAO {
 						typ = dbase.asString (row.get ("object_type"));
 					}
 				} else {
-					if (dbase.queryInt (with.jdbc (),
+					if (dbase.queryInt (with.cursor (),
 							    "SELECT count(*) cnt FROM information_schema.views WHERE TABLE_SCHEMA = (select SCHEMA()) and table_name = :tableName",
 							    "tableName", table) > 0) {
 						typ = "VIEW";
@@ -123,7 +141,7 @@ public class CompanyDAO {
 					} else {
 						query = "SELECT VIEW_DEFINITION FROM information_schema.VIEWS WHERE TABLE_SCHEMA = (select SCHEMA()) AND table_name = :tableName";
 					}
-					text = dbase.queryString (with.jdbc (),
+					text = dbase.queryString (with.cursor (),
 								  query,
 								  "tableName", table);
 					if (text != null) {
@@ -135,7 +153,7 @@ public class CompanyDAO {
 					}
 				}
 				if (companyBaseID != companyID) {
-					row = dbase.querys (with.jdbc (),
+					row = dbase.querys (with.cursor (),
 							    "SELECT status " +
 							    "FROM company_tbl " +
 							    "WHERE company_id = :companyID",
@@ -190,6 +208,9 @@ public class CompanyDAO {
 	}
 	public Map <String, String> info () {
 		return info;
+	}
+	public Set <String> permissions () {
+		return permissions;
 	}
 	public long companyBaseID () {
 		return companyBaseID;

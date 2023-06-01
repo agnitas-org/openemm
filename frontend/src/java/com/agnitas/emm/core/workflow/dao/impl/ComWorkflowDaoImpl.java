@@ -22,8 +22,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
-import com.agnitas.beans.ComAdmin;
 import org.agnitas.beans.CompaniesConstraints;
 import org.agnitas.dao.impl.BaseDaoImpl;
 import org.agnitas.dao.impl.mapper.IntegerRowMapper;
@@ -39,6 +39,7 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.jdbc.core.RowMapper;
 
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.Mailing;
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.emm.core.target.service.ComTargetService;
@@ -53,11 +54,10 @@ import com.agnitas.emm.core.workflow.dao.ComWorkflowDao;
 
 public class ComWorkflowDaoImpl extends BaseDaoImpl implements ComWorkflowDao {
 	
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(ComWorkflowDaoImpl.class);
+	private static final Logger logger = LogManager.getLogger(ComWorkflowDaoImpl.class);
 
     protected ComTargetService targetService;
-	
+
     @Override
     public boolean exists(int workflowId, @VelocityCheck int companyId) {
         String sqlGetCount = "SELECT COUNT(*) FROM workflow_tbl WHERE workflow_id = ? AND company_id = ?";
@@ -216,7 +216,9 @@ public class ComWorkflowDaoImpl extends BaseDaoImpl implements ComWorkflowDao {
     @Override
     public void deleteDependencies(@VelocityCheck int companyId, int workflowId, boolean clearTargetConditions) {
         if (companyId > 0 && workflowId > 0) {
-            if(clearTargetConditions) {
+            removeWorkflowLinkForMailings(companyId, workflowId);
+            
+            if (clearTargetConditions) {
                 String sqlDeleteAll = "DELETE FROM workflow_dependency_tbl WHERE company_id = ? AND workflow_id = ?";
     
                 update(logger, sqlDeleteAll, companyId, workflowId);
@@ -251,6 +253,7 @@ public class ComWorkflowDaoImpl extends BaseDaoImpl implements ComWorkflowDao {
 
             if (CollectionUtils.isNotEmpty(dependencies)) {
                 List<Object[]> sqlParametersList = new ArrayList<>(dependencies.size());
+
                 for (WorkflowDependency dependency : dependencies) {
                     sqlParametersList.add(new Object[]{
                         companyId,
@@ -260,22 +263,53 @@ public class ComWorkflowDaoImpl extends BaseDaoImpl implements ComWorkflowDao {
                         dependency.getEntityName()
                     });
                 }
+
                 batchupdate(logger, sqlInsertNew, sqlParametersList);
+                addWorkflowLinkForDependencies(dependencies, workflowId, companyId);
             }
         }
     }
-    
-    @Override
-    public void addDependency(@VelocityCheck int companyId, int workflowId, WorkflowDependency dependency) {
-        String sqlInsertNew = "INSERT INTO workflow_dependency_tbl (company_id, workflow_id, type, entity_id, entity_name) VALUES (?, ?, ?, ?, ?)";
 
+    private void addWorkflowLinkForDependencies(Set<WorkflowDependency> dependencies, int workflowId, int companyId) {
+        String mailingIds = dependencies.stream()
+                .filter(d -> WorkflowDependencyType.MAILING_DELIVERY.equals(d.getType()))
+                .map(d -> String.valueOf(d.getEntityId()))
+                .collect(Collectors.joining(","));
+
+        if (!mailingIds.isBlank()) {
+            String query = "UPDATE mailing_tbl SET workflow_id = ? WHERE company_id = ? AND mailing_id IN (" + mailingIds + ")";
+            update(logger, query, workflowId, companyId);
+        }
+    }
+
+    private void removeWorkflowLinkForMailings(int companyId, int workflowId) {
         if (companyId > 0 && workflowId > 0) {
-            update(logger, sqlInsertNew, companyId, workflowId, dependency.getType().getId(), dependency.getEntityId(), dependency.getEntityName());
+        	List<Integer> referencedMailingIds = select(logger, "SELECT entity_id FROM workflow_dependency_tbl WHERE company_id = ? AND workflow_id = ? AND type = ?",
+        		IntegerRowMapper.INSTANCE, companyId, workflowId, WorkflowDependencyType.MAILING_DELIVERY.getId());
+        	
+        	for (Integer mailingID : referencedMailingIds) {
+            	// Detect if this mailing is still referenced by some other workflow
+            	Integer otherReferencedWorkflowId = select(logger, "SELECT MAX(workflow_id) FROM workflow_dependency_tbl WHERE company_id = ? AND entity_id = ? AND type = ? AND workflow_id != ?",
+            		Integer.class, companyId, mailingID, WorkflowDependencyType.MAILING_DELIVERY.getId(), workflowId);
+            	if (otherReferencedWorkflowId != null) {
+                    update(logger, "UPDATE mailing_tbl SET workflow_id = ? WHERE company_id = ? AND mailing_id = ?", otherReferencedWorkflowId, companyId, mailingID);
+            	} else {
+                    update(logger, "UPDATE mailing_tbl SET workflow_id = 0 WHERE company_id = ? AND mailing_id = ?", companyId, mailingID);
+            	}
+        	}
         }
     }
 
     @Override
-    public List<Workflow> getWorkflowsOverview(ComAdmin admin) {
+    public void addDependency(@VelocityCheck int companyId, int workflowId, WorkflowDependency dependency) {
+        if (companyId > 0 && workflowId > 0) {
+            update(logger, "INSERT INTO workflow_dependency_tbl (company_id, workflow_id, type, entity_id, entity_name) VALUES (?, ?, ?, ?, ?)",
+            	companyId, workflowId, dependency.getType().getId(), dependency.getEntityId(), dependency.getEntityName());
+        }
+    }
+
+    @Override
+    public List<Workflow> getWorkflowsOverview(Admin admin) {
         List<Object> parameters = new ArrayList<>();
 		String query = "SELECT wf.workflow_id, wf.company_id, wf.shortname, wf.description, wf.status, wf.editor_position_left," +
 				" wf.editor_position_top, wf.is_inner, wf.general_start_date, wf.general_end_date, wf.end_type, wf.general_start_reaction, " +
@@ -299,7 +333,7 @@ public class ComWorkflowDaoImpl extends BaseDaoImpl implements ComWorkflowDao {
 		return select(logger, query, new WorkflowRowMapper(), parameters.toArray());
     }
 
-    protected String getWorkflowOverviewAdditionalRestrictions(ComAdmin admin, List<Object> params) {
+    protected String getWorkflowOverviewAdditionalRestrictions(Admin admin, List<Object> params) {
         return StringUtils.EMPTY;
     }
 
@@ -464,46 +498,32 @@ public class ComWorkflowDaoImpl extends BaseDaoImpl implements ComWorkflowDao {
 
     @Override
     public List<Workflow> getActiveWorkflowsTrackingProfileField(String column, @VelocityCheck int companyId) {
-        if (StringUtils.isBlank(column) || companyId <= 0) {
-            return Collections.emptyList();
-        }
-
-        String sqlGetDependentWorkflows = "SELECT w.* FROM workflow_tbl w " +
-            "JOIN workflow_dependency_tbl dep ON dep.workflow_id = w.workflow_id AND dep.company_id = w.company_id " +
-            "WHERE w.company_id = ? AND w.status IN (?, ?) AND dep.type = ? AND dep.entity_name = ? " +
-            "ORDER BY w.workflow_id DESC";
-
-        Object[] sqlParameters = new Object[] {
-            companyId,
-            WorkflowStatus.STATUS_ACTIVE.getId(),
-            WorkflowStatus.STATUS_TESTING.getId(),
-            WorkflowDependencyType.PROFILE_FIELD_HISTORY.getId(),
-            column
-        };
-
-        return select(logger, sqlGetDependentWorkflows, new WorkflowRowMapper(), sqlParameters);
+        return listActiveWorkflowsUsingDependencyName(column, companyId, WorkflowDependencyType.PROFILE_FIELD_HISTORY);
     }
 
     @Override
     public List<Workflow> getActiveWorkflowsUsingProfileField(String column, @VelocityCheck int companyId) {
-        if (StringUtils.isBlank(column) || companyId <= 0) {
+        return listActiveWorkflowsUsingDependencyName(column, companyId,
+                WorkflowDependencyType.PROFILE_FIELD, WorkflowDependencyType.PROFILE_FIELD_HISTORY);
+    }
+
+    private List<Workflow> listActiveWorkflowsUsingDependencyName(String name, int companyId, WorkflowDependencyType... types) {
+        if (StringUtils.isBlank(name) || companyId <= 0) {
             return Collections.emptyList();
         }
+        List<Object> params = new ArrayList<>(6);
+        params.add(companyId);
+        params.add(WorkflowStatus.STATUS_ACTIVE.getId());
+        params.add(WorkflowStatus.STATUS_TESTING.getId());
+        List.of(types).forEach(type -> params.add(type.getId()));
+        params.add(name);
 
-        String sqlGetDependentWorkflows = "SELECT w.* FROM workflow_tbl w " +
-                "JOIN workflow_dependency_tbl dep ON dep.workflow_id = w.workflow_id AND dep.company_id = w.company_id " +
-                "WHERE w.company_id = ? AND w.status IN (?, ?) AND dep.type = ? AND dep.entity_name = ? " +
-                "ORDER BY w.workflow_id DESC";
-
-        Object[] sqlParameters = new Object[] {
-                companyId,
-                WorkflowStatus.STATUS_ACTIVE.getId(),
-                WorkflowStatus.STATUS_TESTING.getId(),
-                WorkflowDependencyType.PROFILE_FIELD.getId(),
-                column
-        };
-
-        return select(logger, sqlGetDependentWorkflows, new WorkflowRowMapper(), sqlParameters);
+        return select(logger, "SELECT w.* FROM workflow_tbl w " +
+                "JOIN workflow_dependency_tbl d ON d.workflow_id = w.workflow_id AND d.company_id = w.company_id " +
+                "WHERE w.company_id = ? AND w.status IN (?, ?) " +
+                (types.length > 0 ? "AND d.type IN (" + StringUtils.repeat("?",  ", ", types.length) + ") " : "") +
+                "AND d.entity_name = ? " +
+                "ORDER BY w.workflow_id DESC", new WorkflowRowMapper(), params.toArray());
     }
 
     @Override

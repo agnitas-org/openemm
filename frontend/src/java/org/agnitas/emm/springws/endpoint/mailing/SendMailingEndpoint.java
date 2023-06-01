@@ -18,9 +18,11 @@ import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.mailing.service.MailingModel;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.springws.endpoint.BaseEndpoint;
-import org.agnitas.emm.springws.endpoint.Utils;
+import org.agnitas.emm.springws.endpoint.Namespaces;
 import org.agnitas.emm.springws.jaxb.SendMailingRequest;
 import org.agnitas.emm.springws.jaxb.SendMailingResponse;
+import org.agnitas.emm.springws.util.SecurityContextAccess;
+import org.agnitas.emm.springws.util.UserActivityLogAccess;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.ws.server.endpoint.annotation.Endpoint;
 import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
@@ -34,19 +36,23 @@ public class SendMailingEndpoint extends BaseEndpoint {
 
 	private MailingService mailingService;
 	private ConfigService configService;
+	private SecurityContextAccess securityContextAccess;
+	private UserActivityLogAccess userActivityLogAccess;
 
-	public SendMailingEndpoint(@Qualifier("MailingService") MailingService mailingService, ConfigService configService) {
+	public SendMailingEndpoint(@Qualifier("MailingService") MailingService mailingService, ConfigService configService, final SecurityContextAccess securityContextAccess, final UserActivityLogAccess userActivityLogAccess) {
 		this.mailingService = mailingService;
 		this.configService = configService;
+		this.securityContextAccess = securityContextAccess;
+		this.userActivityLogAccess = userActivityLogAccess;
 	}
 
-	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "SendMailingRequest")
+	@PayloadRoot(namespace = Namespaces.AGNITAS_ORG, localPart = "SendMailingRequest")
 	public @ResponsePayload SendMailingResponse sendMailing(@RequestPayload SendMailingRequest request) throws Exception {
-		if (Utils.getUserCompany() == 1 && !configService.getBooleanValue(ConfigValue.System_License_AllowMailingSendForMasterCompany)) {
+		if (this.securityContextAccess.getWebserviceUserCompanyId() == 1 && !configService.getBooleanValue(ConfigValue.System_License_AllowMailingSendForMasterCompany)) {
     		throw new Exception("error.company.mailings.sent.forbidden");
     	} else {
 			MailingModel model = new MailingModel();
-			model.setCompanyId(Utils.getUserCompany());
+			model.setCompanyId(this.securityContextAccess.getWebserviceUserCompanyId());
 			model.setMailingId(request.getMailingID());
 			model.setMaildropStatus(request.getRecipientsType());
 			model.setSendDate(request.getSendDate());
@@ -55,7 +61,7 @@ public class SendMailingEndpoint extends BaseEndpoint {
 	
 			List<UserAction> userActions = new ArrayList<>();
 			mailingService.sendMailing(model, userActions);
-			Utils.writeLog(userActivityLogService, userActions);
+			this.userActivityLogAccess.writeLog(userActions);
 	
 			return new SendMailingResponse();
     	}

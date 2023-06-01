@@ -32,7 +32,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.lowagie.text.DocumentException;
 import com.lowagie.text.Image;
 import com.lowagie.text.PageSize;
@@ -53,11 +53,11 @@ public class GenerationPDFService {
             "\twidth: 100% !important;\n" +
             "}\n";
 
-    public File generatePDF(String wkhtmltopdf, String url, String title, ComAdmin admin, String windowStatusForWaiting, String orientation, String footerTitleMessageKey) {
+    public File generatePDF(String wkhtmltopdf, String url, String title, Admin admin, String windowStatusForWaiting, String orientation, String footerTitleMessageKey) {
     	return generatePDF(wkhtmltopdf, url, title, admin, windowStatusForWaiting, orientation, footerTitleMessageKey, USER_STYLESHEET_CONTENT);
 	}
     
-    public File generatePDF(String wkhtmltopdf, String url, String title, ComAdmin admin, String windowStatusForWaiting, String orientation, String footerTitleMessageKey, String customCssStyle) {
+    public File generatePDF(String wkhtmltopdf, String url, String title, Admin admin, String windowStatusForWaiting, String orientation, String footerTitleMessageKey, String customCssStyle) {
     	if (StringUtils.isBlank(wkhtmltopdf)) {
         	logger.error("Missing path to wkhtmltopdf tool");
         } else if (!new File(wkhtmltopdf).exists()) {
@@ -171,7 +171,7 @@ public class GenerationPDFService {
             // draw additional elements to PDF (agnitas logo, footer)
             File finalPdfFile = drawAdditionalElements(title, admin, pdfInitialFile, orientation, footerTitleMessageKey);
 
-        	if (pdfInitialFile != null && pdfInitialFile.exists()) {
+        	if (pdfInitialFile.exists()) {
         		try {
 					pdfInitialFile.delete();
 				} catch (Exception e) {
@@ -179,7 +179,7 @@ public class GenerationPDFService {
 				}
         	}
         	
-            if (stylesheetFile != null && stylesheetFile.exists()) {
+            if (stylesheetFile.exists()) {
                 try {
                     stylesheetFile.delete();
                 } catch (Exception e) {
@@ -204,7 +204,7 @@ public class GenerationPDFService {
      * @throws IOException
      * @throws DocumentException
      */
-    private File drawAdditionalElements(String title, ComAdmin admin, File pdfInitialFile, String orientation,
+    private File drawAdditionalElements(String title, Admin admin, File pdfInitialFile, String orientation,
                                         String footerTitleMessageKey) throws IOException, DocumentException {
         File finalFile = File.createTempFile("preview_final_", ".pdf", AgnUtils.createDirectory(PREVIEW_FILE_DIRECTORY));
         PdfReader pdfReader = new PdfReader(pdfInitialFile.getAbsolutePath());

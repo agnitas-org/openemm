@@ -13,8 +13,8 @@ package com.agnitas.emm.core.workflow.dao;
 import java.util.Date;
 import java.util.List;
 
+import com.agnitas.beans.ComTrackableLink;
 import org.agnitas.beans.CompaniesConstraints;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.emm.core.workflow.beans.ComWorkflowReaction;
 import com.agnitas.emm.core.workflow.beans.WorkflowActionMailingDeferral;
@@ -30,9 +30,9 @@ public interface ComWorkflowReactionDao {
 	 * @param companyId an identifier of a company that owns referenced reaction.
 	 * @return whether ({@code true}) or not ({@code false}) the referenced reaction exists.
 	 */
-	boolean exists(int reactionId, @VelocityCheck int companyId);
+	boolean exists(int reactionId, int companyId);
 
-	ComWorkflowReaction getReaction(int reactionId, @VelocityCheck int companyId);
+	ComWorkflowReaction getReaction(int reactionId, int companyId);
 
 	List<ComWorkflowReaction> getReactionsToCheck(CompaniesConstraints constraints);
 
@@ -50,7 +50,7 @@ public interface ComWorkflowReactionDao {
 
     void saveReaction(ComWorkflowReaction reaction);
 
-    void saveReactionStepDeclarations(List<WorkflowReactionStepDeclaration> declarations, int reactionId, @VelocityCheck int companyId);
+    void saveReactionStepDeclarations(List<WorkflowReactionStepDeclaration> declarations, int reactionId, int companyId);
 
 	/**
 	 * See {@link #deactivateReaction(int, int)} and {@link #getReactionId(int, int)}.
@@ -58,7 +58,7 @@ public interface ComWorkflowReactionDao {
 	 * @param workflowId an identifier of the action-based workflow whose trigger should be deactivated.
 	 * @param companyId an identifier of a company that owns referenced workflow.
 	 */
-	void deactivateWorkflowReactions(int workflowId, @VelocityCheck int companyId);
+	void deactivateWorkflowReactions(int workflowId, int companyId);
 
 	/**
 	 * Mark the reaction as inactive and clear all logs (except the entries for trigger-step).
@@ -66,7 +66,7 @@ public interface ComWorkflowReactionDao {
 	 * @param reactionId an identifier of the reaction to be deactivated.
 	 * @param companyId an identifier of a company that owns referenced reaction.
 	 */
-	void deactivateReaction(int reactionId, @VelocityCheck int companyId);
+	void deactivateReaction(int reactionId, int companyId);
 
 	/**
 	 * See {@link #deleteReaction(int, int)} and {@link #getReactionId(int, int)}.
@@ -74,14 +74,14 @@ public interface ComWorkflowReactionDao {
 	 * @param workflowId an identifier of the action-based workflow whose trigger should be deleted.
 	 * @param companyId an identifier of a company that owns referenced workflow.
 	 */
-	void deleteWorkflowReactions(int workflowId, @VelocityCheck int companyId);
+	void deleteWorkflowReactions(int workflowId, int companyId);
 
 	/**
 	 * Delete all the data related to reactions within specified company.
 	 *
 	 * @param companyId an identifier of a company that owns data to be deleted.
 	 */
-	void deleteReactions(@VelocityCheck int companyId);
+	void deleteReactions(int companyId);
 
 	/**
 	 * Delete reaction and all connected data (declarations, logs, etc).
@@ -89,7 +89,7 @@ public interface ComWorkflowReactionDao {
 	 * @param reactionId an identifier of the reaction to be deleted.
 	 * @param companyId an identifier of a company that owns referenced reaction.
 	 */
-	void deleteReaction(int reactionId, @VelocityCheck int companyId);
+	void deleteReaction(int reactionId, int companyId);
 
 	List<Integer> getClickedRecipients(ComWorkflowReaction reaction, boolean excludeLoggedReactions);
 
@@ -164,7 +164,7 @@ public interface ComWorkflowReactionDao {
 	 * For legacy mode only (see {@link ComWorkflowReaction#isLegacyMode()}).
 	 */
 	@Deprecated
-	void addDeferredActionMailings(int reactionId, int mailingId, List<Integer> customersId, Date sendDate, @VelocityCheck int companyId);
+	void addDeferredActionMailings(int reactionId, int mailingId, List<Integer> customersId, Date sendDate, int companyId);
 
 	/**
 	 * For legacy mode only (see {@link ComWorkflowReaction#isLegacyMode()}).
@@ -178,5 +178,7 @@ public interface ComWorkflowReactionDao {
 	@Deprecated
 	void markDeferredActionMailingsAsSent(List<Integer> deferralsIds);
 
-    int getReactionId(int workflowId, @VelocityCheck int companyId);
+    int getReactionId(int workflowId, int companyId);
+
+    boolean isLinkUsedInActiveWorkflow(ComTrackableLink linkId);
 }

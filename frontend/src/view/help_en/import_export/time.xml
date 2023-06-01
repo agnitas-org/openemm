@@ -1,4 +1,0 @@
-<HelpBalloon>
-	<title>Time</title>
-	<content><![CDATA[The time set gives the earliest processing time. Because of possible parallel import processes it may come to delays of maximal 30 minutes.]]></content>
-</HelpBalloon>

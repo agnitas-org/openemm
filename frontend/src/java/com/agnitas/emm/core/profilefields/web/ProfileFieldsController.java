@@ -18,6 +18,9 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 
+import com.agnitas.emm.core.objectusage.common.ObjectUsage;
+import com.agnitas.web.mvc.XssCheckAware;
+import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.useractivitylog.UserAction;
@@ -26,9 +29,7 @@ import org.agnitas.service.WebStorage;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.DbColumnType;
-import org.agnitas.util.GuiConstants;
 import org.agnitas.web.forms.FormUtils;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -45,8 +46,9 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.ProfileField;
+import com.agnitas.beans.ProfileFieldMode;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.objectusage.common.ObjectUsages;
 import com.agnitas.emm.core.objectusage.service.ObjectUsageService;
@@ -58,26 +60,27 @@ import com.agnitas.emm.core.recipient.RecipientProfileHistoryUtil;
 import com.agnitas.service.ComWebStorage;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.perm.annotations.PermissionMapping;
+import static com.agnitas.emm.core.Permission.RECIPIENT_PROFILEFIELD_HTML_ALLOWED;
+import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
 
 @Controller
 @PermissionMapping("profiledb")
-public class ProfileFieldsController {
+public class ProfileFieldsController implements XssCheckAware {
+
     private static final Logger logger = LogManager.getLogger(ProfileFieldsController.class);
 
     private static final String INVALID_DEFAULT_VALUE_ERROR_MSG = "error.profiledb.invalidDefaultValue";
     
-    private ProfileFieldService profileFieldService;
-    private WebStorage webStorage;
-    private ConversionService conversionService;
-    private ConfigService configService;
-    private ProfileFieldValidationService validationService;
-    private UserActivityLogService userActivityLogService;
-    private ObjectUsageService objectUsageService;
+    private final ProfileFieldService profileFieldService;
+    private final WebStorage webStorage;
+    private final ConversionService conversionService;
+    private final ConfigService configService;
+    private final ProfileFieldValidationService validationService;
+    private final UserActivityLogService userActivityLogService;
+    private final ObjectUsageService objectUsageService;
     
-    public ProfileFieldsController(ProfileFieldService profileFieldService, WebStorage webStorage,
-                                   ConversionService conversionService, ConfigService configService,
-                                   ProfileFieldValidationService validationService,
-                                   UserActivityLogService userActivityLogService, final ObjectUsageService objectUsageService) {
+    public ProfileFieldsController(ProfileFieldService profileFieldService, WebStorage webStorage, ConversionService conversionService, ConfigService configService,
+                                   ProfileFieldValidationService validationService, UserActivityLogService userActivityLogService, ObjectUsageService objectUsageService) {
         this.profileFieldService = profileFieldService;
         this.webStorage = webStorage;
         this.conversionService = conversionService;
@@ -88,12 +91,25 @@ public class ProfileFieldsController {
     }
 
     @RequestMapping("/profiledb.action")
-    public String list(ComAdmin admin, @ModelAttribute("profileForm") ProfileFieldForm profileForm, Model model, Popups popups) {
+    public String list(@ModelAttribute("profileForm") ProfileFieldForm profileForm, Admin admin, Model model, Popups popups,
+                       @RequestParam(value = "syncSorting", required = false) boolean syncSorting) throws Exception {
     	FormUtils.syncNumberOfRows(webStorage, ComWebStorage.PROFILE_FIELD_OVERVIEW, profileForm);
+
+    	if (syncSorting) {
+            FormUtils.syncSortingParams(webStorage, ComWebStorage.PROFILE_FIELD_OVERVIEW, profileForm);
+        }
 
     	int companyId = admin.getCompanyID();
 
-        model.addAttribute("columnInfo", profileFieldService.getSortedColumnInfo(companyId));
+        PaginatedListImpl<ProfileField> profileFields = profileFieldService.getPaginatedFieldsList(
+                companyId,
+                profileForm.getSort(),
+                profileForm.getDir(),
+                profileForm.getPage(),
+                profileForm.getNumberOfRows()
+        );
+
+        model.addAttribute("profileFields", profileFields);
         model.addAttribute("fieldsWithIndividualSortOrder", profileFieldService.getFieldWithIndividualSortOrder(companyId, admin.getAdminID()));
 
         if (!validationService.mayAddNewColumn(companyId)) {
@@ -111,24 +127,18 @@ public class ProfileFieldsController {
     }
 
     @RequestMapping("/profiledb/{fieldname}/view.action")
-    public String view(ComAdmin admin, @PathVariable("fieldname") String fieldName, ModelMap model) {
+    public String view(Admin admin, @PathVariable("fieldname") String fieldName, ModelMap model) {
         final int companyId = admin.getCompanyID();
         ProfileField field = profileFieldService.getProfileField(companyId, fieldName);
 
         if (!model.containsAttribute("profileForm")) {
-            ProfileFieldForm form;
-
             if (field == null) {
                 return "redirect:/profiledb/new.action";
             }
 
-            form = conversionService.convert(field, ProfileFieldForm.class);
+            ProfileFieldForm form = conversionService.convert(field, ProfileFieldForm.class);
             form.setFieldname(fieldName);
             prepareDefaultValue(form, admin.getLocale());
-
-            if (field.getHistorize()) {
-                form.setDependentWorkflowName(profileFieldService.getTrackingDependentWorkflows(companyId, fieldName));
-            }
 
             model.addAttribute("profileForm", form);
         }
@@ -160,7 +170,7 @@ public class ProfileFieldsController {
     }
 
     @RequestMapping("/profiledb/{fieldname}/dependents.action")
-    public String dependents(ComAdmin admin, @PathVariable("fieldname") String fieldName, Model model, Popups popups) {
+    public String dependents(Admin admin, @PathVariable("fieldname") String fieldName, Model model, Popups popups) {
         int companyId = admin.getCompanyID();
 
         ProfileField field = profileFieldService.getProfileField(companyId, fieldName);
@@ -176,7 +186,7 @@ public class ProfileFieldsController {
     }
 
     @PostMapping("/profiledb/save.action")
-    public String save(ComAdmin admin, @ModelAttribute("profileForm") ProfileFieldForm profileForm, Popups popups) {
+    public String save(Admin admin, @ModelAttribute("profileForm") ProfileFieldForm profileForm, Popups popups) {
         if (StringUtils.isBlank(profileForm.getFieldname())) {
             popups.alert("error.profiledb.invalid_fieldname", "''");
         } else if (profileFieldService.isReservedKeyWord(profileForm.getFieldname())) {
@@ -195,7 +205,7 @@ public class ProfileFieldsController {
             if (!popups.hasAlertPopups()) {
                 if (isNewField ? createField(admin, profileForm) : updateField(admin, field, profileForm)) {
                     popups.success("default.changes_saved");
-                    return "redirect:/profiledb.action";
+                    return "redirect:/profiledb.action?syncSorting=true";
                 } else {
                     popups.alert("Error");
                 }
@@ -206,7 +216,7 @@ public class ProfileFieldsController {
     }
 
     @RequestMapping("/profiledb/saveWizardField.action")
-    public String saveWizardField(ComAdmin admin, @ModelAttribute("profileForm") ProfileFieldForm profileForm, RedirectAttributes model, Popups popups) {
+    public String saveWizardField(Admin admin, @ModelAttribute("profileForm") ProfileFieldForm profileForm, RedirectAttributes model, Popups popups) {
         String tile = save(admin, profileForm, popups);
 
         if (tile.equals("messages")) {
@@ -218,46 +228,19 @@ public class ProfileFieldsController {
         return "redirect:/profiledb/newWizardField.action";
     }
 
-    @RequestMapping("/profiledb/{fieldname}/confirmDelete.action")
-    public String confirmDelete(ComAdmin admin, @PathVariable("fieldname") String fieldName, Model model, final Popups popups, @RequestParam(name="from_list_page", required=false) final boolean fromListPage) {
-    	final int companyId = admin.getCompanyID();
-        
-        final ObjectUsages usages = this.objectUsageService.listUsageOfProfileFieldByDatabaseName(companyId, fieldName);
-        if(!usages.isEmpty()) {
-        	ObjectUsagesToPopups.objectUsagesToPopups("error.profilefield.used", "error.profilefield.used.withMore", usages, popups, admin.getLocale());
-        	
-        	return fromListPage
-        			? "redirect:/profiledb.action"
-        			: String.format("redirect:/profiledb/%s/view.action", fieldName);
-        } else {
-        	String result = "settings_profile_field_delete_ajax";
-	        List<String> dependentWorkflows = profileFieldService.getDependentWorkflows(companyId, fieldName);
-	
-	        if(!usages.isEmpty()) {
-	        	model.addAttribute("objectUsageMessageKey", "");
-	        	model.addAttribute("objectUsages", usages.mappedByType());
-	        	
-	        	result = "messages";
-	        }
-	
-	        if (CollectionUtils.isNotEmpty(dependentWorkflows)) {
-	            model.addAttribute("affectedDependentWorkflowsMessageKey", "error.profiledb.dependency.workflow");
-	            model.addAttribute("affectedDependentWorkflowsMessageType", GuiConstants.MESSAGE_TYPE_ALERT);
-	            model.addAttribute("affectedDependentWorkflows", dependentWorkflows);
-	
-	            result = "messages";
-	        }
-	
-	        if (CollectionUtils.isEmpty(dependentWorkflows)) {
-	            model.addAttribute("fieldname", fieldName);
-	        }
-	
-	        return result;
+    @RequestMapping("/profiledb/{column}/confirmDelete.action")
+    public String confirmDelete(Admin admin, @PathVariable String column, final Popups popups) {
+        ObjectUsages usages = objectUsageService.listUsageOfProfileFieldByDatabaseName(admin.getCompanyID(), column);
+        if (!usages.isEmpty()) {
+        	ObjectUsagesToPopups.objectUsagesToPopups(
+        	        "error.profilefield.used", "error.profilefield.used.withMore", usages, popups, admin.getLocale());
+        	return MESSAGES_VIEW;
         }
+        return "settings_profile_field_delete_ajax";
     }
 
     @RequestMapping(value = "/profiledb/{fieldname}/delete.action", method = {RequestMethod.POST, RequestMethod.DELETE})
-    public String delete(ComAdmin admin, @PathVariable("fieldname") String fieldName, Popups popups) {
+    public String delete(Admin admin, @PathVariable("fieldname") String fieldName, Popups popups) {
         final int companyId = admin.getCompanyID();
 
         if (validationService.notContainsInDb(companyId, fieldName)) {
@@ -281,7 +264,7 @@ public class ProfileFieldsController {
     }
 
     @RequestMapping("/profiledb/new.action")
-    public String newField(ComAdmin admin, @ModelAttribute("profileForm") ProfileFieldForm profileForm, Model model) {
+    public String newField(Admin admin, @ModelAttribute("profileForm") ProfileFieldForm profileForm, Model model) {
         profileForm.setFieldType(DbColumnType.GENERIC_TYPE_VARCHAR);
         profileForm.setFieldLength(100);
 
@@ -293,7 +276,7 @@ public class ProfileFieldsController {
     }
 
     @RequestMapping("/profiledb/newWizardField.action")
-    public String newWizardField(ComAdmin admin, @ModelAttribute("profileForm") ProfileFieldForm profileForm, Model model) {
+    public String newWizardField(Admin admin, @ModelAttribute("profileForm") ProfileFieldForm profileForm, Model model) {
         model.addAttribute("isNewField", isNewField(admin, profileForm.getFieldname()));
         model.addAttribute("customerFields", profileFieldService.getFieldWithIndividualSortOrder(admin.getCompanyID(), admin.getAdminID()));
 
@@ -305,7 +288,7 @@ public class ProfileFieldsController {
         return "mailing_wizard_new_target";
     }
 
-    private boolean isNewField(ComAdmin admin, String fieldName) {
+    private boolean isNewField(Admin admin, String fieldName) {
         if (StringUtils.isBlank(fieldName)) {
             return true;
         }
@@ -317,7 +300,7 @@ public class ProfileFieldsController {
         }
     }
 
-    private boolean createField(ComAdmin admin, ProfileFieldForm form) {
+    private boolean createField(Admin admin, ProfileFieldForm form) {
         ProfileField field = conversionService.convert(form, ProfileField.class);
         field.setCompanyID(admin.getCompanyID());
 
@@ -326,7 +309,7 @@ public class ProfileFieldsController {
         return profileFieldService.createNewField(field, admin);
     }
 
-    private boolean updateField(ComAdmin admin, ProfileField field, ProfileFieldForm form) {
+    private boolean updateField(Admin admin, ProfileField field, ProfileFieldForm form) {
         UserAction openEmmChangeLog = profileFieldService.getOpenEmmChangeLog(field, form);
         UserAction emmChangeLog = profileFieldService.getEmmChangeLog(field, form);
 
@@ -349,13 +332,13 @@ public class ProfileFieldsController {
         field.setAllowedValues(form.getAllowedValues());
 
         if (admin.permissionAllowed(Permission.PROFILEFIELD_VISIBLE)) {
-            field.setModeEdit(form.isFieldVisible() ? ProfileField.MODE_EDIT_EDITABLE : ProfileField.MODE_EDIT_NOT_VISIBLE);
+            field.setModeEdit(form.isFieldVisible() ? ProfileFieldMode.Editable : ProfileFieldMode.NotVisible);
         }
 
         return profileFieldService.updateField(field, admin);
     }
 
-    private void validateField(ComAdmin admin, ProfileFieldForm form, ProfileField profileField, Popups popups) {
+    private void validateField(Admin admin, ProfileFieldForm form, ProfileField profileField, Popups popups) {
         final int companyId = admin.getCompanyID();
 
         if (!validationService.isValidDbFieldName(form.getFieldname())) {
@@ -449,7 +432,7 @@ public class ProfileFieldsController {
                 popups.alert("error.profileHistory.tooManyFields");
             }
         }
-        alertIfUsedProfileFieldRenamed(popups, companyId, field, form.getShortname(), locale);
+        alertIfUsedProfileFieldChanged(popups, companyId, field, form, locale);
     }
 
     private String getDefaultValueToValidate(ProfileFieldForm form, Locale locale) {
@@ -469,12 +452,18 @@ public class ProfileFieldsController {
         }
     }
 
-    private void alertIfUsedProfileFieldRenamed(Popups popups, int companyId, ProfileField field, String newName, Locale locale) {
-        if (!StringUtils.equals(field.getShortname(), newName)) {
-            ObjectUsages usages = objectUsageService.listUsageOfProfileFieldByDatabaseName(companyId, field.getColumn());
+    private void alertIfUsedProfileFieldChanged(Popups popups, int companyId, ProfileField field, ProfileFieldForm form, Locale locale) {
+        if (!StringUtils.equals(field.getShortname(), form.getShortname())) {
+            List<ObjectUsage> usages = objectUsageService.listUsageOfProfileFieldByVisibleName(companyId, field.getShortname());
             if (!usages.isEmpty()) {
                 ObjectUsagesToPopups.objectUsagesToPopups("GWUA.error.profileField.rename",
-                        "GWUA.error.profileField.rename.withMore", usages, popups, locale);
+                        "GWUA.error.profileField.rename.withMore", new ObjectUsages(usages), popups, locale);
+            }
+        }
+        if (!form.isIncludeInHistory() && configService.isRecipientProfileHistoryEnabled(companyId)) {
+            String dependentWorkflow = profileFieldService.getTrackingDependentWorkflows(companyId, field.getColumn());
+            if (StringUtils.isNotBlank(dependentWorkflow)) {
+                popups.alert("warning.profilefield.inuse", dependentWorkflow);
             }
         }
     }
@@ -521,7 +510,13 @@ public class ProfileFieldsController {
         return form.isUseAllowedValues() && form.getAllowedValues() != null;
     }
 
-    private void writeUserActivityLog(ComAdmin admin, UserAction userAction) {
+    private void writeUserActivityLog(Admin admin, UserAction userAction) {
         userActivityLogService.writeUserActivityLog(admin, userAction, logger);
+    }
+
+    @Override
+    public boolean isParameterExcludedForUnsafeHtmlTagCheck(Admin admin, String param, String controllerMethodName) {
+        return ("allowedValues".equals(param) || "fieldDefault".equals(param))
+                && admin.permissionAllowed(RECIPIENT_PROFILEFIELD_HTML_ALLOWED);
     }
 }

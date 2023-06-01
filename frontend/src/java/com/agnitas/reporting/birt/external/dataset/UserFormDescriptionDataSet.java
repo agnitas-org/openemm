@@ -20,8 +20,8 @@ import org.apache.logging.log4j.Logger;
  * User form information for birt reports
  */
 public class UserFormDescriptionDataSet extends BIRTDataSet {
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(UserFormDescriptionDataSet.class);
+
+	private static final Logger logger = LogManager.getLogger(UserFormDescriptionDataSet.class);
 	
 	public List<String> getUserFormDescription (int formID){
 		return select(logger, "SELECT formname FROM userform_tbl WHERE form_id = ?", StringRowMapper.INSTANCE, formID);

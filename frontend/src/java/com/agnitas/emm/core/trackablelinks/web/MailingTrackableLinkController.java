@@ -10,7 +10,50 @@
 
 package com.agnitas.emm.core.trackablelinks.web;
 
-import com.agnitas.beans.ComAdmin;
+import static org.agnitas.beans.BaseTrackableLink.KEEP_UNCHANGED;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import com.agnitas.web.mvc.XssCheckAware;
+import org.agnitas.beans.BaseTrackableLink;
+import org.agnitas.beans.TrackableLink;
+import org.agnitas.beans.impl.PaginatedListImpl;
+import org.agnitas.dao.MailingDao;
+import org.agnitas.emm.core.commons.exceptions.InsufficientPermissionException;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.emm.core.useractivitylog.UserAction;
+import org.agnitas.service.LinkcheckService;
+import org.agnitas.service.UserActivityLogService;
+import org.agnitas.service.WebStorage;
+import org.agnitas.util.AgnUtils;
+import org.agnitas.web.forms.BulkActionForm;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.context.ApplicationContext;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.context.WebApplicationContext;
+import org.springframework.web.context.support.WebApplicationContextUtils;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.ComTrackableLink;
 import com.agnitas.beans.LinkProperty;
 import com.agnitas.beans.Mailing;
@@ -32,51 +75,13 @@ import com.agnitas.service.GridServiceWrapper;
 import com.agnitas.web.exception.ClearLinkExtensionsException;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.perm.annotations.PermissionMapping;
+
 import jakarta.servlet.http.HttpServletRequest;
-import org.agnitas.beans.BaseTrackableLink;
-import org.agnitas.beans.TrackableLink;
-import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.dao.MailingDao;
-import org.agnitas.emm.core.commons.exceptions.InsufficientPermissionException;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.service.UserActivityLogService;
-import org.agnitas.service.WebStorage;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.web.forms.BulkActionForm;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.context.WebApplicationContext;
-import org.springframework.web.context.support.WebApplicationContextUtils;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
-import static org.agnitas.beans.BaseTrackableLink.KEEP_UNCHANGED;
 
 @Controller
 @RequestMapping("/mailing/{mailingId:\\d+}/trackablelink")
 @PermissionMapping("mailing.trackablelink")
-public class MailingTrackableLinkController {
+public class MailingTrackableLinkController implements XssCheckAware {
 
     private static final Logger logger = LogManager.getLogger(MailingTrackableLinkController.class);
 
@@ -98,8 +103,14 @@ public class MailingTrackableLinkController {
     private final ComEmmActionService actionService;
     private final ComTrackableLinkService trackableLinkService;
     private final ExtendedConversionService conversionService;
+    private final LinkcheckService linkcheckService;
+    private final ApplicationContext applicationContext;
 
-    public MailingTrackableLinkController(UserActivityLogService userActivityLogService, ComTrackableLinkService trackableLinkService, ExtendedConversionService conversionService, ComMailingBaseService mailingBaseService, ComEmmActionService actionService, GridServiceWrapper gridService, ConfigService configService, LinkService linkService, MailingDao mailingDao, WebStorage webStorage) {
+    public MailingTrackableLinkController(UserActivityLogService userActivityLogService, ComTrackableLinkService trackableLinkService,
+                                          ExtendedConversionService conversionService, ComMailingBaseService mailingBaseService,
+                                          ComEmmActionService actionService, GridServiceWrapper gridService, ConfigService configService,
+                                          LinkService linkService, MailingDao mailingDao, WebStorage webStorage, LinkcheckService linkcheckService,
+                                          ApplicationContext applicationContext) {
         this.mailingBaseService = mailingBaseService;
         this.gridService = gridService;
         this.configService = configService;
@@ -110,10 +121,12 @@ public class MailingTrackableLinkController {
         this.actionService = actionService;
         this.trackableLinkService = trackableLinkService;
         this.conversionService = conversionService;
+        this.linkcheckService = linkcheckService;
+        this.applicationContext = applicationContext;
     }
 
     @RequestMapping("/list.action")
-    public String list(@PathVariable int mailingId, TrackableLinksForm form, ComAdmin admin, Model model,
+    public String list(@PathVariable int mailingId, TrackableLinksForm form, Admin admin, Model model,
                        @RequestParam(required = false) Integer scrollToLinkId) {
         int companyId = admin.getCompanyID();
         Mailing mailing = mailingDao.getMailing(mailingId, companyId);
@@ -124,7 +137,7 @@ public class MailingTrackableLinkController {
         setupList(form, mailing.getTrackableLinks().values(), model);
 
         writeUserActivityLog(admin, "trackable link list", "active tab - links");
-        return "mailing_trackablelink_list_new";
+        return "mailing_trackablelink_list";
     }
 
     private void addLinkListModelAttrs(int mailingId, Model model, int companyId, Mailing mailing, Integer scrollToLinkId) {
@@ -172,7 +185,7 @@ public class MailingTrackableLinkController {
         }
     }
 
-    private void addMailingModelAttrs(Mailing mailing, Model model, int mailingId, ComAdmin admin) {
+    private void addMailingModelAttrs(Mailing mailing, Model model, int mailingId, Admin admin) {
         model.addAttribute("isTemplate", mailing.isIsTemplate());
         model.addAttribute("mailingShortname", mailing.getShortname());
         model.addAttribute("gridTemplateId", gridService.getGridTemplateIdByMailingId(mailingId));
@@ -187,7 +200,7 @@ public class MailingTrackableLinkController {
     }
 
     @PostMapping("/confirmBulkClearExtensions.action")
-    public String confirmBulkClearExtensions(@PathVariable int mailingId, TrackableLinksForm form, Model model, ComAdmin admin, Popups popups) {
+    public String confirmBulkClearExtensions(@PathVariable int mailingId, TrackableLinksForm form, Model model, Admin admin, Popups popups) {
         if (CollectionUtils.isEmpty(form.getBulkIds())) {
             popups.alert("error.workflow.noLinkSelected");
             return MESSAGES_VIEW;
@@ -202,21 +215,35 @@ public class MailingTrackableLinkController {
     }
 
     @PostMapping("/bulkClearExtensions.action")
-    public String bulkClearExtensions(@PathVariable int mailingId, BulkActionForm form, ComAdmin admin, Popups popups) {
+    public String bulkClearExtensions(@PathVariable int mailingId, BulkActionForm form, Admin admin, Popups popups) {
         try {
             trackableLinkService.bulkClearExtensions(mailingId, admin.getCompanyID(), new HashSet<>(form.getBulkIds()));
             writeUserActivityLog(admin, "edit mailing", "ID = " + mailingId + ". Removed global and individual link extensions");
             popups.success(CHANGES_SAVED_CODE);
             return String.format(REDIRECT_TO_LIST_STR, mailingId);
         } catch (ClearLinkExtensionsException e) {
-            logger.error("Error removing global and individual link extensions (mailing ID: " + mailingId + ")", e);
+            logger.error("Error removing global and individual link extensions (mailing ID: {})", mailingId, e);
             popups.alert("error.trackablelinks.extensions.remove");
             return MESSAGES_VIEW;
         }
     }
 
+    @PostMapping("/check.action")
+    public String checkLinks(@PathVariable("mailingId") int mailingId, Admin admin, Popups popups) throws Exception {
+        Mailing mailing = mailingDao.getMailing(mailingId, admin.getCompanyID());
+
+        mailing.buildDependencies(popups, false, null, applicationContext, admin);
+        popups.addPopups(linkcheckService.checkForUnreachableLinks(mailing));
+
+        if (!popups.hasAlertPopups()) {
+            popups.success("link.check.success");
+        }
+
+        return MESSAGES_VIEW;
+    }
+
     @RequestMapping("/bulkActionsView.action")
-    public String bulkActionsView(@PathVariable int mailingId, TrackableLinksForm form, Model model, ComAdmin admin, Popups popups) {
+    public String bulkActionsView(@PathVariable int mailingId, TrackableLinksForm form, Model model, Admin admin, Popups popups) {
         HashSet<Integer> bulkIds = new HashSet<>(form.getBulkIds());
         if (CollectionUtils.isEmpty(form.getBulkIds())) {
             popups.alert("error.workflow.noLinkSelected");
@@ -235,22 +262,20 @@ public class MailingTrackableLinkController {
 
     @PostMapping("/activateTrackingLinksOnEveryPosition.action")
     public String activateTrackingLinksOnEveryPosition(@PathVariable int mailingId, TrackableLinksForm form,
-                                                       ComAdmin admin, Popups popups, HttpServletRequest req) {
-        if (form.isTrackOnEveryPosition()) {
-            try {
-                mailingBaseService.activateTrackingLinksOnEveryPosition(admin,
-                        mailingDao.getMailing(mailingId, admin.getCompanyID()), getApplicationContext(req));
-            } catch (Exception e) {
-                popups.alert(ERROR_CODE);
-                return MESSAGES_VIEW;
-            }
+                                                       Admin admin, Popups popups, HttpServletRequest req) {
+        try {
+            mailingBaseService.activateTrackingLinksOnEveryPosition(admin,
+                    mailingDao.getMailing(mailingId, admin.getCompanyID()), getApplicationContext(req));
+        } catch (Exception e) {
+            popups.alert(ERROR_CODE);
+            return MESSAGES_VIEW;
         }
         popups.success(CHANGES_SAVED_CODE);
         return String.format(REDIRECT_TO_LIST_STR, mailingId);
     }
 
     @PostMapping("/saveAll.action")
-    public String saveAll(@PathVariable int mailingId, TrackableLinksForm form, ComAdmin admin, Popups popups) {
+    public String saveAll(@PathVariable int mailingId, TrackableLinksForm form, Admin admin, Popups popups) {
         if (!intelliAdSettingsValid(form, popups)) {
             return MESSAGES_VIEW;
         }
@@ -259,7 +284,7 @@ public class MailingTrackableLinkController {
         return String.format(REDIRECT_TO_LIST_STR, mailingId);
     }
 
-    private void saveAll(int mailingId, TrackableLinksForm form, ComAdmin admin) {
+    private void saveAll(int mailingId, TrackableLinksForm form, Admin admin) {
         Mailing mailing = mailingDao.getMailing(mailingId, admin.getCompanyID());
         Collection<ComTrackableLink> links = mailing.getTrackableLinks().values();
 
@@ -269,7 +294,7 @@ public class MailingTrackableLinkController {
         mailingDao.saveMailing(mailing, false);
     }
 
-    private void updateGlobalSettings(TrackableLinksForm form, Mailing mailing, ComAdmin admin) {
+    private void updateGlobalSettings(TrackableLinksForm form, Mailing mailing, Admin admin) {
         writeCommonActionChanges(mailing, form, admin);
         mailing.setOpenActionID(form.getOpenActionId());
         mailing.setClickActionID(form.getClickActionId());
@@ -280,7 +305,7 @@ public class MailingTrackableLinkController {
         }
     }
 
-    private void updateGlobalLinksExtensions(TrackableLinksForm form, Mailing mailing, ComAdmin admin) {
+    private void updateGlobalLinksExtensions(TrackableLinksForm form, Mailing mailing, Admin admin) {
         List<UserAction> userActions = new ArrayList<>();
         List<LinkProperty> extensions = conversionService.convert(form.getExtensions(), ExtensionProperty.class, LinkProperty.class);
         Set<Integer> linkIds = mailing.getTrackableLinks().values().stream().map(BaseTrackableLink::getId).collect(Collectors.toSet());
@@ -288,7 +313,7 @@ public class MailingTrackableLinkController {
         userActions.forEach(ua -> writeUserActivityLog(admin, ua));
     }
 
-    private void updateIndividualLinks(Collection<ComTrackableLink> links, TrackableLinksForm linksForm, ComAdmin admin) {
+    private void updateIndividualLinks(Collection<ComTrackableLink> links, TrackableLinksForm linksForm, Admin admin) {
         Map<Integer, ComTrackableLink> existLinks = links.stream()
                 .collect(Collectors.toMap(BaseTrackableLink::getId, Function.identity()));
 
@@ -297,7 +322,7 @@ public class MailingTrackableLinkController {
         }
     }
 
-    private void updateBulkLinks(Collection<ComTrackableLink> links, TrackableLinksForm form, Mailing mailing, ComAdmin admin) {
+    private void updateBulkLinks(Collection<ComTrackableLink> links, TrackableLinksForm form, Mailing mailing, Admin admin) {
         links.stream()
                 .filter(link -> form.getBulkIds().contains(link.getId()))
                 .forEach(link -> logLinkEdited(admin, updateBulkLinkAndGetLog(link, form, admin.getCompanyID()), link));
@@ -307,7 +332,7 @@ public class MailingTrackableLinkController {
         }
     }
 
-    private void updateBulkLinksExtensions(TrackableLinksForm form, Mailing mailing, ComAdmin admin) {
+    private void updateBulkLinksExtensions(TrackableLinksForm form, Mailing mailing, Admin admin) {
         List<UserAction> userActions = new ArrayList<>();
         List<LinkProperty> extensions = conversionService.convert(form.getExtensions(), ExtensionProperty.class, LinkProperty.class);
         Set<Integer> linkIds = new HashSet<>(form.getBulkIds());
@@ -331,22 +356,22 @@ public class MailingTrackableLinkController {
     }
 
     @GetMapping("/{linkId:\\d+}/view.action")
-    public String view(@PathVariable int mailingId, @PathVariable int linkId, ComAdmin admin, Model model, Popups popups) {
+    public String view(@PathVariable int mailingId, @PathVariable int linkId, Admin admin, Model model, Popups popups) {
         int companyId = admin.getCompanyID();
         ComTrackableLink link = trackableLinkService.getTrackableLink(companyId, linkId);
         if (link == null) {
             popups.alert(ERROR_CODE);
-            logger.error("could not load link: " + linkId);
+            logger.error("could not load link: {}", linkId);
             return MESSAGES_VIEW;
         }
         Mailing mailing = mailingDao.getMailing(mailingId, companyId);
         addMailingModelAttrs(mailing, model, mailingId, admin);
         addLinkViewModelAttrs(mailingId, admin, model, companyId, link);
         writeUserActivityLog(admin, "trackable link list", "active tab - links");
-        return "mailing_trackablelink_view_new";
+        return "mailing_trackablelink_view";
     }
 
-    private void addLinkViewModelAttrs(int mailingId, ComAdmin admin, Model model, int companyId, ComTrackableLink link) {
+    private void addLinkViewModelAttrs(int mailingId, Admin admin, Model model, int companyId, ComTrackableLink link) {
         model.addAttribute("trackableLinkForm", conversionService.convert(link, TrackableLinkForm.class));
         model.addAttribute("altText", link.getAltText());
         model.addAttribute("originalUrl", link.getOriginalUrl());
@@ -356,7 +381,7 @@ public class MailingTrackableLinkController {
     }
 
     @PostMapping("/{linkId:\\d+}/save.action")
-    public String save(@PathVariable int mailingId, @PathVariable int linkId, TrackableLinkForm form, ComAdmin admin, Popups popups, HttpServletRequest req, RedirectAttributes redirectAttrs) throws TrackableLinkException {
+    public String save(@PathVariable int mailingId, @PathVariable int linkId, TrackableLinkForm form, Admin admin, Popups popups, HttpServletRequest req, RedirectAttributes redirectAttrs) throws TrackableLinkException {
         ComTrackableLink link = trackableLinkService.getTrackableLink(admin.getCompanyID(), linkId);
         if (link == null) {
             popups.alert(ERROR_CODE);
@@ -373,7 +398,7 @@ public class MailingTrackableLinkController {
         return String.format(REDIRECT_TO_LIST_STR, mailingId);
     }
 
-    private boolean tryUpdateLinkUrl(int linkId, String newUrl, ComAdmin admin) throws TrackableLinkException {
+    private boolean tryUpdateLinkUrl(int linkId, String newUrl, Admin admin) throws TrackableLinkException {
         try {
             updateLinkUrl(linkId, newUrl, admin);
             return true;
@@ -391,7 +416,7 @@ public class MailingTrackableLinkController {
      * @throws InsufficientPermissionException if user does not have sufficient permissions to change link target
      * @throws TrackableLinkException          on errors updating link target
      */
-    private void updateLinkUrl(int linkId, String newUrl, ComAdmin admin) throws InsufficientPermissionException, TrackableLinkException {
+    private void updateLinkUrl(int linkId, String newUrl, Admin admin) throws InsufficientPermissionException, TrackableLinkException {
         ComTrackableLink link = trackableLinkService.getTrackableLink(admin.getCompanyID(), linkId);
         if (!newUrl.equals(link.getFullUrl())) {
             if (admin.permissionAllowed(Permission.MAILING_TRACKABLELINKS_URL_CHANGE)) {
@@ -399,7 +424,7 @@ public class MailingTrackableLinkController {
 
                 writeUserActivityLog(admin, "edit link target", "Set target of link " + link.getId() + " to " + newUrl);
             } else {
-                logger.warn("Admin " + admin.getUsername() + " (ID " + admin.getAdminID() + ") has no permission to edit link URLs");
+                logger.warn("Admin {} (ID {}) has no permission to edit link URLs", admin.getUsername(), admin.getAdminID());
                 throw new InsufficientPermissionException(admin.getAdminID(), "mailing.trackablelinks.url.change");
             }
         }
@@ -410,16 +435,16 @@ public class MailingTrackableLinkController {
                 .getSession().getServletContext());
     }
 
-    private void writeCommonActionChanges(Mailing mailing, TrackableLinksForm form, ComAdmin admin) {
+    private void writeCommonActionChanges(Mailing mailing, TrackableLinksForm form, Admin admin) {
         int mailingId = mailing.getId();
         writeCommonActionChangeLog("Open", mailingId, admin, mailing.getOpenActionID(), form.getOpenActionId());
         writeCommonActionChangeLog("Click", mailingId, admin, mailing.getClickActionID(), form.getClickActionId());
         if (logger.isInfoEnabled()) {
-            logger.info("save Trackable links Open/Click Actions, mailing ID =  " + mailingId);
+            logger.info("save Trackable links Open/Click Actions, mailing ID = {}", mailingId);
         }
     }
 
-    private void saveLink(ComTrackableLink link, TrackableLinkForm form, ComAdmin admin, boolean includeDeepTracking) {
+    private void saveLink(ComTrackableLink link, TrackableLinkForm form, Admin admin, boolean includeDeepTracking) {
         StringBuilder logBuilder = new StringBuilder();
 
         logBuilder.append(updateLinkDescription(link, form.getShortname()));
@@ -444,7 +469,7 @@ public class MailingTrackableLinkController {
         trackableLinkService.saveTrackableLink(link);
     }
 
-    private void updateIndividualLink(ComTrackableLink link, TrackableLinkForm form, List<Integer> bulkIds, ComAdmin admin) {
+    private void updateIndividualLink(ComTrackableLink link, TrackableLinkForm form, List<Integer> bulkIds, Admin admin) {
         StringBuilder logBuilder = new StringBuilder();
 
         logBuilder.append(updateLinkAdmin(link, form.isAdmin()));
@@ -556,16 +581,16 @@ public class MailingTrackableLinkController {
         });
     }
 
-    private void writeUserActivityLog(ComAdmin admin, String action, String description) {
+    private void writeUserActivityLog(Admin admin, String action, String description) {
         writeUserActivityLog(admin, new UserAction(action, description));
     }
 
-    private void writeUserActivityLog(ComAdmin admin, UserAction userAction) {
+    private void writeUserActivityLog(Admin admin, UserAction userAction) {
         if (userActivityLogService != null) {
             userActivityLogService.writeUserActivityLog(admin, userAction, logger);
         } else {
-            logger.error("Missing userActivityLogService in " + this.getClass().getSimpleName());
-            logger.info("Userlog: " + admin.getUsername() + " " + userAction.getAction() + " " + userAction.getDescription());
+            logger.error("Missing userActivityLogService in {}", this.getClass().getSimpleName());
+            logger.info("Userlog: {} {} {}", admin.getUsername(), userAction.getAction(), userAction.getDescription());
         }
     }
 
@@ -611,14 +636,14 @@ public class MailingTrackableLinkController {
         return !popups.hasAlertPopups();
     }
 
-    private void logLinkEdited(ComAdmin admin, StringBuilder logBuilder, ComTrackableLink link) {
+    private void logLinkEdited(Admin admin, StringBuilder logBuilder, ComTrackableLink link) {
         if (logBuilder.length() != 0) {
             logBuilder.insert(0, String.format("ID = %d. Trackable link %s. ", link.getId(), link.getFullUrl()));
             writeUserActivityLog(admin, EDIT_MESSAGE, logBuilder.toString().trim());
         }
     }
 
-    private void writeCommonActionChangeLog(String actionName, int id, ComAdmin admin, int oldId, int newId) {
+    private void writeCommonActionChangeLog(String actionName, int id, Admin admin, int oldId, int newId) {
         int companyId = admin.getCompanyID();
         if (oldId != newId) {
             writeUserActivityLog(admin, EDIT_MESSAGE,
@@ -634,7 +659,7 @@ public class MailingTrackableLinkController {
                 : "";
     }
 
-    private void writeLinkExtensionsChangesLog(int mailingId, String url, ComAdmin admin, List<LinkProperty> oldProperties, List<LinkProperty> newProperties) {
+    private void writeLinkExtensionsChangesLog(int mailingId, String url, Admin admin, List<LinkProperty> oldProperties, List<LinkProperty> newProperties) {
         if (oldProperties == null || newProperties == null
                 || (CollectionUtils.isEmpty(oldProperties) && CollectionUtils.isEmpty(newProperties))) {
             return;

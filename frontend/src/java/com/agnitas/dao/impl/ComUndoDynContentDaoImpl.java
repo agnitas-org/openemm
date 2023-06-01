@@ -15,7 +15,6 @@ import java.sql.SQLException;
 import java.util.List;
 
 import org.agnitas.dao.impl.BaseDaoImpl;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.jdbc.core.RowMapper;
@@ -45,10 +44,6 @@ public class ComUndoDynContentDaoImpl extends BaseDaoImpl implements ComUndoDynC
 	private static final String DELETE_CONTENT_STATEMENT =
 		"DELETE FROM undo_dyn_content_tbl " +
 		"WHERE undo_id = ?";
-	
-	private static final String DELETE_OUTDATED_CONTENT_STATEMENT =
-		"DELETE FROM undo_dyn_content_tbl " +
-		"WHERE undo_id <= ?";
 	
 	private static final String DELETE_UNDODATA_FOR_MAILING_STATEMENT =
 		"DELETE FROM undo_dyn_content_tbl " +
@@ -108,12 +103,6 @@ public class ComUndoDynContentDaoImpl extends BaseDaoImpl implements ComUndoDynC
 	public void deleteUndoData(int undoId) {
 		update(logger, DELETE_CONTENT_STATEMENT, undoId);
 	}
-
-	@Override
-	@DaoUpdateReturnValueCheck
-	public void deleteOutdatedUndoData(int lastUndoId) {
-		update(logger, DELETE_OUTDATED_CONTENT_STATEMENT, lastUndoId);
-	}
 	
 	@Override
 	@DaoUpdateReturnValueCheck
@@ -137,7 +126,7 @@ public class ComUndoDynContentDaoImpl extends BaseDaoImpl implements ComUndoDynC
 
 	@Override
 	@DaoUpdateReturnValueCheck
-	public boolean deleteByCompany(@VelocityCheck int companyId) {
+	public boolean deleteByCompany(int companyId) {
 		return deleteByCompany(logger, "undo_dyn_content_tbl", companyId);
 	}
 }

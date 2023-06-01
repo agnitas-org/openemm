@@ -38,6 +38,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.web.ComImportWizardForm;
 
 /**
@@ -129,7 +130,7 @@ public class ImportWizardHelperImpl implements ImportWizardHelper {
 	/**
 	 * Holds value of property resultMailingListAdded.
 	 */
-	private Map<String, String> resultMailingListAdded;
+	private Map<MediaTypes, Map<String, String>> resultMailingListAdded;
 
 	/**
 	 * Holds value of property columnMapping.
@@ -825,7 +826,7 @@ public class ImportWizardHelperImpl implements ImportWizardHelper {
 	 * @see org.agnitas.service.impl.ImportWizardHelper#getResultMailingListAdded()
 	 */
 	@Override
-	public Map<String, String> getResultMailingListAdded() {
+	public Map<MediaTypes, Map<String, String>> getResultMailingListAdded() {
 		return resultMailingListAdded;
 	}
 
@@ -833,7 +834,7 @@ public class ImportWizardHelperImpl implements ImportWizardHelper {
 	 * @see org.agnitas.service.impl.ImportWizardHelper#setResultMailingListAdded(java.util.Hashtable)
 	 */
 	@Override
-	public void setResultMailingListAdded(Map<String, String> resultMailingListAdded) {
+	public void setResultMailingListAdded(Map<MediaTypes, Map<String, String>> resultMailingListAdded) {
 		this.resultMailingListAdded = resultMailingListAdded;
 	}
 

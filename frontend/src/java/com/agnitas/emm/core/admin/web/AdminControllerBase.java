@@ -12,7 +12,6 @@ package com.agnitas.emm.core.admin.web;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -53,7 +52,7 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.agnitas.beans.AdminPreferences;
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.PollingUid;
 import com.agnitas.emm.core.admin.form.AdminForm;
 import com.agnitas.emm.core.admin.form.AdminListForm;
@@ -78,13 +77,18 @@ import com.lowagie.text.DocumentException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import static org.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
+import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
+import static org.agnitas.util.Const.Mvc.SELECTION_DELETED_MSG;
 
 public class AdminControllerBase implements XssCheckAware {
 
-	/** The logger. */
-    private static final transient Logger LOGGER = LogManager.getLogger(AdminControllerBase.class);
+    private static final Logger LOGGER = LogManager.getLogger(AdminControllerBase.class);
     
     private static final String ADMIN_ENTRIES_KEY = "adminEntries";
+    private static final String USERNAME_DUPLICATE_MSG = "error.username.duplicate";
+    private static final String REDIRECT_TO_LIST = "redirect:/admin/list.action";
+    private static final String SAVE_ERROR_MSG = "error.admin.save";
 
     protected final ConfigService configService;
     protected final AdminService adminService;
@@ -128,7 +132,7 @@ public class AdminControllerBase implements XssCheckAware {
     }
 
     @RequestMapping("/list.action")
-    public Pollable<ModelAndView> list(final ComAdmin admin, final AdminListForm form,
+    public Pollable<ModelAndView> list(final Admin admin, final AdminListForm form,
                                        final Model model, final HttpSession session,
                                        @RequestParam(value = FormSearchParams.RESET_PARAM_NAME, required = false) boolean resetSearchParams,
                                        @RequestParam(value = FormSearchParams.RESTORE_PARAM_NAME, required = false) boolean restoreSearchParams,
@@ -154,18 +158,18 @@ public class AdminControllerBase implements XssCheckAware {
             return new ModelAndView("settings_admin_list", model.asMap());
         };
 
-        ModelAndView modelAndView = new ModelAndView("redirect:/admin/list.action", form.toMap());
+        ModelAndView modelAndView = new ModelAndView(REDIRECT_TO_LIST, form.toMap());
 
         return new Pollable<>(pollingUid, Pollable.DEFAULT_TIMEOUT, modelAndView, worker);
     }
 
     @RequestMapping("/{adminID}/view.action")
-    public String view(final ComAdmin admin, final AdminForm form, final Popups popups, final Model model) {
+    public String view(final Admin admin, final AdminForm form, final Popups popups, final Model model) {
         final int adminIdToEdit = form.getAdminID();
         final int companyID = admin.getCompanyID();
-        final ComAdmin adminToEdit = adminService.getAdmin(adminIdToEdit, companyID);
+        final Admin adminToEdit = adminService.getAdmin(adminIdToEdit, companyID);
         if (adminToEdit == null) {
-            return prepareErrorPageForNotLoadedAdmin(adminIdToEdit, companyID, popups, "redirect:/admin/list.action");
+            return prepareErrorPageForNotLoadedAdmin(adminIdToEdit, companyID, popups, REDIRECT_TO_LIST);
         }
         if (adminToEdit.getGroups() == null || adminToEdit.getGroups().isEmpty()) {
             popups.alert("error.admin.invalidGroup");
@@ -174,35 +178,40 @@ public class AdminControllerBase implements XssCheckAware {
         initializeForm(form, adminToEdit, admin);
 
         if (LOGGER.isInfoEnabled()) {
-            LOGGER.info("loadAdmin: admin " + form.getAdminID() + " loaded");
+            LOGGER.info("loadAdmin: admin {} loaded", form.getAdminID());
         }
 
         userActivityLogService.writeUserActivityLog(admin, "view user", adminToEdit.getUsername());
 
         loadDataForViewPage(admin, adminToEdit, model);
         model.addAttribute("PASSWORD_POLICY", PasswordPolicyUtil.loadCompanyPasswordPolicy(admin.getCompanyID(), configService).getPolicyName());
+        model.addAttribute("EDIT_ALTG_ENABLED", canEditAltg(admin, form));
 
         return "settings_admin_view";
     }
     
+    private static final boolean canEditAltg(final Admin admin, final AdminForm adminForm) {
+    	return admin.getCompanyID() == adminForm.getCompanyID();
+    }
+
     @RequestMapping("/{adminID}/welcome.action")
-    public String sendWelcome(final ComAdmin admin, final AdminRightsForm form, final Popups popups, HttpServletRequest request) {
+    public String sendWelcome(final Admin admin, final AdminRightsForm form, final Popups popups, HttpServletRequest request) {
     	String clientIp = request.getRemoteAddr();
     	final int adminIdToEdit = form.getAdminID();
     	final int companyID = admin.getCompanyID();
-    	final ComAdmin adminToEdit = adminService.getAdmin(adminIdToEdit, companyID);
+    	final Admin adminToEdit = adminService.getAdmin(adminIdToEdit, companyID);
     	logonService.sendWelcomeMail(adminToEdit, clientIp, LogonControllerBasic.PASSWORD_RESET_LINK_PATTERN);
     	popups.success("admin.password.sent");
-    	return "messages";
+    	return MESSAGES_VIEW;
     }
 
     @RequestMapping("/{adminID}/rights/view.action")
-    public String viewRights(final ComAdmin admin, final AdminRightsForm form, final Popups popups, final Model model) {
+    public String viewRights(final Admin admin, final AdminRightsForm form, final Popups popups, final Model model) {
         final int adminIdToEdit = form.getAdminID();
         final int companyID = admin.getCompanyID();
-        final ComAdmin adminToEdit = adminService.getAdmin(adminIdToEdit, companyID);
+        final Admin adminToEdit = adminService.getAdmin(adminIdToEdit, companyID);
         if (adminToEdit == null) {
-            return prepareErrorPageForNotLoadedAdmin(adminIdToEdit, companyID, popups, "redirect:/admin/list.action");
+            return prepareErrorPageForNotLoadedAdmin(adminIdToEdit, companyID, popups, REDIRECT_TO_LIST);
         }
 
         prepareRightsViewPageData(admin, form, model, adminToEdit);
@@ -211,48 +220,50 @@ public class AdminControllerBase implements XssCheckAware {
     }
 
     @PostMapping(value = "/{adminID}/save.action")
-    public String save(final ComAdmin admin, final AdminForm form, final Popups popups) {
+    public String save(final Admin admin, final AdminForm form, final Popups popups) {
         if (!AdminFormValidator.validate(form, popups)){
-        	popups.alert("error.admin.save");
-        	return "redirect:/admin/" + form.getAdminID() + "/view.action";
+        	popups.alert(SAVE_ERROR_MSG);
+        	return redirectToView(form.getAdminID());
         } else if (adminUsernameChangedToExisting(form)) {
-            popups.alert("error.username.duplicate");
-            return "redirect:/admin/" + form.getAdminID() + "/view.action";
+            popups.alert(USERNAME_DUPLICATE_MSG);
+            return redirectToView(form.getAdminID());
         } else {
             if (StringUtils.isEmpty(form.getPassword()) || checkPassword(form, popups)) {
                 admin.setRestful(false);
                 saveAdminAndGetView(form, admin, popups);
                 logonService.updateSessionsLanguagesAttributes(admin);
-                // Show "changes saved"
-                popups.success("default.changes_saved");
+                popups.success(CHANGES_SAVED_MSG);
             }
-            return "redirect:/admin/" + form.getAdminID() + "/view.action";
+            return redirectToView(form.getAdminID());
         }
     }
 
+    private String redirectToView(int adminId) {
+        return "redirect:/admin/" + adminId + "/view.action";
+    }
+
     @PostMapping(value = "/{adminID}/rights/save.action")
-    public String saveRights(final ComAdmin admin, final AdminRightsForm form, final Popups popups, final Model model) {
+    public String saveRights(final Admin admin, final AdminRightsForm form, final Popups popups, final Model model) {
         try {
             final boolean isSuccess = saveAdminRightsAndWriteToActivityLog(admin, form, popups);
             final int adminIdToEdit = form.getAdminID();
             final int companyID = admin.getCompanyID();
-            final ComAdmin adminToEdit = adminService.getAdmin(adminIdToEdit, companyID);
+            final Admin adminToEdit = adminService.getAdmin(adminIdToEdit, companyID);
             prepareRightsViewPageData(admin, form, model, adminToEdit);
 
             if (isSuccess) {
-                // Show "changes saved"
-                popups.success("default.changes_saved");
+                popups.success(CHANGES_SAVED_MSG);
             }
         } catch (Exception e) {
             LOGGER.error("Exception saving rights", e);
-            popups.alert("error.admin.save", e);
-            return "messages";
+            popups.alert(SAVE_ERROR_MSG, e);
+            return MESSAGES_VIEW;
         }
         return "settings_admin_rights";
     }
 
    @RequestMapping("/create.action")
-    public String create(final ComAdmin admin, @ModelAttribute("adminForm") AdminForm form, final Model model) {
+    public String create(final Admin admin, @ModelAttribute("adminForm") AdminForm form, final Model model) {
        	model.addAttribute("PASSWORD_POLICY", PasswordPolicyUtil.loadCompanyPasswordPolicy(admin.getCompanyID(), configService).getPolicyName());
 
         loadDataForViewPage(admin, null, model);
@@ -262,34 +273,34 @@ public class AdminControllerBase implements XssCheckAware {
     }
 
     @PostMapping(value = "/saveNew.action")
-    public String saveNew(final ComAdmin admin, final AdminForm form, final Popups popups) {
-        final int maximumNumberOfAdmins = configService.getIntegerValue(ConfigValue.System_License_MaximumNumberOfAdmins);
-        if (maximumNumberOfAdmins >= 0 && maximumNumberOfAdmins <= adminService.getNumberOfAdmins()) {
+    public String saveNew(final Admin admin, final AdminForm form, final Popups popups) {
+        final int maximumNumberOfAdmins = configService.getIntegerValue(ConfigValue.System_License_MaximumNumberOfAdmins, admin.getCompanyID());
+        if (maximumNumberOfAdmins >= 0 && maximumNumberOfAdmins <= adminService.getNumberOfGuiAdmins(admin.getCompanyID())) {
             popups.alert("error.numberOfAdminsExceeded", maximumNumberOfAdmins);
-            return "messages";
+            return MESSAGES_VIEW;
         }
         form.setAdminID(0);
-        if (!AdminFormValidator.validate(form, popups)){
-        	popups.alert("error.admin.save");
-        	return "messages";
+        if (!AdminFormValidator.validate(form, popups)) {
+        	popups.alert(SAVE_ERROR_MSG);
+        	return MESSAGES_VIEW;
         }
         if (StringUtils.isBlank(form.getPassword())) {
             popups.alert("error.password.missing");
-            return "messages";
+            return MESSAGES_VIEW;
         }
 
         if (form.getGroupIDs() == null || form.getGroupIDs().isEmpty()) {
             popups.alert("error.user.group");
-            return "messages";
+            return MESSAGES_VIEW;
         }
 
         if (adminService.adminExists(form.getUsername())) {
-            popups.alert("error.username.duplicate");
-            return "messages";
+            popups.alert(USERNAME_DUPLICATE_MSG);
+            return MESSAGES_VIEW;
         }
 
         if (!checkPassword(form, popups)) {
-            return "messages";
+            return MESSAGES_VIEW;
         }
         
         admin.setRestful(false);
@@ -298,12 +309,12 @@ public class AdminControllerBase implements XssCheckAware {
     }
 
     @RequestMapping("/list/export/csv.action")
-    public Object exportCsv(final ComAdmin admin, final AdminListForm form, final Popups popups) throws Exception {
+    public Object exportCsv(final Admin admin, final AdminListForm form, final Popups popups) throws Exception {
         byte[] csvData = csvService.getUserCSV(getAdminListFromAdminListForm(admin, form, Integer.MAX_VALUE).getList());
 
         if (csvData == null) {
             popups.alert("error.export.file_not_ready");
-            return "messages";
+            return MESSAGES_VIEW;
         }
 
         String description = "Page: " + form.getPage()
@@ -318,7 +329,7 @@ public class AdminControllerBase implements XssCheckAware {
     }
 
     @RequestMapping("/list/export/pdf.action")
-    public ResponseEntity<InputStreamResource> exportPdf(final ComAdmin admin, final AdminListForm form)
+    public ResponseEntity<InputStreamResource> exportPdf(final Admin admin, final AdminListForm form)
             throws IOException, DocumentException {
 
         byte[] pdfFileBytes = pdfService
@@ -338,30 +349,31 @@ public class AdminControllerBase implements XssCheckAware {
     }
 
     @RequestMapping("/{adminID}/confirmDelete.action")
-    public String confirmDelete(final ComAdmin admin, final AdminForm form, final Popups popups) {
-        final int adminIdToDelete = form.getAdminID(), companyID = admin.getCompanyID();
-        final ServiceResult<ComAdmin> deleteConfirmSR = adminService.isPossibleToDeleteAdmin(adminIdToDelete, companyID);
+    public String confirmDelete(final Admin admin, final AdminForm form, final Popups popups) {
+        final int adminIdToDelete = form.getAdminID();
+        final int companyID = admin.getCompanyID();
+        final ServiceResult<Admin> deleteConfirmSR = adminService.isPossibleToDeleteAdmin(adminIdToDelete, companyID);
         if (deleteConfirmSR.isSuccess()) {
             form.setUsername(deleteConfirmSR.getResult().getUsername());
             return "settings_admin_delete_ajax";
         }
 
         if (deleteConfirmSR.getResult() == null) {
-            return prepareErrorPageForNotLoadedAdmin(adminIdToDelete, companyID, popups, "redirect:/admin/list.action");
+            return prepareErrorPageForNotLoadedAdmin(adminIdToDelete, companyID, popups, REDIRECT_TO_LIST);
         }
 
         popups.addPopups(deleteConfirmSR);
-        return "messages";
+        return MESSAGES_VIEW;
     }
 
     @RequestMapping("/{adminID}/delete.action")
-    public String delete(final ComAdmin admin, final AdminForm form, final Popups popups,
+    public String delete(final Admin admin, final AdminForm form, final Popups popups,
                          final HttpServletResponse response, final HttpSession session,
                          RedirectAttributes redirectAttributes) {
-        final ServiceResult<ComAdmin> result = adminService.delete(admin, form.getAdminID());
+        final ServiceResult<Admin> result = adminService.delete(admin, form.getAdminID());
 
         if (result.isSuccess()) {
-            final ComAdmin deletedAdmin = result.getResult();
+            final Admin deletedAdmin = result.getResult();
 
             userActivityLogService.writeUserActivityLog(admin, "delete user", deletedAdmin.getUsername() + " (" + deletedAdmin.getAdminID() + ")", LOGGER);
 
@@ -371,13 +383,13 @@ public class AdminControllerBase implements XssCheckAware {
                 return "redirect:/logon.action";
             }
 
-            popups.success("default.selection.deleted");
+            popups.success(SELECTION_DELETED_MSG);
         } else {
             popups.alert("Error");
         }
 
        redirectAttributes.addAttribute(FormSearchParams.RESTORE_PARAM_NAME, true);
-        return "redirect:/admin/list.action";
+        return REDIRECT_TO_LIST;
     }
 
     @ModelAttribute
@@ -386,12 +398,12 @@ public class AdminControllerBase implements XssCheckAware {
     }
 
     private boolean adminUsernameChangedToExisting(final AdminForm aForm) {
-        final ComAdmin currentAdmin = adminService.getAdmin(aForm.getAdminID(), aForm.getCompanyID());
+        final Admin currentAdmin = adminService.getAdmin(aForm.getAdminID(), aForm.getCompanyID());
         return !StringUtils.equals(currentAdmin.getUsername(), aForm.getUsername()) && adminService.adminExists(aForm.getUsername());
     }
 
     private boolean checkPassword(final AdminForm form, final Popups popups) {
-        ComAdmin admin = adminService.getAdmin(form.getAdminID(), form.getCompanyID());
+        Admin admin = adminService.getAdmin(form.getAdminID(), form.getCompanyID());
         PasswordCheckHandler handler = new SpringPasswordCheckHandler(popups, "password");
         if (admin != null && admin.getAdminID() != 0) {
             // Existing user changes his password
@@ -402,11 +414,11 @@ public class AdminControllerBase implements XssCheckAware {
         }
     }
 
-    private PaginatedListImpl<AdminEntry> getAdminListFromAdminListForm(ComAdmin admin, AdminListForm form) {
+    private PaginatedListImpl<AdminEntry> getAdminListFromAdminListForm(Admin admin, AdminListForm form) {
         return getAdminListFromAdminListForm(admin, form, form.getNumberOfRows());
     }
 
-    private PaginatedListImpl<AdminEntry> getAdminListFromAdminListForm(ComAdmin admin, AdminListForm form, int numberOfRows) {
+    private PaginatedListImpl<AdminEntry> getAdminListFromAdminListForm(Admin admin, AdminListForm form, int numberOfRows) {
         return adminService.getAdminList(admin.getCompanyID(),
                 form.getSearchFirstName(),
                 form.getSearchLastName(),
@@ -422,10 +434,10 @@ public class AdminControllerBase implements XssCheckAware {
                 numberOfRows);
     }
 
-    private String saveAdminAndGetView(AdminForm form, ComAdmin admin, Popups popups) {
+    private String saveAdminAndGetView(AdminForm form, Admin admin, Popups popups) {
         final boolean isNew = form.getAdminID() == 0;
 
-        ComAdmin oldSavingAdmin = null;
+        Admin oldSavingAdmin = null;
         AdminPreferences oldSavingAdminPreferences = null;
 
         if (!isNew) {
@@ -433,22 +445,22 @@ public class AdminControllerBase implements XssCheckAware {
             oldSavingAdminPreferences = adminService.getAdminPreferences(form.getAdminID());
             if (!StringUtils.equals(oldSavingAdmin.getUsername(), form.getUsername())
                     && adminService.checkBlacklistedAdminNames(form.getUsername())) {
-                popups.alert("error.username.duplicate");
-                return "messages";
+                popups.alert(USERNAME_DUPLICATE_MSG);
+                return MESSAGES_VIEW;
             }
-        } else if (adminService.adminLimitReached(form.getCompanyID())) {
+        } else if (adminService.isGuiAdminLimitReached(form.getCompanyID())) {
             popups.alert("error.admin.limit");
-            return "messages";
+            return MESSAGES_VIEW;
         }
 
         final AdminSavingResult result = adminService.saveAdmin(form, false, admin);
 
         if (!result.isSuccess()) {
             popups.alert(result.getError());
-            return "messages";
+            return MESSAGES_VIEW;
         }
 
-        final ComAdmin savedAdmin = result.getResult();
+        final Admin savedAdmin = result.getResult();
 
         if(admin.getAdminID() == savedAdmin.getAdminID()) {
             updateCurrentAdmin(admin, savedAdmin);
@@ -466,12 +478,12 @@ public class AdminControllerBase implements XssCheckAware {
 			}
 		}
 
-        popups.success("default.changes_saved");
+        popups.success(CHANGES_SAVED_MSG);
 
         return "redirect:/admin/" + savedAdmin.getAdminID() + "/view.action";
     }
 
-    protected void loadDataForViewPage(final ComAdmin admin, final ComAdmin adminToEdit, final Model model){
+    protected void loadDataForViewPage(final Admin admin, final Admin adminToEdit, final Model model){
         model.addAttribute("adminGroups", adminGroupService.getAdminGroupsByCompanyIdAndDefault(admin.getCompanyID(), admin, adminToEdit));
         model.addAttribute("layouts", adminService.getEmmLayoutsBase(admin.getCompanyID()));
         model.addAttribute("availableTimeZones", TimeZone.getAvailableIDs());
@@ -479,11 +491,11 @@ public class AdminControllerBase implements XssCheckAware {
         addExtendedModelAttr(admin, model);
     }
 
-    protected void addExtendedModelAttr(ComAdmin admin, Model model) {
+    protected void addExtendedModelAttr(Admin admin, Model model) {
         // nothing to do
     }
 
-    private void initializeForm(AdminForm form, ComAdmin adminToEdit, ComAdmin editorAdmin) {
+    private void initializeForm(AdminForm form, Admin adminToEdit, Admin editorAdmin) {
         form.setUsername(adminToEdit.getUsername());
         form.setGender(adminToEdit.getGender());
         form.setTitle(adminToEdit.getTitle());
@@ -510,11 +522,11 @@ public class AdminControllerBase implements XssCheckAware {
         );
     }
 
-    protected void setExtendedFieldsToForm(AdminForm form, ComAdmin adminToEdit, ComAdmin editorAdmin) {
+    protected void setExtendedFieldsToForm(AdminForm form, Admin adminToEdit, Admin editorAdmin) {
         // nothing to do
     }
 
-    private void prepareRightsViewPageData(ComAdmin admin, AdminRightsForm form, Model model, ComAdmin adminToEdit) {
+    private void prepareRightsViewPageData(Admin admin, AdminRightsForm form, Model model, Admin adminToEdit) {
         form.setUsername(adminToEdit.getUsername());
         Map<String, PermissionsOverviewData.PermissionCategoryEntry> permissionsOverview =
                 adminService.getPermissionOverviewData(admin, adminToEdit);
@@ -523,7 +535,7 @@ public class AdminControllerBase implements XssCheckAware {
         model.addAttribute("permissionCategories", list);
     }
 
-    private boolean saveAdminRightsAndWriteToActivityLog(ComAdmin admin, AdminRightsForm aForm, Popups popups) {
+    private boolean saveAdminRightsAndWriteToActivityLog(Admin admin, AdminRightsForm aForm, Popups popups) {
         Tuple<List<String>, List<String>> changes = adminService.saveAdminPermissions(admin.getCompanyID(),
                 aForm.getAdminID(), aForm.getUserRights(), admin.getAdminID());
 
@@ -531,7 +543,7 @@ public class AdminControllerBase implements XssCheckAware {
             popups.alert("error.admin.change.permission");
             return false;
         }
-        ComAdmin savingAdmin = adminService.getAdmin(aForm.getAdminID(), admin.getCompanyID());
+        Admin savingAdmin = adminService.getAdmin(aForm.getAdminID(), admin.getCompanyID());
 
         String action = String.format("User: \"%s\"(%d).", savingAdmin.getUsername(), savingAdmin.getAdminID());
         String added = StringUtils.join(changes.getFirst(), ", ");
@@ -548,7 +560,7 @@ public class AdminControllerBase implements XssCheckAware {
         return true;
     }
 
-    private void updateCurrentAdmin(final ComAdmin currentAdmin, final ComAdmin savedAdmin) {
+    private void updateCurrentAdmin(final Admin currentAdmin, final Admin savedAdmin) {
         currentAdmin.setAdminLang(savedAdmin.getAdminLang());
         currentAdmin.setAdminCountry(savedAdmin.getAdminCountry());
         currentAdmin.setAdminTimezone(savedAdmin.getAdminTimezone());
@@ -557,7 +569,12 @@ public class AdminControllerBase implements XssCheckAware {
     protected String prepareErrorPageForNotLoadedAdmin(final int adminId, final int companyID, final Popups popups,
                                                        final String viewName) {
         popups.alert("Error");
-        LOGGER.warn(MessageFormat.format("Could not load admin by admin id: {0}, company id: {1}.", adminId, companyID));
+        LOGGER.warn("Could not load admin by admin id: {}, company id: {}.", adminId, companyID);
         return viewName;
+    }
+
+    @Override
+    public boolean isParameterExcludedForUnsafeHtmlTagCheck(Admin admin, String param, String controllerMethodName) {
+        return "password".equals(param) || "passwordConfirm".equals(param);
     }
 }

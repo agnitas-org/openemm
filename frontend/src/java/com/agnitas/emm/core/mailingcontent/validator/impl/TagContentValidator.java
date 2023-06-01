@@ -13,7 +13,7 @@ package com.agnitas.emm.core.mailingcontent.validator.impl;
 import java.util.List;
 import java.util.Vector;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.mailingcontent.dto.DynContentDto;
 import com.agnitas.emm.core.mailingcontent.dto.DynTagDto;
 import com.agnitas.emm.core.mailingcontent.validator.DynTagValidator;
@@ -38,7 +38,7 @@ public class TagContentValidator implements DynTagValidator {
     }
 
     @Override
-    public boolean validate(DynTagDto dynTagDto, Popups popups, ComAdmin admin) {
+    public boolean validate(DynTagDto dynTagDto, Popups popups, Admin admin) {
         boolean hasNoErrors = true;
 
         try {

@@ -17,16 +17,16 @@ import jakarta.servlet.http.HttpSession;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.annotation.SessionScope;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 
 @Component
 @SessionScope
 public class AdminUserManager {
 
-    private ComAdmin admin;
+    private Admin admin;
 
     public AdminUserManager(HttpSession session){
-        this.admin = (ComAdmin) session.getAttribute(SESSION_CONTEXT_KEYNAME_ADMIN);
+        this.admin = (Admin) session.getAttribute(SESSION_CONTEXT_KEYNAME_ADMIN);
     }
 
     public int getCompanyId(){

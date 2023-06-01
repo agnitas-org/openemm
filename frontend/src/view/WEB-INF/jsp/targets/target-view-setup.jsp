@@ -123,10 +123,15 @@
                         <emm:instantiate var="dropDownItem" type="java.util.LinkedHashMap">
                             <c:set target="${dropDownItems}" property="1" value="${dropDownItem}" />
                             <c:set target="${dropDownItem}" property="url">
-                                <c:url value="/mailingbase.do">
-                                    <c:param name="action" value="2" />
-                                    <c:param name="mailingID" value="${mailingId}" />
-                                </c:url>
+                                <emm:ShowByPermission token="mailing.settings.migration">
+                                    <c:url value="/mailing/${mailingId}/settings.action"/>
+                                </emm:ShowByPermission>
+                                <emm:HideByPermission token="mailing.settings.migration">
+                                    <c:url value="/mailingbase.do">
+                                        <c:param name="action" value="2" />
+                                        <c:param name="mailingID" value="${mailingId}" />
+                                    </c:url>
+                                </emm:HideByPermission>
                             </c:set>
                             <c:set target="${dropDownItem}" property="icon" value="icon-reply" />
                             <c:set target="${dropDownItem}" property="name">

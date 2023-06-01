@@ -10,27 +10,31 @@
 
 package com.agnitas.emm.core.mailingcontent.converter;
 
-import java.util.Comparator;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import org.agnitas.beans.DynamicTagContent;
-import org.springframework.beans.factory.annotation.Lookup;
-import org.springframework.core.convert.converter.Converter;
-import org.springframework.stereotype.Component;
-
 import com.agnitas.beans.DynamicTag;
 import com.agnitas.emm.core.mailingcontent.dto.DynContentDto;
 import com.agnitas.emm.core.mailingcontent.dto.DynTagDto;
 import com.agnitas.service.ExtendedConversionService;
+import org.agnitas.beans.DynamicTagContent;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.convert.converter.Converter;
+import org.springframework.stereotype.Component;
+
+import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Component
 public class DynamicTagToDynTagDtoConverter implements Converter<DynamicTag, DynTagDto> {
 
+    private final ExtendedConversionService conversionService;
+
+    @Autowired
+    public DynamicTagToDynTagDtoConverter(ExtendedConversionService conversionService) {
+        this.conversionService = conversionService;
+    }
+
     @Override
     public DynTagDto convert(DynamicTag dynamicTag) {
-        ExtendedConversionService extendedConversionService = getExtendedConversionService();
-
         DynTagDto dynTagDto = new DynTagDto();
         dynTagDto.setId(dynamicTag.getId());
         dynTagDto.setMailingId(dynamicTag.getMailingID());
@@ -40,14 +44,9 @@ public class DynamicTagToDynTagDtoConverter implements Converter<DynamicTag, Dyn
         List<DynamicTagContent> dynTagContent = dynamicTag.getDynContent().values().stream()
                 .sorted(Comparator.comparingInt(DynamicTagContent::getDynOrder))
                 .collect(Collectors.toList());
-        List<DynContentDto> dynTagContentDtos = extendedConversionService.convert(dynTagContent, DynamicTagContent.class, DynContentDto.class);
+        List<DynContentDto> dynTagContentDtos = conversionService.convert(dynTagContent, DynamicTagContent.class, DynContentDto.class);
         dynTagDto.setContentBlocks(dynTagContentDtos);
 
         return dynTagDto;
-    }
-
-    @Lookup
-    public ExtendedConversionService getExtendedConversionService() {
-        return null;
     }
 }

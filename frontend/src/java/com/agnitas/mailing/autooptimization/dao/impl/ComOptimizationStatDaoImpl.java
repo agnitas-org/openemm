@@ -15,7 +15,6 @@ import java.util.Map;
 import org.agnitas.beans.BindingEntry.UserType;
 import org.agnitas.dao.UserStatus;
 import org.agnitas.dao.impl.BaseDaoImpl;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -24,10 +23,11 @@ import com.agnitas.mailing.autooptimization.dao.ComOptimizationStatDao;
 import com.agnitas.reporting.birt.external.dataset.CommonKeys;
 
 public class ComOptimizationStatDaoImpl extends BaseDaoImpl implements ComOptimizationStatDao {
-	private static final transient Logger logger = LogManager.getLogger(ComOptimizationStatDaoImpl.class);
+
+	private static final Logger logger = LogManager.getLogger(ComOptimizationStatDaoImpl.class);
 	
 	@Override
-	public int getBounces(int mailingID, @VelocityCheck int companyID) {
+	public int getBounces(int mailingID, int companyID) {
 		String query = "SELECT COUNT(DISTINCT customer_id) FROM customer_" + companyID + "_binding_tbl"
 			+ " WHERE user_status = ? AND exit_mailing_id = ?"
 			+ " AND user_type NOT IN ('" + UserType.Admin.getTypeCode() + "', '" + UserType.TestUser.getTypeCode() + "', '" + UserType.TestVIP.getTypeCode() + "')";
@@ -57,7 +57,7 @@ public class ComOptimizationStatDaoImpl extends BaseDaoImpl implements ComOptimi
     }
 
     @Override
-    public int getClicks(int mailingId, @VelocityCheck int companyId, String recipientsType) {
+    public int getClicks(int mailingId, int companyId, String recipientsType) {
         StringBuilder queryBuilder = new StringBuilder();
         queryBuilder
                 .append("select count(distinct x.customer_id) ")
@@ -68,7 +68,7 @@ public class ComOptimizationStatDaoImpl extends BaseDaoImpl implements ComOptimi
     }
 
     @Override
-    public int getOpened(int mailingId, @VelocityCheck int companyId, String recipientsType) {
+    public int getOpened(int mailingId, int companyId, String recipientsType) {
         StringBuilder queryBuilder = new StringBuilder();
         queryBuilder
                 .append("select count(distinct x.customer_id) ")
@@ -79,7 +79,7 @@ public class ComOptimizationStatDaoImpl extends BaseDaoImpl implements ComOptimi
     }
 
     @Override
-	public int getOptOuts(int mailingID,@VelocityCheck int companyID) {
+	public int getOptOuts(int mailingID, int companyID) {
 		String query = "SELECT count(distinct (bind.customer_id)) AS optout FROM " +
 			" customer_<COMPANYID>_binding_tbl bind " +
 			" WHERE bind.exit_mailing_id= ? AND (bind.user_status = 3 OR  bind.user_status = 4)" +
@@ -112,7 +112,7 @@ public class ComOptimizationStatDaoImpl extends BaseDaoImpl implements ComOptimi
     }
 
     @Override
-	public double getRevenue(int mailingID, @VelocityCheck int companyID) {
+	public double getRevenue(int mailingID, int companyID) {
         try {
             StringBuilder queryBuilder = new StringBuilder();
             queryBuilder

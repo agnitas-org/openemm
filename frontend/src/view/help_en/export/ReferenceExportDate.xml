@@ -1,4 +1,0 @@
-<HelpBalloon>
-	<title>Change in field creation_date</title>
-	<content><![CDATA[The export will include all data for which the date in the choosen field matches the defined period. To choose the current day you have to choose "0".]]></content>
-</HelpBalloon>

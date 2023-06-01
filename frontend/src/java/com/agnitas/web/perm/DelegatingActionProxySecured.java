@@ -29,7 +29,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 import org.springframework.web.struts.DelegatingActionProxy;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.admin.service.AdminService;
 
@@ -91,7 +91,7 @@ public class DelegatingActionProxySecured extends DelegatingActionProxy {
 			if (mappedToken == null) {
 				if (complexTokens == null) {
 					// No complex token was found and no simple token was found
-					ComAdmin admin = AgnUtils.getAdmin(request);
+					Admin admin = AgnUtils.getAdmin(request);
 					String errMsg = String.format("Permission denied: for user %s because no mapping configuration found for token: %s",
 							admin.getUsername(), token);
 					logger.error(errMsg);
@@ -106,7 +106,7 @@ public class DelegatingActionProxySecured extends DelegatingActionProxy {
 		if (isAllowed) {
 			return delegateAction.execute(mapping, form, request, response);
 		} else {
-			ComAdmin admin = AgnUtils.getAdmin(request);
+			Admin admin = AgnUtils.getAdmin(request);
 			String errMsg = String.format("Permission denied: %s does not have sufficient privileges to perform operation: %s",
 					admin.getUsername(), path);
 			if (mappedToken != null) {
@@ -118,7 +118,7 @@ public class DelegatingActionProxySecured extends DelegatingActionProxy {
 	}
 
 	private boolean checkAuthorized(HttpServletRequest request) {
-		ComAdmin admin = AgnUtils.getAdmin(request);
+		Admin admin = AgnUtils.getAdmin(request);
 
 		if (admin == null) {
 			return false;

@@ -13,6 +13,7 @@ package org.agnitas.emm.core.velocity;
 import java.io.Writer;
 import java.util.Map;
 
+import org.agnitas.emm.core.velocity.emmapi.CompanyAccessCheck;
 import org.agnitas.emm.core.velocity.event.StrutsActionMessageEventHandler;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -20,7 +21,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.runtime.RuntimeConstants;
-import org.apache.velocity.util.introspection.Uberspect;
 
 /**
  * Wrapper for Velocity hiding all the boilerplate code.
@@ -44,9 +44,9 @@ public class AbstractVelocityWrapper implements VelocityWrapper {
 	 * 
 	 * @throws Exception on errors initializing Velocity
 	 */
-	protected AbstractVelocityWrapper(int companyId, UberspectDelegateTargetFactory factory) throws Exception {
+	protected AbstractVelocityWrapper(int companyId, CompanyAccessCheck companyAccessCheck) throws Exception {
 		this.contextCompanyId = companyId;
-		this.engine = createEngine( companyId, factory);
+		this.engine = createEngine(companyId, companyAccessCheck);
 	}
 	
 	/**
@@ -60,24 +60,13 @@ public class AbstractVelocityWrapper implements VelocityWrapper {
 	 * 
 	 * @throws Exception on errors initializing Velocity
 	 */
-	private VelocityEngine createEngine( int companyId, UberspectDelegateTargetFactory factory) throws Exception {
+	private VelocityEngine createEngine(int companyId, CompanyAccessCheck companyAccessCheck) {
 		VelocityEngine ve = new VelocityEngine();
 		
 		ve.setProperty(RuntimeConstants.INPUT_ENCODING, "UTF-8");
 		ve.setProperty(RuntimeConstants.EVENTHANDLER_INCLUDE, "org.agnitas.emm.core.velocity.IncludeParsePreventionHandler");
 		
-		Uberspect uberspectDelegateTarget = factory.newDelegateTarget( companyId);
-		
-		if( uberspectDelegateTarget != null) {
-			if( logger.isInfoEnabled()) {
-				logger.info( "Setting uberspect delegate target: " + uberspectDelegateTarget.getClass().getCanonicalName());
-			}
-			
-			ve.setProperty( RuntimeConstants.UBERSPECT_CLASSNAME, UberspectDelegate.class.getCanonicalName());
-			ve.setProperty( UberspectDelegate.DELEGATE_TARGET_PROPERTY_NAME, uberspectDelegateTarget);
-		} else {
-			logger.warn( "SECURITY LEAK: No uberspector defined");
-		}
+        companyAccessCheck.checkCompanyAccess(companyId, getCompanyId());
 		
 		try {
 			ve.init();

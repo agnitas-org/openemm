@@ -10,7 +10,7 @@
 
 package com.agnitas.emm.core.logon.dao;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.supervisor.beans.Supervisor;
 
 /**
@@ -21,7 +21,7 @@ public interface ComHostAuthenticationDao {
 	/**
 	 * Returns security code for pending host authentication.
 	 * 
-	 * @param admin admin  
+	 * @param admin admin
 	 * @param hostID host ID
 	 * 
 	 * @return security code for pending authentication
@@ -29,7 +29,7 @@ public interface ComHostAuthenticationDao {
 	 * @throws NoSecurityCodeHostAuthenticationDaoException if there is no pending host authentication for given admin and host
 	 * @throws HostAuthenticationDaoException on errors during processing
 	 */
-	public String getSecurityCode(ComAdmin admin, String hostID) throws HostAuthenticationDaoException, NoSecurityCodeHostAuthenticationDaoException;
+	public String getSecurityCode(Admin admin, String hostID) throws HostAuthenticationDaoException, NoSecurityCodeHostAuthenticationDaoException;
 
 	/**
 	 * Returns security code for pending host authentication.
@@ -47,18 +47,18 @@ public interface ComHostAuthenticationDao {
 	/**
 	 * Writes a security code for a pending host authentication.
 	 * 
-	 * @param admin admin 
+	 * @param admin admin
 	 * @param hostID host ID
 	 * @param securityCode security code
 	 * 
 	 * @throws HostAuthenticationDaoException on errors during processing
 	 */
-	public void writePendingSecurityCode(ComAdmin admin, String hostID, String securityCode) throws HostAuthenticationDaoException;
+	public void writePendingSecurityCode(Admin admin, String hostID, String securityCode) throws HostAuthenticationDaoException;
 	
 	/**
 	 * Writes a security code for a pending host authentication.
 	 * 
-	 * @param supervisor supervisor 
+	 * @param supervisor supervisor
 	 * @param hostID host ID
 	 * @param securityCode security code
 	 * 
@@ -76,7 +76,7 @@ public interface ComHostAuthenticationDao {
 	 * 
 	 * @throws HostAuthenticationDaoException on errors during processing
 	 */
-	public boolean isHostAuthenticated(ComAdmin admin, String hostID) throws HostAuthenticationDaoException;
+	public boolean isHostAuthenticated(Admin admin, String hostID) throws HostAuthenticationDaoException;
 	
 	/**
 	 * Checks if host is authenticated for given supervisor.
@@ -94,13 +94,13 @@ public interface ComHostAuthenticationDao {
 	 * Writes data for a host authentication. Either a new host authentication is written or the expiration date of an
 	 * existing host authentication is updated.
 	 * 
-	 * @param admin admin 
+	 * @param admin admin
 	 * @param hostID host ID
 	 * @param expiresInDays duration of validity in days of host authentication
 	 * 
 	 * @throws HostAuthenticationDaoException on errors during processing
 	 */
-	public void writeHostAuthentication(ComAdmin admin, String hostID, int expiresInDays) throws HostAuthenticationDaoException;
+	public void writeHostAuthentication(Admin admin, String hostID, int expiresInDays) throws HostAuthenticationDaoException;
 
 	/**
 	 * Writes data for a host authentication. Either a new host authentication is written or the expiration date of an
@@ -117,17 +117,17 @@ public interface ComHostAuthenticationDao {
 	/**
 	 * Removes pending security code for admin and host.
 	 * 
-	 * @param admin admin 
+	 * @param admin admin
 	 * @param hostID host ID
 	 * 
 	 * @throws HostAuthenticationDaoException on errors during processing
 	 */
-	public void removePendingSecurityCode(ComAdmin admin, String hostID) throws HostAuthenticationDaoException;
+	public void removePendingSecurityCode(Admin admin, String hostID) throws HostAuthenticationDaoException;
 
 	/**
 	 * Removes pending security code for supervisor and host.
 	 * 
-	 * @param supervisor supervisor 
+	 * @param supervisor supervisor
 	 * @param hostID host ID
 	 * 
 	 * @throws HostAuthenticationDaoException on errors during processing
@@ -135,12 +135,12 @@ public interface ComHostAuthenticationDao {
 	public void removePendingSecurityCode(Supervisor supervisor, String hostID) throws HostAuthenticationDaoException;
 
 	/**
-	 * Remove all expired host authentications. 
+	 * Remove all expired host authentications.
 	 */
 	public void removeExpiredHostAuthentications();
 
 	/**
-	 * Remove all pending host authentications old than given maximum age. 
+	 * Remove all pending host authentications old than given maximum age.
 	 * 
 	 * @param maxPendingHostAuthenticationsAgeMinutes maximum age of a pending host authentication in minutes
 	 */

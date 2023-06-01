@@ -108,10 +108,6 @@ public class LoginTrackingXwsSecurityInterceptor extends XwsSecurityInterceptor 
 			}
 			
 			this.loginTrackService.trackLoginSuccessful(ip, usernameOrNull);
-			
-			if(usernameOrNull != null) {
-				this.webserviceUserService.updateLastLoginDate(usernameOrNull);
-			}
 		}
 	}
 	

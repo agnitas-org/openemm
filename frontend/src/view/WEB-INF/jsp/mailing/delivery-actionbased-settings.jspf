@@ -69,43 +69,45 @@
     <%-- Activate buttons--%>
     <logic:equal name="mailingSendForm" property="worldMailingSend" value="false">
         <emm:ShowByPermission token="mailing.send.world">
-            <c:choose>
-                <c:when test="${not mailingSendForm.hasDeletedTargetGroups}">
-                    <div class="form-group">
-                        <div class="col-sm-4">
-                            <label class="control-label">
-                                <bean:message key="MailingActivate" />
-                            </label>
-                        </div>
-                        <div class="col-sm-8">
-                            <c:if test="${not isWorkflowDriven}">
-                                <html:link styleClass="btn btn-regular btn-primary"
-                                        page="/mailingsend.do?action=${ACTION_ACTIVATE_CAMPAIGN}&to=3&mailingID=${tmpMailingID}">
-                                    <i class="icon icon-check-circle-o"></i>
-                                    <span class="text"><bean:message key="button.Activate" /></span>
-                                </html:link>
-                            </c:if>
-                            <c:if test="${isWorkflowDriven}">
-                                <div class="input-group">
-                                    <div class="input-group-btn">
-                                        <button class="btn btn-regular" disabled='disabled'>
-                                            <i class="icon icon-check-circle-o"></i>
-                                            <span class="text"><bean:message key="button.Activate" /></span>
-                                        </button>
-                                        <a href="${WORKFLOW_LINK}" class="btn btn-info btn-regular">
-                                            <i class="icon icon-linkage-campaignmanager"></i>
-                                            <strong><bean:message key="campaign.manager.icon"/></strong>
-                                        </a>
-                                    </div>
-                                </div>
-                            </c:if>
-                        </div>
-                    </div>
-                </c:when>
-                <c:otherwise>
-                    <%@ include file="fragments/mailing-cannot-activate-message.jspf" %>
-                </c:otherwise>
-            </c:choose>
+        	<c:if test="${canSendOrActivateMailing}">
+	            <c:choose>
+	                <c:when test="${not mailingSendForm.hasDeletedTargetGroups}">
+	                    <div class="form-group">
+	                        <div class="col-sm-4">
+	                            <label class="control-label">
+	                                <bean:message key="MailingActivate" />
+	                            </label>
+	                        </div>
+	                        <div class="col-sm-8">
+	                            <c:if test="${not isWorkflowDriven}">
+	                                <html:link styleClass="btn btn-regular btn-primary"
+	                                        page="/mailingsend.do?action=${ACTION_ACTIVATE_CAMPAIGN}&to=3&mailingID=${tmpMailingID}">
+	                                    <i class="icon icon-check-circle-o"></i>
+	                                    <span class="text"><bean:message key="button.Activate" /></span>
+	                                </html:link>
+	                            </c:if>
+	                            <c:if test="${isWorkflowDriven}">
+	                                <div class="input-group">
+	                                    <div class="input-group-btn">
+	                                        <button class="btn btn-regular" disabled='disabled'>
+	                                            <i class="icon icon-check-circle-o"></i>
+	                                            <span class="text"><bean:message key="button.Activate" /></span>
+	                                        </button>
+	                                        <a href="${WORKFLOW_LINK}" class="btn btn-info btn-regular">
+	                                            <i class="icon icon-linkage-campaignmanager"></i>
+	                                            <strong><bean:message key="campaign.manager.icon"/></strong>
+	                                        </a>
+	                                    </div>
+	                                </div>
+	                            </c:if>
+	                        </div>
+	                    </div>
+	                </c:when>
+	                <c:otherwise>
+	                    <%@ include file="fragments/mailing-cannot-activate-message.jspf" %>
+	                </c:otherwise>
+	            </c:choose>
+	        </c:if>
         </emm:ShowByPermission>
     </logic:equal>
 

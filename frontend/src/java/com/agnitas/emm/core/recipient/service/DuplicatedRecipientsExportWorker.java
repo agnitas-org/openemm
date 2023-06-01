@@ -29,19 +29,19 @@ import org.agnitas.util.SqlPreparedStatementManager;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.messages.I18nString;
 
 public class DuplicatedRecipientsExportWorker extends GenericExportWorker {
     private static final transient Logger LOGGER = LogManager.getLogger(DuplicatedRecipientsExportWorker.class);
 
     private RecipientQueryBuilder recipientQueryBuilder;
-    private ComAdmin admin;
+    private Admin admin;
     private RecipientDuplicateSqlOptions sqlOptions;
     private List<String> selectedFields;
     private Map<String, String> fieldsNames;
 
-    public DuplicatedRecipientsExportWorker(RecipientQueryBuilder recipientQueryBuilder, ComAdmin admin, RecipientDuplicateSqlOptions sqlOptions, List<String> selectedFields, Map<String, String> fieldsNames) {
+    public DuplicatedRecipientsExportWorker(RecipientQueryBuilder recipientQueryBuilder, Admin admin, RecipientDuplicateSqlOptions sqlOptions, List<String> selectedFields, Map<String, String> fieldsNames) {
         this.admin = admin;
         this.recipientQueryBuilder = recipientQueryBuilder;
         this.sqlOptions = sqlOptions;
@@ -106,7 +106,7 @@ public class DuplicatedRecipientsExportWorker extends GenericExportWorker {
 
     public static class Builder {
         private String exportFile;
-        private ComAdmin admin;
+        private Admin admin;
         private DataSource dataSource;
         private RecipientQueryBuilder recipientQueryBuilder;
         private DateFormat dateFormat;
@@ -121,7 +121,7 @@ public class DuplicatedRecipientsExportWorker extends GenericExportWorker {
         	this.recipientQueryBuilder = Objects.requireNonNull(recipientQueryBuilder);
         }
     
-        public DuplicatedRecipientsExportWorker.Builder setAdmin(ComAdmin admin) {
+        public DuplicatedRecipientsExportWorker.Builder setAdmin(Admin admin) {
             this.admin = admin;
             return this;
         }

@@ -29,8 +29,8 @@ public class ProfileFieldForm extends PaginationForm {
     private String fieldDefault = StringUtils.EMPTY;
     private boolean fieldNull = true;
     private String shortname = StringUtils.EMPTY;
-    private String dependentWorkflows;
-    private String dependentWorkflowName;
+    private String dependentWorkflows; // TODO check usage after ProfileFieldsControllerOld.java has been removed
+    private String dependentWorkflowName; // TODO delete after ProfileFieldsControllerOld.java has been removed
 
     public boolean isFieldVisible() {
         return fieldVisible;

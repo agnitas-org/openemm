@@ -19,7 +19,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.agnitas.util.Log;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 /**
  * Container class to keep track of all used social networks and the
@@ -102,15 +101,12 @@ public class SWYN {
 	 * sequence to use them
 	 */
 	public void setup() {
-		NamedParameterJdbcTemplate jdbc;
 		List<Map<String, Object>> rq;
 		Map<String, Object> row;
 		String query = "SELECT name, source, isize, charset, ordering, image, icon, target, code " + "FROM swyn_tbl " + "WHERE company_id IN (0, :companyID) " + "ORDER BY company_id";
 
-		jdbc = null;
-		try {
-			jdbc = data.dbase.request(query);
-			rq = data.dbase.query(jdbc, query, "companyID", data.company.id());
+		try (DBase.With with = data.dbase.with (query)) {
+			rq = data.dbase.query(with.cursor (), query, "companyID", data.company.id());
 			for (int n = 0; n < rq.size(); ++n) {
 				row = rq.get(n);
 
@@ -153,8 +149,6 @@ public class SWYN {
 			}
 		} catch (Exception e) {
 			data.logging(Log.WARNING, "swyn", "Failed to read swyn_tbl: " + e.toString(), e);
-		} finally {
-			data.dbase.release(jdbc, query);
 		}
 		for (Size sz : sizes.values()) {
 			sz.sort();

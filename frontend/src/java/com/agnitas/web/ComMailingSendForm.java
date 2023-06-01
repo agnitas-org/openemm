@@ -14,9 +14,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import jakarta.servlet.http.HttpServletRequest;
-
-import org.agnitas.emm.core.autoexport.bean.AutoExport;
 import org.agnitas.web.MailingSendForm;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.struts.action.ActionErrors;
@@ -26,6 +23,8 @@ import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MediatypeEmail;
 import com.agnitas.emm.core.beans.Dependent;
 import com.agnitas.emm.core.mailing.bean.MailingDependentType;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 public class ComMailingSendForm extends MailingSendForm {
 	private static final long serialVersionUID = -2719144223604027921L;
@@ -54,8 +53,6 @@ public class ComMailingSendForm extends MailingSendForm {
 
 	private int percentsComplete;
 
-	private int autoExportId;
-
 	/**
 	 * Holds value of property doublechecking.
 	 */
@@ -76,7 +73,6 @@ public class ComMailingSendForm extends MailingSendForm {
 	private boolean isMailingUndoAvailable;
 
 	private Map<String, String> styles;
-	List<AutoExport> autoExports;
 
 	private String[] mailingTestRecipients;
 	private String[] filterTypes;
@@ -87,14 +83,6 @@ public class ComMailingSendForm extends MailingSendForm {
 		super.reset(mapping, request);
 
 		styles = new HashMap<>();
-	}
-
-	public int getAutoExportId() {
-		return autoExportId;
-	}
-
-	public void setAutoExportId(int autoExportId) {
-		this.autoExportId = autoExportId;
 	}
 
 	/**
@@ -366,14 +354,6 @@ public class ComMailingSendForm extends MailingSendForm {
 
 	public void setIsMailingUndoAvailable(boolean isMailingUndoAvailable) {
 		this.isMailingUndoAvailable = isMailingUndoAvailable;
-	}
-
-	public List<AutoExport> getAutoExports() {
-		return autoExports;
-	}
-
-	public void setAutoExports(List<AutoExport> autoExports) {
-		this.autoExports = autoExports;
 	}
 
 	public String[] getMailingTestRecipients() {

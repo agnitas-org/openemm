@@ -24,6 +24,7 @@ import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.zip.GZIPOutputStream;
@@ -203,7 +204,7 @@ public class MailWriterMeta extends MailWriter {
 			try {
 				boolean ok;
 
-				ok = (Boolean) XMLRPCClient.invoke("localhost", 9400, 2000, "unpack", fname);
+				ok = (Boolean) XMLRPCClient.invoke(Data.syscfg.get ("direct-path-server", "localhost"), Data.syscfg.get ("direct-path-port", 9400), 2000, "unpack", fname);
 				data.logging(Log.DEBUG, "trigger", "Trigger direct path " + (ok ? "succeeded" : "failed"));
 			} catch (Exception e) {
 				data.logging(Log.ERROR, "trigger", e.toString());
@@ -644,7 +645,7 @@ public class MailWriterMeta extends MailWriter {
 			List<String> bcc = data.bcc();
 
 			if ((bcc != null) && (bcc.size() > 0)) {
-				c.add("bcc", bcc.stream().map((s) -> StringOps.punycodeEMail(s.trim())).filter((s) -> s.length() > 0).reduce((s, e) -> s + "," + e).orElse(null));
+				c.add("bcc", bcc.stream().map((s) -> Str.punycodeEMail(s.trim())).filter((s) -> s.length() > 0).reduce((s, e) -> s + "," + e).orElse(null));
 			}
 		}
 
@@ -869,9 +870,6 @@ public class MailWriterMeta extends MailWriter {
 						break;
 					case Media.TYPE_PRINT:
 						path = data.mailing.outputDirectoryForCompany("print");
-						break;
-					case Media.TYPE_MMS:
-						path = data.mailing.outputDirectoryForCompany("mms");
 						break;
 					case Media.TYPE_SMS:
 						path = data.mailing.outputDirectoryForCompany("sms");
@@ -1121,8 +1119,9 @@ public class MailWriterMeta extends MailWriter {
 		}
 		mailingInfo();
 		SimpleDateFormat fmt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		Date sendDate = data.genericSendDate();
 
-		writer.openclose("send", "date", fmt.format(data.sendDate()));
+		writer.openclose("send", "date", fmt.format(sendDate), "epoch", (sendDate.getTime () / 1000));
 	}
 
 	protected void mailingInfo() {

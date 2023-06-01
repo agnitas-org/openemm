@@ -13,15 +13,15 @@ package com.agnitas.emm.core.bounce.service;
 import java.util.List;
 import java.util.TimeZone;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.bounce.dto.BounceFilterDto;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public interface BounceFilterService {
-    int saveBounceFilter(ComAdmin admin, BounceFilterDto bounceFilter, boolean isNew) throws Exception;
+    int saveBounceFilter(Admin admin, BounceFilterDto bounceFilter, boolean isNew) throws Exception;
 
-    PaginatedListImpl<BounceFilterDto> getPaginatedBounceFilterList(ComAdmin admin, String sort, String direction, int page, int rownums);
+    PaginatedListImpl<BounceFilterDto> getPaginatedBounceFilterList(Admin admin, String sort, String direction, int page, int rownums);
 
 	int saveBounceFilter(int companyId, TimeZone adminTimeZone, BounceFilterDto bounceFilter, boolean isNew) throws Exception;
 
@@ -31,5 +31,7 @@ public interface BounceFilterService {
 
     boolean isMailingUsedInBounceFilterWithActiveAutoResponder(@VelocityCheck int companyId, int mailingId);
     
-    List<BounceFilterDto> getDependentBounceFiltersWithActiveAutoResponderByMailing(@VelocityCheck int companyId, int mailingId);
+    List<BounceFilterDto> getDependentBounceFiltersWithActiveAutoResponder(@VelocityCheck int companyId, int mailingId);
+
+    String getBounceFilterNames(List<BounceFilterDto> filters);
 }

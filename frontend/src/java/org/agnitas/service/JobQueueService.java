@@ -51,7 +51,7 @@ public class JobQueueService implements ApplicationContextAware {
 	
 	private Date lastCheckAndRunJobTime = null;
 
-	private List<JobWorker> queuedJobWorkers= new ArrayList<>();
+	private List<JobWorker> queuedJobWorkers = new ArrayList<>();
 	private List<JobDto> queuedJobsTodo = new ArrayList<>();
 
 	@Override
@@ -207,6 +207,15 @@ public class JobQueueService implements ApplicationContextAware {
 					}
 				}
 			}
+			
+			if (queuedJobsTodo.size() > 0) {
+				logWaitingJobWorkers();
+				
+				if (queuedJobWorkers.contains(null)) {
+					logger.error("List 'queuedJobWorkers' contains null");
+					queuedJobWorkers.remove(null);
+				}
+			}
 		} else {
 			queuedJobsTodo.clear();
 			
@@ -214,6 +223,50 @@ public class JobQueueService implements ApplicationContextAware {
 				worker.setStopSign();
 			}
 		}
+	}
+
+	private void logWaitingJobWorkers() {
+		List<String> runningJobWorkerNames = new ArrayList<>();
+		try {
+			for (JobWorker queuedJobWorker : queuedJobWorkers) {
+				if (queuedJobWorker == null) {
+					logger.error("List 'queuedJobWorker' contains 'null' value");
+					runningJobWorkerNames.add("<null>");
+				} else {
+					String queuedJobWorkerName = queuedJobWorker.getJobDescription();
+					if (queuedJobWorkerName == null) {
+						logger.error("JobWorker returned 'null' value as name");
+					} else {
+						runningJobWorkerNames.add(queuedJobWorkerName);
+					}
+				}
+			}
+		} catch (Exception e) {
+			logger.error("Cannot create names list 'runningJobWorkerNames': " + e.getMessage(), e);
+		}
+		
+		List<String> waitingJobWorkerNames = new ArrayList<>();
+		try {
+			for (JobDto todoJobWorker : queuedJobsTodo) {
+				if (todoJobWorker == null) {
+					logger.error("List 'queuedJobsTodo' contains 'null' value");
+					waitingJobWorkerNames.add("<null>");
+				} else {
+					String todoJobWorkerName = todoJobWorker.getDescription();
+					if (todoJobWorkerName == null) {
+						logger.error("JobWorker returned 'null' value as name");
+					} else {
+						waitingJobWorkerNames.add(todoJobWorkerName);
+					}
+				}
+			}
+		} catch (Exception e) {
+			logger.error("Cannot create names list 'waitingJobWorkerNames': " + e.getMessage(), e);
+		}
+		
+		logger.warn(queuedJobsTodo.size() + " JobWorker are waiting, because already running " + queuedJobWorkers.size() + " JobWorker\n"
+				+ "JobWorker running: " + StringUtils.join(runningJobWorkerNames, ", ") + "\n"
+				+ "JobWorker waiting: " + StringUtils.join(waitingJobWorkerNames, ", "));
 	}
 
 	private JobWorker createJobWorker(JobDto jobToStart) throws InstantiationException, IllegalAccessException, ClassNotFoundException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException {
@@ -230,8 +283,20 @@ public class JobQueueService implements ApplicationContextAware {
 		return worker;
 	}
 	
-	public void showJobEnd(JobWorker worker) {
-		queuedJobWorkers.remove(worker);
+	public synchronized void showJobEnd(JobWorker worker) {
+		if (queuedJobWorkers.contains(null)) {
+			logger.error("List 'queuedJobWorkers' contains null before removal of ended job");
+			queuedJobWorkers.remove(null);
+		}
+		
+		if (!queuedJobWorkers.remove(worker)) {
+			logger.error("Cannot remove " + worker.getJobDescription() + " from 'queuedJobWorkers'");
+		}
+
+		if (queuedJobWorkers.contains(null)) {
+			logger.error("List 'queuedJobWorkers' contains null after removal of ended job");
+			queuedJobWorkers.remove(null);
+		}
 		
 		checkAndStartNewWorkers();
 	}

@@ -18,6 +18,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import com.agnitas.web.mvc.XssCheckAware;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.service.UserActivityLogService;
@@ -42,7 +43,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.FormComponent;
 import com.agnitas.emm.core.components.dto.FormUploadComponentDto;
 import com.agnitas.emm.core.components.form.FormUploadComponentsForm;
@@ -61,16 +62,15 @@ import com.agnitas.web.perm.annotations.PermissionMapping;
 @Controller
 @RequestMapping("/webform")
 @PermissionMapping("userform.components")
-public class UserFormComponentController {
+public class UserFormComponentController implements XssCheckAware {
 	
-	/** The logger. */
 	private static final Logger logger = LogManager.getLogger(UserFormComponentController.class);
 
-	private ComUserformService userformService;
-	private ComComponentService componentService;
-	private ConfigService configService;
-	private UserActivityLogService userActivityLogService;
-	private ExtendedConversionService conversionService;
+	private final ComUserformService userformService;
+	private final ComComponentService componentService;
+	private final ConfigService configService;
+	private final UserActivityLogService userActivityLogService;
+	private final ExtendedConversionService conversionService;
 
 	public UserFormComponentController(ComUserformService userformService, ComComponentService componentService, ConfigService configService, UserActivityLogService userActivityLogService, ExtendedConversionService conversionService) {
 		this.userformService = userformService;
@@ -81,7 +81,7 @@ public class UserFormComponentController {
 	}
 
 	@RequestMapping("/{formId:\\d+}/components/list.action")
-	public String list(ComAdmin admin, @PathVariable int formId, @ModelAttribute("form") PaginationForm form, Model model) {
+	public String list(Admin admin, @PathVariable int formId, @ModelAttribute("form") PaginationForm form, Model model) {
 		UserFormDto userForm = userformService.getUserForm(admin.getCompanyID(), formId);
 		String userFormInfo = StringUtils.join(Arrays.asList(userForm.getName(), StringUtils.trimToNull(userForm.getDescription())), " | ");
 
@@ -99,7 +99,7 @@ public class UserFormComponentController {
 
 
 	@GetMapping("/{formId:\\d+}/components/{compName}/confirmDelete.action")
-	public String confirmDelete(ComAdmin admin, @PathVariable int formId, @PathVariable String compName,
+	public String confirmDelete(Admin admin, @PathVariable int formId, @PathVariable String compName,
 								SimpleActionForm form, Model model, Popups popups) {
 		FormComponent formComponent = componentService.getFormComponent(formId, admin.getCompanyID(), compName, IMAGE);
 		if (formComponent == null) {
@@ -114,32 +114,36 @@ public class UserFormComponentController {
 	}
 
 	@RequestMapping(value = "/{formId:\\d+}/components/delete.action",  method = {RequestMethod.POST, RequestMethod.DELETE})
-	public String delete(ComAdmin admin, @PathVariable int formId, SimpleActionForm form, Popups popups) {
+	public String delete(Admin admin, @PathVariable int formId, SimpleActionForm form, Popups popups) {
 		boolean deleted = componentService.deleteFormComponent(formId, admin.getCompanyID(), form.getShortname());
 		if (deleted) {
 			popups.success("default.selection.deleted");
-			return "redirect:/webform/" + formId + "/components/list.action";
+			return redirectToComponentList(formId);
 		}
 
 		popups.alert("changes_not_saved");
 		return "messages";
 	}
 
+    private String redirectToComponentList(@PathVariable int formId) {
+        return "redirect:/webform/" + formId + "/components/list.action";
+    }
+
 	@GetMapping(value = "/{formId:\\d+}/components/bulkDownload.action")
 	@PermissionMapping("download")
-	public Object bulkDownload(ComAdmin admin, @PathVariable int formId, Popups popups) {
+	public Object bulkDownload(Admin admin, @PathVariable int formId, Popups popups) {
 		int companyId = admin.getCompanyID();
 		Map<String, byte[]> component = componentService.getImageComponentsData(companyId, formId);
 		if (MapUtils.isEmpty(component)) {
 			popups.alert("error.default.nothing_selected");
-			return "redirect:/webform/" + formId + "/components/list.action";
+			return redirectToComponentList(formId);
 		}
 
 		String zipName = "FormComponents_" + formId + ".zip";
 		File zipFile = componentService.getComponentArchive(zipName, component);
 
         if (zipFile == null) {
-			return "redirect:/webform/" + formId + "/components/list.action";
+			return redirectToComponentList(formId);
 		}
 
         writeUserActivityLog(admin, new UserAction("download form components", String.format("Form ID: %d", formId)));
@@ -151,7 +155,7 @@ public class UserFormComponentController {
 	}
 
 	@PostMapping(value = "/{formId:\\d+}/components/upload.action")
-	public String upload(ComAdmin admin, @PathVariable int formId, FormUploadComponentsForm form, Popups popups) {
+	public String upload(Admin admin, @PathVariable int formId, FormUploadComponentsForm form, Popups popups) {
 		List<FormUploadComponentDto> components = new ArrayList<>(form.getComponents().values());
 		if (!validate(components, popups)) {
 			return "messages";
@@ -172,7 +176,7 @@ public class UserFormComponentController {
 				result.getErrorMessages().forEach(popups::alert);
 			}
 
-			return "redirect:/webform/" + formId + "/components/list.action";
+			return redirectToComponentList(formId);
 		} catch (Exception e) {
 			logger.error("Upload user form coponents failed!", e);
 		}
@@ -182,8 +186,8 @@ public class UserFormComponentController {
 
 	@PostMapping(value = "/{formId:\\d+}/components/uploadZip.action")
 	@PermissionMapping("upload")
-	public String uploadZip(ComAdmin admin, @PathVariable int formId, FormZipUploadComponentsForm form, Popups popups) {
-		if (!validateFile(form.getZipFile(), popups)) {
+	public String uploadZip(Admin admin, @PathVariable int formId, FormZipUploadComponentsForm form, Popups popups) {
+		if (!checkIfFileExists(form.getZipFile(), popups)) {
 			return "messages";
 		}
 
@@ -200,12 +204,12 @@ public class UserFormComponentController {
 			result.getErrorMessages().forEach(popups::alert);
 		}
 
-		return "redirect:/webform/" + formId + "/components/list.action";
+		return redirectToComponentList(formId);
 	}
 
 	private boolean validate(List<FormUploadComponentDto> components, Popups popups) {
 		for (FormUploadComponentDto component : components) {
-			if (!validateFile(component.getFile(), popups)) {
+			if (!checkIfFileExists(component.getFile(), popups)) {
 				return false;
 			}
 		}
@@ -216,7 +220,7 @@ public class UserFormComponentController {
 		return !popups.hasAlertPopups();
 	}
 
-	private boolean validateFile(MultipartFile file, Popups popups) {
+	private boolean checkIfFileExists(MultipartFile file, Popups popups) {
 		if (file == null || file.isEmpty()) {
 			popups.alert("error.file.missingOrEmpty");
 			return false;
@@ -224,7 +228,7 @@ public class UserFormComponentController {
 		return true;
 	}
 
-	private void setComponentsSrcPatterns(ComAdmin admin, int formId, Model model) {
+	private void setComponentsSrcPatterns(Admin admin, int formId, Model model) {
 		String redirectDomain = AgnUtils.getRedirectDomain(admin.getCompany());
 		int licenceId = configService.getLicenseID();
 
@@ -235,7 +239,7 @@ public class UserFormComponentController {
 		WebFormUtils.getImageSrcPattern(redirectDomain, licenceId, admin.getCompanyID(), formId, true);
 	}
 
-	private void writeUserActivityLog(ComAdmin admin, UserAction userAction) {
+	private void writeUserActivityLog(Admin admin, UserAction userAction) {
 		if (userActivityLogService != null) {
 			userActivityLogService.writeUserActivityLog(admin, userAction, logger);
 		} else {

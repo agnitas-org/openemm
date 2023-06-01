@@ -45,5 +45,5 @@ public interface CampaignStats {
 	public double getBiggestRevenue();	// get the biggest Revenue of this campaign
 	public void setBiggestRevenue(double in_Revenue);// set the biggest revenue of this campaign
 	public double getTotalRevenue();	// get the sum of all Revenues of this campaign
-	public void setTotalRevenue(double in_Revenue);	// sets the sum of all revenues of this campaign.	
+	public void setTotalRevenue(double in_Revenue);	// sets the sum of all revenues of this campaign.
 }

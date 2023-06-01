@@ -16,7 +16,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.struts.actions.DispatchAction;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 
 public class BaseDispatchActionSupport extends DispatchAction {
 	
@@ -31,7 +31,7 @@ public class BaseDispatchActionSupport extends DispatchAction {
 		this.userActivityLogService = userActivityLogService;
 	}
     
-	protected void writeUserActivityLog(ComAdmin admin, String action, String description) {
+	protected void writeUserActivityLog(Admin admin, String action, String description) {
     	try {
 			if (userActivityLogService != null) {
 				userActivityLogService.writeUserActivityLog(admin, action, description);
@@ -45,7 +45,7 @@ public class BaseDispatchActionSupport extends DispatchAction {
 		}
     }
     
-    protected void writeUserActivityLog(ComAdmin admin, String action, int description)  {
+    protected void writeUserActivityLog(Admin admin, String action, int description)  {
     	try {
 	    	if (userActivityLogService != null) {
 	    		userActivityLogService.writeUserActivityLog(admin, action, Integer.toString(description));

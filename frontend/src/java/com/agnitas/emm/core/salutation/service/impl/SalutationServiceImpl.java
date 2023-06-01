@@ -10,20 +10,19 @@
 
 package com.agnitas.emm.core.salutation.service.impl;
 
+import com.agnitas.dao.ComTitleDao;
+import com.agnitas.emm.core.salutation.service.SalutationService;
 import org.agnitas.beans.SalutationEntry;
 import org.agnitas.beans.Title;
 import org.agnitas.beans.impl.PaginatedListImpl;
-import org.springframework.beans.factory.annotation.Required;
-
-import com.agnitas.dao.ComTitleDao;
-import com.agnitas.emm.core.salutation.service.SalutationService;
+import org.springframework.beans.factory.annotation.Autowired;
 
 public class SalutationServiceImpl implements SalutationService {
 
-    private ComTitleDao titleDao;
+    private final ComTitleDao titleDao;
 
-    @Required
-    public void setTitleDao(ComTitleDao titleDao) {
+    @Autowired
+    public SalutationServiceImpl(ComTitleDao titleDao) {
         this.titleDao = titleDao;
     }
 

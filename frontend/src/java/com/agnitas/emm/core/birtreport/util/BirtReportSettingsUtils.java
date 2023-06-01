@@ -86,7 +86,7 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportMailingSettings;
 import com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportRecipientSettings;
 import com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings;
@@ -188,7 +188,7 @@ public class BirtReportSettingsUtils {
         return BooleanUtils.toBoolean(os);
     }
     
-    public static SimpleDateFormat getReportDateFormatLocalized(ComAdmin admin) {
+    public static SimpleDateFormat getReportDateFormatLocalized(Admin admin) {
         return new SimpleDateFormat(DateUtilities.YYYY_MM_DD, admin.getLocale());
     }
     
@@ -233,14 +233,14 @@ public class BirtReportSettingsUtils {
         }
     }
     
-    public static Set<String> getMissingProperties(ComAdmin admin, ReportSettingsType type, Map<String, Object> settings) {
+    public static Set<String> getMissingProperties(Admin admin, ReportSettingsType type, Map<String, Object> settings) {
         Set<String> missedProperties = new HashSet<>();
-        if (settingsRequireMailings(admin, type, settings)
+        if (settingsRequireMailings(admin, type)
                 && getSettingsPropertyList(settings, MAILINGS_KEY).isEmpty()) {
             missedProperties.add(MAILINGS_KEY);
         }
         
-        if (settingsRequireMailinglists(admin, type, settings)
+        if (settingsRequireMailinglists(admin, type)
                 && getSettingsPropertyList(settings, MAILINGLISTS_KEY).isEmpty()) {
             missedProperties.add(MAILINGLISTS_KEY);
         }
@@ -249,7 +249,7 @@ public class BirtReportSettingsUtils {
             missedProperties.add(PREDEFINED_ID_KEY);
         }
 
-        if(type == ReportSettingsType.COMPARISON) {
+        if (type == ReportSettingsType.COMPARISON) {
             int mailingTypeValue = NumberUtils.toInt(getSettingsProperty(settings, MAILING_TYPE_KEY));
         
             if (mailingTypeValue != MAILINGS_PREDEFINED && mailingTypeValue != MAILINGS_CUSTOM) {
@@ -258,20 +258,20 @@ public class BirtReportSettingsUtils {
                         .filter(StringUtils::isNotEmpty)
                         .map(NumberUtils::toInt).filter(v -> v != 0)
                         .collect(Collectors.toSet());
-                if(values.isEmpty()) {
+                if (values.isEmpty()) {
                     missedProperties.add(TARGET_GROUPS_KEY);
                 }
             }
         }
-        
-        if(type == ReportSettingsType.MAILING
+
+        if (type == ReportSettingsType.MAILING
                 && !StringUtils.equals(String.valueOf(MAILING_NORMAL),
                 BirtReportSettingsUtils.getSettingsProperty(settings, MAILING_GENERAL_TYPES_KEY))) {
-            if(settings.get(START_DATE) == null) {
+            if (settings.get(START_DATE) == null) {
                 missedProperties.add(START_DATE);
             }
-            
-            if(settings.get(END_DATE) == null) {
+
+            if (settings.get(END_DATE) == null) {
                 missedProperties.add(END_DATE);
             }
         }
@@ -281,25 +281,17 @@ public class BirtReportSettingsUtils {
     
     private static boolean settingsRequirePredefinedValue(ReportSettingsType type, Map<String, Object> settings) {
         if (type == ReportSettingsType.COMPARISON || type == ReportSettingsType.MAILING) {
-            if (getIntProperty(settings, MAILING_FILTER_KEY) > 0) {
-                return true;
-            }
+            return getIntProperty(settings, MAILING_FILTER_KEY) > 0;
         }
         return false;
     }
-    
-    private static boolean settingsRequireMailinglists(ComAdmin admin, ReportSettingsType type, Map<String, Object> settings) {
-        if(isDateRangedType(type, AgnUtils.isMailTrackingAvailable(admin))) {
-            return true;
-        }
-        return false;
+
+    private static boolean settingsRequireMailinglists(Admin admin, ReportSettingsType type) {
+        return isDateRangedType(type, AgnUtils.isMailTrackingAvailable(admin));
     }
-    
-    private static boolean settingsRequireMailings(ComAdmin admin, ReportSettingsType type, Map<String, Object> settings) {
-        if(!isDateRangedType(type, AgnUtils.isMailTrackingAvailable(admin))) {
-            return true;
-        }
-        return false;
+
+    private static boolean settingsRequireMailings(Admin admin, ReportSettingsType type) {
+        return !isDateRangedType(type, AgnUtils.isMailTrackingAvailable(admin));
     }
     
     public static Map<ReportSettingsType, Map<String, Object>> getDefaultSettings() {
@@ -363,13 +355,13 @@ public class BirtReportSettingsUtils {
         return StringUtils.equals(String.valueOf(paramValue), String.valueOf(expectedValue));
     }
     
-    public static void convertReportDatesIntoClientFormat(ComAdmin admin, Map<ReportSettingsType, Map<String, Object>> settings) {
+    public static void convertReportDatesIntoClientFormat(Admin admin, Map<ReportSettingsType, Map<String, Object>> settings) {
         for (ReportSettingsType type : ReportSettingsType.values()) {
         	convertReportDateIntoClientFormat(START_DATE, END_DATE, admin, settings.get(type));
         }
     }
     
-    public static void convertReportDatesIntoBackendFormat( ComAdmin admin, Map<ReportSettingsType, Map<String, Object>> settings) {
+    public static void convertReportDatesIntoBackendFormat( Admin admin, Map<ReportSettingsType, Map<String, Object>> settings) {
         for (ReportSettingsType type : ReportSettingsType.values()) {
             convertReportDateIntoBackendFormat(START_DATE, END_DATE, admin, settings.get(type));
         }
@@ -414,15 +406,15 @@ public class BirtReportSettingsUtils {
 		return DateUtilities.isWeekDayActive(intervalPattern, weekDay, Locale.ENGLISH);
 	}
     
-    public static void convertReportDateIntoClientFormat(String startKey, String stopKey, ComAdmin admin, Map<String, Object> settingsByType) {
+    public static void convertReportDateIntoClientFormat(String startKey, String stopKey, Admin admin, Map<String, Object> settingsByType) {
         convertReportDate(startKey, stopKey, admin, settingsByType, true);
     }
     
-    public static void convertReportDateIntoBackendFormat(String startKey, String stopKey, ComAdmin admin, Map<String, Object> settingsByType) {
+    public static void convertReportDateIntoBackendFormat(String startKey, String stopKey, Admin admin, Map<String, Object> settingsByType) {
         convertReportDate(startKey, stopKey, admin, settingsByType, false);
     }
     
-    private static void convertReportDate(String startKey, String stopKey, ComAdmin admin, Map<String, Object> settingsByType, boolean convertIntoClientFormat) {
+    private static void convertReportDate(String startKey, String stopKey, Admin admin, Map<String, Object> settingsByType, boolean convertIntoClientFormat) {
     	if (settingsByType != null) {
 	        final DateTimeFormatter backendFormatter = DateTimeFormatter.ofPattern(REPORT_DATE_FORMAT);
 	        final DateTimeFormatter userFormatter = admin.getDateFormatter();

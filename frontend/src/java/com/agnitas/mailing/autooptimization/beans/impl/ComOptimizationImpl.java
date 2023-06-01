@@ -30,8 +30,7 @@ import com.agnitas.mailing.autooptimization.beans.ComOptimization;
 
 public class ComOptimizationImpl implements ComOptimization {
 	
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(ComOptimizationImpl.class);
+	private static final Logger logger = LogManager.getLogger(ComOptimizationImpl.class);
 
     private int companyID;
     private String description;
@@ -68,9 +67,7 @@ public class ComOptimizationImpl implements ComOptimization {
 
     private Date sendDate;
 
-    private int bestMailing=0;
-
-    private Date testMailingsSendDate;    
+    private Date testMailingsSendDate;
     
     private int threshold;
     
@@ -109,10 +106,6 @@ public class ComOptimizationImpl implements ComOptimization {
 	public void setThreshold(int threshold) {
 		this.threshold = threshold;
 	}
-
-	public int getBestMailing() {
-        return bestMailing;
-    }
 
     @Override
     public String getDescription() {

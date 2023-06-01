@@ -12,7 +12,7 @@ package com.agnitas.emm.core.trackablelinks.service;
 
 import java.util.List;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.LinkProperty;
 import com.agnitas.emm.core.trackablelinks.dto.FormTrackableLinkDto;
 import com.agnitas.emm.core.userform.dto.UserFormDto;
@@ -20,19 +20,19 @@ import com.agnitas.messages.Message;
 
 public interface FormTrackableLinkService {
 
-	void saveTrackableLinks(ComAdmin admin, UserFormDto userFormDto, List<Message> errors, final List<Message> warnings);
+	void saveTrackableLinks(Admin admin, UserFormDto userFormDto, List<Message> errors, final List<Message> warnings);
 
-	List<FormTrackableLinkDto> getFormTrackableLinks(ComAdmin admin, int formId);
+	List<FormTrackableLinkDto> getFormTrackableLinks(Admin admin, int formId);
 
-	void bulkUpdateTrackableLinks(ComAdmin admin, int formId, List<FormTrackableLinkDto> links, int trackable, List<LinkProperty> commonExtensions);
+	void bulkUpdateTrackableLinks(Admin admin, int formId, List<FormTrackableLinkDto> links, int trackable, List<LinkProperty> commonExtensions);
 
-	void bulkUpdateTrackableLinksExtensions(ComAdmin admin, int formId, List<LinkProperty> commonExtensions);
+	void bulkUpdateTrackableLinksExtensions(Admin admin, int formId, List<LinkProperty> commonExtensions);
 
-	void bulkUpdateTrackableLinksUsage(ComAdmin admin, int formId, int usage);
+	void bulkUpdateTrackableLinksUsage(Admin admin, int formId, int usage);
 
-	List<LinkProperty> getFormTrackableLinkCommonExtensions(ComAdmin admin, int formId);
+	List<LinkProperty> getFormTrackableLinkCommonExtensions(Admin admin, int formId);
 
-	FormTrackableLinkDto getFormTrackableLink(ComAdmin admin, int formId, int linkId);
+	FormTrackableLinkDto getFormTrackableLink(Admin admin, int formId, int linkId);
 
-	boolean updateTrackableLink(ComAdmin admin, int formId, FormTrackableLinkDto trackableLinkDto);
+	boolean updateTrackableLink(Admin admin, int formId, FormTrackableLinkDto trackableLinkDto);
 }

@@ -14,6 +14,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import org.agnitas.target.TargetFactory;
+import org.agnitas.util.DbUtilities;
 import org.springframework.jdbc.core.RowMapper;
 
 import com.agnitas.beans.ComTarget;
@@ -47,6 +48,9 @@ public class TargetRowMapper implements RowMapper<ComTarget> {
             readTarget.setComplexityIndex(resultSet.getInt("complexity"));
             readTarget.setValid(!resultSet.getBoolean("invalid"));
             readTarget.setComponentHide(resultSet.getBoolean("component_hide"));
+            if (DbUtilities.resultsetHasColumn(resultSet, "favorite")) {
+                readTarget.setFavorite(resultSet.getBoolean("favorite"));
+            }
 
             final String eql = readEql(resultSet);
 

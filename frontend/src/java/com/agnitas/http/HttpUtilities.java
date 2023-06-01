@@ -17,7 +17,6 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
-import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.Proxy;
 import java.net.URL;
@@ -40,7 +39,7 @@ import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
-import org.agnitas.util.AgnUtils;
+import org.agnitas.util.NetworkUtil;
 import org.agnitas.util.Triple;
 import org.agnitas.util.Tuple;
 import org.apache.commons.io.IOUtils;
@@ -110,7 +109,7 @@ public class HttpUtilities {
 
 			HttpURLConnection urlConnection;
 			if (proxy == null) {
-				urlConnection = (HttpURLConnection) new URL(requestedUrl).openConnection(getProxyFromSystem(requestedUrl));
+				urlConnection = (HttpURLConnection) new URL(requestedUrl).openConnection(NetworkUtil.getProxyFromSystem(requestedUrl));
 			} else {
 				urlConnection = (HttpURLConnection) new URL(requestedUrl).openConnection(proxy);
 			}
@@ -314,52 +313,6 @@ public class HttpUtilities {
 
 			return returnValue.toString();
 		}
-	}
-
-	/**
-	 * This proxy will be used as default proxy.
-	 * To override default proxy usage use "Proxy.NO_PROXY"
-	 *
-	 * It is set via JVM properties on startup:
-	 * java ... -Dhttp.proxyHost=proxy.url.local -Dhttp.proxyPort=8080 -Dhttp.nonProxyHosts='127.0.0.1|localhost'
-	 */
-	public static Proxy getProxyFromSystem(final String url) {
-		final String proxyHost = System.getProperty("http.proxyHost");
-		if (StringUtils.isNotBlank(proxyHost)) {
-			final String proxyPort = System.getProperty("http.proxyPort");
-			final String nonProxyHosts = System.getProperty("http.nonProxyHosts");
-
-			if (StringUtils.isBlank(nonProxyHosts)) {
-				if (StringUtils.isNotBlank(proxyHost)) {
-					if (StringUtils.isNotBlank(proxyPort) && AgnUtils.isNumber(proxyPort)) {
-						return new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHost, Integer.parseInt(proxyPort)));
-					} else {
-						return new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHost, 8080));
-					}
-				}
-			} else {
-				boolean ignoreProxy = false;
-				final String urlDomain = getDomainFromUrl(url);
-				for (String nonProxyHost : nonProxyHosts.split("\\|")) {
-					nonProxyHost = nonProxyHost.trim();
-					if (urlDomain == null || urlDomain.equalsIgnoreCase(url)) {
-						ignoreProxy = true;
-						break;
-					}
-				}
-				if (!ignoreProxy) {
-					if (StringUtils.isNotBlank(proxyHost)) {
-						if (StringUtils.isNotBlank(proxyPort) && AgnUtils.isNumber(proxyPort)) {
-							return new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHost, Integer.parseInt(proxyPort)));
-						} else {
-							return new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHost, 8080));
-						}
-					}
-				}
-			}
-		}
-
-		return Proxy.NO_PROXY;
 	}
 
 	public static String getDomainFromUrl(String url) {

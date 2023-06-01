@@ -13,6 +13,8 @@ package com.agnitas.emm.core.workflow.beans;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.agnitas.emm.core.workflow.beans.impl.WorkflowMailingMediaTypePostImpl;
+import com.agnitas.emm.core.workflow.beans.impl.WorkflowMailingMediaTypeSmsImpl;
 import com.agnitas.emm.core.workflow.service.WorkflowIconTypeSerializer;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -49,6 +51,8 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
         @JsonSubTypes.Type(value = WorkflowMailingImpl.class, name = WorkflowIconType.Constants.MAILING_VALUE),
 		@JsonSubTypes.Type(value = WorkflowActionBasedMailingImpl.class, name = WorkflowIconType.Constants.ACTION_BASED_MAILING_VALUE),
 		@JsonSubTypes.Type(value = WorkflowDateBasedMailingImpl.class, name = WorkflowIconType.Constants.DATE_BASED_MAILING_VALUE),
+		@JsonSubTypes.Type(value = WorkflowMailingMediaTypeSmsImpl.class, name = WorkflowIconType.Constants.MAILING_MEDIATYPE_SMS_VALUE),
+		@JsonSubTypes.Type(value = WorkflowMailingMediaTypePostImpl.class, name = WorkflowIconType.Constants.MAILING_MEDIATYPE_POST_VALUE),
 		@JsonSubTypes.Type(value = WorkflowFollowupMailingImpl.class, name = WorkflowIconType.Constants.FOLLOWUP_MAILING_VALUE),
 		@JsonSubTypes.Type(value = WorkflowImportImpl.class, name = WorkflowIconType.Constants.IMPORT_VALUE),
 		@JsonSubTypes.Type(value = WorkflowExportImpl.class, name = WorkflowIconType.Constants.EXPORT_VALUE)

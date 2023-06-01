@@ -6,6 +6,9 @@ AGN.Lib.Controller.new('recipient-list', function () {
     Messages = AGN.Lib.Messages,
     Storage = AGN.Lib.Storage;
 
+  const ADVANCED_SUFFIX = '_advanced';
+  const NO_MAILINGLIST_VALUE = '-1';
+
   var initialRules = {};
   var searchFieldsUpdatingRequired = false;
 
@@ -57,6 +60,9 @@ AGN.Lib.Controller.new('recipient-list', function () {
     } else {
       onGeneralList(config);
     }
+
+    const mlId = $('[data-action="change-mailinglist-id"]').val();
+    disabledMlDependentFields(mlId === NO_MAILINGLIST_VALUE);
   }
 
   function onDuplicateList() {
@@ -140,22 +146,6 @@ AGN.Lib.Controller.new('recipient-list', function () {
     if (isValid) {
       Modal.createFromTemplate({}, 'target-group-save');
     }
-  });
-
-  this.addAction({change: 'change-ml-field'}, function () {
-    var value = $(this.el).select2('val');
-    disabledMlDependentFields(value == '-1');
-
-    //synchronize advanced search field value
-    $('#search_mailinglist_advanced').select2('val', value);
-  });
-
-  this.addAction({change: 'change-ml-field-advanced'}, function () {
-    var value = $(this.el).select2('val');
-    disabledMlDependentFields(value == '-1');
-
-    //synchronize basic search field value
-    $('#search_mailinglist').select2('val', value);
   });
 
   function disabledMlDependentFields(disabled) {
@@ -256,8 +246,8 @@ AGN.Lib.Controller.new('recipient-list', function () {
   });
 
   this.addAction({change: 'change-mailinglist-id'}, function() {
-    var mlId = $(this.el).select2('val');
-    disabledMlDependentFields(mlId == '-1');
+    const mlId = $(this.el).select2('val');
+    disabledMlDependentFields(mlId === NO_MAILINGLIST_VALUE);
   });
 
   this.addAction({click: 'refresh-basic-search'}, function () {
@@ -273,18 +263,25 @@ AGN.Lib.Controller.new('recipient-list', function () {
   });
 
   function disableIndependentFields(isAdvanced) {
-    var prefix = isAdvanced ? '' : '_advanced';
-    var fieldsToDisable = ['#search_mailinglist', '#search_altg', '#search_targetgroup', '#search_recipient_type', '#search_recipient_state'];
+    const suffix = isAdvanced ? '' : ADVANCED_SUFFIX;
+    const fieldsToDisable = ['#search_mailinglist', '#search_altg', '#search_targetgroup', '#search_recipient_type', '#search_recipient_state'];
     fieldsToDisable.forEach(function(selector) {
-      $(selector + prefix).prop('disabled', true);
+      $(selector + suffix).prop('disabled', true);
     })
   }
 
   function enableIndependentFields(isAdvanced) {
-    var prefix = isAdvanced ? '_advanced' : '';
-    var fieldsToDisable = ['#search_mailinglist', '#search_altg', '#search_targetgroup', '#search_recipient_type', '#search_recipient_state'];
-    fieldsToDisable.forEach(function(selector) {
-      $(selector + prefix).prop('disabled', false);
+    const fieldsToEnable = ['#search_mailinglist', '#search_altg', '#search_targetgroup'];
+
+    // if 'no mailinglist' option selected on previous search tab
+    // so dropdowns for type and status should not be enabled
+    if ($('#search_mailinglist' + (isAdvanced ? '' : ADVANCED_SUFFIX)).val() !== NO_MAILINGLIST_VALUE) {
+      fieldsToEnable.push('#search_recipient_type', '#search_recipient_state');
+    }
+
+    const suffix = isAdvanced ? ADVANCED_SUFFIX : '';
+    fieldsToEnable.forEach(function(selector) {
+      $(selector + suffix).prop('disabled', false);
     })
   }
 

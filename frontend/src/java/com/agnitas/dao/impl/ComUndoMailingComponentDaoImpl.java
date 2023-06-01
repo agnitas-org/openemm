@@ -56,9 +56,6 @@ public class ComUndoMailingComponentDaoImpl extends BaseDaoImpl implements ComUn
 	private static final String DELETE_COMPONENT_STATEMENT =
 		"DELETE FROM undo_component_tbl WHERE undo_id = ?";
 	
-	private static final String DELETE_OUTDATED_COMPONENT_STATEMENT =
-		"DELETE FROM undo_component_tbl WHERE undo_id <= ?";
-	
 	private static final String DELETE_UNDODATA_FOR_MAILING_STATEMENT =
 		"DELETE FROM undo_component_tbl WHERE mailing_id = ?";
 	
@@ -198,12 +195,6 @@ public class ComUndoMailingComponentDaoImpl extends BaseDaoImpl implements ComUn
 	@DaoUpdateReturnValueCheck
 	public void deleteUndoData(int undoId) {
 		update(logger, DELETE_COMPONENT_STATEMENT, undoId);
-	}
-
-	@Override
-	@DaoUpdateReturnValueCheck
-	public void deleteOutdatedUndoData(int lastUndoId) {
-		update(logger, DELETE_OUTDATED_COMPONENT_STATEMENT, lastUndoId);
 	}
 	
 	@Override

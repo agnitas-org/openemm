@@ -10,6 +10,15 @@
 
 package com.agnitas.emm.util.html.xssprevention.http;
 
+import com.agnitas.emm.util.html.xssprevention.HtmlCheckError;
+import com.agnitas.emm.util.html.xssprevention.HtmlXSSPreventer;
+import com.agnitas.emm.util.html.xssprevention.XSSHtmlException;
+import jakarta.servlet.http.HttpServletRequest;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.MultipartRequest;
+import org.springframework.web.util.WebUtils;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -19,15 +28,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
-import jakarta.servlet.http.HttpServletRequest;
-
-import com.agnitas.emm.util.html.xssprevention.HtmlCheckError;
-import com.agnitas.emm.util.html.xssprevention.HtmlXSSPreventer;
-import com.agnitas.emm.util.html.xssprevention.XSSHtmlException;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.multipart.support.DefaultMultipartHttpServletRequest;
 
 public class RequestParameterXssPreventerHelper {
 
@@ -65,7 +65,7 @@ public class RequestParameterXssPreventerHelper {
 	
 	private Collection<HtmlCheckError> getHtmlCheckErrors(final String text) {
 		try {
-			HtmlXSSPreventer.checkString(text);
+			HtmlXSSPreventer.checkString(StringUtils.defaultString(text));
 			return Collections.emptyList();
 		} catch (final XSSHtmlException e) {
 			return e.getErrors();
@@ -73,14 +73,19 @@ public class RequestParameterXssPreventerHelper {
 	}
 
     private Collection<HtmlCheckError> collectMultipartFilesHtmlErrors(HttpServletRequest request) {
-        if (!StringUtils.startsWith(request.getContentType(), "multipart/form-data")) {
-            return Collections.emptyList();
-        }
-        return ((DefaultMultipartHttpServletRequest) request)
-                .getMultiFileMap().toSingleValueMap().values().stream()
-                .map(MultipartFile::getOriginalFilename)
-                .map(this::getHtmlCheckErrors)
-                .flatMap(Collection::stream)
-                .collect(Collectors.toList());
+		MultipartRequest multipartRequest = WebUtils.getNativeRequest(request, MultipartRequest.class);
+
+		if (multipartRequest == null) {
+			return Collections.emptyList();
+		}
+
+		return multipartRequest.getMultiFileMap()
+				.toSingleValueMap()
+				.values()
+				.stream()
+				.map(MultipartFile::getOriginalFilename)
+				.map(this::getHtmlCheckErrors)
+				.flatMap(Collection::stream)
+				.collect(Collectors.toList());
     }
 }

@@ -273,7 +273,7 @@ importPackage(Packages.java.util);
 if( currentrow < statsList.size() ){
 	row["TARGETGROUP"]=  statsList.get(currentrow).getTargetgroup();
 	row["CATEGORY"] = statsList.get(currentrow).getCategory();
-	row["CATEGORY_INDEX"] = statsList.get(currentrow).getCategory_index();
+	row["CATEGORY_INDEX"] = statsList.get(currentrow).getCategoryIndex();
 	
 	language = 'EN';
 	if( params["language"].value != null ){
@@ -290,14 +290,14 @@ if( currentrow < statsList.size() ){
 	row["PAGE_TAG"] = statsList.get(currentrow).getPageTag();
 	
 	if(row["CATEGORY_INDEX"] < 5 ) {
-		row["VALUE"] = currencyFormat.format( statsList.get(currentrow).getValue_1()) +" "+ row["CURRENCY"]; 
+		row["VALUE"] = currencyFormat.format( statsList.get(currentrow).getValue()) +" "+ row["CURRENCY"]; 
 	}
 	else {
-		row["VALUE"] = fixedFormat.format( statsList.get(currentrow).getValue_1());
+		row["VALUE"] = fixedFormat.format( statsList.get(currentrow).getValue());
 	}
 	
 		
-	row["TARGETGROUP_INDEX"] = statsList.get(currentrow).getTargetgroup_index() ;
+	row["TARGETGROUP_INDEX"] = statsList.get(currentrow).getTargetgroupIndex() ;
 	currentrow++ ;
 	return  true;
 }
@@ -439,7 +439,7 @@ if( currentrow < statsList.size() ){
 	row["TARGETGROUP"]=  statsList.get(currentrow).getTargetgroup();
 	row["CATEGORY"] = statsList.get(currentrow).getCategory();
 	row["PAGE_TAG"] = statsList.get(currentrow).getPageTag();
-	row["CATEGORY_INDEX"] = statsList.get(currentrow).getCategory_index();
+	row["CATEGORY_INDEX"] = statsList.get(currentrow).getCategoryIndex();
 		
 	language = 'EN';
 	if( params["language"].value != null ){
@@ -455,13 +455,13 @@ if( currentrow < statsList.size() ){
 	currency = statsList.get(currentrow).getCurrency() != null ? statsList.get(currentrow).getCurrency(): "";
 	
 	if(row["CATEGORY_INDEX"] < 5 ) {
-		row["VALUE1"] = currencyFormat.format( statsList.get(currentrow).getValue_1()) +" "+ currency; 
+		row["VALUE1"] = currencyFormat.format( statsList.get(currentrow).getValue()) +" "+ currency; 
 	}
 	else {
-		row["VALUE1"] = fixedFormat.format( statsList.get(currentrow).getValue_1());
+		row["VALUE1"] = fixedFormat.format( statsList.get(currentrow).getValue());
 	}
-	row["INITIAL_VALUE"] = statsList.get(currentrow).getValue_1();
-	row["TARGETGROUP_INDEX"] = statsList.get(currentrow).getTargetgroup_index() ;
+	row["INITIAL_VALUE"] = statsList.get(currentrow).getValue();
+	row["TARGETGROUP_INDEX"] = statsList.get(currentrow).getTargetgroupIndex() ;
 	currentrow++ ;
 	return  true;
 }

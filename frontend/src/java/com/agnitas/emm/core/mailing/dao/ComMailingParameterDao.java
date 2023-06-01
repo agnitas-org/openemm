@@ -12,6 +12,7 @@ package com.agnitas.emm.core.mailing.dao;
 
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Stream;
 
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
@@ -20,9 +21,26 @@ import com.agnitas.emm.core.mailing.bean.ComMailingParameter;
 import com.agnitas.emm.core.mailing.dao.impl.MailingParameterNotFoundException;
 
 public interface ComMailingParameterDao {
-    String PARAMETERNAME_INTERVAL = "interval";
-    String PARAMETERNAME_ERROR = "error";
-    String PARAMETERNAME_NEXT_START = "next_start";
+    enum ReservedMailingParam {
+        INTERVAL("interval"),
+        ERROR("error"),
+        NEXT_START("next_start");
+
+        private final String name;
+
+        ReservedMailingParam(String name) {
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public static boolean isReservedParam(String paramName) {
+            return Stream.of(values())
+                    .anyMatch(p -> p.getName().equals(paramName));
+        }
+    }
 
     enum IntervalType implements IntEnum {
         None(0),

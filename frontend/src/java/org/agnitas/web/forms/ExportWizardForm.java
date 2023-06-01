@@ -15,6 +15,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -162,6 +163,8 @@ public class ExportWizardForm extends StrutsFormBase {
 	private int dateTimeFormat = DateFormat.ddMMyyyyHHmmss.getIntValue();
 	private String timezone = "Europe/Berlin";
 	private String decimalSeparator = ",";
+	
+	private Locale locale = new Locale("en", "US");
 	
 	private boolean timeLimitsLinkedByAnd = false;
 	
@@ -882,4 +885,21 @@ public class ExportWizardForm extends StrutsFormBase {
     public void setCustomColumnMappings(Map<String, String> customColumnMappings) {
         this.customColumnMappings = customColumnMappings;
     }
+
+	public void setLocaleString(String localeString) {
+		String[] localeStringParts = localeString.split("_");
+		locale = new Locale(localeStringParts[0], localeStringParts[1]);
+	}
+
+	public String getLocaleString() {
+		return locale.getLanguage() + "_" + locale.getCountry();
+	}
+
+	public Locale getLocale() {
+		return locale;
+	}
+
+	public void setLocale(Locale locale) {
+		this.locale = locale;
+	}
 }

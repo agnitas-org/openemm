@@ -10,6 +10,7 @@
 
 package org.agnitas.backend;
 
+import java.io.Closeable;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.util.StringTokenizer;
@@ -19,7 +20,7 @@ import org.agnitas.util.Log;
 /**
  * this class is used to remove pending mailings
  */
-public class Destroyer {
+public class Destroyer implements Closeable {
 	/**
 	 * Class to filter filenames for deletion
 	 */
@@ -89,13 +90,19 @@ public class Destroyer {
 		}
 		mailingID = mailing_id;
 		data = new Data("destroyer");
+		data.setup (null);
 	}
 
 	/**
 	 * Cleanup
 	 */
-	public void done() throws Exception {
-		data.done();
+	@Override
+	public void close() {
+		try {
+			data.done();
+		} catch (Exception e) {
+			// do nothing
+		}
 	}
 
 	/**

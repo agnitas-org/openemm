@@ -10,7 +10,9 @@
 
 package org.agnitas.beans;
 
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -354,4 +356,14 @@ public interface ImportProfile {
     Map<Integer, String> getGenderMappingsToSave();
 
     void setGenderMappingsToSave(Map<Integer, String> genderMappingsToSave);
+
+	void setReportLocale(Locale reportLocale);
+	
+	Locale getReportLocale();
+	
+	void setReportTimezone(String reportTimezone);
+
+	String getReportTimezone();
+
+	DateTimeFormatter getReportDateTimeFormatter();
 }

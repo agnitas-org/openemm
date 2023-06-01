@@ -18,11 +18,11 @@ import org.agnitas.beans.AdminEntry;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.useractivitylog.LoggedUserAction;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 
 public class UserActivityLogQueryWorker implements Callable<PaginatedListImpl<LoggedUserAction>> {
 	private UserActivityLogService userActivityLogService;
-	private ComAdmin admin;
+	private Admin admin;
 	private int pageNumber;
 	private int rownums;
 	private String sort;
@@ -35,7 +35,7 @@ public class UserActivityLogQueryWorker implements Callable<PaginatedListImpl<Lo
 	private String description;
 
 
-	public UserActivityLogQueryWorker(UserActivityLogService userActivityLogService, ComAdmin admin, int pageNumber, int rownums, String username, int action, LocalDate fromDate, LocalDate toDate, String description, String sort, String direction, List<AdminEntry> admins) {
+	public UserActivityLogQueryWorker(UserActivityLogService userActivityLogService, Admin admin, int pageNumber, int rownums, String username, int action, LocalDate fromDate, LocalDate toDate, String description, String sort, String direction, List<AdminEntry> admins) {
 		this.userActivityLogService = userActivityLogService;
 		this.admin = admin;
 		this.pageNumber = pageNumber;

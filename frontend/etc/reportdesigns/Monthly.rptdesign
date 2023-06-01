@@ -2505,7 +2505,7 @@ function beforeDrawAxisLabel( axis, label, icsc ) {
                             </structure>
                             <structure>
                                 <property name="name">mailing_count</property>
-                                <expression name="expression">dataSetRow["mailing_count"]</expression>
+                                <expression name="expression" type="javascript">dataSetRow["total"]</expression>
                                 <property name="dataType">integer</property>
                             </structure>
                             <structure>

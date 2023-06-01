@@ -23,7 +23,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.struts.action.Action;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 
 /**
  * Base action class which is used as a base class for other OpenEMM actions<br><br>
@@ -120,7 +120,7 @@ public class StrutsActionBase extends Action {
         return sort;
 	}
 
-    protected void writeUserActivityLog(ComAdmin admin, String action, String description, Logger callerLog)  {
+    protected void writeUserActivityLog(Admin admin, String action, String description, Logger callerLog)  {
 		if (userActivityLogService != null) {
 			userActivityLogService.writeUserActivityLog(admin, action, description, callerLog);
 		} else {
@@ -129,19 +129,19 @@ public class StrutsActionBase extends Action {
 		}
     }
 
-    protected void writeUserActivityLog(ComAdmin admin, UserAction action, Logger callerLog)  {
+    protected void writeUserActivityLog(Admin admin, UserAction action, Logger callerLog)  {
     	writeUserActivityLog(admin, action.getAction(), action.getDescription(), callerLog);
     }
 
-	protected void writeUserActivityLog(ComAdmin admin, String action, String description)  {
+	protected void writeUserActivityLog(Admin admin, String action, String description)  {
 		writeUserActivityLog(admin, action, description, logger);
 	}
 
-	protected void writeUserActivityLog(ComAdmin admin, UserAction action)  {
+	protected void writeUserActivityLog(Admin admin, UserAction action)  {
 		writeUserActivityLog(admin, action, logger);
 	}
 
-    protected void writeUserActivityLog(ComAdmin admin, String action, int description)  {
+    protected void writeUserActivityLog(Admin admin, String action, int description)  {
 		writeUserActivityLog(admin, action, Integer.toString(description));
     }
 

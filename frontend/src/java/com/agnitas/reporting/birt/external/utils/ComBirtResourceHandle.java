@@ -15,7 +15,7 @@ import java.util.Locale;
 import com.agnitas.messages.I18nString;
 
 public class ComBirtResourceHandle {
-    private String language;
+    private final String language;
 
     public ComBirtResourceHandle(Locale locale) {
         if (locale == null) {

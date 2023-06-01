@@ -11,6 +11,7 @@
 package com.agnitas.dao;
 
 import java.util.Date;
+import java.util.List;
 
 import com.agnitas.beans.ComUndoMailing;
 
@@ -33,7 +34,7 @@ public interface ComUndoMailingDao {
 	 * 
 	 * @param mailingId mailing ID
 	 * 
-	 * @return last undo step 
+	 * @return last undo step
 	 */
 	ComUndoMailing getLastUndoData(int mailingId);
 
@@ -43,21 +44,18 @@ public interface ComUndoMailingDao {
 	 * @param mailingId mailing ID
 	 * @param undoId undo step ID
 	 * 
-	 * @return last undo step 
+	 * @return last undo step
 	 */
 	ComUndoMailing getUndoData(int mailingId, int undoId);
 	
 	void deleteUndoData(int undoId);
 
-	int getYoungestOutdatedUndoId(int retentionTime);
+	List<Integer> findUndoIdsToCleanup(final int retentionTime);
 
 	int getUndoIdOverLimit(int mailingId, int undoLimit);
 
 	void deleteUndoDataOverLimit(int mailingId, int undoId);
 	
-	void deleteOutdatedUndoData(int lastUndoId);
-	
 	void deleteUndoDataForMailing(int mailingID);
 
-	void deleteUndoForSentMailings();
 }

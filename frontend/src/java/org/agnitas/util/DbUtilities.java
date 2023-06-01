@@ -10,6 +10,8 @@
 
 package org.agnitas.util;
 
+import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
+
 import java.beans.BeanInfo;
 import java.beans.PropertyDescriptor;
 import java.io.InputStream;
@@ -59,8 +61,6 @@ import org.springframework.util.CollectionUtils;
 import com.agnitas.json.JsonArray;
 import com.agnitas.json.JsonObject;
 import com.agnitas.json.JsonWriter;
-
-import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
 
 public class DbUtilities {
 
@@ -601,6 +601,15 @@ public class DbUtilities {
 		}
 	}
 
+	public static boolean checkIfTableExists(JdbcTemplate jdbcTemplate, String tableName) {
+		try {
+			checkTableExists(jdbcTemplate.getDataSource(), tableName);
+			return true;
+		} catch (Exception e) {
+			return false;
+		}
+	}
+
 	public static boolean checkIfTableExists(Connection connection, String tableName) {
 		try {
 			checkTableExists(connection, tableName);
@@ -614,6 +623,10 @@ public class DbUtilities {
 		try (final Connection connection = dataSource.getConnection()) {
 			checkTableExists(connection, tableName);
 		}
+	}
+
+	public static void checkTableExists(JdbcTemplate jdbcTemplate, String tableName) throws Exception {
+		checkTableExists(jdbcTemplate.getDataSource(), tableName);
 	}
 
 	public static void checkTableExists(Connection connection, String tableName) throws Exception {
@@ -644,24 +657,6 @@ public class DbUtilities {
 				} catch (Exception e) {
 					throw new Exception("Table '" + tableName + "' does not exist");
 				}
-			}
-		}
-	}
-
-	public static void checkTableExists(JdbcTemplate jdbcTemplate, String tableName) throws Exception {
-		if (jdbcTemplate == null) {
-			throw new Exception("JdbcTemplate for checkTableExists is null");
-		} else if (StringUtils.isBlank(tableName)) {
-			throw new Exception("TableName for checkTableExists is empty");
-		} else if (checkDbVendorIsOracle(jdbcTemplate.getDataSource())) {
-			int foundTables = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM user_tables WHERE table_name = ?", Integer.class, tableName.toUpperCase());
-			if (foundTables <= 0) {
-				throw new Exception("Table '" + tableName + "' does not exist");
-			}
-		} else {
-			int foundTables = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = SCHEMA() AND table_name = ?", Integer.class, tableName.toLowerCase());
-			if (foundTables <= 0) {
-				throw new Exception("Table '" + tableName + "' does not exist");
 			}
 		}
 	}
@@ -796,10 +791,10 @@ public class DbUtilities {
 				boolean isNullable;
 				if (checkDbVendorIsOracle(connection)) {
 					// Read special constraints for not-nullable fields by user_tab_columns
-					String nullableSql = "SELECT search_condition FROM all_constraints WHERE table_name = UPPER(?)";
+					String nullableSql = "SELECT search_condition FROM user_constraints WHERE table_name = ?";
 					boolean isNotNullByConstraintFields = false;
 					try (final PreparedStatement preparedStatementNullable = connection.prepareStatement(nullableSql)) {
-						preparedStatementNullable.setString(1, tableName);
+						preparedStatementNullable.setString(1, tableName.toUpperCase());
 						try (final ResultSet resultSetNullable = preparedStatementNullable.executeQuery()) {
 							while (resultSetNullable.next()) {
 								String searchCondition = resultSetNullable.getString("search_condition");
@@ -919,10 +914,10 @@ public class DbUtilities {
 				CaseInsensitiveMap<String, DbColumnType> returnMap = new CaseInsensitiveMap<>();
 				if (checkDbVendorIsOracle(connection)) {
 					// Read special constraints for not-nullable fields by user_tab_columns
-					String nullableSql = "SELECT search_condition FROM all_constraints WHERE table_name = UPPER(?)";
+					String nullableSql = "SELECT search_condition FROM user_constraints WHERE table_name = ?";
 					Set<String> notNullByConstraintFields = new HashSet<>();
 					try (final PreparedStatement preparedStatementNullable = connection.prepareStatement(nullableSql)) {
-						preparedStatementNullable.setString(1, tableName);
+						preparedStatementNullable.setString(1, tableName.toUpperCase());
 						try (final ResultSet resultSetNullable = preparedStatementNullable.executeQuery()) {
 							while (resultSetNullable.next()) {
 								String searchCondition = resultSetNullable.getString("search_condition");
@@ -1120,8 +1115,19 @@ public class DbUtilities {
 
 				return extractStringLiteral(value);
 			} else {
-				String sql = "SELECT column_default FROM information_schema.columns WHERE table_schema = SCHEMA() AND table_name = ? AND column_name = ?";
-				return new JdbcTemplate(dataSource).queryForObject(sql, String.class, tableName, columnName);
+				final String sql = "SELECT column_default FROM information_schema.columns WHERE table_schema = SCHEMA() AND table_name = ? AND column_name = ?";
+				String value = new JdbcTemplate(dataSource).queryForObject(sql, String.class, tableName, columnName);
+
+				if (StringUtils.isNotBlank(value)) {
+					// A trailing whitespace appears in Oracle.
+					value = StringUtils.removeEnd(value, " ");
+				}
+
+				if (StringUtils.equalsIgnoreCase(value, "null")) {
+					return null;
+				}
+
+				return extractStringLiteral(value);
 			}
 		}
 	}
@@ -2581,7 +2587,7 @@ public class DbUtilities {
     
     public static String createTargetsExpressionRestriction(Set<Integer> targetIds, List<Object> params, final boolean isOracle) {
         return createTargetsExpressionRestriction(targetIds, params, null, isOracle);
-    }    
+    }
     
     public static String createTargetsExpressionRestriction(Collection<Integer> targetIds, List<Object> params, String mailingTableName, final boolean isOracle) {
         List<String> targetRestrictions = new ArrayList<>();

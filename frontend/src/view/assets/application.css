@@ -8658,7 +8658,7 @@ html, body {
   height: 100%; }
 
 body {
-  font-family: "Proxima Nova", "Helvetica Neue", Arial, sans-serif;
+  font-family: Arial, sans-serif;
   font-size: 13px;
   line-height: 1.5;
   background-color: #e2e3e3; }
@@ -10433,7 +10433,8 @@ body.dark-theme .l-sidebar {
   .l-logo-box .l-right-logo {
     width: auto;
     height: auto;
-    max-width: 275px; }
+    max-width: 275px;
+    max-height: 50px; }
 
 .systempage {
   padding-top: 15%; }
@@ -12091,6 +12092,13 @@ fieldset[disabled] .flex_btn:hover {
 .vspace-bottom-5 {
   margin-bottom: 5px !important; }
 
+.icon-jobqueue-failure {
+  border: 2px solid #fa6861;
+  padding: 3px 6px;
+  background-color: #fa6861;
+  color: #FFF;
+  border-radius: 1px; }
+
 .l-company-insights .l-chart {
   height: 300px;
   float: left;
@@ -12967,6 +12975,21 @@ body.dark-theme .l-mailing-content-entry {
     left: -100%; }
   to {
     left: 100%; } }
+
+.modal-char-counter {
+  padding-left: 5px; }
+
+.unlock-icon {
+  width: 13px;
+  height: 13px;
+  vertical-align: middle;
+  filter: invert(71%) sepia(59%) saturate(5633%) hue-rotate(325deg) brightness(104%) contrast(97%); }
+
+.lock-icon {
+  width: 11px;
+  height: 11px;
+  vertical-align: middle;
+  filter: invert(49%) sepia(39%) saturate(1501%) hue-rotate(47deg) brightness(99%) contrast(102%); }
 
 .preview-settings-block {
   max-width: 800px;
@@ -14950,6 +14973,9 @@ body.dark-theme .table {
     .table-condensed > tbody > tr > td.table-link a,
     .table-condensed > tfoot > tr > td.table-link a {
       padding: 5px 5px; }
+
+.table-equal-col-width {
+  table-layout: fixed; }
 
 .table-bordered {
   border: 1px solid #cccdcd; }
@@ -17926,7 +17952,7 @@ body {
         background-color: #363636;
         border-color: #000000; }
   body .ui-widget {
-    font-family: "Proxima Nova", "Helvetica Neue", Arial, sans-serif; }
+    font-family: Arial, sans-serif; }
   body .ui-widget-overlay.ui-front {
     position: absolute;
     top: 0;
@@ -20096,6 +20122,15 @@ Below is the full example in all sizes.
   padding-left: 0px;
   font-weight: bolder; }
 
+.text-char-counter input[type="text"] {
+  padding-right: 150px; }
+
+.text-char-counter > div > span {
+  position: absolute;
+  margin-top: -23px;
+  margin-right: 15px;
+  right: 0; }
+
 /*
 Version: 3.5.1 Timestamp: Tue Jul 22 18:58:56 EDT 2014
 */
@@ -20652,6 +20687,12 @@ body.dark-theme .select2-container-multi .select2-choices .select2-search-field 
   .select2-container-multi .select2-choices .select2-search-choice a {
     color: lightblue; }
 
+.select2-container-multi .select2-choices .select2-search-choice-inlined {
+  padding: 8px 20px 8px 6px;
+  width: auto;
+  float: left;
+  border-radius: 10px; }
+
 html[dir="rtl"] .select2-container-multi .select2-choices .select2-search-choice {
   margin: 3px 5px 3px 0;
   padding: 8px 24px 8px 5px; }
@@ -20682,6 +20723,9 @@ html[dir="rtl"] .select2-search-choice-close {
 
 .select2-container-multi .select2-search-choice-close {
   left: 8px; }
+
+.select2-container-multi .select2-choices .select2-search-choice-inlined .select2-search-choice-close {
+  left: auto; }
 
 html[dir="rtl"] .select2-container-multi .select2-search-choice-close {
   left: auto;
@@ -21812,6 +21856,53 @@ body.dark-theme .alert-line {
   font-family: 'Font Awesome 5 Free';
   font-weight: 700; }
 
+.yes-no-btn input {
+  clip: rect(0 0 0 0);
+  position: absolute; }
+
+.yes-no-btn input + label {
+  display: inline-block;
+  padding: 1px 5px;
+  font-size: 12px;
+  line-height: 1.5;
+  font-weight: 400;
+  z-index: 2;
+  color: #fff;
+  border: 1px solid transparent;
+  float: left;
+  background-color: #8d8d8f; }
+
+.yes-no-btn input:hover:not([disabled]) + label {
+  background-color: #004470; }
+
+.yes-no-btn input:checked + label {
+  background-color: #004470; }
+
+.yes-no-btn input:disabled + label {
+  color: #7f8181;
+  border-color: #c3c5c5; }
+
+.yes-no-btn-left {
+  border-radius: 3px 0 0 3px;
+  margin-right: -1px; }
+
+.yes-no-btn-right {
+  border-radius: 0 3px 3px 0;
+  margin-left: -1px; }
+
+body.dark-theme .yes-no-btn input + label {
+  background-color: #444; }
+
+body.dark-theme .yes-no-btn input:hover:not([disabled]) + label {
+  background-color: #0071b9; }
+
+body.dark-theme .yes-no-btn input:checked + label {
+  background-color: #0071b9; }
+
+body.dark-theme .yes-no-btn input:disabled + label {
+  color: #7f8181;
+  border-color: #c3c5c5; }
+
 .system-tile {
   position: relative;
   width: 98%;
@@ -21836,7 +21927,8 @@ body.dark-theme .alert-line {
   .system-tile-header .edition-logo {
     float: right; }
     .system-tile-header .edition-logo .logo-image {
-      margin-top: 4px; }
+      margin-top: 4px;
+      max-height: 50px; }
 
 .system-tile-content {
   padding: 25px;
@@ -22237,7 +22329,7 @@ ag-grid-aurelia {
   border: 1px solid black;
   box-sizing: border-box;
   cursor: move;
-  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-family: Helvetica, Arial, sans-serif;
   font-size: 14px;
   line-height: 1.4;
   overflow: hidden;
@@ -23800,7 +23892,7 @@ body.dark-theme .ag-cell a {
 
 .ag-theme-bootstrap {
   line-height: 1.4;
-  font-family: "Proxima Nova", "Helvetica Neue", Arial, sans-serif;
+  font-family: Arial, sans-serif;
   font-size: 13px;
   color: #000;
   /* this is for the rowGroupPanel, that appears along the top of the grid */
@@ -24433,7 +24525,7 @@ body.dark-theme .ag-cell a {
     border: 1px solid #cccdcd;
     background-color: #fff;
     cursor: default;
-    font-family: "Proxima Nova", "Helvetica Neue", Arial, sans-serif;
+    font-family: Arial, sans-serif;
     font-size: 13px; }
     .ag-theme-bootstrap .ag-menu .ag-tab-header {
       background-color: #e6e6e6; }

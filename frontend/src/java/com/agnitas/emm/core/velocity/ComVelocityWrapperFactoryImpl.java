@@ -23,7 +23,7 @@ public class ComVelocityWrapperFactoryImpl extends VelocityWrapperFactoryImpl {
 
 	@Override
 	protected VelocityWrapper createVelocityWrapper(@VelocityCheck int companyId) throws Exception {
-		return new ComVelocityWrapperImpl(companyId, getUberspectDelegateTargetFactory());
+		return new ComVelocityWrapperImpl(companyId, getCompanyAccessCheck());
 	}
 
 }

@@ -138,6 +138,7 @@ public final class UserFormExecutionServiceImpl implements UserFormExecutionServ
 				params.put("agnUID", uidString);
 				params.put("companyID", uidObject.getCompanyID());
 				params.put("locale", req.getLocale());
+				params.put("_uid", uidObject);
 
 				if (useSession) {
 					CaseInsensitiveMap<String, Object> tmpPars = new CaseInsensitiveMap<>();

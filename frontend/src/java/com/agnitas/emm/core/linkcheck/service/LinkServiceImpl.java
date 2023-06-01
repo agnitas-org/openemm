@@ -14,6 +14,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -22,7 +23,12 @@ import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
+import com.agnitas.emm.core.target.service.ComTargetService;
+import com.agnitas.emm.core.trackablelinks.exceptions.DependentTrackableLinkException;
+import com.agnitas.emm.core.workflow.service.ComWorkflowService;
+import org.agnitas.beans.BaseTrackableLink;
 import org.agnitas.beans.TagDetails;
 import org.agnitas.beans.impl.TagDetailsImpl;
 import org.agnitas.emm.core.commons.uid.ExtensibleUIDService;
@@ -40,8 +46,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.Company;
 import com.agnitas.beans.ComTrackableLink;
+import com.agnitas.beans.Company;
 import com.agnitas.beans.LinkProperty;
 import com.agnitas.beans.impl.ComTrackableLinkImpl;
 import com.agnitas.dao.ComCompanyDao;
@@ -60,11 +66,11 @@ import com.agnitas.util.DeepTrackingToken;
 import com.agnitas.util.LinkUtils;
 import com.agnitas.util.StringUtil;
 import com.agnitas.util.backend.Decrypt;
+import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
 
 public class LinkServiceImpl implements LinkService {
 	
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(LinkServiceImpl.class);
+	private static final Logger logger = LogManager.getLogger(LinkServiceImpl.class);
 
 	private static final Pattern PLACEHOLDER_PATTERN = Pattern.compile("^\\{\\d+\\}$");
 	private static final Pattern HASHTAG_PATTERN = Pattern.compile("##([^#]+)##");
@@ -131,6 +137,10 @@ public class LinkServiceImpl implements LinkService {
 	private ComMailingParameterDao mailingParameterDao;
 	
 	private HashTagEvaluationService hashTagEvaluationService;
+	
+	private ComWorkflowService workflowService;
+	
+    private ComTargetService targetService;
 
 	/**
 	 * Map cache from mailingID to baseUrl
@@ -168,6 +178,16 @@ public class LinkServiceImpl implements LinkService {
 	}
 	
 	@Required
+	public void setWorkflowService(ComWorkflowService workflowService) {
+		this.workflowService = workflowService;
+	}
+    
+	@Required
+    public void setTargetService(ComTargetService targetService) {
+        this.targetService = targetService;
+    }
+	
+    @Required
 	public final void setHashTagEvaluationService(final HashTagEvaluationService service) {
 		this.hashTagEvaluationService = Objects.requireNonNull(service, "HashTagEvaluationSerice is null");
 	}
@@ -187,7 +207,7 @@ public class LinkServiceImpl implements LinkService {
 		String fullUrl = replaceHashTags(link, agnUidString, customerID, referenceTableRecordSelector, fullUrlWithHashTags, staticValueMap);
 		
 		if (applyLinkExtensions) {
-			if (link.getProperties() != null && link.getProperties().size() > 0) {
+			if (link.getProperties() != null && !link.getProperties().isEmpty()) {
 				// Create redirect Url with new extensions
 				for (LinkProperty linkProperty : link.getProperties()) {
 					if (LinkUtils.isExtension(linkProperty)) {
@@ -209,14 +229,12 @@ public class LinkServiceImpl implements LinkService {
 		return fullUrl;
 	}
 	
-	private final Map<String, Object> decryptStaticValueMap(final int companyID, final int customerID, final String encryptedStaticValueMap) {
+	private Map<String, Object> decryptStaticValueMap(final int companyID, final int customerID, final String encryptedStaticValueMap) {
 		final Company company = this.companyDao.getCompany(companyID);
 		
 		try {
 			final Decrypt decrypt = new Decrypt(company.getSecretKey());
-			final Map<String, Object> staticValueMap = decrypt.decryptAndDecode(encryptedStaticValueMap, customerID);
-	
-			return staticValueMap;
+			return decrypt.decryptAndDecode(encryptedStaticValueMap, customerID);
 		} catch(final Exception e) {
 			logger.error("Error decrypting static value map", e);
 			
@@ -354,7 +372,7 @@ public class LinkServiceImpl implements LinkService {
 	 * AgnTag [agnPROFILE] will be resolved.
 	 * AgnTag [agnUNSUBSCRIBE] will be resolved.
 	 * AgnTag [agnFORM] will be resolved.
-	 * @throws Exception
+	 *
 	 */
 	// TODO: Check availablility and mimetype of image links
 	@Override
@@ -377,7 +395,7 @@ public class LinkServiceImpl implements LinkService {
 	 * AgnTag [agnPROFILE] ARE NOT resolved.
 	 * AgnTag [agnUNSUBSCRIBE] ARE NOT resolved.
 	 * AgnTag [agnFORM] ARE NOT resolved.
-	 * @throws Exception
+	 *
 	 */
 	// TODO: Check availablility and mimetype of image links
 	@Override
@@ -400,7 +418,7 @@ public class LinkServiceImpl implements LinkService {
 		
 		try {
 			findAllLinks(textWithReplacedHashTags, (start, end) -> {
-				final LinkScanContext context = new LinkScanContext(text, start, end, foundTrackableLinks, foundImages, foundNotTrackableLinks, foundErroneousLinks, localLinks, linkWarnings);
+				final LinkScanContext context = new LinkScanContext(text, textWithReplacedHashTags, start, end, foundTrackableLinks, foundImages, foundNotTrackableLinks, foundErroneousLinks, localLinks, linkWarnings);
 				doLinkChecks(context);
 			});
 		} catch (RuntimeException e) {
@@ -410,7 +428,7 @@ public class LinkServiceImpl implements LinkService {
 		return new LinkScanResult(foundTrackableLinks, foundImages, foundNotTrackableLinks, foundErroneousLinks, localLinks, linkWarnings);
 	}
 	
-	private final void doLinkChecks(final LinkScanContext context) {
+	private void doLinkChecks(final LinkScanContext context) {
 		
 		// Do not check URLs that are values of attributes "xmlns" or "xmlns:<...>"
 		if (linkCheckIsNamespace(context)) {
@@ -452,7 +470,7 @@ public class LinkServiceImpl implements LinkService {
 		}
 	}
 	
-	private final void doNonImageLinkCheck(final LinkScanContext context) {
+	private void doNonImageLinkCheck(final LinkScanContext context) {
 		if (linkCheckContainsAgnFormTag(context)) { // In some cases, the agnFORM tags cannot be resolved, so we must exclude them here
 			
 		} else if (linkCheckContainsAgnTagOrGridPhTag(context)) {
@@ -475,7 +493,7 @@ public class LinkServiceImpl implements LinkService {
 		}
 	}
 	
-	private final void doImageLinkCheck(final LinkScanContext context) {
+	private void doImageLinkCheck(final LinkScanContext context) {
 		if (linkCheckContainsHashTag(context)) {
 			// No hash tags in image links allowed
 			context.getFoundErroneousLinks().add(new ErroneousLink("error.mailing.imagelink.hash", context.getStart(), context.getLinkUrl()));
@@ -499,19 +517,18 @@ public class LinkServiceImpl implements LinkService {
 		}
 	}
 	
-	private final boolean isPlaceholderUrl(final LinkScanContext context) {
+	private boolean isPlaceholderUrl(final LinkScanContext context) {
 		return PLACEHOLDER_PATTERN.matcher(context.getLinkUrl()).matches();
 	}
 	
-	private final boolean linkCheckIsNamespace(final LinkScanContext context) {
+	private boolean linkCheckIsNamespace(final LinkScanContext context) {
 		final String textBefore = context.getFullText().substring(0, context.getStart());
 		final Matcher m = XMLNS_PATTERN.matcher(textBefore);
-		final boolean isNamespace = m.matches();
-			
-		return isNamespace;
+
+		return m.matches();
 	}
 	
-	private final boolean linkCheckIsLocalUrl(final LinkScanContext context) {
+	private boolean linkCheckIsLocalUrl(final LinkScanContext context) {
 		final String schema = context.getProtocolSchema();
 		
 		if(schema == null) {
@@ -529,20 +546,20 @@ public class LinkServiceImpl implements LinkService {
 		return false;			// Treat as non-local
 	}
 	
-	private final boolean linkCheckIsProtocolSchemaPresent(final LinkScanContext context) {
+	private boolean linkCheckIsProtocolSchemaPresent(final LinkScanContext context) {
 		return context.getProtocolSchema() != null;
 	}
 	
-	private final boolean linkCheckIsHttpOrHttpsSchema(final LinkScanContext context) {
+	private boolean linkCheckIsHttpOrHttpsSchema(final LinkScanContext context) {
 		return "http".equalsIgnoreCase(context.getProtocolSchema())
 				|| "https".equalsIgnoreCase(context.getProtocolSchema());
 	}
 	
-	private final boolean linkCheckIsInsecureProtocol(final LinkScanContext context) {
+	private boolean linkCheckIsInsecureProtocol(final LinkScanContext context) {
 		return "http".equalsIgnoreCase(context.getProtocolSchema());
 	}
 	
-	private final boolean linkCheckUrlContainsBlanks(final LinkScanContext context) {
+	private boolean linkCheckUrlContainsBlanks(final LinkScanContext context) {
 		// Check on URLs with AGN tags replaced, because AGN tags are allowed to contain blanks.
 		return context.getLinkUrlWithAgnTagsReplaced().trim().contains(" ");
 	}
@@ -551,32 +568,32 @@ public class LinkServiceImpl implements LinkService {
         return context.getLinkUrl().trim().length() <= MAX_LINK_LENGTH;
     }
 	
-	private final boolean linkCheckHasMultipleProtocols(final LinkScanContext context) {
+	private boolean linkCheckHasMultipleProtocols(final LinkScanContext context) {
 		final Matcher matcher = DOUBLE_PROTOCOL_SCHEMA_PATTERN.matcher(context.getLinkUrl());
 
 		return matcher.matches();
 	}
 	
-	private final boolean linkCheckIsImageUrl(final LinkScanContext context) {
+	private boolean linkCheckIsImageUrl(final LinkScanContext context) {
 		return AgnUtils.checkPreviousTextEquals(context.getFullText(), context.getStart(), "src=", ' ', '\'', '"', '\n', '\r', '\t')
 				|| AgnUtils.checkPreviousTextEquals(context.getFullText(), context.getStart(), "background=", ' ', '\'', '"', '\n', '\r', '\t')
 				|| AgnUtils.checkPreviousTextEquals(context.getFullText(), context.getStart(), "url(", ' ', '\'', '"', '\n', '\r', '\t');
 	}
 	
-	private final boolean linkCheckContainsHashTag(final LinkScanContext context) {
+	private boolean linkCheckContainsHashTag(final LinkScanContext context) {
 		return HASHTAG_PATTERN.matcher(context.getLinkUrl()).find();
 	}
 	
-	private final boolean linkCheckContainsAgnFormTag(final LinkScanContext context) {
+	private boolean linkCheckContainsAgnFormTag(final LinkScanContext context) {
 		return context.getLinkUrl().contains("[agnFORM");
 	}
 	
-	private final boolean linkCheckContainsAgnTagOrGridPhTag(final LinkScanContext context) {
+	private boolean linkCheckContainsAgnTagOrGridPhTag(final LinkScanContext context) {
 		return context.getLinkUrl().contains("[agn")
 				|| context.getLinkUrl().contains("[gridPH");
 	}
 	
-	private final boolean linkCheckIsAnchor(final LinkScanContext context) {
+	private boolean linkCheckIsAnchor(final LinkScanContext context) {
 		return context.getLinkUrl().startsWith("#");
 	}
 
@@ -674,13 +691,8 @@ public class LinkServiceImpl implements LinkService {
 	 * AgnTag [agnUNSUBSCRIBE] will be resolved.
 	 * AgnTag [agnFORM] will be resolved.
 	 * 
-	 * @param text
-	 * @param mailingID
-	 * @param mailinglistID
-	 * @param companyID
-	 * @return
 	 */
-	private final String resolveAgnTags(String text, int mailingID, int mailinglistID, int companyID) {
+	private String resolveAgnTags(String text, int mailingID, int mailinglistID, int companyID) {
 		if (text.contains("[agnPROFILE]")) {
 			TagDetails tag = new TagDetailsImpl();
 			tag.setTagName("agnPROFILE");
@@ -700,7 +712,7 @@ public class LinkServiceImpl implements LinkService {
 				int startIndexOfAgnFormTag = text.indexOf("[agnFORM");
 
 				if (latestAgnFormTagPosition >= 0 && latestAgnFormTagPosition == startIndexOfAgnFormTag) {
-					logger.error(String.format("Error while detecting agnFORM tags: deadlock"));
+					logger.error("Error while detecting agnFORM tags: deadlock");
 					break;
 				}
 				latestAgnFormTagPosition = startIndexOfAgnFormTag;
@@ -772,14 +784,11 @@ public class LinkServiceImpl implements LinkService {
 			String uidString;
 			try {
 				uidString = extensibleUIDService.buildUIDString(uid);
-			} catch (UIDStringBuilderException e) {
-				logger.error("makeUIDString", e);
-				uidString = "";
-			} catch (RequiredInformationMissingException e) {
+			} catch (UIDStringBuilderException | RequiredInformationMissingException e) {
 				logger.error("makeUIDString", e);
 				uidString = "";
 			}
-			
+
 			if (configService.getBooleanValue(ConfigValue.UseRdirContextLinks, companyID)) {
 				return rdirDomain + "/r/" + uidString;
 			} else {
@@ -796,11 +805,6 @@ public class LinkServiceImpl implements LinkService {
 	 * First = deepTracking Http-Url Params
 	 * Second = Http-Cookie data string
 	 * 
-	 * @param companyID
-	 * @param mailingID
-	 * @param linkID
-	 * @param customerID
-	 * @return
 	 */
 	@Override
 	public String createDeepTrackingUID(int companyID, int mailingID, int linkID, int customerID) {
@@ -812,7 +816,7 @@ public class LinkServiceImpl implements LinkService {
 		}
 	}
 
-	private final int getActionIdForLink(final LinkScanContext context) {
+	private int getActionIdForLink(final LinkScanContext context) {
 		return getActionIdForLink(context.getFullText(), context.getStart(), context.getLinkUrl());
 	}
 	
@@ -866,7 +870,7 @@ public class LinkServiceImpl implements LinkService {
 		}
 	}
 
-	private final String getTitleForLink(final LinkScanContext context) {
+	private String getTitleForLink(final LinkScanContext context) {
 		return getTitleForLink(context.getFullText(), context.getStart(), context.getLinkUrl());
 	}
 	
@@ -954,38 +958,39 @@ public class LinkServiceImpl implements LinkService {
 		}
 	}
 
-	static final String getTextWithReplacedAgnTags(String text, String replaceTo) {
-		// todo: there is possible to use replaceAll(regexp, replaceTo)
+	static String getTextWithReplacedAgnTags(String text, String replaceTo) {
+		String textWithReplacements = text;
+		
+		textWithReplacements = replaceInText(HASHTAG_PATTERN, textWithReplacements, replaceTo);
+		textWithReplacements = replaceInText(AGNTAG_PATTERN, textWithReplacements, replaceTo);
+		textWithReplacements = replaceInText(GRIDTAG_PATTERN, textWithReplacements, replaceTo);
+
+		return textWithReplacements;
+	}
+	
+	/**
+	 * Replaces patterns in given text by a text of same length.
+	 * 
+	 * @param pattern pattern to replace
+	 * @param in original text
+	 * @param replaceBy (fragment) of replacement text
+	 * 
+	 * @return text with replaced patterns
+	 */
+	private static String replaceInText(final Pattern pattern, final String in, final String replaceBy) {
 		// Find all HashTags and replace them by x...x to allow standard html link scan but preserve any occurring errors and their real positions
-		String textWithReplacedHashTags = text;
+		
 		int currentPosition = 0;
-		Matcher hashTagMatcher = HASHTAG_PATTERN.matcher(textWithReplacedHashTags);
-
-		while (hashTagMatcher.find(currentPosition)) {
-			String fullHashTagString = text.substring(hashTagMatcher.start(), hashTagMatcher.end());
-			textWithReplacedHashTags = textWithReplacedHashTags.replace(fullHashTagString, AgnUtils.repeatString(replaceTo, (fullHashTagString.length())));
-			currentPosition = hashTagMatcher.end();
+		String text = in;
+		final Matcher matcher = pattern.matcher(text);
+		
+		while (matcher.find(currentPosition)) {
+			final String matchingString = text.substring(matcher.start(), matcher.end());
+			text = text.replace(matchingString, AgnUtils.repeatString(replaceBy, (matchingString.length())));
+			currentPosition = matcher.end();
 		}
-
-		// Find all AgnTags and replace them by x...x to allow standard html link scan but preserve any occurring errors and their real positions
-		currentPosition = 0;
-		Matcher agnTagMatcher = AGNTAG_PATTERN.matcher(textWithReplacedHashTags);
-		while (agnTagMatcher.find(currentPosition)) {
-			String fullAgnTagString = textWithReplacedHashTags.substring(agnTagMatcher.start(), agnTagMatcher.end());
-			textWithReplacedHashTags = textWithReplacedHashTags.replace(fullAgnTagString, AgnUtils.repeatString(replaceTo, (fullAgnTagString.length())));
-			currentPosition = agnTagMatcher.end();
-		}
-
-		// Find all GridPH-Tags and replace them by x...x to allow standard html link scan but preserve any occurring errors and their real positions
-		currentPosition = 0;
-		Matcher gridTagMatcher = GRIDTAG_PATTERN.matcher(textWithReplacedHashTags);
-		while (gridTagMatcher.find(currentPosition)) {
-			String fullGridTagString = textWithReplacedHashTags.substring(gridTagMatcher.start(), gridTagMatcher.end());
-			textWithReplacedHashTags = textWithReplacedHashTags.replace(fullGridTagString, AgnUtils.repeatString(replaceTo, (fullGridTagString.length())));
-			currentPosition = gridTagMatcher.end();
-		}
-
-		return textWithReplacedHashTags;
+		
+		return text;
 	}
 
 	@Override
@@ -1014,4 +1019,29 @@ public class LinkServiceImpl implements LinkService {
 		Caret caret = Caret.at(text, matcher.start());
 		return new ParseLinkRuntimeException(message + caret, matcher.group(), caret);
 	}
+	
+	@Override
+    public void assertChangedOrDeletedLinksNotDepended(
+            Collection<ComTrackableLink> oldLinks,
+            Collection<ComTrackableLink> newLinks) throws DependentTrackableLinkException {
+	    
+        List<Integer> newLinksIds = newLinks.stream()
+                .map(BaseTrackableLink::getId)
+                .collect(Collectors.toList());
+        
+        List<ComTrackableLink> changedOrDeletedLinks = oldLinks.stream()
+                .filter(link -> !newLinksIds.contains(link.getId()))
+                .collect(Collectors.toList());
+        List<String> usedInActiveWorkflowLinks = changedOrDeletedLinks.stream().filter(link
+                -> workflowService.isLinkUsedInActiveWorkflow(link))
+                .map(BaseTrackableLink::getFullUrl)
+                .collect(Collectors.toList());
+        List<String> usedInTargetLinks = changedOrDeletedLinks.stream()
+                .filter(link -> targetService.isLinkUsedInTarget(link))
+                .map(BaseTrackableLink::getFullUrl)
+                .collect(Collectors.toList());
+        if (isNotEmpty(usedInActiveWorkflowLinks) || isNotEmpty(usedInTargetLinks)) {
+            throw new DependentTrackableLinkException(usedInActiveWorkflowLinks, usedInTargetLinks);
+        }
+    }
 }

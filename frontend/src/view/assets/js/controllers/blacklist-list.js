@@ -23,8 +23,10 @@ AGN.Lib.Controller.new('blacklist-list', function () {
           form.submit().done(function() {
             AGN.Lib.JsonMessages(resp.popups, true);
           });
-        } else {
+        } else if (resp.popups) {
           AGN.Lib.JsonMessages(resp.popups, true);
+        } else {
+          AGN.Lib.RenderMessages($(resp));
         }
       }
     });
@@ -44,10 +46,11 @@ AGN.Lib.Controller.new('edit-modal-blacklist-list', function () {
           AGN.Lib.JsonMessages(resp.popups, true);
         });
         AGN.Lib.Modal.getWrapper($element).modal('hide');
-      } else {
+      } else if (resp.popups) {
         AGN.Lib.JsonMessages(resp.popups, true);
+      } else {
+        AGN.Lib.RenderMessages($(resp));
       }
     });
   });
 });
-

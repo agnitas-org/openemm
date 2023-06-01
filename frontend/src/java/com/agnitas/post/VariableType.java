@@ -85,7 +85,7 @@ public enum VariableType {
 		return dataTypeId;
 	}
 
-	private VariableType(String key, int dataTypeId) {
+	VariableType(String key, int dataTypeId) {
 		this.key = key;
 		this.dataTypeId = dataTypeId;
 	}

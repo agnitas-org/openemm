@@ -29,7 +29,7 @@ import org.agnitas.service.ImportException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.dao.impl.ComCompanyDaoImpl;
 import com.agnitas.emm.core.Permission;
 
@@ -66,7 +66,9 @@ public class ImportUtils {
 		VALUE_TOO_LARGE_ERROR("valueTooLarge"),
 		NUMBER_TOO_LARGE_ERROR("numberTooLarge"),
 		MISSING_MANDATORY_ERROR("missingMandatory"),
-		INVALID_FORMAT_ERROR("invalidFormat");
+		INVALID_FORMAT_ERROR("invalidFormat"),
+		
+		UNKNOWN_ERROR("unknown");
     	
     	private String idString;
     	
@@ -152,13 +154,13 @@ public class ImportUtils {
 		return null;
 	}
 
-	public static void removeHiddenColumns(Map<String, CsvColInfo> dbColumns, ComAdmin admin) {
+	public static void removeHiddenColumns(Map<String, CsvColInfo> dbColumns, Admin admin) {
 		for (String hiddenColumn : getHiddenColumns(admin)) {
 			dbColumns.remove(hiddenColumn);
 		}
 	}
 
-	public static List<String> getHiddenColumns(ComAdmin admin) {
+	public static List<String> getHiddenColumns(Admin admin) {
 		List<String> hiddenColumns = new ArrayList<>();
 		hiddenColumns.add("change_date");
 		hiddenColumns.add(ComCompanyDaoImpl.STANDARD_FIELD_TIMESTAMP);
@@ -186,18 +188,19 @@ public class ImportUtils {
         } else if (AgnUtils.isZipArchiveFile(importFile)) {
 			try {
 				if (optionalZipPassword != null) {
-					ZipFile zipFile = new ZipFile(importFile);
-					zipFile.setPassword(optionalZipPassword.toCharArray());
-					List<FileHeader> fileHeaders = zipFile.getFileHeaders();
-					// Check if there is only one file within the zip file
-					if (fileHeaders == null || fileHeaders.size() != 1) {
-						throw new Exception("Invalid number of files included in zip file");
-					} else {
-						boolean fileHasData = fileHeaders.get(0).getUncompressedSize() > 0;
-						try (InputStream dataInputStream = zipFile.getInputStream(fileHeaders.get(0))) {
-							// do nothing
+					try (ZipFile zipFile = new ZipFile(importFile))  {
+						zipFile.setPassword(optionalZipPassword.toCharArray());
+						List<FileHeader> fileHeaders = zipFile.getFileHeaders();
+						// Check if there is only one file within the zip file
+						if (fileHeaders == null || fileHeaders.size() != 1) {
+							throw new Exception("Invalid number of files included in zip file");
+						} else {
+							boolean fileHasData = fileHeaders.get(0).getUncompressedSize() > 0;
+							try (InputStream dataInputStream = zipFile.getInputStream(fileHeaders.get(0))) {
+								// do nothing
+							}
+							return fileHasData;
 						}
-						return fileHasData;
 					}
 				} else {
 					try (InputStream dataInputStream = ZipUtilities.openZipInputStream(new FileInputStream(importFile))) {

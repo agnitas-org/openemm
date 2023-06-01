@@ -13,7 +13,7 @@ package com.agnitas.emm.core.mailingcontent.validator.impl;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.mailingcontent.dto.DynTagDto;
 import com.agnitas.emm.core.mailingcontent.validator.DynTagValidator;
 import com.agnitas.service.AgnTagService;
@@ -32,7 +32,7 @@ public class TagDeprecatedValidator implements DynTagValidator {
     }
 
     @Override
-    public boolean validate(DynTagDto dynTagDto, Popups popups, ComAdmin admin) {
+    public boolean validate(DynTagDto dynTagDto, Popups popups, Admin admin) {
         List<String> deprecatedTagNames = dynTagDto.getContentBlocks()
                 .stream()
                 .flatMap(block -> agnTagService.parseDeprecatedTagNamesFromString(block.getContent(), dynTagDto.getCompanyId()).stream())

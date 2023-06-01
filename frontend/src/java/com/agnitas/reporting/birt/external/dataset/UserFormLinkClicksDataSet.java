@@ -24,8 +24,8 @@ import com.agnitas.reporting.birt.external.beans.UserFormLinkClicksStatisticRow;
  * BIRT-DataSet for user form URL clicks statistics
  */
 public class UserFormLinkClicksDataSet extends BIRTDataSet {
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(UserFormLinkClicksDataSet.class);
+
+	private static final Logger logger = LogManager.getLogger(UserFormLinkClicksDataSet.class);
 	
 	public List<UserFormLinkClicksStatisticRow> getClicksPerUrl(@VelocityCheck int formID, int companyID) {
 		List<UserFormLinkClicksStatisticRow> urlClickList = new ArrayList<>();
@@ -47,10 +47,10 @@ public class UserFormLinkClicksDataSet extends BIRTDataSet {
 			UserFormLinkClicksStatisticRow statisticRow = new UserFormLinkClicksStatisticRow();
 			
 			statisticRow.setUrl((String) row.get("url"));
-			statisticRow.setUrl_id(((Number) row.get("url_id")).intValue());
-			statisticRow.setClicks_gros(((Number) row.get("clicks_gross")).intValue());
-			statisticRow.setClicks_net(((Number) row.get("clicks_net")).intValue());
-			statisticRow.setClicks_unique(0);
+			statisticRow.setUrlId(((Number) row.get("url_id")).intValue());
+			statisticRow.setClicksGross(((Number) row.get("clicks_gross")).intValue());
+			statisticRow.setClicksNet(((Number) row.get("clicks_net")).intValue());
+			statisticRow.setClicksUnique(0);
             
 			urlClickList.add(statisticRow);
 		}
@@ -72,7 +72,7 @@ public class UserFormLinkClicksDataSet extends BIRTDataSet {
 			
 			UserFormLinkClicksStatisticRow statisticRow = null;
 			for (UserFormLinkClicksStatisticRow urlClickListItem : urlClickList) {
-				if (urlClickListItem.getUrl_id() == urlID) {
+				if (urlClickListItem.getUrlId() == urlID) {
 					statisticRow = urlClickListItem;
 					break;
 				}
@@ -80,15 +80,15 @@ public class UserFormLinkClicksDataSet extends BIRTDataSet {
 			
 			if (statisticRow != null) {
 				// Add anonymous value to existing statistic row
-	            statisticRow.setClicks_anonymous(((Number) row.get("clicks_anonym")).intValue());
+	            statisticRow.setClicksAnonymous(((Number) row.get("clicks_anonym")).intValue());
 			} else {
 				// Add stand alone statistic row for anonymous value
 				statisticRow = new UserFormLinkClicksStatisticRow();
 				
 				statisticRow.setUrl((String) row.get("url"));
-				statisticRow.setUrl_id(urlID);
-	            statisticRow.setClicks_anonymous(((Number) row.get("clicks_anonym")).intValue());
-				statisticRow.setClicks_unique(0);
+				statisticRow.setUrlId(urlID);
+	            statisticRow.setClicksAnonymous(((Number) row.get("clicks_anonym")).intValue());
+				statisticRow.setClicksUnique(0);
 	            
 				urlClickList.add(statisticRow);
 			}

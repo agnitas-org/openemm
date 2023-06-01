@@ -4,6 +4,7 @@
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
 <%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="agn" uri="https://emm.agnitas.de/jsp/jstl/tags" %>
 
 <emm:CheckLogon/>
 
@@ -19,7 +20,7 @@
                 </h4>
             </div>
 
-            <html:form action="/exportwizard">
+            <agn:agnForm action="/exportwizard">
                 <html:hidden property="exportPredefID"/>
                 <html:hidden property="action"/>
 
@@ -40,7 +41,7 @@
                     </div>
                 </div>
 
-            </html:form>
+            </agn:agnForm>
 
         </div>
     </div>

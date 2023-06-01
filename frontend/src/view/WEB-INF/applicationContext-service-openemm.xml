@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-	Application context definition for AGNITAS service layer.
+	Application context definition for AGNITAS OpenEMM service layer.
 
 	Only service layer classes here!
 -->
@@ -167,6 +167,8 @@
 		<property name="companyFactory" ref="CompanyFactory"/>
 		<property name="recipientProfileHistoryService" ref="RecipientProfileHistoryService"/>
 		<property name="adminService" ref="AdminService"/>
+		<property name="adminGroupService" ref="AdminGroupService" />
+		<property name="webserviceUserService" ref="WebserviceUserService" />
 		<property name="userActivityLogService" ref="UserActivityLogService"/>
         <property name="bounceFilterService" ref="BounceFilterService"/>
         <property name="companyTokenService" ref="CompanyTokenService" />
@@ -178,7 +180,7 @@
 		<property name="importModeHandlerFactory" ref="ImportModeHandlerFactory" />
 		<property name="importRecipientsDao" ref="ImportRecipientsDao" />
 		<property name="mailinglistDao" ref="MailinglistDao" />
-        <property name="columnInfoService" ref="ColumnInfoService" />
+		<property name="columnInfoService" ref="ColumnInfoService" />
 	</bean>
 
 	<bean id="mailingDeliveryStatService" class="com.agnitas.emm.core.mailing.service.impl.ComMailingDeliveryStatServiceImpl">

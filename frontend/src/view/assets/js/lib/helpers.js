@@ -166,6 +166,13 @@ by default using SI
             $div.remove();
         },
 
+        renameFile: function(file, name) {
+            Object.defineProperty(file, 'name', {
+                writable: true,
+                value: name
+            });
+        },
+
         formatBytes: function (bytes, units) {
             // Handle some special cases
             if (bytes == 0) return '0 Bytes';

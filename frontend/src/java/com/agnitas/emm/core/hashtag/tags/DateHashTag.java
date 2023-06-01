@@ -76,7 +76,7 @@ public class DateHashTag extends AbstractColonHashTagWithParameters {
 
 //	private static Map<String, String> getPlaceholderParameters(String parameterString) {
 //		Map<String, String> parameters = new HashMap<>();
-//		
+//
 //		Matcher matcher = HASHTAG_PARAMETER_PATTERN.matcher(parameterString);
 //		while (parameterString != null && matcher.matches()) {
 //			String key = matcher.group(1);
@@ -89,7 +89,7 @@ public class DateHashTag extends AbstractColonHashTagWithParameters {
 //				matcher = HASHTAG_PARAMETER_PATTERN.matcher(parameterString);
 //			}
 //		}
-//		
+//
 //		return parameters;
 //	}
 

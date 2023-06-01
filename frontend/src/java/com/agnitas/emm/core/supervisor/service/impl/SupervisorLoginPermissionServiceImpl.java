@@ -18,7 +18,7 @@ import com.agnitas.emm.core.supervisor.service.SupervisorLoginPermissionService;
 import com.agnitas.emm.core.supervisor.service.UnknownSupervisorLoginPermissionException;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.departments.beans.Department;
 import com.agnitas.emm.core.departments.exceptions.UnknownDepartmentIdException;
 import com.agnitas.emm.core.departments.service.DepartmentService;
@@ -32,7 +32,7 @@ public final class SupervisorLoginPermissionServiceImpl implements SupervisorLog
 	private DepartmentService departmentService;
 
 	@Override
-	public final void grantLoginPermissionToDepartment(final ComAdmin admin, final int departmentID, final Date expireDate) throws SupervisorException, UnknownDepartmentIdException {
+	public final void grantLoginPermissionToDepartment(final Admin admin, final int departmentID, final Date expireDate) throws SupervisorException, UnknownDepartmentIdException {
 		Objects.requireNonNull(expireDate, "Expire date cannot be null");
 		
 		// Try to load department to know, if is exists
@@ -42,14 +42,14 @@ public final class SupervisorLoginPermissionServiceImpl implements SupervisorLog
 	}
 
 	@Override
-	public final void grantLoginPermissionToAllDepartments(final ComAdmin admin, final Date expireDate) throws SupervisorException {
+	public final void grantLoginPermissionToAllDepartments(final Admin admin, final Date expireDate) throws SupervisorException {
 		Objects.requireNonNull(expireDate, "Expire date cannot be null");
 		
 		this.grantSupervisorLoginDao.grantSupervisorLoginToAllDepartments(admin.getAdminID(), expireDate);
 	}
 
 	@Override
-	public final void grantUnlimitedLoginPermissionToDepartment(final ComAdmin admin, final int departmentID) throws SupervisorException, UnknownDepartmentIdException {
+	public final void grantUnlimitedLoginPermissionToDepartment(final Admin admin, final int departmentID) throws SupervisorException, UnknownDepartmentIdException {
 		// Try to load department to know, if is exists
 		this.departmentService.getDepartmentByID(departmentID);
 		
@@ -57,7 +57,7 @@ public final class SupervisorLoginPermissionServiceImpl implements SupervisorLog
 	}
 
 	@Override
-	public final void grantUnlimitedLoginPermissionToAllDepartments(final ComAdmin admin) throws SupervisorException {
+	public final void grantUnlimitedLoginPermissionToAllDepartments(final Admin admin) throws SupervisorException {
 		this.grantSupervisorLoginDao.grantSupervisorLoginToAllDepartments(admin.getAdminID(), null);
 	}
 
@@ -67,7 +67,7 @@ public final class SupervisorLoginPermissionServiceImpl implements SupervisorLog
 	}
 
 	@Override
-	public final List<SupervisorLoginPermissionTableItem> listActiveSupervisorLoginPermissions(final ComAdmin admin) {
+	public final List<SupervisorLoginPermissionTableItem> listActiveSupervisorLoginPermissions(final Admin admin) {
 		return this.grantSupervisorLoginDao.listActiveSupervisorLoginPermissions(admin.getAdminID());	
 	}
 	

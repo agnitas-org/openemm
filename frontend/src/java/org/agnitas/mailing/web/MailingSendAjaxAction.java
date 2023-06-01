@@ -23,7 +23,7 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.actions.DispatchAction;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 
 public class MailingSendAjaxAction extends DispatchAction {
 
@@ -33,7 +33,7 @@ public class MailingSendAjaxAction extends DispatchAction {
 			HttpServletRequest request, HttpServletResponse response)
 	throws Exception {
 
-		ComAdmin admin = AgnUtils.getAdmin(request); 
+		Admin admin = AgnUtils.getAdmin(request); 
 		if (admin == null ) {
 			return null;
 		}

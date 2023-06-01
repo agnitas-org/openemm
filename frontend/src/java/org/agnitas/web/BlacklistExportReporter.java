@@ -18,6 +18,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
 
+import org.agnitas.emm.core.autoexport.bean.AutoExport;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.service.BlacklistExportWorker;
@@ -28,7 +29,7 @@ import org.agnitas.util.importvalues.TextRecognitionChar;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.Company;
 import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.emm.core.JavaMailService;
@@ -80,25 +81,25 @@ public class BlacklistExportReporter {
 	 * @param admin
 	 * @throws Exception
 	 */
-	public void sendExportReportMail(BlacklistExportWorker exportWorker, ComAdmin admin) throws Exception {
+	public void sendExportReportMail(BlacklistExportWorker exportWorker) throws Exception {
 		Set<String> emailRecipients = new HashSet<>();
 		
 		String additionalContent = "";
-		Company comp = companyDao.getCompany(admin.getCompanyID());
+		Company comp = companyDao.getCompany(exportWorker.getAutoExport().getCompanyId());
 		if (comp.getExportNotifyAdmin() > 0) {
-			final ComAdmin notifyAdmin = adminService.getAdmin(comp.getExportNotifyAdmin(), admin.getCompanyID());
+			final Admin notifyAdmin = adminService.getAdmin(comp.getExportNotifyAdmin(), exportWorker.getAutoExport().getCompanyId());
 
 			if (notifyAdmin != null && StringUtils.isNotBlank(notifyAdmin.getEmail())) {
 				emailRecipients.add(AgnUtils.normalizeEmail(notifyAdmin.getEmail()));
 			} else {
 				emailRecipients.add(AgnUtils.normalizeEmail(configService.getValue(ConfigValue.Mailaddress_Error)));
-				additionalContent = "Admin User or Email for this export was not available: CompanyID: " + admin.getCompanyID() + " / AdminID: " + comp.getExportNotifyAdmin() + " \n\n";
+				additionalContent = "Admin User or Email for this export was not available: CompanyID: " + exportWorker.getAutoExport().getCompanyId() + " / AdminID: " + comp.getExportNotifyAdmin() + " \n\n";
 			}
 		}
 		
-		if (StringUtils.isNotBlank(configService.getValue(ConfigValue.ExportAlwaysInformEmail, admin.getCompanyID()))) {
-			if (StringUtils.isNotBlank(configService.getValue(ConfigValue.ExportAlwaysInformEmail, admin.getCompanyID()))) {
-				for (String email : AgnUtils.splitAndTrimList(configService.getValue(ConfigValue.ExportAlwaysInformEmail, admin.getCompanyID()))) {
+		if (StringUtils.isNotBlank(configService.getValue(ConfigValue.ExportAlwaysInformEmail, exportWorker.getAutoExport().getCompanyId()))) {
+			if (StringUtils.isNotBlank(configService.getValue(ConfigValue.ExportAlwaysInformEmail, exportWorker.getAutoExport().getCompanyId()))) {
+				for (String email : AgnUtils.splitAndTrimList(configService.getValue(ConfigValue.ExportAlwaysInformEmail, exportWorker.getAutoExport().getCompanyId()))) {
 					emailRecipients.add(AgnUtils.normalizeEmail(email));
 				}
 			}
@@ -111,19 +112,18 @@ public class BlacklistExportReporter {
 		}
 
 		if (!emailRecipients.isEmpty()) {
-			Locale locale = admin.getLocale();
 			Company company = companyDao.getCompany(exportWorker.getAutoExport().getCompanyId());
 			
-			String subject = I18nString.getLocaleString("ResultMsg", locale) + " \"" + I18nString.getLocaleString("recipient.Blacklist", locale) + "\" (" + I18nString.getLocaleString("Company", locale) + ": " + company.getShortname() + ")";
-			String bodyHtml = generateLocalizedExportHtmlReport(exportWorker, admin) + "\n" + additionalContent;
-			String bodyText = generateLocalizedExportTextReport(exportWorker, admin) + "\n" + additionalContent;
+			String subject = I18nString.getLocaleString("ResultMsg", exportWorker.getAutoExport().getLocale()) + " \"" + I18nString.getLocaleString("recipient.Blacklist", exportWorker.getAutoExport().getLocale()) + "\" (" + I18nString.getLocaleString("Company", exportWorker.getAutoExport().getLocale()) + ": " + company.getShortname() + ")";
+			String bodyHtml = generateLocalizedExportHtmlReport(exportWorker) + "\n" + additionalContent;
+			String bodyText = generateLocalizedExportTextReport(exportWorker) + "\n" + additionalContent;
 			
-			javaMailService.sendEmail(admin.getCompanyID(), StringUtils.join(emailRecipients, ", "), subject, bodyText, bodyHtml);
+			javaMailService.sendEmail(exportWorker.getAutoExport().getCompanyId(), StringUtils.join(emailRecipients, ", "), subject, bodyText, bodyHtml);
 		}
 	}
 
-	private String generateLocalizedExportTextReport(BlacklistExportWorker exportWorker, ComAdmin admin) throws Exception {
-		Locale locale = admin.getLocale();
+	private String generateLocalizedExportTextReport(BlacklistExportWorker exportWorker) throws Exception {
+		Locale locale = exportWorker.getAutoExport().getLocale();
 		
 		String reportContent = I18nString.getLocaleString("ResultMsg", locale) + " \"" + I18nString.getLocaleString("recipient.Blacklist", locale) + "\":\n\n";
 
@@ -137,7 +137,7 @@ public class BlacklistExportReporter {
 			reportContent += I18nString.getLocaleString("error.import.profile.email", locale) + ": " + (StringUtils.isBlank(exportWorker.getAutoExport().getEmailOnError()) ? I18nString.getLocaleString("default.none", locale) : exportWorker.getAutoExport().getEmailOnError());
 			reportContent += I18nString.getLocaleString("autoImport.fileServer", locale) + ": " + exportWorker.getAutoExport().getFileServerWithoutCredentials();
 			reportContent += I18nString.getLocaleString("autoImport.filePath", locale) + ": " + exportWorker.getAutoExport().getFilePath();
-			reportContent += I18nString.getLocaleString("settings.FileName", locale) + ": " + exportWorker.getAutoExport().getFileNameWithPatterns();
+			reportContent += I18nString.getLocaleString("autoExport.fileNamePattern", locale) + ": " + (StringUtils.isBlank(exportWorker.getAutoExport().getFileNameWithPatterns()) ? AutoExport.DEFAULT_EXPORT_FILENAME_PATTERN : exportWorker.getAutoExport().getFileNameWithPatterns());
 		}
 		
 		if (exportWorker.getUsername() != null) {
@@ -188,8 +188,8 @@ public class BlacklistExportReporter {
 		return reportContent;
 	}
 
-	private String generateLocalizedExportHtmlReport(BlacklistExportWorker exportWorker, ComAdmin admin) throws Exception {
-		Locale locale = admin.getLocale();
+	private String generateLocalizedExportHtmlReport(BlacklistExportWorker exportWorker) throws Exception {
+		Locale locale = exportWorker.getAutoExport().getLocale();
 		String title;
 		if (exportWorker.getAutoExport() != null) {
 			title = "AutoExport: " + exportWorker.getAutoExport().getShortname() + " (ID: " + exportWorker.getAutoExport().getAutoExportId() + ")";
@@ -242,7 +242,7 @@ public class BlacklistExportReporter {
 			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("error.import.profile.email", locale), (StringUtils.isBlank(exportWorker.getAutoExport().getEmailOnError()) ? I18nString.getLocaleString("default.none", locale) : exportWorker.getAutoExport().getEmailOnError())));
 			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("autoImport.fileServer", locale), exportWorker.getAutoExport().getFileServerWithoutCredentials()));
 			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("autoImport.filePath", locale), exportWorker.getAutoExport().getFilePath()));
-			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("settings.FileName", locale), exportWorker.getAutoExport().getFileNameWithPatterns()));
+			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("autoExport.fileNamePattern", locale), (StringUtils.isBlank(exportWorker.getAutoExport().getFileNameWithPatterns()) ? AutoExport.DEFAULT_EXPORT_FILENAME_PATTERN : exportWorker.getAutoExport().getFileNameWithPatterns())));
 		}
 		
 		if (exportWorker.getUsername() != null) {
@@ -266,8 +266,8 @@ public class BlacklistExportReporter {
 		}
 		htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("csv.alwaysQuote", locale), I18nString.getLocaleString(exportWorker.getAlwaysQuote() ? "delimiter.always" : "delimiter.ifneeded", locale)));
 		
-		htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("StartTime", locale), (exportWorker.getStartTime() == null ? I18nString.getLocaleString("Unknown", locale) : DateUtilities.getDateTimeString(exportWorker.getStartTime(), TimeZone.getTimeZone(admin.getAdminTimezone()).toZoneId(), admin.getDateTimeFormatter()))));
-		htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("EndTime", locale), (exportWorker.getEndTime() == null ? I18nString.getLocaleString("Unknown", locale) : DateUtilities.getDateTimeString(exportWorker.getEndTime(), TimeZone.getTimeZone(admin.getAdminTimezone()).toZoneId(), admin.getDateTimeFormatter()))));
+		htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("StartTime", locale), (exportWorker.getStartTime() == null ? I18nString.getLocaleString("Unknown", locale) : DateUtilities.getDateTimeString(exportWorker.getStartTime(), TimeZone.getTimeZone(exportWorker.getAutoExport().getTimeZone()).toZoneId(), exportWorker.getAutoExport().getDateTimeFormatter()))));
+		htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("EndTime", locale), (exportWorker.getEndTime() == null ? I18nString.getLocaleString("Unknown", locale) : DateUtilities.getDateTimeString(exportWorker.getEndTime(), TimeZone.getTimeZone(exportWorker.getAutoExport().getTimeZone()).toZoneId(), exportWorker.getAutoExport().getDateTimeFormatter()))));
 
 		if (exportWorker.getRemoteFile() != null) {
 			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("settings.FileName", locale), StringUtils.isBlank(exportWorker.getRemoteFile().getRemoteFilePath()) ? I18nString.getLocaleString("Unknown", locale) : exportWorker.getRemoteFile().getRemoteFilePath()));
@@ -284,24 +284,24 @@ public class BlacklistExportReporter {
 		return htmlContent.toString();
 	}
 
-	public void sendExportErrorMail(BlacklistExportWorker exportWorker, ComAdmin admin) throws Exception {
+	public void sendExportErrorMail(BlacklistExportWorker exportWorker) throws Exception {
 		Set<String> emailRecipients = new HashSet<>();
 
 		String additionalContent = "";
-		Company comp = companyDao.getCompany(admin.getCompanyID());
+		Company comp = companyDao.getCompany(exportWorker.getAutoExport().getCompanyId());
 		if (comp.getExportNotifyAdmin() > 0) {
-			final ComAdmin notifyAdmin = adminService.getAdmin(comp.getExportNotifyAdmin(), admin.getCompanyID());
+			final Admin notifyAdmin = adminService.getAdmin(comp.getExportNotifyAdmin(), exportWorker.getAutoExport().getCompanyId());
 
 			if (notifyAdmin != null && StringUtils.isNotBlank(notifyAdmin.getEmail())) {
 				emailRecipients.add(AgnUtils.normalizeEmail(notifyAdmin.getEmail()));
 			} else {
 				emailRecipients.add(AgnUtils.normalizeEmail(configService.getValue(ConfigValue.Mailaddress_Error)));
-				additionalContent = "Admin User or Email for this export was not available: CompanyID: " + admin.getCompanyID() + " / AdminID: " + comp.getExportNotifyAdmin() + " \n\n";
+				additionalContent = "Admin User or Email for this export was not available: CompanyID: " + exportWorker.getAutoExport().getCompanyId() + " / AdminID: " + comp.getExportNotifyAdmin() + " \n\n";
 			}
 		}
 
-		if (StringUtils.isNotBlank(configService.getValue(ConfigValue.ExportAlwaysInformEmail, admin.getCompanyID()))) {
-			for (String email : AgnUtils.splitAndTrimList(configService.getValue(ConfigValue.ExportAlwaysInformEmail, admin.getCompanyID()))) {
+		if (StringUtils.isNotBlank(configService.getValue(ConfigValue.ExportAlwaysInformEmail, exportWorker.getAutoExport().getCompanyId()))) {
+			for (String email : AgnUtils.splitAndTrimList(configService.getValue(ConfigValue.ExportAlwaysInformEmail, exportWorker.getAutoExport().getCompanyId()))) {
 				emailRecipients.add(AgnUtils.normalizeEmail(email));
 			}
 		}
@@ -323,18 +323,18 @@ public class BlacklistExportReporter {
 		}
 
 		if (!emailRecipients.isEmpty()) {
-			Locale locale = admin.getLocale();
+			Locale locale = exportWorker.getAutoExport().getLocale();
 			Company company = companyDao.getCompany(exportWorker.getAutoExport().getCompanyId());
 			
 			String subject = "Export-ERROR: " + I18nString.getLocaleString("ResultMsg", locale) + ": " + " \"" + I18nString.getLocaleString("recipient.Blacklist", locale) + "\" (" + I18nString.getLocaleString("Company", locale) + ": " + company.getShortname() + ")";
-			String bodyHtml = generateLocalizedExportHtmlReport(exportWorker, admin) + "\n" + additionalContent;
-			String bodyText = "Export-ERROR:\n" + generateLocalizedExportTextReport(exportWorker, admin) + "\n" + additionalContent;
+			String bodyHtml = generateLocalizedExportHtmlReport(exportWorker) + "\n" + additionalContent;
+			String bodyText = "Export-ERROR:\n" + generateLocalizedExportTextReport(exportWorker) + "\n" + additionalContent;
 						
-			javaMailService.sendEmail(admin.getCompanyID(), StringUtils.join(emailRecipients, ", "), subject, bodyText, bodyHtml);
+			javaMailService.sendEmail(exportWorker.getAutoExport().getCompanyId(), StringUtils.join(emailRecipients, ", "), subject, bodyText, bodyHtml);
 		}
 	}
 
-	public void createAndSaveExportReport(BlacklistExportWorker exportWorker, ComAdmin admin, boolean isError) throws Exception {
+	public void createAndSaveExportReport(BlacklistExportWorker exportWorker, int adminID, boolean isError) throws Exception {
 		String fileToShow;
 		if (exportWorker.getRemoteFile() != null && StringUtils.isNotBlank(exportWorker.getRemoteFile().getRemoteFilePath())) {
 			// Remote file on ftp or sftp server
@@ -343,6 +343,6 @@ public class BlacklistExportReporter {
 			//Local exported File
 			fileToShow = exportWorker.getExportFile();
 		}
-		recipientsReportService.createAndSaveExportReport(admin, fileToShow, exportWorker.getEndTime(), generateLocalizedExportHtmlReport(exportWorker, admin), isError);
+		recipientsReportService.createAndSaveExportReport(exportWorker.getAutoExport().getCompanyId(), adminID, fileToShow, exportWorker.getEndTime(), generateLocalizedExportHtmlReport(exportWorker), isError);
 	}
 }

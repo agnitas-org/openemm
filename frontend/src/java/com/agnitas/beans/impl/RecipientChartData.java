@@ -35,28 +35,6 @@ public class RecipientChartData {
     private int lead;
 
     /**
-     *  Version with Automation Package (mailing history is activated):
-     *  no opened or clicked mailings during the last 90 days
-     */
-    private int sleeperWithHistory;
-    /**
-     * Version with Automation Package (mailing history is activated):
-     * recipients reacted on at least 1 mailing up to 25% of received mailings during the last 90 days
-     */
-    private int opportunityWithHistory;
-    /**
-     *  Version with Automation Package (mailing history is activated):
-     *  recipient is less then 90 days active and did not react (lastopendate is null & lastclickdate is null)
-     *  OR last senddate is greater then 90 days (lastsenddate < sysdate-90 or lastsenddate is null)
-     */
-    private int leadWithHistory;
-    /**
-     * Version with Automation Package (mailing history is activated):
-     *  recipients reacted on more than 25% of received mailings during the last 90 days
-     */
-    private int highPerformerWithHistory;
-
-    /**
      *  number of all buyings / number of all buyers
      */
     private float rebuyRate;
@@ -204,37 +182,5 @@ public class RecipientChartData {
 
     public void setHighRevenue(int highRevenue) {
         this.highRevenue = highRevenue;
-    }
-
-    public int getSleeperWithHistory() {
-        return sleeperWithHistory;
-    }
-
-    public void setSleeperWithHistory(int sleeperWithHistory) {
-        this.sleeperWithHistory = sleeperWithHistory;
-    }
-
-    public int getOpportunityWithHistory() {
-        return opportunityWithHistory;
-    }
-
-    public void setOpportunityWithHistory(int opportunityWithHistory) {
-        this.opportunityWithHistory = opportunityWithHistory;
-    }
-
-    public int getLeadWithHistory() {
-        return leadWithHistory;
-    }
-
-    public void setLeadWithHistory(int leadWithHistory) {
-        this.leadWithHistory = leadWithHistory;
-    }
-
-    public int getHighPerformerWithHistory() {
-        return highPerformerWithHistory;
-    }
-
-    public void setHighPerformerWithHistory(int highPerformerWithHistory) {
-        this.highPerformerWithHistory = highPerformerWithHistory;
     }
 }

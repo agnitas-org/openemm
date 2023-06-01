@@ -21,6 +21,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 public class WorkflowParametersHelper {
     
@@ -36,6 +37,19 @@ public class WorkflowParametersHelper {
     public static boolean isWorkflowDriven(HttpServletRequest request) {
         WorkflowParameters params = find(request);
         return params != null && params.getWorkflowId() != null && params.getWorkflowId() > 0;
+    }
+	
+    public static int getWorkflowIdFromSession(HttpSession session) {
+        Integer workflowId = (Integer) session.getAttribute(WorkflowParametersHelper.WORKFLOW_ID);
+        return workflowId == null ? 0 : workflowId;
+    }
+
+    /**
+     * Used in case when some action performs from campaign manager icon edit modal
+     */
+    public static void addEditedElemRedirectAttrs(RedirectAttributes ra, HttpSession session, int elementValue) {
+        ra.addAttribute("forwardParams", session.getAttribute(WORKFLOW_FORWARD_PARAMS).toString()
+                + ";elementValue=" + elementValue);
     }
 
     public static WorkflowParameters defaultIfEmpty(HttpServletRequest request, Integer defaultId) {

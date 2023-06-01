@@ -30,8 +30,8 @@ import com.agnitas.messages.I18nString;
 import com.agnitas.reporting.birt.external.beans.BouncesEmailStatRow;
 
 public class MailingBouncesDataSet extends BIRTDataSet {
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(MailingBouncesDataSet.class);
+
+	private static final Logger logger = LogManager.getLogger(MailingBouncesDataSet.class);
 
     public static final int SOFTBOUNCES_UNDELIVERABLE = 33;
 

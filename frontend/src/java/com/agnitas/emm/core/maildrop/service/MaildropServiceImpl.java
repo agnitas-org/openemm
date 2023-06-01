@@ -16,6 +16,7 @@ import java.util.List;
 
 import org.agnitas.dao.MaildropStatusDao;
 import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.agnitas.util.importvalues.MailType;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -30,6 +31,7 @@ import com.agnitas.emm.core.maildrop.MaildropException;
 import com.agnitas.emm.core.maildrop.MaildropGenerationStatus;
 import com.agnitas.emm.core.maildrop.MaildropStatus;
 import com.agnitas.emm.core.maildrop.MailingAlreadySentException;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 
 public class MaildropServiceImpl implements MaildropService {
 
@@ -40,6 +42,16 @@ public class MaildropServiceImpl implements MaildropService {
 	
 	private ComMailingDao mailingDao;
 	private MaildropStatusDao maildropStatusDao;
+	
+	@Required
+	public void setMailingDao(final ComMailingDao dao) {
+		this.mailingDao = dao;
+	}
+	
+	@Required
+	public void setMaildropStatusDao(final MaildropStatusDao dao) {
+		this.maildropStatusDao = dao;
+	}
 	
 	@Override
 	public final boolean stopWorldMailingBeforeGeneration(final int companyID, final int mailingID) {
@@ -117,11 +129,9 @@ public class MaildropServiceImpl implements MaildropService {
 	public final boolean isActiveMailing(final int mailingID, final int companyID) {
 		if (hasMaildropStatus(mailingID, companyID, MaildropStatus.ACTION_BASED, MaildropStatus.DATE_BASED, MaildropStatus.WORLD)) {
 			return true;
-		} else if (mailingDao.isActiveIntervalMailing(companyID, mailingID)) {
-			return true;
-		} else {
-			return false;
 		}
+
+		return mailingDao.isActiveIntervalMailing(companyID, mailingID);
 	}
 
 	@Override
@@ -163,14 +173,14 @@ public class MaildropServiceImpl implements MaildropService {
 			throw new InvalidMailingTypeException(expectedMailingType, currentMailingType);
 		}
 	}
-	
-	@Required
-	public void setMailingDao(final ComMailingDao dao) {
-		this.mailingDao = dao;
+
+	@Override
+	public void writeMailingSendStatisticsEntry(int companyID, int mailingID, MaildropStatus maildropStatus, MediaTypes mediaType, MailType mailType, int amount, int dataSize, Date sendDate, String mailerHostname) {
+		maildropStatusDao.writeMailingSendStatisticsEntry(companyID, mailingID, maildropStatus, mediaType, mailType, amount, dataSize, sendDate, mailerHostname);
 	}
-	
-	@Required
-	public void setMaildropStatusDao(final MaildropStatusDao dao) {
-		this.maildropStatusDao = dao;
+
+	@Override
+	public List<Integer> getMailingsSentBetween(int companyID, Date startDateIncluded, Date endDateExcluded) {
+		return maildropStatusDao.getMailingsSentBetween(companyID, startDateIncluded, endDateExcluded);
 	}
 }

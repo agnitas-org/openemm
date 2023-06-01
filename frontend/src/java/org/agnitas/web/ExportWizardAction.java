@@ -59,14 +59,14 @@ import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.ProfileField;
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.ProfileFieldMode;
 import com.agnitas.emm.core.JavaMailService;
 import com.agnitas.emm.core.export.util.ExportWizardUtils;
-import com.agnitas.emm.core.mailinglist.service.ComMailinglistService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
+import com.agnitas.emm.core.mailinglist.service.MailinglistService;
 import com.agnitas.emm.core.target.service.ComTargetService;
-import com.agnitas.service.ComColumnInfoService;
+import com.agnitas.service.ColumnInfoService;
 import com.agnitas.service.ExportPredefService;
 import com.agnitas.util.FutureHolderMap;
 
@@ -94,7 +94,7 @@ public class ExportWizardAction extends StrutsActionBase {
 
     private ExportPredefService exportPredefService;
     protected ComTargetService targetService;
-    private ComMailinglistService mailinglistService;
+    private MailinglistService mailinglistService;
     protected DataSource dataSource;
 	protected ConfigService configService;
     private FutureHolderMap futureHolder;
@@ -104,7 +104,7 @@ public class ExportWizardAction extends StrutsActionBase {
 	protected AutoExportDao autoExportDao;
     private MailinglistApprovalService mailinglistApprovalService;
     private RecipientExportWorkerFactory recipientExportWorkerFactory;
-    private ComColumnInfoService columnInfoService;
+    private ColumnInfoService columnInfoService;
 
     @Required
     public final void setRecipientExportWorkerFactory(final RecipientExportWorkerFactory factory) {
@@ -142,7 +142,7 @@ public class ExportWizardAction extends StrutsActionBase {
 	}
 	
     @Required
-    public void setColumnInfoService(ComColumnInfoService columnInfoService) {
+    public void setColumnInfoService(ColumnInfoService columnInfoService) {
         this.columnInfoService = columnInfoService;
     }
 	
@@ -226,7 +226,7 @@ public class ExportWizardAction extends StrutsActionBase {
         ActionMessages errors = new ActionMessages();
         ActionForward destination = null;
 
-        ComAdmin admin = AgnUtils.getAdmin(req);
+        Admin admin = AgnUtils.getAdmin(req);
         int companyID = admin.getCompanyID();
 
         if (form != null) {
@@ -256,15 +256,16 @@ public class ExportWizardAction extends StrutsActionBase {
                     	aForm.setDateTimeFormat("de".equalsIgnoreCase(admin.getAdminLang()) ? org.agnitas.util.importvalues.DateFormat.ddMMyyyyHHmmss.getIntValue() : org.agnitas.util.importvalues.DateFormat.MMddyyyyhhmmss.getIntValue());
                     	aForm.setDecimalSeparator("de".equalsIgnoreCase(admin.getAdminLang()) ? "," : ".");
                     	aForm.setTimezone(admin.getAdminTimezone());
+                    	aForm.setLocale(admin.getLocale());
                     	aForm.setTimeLimitsLinkedByAnd(true);
                     }
                     
                     req.setAttribute("availableDateFormats", org.agnitas.util.importvalues.DateFormat.values());
                     req.setAttribute("availableDateTimeFormats", org.agnitas.util.importvalues.DateFormat.values());
                     req.setAttribute("availableTimeZones", TimeZone.getAvailableIDs());
-                    
+
                     req.setAttribute("availableColumns", columnInfoService.getComColumnInfos(companyID, admin.getAdminID()).stream()
-                    	.filter(t -> t.getModeEdit() == ProfileField.MODE_EDIT_EDITABLE || t.getModeEdit() == ProfileField.MODE_EDIT_READONLY)
+                    	.filter(t -> t.getModeEdit() == ProfileFieldMode.Editable || t.getModeEdit() == ProfileFieldMode.ReadOnly)
                     	.collect(Collectors.toList()));
 
                     aForm.setTargetGroups(targetService.getTargetLights(admin));
@@ -307,9 +308,14 @@ public class ExportWizardAction extends StrutsActionBase {
 
                 case ACTION_SAVE:
                 	// Save current export profile for later usage under the given name
-					if (StringUtils.length(aForm.getShortname()) < 3) {
+                	String shortname = aForm.getShortname();
+		
+					if (StringUtils.trimToNull(shortname) == null) {
 						errors.add("shortname", new ActionMessage("error.name.too.short"));
-	                    destination = mapping.findForward("view");
+						destination = mapping.findForward("view");
+					} else if (StringUtils.trimToNull(shortname).length() < 3) {
+						errors.add("shortname", new ActionMessage("error.name.too.short"));
+						destination = mapping.findForward("view");
 					} else {
                         if (createOrUpdateExport(aForm, req)) {
                             messages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("default.changes_saved"));
@@ -322,9 +328,9 @@ public class ExportWizardAction extends StrutsActionBase {
                     req.setAttribute("availableDateFormats", org.agnitas.util.importvalues.DateFormat.values());
                     req.setAttribute("availableDateTimeFormats", org.agnitas.util.importvalues.DateFormat.values());
                     req.setAttribute("availableTimeZones", TimeZone.getAvailableIDs());
-
+                    
                     req.setAttribute("availableColumns", columnInfoService.getComColumnInfos(companyID, admin.getAdminID()).stream()
-                    	.filter(t -> t.getModeEdit() == ProfileField.MODE_EDIT_EDITABLE || t.getModeEdit() == ProfileField.MODE_EDIT_READONLY)
+                    	.filter(t -> t.getModeEdit() == ProfileFieldMode.Editable || t.getModeEdit() == ProfileFieldMode.ReadOnly)
                     	.collect(Collectors.toList()));
                     
                     aForm.setTargetGroups(targetService.getTargetLights(admin));
@@ -417,13 +423,13 @@ public class ExportWizardAction extends StrutsActionBase {
 	                        aForm.setRefreshMillis(StrutsFormBase.DEFAULT_REFRESH_MILLIS);
 	                        RecipientExportWorker worker = (RecipientExportWorker) future.get();
 	                        if (worker.getError() != null) {
-	                        	recipientExportReporter.sendExportErrorMail(worker, admin);
-	                        	recipientExportReporter.createAndSaveExportReport(worker, admin, true);
+	                        	recipientExportReporter.sendExportErrorMail(worker);
+	                        	recipientExportReporter.createAndSaveExportReport(worker, admin.getAdminID(), true);
 	                        	errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("export.result.error", worker.getError().getMessage()));
 	                        } else {
-	                        	recipientExportReporter.createAndSaveExportReport(worker, admin, false);
+	                        	recipientExportReporter.createAndSaveExportReport(worker, admin.getAdminID(), false);
 	                        	
-	                			recipientExportReporter.sendExportReportMail(worker, admin);
+	                			recipientExportReporter.sendExportReportMail(worker);
 	                			
 	                			// Export via GUI is always zipped, but we need the date in the name of the zipped CSV file to be used in the name of the download zip file
 	        					if (worker.getZippedFileName().toLowerCase().endsWith(".csv")) {
@@ -584,6 +590,7 @@ public class ExportWizardAction extends StrutsActionBase {
 			aForm.setDateFormat(exportPredef.getDateFormat());
 			aForm.setDateTimeFormat(exportPredef.getDateTimeFormat());
 			aForm.setTimezone(exportPredef.getTimezone());
+			aForm.setLocale(exportPredef.getLocale());
 			aForm.setDecimalSeparator(exportPredef.getDecimalSeparator());
 			
 			aForm.setTimeLimitsLinkedByAnd(exportPredef.isTimeLimitsLinkedByAnd());
@@ -630,7 +637,7 @@ public class ExportWizardAction extends StrutsActionBase {
     protected boolean createOrUpdateExport(ExportWizardForm aForm, HttpServletRequest request) {
     	boolean isNew = aForm.getExportPredefID() <= 0;
     	int companyId = AgnUtils.getCompanyID(request);
-		ComAdmin admin = AgnUtils.getAdmin(request);
+		Admin admin = AgnUtils.getAdmin(request);
 		assert admin != null;
 
 		ExportPredef exportPredef;
@@ -654,6 +661,7 @@ public class ExportWizardAction extends StrutsActionBase {
         exportPredef.setDateFormat(aForm.getDateFormat());
         exportPredef.setDateTimeFormat(aForm.getDateTimeFormat());
         exportPredef.setTimezone(aForm.getTimezone());
+        exportPredef.setLocale(aForm.getLocale());
         exportPredef.setDecimalSeparator(aForm.getDecimalSeparator());
         
         String separator = aForm.getSeparator();
@@ -689,7 +697,7 @@ public class ExportWizardAction extends StrutsActionBase {
         return true;
     }
 
-    private List<ExportColumnMapping> getExportColumnMappingsFromForm(ExportWizardForm form, ComAdmin admin) {
+    private List<ExportColumnMapping> getExportColumnMappingsFromForm(ExportWizardForm form, Admin admin) {
         List<ExportColumnMapping> exportColumnMappings = new ArrayList<>();
         for (String dbColumn : form.getColumns()) {
         	ExportColumnMapping exportColumnMapping = new ExportColumnMapping();
@@ -711,7 +719,7 @@ public class ExportWizardAction extends StrutsActionBase {
         }).collect(Collectors.toList());
     }
 
-    private void writeExportChangeLog(ExportPredef oldExport, ExportPredef newExport, ComAdmin admin) {
+    private void writeExportChangeLog(ExportPredef oldExport, ExportPredef newExport, Admin admin) {
 		DateFormat dateFormat = admin.getDateTimeFormatWithSeconds();
 		
 		String newColumns = StringUtils.join(newExport.getExportColumnMappings().stream().map(ExportColumnMapping::getDbColumn).collect(Collectors.toList()), ";");
@@ -821,7 +829,7 @@ public class ExportWizardAction extends StrutsActionBase {
 	}
 
     protected ExportPredef getExportProfileFromForm(ExportWizardForm form, HttpServletRequest request, int companyID) {
-        ComAdmin admin = AgnUtils.getAdmin(request);
+        Admin admin = AgnUtils.getAdmin(request);
         SimpleDateFormat format = admin.getDateFormat();
 		
 		ExportPredef exportProfile = new ExportPredef();
@@ -856,6 +864,7 @@ public class ExportWizardAction extends StrutsActionBase {
 		exportProfile.setDateFormat(form.getDateFormat());
 		exportProfile.setDateTimeFormat(form.getDateTimeFormat());
 		exportProfile.setTimezone(form.getTimezone());
+		exportProfile.setLocale(form.getLocale());
         exportProfile.setDecimalSeparator(form.getDecimalSeparator());
         exportProfile.setTimeLimitsLinkedByAnd(form.isTimeLimitsLinkedByAnd());
 		
@@ -884,7 +893,7 @@ public class ExportWizardAction extends StrutsActionBase {
 	 * @param endDate : export end time
      */
     private void writeCollectContentLog(ExportWizardForm aForm, HttpServletRequest request, Date startDate, Date endDate) {
-    	ComAdmin admin = AgnUtils.getAdmin(request);
+    	Admin admin = AgnUtils.getAdmin(request);
         int companyId = AgnUtils.getCompanyID(request);
 
         String mailingList = getMailingListById(aForm.getMailinglistID(), companyId);
@@ -1009,7 +1018,7 @@ public class ExportWizardAction extends StrutsActionBase {
 	}
 
 	/**
-	 * Get a description for export definition entity to be passed to {@link #writeUserActivityLog(com.agnitas.beans.ComAdmin, String, int)}.
+	 * Get a description for export definition entity to be passed to {@link #writeUserActivityLog(com.agnitas.beans.Admin, String, int)}.
 	 * @param definition an export definition entity.
 	 * @return a description of the {@code ep}.
 	 */
@@ -1030,7 +1039,7 @@ public class ExportWizardAction extends StrutsActionBase {
         this.dataSource = dataSource;
     }
 
-	public void setMailinglistService(ComMailinglistService mailinglistService) {
+	public void setMailinglistService(MailinglistService mailinglistService) {
 		this.mailinglistService = mailinglistService;
 	}
 

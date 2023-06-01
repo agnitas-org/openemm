@@ -31,9 +31,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.Mailing;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.MaildropEntry;
+import com.agnitas.beans.Mailing;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.emm.core.calendar.service.CalendarService;
 import com.agnitas.emm.core.maildrop.MaildropGenerationStatus;
@@ -60,17 +60,17 @@ public class CalendarServiceImpl implements CalendarService {
     }
 
     @Override
-    public PaginatedListImpl<Map<String, Object>> getUnsentMailings(ComAdmin admin, int listSize) {
+    public PaginatedListImpl<Map<String, Object>> getUnsentMailings(Admin admin, int listSize) {
         return mailingDao.getUnsentMailings(admin, listSize);
     }
 
     @Override
-    public PaginatedListImpl<Map<String, Object>> getPlannedMailings(ComAdmin admin, int listSize) {
+    public PaginatedListImpl<Map<String, Object>> getPlannedMailings(Admin admin, int listSize) {
         return mailingDao.getPlannedMailings(admin, listSize);
     }
 
     @Override
-    public JSONArray getMailings(ComAdmin admin, LocalDate startDate, LocalDate endDate) {
+    public JSONArray getMailings(Admin admin, LocalDate startDate, LocalDate endDate) {
         List<Map<String, Object>> mailings = new ArrayList<>();
         int companyId = admin.getCompanyID();
         ZoneId zoneId = AgnUtils.getZoneId(admin);
@@ -96,7 +96,7 @@ public class CalendarServiceImpl implements CalendarService {
         return mailingsAsJson(mailings, openers, clickers, admin);
     }
 
-    protected List<Map<String, Object>> getPlannedMailings(final ComAdmin admin, final Date startDate, final Date endDate) {
+    protected List<Map<String, Object>> getPlannedMailings(final Admin admin, final Date startDate, final Date endDate) {
         List<Map<String, Object>> plannedMailings;
         plannedMailings = mailingDao.getPlannedMailings(admin, startDate, endDate);
         return addSomeFieldsToPlannedMailings(plannedMailings, AgnUtils.getZoneId(admin));
@@ -113,7 +113,7 @@ public class CalendarServiceImpl implements CalendarService {
         return mailings;
     }
 
-    protected List<Map<String, Object>> getMailings(final ComAdmin admin, Date startDate, Date endDate) {
+    protected List<Map<String, Object>> getMailings(final Admin admin, Date startDate, Date endDate) {
         List<Map<String, Object>> mailings;
         mailings = mailingDao.getSentAndScheduled(admin, startDate, endDate);
 
@@ -156,7 +156,7 @@ public class CalendarServiceImpl implements CalendarService {
     }
 
     @Override
-    public boolean moveMailing(ComAdmin admin, int mailingId, LocalDate date) {
+    public boolean moveMailing(Admin admin, int mailingId, LocalDate date) {
         Mailing mailing = mailingDao.getMailing(mailingId, admin.getCompanyID());
         // Avoid schedule in the past.
         if (mailing.getId() == mailingId && !date.isBefore(LocalDate.now())) {
@@ -171,7 +171,7 @@ public class CalendarServiceImpl implements CalendarService {
         return false;
     }
 
-    private boolean setMailingDate(ComAdmin admin, Mailing mailing, MaildropEntry drop, LocalDate date) {
+    private boolean setMailingDate(Admin admin, Mailing mailing, MaildropEntry drop, LocalDate date) {
         ZoneId zoneId = AgnUtils.getZoneId(admin);
         boolean success = false;
 
@@ -233,7 +233,7 @@ public class CalendarServiceImpl implements CalendarService {
         return num.intValue();
     }
 
-    private JSONArray mailingsAsJson(List<Map<String, Object>> mailings, Map<Integer, Integer> openers, Map<Integer, Integer> clickers, ComAdmin admin) {
+    private JSONArray mailingsAsJson(List<Map<String, Object>> mailings, Map<Integer, Integer> openers, Map<Integer, Integer> clickers, Admin admin) {
         TimeZone timezone = AgnUtils.getTimeZone(admin);
         Locale locale = admin.getLocale();
 

@@ -1,5 +1,12 @@
 <%@ page contentType="text/html; charset=utf-8"%>
+<%@ page import="org.agnitas.util.AgnUtils"%>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+
+<c:set var="SESSION_CONTEXT_KEYNAME_ADMIN" value="<%= AgnUtils.SESSION_CONTEXT_KEYNAME_ADMIN%>" />
+<c:set var="admin" value="${sessionScope[SESSION_CONTEXT_KEYNAME_ADMIN]}" />
+
+<c:set var="aLocale" value="${admin.getLocale()}" />
 
 <div class="tile" data-sizing="container">
     <div class="tile-header" data-sizing="top">
@@ -18,7 +25,14 @@
         <div class="upselling-desc">
             <p><mvc:message code="grid.layout.builder.teaser.text"/></p>
 
-            <a href="#" class="more-info-btn">
+			<c:choose>
+				<c:when test="${aLocale eq 'de_DE'}">
+					<a href="https://www.agnitas.de/e-marketing-manager/premium-features/mailing/" class="more-info-btn" target="_blank">
+				</c:when>
+				<c:otherwise>
+					<a href="https://www.agnitas.de/en/e-marketing_manager/premium-features/mailing/" class="more-info-btn" target="_blank">
+				</c:otherwise>
+			</c:choose>
                 <mvc:message code="general.upselling.information"/>
             </a>
         </div>

@@ -551,23 +551,32 @@ public class GenericExportWorker implements Callable<GenericExportWorker> {
 
 	private OutputStream getExportOutputStream() throws IOException, FileNotFoundException {
 		if (zipped && StringUtils.isEmpty(zipPassword)) {
-			OutputStream outputStream = ZipUtilities.openNewZipOutputStream(new FileOutputStream(new File(exportFile)));
-			if (StringUtils.isBlank(zippedFileName) ) {
-				zippedFileName = exportFile;
+			OutputStream outputStream = null;
+			try {
+				outputStream = ZipUtilities.openNewZipOutputStream(new FileOutputStream(new File(exportFile)));
+				if (StringUtils.isBlank(zippedFileName) ) {
+					zippedFileName = exportFile;
+				}
+				if (zippedFileName.contains(File.separator)) {
+					zippedFileName = zippedFileName.substring(zippedFileName.lastIndexOf(File.separatorChar) + 1);
+				}
+				if (zippedFileName.toLowerCase().endsWith(".zip")) {
+					zippedFileName = zippedFileName.substring(0, zippedFileName.length() - 4);
+				}
+				if (!zippedFileName.toLowerCase().endsWith(".csv")) {
+					zippedFileName += ".csv";
+				}
+				ZipEntry entry = new ZipEntry(zippedFileName);
+				entry.setTime(new Date().getTime());
+				((ZipOutputStream) outputStream).putNextEntry(entry);
+				return outputStream;
+			} catch (Exception e) {
+				if (outputStream != null) {
+					outputStream.close();
+					outputStream = null;
+				}
+				throw e;
 			}
-			if (zippedFileName.contains(File.separator)) {
-				zippedFileName = zippedFileName.substring(zippedFileName.lastIndexOf(File.separatorChar) + 1);
-			}
-			if (zippedFileName.toLowerCase().endsWith(".zip")) {
-				zippedFileName = zippedFileName.substring(0, zippedFileName.length() - 4);
-			}
-			if (!zippedFileName.toLowerCase().endsWith(".csv")) {
-				zippedFileName += ".csv";
-			}
-			ZipEntry entry = new ZipEntry(zippedFileName);
-			entry.setTime(new Date().getTime());
-			((ZipOutputStream) outputStream).putNextEntry(entry);
-			return outputStream;
 		} else {
 			return new FileOutputStream(new File(exportFile));
 		}

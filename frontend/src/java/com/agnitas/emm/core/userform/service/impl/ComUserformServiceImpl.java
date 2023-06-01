@@ -45,7 +45,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.impl.ComRecipientLiteImpl;
 import com.agnitas.dao.ComRecipientDao;
@@ -148,7 +148,7 @@ public class ComUserformServiceImpl extends UserformServiceImpl implements ComUs
     }
 
     @Override
-    public JSONArray getUserFormsJson(ComAdmin admin) {
+    public JSONArray getUserFormsJson(Admin admin) {
     	final String placeholder = "{%FORMNAME%}";
     	
     	final Optional<String> companyTokenOpt = companyTokenForAdmin(admin);
@@ -217,7 +217,7 @@ public class ComUserformServiceImpl extends UserformServiceImpl implements ComUs
 	}
 	
 	@Override
-	public ServiceResult<Integer> saveUserForm(ComAdmin admin, UserFormDto userFormDto) {
+	public ServiceResult<Integer> saveUserForm(Admin admin, UserFormDto userFormDto) {
         int companyId = admin.getCompanyID();
 
         int userFormId = userFormDto.getId();
@@ -260,7 +260,7 @@ public class ComUserformServiceImpl extends UserformServiceImpl implements ComUs
     }
 
     @Override
-    public ServiceResult<Integer> cloneUserForm(ComAdmin admin, int userFormId) {
+    public ServiceResult<Integer> cloneUserForm(Admin admin, int userFormId) {
 		UserFormDto userForm = getUserForm(admin.getCompanyID(), userFormId);
 		if (userForm == null) {
             throw new IllegalArgumentException("userForm == null (invalid userFormId)");
@@ -280,7 +280,7 @@ public class ComUserformServiceImpl extends UserformServiceImpl implements ComUs
     }
 
     @Override
-    public File exportUserForm(ComAdmin admin, int userFormId, String userFormName) {
+    public File exportUserForm(Admin admin, int userFormId, String userFormName) {
         try {
             int companyId = admin.getCompanyID();
 
@@ -299,7 +299,7 @@ public class ComUserformServiceImpl extends UserformServiceImpl implements ComUs
     }
 
 	@Override
-	public String getUserFormUrlPattern(final ComAdmin admin, final String formName, final boolean resolveUID, final Optional<String> companyToken) {
+	public String getUserFormUrlPattern(final Admin admin, final String formName, final boolean resolveUID, final Optional<String> companyToken) {
 		try {
 			int testCustomerId = comRecipientDao.getAdminOrTestRecipientId(admin.getCompanyID(), admin.getAdminID());
 			final int licenseID = configService.getLicenseID();
@@ -320,7 +320,7 @@ public class ComUserformServiceImpl extends UserformServiceImpl implements ComUs
 	}
 
 	@Override
-	public final List<UserFormTestUrl> getUserFormUrlForAllAdminAndTestRecipients(final ComAdmin admin, final String formName, final Optional<String> companyToken) {
+	public final List<UserFormTestUrl> getUserFormUrlForAllAdminAndTestRecipients(final Admin admin, final String formName, final Optional<String> companyToken) {
 		try {
 			final List<ComRecipientLiteImpl> recipients = this.recipentService.listAdminAndTestRecipients(admin);
 			final List<UserFormTestUrl> urls = new ArrayList<>();
@@ -349,7 +349,7 @@ public class ComUserformServiceImpl extends UserformServiceImpl implements ComUs
 	}
 	
     @Override
-	public final String getUserFormUrlWithoutUID(ComAdmin admin, String formName, Optional<String> companyToken) {
+	public final String getUserFormUrlWithoutUID(Admin admin, String formName, Optional<String> companyToken) {
     	try {
 	        return WebFormUrlBuilder.from(admin.getCompany(), formName)
 				.withCompanyToken(companyToken)
@@ -370,12 +370,12 @@ public class ComUserformServiceImpl extends UserformServiceImpl implements ComUs
     }
 
     @Override
-    public Map<String, String> getMediapoolImages(ComAdmin admin) {
+    public Map<String, String> getMediapoolImages(Admin admin) {
         return Collections.emptyMap();
     }
 
     @Override
-    public Map<String, String> getProfileFields(ComAdmin admin, DbColumnType.SimpleDataType... allowedTypes) {
+    public Map<String, String> getProfileFields(Admin admin, DbColumnType.SimpleDataType... allowedTypes) {
         final Map<String, String> resultMap = new LinkedHashMap<>();
         resultMap.put("none", I18nString.getLocaleString("default.none", admin.getLocale()));
 
@@ -392,7 +392,7 @@ public class ComUserformServiceImpl extends UserformServiceImpl implements ComUs
         return resultMap;
     }
     
-    private final Optional<String> companyTokenForAdmin(final ComAdmin admin) {
+    private final Optional<String> companyTokenForAdmin(final Admin admin) {
     	try {
     		return this.companyTokenService.getCompanyToken(admin.getCompanyID());
     	} catch(final UnknownCompanyIdException e) {

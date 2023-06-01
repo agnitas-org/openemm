@@ -83,6 +83,7 @@ public class ComCompanyToCompanyViewFormConverter implements Converter<Company, 
         settingsDto.setBusiness(comCompany.getBusiness());
         settingsDto.setHasTwoFactorAuthentication(configService.getBooleanValue(ConfigValue.HostAuthentication, comCompany.getId()));
         settingsDto.setMaxAdminMails(configService.getIntegerValue(ConfigValue.MaxAdminMails, comCompany.getId()));
+        settingsDto.setMaxFields(configService.getIntegerValue(ConfigValue.MaxFields, comCompany.getId()));
         
         // Settings for login tracking
         final Optional<LoginlockSettings> settingsOptional = LoginlockSettings.fromSettings(
@@ -98,7 +99,8 @@ public class ComCompanyToCompanyViewFormConverter implements Converter<Company, 
         settingsDto.setHostauthCookieExpireDays(this.configService.getIntegerValue(ConfigValue.HostAuthenticationHostIdCookieExpireDays, comCompany.getId()));
 
         settingsDto.setSendPasswordChangedNotification(configService.getBooleanValue(ConfigValue.SendPasswordChangedNotification, comCompany.getId()));
-        
+        settingsDto.setSendEncryptedMailings(configService.getBooleanValue(ConfigValue.SendEncryptedMailings, comCompany.getId()));
+
         settingsDto.setDefaultLinkExtension(configService.getValue(ConfigValue.DefaultLinkExtension, comCompany.getId()));
         settingsDto.setLinkcheckerLinktimeout(configService.getIntegerValue(ConfigValue.Linkchecker_Linktimeout, comCompany.getId()));
         settingsDto.setLinkcheckerThreadcount(configService.getIntegerValue(ConfigValue.Linkchecker_Threadcount, comCompany.getId()));
@@ -109,6 +111,7 @@ public class ComCompanyToCompanyViewFormConverter implements Converter<Company, 
         settingsDto.setTrackingVetoAllowTransactionTracking(configService.getBooleanValue(ConfigValue.TrackingVetoAllowTransactionTracking, comCompany.getId()));
         settingsDto.setDeleteSuccessfullyImportedFiles(configService.getBooleanValue(ConfigValue.DeleteSuccessfullyImportedFiles, comCompany.getId()));
         settingsDto.setImportAlwaysInformEmail(configService.getValue(ConfigValue.ImportAlwaysInformEmail, comCompany.getId()));
+        settingsDto.setNormalizeEmails(!configService.getBooleanValue(ConfigValue.AllowUnnormalizedEmails, comCompany.getId()));
         settingsDto.setExportAlwaysInformEmail(configService.getValue(ConfigValue.ExportAlwaysInformEmail, comCompany.getId()));
         settingsDto.setBccEmail(configService.getValue(ConfigValue.DefaultBccEmail, comCompany.getId()));
         settingsDto.setAnonymizeAllRecipients(configService.getBooleanValue(ConfigValue.AnonymizeAllRecipients, comCompany.getId()));
@@ -116,7 +119,6 @@ public class ComCompanyToCompanyViewFormConverter implements Converter<Company, 
         settingsDto.setAllowEmailWithWhitespace(configService.getBooleanValue(ConfigValue.AllowEmailWithWhitespace, comCompany.getId()));
         settingsDto.setAllowEmptyEmail(configService.getBooleanValue(ConfigValue.AllowEmptyEmail, comCompany.getId()));
         settingsDto.setExpireStatistics(configService.getIntegerValue(ConfigValue.ExpireStatistics, comCompany.getId()));
-        settingsDto.setExpireOnePixel(configService.getIntegerValue(ConfigValue.ExpireOnePixel, comCompany.getId()));
         settingsDto.setExpireSuccess(configService.getIntegerValue(ConfigValue.ExpireSuccess, comCompany.getId()));
         settingsDto.setExpireRecipient(configService.getIntegerValue(ConfigValue.ExpireRecipient, comCompany.getId()));
         settingsDto.setExpireBounce(configService.getIntegerValue(ConfigValue.ExpireBounce, comCompany.getId()));

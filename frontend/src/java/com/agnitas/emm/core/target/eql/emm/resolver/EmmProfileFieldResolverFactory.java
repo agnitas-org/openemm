@@ -13,14 +13,14 @@ package com.agnitas.emm.core.target.eql.emm.resolver;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.dao.ComProfileFieldDao;
+import com.agnitas.dao.ProfileFieldDao;
 import com.agnitas.emm.core.target.eql.codegen.resolver.ProfileFieldResolveException;
 import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderConfiguration;
 
 public class EmmProfileFieldResolverFactory {
 
-	/** {@link ComProfileFieldDao}, that will be used by the {@link EmmProfileFieldResolver}. */
-	private ComProfileFieldDao profileFieldDao;
+	/** {@link ProfileFieldDao}, that will be used by the {@link EmmProfileFieldResolver}. */
+	private ProfileFieldDao profileFieldDao;
 
 	private QueryBuilderConfiguration queryBuilderConfiguration;
 
@@ -39,7 +39,7 @@ public class EmmProfileFieldResolverFactory {
 		
 	
 	@Required
-	public void setProfileFieldDao(ComProfileFieldDao dao) {
+	public void setProfileFieldDao(ProfileFieldDao dao) {
 		this.profileFieldDao = dao;
 	}
 

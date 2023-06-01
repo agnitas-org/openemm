@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import com.agnitas.web.mvc.XssCheckAware;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.emm.core.autoexport.bean.AutoExport;
 import org.agnitas.emm.core.autoexport.service.AutoExportService;
@@ -26,7 +27,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.Campaign;
 import com.agnitas.beans.TargetLight;
 import com.agnitas.dao.CampaignDao;
@@ -37,12 +38,13 @@ import com.agnitas.web.perm.annotations.PermissionMapping;
 @Controller
 @RequestMapping("/workflow/ajax")
 @PermissionMapping("workflow")
-public class WorkflowAjaxController {
-    private ComWorkflowService workflowService;
-    private AutoImportService autoImportService;
-    private AutoExportService autoExportService;
-    private CampaignDao campaignDao;
-    private MailinglistApprovalService mailinglistApprovalService;
+public class WorkflowAjaxController implements XssCheckAware {
+
+    private final ComWorkflowService workflowService;
+    private final AutoImportService autoImportService;
+    private final AutoExportService autoExportService;
+    private final CampaignDao campaignDao;
+    private final MailinglistApprovalService mailinglistApprovalService;
 
     public WorkflowAjaxController(ComWorkflowService workflowService,
                                   @Autowired(required = false) AutoImportService autoImportService,
@@ -59,7 +61,7 @@ public class WorkflowAjaxController {
     @GetMapping("/getMailingNames.action")
     @PermissionMapping("view")
     public @ResponseBody
-    Map<Integer, String> getMailingNames(ComAdmin admin) {
+    Map<Integer, String> getMailingNames(Admin admin) {
         return workflowService.getAllMailings(admin).stream()
                 .collect(Collectors.toMap(LightweightMailing::getMailingID, LightweightMailing::getShortname));
     }
@@ -67,7 +69,7 @@ public class WorkflowAjaxController {
     @GetMapping("/getAutoExportNames.action")
     @PermissionMapping("view")
     public @ResponseBody
-    Map<Integer, String> getAutoExportNames(ComAdmin admin) {
+    Map<Integer, String> getAutoExportNames(Admin admin) {
         if (autoExportService == null) {
             return new HashMap<>();
         }
@@ -79,7 +81,7 @@ public class WorkflowAjaxController {
     @GetMapping("/getAutoImportNames.action")
     @PermissionMapping("view")
     public @ResponseBody
-    Map<Integer, String> getAutoImportNames(ComAdmin admin) {
+    Map<Integer, String> getAutoImportNames(Admin admin) {
         if (autoImportService == null) {
             return new HashMap<>();
         }
@@ -91,7 +93,7 @@ public class WorkflowAjaxController {
     @GetMapping("/getMailinglistNames.action")
     @PermissionMapping("view")
     public @ResponseBody
-    Map<Integer, String> getMailinglistNames(ComAdmin admin) {
+    Map<Integer, String> getMailinglistNames(Admin admin) {
         return mailinglistApprovalService.getEnabledMailinglistsForAdmin(admin).stream()
                 .collect(Collectors.toMap(Mailinglist::getId, Mailinglist::getShortname));
     }
@@ -99,7 +101,7 @@ public class WorkflowAjaxController {
     @GetMapping("/getArchiveNames.action")
     @PermissionMapping("view")
     public @ResponseBody
-    Map<Integer, String> getArchiveNames(ComAdmin admin) {
+    Map<Integer, String> getArchiveNames(Admin admin) {
         return campaignDao.getCampaignList(admin.getCompanyID(), "lower(shortname)", 1).stream()
                 .collect(Collectors.toMap(Campaign::getId, Campaign::getShortname));
     }
@@ -107,7 +109,7 @@ public class WorkflowAjaxController {
     @GetMapping("/getTargetNames.action")
     @PermissionMapping("view")
     public @ResponseBody
-    Map<Integer, String> getTargetNames(ComAdmin admin) {
+    Map<Integer, String> getTargetNames(Admin admin) {
         return workflowService.getAllTargets(admin.getCompanyID()).stream()
                 .collect(Collectors.toMap(TargetLight::getId, TargetLight::getTargetName));
     }
@@ -115,7 +117,7 @@ public class WorkflowAjaxController {
     @GetMapping("/getReportNames.action")
     @PermissionMapping("view")
     public @ResponseBody
-    Map<Integer, String> getReportNames(ComAdmin admin) {
+    Map<Integer, String> getReportNames(Admin admin) {
         return workflowService.getAllReports(admin.getCompanyID());
     }
 }

@@ -14,19 +14,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.agnitas.beans.AdminGroup;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.dao.ComAdminGroupDao;
+import com.agnitas.beans.Admin;
+import com.agnitas.dao.AdminGroupDao;
 import com.agnitas.emm.core.admin.service.AdminGroupService;
 
 public class AdminGroupServiceImpl implements AdminGroupService {
 
-    private ComAdminGroupDao adminGroupDao;
+    private AdminGroupDao adminGroupDao;
 
     @Override
-    public List<AdminGroup> getAdminGroupsByCompanyIdAndDefault(@VelocityCheck int companyId, ComAdmin admin, ComAdmin adminIdToEdit) {
+    public List<AdminGroup> getAdminGroupsByCompanyIdAndDefault(int companyId, Admin admin, Admin adminIdToEdit) {
         List<Integer> additionalAdminGroupIds = new ArrayList<>();
         if (admin != null) {
         	additionalAdminGroupIds.addAll(admin.getGroupIds());
@@ -48,7 +47,7 @@ public class AdminGroupServiceImpl implements AdminGroupService {
     }
 
     @Required
-    public void setAdminGroupDao(ComAdminGroupDao adminGroupDao) {
+    public void setAdminGroupDao(AdminGroupDao adminGroupDao) {
         this.adminGroupDao = adminGroupDao;
     }
 
@@ -65,5 +64,10 @@ public class AdminGroupServiceImpl implements AdminGroupService {
 	@Override
 	public int saveAdminGroup(AdminGroup adminGroup) throws Exception {
 		return adminGroupDao.saveAdminGroup(adminGroup);
+	}
+
+	@Override
+	public boolean adminGroupExists(int companyID, String adminGroupName) {
+		return adminGroupDao.adminGroupExists(companyID, adminGroupName);
 	}
 }

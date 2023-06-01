@@ -341,24 +341,24 @@
                 	<%@include file="email-charsets.jspf" %>
                 </div>
             </div>
-
-            <div class="form-group">
-                <div class="col-sm-4">
-                    <label class="control-label" for="emailLinefeed">
-                        <bean:message key="Linefeed_After"/>
-                    </label>
-                </div>
-                <div class="col-sm-8">
-                    <html:select styleId="emailLinefeed" property="emailLinefeed"
-                                 styleClass="form-control" disabled="${isEmailSettingsDisabled}">
-                        <html:option value="0"><bean:message key="mailing.No_Linefeed"/></html:option>
-                        <c:forEach begin="60" end="80" step="1" var="a">
-                            <html:option value="${a}">${a} <bean:message key="Characters"/></html:option>
-                        </c:forEach>
-                    </html:select>
-                </div>
-            </div>
-
+			<emm:ShowByPermission token="mailing.linefeed">
+	            <div class="form-group">
+	                <div class="col-sm-4">
+	                    <label class="control-label" for="emailLinefeed">
+	                        <bean:message key="Linefeed_After"/>
+	                    </label>
+	                </div>
+	                <div class="col-sm-8">
+	                    <html:select styleId="emailLinefeed" property="emailLinefeed"
+	                                 styleClass="form-control" disabled="${isEmailSettingsDisabled}">
+	                        <html:option value="0"><bean:message key="mailing.No_Linefeed"/></html:option>
+	                        <c:forEach begin="60" end="80" step="1" var="a">
+	                            <html:option value="${a}">${a} <bean:message key="Characters"/></html:option>
+	                        </c:forEach>
+	                    </html:select>
+	                </div>
+	            </div>
+			</emm:ShowByPermission>
            <jsp:include page="email-onepixel.jsp">
                 <jsp:param name="isEmailSettingsDisabled" value="${isEmailSettingsDisabled}"/>
            </jsp:include>

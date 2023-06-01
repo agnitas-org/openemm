@@ -19,30 +19,30 @@ import org.agnitas.emm.core.useractivitylog.LoggedUserAction;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.apache.logging.log4j.Logger;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 
 public interface UserActivityLogService {
-	PaginatedListImpl<LoggedUserAction> getUserActivityLogByFilter(ComAdmin admin, String username, int action, LocalDate fromDate, LocalDate toDate, String description, int pageNumber, int rownums, String sort, String direction, List<AdminEntry> admins) throws Exception;
+	PaginatedListImpl<LoggedUserAction> getUserActivityLogByFilter(Admin admin, String username, int action, LocalDate fromDate, LocalDate toDate, String description, int pageNumber, int rownums, String sort, String direction, List<AdminEntry> admins) throws Exception;
 
 	/**
-	 * Write user activity log for given {@link ComAdmin}.
+	 * Write user activity log for given {@link Admin}.
 	 *
 	 * @param admin admin
 	 * @param action action
 	 * @param description description of action
 	 */
-	void writeUserActivityLog(ComAdmin admin, String action, String description);
+	void writeUserActivityLog(Admin admin, String action, String description);
 
 	/**
-	 * Write user activity log for given {@link ComAdmin}.
+	 * Write user activity log for given {@link Admin}.
 	 *
 	 * @param admin admin
 	 * @param action user action
 	 */
-	void writeUserActivityLog(ComAdmin admin, UserAction action);
+	void writeUserActivityLog(Admin admin, UserAction action);
 
     /**
-     * Write user activity log for given {@link ComAdmin}.
+     * Write user activity log for given {@link Admin}.
      *
      * Trace errors in case of service failure to caller log.
      *
@@ -51,10 +51,10 @@ public interface UserActivityLogService {
      * @param description description of action
      * @param callerLog caller logging class to report in case of service failure
      */
-    void writeUserActivityLog(ComAdmin admin, String action, String description, Logger callerLog);
+    void writeUserActivityLog(Admin admin, String action, String description, Logger callerLog);
 
     /**
-     * Write user activity log for given {@link ComAdmin}.
+     * Write user activity log for given {@link Admin}.
      *
      * Trace errors in case of service failure to caller log.
      *
@@ -62,5 +62,5 @@ public interface UserActivityLogService {
      * @param action user action
      * @param callerLog caller logging class to report in case of service failure
      */
-    void writeUserActivityLog(ComAdmin admin, UserAction action, Logger callerLog);
+    void writeUserActivityLog(Admin admin, UserAction action, Logger callerLog);
 }

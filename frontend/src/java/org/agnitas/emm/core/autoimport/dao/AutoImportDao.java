@@ -17,12 +17,11 @@ import org.agnitas.emm.core.autoimport.bean.AutoImport;
 import org.agnitas.emm.core.autoimport.bean.AutoImportLight;
 import org.agnitas.emm.core.autoimport.service.AutoImportJobStatus;
 import org.agnitas.emm.core.autoimport.service.Filter;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.Tuple;
 
 public interface AutoImportDao {
 
-	boolean exists(int autoImportId, @VelocityCheck int companyId);
+	boolean exists(int autoImportId, int companyId);
 	
 	List<AutoImportLight> listAutoImports(final int companyID);
 	
@@ -54,11 +53,9 @@ public interface AutoImportDao {
 
 	int resetAutoImportsForCurrentHost();
 	
-	List<AutoImport> getAutoImportsOverviewFiltered(@VelocityCheck int companyId, List<Filter> filters, boolean restrictContentSourceType);
+	List<AutoImport> getAutoImportsOverviewFiltered(int companyId, List<Filter> filters, boolean restrictContentSourceType, boolean showReferenceTableImports);
 	
 	int getRunningAutoImportsByHost(String hostname);
-
-	boolean isImportStalling();
 
 	void writeResultData(int autoImportId, int durationInSeconds, String result, String detailedResult, int datasourceId, int fieldCount, int insertCount, int updateCount, long fileSize) throws Exception;
 
@@ -82,7 +79,7 @@ public interface AutoImportDao {
 	 * @param expirationTimeout how long (in seconds) this entry should stay in database.
 	 * @return an identifier of an entry just created.
 	 */
-	int saveWsJobState(@VelocityCheck int companyId, int autoImportId, AutoImportJobStatus status, int expirationTimeout);
+	int saveWsJobState(int companyId, int autoImportId, AutoImportJobStatus status, int expirationTimeout);
 
 	/**
 	 * Update an entry describing an auto-import job (triggered by webservice).
@@ -93,10 +90,14 @@ public interface AutoImportDao {
 	 * @param report a new report to store.
 	 * @param expirationTimeout how long (in seconds) this entry should stay in database.
 	 */
-	void saveWsJobState(int autoImportJobId, @VelocityCheck int companyId, AutoImportJobStatus status, String report, int expirationTimeout);
+	void saveWsJobState(int autoImportJobId, int companyId, AutoImportJobStatus status, String report, int expirationTimeout);
 
 	/**
 	 * Remove all the auto-import job entries whose expiration timeout is reached.
 	 */
 	void removeExpiredWsJobs();
+
+	List<AutoImport> getStallingAutoImports();
+
+	int getStallingImportsAmount();
 }

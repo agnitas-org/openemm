@@ -12,7 +12,7 @@ package com.agnitas.emm.wsmanager.service;
 
 import org.agnitas.beans.impl.PaginatedListImpl;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.wsmanager.dto.WebserviceUserDto;
 import com.agnitas.emm.core.wsmanager.dto.WebserviceUserEntryDto;
 import com.agnitas.emm.wsmanager.bean.WebserviceUserSettings;
@@ -71,13 +71,11 @@ public interface WebserviceUserService {
 	 * @throws WebserviceUserServiceException on errors concerning the webservice user itself (like unknown username)
 	 * @throws WebserviceUserException on errors during processing the request
 	 */
-	void saveWebServiceUser(ComAdmin admin, WebserviceUserDto user, boolean isNew) throws WebserviceUserException, WebserviceUserServiceException;
+	void saveWebServiceUser(Admin admin, WebserviceUserDto user, boolean isNew) throws WebserviceUserException, WebserviceUserServiceException;
 
-	int getNumberOfWebserviceUsers();
+	int getNumberOfWebserviceUsers(int companyID);
 	
 	public WebserviceUserSettings findSettingsForWebserviceUser(final String username) throws WebserviceUserException, WebserviceUserServiceException;
-
-	public void updateLastLoginDate(final String username);
 
 	boolean deleteWebserviceUser(String username);
 

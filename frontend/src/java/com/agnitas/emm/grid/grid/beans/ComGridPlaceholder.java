@@ -35,4 +35,10 @@ public interface ComGridPlaceholder {
 
     boolean getIsTocItem();
     void setIsTocItem(boolean isTocItem);
+    
+    String getOptions();
+    void setOptions(String options);
+        
+    String getHelp();
+    void setHelp(String help);
 }

@@ -12,8 +12,6 @@ package com.agnitas.dao;
 
 import java.util.List;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
-
 import com.agnitas.beans.ComUndoDynContent;
 
 /**
@@ -39,8 +37,6 @@ public interface ComUndoDynContentDao {
 	List<ComUndoDynContent> getAllUndoDataForMailing(int mailingId, int undoId);
 	
 	void deleteUndoData(int undoId);
-
-	void deleteOutdatedUndoData(int lastUndoId);
 	
 	void deleteUndoDataForMailing(int mailingID);
 	
@@ -54,5 +50,5 @@ public interface ComUndoDynContentDao {
 	 */
 	void deleteAddedDynContent(int mailingId, int undoId);
 
-	boolean deleteByCompany(@VelocityCheck int companyId);
+	boolean deleteByCompany(int companyId);
 }

@@ -14,18 +14,19 @@ import java.io.File;
 import java.util.List;
 import java.util.Map;
 
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.FormComponent;
-import com.agnitas.emm.core.components.dto.FormComponentDto;
-import com.agnitas.emm.core.components.dto.FormUploadComponentDto;
-import com.agnitas.messages.Message;
-import com.agnitas.service.SimpleServiceResult;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.emm.core.component.service.ComponentModel;
 import org.agnitas.emm.core.component.service.ComponentService;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.springframework.web.multipart.MultipartFile;
+
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.FormComponent;
+import com.agnitas.emm.core.components.dto.FormComponentDto;
+import com.agnitas.emm.core.components.dto.FormUploadComponentDto;
+import com.agnitas.messages.Message;
+import com.agnitas.service.SimpleServiceResult;
 
 public interface ComComponentService extends ComponentService {
     
@@ -39,11 +40,12 @@ public interface ComComponentService extends ComponentService {
 
 	File getComponentArchive(String zipName, Map<String, byte[]> formComponentsData);
 
-	SimpleServiceResult saveFormComponents(ComAdmin admin, int formId, List<FormComponent> components, List<UserAction> userActions);
+	SimpleServiceResult saveFormComponents(Admin admin, int formId, List<FormComponent> components, List<UserAction> userActions);
 
-	SimpleServiceResult saveFormComponents(ComAdmin admin, int formId, List<FormComponent> components, List<UserAction> userActions, boolean overwriteExisting);
+	SimpleServiceResult saveFormComponents(Admin admin, int formId, List<FormComponent> components, List<UserAction> userActions, boolean overwriteExisting);
 
-	SimpleServiceResult saveComponentsFromZipFile(ComAdmin admin, int formId, MultipartFile zipFile, List<UserAction> userActions, boolean overwriteExisting);
+	SimpleServiceResult saveComponentsFromZipFile(Admin admin, int formId, MultipartFile zipFile, List<UserAction> userActions, boolean overwriteExisting);
 
 	List<Message> validateComponents(List<FormUploadComponentDto> components, boolean checkDuplicate);
+
 }

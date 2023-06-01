@@ -10,10 +10,13 @@
 
 package com.agnitas.emm.springws.endpoint;
 
+import java.util.Objects;
+
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.springws.endpoint.BaseEndpoint;
-import org.agnitas.emm.springws.endpoint.Utils;
+import org.agnitas.emm.springws.endpoint.Namespaces;
+import org.agnitas.emm.springws.util.SecurityContextAccess;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.ws.server.endpoint.annotation.Endpoint;
@@ -39,18 +42,22 @@ public class SendServiceMailEndpoint extends BaseEndpoint {
 	
 	/** Service providing configuration. */
 	private ConfigService configService;
+	
+	private SecurityContextAccess securityContextAccess;
 
-	public SendServiceMailEndpoint(SendServiceMailService sendServiceMailingService, ConfigService configService) {
-		this.sendServiceMailingService = sendServiceMailingService;
-		this.configService = configService;
+	public SendServiceMailEndpoint(SendServiceMailService sendServiceMailingService, ConfigService configService, final SecurityContextAccess securityContextAccess) {
+		this.sendServiceMailingService = Objects.requireNonNull(sendServiceMailingService, "sendServiceMailingService");
+		this.configService = Objects.requireNonNull(configService, "configService");
+		this.securityContextAccess = Objects.requireNonNull(securityContextAccess, "securityContextAccess");
 	}
 
-	@PayloadRoot(namespace = Utils.NAMESPACE_COM, localPart = "SendServiceMailRequest")
+	@PayloadRoot(namespace = Namespaces.AGNITAS_COM, localPart = "SendServiceMailRequest")
 	public @ResponsePayload SendServiceMailResponse sendServiceMail(@RequestPayload SendServiceMailRequest request) throws Exception {
-		if (Utils.getUserCompany() == 1 && !configService.getBooleanValue(ConfigValue.System_License_AllowMailingSendForMasterCompany)) {
+		final int companyID = this.securityContextAccess.getWebserviceUserCompanyId();
+		
+		if (companyID == 1 && !configService.getBooleanValue(ConfigValue.System_License_AllowMailingSendForMasterCompany)) {
     		throw new Exception("error.company.mailings.sent.forbidden");
     	} else {
-			int companyID = Utils.getUserCompany();
 			int actionID = request.getActionID();
 			int customerID = request.getCustomerID();
 			

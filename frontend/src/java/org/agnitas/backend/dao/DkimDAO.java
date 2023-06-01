@@ -11,19 +11,24 @@
 package org.agnitas.backend.dao;
 
 import java.nio.charset.StandardCharsets;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.agnitas.backend.DBase;
 import org.agnitas.backend.EMail;
-import org.agnitas.backend.StringOps;
 import org.agnitas.util.Log;
+import org.agnitas.util.Str;
 import org.apache.commons.codec.binary.Base64;
 
 /**
@@ -105,7 +110,7 @@ public class DkimDAO {
 		dkims = new ArrayList <> ();
 		if (dbase.exists ("dkim_key_tbl")) {
 			try (DBase.With with = dbase.with ()) {
-				rq = dbase.query (with.jdbc (),
+				rq = dbase.query (with.cursor (),
 						  "SELECT * FROM dkim_key_tbl " +
 						  "WHERE company_id IN (0, :companyID) AND " +
 						  "      ((valid_start IS NULL) OR (valid_start <= CURRENT_TIMESTAMP)) AND " +
@@ -129,7 +134,7 @@ public class DkimDAO {
 						}
 					} else if ((dkimKey != null) && hasSecret) {
 						try {
-							dbase.update (with.jdbc (),
+							dbase.update (with.cursor (),
 								      "UPDATE dkim_key_tbl SET domain_key_encrypted = :domainKey WHERE dkim_id = :dkimID",
 								      "dkimID", dkimID,
 								      "domainKey", encrypt (dkimKey));
@@ -140,7 +145,7 @@ public class DkimDAO {
 							dbase.logging(Log.WARNING, "dkim", "Failed to encrypt entry " + dkimID + ": " + e);
 						}
 					}
-					dkim = new DKIM(dkimID, dbase.asLong(row.get("company_id")) == companyID, dkimKey, StringOps.punycodeDomain(dbase.asString(row.get("domain"))), dbase.asString(row.get("selector")));
+					dkim = new DKIM(dkimID, dbase.asLong(row.get("company_id")) == companyID, dkimKey, Str.punycodeDomain(dbase.asString(row.get("domain"))), dbase.asString(row.get("selector")));
 					if (dkim.valid()) {
 						dkims.add(dkim);
 					}
@@ -183,7 +188,7 @@ public class DkimDAO {
 		return fallback;
 	}
 
-	private String decrypt(String content) throws Exception {
+	private String decrypt(String content) throws NoSuchAlgorithmException, InvalidKeyException, IllegalBlockSizeException, NoSuchPaddingException, BadPaddingException {
 		SecretKey secKey = new SecretKeySpec(secretKey, "AES");
 		Cipher cipher = Cipher.getInstance("AES");
 
@@ -191,7 +196,7 @@ public class DkimDAO {
 		return new String(cipher.doFinal(Base64.decodeBase64(content.getBytes(StandardCharsets.UTF_8))));
 	}
 
-	private String encrypt(String content) throws Exception {
+	private String encrypt(String content) throws NoSuchAlgorithmException, InvalidKeyException, IllegalBlockSizeException, NoSuchPaddingException, BadPaddingException {
 		SecretKey secKey = new SecretKeySpec(secretKey, "AES");
 		Cipher cipher = Cipher.getInstance("AES");
 

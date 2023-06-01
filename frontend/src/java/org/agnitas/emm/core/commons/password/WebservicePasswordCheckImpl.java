@@ -14,7 +14,7 @@ import org.agnitas.emm.core.commons.password.policy.PasswordPolicy;
 import org.agnitas.emm.core.commons.password.policy.WebservicePasswordPolicy;
 import org.agnitas.emm.core.commons.password.util.PasswordCheckUtil;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.service.SimpleServiceResult;
 
 /**
@@ -26,7 +26,7 @@ public class WebservicePasswordCheckImpl implements PasswordCheck {
 	private final PasswordPolicy policy = new WebservicePasswordPolicy();
 
 	@Override
-	public boolean checkAdminPassword(String password, ComAdmin admin, PasswordCheckHandler handler) {
+	public boolean checkAdminPassword(String password, Admin admin, PasswordCheckHandler handler) {
 		try {
 			// Check basic constraints
 			policy.checkPassword(password);
@@ -54,7 +54,7 @@ public class WebservicePasswordCheckImpl implements PasswordCheck {
 	}
 
 	@Override
-	public SimpleServiceResult checkAdminPassword(String password, ComAdmin admin) {
+	public SimpleServiceResult checkAdminPassword(String password, Admin admin) {
 		try {
 			policy.checkPassword(password);
 

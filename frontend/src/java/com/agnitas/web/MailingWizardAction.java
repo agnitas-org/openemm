@@ -10,17 +10,35 @@
 
 package com.agnitas.web;
 
-import static com.agnitas.emm.core.workflow.service.util.WorkflowUtils.updateForwardParameters;
-
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Vector;
-
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.ComTarget;
+import com.agnitas.beans.DynamicTag;
+import com.agnitas.beans.Mailing;
+import com.agnitas.beans.MailingContentType;
+import com.agnitas.beans.MailingWizardOption;
+import com.agnitas.beans.Mediatype;
+import com.agnitas.beans.MediatypeEmail;
+import com.agnitas.beans.TargetLight;
+import com.agnitas.dao.CampaignDao;
+import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.admin.service.AdminService;
+import com.agnitas.emm.core.mailing.service.MailingService;
+import com.agnitas.emm.core.mailinglist.service.MailinglistService;
+import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
+import com.agnitas.emm.core.target.TargetExpressionUtils;
+import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderFilterListBuilder;
+import com.agnitas.emm.core.target.form.TargetEditForm;
+import com.agnitas.emm.core.target.service.ComTargetService;
+import com.agnitas.emm.core.target.web.util.EditorContentSynchronizer;
+import com.agnitas.emm.core.workflow.beans.Workflow;
+import com.agnitas.emm.core.workflow.dao.ComWorkflowDao;
+import com.agnitas.emm.core.workflow.service.ComWorkflowService;
+import com.agnitas.service.AgnTagService;
+import com.agnitas.util.preview.PreviewImageService;
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import org.agnitas.actions.EmmAction;
 import org.agnitas.beans.DynamicTagContent;
 import org.agnitas.beans.MailingComponent;
@@ -55,40 +73,25 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
+import org.apache.struts.action.ActionRedirect;
 import org.apache.struts.upload.FormFile;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.ComTarget;
-import com.agnitas.beans.DynamicTag;
-import com.agnitas.beans.Mailing;
-import com.agnitas.beans.MailingContentType;
-import com.agnitas.beans.Mediatype;
-import com.agnitas.beans.MediatypeEmail;
-import com.agnitas.beans.TargetLight;
-import com.agnitas.dao.CampaignDao;
-import com.agnitas.emm.core.Permission;
-import com.agnitas.emm.core.admin.service.AdminService;
-import com.agnitas.emm.core.mailing.service.MailingService;
-import com.agnitas.emm.core.mailinglist.service.ComMailinglistService;
-import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
-import com.agnitas.emm.core.target.TargetExpressionUtils;
-import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderFilterListBuilder;
-import com.agnitas.emm.core.target.form.TargetEditForm;
-import com.agnitas.emm.core.target.service.ComTargetService;
-import com.agnitas.emm.core.target.web.util.EditorContentSynchronizer;
-import com.agnitas.emm.core.workflow.beans.Workflow;
-import com.agnitas.emm.core.workflow.dao.ComWorkflowDao;
-import com.agnitas.emm.core.workflow.service.ComWorkflowService;
-import com.agnitas.service.AgnTagService;
-import com.agnitas.util.preview.PreviewImageService;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Vector;
+import java.util.stream.Collectors;
 
-import jakarta.servlet.ServletOutputStream;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
+import static com.agnitas.emm.core.workflow.service.util.WorkflowUtils.updateForwardParameters;
+import static org.agnitas.web.forms.WorkflowParametersHelper.WORKFLOW_KEEP_FORWARD;
 
 /**
  * Implementation of <strong>Action</strong> that handles Mailings
@@ -116,40 +119,40 @@ public class MailingWizardAction extends StrutsDispatchActionBase {
 	public static final String ACTION_FINISH = "finish";
 	public static final String ACTION_NEW_TARGET = "newTarget";
 	public static final String ACTION_ADD_TARGET = "addTarget";
-	
+
 	/** DAO accessing mailinglists. */
     protected MailingFactory mailingFactory;
-    
+
     /** DAO accessing mailings. */
     protected MailingDao mailingDao;
     protected MailingService mailingService;
     protected MailingComponentFactory mailingComponentFactory;
     protected DynamicTagContentFactory dynamicTagContentFactory;
-    
+
     /** DAO accessing campaigns. */
     protected CampaignDao campaignDao;
-    
+
     protected ComTargetService targetService;
-    
+
     /** DAO accessing EMM actions. */
     protected EmmActionDao emmActionDao;
-    
+
 	protected ConfigService configService;
 	protected ComWorkflowDao workflowDao;
 	protected ComWorkflowService workflowService;
-	protected ComMailinglistService mailinglistService;
+	protected MailinglistService mailinglistService;
 	protected AgnTagService agnTagService;
     protected MailinglistApprovalService mailinglistApprovalService;
     protected PreviewImageService previewImageService;
 
 	private UserActivityLogService userActivityLogService;
-	
+
 	protected CopyMailingService copyMailingService;
 	protected QueryBuilderFilterListBuilder filterListBuilder;
 	protected AdminService adminService;
 
 	protected EditorContentSynchronizer editorContentSynchronizer;
-	
+
     // --------------------------------------------------------- Public Methods
 
     /**
@@ -169,13 +172,44 @@ public class MailingWizardAction extends StrutsDispatchActionBase {
 		}
 		updateForwardParameters(req, true);
 		getExtendedRequestAttrs(req);
+
+		Admin admin = AgnUtils.getAdmin(req);
+
+		List<MailingWizardOption> allowedOptions = Arrays.stream(MailingWizardOption.values())
+				.filter(o -> admin.permissionAllowed(o.getRequiredPermission()))
+				.collect(Collectors.toList());
+
+		boolean canSelectOptionAutomatically = allowedOptions.size() == 1;
+		if (canSelectOptionAutomatically) {
+            return autoSelectOption(allowedOptions.get(0), req);
+		}
+
 		return mapping.getInputForward();
 	}
-	
+
+	private ActionForward autoSelectOption(MailingWizardOption optionToSelect, HttpServletRequest req) {
+        ActionRedirect actionRedirect = new ActionRedirect(optionToSelect.getRedirectionUrl());
+
+        if (optionToSelect.isNeedKeepForward()) {
+            boolean keepForward = false;
+
+            String workflowIdParam = req.getParameter(WorkflowParametersHelper.WORKFLOW_ID);
+
+            if (StringUtils.isNoneBlank(workflowIdParam)) {
+                int workflowId = Integer.parseInt(workflowIdParam);
+                keepForward = workflowId > 0;
+            }
+
+            actionRedirect.addParameter(WORKFLOW_KEEP_FORWARD, keepForward);
+        }
+
+        return actionRedirect;
+    }
+
     protected void getExtendedRequestAttrs(HttpServletRequest req) {
         // Do nothing
     }
-	
+
 	/**
      * If the user is not logged in - forwards to login page<br>
      * Gets list of mailinglists for current company. If there are no mailinglists existing - adds error message and
@@ -228,7 +262,7 @@ public class MailingWizardAction extends StrutsDispatchActionBase {
 
 		return mapping.findForward("next");
 	}
-	
+
 	/**
      * If the user is not logged in - forwards to login page.
      * Sets "isTemplate" mailing property to false. Loads list of company's templates to request.
@@ -258,7 +292,7 @@ public class MailingWizardAction extends StrutsDispatchActionBase {
 
         return mapping.findForward("next");
 	}
-	
+
 	/**
      * If the user is not logged in - forwards to login page<br>
      * If template is selected: loads template from database and copies template data to mailing. <br>
@@ -346,7 +380,7 @@ public class MailingWizardAction extends StrutsDispatchActionBase {
 		}
 		return mapping.findForward("next");
 	}
-	
+
 	protected void prepareTemplatePage(HttpServletRequest req) {
         List<Mailing> templates = mailingService.getTemplates(AgnUtils.getAdmin(req));
         req.setAttribute("templates", templates);
@@ -432,7 +466,7 @@ public class MailingWizardAction extends StrutsDispatchActionBase {
 
 		return targetView(mapping, form, req, res);
 	}
-	
+
 	/**
      * If the user is not logged in - forwards to login page.
      * Loads campaigns, mailinglists and target-groups to request. Forwards to "targetView"
@@ -494,7 +528,7 @@ public class MailingWizardAction extends StrutsDispatchActionBase {
 
 		return mapping.findForward("next");
 	}
-	
+
 	/**
      * Loads required data for target page (Mailinglists, Campaigns and Target groups) into request.
      *
@@ -502,7 +536,7 @@ public class MailingWizardAction extends StrutsDispatchActionBase {
 	 * @param form
 	 */
 	public void prepareTargetPage(HttpServletRequest request, ActionForm form) {
-		final ComAdmin admin = AgnUtils.getAdmin(request);
+		final Admin admin = AgnUtils.getAdmin(request);
 		final int companyId = admin.getCompanyID();
 		final boolean excludeHiddenTargets = !admin.permissionAllowed(Permission.MAILING_CONTENT_SHOW_EXCLUDED_TARGETGROUPS);
         MailingWizardForm mailingWizardForm = (MailingWizardForm) form;
@@ -518,7 +552,7 @@ public class MailingWizardAction extends StrutsDispatchActionBase {
 		configureTargetALTG(request, mailingWizardForm);
 	}
 
-    protected void setComplexTargetExpressionRequestAttr(HttpServletRequest request, ComAdmin admin, MailingWizardForm mailingWizardForm) {
+    protected void setComplexTargetExpressionRequestAttr(HttpServletRequest request, Admin admin, MailingWizardForm mailingWizardForm) {
         request.setAttribute("complexTargetExpression", mailingWizardForm.getMailing().hasComplexTargetExpression());
     }
 
@@ -594,7 +628,7 @@ public class MailingWizardAction extends StrutsDispatchActionBase {
 		}
 		return mapping.findForward("next");
 	}
-	
+
 	/**
      * Loads target groups list into request and forwards to "previous".
      *
@@ -854,7 +888,7 @@ public class MailingWizardAction extends StrutsDispatchActionBase {
 	}
 
 	protected void prepareAttachmentPage(HttpServletRequest request, ActionForm form) {
-		final ComAdmin admin = AgnUtils.getAdmin(request);
+		final Admin admin = AgnUtils.getAdmin(request);
 		final boolean excludeHiddenTargets = !admin.permissionAllowed(Permission.MAILING_CONTENT_SHOW_EXCLUDED_TARGETGROUPS);
 
 		List<TargetLight> targetList = targetService.getTargetLights(admin, false, true, false, excludeHiddenTargets);
@@ -982,6 +1016,8 @@ public class MailingWizardAction extends StrutsDispatchActionBase {
 
 		MailingWizardForm aForm = (MailingWizardForm) form;
 		Mailing mailing = aForm.getMailing();
+
+		mailing.getEmailParam().setEncryptedSend(configService.getBooleanValue(ConfigValue.SendEncryptedMailings, mailing.getCompanyID()));
 
 		mailingDao.saveMailing(mailing, false);
 		previewImageService.generateMailingPreview(AgnUtils.getAdmin(req), req.getSession().getId(), mailing.getId(), true);
@@ -1118,7 +1154,7 @@ public class MailingWizardAction extends StrutsDispatchActionBase {
 			return mapping.findForward("logon");
 		}
 
-		ComAdmin admin = AgnUtils.getAdmin(request);
+		Admin admin = AgnUtils.getAdmin(request);
 
         request.setAttribute("editTargetForm", new TargetEditForm());
 		request.setAttribute("mailTrackingAvailable", AgnUtils.isMailTrackingAvailable(admin));
@@ -1133,7 +1169,7 @@ public class MailingWizardAction extends StrutsDispatchActionBase {
 		request.getRequestDispatcher("/target/" + wizardForm.getViewTargetId() + "/view.action?isMailingWizard=true").forward(request, response);
 		return null;
 	}
-	
+
 	private void setMailingWorkflowParameters(HttpServletRequest req, Mailing mailing) {
 		HttpSession session = req.getSession();
 
@@ -1154,7 +1190,7 @@ public class MailingWizardAction extends StrutsDispatchActionBase {
         return WebApplicationContextUtils.getRequiredWebApplicationContext(req.getSession().getServletContext());
     }
 
-	public void setMailinglistService(ComMailinglistService mailinglistService) {
+	public void setMailinglistService(MailinglistService mailinglistService) {
 		this.mailinglistService = mailinglistService;
 	}
 
@@ -1189,7 +1225,7 @@ public class MailingWizardAction extends StrutsDispatchActionBase {
 
 	/**
      * Returns DAO accessing EMM actions.
-     * 
+     *
      * @return DAO accessing EMM actions
      */
     public EmmActionDao getEmmActionDao() {
@@ -1198,7 +1234,7 @@ public class MailingWizardAction extends StrutsDispatchActionBase {
 
     /**
      * Sets DAO accessing EMM actions.
-     * 
+     *
      * @param emmActionDao DAO accessing EMM actions
      */
     public void setEmmActionDao(EmmActionDao emmActionDao) {
@@ -1224,7 +1260,7 @@ public class MailingWizardAction extends StrutsDispatchActionBase {
 	public void setAgnTagService(AgnTagService agnTagService) {
 		this.agnTagService = agnTagService;
 	}
-	  
+
     @Required
     public final void setMailinglistApprovalService(final MailinglistApprovalService service) {
     	this.mailinglistApprovalService = Objects.requireNonNull(service, "Mailinglist approval service is null");

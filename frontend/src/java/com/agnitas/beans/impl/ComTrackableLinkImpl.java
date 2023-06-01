@@ -138,6 +138,6 @@ public class ComTrackableLinkImpl extends BaseTrackableLinkImpl implements ComTr
     
     @Override
     public final void setCreateSubstituteLinkForAgnDynMulti(final boolean createSubstituteForAgnDynMulti) {
-    	this.createSubstituteForAgnDynMulti = createSubstituteForAgnDynMulti; 
+    	this.createSubstituteForAgnDynMulti = createSubstituteForAgnDynMulti;
     }
 }

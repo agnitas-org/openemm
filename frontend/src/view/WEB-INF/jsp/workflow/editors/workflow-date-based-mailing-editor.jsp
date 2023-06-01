@@ -6,6 +6,7 @@
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
 <%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
 <c:set var="FORWARD_MAILING_CREATE" value="<%= WorkflowController.FORWARD_MAILING_CREATE%>" scope="page"/>
 <c:set var="FORWARD_MAILING_EDIT" value="<%= WorkflowController.FORWARD_MAILING_EDIT%>" scope="page"/>
@@ -16,7 +17,7 @@
 
     <div class="status_error editor-error-messages well" style="display: none;"></div>
 
-    <form action="" id="datebasedMailingForm" name="datebasedMailingForm">
+    <mvc:form action="" id="datebasedMailingForm" name="datebasedMailingForm">
         <jsp:include page="sort-select-mailing.jsp">
             <jsp:param name="containerId" value="datebased_mailing-editor"/>
             <jsp:param name="selectName" value="mailingId"/>
@@ -30,7 +31,7 @@
             <jsp:param name="message2" value="default.status.active"/>
             <jsp:param name="disabledSelection" value="false"/>
         </jsp:include>
-    </form>
+    </mvc:form>
 
     <hr>
     <div class="form-group">

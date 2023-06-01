@@ -12,13 +12,14 @@ package com.agnitas.emm.core.admin.service;
 
 import java.util.List;
 
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.AdminPreferences;
-import com.agnitas.emm.core.admin.form.AdminForm;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 
+import com.agnitas.beans.AdminPreferences;
+import com.agnitas.beans.Admin;
+import com.agnitas.emm.core.admin.form.AdminForm;
+
 /**
- * Service for logging changes in {@link ComAdmin}
+ * Service for logging changes in {@link Admin}
  */
 public interface AdminChangesLogService {
 
@@ -138,6 +139,6 @@ public interface AdminChangesLogService {
         }
     }
 
-    List<UserAction> getChangesAsUserActions(AdminForm newAdminData, ComAdmin oldAdmin, AdminPreferences oldAdminPreferences);
+    List<UserAction> getChangesAsUserActions(AdminForm newAdminData, Admin oldAdmin, AdminPreferences oldAdminPreferences);
 
 }

@@ -33,7 +33,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.servlet.ModelAndView;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.PollingUid;
 import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.bounce.dto.BounceFilterDto;
@@ -98,7 +98,7 @@ public class BounceFilterController implements XssCheckAware {
     }
 
     @RequestMapping(value = "/list.action")
-    public Pollable<ModelAndView> list(ComAdmin admin, HttpSession session, BounceFilterListForm form, Model model) {
+    public Pollable<ModelAndView> list(Admin admin, HttpSession session, BounceFilterListForm form, Model model) {
         FormUtils.syncNumberOfRows(webStorage, ComWebStorage.BOUNCE_FILTER_OVERVIEW, form);
 
         PollingUid uid = PollingUid.builder(session.getId(), "bounceFilterList")
@@ -123,7 +123,7 @@ public class BounceFilterController implements XssCheckAware {
     }
 
     @GetMapping(value = "/{id:\\d+}/view.action")
-    public String view(ComAdmin admin, @PathVariable int id, Model model) {
+    public String view(Admin admin, @PathVariable int id, Model model) {
         if (id <= 0) {
             return "redirect:/administration/bounce/new.action";
         }
@@ -140,14 +140,14 @@ public class BounceFilterController implements XssCheckAware {
     }
 
     @GetMapping(value = "/new.action")
-    public String create(ComAdmin admin, @ModelAttribute BounceFilterForm form, Model model) {
+    public String create(Admin admin, @ModelAttribute BounceFilterForm form, Model model) {
         loadAdditionalFormData(admin, model);
         setFilterEmailAttributes(admin, model, 0);
         return "bounce_filter_view";
     }
 
     @PostMapping(value = "/save.action")
-    public String save(ComAdmin admin, @ModelAttribute BounceFilterForm form, Popups popups) throws Exception {
+    public String save(Admin admin, @ModelAttribute BounceFilterForm form, Popups popups) throws Exception {
         if (isValid(admin, form, popups)) {
             BounceFilterDto bounceFilter = conversionService.convert(form, BounceFilterDto.class);
             try {
@@ -184,13 +184,13 @@ public class BounceFilterController implements XssCheckAware {
     }
 
     @GetMapping(value = "/{id:\\d+}/confirmDelete.action")
-    public String confirmDelete(ComAdmin admin, @PathVariable int id, Model model) {
+    public String confirmDelete(Admin admin, @PathVariable int id, Model model) {
         loadBounceFilter(admin.getCompanyID(), id, model);
         return "bounce_filter_delete_ajax";
     }
 
     @RequestMapping(value = "/delete.action", method = {RequestMethod.POST, RequestMethod.DELETE})
-    public String delete(ComAdmin admin, BounceFilterForm form, Popups popups) {
+    public String delete(Admin admin, BounceFilterForm form, Popups popups) {
         int id = form.getId();
         if(id > 0 && bounceFilterService.deleteBounceFilter(id, admin.getCompanyID())){
             writeUserActivityLog(admin, "delete bounce filter", getBounceFilterDescription(form));
@@ -210,13 +210,13 @@ public class BounceFilterController implements XssCheckAware {
         return form;
     }
 
-    private void loadAdditionalFormData(ComAdmin admin, Model model){
+    private void loadAdditionalFormData(Admin admin, Model model){
         model.addAttribute(MAILING_LISTS, mailinglistApprovalService.getEnabledMailinglistsForAdmin(admin));
         model.addAttribute(USER_FORM_LIST, userFormService.getUserForms(admin.getCompanyID()));
         model.addAttribute(ACTIONBASED_MAILINGS, mailingService.getMailingsByType(MailingType.ACTION_BASED, admin.getCompanyID(), false));
     }
 
-    private boolean isValid(ComAdmin admin, BounceFilterForm form, Popups popups){
+    private boolean isValid(Admin admin, BounceFilterForm form, Popups popups){
         boolean success = true;
         final String companyMailloopDomain = admin.getCompany().getMailloopDomain();
         if(!isAllowedMailloopDomain(companyMailloopDomain) || form.isOwnForwardEmailSelected()) {
@@ -244,7 +244,7 @@ public class BounceFilterController implements XssCheckAware {
     	return false;
     }
 
-    private void setFilterEmailAttributes(ComAdmin admin, Model model, int id) {
+    private void setFilterEmailAttributes(Admin admin, Model model, int id) {
         final String companyMailloopDomain = admin.getCompany().getMailloopDomain();
         boolean isAllowedMailloopDomain = isAllowedMailloopDomain(companyMailloopDomain);
         model.addAttribute(IS_ALLOWED_MAILLOOP_DOMAIN, isAllowedMailloopDomain);
@@ -254,7 +254,7 @@ public class BounceFilterController implements XssCheckAware {
         }
     }
 
-    private void writeUserActivityLog(ComAdmin admin, String action, String description) {
+    private void writeUserActivityLog(Admin admin, String action, String description) {
         userActivityLogService.writeUserActivityLog(admin, action, description);
     }
 

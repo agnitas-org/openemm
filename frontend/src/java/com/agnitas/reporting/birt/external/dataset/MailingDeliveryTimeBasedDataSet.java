@@ -52,7 +52,9 @@ public class MailingDeliveryTimeBasedDataSet extends BIRTDataSet {
         boolean isSingleDayStatistic = true;
 
         // for include an end day for collecting statistics
-        if (DateUtilities.getDaysBetween(startDate, endDate) > 1) {
+        int daysBetween = DateUtilities.getDaysBetween(startDate, endDate);
+
+        if (daysBetween > 1 || daysBetween == 0) {
             endDate = DateUtilities.addDaysToDate(endDate, 1);
             isSingleDayStatistic = false;
         }
@@ -138,7 +140,7 @@ public class MailingDeliveryTimeBasedDataSet extends BIRTDataSet {
         }
     }
     
-    private class TimeBasedDelivery_RowMapper implements RowMapper<TimeBasedDeliveryStatRow> {
+    private static class TimeBasedDelivery_RowMapper implements RowMapper<TimeBasedDeliveryStatRow> {
         
         private DateFormat format;
         private boolean isDateBasedMailing;

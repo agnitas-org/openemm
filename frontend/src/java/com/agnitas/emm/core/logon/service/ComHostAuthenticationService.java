@@ -10,7 +10,7 @@
 
 package com.agnitas.emm.core.logon.service;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.logon.web.CannotSendSecurityCodeException;
 
 /**
@@ -35,14 +35,14 @@ public interface ComHostAuthenticationService {
 	/**
 	 * Checks, if there is a successful authentication for user and host.
 	 * 
-	 * @param admin {@link ComAdmin}
+	 * @param admin {@link Admin}
 	 * @param hostId host ID
 	 * 
 	 * @return true if host authentication is successful otherwise false
 	 * 
 	 * @throws HostAuthenticationServiceException on errors during authentication
 	 */
-	boolean isHostAuthenticated(ComAdmin admin, String hostId) throws HostAuthenticationServiceException;
+	boolean isHostAuthenticated(Admin admin, String hostId) throws HostAuthenticationServiceException;
 
 	/**
 	 * Sends security code to given user.
@@ -58,7 +58,7 @@ public interface ComHostAuthenticationService {
 	 * @throws CannotSendSecurityCodeException when security code cannot be sent by some reasons
 	 * @throws HostAuthenticationServiceException on errors during processing
 	 */
-	void sendSecurityCode(ComAdmin admin, String hostID) throws HostAuthenticationServiceException;
+	void sendSecurityCode(Admin admin, String hostID) throws HostAuthenticationServiceException;
 
 	/**
 	 * Write host authentication for given admin and host ID.
@@ -68,7 +68,7 @@ public interface ComHostAuthenticationService {
 	 * 
 	 * @throws HostAuthenticationServiceException on errors during processing
 	 */
-	void writeHostAuthentication(ComAdmin admin, String hostId) throws HostAuthenticationServiceException;
+	void writeHostAuthentication(Admin admin, String hostId) throws HostAuthenticationServiceException;
 
 	/**
 	 * Get security code for pending authentication.
@@ -80,7 +80,7 @@ public interface ComHostAuthenticationService {
 	 * 
 	 * @throws HostAuthenticationServiceException on errors during processing
 	 */
-	String getPendingSecurityCode(ComAdmin admin, String hostID) throws HostAuthenticationServiceException;
+	String getPendingSecurityCode(Admin admin, String hostID) throws HostAuthenticationServiceException;
 
 	/**
 	 * Removes all expired data for host authentication. 

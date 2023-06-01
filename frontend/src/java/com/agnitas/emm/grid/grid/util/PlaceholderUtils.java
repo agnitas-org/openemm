@@ -23,6 +23,7 @@ public class PlaceholderUtils {
     public static final String PLACEHOLDER_DEFAULT_CONTENT_BIG_TEXT = "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.";
     public static final String PLACEHOLDER_DEFAULT_CONTENT_IMAGE_SRC = "assets/core/images/grid_expire_image.png";
     public static final String PLACEHOLDER_DEFAULT_CONTENT_LINK_HREF = "#";
+    public static final String PLACEHOLDER_DEFAULT_CONTENT_COLOR = "#FFFFFF";
 
     public static final String TOC_ITEM_ID_PREFIX = "toc_";
 

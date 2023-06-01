@@ -2,16 +2,16 @@
 <div class="form-group">
     <div class="col-sm-4">
         <label for="globalUsage" class="control-label">
-            <bean:message key="LinkTracking" />
+            <mvc:message code="LinkTracking" />
         </label>
     </div>
     <div class="col-sm-8">
-        <html:select property="globalUsage" styleId="globalUsage" styleClass="form-control" value="${KEEP_UNCHANGED}">
-            <html:option value="${KEEP_UNCHANGED}"><bean:message key="KeepUnchanged"/></html:option>
-            <html:option value="0"><bean:message key="mailing.Not_Trackable" /></html:option>
-            <html:option value="1"><bean:message key="Only_Text_Version" /></html:option>
-            <html:option value="2"><bean:message key="Only_HTML_Version" /></html:option>
-            <html:option value="3"><bean:message key="Text_and_HTML_Version" /></html:option>
-        </html:select>
+        <select name="bulkUsage" id="globalUsage" class="form-control">
+            <option value="${KEEP_UNCHANGED}"><mvc:message code="KeepUnchanged"/></option>
+            <option value="0"><mvc:message code="mailing.Not_Trackable" /></option>
+            <option value="1"><mvc:message code="Only_Text_Version" /></option>
+            <option value="2"><mvc:message code="Only_HTML_Version" /></option>
+            <option value="3"><mvc:message code="Text_and_HTML_Version" /></option>
+        </select>
     </div>
 </div>

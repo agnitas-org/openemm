@@ -10,11 +10,11 @@
 
 package org.agnitas.emm.core.velocity;
 
-import com.agnitas.emm.core.velocity.AgnVelocityUberspector;
+import org.agnitas.emm.core.velocity.emmapi.CompanyAccessCheck;
 
 /**
  * Implementation of {@link AbstractVelocityWrapper} using the
- * {@link AgnVelocityUberspector}.
+ * {@link CompanyAccessCheck}.
  */
 class VelocityWrapperImpl extends AbstractVelocityWrapper {
 	/**
@@ -22,11 +22,11 @@ class VelocityWrapperImpl extends AbstractVelocityWrapper {
 	 * given company ID.
 	 * 
 	 * @param companyId company ID
-	 * @param factory factory for Uberspect delegate targets
+	 * @param companyAccessCheck checker
 	 * 
 	 * @throws Exception on errors initializing the {@link VelocityWrapper}
 	 */
-	public VelocityWrapperImpl(int companyId, UberspectDelegateTargetFactory factory) throws Exception {
-		super(companyId, factory);
+	public VelocityWrapperImpl(int companyId, CompanyAccessCheck companyAccessCheck) throws Exception {
+		super(companyId, companyAccessCheck);
 	}
 }

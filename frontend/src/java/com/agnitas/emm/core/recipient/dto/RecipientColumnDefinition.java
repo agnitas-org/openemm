@@ -10,18 +10,17 @@
 
 package com.agnitas.emm.core.recipient.dto;
 
-import static com.agnitas.beans.ProfileField.MODE_EDIT_EDITABLE;
-import static com.agnitas.beans.ProfileField.MODE_EDIT_READONLY;
-
 import java.util.List;
 
 import org.agnitas.util.DbColumnType;
+
+import com.agnitas.beans.ProfileFieldMode;
 
 public class RecipientColumnDefinition {
     private String columnName;
     private String shortname;
     private DbColumnType.SimpleDataType dataType;
-    private int editMode;
+    private ProfileFieldMode editMode;
     private boolean nullable;
     private long maxSize;
     private boolean lineAfter;
@@ -53,20 +52,20 @@ public class RecipientColumnDefinition {
         return dataType;
     }
 
-    public void setEditMode(int editMode) {
+    public void setEditMode(ProfileFieldMode editMode) {
         this.editMode = editMode;
     }
 
-    public int getEditMode() {
+    public ProfileFieldMode getEditMode() {
         return editMode;
     }
 
     public boolean isReadable() {
-        return editMode == MODE_EDIT_EDITABLE || editMode == MODE_EDIT_READONLY;
+        return editMode == ProfileFieldMode.Editable || editMode == ProfileFieldMode.ReadOnly;
     }
 
     public boolean isWritable() {
-        return editMode == MODE_EDIT_EDITABLE;
+        return editMode == ProfileFieldMode.Editable;
     }
 
     public void setNullable(boolean nullable) {

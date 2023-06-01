@@ -14,7 +14,7 @@
 <%--@elvariable id="localeDatePattern" type="java.lang.String"--%>
 <%--@elvariable id="firstDayOfWeek" type="java.lang.Integer"--%>
 
-<%--@elvariable id="admin" type="com.agnitas.beans.ComAdmin"--%>
+<%--@elvariable id="admin" type="com.agnitas.beans.Admin"--%>
 
 <%--@elvariable id="adminDateFormat" type="java.lang.String"--%>
 <%--@elvariable id="adminTimeZone" type="java.lang.String"--%>
@@ -50,10 +50,17 @@
 
 <div class="calendar" data-initializer="calendar-table">
     <div class="tile">
-        <c:url var="mailingViewUrl" value="/mailingbase.do">
-            <c:param name="action" value="${ACTION_VIEW}"/>
-            <c:param name="init" value="true"/>
-        </c:url>
+        <emm:ShowByPermission token="mailing.settings.migration">
+            <c:url var="mailingViewUrl" value="/mailing/{mailingId}/settings.action"/>
+            <c:set var="mailingLink" value="${mailingViewUrl}"/>
+        </emm:ShowByPermission>
+        <emm:HideByPermission token="mailing.settings.migration">
+            <c:url var="mailingViewUrl" value="/mailingbase.do">
+                <c:param name="action" value="${ACTION_VIEW}"/>
+                <c:param name="init" value="true"/>
+            </c:url>
+            <c:set var="mailingLink" value="${mailingViewUrl}&mailingID={mailingId}"/>
+        </emm:HideByPermission>
 
         <c:url var="mailingStatisticsViewUrl" value="/statistics/mailing/{mailingId}/view.action">
             <c:param name="init" value="true"/>
@@ -83,7 +90,7 @@
                     "CALENDAR_COMMENT_SAVE": "<c:url value="/calendar/saveComment.action"/>",
                     "CALENDAR_COMMENT_REMOVE": "<c:url value="/calendar/removeComment.action"/>",
                     "CALENDAR_COMMENT_LIST": "<c:url value="/calendar/comments.action"/>",
-                    "MAILING_VIEW": "${mailingViewUrl}&mailingID={mailingId}",
+                    "MAILING_VIEW": "${mailingLink}",
                     "MAILING_STATISTICS_VIEW": "${mailingStatisticsViewUrl}"
                 }
             }

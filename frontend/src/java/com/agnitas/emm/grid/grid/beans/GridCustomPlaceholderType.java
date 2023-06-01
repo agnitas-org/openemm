@@ -11,6 +11,7 @@
 package com.agnitas.emm.grid.grid.beans;
 
 import static com.agnitas.emm.grid.grid.util.PlaceholderUtils.PLACEHOLDER_DEFAULT_CONTENT_BIG_TEXT;
+import static com.agnitas.emm.grid.grid.util.PlaceholderUtils.PLACEHOLDER_DEFAULT_CONTENT_COLOR;
 import static com.agnitas.emm.grid.grid.util.PlaceholderUtils.PLACEHOLDER_DEFAULT_CONTENT_IMAGE_SRC;
 import static com.agnitas.emm.grid.grid.util.PlaceholderUtils.PLACEHOLDER_DEFAULT_CONTENT_LINK_HREF;
 import static com.agnitas.emm.grid.grid.util.PlaceholderUtils.PLACEHOLDER_DEFAULT_CONTENT_TEXT;
@@ -24,7 +25,10 @@ public enum GridCustomPlaceholderType {
     Text(1, PLACEHOLDER_DEFAULT_CONTENT_BIG_TEXT),
     Image(2, PLACEHOLDER_DEFAULT_CONTENT_IMAGE_SRC),
     Link(3, PLACEHOLDER_DEFAULT_CONTENT_LINK_HREF),
-    ImageLink(4, PLACEHOLDER_DEFAULT_CONTENT_IMAGE_SRC);
+    ImageLink(4, PLACEHOLDER_DEFAULT_CONTENT_IMAGE_SRC),
+    Color(5, PLACEHOLDER_DEFAULT_CONTENT_COLOR),
+    Select(6, ""),
+    Check(7, "");
 
     private int id;
     private String stub;
@@ -51,6 +55,15 @@ public enum GridCustomPlaceholderType {
         }
 
         return null;
+    }
+    
+    public static GridCustomPlaceholderType getByName(String name) {
+    	for (GridCustomPlaceholderType value : GridCustomPlaceholderType.values()) {
+    		if (value.name().equalsIgnoreCase(name)) {
+    			return value;
+    		}
+    	}
+    	return null;
     }
     
     public static GridCustomPlaceholderType getPlaceholderTypeByName(String name) throws Exception {

@@ -14,15 +14,15 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.Stack;
-import java.util.stream.Stream;
 
-import au.id.jericho.lib.html.Attribute;
-import au.id.jericho.lib.html.Attributes;
-import au.id.jericho.lib.html.EndTag;
-import au.id.jericho.lib.html.HTMLElements;
-import au.id.jericho.lib.html.Source;
-import au.id.jericho.lib.html.StartTag;
-import au.id.jericho.lib.html.Tag;
+import net.htmlparser.jericho.Attribute;
+import net.htmlparser.jericho.Attributes;
+import net.htmlparser.jericho.EndTag;
+import net.htmlparser.jericho.HTMLElements;
+import net.htmlparser.jericho.Source;
+import net.htmlparser.jericho.StartTag;
+import net.htmlparser.jericho.Tag;
+import org.apache.commons.collections4.CollectionUtils;
 
 /**
  * Code to check a String for forbidden tags and attributes and unclosed / unopened tags.
@@ -38,7 +38,6 @@ public final class HtmlXSSPreventer {
     
     private static final String[] UNSUPPORTED_TAGS = { "applet", "object", "embed", "iframe" };
 
-    @SuppressWarnings("unchecked")
 	private static final Set<String> END_TAG_REQUIRED_ELEMENTS = HTMLElements.getEndTagRequiredElementNames();
 
     public static final void checkUnsupportedTags(final String string) throws XSSHtmlException {
@@ -46,8 +45,7 @@ public final class HtmlXSSPreventer {
     	
 		final Source source = new Source(string);
 
-		@SuppressWarnings("unchecked")
-		final List<Tag> tags = source.findAllTags();
+		final List<Tag> tags = source.getAllTags();
 		
 		for(final Tag tag : tags) {
 			if(tag instanceof StartTag || tag instanceof EndTag) {
@@ -79,8 +77,7 @@ public final class HtmlXSSPreventer {
 		final Stack<String> openedTags = new Stack<>();
 		final Set<HtmlCheckError> errors = new HashSet<>();
 
-		@SuppressWarnings("unchecked")
-		final List<Tag> tags = source.findAllTags();
+		final List<Tag> tags = source.getAllTags();
 
 		// Perform checks on each tag
 		for(final Tag tag : tags) {
@@ -116,9 +113,9 @@ public final class HtmlXSSPreventer {
 	private static void checkTagAttributes(final Tag tag, final Set<HtmlCheckError> errors) {
 		final Attributes attributes = tag.parseAttributes();
 		
-		if(attributes.size() > 0) {
-			((Stream<?>)attributes.stream())
-					.map(attr -> ((Attribute)attr).getName())
+		if (CollectionUtils.isNotEmpty(attributes)) {
+			attributes.stream()
+					.map(Attribute::getName)
 					.forEach(name -> errors.add(new ForbiddenTagAttributeError(tag.getName(), name)));
 		}
 	}

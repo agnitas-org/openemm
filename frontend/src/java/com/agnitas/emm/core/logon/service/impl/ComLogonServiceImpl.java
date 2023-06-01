@@ -44,7 +44,7 @@ import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.AdminPreferences;
 import com.agnitas.dao.AdminPreferencesDao;
 import com.agnitas.dao.ComEmmLayoutBaseDao;
@@ -103,7 +103,7 @@ public class ComLogonServiceImpl implements ComLogonService {
 	// ----------------------------------------------------------- Business code
 	
 	@Override
-	public ComAdmin getAdminByCredentials(String username, String password, String hostIpAddress) throws LogonServiceException {
+	public Admin getAdminByCredentials(String username, String password, String hostIpAddress) throws LogonServiceException {
 		if (!SupervisorUtil.isSupervisorLoginName(username)) {
 			return doRegularLogin(username, password, hostIpAddress);
 		} else {
@@ -118,12 +118,12 @@ public class ComLogonServiceImpl implements ComLogonService {
 	 * @param password password
 	 * @param hostIpAddress IP address of host
 	 * 
-	 * @return {@link ComAdmin} for credentials
+	 * @return {@link Admin} for credentials
 	 * 
 	 * @throws LogonServiceException on errors during login (invalid username/password, ...)
 	 */
-	private ComAdmin doRegularLogin( String username, String password, String hostIpAddress) throws LogonServiceException {
-		final Optional<ComAdmin> adminOptional = adminService.findAdminByCredentials(username, password);
+	private Admin doRegularLogin( String username, String password, String hostIpAddress) throws LogonServiceException {
+		final Optional<Admin> adminOptional = adminService.findAdminByCredentials(username, password);
 		
 		// Check, if we got an Admin (combination of username and password is valid)
 		if (!adminOptional.isPresent()) {
@@ -135,7 +135,7 @@ public class ComLogonServiceImpl implements ComLogonService {
 			throw new LogonFailedException(false);
 		}
 		
-		final ComAdmin admin = adminOptional.get();
+		final Admin admin = adminOptional.get();
 		
 		// Check, if IP is currently blocked
 		checkIPBlockState(admin.getCompanyID(), username, hostIpAddress);
@@ -176,17 +176,17 @@ public class ComLogonServiceImpl implements ComLogonService {
 	 * @param password supervisor password
 	 * @param hostIpAddress IP of client
 	 * 
-	 * @return {@link ComAdmin} for credentials
+	 * @return {@link Admin} for credentials
 	 * 
 	 * @throws LogonServiceException on errors during login (username/password invalid, ...)
 	 */
-	private ComAdmin doSupervisorLogin(final String loginName, final String password, final String hostIpAddress) throws LogonServiceException {
+	private Admin doSupervisorLogin(final String loginName, final String password, final String hostIpAddress) throws LogonServiceException {
 		final String username = SupervisorUtil.getUserNameFromLoginName(loginName);
 		final String supervisorName = SupervisorUtil.getSupervisorNameFromLoginName(loginName);
 		
 		// Get admin
 		try {
-			final ComAdmin admin = adminService.getAdminByNameForSupervisor(username, supervisorName, password);
+			final Admin admin = adminService.getAdminByNameForSupervisor(username, supervisorName, password);
 			
 			// Check, if admin is valid
 			if (admin == null || admin.getAdminID() == 0) {
@@ -215,7 +215,7 @@ public class ComLogonServiceImpl implements ComLogonService {
 	}
 
 	@Override
-	public ServiceResult<ComAdmin> authenticate(String username, String password, String clientIp) {
+	public ServiceResult<Admin> authenticate(String username, String password, String clientIp) {
 		try {
 			checkLicense();
 		} catch (LicenseError e) {
@@ -249,12 +249,12 @@ public class ComLogonServiceImpl implements ComLogonService {
 	}
 
 	@Override
-	public AdminPreferences getPreferences(ComAdmin admin) {
+	public AdminPreferences getPreferences(Admin admin) {
 		return adminPreferencesDao.getAdminPreferences(admin.getAdminID());
 	}
 
 	@Override
-	public EmmLayoutBase getEmmLayoutBase(ComAdmin admin) {
+	public EmmLayoutBase getEmmLayoutBase(Admin admin) {
 		return emmLayoutBaseDao.getEmmLayoutBase(admin.getCompanyID(), admin.getLayoutBaseID());
 	}
 
@@ -264,7 +264,7 @@ public class ComLogonServiceImpl implements ComLogonService {
 	}
 
 	@Override
-	public String getHelpLanguage(ComAdmin admin) {
+	public String getHelpLanguage(Admin admin) {
 		if (admin == null) {
 			return getHelpLanguage(LocaleContextHolder.getLocale().getLanguage());
 		} else {
@@ -273,7 +273,7 @@ public class ComLogonServiceImpl implements ComLogonService {
 	}
 
 	@Override
-	public PasswordState getPasswordState(ComAdmin admin) {
+	public PasswordState getPasswordState(Admin admin) {
 		if (admin.isSupervisor()) {
 			return supervisorService.getPasswordState(admin.getSupervisor());
 		} else {
@@ -282,7 +282,7 @@ public class ComLogonServiceImpl implements ComLogonService {
 	}
 
 	@Override
-	public Date getPasswordExpirationDate(ComAdmin admin) {
+	public Date getPasswordExpirationDate(Admin admin) {
 		if (admin.isSupervisor()) {
 			return supervisorService.computePasswordExpireDate(admin.getSupervisor());
 		} else {
@@ -291,7 +291,7 @@ public class ComLogonServiceImpl implements ComLogonService {
 	}
 
 	@Override
-	public SimpleServiceResult setPassword(ComAdmin admin, String password) {
+	public SimpleServiceResult setPassword(Admin admin, String password) {
 		if (StringUtils.isBlank(password)) {
 			return new SimpleServiceResult(false, Message.of("error.password.required"));
 		}
@@ -326,11 +326,11 @@ public class ComLogonServiceImpl implements ComLogonService {
 
 	@Override
 	public SimpleServiceResult requestPasswordReset(String username, String email, String clientIp, String linkPattern) {
-		ComAdmin admin = getAdmin(username, email);
+		Admin admin = getAdmin(username, email);
 
 		if (admin == null) {
 			loginTrackService.trackLoginFailed(clientIp, username);
-			return new SimpleServiceResult(false, Message.of("error.passwordReset.auth"));
+			return new SimpleServiceResult(false, Message.of("GWUA.error.passwordReset"));
 		}
 
 		int adminId = admin.getAdminID();
@@ -352,8 +352,8 @@ public class ComLogonServiceImpl implements ComLogonService {
 	}
 	
 	@Override
-	public ServiceResult<ComAdmin> resetPassword(String username, String token, String password, String clientIp) {
-		final Optional<ComAdmin> adminOptional = adminService.getAdminByName(username);
+	public ServiceResult<Admin> resetPassword(String username, String token, String password, String clientIp) {
+		final Optional<Admin> adminOptional = adminService.getAdminByName(username);
 		
 		if(!adminOptional.isPresent()) {
 			if(logger.isInfoEnabled()) {
@@ -362,10 +362,10 @@ public class ComLogonServiceImpl implements ComLogonService {
 			
 			loginTrackService.trackLoginFailed(clientIp, username);
 			
-			return new ServiceResult<>(null, false, Message.of("error.passwordReset.auth"));
+			return new ServiceResult<>(null, false, Message.of("GWUA.error.passwordReset"));
 		}
 		
-		final ComAdmin admin = adminOptional.get();
+		final Admin admin = adminOptional.get();
 
 		if (passwordResetDao.existsPasswordResetTokenHash(username, getTokenHash(token))) {
 			if (passwordResetDao.isValidPasswordResetTokenHash(username, getTokenHash(token))) {
@@ -405,8 +405,8 @@ public class ComLogonServiceImpl implements ComLogonService {
 		}
 	}
 
-	private ComAdmin getAdmin(String username, String email) {
-		final Optional<ComAdmin> adminOptional = adminService.getAdminByName(username);
+	private Admin getAdmin(String username, String email) {
+		final Optional<Admin> adminOptional = adminService.getAdminByName(username);
 		
 		if(!adminOptional.isPresent()) {
 			if(logger.isInfoEnabled()) {
@@ -416,7 +416,7 @@ public class ComLogonServiceImpl implements ComLogonService {
 			return null;
 		}
 		
-		final ComAdmin admin = adminOptional.get();
+		final Admin admin = adminOptional.get();
 
 		if (StringUtils.equalsIgnoreCase(admin.getEmail(), email)) {
 			return admin;
@@ -425,7 +425,7 @@ public class ComLogonServiceImpl implements ComLogonService {
 		}
 	}
 	
-	private String generatePasswordResetToken(ComAdmin admin, String clientIp) {
+	private String generatePasswordResetToken(Admin admin, String clientIp) {
 		String token = SecurityTokenGenerator.generateSecurityToken();
 		Date expirationDate = DateUtils.addMinutes(new Date(), TOKEN_EXPIRATION_MINUTES);
 
@@ -434,7 +434,7 @@ public class ComLogonServiceImpl implements ComLogonService {
 		return token;
 	}
 	
-	private String generatePasswordSetToken(ComAdmin admin, String clientIp, Date expirationDate) {
+	private String generatePasswordSetToken(Admin admin, String clientIp, Date expirationDate) {
 		String token = SecurityTokenGenerator.generateSecurityToken();
 
 		passwordResetDao.save(admin.getAdminID(), getTokenHash(token), expirationDate, clientIp);
@@ -451,7 +451,7 @@ public class ComLogonServiceImpl implements ComLogonService {
 		}
 	}
 
-	private void sendPasswordResetMail(ComAdmin admin, String passwordResetLink) {
+	private void sendPasswordResetMail(Admin admin, String passwordResetLink) {
 		Locale locale = admin.getLocale();
 		
 		final String mailSubject;
@@ -584,7 +584,7 @@ public class ComLogonServiceImpl implements ComLogonService {
 	}
 	
 	@Override
-	public SimpleServiceResult sendWelcomeMail(ComAdmin admin, String clientIp, String linkPattern) {
+	public SimpleServiceResult sendWelcomeMail(Admin admin, String clientIp, String linkPattern) {
 		Date expirationDate = DateUtils.addDays(new Date(), TOKEN_EXPIRATION_DAYS);
 		String token = generatePasswordSetToken(admin, clientIp, expirationDate);
 		String passwordResetLink = getPasswordResetLink(linkPattern, admin.getUsername(), token);
@@ -627,7 +627,7 @@ public class ComLogonServiceImpl implements ComLogonService {
 
 	@Override
 	public void riseErrorCount(String username) {
-		final Optional<ComAdmin> adminOptional = adminService.getAdminByName(username);
+		final Optional<Admin> adminOptional = adminService.getAdminByName(username);
 		
 		if (adminOptional.isPresent()) {
 			passwordResetDao.riseErrorCount(adminOptional.get().getAdminID());
@@ -635,7 +635,7 @@ public class ComLogonServiceImpl implements ComLogonService {
 	}
 
 	@Override
-	public void updateSessionsLanguagesAttributes(final ComAdmin admin) {
+	public void updateSessionsLanguagesAttributes(final Admin admin) {
 		final RequestAttributes attributes = RequestContextHolder.getRequestAttributes();
 		attributes.setAttribute(Globals.LOCALE_KEY, admin.getLocale(), RequestAttributes.SCOPE_SESSION);  // To be removed when Struts message tags are not in use anymore.
 		attributes.setAttribute("helplanguage", this.getHelpLanguage(admin), RequestAttributes.SCOPE_SESSION);

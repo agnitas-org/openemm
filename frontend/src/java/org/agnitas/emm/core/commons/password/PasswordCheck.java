@@ -12,7 +12,7 @@ package org.agnitas.emm.core.commons.password;
 
 import org.agnitas.emm.core.commons.password.policy.PasswordPolicy;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.service.SimpleServiceResult;
 
 /**
@@ -29,7 +29,7 @@ public interface PasswordCheck {
 	 * 
 	 * @return {@code true} if password is ok, otherwise {@code false}
 	 */
-	boolean checkAdminPassword(String password, ComAdmin admin, PasswordCheckHandler handler);
+	boolean checkAdminPassword(String password, Admin admin, PasswordCheckHandler handler);
 	boolean checkNewAdminPassword(final String password, final int companyID, final PasswordCheckHandler handler);
 
 	/**
@@ -40,7 +40,7 @@ public interface PasswordCheck {
 	 *
 	 * @return a {@link SimpleServiceResult} instance.
 	 */
-	SimpleServiceResult checkAdminPassword(String password, ComAdmin admin);
+	SimpleServiceResult checkAdminPassword(String password, Admin admin);
 	SimpleServiceResult checkNewAdminPassword(final String password, final PasswordPolicy passwordPolicy);
 
 }

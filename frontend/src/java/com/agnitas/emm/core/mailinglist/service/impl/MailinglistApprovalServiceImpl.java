@@ -26,10 +26,9 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
-
 
 public class MailinglistApprovalServiceImpl implements MailinglistApprovalService {
 
@@ -53,12 +52,12 @@ public class MailinglistApprovalServiceImpl implements MailinglistApprovalServic
     }
 
     @Override
-    public List<Mailinglist> getEnabledMailinglistsNamesForAdmin(ComAdmin admin) {
+    public List<Mailinglist> getEnabledMailinglistsNamesForAdmin(Admin admin) {
         return mailinglistApprovalDao.getEnabledMailinglistsNamesForAdmin(admin.getCompanyID(), admin.getAdminID());
     }
 
     @Override
-    public List<Mailinglist> getEnabledMailinglistsForAdmin(ComAdmin admin) {
+    public List<Mailinglist> getEnabledMailinglistsForAdmin(Admin admin) {
         if (admin == null) {
             return new ArrayList<>();
         }
@@ -118,17 +117,17 @@ public class MailinglistApprovalServiceImpl implements MailinglistApprovalServic
     }
 
     @Override
-    public boolean isAdminHaveAccess(ComAdmin admin, int mailingListId) {
+    public boolean isAdminHaveAccess(Admin admin, int mailingListId) {
         return mailingListId <= 0 || mailinglistApprovalDao.isAdminHaveAccess(admin.getCompanyID(), admin.getAdminID(), mailingListId);
     }
     
     @Override
-    public boolean hasAnyDisabledMailingListsForAdmin(ComAdmin admin) {
+    public boolean hasAnyDisabledMailingListsForAdmin(Admin admin) {
         return hasAnyDisabledMailingListsForAdmin(admin.getCompanyID(), admin.getAdminID());
     }
 
     @Override
-    public boolean hasAnyDisabledRecipientBindingsForAdmin(ComAdmin admin, int recipientId) {
+    public boolean hasAnyDisabledRecipientBindingsForAdmin(Admin admin, int recipientId) {
         return admin != null && mailinglistApprovalDao.hasAnyDisabledRecipientBindingsForAdmin(admin.getCompanyID(), admin.getAdminID(), recipientId);
     }
 

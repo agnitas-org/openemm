@@ -10,17 +10,22 @@
 
 package com.agnitas.taglib;
 
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.jsp.JspException;
+import jakarta.servlet.jsp.tagext.DynamicAttributes;
+import org.apache.struts.taglib.TagUtils;
+import org.apache.struts.taglib.html.FormTag;
+import org.springframework.security.web.csrf.CsrfToken;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import jakarta.servlet.jsp.tagext.DynamicAttributes;
-
-import org.apache.struts.taglib.html.FormTag;
-
 public class AgnFormTag extends FormTag implements DynamicAttributes {
+
 	private static final long serialVersionUID = 530481172972908744L;
-	
+    private static final String DISABLE_CSRF_TOKEN_ATTR = "DISABLE_CSRF_TOKEN_ATTR";
+
 	private Map<String, Object> tagattr = new HashMap<>();
 
 	@Override
@@ -32,6 +37,31 @@ public class AgnFormTag extends FormTag implements DynamicAttributes {
     protected void renderOtherAttributes(StringBuffer results) {
     	for (Entry<String, Object> entry : tagattr.entrySet()) {
             renderAttribute(results, entry.getKey(), (String) entry.getValue());
+        }
+    }
+
+    @Override
+    public int doStartTag() throws JspException {
+        int result = super.doStartTag();
+        appendCsrfDataIfNeeded();
+
+        return result;
+    }
+
+    private void appendCsrfDataIfNeeded() throws JspException {
+        ServletRequest request = pageContext.getRequest();
+        if (Boolean.TRUE.equals(request.getAttribute(DISABLE_CSRF_TOKEN_ATTR))) {
+            request.removeAttribute(DISABLE_CSRF_TOKEN_ATTR);
+        } else {
+            CsrfToken token = (CsrfToken)request.getAttribute(CsrfToken.class.getName());
+            if (token != null) {
+                String csrfToken = "<div>\n" +
+                        "<input type=\"hidden\" " + "name=\"" + token.getParameterName() + "\" value=\"" + token.getToken() + "\" " +
+                        "/>\n" +
+                        "</div>";
+
+                TagUtils.getInstance().write(this.pageContext, csrfToken);
+            }
         }
     }
 

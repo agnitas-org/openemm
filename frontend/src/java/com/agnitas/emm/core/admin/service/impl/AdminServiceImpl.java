@@ -44,13 +44,13 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.AdminPreferences;
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.Company;
 import com.agnitas.beans.impl.AdminPreferencesImpl;
-import com.agnitas.beans.impl.ComAdminImpl;
+import com.agnitas.beans.impl.AdminImpl;
 import com.agnitas.dao.AdminPreferencesDao;
-import com.agnitas.dao.ComAdminDao;
-import com.agnitas.dao.ComAdminGroupDao;
+import com.agnitas.dao.AdminDao;
+import com.agnitas.dao.AdminGroupDao;
 import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.dao.ComEmmLayoutBaseDao;
 import com.agnitas.emm.core.Permission;
@@ -79,14 +79,14 @@ public class AdminServiceImpl implements AdminService {
 	/** The logger. */
 	private static final transient Logger logger = LogManager.getLogger(AdminServiceImpl.class);
 
-	protected ComAdminDao adminDao;
+	protected AdminDao adminDao;
 	
 	// Use ComSupervisorService instead
 	@Deprecated
 	protected ComSupervisorDao supervisorDao;
 	protected ComCompanyDao companyDao;
 	protected AdminPreferencesDao adminPreferencesDao;
-	protected ComAdminGroupDao adminGroupDao;
+	protected AdminGroupDao adminGroupDao;
 	protected GrantedSupervisorLoginDao grantedSupervisorLoginDao;
 	protected ConfigService configService;
 	private PermissionFilter permissionFilter;
@@ -96,7 +96,7 @@ public class AdminServiceImpl implements AdminService {
 	private AdminPasswordChangedNotifier passwordChangedNotifier;
 	
 	@Required
-	public void setAdminDao(ComAdminDao adminDao) {
+	public void setAdminDao(AdminDao adminDao) {
 		this.adminDao = adminDao;
 	}
 
@@ -121,7 +121,7 @@ public class AdminServiceImpl implements AdminService {
 	}
 
 	@Required
-	public void setAdminGroupDao(ComAdminGroupDao adminGroupDao) {
+	public void setAdminGroupDao(AdminGroupDao adminGroupDao) {
 		this.adminGroupDao = adminGroupDao;
 	}
 	
@@ -158,9 +158,9 @@ public class AdminServiceImpl implements AdminService {
 	// ----------------------------------------------------------------------------------------------------------------
 
 	@Override
-	public Optional<ComAdmin> getAdminByName(final String username) {
+	public Optional<Admin> getAdminByName(final String username) {
 		try {
-			final ComAdmin admin = adminDao.getAdmin(username);
+			final Admin admin = adminDao.getAdmin(username);
 			
 			return Optional.of(admin);
 		} catch(final Exception e) {
@@ -171,14 +171,14 @@ public class AdminServiceImpl implements AdminService {
 	}
 	
 	@Override
-	public final Optional<ComAdmin> findAdminByCredentials(final String username, final String password) {
-		final ComAdmin admin = this.adminDao.getAdminByLogin(username, password);
+	public final Optional<Admin> findAdminByCredentials(final String username, final String password) {
+		final Admin admin = this.adminDao.getAdminByLogin(username, password);
 		
 		return Optional.ofNullable(admin);
 	}
 	
 	@Override
-	public ComAdmin getAdminByNameForSupervisor(final String username, final String supervisorName, final String password) throws AdminException, SupervisorException {
+	public Admin getAdminByNameForSupervisor(final String username, final String supervisorName, final String password) throws AdminException, SupervisorException {
 		final Supervisor supervisor = supervisorDao.getSupervisor(supervisorName, password);
 
 		// Check if supervisor exists
@@ -195,7 +195,7 @@ public class AdminServiceImpl implements AdminService {
 			throw new SupervisorLoginFailedException(username, supervisorName);
 		}
 
-		final ComAdmin admin = adminDao.getByNameAndActiveCompany(username);
+		final Admin admin = adminDao.getByNameAndActiveCompany(username);
 		
 		// Check if admin exists
 		if (admin == null) {
@@ -251,7 +251,7 @@ public class AdminServiceImpl implements AdminService {
 		
 	}
 	
-	private final boolean isSupervisorLoginForUserAllowed(final Supervisor supervisor, final ComAdmin admin) {
+	private final boolean isSupervisorLoginForUserAllowed(final Supervisor supervisor, final Admin admin) {
 		// Login Permission feature disabled? -> Login allowed
 		if(!this.configService.getBooleanValue(ConfigValue.SupervisorRequiresLoginPermission, admin.getCompanyID())) {
 			return true;
@@ -276,7 +276,7 @@ public class AdminServiceImpl implements AdminService {
 		}
 	}
 
-	private boolean isSupervisorLoginAllowedForCompany(final ComAdmin admin, final Supervisor supervisor) {
+	private boolean isSupervisorLoginAllowedForCompany(final Admin admin, final Supervisor supervisor) {
 		final List<Integer> allowedCompanyIDs = supervisorService.getAllowedCompanyIds(supervisor.getId());
 		
 		return (supervisor.getDepartment().isSupervisorBindingToCompany0Allowed() && allowedCompanyIDs.contains(0))
@@ -309,8 +309,8 @@ public class AdminServiceImpl implements AdminService {
 	}
 
 	@Override
-	public ServiceResult<ComAdmin> isPossibleToDeleteAdmin(final int adminId, final int companyId) {
-		final ComAdmin admin = getAdmin(adminId, companyId);
+	public ServiceResult<Admin> isPossibleToDeleteAdmin(final int adminId, final int companyId) {
+		final Admin admin = getAdmin(adminId, companyId);
 		if(admin == null) {
 			return ServiceResult.error();
 		}
@@ -323,8 +323,8 @@ public class AdminServiceImpl implements AdminService {
 	}
 
 	@Override
-	public ServiceResult<ComAdmin> delete(ComAdmin admin, int adminIdToDelete) {
-		ComAdmin adminToDelete = adminDao.getAdmin(adminIdToDelete, admin.getCompanyID());
+	public ServiceResult<Admin> delete(Admin admin, int adminIdToDelete) {
+		Admin adminToDelete = adminDao.getAdmin(adminIdToDelete, admin.getCompanyID());
 
 		if (adminToDelete == null) {
 			return new ServiceResult<>(null, false);
@@ -361,7 +361,7 @@ public class AdminServiceImpl implements AdminService {
 	}
 
 	@Override
-	public AdminSavingResult saveAdmin(AdminForm form, boolean restfulUser, ComAdmin editorAdmin) {
+	public AdminSavingResult saveAdmin(AdminForm form, boolean restfulUser, Admin editorAdmin) {
 		int savingAdminID = form.getAdminID();
 		int savingCompanyID = form.getCompanyID();
 		int editorCompanyID = editorAdmin.getCompanyID();
@@ -376,13 +376,13 @@ public class AdminServiceImpl implements AdminService {
 			}
 		}
 
-		ComAdmin savingAdmin;
+		Admin savingAdmin;
 		AdminPreferences savingAdminPreferences;
 		boolean isNew = savingAdminID == 0;
 		boolean isPasswordChanged = false;
 
 		if (isNew) {
-			savingAdmin = new ComAdminImpl();
+			savingAdmin = new AdminImpl();
 			savingAdmin.setCompany(companyDao.getCompany(savingCompanyID));
 			savingAdminPreferences = new AdminPreferencesImpl();
 		} else {
@@ -447,8 +447,8 @@ public class AdminServiceImpl implements AdminService {
 	@Override
 	public Tuple<List<String>, List<String>> saveAdminPermissions(int companyID, int savingAdminID, Collection<String> tokens, int editorAdminID) {
 		tokens = CollectionUtils.emptyIfNull(tokens);
-		ComAdmin editorAdmin = adminDao.getAdmin(editorAdminID, companyID);
-		ComAdmin savingAdmin = adminDao.getAdmin(savingAdminID, companyID);
+		Admin editorAdmin = adminDao.getAdmin(editorAdminID, companyID);
+		Admin savingAdmin = adminDao.getAdmin(savingAdminID, companyID);
 
 		Map<String, Boolean> permissionChangeable = new HashMap<>();
 		
@@ -522,7 +522,7 @@ public class AdminServiceImpl implements AdminService {
 	}
 
 	@Override
-	public ComAdmin getAdmin(int adminID, int companyID){
+	public Admin getAdmin(int adminID, int companyID){
 		return adminDao.getAdmin(adminID, companyID);
 	}
 
@@ -532,18 +532,13 @@ public class AdminServiceImpl implements AdminService {
 	}
 
 	@Override
-	public int getNumberOfAdmins(){
-		return adminDao.getNumberOfAdmins();
-	}
-
-	@Override
 	public boolean adminExists(String username){
 		return adminDao.adminExists(username) || adminDao.checkBlacklistedAdminNames(username);
 	}
 	
 	@Override
-	public boolean adminLimitReached(int companyID) {
-		return adminDao.getNumberOfAdmins(companyID) >= configService.getIntegerValue(ConfigValue.UserAllowed, companyID);
+	public boolean isGuiAdminLimitReached(int companyID) {
+		return adminDao.getNumberOfGuiAdmins(companyID) >= configService.getIntegerValue(ConfigValue.UserAllowed, companyID);
 	}
 
 	@Override
@@ -565,7 +560,7 @@ public class AdminServiceImpl implements AdminService {
 	}
 	
 	@Override
-	public List<AdminEntry> getAdminEntriesForUserActivityLog(ComAdmin admin) {
+	public List<AdminEntry> getAdminEntriesForUserActivityLog(Admin admin) {
 		List<AdminEntry> admins = Collections.singletonList(new AdminEntryImpl(admin));
 
 		if (admin.permissionAllowed(Permission.MASTERLOG_SHOW)) {
@@ -579,7 +574,7 @@ public class AdminServiceImpl implements AdminService {
 	}
 
 	@Override
-	public List<AdminGroup> getAdminGroups(int companyID, ComAdmin admin) {
+	public List<AdminGroup> getAdminGroups(int companyID, Admin admin) {
 		return adminGroupDao.getAdminGroupsByCompanyIdAndDefault(companyID, admin.getGroupIds());
 	}
 	
@@ -589,12 +584,12 @@ public class AdminServiceImpl implements AdminService {
 	}
 
 	@Override
-	public int adminGroupExists(int companyId, String groupname) {
+	public boolean adminGroupExists(int companyId, String groupname) {
 		return adminGroupDao.adminGroupExists(companyId, groupname);
 	}
 	
 	private boolean passwordChanged(String username, String password) {
-		ComAdmin admin = adminDao.getAdminByLogin(username, password);
+		Admin admin = adminDao.getAdminByLogin(username, password);
 		return !(StringUtils.isEmpty(password) || (admin != null && admin.getAdminID() > 0));
 	}
 	
@@ -604,7 +599,7 @@ public class AdminServiceImpl implements AdminService {
 	}
 
 	@Override
-	public PasswordState getPasswordState(ComAdmin admin) {
+	public PasswordState getPasswordState(Admin admin) {
 		int expirationDays = configService.getIntegerValue(ConfigValue.UserPasswordExpireDays, admin.getCompanyID());
 		if (expirationDays <= 0) {
 			// Expiration is disabled for company.
@@ -640,7 +635,7 @@ public class AdminServiceImpl implements AdminService {
 	}
 
 	@Override
-	public Date computePasswordExpireDate(ComAdmin admin) {
+	public Date computePasswordExpireDate(Admin admin) {
 		int expirationDays = configService.getIntegerValue(ConfigValue.UserPasswordExpireDays, admin.getCompanyID());
 		if (expirationDays <= 0) {
 			// Expiration is disabled for company.
@@ -652,7 +647,7 @@ public class AdminServiceImpl implements AdminService {
 
 	@Override
 	public boolean setPassword(int adminId, int companyId, String password) {
-		ComAdmin admin = adminDao.getAdmin(adminId, companyId);
+		Admin admin = adminDao.getAdmin(adminId, companyId);
 
 		if (admin == null) {
 			return false;
@@ -687,7 +682,7 @@ public class AdminServiceImpl implements AdminService {
 	}
     
     @Override
-    public Map<String, PermissionsOverviewData.PermissionCategoryEntry> getPermissionOverviewData(ComAdmin admin, ComAdmin adminToEdit) {
+    public Map<String, PermissionsOverviewData.PermissionCategoryEntry> getPermissionOverviewData(Admin admin, Admin adminToEdit) {
 		PermissionsOverviewData.Builder builder = PermissionsOverviewData.builder();
 		builder.setAdmin(admin);
 		builder.setAdminToEdit(adminToEdit);
@@ -710,7 +705,7 @@ public class AdminServiceImpl implements AdminService {
 	}
 
 	@Override
-	public boolean isDarkmodeEnabled(final ComAdmin admin) {
+	public boolean isDarkmodeEnabled(final Admin admin) {
 		final EmmLayoutBase layout = emmLayoutBaseDao.getEmmLayoutBase(admin.getCompanyID(), admin.getLayoutBaseID());
 		return layout.getThemeType() == EmmLayoutBase.ThemeType.DARK_MODE;
 	}
@@ -726,12 +721,12 @@ public class AdminServiceImpl implements AdminService {
 	}
 
 	@Override
-	public final ComAdmin getOldestAdminOfCompany(final int companyId) {
+	public final Admin getOldestAdminOfCompany(final int companyId) {
 		return adminDao.getOldestAdminOfCompany(companyId);
 	}
 
 	@Override
-	public void save(ComAdmin admin) throws Exception {
+	public void save(Admin admin) throws Exception {
 		final boolean passwordChanged = admin.getAdminID() != 0 && admin.getPasswordForStorage() != null;
 		
 		adminDao.save(admin);
@@ -742,25 +737,25 @@ public class AdminServiceImpl implements AdminService {
 	}
 
 	@Override
-	public boolean isAdminPassword(ComAdmin admin, String password) {
+	public boolean isAdminPassword(Admin admin, String password) {
 		return adminDao.isAdminPassword(admin, password);
 	}
 
 	@Override
-	public boolean isEnabled(ComAdmin admin) {
+	public boolean isEnabled(Admin admin) {
 		return adminDao.isEnabled(admin);
 	}
 
 	@Override
-	public ComAdmin getAdminByLogin(String name, String password) {
+	public Admin getAdminByLogin(String name, String password) {
 		return adminDao.getAdminByLogin(name, password);
 	}
 
-	protected void mapExtendedFields(final ComAdmin target, final AdminForm sourceForm, final ComAdmin editorAdmin) {
+	protected void mapExtendedFields(final Admin target, final AdminForm sourceForm, final Admin editorAdmin) {
 		logger.debug("Not supported for OpenEMM");
 	}
 
-	private void map(final ComAdmin target, final AdminForm sourceForm, final ComAdmin editorAdmin) {
+	private void map(final Admin target, final AdminForm sourceForm, final Admin editorAdmin) {
 		target.setUsername(sourceForm.getUsername());
 		target.setFullname(sourceForm.getFullname());
 		target.setFirstName(sourceForm.getFirstname());
@@ -780,12 +775,12 @@ public class AdminServiceImpl implements AdminService {
 	}
 
 	@Override
-	public int getAccessLimitTargetId(ComAdmin admin) {
+	public int getAccessLimitTargetId(Admin admin) {
 		return 0;
 	}
 
 	@Override
-    public boolean isExtendedAltgEnabled(ComAdmin admin) {
+    public boolean isExtendedAltgEnabled(Admin admin) {
         return false;
     }
 
@@ -802,13 +797,6 @@ public class AdminServiceImpl implements AdminService {
 	@Override
 	public int getPasswordChangedMailingId(String language) {
 		return adminDao.getPasswordChangedMailingId(language);
-	}
-
-	@Override
-	public final void updateLoginDate(final int adminID) {
-		final Date now = new Date();
-		
-		this.adminDao.updateLoginDate(adminID, now);
 	}
 	
 	@Override
@@ -830,7 +818,7 @@ public class AdminServiceImpl implements AdminService {
 	}
 
 	@Override
-	public List<ComAdmin> getAdmins(int companyID, boolean restful) {
+	public List<Admin> getAdmins(int companyID, boolean restful) {
 		return adminDao.getAdmins(companyID, restful);
 	}
 
@@ -842,5 +830,20 @@ public class AdminServiceImpl implements AdminService {
 	@Override
 	public List<Integer> getAccessLimitingAdmins(int accessLimitingTargetGroupID) {
 		return null;
+	}
+
+	@Override
+	public int getNumberOfGuiAdmins(int companyID){
+		return adminDao.getNumberOfGuiAdmins(companyID);
+	}
+
+	@Override
+	public int getNumberOfRestfulUsers(int companyID) {
+		return adminDao.getNumberOfRestfulUsers(companyID);
+	}
+
+	@Override
+	public List<Map<String, Object>> getAdminsLight(int companyID, boolean restful) {
+		return adminDao.getAdminsLight(companyID, restful);
 	}
 }

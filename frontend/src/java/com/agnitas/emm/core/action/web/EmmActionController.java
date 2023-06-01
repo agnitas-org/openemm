@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import com.agnitas.web.mvc.XssCheckAware;
 import org.agnitas.actions.EmmAction;
 import org.agnitas.actions.impl.EmmActionImpl;
 import org.agnitas.beans.factory.ActionOperationFactory;
@@ -28,6 +29,7 @@ import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.service.UserActivityLogService;
 import org.agnitas.service.WebStorage;
 import org.agnitas.util.AgnUtils;
+import org.agnitas.util.UserActivityUtil;
 import org.agnitas.web.forms.BulkActionForm;
 import org.agnitas.web.forms.FormUtils;
 import org.agnitas.web.forms.SimpleActionForm;
@@ -46,8 +48,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.ProfileField;
+import com.agnitas.beans.ProfileFieldMode;
 import com.agnitas.emm.core.action.dto.EmmActionDto;
 import com.agnitas.emm.core.action.form.EmmActionForm;
 import com.agnitas.emm.core.action.form.EmmActionsForm;
@@ -60,35 +63,41 @@ import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
 import com.agnitas.emm.core.userform.service.ComUserformService;
 import com.agnitas.emm.core.workflow.service.ComWorkflowService;
-import com.agnitas.service.ComColumnInfoService;
+import com.agnitas.service.ColumnInfoService;
 import com.agnitas.service.SimpleServiceResult;
 import com.agnitas.web.dto.BooleanResponseDto;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.perm.annotations.PermissionMapping;
+import static org.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
+import static org.agnitas.util.Const.Mvc.ERROR_MSG;
+import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
+import static org.agnitas.util.Const.Mvc.SELECTION_DELETED_MSG;
 
 @Controller
 @RequestMapping("/action")
 @PermissionMapping("action")
-public class EmmActionController {
+public class EmmActionController implements XssCheckAware {
 
-	/** The logger. */
 	private static final Logger logger = LogManager.getLogger(EmmActionController.class);
 
-    private WebStorage webStorage;
-    private ComEmmActionService emmActionService;
-    private MailingService mailingService;
-    private ConfigService configService;
-    private ComWorkflowService workflowService;
-	private UserActivityLogService userActivityLogService;
-	private ConversionService conversionService;
-	private ActionOperationParametersParser actionOperationParametersParser;
-	private EmmActionValidationServiceImpl validationService;
-	private ActionOperationFactory actionOperationFactory;
-	private ComUserformService userFormService;
-	private MailinglistApprovalService mailinglistApprovalService;
-	private final ComColumnInfoService columnInfoService;
+    private static final String ACTIONS_VIEW = "actions_view";
+    private static final String SHORTNAME = "shortname";
+	
+    private final WebStorage webStorage;
+    private final ComEmmActionService emmActionService;
+    private final MailingService mailingService;
+    private final ConfigService configService;
+    private final ComWorkflowService workflowService;
+	private final UserActivityLogService userActivityLogService;
+	private final ConversionService conversionService;
+	private final ActionOperationParametersParser actionOperationParametersParser;
+	private final EmmActionValidationServiceImpl validationService;
+	private final ActionOperationFactory actionOperationFactory;
+	private final ComUserformService userFormService;
+	private final MailinglistApprovalService mailinglistApprovalService;
+	private final ColumnInfoService columnInfoService;
 
-	public EmmActionController(WebStorage webStorage, ComEmmActionService emmActionService, MailingService mailingService, ConfigService configService, ComWorkflowService workflowService, UserActivityLogService userActivityLogService, ConversionService conversionService, ActionOperationParametersParser actionOperationParametersParser, EmmActionValidationServiceImpl validationService, ActionOperationFactory actionOperationFactory, ComUserformService userFormService, MailinglistApprovalService mailinglistApprovalService, final ComColumnInfoService columnInfoService) {
+    public EmmActionController(WebStorage webStorage, ComEmmActionService emmActionService, MailingService mailingService, ConfigService configService, ComWorkflowService workflowService, UserActivityLogService userActivityLogService, ConversionService conversionService, ActionOperationParametersParser actionOperationParametersParser, EmmActionValidationServiceImpl validationService, ActionOperationFactory actionOperationFactory, ComUserformService userFormService, MailinglistApprovalService mailinglistApprovalService, final ColumnInfoService columnInfoService) {
 		this.webStorage = webStorage;
 		this.emmActionService = emmActionService;
 		this.mailingService = mailingService;
@@ -105,7 +114,7 @@ public class EmmActionController {
     }
 
 	@RequestMapping("/list.action")
-	public String list(ComAdmin admin, EmmActionsForm form, Model model, Popups popups) {
+	public String list(Admin admin, EmmActionsForm form, Model model, Popups popups) {
 		try {
 			AgnUtils.setAdminDateTimeFormatPatterns(admin, model);
 			FormUtils.syncNumberOfRows(webStorage, WebStorage.ACTION_OVERVIEW, form);
@@ -120,16 +129,16 @@ public class EmmActionController {
 	}
 
 	@PostMapping("/saveActiveness.action")
-	public @ResponseBody BooleanResponseDto saveActiveness(ComAdmin admin, EmmActionsForm form, Popups popups) {
+	public @ResponseBody BooleanResponseDto saveActiveness(Admin admin, EmmActionsForm form, Popups popups) {
 		List<UserAction> userActions = new ArrayList<>();
 		boolean result = emmActionService.setActiveness(form.getActiveness(), admin.getCompanyID(), userActions);
 		if (result) {
 			for (UserAction action : userActions) {
 				writeUserActivityLog(admin, action);
 			}
-			popups.success("default.changes_saved");
+			popups.success(CHANGES_SAVED_MSG);
 		} else {
-			popups.alert("Error");
+			popups.alert(ERROR_MSG);
 		}
 
 		return new BooleanResponseDto(popups, result);
@@ -139,16 +148,16 @@ public class EmmActionController {
 	public String confirmBulkDelete(@ModelAttribute("bulkDeleteForm") BulkActionForm form, Popups popups) {
 		if (CollectionUtils.isEmpty(form.getBulkIds())) {
 			popups.alert("bulkAction.nothing.action");
-			return "messages";
+			return MESSAGES_VIEW;
 		}
 		return "action_bulk_delete_ajax";
 	}
 
 	@RequestMapping(value = "/bulkDelete.action", method = { RequestMethod.POST, RequestMethod.DELETE})
-    public String bulkDelete(ComAdmin admin, @ModelAttribute("bulkDeleteForm") BulkActionForm form, Popups popups) {
+    public String bulkDelete(Admin admin, @ModelAttribute("bulkDeleteForm") BulkActionForm form, Popups popups) {
         if (form.getBulkIds().isEmpty()) {
             popups.alert("bulkAction.nothing.action");
-            return "messages";
+            return MESSAGES_VIEW;
         }
 
 		try {
@@ -163,18 +172,18 @@ public class EmmActionController {
 				writeUserActivityLog(admin, "delete action", descriptions.get(actionId));
 			}
 
-			popups.success("default.selection.deleted");
+			popups.success(SELECTION_DELETED_MSG);
 			return "redirect:/action/list.action";
 		} catch (Exception e) {
-			logger.error("Bulk deletion failed: " + e.getMessage(), e);
+			logger.error("Bulk deletion failed: {}", e.getMessage(), e);
 		}
 
-        popups.alert("Error");
-        return "messages";
+        popups.alert(ERROR_MSG);
+        return MESSAGES_VIEW;
     }
 
     @GetMapping("/{id:\\d+}/confirmDelete.action")
-	public String confirmDelete(ComAdmin admin, @PathVariable int id, @ModelAttribute("simpleActionForm") SimpleActionForm form, Popups popups) {
+	public String confirmDelete(Admin admin, @PathVariable int id, @ModelAttribute("simpleActionForm") SimpleActionForm form, Popups popups) {
 		EmmAction emmAction = emmActionService.getEmmAction(id, admin.getCompanyID());
 		if (emmAction != null) {
 			form.setId(emmAction.getId());
@@ -183,45 +192,45 @@ public class EmmActionController {
 			return "action_delete_ajax";
 		}
 
-		popups.alert("Error");
-		return "messages";
+		popups.alert(ERROR_MSG);
+		return MESSAGES_VIEW;
 	}
 
 	@RequestMapping(value = "/delete.action", method = {RequestMethod.POST, RequestMethod.DELETE})
-    public String delete(ComAdmin admin, SimpleActionForm form, Popups popups) {
+    public String delete(Admin admin, SimpleActionForm form, Popups popups) {
         if (emmActionService.deleteEmmAction(form.getId(), admin.getCompanyID())) {
 			writeUserActivityLog(admin, "delete action", String.format("%s (ID: %d)", form.getShortname(), form.getId()));
-			popups.success("default.selection.deleted");
+			popups.success(SELECTION_DELETED_MSG);
 			return "redirect:/action/list.action";
 		}
 
-        popups.alert("Error");
-        return "messages";
+        popups.alert(ERROR_MSG);
+        return MESSAGES_VIEW;
     }
 
 	@GetMapping(value = {"/new.action", "/0/view.action"})
-	public String create(ComAdmin admin, @ModelAttribute("form") EmmActionForm form, Model model) {
+	public String create(Admin admin, @ModelAttribute("form") EmmActionForm form, Model model) {
 		loadViewData(admin, model, 0);
 
-		return "actions_view";
+		return ACTIONS_VIEW;
 	}
 
 	@GetMapping("/{id:\\d+}/view.action")
-	public String view(ComAdmin admin, @PathVariable int id, @ModelAttribute("form") EmmActionForm form, Model model) {
+	public String view(Admin admin, @PathVariable int id, @ModelAttribute("form") EmmActionForm form, Model model) {
 		EmmAction emmAction = emmActionService.getEmmAction(id, admin.getCompanyID());
 		if (emmAction == null) {
-			logger.warn("loadAction: could not load action " + id);
+			logger.warn("loadAction: could not load action {}", id);
 			return "redirect:/action/new.action";
 		}
 
 		model.addAttribute("form", conversionService.convert(emmAction, EmmActionForm.class));
 		loadViewData(admin, model, id);
 
-		return "actions_view";
+		return ACTIONS_VIEW;
 	}
 
 	@PostMapping("/save.action")
-	public String save(ComAdmin admin, @ModelAttribute("form") EmmActionForm form, Popups popups) {
+	public String save(Admin admin, @ModelAttribute("form") EmmActionForm form, Popups popups) {
 		try {
 			List<AbstractActionOperationParameters> parameters = actionOperationParametersParser.deSerializeActionModulesList(form.getModulesSchema());
 			if (isValidAction(admin, form, parameters, popups)) {
@@ -252,22 +261,22 @@ public class EmmActionController {
 				return "redirect:/action/" + actionId + "/view.action";
 			}
 		} catch (Exception e) {
-			logger.error("Saving action data failed: " + e.getMessage(), e);
-			popups.alert("Error");
+			logger.error("Saving action data failed: {}", e.getMessage(), e);
+			popups.alert(ERROR_MSG);
 		}
 
-		return "messages";
+		return MESSAGES_VIEW;
 	}
 
-	private boolean isValidAction(ComAdmin admin, EmmActionForm form, List<AbstractActionOperationParameters> params, Popups popups) {
+	private boolean isValidAction(Admin admin, EmmActionForm form, List<AbstractActionOperationParameters> params, Popups popups) {
 		String shortname = form.getShortname();
 
 		if (StringUtils.trimToNull(shortname) == null) {
-			popups.field("shortname", "error.name.is.empty");
+			popups.field(SHORTNAME, "error.name.is.empty");
 		} else if (StringUtils.trimToNull(shortname).length() < 3) {
-			popups.field("shortname", "error.name.too.short");
+			popups.field(SHORTNAME, "error.name.too.short");
 		} else if (StringUtils.length(shortname) > 50) {
-			popups.field("shortname", "error.action.nameTooLong");
+			popups.field(SHORTNAME, "error.action.nameTooLong");
 		}
 		
 		if (CollectionUtils.isNotEmpty(params)) {
@@ -279,8 +288,8 @@ public class EmmActionController {
 					}
 				}
 			} catch (Exception e) {
-				logger.error("Action operation validation failed: " + e.getMessage(), e);
-				popups.alert("Error");
+				logger.error("Action operation validation failed: {}", e.getMessage(), e);
+				popups.alert(ERROR_MSG);
 			}
 		}
 
@@ -288,7 +297,7 @@ public class EmmActionController {
     }
 
 	@GetMapping("/{id:\\d+}/clone.action")
-	public String clone(ComAdmin admin, @PathVariable("id") int originId, Model model) {
+	public String clone(Admin admin, @PathVariable("id") int originId, Model model) {
 		EmmActionDto copyOfAction = emmActionService.getCopyOfAction(admin, originId);
 
 		EmmActionForm form = conversionService.convert(copyOfAction, EmmActionForm.class);
@@ -296,32 +305,32 @@ public class EmmActionController {
 
 		loadViewData(admin, model, originId);
 
-		return "actions_view";
+		return ACTIONS_VIEW;
 	}
 
 	@GetMapping("/{id:\\d+}/usage.action")
-	public String webformsView(ComAdmin admin, @PathVariable int id, Model model) {
+	public String webformsView(Admin admin, @PathVariable int id, Model model) {
 		model.addAttribute("actionId", id);
-		model.addAttribute("shortname", emmActionService.getEmmActionName(id, admin.getCompanyID()));
+		model.addAttribute(SHORTNAME, emmActionService.getEmmActionName(id, admin.getCompanyID()));
 		model.addAttribute("webFormsByActionId", userFormService.getUserFormNamesByActionID(admin.getCompanyID(), id));
 		return "actions_view_forms";
 	}
 
-	private void loadViewData(ComAdmin admin, Model model, final int actionId) {
+	private void loadViewData(Admin admin, Model model, int actionId) {
 		model.addAttribute("operationList", actionOperationFactory.getTypesList());
 	    model.addAttribute("isUnsubscribeExtended", true);
 	    model.addAttribute("allowedMailinglists", mailinglistApprovalService.getEnabledMailinglistsNamesForAdmin(admin));
 
 		// Some deserialized Actions need the mailings to show their configuration data
 		model.addAttribute("eventBasedMailings", mailingService.getMailingsByStatusE(admin.getCompanyID()));
-		model.addAttribute("archives", workflowService.getCampaignList(admin.getCompanyID(), "shortname", 1));
+		model.addAttribute("archives", workflowService.getCampaignList(admin.getCompanyID(), SHORTNAME, 1));
 		model.addAttribute("isForceSendingEnabled", configService.getBooleanValue(ConfigValue.ForceSending, admin.getCompanyID()));
 		
 		try {
 			final List<ProfileField> profileFields = columnInfoService.getComColumnInfos(admin.getCompanyID(), admin.getAdminID(), false)
 					.stream()
-					.filter(field -> field.getModeEdit() != ProfileField.MODE_EDIT_READONLY)
-					.filter(field -> field.getModeEdit() != ProfileField.MODE_EDIT_NOT_VISIBLE)
+					.filter(field -> field.getModeEdit() != ProfileFieldMode.ReadOnly)
+					.filter(field -> field.getModeEdit() != ProfileFieldMode.NotVisible)
 					.collect(Collectors.toList());
 			
 			model.addAttribute("AVAILABLE_PROFILE_FIELDS", profileFields);
@@ -332,21 +341,17 @@ public class EmmActionController {
 		model.addAttribute("ACTION_READONLY", !this.emmActionService.canUserSaveAction(admin, actionId));
 	}
 
-	private void writeUserActivityLog(ComAdmin admin, UserAction userAction) {
-		if (userActivityLogService != null) {
-			userActivityLogService.writeUserActivityLog(admin, userAction, logger);
-		} else {
-			logger.error("Missing userActivityLogService in " + this.getClass().getSimpleName());
-			logger.info("Userlog: " + admin.getUsername() + " " + userAction.getAction() + " " +  userAction.getDescription());
-		}
+	private void writeUserActivityLog(Admin admin, UserAction userAction) {
+        UserActivityUtil.log(userActivityLogService, admin, userAction, logger);
 	}
 
-	private void writeUserActivityLog(ComAdmin admin, String action, String description) {
-		if (userActivityLogService != null) {
-			userActivityLogService.writeUserActivityLog(admin, action, description, logger);
-		} else {
-			logger.error("Missing userActivityLogService in " + this.getClass().getSimpleName());
-			logger.info("Userlog: " + admin.getUsername() + " " + action + " " +  description);
-		}
+	private void writeUserActivityLog(Admin admin, String action, String description) {
+        UserActivityUtil.log(userActivityLogService, admin, action, description, logger);
 	}
+
+    @Override
+    public boolean isParameterExcludedForUnsafeHtmlTagCheck(Admin admin, String param, String controllerMethodName) {
+        return "save".equals(controllerMethodName)
+                && ("modules[].script".equals(param) || "modulesSchema".equals(param));
+    }
 }

@@ -22,7 +22,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.jdbc.core.RowMapper;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.emm.core.supervisor.beans.Supervisor;
 
@@ -40,7 +40,7 @@ import com.agnitas.emm.core.supervisor.beans.Supervisor;
  * DO NOT INHERIT FROM BaseDaoImpl!!!
  * 
  * BaseDaoImpl provides methods to switch code between MySQL and Oracle. DO NOT USE!
- * Write separate implementations for different databases and use switching code on top of these classes in 
+ * Write separate implementations for different databases and use switching code on top of these classes in
  * an additional class by using Facade pattern!
  * 
  * Use this class (ComHostAuthenticationDaoImpl) as base class for common SQL statements and inherit from this class for Oracle, MySQL, ...
@@ -51,7 +51,7 @@ public class ComHostAuthenticationDaoImpl extends BaseDaoImpl implements ComHost
 	private static final transient Logger logger = LogManager.getLogger(ComHostAuthenticationDaoImpl.class);
 	
 	@Override
-	public String getSecurityCode(ComAdmin admin, String hostID) throws HostAuthenticationDaoException, NoSecurityCodeHostAuthenticationDaoException {
+	public String getSecurityCode(Admin admin, String hostID) throws HostAuthenticationDaoException, NoSecurityCodeHostAuthenticationDaoException {
 		int adminID = admin.getAdminID();
 		
 		if (logger.isInfoEnabled()) {
@@ -90,7 +90,7 @@ public class ComHostAuthenticationDaoImpl extends BaseDaoImpl implements ComHost
 
 	@Override
 	@DaoUpdateReturnValueCheck
-	public void writePendingSecurityCode(ComAdmin admin, String hostID, String securityCode) throws HostAuthenticationDaoException {
+	public void writePendingSecurityCode(Admin admin, String hostID, String securityCode) throws HostAuthenticationDaoException {
 		int adminID = admin.getAdminID();
 		
 		if (logger.isInfoEnabled()) {
@@ -113,7 +113,7 @@ public class ComHostAuthenticationDaoImpl extends BaseDaoImpl implements ComHost
 	}
 
 	@Override
-	public boolean isHostAuthenticated(ComAdmin admin, String hostID) throws HostAuthenticationDaoException {
+	public boolean isHostAuthenticated(Admin admin, String hostID) throws HostAuthenticationDaoException {
 		int adminID = admin.getAdminID();
 		
 		if (logger.isInfoEnabled()) {
@@ -147,7 +147,7 @@ public class ComHostAuthenticationDaoImpl extends BaseDaoImpl implements ComHost
 	}
 
 	@Override
-	public void writeHostAuthentication(ComAdmin admin, String hostID, int expiresInDays) throws HostAuthenticationDaoException {
+	public void writeHostAuthentication(Admin admin, String hostID, int expiresInDays) throws HostAuthenticationDaoException {
 		int adminID = admin.getAdminID();
 		
 		if (logger.isInfoEnabled()) {
@@ -214,7 +214,7 @@ public class ComHostAuthenticationDaoImpl extends BaseDaoImpl implements ComHost
 	 * @return {@code true} if renewal was successful, otherwise {@code false}
 	 */
 	@DaoUpdateReturnValueCheck
-	private boolean renewHostAuthenticationData(ComAdmin admin, String hostID, int expiresInDays) {
+	private boolean renewHostAuthenticationData(Admin admin, String hostID, int expiresInDays) {
 		int adminID = admin.getAdminID();
 		Date expireDate = computeExpireDate(expiresInDays);
 
@@ -252,7 +252,7 @@ public class ComHostAuthenticationDaoImpl extends BaseDaoImpl implements ComHost
 	 * @param expiresInDays duration of validity in days of authentication data
 	 */
 	@DaoUpdateReturnValueCheck
-	private void writeNewHostAuthenticationData(ComAdmin admin, String hostID, int expiresInDays) {
+	private void writeNewHostAuthenticationData(Admin admin, String hostID, int expiresInDays) {
 		int adminID = admin.getAdminID();
 		Date expireDate = computeExpireDate(expiresInDays);
 
@@ -278,7 +278,7 @@ public class ComHostAuthenticationDaoImpl extends BaseDaoImpl implements ComHost
 
 	@Override
 	@DaoUpdateReturnValueCheck
-	public void removePendingSecurityCode(ComAdmin admin, String hostID) throws HostAuthenticationDaoException {
+	public void removePendingSecurityCode(Admin admin, String hostID) throws HostAuthenticationDaoException {
 		int adminID = admin.getAdminID();
 		update(logger, "DELETE FROM hostauth_pending_tbl WHERE admin_id = ? AND host_id = ?", adminID, hostID);
 	}

@@ -10,6 +10,7 @@
 
 package com.agnitas.emm.core.wysiwyg.web;
 
+import com.agnitas.web.mvc.XssCheckAware;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,7 +18,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.wysiwyg.service.WysiwygService;
 import com.agnitas.service.AgnTagService;
 
@@ -25,7 +26,8 @@ import net.sf.json.JSONObject;
 
 @Controller
 @RequestMapping("/wysiwyg")
-public class WysiwygController {
+public class WysiwygController implements XssCheckAware {
+
     private final AgnTagService agnTagService;
     private final WysiwygService wysiwygService;
 
@@ -35,18 +37,18 @@ public class WysiwygController {
     }
 
     @RequestMapping("/dialogs/agn-tags.action")
-    public ModelAndView showAgnTags(ComAdmin admin) {
+    public ModelAndView showAgnTags(Admin admin) {
         return new ModelAndView("wysiwyg_agn_tags_dialog", "tags", agnTagService.getSupportedAgnTags(admin));
     }
 
     @RequestMapping("/images/names-urls.action")
-    public @ResponseBody JSONObject getNamesUrlsJsonMap(final ComAdmin admin,
+    public @ResponseBody JSONObject getNamesUrlsJsonMap(final Admin admin,
                                                         @RequestParam(name = "mi", required = false) final int mailingId) {
         return wysiwygService.getImagesLinksWithDescriptionJson(admin, mailingId);
     }
 
     @RequestMapping("/image-browser.action")
-    public String imageBrowser(ComAdmin admin, Model model) {
+    public String imageBrowser(Admin admin, Model model) {
         model.addAttribute("rdirDomain", admin.getCompany().getRdirDomain());
         model.addAttribute("companyId", admin.getCompanyID());
         return "wysiwyg_agn_tags_window";

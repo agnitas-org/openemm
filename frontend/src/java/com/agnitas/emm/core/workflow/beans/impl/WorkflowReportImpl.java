@@ -54,9 +54,15 @@ public class WorkflowReportImpl extends BaseWorkflowIcon implements WorkflowRepo
 
 	@Override
 	public boolean equals(Object o) {
-		if (this == o) return true;
-		if (o == null || getClass() != o.getClass()) return false;
-		if (!super.equals(o)) return false;
+		if (this == o) {
+			return true;
+		}
+		if (o == null || getClass() != o.getClass()) {
+			return false;
+		}
+		if (!super.equals(o)) {
+			return false;
+		}
 		WorkflowReportImpl that = (WorkflowReportImpl) o;
 		return Objects.equals(reports, that.reports);
 	}

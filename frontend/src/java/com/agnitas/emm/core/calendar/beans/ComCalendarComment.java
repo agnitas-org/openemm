@@ -18,43 +18,43 @@ import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public interface ComCalendarComment {
 
-    public int getCommentId();
+    int getCommentId();
 
-    public void setCommentId(int commentId);
+    void setCommentId(int commentId);
 
-    public String getComment();
+    String getComment();
 
-    public void setComment(String comment);
+    void setComment(String comment);
 
-    public Date getDate();
+    Date getDate();
 
-    public void setDate(Date date);
+    void setDate(Date date);
 
-    public boolean isDeadline();
+    boolean isDeadline();
 
-    public void setDeadline(boolean deadline);
+    void setDeadline(boolean deadline);
 
-    public int getCompanyId();
+    int getCompanyId();
 
-    public void setCompanyId(@VelocityCheck int companyId);
+    void setCompanyId(@VelocityCheck int companyId);
 
-    public int getAdminId();
+    int getAdminId();
 
-    public void setAdminId(int adminId);
+    void setAdminId(int adminId);
 
-    public boolean isNotified();
+    boolean isNotified();
 
-    public List<ComCalendarCommentRecipient> getRecipients();
+    List<ComCalendarCommentRecipient> getRecipients();
 
-    public void setRecipients(List<ComCalendarCommentRecipient> recipients);
+    void setRecipients(List<ComCalendarCommentRecipient> recipients);
 
-    public String getRecipientsString();
+    String getRecipientsString();
 
-    public boolean isSendNow();
+    boolean isSendNow();
 
-    public void setSendNow(boolean sendNow);
+    void setSendNow(boolean sendNow);
 
-    public Date getPlannedSendDate();
+    Date getPlannedSendDate();
 
-    public void setPlannedSendDate(Date plannedSendDate);
+    void setPlannedSendDate(Date plannedSendDate);
 }

@@ -19,10 +19,9 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.antlr.v4.runtime.misc.Nullable;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.dao.ComBindingEntryDao;
 
 /**
@@ -209,7 +208,7 @@ public interface BindingEntry extends Serializable {
      * @param companyID The company ID of the Binding
      * @return true on Sucess, false otherwise.
      */
-	boolean insertNewBindingInDB( @VelocityCheck int companyID);
+	boolean insertNewBindingInDB(int companyID);
 
     /**
      * Updates this Binding in the Database
@@ -217,7 +216,7 @@ public interface BindingEntry extends Serializable {
      * @param companyID The company ID of the Binding
      * @return true on Sucess, false otherwise.
      */
-	boolean updateBindingInDB( @VelocityCheck int companyID);
+	boolean updateBindingInDB(int companyID);
 
     /**
      * Updates or Creates this Binding in the Database
@@ -227,7 +226,7 @@ public interface BindingEntry extends Serializable {
      * @return true on Sucess, false otherwise.
      * @throws Exception
      */
-	boolean saveBindingInDB( @VelocityCheck int companyID, Map<Integer, Map<Integer, BindingEntry>> allCustLists, ComAdmin admin) throws Exception;
+	boolean saveBindingInDB(int companyID, Map<Integer, Map<Integer, BindingEntry>> allCustLists, Admin admin) throws Exception;
     
     /**
      * Mark binding as opted out.
@@ -236,9 +235,9 @@ public interface BindingEntry extends Serializable {
      * @param companyID The company ID of the Binding
      * @return true if binding is active on the mailinglist, false otherwise.
      */
-	boolean optOutEmailAdr(String email, @VelocityCheck int companyID);
+	boolean optOutEmailAdr(String email, int companyID);
 
-	boolean getUserBindingFromDB( @VelocityCheck int companyID);
+	boolean getUserBindingFromDB(int companyID);
 
     void setBindingEntryDao(ComBindingEntryDao bindingEntryDao);
 

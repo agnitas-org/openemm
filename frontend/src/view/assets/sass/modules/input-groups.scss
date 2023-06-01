@@ -570,3 +570,14 @@ Below is the full example in all sizes.
     font-weight: bolder;
   }
 }
+
+.text-char-counter  input[type="text"] {
+  padding-right: 150px;
+}
+
+.text-char-counter > div > span {
+  position: absolute;
+  margin-top: -23px;
+  margin-right: 15px;
+  right: 0;
+}

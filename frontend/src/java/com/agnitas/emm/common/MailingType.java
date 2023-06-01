@@ -43,7 +43,7 @@ public enum MailingType {
 	 * 
 	 * @param code magic number of mailing type
 	 */
-	private MailingType(int code, String messagekey, final String webserviceCode) {
+	MailingType(int code, String messagekey, final String webserviceCode) {
 		this.code = code;
 		this.messagekey = messagekey;
 		this.webserviceCode = webserviceCode;

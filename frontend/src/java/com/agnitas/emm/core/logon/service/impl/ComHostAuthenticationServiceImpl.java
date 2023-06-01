@@ -18,7 +18,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.JavaMailService;
 import com.agnitas.emm.core.logon.dao.ComHostAuthenticationDao;
 import com.agnitas.emm.core.logon.dao.HostAuthenticationDaoException;
@@ -50,7 +50,7 @@ public class ComHostAuthenticationServiceImpl implements ComHostAuthenticationSe
 	private static final transient Logger logger = LogManager.getLogger(ComHostAuthenticationServiceImpl.class);
 
 	@Override
-	public boolean isHostAuthenticated(ComAdmin admin, String hostId) throws HostAuthenticationServiceException {
+	public boolean isHostAuthenticated(Admin admin, String hostId) throws HostAuthenticationServiceException {
 		Supervisor supervisor = SupervisorUtil.extractSupervisor(admin);
 
 		try {
@@ -89,7 +89,7 @@ public class ComHostAuthenticationServiceImpl implements ComHostAuthenticationSe
 	}
 
 	@Override
-	public void sendSecurityCode(ComAdmin admin, String hostID) throws HostAuthenticationServiceException {
+	public void sendSecurityCode(Admin admin, String hostID) throws HostAuthenticationServiceException {
 		// TODO: Method cannot be unit-tested. Final code for sending mail should be
 		// moved behind interface.
 
@@ -139,7 +139,6 @@ public class ComHostAuthenticationServiceImpl implements ComHostAuthenticationSe
 																			// unit-testing. Code of this method should
 																			// be move to own class
 			}
-
 		} catch (CannotSendSecurityCodeException e) {
 			String msg = supervisor == null
 					? "Error sending security code (admin " + admin.getAdminID() + ", host " + hostID + ")"
@@ -170,7 +169,7 @@ public class ComHostAuthenticationServiceImpl implements ComHostAuthenticationSe
 	 * @throws CannotSendSecurityCodeException
 	 *             on errors sending mail
 	 */
-	private void sendSecurityCodeByEmail(ComAdmin admin, String securityCode) throws CannotSendSecurityCodeException {
+	private void sendSecurityCodeByEmail(Admin admin, String securityCode) throws CannotSendSecurityCodeException {
 		String subjectTemplate = I18nString.getLocaleString("logon.hostauth.email.security_code.subject", admin.getLocale());
 		String messageTemplate = I18nString.getLocaleString("logon.hostauth.email.security_code.content", admin.getLocale());
 
@@ -202,7 +201,7 @@ public class ComHostAuthenticationServiceImpl implements ComHostAuthenticationSe
 	 * @throws CannotSendSecurityCodeException
 	 *             on errors sending mail
 	 */
-	private void sendSecurityCodeByEmail(Supervisor supervisor, ComAdmin admin, String securityCode) throws CannotSendSecurityCodeException {
+	private void sendSecurityCodeByEmail(Supervisor supervisor, Admin admin, String securityCode) throws CannotSendSecurityCodeException {
 		String subjectTemplate = I18nString.getLocaleString("logon.hostauth.email.security_code.subject_supervisor", admin.getLocale());
 		String messageTemplate = I18nString.getLocaleString("logon.hostauth.email.security_code.content_supervisor", admin.getLocale());
 
@@ -225,7 +224,7 @@ public class ComHostAuthenticationServiceImpl implements ComHostAuthenticationSe
 	}
 
 	@Override
-	public void writeHostAuthentication(ComAdmin admin, String hostID) throws HostAuthenticationServiceException {
+	public void writeHostAuthentication(Admin admin, String hostID) throws HostAuthenticationServiceException {
 		Supervisor supervisor = SupervisorUtil.extractSupervisor(admin);
 
 		try {
@@ -248,7 +247,7 @@ public class ComHostAuthenticationServiceImpl implements ComHostAuthenticationSe
 	}
 
 	@Override
-	public String getPendingSecurityCode(ComAdmin admin, String hostID) throws HostAuthenticationServiceException {
+	public String getPendingSecurityCode(Admin admin, String hostID) throws HostAuthenticationServiceException {
 		Supervisor supervisor = SupervisorUtil.extractSupervisor(admin);
 
 		try {

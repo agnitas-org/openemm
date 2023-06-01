@@ -10,14 +10,17 @@
 
 package org.agnitas.emm.springws.endpoint.component;
 
+import java.util.Objects;
+
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.MailingComponentType;
 import org.agnitas.emm.core.component.service.ComponentModel;
 import org.agnitas.emm.core.component.service.ComponentService;
 import org.agnitas.emm.springws.endpoint.BaseEndpoint;
-import org.agnitas.emm.springws.endpoint.Utils;
+import org.agnitas.emm.springws.endpoint.Namespaces;
 import org.agnitas.emm.springws.jaxb.ListAttachmentsRequest;
 import org.agnitas.emm.springws.jaxb.ListAttachmentsResponse;
+import org.agnitas.emm.springws.util.SecurityContextAccess;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.ws.server.endpoint.annotation.Endpoint;
 import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
@@ -27,18 +30,18 @@ import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 @Endpoint
 public class ListAttachmentsEndpoint extends BaseEndpoint {
 
-	private ComponentService componentService;
+	private final ComponentService componentService;
+	private final SecurityContextAccess securityContextAccess;
 
-	public ListAttachmentsEndpoint(@Qualifier("componentService") ComponentService componentService) {
-		this.componentService = componentService;
+	public ListAttachmentsEndpoint(@Qualifier("componentService") ComponentService componentService, final SecurityContextAccess securityContextAccess) {
+		this.componentService = Objects.requireNonNull(componentService, "componentService");
+		this.securityContextAccess = Objects.requireNonNull(securityContextAccess, "securityContextAccess");
 	}
 
-	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "ListAttachmentsRequest")
+	@PayloadRoot(namespace = Namespaces.AGNITAS_ORG, localPart = "ListAttachmentsRequest")
 	public @ResponsePayload ListAttachmentsResponse listAttachments(@RequestPayload ListAttachmentsRequest request) {
-		ListAttachmentsResponse response = new ListAttachmentsResponse();
-		
-		ComponentModel model = new ComponentModel();
-		model.setCompanyId(Utils.getUserCompany());
+		final ComponentModel model = new ComponentModel();
+		model.setCompanyId(this.securityContextAccess.getWebserviceUserCompanyId());
 		model.setMailingId(request.getMailingID());
 		model.setComponentType(MailingComponentType.Attachment);
 
@@ -46,6 +49,7 @@ public class ListAttachmentsEndpoint extends BaseEndpoint {
             request.setUseISODateFormat(false);
         }
 
+        final ListAttachmentsResponse response = new ListAttachmentsResponse();
         for (MailingComponent component : componentService.getComponents(model)) {
 			response.getItem().add(new AttachmentResponseBuilder().createResponse(component, false, request.isUseISODateFormat()));
 		}

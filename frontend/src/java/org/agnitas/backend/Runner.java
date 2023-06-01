@@ -97,9 +97,8 @@ public class Runner extends Thread {
 		MailgunImpl mailout = null;
 		try {
 			mailout = new MailgunImpl();
-			mailout.initialize(status_id);
 
-			message(Log.INFO, mailout.fire(custid));
+			message(Log.INFO, mailout.fire(status_id, custid));
 		} catch (Exception e) {
 			message(Log.ERROR, "Error during starting: " + e.toString(), e);
 			if (mailout == null) {

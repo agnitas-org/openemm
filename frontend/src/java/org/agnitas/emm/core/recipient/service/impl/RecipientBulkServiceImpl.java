@@ -19,17 +19,22 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.agnitas.beans.Recipient;
 import org.agnitas.beans.factory.RecipientFactory;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.recipient.service.RecipientBulkService;
 import org.agnitas.emm.core.recipient.service.RecipientModel;
 import org.agnitas.emm.core.recipient.service.RecipientService;
+import org.agnitas.emm.core.recipient.service.SubscriberLimitCheck;
+import org.agnitas.emm.core.recipient.service.SubscriberLimitExceededException;
 import org.agnitas.emm.core.service.impl.AbstractBulkServiceImpl;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.validator.ModelValidator;
-import org.agnitas.emm.springws.endpoint.Utils;
+import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.DbColumnType;
 import org.agnitas.util.Tuple;
@@ -52,6 +57,8 @@ public final class RecipientBulkServiceImpl extends AbstractBulkServiceImpl<Reci
 	private RecipientService recipientService;
 	private ModelValidator validator;
 	private RecipientFactory recipientFactory;
+	private ConfigService configService;
+	private SubscriberLimitCheck subscriberLimitCheck;
 
 	private int validateModels(Class<?> group, final List<RecipientModel> models, boolean ignoreErrors, Object dummyResult, List<Object> results) {
 		int invalidCnt = 0;
@@ -107,7 +114,7 @@ public final class RecipientBulkServiceImpl extends AbstractBulkServiceImpl<Reci
 
 	@Override
 	public List<Object> addSubscriber(final List<RecipientModel> models, final boolean ignoreErrors, String username, final int companyID, List<UserAction> userActions) {
-		int defaultDataSourceID = recipientDao.getDefaultDatasourceID(Utils.getUserName(), Utils.getUserCompany());
+		final int defaultDataSourceID = recipientDao.getDefaultDatasourceID(username, companyID);
 		return validatedOperation(models, ignoreErrors, RecipientModel.AddGroup.class, 0 /*RecipientBulkNotAppliedException()*/, validModels -> {
 			if (ignoreErrors) {
 				return addCustomersIgnoreErrors(validModels, defaultDataSourceID, username, companyID, userActions);
@@ -202,14 +209,19 @@ public final class RecipientBulkServiceImpl extends AbstractBulkServiceImpl<Reci
 				logger.error("addCustomersChunckIgnoreErrors: model.getCompanyId differs for model " + model.toString());
 				return Collections.emptyList();
 			}
-			model.setEmail(model.getEmail().toLowerCase());
+			
+			if (configService.getBooleanValue(ConfigValue.AllowUnnormalizedEmails, model.getCompanyId())) {
+				model.setEmail(model.getEmail());
+			} else {
+				model.setEmail(AgnUtils.normalizeEmail(model.getEmail()));
+			}
 			
 			final Recipient aCust = this.recipientFactory.newRecipient(companyID);
 	        Map<String, String> customerFieldTypes = aCust.getCustDBStructure();
 	        for (Entry<String, Object> entry : model.getParameters().entrySet()) {
 				String name = entry.getKey();
-				String value = entry.getValue() instanceof String 
-						? (String) entry.getValue() 
+				String value = entry.getValue() instanceof String
+						? (String) entry.getValue()
 						: (entry.getValue() != null ? entry.getValue().toString() : null);
 
 				if (DbColumnType.GENERIC_TYPE_DATE.equalsIgnoreCase(customerFieldTypes.get(name)) || DbColumnType.GENERIC_TYPE_DATETIME.equalsIgnoreCase(customerFieldTypes.get(name))) {
@@ -287,7 +299,7 @@ public final class RecipientBulkServiceImpl extends AbstractBulkServiceImpl<Reci
 		return result;
 	}
 	
-	private List<Object> addCustomers(final List<RecipientModel> models, int defaultDataSourceID, List<UserAction> userActions) {
+	private List<Object> addCustomers(final List<RecipientModel> models, int defaultDataSourceID, List<UserAction> userActions) throws SubscriberLimitExceededException {
 		return  addCustomersChunk(models, defaultDataSourceID, userActions);
 	}
 
@@ -298,7 +310,7 @@ public final class RecipientBulkServiceImpl extends AbstractBulkServiceImpl<Reci
 	 * @param models CompanyId should be the same for all models in list.
 	 * @return list of recipient ID's or empty list in case of errors
 	 */
-	private List<Object> addCustomersChunk(List<RecipientModel> models, int defaultDataSourceID, List<UserAction> userActions) {
+	private List<Object> addCustomersChunk(List<RecipientModel> models, int defaultDataSourceID, List<UserAction> userActions) throws SubscriberLimitExceededException {
 		List<Recipient> toInsert = new ArrayList<>();
 		List<Boolean> doubleCheck = new ArrayList<>();
 		List<Boolean> overwrite = new ArrayList<>();
@@ -316,7 +328,12 @@ public final class RecipientBulkServiceImpl extends AbstractBulkServiceImpl<Reci
 				logger.error("addSubscriberInternal: model.getCompanyId differs for model " + model.toString());
 				return Collections.emptyList();
 			}
-			model.setEmail(model.getEmail().toLowerCase());
+			
+			if (configService.getBooleanValue(ConfigValue.AllowUnnormalizedEmails, model.getCompanyId())) {
+				model.setEmail(model.getEmail());
+			} else {
+				model.setEmail(AgnUtils.normalizeEmail(model.getEmail()));
+			}
 			
 			final Recipient aCust = this.recipientFactory.newRecipient(companyID);
 	        
@@ -360,6 +377,9 @@ public final class RecipientBulkServiceImpl extends AbstractBulkServiceImpl<Reci
 			overwrite.add(model.isOverwrite());
 			keyFields.add(model.getKeyColumn());
 		}
+		
+		this.subscriberLimitCheck.checkSubscriberLimit(companyID, toInsert.size());
+		
 		List<Integer> customerIds = toInsert.stream().map(Recipient::getCustomerID).collect(Collectors.toList());
 		recipientDao.lockCustomers(companyID, customerIds);
         List<Object> results = recipientDao.insertCustomers(companyID, toInsert, doubleCheck, overwrite, keyFields);
@@ -611,5 +631,15 @@ public final class RecipientBulkServiceImpl extends AbstractBulkServiceImpl<Reci
 	@Required
 	public final void setRecipientFactory(final RecipientFactory factory) {
 		this.recipientFactory = factory;
+	}
+
+	@Required
+	public final void setConfigService(final ConfigService service) {
+		this.configService = Objects.requireNonNull(service, "Config service cannot be null");
+	}
+	
+	@Required
+	public final void setSubscriberLimitCheck(final SubscriberLimitCheck check) {
+		this.subscriberLimitCheck = Objects.requireNonNull(check, "subscriberLimitCheck");
 	}
 }

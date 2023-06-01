@@ -10,9 +10,6 @@
 
 package com.agnitas.emm.core.mailloop.web;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.struts.action.Action;
@@ -23,6 +20,9 @@ import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.emm.core.mailloop.MailloopException;
 import com.agnitas.emm.core.mailloop.service.MailloopService;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * Action called when auto-responder mail is to be sent.

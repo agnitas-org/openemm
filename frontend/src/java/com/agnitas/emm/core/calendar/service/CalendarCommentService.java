@@ -15,7 +15,7 @@ import java.util.List;
 
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.calendar.beans.ComCalendarComment;
 import com.agnitas.emm.core.calendar.beans.ComCalendarCommentRecipient;
 
@@ -23,7 +23,7 @@ import net.sf.json.JSONArray;
 
 public interface CalendarCommentService {
 
-    JSONArray getComments(ComAdmin admin, LocalDate startDate, LocalDate endDate);
+    JSONArray getComments(Admin admin, LocalDate startDate, LocalDate endDate);
 
     List<ComCalendarCommentRecipient> getRecipients(int notifyAdminId, String recipients);
 

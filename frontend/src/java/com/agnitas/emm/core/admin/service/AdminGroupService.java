@@ -13,12 +13,11 @@ package com.agnitas.emm.core.admin.service;
 import java.util.List;
 
 import org.agnitas.beans.AdminGroup;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 
 public interface AdminGroupService {
-    List<AdminGroup> getAdminGroupsByCompanyIdAndDefault(@VelocityCheck int companyId, ComAdmin admin, ComAdmin adminIdToEdit);
+    List<AdminGroup> getAdminGroupsByCompanyIdAndDefault(int companyId, Admin admin, Admin adminIdToEdit);
 
 	AdminGroup getAdminGroup(int adminGroupID, int companyToLimitPremiumPermissionsFor);
 
@@ -27,4 +26,6 @@ public interface AdminGroupService {
 	boolean deleteAdminGroup(int companyID, int adminGroupIdToDelete);
 	
     int saveAdminGroup(AdminGroup adminGroup) throws Exception;
+
+	boolean adminGroupExists(int companyID, String string);
 }

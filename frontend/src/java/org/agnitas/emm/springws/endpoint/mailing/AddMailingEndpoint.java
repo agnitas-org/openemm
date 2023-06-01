@@ -14,7 +14,7 @@ import java.util.Objects;
 
 import org.agnitas.emm.core.mailing.service.MailingModel;
 import org.agnitas.emm.springws.endpoint.BaseEndpoint;
-import org.agnitas.emm.springws.endpoint.Utils;
+import org.agnitas.emm.springws.endpoint.Namespaces;
 import org.agnitas.emm.springws.jaxb.AddMailingRequest;
 import org.agnitas.emm.springws.jaxb.AddMailingRequest.TargetIDList;
 import org.agnitas.emm.springws.jaxb.AddMailingResponse;
@@ -47,7 +47,7 @@ public class AddMailingEndpoint extends BaseEndpoint {
 		this.securityContextAccess = Objects.requireNonNull(securityContextAccess, "securityContextAccess");
 	}
 
-	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "AddMailingRequest")
+	@PayloadRoot(namespace = Namespaces.AGNITAS_ORG, localPart = "AddMailingRequest")
 	public @ResponsePayload AddMailingResponse addMailing(@RequestPayload AddMailingRequest request) throws Exception {
 		final int companyID = this.securityContextAccess.getWebserviceUserCompanyId();
 		
@@ -71,8 +71,8 @@ public class AddMailingEndpoint extends BaseEndpoint {
 		model.setReplyToAddress(request.getReplyToAddress());
 		model.setCharset(request.getCharset());
 		model.setLinefeed(request.getLinefeed());
-		model.setFormatString(request.getFormat());
-		model.setOnePixelString(request.getOnePixel());
+		model.setFormat(request.getFormat());
+		model.setOnePixel(request.getOnePixel());
 //		model.setAutoUpdate(request.isAutoUpdate());
 
 		final int mailingID = mailingService.addMailing(model);

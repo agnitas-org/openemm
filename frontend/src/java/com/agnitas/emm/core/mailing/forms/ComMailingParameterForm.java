@@ -12,8 +12,6 @@ package com.agnitas.emm.core.mailing.forms;
 
 import java.util.Date;
 
-import jakarta.servlet.http.HttpServletRequest;
-
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.web.forms.StrutsFormBase;
 import org.apache.commons.lang3.StringUtils;
@@ -22,6 +20,8 @@ import org.apache.logging.log4j.Logger;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 public class ComMailingParameterForm extends StrutsFormBase {
 	private static final long serialVersionUID = 6617476371226706266L;
@@ -35,7 +35,7 @@ public class ComMailingParameterForm extends StrutsFormBase {
 	private String parameterName;				//name of the parameter
 	private String value;						//value of the parameter
 	private String description; 				//description of the parameter
-	private Date creation_date; 
+	private Date creation_date;
 	private Date change_date;
 	private int creationAdminID = 0; 			//who created the parameter
 	private int changeAdminID = 0; 				//who changed the values
@@ -179,7 +179,7 @@ public class ComMailingParameterForm extends StrutsFormBase {
 	 * this method returns the ActionErrors
 	 */
 	@Override
-	public ActionErrors formSpecificValidate(ActionMapping mapping, HttpServletRequest request) {		
+	public ActionErrors formSpecificValidate(ActionMapping mapping, HttpServletRequest request) {
 		ActionErrors actionErrors = new ActionErrors();	// hold the errors. This will be returned.
 		
 		// Check only if we have a new or edited form. Not at the list-view!
@@ -191,7 +191,7 @@ public class ComMailingParameterForm extends StrutsFormBase {
 				if (logger.isDebugEnabled()) {
 					logger.debug("Error in MailingParameter - name is empty");
 				}
-			}	
+			}
 		
 			if(StringUtils.isBlank(getValue())) {
 				actionErrors.add("mailingParameter", new ActionMessage("error.mailing.parameter.value"));
@@ -201,5 +201,5 @@ public class ComMailingParameterForm extends StrutsFormBase {
 			}
 		}
 		return actionErrors;
-	}		
+	}
 }

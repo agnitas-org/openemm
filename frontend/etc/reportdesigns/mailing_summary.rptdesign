@@ -120,16 +120,17 @@ mailingSummaryDataDefinition[CommonKeys.RECIPIENTS_NUMBER] 			= {"position": 1, 
 mailingSummaryDataDefinition[CommonKeys.DELIVERED_EMAILS] 			= {"position": 2, "color": "color-blue"};
 mailingSummaryDataDefinition[CommonKeys.DELIVERED_EMAILS_DELIVERED] = {"position": 3, "color": "color-dark-blue", "successExpirationCheck": true};
 mailingSummaryDataDefinition[CommonKeys.OPENERS_MEASURED] 			= {"position": 4, "color": "color-light-green", "translationKey": "report.opens.measured", "onepixelExpirationCheck": true};
-mailingSummaryDataDefinition[CommonKeys.OPENERS_INVISIBLE] 			= {"position": 5, "color": "color-middle-green", "translationKey": "report.opens.invisible", "onepixelExpirationCheck": true};
-mailingSummaryDataDefinition[CommonKeys.OPENERS_TOTAL] 				= {"position": 6, "color": "color-dark-green", "onepixelExpirationCheck": true};
-mailingSummaryDataDefinition[CommonKeys.OPENINGS_ANONYMOUS] 		= {"position": 7, "color": "color-light-grey", "hasNoPercentageRepresentation": true, "onepixelExpirationCheck": true};
-mailingSummaryDataDefinition[CommonKeys.CLICKER] 					= {"position": 8, "color": "color-petrol", "onepixelExpirationCheck": true};
-mailingSummaryDataDefinition[CommonKeys.CLICKS_ANONYMOUS] 			= {"position": 9, "color": "color-light-grey", "hasNoPercentageRepresentation": true, "onepixelExpirationCheck": true};
-mailingSummaryDataDefinition[CommonKeys.OPT_OUTS] 					= {"position": 10, "color": "color-red"};
-mailingSummaryDataDefinition[CommonKeys.SOFT_BOUNCES] 				= {"position": 11, "color": "color-vivid-orange"};
-mailingSummaryDataDefinition[CommonKeys.HARD_BOUNCES] 				= {"position": 12, "color": "color-orange"};
-mailingSummaryDataDefinition[CommonKeys.SOFT_BOUNCES_UNDELIVERABLE] = {"position": 13, "color": "color-yellow"};
-mailingSummaryDataDefinition[CommonKeys.REVENUE] 					= {"position": 14, "color": "color-vivid-orange", "hasNoPercentageRepresentation": true};
+mailingSummaryDataDefinition[CommonKeys.OPENERS_PROXY] 			    = {"position": 5, "translationKey": "statistic.opener.proxy"};
+mailingSummaryDataDefinition[CommonKeys.OPENERS_INVISIBLE] 			= {"position": 6, "color": "color-middle-green", "translationKey": "report.opens.invisible", "onepixelExpirationCheck": true};
+mailingSummaryDataDefinition[CommonKeys.OPENERS_TOTAL] 				= {"position": 7, "color": "color-dark-green", "onepixelExpirationCheck": true};
+mailingSummaryDataDefinition[CommonKeys.OPENINGS_ANONYMOUS] 		= {"position": 8, "color": "color-light-grey", "hasNoPercentageRepresentation": true, "onepixelExpirationCheck": true};
+mailingSummaryDataDefinition[CommonKeys.CLICKER] 					= {"position": 9, "color": "color-petrol", "onepixelExpirationCheck": true};
+mailingSummaryDataDefinition[CommonKeys.CLICKS_ANONYMOUS] 			= {"position": 10, "color": "color-light-grey", "hasNoPercentageRepresentation": true, "onepixelExpirationCheck": true};
+mailingSummaryDataDefinition[CommonKeys.OPT_OUTS] 					= {"position": 11, "color": "color-red"};
+mailingSummaryDataDefinition[CommonKeys.SOFT_BOUNCES] 				= {"position": 12, "color": "color-vivid-orange"};
+mailingSummaryDataDefinition[CommonKeys.HARD_BOUNCES] 				= {"position": 13, "color": "color-orange"};
+mailingSummaryDataDefinition[CommonKeys.SOFT_BOUNCES_UNDELIVERABLE] = {"position": 14, "color": "color-yellow"};
+mailingSummaryDataDefinition[CommonKeys.REVENUE] 					= {"position": 15, "color": "color-vivid-orange", "hasNoPercentageRepresentation": true};
 mailingSummaryDataDefinition[CommonKeys.OPENERS_PC_AND_MOBILE] 		= {"translationKey": "report.opens.pc.and.mobileWithNote"};
 mailingSummaryDataDefinition[CommonKeys.CLICKER_PC_AND_MOBILE] 		= {"translationKey": "statistic.clicker.multiple"};
 
@@ -757,6 +758,11 @@ return false;]]></method>
                     <property name="name">categoryKey</property>
                     <property name="dataType">string</property>
                 </structure>
+                <structure>
+                    <property name="position">10</property>
+                    <property name="name">partial_value</property>
+                    <property name="dataType">integer</property>
+                </structure>
             </list-property>
             <list-property name="columnHints">
                 <structure>
@@ -785,6 +791,9 @@ return false;]]></method>
                 </structure>
                 <structure>
                     <property name="columnName">categoryKey</property>
+                </structure>
+                <structure>
+                    <property name="columnName">partial_value</property>
                 </structure>
             </list-property>
             <structure name="cachedMetaData">
@@ -834,6 +843,11 @@ return false;]]></method>
                         <property name="name">categoryKey</property>
                         <property name="dataType">string</property>
                     </structure>
+                    <structure>
+                        <property name="position">10</property>
+                        <property name="name">partial_value</property>
+                        <property name="dataType">integer</property>
+                    </structure>
                 </list-property>
             </structure>
             <property name="dataSource">DummyDataSource</property>
@@ -880,6 +894,9 @@ switch (currentRowData.getCategoryindex()) {
 	case CommonKeys.OPENERS_MEASURED_INDEX:
 		row["category"] = getTranslation("report.opens.measured");
 		break;
+    case CommonKeys.OPENERS_PROXY_INDEX:
+        row["category"] = getTranslation("statistic.opener.proxy");
+        break;
 	default:
 		row["category"] = getTranslation(currentRowData.getCategory());
 		break;
@@ -906,6 +923,7 @@ else {
 
 row["targetgroup_index"] = currentRowData.getTargetgroupindex();
 row["value"] = currentRowData.getCount();
+row["partial_value"] = currentRowData.getPartialCount();
 row["rate"] = currentRowData.getRate();
 if (row["rate"] == -1) {
     row["rate"] = 0;
@@ -1876,7 +1894,7 @@ return false;]]></method>
                                     <xml-property name="xmlRepresentation"><![CDATA[<model:ChartWithAxes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:attribute="http://www.birt.eclipse.org/ChartModelAttribute" xmlns:data="http://www.birt.eclipse.org/ChartModelData" xmlns:layout="http://www.birt.eclipse.org/ChartModelLayout" xmlns:model="http://www.birt.eclipse.org/ChartModel" xmlns:type="http://www.birt.eclipse.org/ChartModelType">
   <Version>2.6.1</Version>
   <Type>Bar Chart</Type>
-  <SubType>Side-by-side</SubType>
+  <SubType>Stacked</SubType>
   <Description>
     <Value></Value>
     <Font>
@@ -2214,6 +2232,7 @@ function beforeGeneration(chart, icsc){
  * @param label Label
  * @param icsc IChartScriptContext
  */
+ var isProxyValueLabel = true;
 function beforeDrawDataPointLabel(dph, label, icsc) {
 	var reportContext = icsc.getExternalContext().getObject();
 	var externalScriptableContext = icsc.getExternalContext().getScriptable();
@@ -2225,6 +2244,19 @@ function beforeDrawDataPointLabel(dph, label, icsc) {
 	if (dph.getIndex() in naIndexes) {
 		label.getCaption().setValue(I18nString.getLocaleString(&quot;NotAvailableShort&quot;, reportContext.getLocale()));
 	} else if (!(dph.getIndex() in ignoredBarIndexes)) {
+        if (dph.getBaseDisplayValue().equals(CommonKeys.OPENERS_MEASURED)) {
+            if (isProxyValueLabel) {
+                isProxyValueLabel = false;
+                var proxyOpenersCount = Packages.java.text.NumberFormat.getNumberInstance(getLocale()).parse(label.getCaption().getValue());
+                reportContext.setGlobalVariable("proxy_openers_count", proxyOpenersCount);
+            }
+
+            var openersMeasuredCount = Packages.java.text.NumberFormat.getNumberInstance(getLocale()).parse(label.getCaption().getValue());
+            var totalMeasured = parseInt(reportContext.getGlobalVariable(&quot;proxy_openers_count&quot;)) + parseInt(openersMeasuredCount);
+
+            label.getCaption().setValue(totalMeasured);
+        }
+
 		currentValue = label.getCaption().getValue();
 		curValue = Packages.java.text.NumberFormat.getNumberInstance(getLocale()).parse(currentValue);
 		totalSentNumber = new Number(totalSent);
@@ -2253,6 +2285,7 @@ function beforeDrawDataPointLabel(dph, label, icsc) {
  *            IChartScriptContext
  */
 
+var isProxyOpenersBar = true;
 function beforeDrawDataPoint( dph, fill, icsc )
 {
 	var externalScriptableContext = icsc.getExternalContext().getScriptable();	
@@ -2260,6 +2293,13 @@ function beforeDrawDataPoint( dph, fill, icsc )
 	var isDataDefinitionContainsColor = externalScriptableContext.getGlobalVariable(&quot;isDataDefinitionContainsColorFunction&quot;);
 	
 	var categoryKey = dph.getBaseDisplayValue();
+
+	if (categoryKey.equals(CommonKeys.OPENERS_MEASURED) &amp;&amp; isProxyOpenersBar) {
+	    isProxyOpenersBar = false;
+	    fill.set(65, 100, 26);
+	    return;
+	}
+
 	// and change key if some other key present in data definition for this item
 	 if (isDataDefinitionContainsColor(categoryKey)) {
 	 	// color in corresponding position for current item
@@ -2314,6 +2354,10 @@ function beforeDrawAxisLabel( axis, label, icsc )
     <OrthogonalSampleData>
       <DataSetRepresentation>6,4,12,8,10</DataSetRepresentation>
       <SeriesDefinitionIndex>0</SeriesDefinitionIndex>
+    </OrthogonalSampleData>
+    <OrthogonalSampleData>
+      <DataSetRepresentation>12.0,8.0,24.0,16.0,20.0</DataSetRepresentation>
+      <SeriesDefinitionIndex>1</SeriesDefinitionIndex>
     </OrthogonalSampleData>
     <AncillarySampleData>
       <DataSetRepresentation>Series 1</DataSetRepresentation>
@@ -2683,10 +2727,10 @@ function beforeDrawAxisLabel( axis, label, icsc )
               <Bottom>0.0</Bottom>
               <Right>3.0</Right>
             </Insets>
-            <Visible>true</Visible>
+            <Visible>false</Visible>
           </Label>
           <DataDefinition>
-            <Definition>row[&quot;value&quot;] > 0 ? (row[&quot;category_index&quot;] != CommonKeys.REVENUE_INDEX ? row[&quot;value&quot;] : row[&quot;value&quot;]/100) : 0.000001</Definition>
+            <Definition>row[&quot;partial_value&quot;]</Definition>
             <Grouping>
               <GroupType>Text</GroupType>
               <AggregateExpression>Sum</AggregateExpression>
@@ -2705,8 +2749,8 @@ function beforeDrawAxisLabel( axis, label, icsc )
             <Suffix></Suffix>
             <Separator></Separator>
           </DataPoint>
-          <LabelPosition>Outside</LabelPosition>
-          <Stacked>false</Stacked>
+          <LabelPosition>Inside</LabelPosition>
+          <Stacked>true</Stacked>
           <Riser>Rectangle</Riser>
         </Series>
         <Grouping>
@@ -2716,6 +2760,295 @@ function beforeDrawAxisLabel( axis, label, icsc )
           <AggregateExpression>Sum</AggregateExpression>
         </Grouping>
         <SortKey/>
+      </SeriesDefinitions>
+      <SeriesDefinitions>
+        <Query>
+          <Definition></Definition>
+          <Grouping>
+            <GroupType>Numeric</GroupType>
+          </Grouping>
+        </Query>
+        <SeriesPalette>
+          <Entries xsi:type="attribute:ColorDefinition">
+            <Transparency>255</Transparency>
+            <Red>242</Red>
+            <Green>88</Green>
+            <Blue>106</Blue>
+          </Entries>
+          <Entries xsi:type="attribute:ColorDefinition">
+            <Transparency>255</Transparency>
+            <Red>232</Red>
+            <Green>172</Green>
+            <Blue>57</Blue>
+          </Entries>
+          <Entries xsi:type="attribute:ColorDefinition">
+            <Transparency>255</Transparency>
+            <Red>128</Red>
+            <Green>255</Green>
+            <Blue>128</Blue>
+          </Entries>
+          <Entries xsi:type="attribute:ColorDefinition">
+            <Transparency>255</Transparency>
+            <Red>64</Red>
+            <Green>128</Green>
+            <Blue>128</Blue>
+          </Entries>
+          <Entries xsi:type="attribute:ColorDefinition">
+            <Transparency>255</Transparency>
+            <Red>128</Red>
+            <Green>128</Green>
+            <Blue>192</Blue>
+          </Entries>
+          <Entries xsi:type="attribute:ColorDefinition">
+            <Transparency>255</Transparency>
+            <Red>170</Red>
+            <Green>85</Green>
+            <Blue>85</Blue>
+          </Entries>
+          <Entries xsi:type="attribute:ColorDefinition">
+            <Transparency>255</Transparency>
+            <Red>128</Red>
+            <Green>128</Green>
+            <Blue>0</Blue>
+          </Entries>
+          <Entries xsi:type="attribute:ColorDefinition">
+            <Transparency>255</Transparency>
+            <Red>192</Red>
+            <Green>192</Green>
+            <Blue>192</Blue>
+          </Entries>
+          <Entries xsi:type="attribute:ColorDefinition">
+            <Transparency>255</Transparency>
+            <Red>255</Red>
+            <Green>255</Green>
+            <Blue>128</Blue>
+          </Entries>
+          <Entries xsi:type="attribute:ColorDefinition">
+            <Transparency>255</Transparency>
+            <Red>128</Red>
+            <Green>192</Green>
+            <Blue>128</Blue>
+          </Entries>
+          <Entries xsi:type="attribute:ColorDefinition">
+            <Transparency>255</Transparency>
+            <Red>7</Red>
+            <Green>146</Green>
+            <Blue>94</Blue>
+          </Entries>
+          <Entries xsi:type="attribute:ColorDefinition">
+            <Transparency>255</Transparency>
+            <Red>0</Red>
+            <Green>128</Green>
+            <Blue>255</Blue>
+          </Entries>
+          <Entries xsi:type="attribute:ColorDefinition">
+            <Transparency>255</Transparency>
+            <Red>255</Red>
+            <Green>128</Green>
+            <Blue>192</Blue>
+          </Entries>
+          <Entries xsi:type="attribute:ColorDefinition">
+            <Transparency>255</Transparency>
+            <Red>0</Red>
+            <Green>255</Green>
+            <Blue>255</Blue>
+          </Entries>
+          <Entries xsi:type="attribute:ColorDefinition">
+            <Transparency>255</Transparency>
+            <Red>255</Red>
+            <Green>128</Green>
+            <Blue>128</Blue>
+          </Entries>
+          <Entries xsi:type="attribute:ColorDefinition">
+            <Transparency>255</Transparency>
+            <Red>0</Red>
+            <Green>128</Green>
+            <Blue>192</Blue>
+          </Entries>
+          <Entries xsi:type="attribute:ColorDefinition">
+            <Transparency>255</Transparency>
+            <Red>128</Red>
+            <Green>128</Green>
+            <Blue>192</Blue>
+          </Entries>
+          <Entries xsi:type="attribute:ColorDefinition">
+            <Transparency>255</Transparency>
+            <Red>255</Red>
+            <Green>0</Green>
+            <Blue>255</Blue>
+          </Entries>
+          <Entries xsi:type="attribute:ColorDefinition">
+            <Transparency>255</Transparency>
+            <Red>128</Red>
+            <Green>64</Green>
+            <Blue>64</Blue>
+          </Entries>
+          <Entries xsi:type="attribute:ColorDefinition">
+            <Transparency>255</Transparency>
+            <Red>255</Red>
+            <Green>128</Green>
+            <Blue>64</Blue>
+          </Entries>
+          <Entries xsi:type="attribute:ColorDefinition">
+            <Transparency>255</Transparency>
+            <Red>80</Red>
+            <Green>240</Green>
+            <Blue>120</Blue>
+          </Entries>
+          <Entries xsi:type="attribute:ColorDefinition">
+            <Transparency>255</Transparency>
+            <Red>0</Red>
+            <Green>64</Green>
+            <Blue>128</Blue>
+          </Entries>
+          <Entries xsi:type="attribute:ColorDefinition">
+            <Transparency>255</Transparency>
+            <Red>128</Red>
+            <Green>0</Green>
+            <Blue>64</Blue>
+          </Entries>
+          <Entries xsi:type="attribute:ColorDefinition">
+            <Transparency>255</Transparency>
+            <Red>255</Red>
+            <Green>0</Green>
+            <Blue>128</Blue>
+          </Entries>
+          <Entries xsi:type="attribute:ColorDefinition">
+            <Transparency>255</Transparency>
+            <Red>128</Red>
+            <Green>128</Green>
+            <Blue>64</Blue>
+          </Entries>
+          <Entries xsi:type="attribute:ColorDefinition">
+            <Transparency>255</Transparency>
+            <Red>128</Red>
+            <Green>128</Green>
+            <Blue>128</Blue>
+          </Entries>
+          <Entries xsi:type="attribute:ColorDefinition">
+            <Transparency>255</Transparency>
+            <Red>255</Red>
+            <Green>128</Green>
+            <Blue>255</Blue>
+          </Entries>
+          <Entries xsi:type="attribute:ColorDefinition">
+            <Transparency>255</Transparency>
+            <Red>0</Red>
+            <Green>64</Green>
+            <Blue>0</Blue>
+          </Entries>
+          <Entries xsi:type="attribute:ColorDefinition">
+            <Transparency>255</Transparency>
+            <Red>0</Red>
+            <Green>0</Green>
+            <Blue>0</Blue>
+          </Entries>
+          <Entries xsi:type="attribute:ColorDefinition">
+            <Transparency>255</Transparency>
+            <Red>255</Red>
+            <Green>255</Green>
+            <Blue>255</Blue>
+          </Entries>
+          <Entries xsi:type="attribute:ColorDefinition">
+            <Transparency>255</Transparency>
+            <Red>255</Red>
+            <Green>128</Green>
+            <Blue>0</Blue>
+          </Entries>
+          <Entries xsi:type="attribute:ColorDefinition">
+            <Transparency>255</Transparency>
+            <Red>255</Red>
+            <Green>255</Green>
+            <Blue>255</Blue>
+          </Entries>
+          <Entries xsi:type="attribute:ColorDefinition">
+            <Transparency>255</Transparency>
+            <Red>80</Red>
+            <Green>166</Green>
+            <Blue>218</Blue>
+          </Entries>
+        </SeriesPalette>
+        <Series xsi:type="type:BarSeries">
+          <Visible>true</Visible>
+          <Label>
+            <Caption>
+              <Value></Value>
+              <Font>
+                <Name>Arial</Name>
+                <Size>10.0</Size>
+                <Alignment/>
+              </Font>
+              <Color>
+                <Transparency>255</Transparency>
+                <Red>79</Red>
+                <Green>80</Green>
+                <Blue>81</Blue>
+              </Color>
+            </Caption>
+            <Background xsi:type="attribute:ColorDefinition">
+              <Transparency>0</Transparency>
+              <Red>255</Red>
+              <Green>255</Green>
+              <Blue>255</Blue>
+            </Background>
+            <Outline>
+              <Style>Solid</Style>
+              <Thickness>1</Thickness>
+              <Color>
+                <Transparency>255</Transparency>
+                <Red>0</Red>
+                <Green>0</Green>
+                <Blue>0</Blue>
+              </Color>
+              <Visible>false</Visible>
+            </Outline>
+            <Insets>
+              <Top>0.0</Top>
+              <Left>10.0</Left>
+              <Bottom>0.0</Bottom>
+              <Right>3.0</Right>
+            </Insets>
+            <Visible>true</Visible>
+          </Label>
+          <DataDefinition>
+            <Definition>row[&quot;value&quot;] > 0 ? (row[&quot;category_index&quot;] != CommonKeys.REVENUE_INDEX ? (row[&quot;value&quot;] - row[&quot;partial_value&quot;]) : row[&quot;value&quot;]/100) : 0.000001</Definition>
+            <Grouping>
+              <Enabled>false</Enabled>
+              <GroupType>Text</GroupType>
+              <AggregateExpression>Sum</AggregateExpression>
+            </Grouping>
+          </DataDefinition>
+          <SeriesIdentifier>Series 2</SeriesIdentifier>
+          <DataPoint>
+            <Components>
+              <Type>Orthogonal_Value</Type>
+              <FormatSpecifier xsi:type="attribute:NumberFormatSpecifier">
+                <Prefix></Prefix>
+                <Suffix></Suffix>
+                <FractionDigits>0</FractionDigits>
+              </FormatSpecifier>
+            </Components>
+            <Suffix></Suffix>
+            <Separator></Separator>
+          </DataPoint>
+          <LabelPosition>Outside</LabelPosition>
+          <Stacked>true</Stacked>
+          <Triggers>
+            <Condition>onmouseover</Condition>
+            <Action>
+              <Type>Show_Tooltip</Type>
+              <Value xsi:type="attribute:TooltipValue">
+                <Text></Text>
+                <Delay>200</Delay>
+              </Value>
+            </Action>
+          </Triggers>
+          <Riser>Rectangle</Riser>
+        </Series>
+        <Grouping>
+          <GroupType>Text</GroupType>
+          <AggregateExpression>Sum</AggregateExpression>
+        </Grouping>
       </SeriesDefinitions>
       <Orientation>Vertical</Orientation>
       <LineAttributes>
@@ -3659,6 +3992,15 @@ row["category_index"] == CommonKeys.CLICKS_ANONYMOUS_INDEX</expression>
                                         <structure>
                                             <property name="format">all</property>
                                             <expression name="valueExpr" type="javascript">reportContext.getPersistentGlobalVariable("showGross") == false</expression>
+                                        </structure>
+                                    </list-property>
+                                    <list-property name="boundDataColumns">
+                                        <structure>
+                                            <property name="name">partial_value</property>
+                                            <text-property name="displayName">partial_value</text-property>
+                                            <expression name="expression" type="javascript">dataSetRow["partial_value"]</expression>
+                                            <property name="dataType">integer</property>
+                                            <property name="allowExport">true</property>
                                         </structure>
                                     </list-property>
                                 </extended-item>
@@ -5663,10 +6005,28 @@ isCategoryDataExpired(data["categoryKey"]) == true</expression>
                                 <property name="style">table-head</property>
                             </extended-item>
                         </property>
+                        <method name="onCreate"><![CDATA[
+/**
+ * Called when crosstab cell is being created.
+ *
+ * @param cellInst
+ *            ICrosstabCellInstance
+ * @param reportContext
+ *            IReportContext
+ */
+
+function onCreateCell( cellInst, reportContext )
+{
+    var proxyOpenersMessage = Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.opener.proxy", reportContext.getLocale());
+	if( proxyOpenersMessage == cellInst.getDataValue("category") ) {
+        cellInst.getStyle().setPaddingLeft("40px");
+	}
+}
+]]></method>
                         <property name="filter">
                             <filter-condition-element>
                                 <expression name="expr" type="javascript">dimension["CategoryGroup"]["category"]["category_index"] &lt;= CommonKeys.REVENUE_INDEX ||
-dimension["CategoryGroup"]["category"]["category_index"] == CommonKeys.OPENINGS_ANONYMOUS_INDEX ||
+dimension["CategoryGroup"]["category"]["category_index"] == CommonKeys.OPENINGS_ANONYMOUS_INDEX || dimension["CategoryGroup"]["category"]["category_index"] == CommonKeys.OPENERS_PROXY_INDEX ||
 dimension["CategoryGroup"]["category"]["category_index"] == CommonKeys.CLICKS_ANONYMOUS_INDEX</expression>
                                 <property name="operator">is-true</property>
                             </filter-condition-element>
@@ -5735,6 +6095,12 @@ hasPercentageRepresentation(dimension["CategoryGroup"]["category"]["categoryKey"
                             <structure>
                                 <property name="name">categoryKey</property>
                                 <expression name="expression" type="javascript">dimension["CategoryGroup"]["category"]["categoryKey"]</expression>
+                                <property name="dataType">string</property>
+                            </structure>
+                            <structure>
+                                <property name="name">Column Binding</property>
+                                <text-property name="displayName">Proxy_openers</text-property>
+                                <expression name="expression" type="javascript">1</expression>
                                 <property name="dataType">string</property>
                             </structure>
                         </list-property>
@@ -5940,7 +6306,7 @@ isCategoryDataExpired(data["categoryKey"]) == true</expression>
                         <property name="filter">
                             <filter-condition-element>
                                 <expression name="expr" type="javascript">dimension["CategoryGroup"]["category"]["category_index"] &lt;= CommonKeys.REVENUE_INDEX ||
-dimension["CategoryGroup"]["category"]["category_index"] == CommonKeys.OPENINGS_ANONYMOUS_INDEX ||
+dimension["CategoryGroup"]["category"]["category_index"] == CommonKeys.OPENINGS_ANONYMOUS_INDEX || dimension["CategoryGroup"]["category"]["category_index"] == CommonKeys.OPENERS_PROXY_INDEX ||
 dimension["CategoryGroup"]["category"]["category_index"] == CommonKeys.CLICKS_ANONYMOUS_INDEX</expression>
                                 <property name="operator">is-true</property>
                             </filter-condition-element>

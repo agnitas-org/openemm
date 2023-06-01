@@ -276,7 +276,7 @@ importPackage(Packages.com.agnitas.reporting.birt.external.dataset.CommonKey);
 if( currentrow < statsList.size() ){
 	row["TARGETGROUP"]=  statsList.get(currentrow).getTargetgroup();
 	row["CATEGORY"] = statsList.get(currentrow).getCategory();
-	row["CATEGORY_INDEX"] = statsList.get(currentrow).getCategory_index();
+	row["CATEGORY_INDEX"] = statsList.get(currentrow).getCategoryIndex();
 	
 	language = 'EN';
 	if( params["language"].value != null ){
@@ -292,21 +292,21 @@ if( currentrow < statsList.size() ){
 	row["CURRENCY"] = statsList.get(currentrow).getCurrency() != null ? statsList.get(currentrow).getCurrency(): "";
 	
 	if(row["CATEGORY_INDEX"] < 5 ) {
-		row["VALUE"] = currencyFormat.format( statsList.get(currentrow).getValue_1()) +" "+ row["CURRENCY"]; 
+		row["VALUE"] = currencyFormat.format( statsList.get(currentrow).getValue()) +" "+ row["CURRENCY"]; 
 	} 
 	else if(row["CATEGORY_INDEX"] === CommonKeys.CLICKERS_TO_BUYERS_RATIO_INDEX || row["CATEGORY_INDEX"] === CommonKeys.RECIPIENTS_TO_BUYERS_RATIO_INDEX) {
 		digitsFormat = NumberFormat.getNumberInstance(new Locale("EN"));
 		digitsFormat.setMaximumFractionDigits(2);
 		digitsFormat.setMinimumFractionDigits(2);
-		row["VALUE"] = digitsFormat.format( statsList.get(currentrow).getValue_1()) + " %";
+		row["VALUE"] = digitsFormat.format( statsList.get(currentrow).getValue()) + " %";
 	}	
 	else {
-		row["VALUE"] = fixedFormat.format( statsList.get(currentrow).getValue_1());
+		row["VALUE"] = fixedFormat.format( statsList.get(currentrow).getValue());
 	}
 	
 	
 		
-	row["TARGETGROUP_INDEX"] = statsList.get(currentrow).getTargetgroup_index() ;
+	row["TARGETGROUP_INDEX"] = statsList.get(currentrow).getTargetgroupIndex() ;
 	currentrow++ ;
 	return  true;
 }
@@ -421,7 +421,7 @@ if( currentrow < statsList.size() ){
   	row["DAY"]=  statsList.get(currentrow).getDate();
 	row["TARGETGROUP"]=  statsList.get(currentrow).getTargetgroup();
 	row["CATEGORY"] = statsList.get(currentrow).getCategory();
-	row["CATEGORY_INDEX"] = statsList.get(currentrow).getCategory_index();
+	row["CATEGORY_INDEX"] = statsList.get(currentrow).getCategoryIndex();
 		
 	language = 'EN';
 	if( params["language"].value != null ){
@@ -437,13 +437,13 @@ if( currentrow < statsList.size() ){
 	currency = statsList.get(currentrow).getCurrency() != null ? statsList.get(currentrow).getCurrency(): "";
 	
 	if(row["CATEGORY_INDEX"] < 5 ) {
-		row["VALUE1"] = currencyFormat.format( statsList.get(currentrow).getValue_1()) +" "+ currency; 
+		row["VALUE1"] = currencyFormat.format( statsList.get(currentrow).getValue()) +" "+ currency; 
 	}
 	else {
-		row["VALUE1"] = fixedFormat.format( statsList.get(currentrow).getValue_1());
+		row["VALUE1"] = fixedFormat.format( statsList.get(currentrow).getValue());
 	}
 	
-	row["TARGETGROUP_INDEX"] = statsList.get(currentrow).getTargetgroup_index() ;
+	row["TARGETGROUP_INDEX"] = statsList.get(currentrow).getTargetgroupIndex() ;
 	currentrow++ ;
 	return  true;
 }
@@ -632,14 +632,14 @@ statsList = dataSetClass.getRevenuePerDevice(reportContext.getPersistentGlobalVa
 currentrow = 0;
 reportContext.setPersistentGlobalVariable("total_revenue", new Integer(0));]]></method>
             <method name="fetch"><![CDATA[if( currentrow < statsList.size() ){
-	row["category_index"] = statsList.get(currentrow).getCategory_index();
+	row["category_index"] = statsList.get(currentrow).getCategoryIndex();
 	
 	language = 'EN';
 	if( params["language"].value != null ){
 		language = params["language"].value;
 	} 	
 	
-	row["value"] = statsList.get(currentrow).getValue_1();
+	row["value"] = statsList.get(currentrow).getValue();
 	
 	total_revenue = Integer.parseInt(reportContext.getPersistentGlobalVariable("total_revenue"));
 	reportContext.setPersistentGlobalVariable("total_revenue", new Integer(total_revenue + row["value"]));

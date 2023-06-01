@@ -33,8 +33,8 @@ public class ActionOperationGetArchiveMailingDaoImpl extends AbstractActionOpera
 	@Override
 	@DaoUpdateReturnValueCheck
 	protected void processSaveOperation(ActionOperationGetArchiveMailingParameters operation) {
-		update(logger, "insert into actop_get_archive_mailing_tbl (action_operation_id, expire_day, expire_month, expire_year) values (?,?,?,?)", 
-				operation.getId(), 
+		update(logger, "insert into actop_get_archive_mailing_tbl (action_operation_id, expire_day, expire_month, expire_year) values (?,?,?,?)",
+				operation.getId(),
 				operation.getExpireDay(),
 				operation.getExpireMonth(),
 				operation.getExpireYear());
@@ -43,7 +43,7 @@ public class ActionOperationGetArchiveMailingDaoImpl extends AbstractActionOpera
 	@Override
 	@DaoUpdateReturnValueCheck
 	protected void processUpdateOperation(ActionOperationGetArchiveMailingParameters operation) {
-		update(logger, "update actop_get_archive_mailing_tbl set expire_day=?, expire_month=?, expire_year=? where action_operation_id=?", 
+		update(logger, "update actop_get_archive_mailing_tbl set expire_day=?, expire_month=?, expire_year=? where action_operation_id=?",
 				operation.getExpireDay(),
 				operation.getExpireMonth(),
 				operation.getExpireYear(),

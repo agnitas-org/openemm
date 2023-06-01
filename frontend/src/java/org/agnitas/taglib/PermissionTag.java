@@ -15,7 +15,7 @@ import jakarta.servlet.jsp.JspTagException;
 import jakarta.servlet.jsp.tagext.BodyContent;
 import jakarta.servlet.jsp.tagext.BodyTag;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.Permission;
 import org.agnitas.util.AgnUtils;
 
@@ -49,7 +49,7 @@ public class PermissionTag extends PermissionExceptionTagSupport implements Body
 	 */
 	@Override
 	public int doStartTag() throws JspTagException {
-		ComAdmin aAdmin = AgnUtils.getAdmin(pageContext);
+		Admin aAdmin = AgnUtils.getAdmin(pageContext);
 
 		if (aAdmin == null) {
 			throw new JspTagException("PermissionDenied$" + permissionToken);

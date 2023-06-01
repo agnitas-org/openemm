@@ -13,7 +13,7 @@ package com.agnitas.emm.core.logon.dao;
 import org.agnitas.dao.impl.BaseDaoImpl;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.supervisor.beans.Supervisor;
 
 /**
@@ -34,14 +34,15 @@ public class ComDbSwitchingHostAuthenticationDaoImpl extends BaseDaoImpl impleme
 	 * @return database specific implementation of {@link ComHostAuthenticationDao}
 	 */
 	private ComHostAuthenticationDao getDbBasedImplementation() {
-		if( isOracleDB())
+		if( isOracleDB()) {
 			return oracleDao;
-		else
+		} else {
 			return mysqlDao;
+		}
 	}
 	
 	@Override
-	public String getSecurityCode(ComAdmin admin, String hostID) throws HostAuthenticationDaoException, NoSecurityCodeHostAuthenticationDaoException {
+	public String getSecurityCode(Admin admin, String hostID) throws HostAuthenticationDaoException, NoSecurityCodeHostAuthenticationDaoException {
 		return getDbBasedImplementation().getSecurityCode(admin, hostID);
 	}
 	
@@ -51,7 +52,7 @@ public class ComDbSwitchingHostAuthenticationDaoImpl extends BaseDaoImpl impleme
 	}
 	
 	@Override
-	public void writePendingSecurityCode(ComAdmin admin, String hostID, String securityCode) throws HostAuthenticationDaoException {
+	public void writePendingSecurityCode(Admin admin, String hostID, String securityCode) throws HostAuthenticationDaoException {
 		getDbBasedImplementation().writePendingSecurityCode(admin, hostID, securityCode);
 	}
 	
@@ -61,7 +62,7 @@ public class ComDbSwitchingHostAuthenticationDaoImpl extends BaseDaoImpl impleme
 	}
 	
 	@Override
-	public boolean isHostAuthenticated(ComAdmin admin, String hostID) throws HostAuthenticationDaoException {
+	public boolean isHostAuthenticated(Admin admin, String hostID) throws HostAuthenticationDaoException {
 		return getDbBasedImplementation().isHostAuthenticated(admin, hostID);
 	}
 	
@@ -71,7 +72,7 @@ public class ComDbSwitchingHostAuthenticationDaoImpl extends BaseDaoImpl impleme
 	}
 	
 	@Override
-	public void writeHostAuthentication(ComAdmin admin, String hostID, int expiresInDays) throws HostAuthenticationDaoException {
+	public void writeHostAuthentication(Admin admin, String hostID, int expiresInDays) throws HostAuthenticationDaoException {
 		getDbBasedImplementation().writeHostAuthentication(admin, hostID, expiresInDays);
 	}
 	
@@ -81,7 +82,7 @@ public class ComDbSwitchingHostAuthenticationDaoImpl extends BaseDaoImpl impleme
 	}
 	
 	@Override
-	public void removePendingSecurityCode(ComAdmin admin, String hostID) throws HostAuthenticationDaoException {
+	public void removePendingSecurityCode(Admin admin, String hostID) throws HostAuthenticationDaoException {
 		getDbBasedImplementation().removePendingSecurityCode(admin, hostID);
 	}
 	

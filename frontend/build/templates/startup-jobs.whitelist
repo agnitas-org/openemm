@@ -7,14 +7,6 @@
 # Comments starts a "#" and are also skipped
 #
 
-# Jobs already present (and in common also already executed)
-
-# (Check for removal in LTS 22.04)
-com.agnitas.startuplistener.startupjobs.TargetGroupUsageDataStartupJob
-
-# (Check for removal in LTS 22.04)
-com.agnitas.startuplistener.startupjobs.LoginTrackSettingsMigrationStartupJob
-
 # Add new jobs here. Leave a comment on each job (JIRA issue, short description, ...)
 
 #

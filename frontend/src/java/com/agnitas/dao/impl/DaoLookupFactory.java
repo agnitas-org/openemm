@@ -22,13 +22,13 @@ import org.agnitas.web.ProfileImportReporter;
 
 import com.agnitas.dao.AnonymizeStatisticsDao;
 import com.agnitas.dao.ComCompanyDao;
-import com.agnitas.dao.DatasourceDescriptionDao;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.dao.ComTargetDao;
 import com.agnitas.dao.ComUndoDynContentDao;
 import com.agnitas.dao.ComUndoMailingComponentDao;
 import com.agnitas.dao.ComUndoMailingDao;
+import com.agnitas.dao.DatasourceDescriptionDao;
 import com.agnitas.dao.DynamicTagDao;
 import com.agnitas.emm.core.JavaMailService;
 import com.agnitas.emm.core.action.service.EmmActionService;

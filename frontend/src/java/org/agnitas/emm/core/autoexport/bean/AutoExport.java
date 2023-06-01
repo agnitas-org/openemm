@@ -10,9 +10,12 @@
 
 package org.agnitas.emm.core.autoexport.bean;
 
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
+import org.agnitas.util.AgnUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
 
@@ -31,6 +34,7 @@ public class AutoExport {
 		ReferenceTable("ReferenceTable"),
 		Mailing("Mailing"),
 		Reactions("Reactions"),
+		ReactionsAndStatus("ReactionsAndStatus"),
 		Blacklist("Blacklist");
 		
 		/**
@@ -84,6 +88,10 @@ public class AutoExport {
 			return this == Reactions;
 		}
 
+		public boolean isReactionsAndStatus(){
+			return this == ReactionsAndStatus;
+		}
+
 		public boolean isBlacklist(){
 			return this == Blacklist;
 		}
@@ -121,13 +129,18 @@ public class AutoExport {
 	private int mailingID;
 	private boolean hidden;
 	private String intervalAsJson;
-	private String timeZone;
+	private String timeZone = "Europe/Berlin";
 	private boolean considerLastRun;
 	private int retryCount;
 	private int maximumRetries = 1;
+	private List<Integer> hoursAfterDelivery = null;
+	
+	private Date currentStart = null;
 
 	// For AutoExportType.Reactions only.
 	private List<String> additionalCustomerFields;
+
+	private Locale locale = new Locale("en", "US");
 
 	public int getMailingID() {
 		return mailingID;
@@ -439,5 +452,33 @@ public class AutoExport {
 
 	public void setMaximumRetries(int maximumRetries) {
 		this.maximumRetries = maximumRetries;
+	}
+
+	public List<Integer> getHoursAfterDelivery() {
+		return hoursAfterDelivery;
+	}
+
+	public void setHoursAfterDelivery(List<Integer> hoursAfterDelivery) {
+		this.hoursAfterDelivery = hoursAfterDelivery;
+	}
+
+	public Date getCurrentStart() {
+		return currentStart;
+	}
+
+	public void setCurrentStart(Date currentStart) {
+		this.currentStart = currentStart;
+	}
+
+	public DateTimeFormatter getDateTimeFormatter() {
+		return AgnUtils.getDateTimeFormatter(getTimeZone(), getLocale());
+	}
+
+	public void setLocale(Locale locale) {
+		this.locale = locale;
+	}
+
+	public Locale getLocale() {
+		return locale;
 	}
 }

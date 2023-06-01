@@ -12,8 +12,10 @@ package com.agnitas.emm.core.components.service.impl;
 
 import static org.agnitas.beans.impl.MailingComponentImpl.COMPONENT_NAME_MAX_LENGTH;
 
+import java.io.InputStream;
 import java.util.List;
 
+import com.agnitas.emm.validator.ApacheTikaUtils;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
@@ -33,10 +35,10 @@ import com.agnitas.messages.Message;
 @Service("ComponentValidationService")
 public class ComponentValidationServiceImpl implements ComponentValidationService {
 
-    private ComUploadDao uploadDao;
-    private MimeTypeWhitelistService mimetypeWhitelistService;
-    private ComMailingComponentsService mailingComponentsService;
-	private ConfigService configService;
+    private final ComUploadDao uploadDao;
+    private final MimeTypeWhitelistService mimetypeWhitelistService;
+    private final ComMailingComponentsService mailingComponentsService;
+	private final ConfigService configService;
 
     public ComponentValidationServiceImpl(ComUploadDao uploadDao,
                                           MimeTypeWhitelistService mimetypeWhitelistService,
@@ -104,6 +106,20 @@ public class ComponentValidationServiceImpl implements ComponentValidationServic
         } else if (!mimetypeWhitelistService.isMimeTypeWhitelisted(file.getContentType())) {
             errors.add(Message.of("mailing.errors.attachment.invalidMimeType", file.getContentType()));
             return false;
+        } else if (configService.getBooleanValue(ConfigValue.UseAdvancedFileContentTypeDetection)) {
+        	// Detect mimetype by file content (not file name extension)
+        	String fileContentType;
+        	try (InputStream stream = file.getInputStream()) {
+    	        fileContentType = ApacheTikaUtils.getContentType(stream);
+    		} catch (Exception e) {
+    			errors.add(Message.of("upload.file.mimetyp.detection.error", file.getOriginalFilename()));
+                return false;
+    		}
+        	
+        	if (!fileContentType.equalsIgnoreCase(file.getContentType())) {
+                errors.add(Message.of("mailing.errors.attachment.invalidMimeType", file.getContentType()));
+                return false;
+        	}
         }
 
         return true;
@@ -152,7 +168,7 @@ public class ComponentValidationServiceImpl implements ComponentValidationServic
         }
 
         if (!StringUtils.equals("application/pdf", attachment.getBackgroundFile().getContentType())) {
-            errors.add(Message.of("GWUA.mailing.errors.personalized.bg.attachment.invalidMimeType"));
+            errors.add(Message.of("error.mailing.attachment.type.invalid"));
             return false;
         }
 

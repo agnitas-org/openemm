@@ -15,7 +15,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.target.eql.emm.querybuilder.EqlToQueryBuilderConversionException;
 import com.agnitas.emm.core.target.eql.emm.querybuilder.EqlToQueryBuilderConverter;
 import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderFilterListBuilder;
@@ -34,15 +34,13 @@ public class EditorContentSynchronizer {
 	private static final Logger logger = LogManager.getLogger(EditorContentSynchronizer.class);
 	
 	private EqlToQueryBuilderConverter eqlToQueryBuilderConverter;
-
 	private QueryBuilderToEqlConverter queryBuilderToEqlConverter;
-
 	private ComTargetService targetService;
 
 	/** Builder for QueryBuilder filters. */
 	private QueryBuilderFilterListBuilder filterListBuilder;
 
-	public void synchronizeEditors(final ComAdmin admin, final TargetgroupViewFormat synchronizeFrom, final TargetEditForm form) throws EditorContentSynchronizationException {
+	public void synchronizeEditors(final Admin admin, final TargetgroupViewFormat synchronizeFrom, final TargetEditForm form) throws EditorContentSynchronizationException {
 		switch (synchronizeFrom) {
 			case EQL:
 				synchronizeEqlToQuerybuilder(admin, form);
@@ -57,7 +55,7 @@ public class EditorContentSynchronizer {
 		}
 	}
 
-	public final void synchronizeEqlToQuerybuilder(final ComAdmin admin, final TargetEditForm form) throws EditorContentSynchronizationException {
+	public final void synchronizeEqlToQuerybuilder(final Admin admin, final TargetEditForm form) throws EditorContentSynchronizationException {
 		try {
 			boolean excludeHiddenFields = !targetService.isEqlContainsInvisibleFields(form.getEql(), admin.getCompanyID(), admin.getAdminID());
 
@@ -116,7 +114,7 @@ public class EditorContentSynchronizer {
 	public void setEqlToQueryBuilderConverter(final EqlToQueryBuilderConverter converter) {
 		this.eqlToQueryBuilderConverter = converter;
 	}
-
+	
 	@Required
 	public final void setQueryBuilderToEqlConverter(final QueryBuilderToEqlConverter converter) {
 		this.queryBuilderToEqlConverter = converter;

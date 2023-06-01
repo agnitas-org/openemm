@@ -58,7 +58,7 @@ public class ActionOperationServiceMailImpl implements EmmActionOperation {
 		int companyID = op.getCompanyId();
 
 		if (getRequestParameter(params, "sendServiceMail") != null && getRequestParameter(params, "sendServiceMail").equals("no")) {
-			/* 
+			/*
 			 * TODO Introduce info flags
 			 * 
 			 * Cannot use actionOperationErrors.addErrorCode(ErrorCode.SERVICE_MAIL_MANUALLY_BLOCKED);

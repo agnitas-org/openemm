@@ -14,7 +14,7 @@
 <div class="modal" data-controller="target-create-mailinglist">
     <div class="modal-dialog">
         <div class="modal-content">
-            <form action="<c:url value='/mailinglist/create.action'/>" method="POST">
+            <mvc:form servletRelativeAction="/mailinglist/create.action" method="POST">
                 <input type="hidden" name="targetId" value="${targetIdToCreateMailingList}"/>
                 <div class="modal-header">
                     <button type="button" class="close-icon close js-confirm-negative" data-dismiss="modal">
@@ -65,7 +65,7 @@
                         </button>
                     </div>
                 </div>
-            </form>
+            </mvc:form>
         </div>
     </div>
 </div>

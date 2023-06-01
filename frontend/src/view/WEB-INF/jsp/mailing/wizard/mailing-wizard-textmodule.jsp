@@ -24,6 +24,11 @@
 <c:set var="MessageMoveUp"><bean:message key="mailing.content.moveUp"/></c:set>
 <c:set var="MessageMoveDown"><bean:message key="mailing.content.moveDown" /></c:set>
 
+<c:set var="onlyWysiwygEditorAvailable" value="false"/>
+<emm:ShowByPermission token="mailing.editor.hide.html">
+    <c:set var="onlyWysiwygEditorAvailable" value="true"/>
+</emm:ShowByPermission>
+
 <agn:agnForm action="/mwTextmodule" id="wizard-step-8" data-form="resource">
     <html:hidden property="action" value="${ACTION_TEXTMODULE}"/>
     <html:hidden property="contentID"/>
@@ -90,13 +95,15 @@
 
                             <logic:equal name="mailingWizardForm" property="showHTMLEditorForDynTag" value="true">
                                 <ul class="inline-tile-header-nav">
-                                    <li class="active">
-                                        <a href="#" data-toggle-tab="#tab-mailingContentViewCode${index}">
-                                            <bean:message key="HTML"/>
-                                        </a>
-                                    </li>
+                                    <emm:HideByPermission token="mailing.editor.hide.html">
+                                        <li class="active">
+                                            <a href="#" data-toggle-tab="#tab-mailingContentViewCode${index}">
+                                                <bean:message key="HTML"/>
+                                            </a>
+                                        </li>
+                                    </emm:HideByPermission>
                                     <emm:HideByPermission token="mailing.editor.hide">
-                                        <li>
+                                        <li ${onlyWysiwygEditorAvailable ? 'class="active"' : ''}>
                                             <a href="#" data-toggle-tab="#tab-mailingContentViewHtml${index}">
                                                 <bean:message key="mailingContentHTMLEditor"/>
                                             </a>
@@ -143,7 +150,7 @@
                             </emm:ShowByPermission>
                             <emm:HideByPermission token="mailing.editor.hide">
                             <logic:equal name="mailingWizardForm" property="showHTMLEditorForDynTag" value="true">
-                                <div id="tab-mailingContentViewCode${index}">
+                                <div id="tab-mailingContentViewCode${index}" ${onlyWysiwygEditorAvailable ? 'class="hidden"' : ''}>
                                     <div class="row">
                                         <div class="col-sm-12">
                                             <div id="${fn:replace(fn:replace(fn:replace(editorId, '[', '_'), ']', '_'), '.', '_')}Editor" class="form-control"></div>
@@ -153,7 +160,7 @@
                             </logic:equal>
 
                             <logic:equal name="mailingWizardForm" property="showHTMLEditorForDynTag" value="true">
-                                <div id="tab-mailingContentViewHtml${index}" class="hidden">
+                                <div id="tab-mailingContentViewHtml${index}" ${onlyWysiwygEditorAvailable ? '' : 'class="hidden"'}>
                             </logic:equal>
                                     <div class="row">
                                         <div class="col-sm-12">
@@ -193,13 +200,15 @@
 
                         <logic:equal name="mailingWizardForm" property="showHTMLEditorForDynTag" value="true">
                             <ul class="inline-tile-header-nav">
-                                <li class="active">
-                                    <a href="#" data-toggle-tab="#tab-mailingNewContentViewCode">
-                                        <bean:message key="HTML"/>
-                                    </a>
-                                </li>
+                                <emm:HideByPermission token="mailing.editor.hide.html">
+                                    <li class="active">
+                                        <a href="#" data-toggle-tab="#tab-mailingNewContentViewCode">
+                                            <bean:message key="HTML"/>
+                                        </a>
+                                    </li>
+                                </emm:HideByPermission>
                                 <emm:HideByPermission token="mailing.editor.hide">
-                                    <li>
+                                    <li ${onlyWysiwygEditorAvailable ? 'class="active"' : ''}>
                                         <a href="#" data-toggle-tab="#tab-mailingNewContentViewHtml">
                                             <bean:message key="mailingContentHTMLEditor"/>
                                         </a>
@@ -239,7 +248,7 @@
                         
                         <emm:HideByPermission token="mailing.editor.hide">
                         <logic:equal name="mailingWizardForm" property="showHTMLEditorForDynTag" value="true">
-                            <div id="tab-mailingNewContentViewCode">
+                            <div id="tab-mailingNewContentViewCode" ${onlyWysiwygEditorAvailable ? 'class="hidden"' : ''}>
                                 <div class="row">
                                     <div class="col-sm-12">
                                         <div id="newContentEditor" class="form-control"></div>
@@ -249,7 +258,7 @@
                         </logic:equal>
 
                         <logic:equal name="mailingWizardForm" property="showHTMLEditorForDynTag" value="true">
-                        <div id="tab-mailingNewContentViewHtml" class="hidden">
+                        <div id="tab-mailingNewContentViewHtml" ${onlyWysiwygEditorAvailable ? '' : 'class="hidden"'}>
                             </logic:equal>
                             <div class="row">
                                 <div class="col-sm-12">

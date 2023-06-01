@@ -2,8 +2,8 @@
 	<title>Checking for duplicate records</title>
 	<content><![CDATA[This drop-down list allows you to decide what the system should do when checking for duplicate records.
       <ul type="disc">
-         <li> The setting all will check for two things: whether a recipient already features in the database, and whether the list of new recipients itself contains duplicate entries.</li>
-         <li>The setting Only within new data only checks the list of imported entries for duplicates.</li>
-         <li>The No check setting: All recipients will be imported. There will be no check for duplicates in the import file and no check if recipients already are in the database. As a result, it is possible that one recipient with one e-mail address is included in the database twice.</li>
+         <li>The option "Yes" checks two things: Firstly, whether a recipient already exists in the database. And secondly, whether a recipient occurs more than once within the import file. How detected duplicates are handled depends on your choice under Import Mode. If, for example, you have selected a mode that updates existing recipients, then the contents of the import file are written into the existing recipient profile, and each record contained more than once in the import file updates the profile again. If your database already contains duplicates, all duplicates will be updated.
+If you only want to add new recipients, records from the import file that already exist in the database are discarded and not updated. If there are multiple records in the import file, only the first record is imported and the others are discarded.</li>
+         <li>The option "No": All recipients are imported. There is no check for duplicates within the import file. Likewise, it is not checked whether a recipient already exists in the database. This can lead to a recipient with one email address being contained several times in the database and the recipient profiles also having different contents.</li>
       </ul>]]></content>
 </HelpBalloon>

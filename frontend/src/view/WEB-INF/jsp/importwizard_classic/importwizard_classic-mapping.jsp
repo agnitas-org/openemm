@@ -1,7 +1,7 @@
-<%@page import="com.agnitas.beans.ProfileField"%>
+<%@page import="com.agnitas.beans.ProfileFieldMode"%>
 <%@page import="org.agnitas.util.importvalues.ImportMode"%>
 <%@ page language="java" contentType="text/html; charset=utf-8"
-         import="org.agnitas.util.*,java.util.*, com.agnitas.web.ComImportWizardForm, com.agnitas.beans.ComAdmin"  errorPage="/error.do" %>
+         import="org.agnitas.util.*,java.util.*, com.agnitas.web.ComImportWizardForm,com.agnitas.beans.Admin"  errorPage="/error.do" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
@@ -72,13 +72,13 @@
                         <emm:ShowColumnInfo id="agnTbl" table="<%= AgnUtils.getCompanyID(request) %>"
                                             hide="timestamp, change_date, creation_date, bounceload, datasource_id, lastopen_date, lastclick_date, lastsend_date, latest_datasource_id, cleaned_date, facebook_status, foursquare_status, google_status, twitter_status, xing_status, sys_encrypted_sending">
                             <%
-                         		int modeEdit = (int) pageContext.getAttribute("_agnTbl_editable");
-	                            if (modeEdit == ProfileField.MODE_EDIT_EDITABLE ||(modeEdit == ProfileField.MODE_EDIT_READONLY && aForm.getStatus().getKeycolumn().equalsIgnoreCase((String) pageContext.getAttribute("_agnTbl_column_name")))) {
+                            	ProfileFieldMode modeEdit = (ProfileFieldMode) pageContext.getAttribute("_agnTbl_editable");
+                            	if (modeEdit == ProfileFieldMode.Editable ||(modeEdit == ProfileFieldMode.ReadOnly && aForm.getStatus().getKeycolumn().equalsIgnoreCase((String) pageContext.getAttribute("_agnTbl_column_name")))) {
 	                                String colName = (String) pageContext.getAttribute("_agnTbl_column_name");
 	                                String aliasName = (String) pageContext.getAttribute("_agnTbl_shortname");
-	
-	                                linkedMap.put(colName, aliasName);
-	                            }
+	                                
+                                	linkedMap.put(colName, aliasName);
+                            	}
                             %>
                         </emm:ShowColumnInfo>
                         <% int customerID_allowed = 0; %>

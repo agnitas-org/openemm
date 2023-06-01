@@ -16,7 +16,7 @@
    ========================================================================== */
 
 /**
- * jQuery JavaScript Library v1.11.1
+ * jQuery JavaScript Library v3.5.1
  *
  * Includes Sizzle.js
  * http://sizzlejs.com/
@@ -28,11 +28,11 @@
  **/
 
 /**
- * Lo-Dash 2.4.1 (Custom Build)
+ * Lo-Dash 4.17.21 (Custom Build)
  *
  * Build: `lodash -o ./dist/lodash.compat.js`
  *
- * Based on Underscore.js 1.5.2
+ * Based on Underscore.js 1.8.3
  * Licensed under MIT (http://underscorejs.org/LICENSE)
  * (c) 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
  *
@@ -68,7 +68,7 @@
  * (c) 2010 Dave Perrett
  * https://github.com/recurser/jquery-i18n
  *
- * jquery-migrate v1.2.1
+ * jquery-migrate v3.3.2
  * Licensed under MIT
  * (c) 2005, 2013 jQuery Foundation, Inc. and other contributors
  * https://github.com/jquery/jquery-migrate
@@ -105,14 +105,14 @@
  **/
 
 /**
- * Bootstrap Components v3.2.0
+ * Bootstrap Components v3.4.1
  *
  * dropdown.js
  * modal.js
  * popover.js
  * tooltip.js
  *
- * (c) 2011-2014 Twitter, Inc.
+ * (c) 2011-2019 Twitter, Inc.
  * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)
  *
  * http://getbootstrap.com/
@@ -125,14 +125,14 @@
  * Licensed under MIT
  * (c) 2015 Kyle Kemp, Rohit Kalkur, and contributors
  *
- * bootstrap-colorpicker v2.2.0
+ * bootstrap-colorpicker v2.5.2
  * Licensed under Apache License v2.0
  * (c) 2012 Stefan Petre
  *
  **/
 
 /**
- * jQuery UI v1.11.1
+ * jQuery UI v1.13.1
  *
  * core.js, widget.js, mouse.js, position.js, accordion.js, autocomplete.js, button.js, datepicker.js, dialog.js, draggable.js, droppable.js, effect.js, effect-blind.js, effect-bounce.js, effect-clip.js, effect-drop.js, effect-explode.js, effect-fade.js, effect-fold.js, effect-highlight.js, effect-puff.js, effect-pulsate.js, effect-scale.js, effect-shake.js, effect-size.js, effect-slide.js, effect-transfer.js, menu.js, progressbar.js, resizable.js, selectable.js, selectmenu.js, slider.js, sortable.js, spinner.js, tabs.js, tooltip.js
  *
@@ -143,14 +143,14 @@
  **/
 
 /**
- * Pickadate v3.5.4
+ * Pickadate v3.5.6
  *
  * date.js
  * time.js
  * legacy.js
  *
  * (c) 2014 Amsul, http://amsul.ca
- * Licensed under https://github.com/amsul/pickadate.js/blob/3.5.4/LICENSE.md
+ * Licensed under https://github.com/amsul/pickadate.js/blob/3.5.6/LICENSE.md
  *
  * https://amsul.github.io/pickadate.js
  **/
@@ -189,7 +189,7 @@
  **/
 
 /**
- * iFrame Resizer v2.6.3
+ * iFrame Resizer v4.3.2
  *
  * (c) 2014 David J. Bradshaw - dave@bradshaw.net
  * Licensed under MIT

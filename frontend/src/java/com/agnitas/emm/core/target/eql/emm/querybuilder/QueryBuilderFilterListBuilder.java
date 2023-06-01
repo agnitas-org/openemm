@@ -27,8 +27,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.ProfileField;
+import com.agnitas.beans.ProfileFieldMode;
 
 import net.sf.json.JSONSerializer;
 
@@ -39,30 +40,28 @@ import net.sf.json.JSONSerializer;
 public class QueryBuilderFilterListBuilder {
 
 	private static final Logger logger = LogManager.getLogger(QueryBuilderFilterListBuilder.class);
-	
-	private QueryBuilderConfiguration queryBuilderConfiguration;
 
 	private ProfileFieldService profileFieldService;
+	private QueryBuilderConfiguration queryBuilderConfiguration;
 
 	/**
 	 * Creates the filter list as JSON string from profile fields for given company ID.
-	 * 
+	 *
 	 * @param admin admin that's bound to profile fields
-	 * 
+	 *
 	 * @return JSON string for the QueryBuilder filter list
-	 * 
-	 * @throws Exception
+	 * @throws Exception 
 	 */
-	public String buildFilterListJson(ComAdmin admin, boolean excludeHiddenFields) throws Exception {
+	public String buildFilterListJson(Admin admin, boolean excludeHiddenFields) throws Exception {
 		List<ProfileField> profileFields = listProfileFields(admin.getCompanyID(), admin.getAdminID(), excludeHiddenFields);
 		createIndependentFilters(profileFields, admin);
 
 		final List<Map<String, Object>> map = createFilterList(profileFields, admin);
-		
+
 		return JSONSerializer.toJSON(map).toString();
 	}
 
-	private void createIndependentFilters(final List<ProfileField> profileFields, final ComAdmin admin) {
+	private void createIndependentFilters(final List<ProfileField> profileFields, final Admin admin) {
 		TargetRuleKey[] excludedRulesKeys;
 
 		if (AgnUtils.isMailTrackingAvailable(admin)) {
@@ -76,44 +75,44 @@ public class QueryBuilderFilterListBuilder {
 
 	/**
 	 * Creates a list of filter settings for JSON encoding.
-	 * 
+	 *
 	 * @param profileFields list of known profile fields
-	 * 
+	 *
 	 * @return list of filter settings for JSON encoding
 	 */
-	private List<Map<String, Object>> createFilterList(final List<ProfileField> profileFields, ComAdmin admin) {
+	private List<Map<String, Object>> createFilterList(final List<ProfileField> profileFields, Admin admin) {
 
 		// TODO: Respect unknown profile fields somehow
-		
+
 		final List<Map<String, Object>> filterList = new ArrayList<>();
-		
-		for(ProfileField profileField : profileFields) {
+
+		for (ProfileField profileField : profileFields) {
 			final Map<String, Object> filter = new HashMap<>();
-			
+
 			filter.put("id", profileField.getShortname().toLowerCase());
 			filter.put("label", getLabel(profileField, admin.getLocale()));
-			
+
 			final SimpleDataType dataType = DbColumnType.getSimpleDataType(profileField.getDataType(), profileField.getNumericScale());
 			switch(dataType) {
-			case Numeric:
-			case Float:
-				filter.put("type", "double");
-				break;
-				
-			case Date:
-			case DateTime:
-				filter.put("type", "date");
-				break;
-				
-			case Characters:
-				filter.put("type", "string");
-				break;
-			default:
+			    case Numeric:
+			    case Float:
+			    	filter.put("type", "double");
+			    	break;
+
+			    case Date:
+			    case DateTime:
+			    	filter.put("type", "date");
+			    	break;
+
+			    case Characters:
+			    	filter.put("type", "string");
+			    	break;
+			    default:
 			}
-			
+
 			filterList.add(filter);
 		}
-		
+
 		return filterList;
 	}
 
@@ -124,16 +123,15 @@ public class QueryBuilderFilterListBuilder {
 
 	/**
 	 * Lists all known profile fields for given company ID.
-	 * 
+	 *
 	 * @param companyID company ID
-	 * 
+	 *
 	 * @return list of all known profile fields
-	 * 
-	 * @throws Exception
+	 * @throws Exception 
 	 */
-	private List<ProfileField> listProfileFields(int companyID, int adminId, boolean excludeHidden) throws Exception {
+	private List<ProfileField> listProfileFields(int companyID, int adminID, boolean excludeHidden) throws Exception {
 		if (excludeHidden) {
-			return profileFieldService.getProfileFields(companyID, adminId).stream().filter(x -> x.getModeEdit() != ProfileField.MODE_EDIT_NOT_VISIBLE).collect(Collectors.toList());
+			return profileFieldService.getProfileFields(companyID, adminID).stream().filter(x -> x.getModeEdit() != ProfileFieldMode.NotVisible).collect(Collectors.toList());
 		}
 
 		try {
@@ -144,7 +142,7 @@ public class QueryBuilderFilterListBuilder {
 			throw new QueryBuilderFilterListBuilderException("Error listing profile fields", e);
 		}
 	}
-	
+
 	// ------------------------------------------------------------------------------------------------------------------ Dependency Injection
 
 	@Required

@@ -31,7 +31,6 @@ public class Media {
 	static public final int TYPE_EMAIL = 0;
 	static public final int TYPE_FAX = 1;
 	static public final int TYPE_PRINT = 2;
-	static public final int TYPE_MMS = 3;
 	static public final int TYPE_SMS = 4;
 	/**
 	 * Entry is not used
@@ -89,8 +88,6 @@ public class Media {
 				return "fax";
 			case TYPE_PRINT:
 				return "print";
-			case TYPE_MMS:
-				return "mms";
 			case TYPE_SMS:
 				return "sms";
 			default:
@@ -114,8 +111,6 @@ public class Media {
 				return "faxnumber";
 			case TYPE_PRINT:
 				return null;
-			case TYPE_MMS:
-				return "smsnumber";
 			case TYPE_SMS:
 				return "smsnumber";
 			default:
@@ -198,6 +193,10 @@ public class Media {
 
 	public String profileField() {
 		return profileField;
+	}
+	
+	public boolean containsKey (String key) {
+		return ptab.containsKey (key);
 	}
 
 	/**

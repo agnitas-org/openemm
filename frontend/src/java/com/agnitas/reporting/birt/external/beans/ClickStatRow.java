@@ -13,97 +13,80 @@ package com.agnitas.reporting.birt.external.beans;
 import com.agnitas.emm.core.mobile.bean.DeviceClass;
 
 public class ClickStatRow {
-	private int clicks_gross;
-	private int clicks_net;
-	private float clicks_gross_percent;
-	private float clicks_net_percent;
-	private int total_clicks_gros;
-	private int total_clicks_net;
-	private int clicks_anonymous;
-	private int column_index;
-	private int row_index;
-	private boolean admin_link;
+
+	private int clicksGross;
+	private int clicksNet;
+	private float clicksGrossPercent;
+	private float clicksNetPercent;
+	private int clicksAnonymous;
+	private int columnIndex;
+	private int rowIndex;
+	private boolean adminLink;
 	private boolean deleted;
 	private DeviceClass deviceClass;
 
-	public int getClicks_gross() {
-		return clicks_gross;
+	public int getClicksGross() {
+		return clicksGross;
 	}
 
-	public void setClicks_gross(int clicks_gross) {
-		this.clicks_gross = clicks_gross;
+	public void setClicksGross(int clicksGross) {
+		this.clicksGross = clicksGross;
 	}
 
-	public int getClicks_net() {
-		return clicks_net;
+	public int getClicksNet() {
+		return clicksNet;
 	}
 
-	public void setClicks_net(int clicks_net) {
-		this.clicks_net = clicks_net;
+	public void setClicksNet(int clicksNet) {
+		this.clicksNet = clicksNet;
 	}
 
-	public float getClicks_gross_percent() {
-		return clicks_gross_percent;
+	public float getClicksGrossPercent() {
+		return clicksGrossPercent;
 	}
 
-	public void setClicks_gross_percent(float clicks_gross_percent) {
-		this.clicks_gross_percent = clicks_gross_percent;
+	public void setClicksGrossPercent(float clicksGrossPercent) {
+		this.clicksGrossPercent = clicksGrossPercent;
 	}
 
-	public float getClicks_net_percent() {
-		return clicks_net_percent;
+	public float getClicksNetPercent() {
+		return clicksNetPercent;
 	}
 
-	public void setClicks_net_percent(float clicks_net_percent) {
-		this.clicks_net_percent = clicks_net_percent;
+	public void setClicksNetPercent(float clicksNetPercent) {
+		this.clicksNetPercent = clicksNetPercent;
 	}
 
-	public int getClicks_anonymous() {
-		return clicks_anonymous;
+	public int getClicksAnonymous() {
+		return clicksAnonymous;
 	}
 
-	public void setClicks_anonymous(int clicks_anonymous) {
-		this.clicks_anonymous = clicks_anonymous;
+	public void setClicksAnonymous(int clicksAnonymous) {
+		this.clicksAnonymous = clicksAnonymous;
 	}
 
-	public int getTotal_clicks_gros() {
-		return total_clicks_gros;
+	public int getColumnIndex() {
+		return columnIndex;
 	}
 
-	public void setTotal_clicks_gros(int total_clicks_gros) {
-		this.total_clicks_gros = total_clicks_gros;
+	public void setColumnIndex(int columnIndex) {
+		this.columnIndex = columnIndex;
 	}
 
-	public int getTotal_clicks_net() {
-		return total_clicks_net;
+	public int getRowIndex() {
+		return rowIndex;
 	}
 
-	public void setTotal_clicks_net(int total_clicks_net) {
-		this.total_clicks_net = total_clicks_net;
+	public void setRowIndex(int rowIndex) {
+		this.rowIndex = rowIndex;
 	}
 
-	public int getColumn_index() {
-		return column_index;
+	public boolean isAdminLink() {
+		return adminLink;
 	}
 
-	public void setColumn_index(int column_index) {
-		this.column_index = column_index;
-	}
-
-	public int getRow_index() {
-		return row_index;
-	}
-
-	public void setRow_index(int row_index) {
-		this.row_index = row_index;
-	}
-
-	public boolean isAdmin_link() {
-		return admin_link;
-	}
-
-	public void setAdmin_link(boolean admin_link) {
-		this.admin_link = admin_link;
+	public void setAdminLink(boolean adminLink) {
+		this.adminLink = adminLink;
 	}
 
     public boolean isMobile() {
@@ -141,23 +124,21 @@ public class ClickStatRow {
     @Override
     public String toString() {
     	return
-			"ClicksGross: " + clicks_gross
-			+ " ClicksNet: " + clicks_net
-			+ " TotalClicksGross: " + total_clicks_gros
-	    	+ " TotalClicksNet: " + total_clicks_net
-	    	+ " ClicksAnonymous: " + clicks_anonymous
+			"ClicksGross: " + clicksGross
+			+ " ClicksNet: " + clicksNet
+	    	+ " ClicksAnonymous: " + clicksAnonymous
 	    	+ " DeviceClass: " + deviceClass;
     }
 	
-	public void addClicks_gross(int clicksGrossValue) {
-		this.clicks_gross += clicksGrossValue;
+	public void addClicksGross(int clicksGrossValue) {
+		this.clicksGross += clicksGrossValue;
 	}
 	
-	public void addClicks_net(int clicksNetValue) {
-		this.clicks_net += clicksNetValue;
+	public void addClicksNet(int clicksNetValue) {
+		this.clicksNet += clicksNetValue;
 	}
 	
-	public void addClicks_anonymous(int clicksAnonymous) {
-		this.clicks_anonymous += clicksAnonymous;
+	public void addClicksAnonymous(int clicksAnonymous) {
+		this.clicksAnonymous += clicksAnonymous;
 	}
 }

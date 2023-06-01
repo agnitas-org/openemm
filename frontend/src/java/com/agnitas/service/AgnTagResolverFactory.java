@@ -10,9 +10,7 @@
 
 package com.agnitas.service;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
-
 public interface AgnTagResolverFactory {
-    AgnTagResolver create(@VelocityCheck int companyId, int mailingId, int mailingListId, int customerId);
-    AgnTagResolver create(@VelocityCheck int companyId);
+    AgnTagResolver create(int companyId, int mailingId, int mailingListId, int customerId);
+    AgnTagResolver create(int companyId);
 }

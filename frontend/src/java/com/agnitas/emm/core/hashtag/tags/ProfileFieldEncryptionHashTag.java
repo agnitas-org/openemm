@@ -21,7 +21,7 @@ import com.agnitas.emm.core.hashtag.HashTagContext;
 /**
  * Implementation of "encrypt:profilefield" hash tag.
  * 
- * <b>Note: This implementation is limited to profile fields. Encryption of 
+ * <b>Note: This implementation is limited to profile fields. Encryption of
  * reference tables is currently not supported!</b>
  */
 public class ProfileFieldEncryptionHashTag extends AbstractColonHashTag {

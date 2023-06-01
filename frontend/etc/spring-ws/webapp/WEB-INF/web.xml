@@ -57,8 +57,10 @@
 
     <!--  Spring WS servlet -->
     <servlet>
-	<servlet-name>spring-ws</servlet-name>
-	<servlet-class>org.springframework.ws.transport.http.MessageDispatcherServlet</servlet-class>
+		<servlet-name>spring-ws</servlet-name>
+		<servlet-class>org.agnitas.emm.springws.AgnitasMessageDispatcherServlet</servlet-class>
+		<!--  <servlet-class>org.springframework.ws.transport.http.MessageDispatcherServlet</servlet-class-->
+		<!--  <servlet-class>org.agnitas.emm.springws.AgnitasMessageDispatcherServlet</servlet-class-->
     </servlet>
     <servlet-mapping>
         <servlet-name>spring-ws</servlet-name>

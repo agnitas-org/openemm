@@ -18,7 +18,7 @@ import org.agnitas.actions.EmmAction;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 
 
 public interface ComEmmActionService extends EmmActionService {
@@ -33,6 +33,6 @@ public interface ComEmmActionService extends EmmActionService {
 
     List<EmmAction> getEmmNotFormActions(int companyId, boolean includeInactive);
     
-    boolean canUserSaveAction(final ComAdmin admin, final int actionId);
-    boolean canUserSaveAction(final ComAdmin admin, final EmmAction action);
+    boolean canUserSaveAction(final Admin admin, final int actionId);
+    boolean canUserSaveAction(final Admin admin, final EmmAction action);
 }

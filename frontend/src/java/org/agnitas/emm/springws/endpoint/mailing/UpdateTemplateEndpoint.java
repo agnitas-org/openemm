@@ -17,9 +17,11 @@ import java.util.Objects;
 import org.agnitas.emm.core.mailing.service.MailingModel;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.springws.endpoint.BaseEndpoint;
-import org.agnitas.emm.springws.endpoint.Utils;
+import org.agnitas.emm.springws.endpoint.Namespaces;
 import org.agnitas.emm.springws.jaxb.UpdateTemplateRequest;
 import org.agnitas.emm.springws.jaxb.UpdateTemplateResponse;
+import org.agnitas.emm.springws.util.SecurityContextAccess;
+import org.agnitas.emm.springws.util.UserActivityLogAccess;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,20 +38,26 @@ import com.agnitas.emm.core.thumbnails.service.ThumbnailService;
 @Endpoint
 public class UpdateTemplateEndpoint extends BaseEndpoint {
 
-	private static final transient Logger LOGGER = LogManager.getLogger(AddMailingFromTemplateEndpoint.class);
+	/** The logger. */
+	private static final Logger LOGGER = LogManager.getLogger(UpdateTemplateEndpoint.class);
 
 	private final ThumbnailService thumbnailService;
-	private MailingService mailingService;
+	private final MailingService mailingService;
+	private final SecurityContextAccess securityContextAccess;
+	private final UserActivityLogAccess userActivityLogAccess;
+	
 
 	@Autowired
-	public UpdateTemplateEndpoint(@Qualifier("MailingService") MailingService mailingService, final ThumbnailService thumbnailService) {
-		this.mailingService = mailingService;
-		this.thumbnailService = Objects.requireNonNull(thumbnailService);
+	public UpdateTemplateEndpoint(@Qualifier("MailingService") MailingService mailingService, final ThumbnailService thumbnailService, final SecurityContextAccess securityContextAccess, final UserActivityLogAccess userActivityLogAccess) {
+		this.mailingService = Objects.requireNonNull(mailingService, "mailingService");
+		this.thumbnailService = Objects.requireNonNull(thumbnailService, "thumbnailService");
+		this.securityContextAccess = Objects.requireNonNull(securityContextAccess, "securityContextAccess");
+		this.userActivityLogAccess = Objects.requireNonNull(userActivityLogAccess, "userActivityLogAccess");
 	}
 
-	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "UpdateTemplateRequest")
+	@PayloadRoot(namespace = Namespaces.AGNITAS_ORG, localPart = "UpdateTemplateRequest")
 	public @ResponsePayload UpdateTemplateResponse updateTemplate(@RequestPayload UpdateTemplateRequest request) throws Exception {
-		final int companyID = Utils.getUserCompany();
+		final int companyID = this.securityContextAccess.getWebserviceUserCompanyId();
 		
 		final MailingModel model = new MailingModel();
 		model.setMailingId(request.getTemplateID());
@@ -71,14 +79,14 @@ public class UpdateTemplateEndpoint extends BaseEndpoint {
 		model.setReplyToAddress(request.getReplyToAddress());
 		model.setCharset(request.getCharset());
 		model.setLinefeed(request.getLinefeed());
-		model.setFormatString(request.getFormat());
-		model.setOnePixelString(request.getOnePixel());
+		model.setFormat(request.getFormat());
+		model.setOnePixel(request.getOnePixel());
 //		model.setAutoUpdate(request.isAutoUpdate());
 		model.setTemplate(true);
 
 		List<UserAction> userActions = new ArrayList<>();
 		mailingService.updateMailing(model, userActions);
-		Utils.writeLog(userActivityLogService, userActions);
+		this.userActivityLogAccess.writeLog(userActions);
 
 		try {
 			this.thumbnailService.updateMailingThumbnailByWebservice(companyID, request.getTemplateID());
@@ -86,7 +94,6 @@ public class UpdateTemplateEndpoint extends BaseEndpoint {
 			LOGGER.error(String.format("Error updating thumbnail of template %d", request.getTemplateID()), e);
 		}
 
-		final UpdateTemplateResponse response = new UpdateTemplateResponse();
-		return response;
+        return new UpdateTemplateResponse();
 	}
 }

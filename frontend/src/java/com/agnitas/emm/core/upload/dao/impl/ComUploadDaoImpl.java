@@ -32,7 +32,7 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.support.lob.DefaultLobHandler;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.emm.core.upload.bean.DownloadData;
 import com.agnitas.emm.core.upload.bean.UploadData;
@@ -115,7 +115,7 @@ public class ComUploadDaoImpl extends PaginatedBaseDaoImpl implements ComUploadD
 	 * @return
 	 */
 	@Override
-	public List<UploadData> getOverviewListByExtention(ComAdmin admin, List<String> extentions) {
+	public List<UploadData> getOverviewListByExtention(Admin admin, List<String> extentions) {
 		String sqlExtentions = "";
 		String sql = "SELECT upload_id, admin_id, creation_date, filename, filesize FROM upload_tbl WHERE";
 		String sqlOrder = " ORDER BY upload_id ";
@@ -150,7 +150,7 @@ public class ComUploadDaoImpl extends PaginatedBaseDaoImpl implements ComUploadD
 	 * @return
 	 */
 	@Override
-	public List<UploadData> getOverviewList(ComAdmin admin) {
+	public List<UploadData> getOverviewList(Admin admin) {
 		String sql = "SELECT upload_id, admin_id, creation_date, filename, filesize FROM upload_tbl WHERE ";
 		String sqlOrder = " ORDER BY upload_id ";
 		
@@ -314,7 +314,7 @@ public class ComUploadDaoImpl extends PaginatedBaseDaoImpl implements ComUploadD
 	 * @return
 	 */
 	@Override
-	public boolean isOwnerOrAdmin(ComAdmin admin, int uploadID) {
+	public boolean isOwnerOrAdmin(Admin admin, int uploadID) {
 		return isOwnerOrAdmin(uploadID,admin.getAdminID(),admin.getCompanyID());
 	}
 

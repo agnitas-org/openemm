@@ -69,9 +69,7 @@ public interface ComRecipientDao {
 
 	List<Integer> filterRecipientsByMailinglistAndTarget(List<Integer> recipientIds, int companyId, int mailinglistId, String sqlTargetExpression, boolean allRecipients, boolean shouldBeActive);
 
-	List<Integer> getDateMatchingRecipients(int companyId, List<Date> allDates, String dateProfileField, String dateFieldOperator, String dateFieldValue, String dateFormat);
-
-    boolean successTableActivated(int companyID);
+	List<Integer> getDateMatchingRecipients(int companyId, List<Date> allDates, String dateProfileField, String dateFieldOperator, String dateFormat);
 
     boolean isMailtrackingEnabled(int companyID);
 
@@ -147,6 +145,7 @@ public interface ComRecipientDao {
      * @param count the number of recipients that should be added.
      * @return true if it is allowed to add the given number of recipients.
      */
+    @Deprecated // Use SubscriberLimitCheck#checkSubscriberLimit() instead
     boolean mayAdd(int companyID, int count);
 
     /**
@@ -314,6 +313,7 @@ public interface ComRecipientDao {
      *
      * @param companyID the id of the company
      * @param list the list of customer id
+     * @return 
      */
     int deleteRecipients(int companyID, List<Integer> list);
 
@@ -463,4 +463,6 @@ public interface ComRecipientDao {
 	boolean isRecipientTrackingAllowed(int companyID, int recipientID);
 
 	List<CaseInsensitiveMap<String, Object>> getTargetRecipients(int companyID, String targetSql, List<String> profileFieldsList, TimeZone timeZone) throws Exception;
+
+	List<ComRecipientMailing> getMailingsDeliveredToRecipient(int customerID, int companyID);
 }

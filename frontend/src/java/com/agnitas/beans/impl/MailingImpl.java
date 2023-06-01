@@ -16,12 +16,9 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Hashtable;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -29,7 +26,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.Vector;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -57,7 +53,6 @@ import org.agnitas.util.GuiConstants;
 import org.agnitas.util.MailoutClient;
 import org.agnitas.util.SafeString;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -65,8 +60,7 @@ import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.springframework.context.ApplicationContext;
 
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.ComTarget;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.ComTrackableLink;
 import com.agnitas.beans.DynamicTag;
 import com.agnitas.beans.LinkProperty;
@@ -76,8 +70,6 @@ import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MailingContentType;
 import com.agnitas.beans.Mediatype;
 import com.agnitas.beans.MediatypeEmail;
-import com.agnitas.dao.ComRecipientDao;
-import com.agnitas.dao.ComTargetDao;
 import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.linkcheck.service.LinkService;
 import com.agnitas.emm.core.linkcheck.service.LinkService.ErroneousLink;
@@ -91,11 +83,12 @@ import com.agnitas.service.AgnDynTagGroupResolverFactory;
 import com.agnitas.service.AgnTagService;
 import com.agnitas.util.ImageUtils;
 import com.agnitas.util.LinkUtils;
+import com.agnitas.web.mvc.Popups;
+import com.agnitas.web.mvc.impl.StrutsPopups;
 
 public class MailingImpl extends MailingBaseImpl implements Mailing {
 	public static final String LINK_SWYN_PREFIX = "SWYN: ";
 
-	/** The logger. */
 	private static final transient Logger logger = LogManager.getLogger(MailingImpl.class);
 
 	protected MailingType mailingType;
@@ -103,17 +96,13 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 	protected int targetID;
 	protected Map<String, DynamicTag> dynTags = new LinkedHashMap<>();
 	protected Map<String, MailingComponent> components = new LinkedHashMap<>();
-	protected Hashtable<String, MailingComponent> attachments;
 	protected Map<String, ComTrackableLink> trackableLinks = new LinkedHashMap<>();
 	protected int clickActionID;
 	protected int openActionID;
 	protected Set<MaildropEntry> maildropStatus = new LinkedHashSet<>();
 	protected Map<Integer, Mediatype> mediatypes = new LinkedHashMap<>();
 	protected Date creationDate;
-	protected Date changeDate;
-	protected Map<Integer, ComTarget> allowedTargets = null;
 	protected Collection<Integer> targetGroups;
-	protected int templateOK;
 	protected boolean isTemplate;
 	protected int targetMode;
 	protected String targetExpression;
@@ -195,12 +184,21 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 	}
 
 	@Override
+	public boolean isLocked() {
+		return locked;
+	}
+
+	@Override
 	public void setLocked(int locked) {
 		this.locked = (locked != 0);
 	}
 
+	@Deprecated
+	/**
+	  * TODO: use {@link com.agnitas.emm.core.components.service.MailingTriggerService}
+	 */
 	@Override
-	public boolean triggerMailing(int maildropStatusID, Map<String, Object> opts, ApplicationContext con) throws Exception {
+	public boolean triggerMailing(int maildropStatusID) throws Exception {
 		try {
 			if (maildropStatusID <= 0) {
 				logger.warn( "maildropStatisID is 0");
@@ -225,17 +223,13 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 		}
 	}
 
-	public boolean triggerMailing(int maildropStatusID) throws Exception {
-		return triggerMailing(maildropStatusID, null, null);
-	}
-
 	@Override
 	public Vector<String> scanForLinks(String text, String textModuleName, ApplicationContext applicationContext, ActionMessages actionMessages, ActionMessages errors) throws Exception {
 		return scanForLinks(text, textModuleName, applicationContext, actionMessages, errors, null);
 	}
 
 	@Override
-	public Vector<String> scanForLinks(String text, String textModuleName, ApplicationContext applicationContext, ActionMessages warnings, ActionMessages errors, ComAdmin admin) throws Exception {
+	public Vector<String> scanForLinks(String text, String textModuleName, ApplicationContext applicationContext, ActionMessages warnings, ActionMessages errors, Admin admin) throws Exception {
 		final int defaultTrackingMode = readDefaultLinkTrackingMode(applicationContext, companyID);
 		
 		
@@ -372,7 +366,7 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
         return scanForLinks(con, null, null, null);
     }
 
-	private Vector<String> scanForLinks(ApplicationContext con, ActionMessages messages, ActionMessages errors, ComAdmin admin) throws Exception {
+	private Vector<String> scanForLinks(ApplicationContext con, ActionMessages messages, ActionMessages errors, Admin admin) throws Exception {
 		Vector<String> addedLinks = new Vector<>();
 
 		for (MailingComponent component : components.values()) {
@@ -405,37 +399,6 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
         }
         return false;
     }
-
-	/**
-	 * Sort the dynamic tags by their interest group value, the position of
-	 * 'non-interest-group' tags is kept untouched.
-	 */
-	protected Map<DynamicTag, DynamicTag> getTagsReorderMap(List<DynamicTag> tags, int customerId, ApplicationContext con) {
-		ComRecipientDao recipientDao = (ComRecipientDao) con.getBean("RecipientDao");
-
-		Map<String, Integer> interestCache = new HashMap<>();
-		// Sort tags by interest group value (if specified) or keep an order untouched (if not).
-		Comparator<DynamicTag> comparator = new DynTagInterestComparator(group -> {
-			// Use interest values cache in order to avoid numerous database queries.
-			return interestCache.computeIfAbsent(group, name -> {
-				// Get interest value by interest group name.
-				return NumberUtils.toInt(recipientDao.getField(name, customerId, companyID));
-			});
-		});
-
-		return getTagsReorderMap(tags, comparator);
-	}
-
-	private Map<DynamicTag, DynamicTag> getTagsReorderMap(List<DynamicTag> tags, Comparator<DynamicTag> comparator) {
-		Iterator<DynamicTag> sortedTags = tags.stream().sorted(comparator).iterator();
-
-		Map<DynamicTag, DynamicTag> map = new HashMap<>();
-		for (DynamicTag tag : tags) {
-			map.put(tag, sortedTags.next());
-		}
-
-		return map;
-	}
 
 	@Override
 	public String getStatusmailRecipients() {
@@ -580,31 +543,6 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 		return (StringUtils.isNotBlank(shortname) ? shortname : "<empty shortname>") + " (" + id + ")";
 	}
 
-	private static class DynTagInterestComparator implements Comparator<DynamicTag> {
-		DynTagInterestResolver resolver;
-
-		public DynTagInterestComparator(DynTagInterestResolver resolver) {
-			this.resolver = resolver;
-		}
-
-		@Override
-		public int compare(DynamicTag tag1, DynamicTag tag2) {
-			String group1 = tag1.getDynInterestGroup();
-			String group2 = tag2.getDynInterestGroup();
-
-			// Keep an existing order when no interest group selected.
-			if (group1 == null || group2 == null) {
-				return 0;
-			} else {
-				return -Integer.compare(resolver.resolve(group1), resolver.resolve(group2));
-			}
-		}
-	}
-
-	private interface DynTagInterestResolver {
-		int resolve(String interestGroup);
-	}
-
 	@Override
 	public MailingContentType getMailingContentType() {
 		return mailingContentType == null ? MailingContentType.advertising : mailingContentType;
@@ -661,7 +599,6 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 
 	@Override
 	public void addComponent(MailingComponent aComp) {
-
 		if (components == null) {
 			components = new HashMap<>();
 		}
@@ -675,16 +612,6 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 		for( MailingComponent component : componentsToAdd) {
 			addComponent( component);
 		}
-	}
-
-	@Override
-	public void addAttachment(MailingComponent aComp) {
-
-		if (attachments == null) {
-			attachments = new Hashtable<>();
-		}
-
-		attachments.put(aComp.getComponentName(), aComp);
 	}
 
 	@Override
@@ -854,7 +781,7 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 
                 if (!components.containsKey(componentLinkString)) {
                     if (foundComponent.getComponentName().contains("[agnDVALUE")) {
-                        var name = getAgnTagName(componentLinkString);
+                        String name = getAgnTagName(componentLinkString);
                         for (DynamicTagContent contentBlock : dynTags.get(name).getDynContent().values()) {
                             if (contentBlock.getTargetID() == 0) {
                                 name = contentBlock.getDynContent().trim();
@@ -900,7 +827,7 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 	}
 
     private String getAgnTagName(String componentLinkString) {
-        var name = StringUtils.substringBetween(componentLinkString, "name=\"", "\"/]");
+    	String name = StringUtils.substringBetween(componentLinkString, "name=\"", "\"/]");
         return StringUtils.isBlank(name) ? StringUtils.substringBetween(componentLinkString, "name=\"", "\"]") : name;
     }
 
@@ -982,62 +909,6 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 		}
 	}
 
-	/**
-	 * Scans a textblock for trackable links and replaces them with encoded
-	 * rdir-links.
-	 */
-	public String insertTrackableLinks(String aText1, int customerID, ApplicationContext context) {
-		if (trackableLinks == null) {
-			return aText1;
-		}
-
-		if (aText1 == null) {
-			return null;
-		}
-
-		/*
-		 * trackableLinks is an unordered HashMap. When there are 2 links in the
-		 * Map, where one is part of the other, this could lead to an link
-		 * replacement, depending on the map ordering.
-		 *
-		 * Link 1: http://www.mydomain.de Link 2:
-		 * http://www.mydomain.de/path/index.htm
-		 *
-		 * If Link 1 is returned before Link 2 from the iterator this resulted
-		 * in: https://rdir.de/r.html?uid=<uid of Link1>/path/index.htm
-		 */
-		Set<String> sorted = new TreeSet<>(Comparator.reverseOrder());
-		sorted.addAll(trackableLinks.keySet());
-
-		int start_link = 0;
-		int end_link = 0;
-		StringBuilder sb = new StringBuilder(aText1);
-		boolean isHref = false;
-		for (String aLink : sorted) {
-			end_link = 0;
-			while ((start_link = sb.indexOf(aLink, end_link)) != -1) {
-				end_link = start_link + 1;
-				isHref = false;
-				if (start_link > 5 && (sb.substring(start_link - 6, start_link).equalsIgnoreCase("href=\""))) {
-					isHref = true;
-				}
-				if (start_link > 6 && (sb.substring(start_link - 7, start_link).equalsIgnoreCase("href=\""))) {
-					isHref = true;
-				}
-				if (sb.length() > (start_link + aLink.length())) {
-					if (!(sb.charAt(start_link + aLink.length()) == ' ' || sb.charAt(start_link + aLink.length()) == '\'' || sb.charAt(start_link + aLink.length()) == '"')) {
-						isHref = false;
-					}
-				}
-				if (isHref) {
-					TrackableLink trackableLink = trackableLinks.get(aLink);
-					sb.replace(start_link, start_link + aLink.length(), getLinkService(context).encodeTagStringLinkTracking(trackableLink.getCompanyID(), trackableLink.getMailingID(), trackableLink.getId(), customerID));
-				}
-			}
-		}
-		return sb.toString();
-	}
-
 	@Override
 	public MailingComponent getTemplate(String type) {
 		return components.get("agn" + type);
@@ -1077,6 +948,11 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 		return (MediatypeEmail) mediatypes.get(MediaTypes.EMAIL.getMediaCode());
 	}
 
+	@Override
+	public boolean isEncryptedSend() {
+		return getEmailParam() != null && getEmailParam().isEncryptedSend();
+	}
+
 	/**
 	 * Getter for property targetGroups.
 	 *
@@ -1092,7 +968,9 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 	 *
 	 * @param targetGroups
 	 *            New value of property targetGroups.
+	 * @deprecated
 	 */
+	@Deprecated
 	@Override
 	public void setTargetGroups(Collection<Integer> targetGroups) {
 		this.targetGroups = targetGroups;
@@ -1167,27 +1045,6 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 	}
 
 	/**
-	 * Getter for property templateOK.
-	 *
-	 * @return Value of property templateOK.
-	 */
-	@Override
-	public int getTemplateOK() {
-		return templateOK;
-	}
-
-	/**
-	 * Setter for property templateOK.
-	 *
-	 * @param templateOK
-	 *            New value of property templateOK.
-	 */
-	@Override
-	public void setTemplateOK(int templateOK) {
-		this.templateOK = templateOK;
-	}
-
-	/**
 	 * Getter for property isTemplate.
 	 *
 	 * @return Value of property isTemplate.
@@ -1223,7 +1080,9 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 	 *
 	 * @param targetMode
 	 *            New value of property targetMode.
+	 * @deprecated
 	 */
+	@Deprecated
 	@Override
 	public void setTargetMode(int targetMode) {
 		this.targetMode = targetMode;
@@ -1354,16 +1213,6 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 	}
 
 	@Override
-	public TrackableLink getTrackableLinkById(int urlID) {
-		for (TrackableLink tmp : trackableLinks.values()) {
-			if (urlID == tmp.getId()) {
-				return tmp;
-			}
-		}
-		return null;
-	}
-
-	@Override
 	public boolean buildDependencies(boolean scanDynTags, ApplicationContext con) throws Exception {
 		return buildDependencies(scanDynTags, null, con, null, null);
 	}
@@ -1378,8 +1227,17 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 		return buildDependencies(scanDynTags, dynNamesForDeletion, con, messages, errors, null);
 	}
 
+    @Override
+    public boolean buildDependencies(Popups popups, boolean scanDynTags, List<String> dynNamesForDeletion, ApplicationContext con, Admin admin) throws Exception {
+        ActionMessages errors = new ActionMessages();
+        ActionMessages warnings = new ActionMessages();
+        boolean result = buildDependencies(scanDynTags, dynNamesForDeletion, con, warnings, errors, admin);
+        StrutsPopups.insertMessagesToPopups(warnings, errors, popups);
+	    return result;
+    }
+	
 	@Override
-	public boolean buildDependencies(boolean scanDynTags, List<String> dynNamesForDeletion, ApplicationContext con, ActionMessages messages, ActionMessages errors, ComAdmin admin) throws Exception {
+	public boolean buildDependencies(boolean scanDynTags, List<String> dynNamesForDeletion, ApplicationContext con, ActionMessages messages, ActionMessages errors, Admin admin) throws Exception {
 		Vector<String> componentsToCheck = new Vector<>();
 
 		// scan for Dyntags
@@ -1459,25 +1317,6 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 		dynNamesInUse.removeAll(names);
 
 		return new Vector<>(dynNamesInUse);
-	}
-
-	@Override
-	public Map<Integer, ComTarget> getAllowedTargets(ApplicationContext myContext) {
-		if (allowedTargets == null) {
-			ComTargetDao dao = myContext.getBean("TargetDao", ComTargetDao.class);
-
-			allowedTargets = dao.getAllowedTargets(companyID);
-			if (allowedTargets != null) {
-				ComTarget aTarget = myContext.getBean("Target", ComTarget.class);
-
-				aTarget.setCompanyID(companyID);
-				aTarget.setId(0);
-				aTarget.setTargetName("All Subscribers");
-				allowedTargets.put(0, aTarget);
-			}
-		}
-
-		return allowedTargets;
 	}
 
 	/**
@@ -1572,14 +1411,6 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 		this.clickActionID = id;
 	}
 
-	public Date getChangeDate() {
-		return changeDate;
-	}
-
-	public void setChangeDate(Date changeDate) {
-		this.changeDate = changeDate;
-	}
-
     @Override
     public List<EmmAction> getPossibleActions() {
         return possibleActions;
@@ -1602,8 +1433,6 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 
     /**
      * For testing purposes only
-     *
-     * @param linkService
      */
     public void setLinkService(LinkService linkService) {
         this.linkService = linkService;

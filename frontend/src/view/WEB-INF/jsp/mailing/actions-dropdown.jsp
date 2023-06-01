@@ -1,24 +1,24 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 <%@ page import="com.agnitas.web.MailingBaseAction" %>
 <%@ page import="org.agnitas.util.AgnUtils" %>
-<%@ page import="com.agnitas.beans.ComAdmin" %>
+<%@ page import="com.agnitas.beans.Admin" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="bean" uri="http://struts.apache.org/tags-bean" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
-<c:set var="ACTION_VIEW" value="<%= MailingBaseAction.ACTION_VIEW %>"/>
-<c:set var="ACTION_CLONE_AS_MAILING" value="<%= MailingBaseAction.ACTION_CLONE_AS_MAILING %>"/>
-<c:set var="ACTION_CONFIRM_DELETE" value="<%= MailingBaseAction.ACTION_CONFIRM_DELETE %>"/>
-<c:set var="ACTION_CREATE_FOLLOW_UP" value="<%= MailingBaseAction.ACTION_CREATE_FOLLOW_UP %>"/>
-<c:set var="ACTION_CONFIRM_UNDO" value="<%= MailingBaseAction.ACTION_CONFIRM_UNDO %>"/>
-<c:set var="ACTION_MAILING_EXPORT" value="<%= MailingBaseAction.ACTION_MAILING_EXPORT %>"/>
+<c:set var="ACTION_VIEW" value="<%=MailingBaseAction.ACTION_VIEW%>"/>
+<c:set var="ACTION_CLONE_AS_MAILING" value="<%=MailingBaseAction.ACTION_CLONE_AS_MAILING%>"/>
+<c:set var="ACTION_CONFIRM_DELETE" value="<%=MailingBaseAction.ACTION_CONFIRM_DELETE%>"/>
+<c:set var="ACTION_CREATE_FOLLOW_UP" value="<%=MailingBaseAction.ACTION_CREATE_FOLLOW_UP%>"/>
+<c:set var="ACTION_CONFIRM_UNDO" value="<%=MailingBaseAction.ACTION_CONFIRM_UNDO%>"/>
+<c:set var="ACTION_MAILING_EXPORT" value="<%=MailingBaseAction.ACTION_MAILING_EXPORT%>"/>
 
 <c:set var="workflowParams" value="${emm:getWorkflowParamsWithDefault(pageContext.request, param.workflowId)}" scope="page"/>
 <c:set var="isWorkflowDriven" value="${not empty workflowParams and workflowParams.workflowId gt 0}" scope="page"/>
 
-<c:set var="SESSION_CONTEXT_KEYNAME_ADMIN" value="<%= AgnUtils.SESSION_CONTEXT_KEYNAME_ADMIN %>"/>
+<c:set var="SESSION_CONTEXT_KEYNAME_ADMIN" value="<%=AgnUtils.SESSION_CONTEXT_KEYNAME_ADMIN%>"/>
 
-<c:set var="company" value="<%= ((ComAdmin) session.getAttribute(AgnUtils.SESSION_CONTEXT_KEYNAME_ADMIN)).getCompany() %>"/>
+<c:set var="company" value="<%=((Admin) session.getAttribute(AgnUtils.SESSION_CONTEXT_KEYNAME_ADMIN)).getCompany()%>"/>
 <c:set var="admin" value="${sessionScope[SESSION_CONTEXT_KEYNAME_ADMIN]}"/>
 
 <c:if test="${empty itemActionsSettings}">

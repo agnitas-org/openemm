@@ -223,7 +223,7 @@ public class ImageHelperService {
 	public byte[] createThumbIfNeeded(byte[] img) throws Exception {
 		logger.info("ImageHelperService: called createThumbIfNeeded");
 		byte[] returnImage = img;
-		float scaleLimit = configService.getFloatValue(ConfigValue.Thumbnail_Treshold);
+		float scaleLimit = configService.getFloatValue(ConfigValue.Thumbnail_Threshold);
 		ByteArrayInputStream byteIn = new ByteArrayInputStream(img);
 		BufferedImage buffImg = null;
 		try {

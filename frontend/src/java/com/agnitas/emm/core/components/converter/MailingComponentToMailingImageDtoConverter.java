@@ -28,7 +28,7 @@ public class MailingComponentToMailingImageDtoConverter implements Converter<Mai
 
     @Override
 	public MailingImageDto convert(MailingComponent component) {
-        var dto = new MailingImageDto();
+    	MailingImageDto dto = new MailingImageDto();
 		dto.setId(component.getId());
 		dto.setMobile(component.isMobileImage());
 		dto.setName(component.getComponentName());

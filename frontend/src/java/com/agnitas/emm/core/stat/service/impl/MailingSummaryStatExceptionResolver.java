@@ -13,26 +13,29 @@ package com.agnitas.emm.core.stat.service.impl;
 import org.agnitas.emm.springws.exceptionresolver.AbstractEmmExceptionResolver;
 import org.springframework.ws.soap.server.endpoint.SoapFaultDefinition;
 
-
 public class MailingSummaryStatExceptionResolver extends AbstractEmmExceptionResolver {
 
 	@Override
-	protected SoapFaultDefinition getFaultDefinition(Object endpoint,
-			Exception ex) {
-		
+	protected SoapFaultDefinition getFaultDefinition(Object endpoint, Exception ex) {
 		if (ex instanceof SummaryStatJobNotExistException) {
 			SoapFaultDefinition definition = getDefaultDefinition(ex);
 			definition.setFaultStringOrReason("Unknown summary statistic job ID");
 			return definition;
-		} else if (ex instanceof TargetGroupsStringFormatException) {
+		}
+
+		if (ex instanceof TargetGroupsStringFormatException) {
 			SoapFaultDefinition definition = getDefaultDefinition(ex);
 			definition.setFaultStringOrReason("Error parsing target group list string argument.");
 			return definition;
-		} else if (ex instanceof UnknownRecipientsTypeException) {
+		}
+
+		if (ex instanceof UnknownRecipientsTypeException) {
 			SoapFaultDefinition definition = getDefaultDefinition(ex);
 			definition.setFaultStringOrReason("Unknown recipients type");
 			return definition;
-		} else if (ex instanceof FailedArgumentsValidationException) {
+		}
+
+		if (ex instanceof FailedArgumentsValidationException) {
 			SoapFaultDefinition definition = getDefaultDefinition(ex);
 			definition.setFaultStringOrReason("Invalid argument(s): " + ex.getMessage());
 			return definition;
@@ -40,5 +43,4 @@ public class MailingSummaryStatExceptionResolver extends AbstractEmmExceptionRes
 		
 		return super.getFaultDefinition(endpoint, ex);
 	}
-
 }

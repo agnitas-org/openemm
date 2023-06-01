@@ -145,7 +145,7 @@ public class DBJobWorker extends JobWorker {
 								sftpHelper.connect();
 								sftpHelper.put(exportDataFile.getAbsolutePath(), sftpFileName, ChannelSftp.OVERWRITE, true);
 							} catch (Exception e) {
-								throw new Exception("Cannot upload file top SFTP server: " + e.getMessage(), e);
+								throw new Exception("Cannot upload file to SFTP server ('" + (exportDataFile == null ? "null" : exportDataFile.getAbsolutePath()) + "'): " + e.getMessage(), e);
 							}
 
 							infoMailContent.append("Export data file '" + sftpFileName + "' transfered to SFTP server<br />\n");

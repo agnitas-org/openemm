@@ -10,11 +10,11 @@
 
 package com.agnitas.emm.core.workflow.beans.impl;
 
+import java.util.Objects;
+
 import com.agnitas.emm.core.workflow.beans.WorkflowIconType;
 import com.agnitas.emm.core.workflow.beans.WorkflowStop;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-
-import java.util.Objects;
 
 //Start/Stop icons uses the same modals and stored in the same table.
 //Furthermore it is possible to know know which type of icon we have (if icon is not filled we don't know is it start or end)
@@ -41,9 +41,15 @@ public class WorkflowStopImpl extends WorkflowStartStopImpl implements WorkflowS
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
+        if (this == o) {
+			return true;
+		}
+        if (o == null || getClass() != o.getClass()) {
+			return false;
+		}
+        if (!super.equals(o)) {
+			return false;
+		}
         WorkflowStopImpl that = (WorkflowStopImpl) o;
         return endType == that.endType;
     }

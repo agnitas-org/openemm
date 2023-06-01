@@ -15,7 +15,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.dao.ComTrackableLinkDao;
+import com.agnitas.dao.TrackableLinkDao;
 import com.agnitas.emm.core.target.eql.codegen.validate.LinkIdValidationException;
 import com.agnitas.emm.core.target.eql.codegen.validate.LinkIdValidator;
 import com.agnitas.emm.core.target.eql.codegen.validate.UnknownLinkIdValidationException;
@@ -29,7 +29,7 @@ public class EmmLinkIdValidator implements LinkIdValidator {
 	private static final transient Logger logger = LogManager.getLogger(EmmLinkIdValidator.class);
 	
 	/** DAO used for link ID validation. */
-	private ComTrackableLinkDao linkDao;
+	private TrackableLinkDao linkDao;
 	
 	@Override
 	public void validateLinkId(int mailingId, Integer linkId, int companyId) throws LinkIdValidationException {
@@ -56,7 +56,7 @@ public class EmmLinkIdValidator implements LinkIdValidator {
 	 * @param dao DAO for accessing trackable link data
 	 */
 	@Required
-	public void setTrackableLinkDao(ComTrackableLinkDao dao) {
+	public void setTrackableLinkDao(TrackableLinkDao dao) {
 		this.linkDao = dao;
 	}
 }

@@ -28,7 +28,7 @@ public enum MaildropGenerationStatus {
 		this.finalState = finalState;
 	}
 
-	public static final MaildropGenerationStatus fromCodeOrNull(final int code) {
+	public static MaildropGenerationStatus fromCodeOrNull(final int code) {
 		for(final MaildropGenerationStatus value : values()) {
 			if(value.code == code) {
 				return value;
@@ -38,7 +38,7 @@ public enum MaildropGenerationStatus {
 		return null;
 	}
 	
-	public static final boolean isFinalState(final int code) {
+	public static boolean isFinalState(final int code) {
 		final MaildropGenerationStatus status = fromCodeOrNull(code);
 		
 		if(status == null) {

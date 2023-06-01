@@ -39,7 +39,6 @@ import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MailingContentType;
 import com.agnitas.beans.MediatypeEmail;
 import com.agnitas.beans.TargetLight;
-import com.agnitas.emm.common.MailingType;
 import com.agnitas.web.MailingWizardAction;
 
 import jakarta.mail.internet.InternetAddress;
@@ -79,10 +78,13 @@ public class MailingWizardForm extends StrutsFormBase {
     public ActionErrors formSpecificValidate(ActionMapping mapping,
             HttpServletRequest request) {
     	ActionErrors errors = new ActionErrors();
-
-        if (MailingWizardAction.ACTION_NAME.equals(this.action) &&
-                StringUtils.length(this.getMailing().getShortname()) < 3) {
-            errors.add("shortname", new ActionMessage("error.name.too.short"));
+    	
+        if (MailingWizardAction.ACTION_NAME.equals(this.action)) {
+        	if (StringUtils.trimToNull(this.getMailing().getShortname()) == null) {
+        		errors.add("shortname", new ActionMessage("error.name.is.empty"));
+        	} else if (StringUtils.trimToNull(this.getMailing().getShortname()).length() < 3) {
+        		errors.add("shortname", new ActionMessage("error.name.too.short"));
+        	}
         }
 
         if (this.action.equals(MailingWizardAction.ACTION_SENDADDRESS)) {
@@ -121,13 +123,6 @@ public class MailingWizardForm extends StrutsFormBase {
 				errors.add("textmodule", new ActionMessage("error.mailing.content.target.duplicated"));
 			}
         }
-
-        if (mailing != null && (MailingWizardAction.ACTION_TARGET.equalsIgnoreCase(action) ||
-        		MailingWizardAction.ACTION_FINISH.equalsIgnoreCase(action))) {
-    	  if (CollectionUtils.isEmpty(mailing.getTargetGroups()) && CollectionUtils.isEmpty(targetGroups) && mailing.getMailingType() == MailingType.DATE_BASED) {
-              errors.add("global", new ActionMessage("error.mailing.rulebased_without_target"));
-          }
-    	}
 
         return errors;
     }

@@ -15,12 +15,6 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import jakarta.servlet.ServletException;
-import jakarta.servlet.ServletOutputStream;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-
 import org.agnitas.beans.EmmLayoutBase;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.impl.CompanyStatus;
@@ -44,6 +38,12 @@ import com.agnitas.emm.core.mobile.bean.DeviceClass;
 import com.agnitas.emm.core.mobile.service.ComDeviceService;
 import com.agnitas.util.ImageUtils;
 
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+
 /**
  * This servlet loads and shows a image from the mailing_component_tbl.
  * The images are cached. When an image cannot be found a default image is shown which is also cached.
@@ -59,7 +59,7 @@ public class ShowImageServlet extends HttpServlet {
      * This is needed, because "containsKey" may be "true", but before retrieving the value the cache might have it removed because it was outdated.
      * But we still need the information whether there was no value in the cache or there was a value but it was null(=NOT_FOUND_IMAGE).
      */
-	private static final DeliverableImage NOT_FOUND_IMAGE = new DeliverableImage();
+	protected static final DeliverableImage NOT_FOUND_IMAGE = new DeliverableImage();
 
 	/** Serial version UID: */
 	private static final long serialVersionUID = -595094416663851734L;
@@ -193,8 +193,28 @@ public class ShowImageServlet extends HttpServlet {
 				if ((StringUtils.isNotEmpty(companyIdString) && StringUtils.isNotEmpty(mailingIdString) && StringUtils.isNotEmpty(imageName))) {
 					if (getDeviceService().getDeviceClassForStatistics(request.getHeader("User-Agent")) == DeviceClass.MOBILE) {
 						image = getImageForMobileRequest(request, companyID, Integer.parseInt(mailingIdString), imageName, noCache);
+						if (image == null && imageName != null) {
+							// Try to read image from mediapool
+							int elementID;
+							try {
+								elementID = imageName.contains(".") ? Integer.parseInt(imageName.substring(0, imageName.lastIndexOf("."))) : Integer.parseInt(imageName);
+								image = getMediapoolImage(companyID, elementID, noCache, true);
+							} catch (Exception e) {
+								// do nothing
+							}
+						}
 					} else {
 						image = getImageForStandardRequest(request, companyID, Integer.parseInt(mailingIdString), imageName, noCache);
+						if (image == null && imageName != null) {
+							// Try to read image from mediapool
+							int elementID;
+							try {
+								elementID = imageName.contains(".") ? Integer.parseInt(imageName.substring(0, imageName.lastIndexOf("."))) : Integer.parseInt(imageName);
+								image = getMediapoolImage(companyID, elementID, noCache, false);
+							} catch (Exception e) {
+								// do nothing
+							}
+						}
 					}
 				}
 	
@@ -212,6 +232,16 @@ public class ShowImageServlet extends HttpServlet {
 				CdnImage cdnImage = getCdnCache().get(cacheKey);
 				if (cdnImage == null) {
 					cdnImage = getComponentDao().getCdnImage(companyID, Integer.parseInt(mailingIdString), imageName, mobile);
+					if (cdnImage == null && imageName != null) {
+						// Try to read image from mediapool
+						int elementID;
+						try {
+							elementID = imageName.contains(".") ? Integer.parseInt(imageName.substring(0, imageName.lastIndexOf("."))) : Integer.parseInt(imageName);
+							cdnImage = getMediapoolCdnImage(companyID, elementID);
+						} catch (Exception e) {
+							// do nothing
+						}
+					}
 					getCdnCache().put(cacheKey, cdnImage);
 				}
 				if (cdnImage != null) {
@@ -229,6 +259,26 @@ public class ShowImageServlet extends HttpServlet {
 				logger.debug("ShowImageServlet execute end: " + new SimpleDateFormat(DateUtilities.YYYY_MM_DD_HH_MM_SS_MS).format(new Date()));
 			}
 		}
+	}
+
+	/**
+	 * @param companyID
+	 * @param elementID
+	 * @param noCache
+	 * @param isMobileDevice
+	 */
+	protected DeliverableImage getMediapoolImage(@VelocityCheck int companyID, int elementID, boolean noCache, boolean isMobileDevice) {
+		return null;
+	}
+
+	/**
+	 * @param companyID
+	 * @param elementID
+	 * @param noCache
+	 * @param isMobileDevice
+	 */
+	protected CdnImage getMediapoolCdnImage(int companyID, int elementID) {
+		return null;
 	}
 
 	/**
@@ -470,7 +520,7 @@ public class ShowImageServlet extends HttpServlet {
 		return true;
 	}
 
-	private boolean checkImageCacheSize(DeliverableImage image) {
+	protected boolean checkImageCacheSize(DeliverableImage image) {
 		if (image != null) {
 			int maxSize = getConfigService().getIntegerValue(ConfigValue.MaximumCachedImageSize);
 			return image.imageData != null && image.imageData.length <= maxSize;
@@ -506,7 +556,7 @@ public class ShowImageServlet extends HttpServlet {
 	 */
 	private ComMailingComponentDao getComponentDao() {
 		if (componentDao == null) {
-			componentDao = (ComMailingComponentDao) WebApplicationContextUtils.getWebApplicationContext(getServletContext()).getBean("MailingComponentDao");
+			componentDao = WebApplicationContextUtils.getWebApplicationContext(getServletContext()).getBean("MailingComponentDao", ComMailingComponentDao.class);
 		}
 		return componentDao;
 	}
@@ -516,28 +566,28 @@ public class ShowImageServlet extends HttpServlet {
 	 */
 	private ComDeviceService getDeviceService() {
 		if (deviceService == null) {
-			deviceService = (ComDeviceService) WebApplicationContextUtils.getWebApplicationContext(getServletContext()).getBean("DeviceService");
+			deviceService = WebApplicationContextUtils.getWebApplicationContext(getServletContext()).getBean("DeviceService", ComDeviceService.class);
 		}
 		return deviceService;
 	}
 
     private RdirTrafficAmountDao getRdirTrafficAmountDao() {
 		if (rdirTrafficAmountDao == null) {
-			rdirTrafficAmountDao = (RdirTrafficAmountDao) WebApplicationContextUtils.getWebApplicationContext(getServletContext()).getBean("RdirTrafficAmountDao");
+			rdirTrafficAmountDao = WebApplicationContextUtils.getWebApplicationContext(getServletContext()).getBean("RdirTrafficAmountDao", RdirTrafficAmountDao.class);
 		}
 		return rdirTrafficAmountDao;
 	}
 
     private CompanyDaoCache getCompanyDaoCache() {
 		if (companyDaoCache == null) {
-			companyDaoCache = (CompanyDaoCache) WebApplicationContextUtils.getWebApplicationContext(getServletContext()).getBean("CompanyDaoCache");
+			companyDaoCache = WebApplicationContextUtils.getWebApplicationContext(getServletContext()).getBean("CompanyDaoCache", CompanyDaoCache.class);
 		}
 		return companyDaoCache;
 	}
 
     private ConfigService getConfigService() {
 		if (configService == null) {
-			configService = (ConfigService) WebApplicationContextUtils.getWebApplicationContext(getServletContext()).getBean("ConfigService");
+			configService = WebApplicationContextUtils.getWebApplicationContext(getServletContext()).getBean("ConfigService", ConfigService.class);
 		}
 		return configService;
 	}

@@ -10,8 +10,11 @@
 
 package org.agnitas.util;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -25,6 +28,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.agnitas.ssh.SshKey;
+import com.agnitas.ssh.SshKeyReader;
+import com.agnitas.ssh.SshKeyWriter;
 import com.jcraft.jsch.Channel;
 import com.jcraft.jsch.ChannelSftp;
 import com.jcraft.jsch.ChannelSftp.LsEntry;
@@ -38,8 +44,7 @@ import com.jcraft.jsch.SftpException;
  */
 public class SFtpHelper implements RemoteFileHelper {
 
-	/** The Constant logger. */
-	private static final transient Logger logger = LogManager.getLogger(SFtpHelper.class);
+	private static final Logger logger = LogManager.getLogger(SFtpHelper.class);
 
 	/** The host. */
 	private String host = null;
@@ -171,7 +176,6 @@ public class SFtpHelper implements RemoteFileHelper {
 	 * Default port for SFTP is 22
 	 *
 	 * @param fileServerAndAuthConfigString like "[username[:password]@]server[:port][;hostKeyFingerprint][/baseDirectory]". The hostKeyFingerprint should be given without ":"-Characters
-	 * @throws Exception
 	 */
 	public SFtpHelper(String fileServerAndAuthConfigString) throws Exception {
 		if (fileServerAndAuthConfigString.toLowerCase().startsWith("ftp://")) {
@@ -225,8 +229,6 @@ public class SFtpHelper implements RemoteFileHelper {
 	
 	/**
 	 * Set the private/public key auth data and use the already configured password if set before
-	 * @param privateSshKeyData
-	 * @throws Exception
 	 */
 	public void setPrivateSshKeyData(String privateSshKeyData) throws Exception {
 		this.privateSshKeyData = privateSshKeyData;
@@ -237,8 +239,6 @@ public class SFtpHelper implements RemoteFileHelper {
 	
 	/**
 	 * Override the known_hosts file
-	 * 
-	 * @param allowUnknownHostKeys
 	 */
 	public void setAllowUnknownHostKeys(boolean allowUnknownHostKeys) {
 		this.allowUnknownHostKeys = allowUnknownHostKeys;
@@ -246,8 +246,6 @@ public class SFtpHelper implements RemoteFileHelper {
 	
 	/**
 	 * Set a expected specific hostKeyFingerprint for this connection
-	 * 
-	 * @param hostKeyFingerprint
 	 */
 	public void setHostKeyFingerPrint(String hostKeyFingerprint) {
 		this.hostKeyFingerprint = hostKeyFingerprint;
@@ -255,8 +253,6 @@ public class SFtpHelper implements RemoteFileHelper {
 
 	/**
 	 * Set a starting directory
-	 * 
-	 * @param baseDir
 	 */
 	public void setBaseDir(String baseDir) {
 		this.baseDir = baseDir;
@@ -273,7 +269,19 @@ public class SFtpHelper implements RemoteFileHelper {
 			if (privateSshKeyFile != null) {
 				jsch.addIdentity(privateSshKeyFile.getAbsolutePath(), privateSshKeyPassphrase);
 			} else if (privateSshKeyData != null) {
-				jsch.addIdentity(user, privateSshKeyData.getBytes("UTF-8"), null, privateSshKeyPassphrase);
+				// Convert from SSH key formats of OpenSSH etc. to a Jsch compatible format
+				SshKey sshKey = null;
+				char[] passwordChars = privateSshKeyPassphrase == null ? null : new String(privateSshKeyPassphrase, StandardCharsets.UTF_8).toCharArray();
+				try (InputStream inputStream = new ByteArrayInputStream(privateSshKeyData.getBytes("UTF-8"))) {
+					sshKey = SshKeyReader.readKey(inputStream, passwordChars);
+				}
+				byte[] sshKeyArray;
+				try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
+					SshKeyWriter.writePKCS8Format(byteArrayOutputStream, sshKey.getKeyPair(), passwordChars, StandardCharsets.UTF_8);
+					sshKeyArray = byteArrayOutputStream.toByteArray();
+				}
+				
+				jsch.addIdentity(user, sshKeyArray, null, privateSshKeyPassphrase);
 			} else if (password == null) {
 				String homeDir = AgnUtils.getUserHomeDir();
 				if (new File(homeDir + "/.ssh/id_dsa").exists()) {
@@ -419,7 +427,6 @@ public class SFtpHelper implements RemoteFileHelper {
 	 *
 	 * @param name the name
 	 * @return the files size in bytes
-	 * @throws Exception
 	 * @throws SftpException the sftp exception
 	 * @throws ParseException the parse exception
 	 */
@@ -496,10 +503,6 @@ public class SFtpHelper implements RemoteFileHelper {
 	
 	/**
 	 * Check if directory exists on sftp server
-	 * 
-	 * @param directoryPath
-	 * @return
-	 * @throws Exception
 	 */
 	@Override
 	public boolean directoryExists(String directoryPath) throws Exception {
@@ -522,9 +525,7 @@ public class SFtpHelper implements RemoteFileHelper {
 	
 	/**
 	 * Check if file exists on sftp server
-	 * 
-	 * @param filePath
-	 * @return
+	 *
 	 * @throws Exception on invalid directory
 	 */
 	@Override

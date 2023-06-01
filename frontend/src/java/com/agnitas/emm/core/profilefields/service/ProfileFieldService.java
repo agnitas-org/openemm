@@ -13,10 +13,11 @@ package com.agnitas.emm.core.profilefields.service;
 import java.util.List;
 import java.util.Set;
 
+import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.ProfileField;
 import com.agnitas.emm.core.beans.Dependent;
 import com.agnitas.emm.core.profilefields.ProfileFieldException;
@@ -24,16 +25,20 @@ import com.agnitas.emm.core.profilefields.bean.ProfileFieldDependentType;
 import com.agnitas.emm.core.profilefields.form.ProfileFieldForm;
 
 public interface ProfileFieldService {
-    boolean checkDatabaseNameExists(@VelocityCheck final int companyID, final String fieldNameOnDatabase) throws ProfileFieldException;
 
     String translateDatabaseNameToVisibleName(@VelocityCheck final int companyID, final String databaseName) throws ProfileFieldException;
+
     String translateVisibleNameToDatabaseName(final int companyID, final String visibleName) throws ProfileFieldException;
 
-    List<ProfileField> getProfileFieldsWithInterest(ComAdmin admin);
+    List<ProfileField> getProfileFieldsWithInterest(Admin admin);
 
     boolean isAddingNearLimit(@VelocityCheck int companyId);
 
+    PaginatedListImpl<ProfileField> getPaginatedFieldsList(int companyId, String sortColumn, String order, int page, int rowsCount) throws Exception;
+
     List<ProfileField> getSortedColumnInfo(@VelocityCheck int companyId);
+
+    List<String> getAllExceptSpecifiedNames(List<String> excludedFields, int companyId);
 
     List<ProfileField> getFieldWithIndividualSortOrder(@VelocityCheck int companyId, int adminId);
 
@@ -47,15 +52,15 @@ public interface ProfileFieldService {
 
     ProfileField getProfileField(int companyId, String fieldName, int adminId);
 
-    List<String> getDependentWorkflows(@VelocityCheck int companyId, String fieldName);
-
-    String getTrackingDependentWorkflows(@VelocityCheck int companyId, String fieldName);
+    String getTrackingDependentWorkflows(int companyId, String fieldName);
 
     Set<String> getSelectedFieldsWithHistoryFlag(@VelocityCheck int companyId);
 
-    boolean createNewField(ProfileField field, ComAdmin admin);
+    void createMandatoryFieldsIfNotExist(Admin admin);
 
-    boolean updateField(ProfileField field, ComAdmin admin);
+    boolean createNewField(ProfileField field, Admin admin);
+
+    boolean updateField(ProfileField field, Admin admin);
 
     void removeProfileField(@VelocityCheck int companyId, String fieldName);
 
@@ -70,12 +75,16 @@ public interface ProfileFieldService {
     List<Dependent<ProfileFieldDependentType>> getDependents(@VelocityCheck int companyId, String fieldName);
 
     List<ProfileField> getProfileFields(int companyId) throws Exception;
-
+    
     List<ProfileField> getProfileFields(int companyId, int adminId) throws Exception;
 
-    boolean isReservedKeyWord(String fieldname);
+    List<ProfileField> getVisibleProfileFields(int companyId);
+
+    List<ProfileField> getVisibleProfileFields(int adminId, int companyId);
+
+	boolean isReservedKeyWord(String fieldname);
 
 	int getMaximumNumberOfCompanySpecificProfileFields() throws Exception;
 
-	ProfileField getProfileFieldByShortname(int companyID, String shortname) throws Exception;
+    ProfileField getProfileFieldByShortname(int companyID, String shortname);
 }

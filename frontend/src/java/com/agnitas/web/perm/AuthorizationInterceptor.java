@@ -27,7 +27,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.web.perm.annotations.AlwaysAllowed;
@@ -83,7 +83,7 @@ public class AuthorizationInterceptor extends HandlerInterceptorAdapter {
     }
 
     private void checkAuthorized(HttpServletRequest request, String namespace, String method) throws Exception {
-        ComAdmin admin = AgnUtils.getAdmin(request);
+        Admin admin = AgnUtils.getAdmin(request);
 
         if (admin == null) {
             logger.error("Permission denied: anonymous user is not authorized to request");

@@ -223,6 +223,19 @@
                 <entry key="exportwizard.delete" value="export.delete" />
                 <entry key="exportwizard.unspecified" value="wizard.export" />
 
+                <!-- Optimization -->
+                <entry key="optimization.list" value="campaign.change"/>
+                <entry key="optimization.view" value="campaign.change"/>
+                <entry key="optimization.create" value="campaign.change"/>
+                <entry key="optimization.confirmDelete" value="campaign.change"/>
+                <entry key="optimization.delete" value="campaign.change"/>
+                <entry key="optimization.save" value="campaign.change"/>
+                <entry key="optimization.schedule" value="campaign.change"/>
+                <entry key="optimization.unSchedule" value="campaign.change"/>
+
+                <entry key="optimization.ajax.splits" value="campaign.change"/>
+                <entry key="optimization.ajax.loadStatistic" value="campaign.change"/>
+
                 <!-- recipient blacklist -->
                 <entry key="blacklist.list" value="blacklist" />
                 <entry key="blacklist.save" value="blacklist" />
@@ -272,6 +285,17 @@
                 <entry key="calendar.getNotifications" value="calendar.show" />
                 <entry key="calendar.movePush" value="calendar.show" />
 
+                <entry key="mailing.view" value="mailing.show" />
+                <entry key="mailing.confirmDelete" value="mailing.delete" />
+                <entry key="mailing.delete" value="mailing.delete" />
+                <entry key="mailing.copy" value="mailing.change" />
+                <entry key="mailing.export" value="mailing.export" />
+                <entry key="mailing.confirmUndo" value="mailing.change" />
+                <entry key="mailing.undo" value="mailing.change" />
+                <entry key="mailing.save" value="mailing.change" />
+                <entry key="mailing.templates" value="mailing.show"/>
+                <entry key="mailing.newClassic" value="mailing.change"/>
+
                 <entry key="mailingbase.new" value="mailing.change" />
                 <entry key="mailingbase.view" value="mailing.show" />
                 <entry key="mailingbase.view_without_load" value="mailing.show" />
@@ -297,6 +321,8 @@
                 <entry key="mailing_ajax.tryToLock" value="mailing.content.show" />
                 <entry key="mailing_ajax.setStatusOnErrorOnly" value="mailing.send.world" />
                 <entry key="mailing_ajax.saveSecuritySettings" value="mailing.send.world" />
+                <entry key="mailing_ajax.isAdvertisingContentType" value="mailing.show" />
+                <entry key="mailing_ajax.calculateRecipients" value="always.allowed" />
 
                 <entry key="mailingbase.import_templates" value="mailing.import|forms.import" />
                 <entry key="mailingbase.mailing_export" value="mailing.export" />
@@ -307,6 +333,11 @@
                 <entry key="mailingParameter.deleteConfirm" value="mailing.parameter.change" />
                 <entry key="mailingParameter.deleteCancelled" value="mailing.parameter.change" />
                 <entry key="mailingParameter.confirmDelete" value="mailing.parameter.change" />
+                
+                <entry key="mailing.parameter.new" value="mailing.parameter.change" />
+                <entry key="mailing.parameter.save" value="mailing.parameter.change" />
+                <entry key="mailing.parameter.delete" value="mailing.parameter.change" />
+                <entry key="mailing.parameter.confirmDelete" value="mailing.parameter.change" />
                 
                 <entry key="mwStart.unspecified" value="mailing.change" />
                 <entry key="mwStart.target" value="mailing.change" />
@@ -391,21 +422,17 @@
                 <entry key="mailingcontent.generate_text_from_html" value="mailing.content.show" />
                 <entry key="mailingcontent.generate_text_from_html_confirm" value="mailing.content.show" />
 
+                <entry key="mailing.content.viewContent" value="mailing.content.show" />
+                <entry key="mailing.content.importContent" value="mailing.content.show" />
+                <entry key="mailing.content.addCustomerExternalField" value="mediatype.post" />
+                <entry key="mailing.content.addReferenceExternalField" value="mediatype.post" />
+                <entry key="mailing.content.removeCustomerExternalField" value="mediatype.post" />
+                <entry key="mailing.content.removeReferenceExternalField" value="mediatype.post" />
+                <entry key="mailing.content.createPostalMailing" value="mediatype.post" />
+                <entry key="mailing.content.confirmGenerateTextFromHtml" value="mailing.content.show" />
+                <entry key="mailing.content.generateTextFromHtml" value="mailing.content.show" />
                 <entry key="mailing.content.view" value="mailing.content.show" />
                 <entry key="mailing.content.save" value="mailing.content.show" />
-
-                <entry key="mcomponents.list" value="mailing.components.show" />
-                <entry key="mcomponents.save_components" value="mailing.components.change" />
-                <entry key="mcomponents.bulk_download_component" value="mailing.components.show" />
-                <entry key="mcomponents.upload_archive" value="mailing.components.change" />
-                <entry key="mcomponents.upload_sftp" value="mailing.components.sftp" />
-                <entry key="mcomponents.delete" value="mailing.components.change" />
-                <entry key="mcomponents.unspecified" value="mailing.components.show" />
-                <entry key="mcomponents.confirm_delete" value="mailing.components.change" />
-                <entry key="mcomponents.reload_image" value="mailing.components.change" />
-                <entry key="mcomponents.update_image" value="mailing.components.change" />
-                <entry key="mcomponents.bulk_confirm_delete" value="mailing.components.change" />
-                <entry key="mcomponents.bulk_delete" value="mailing.components.change" />
 
                 <entry key="mailing.images.list" value="mailing.components.show" />
                 <entry key="mailing.images.bulkDownload" value="mailing.components.show" />
@@ -450,19 +477,43 @@
                 <entry key="mailingsend.unspecified" value="mailing.send.show" />
                 <entry key="mailingsend.prioritization_switching" value="mailing.send.show" />
 
+                <entry key="mailing.send.view" value="mailing.send.show" />
+                <entry key="mailing.send.unlock" value="mailing.can_allow" />
+                <entry key="mailing.send.confirmDeactivation" value="mailing.send.world" />
+                <entry key="mailing.send.deactivate" value="mailing.send.world" />
+                <entry key="mailing.send.deactivateIntervalMailing" value="mailing.send.world" />
+                <entry key="mailing.send.activateDateBased" value="mailing.send.world" />
+                <entry key="mailing.send.confirmDateBasedActivation" value="mailing.send.world" />
+                <entry key="mailing.send.activateActionBased" value="mailing.send.world" />
+                <entry key="mailing.send.confirmActionBasedActivation" value="mailing.send.world" />
+                <entry key="mailing.send.activateIntervalMailing" value="mailing.send.world" />
+                <entry key="mailing.send.saveStatusmailRecipients" value="mailing.send.world" />
+                <entry key="mailing.send.confirmSendWorld" value="mailing.send.show" />
+                <entry key="mailing.send.viewDeliverySettings" value="mailing.send.show" />
+                <entry key="mailing.send.cancel" value="mailing.send.world" />
+                <entry key="mailing.send.loadDeliveryStatusBox" value="mailing.send.show" />
+                <entry key="mailing.send.sendAdmin" value="always.allowed" />
+                <entry key="mailing.send.sendTest" value="always.allowed" />
+                <entry key="mailing.send.sendWorldMailing" value="mailing.send.world" />
+                <entry key="mailing.send.resumeSending" value="mailing.send.world" />
+                <entry key="mailing.send.changePrioritization" value="mailing.send.show" />
+                <entry key="mailing.send.saveIntervalSettings" value="mailing.send.world" />
+                <entry key="mailing.send.changeEncrypted" value="mailing.send.show" />
+                <entry key="mailing.send.confirmCancel" value="mailing.send.world" />
+                <entry key="mailing.send.confirmResume" value="mailing.resume.world" />
+                <entry key="mailing.send.confirmResumeByCopy" value="mailing.resume.world" />
+                <entry key="mailing.send.resume" value="mailing.resume.world" />
+                <entry key="mailing.send.resumeByCopy" value="mailing.resume.world" />
+
+                <entry key="mailing.preview.view" value="mailing.show" />
+                <entry key="mailing.preview.header" value="mailing.show" />
+                <entry key="mailing.preview.viewContent" value="mailing.show" />
+                <entry key="mailing.preview.saveAsPdf" value="mailing.show" />
+
                 <entry key="mailingsend.resume_mailing" value="mailing.resume.world" />
                 <entry key="mailingsend.resume_mailing_request" value="mailing.resume.world" />
                 <entry key="mailingsend.resume_mailing_by_copy" value="mailing.resume.world" />
                 <entry key="mailingsend.resume_mailing_by_copy_request" value="mailing.resume.world" />
-                
-                <entry key="tracklink.list" value="mailing.content.show" />
-                <entry key="tracklink.view" value="mailing.content.show" />
-                <entry key="tracklink.save" value="mailing.content.show" />
-                <entry key="tracklink.save_all" value="mailing.content.show" />
-                <entry key="tracklink.unspecified" value="mailing.content.show" />
-                <entry key="tracklink.bulk_clear_extension" value="mailing.content.show" />
-                <entry key="tracklink.confirm_bulk_clear_extensions" value="mailing.content.show" />
-                <entry key="tracklink.show_bulk_actions" value="mailing.content.show" />
 
                 <entry key="mailing.trackablelink.list" value="mailing.content.show" />
                 <entry key="mailing.trackablelink.view" value="mailing.content.show" />
@@ -472,7 +523,8 @@
                 <entry key="mailing.trackablelink.bulkClearExtensions" value="mailing.content.show" />
                 <entry key="mailing.trackablelink.bulkActionsView" value="mailing.content.show" />
                 <entry key="mailing.trackablelink.activateTrackingLinksOnEveryPosition" value="mailing.content.show" />
-                
+                <entry key="mailing.trackablelink.checkLinks" value="mailing.send.show" />
+
                 <entry key="campaign.unspecified" value="campaign.show" />
                 <entry key="campaign.list" value="campaign.show" />
                 <entry key="campaign.view" value="campaign.show" />
@@ -481,13 +533,13 @@
                 <entry key="campaign.new_mailing" value="mailing.change" />
                 <entry key="campaign.view_without_load" value="campaign.show" />
 
-                <entry key="mailing_campaign.list" value="campaign.show" />
-                <entry key="mailing_campaign.view" value="campaign.show" />
-                <entry key="mailing_campaign.confirmMailingDelete" value="campaign.delete" />
-                <entry key="mailing_campaign.confirmDelete" value="campaign.delete" />
-                <entry key="mailing_campaign.delete" value="campaign.delete" />
-                <entry key="mailing_campaign.create" value="campaign.change" />
-                <entry key="mailing_campaign.save" value="campaign.change" />
+                <entry key="mailing.archive.list" value="campaign.show" />
+                <entry key="mailing.archive.view" value="campaign.show" />
+                <entry key="mailing.archive.confirmMailingDelete" value="campaign.delete" />
+                <entry key="mailing.archive.confirmDelete" value="campaign.delete" />
+                <entry key="mailing.archive.delete" value="campaign.delete" />
+                <entry key="mailing.archive.create" value="campaign.change" />
+                <entry key="mailing.archive.save" value="campaign.change" />
 
                 <entry key="webservice.manager.user.list" value="webservice.user.show"/>
                 <entry key="webservice.manager.user.create" value="webservice.user.create"/>
@@ -502,11 +554,12 @@
 
                 <entry key="http_options_handler.handle" value="always.allowed" /> <!-- Required for successful preflight requests -->
 
-                <entry key="selfservice.view" value="selfservice.migration" />
-                <entry key="selfservice.save" value="selfservice.migration" />
-                <entry key="selfservice.showSupervisorPermission" value="selfservice.migration" />
-                <entry key="selfservice.grantSupervisorPermission" value="selfservice.migration" />
-                <entry key="selfservice.revokeSupervisorPermission" value="selfservice.migration" />
+                <entry key="user.self.view" value="always.allowed" />
+                <entry key="user.self.save" value="always.allowed" />
+
+                <entry key="user.self.supervisor.show" value="always.allowed" />
+                <entry key="user.self.supervisor.grant" value="always.allowed" />
+                <entry key="user.self.supervisor.revoke" value="always.allowed" />
 
                 <!-- new tokens for user activity log -->
                 <entry key="user.activity.log.list" value="always.allowed"/>
@@ -526,10 +579,6 @@
                 <entry key="server.status.jobQueueView" value="server.status"/>
                 <entry key="server.status.licenseFileUpload" value="server.status"/>
                 <entry key="server.status.updateCheck" value="server.status"/>
-                <entry key="targetgroup.list" value="targetgroup.show"/>
-                <entry key="targetgroup.confirmDelete" value="targetgroup.delete"/>
-                <!--				<entry key="targetgroups.view" value="targetgroups.show"/>-->
-
             </map>
 		</property>
 		<!-- Below is a configuration of tokens in case of permission depends on several tokens

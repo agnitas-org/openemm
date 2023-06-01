@@ -21,7 +21,7 @@ import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.grid.grid.beans.ComGridDefaultContentElement;
 import com.agnitas.emm.grid.grid.beans.ComGridDivContainer;
 import com.agnitas.emm.grid.grid.beans.ComGridPlaceholder;
@@ -37,14 +37,16 @@ public interface ComGridDivContainerService {
 
     ComGridDivContainer getDivContainer(int id, @VelocityCheck int companyId, boolean includeThumbnail);
 
-    ServiceResult<ComGridDivContainer> getDivContainerForDeletion(ComAdmin admin, int id);
+    ServiceResult<ComGridDivContainer> getDivContainerForDeletion(Admin admin, int id);
 
-    boolean exists(ComAdmin admin, int id);
+    boolean exists(Admin admin, int id);
 
     /**
      * See {@link com.agnitas.emm.grid.grid.dao.ComGridPlaceholderDao#getPlaceholdersForDivContainer(int, int)}.
      */
     List<ComGridPlaceholder> getPlaceholders(int id, @VelocityCheck int companyId);
+
+    List<ComGridPlaceholder> getOrderedPlaceholders(int containerId, int companyId);
 
     /**
      * Validate and store the div-container and custom placeholders that its body (see {@link ComGridDivContainer#getBody()}) contains.
@@ -54,7 +56,7 @@ public interface ComGridDivContainerService {
      * - div-container is in use (see {@link #isInUse(int)}) AND existing custom placeholders have been changed/removed or TOC markup presence toggled.
      * @throws Exception
      */
-    SimpleServiceResult save(ComAdmin admin, ComGridDivContainer container) throws Exception;
+    SimpleServiceResult save(Admin admin, ComGridDivContainer container) throws Exception;
 
     /**
      * Get paginated list of div containers for list view (overview page) including usage data (see {@link com.agnitas.emm.grid.grid.beans.ComGridDivContainerUsages}.
@@ -78,7 +80,7 @@ public interface ComGridDivContainerService {
     
     void generateDivContainerThumbnailsForTemplate(int templateId, boolean updateExisting, @VelocityCheck int companyId, String sessionId, boolean isUseThread);
 
-    void generateDivContainerThumbnails(ComAdmin admin, String sessionId, int containerId, boolean updateExisting, boolean isUseThread);
+    void generateDivContainerThumbnails(Admin admin, String sessionId, int containerId, boolean updateExisting, boolean isUseThread);
 
     /**
      * Check whether a div container uses (see {@link com.agnitas.emm.grid.grid.beans.ComGridDivContainer#getIsThumbnailCustom()})
@@ -94,9 +96,9 @@ public interface ComGridDivContainerService {
 
     List<ComGridDefaultContentElement> getContentForDivContainerPlaceholders(int containerId, @VelocityCheck int companyId);
 
-    Map<Integer, String> getDefaultContentMap(ComAdmin admin, int containerId);
+    Map<Integer, String> getDefaultContentMap(Admin admin, int containerId);
 
-    Optional<byte[]> getThumbnail(ComAdmin admin, int containerId, int templateId);
+    Optional<byte[]> getThumbnail(Admin admin, int containerId, int templateId);
 
     void saveThumbnail(@VelocityCheck int companyId, int containerId, byte[] thumbnail) throws Exception;
 
@@ -159,11 +161,11 @@ public interface ComGridDivContainerService {
      * @param code an HTML code of a div-container to be validated.
      * @return {@link com.agnitas.service.SimpleServiceResult} instance that indicates validation result (and errors if validation failed).
      */
-    SimpleServiceResult validateHtml(ComAdmin admin, String code);
+    SimpleServiceResult validateHtml(Admin admin, String code);
 
     SimpleServiceResult checkDeprecatedTags(int companyId, String html);
 
-    boolean validateNameUniqueness(ComAdmin admin, String newName, int id);
+    boolean validateNameUniqueness(Admin admin, String newName, int id);
 
     /**
      * Parse a div-container's template and retrieve all the custom (user-defined) placeholders.
@@ -194,22 +196,22 @@ public interface ComGridDivContainerService {
      */
     String asJsonString(@VelocityCheck int companyId, int containerId);
 
-    boolean setActiveness(ComAdmin admin, Map<Integer, Boolean> changeMap, List<UserAction> userActions);
+    boolean setActiveness(Admin admin, Map<Integer, Boolean> changeMap, List<UserAction> userActions);
 
-    ContainerBulkDeleteResult bulkDelete(ComAdmin admin, List<Integer> ids, List<UserAction> userActions);
+    ContainerBulkDeleteResult bulkDelete(Admin admin, List<Integer> ids, List<UserAction> userActions);
 
-    void clonePlaceholderContent(ComAdmin admin, int targetId, int originId);
+    void clonePlaceholderContent(Admin admin, int targetId, int originId);
 
-    String getPreviewStyles(ComAdmin admin, int templateId);
+    String getPreviewStyles(Admin admin, int templateId);
 
     /**
-     * See {@link GridTemplateGenerationService#generateContainerPreview(ComAdmin, ComGridDivContainer)}.
+     * See {@link GridTemplateGenerationService#generateContainerPreview(Admin, ComGridDivContainer)}.
      */
-    String generatePreview(ComAdmin admin, ComGridDivContainer container);
+    String generatePreview(Admin admin, ComGridDivContainer container);
 
-    String getMediaPoolImageSrcPattern(ComAdmin admin);
+    String getMediaPoolImageSrcPattern(Admin admin);
 
-    void saveDefaultContent(ComAdmin admin, int containerId, Map<Integer, String> contentMap);
+    void saveDefaultContent(Admin admin, int containerId, Map<Integer, String> contentMap);
 
     void removeDivContainersSamples(@VelocityCheck int companyId);
 }

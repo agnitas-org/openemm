@@ -10,10 +10,10 @@
 
 package com.agnitas.emm.core.admin.service;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 
 public interface AdminPasswordChangedNotifier {
 
-	public void notifyAdminAboutChangedPassword(final ComAdmin admin);
+	void notifyAdminAboutChangedPassword(final Admin admin);
 	
 }

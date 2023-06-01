@@ -27,7 +27,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.ComTrackableLink;
 import com.agnitas.beans.LinkProperty;
 import com.agnitas.emm.core.Permission;
@@ -56,7 +56,7 @@ public class FormTrackableLinkServiceImpl implements FormTrackableLinkService {
 	private ExtendedConversionService conversionService;
 
 	@Override
-	public void saveTrackableLinks(ComAdmin admin, UserFormDto userFormDto, List<Message> errors, final List<Message> warnings) {
+	public void saveTrackableLinks(Admin admin, UserFormDto userFormDto, List<Message> errors, final List<Message> warnings) {
 		int companyId = admin.getCompanyID();
 		int userFormId = userFormDto.getId();
 
@@ -79,29 +79,29 @@ public class FormTrackableLinkServiceImpl implements FormTrackableLinkService {
 	}
 
 	@Override
-	public List<FormTrackableLinkDto> getFormTrackableLinks(ComAdmin admin, int formId) {
+	public List<FormTrackableLinkDto> getFormTrackableLinks(Admin admin, int formId) {
 		List<ComTrackableUserFormLink> formTrackableLinks = trackableLinkDao.getUserFormTrackableLinkList(formId, admin.getCompanyID());
 		return conversionService.convert(formTrackableLinks, ComTrackableUserFormLink.class, FormTrackableLinkDto.class);
 	}
 
 	@Override
-	public void bulkUpdateTrackableLinks(ComAdmin admin, int formId, List<FormTrackableLinkDto> links, int trackable, List<LinkProperty> commonExtensions) {
+	public void bulkUpdateTrackableLinks(Admin admin, int formId, List<FormTrackableLinkDto> links, int trackable, List<LinkProperty> commonExtensions) {
 		bulkUpdateTrackableLinks(admin, formId, links, trackable, true, commonExtensions);
 	}
 
 	@Override
-	public void bulkUpdateTrackableLinksExtensions(ComAdmin admin, int formId, List<LinkProperty> commonExtensions) {
+	public void bulkUpdateTrackableLinksExtensions(Admin admin, int formId, List<LinkProperty> commonExtensions) {
 		bulkUpdateTrackableLinks(admin, formId, Collections.emptyList(), LinkUtils.KEEP_UNCHANGED, true, commonExtensions);
 	}
 
 	@Override
-	public void bulkUpdateTrackableLinksUsage(ComAdmin admin, int formId, int trackable) {
+	public void bulkUpdateTrackableLinksUsage(Admin admin, int formId, int trackable) {
 		if (trackable > LinkUtils.KEEP_UNCHANGED) {
 			bulkUpdateTrackableLinks(admin, formId, Collections.emptyList(), trackable, false, Collections.emptyList());
 		}
 	}
 
-	private void bulkUpdateTrackableLinks(ComAdmin admin, int formId, List<FormTrackableLinkDto> links, int trackable, boolean updateProperties, List<LinkProperty> commonExtensions) {
+	private void bulkUpdateTrackableLinks(Admin admin, int formId, List<FormTrackableLinkDto> links, int trackable, boolean updateProperties, List<LinkProperty> commonExtensions) {
 		List<ComTrackableUserFormLink> formTrackableLinks = trackableLinkDao.getUserFormTrackableLinkList(formId, admin.getCompanyID());
 		List<LinkProperty> commonProperties = getFormTrackableLinkCommonExtensions(admin, formId);
 
@@ -130,7 +130,7 @@ public class FormTrackableLinkServiceImpl implements FormTrackableLinkService {
 	}
 
 	@Override
-	public List<LinkProperty> getFormTrackableLinkCommonExtensions(ComAdmin admin, int formId) {
+	public List<LinkProperty> getFormTrackableLinkCommonExtensions(Admin admin, int formId) {
 		if (!admin.permissionAllowed(Permission.MAILING_EXTEND_TRACKABLE_LINKS)) {
 			return new ArrayList<>();
 		}
@@ -146,7 +146,7 @@ public class FormTrackableLinkServiceImpl implements FormTrackableLinkService {
 	}
 
 	@Override
-	public FormTrackableLinkDto getFormTrackableLink(ComAdmin admin, int formId, int linkId) {
+	public FormTrackableLinkDto getFormTrackableLink(Admin admin, int formId, int linkId) {
 		ComTrackableUserFormLink userFormTrackableLink = trackableLinkDao.getUserFormTrackableLink(admin.getCompanyID(), formId, linkId);
 		if (userFormTrackableLink == null) {
 			return null;
@@ -156,7 +156,7 @@ public class FormTrackableLinkServiceImpl implements FormTrackableLinkService {
 	}
 
 	@Override
-	public boolean updateTrackableLink(ComAdmin admin, int formId, FormTrackableLinkDto trackableLinkDto) {
+	public boolean updateTrackableLink(Admin admin, int formId, FormTrackableLinkDto trackableLinkDto) {
 		if (trackableLinkDto == null || formId < 0) {
 			return false;
 		}
@@ -177,7 +177,7 @@ public class FormTrackableLinkServiceImpl implements FormTrackableLinkService {
 		return true;
 	}
 
-	private List<ComTrackableUserFormLink> getValidTrackableLinks(ComAdmin admin, int userFormId, UserFormDto userFormDto, List<Message> errors, final List<Message> warnings)
+	private List<ComTrackableUserFormLink> getValidTrackableLinks(Admin admin, int userFormId, UserFormDto userFormDto, List<Message> errors, final List<Message> warnings)
             throws Exception {
         int companyId = admin.getCompanyID();
         LinkService.LinkScanResult successSettingsLinkResult = validateLinks(userFormDto.getSuccessSettings(), admin, errors, warnings);
@@ -212,7 +212,7 @@ public class FormTrackableLinkServiceImpl implements FormTrackableLinkService {
         return userFormLinks;
     }
 
-    private LinkService.LinkScanResult validateLinks(ResultSettings settings, ComAdmin admin, List<Message> errors, List<Message> warnings) throws Exception {
+    private LinkService.LinkScanResult validateLinks(ResultSettings settings, Admin admin, List<Message> errors, List<Message> warnings) throws Exception {
 		String type = settings.isSuccess() ? "SUCCESS" : "ERROR";
 		LinkService.LinkScanResult links = linkService.scanForLinks(settings.getTemplate(), admin.getCompanyID());
 

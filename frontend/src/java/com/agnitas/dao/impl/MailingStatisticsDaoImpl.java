@@ -12,10 +12,10 @@ package com.agnitas.dao.impl;
 
 import java.sql.Connection;
 import java.sql.Statement;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import org.agnitas.beans.MediaTypeStatus;
@@ -25,12 +25,10 @@ import org.agnitas.dao.impl.BaseDaoImpl;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.importvalues.MailType;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 
@@ -40,23 +38,23 @@ import com.agnitas.dao.ComTargetDao;
 import com.agnitas.dao.MailingStatisticsDao;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.target.TargetExpressionUtils;
+import com.agnitas.emm.core.target.service.ComTargetService;
 
 public class MailingStatisticsDaoImpl extends BaseDaoImpl implements MailingStatisticsDao {
     /** The logger. */
     private static final transient Logger logger = LogManager.getLogger(MailingStatisticsDaoImpl.class);
 
-	private ConfigService configService;
-    private ComTargetDao targetDao;
+	private final ConfigService configService;
+    private final ComTargetService targetService;
     
-    @Required
-    public void setConfigService(ConfigService configService) {
-		this.configService = configService;
-	}
-
-    @Required
-	public void setTargetDao(ComTargetDao targetDao) {
-		this.targetDao = targetDao;
-	}
+    @Deprecated(forRemoval = true)	// Use TargetService instead
+    private final ComTargetDao targetDao;
+    
+    public MailingStatisticsDaoImpl(final ConfigService configService, final ComTargetService targetService, @Deprecated final ComTargetDao targetDao) {
+    	this.configService = Objects.requireNonNull(configService);
+    	this.targetService = Objects.requireNonNull(targetService);
+    	this.targetDao = Objects.requireNonNull(targetDao);
+    }
 	
     /**
      * This method returns the Follow-up statistics for the given mailing.
@@ -387,7 +385,7 @@ public class MailingStatisticsDaoImpl extends BaseDaoImpl implements MailingStat
     }
 
 	@Override
-    public Map<Integer, Integer> getSendStats(final Mailing mailing, @VelocityCheck final int companyId) throws Exception {
+    public Map<Integer, Integer> getSendStats(final Mailing mailing, final int companyId) throws Exception {
         final Map<Integer, Integer> map = new HashMap<>();
         int numText = 0;
         int numHtml = 0;
@@ -396,51 +394,18 @@ public class MailingStatisticsDaoImpl extends BaseDaoImpl implements MailingStat
         final MediatypeEmail mediatype = mailing.getEmailParam();
 
         if (StringUtils.isBlank(mediatype.getFollowupFor())) {
-            final StringBuilder sqlSelection = new StringBuilder(" ");
+        	final String targetAndSplitSql = targetService.getSQLFromTargetExpression(mailing.getTargetExpression(), mailing.getSplitID(), companyId);
 
-            final Collection<Integer> targetGroupIds = mailing.getTargetGroups();
+            String sqlStatement = "SELECT count(*) as count, bind.mediatype, cust.mailtype FROM customer_" + companyId + "_tbl cust, " + "customer_" + companyId
+                    + "_binding_tbl bind WHERE bind.mailinglist_id = ? AND cust.customer_id = bind.customer_id " + (StringUtils.isNotBlank(targetAndSplitSql) ? " AND (" + targetAndSplitSql + ")" : "")
+                    + " AND bind.user_status = ?";
 
-            if (CollectionUtils.isNotEmpty(targetGroupIds)) {
-                final String operator = (mailing.getTargetMode() == Mailing.TARGET_MODE_OR) ? "OR " : "AND ";
-                int numTargets = 0;
-
-                for (final int targetId : targetGroupIds) {
-                    final String sql = targetDao.getTargetSQL(targetId, companyId);
-                    if (StringUtils.isNotBlank(sql)) {
-                        if (numTargets > 0) {
-                            sqlSelection.append(operator);
-                        }
-                        sqlSelection.append("(").append(sql).append(") ");
-                        numTargets++;
-                    }
-                }
-
-                if (numTargets > 0) {
-                    if (numTargets > 1) {
-                        sqlSelection.insert(0, " AND (");
-                        sqlSelection.append(") ");
-                    } else {
-                        sqlSelection.insert(0, " AND ");
-                    }
-                }
+            if (mailing.isEncryptedSend()) {
+                sqlStatement += " AND cust.sys_encrypted_sending = 1 ";
             }
 
-            if (mailing.getSplitID() > 0) {
-                String sql = targetDao.getTargetSQL(mailing.getSplitID(), companyId);
+            sqlStatement += " GROUP BY bind.mediatype, cust.mailtype";
 
-                // Could be system target group (doesn't belong to any company).
-                if (sql == null) {
-                    sql = targetDao.getTargetSQL(mailing.getSplitID(), 0);
-                }
-
-                if (StringUtils.isNotBlank(sql)) {
-                    sqlSelection.append(" AND (").append(sql).append(") ");
-                }
-            }
-
-            final String sqlStatement = "SELECT count(*) as count, bind.mediatype, cust.mailtype FROM customer_" + companyId + "_tbl cust, " + "customer_" + companyId
-                    + "_binding_tbl bind WHERE bind.mailinglist_id = ? AND cust.customer_id = bind.customer_id" + sqlSelection.toString()
-                    + " AND bind.user_status = ? GROUP BY bind.mediatype, cust.mailtype";
 
             if (logger.isInfoEnabled()) {
                 logger.info("sql: " + sqlStatement);

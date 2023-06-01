@@ -27,7 +27,7 @@ import org.agnitas.util.HttpUtils.RequestMethod;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.dao.ComMailingComponentDao;
 import com.agnitas.dao.ComMailingDao;
@@ -105,7 +105,7 @@ public class ComponentRestfulServiceHandler implements RestfulServiceHandler {
 	}
 
 	@Override
-	public void doService(HttpServletRequest request, HttpServletResponse response, ComAdmin admin, byte[] requestData, File requestDataFile, BaseRequestResponse restfulResponse, ServletContext context, RequestMethod requestMethod, boolean extendedLogging) throws Exception {
+	public void doService(HttpServletRequest request, HttpServletResponse response, Admin admin, byte[] requestData, File requestDataFile, BaseRequestResponse restfulResponse, ServletContext context, RequestMethod requestMethod, boolean extendedLogging) throws Exception {
 		if (requestMethod == RequestMethod.GET) {
 			((JsonRequestResponse) restfulResponse).setJsonResponseData(new JsonNode(getComponent(request, response, admin)));
 		} else if (requestMethod == RequestMethod.DELETE) {
@@ -129,7 +129,7 @@ public class ComponentRestfulServiceHandler implements RestfulServiceHandler {
 	 * @return
 	 * @throws Exception
 	 */
-	private Object getComponent(HttpServletRequest request, HttpServletResponse response, ComAdmin admin) throws Exception {
+	private Object getComponent(HttpServletRequest request, HttpServletResponse response, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.MAILING_COMPONENTS_SHOW)) {
 			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.MAILING_COMPONENTS_SHOW.toString() + "'");
 		}
@@ -188,7 +188,7 @@ public class ComponentRestfulServiceHandler implements RestfulServiceHandler {
 	 * @return
 	 * @throws Exception
 	 */
-	private Object deleteComponent(HttpServletRequest request, ComAdmin admin) throws Exception {
+	private Object deleteComponent(HttpServletRequest request, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.MAILING_COMPONENTS_CHANGE)) {
 			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.MAILING_COMPONENTS_CHANGE.toString() + "'");
 		}
@@ -233,7 +233,7 @@ public class ComponentRestfulServiceHandler implements RestfulServiceHandler {
 	 * @return
 	 * @throws Exception
 	 */
-	private Object createNewComponent(HttpServletRequest request, byte[] requestData, File requestDataFile, ComAdmin admin) throws Exception {
+	private Object createNewComponent(HttpServletRequest request, byte[] requestData, File requestDataFile, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.MAILING_COMPONENTS_CHANGE)) {
 			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.MAILING_COMPONENTS_CHANGE.toString() + "'");
 		}
@@ -274,7 +274,7 @@ public class ComponentRestfulServiceHandler implements RestfulServiceHandler {
 	 * @return
 	 * @throws Exception
 	 */
-	private Object createOrUpdateComponent(HttpServletRequest request, byte[] requestData, File requestDataFile, ComAdmin admin) throws Exception {
+	private Object createOrUpdateComponent(HttpServletRequest request, byte[] requestData, File requestDataFile, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.MAILING_COMPONENTS_CHANGE)) {
 			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.MAILING_COMPONENTS_CHANGE.toString() + "'");
 		}
@@ -374,7 +374,7 @@ public class ComponentRestfulServiceHandler implements RestfulServiceHandler {
 		return componentJsonObject;
 	}
 
-	private MailingComponent parseComponentJsonObject(byte[] requestData, File requestDataFile, ComAdmin admin) throws Exception {
+	private MailingComponent parseComponentJsonObject(byte[] requestData, File requestDataFile, Admin admin) throws Exception {
 		MailingComponent mailingComponent = new MailingComponentImpl();
 		mailingComponent.setCompanyID(admin.getCompanyID());
 		

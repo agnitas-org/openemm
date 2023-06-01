@@ -1,0 +1,78 @@
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+
+<script id="enlarged-content-editor-template" type="text/x-mustache-template">
+    {{var readonly = isEditableMailing ? '' : 'readonly="readonly"';}}
+    <div id="enlarged_content_modal"
+         class="modal"
+         data-backdrop="static"
+         data-keyboard="false"
+         data-controller="enlarged-content-editor-controller"
+         data-initializer="enlarged-content-editor-initializer">
+        <div class="modal-dialog" style="width: 100vw; height: 100vh; margin: 0">
+            <mvc:form cssClass="modal-fixed-content" cssStyle="display: block; height: 100%">
+                {{if (showHTMLEditor) { }}
+                <div class="modal-fixed-header standard-header">
+                    <ul class="modal-header-nav">
+                        <emm:HideByPermission token="mailing.editor.hide.html">
+                            <li>
+                                <a href="#" data-toggle-tab="#tab-enlargedContent-html" data-action="show-enlarged-char-counter">
+                                    <mvc:message code="HTML"/>
+                                </a>
+                            </li>
+                        </emm:HideByPermission>
+                        <emm:HideByPermission token="mailing.editor.hide">
+                            <li class="active">
+                                <a href="#" data-toggle-tab="#tab-enlargedContent-wysiwyg" data-action="hide-enlarged-char-counter">
+                                    <mvc:message code="mailingContentHTMLEditor"/>
+                                </a>
+                            </li>
+                        </emm:HideByPermission>
+                    </ul>
+                </div>
+                {{ } }}
+                <div class="modal-fixed-body">
+                    <emm:ShowByPermission token="mailing.editor.hide">
+                        <emm:HideByPermission token="mailing.editor.hide.html">
+                            <div id="tab-enlargedContent-html" class="{{- showHTMLEditor ? 'hidden' : ''}} full-height" data-tab-show="true">
+                                <div id="enlargedContentEditor" class="form-control" {{- readonly }}></div>
+                                <textarea id="enlargedContent" data-action="count-textarea-chars" class="form-control js-editor" {{- readonly }}>{{-content}}</textarea>
+                            </div>
+                        </emm:HideByPermission>
+                    </emm:ShowByPermission>
+                    <emm:HideByPermission token="mailing.editor.hide">
+                        <div id="tab-enlargedContent-html" class="{{- showHTMLEditor ? 'hidden' : ''}} full-height">
+                            <div id="enlargedContentEditor" class="form-control" {{- readonly }}></div>
+                        </div>
+                        <div id="tab-enlargedContent-wysiwyg" class="{{- showHTMLEditor ? '' : 'hidden'}} full-height">
+                            <textarea id="enlargedContent"
+                                      name="enlargedContent"
+                                      class="form-control js-editor js-wysiwyg full-height"
+                                      data-action="count-enlarged-textarea-chars"
+                                      data-editor-options="isFullHtml: {{- isFullHtmlTags }}, browseMailingId: ${mailingId}"
+                                      {{- readonly }}>{{-content}}</textarea>
+                        </div>
+                    </emm:HideByPermission>
+                    <div class="modal-char-counter" data-enlarged-char-counter-for="enlargedContent">
+                        <span class="small status">&nbsp;</span>
+                    </div>
+                </div>
+                <div class="modal-fixed-footer standard-footer">
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-default btn-large" data-dismiss="modal">
+                            <i class="icon icon-times"></i>
+                            <span class="text"><mvc:message code="button.Cancel"/></span>
+                        </button>
+
+                        {{ if (isEditableMailing) { }}
+                            <button type="button" class="btn btn-primary btn-large"
+                                    data-action="updateContent">
+                                <i class="icon icon-check"></i>
+                                <span class="text"><mvc:message code="button.Apply"/></span>
+                            </button>
+                        {{ } }}
+                    </div>
+                </div>
+            </mvc:form>
+        </div>
+    </div>
+</script>

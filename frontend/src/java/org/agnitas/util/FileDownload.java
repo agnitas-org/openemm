@@ -106,7 +106,7 @@ public final class FileDownload {
 			// Check response state
 			if(statusCode != HttpStatus.SC_OK) {
 				// Response does not indicate success
-				logger.warn(String.format("Downloading from url '%s' returned HTTP status %d (%s)", statusCode, response.getStatusLine().getReasonPhrase()));
+				logger.warn(String.format("Downloading from url '%s' returned HTTP status %d (%s)", url, statusCode, response.getStatusLine().getReasonPhrase()));
 				
 				return false;
 			} 

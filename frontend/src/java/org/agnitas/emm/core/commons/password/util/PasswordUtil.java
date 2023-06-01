@@ -13,7 +13,7 @@ package org.agnitas.emm.core.commons.password.util;
 
 import org.apache.commons.lang3.StringUtils;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.admin.service.AdminService;
 
 /**
@@ -32,7 +32,7 @@ public final class PasswordUtil {
      * @return {@code true} if password changed, otherwise {@code false}
      */
     public static boolean passwordChanged(final AdminService adminService, final String username, final String password) {
-    	final ComAdmin admin = adminService.getAdminByLogin(username, password);
+    	final Admin admin = adminService.getAdminByLogin(username, password);
 
     	if (StringUtils.isEmpty(password) || (admin != null && admin.getAdminID() > 0)) {
             return false;

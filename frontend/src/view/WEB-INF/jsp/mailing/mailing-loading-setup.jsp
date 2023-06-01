@@ -38,7 +38,12 @@
         </emm:ShowByPermission>
         <emm:ShowByPermission token="template.change">
             <c:set var="isNewItemAvailable" value="true"/>
-            <c:set var="newItemUrl" value="/mailingbase.do?action=${ACTION_NEW}&mailingID=0&isTemplate=true" scope="request"/>
+            <emm:ShowByPermission token="mailing.settings.migration">
+                <c:set var="newItemUrl" value="/mailing/new.action?isTemplate=true" scope="request"/>
+            </emm:ShowByPermission>
+            <emm:HideByPermission token="mailing.settings.migration">
+                <c:set var="newItemUrl" value="/mailingbase.do?action=${ACTION_NEW}&mailingID=0&isTemplate=true" scope="request"/>
+            </emm:HideByPermission>
             <c:set var="newItemLabelKey" value="mailing.New_Template" scope="request"/>
         </emm:ShowByPermission>
     </c:when>

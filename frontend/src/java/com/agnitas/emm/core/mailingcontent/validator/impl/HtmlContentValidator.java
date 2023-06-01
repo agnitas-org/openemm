@@ -10,8 +10,10 @@
 
 package com.agnitas.emm.core.mailingcontent.validator.impl;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import org.agnitas.util.HtmlUtils;
@@ -21,7 +23,7 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.linkcheck.service.LinkService;
 import com.agnitas.emm.core.mailingcontent.dto.DynContentDto;
 import com.agnitas.emm.core.mailingcontent.dto.DynTagDto;
@@ -33,41 +35,52 @@ import com.agnitas.web.mvc.Popups;
 @Component
 @Order(2)
 public class HtmlContentValidator implements DynTagValidator {
+	
+	/** The logger. */
     private static final Logger logger = LogManager.getLogger(HtmlContentValidator.class);
+    
+    /** Regular expression for links. */
     public static final Pattern LINK_PATTER = Pattern.compile("(http|https):/+.*", Pattern.CASE_INSENSITIVE);
+    
+    private static final Set<String> INVALID_HTML_ELEMENTS = Set.of("script", "iframe", "object", "embed", "applet");
 
-    private LinkService linkService;
+    private final LinkService linkService;
 
     public HtmlContentValidator(LinkService linkService) {
         this.linkService = linkService;
     }
+    
+    public final List<String> findInvalidTags(final String content) {
+    	try {
+	    	final List<String> list = new ArrayList<>();
+	    	
+	    	for(final String element : INVALID_HTML_ELEMENTS) {
+	    		if(HtmlUtils.containsElementByTag(content, element)) {
+	    			list.add(element);
+	    		}
+	    	}
+	    	
+	    	return list;
+    	} catch(final Exception e) {
+    		logger.error("Error checking content", e);
+    		
+    		throw e;
+    	}
+    }
 
     @Override
-    public boolean validate(DynTagDto dynTagDto, Popups popups, ComAdmin comAdmin) {
+    public boolean validate(DynTagDto dynTagDto, Popups popups, Admin admin) {
         List<DynContentDto> contentBlocks = dynTagDto.getContentBlocks();
         boolean hasNoErrors = true;
 
         for (DynContentDto contentBlock : contentBlocks) {
-            if (HtmlUtils.containsElementByTag(contentBlock.getContent(), "script")) {
-                popups.alert("error.mailing.content.illegal.script");
-                return false;
-            }
-            if (HtmlUtils.containsElementByTag(contentBlock.getContent(), "iframe")) {
-                popups.alert("error.mailing.content.illegal.iframe");
-                return false;
-            }
-            if (HtmlUtils.containsElementByTag(contentBlock.getContent(), "object")) {
-                popups.alert("error.mailing.content.illegal.object");
-                return false;
-            }
-            if (HtmlUtils.containsElementByTag(contentBlock.getContent(), "embed")) {
-                popups.alert("error.mailing.content.illegal.embed");
-                return false;
-            }
-            if (HtmlUtils.containsElementByTag(contentBlock.getContent(), "applet")) {
-                popups.alert("error.mailing.content.illegal.applet");
-                return false;
-            }
+        	final List<String> invalidElements = findInvalidTags(contentBlock.getContent());
+        	
+        	if(!invalidElements.isEmpty()) {
+        		final String element = invalidElements.get(0);
+        		popups.alert(String.format("error.mailing.content.illegal.%s", element));
+        		return false;
+        	}
             
             try {
                 LinkService.LinkScanResult linkScanResult = linkService.scanForLinks(contentBlock.getContent(), dynTagDto.getCompanyId());
@@ -86,7 +99,7 @@ public class HtmlContentValidator implements DynTagValidator {
                 validatePoorLink(dynTagDto.getCompanyId(), contentBlock.getContent(), popups);
             } catch (Exception e) {
                 String description = String.format("dyn tag id: %d, dyn tag name: %s", dynTagDto.getId(), dynTagDto.getName());
-                logger.warn("something went wrong while html content validation in the dyn content. " + description);
+                logger.warn("something went wrong while html content validation in the dyn content. {}", description);
             }
         }
 

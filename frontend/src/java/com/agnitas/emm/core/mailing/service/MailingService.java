@@ -10,8 +10,10 @@
 
 package com.agnitas.emm.core.mailing.service;
 
+import java.util.Date;
 import java.util.List;
 
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import org.agnitas.beans.MailingBase;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.dao.MailingStatus;
@@ -23,12 +25,13 @@ import org.agnitas.emm.core.mailinglist.service.impl.MailinglistException;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.MaildropEntry;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.TargetLight;
 import com.agnitas.emm.core.mailing.web.MailingSendSecurityOptions;
 import com.agnitas.emm.core.workflow.beans.WorkflowIcon;
+import org.springframework.context.ApplicationContext;
 
 public interface MailingService {
 	
@@ -40,6 +43,8 @@ public interface MailingService {
 
 	Mailing getMailing(final int companyID, final int mailingID);
 
+    int getFollowUpFor(int mailingId);
+	
 	void updateMailing(MailingModel model, List<UserAction> userActions) throws MailinglistException;
 
 	String getMailingStatus(MailingModel model);
@@ -52,6 +57,12 @@ public interface MailingService {
 	List<Mailing> getMailingsForMLID(MailingModel model) throws MailinglistException;
 
 	void sendMailing(MailingModel model, List<UserAction> userActions) throws Exception;
+
+	boolean isMissingNecessaryTargetGroup(Mailing mailing);
+
+	boolean isFollowupMailingDateBeforeDate(Mailing mailing, Date boundDate) throws Exception;
+
+	boolean isMailingLocked(Mailing mailing);
 
 	MaildropEntry addMaildropEntry(MailingModel model, List<UserAction> userActions) throws Exception;
 	
@@ -78,7 +89,7 @@ public interface MailingService {
 
 	boolean isActiveIntervalMailing(final int mailingID);
 	
-    List<LightweightMailing> getAllMailingNames(@VelocityCheck ComAdmin admin);
+    List<LightweightMailing> getAllMailingNames(@VelocityCheck Admin admin);
 
     List<MailingComponent> getMailingComponents(int mailingID, @VelocityCheck int companyID) throws MailingNotExistException;
 
@@ -103,11 +114,13 @@ public interface MailingService {
 
 	List<TargetLight> listTargetGroupsOfMailing(final int companyID, final int mailingID) throws MailingNotExistException;
 
+	boolean containsInvalidTargetGroups(int companyID, int mailingId);
+
 	String getTargetExpression(@VelocityCheck final int companyId, final int mailingId);
 
-	boolean tryToLock(ComAdmin admin, int mailingId);
+	boolean tryToLock(Admin admin, int mailingId);
 
-	ComAdmin getMailingLockingAdmin(int mailingId, int companyId);
+	Admin getMailingLockingAdmin(int mailingId, int companyId);
 
 	boolean isDeliveryComplete(final int companyID, final int mailingID);
 	boolean isDeliveryComplete(final LightweightMailing mailing);
@@ -116,17 +129,17 @@ public interface MailingService {
 
 	List<Integer> listFollowupMailingIds(int companyID, int mailingID, boolean includeUnscheduled);
     
-    boolean generateMailingTextContentFromHtml(ComAdmin admin, int mailingId) throws Exception;
+    boolean generateMailingTextContentFromHtml(Admin admin, int mailingId) throws Exception;
 
-	List<LightweightMailing> getLightweightMailings(ComAdmin admin);
+	List<LightweightMailing> getLightweightMailings(Admin admin);
 
-	List<LightweightMailing> getLightweightIntervalMailings(ComAdmin admin);
+	List<LightweightMailing> getLightweightIntervalMailings(Admin admin);
 
 	List<LightweightMailing> getMailingsDependentOnTargetGroup(int companyID, int id);
 
-	List<Mailing> getTemplates(ComAdmin admin);
+	List<Mailing> getTemplates(Admin admin);
 
-	List<MailingBase> getTemplatesWithPreview(ComAdmin admin, String sort, String direction);
+	List<MailingBase> getTemplatesWithPreview(Admin admin, String sort, String direction);
 
     List<MailingBase> getMailingsByStatusE(@VelocityCheck int companyId);
 
@@ -135,4 +148,32 @@ public interface MailingService {
 	boolean isThresholdClearanceExceeded(int companyId, int mailingId);
 
 	int saveMailing(final Mailing mailing, final boolean preserveTrackableLinks);
+	
+    List<UserAction> deleteMailing(int mailingId, Admin admin) throws Exception;
+
+    boolean usedInRunningWorkflow(int mailingId, int companyId);
+
+    void updateMailingsWithDynamicTemplate(Mailing mailing, ApplicationContext applicationContext);
+
+    boolean isBaseMailingTrackingDataAvailable(int baseMailingId, Admin admin);
+
+    Date getMailingPlanDate(int mailingId, int companyId);
+
+    boolean checkMailingReferencesTemplate(int templateId, int companyId);
+
+    boolean hasMediaType(int mailingId, MediaTypes type, int companyId);
+
+	String getMailingName(int mailingId, int companyId);
+
+	boolean isMailingTargetsHaveConjunction(Admin admin, Mailing mailing);
+
+	boolean isApproved(int mailingId, int companyId);
+
+	void removeApproval(int mailingId, Admin admin);
+
+	void writeRemoveApprovalLog(int mailingId, Admin admin);
+
+	MailingStatus getMailingStatus(int companyID, int id);
+
+	boolean saveMailingDescriptiveData(Mailing mailing);
 }

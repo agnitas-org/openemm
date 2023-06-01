@@ -78,11 +78,11 @@ public class TimeBasedDataSet extends BIRTDataSet {
 					if (!found) {
 						TimeBasedClickStatRow timeBasedClickStatRow = new TimeBasedClickStatRow();
 						timeBasedClickStatRow.setClickTime(nextPeriodDate.getTime());
-						timeBasedClickStatRow.setClicks_net(0);
+						timeBasedClickStatRow.setClicksNet(0);
 						timeBasedClickStatRow.setDeviceClass(deviceClass);
 						timeBasedClickStatRow.setTargetgroup(targetGroups.get(targetEntry.getKey()) == null ?
 								CommonKeys.ALL_SUBSCRIBERS : targetGroups.get(targetEntry.getKey()).getName());
-						timeBasedClickStatRow.setColumn_index(targetGroupIndexes.get(targetEntry.getKey()));
+						timeBasedClickStatRow.setColumnIndex(targetGroupIndexes.get(targetEntry.getKey()));
 						returnList.add(timeBasedClickStatRow);
 					}
 				}
@@ -99,7 +99,7 @@ public class TimeBasedDataSet extends BIRTDataSet {
         	    int cmp = item1.getClickTime().compareTo(item2.getClickTime());
         	    if (cmp == 0) {
         	    	if (item1.getDeviceClass() == item2.getDeviceClass()) {
-        	    		cmp = Integer.compare(item1.getColumn_index(), item2.getColumn_index());
+        	    		cmp = Integer.compare(item1.getColumnIndex(), item2.getColumnIndex());
         	    	} else if (item1.getDeviceClass() == null) {
         	    		cmp = 1;
         	    	} else if (item2.getDeviceClass() == null) {

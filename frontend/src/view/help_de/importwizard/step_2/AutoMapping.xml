@@ -1,4 +1,0 @@
-<HelpBalloon>
-	<title>Automatisches Mapping</title>
-	<content><![CDATA[Beim Automatischen Mapping ordnet der EMM die Spalten in der CSV-Datei automatisch den vorhandenen Profilfeldern zu. Daf&uuml;r muss die Kopfzeile der CSV-Datei die Namen der Datenbankfelder enthalten, in die importiert werden soll. Groß- und Kleinschreibung ist dabei irrelevant.]]></content>
-</HelpBalloon>

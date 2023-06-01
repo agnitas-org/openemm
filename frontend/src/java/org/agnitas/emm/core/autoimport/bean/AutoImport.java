@@ -10,10 +10,13 @@
 
 package org.agnitas.emm.core.autoimport.bean;
 
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
+import org.agnitas.util.AgnUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
 
@@ -108,6 +111,9 @@ public class AutoImport extends AutoImportLight {
 	private boolean emptyFileAllowed;
 	
 	private boolean alwaysReport = false;
+	
+	private Locale reportLocale = new Locale("en", "US");
+	private String reportTimezone = "Europe/Berlin";
 	
 	public int getAdminId() {
 		return adminId;
@@ -449,6 +455,34 @@ public class AutoImport extends AutoImportLight {
 
 	public void setContentSourceID(int contentSourceID) {
 		this.contentSourceID = contentSourceID;
+	}
+
+	public void setReportLocale(Locale reportLocale) {
+		this.reportLocale = reportLocale;
+	}
+
+	public Locale getReportLocale() {
+		if (reportLocale == null) {
+			reportLocale = new Locale("en", "US");
+		}
+		
+		return reportLocale;
+	}
+
+	public void setReportTimezone(String reportTimezone) {
+		this.reportTimezone = reportTimezone;
+	}
+
+	public String getReportTimezone() {
+		if (StringUtils.isBlank(reportTimezone)) {
+			reportTimezone = "Europe/Berlin";
+		}
+		
+		return reportTimezone;
+	}
+
+	public DateTimeFormatter getReportDateTimeFormatter() {
+		return AgnUtils.getDateTimeFormatter(getReportTimezone(), getReportLocale());
 	}
 
 	public static class UsedFile {

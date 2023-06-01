@@ -61,7 +61,7 @@ public class ImportModeBlacklistExclusiveHandler implements ImportModeHandler {
 	}
 
 	@Override
-	public Map<Integer, Integer> handlePostProcessing(EmmActionService emmActionService, ImportStatus status, ImportProfile importProfile, String temporaryImportTableName, int datasourceId, List<Integer> mailingListIdsToAssign, Set<MediaTypes> mediatypes) throws Exception {
+	public Map<MediaTypes, Map<Integer, Integer>> handlePostProcessing(EmmActionService emmActionService, ImportStatus status, ImportProfile importProfile, String temporaryImportTableName, int datasourceId, List<Integer> mailingListIdsToAssign, Set<MediaTypes> mediatypes) throws Exception {
 		// Mark customers as blacklisted in binding table
 		int emailsMarkedAsBlacklisted = importRecipientsDao.importInBlackList(temporaryImportTableName, importProfile.getCompanyId());
 		status.setBlacklisted(emailsMarkedAsBlacklisted);

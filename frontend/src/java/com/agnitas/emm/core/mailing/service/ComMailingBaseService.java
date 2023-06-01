@@ -18,17 +18,16 @@ import java.util.Set;
 
 import javax.sql.DataSource;
 
+import com.agnitas.web.mvc.Popups;
 import org.agnitas.beans.MailingBase;
 import org.agnitas.beans.MailingSendStatus;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.UserStatus;
 import org.agnitas.emm.core.mailing.beans.LightweightMailing;
-import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.agnitas.service.MailingRecipientExportWorker;
 import org.apache.struts.action.ActionMessages;
 import org.springframework.context.ApplicationContext;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.DynamicTag;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MailingsListProperties;
@@ -40,17 +39,17 @@ import com.agnitas.service.SimpleServiceResult;
 
 
 public interface ComMailingBaseService {
-    boolean isMailingExists(int mailingId, @VelocityCheck int companyId);
-    boolean isMailingExists(int mailingId, @VelocityCheck int companyId, boolean isTemplate);
+    boolean isMailingExists(int mailingId, int companyId);
+    boolean isMailingExists(int mailingId, int companyId, boolean isTemplate);
     boolean checkUndoAvailable(int mailingId);
-    boolean isTextTemplateExists(ComAdmin admin, int mailingId);
+    boolean isTextTemplateExists(Admin admin, int mailingId);
 
-    void bulkDelete(Set<Integer> mailingsIds, @VelocityCheck int companyId);
+    void bulkDelete(Set<Integer> mailingsIds, int companyId);
 
-    int getWorkflowId(int mailingId, @VelocityCheck int companyId);
+    int getWorkflowId(int mailingId, int companyId);
 
     int saveMailingWithUndo(Mailing mailing, int adminId, boolean preserveTrackableLinks);
-    void restoreMailingUndo(ApplicationContext ctx, int mailingId, @VelocityCheck int companyId) throws Exception;
+    void restoreMailingUndo(ApplicationContext ctx, int mailingId, int companyId) throws Exception;
 
     /**
      * Set target groups (see {@link Mailing#setTargetGroups(Collection)}) and their combining mode (see {@link Mailing#setTargetMode(int)}) if it's permitted.
@@ -65,9 +64,9 @@ public interface ComMailingBaseService {
      * @return {@code true} if succeeded or {@code false} if mailing doesn't exist or updating is not permitted.
      * @throws TooManyTargetGroupsInMailingException if a composed target expression is too long.
      */
-    boolean setTargetGroups(int mailingId, @VelocityCheck int companyId, Collection<Integer> targetGroupIds, boolean conjunction) throws TooManyTargetGroupsInMailingException;
+    boolean setTargetGroups(int mailingId, int companyId, Collection<Integer> targetGroupIds, boolean conjunction) throws TooManyTargetGroupsInMailingException;
 
-    String getMailingName(int mailingId, @VelocityCheck int companyId);
+    String getMailingName(int mailingId, int companyId);
 
     /**
      * Retrieve a subset (see pagination parameters {@code pageNumber} and {@code rowsPerPage}) of a recipients that successfully
@@ -87,14 +86,14 @@ public interface ComMailingBaseService {
      * @return a filled {@link org.agnitas.beans.impl.PaginatedListImpl} instance
      * @throws Exception
      */
-    PaginatedListImpl<MailingRecipientStatRow> getMailingRecipients(int mailingId, @VelocityCheck int companyId, int filterType, int pageNumber, int rowsPerPage, String sortCriterion, boolean sortAscending, List<String> columns) throws Exception;
+    PaginatedListImpl<MailingRecipientStatRow> getMailingRecipients(int mailingId, int companyId, int filterType, int pageNumber, int rowsPerPage, String sortCriterion, boolean sortAscending, List<String> columns) throws Exception;
 
-    PaginatedListImpl<Map<String, Object>> getPaginatedMailingsData(ComAdmin admin, MailingsListProperties props);
+    PaginatedListImpl<Map<String, Object>> getPaginatedMailingsData(Admin admin, MailingsListProperties props);
     
     /**
      * A shortcut for {@link #getDynamicTags(int, int, boolean)} passing {@code false} as {@code resetIds} argument.
      */
-    List<DynamicTag> getDynamicTags(int mailingId, @VelocityCheck int companyId);
+    List<DynamicTag> getDynamicTags(int mailingId, int companyId);
 
     /**
      * Retrieve a dynamic contents of a mailing referenced by {@code mailingId}.
@@ -104,7 +103,7 @@ public interface ComMailingBaseService {
      * @param resetIds if {@code true} then assign zeros to all the identifiers (convenient for further copying this dynamic content to another mailing).
      * @return a list of an entities representing dynamic contents.
      */
-    List<DynamicTag> getDynamicTags(int mailingId, @VelocityCheck int companyId, boolean resetIds);
+    List<DynamicTag> getDynamicTags(int mailingId, int companyId, boolean resetIds);
     
     /**
      * Search for all dynamic tags name by {@code mailing}
@@ -114,7 +113,7 @@ public interface ComMailingBaseService {
      */
     List<String> getDynamicTagNames(Mailing mailing);
 
-    DynamicTag getDynamicTag(@VelocityCheck int companyId, int dynNameId);
+    DynamicTag getDynamicTag(int companyId, int dynNameId);
 
     /**
      * Get distinct number of recipients for referenced mailinglist and other settings.
@@ -132,7 +131,7 @@ public interface ComMailingBaseService {
      * @return distinct number of recipients for referenced mailinglist and other settings.
      * @throws Exception if calculation is impossible or some data is corrupted.
      */
-    int calculateRecipients(@VelocityCheck int companyId, int mailingListId, int splitId, Collection<Integer> altgIds, Collection<Integer> targetGroupIds, boolean conjunction) throws Exception;
+    int calculateRecipients(int companyId, int mailingListId, int splitId, Collection<Integer> altgIds, Collection<Integer> targetGroupIds, boolean conjunction) throws Exception;
 
     /**
      * Get distinct number of recipients for referenced mailinglist and other settings.
@@ -149,7 +148,7 @@ public interface ComMailingBaseService {
      * @return distinct number of recipients for referenced mailinglist and other settings.
      * @throws Exception if calculation is impossible or some data is corrupted.
      */
-    int calculateRecipients(@VelocityCheck int companyId, int mailingId, int mailingListId, int splitId) throws Exception;
+    int calculateRecipients(int companyId, int mailingId, int mailingListId, int splitId) throws Exception;
 
     /**
      * Get distinct number of recipients for referenced mailing.
@@ -163,7 +162,7 @@ public interface ComMailingBaseService {
      * @return distinct number of recipients for referenced mailing.
      * @throws Exception if calculation is impossible or some data is corrupted.
      */
-    int calculateRecipients(@VelocityCheck int companyId, int mailingId) throws Exception;
+    int calculateRecipients(int companyId, int mailingId) throws Exception;
 	DataSource getDataSource();
 
     int calculateRecipients(CalculationRecipientsConfig config) throws Exception;
@@ -175,9 +174,9 @@ public interface ComMailingBaseService {
 	 * @param mailingId an identifier of a mailing
 	 * @return true if mailing has advertising content type
 	 */
-	boolean isAdvertisingContentType(@VelocityCheck int companyId, int mailingId);
+	boolean isAdvertisingContentType(int companyId, int mailingId);
 	
-	boolean isLimitedRecipientOverview(ComAdmin admin, int mailingId);
+	boolean isLimitedRecipientOverview(Admin admin, int mailingId);
 
     /**
      * Check if the given mailing content is blank (resolve all the dyn-tags (if any) and check if mail contains at least
@@ -191,9 +190,11 @@ public interface ComMailingBaseService {
      */
     boolean isContentBlank(String content, Map<String, DynamicTag> contentMap);
 
-    void doTextTemplateFilling(Mailing mailing, ComAdmin admin, ActionMessages messages);
+    void doTextTemplateFilling(Mailing mailing, Admin admin, ActionMessages messages);
     
-    Mailing getMailing(@VelocityCheck int companyId, int mailingId);
+    void doTextTemplateFilling(Mailing mailing, Admin admin, Popups popups);
+    
+    Mailing getMailing(int companyId, int mailingId);
     
     /**
      * Loads list of non-deleted mailing have been sent by certain company
@@ -202,14 +203,14 @@ public interface ComMailingBaseService {
      *                  Id of the company that sent the mailings
      * @return  List of MailingBase bean objects
      */
-    List<MailingBase> getMailingsForComparison(ComAdmin admin);
+    List<MailingBase> getMailingsForComparison(Admin admin);
     
-    Map<Integer, String> getMailingNames(List<Integer> mailingIds, @VelocityCheck int companyId);
+    Map<Integer, String> getMailingNames(List<Integer> mailingIds, int companyId);
 
-	List<LightweightMailing> getMailingsByType(MailingType type, @VelocityCheck int companyId);
-	List<LightweightMailing> getMailingsByType(MailingType type, @VelocityCheck int companyId, boolean includeInactive);
+	List<LightweightMailing> getMailingsByType(MailingType type, int companyId);
+	List<LightweightMailing> getMailingsByType(MailingType type, int companyId, boolean includeInactive);
     
-    MailingSendStatus getMailingSendStatus(int mailingId, @VelocityCheck int companyId);
+    MailingSendStatus getMailingSendStatus(int mailingId, int companyId);
     
     MailingType getMailingType(int mailingId) throws Exception;
 
@@ -222,5 +223,7 @@ public interface ComMailingBaseService {
      */
     SimpleServiceResult checkContentNotBlank(Mailing mailing);
 
-    void activateTrackingLinksOnEveryPosition(ComAdmin admin, Mailing mailing, ApplicationContext context) throws Exception;
+    void activateTrackingLinksOnEveryPosition(Admin admin, Mailing mailing, ApplicationContext context) throws Exception;
+    
+	List<Integer> getMailingsSentBetween(int companyID, Date startDateIncluded, Date endDateExcluded);
 }

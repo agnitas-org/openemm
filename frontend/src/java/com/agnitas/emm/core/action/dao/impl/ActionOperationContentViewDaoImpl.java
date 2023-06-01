@@ -31,15 +31,15 @@ public class ActionOperationContentViewDaoImpl extends AbstractActionOperationDa
 	@Override
 	@DaoUpdateReturnValueCheck
 	protected void processSaveOperation(ActionOperationContentViewParameters operation) {
-		update(logger, "insert into actop_content_view_tbl (action_operation_id, tag_name) values (?,?)", 
-				operation.getId(), 
+		update(logger, "insert into actop_content_view_tbl (action_operation_id, tag_name) values (?,?)",
+				operation.getId(),
 				operation.getTagName());
 	}
 
 	@Override
 	@DaoUpdateReturnValueCheck
 	protected void processUpdateOperation(ActionOperationContentViewParameters operation) {
-		update(logger, "update actop_content_view_tbl set tag_name=? where action_operation_id=?", 
+		update(logger, "update actop_content_view_tbl set tag_name=? where action_operation_id=?",
 				operation.getTagName(),
 				operation.getId());
 	}

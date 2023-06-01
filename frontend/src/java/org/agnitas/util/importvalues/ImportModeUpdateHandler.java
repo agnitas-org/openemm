@@ -72,9 +72,9 @@ public class ImportModeUpdateHandler implements ImportModeHandler {
 	}
 
 	@Override
-	public Map<Integer, Integer> handlePostProcessing(EmmActionService emmActionService, ImportStatus status, ImportProfile importProfile, String temporaryImportTableName, int datasourceId, List<Integer> mailingListIdsToAssign, Set<MediaTypes> mediatypes) throws Exception {
+	public Map<MediaTypes, Map<Integer, Integer>> handlePostProcessing(EmmActionService emmActionService, ImportStatus status, ImportProfile importProfile, String temporaryImportTableName, int datasourceId, List<Integer> mailingListIdsToAssign, Set<MediaTypes> mediatypes) throws Exception {
 		if (mailingListIdsToAssign != null && mailingListIdsToAssign.size() > 0) {
-			Map<Integer, Integer> mailinglistAssignStatistics = new HashMap<>();
+			Map<MediaTypes, Map<Integer, Integer>> mailinglistAssignStatistics = new HashMap<>();
 			if (importProfile.getActionForNewRecipients() > 0) {
 				// Execute configured action for recipients that had no binding before this import (existing recipients without binding or completely new recipients)
 				for (int mailingListId : mailingListIdsToAssign) {
@@ -105,16 +105,22 @@ public class ImportModeUpdateHandler implements ImportModeHandler {
 							throw e;
 						}
 					}
-		    		mailinglistAssignStatistics.put(mailingListId, succesfullyExecutedCustomerActions);
+					if (!mailinglistAssignStatistics.containsKey(MediaTypes.EMAIL)) {
+	    				mailinglistAssignStatistics.put(MediaTypes.EMAIL, new HashMap<>());
+	    			}
+		    		mailinglistAssignStatistics.get(MediaTypes.EMAIL).put(mailingListId, succesfullyExecutedCustomerActions);
 				}
 			} else  {
 				// Insert bindings for new and existing customers (subscribe to mailinglists)
 		    	for (int mailingListId : mailingListIdsToAssign) {
-		    		int existingCustomerSubscribed = 0;
 		    		for (MediaTypes mediatype : mediatypes) {
-		    			existingCustomerSubscribed = importRecipientsDao.assignExistingCustomerWithoutBindingToMailingList(temporaryImportTableName, importProfile.getCompanyId(), mailingListId, mediatype, UserStatus.Active);
+		    			int existingCustomerSubscribed = importRecipientsDao.assignExistingCustomerWithoutBindingToMailingList(temporaryImportTableName, importProfile.getCompanyId(), mailingListId, mediatype, UserStatus.Active);
+		    			
+		    			if (!mailinglistAssignStatistics.containsKey(mediatype)) {
+		    				mailinglistAssignStatistics.put(mediatype, new HashMap<>());
+		    			}
+		    			mailinglistAssignStatistics.get(mediatype).put(mailingListId, existingCustomerSubscribed);
 		    		}
-		    		mailinglistAssignStatistics.put(mailingListId, existingCustomerSubscribed);
 		    	}
 			}
 			return mailinglistAssignStatistics;

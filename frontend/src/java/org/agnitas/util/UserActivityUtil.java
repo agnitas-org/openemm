@@ -13,7 +13,11 @@ package org.agnitas.util;
 import java.text.DateFormat;
 import java.util.Date;
 
+import com.agnitas.beans.Admin;
+import org.agnitas.emm.core.useractivitylog.UserAction;
+import org.agnitas.service.UserActivityLogService;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.Logger;
 
 public class UserActivityUtil {
 
@@ -78,4 +82,18 @@ public class UserActivityUtil {
 
         return fieldDescription.toString();
     }
+
+    public static void log(UserActivityLogService logService, Admin admin, UserAction ua, Logger logger) {
+        log(logService, admin, ua.getAction(), ua.getDescription(), logger);
+   	}
+   
+   	public static void log(UserActivityLogService logService, Admin admin,
+                           String action, String description, Logger logger) {
+   		if (logService != null) {
+            logService.writeUserActivityLog(admin, action, description, logger);
+            return;
+        }
+        logger.error("Missing userActivityLogService in {}", logger.getClass());
+        logger.info("Userlog: {}, {}, {}", admin.getUsername(), action,  description);
+   	}
 }

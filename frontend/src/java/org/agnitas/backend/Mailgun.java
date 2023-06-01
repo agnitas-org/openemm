@@ -37,10 +37,11 @@ public interface Mailgun {
 	/**
 	 * Full execution of a mail generation
 	 *
+	 * @param status_id the string version of the statusID to use
 	 * @param custid optional customer id
 	 * @return Status string
 	 */
-	String fire(String custid) throws Exception;
+	String fire(String status_id, String custid) throws Exception;
 
 	/**
 	 * Cleanup mailout

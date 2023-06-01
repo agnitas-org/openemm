@@ -18,6 +18,7 @@ import com.agnitas.emm.core.objectusage.common.ObjectUsage;
 import com.agnitas.emm.core.objectusage.common.ObjectUserType;
 import com.agnitas.emm.core.target.web.TargetGroupViewHelper;
 import com.agnitas.messages.I18nString;
+import org.springframework.web.util.UriComponentsBuilder;
 
 /**
  * <p>
@@ -37,6 +38,9 @@ import com.agnitas.messages.I18nString;
  */
 final class HyperlinkHelper {
 
+    private HyperlinkHelper() {
+    }
+
 	/**
 	 * Creates hyperlink for given object usage.
 	 * If user type is not implemented, a plain text representation is returned.
@@ -46,26 +50,36 @@ final class HyperlinkHelper {
 
 	 * @return hyperlink or plain text
 	 */
-	public static final String toHyperlink(final ObjectUsage usage, final Locale locale) {
+	public static String toHyperlink(final ObjectUsage usage, final Locale locale) {
 		switch(usage.getObjectUserType()) {
-		case TARGET_GROUP:
-			return targetGroupHyperlink(usage, locale);
-			
-		default:
-			return plainText(usage, locale);
-
+            case TARGET_GROUP:
+                return targetGroupHyperlink(usage, locale);
+            case WORKFLOW:
+                return workflowHyperlink(usage, locale);
+            default:
+                return plainText(usage, locale);
 		}
 	}
 	
-	private static final String targetGroupHyperlink(final ObjectUsage usage, final Locale locale) {
+	private static String targetGroupHyperlink(final ObjectUsage usage, final Locale locale) {
 		return String.format(
 				"<a href=\"%s\" data-relative=\"\">%s</a>", 
 				TargetGroupViewHelper.targetGroupViewUrl(usage.getObjectUserID()),
 				plainText(usage, locale));
 	}
-	
-	private static final String plainText(final ObjectUsage usage, final Locale locale) {
+
+	// TODO refactor after GWUA. prefix has been removed
+    private static String workflowHyperlink(ObjectUsage usage, Locale locale) {
+  		return String.format("<a href=\"%s\" data-relative=\"\">%s</a>",
+                UriComponentsBuilder.newInstance()
+  								.path("/workflow/")
+  								.path(Integer.toString(usage.getObjectUserID()))
+  								.path("/view.action")
+  								.toUriString(),
+                I18nString.getLocaleString("GWUA.referencingObject." + usage.getObjectUserType().name(), locale, StringEscapeUtils.escapeHtml4(usage.getObjectUserName())));
+  	}
+
+	private static String plainText(final ObjectUsage usage, final Locale locale) {
 		return I18nString.getLocaleString("referencingObject." + usage.getObjectUserType().name(), locale, StringEscapeUtils.escapeHtml4(usage.getObjectUserName()));
 	}
-	
 }

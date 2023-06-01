@@ -25,13 +25,13 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.agnitas.beans.TrackableLink;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.exception.target.TargetGroupLockedException;
 import org.agnitas.dao.exception.target.TargetGroupPersistenceException;
 import org.agnitas.dao.exception.target.TargetGroupTooLargeException;
 import org.agnitas.dao.impl.PaginatedBaseDaoImpl;
 import org.agnitas.dao.impl.mapper.IntegerRowMapper;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.target.TargetFactory;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DbUtilities;
@@ -66,7 +66,7 @@ import com.agnitas.emm.core.target.eql.codegen.sql.SqlCode;
 import com.agnitas.emm.core.target.eql.codegen.sql.SqlCodeProperties;
 import com.agnitas.emm.core.target.service.TargetLightsOptions;
 import com.agnitas.emm.core.workflow.beans.WorkflowDependencyType;
-import com.phloc.commons.collections.pair.Pair;
+import com.helger.collection.pair.Pair;
 
 /**
  * Implementation of {@link ComTargetDao}.
@@ -77,7 +77,7 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 	public static final int TARGET_GROUP_SQL_MAX_LENGTH = 4000;
 
 	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(ComTargetDaoImpl.class);
+	private static final Logger logger = LogManager.getLogger(ComTargetDaoImpl.class);
 
     /** Facade for EQL feature */
 	private EqlFacade eqlFacade;
@@ -126,7 +126,7 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 	// Business Logic
 
 	@Override
-	public String getTargetName(int targetId, @VelocityCheck int companyId, boolean includeDeleted) {
+	public String getTargetName(int targetId, int companyId, boolean includeDeleted) {
 		String sql = "SELECT target_shortname FROM dyn_target_tbl WHERE company_id = ? AND target_id = ?";
 		if (!includeDeleted) {
 			sql += " AND deleted <> 1";
@@ -135,7 +135,7 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 	}
 
 	@Override
-	public boolean isTargetNameInUse(@VelocityCheck int companyId, String targetName, boolean includeDeleted) {
+	public boolean isTargetNameInUse(int companyId, String targetName, boolean includeDeleted) {
 		String sqlGetCount = "SELECT COUNT(*) FROM dyn_target_tbl WHERE company_id = ? AND target_shortname = ?";
 
 		if (!includeDeleted) {
@@ -146,9 +146,9 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 	}
 
 	@Override
-	public List<String> getTargetNamesByIds(@VelocityCheck int companyId, Set<Integer> targetIds) {
+	public List<String> getTargetNamesByIds(int companyId, Set<Integer> targetIds) {
 		List<String> resultList = new ArrayList<>();
-		if (targetIds.size() <= 0) {
+		if (targetIds.isEmpty()) {
 			return resultList;
 		}
 		String sql = "SELECT target_shortname FROM dyn_target_tbl WHERE company_id = ? AND target_id in (" + StringUtils.join(targetIds, ", ") + ")";
@@ -161,7 +161,7 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 	}
 
 	@Override
-	public List<Integer> getDeletedTargets(@VelocityCheck int companyID) {
+	public List<Integer> getDeletedTargets(int companyID) {
 		String sql = "SELECT target_id FROM dyn_target_tbl WHERE company_id = ? AND deleted = 1";
 		List<Map<String, Object>> list = select(logger, sql, companyID);
 		return list.stream()
@@ -170,7 +170,7 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 	}
 
 	@Override
-	public Map<Integer, ComTarget> getAllowedTargets(@VelocityCheck int companyID) {
+	public Map<Integer, ComTarget> getAllowedTargets(int companyID) {
 		Map<Integer, ComTarget> targets = new HashMap<>();
 		String sql = "SELECT target_id, target_shortname, target_description, target_sql FROM dyn_target_tbl WHERE company_id = ? ORDER BY target_id";
 
@@ -205,7 +205,7 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 	}
 
 	@Override
-	public Map<Integer, TargetLight> getAllowedTargetLights(@VelocityCheck int companyID) {
+	public Map<Integer, TargetLight> getAllowedTargetLights(int companyID) {
 		Map<Integer, TargetLight> targets = new HashMap<>();
 		String sql = "SELECT target_id, company_id, target_shortname, target_description, locked, creation_date, change_date, invalid, deleted, component_hide, complexity, invalid, favorite " + getTargetExtendedColumnsAsString() +
 				"FROM dyn_target_tbl WHERE company_id = ? " +
@@ -322,6 +322,7 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
                     BooleanUtils.toInteger(target.isAdminTestDelivery()),
                     BooleanUtils.toInteger(target.getComponentHide()),
                     BooleanUtils.toInteger(hidden),
+                    BooleanUtils.toInteger(target.isFavorite()),
                     target.getEQL(),
                     target.getComplexityIndex(),
                     target.isValid() ? 0 : 1	// Note: Property is "valid", table column is "invalid"!'
@@ -332,15 +333,15 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 				if (isOracleDB()) {
                     target.setId(selectInt(logger, "SELECT dyn_target_tbl_seq.NEXTVAL FROM DUAL"));
                     params.add(0, target.getId());
-					update(logger, "INSERT INTO dyn_target_tbl (target_id, company_id, target_sql, target_shortname, target_description, creation_date, change_date, deleted, admin_test_delivery, component_hide, hidden, eql, complexity, invalid" + additionalColumns
+					update(logger, "INSERT INTO dyn_target_tbl (target_id, company_id, target_sql, target_shortname, target_description, creation_date, change_date, deleted, admin_test_delivery, component_hide, hidden, favorite, eql, complexity, invalid" + additionalColumns
                             + ") VALUES (" + AgnUtils.repeatString("?", params.size(), ", ") + ")", params.toArray());
 				} else {
-                    int targetID = insertIntoAutoincrementMysqlTable(logger, "target_id", "INSERT INTO dyn_target_tbl (company_id, target_sql, target_shortname, target_description, creation_date, change_date, deleted, admin_test_delivery, component_hide, hidden, eql, complexity, invalid" + additionalColumns
+                    int targetID = insertIntoAutoincrementMysqlTable(logger, "target_id", "INSERT INTO dyn_target_tbl (company_id, target_sql, target_shortname, target_description, creation_date, change_date, deleted, admin_test_delivery, component_hide, hidden, favorite, eql, complexity, invalid" + additionalColumns
                             + ") VALUES (" + AgnUtils.repeatString("?", params.size(), ", ") + ")", params.toArray());
 					target.setId(targetID);
 				}
 			} else {
-				update(logger, "UPDATE dyn_target_tbl SET target_sql = ?, target_shortname = ?, target_description = ?, deleted = ?, change_date = ?, admin_test_delivery = ?, eql=?, complexity = ?, invalid=?, component_hide = ? WHERE target_id = ? AND company_id = ?",
+				update(logger, "UPDATE dyn_target_tbl SET target_sql = ?, target_shortname = ?, target_description = ?, deleted = ?, change_date = ?, admin_test_delivery = ?, eql=?, complexity = ?, invalid=?, component_hide = ?, favorite = ? WHERE target_id = ? AND company_id = ?",
 					target.getTargetSQL(),
 					target.getTargetName(),
 					target.getTargetDescription(),
@@ -351,6 +352,7 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 					target.getComplexityIndex(),
 					target.isValid() ? 0 : 1,	// Note: Property is "valid", table column is "invalid"!
 					BooleanUtils.toInteger(target.getComponentHide()),
+					BooleanUtils.toInteger(target.isFavorite()),
 					target.getId(),
 					target.getCompanyID()
 					);
@@ -378,9 +380,9 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 	}
 
 	@Override
-	public ComTarget getTarget(int targetID, @VelocityCheck int companyID) {
+	public ComTarget getTarget(int targetID, int companyID) {
 		final String sqlGetTarget = "SELECT target_id, company_id, target_description, target_shortname, target_sql, " +
-				"deleted, creation_date, change_date, admin_test_delivery, locked, eql, COALESCE(complexity, -1) AS complexity, " +
+				"deleted, creation_date, change_date, admin_test_delivery, locked, eql, COALESCE(complexity, -1) AS complexity, favorite, " +
 				"invalid, component_hide " + getTargetExtendedColumnsAsString()
 				+ " FROM dyn_target_tbl WHERE target_id = ? AND company_id = ?";
 
@@ -400,7 +402,7 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 	 * TODO: Replace this method by a new method that takes list split data as parameters to avoid misuse of this method.
 	 */
 	@Override
-	public ComTarget getTargetByName(String targetName, @VelocityCheck int companyID) {
+	public ComTarget getTargetByName(String targetName, int companyID) {
 		final StringBuilder sqlQueryBuilder = new StringBuilder();
 
 		final List<String> columns = ListUtils.union(Arrays.asList(
@@ -416,11 +418,13 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 				"locked",
 				"invalid",
 				"COALESCE(complexity, -1) AS complexity",
+				"favorite",
 				"component_hide",
 				"eql"
 		), getTargetLightsExtendedColumns());
 
 		if (isOracleDB()) {
+			// Using "SELECT * ...", because of subselect
 			sqlQueryBuilder.append("SELECT * FROM (");
 		}
 
@@ -441,7 +445,7 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 	}
 
 	@Override
-	public ComTarget getListSplitTarget(String splitType, int index, @VelocityCheck int companyID) {
+	public ComTarget getListSplitTarget(String splitType, int index, int companyID) {
 		ComTarget target = getListSplitTarget(TargetLight.LIST_SPLIT_PREFIX, splitType, index, companyID);
 		if (target == null) {
 			target = getListSplitTarget(TargetLight.LIST_SPLIT_CM_PREFIX, splitType, index, companyID);
@@ -450,7 +454,7 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 	}
 
 	@Override
-	public ComTarget getListSplitTarget(String prefix, String splitType, int index, @VelocityCheck int companyID) {
+	public ComTarget getListSplitTarget(String prefix, String splitType, int index, int companyID) {
 		if (StringUtils.isEmpty(prefix) || StringUtils.isEmpty(splitType) || index < 0 || companyID <= 0) {
 			return null;
 		}
@@ -460,7 +464,7 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 
 	@Override
 	@DaoUpdateReturnValueCheck
-	public boolean deleteTarget(int targetID, @VelocityCheck int companyID) throws TargetGroupPersistenceException {
+	public boolean deleteTarget(int targetID, int companyID) throws TargetGroupPersistenceException {
 		if (isTargetGroupLocked(targetID, companyID)) {
 			throw new TargetGroupLockedException(targetID);
 		}
@@ -471,13 +475,13 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 	}
 
 	@Override
-	public boolean deleteTargetReally(int targetId, @VelocityCheck int companyId) {
+	public boolean deleteTargetReally(int targetId, int companyId) {
 		return update(logger, "DELETE FROM dyn_target_tbl WHERE company_id = ? AND target_id = ?", companyId, targetId) > 0;
 	}
 
 	@Override
 	@DaoUpdateReturnValueCheck
-	public boolean deleteTargetsReally(@VelocityCheck int companyID) {
+	public boolean deleteTargetsReally(int companyID) {
 		if (companyID <= 0) {
 			return false;
 		}
@@ -491,7 +495,7 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 	}
 
     @Override
-    public boolean deleteWorkflowTargetConditions(@VelocityCheck int companyId, int workflowId) {
+    public boolean deleteWorkflowTargetConditions(int companyId, int workflowId) {
 		String sql = "DELETE FROM dyn_target_tbl WHERE target_id IN " +
 				"(SELECT entity_id FROM workflow_dependency_tbl WHERE company_id = ? AND workflow_id = ? AND type = ?)";
 
@@ -517,6 +521,7 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 	public int getTargetSplitID(String name) {
 		String sqlGetTargetId = "SELECT target_id FROM dyn_target_tbl WHERE target_shortname = ?";
 		if (isOracleDB()) {
+			// Using "SELECT * ...", because of subselect
 			return selectIntWithDefaultValue(logger, "SELECT * FROM (" + sqlGetTargetId + ") WHERE ROWNUM = 1", -1, name);
 		} else {
 			return selectIntWithDefaultValue(logger, sqlGetTargetId + " LIMIT 1", -1, name);
@@ -524,13 +529,13 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 	}
 
 	@Override
-	public String getTargetSQL(int targetId, @VelocityCheck int companyId) {
+	public String getTargetSQL(int targetId, int companyId) {
 		String sqlSelectSqlCode = "SELECT target_sql FROM dyn_target_tbl WHERE target_id = ? AND company_id = ?";
 		return selectWithDefaultValue(logger, sqlSelectSqlCode, String.class, null, targetId, companyId);
 	}
 
 	@Override
-	public List<String> getSplitNames(@VelocityCheck int companyID) {
+	public List<String> getSplitNames(int companyID) {
 		StringBuilder sqlQueryBuilder = new StringBuilder();
 		List<Object> sqlParameters = new ArrayList<>();
 
@@ -555,7 +560,7 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 	}
 
 	@Override
-	public int getSplits(@VelocityCheck int companyID, String splitType) {
+	public int getSplits(int companyID, String splitType) {
 		StringBuilder sqlQueryBuilder = new StringBuilder();
 		List<Object> sqlParameters = new ArrayList<>();
 
@@ -573,22 +578,22 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 	}
 
 	@Override
-	public List<TargetLight> getTargetLights(@VelocityCheck int companyID) {
+	public List<TargetLight> getTargetLights(int companyID) {
 		return getTargetLights(companyID, false);
 	}
 
 	@Override
-	public List<TargetLight> getTargetLights(@VelocityCheck int companyID, boolean includeDeleted) {
+	public List<TargetLight> getTargetLights(int companyID, boolean includeDeleted) {
 		return getTargetLights(companyID, includeDeleted, true, true);
 	}
 
 	@Override
-	public List<TargetLight> getTargetLights(@VelocityCheck int companyID, boolean includeDeleted, boolean worldDelivery, boolean adminTestDelivery) {
+	public List<TargetLight> getTargetLights(int companyID, boolean includeDeleted, boolean worldDelivery, boolean adminTestDelivery) {
 		return getTargetLights(companyID, includeDeleted, worldDelivery, adminTestDelivery, false);
 	}
 
 	@Override
-	public List<TargetLight> getTargetLights(@VelocityCheck int companyID, boolean includeDeleted, boolean worldDelivery, boolean adminTestDelivery, boolean content) {
+	public List<TargetLight> getTargetLights(int companyID, boolean includeDeleted, boolean worldDelivery, boolean adminTestDelivery, boolean content) {
 		TargetLightsOptions options = TargetLightsOptions.builder()
 				.setCompanyId(companyID)
 				.setIncludeDeleted(includeDeleted)
@@ -735,7 +740,7 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 	 * @return true if locked, otherwise false
 	 */
     @Override
-	public boolean isTargetGroupLocked(int targetID, @VelocityCheck int companyID) {
+	public boolean isTargetGroupLocked(int targetID, int companyID) {
 		// New target groups are never locked
 		if (targetID == 0) {
 			return false;
@@ -743,16 +748,12 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 
 		int result = selectIntWithDefaultValue(logger, "SELECT COALESCE(locked, 0) AS locked FROM dyn_target_tbl WHERE target_id = ? AND (company_id = ? OR company_id = 0)", -1, targetID, companyID);
 
-		if (result == 1 || result == -1) {
-			return true;
-		} else {
-			return false;
-		}
+		return result == 1 || result == -1;
 	}
 
 	@Override
 	@DaoUpdateReturnValueCheck
-	public void updateTargetLockState(int targetID, @VelocityCheck int companyID, boolean locked) {
+	public void updateTargetLockState(int targetID, int companyID, boolean locked) {
 		update(logger, "UPDATE dyn_target_tbl SET locked = ? WHERE company_id = ? AND target_id = ?", locked ? 1 : 0, companyID, targetID);
 	}
 
@@ -897,7 +898,7 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 	}
 
 	@Override
-	public final List<RawTargetGroup> listRawTargetGroups(@VelocityCheck int companyId, String ...eqlRawFragments) {
+	public final List<RawTargetGroup> listRawTargetGroups(int companyId, String ...eqlRawFragments) {
 		String sqlGetAll = "SELECT target_id, target_shortname, company_id, eql FROM dyn_target_tbl "
 				+ "WHERE company_id = ? AND deleted = 0";
 
@@ -925,7 +926,7 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 	}
 
 	@Override
-	public void saveComplexityIndices(@VelocityCheck int companyId, Map<Integer, Integer> complexities) {
+	public void saveComplexityIndices(int companyId, Map<Integer, Integer> complexities) {
 		if (MapUtils.isNotEmpty(complexities)) {
 			List<Object[]> sqlParameters = complexities.entrySet()
 					.stream()
@@ -940,7 +941,7 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 	public List<ComTarget> getTargetByNameAndSQL(int companyId, String targetName, String targetSQL, boolean includeDeleted, boolean worldDelivery, boolean adminTestDelivery) {
 		List<Object> selectParameter = new ArrayList<>();
 		String selectSql = "SELECT target_id, company_id, target_description, target_shortname, target_sql, deleted, " +
-				"creation_date, change_date, admin_test_delivery, locked, eql, invalid, component_hide, COALESCE(complexity, -1) AS complexity " + getTargetExtendedColumnsAsString() +
+				"creation_date, change_date, admin_test_delivery, locked, eql, invalid, component_hide, COALESCE(complexity, -1) AS complexity, favorite " + getTargetExtendedColumnsAsString() +
 				" FROM dyn_target_tbl WHERE company_id = ? AND target_shortname = ? AND target_sql = ?" +
 				" AND (hidden IS NULL or hidden = 0)";
 		selectParameter.add(companyId);
@@ -962,7 +963,7 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 	}
 
 	@Override
-	public PaginatedListImpl<Dependent<TargetGroupDependentType>> getDependents(@VelocityCheck int companyId, int targetId,
+	public PaginatedListImpl<Dependent<TargetGroupDependentType>> getDependents(int companyId, int targetId,
 																				Set<TargetGroupDependentType> allowedTypes, int pageNumber,
 																				int pageSize, String sortColumn, String order) {
 		final boolean isOracle = isOracle();
@@ -999,14 +1000,14 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 			sqlParameters.add(companyId);
 			sqlParameters.add(targetId);
 		}
-
+		// Using "SELECT * ...", because of subselect
 		String sqlGetDependents = "SELECT * FROM (" + StringUtils.join(sqlSubQueries, " UNION ALL ") + ") T1";
 
 		return selectPaginatedList(logger, sqlGetDependents, null, StringUtils.trimToNull(sortColumn), sortAscending, pageNumber, pageSize, new DependentMapper(), sqlParameters.toArray());
 	}
 
 	@Override
-	public Map<Integer, Integer> getTargetComplexityIndices(@VelocityCheck int companyId) {
+	public Map<Integer, Integer> getTargetComplexityIndices(int companyId) {
 		String sqlGetComplexityIndices = "SELECT target_id, COALESCE(complexity, -1) AS complexity FROM dyn_target_tbl WHERE company_id = ? AND COALESCE(hidden, 0) = 0";
 
 		Map<Integer, Integer> map = new HashMap<>();
@@ -1015,7 +1016,7 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 	}
 
 	@Override
-	public Integer getTargetComplexityIndex(@VelocityCheck int companyId, int targetId) {
+	public Integer getTargetComplexityIndex(int companyId, int targetId) {
 		String sqlGetComplexityIndex = "SELECT COALESCE(complexity, -1) FROM dyn_target_tbl " +
 			"WHERE target_id = ? AND company_id = ? AND COALESCE(hidden, 0) = 0";
 
@@ -1023,7 +1024,7 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 	}
 
 	@Override
-	public List<Pair<Integer, String>> getTargetsToInitializeComplexityIndices(@VelocityCheck int companyId) {
+	public List<Pair<Integer, String>> getTargetsToInitializeComplexityIndices(int companyId) {
 		String sqlGetTargets = "SELECT target_id, eql FROM dyn_target_tbl WHERE company_id = ? AND complexity IS NULL";
 
 		return select(logger, sqlGetTargets, new TargetEqlMapper(), companyId);
@@ -1171,4 +1172,11 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 	public int getAccessLimitingTargetgroupsAmount(int companyId) {
 		return 0;
 	}
+
+    @Override
+    public boolean isLinkUsedInTarget(TrackableLink link) {
+        return selectInt(logger, "SELECT 1 FROM dyn_target_tbl " +
+                "WHERE eql LIKE '%CLICKED LINK " + link.getId() + " IN MAILING " + link.getMailingID() + "%' " +
+                "AND deleted <= 0 AND hidden = 0 " + (isOracle() ? "AND rownum < 2" : "LIMIT 1")) == 1;
+    }
 }

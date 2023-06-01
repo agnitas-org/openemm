@@ -14,10 +14,10 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
-import com.agnitas.beans.ComAdmin;
 import org.agnitas.beans.CompaniesConstraints;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.workflow.beans.Workflow;
 import com.agnitas.emm.core.workflow.beans.Workflow.WorkflowStatus;
 import com.agnitas.emm.core.workflow.beans.WorkflowDependency;
@@ -114,7 +114,7 @@ public interface ComWorkflowDao {
      */
     void addDependency(@VelocityCheck int companyId, int workflowId, WorkflowDependency dependency);
 
-    List<Workflow> getWorkflowsOverview(ComAdmin admin);
+    List<Workflow> getWorkflowsOverview(Admin admin);
 
 	List<Workflow> getWorkflowsToDeactivate(CompaniesConstraints constraints);
 

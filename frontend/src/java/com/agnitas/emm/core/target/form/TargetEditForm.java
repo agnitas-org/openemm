@@ -16,6 +16,7 @@ public class TargetEditForm {
     private int targetId;
     private String shortname;
     private String description;
+    private boolean favorite;
     private boolean useForAdminAndTestDelivery;
     private boolean accessLimitation;
     private TargetgroupViewFormat viewFormat;
@@ -128,4 +129,12 @@ public class TargetEditForm {
     public void setQueryBuilderFilters(String queryBuilderFilters) {
         this.queryBuilderFilters = queryBuilderFilters;
     }
+
+	public boolean isFavorite() {
+		return favorite;
+	}
+
+	public void setFavorite(boolean favorite) {
+		this.favorite = favorite;
+	}
 }

@@ -26,8 +26,8 @@ import com.agnitas.reporting.birt.external.beans.LightMailing;
 import com.agnitas.reporting.birt.external.dao.LightMailingDao;
 
 public class LightMailingDaoImpl extends BaseDaoImpl implements LightMailingDao {
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(LightMailingDaoImpl.class);
+
+	private static final Logger logger = LogManager.getLogger(LightMailingDaoImpl.class);
 	
 	public LightMailingDaoImpl(DataSource dataSource) {
 		setDataSource(dataSource);
@@ -41,7 +41,7 @@ public class LightMailingDaoImpl extends BaseDaoImpl implements LightMailingDao 
 		return selectObjectDefaultNull(logger, targetSql, new LightMailingRowMapper(), companyId, mailingId);
 	}
 	
-	private class LightMailingRowMapper implements RowMapper<LightMailing> {
+	private static class LightMailingRowMapper implements RowMapper<LightMailing> {
 		@Override
 		public LightMailing mapRow(ResultSet resultSet, int row) throws SQLException {
 			LightMailing mailing = new LightMailing();

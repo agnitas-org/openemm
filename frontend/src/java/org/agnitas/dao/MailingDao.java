@@ -15,14 +15,14 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import com.agnitas.beans.ComAdmin;
 import org.agnitas.beans.MailingBase;
 import org.agnitas.beans.MailingSendStatus;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.mailing.beans.LightweightMailing;
 import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.agnitas.util.FulltextSearchInvalidQueryException;
 
-import com.agnitas.beans.ComTarget;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MailingsListProperties;
 import com.agnitas.emm.common.MailingType;
@@ -118,21 +118,11 @@ public interface MailingDao {
 	int findLastNewsletter(int customerID, @VelocityCheck int companyID, int mailinglist);
 
     /**
-     * Gets values for agn tag with certain name for given company (including default value)
-     *
-     * @param name
-     *          The name of agn tag
-     * @param companyID
-     *          The id of the company
-     * @return string array or null
-     */
-	//public String[] getTag(String name, @VelocityCheck int companyID);
-
-    /**
      *  Could not be used in fact because the column auto_url does not exist in mailing_tbl
      *
      */
-	String getAutoURL(int mailingID);
+	// Deprecated. GWUA-5122 TODO: Remove after 29.10.2022
+//	String getAutoURL(int mailingID);
 
     /**
      *  Could not be used in fact because the column rdir_domain does not exist in mailinglist_tbl
@@ -166,30 +156,26 @@ public interface MailingDao {
 	 * @param props filtering, sorting and pagination parameters for mailing list selection.
 	 *
 	 * @return PaginatedList of MailingBase
-	 * @throws Exception
 	 */
-	PaginatedListImpl<Map<String, Object>> getMailingList(ComAdmin admin, MailingsListProperties props);
+	PaginatedListImpl<Map<String, Object>> getMailingList(Admin admin, MailingsListProperties props) throws FulltextSearchInvalidQueryException;
 
-	List<LightweightMailing> getLightweightMailings(ComAdmin admin, MailingsListProperties props);
+	List<LightweightMailing> getLightweightMailings(Admin admin, MailingsListProperties props) throws FulltextSearchInvalidQueryException;
 
 	/**
      * Creates empty paginated list
 
      * @return PaginatedList of MailingBase
      */
-    PaginatedListImpl<Map<String, Object>> getEmptyMailingList();
+	// Deprecated. GWUA-5122 TODO: Remove after 29.10.2022
+//    PaginatedListImpl<Map<String, Object>> getEmptyMailingList();
 
 	/**
 	 * Checks whether full-text indices for name and description of a mailing are available
-	 *
-	 * @return
 	 */
 	boolean isBasicFullTextSearchSupported();
 
 	/**
 	 * Checks whether full-text indices for mailing content are available
-	 *
-	 * @return
 	 */
 	boolean isContentFullTextSearchSupported();
 
@@ -212,7 +198,8 @@ public interface MailingDao {
 	 */
 	int getStatusidForWorldMailing(int mailingID, @VelocityCheck int companyID);
 
-	int getGenstatusForWorldMailing(int mailingID);
+	// Deprecated. GWUA-5122 TODO: Remove after 29.10.2022
+//	int getGenstatusForWorldMailing(int mailingID);
 
 	/**
 	 * Retrieve a genstatus value from the latest maildrop entry or -1 if there's no one.
@@ -221,7 +208,6 @@ public interface MailingDao {
 	 *              Id of the mailing in database
 	 * @param statuses
 	 *              Filter for work_status column
-	 * @return
 	 */
 	int getLastGenstatus(int mailingID, char ...statuses);
 
@@ -277,7 +263,6 @@ public interface MailingDao {
      * @param companyID
      *              Id of the company that created a mailing/template
      * @return  true - it's template, false - it's mailing
-     * @throws Exception
      */
 	boolean checkMailingReferencesTemplate(int templateID, @VelocityCheck int companyID) throws Exception;
 
@@ -294,11 +279,6 @@ public interface MailingDao {
 
     /**
      * Checks the existence of template in the database
-     *
-     * @param mailingID
-     * @param companyID
-     * @param isTemplate
-     * @return
      */
 	boolean exist(int mailingID, @VelocityCheck int companyID, boolean isTemplate);
 
@@ -315,7 +295,8 @@ public interface MailingDao {
      *                  Id of the company that created the mailings
      * @return  String object
      */
-	String compareMailingsNameAndDesc(String mailingIDList, Map<Integer, String> allNames, Map<Integer, String> allDesc, @VelocityCheck int companyID);
+	// Deprecated. GWUA-5122 TODO: Remove after 29.10.2022
+//	String compareMailingsNameAndDesc(String mailingIDList, Map<Integer, String> allNames, Map<Integer, String> allDesc, @VelocityCheck int companyID);
 
     /**
      *  For each mailing from the given list loads number of openers and chose the biggest number
@@ -332,7 +313,8 @@ public interface MailingDao {
      *                  Target bean object with recipients target group data
      * @return max number of openers
      */
-	int compareMailingsOpened(String mailingIDList, @VelocityCheck int companyID, Map<Integer, Integer> allOpen, int biggestOpened, ComTarget aTarget);
+	// Deprecated. GWUA-5122 TODO: Remove after 29.10.2022
+//	int compareMailingsOpened(String mailingIDList, @VelocityCheck int companyID, Map<Integer, Integer> allOpen, int biggestOpened, ComTarget aTarget);
 
     /**
      * For each mailing from the given list loads number of clickers and chose the biggest number
@@ -349,7 +331,8 @@ public interface MailingDao {
      *                  Target bean object with recipients target group data
      * @return max number of clickers
      */
-	int compareMailingsTotalClicks(String mailingIDList, Map<Integer, Integer> allClicks, int biggestClicks, @VelocityCheck int companyID, ComTarget aTarget);
+	// Deprecated. GWUA-5122 TODO: Remove after 29.10.2022
+//	int compareMailingsTotalClicks(String mailingIDList, Map<Integer, Integer> allClicks, int biggestClicks, @VelocityCheck int companyID, ComTarget aTarget);
 
     /**
      * For each mailing from the given list loads numbers of customer which did not open (opt-out) or skipped (bounce) the mailing, and chose the biggest numbers
@@ -370,7 +353,8 @@ public interface MailingDao {
      *                  Target bean object with recipients target group data
      * @return Map with biggest bounce and biggest optout values
      */
-	Map<String, Integer> compareMailingsOptoutAndBounce(String mailingIDList, Map<Integer, Integer> allOptout, Map<Integer, Integer> allBounce, int biggestOptout, int biggestBounce, @VelocityCheck int companyID, ComTarget aTarget);
+	// Deprecated. GWUA-5122 TODO: Remove after 29.10.2022
+//	Map<String, Integer> compareMailingsOptoutAndBounce(String mailingIDList, Map<Integer, Integer> allOptout, Map<Integer, Integer> allBounce, int biggestOptout, int biggestBounce, @VelocityCheck int companyID, ComTarget aTarget);
 
     /**
      * Loads list of non-deleted mailing have been sent by certain company
@@ -378,7 +362,7 @@ public interface MailingDao {
      * @param admin current user
 	 * @return  List of MailingBase bean objects
      */
-	List<MailingBase> getMailingsForComparation(ComAdmin admin);
+	List<MailingBase> getMailingsForComparation(Admin admin);
 
     /**
      * Loads list of templates of certain company
@@ -386,7 +370,7 @@ public interface MailingDao {
      * @param admin current user
      * @return List of Mailing bean objects
      */
-	List<Mailing> getTemplates(ComAdmin admin);
+	List<Mailing> getTemplates(Admin admin);
 
     /**
      * Loads list of non-deleted templates of certain company
@@ -448,20 +432,15 @@ public interface MailingDao {
 
 	String getSQLExpression(String targetExpression);
 
-	List<LightweightMailing> getLightweightIntervalMailings(ComAdmin admin);
+	List<LightweightMailing> getLightweightIntervalMailings(Admin admin);
 
     /**
      * returns the mailing-Type for the given mailing.
      * eg. 3 means a Follow-Up mailing.
-     * @param mailingID
-     * @return
-     * @throws Exception
      */
 	MailingType getMailingType(int mailingID) throws Exception;
 
 	Date getMailingPlanDate(int mailingId, @VelocityCheck int companyId);
 
-    boolean isOracleDB();
-
-	List<MailingBase> getMailingTemplatesWithPreview(ComAdmin admin, String sort, String direction);
+	List<MailingBase> getMailingTemplatesWithPreview(Admin admin, String sort, String direction);
 }

@@ -14,12 +14,11 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import com.agnitas.emm.core.workflow.beans.WorkflowReactionType;
 import com.agnitas.emm.core.workflow.beans.WorkflowRule;
 import com.agnitas.emm.core.workflow.beans.WorkflowStart;
 import com.agnitas.emm.core.workflow.beans.WorkflowStartStop;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public abstract class WorkflowStartStopImpl extends BaseWorkflowIcon implements WorkflowStartStop {
 

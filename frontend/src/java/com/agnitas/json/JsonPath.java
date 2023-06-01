@@ -32,8 +32,8 @@ public class JsonPath {
 	 * 	#/store/customer/item
 	 * 
 	 * @param jsonPathString
-	 * @throws Exception 
-	 * @throws UnsupportedEncodingException 
+	 * @throws Exception
+	 * @throws UnsupportedEncodingException
 	 */
 	public JsonPath(String jsonPathString) throws Exception {
 		try (JsonPathReader jsonPathReader = new JsonPathReader(jsonPathString)) {

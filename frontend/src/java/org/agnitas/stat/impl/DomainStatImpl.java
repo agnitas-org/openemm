@@ -16,6 +16,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 
+import com.agnitas.reporting.birt.external.dataset.CommonKeys;
 import jakarta.servlet.http.HttpServletRequest;
 import javax.sql.DataSource;
 
@@ -113,7 +114,7 @@ public class DomainStatImpl extends BaseDaoImpl implements org.agnitas.stat.Doma
                 sqlCount += targetSQL;
                 sqlCount += " AND cust.customer_id = bind.customer_id ";
                 sqlCount += " AND bind.user_status =1";
-                csvfile += SafeString.getLocaleString("Mailinglist", locale) + ":;" + SafeString.getLocaleString("statistic.All_Mailinglists", locale) + "\n";
+                csvfile += SafeString.getLocaleString("Mailinglist", locale) + ":;" + SafeString.getLocaleString(CommonKeys.ALL_MAILINGLISTS, locale) + "\n";
             }
         }
        

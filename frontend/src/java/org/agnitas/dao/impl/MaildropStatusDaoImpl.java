@@ -24,6 +24,7 @@ import org.agnitas.dao.MaildropStatusDao;
 import org.agnitas.dao.impl.mapper.IntegerRowMapper;
 import org.agnitas.dao.impl.mapper.MaildropRowMapper;
 import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.agnitas.util.importvalues.MailType;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -33,6 +34,7 @@ import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.maildrop.MaildropGenerationStatus;
 import com.agnitas.emm.core.maildrop.MaildropStatus;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 
 public class MaildropStatusDaoImpl extends BaseDaoImpl implements MaildropStatusDao {
 	private static final transient Logger logger = LogManager.getLogger( MaildropStatusDaoImpl.class);
@@ -59,7 +61,7 @@ public class MaildropStatusDaoImpl extends BaseDaoImpl implements MaildropStatus
 	
 	@Override
 	public boolean delete(int companyId, int mailingId, MaildropStatus status, MaildropGenerationStatus generationStatus) {
-		final String sql = "DELETE FROM maildrop_status_tbl WHERE company_id=? AND mailing_id=? AND status_field=? AND genstatus=?";
+		final String sql = "DELETE FROM maildrop_status_tbl WHERE company_id = ? AND mailing_id = ? AND status_field = ? AND genstatus = ?";
 
 		final int deleted = update(logger, sql, companyId, mailingId, status.getCodeString(), generationStatus.getCode());
 
@@ -327,6 +329,10 @@ public class MaildropStatusDaoImpl extends BaseDaoImpl implements MaildropStatus
 					entries.get(i).setId(ids[i]);
 				}
 				
+				// TODO: Bugfix: Some MariaDB versions (10.3 ?) cause time values '00:00' when batch inserting, so we update those values again afterwards
+				for (MaildropEntry entry : entries) {
+					updateMaildropEntry(entry);
+				}
 			}
 		} catch (Exception e) {
 			logger.error("Could not insert new mail drops", e);
@@ -454,5 +460,17 @@ public class MaildropStatusDaoImpl extends BaseDaoImpl implements MaildropStatus
 		final String deleteSql = "DELETE FROM maildrop_status_tbl WHERE status_id=?";
 		this.batchupdate(logger, deleteSql, idArgList);
 	}
-	
+
+	@Override
+	public void writeMailingSendStatisticsEntry(int companyID, int mailingID, MaildropStatus maildropStatus, MediaTypes mediaType, MailType mailType, int amount, int dataSize, Date sendDate, String mailerHostname) {
+		update(logger, "INSERT INTO mailing_account_tbl (company_id, mailing_id, status_field, mediatype, mailtype, no_of_mailings, no_of_bytes, timestamp, mailer) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+			companyID, mailingID, Character.toString(maildropStatus.getCode()), mediaType.getMediaCode(), mailType.getIntValue(), amount, dataSize, sendDate, mailerHostname
+		);
+	}
+
+	@Override
+	public List<Integer> getMailingsSentBetween(int companyID, Date startDateIncluded, Date endDateExcluded) {
+		return select(logger, "SELECT mailing_id FROM maildrop_status_tbl WHERE company_id = ? AND senddate >= ? AND senddate < ? AND status_field NOT IN (?, ?)", IntegerRowMapper.INSTANCE,
+				companyID, startDateIncluded, endDateExcluded, MaildropStatus.ADMIN.getCodeString(), MaildropStatus.TEST.getCodeString());
+	}
 }

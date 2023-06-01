@@ -12,14 +12,13 @@ package com.agnitas.emm.core.report.dao;
 
 import java.util.List;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.emm.core.report.bean.CompositeBindingEntryHistory;
 import com.agnitas.emm.core.report.bean.PlainBindingEntryHistory;
 
 public interface BindingEntryHistoryDao {
 
-    List<PlainBindingEntryHistory> getHistory(@VelocityCheck int companyId, int recipientId, int mailinglistId, int mediaType);
+    List<PlainBindingEntryHistory> getHistory(int companyId, int recipientId, int mailinglistId, int mediaType);
 
-    List<CompositeBindingEntryHistory> getHistoryOfNonexistentBindings(@VelocityCheck int companyId, int recipientId);
+    List<CompositeBindingEntryHistory> getHistoryOfNonexistentBindings(int companyId, int recipientId);
 }

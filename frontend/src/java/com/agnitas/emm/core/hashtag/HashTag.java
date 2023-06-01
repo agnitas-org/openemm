@@ -34,7 +34,7 @@ public interface HashTag {
 	/**
 	 * Handles the tag string.
 	 * 
-	 * @param context {@link HashTagContext} 
+	 * @param context {@link HashTagContext}
 	 * @param tagString tag string
 	 * 
 	 * @return replacement text for hash tag

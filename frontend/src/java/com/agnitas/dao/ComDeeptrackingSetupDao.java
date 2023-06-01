@@ -10,11 +10,9 @@
 
 package com.agnitas.dao;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
-
 public interface ComDeeptrackingSetupDao {
 	
-	boolean create(@VelocityCheck int companyID);
+	boolean create(int companyID);
 
-	void delete(@VelocityCheck int companyId);
+	void delete(int companyId);
 }

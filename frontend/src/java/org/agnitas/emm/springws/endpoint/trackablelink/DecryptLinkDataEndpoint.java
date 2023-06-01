@@ -10,12 +10,15 @@
 
 package org.agnitas.emm.springws.endpoint.trackablelink;
 
+import java.util.Objects;
+
 import org.agnitas.emm.core.commons.uid.ExtensibleUIDService;
 import org.agnitas.emm.core.commons.uid.parser.exception.UIDParseException;
 import org.agnitas.emm.springws.endpoint.BaseEndpoint;
-import org.agnitas.emm.springws.endpoint.Utils;
+import org.agnitas.emm.springws.endpoint.Namespaces;
 import org.agnitas.emm.springws.jaxb.DecryptLinkDataRequest;
 import org.agnitas.emm.springws.jaxb.DecryptLinkDataResponse;
+import org.agnitas.emm.springws.util.SecurityContextAccess;
 import org.springframework.ws.server.endpoint.annotation.Endpoint;
 import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
 import org.springframework.ws.server.endpoint.annotation.RequestPayload;
@@ -26,20 +29,23 @@ import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
 @Endpoint
 public class DecryptLinkDataEndpoint extends BaseEndpoint {
 
-	private ExtensibleUIDService uidService;
+	private final ExtensibleUIDService uidService;
+	private final SecurityContextAccess securityContextAccess;
 
-	public DecryptLinkDataEndpoint(ExtensibleUIDService uidService) {
-		this.uidService = uidService;
+	public DecryptLinkDataEndpoint(final ExtensibleUIDService uidService, final SecurityContextAccess securityContextAccess) {
+		this.uidService = Objects.requireNonNull(uidService, "uidService");
+		this.securityContextAccess = Objects.requireNonNull(securityContextAccess, "securityContextAccess");
 	}
 
-	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "DecryptLinkDataRequest")
+	@PayloadRoot(namespace = Namespaces.AGNITAS_ORG, localPart = "DecryptLinkDataRequest")
 	public @ResponsePayload DecryptLinkDataResponse decryptLinkData(@RequestPayload DecryptLinkDataRequest request) throws Exception {
-		final DecryptLinkDataResponse response = new DecryptLinkDataResponse();
-
+		final int companyID = this.securityContextAccess.getWebserviceUserCompanyId();
 		final ComExtensibleUID uid = uidService.parse(request.getLinkparam());
 		
-		if(uid.getCompanyID() == Utils.getUserCompany()) {
-			response.setCompanyID(Utils.getUserCompany());
+		if(uid.getCompanyID() == companyID) {
+			final DecryptLinkDataResponse response = new DecryptLinkDataResponse();
+			
+			response.setCompanyID(companyID);
 			response.setCustomerID(uid.getCustomerID());
 			response.setMailingID(uid.getMailingID());
 			response.setUrlID(uid.getUrlID());

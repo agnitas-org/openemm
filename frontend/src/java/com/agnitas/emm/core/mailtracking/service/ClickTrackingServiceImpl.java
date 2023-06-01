@@ -23,7 +23,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.dao.ComTrackableLinkDao;
+import com.agnitas.dao.TrackableLinkDao;
 import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
 import com.agnitas.emm.core.mailing.cache.MailingContentTypeCache;
 import com.agnitas.emm.core.mailtracking.service.TrackingVetoHelper.TrackingLevel;
@@ -39,7 +39,7 @@ public final class ClickTrackingServiceImpl implements ClickTrackingService {
 	private static final transient Logger logger = LogManager.getLogger(ClickTrackingServiceImpl.class);
 
 	/** DAO handling trackable links. */
-	private ComTrackableLinkDao trackableLinkDao;
+	private TrackableLinkDao trackableLinkDao;
 	
 	/** Configuration service. */
 	private ConfigService configService;
@@ -129,7 +129,7 @@ public final class ClickTrackingServiceImpl implements ClickTrackingService {
 	 * @param dao DAO handling trackable links
 	 */
 	@Required
-	public final void setTrackableLinkDao(final ComTrackableLinkDao dao) {
+	public final void setTrackableLinkDao(final TrackableLinkDao dao) {
 		this.trackableLinkDao = Objects.requireNonNull(dao, "Trackable link DAO cannot be null");
 	}
 

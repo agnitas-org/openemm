@@ -14,7 +14,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Locale;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.ComRecipientHistory;
 import com.agnitas.beans.ComRecipientMailing;
 import com.agnitas.beans.ComRecipientReaction;
@@ -35,6 +35,7 @@ import com.agnitas.emm.core.report.generator.TableGenerator;
 import com.agnitas.emm.core.report.printer.RecipientEntityDtoPrinter;
 import com.agnitas.emm.core.report.services.RecipientReportService;
 import com.agnitas.messages.I18nString;
+import com.agnitas.web.mvc.XssCheckAware;
 import com.agnitas.web.perm.annotations.PermissionMapping;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.springframework.core.io.ByteArrayResource;
@@ -50,7 +51,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 @Controller
 @RequestMapping("/report")
 @PermissionMapping("report")
-public class ReportController {
+public class ReportController implements XssCheckAware {
 
     private static final String RECIPIENT_REPORT_RIGHTOFACCESS = "recipient.report.rightOfAccess";
 
@@ -83,7 +84,7 @@ public class ReportController {
 
     @PermissionMapping("recipients")
     @GetMapping(value = "/recipients.action")
-    public ResponseEntity<Resource> getRecipientReport(@RequestParam("id") @VelocityCheck int recipientId, ComAdmin admin) {
+    public ResponseEntity<Resource> getRecipientReport(@RequestParam("id") @VelocityCheck int recipientId, Admin admin) {
 
         Locale locale = admin.getLocale();
         int companyId = admin.getCompanyID();

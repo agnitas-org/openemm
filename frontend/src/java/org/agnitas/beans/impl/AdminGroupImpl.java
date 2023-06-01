@@ -16,8 +16,6 @@ import java.util.List;
 import java.util.Set;
 
 import org.agnitas.beans.AdminGroup;
-import org.agnitas.emm.core.velocity.VelocityCheck;
-
 import com.agnitas.emm.core.Permission;
 
 public class AdminGroupImpl implements AdminGroup {
@@ -40,7 +38,7 @@ public class AdminGroupImpl implements AdminGroup {
 	// SETTER:
 	// * * * * *
 	@Override
-	public void setCompanyID( @VelocityCheck int id) {
+	public void setCompanyID(int id) {
 		companyID = id;
 	}
 

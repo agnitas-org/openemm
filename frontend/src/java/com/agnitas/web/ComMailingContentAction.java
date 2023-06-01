@@ -11,11 +11,13 @@
 package com.agnitas.web;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Vector;
+import java.util.stream.Collectors;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -47,7 +49,7 @@ import org.springframework.beans.factory.annotation.Required;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.AdminPreferences;
 import com.agnitas.beans.DynamicTag;
 import com.agnitas.beans.Mailing;
@@ -55,7 +57,7 @@ import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.TargetLight;
 import com.agnitas.dao.AdminPreferencesDao;
 import com.agnitas.dao.ComMailingComponentDao;
-import com.agnitas.dao.ComProfileFieldDao;
+import com.agnitas.dao.ProfileFieldDao;
 import com.agnitas.dao.DynamicTagDao;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.maildrop.service.MaildropService;
@@ -80,7 +82,7 @@ public class ComMailingContentAction extends StrutsActionBase {
     
     public static final int CONTENT_ACTION_LAST = ACTION_LAST + 4;
 
-	protected ComProfileFieldDao profileFieldDao;
+	protected ProfileFieldDao profileFieldDao;
 	protected ComMailingContentService mailingContentService;
 	protected ComMailingComponentDao mailingComponentDao;
 	protected DynamicTagDao dynamicTagDao;
@@ -161,7 +163,7 @@ public class ComMailingContentAction extends StrutsActionBase {
 	}
 
 	protected ActionForward doExecute(ActionMapping mapping, ComMailingContentForm form, HttpServletRequest req, HttpServletResponse res, final ActionMessages errors, final ActionMessages messages) throws Exception {
-		ComAdmin admin = AgnUtils.getAdmin(req);
+		Admin admin = AgnUtils.getAdmin(req);
 
 		assert admin != null;
 
@@ -201,7 +203,7 @@ public class ComMailingContentAction extends StrutsActionBase {
 		}
 	}
 	
-	private boolean generateTextContent(ComAdmin admin, int mailingId) {
+	private boolean generateTextContent(Admin admin, int mailingId) {
 		try {
 			return mailingService.generateMailingTextContentFromHtml(admin, mailingId);
 		} catch (Exception e) {
@@ -238,7 +240,7 @@ public class ComMailingContentAction extends StrutsActionBase {
 	}
 
 	private void loadMailing(ComMailingContentForm form, HttpServletRequest req) {
-		ComAdmin admin = AgnUtils.getAdmin(req);
+		Admin admin = AgnUtils.getAdmin(req);
 		Mailing mailing = mailingService.getMailing(admin.getCompanyID(), form.getMailingID());
 
 		AdminPreferences adminPreferences = adminPreferencesDao.getAdminPreferences(admin.getAdminID());
@@ -287,6 +289,7 @@ public class ComMailingContentAction extends StrutsActionBase {
 					Map<String, DynamicTag> tags = form.getTags();
 					for (String name : getAgnTags(htmlComponent.getEmmBlock(), req)) {
 						tags.remove(name);
+						findTocItemDynNames(name, tags.keySet()).forEach(tags::remove);
 					}
 				}
 			}
@@ -295,6 +298,12 @@ public class ComMailingContentAction extends StrutsActionBase {
 			form.setGridTemplateId(0);
 			form.setWorkflowId(0);
 		}
+	}
+
+	private List<String> findTocItemDynNames(String dynName, Collection<String> dynNames) {
+		return dynNames.stream()
+				.filter(n -> n.startsWith(dynName + AgnUtils.TOC_ITEM_SUFFIX))
+				.collect(Collectors.toList());
 	}
 
 	private Vector<String> getAgnTags(String content, HttpServletRequest req) {
@@ -339,19 +348,19 @@ public class ComMailingContentAction extends StrutsActionBase {
 	 * Basically a world sent mailing is not editable but there's a permission {@link com.agnitas.emm.core.Permission#MAILING_CONTENT_CHANGE_ALWAYS}
 	 * that unlocks sent mailing so it could be edited anyway.
 	 */
-	protected boolean isMailingEditable(ComAdmin admin, ComMailingContentForm form) {
+	protected boolean isMailingEditable(Admin admin, ComMailingContentForm form) {
 		return isMailingEditable(admin, form.getMailingID());
 	}
 
-	protected boolean isMailingEditable(ComAdmin admin, int mailingId) {
+	protected boolean isMailingEditable(Admin admin, int mailingId) {
 		return this.mailingPropertiesRules.isMailingContentEditable(mailingId, admin);
 	}
 
-	private boolean tryToLock(int mailingId, ComAdmin admin, ComMailingContentForm form) {
+	private boolean tryToLock(int mailingId, Admin admin, ComMailingContentForm form) {
 		try {
             boolean lockedByCurrentUser = mailingService.tryToLock(admin, form.getMailingID());
             if (!lockedByCurrentUser) {
-                ComAdmin lockingUser = mailingService.getMailingLockingAdmin(mailingId, admin.getCompanyID());
+                Admin lockingUser = mailingService.getMailingLockingAdmin(mailingId, admin.getCompanyID());
                 if (lockingUser != null) {
                     form.setAnotherLockingUserName(String.join(" ", lockingUser.getFirstName(), lockingUser.getFullname()));
                 }
@@ -406,7 +415,7 @@ public class ComMailingContentAction extends StrutsActionBase {
 	}
 
 	@Required
-	public void setProfileFieldDao(ComProfileFieldDao profileFieldDao) {
+	public void setProfileFieldDao(ProfileFieldDao profileFieldDao) {
 		this.profileFieldDao = profileFieldDao;
 	}
 

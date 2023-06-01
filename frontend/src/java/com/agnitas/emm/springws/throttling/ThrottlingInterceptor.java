@@ -11,8 +11,10 @@
 package com.agnitas.emm.springws.throttling;
 
 import java.util.Locale;
+import java.util.Objects;
 
-import org.agnitas.emm.springws.endpoint.Utils;
+import org.agnitas.emm.springws.util.SecurityContextAccess;
+import org.springframework.beans.factory.annotation.Required;
 import org.springframework.ws.context.MessageContext;
 import org.springframework.ws.soap.SoapBody;
 import org.springframework.ws.soap.SoapHeaderElement;
@@ -30,14 +32,22 @@ public class ThrottlingInterceptor implements SoapEndpointInterceptor {
 	
 	/** Service for limiting WS calls. */
 	private QuotaService throttlingService;
+	
+	private SecurityContextAccess securityContextAccess;
 
 	/**
 	 * Sets {@link QuotaService}.
 	 * 
 	 * @param throttlingService {@link QuotaService}
 	 */
+	@Required
 	public void setThrottlingService(QuotaService throttlingService) {
 		this.throttlingService = throttlingService;
+	}
+	
+	@Required
+	public final void setSecurityContextAccess(final SecurityContextAccess securityContextAccess) {
+		this.securityContextAccess = Objects.requireNonNull(securityContextAccess, "securityContextAccess");
 	}
 
 	@Override
@@ -47,7 +57,7 @@ public class ThrottlingInterceptor implements SoapEndpointInterceptor {
 
 	@Override
 	public boolean handleRequest(MessageContext messageContext, Object paramObject) throws Exception {
-		final WebserviceUserDetails webserviceUser = Utils.getWebserviceUserDetails();
+		final WebserviceUserDetails webserviceUser = this.securityContextAccess.getWebserviceUserDetails();
 		final String endpointName = EndpointClassUtil.endpointNameFromInstance(paramObject);
 		
 		try {

@@ -3,10 +3,11 @@
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
+<%@ taglib prefix="agn" uri="https://emm.agnitas.de/jsp/jstl/tags" %>
 
 <c:set var="ACTION_VIEW_SEND" value="<%= MailingSendAction.ACTION_VIEW_SEND %>"/>
 
-<html:form action="/mailingsend">
+<agn:agnForm action="/mailingsend">
     <html:hidden property="mailingID"/>
     <html:hidden property="action"/>
 
@@ -20,5 +21,5 @@
         </html:link>
     </p>
 
-</html:form>
+</agn:agnForm>
     

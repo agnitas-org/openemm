@@ -18,7 +18,9 @@ public enum ObjectUserType {
 	/** Using object is a target group. */
 	TARGET_GROUP,
 	
-	/** Using object is a mailing. */ 
-	MAILING
-	
+	/** Using object is a mailing. */
+	MAILING,
+
+    /** Using object is a workflow. */
+	WORKFLOW
 }

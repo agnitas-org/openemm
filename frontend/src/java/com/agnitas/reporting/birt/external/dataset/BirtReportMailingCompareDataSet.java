@@ -14,9 +14,9 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -42,7 +42,7 @@ import com.agnitas.reporting.birt.external.utils.BirtReporUtils;
 import com.agnitas.reporting.birt.external.utils.FormatTools;
 
 public class BirtReportMailingCompareDataSet extends BIRTDataSet {
-	private static final transient Logger logger = LogManager.getLogger(BirtReportMailingCompareDataSet.class);
+	private static final Logger logger = LogManager.getLogger(BirtReportMailingCompareDataSet.class);
 
     private Map<Integer, Integer> categoriesByTable = new HashMap<>();
 
@@ -82,7 +82,7 @@ public class BirtReportMailingCompareDataSet extends BIRTDataSet {
         categoriesByTable.put(CommonKeys.SENT_OFFLINE_HTML_INDEX, 6);
     }
     
-    public class CompareStatRowRowMapper implements RowMapper<BirtReportCompareStatRow> {
+    public static class CompareStatRowRowMapper implements RowMapper<BirtReportCompareStatRow> {
 		@Override
 		public BirtReportCompareStatRow mapRow(ResultSet resultSet, int index) throws SQLException {
 	        try {
@@ -101,14 +101,11 @@ public class BirtReportMailingCompareDataSet extends BIRTDataSet {
 				row.setAssignedTargets(resultSet.getString("assigned_targets"));
 				
 				return row;
-			} catch (SQLException e) {
-				logger.error("Error in CompareStatRowRowMapper: " + e.getMessage(), e);
-				throw e;
 			} catch (Exception e) {
-				logger.error("Error in CompareStatRowRowMapper: " + e.getMessage(), e);
+				logger.error(MessageFormat.format("Error in CompareStatRowRowMapper: {0}", e.getMessage()), e);
 				throw e;
 			}
-		}
+        }
     }
 
     public int prepareReport(String mailingIdsStr, @VelocityCheck int companyId, String targetsStr, String hiddenTargetIdStr,
@@ -171,7 +168,7 @@ public class BirtReportMailingCompareDataSet extends BIRTDataSet {
 //			//mailingSummaryDataSet.removeCategoryData(tempTableId, CommonKeys.CLICKER_TRACKED_INDEX);
 //			mailingSummaryDataSet.removeCategoryData(tempTableId, CommonKeys.OPENERS_TRACKED_INDEX);
 
-			migrateDataToOwnTempTable(ownTempTableId, tempTableId, companyId, mailingId);
+			migrateDataToOwnTempTable(ownTempTableId, tempTableId, mailingId);
 
 			// hack for displaying send date in crossTab with all other categories as last column
 			insertIntoTempTable(ownTempTableId, new BirtReportCompareStatRow(CommonKeys.SEND_DATE, CommonKeys.SEND_DATE_INDEX, CommonKeys.ALL_SUBSCRIBERS,
@@ -221,9 +218,9 @@ public class BirtReportMailingCompareDataSet extends BIRTDataSet {
             }
 		}
         if (sortBy.equals("date")) {
-            Collections.sort(newResult, (o1, o2) -> DateUtilities.compare(o1.getSendDate(), o2.getSendDate()));
+            newResult.sort((o1, o2) -> DateUtilities.compare(o1.getSendDate(), o2.getSendDate()));
         } else {
-            Collections.sort(newResult, (o1, o2) -> o1.getMailingName().compareToIgnoreCase(o2.getMailingName()));
+            newResult.sort((o1, o2) -> o1.getMailingName().compareToIgnoreCase(o2.getMailingName()));
         }
         int rowNum = 0;
         Map<Integer, Integer> usedMailingId = new HashMap<>();
@@ -239,7 +236,6 @@ public class BirtReportMailingCompareDataSet extends BIRTDataSet {
 
 	/**
 	 * Count values sentHtml, sentText, sentOfflineHTML if needed
-	 * @throws Exception
 	 */
 	private void addSentMailsByMailtypeData(List<Integer> mailingIds, @VelocityCheck int companyId, int tempTableID, List<BirtReporUtils.BirtReportFigure> figures) throws Exception {
 		if (!(figures.contains(BirtReporUtils.BirtReportFigure.HTML) || figures.contains(BirtReporUtils.BirtReportFigure.TEXT) ||
@@ -302,7 +298,7 @@ public class BirtReportMailingCompareDataSet extends BIRTDataSet {
         }
 	}
 
-	private void migrateDataToOwnTempTable(int ownTempTableID, int curMailingTempTableID, @VelocityCheck int companyId, Integer mailingId) throws Exception {
+	private void migrateDataToOwnTempTable(int ownTempTableID, int curMailingTempTableID, Integer mailingId) throws Exception {
 		// get data for this mailing from mailing summary temp-table
 		MailingSummaryDataSet mailingSummaryDataSet = new MailingSummaryDataSet();
 		List<MailingSummaryDataSet.MailingSummaryRow> summaryData = mailingSummaryDataSet.getSummaryData(curMailingTempTableID);
@@ -534,9 +530,9 @@ public class BirtReportMailingCompareDataSet extends BIRTDataSet {
         }
 
         if (sortBy.equals("date")) {
-            Collections.sort(data, (o1, o2) -> DateUtilities.compare(o1.getSendDate(), o2.getSendDate()));
+            data.sort((o1, o2) -> DateUtilities.compare(o1.getSendDate(), o2.getSendDate()));
         } else {
-            Collections.sort(data, (o1, o2) -> o1.getMailingName().compareToIgnoreCase(o2.getMailingName()));
+            data.sort((o1, o2) -> o1.getMailingName().compareToIgnoreCase(o2.getMailingName()));
         }
 
         int rowNum = 0;
@@ -557,7 +553,7 @@ public class BirtReportMailingCompareDataSet extends BIRTDataSet {
     }
 
     public String getPredefineMailingName(int mailingFilter, int predefineMailingId, @VelocityCheck int companyId) {
-        String sql = "";
+        String sql;
         if (FilterType.FILTER_ARCHIVE.getKey() == mailingFilter) {
             sql = "select shortname from campaign_tbl where campaign_id = ? and company_id = ?";
         } else if (FilterType.FILTER_MAILINGLIST.getKey() == mailingFilter) {

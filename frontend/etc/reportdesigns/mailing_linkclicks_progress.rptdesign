@@ -285,18 +285,18 @@ currentrow = 0;
 	currentrow++;
 
 	row["DATETIME"] =  data.getClickTime();
-	row["CLICKS_GROS"] = data.getClicks_gross() ;
-	row["CLICKS_ANONYM"] = data.getClicks_anonymous() ;
+	row["CLICKS_GROS"] = data.getClicksGross() ;
+	row["CLICKS_ANONYM"] = data.getClicksAnonymous() ;
 	row["DEVICECLASSID"] = data.getDeviceClassID();
 
 	// do some i18n stuff
-	if (data.getColumn_index() == 1) {
+	if (data.getColumnIndex() == 1) {
 		row["TARGETGROUP"] = Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.all_subscribers", reportContext.getLocale());
 	} else {
 		row["TARGETGROUP"] = data.getTargetgroup();
 	}	
 
-	row["COLUMN_INDEX"] = data.getColumn_index();
+	row["COLUMN_INDEX"] = data.getColumnIndex();
 	return  true;
 }
 return false;

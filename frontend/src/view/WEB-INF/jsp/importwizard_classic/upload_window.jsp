@@ -4,7 +4,7 @@
 <%@ page language="java" contentType="text/html; charset=utf-8"
          import="org.agnitas.util.*, org.agnitas.web.*, com.agnitas.web.*, java.util.*, org.agnitas.beans.*, com.agnitas.beans.*, org.agnitas.util.importvalues.ImportMode"
          errorPage="/error.do" %>
-<%@page import="com.agnitas.beans.ComAdmin"%>
+<%@page import="com.agnitas.beans.Admin"%>
 <%@page import="org.apache.commons.lang3.StringUtils"%>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
@@ -18,15 +18,17 @@
 
 <emm:Permission token="wizard.importclassic"/>
 
-<% ComImportWizardForm aForm = (ComImportWizardForm) session.getAttribute("importWizardForm");
+<%
+ComImportWizardForm aForm = (ComImportWizardForm) session.getAttribute("importWizardForm");
     int tmpInserted = aForm.getStatus().getInserted();
     int tmpUpdated = aForm.getStatus().getUpdated();
 %>
 
-<% // map for the csv download:
+<%
+// map for the csv download:
     String csvfile = "";
     EmmCalendar my_calendar = new EmmCalendar(TimeZone.getDefault());
-    TimeZone zone = TimeZone.getTimeZone(((ComAdmin) session.getAttribute(AgnUtils.SESSION_CONTEXT_KEYNAME_ADMIN)).getAdminTimezone());
+    TimeZone zone = TimeZone.getTimeZone(((Admin) session.getAttribute(AgnUtils.SESSION_CONTEXT_KEYNAME_ADMIN)).getAdminTimezone());
 
     my_calendar.changeTimeWithZone(zone);
     Date my_time = my_calendar.getTime();
@@ -218,7 +220,7 @@
                             </li>
                             <% csvfile += "\n" + SafeString.getLocaleString("import.result.blacklisted", (Locale) session.getAttribute(org.apache.struts.Globals.LOCALE_KEY)) + ":;" + aForm.getStatus().getBlacklisted();
                         } %>
-                        
+                                                
                         <c:forEach var="entry" items="${mailinglists}">
                             <c:set var="mailinglistID" value="${entry.key}"/>
                             <c:set var="mailinglist" value="${entry.value}"/>

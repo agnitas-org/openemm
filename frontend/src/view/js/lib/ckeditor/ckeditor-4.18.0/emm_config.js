@@ -154,25 +154,25 @@ CKEDITOR.editorConfig = function(config) {
     /*FCKConfig.ToolbarSets["Default"]*/
     config.toolbar_Full = [
         ['Source','DocProps','-','Save','NewPage','Preview','-','Templates'],
-        ['Cut','Copy','-','Print','SpellCheck'],
+        ['Cut','Copy','-','Print','SpellCheck','Scayt'],
         ['Undo','Redo','-','Find','Replace','-','SelectAll','RemoveFormat'],
         ['Form','Checkbox','Radio','TextField','Textarea','Select','Button','ImageButton','HiddenField'],
         '/',
-        ['Bold','Italic','Underline','StrikeThrough','-','Subscript','Superscript'],
-        ['OrderedList','UnorderedList','-','Outdent','Indent','Blockquote'],
-        ['JustifyLeft','JustifyCenter','JustifyRight','JustifyFull'],
+        ['Bold','Italic','Underline','Strike','StrikeThrough','-','Subscript','Superscript'],
+        ['OrderedList','UnorderedList','-','Outdent','Indent','Blockquote','NumberedList','BulletedList'],
+        ['JustifyLeft','JustifyCenter','JustifyRight','JustifyFull','JustifyBlock'],
         ['Link','Unlink','Anchor'],
-        ['Image','Flash','Table','Rule','Smiley','SpecialChar','PageBreak'],
+        ['Image','Flash','Table','Rule','Smiley','SpecialChar','PageBreak','HorizontalRule','AGNTag'],
         '/',
-        ['Style','FontFormat','FontName','FontSize'],
+        ['Style','FontFormat','FontName','FontSize','Font','Styles','Format'],
         ['TextColor','BGColor'],
-        ['FitWindow','ShowBlocks','-','About'] // No comma for the last row.
+        ['FitWindow','ShowBlocks','-','About','EmojiPanel'] // No comma for the last row.
     ] ;
 
     /*ADVANCED*/
 
     // It seems like the 'font' plugin is already provided (inlined) by ckeditor.js, but we propose to load it just in case (it wont override inlined version)
-    config.extraPlugins = 'emm,image,flash,htmlwriter,table,tabletools,pastefromword,showprotected';
+    config.extraPlugins = 'emm,image,flash,htmlwriter,table,tabletools,pastefromword,showprotected,textwatcher,autocomplete,textmatch,emoji';
     config.removePlugins = 'uploadimage';
 
     config.toolbar_EMM =
@@ -180,7 +180,7 @@ CKEDITOR.editorConfig = function(config) {
             { name: 'clipboard', items : [ 'Cut','Copy','-','Undo','Redo' ] },
             { name: 'editing', items : [ 'Find','Replace','-','SelectAll','-','Scayt' ] },
             { name: 'links', items : [ 'Link','Unlink','Anchor' ] },
-            { name: 'insert', items : [ 'Image','Table','HorizontalRule','SpecialChar','AGNTag' ] },
+            { name: 'insert', items : [ 'Image','Table','HorizontalRule','SpecialChar','AGNTag','EmojiPanel' ] },
             { name: 'styles', items : [ 'Font','FontSize' ] },
             { name: 'format', items : [ 'Styles','Format' ] },
             { name: 'colors', items : [ 'TextColor','BGColor' ] },
@@ -195,7 +195,7 @@ CKEDITOR.editorConfig = function(config) {
     config.toolbar_EMC = [
         ['Cut', 'Copy'],
         ['Undo','Redo','-','Find','Replace', '-', 'SelectAll'],
-        ['Scayt', '-', 'Link', 'Unlink', 'SpecialChar', 'AGNTag', 'Format'],
+        ['Scayt', '-', 'Link', 'Unlink', 'SpecialChar', 'AGNTag', 'Format', 'EmojiPanel'],
         ['TextColor', 'BGColor', '-', 'Bold', 'Italic', 'Underline', 'Strike', 'Subscript', 'Superscript', 'RemoveFormat']
     ];
 
@@ -203,7 +203,7 @@ CKEDITOR.editorConfig = function(config) {
     /*FCKConfig.ToolbarSets["Trimmed"]*/
     config.toolbar_Trimmed = [
         ['Cut', 'Copy'],
-        ['Undo', 'Redo', '-', 'Find', 'Replace', '-', 'Scayt', '-', 'Link', 'Unlink', '-', 'SpecialChar', 'AGNTag'],
+        ['Undo', 'Redo', '-', 'Find', 'Replace', '-', 'Scayt', '-', 'Link', 'Unlink', '-', 'SpecialChar', 'AGNTag', 'EmojiPanel'],
         '/',
         ['Bold', 'Italic', 'Underline', 'Subscript', 'Superscript', 'RemoveFormat', '-', 'JustifyLeft', 'JustifyCenter', 'JustifyRight'],
         ['NumberedList', 'BulletedList', '-', 'Outdent', 'Indent']

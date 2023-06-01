@@ -68,7 +68,7 @@ import com.agnitas.emm.core.recipient.dao.BindingHistoryDao;
 
 public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompanyDao {
 	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(ComCompanyDaoImpl.class);
+	private static final Logger logger = LogManager.getLogger(ComCompanyDaoImpl.class);
 
 	/** Configuration service. */
 	private ConfigService configService;
@@ -224,29 +224,28 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 	public Company getCompany(int companyID) {
 		if (companyID == 0) {
 			return null;
-		} else {
-			try {
-				String sql = "SELECT company_id, creator_company_id, shortname, description, rdir_domain, mailloop_domain, status, mailtracking, stat_admin, secret_key, uid_version, auto_mailing_report_active, sector, business_field, max_recipients, salutation_extended, enabled_uid_version, export_notify, parent_company_id, contact_tech FROM company_tbl WHERE company_id = ?";
-				List<Company> list = select(logger, sql, new ComCompany_RowMapper(), companyID);
-				if (list.size() > 0) {
-					return list.get(0);
-				} else {
-					return null;
-				}
-			} catch (Exception e) {
-				throw new RuntimeException("Cannot read company data for companyid: " + companyID, e);
+		}
+
+		try {
+			String sql = "SELECT company_id, creator_company_id, shortname, description, rdir_domain, mailloop_domain, status, mailtracking, stat_admin, secret_key, uid_version, auto_mailing_report_active, sector, business_field, max_recipients, salutation_extended, enabled_uid_version, export_notify, parent_company_id, contact_tech FROM company_tbl WHERE company_id = ?";
+			List<Company> list = select(logger, sql, new ComCompany_RowMapper(), companyID);
+			if (!list.isEmpty()) {
+				return list.get(0);
 			}
+
+			return null;
+		} catch (Exception e) {
+			throw new RuntimeException("Cannot read company data for companyid: " + companyID, e);
 		}
 	}
 
 	@Override
 	@DaoUpdateReturnValueCheck
 	public void saveCompany(Company company) throws Exception {
-		Company comCompany = company;
 		try {
-			List<Map<String, Object>> list = select(logger, "SELECT company_id FROM company_tbl WHERE company_id = ?", comCompany.getId());
+			List<Map<String, Object>> list = select(logger, "SELECT company_id FROM company_tbl WHERE company_id = ?", company.getId());
 			
-			if (list.size() > 0) {
+			if (!list.isEmpty()) {
 				String sql = "UPDATE company_tbl SET creator_company_id = ?, shortname = ?, description = ?," +
 						" rdir_domain = ?, mailloop_domain = ?, status = ?, mailtracking = ?," +
 						" stat_admin = ?," +
@@ -254,21 +253,21 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 						" salutation_extended = ?, export_notify = ?, contact_tech = ?" +
 						" WHERE company_id = ?";
 				update(logger, sql,
-						comCompany.getCreatorID(),
-						comCompany.getShortname(),
-						comCompany.getDescription(),
-						comCompany.getRdirDomain(),
-						comCompany.getMailloopDomain(),
-						comCompany.getStatus().getDbValue(),
-						comCompany.getMailtracking(),
-						comCompany.getStatAdmin(),
-						comCompany.getSector(),
-						comCompany.getBusiness(),
-						comCompany.getMaxRecipients(),
-						comCompany.getSalutationExtended(),
-						comCompany.getExportNotifyAdmin(),
-						StringUtils.defaultString(comCompany.getContactTech()),
-						comCompany.getId());
+						company.getCreatorID(),
+						company.getShortname(),
+						company.getDescription(),
+						company.getRdirDomain(),
+						company.getMailloopDomain(),
+						company.getStatus().getDbValue(),
+						company.getMailtracking(),
+						company.getStatAdmin(),
+						company.getSector(),
+						company.getBusiness(),
+						company.getMaxRecipients(),
+						company.getSalutationExtended(),
+						company.getExportNotifyAdmin(),
+						StringUtils.defaultString(company.getContactTech()),
+						company.getId());
 			} else {
 				int defaultDatasourceID = createNewDefaultdatasourceID();
 				
@@ -289,23 +288,23 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 					
 					update(logger, sql,
 						newCompanyID,
-						comCompany.getCreatorID(),
-						comCompany.getShortname(),
-						comCompany.getDescription(),
-						comCompany.getRdirDomain(),
-						comCompany.getMailloopDomain(),
-						comCompany.getStatus().getDbValue(),
-						comCompany.getMailtracking(),
-						comCompany.getStatAdmin(),
-						comCompany.getSector(),
-						comCompany.getBusiness(),
-						comCompany.getMaxRecipients(),
-						comCompany.getSecretKey(),
-						comCompany.getSalutationExtended(),
-						comCompany.getEnabledUIDVersion(),
-						comCompany.getExportNotifyAdmin(),
+						company.getCreatorID(),
+						company.getShortname(),
+						company.getDescription(),
+						company.getRdirDomain(),
+						company.getMailloopDomain(),
+						company.getStatus().getDbValue(),
+						company.getMailtracking(),
+						company.getStatAdmin(),
+						company.getSector(),
+						company.getBusiness(),
+						company.getMaxRecipients(),
+						company.getSecretKey(),
+						company.getSalutationExtended(),
+						company.getEnabledUIDVersion(),
+						company.getExportNotifyAdmin(),
 						defaultDatasourceID,
-						StringUtils.defaultString(comCompany.getContactTech()));
+						StringUtils.defaultString(company.getContactTech()));
 				} else {
 					List<String> creationFieldList =
 							Arrays.asList("creation_date", "creator_company_id", "shortname", "description",
@@ -319,26 +318,26 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 							+ " VALUES (CURRENT_TIMESTAMP" + StringUtils.repeat(", ?", creationFieldList.size() - 1)+ ")";
 					
 					newCompanyID = insertIntoAutoincrementMysqlTable(logger, "company_id", insertStatementSql,
-						comCompany.getCreatorID(),
-						comCompany.getShortname(),
-						comCompany.getDescription(),
-						comCompany.getRdirDomain(),
-						comCompany.getMailloopDomain(),
-						comCompany.getStatus().getDbValue(),
-						comCompany.getMailtracking(),
-						comCompany.getStatAdmin(),
-						comCompany.getSector(),
-						comCompany.getBusiness(),
-						comCompany.getMaxRecipients(),
-						comCompany.getSecretKey(),
-						comCompany.getSalutationExtended(),
-						comCompany.getEnabledUIDVersion(),
-						comCompany.getExportNotifyAdmin(),
+						company.getCreatorID(),
+						company.getShortname(),
+						company.getDescription(),
+						company.getRdirDomain(),
+						company.getMailloopDomain(),
+						company.getStatus().getDbValue(),
+						company.getMailtracking(),
+						company.getStatAdmin(),
+						company.getSector(),
+						company.getBusiness(),
+						company.getMaxRecipients(),
+						company.getSecretKey(),
+						company.getSalutationExtended(),
+						company.getEnabledUIDVersion(),
+						company.getExportNotifyAdmin(),
 						defaultDatasourceID,
-						StringUtils.defaultString(comCompany.getContactTech()));
+						StringUtils.defaultString(company.getContactTech()));
 				}
 
-				comCompany.setId(newCompanyID);
+				company.setId(newCompanyID);
 				
 				updateDefaultdatasourceIDWithNewCompanyid(defaultDatasourceID, newCompanyID);
 			}
@@ -350,8 +349,6 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 
 	/**
 	 * Because the companyid is not aquired yet we use 1 (always existing company of emm-master) as interim companyid and update this later
-	 * 
-	 * @return
 	 */
 	@DaoUpdateReturnValueCheck
 	private int createNewDefaultdatasourceID() {
@@ -385,7 +382,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 
 	@Override
 	public List<Integer> getOpenEMMCompanyForClosing() {
-		final Date lifeTimeExpire = DateUtilities.getDateOfDaysAgo(configService.getIntegerValue(ConfigValue.System_License_MaximumLifetimeOfTestAccounts));
+		final Date lifeTimeExpire = DateUtilities.getDateOfDaysAgo(configService.getIntegerValue(ConfigValue.MaximumLifetimeOfTestAccounts));
 		final int creatorCompany = configService.getIntegerValue(ConfigValue.System_License_OpenEMMMasterCompany);
 		String sql = "SELECT company_id FROM company_tbl WHERE creator_company_id = ? AND status = '" + CompanyStatus.ACTIVE.getDbValue() + "' AND timestamp < ?";
 		return select(logger, sql, IntegerRowMapper.INSTANCE, creatorCompany, lifeTimeExpire);
@@ -507,7 +504,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 				sql = "CREATE INDEX intervtrack$" + newCompanyId + "$sendd$idx ON interval_track_" + newCompanyId + "_tbl (send_date)" + tablespaceClauseCustomerBindIndex;
 				executeWithRetry(logger, 0, 3, 120, sql);
 				
-				sql = "CREATE TABLE mailtrack_" + newCompanyId + "_tbl (mailing_id NUMBER, maildrop_status_id NUMBER, customer_id NUMBER, timestamp date default SYSDATE)" + tablespaceClauseDataSuccess;
+				sql = "CREATE TABLE mailtrack_" + newCompanyId + "_tbl (mailing_id NUMBER, maildrop_status_id NUMBER, customer_id NUMBER, timestamp DATE default SYSDATE, mediatype NUMBER)" + tablespaceClauseDataSuccess;
 				executeWithRetry(logger, 0, 3, 120, sql);
 				sql = "ALTER TABLE mailtrack_" + newCompanyId + "_tbl ADD CONSTRAINT mt" + newCompanyId + "$cuid$nn CHECK (customer_id IS NOT NULL)";
 				executeWithRetry(logger, 0, 3, 120, sql);
@@ -577,7 +574,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 				initCustomerTables(newCompanyId);
 				
 				// Watch out: Mysql does not support check constraints
-				sql = "CREATE TABLE mailtrack_" + newCompanyId + "_tbl (mailing_id INT(11), maildrop_status_id INT(11) NOT NULL, customer_id INTEGER UNSIGNED NOT NULL, timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
+				sql = "CREATE TABLE mailtrack_" + newCompanyId + "_tbl (mailing_id INT(11), maildrop_status_id INT(11) NOT NULL, customer_id INTEGER UNSIGNED NOT NULL, timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP, mediatype INT(10) UNSIGNED) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
 				executeWithRetry(logger, 0, 3, 120, sql);
 				sql = "CREATE INDEX mailtr" + newCompanyId + "$cid$idx ON mailtrack_" + newCompanyId + "_tbl (customer_id)";
 				executeWithRetry(logger, 0, 3, 120, sql);
@@ -680,11 +677,11 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 				update(logger, sql);
 
 				// Default mediapool categories
-				sql = "INSERT INTO grid_mediapool_category_tbl (company_id, category_id, shortname, hidden, description, in_floating_bar, translatable)"
-					+ " VALUES (" + newCompanyId + ", grid_category_tbl_seq.nextval, 'General', 0, '', 1, 1)";
+				sql = "INSERT INTO grid_mediapool_category_tbl (company_id, category_id, shortname, description, translatable)"
+					+ " VALUES (" + newCompanyId + ", grid_category_tbl_seq.nextval, 'General', '', 1)";
 				update(logger, sql);
-				sql = "INSERT INTO grid_mediapool_category_tbl (company_id, category_id, shortname, hidden, description, in_floating_bar, translatable)"
-					+ " VALUES (" + newCompanyId + ", grid_category_tbl_seq.nextval, 'grid.mediapool.category.editorial', 0, '', 1, 1)";
+				sql = "INSERT INTO grid_mediapool_category_tbl (company_id, category_id, shortname, description, translatable)"
+					+ " VALUES (" + newCompanyId + ", grid_category_tbl_seq.nextval, 'grid.mediapool.category.editorial', '', 1)";
 				update(logger, sql);
 			} else {
 				//init colors for heatmap
@@ -703,7 +700,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 				
 				// Copy customer
 				int customerToCopyID = selectIntWithDefaultValue(logger, "SELECT MIN(customer_id) FROM customer_1_tbl", 0);
-				int newCustomerID = 0;
+				int newCustomerID;
 				if (customerToCopyID > 0) {
 					newCustomerID = insertIntoAutoincrementMysqlTable(logger, "customer_id", "INSERT INTO customer_" + newCompanyId + "_tbl (gender, firstname, lastname, email, mailtype, creation_date, timestamp) (SELECT gender, firstname, lastname, email, mailtype, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP FROM customer_1_tbl WHERE customer_id = ?)", customerToCopyID);
 				} else {
@@ -726,11 +723,11 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 				update(logger, sql);
 
 				// Default mediapool categories
-				sql = "INSERT INTO grid_mediapool_category_tbl (company_id, shortname, hidden, description, in_floating_bar, translatable)"
-					+ " VALUES (" + newCompanyId + ", 'General', 0, '', 1, 1)";
+				sql = "INSERT INTO grid_mediapool_category_tbl (company_id, shortname, description, translatable)"
+					+ " VALUES (" + newCompanyId + ", 'General', '', 1)";
 				update(logger, sql);
-				sql = "INSERT INTO grid_mediapool_category_tbl (company_id, shortname, hidden, description, in_floating_bar, translatable)"
-					+ " VALUES (" + newCompanyId + ", 'grid.mediapool.category.editorial', 0, '', 1, 1)";
+				sql = "INSERT INTO grid_mediapool_category_tbl (company_id, shortname, description, translatable)"
+					+ " VALUES (" + newCompanyId + ", 'grid.mediapool.category.editorial', '', 1)";
 				update(logger, sql);
 			}
 
@@ -756,7 +753,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 						userFormImporter.importUserForm(newCompanyId, userFormInputStream, null, null);
 					}
 				} catch (Exception e) {
-					logger.error("Could not copy user form (" + sampleFormID + ") for new company (" + newCompanyId + "): " + e.getMessage(), e);
+					logger.error(String.format("Could not copy user form (%d) for new company (%d): %s", sampleFormID, newCompanyId, e.getMessage()), e);
 				} finally {
 					if (userFormTempFile.exists()) {
 						userFormTempFile.delete();
@@ -766,7 +763,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 
 			return true;
 		} catch (Exception e) {
-			logger.error("initTables: SQL: " + sql + "\n" + e, e);
+			logger.error(String.format("initTables: SQL: %s\n%s", sql, e), e);
 			updateCompanyStatus(newCompanyId, CompanyStatus.LOCKED);
 			return false;
 		}
@@ -1095,11 +1092,9 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 	public boolean existTrackingTables(int companyID) {
 		if (!DbUtilities.checkIfTableExists(getDataSource(), "rdirlog_" + companyID + "_val_alpha_tbl")) {
 			return false;
-		} else if (!DbUtilities.checkIfTableExists(getDataSource(), "rdirlog_" + companyID + "_ext_link_tbl")) {
-			return false;
-		} else {
-			return true;
 		}
+
+		return DbUtilities.checkIfTableExists(getDataSource(), "rdirlog_" + companyID + "_ext_link_tbl");
 	}
 
 	/**
@@ -1139,12 +1134,10 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 
 	/**
 	 * This method gets a list with all NOT DELETED companys from our DB.
-	 * 
-	 * @return
 	 */
 	@Override
 	public List<Company> getAllActiveCompaniesWithoutMasterCompany() {
-		String sql = "SELECT company_id, creator_company_id, shortname, description, rdir_domain, mailloop_domain, status, mailtracking, stat_admin, secret_key, uid_version, auto_mailing_report_active, sector, business_field, max_recipients, salutation_extended, enabled_uid_version, export_notify, parent_company_id, contact_tech FROM company_tbl WHERE status = '" + CompanyStatus.ACTIVE.getDbValue() + "' AND company_id > 1 ORDER BY company_id";
+		String sql = "SELECT company_id, creator_company_id, shortname, description, rdir_domain, mailloop_domain, status, mailtracking, stat_admin, secret_key, uid_version, auto_mailing_report_active, sector, business_field, max_recipients, salutation_extended, enabled_uid_version, export_notify, parent_company_id, contact_tech FROM company_tbl WHERE status IN ('" + CompanyStatus.ACTIVE.getDbValue() + "', '" + CompanyStatus.LOCKED.getDbValue() + "') AND company_id > 1 ORDER BY company_id";
 		try {
 			return select(logger, sql, new ComCompany_RowMapper());
 		} catch (Exception e) {
@@ -1158,7 +1151,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 	 */
 	@Override
 	public List<Company> getActiveCompaniesWithoutMasterCompanyFromStart(int startCompany) {
-		String sql = "SELECT company_id, creator_company_id, shortname, description, rdir_domain, mailloop_domain, status, mailtracking, stat_admin, secret_key, uid_version, auto_mailing_report_active, sector, business_field, max_recipients, salutation_extended, enabled_uid_version, export_notify, parent_company_id, contact_tech FROM company_tbl WHERE status = '" + CompanyStatus.ACTIVE.getDbValue() + "' AND company_id >= ? ORDER BY company_id";
+		String sql = "SELECT company_id, creator_company_id, shortname, description, rdir_domain, mailloop_domain, status, mailtracking, stat_admin, secret_key, uid_version, auto_mailing_report_active, sector, business_field, max_recipients, salutation_extended, enabled_uid_version, export_notify, parent_company_id, contact_tech FROM company_tbl WHERE status IN ('" + CompanyStatus.ACTIVE.getDbValue() + "', '" + CompanyStatus.LOCKED.getDbValue() + "')  AND company_id >= ? ORDER BY company_id";
 		try {
 			return select(logger, sql, new ComCompany_RowMapper(), startCompany);
 		} catch (Exception e) {
@@ -1258,7 +1251,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 				
 				return true;
 			} catch(Exception e) {
-				logger.error("createHistoryTables: SQL: " + sql + "\n" + e, e);
+				logger.error(String.format("createHistoryTables: SQL: %s\n%s", sql, e), e);
 				
 				return false;
 			}
@@ -1270,8 +1263,6 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 
 	/**
 	 * This method gets a list with all NOT DELETED companies from our DB.
-	 *
-	 * @return
 	 */
 	@Override
 	public List<Company> getAllActiveCompanies() {
@@ -1284,7 +1275,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 		}
 	}
 
-	private class ComCompany_RowMapper implements RowMapper<Company> {
+	private static class ComCompany_RowMapper implements RowMapper<Company> {
 		@Override
 		public Company mapRow(ResultSet resultSet, int row) throws SQLException {
 			Company readCompany = new CompanyImpl();
@@ -1324,11 +1315,16 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 	}
 
 	@Override
+	public int getNumberOfCustomers(int companyID) {
+		return selectInt(logger, "SELECT COUNT(*) FROM customer_" + companyID + "_tbl WHERE " + ComCompanyDaoImpl.STANDARD_FIELD_BOUNCELOAD + " = 0");
+	}
+
+	@Override
 	public int getMaximumNumberOfCustomers() {
 		int maximumNumberOfCustomers = 0;
 		for (Integer companyID : select(logger, "SELECT company_id FROM company_tbl WHERE status = ?", IntegerRowMapper.INSTANCE, CompanyStatus.ACTIVE.getDbValue())) {
 			if (DbUtilities.checkIfTableExists(getDataSource(), "customer_" + companyID + "_tbl")) {
-				int numberOfCustomers = selectInt(logger, "SELECT COUNT(*) FROM customer_" + companyID + "_tbl WHERE " + ComCompanyDaoImpl.STANDARD_FIELD_BOUNCELOAD + " = 0");
+				int numberOfCustomers = getNumberOfCustomers(companyID);
 				maximumNumberOfCustomers = Math.max(maximumNumberOfCustomers, numberOfCustomers);
 			}
 		}
@@ -1366,8 +1362,12 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 	}
 	@Override
 	public void createCompanyPermission(int companyID, Permission permission, String comment) {
-		if (companyID >= 0  && !hasCompanyPermission(companyID, permission)) {
-			update(logger, "INSERT INTO company_permission_tbl (company_id, permission_name, description, creation_date) VALUES (?, ?, ?, CURRENT_TIMESTAMP)", companyID, permission.getTokenString(), comment);
+		if (selectInt(logger, "SELECT COUNT(*) FROM permission_tbl WHERE permission_name = ?", permission.getTokenString()) <= 0) {
+			logger.warn("Permission to be granted by license does not exist in database: " + permission.getTokenString());
+		} else {
+			if (companyID >= 0 && !hasCompanyPermission(companyID, permission)) {
+				update(logger, "INSERT INTO company_permission_tbl (company_id, permission_name, description, creation_date) VALUES (?, ?, ?, CURRENT_TIMESTAMP)", companyID, permission.getTokenString(), comment);
+			}
 		}
 	}
 
@@ -1380,11 +1380,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 	public Set<Permission> getCompanyPermissions(int companyID) {
 		if (configService.getIntegerValue(ConfigValue.System_Licence) == 0) {
 			// Only OpenEMM is allowed everything
-			Set<Permission> returnSet = new HashSet<>();
-			for (Permission permission: Permission.getAllSystemPermissions()) {
-				returnSet.add(permission);
-			}
-			return returnSet;
+			return new HashSet<>(Permission.getAllSystemPermissions());
 		} else {
 			List<String> result = select(logger, "SELECT DISTINCT permission_name FROM company_permission_tbl WHERE company_id = ? OR company_id = 0", StringRowMapper.INSTANCE, companyID);
 			Set<Permission> returnSet = new HashSet<>();
@@ -1414,33 +1410,38 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 	}
 
 	@Override
-	public void setupPremiumFeaturePermissions(Set<String> allowedPremiumFeatures, Set<String> unAllowedPremiumFeatures, String comment) {
+	public void setupPremiumFeaturePermissions(Set<String> allowedPremiumFeatures, Set<String> unAllowedPremiumFeatures, String comment, int companyID) {
 		if (allowedPremiumFeatures != null) {
 			for (String allowedSecurityToken : allowedPremiumFeatures) {
 				Permission grantedPremiumPermission = Permission.getPermissionByToken(allowedSecurityToken);
 				if (grantedPremiumPermission != null) {
 					try {
-						createCompanyPermission(0, grantedPremiumPermission, comment);
+						createCompanyPermission(companyID, grantedPremiumPermission, comment);
 					} catch (Exception e) {
-						logger.error("Cannot activate premium permission: " + grantedPremiumPermission.getTokenString());
+						logger.error(String.format("Cannot activate premium permission: %s", grantedPremiumPermission.getTokenString()));
 					}
 				} else {
-					logger.warn("Found non-existing granted premium permission: " + allowedSecurityToken);
+					logger.warn(String.format("Found non-existing granted premium permission: %s", allowedSecurityToken));
 				}
 			}
 		}
 		
-		if (unAllowedPremiumFeatures != null && unAllowedPremiumFeatures.size() > 0) {
-			Object[] parameters = unAllowedPremiumFeatures.toArray(new String[unAllowedPremiumFeatures.size()]);
+		if (unAllowedPremiumFeatures != null && !unAllowedPremiumFeatures.isEmpty()) {
+			Object[] parameters = unAllowedPremiumFeatures.toArray(new String[0]);
 			
-			List<String> foundUnAllowedPremiumFeatures_Admin = select(logger, "SELECT permission_name FROM company_permission_tbl WHERE permission_name IN (" + AgnUtils.repeatString("?", unAllowedPremiumFeatures.size(), ", ") + ")", StringRowMapper.INSTANCE, parameters);
+			List<String> foundUnAllowedPremiumFeatures_Admin = select(logger, "SELECT permission_name FROM company_permission_tbl WHERE company_id = " + companyID + " AND permission_name IN (" + AgnUtils.repeatString("?", unAllowedPremiumFeatures.size(), ", ") + ")", StringRowMapper.INSTANCE, parameters);
 			
-			int touchedLines1 = update(logger, "DELETE FROM company_permission_tbl WHERE permission_name IN (" + AgnUtils.repeatString("?", unAllowedPremiumFeatures.size(), ", ") + ")", parameters);
+			int touchedLines1 = update(logger, "DELETE FROM company_permission_tbl WHERE company_id = " + companyID + " AND permission_name IN (" + AgnUtils.repeatString("?", unAllowedPremiumFeatures.size(), ", ") + ")", parameters);
 			if (touchedLines1 > 0) {
-				logger.error("Deleted unallowed premium features for admins: " + touchedLines1);
-				logger.error(StringUtils.join(foundUnAllowedPremiumFeatures_Admin, ", "));
+				logger.warn(String.format("Deleted unallowed premium features for company " + companyID + ": %d", touchedLines1));
+				logger.warn(StringUtils.join(foundUnAllowedPremiumFeatures_Admin, ", "));
 			}
 		}
+	}
+
+	@Override
+	public void cleanupPremiumFeaturePermissions(int companyID) {
+		update(logger, "DELETE FROM company_permission_tbl WHERE company_id = ?", companyID);
 	}
 	
 	@Override
@@ -1537,7 +1538,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 				executeWithRetry(logger, 0, 3, 120, "CREATE INDEX cust" + companyID + "$freq$idx ON customer_" + companyID + "_tbl (freq_count_day, freq_count_week,freq_count_month )");
 			}
 		} catch (Exception e) {
-			logger.error("Cannot add missing fields (CID " + companyID + "): " + e.getMessage(), e);
+			logger.error(String.format("Cannot add missing fields (CID %d): %s", companyID, e.getMessage()), e);
 		}
 		return true;
 	}
@@ -1546,18 +1547,18 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 	public Company getCompanyByName(String companyName) {
 		if (StringUtils.isBlank(companyName)) {
 			return null;
-		} else {
-			try {
-				String sql = "SELECT company_id, creator_company_id, shortname, description, rdir_domain, mailloop_domain, status, mailtracking, stat_admin, secret_key, uid_version, auto_mailing_report_active, sector, business_field, max_recipients, salutation_extended, enabled_uid_version, export_notify, parent_company_id, contact_tech FROM company_tbl WHERE shortname = ?";
-				List<Company> list = select(logger, sql, new ComCompany_RowMapper(), companyName);
-				if (list.size() > 0) {
-					return list.get(0);
-				} else {
-					return null;
-				}
-			} catch (Exception e) {
-				throw new RuntimeException("Cannot read company data for name: " + companyName, e);
+		}
+
+		try {
+			String sql = "SELECT company_id, creator_company_id, shortname, description, rdir_domain, mailloop_domain, status, mailtracking, stat_admin, secret_key, uid_version, auto_mailing_report_active, sector, business_field, max_recipients, salutation_extended, enabled_uid_version, export_notify, parent_company_id, contact_tech FROM company_tbl WHERE shortname = ?";
+			List<Company> list = select(logger, sql, new ComCompany_RowMapper(), companyName);
+			if (!list.isEmpty()) {
+				return list.get(0);
 			}
+
+			return null;
+		} catch (Exception e) {
+			throw new RuntimeException("Cannot read company data for name: " + companyName, e);
 		}
 	}
 }

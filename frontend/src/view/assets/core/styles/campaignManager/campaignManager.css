@@ -730,6 +730,16 @@ footer#footnotes-container {
     background-image: url(../../images/campaignManager/icon_actionbased_mailing_s.png);
 }
 
+.toolbarButton[data-type="mailing_mediatype_sms"],
+.dialog-title-image[data-type="mailing_mediatype_sms"] {
+    background-image: url(../../images/campaignManager/icon_sms_s.png);
+}
+
+.toolbarButton[data-type="mailing_mediatype_post"],
+.dialog-title-image[data-type="mailing_mediatype_post"] {
+    background-image: url(../../images/campaignManager/icon_post_s.png);
+}
+
 .toolbarButton[data-type="archive"],
 .dialog-title-image[data-type="archive"] {
     background-image: url(../../images/campaignManager/icon_archive_s.png);
@@ -837,7 +847,7 @@ footer#footnotes-container {
 .context-menu-item.icon {
     min-height: 23px;
     display: block;
-    font-family: 'Proxima Nova', 'Helvetica Neue', Arial, sans-serif;
+    font-family: Arial, sans-serif;
 }
 
 

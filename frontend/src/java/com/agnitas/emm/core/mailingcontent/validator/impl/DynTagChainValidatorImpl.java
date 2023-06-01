@@ -12,14 +12,14 @@ package com.agnitas.emm.core.mailingcontent.validator.impl;
 
 import java.util.List;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.mailingcontent.dto.DynTagDto;
 import com.agnitas.emm.core.mailingcontent.validator.DynTagChainValidator;
 import com.agnitas.emm.core.mailingcontent.validator.DynTagValidator;
 import com.agnitas.web.mvc.Popups;
 import org.springframework.stereotype.Component;
 
-@Component
+@Component("DynTagChainValidator")
 public class DynTagChainValidatorImpl implements DynTagChainValidator {
     private List<DynTagValidator> validators;
 
@@ -28,7 +28,7 @@ public class DynTagChainValidatorImpl implements DynTagChainValidator {
     }
 
     @Override
-    public boolean validate(DynTagDto dynTagDto, Popups popups, ComAdmin admin) {
+    public boolean validate(DynTagDto dynTagDto, Popups popups, Admin admin) {
         for (DynTagValidator validator : validators) {
             if (!validator.validate(dynTagDto, popups, admin)) {
                 return false;

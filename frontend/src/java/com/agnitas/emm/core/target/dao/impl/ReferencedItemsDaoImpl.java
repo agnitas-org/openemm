@@ -29,8 +29,7 @@ import com.agnitas.emm.core.target.dao.ReferencedItemsDao;
  */
 public class ReferencedItemsDaoImpl extends BaseDaoImpl implements ReferencedItemsDao {
 
-	/** The logger. */
-	private static final transient Logger LOGGER = LogManager.getLogger(ReferencedItemsDaoImpl.class);
+	private static final Logger LOGGER = LogManager.getLogger(ReferencedItemsDaoImpl.class);
 	
 	@Override
 	public void removeAllReferencedObjects(final int companyID, final int targetID) {
@@ -151,5 +150,4 @@ public class ReferencedItemsDaoImpl extends BaseDaoImpl implements ReferencedIte
 		
 		return select(LOGGER, sql, TargetLightRowMapper.INSTANCE, companyID, autoImportID);
 	}
-
 }

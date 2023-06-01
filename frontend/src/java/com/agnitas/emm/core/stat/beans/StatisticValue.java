@@ -10,7 +10,6 @@
 
 package com.agnitas.emm.core.stat.beans;
 
-
 public class StatisticValue {
 	
 	private int value;

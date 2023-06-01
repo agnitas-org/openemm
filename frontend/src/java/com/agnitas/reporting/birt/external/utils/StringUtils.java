@@ -11,23 +11,9 @@
 package com.agnitas.reporting.birt.external.utils;
 
 import java.text.BreakIterator;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Locale;
-import java.util.StringTokenizer;
 
 public class StringUtils {
-	public static List<Integer> buildListFormCommaSeparatedValueString(String commaSeparatedValues) {
-		List<Integer> valueList = new ArrayList<>();
-		if( commaSeparatedValues != null && !"".equals(commaSeparatedValues.trim())) {
-			StringTokenizer tokenizer = new StringTokenizer(commaSeparatedValues,",");
-			while(tokenizer.hasMoreTokens()) {
-				String currentToken = tokenizer.nextToken();
-				valueList.add(Integer.parseInt(currentToken));
-			}
-		}
-		return valueList;
-	}
 
     /**
      * Method converts single-line string to the word-wrapped multiline string with the given max-width

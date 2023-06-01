@@ -25,30 +25,33 @@ final class ComExtensibleUIDImpl implements ComExtensibleUID {
 	private final int licenseID;
 
 	/** Prefix for UID. */
-    private final String prefix;
-    
-    /** Company ID. */
-    private final int companyID;
-    
-    /** Customer ID. */
-    private final int customerID;
-    
-    /** Mailing ID. */
-    private final int mailingID;
-    
-    /** URL ID. */
-    private final int urlID;
-    
-    /** The bit field. */
-    private final long bitField;
+	private final String prefix;
 
-    /**
-     * Create and initialize new UID instance.
-     * 
-     * <b>Do never instantiate a UID directly, use {@link UIDFactory} methods instead.</b>
-     * 
-     * @see UIDFactory
-     */
+	/** Company ID. */
+	private final int companyID;
+
+	/** Customer ID. */
+	private final int customerID;
+
+	/** Mailing ID. */
+	private final int mailingID;
+
+	/** URL ID. */
+	private final int urlID;
+
+	/** The bit field. */
+	private final long bitField;
+	
+	/** The senddate in seconds */
+	private long sendDate;
+
+	/**
+	 * Create and initialize new UID instance.
+	 *
+	 * <b>Do never instantiate a UID directly, use {@link UIDFactory} methods instead.</b>
+	 *
+	 * @see UIDFactory
+	 */
  	ComExtensibleUIDImpl(final String prefix, final int licenseID, final int companyID, final int customerID, final int mailingID, final int urlID, final long bitfield) {
  		this.prefix = prefix;
  		this.licenseID = licenseID;
@@ -57,14 +60,15 @@ final class ComExtensibleUIDImpl implements ComExtensibleUID {
  		this.mailingID = urlID == 0 ? mailingID : warnIfZero(mailingID, "Mailing ID is 0, but URL ID given"); // Warn, if mailing ID is 0, but URL ID is <> 0
  		this.urlID = urlID;
  		this.bitField = bitfield;
+		this.sendDate = 0L;
 	}
 
  	/**
  	 * Checks,if given value is zero. If so, a warning is logged.
- 	 * 
+ 	 *
  	 * @param value value to check
  	 * @param warning warning if value is 0
- 	 * 
+ 	 *
  	 * @return given value
  	 */
  	private static int warnIfZero(final int value, final String warning) {
@@ -88,41 +92,53 @@ final class ComExtensibleUIDImpl implements ComExtensibleUID {
 		this.prefix = uid.getPrefix();
 		this.urlID = uid.getUrlID();
 		this.bitField = uid.getBitField();
+		this.sendDate = uid.getSendDate ();
 	}
 
 	@Override
 	public final int getLicenseID() {
 		return this.licenseID;
 	}
-   
-    @Override
-    public final String getPrefix() {
-    	return this.prefix;
-    }
 
-    @Override
-    public final int getCompanyID() {
-    	return this.companyID;
-    }
+	@Override
+	public final String getPrefix() {
+		return this.prefix;
+	}
 
-    @Override
-    public final int getCustomerID() {
-    	return this.customerID;
-    }
+	@Override
+	public final int getCompanyID() {
+		return this.companyID;
+	}
 
-    @Override
-    public final int getMailingID() {
-    	return this.mailingID;
-    }
+	@Override
+	public final int getCustomerID() {
+		return this.customerID;
+	}
 
-    @Override
-    public final int getUrlID() {
-    	return this.urlID;
-    }
+	@Override
+	public final int getMailingID() {
+		return this.mailingID;
+	}
+
+	@Override
+	public final int getUrlID() {
+		return this.urlID;
+	}
 
 	@Override
 	public final long getBitField() {
 		return this.bitField;
+	}
+	
+	@Override
+	public long getSendDate () {
+		return sendDate;
+	}
+	
+	@Override
+	public ComExtensibleUID setSendDate (long sendDate) {
+		this.sendDate = sendDate;
+		return this;
 	}
 
 	@Override
@@ -135,6 +151,7 @@ final class ComExtensibleUIDImpl implements ComExtensibleUID {
 				", mailingID=" + mailingID +
 				", urlID=" + urlID +
 				", bitField=" + bitField +
+				", sendDate=" + sendDate +
 				'}';
 	}
 }

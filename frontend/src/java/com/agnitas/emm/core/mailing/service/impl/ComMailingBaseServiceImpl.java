@@ -10,7 +10,7 @@
 
 package com.agnitas.emm.core.mailing.service.impl;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.ComUndoDynContent;
 import com.agnitas.beans.ComUndoMailing;
 import com.agnitas.beans.ComUndoMailingComponent;
@@ -42,6 +42,7 @@ import com.agnitas.service.AgnTagService;
 import com.agnitas.service.GridServiceWrapper;
 import com.agnitas.service.SimpleServiceResult;
 import com.agnitas.util.Span;
+import com.agnitas.web.mvc.Popups;
 import org.agnitas.beans.DynamicTagContent;
 import org.agnitas.beans.MailingBase;
 import org.agnitas.beans.MailingComponent;
@@ -54,8 +55,10 @@ import org.agnitas.dao.MailingStatus;
 import org.agnitas.emm.core.mailing.beans.LightweightMailing;
 import org.agnitas.emm.core.mailing.exception.UnknownMailingIdException;
 import org.agnitas.emm.core.mailing.service.MailingModel;
+import org.agnitas.emm.core.mailing.service.MailingNotExistException;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.DynTagException;
+import org.agnitas.util.FulltextSearchInvalidQueryException;
 import org.agnitas.util.GuiConstants;
 import org.agnitas.util.SafeString;
 import org.apache.commons.collections4.MapUtils;
@@ -126,7 +129,7 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
     }
 
     @Override
-    public boolean isTextTemplateExists(ComAdmin admin, int mailingId) {
+    public boolean isTextTemplateExists(Admin admin, int mailingId) {
         MailingComponent mailingTextTemplate = mailingComponentsService.getMailingTextTemplate(mailingId, admin.getCompanyID());
         if (mailingTextTemplate != null) {
             String emmBlock = mailingTextTemplate.getEmmBlock();
@@ -167,7 +170,7 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
     }
 
     @Override
-    public void restoreMailingUndo(ApplicationContext ctx, int mailingId, @VelocityCheck int companyId) throws Exception {
+    public void restoreMailingUndo(ApplicationContext ctx, int mailingId, int companyId) throws Exception {
         Mailing mailing = mailingDao.getMailingWithDeletedDynTags(mailingId, companyId);
         ComUndoMailing undoMailing = undoMailingDao.getLastUndoData(mailingId);
         List<ComUndoMailingComponent> undoMailingComponentList = undoMailingComponentDao.getAllUndoDataForMailing(mailingId, undoMailing.getUndoId());
@@ -259,11 +262,18 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
     }
 
     @Override
-    public PaginatedListImpl<Map<String, Object>> getPaginatedMailingsData(ComAdmin admin, MailingsListProperties props) {
+    public PaginatedListImpl<Map<String, Object>> getPaginatedMailingsData(Admin admin, MailingsListProperties props) {
         if (admin == null || Objects.isNull(props)) {
             return new PaginatedListImpl<>();
         }
-        return mailingDao.getMailingList(admin, props);
+
+        try {
+            return mailingDao.getMailingList(admin, props);
+        } catch (FulltextSearchInvalidQueryException e) {
+            e.printStackTrace();
+        }
+
+        return new PaginatedListImpl<>(new ArrayList<>(), 0, props.getRownums(), props.getPage(), "senddate", true);
     }
 
     @Override
@@ -346,20 +356,23 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
     }
 
     @Override
-    public boolean isLimitedRecipientOverview(ComAdmin admin, int mailingId) {
-    	int companyId = admin.getCompanyID();
-		Mailing mailing = mailingDao.getMailing(mailingId, companyId);
+    public boolean isLimitedRecipientOverview(Admin admin, int mailingId) {
+        try {
+            int companyId = admin.getCompanyID();
+            Mailing mailing = mailingDao.getMailing(mailingId, companyId);
 
-		boolean isSentStatus;
+            boolean isSentStatus;
 
-		if (mailing.getMailingType() == MailingType.INTERVAL) {
-			String workStatus = mailingDao.getWorkStatus(companyId, mailingId);
-            isSentStatus = StringUtils.equals(workStatus, MailingStatus.ACTIVE.getDbKey());
-		} else {
-            isSentStatus = maildropService.isActiveMailing(mailingId, companyId);
-		}
-
-		return isSentStatus && !mailinglistApprovalService.isAdminHaveAccess(admin, mailing.getMailinglistID());
+            if (mailing.getMailingType() == MailingType.INTERVAL) {
+                String workStatus = mailingDao.getWorkStatus(companyId, mailingId);
+                isSentStatus = StringUtils.equals(workStatus, MailingStatus.ACTIVE.getDbKey());
+            } else {
+                isSentStatus = maildropService.isActiveMailing(mailingId, companyId);
+            }
+            return isSentStatus && !mailinglistApprovalService.isAdminHaveAccess(admin, mailing.getMailinglistID());
+        } catch (MailingNotExistException ex) {
+            return false;
+        }
     }
 
     @Lookup
@@ -410,7 +423,16 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
     }
 
     @Override
-    public void doTextTemplateFilling(Mailing mailing, ComAdmin admin, ActionMessages messages) {
+    public void doTextTemplateFilling(Mailing mailing, Admin admin, Popups popups) {
+        doTextTemplateFilling(mailing, admin, null, popups);
+    }
+
+    @Override
+    public void doTextTemplateFilling(Mailing mailing, Admin admin, ActionMessages messages) {
+        doTextTemplateFilling(mailing, admin, messages, null);
+    }
+
+    public void doTextTemplateFilling(Mailing mailing, Admin admin, ActionMessages messages, Popups popups) {
         MailingComponent componentTextTemplate = mailing.getTextTemplate();
         if (Objects.isNull(componentTextTemplate)) {
             logger.error("Text template is absent. mailingId: " + mailing.getId());
@@ -421,7 +443,11 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
         String textTemplate = componentTextTemplate.getEmmBlock();
         if (StringUtils.isBlank(textTemplate)) {
             componentTextTemplate.setEmmBlock(SafeString.getLocaleString("mailing.textversion.default", admin.getLocale()), "text/plain");
-            messages.add(GuiConstants.ACTIONMESSAGE_CONTAINER_WARNING, new ActionMessage("mailing.textversion.empty"));
+            if (popups != null) {
+                popups.warning("mailing.textversion.empty");
+            } else {
+                messages.add(GuiConstants.ACTIONMESSAGE_CONTAINER_WARNING, new ActionMessage("mailing.textversion.empty"));
+            }
             return;
         }
 
@@ -475,7 +501,11 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
                 block.setMailingID(textTag.getMailingID());
 
                 textTag.addContent(block);
-                messages.add(GuiConstants.ACTIONMESSAGE_CONTAINER_WARNING, new ActionMessage("mailing.textversion.empty"));
+                if (popups != null) {
+                    popups.warning("mailing.textversion.empty");
+                } else {
+                    messages.add(GuiConstants.ACTIONMESSAGE_CONTAINER_WARNING, new ActionMessage("mailing.textversion.empty"));
+                }
                 return;
             }
         }
@@ -491,7 +521,7 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
     }
 
     @Override
-    public List<MailingBase> getMailingsForComparison(ComAdmin admin) {
+    public List<MailingBase> getMailingsForComparison(Admin admin) {
         return mailingDao.getMailingsForComparation(admin);
     }
 
@@ -773,7 +803,7 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
     }
 
     @Override
-    public void activateTrackingLinksOnEveryPosition(ComAdmin admin, Mailing mailing, ApplicationContext context) throws Exception {
+    public void activateTrackingLinksOnEveryPosition(Admin admin, Mailing mailing, ApplicationContext context) throws Exception {
         List<String> links = mailing.getTrackableLinks().values().stream()
                 .filter(Objects::nonNull)
                 .map(TrackableLink::getFullUrl)
@@ -788,4 +818,9 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
         });
         saveMailingWithUndo(mailing, admin.getAdminID(), false);
     }
+
+	@Override
+	public List<Integer> getMailingsSentBetween(int companyID, Date startDateIncluded, Date endDateExcluded) {
+		return maildropService.getMailingsSentBetween(companyID, startDateIncluded, endDateExcluded);
+	}
 }

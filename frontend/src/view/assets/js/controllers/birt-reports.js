@@ -143,7 +143,7 @@ AGN.Lib.Controller.new('birt-reports', function() {
         if((self.settingsType == config.constant.COMPARISON_SETTINGS && mailingType == 2) ||
             (self.settingsType == config.constant.MAILING_SETTINGS && mailingType == 3)) {
             $.ajax({
-                type: "POST",
+                type: "GET",
                 url: config.urls.FILTERED_MAILING_URL,
                 data: {
                     type: mailingFilter,
@@ -175,4 +175,15 @@ AGN.Lib.Controller.new('birt-reports', function() {
         return parseInt(mailingType.val()) | 0;
     };
 
+    this.addAction({click: 'confirm-deactivate-deliveries'}, function() {
+        AGN.Lib.Confirm.createFromTemplate({
+            action: AGN.url("/statistics/report/" + config.reportId + "/deactivateAllDeliveries.action"),
+            method: 'POST',
+            title: t('birtreport.deactivateAll'),
+            content: t('birtreport.deactivateAllQuestion')
+        }, 'modal-yes-no-cancel')
+            .done(function(resp) {
+                AGN.Lib.Form.get($('#birtreportForm')).updateHtml(resp);
+            })
+    });
 });

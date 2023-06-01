@@ -14,9 +14,13 @@ import java.io.Closeable;
 import java.sql.Blob;
 import java.sql.Clob;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.sql.Types;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -48,40 +52,22 @@ import com.agnitas.dao.DaoUpdateReturnValueCheck;
  * Database abstraction layer
  */
 public class DBase {
-	private static final int DB_UNSET = 0;
-	private static final int DB_MYSQL = 1;
-	private static final int DB_ORACLE = 2;
-	// general retry counter
-	private static final int RETRY = 5;
-
+	static interface Cursor extends Closeable {
+		public <T> T query (String query, Map <String, Object> packed, ResultSetExtractor <T> extractor) throws SQLException;
+		public <T> T querySingle (String query, Map <String, Object> packed) throws SQLException;
+		public Map <String, Object> queryForMap (String query, Map <String, Object> packed) throws SQLException;
+		public List <Map <String, Object>> queryForList (String query, Map <String, Object> packed) throws SQLException;
+		public int update (String query, Map <String, Object> packed) throws SQLException;
+		public void execute (String query) throws SQLException;
+	}
+	static interface DB {
+		public void setup (Data data, DBase dbase, DataSource dataSource) throws ClassNotFoundException;
+		public void done ();
+		public DataSource dataSource ();
+		public Cursor cursor () throws SQLException;
+	}
 	/**
-	 * If not set from outside, Backend will try to create its own datasource from dbcfg data
-	 */
-	public static DataSource DATASOURCE = null;
-	/**
-	 * The column meassure must be written in different ways for oracle and mysql in sql statements
-	 */
-	public String measureType = null;
-	public String measureRepr = null;
-
-	/**
-	 * name for current date in database
-	 */
-	private int dbType = DB_UNSET;
-	private int dbVersion = 0;
-	private String nullQuery = null;
-	/**
-	 * Reference to configuration
-	 */
-	private Data data = null;
-	private String schema = null;
-	/**
-	 * Default jdbc access instance
-	 */
-	private NamedParameterJdbcTemplate jdbcTmpl = null;
-
-	/**
-	 * Wrapper to create a data source and enforce auto commitment
+	 * internal datasource representation
 	 */
 	static class DBDatasource {
 		private Map<String, DataSource> cache;
@@ -153,70 +139,420 @@ public class DBase {
 		}
 	}
 
-	/**
-	 * Simple base class for logging exceptions
-	 */
-	static class DBAccess {
-		Data data;
-		NamedParameterJdbcTemplate jdbc;
+	static class DBNative implements DB {
+		static class CursorNative implements Cursor {
+			static class ParsedSQL {
+				private String			originalSQL;
+				private String			parsedSQL;
+				private List <String>		placeHolder;
+				private Set <String>		expectedPlaceHolder;
+				private static Pattern  	parseNamedParameter = Pattern.compile ("'[^']*'|:[a-z][a-z0-9_]*", Pattern.CASE_INSENSITIVE);
+				public ParsedSQL (String sql) {
+					int		pos = 0;
+					int		length = sql.length ();
+					StringBuffer	parsed = new StringBuffer (length);
+					Matcher		m = parseNamedParameter.matcher (sql);
+			
+					placeHolder = new ArrayList <> ();
+					while (pos < length) {
+						if (m.find (pos)) {
+							int	start = m.start ();
+							int	end = m.end ();
+							String	match = m.group ();
+					
+							if (start > pos) {
+								parsed.append (sql.substring (pos, start));
+							}
+							if (match.startsWith (":")) {
+								placeHolder.add (sql.substring (start + 1, end));
+								parsed.append ("?");
+							} else {
+								parsed.append (match);
+							}
+							pos = end;
+						} else {
+							parsed.append (sql.substring (pos));
+							pos = length;
+						}
+					}
+					originalSQL = sql;
+					parsedSQL = parsed.toString ();
+					expectedPlaceHolder = new HashSet <> (placeHolder);
+				}
 
-		public DBAccess(Data nData, NamedParameterJdbcTemplate nJdbc) {
-			data = nData;
-			jdbc = nJdbc;
+				public PreparedStatement fill (Connection c, Map <String, Object> param) throws SQLException {
+					PreparedStatement	rc = c.prepareStatement (parsedSQL);
+			
+					if (param != null) {
+						int	pos = 1;
+
+						for (String ph : placeHolder) {
+							if (param.containsKey (ph)) {
+								Object	value = param.get (ph);
+								int	valueType = Types.JAVA_OBJECT;
+						
+								if (value != null) {
+									Object	valueClass = value.getClass ();
+							
+									if (valueClass == java.util.Date.class || valueClass == java.sql.Date.class) {
+										valueType = Types.TIMESTAMP;
+									}
+								}
+								if (valueType == Types.JAVA_OBJECT) {
+									rc.setObject (pos++, value);
+								} else {
+									rc.setObject (pos++, value, valueType);
+								}
+							} else {
+								throw new SQLException (originalSQL + ": no value passed for placeholder \"" + ph + "\"");
+							}
+						}
+						String	unexpected = null;
+
+						for (String key : param.keySet ()) {
+							if (! expectedPlaceHolder.contains (key)) {
+								if (unexpected == null) {
+									unexpected = key;
+								} else {
+									unexpected += ", " + key;
+								}
+							}
+						}
+						if (unexpected != null) {
+							throw new SQLException (originalSQL + ": passed unexpected values for these keys: " + unexpected);
+						}
+					} else if (placeHolder.size () > 0) {
+						throw new SQLException (originalSQL + ": no paramater at all passed for expected placeholder");
+					}
+					return rc;
+				}
+			}
+			static private Map <String, ParsedSQL> parsedSQLCache = new HashMap <> ();
+			private DBase dbase;
+			private DataSource dataSource;
+			private Connection connection;
+			
+			public CursorNative (DBase dbase, DataSource dataSource) {
+				this.dbase = dbase;
+				this.dataSource = dataSource;
+				this.connection = null;
+			}
+			@Override
+			public void close () {
+				if (connection != null) {
+					try {
+						connection.close ();
+					} catch (SQLException e) {
+						dbase.logging (Log.INFO, "dbnative", "Failed to close connection, assume its invalid anyway: " + e.toString ());
+					}
+					connection = null;
+				}
+			}
+
+			@Override
+			public <T> T query (String query, Map <String, Object> packed, ResultSetExtractor <T> extractor) throws SQLException {
+				try (ResultSet rset = prepare (query, packed).executeQuery ()) {
+					return extractor.extractData (rset);
+				}
+			}
+			@Override
+			@SuppressWarnings("unchecked")
+			public <T> T querySingle (String query, Map <String, Object> packed) throws SQLException {
+				try (ResultSet rset = prepare (query, packed).executeQuery ()) {
+					if (rset.next ()) {
+						return (T) rset.getObject (1);
+					}
+				}
+				return null;
+			}
+			@Override
+			public Map <String, Object> queryForMap (String query, Map <String, Object> packed) throws SQLException {
+				try (ResultSet rset = prepare (query, packed).executeQuery ()) {
+					if (rset.next ()) {
+						ResultSetMetaData	meta = rset.getMetaData ();
+						int			numberOfColumns = meta.getColumnCount ();
+						Map <String, Object>	result = new HashMap <> ();
+						
+						for (int index = 1; index <= numberOfColumns; ++index) {
+							result.put (meta.getColumnName (index).toLowerCase (), rset.getObject (index));
+						}
+						return result;
+					}
+				}
+				return null;
+			}
+			@Override
+			public List <Map <String, Object>> queryForList (String query, Map <String, Object> packed) throws SQLException {
+				List <Map <String, Object>>	result = new ArrayList <> ();
+				
+				try (ResultSet rset = prepare (query, packed).executeQuery ()) {
+					ResultSetMetaData	meta = rset.getMetaData ();
+					int			numberOfColumns = meta.getColumnCount ();
+
+					while (rset.next ()) {
+						Map <String, Object>	row = new HashMap <> ();
+						
+						for (int index = 1; index <= numberOfColumns; ++index) {
+							row.put (meta.getColumnName (index).toLowerCase (), rset.getObject (index));
+						}
+						result.add (row);
+					}
+				}
+				return result;
+			}
+			@Override
+			public int update (String query, Map <String, Object> packed) throws SQLException {
+				return prepare (query, packed).executeUpdate ();
+			}
+			@Override
+			public void execute (String query) throws SQLException {
+				prepare (query, null).execute ();
+			}
+			
+			private PreparedStatement prepare (String query, Map <String, Object> packed) throws SQLException {
+				ParsedSQL	psql;
+		
+				for (int retry = 0; retry < 2; ++retry) {
+					if (connection == null) {
+						try {
+							connection = dataSource.getConnection ();
+							if (connection == null) {
+								throw new Exception ("no new connection available");
+							}
+							if (! connection.getAutoCommit ()) {
+								dbase.logging (Log.WARNING, "dbnative", "Got unexpected new connection w/o auto commit enabled, enable it");
+								connection.setAutoCommit (true);
+							}
+						} catch (Exception e) {
+							close ();
+							throw new SQLException ("failed to prepare query \"" + query + "\": " + e.toString (), e);
+						}
+					}
+					synchronized (parsedSQLCache) {
+						psql = parsedSQLCache.get (query);
+						if (psql == null) {
+							psql = new ParsedSQL (query);
+							parsedSQLCache.put (query, psql);
+						}
+					}
+					try {
+						return psql.fill (connection, packed);
+					} catch (SQLException e) {
+						dbase.logging (Log.ERROR, "dbnative", "failed to prepare \"" + query + "\": " + e.toString ());
+						close ();
+					}
+				}
+				throw new SQLException ("failed to prepare query " + query);
+			}
 		}
-
-		public SQLException failure(String q, SQLException e) {
-			data.logging(Log.ERROR, "dbase", "DB Failed: " + q + ": " + e.toString());
-			return e;
+		private DBase dbase = null;
+		private DBDatasource dbDatasource = null;
+		private DataSource dataSource = null;
+		
+		@Override
+		public synchronized void setup (Data data, DBase dbase, DataSource dataSource) throws ClassNotFoundException {
+			this.dbase = dbase;
+			if (dataSource == null) {
+				if (dbDatasource == null) {
+					dbDatasource = new DBDatasource ();
+				}
+				this.dataSource = dbDatasource.request (data.dbDriver (), data.dbConnect (), data.dbLogin (), data.dbPassword ());
+			} else {
+				this.dataSource = dataSource;
+			}
+		}
+		
+		@Override
+		public void done () {
+			// nothing to do
+		}
+		
+		@Override
+		public DataSource dataSource () {
+			return dataSource;
+		}
+		
+		@Override
+		public Cursor cursor () throws SQLException {
+			return new CursorNative (dbase, dataSource);
 		}
 	}
 
-	/**
-	 * Wrapper class to allow logging of occured expections
-	 */
-	static class DBAccessSingle<T> extends DBAccess implements ResultSetExtractor<T> {
-		public DBAccessSingle(Data nData, NamedParameterJdbcTemplate nJdbc) {
-			super(nData, nJdbc);
+	static class DBJDBC implements DB {
+		static class CursorJDBC implements Cursor {
+			private DataSource dataSource;
+			private NamedParameterJdbcTemplate jdbc;
+			
+			public CursorJDBC (DataSource dataSource) {
+				this.dataSource = dataSource;
+				this.jdbc = null;
+			}
+			@Override
+			public void close () {
+				jdbc = null;
+			}
+			@Override
+			public <T> T query (String query, Map <String, Object> packed, ResultSetExtractor <T> extractor) {
+				check ();
+				return jdbc.query (query, packed, extractor);
+			}
+			private class SingleExtract <T> implements ResultSetExtractor <T> {
+				@Override
+				@SuppressWarnings("unchecked")
+				public T extractData (ResultSet rs) throws SQLException, DataAccessException {
+					if (rs.next ()) {
+						return (T) rs.getObject (1);
+					}
+					return null;
+				}
+			}
+			@Override
+			public <T> T querySingle (String query, Map <String, Object> packed) {
+				check ();
+				return jdbc.query (query, packed, new SingleExtract <T> ());
+			}
+			@Override
+			public Map <String, Object> queryForMap (String query, Map <String, Object> packed) {
+				check ();
+				return jdbc.queryForMap (query, packed);
+			}
+			@Override
+			public List <Map <String, Object>> queryForList (String query, Map <String, Object> packed) {
+				check ();
+				return jdbc.queryForList (query, packed);
+			}
+			@Override
+			public int update (String query, Map <String, Object> packed) {
+				check ();
+				return jdbc.update (query, packed);
+			}
+			@Override
+			public void execute (String query) {
+				check ();
+				jdbc.getJdbcOperations ().execute (query);
+			}
+
+			private void check () {
+				if (jdbc == null) {
+					jdbc = new NamedParameterJdbcTemplate (dataSource);
+				}
+			}
 		}
+		private static DBDatasourcePooled dsPool = null;
+		private DataSource dataSource = null;
 
 		@Override
-		@SuppressWarnings("unchecked")
-		public T extractData(ResultSet rs) throws SQLException, DataAccessException {
-			if (rs.next()) {
-				return (T) rs.getObject(1);
+		public synchronized void setup (Data data, DBase dbase, DataSource dataSource) throws ClassNotFoundException {
+			if (dataSource == null) {
+				if (dsPool == null) {
+					dsPool = new DBDatasourcePooled ();
+					dsPool.setup(data.dbPoolsize(), data.dbPoolgrow());
+				}
+				this.dataSource = dsPool.request(data.dbDriver(), data.dbConnect(), data.dbLogin(), data.dbPassword());
+			} else {
+				this.dataSource = dataSource;
 			}
-			return null;
 		}
-
-		public T query(String q, Map<String, Object> packed) {
-			return jdbc.query(q, packed, this);
+		
+		@Override
+		public void done () {
+			// nothing to do
 		}
-
-		public T query(String q) {
-			return query(q, null);
+		
+		@Override
+		public DataSource dataSource () {
+			return dataSource;
+		}
+		
+		@Override
+		public Cursor cursor () throws SQLException {
+			return new CursorJDBC (dataSource);
 		}
 	}
+	
+	/**
+	 * Class to implement a retry concept for database queries where
+	 * recoverable queries are retried several times. To use this
+	 * one have to subclass this class (anonymous is okay) and overwrite
+	 * the method execute
+	 */
+	abstract public class Retry<T> {
+		public String name;
+		public DBase dbase;
+		public Cursor cursor;
+		public T priv;
+		public SQLException error;
 
-	private static DBDatasourcePooled dsPool = new DBDatasourcePooled();
+		public Retry(String nName, DBase nDBase, Cursor nCursor, T nPriv) {
+			name = nName;
+			dbase = nDBase;
+			cursor = nCursor;
+			priv = nPriv;
+			error = null;
+		}
+
+		public Retry(String nName, DBase nDBase, Cursor nCursor) {
+			this(nName, nDBase,nCursor, null);
+		}
+
+		public void reset() {
+			priv = null;
+			try {
+				cursor.close ();
+			} catch (java.io.IOException e) {
+				dbase.logging (Log.WARNING, name, "reset cursor");
+			}
+		}
+
+		public abstract void execute() throws SQLException;
+	}
+	
+	private static final int DB_UNSET = 0;
+	private static final int DB_MYSQL = 1;
+	private static final int DB_ORACLE = 2;
+	// general retry counter
+	private static final int RETRY = 5;
 
 	/**
-	 * Constructor for a database wrapper object
-	 *
-	 * @param data the global configuration
+	 * If not set from outside, Backend will try to create its own datasource from dbcfg data
 	 */
-	private static Object lock = new Object();
+	public static DataSource DATASOURCE = null;
+
+	/**
+	 * name for current date in database
+	 */
+	private int dbType = DB_UNSET;
+	private int dbVersion = 0;
+	private String dbImplementation = "unset";
+	/**
+	 * Reference to configuration
+	 */
+	private Data data = null;
+	/**
+	 * Default database access instance
+	 */
+	private DB db = null;
+	private Cursor defaultCursor = null;
+	private List <Cursor> cursorCache = null;
+	private String schema = null;
 
 	public DBase(Data data) throws ClassNotFoundException {
 		this.data = data;
-
-		synchronized (lock) {
-			// Only create a new Datasource from dbcfg data, if none has been injected by EMM or OpenEMM
-			dsPool.setup(data.dbPoolsize(), data.dbPoolgrow());
-			if (DATASOURCE == null) {
-				DATASOURCE = dsPool.request(data.dbDriver(), data.dbConnect(), data.dbLogin(), data.dbPassword());
+		dbImplementation = Data.syscfg.get ("db-implementation", "default");
+		switch (dbImplementation) {
+		case "native":
+			db = new DBNative ();
+			break;
+		default:
+		case "jdbc":
+			if (! "jdbc".equals (dbImplementation)) {
+				dbImplementation = "jdbc (" + dbImplementation + ")";
 			}
+			db = new DBJDBC ();
+			break;
 		}
-		jdbcTmpl = null;
+		db.setup (data, this, DATASOURCE);
+		cursorCache = new ArrayList <> ();
 	}
 
 	/**
@@ -225,7 +561,12 @@ public class DBase {
 	 * @trhows Exception
 	 */
 	public DBase done() throws Exception {
-		jdbcTmpl = null;
+		for (Cursor cursor : cursorCache) {
+			cursor.close ();
+		}
+		cursorCache.clear ();
+		defaultCursor.close ();
+		db.done ();
 		return null;
 	}
 
@@ -239,75 +580,35 @@ public class DBase {
 	public void setup() throws Exception {
 		String dbms = data.dbMS;
 
-		dbType = DB_UNSET;
-		if (DATASOURCE != null) {
-			boolean found = false;
-
-			for (int retry = RETRY; (!found) && (retry > 0); --retry) {
-				try (Connection c = getConnection()) {
-					String product = c.getMetaData().getDatabaseProductName();
-
-					if ((product != null) && (product.toLowerCase().indexOf("oracle") != -1)) {
-						data.logging (Log.INFO, "db", "Found oracle type database from product " + product);
-						dbType = DB_ORACLE;
-					} else {
-						dbType = DB_MYSQL;
-					}
-					found = true;
-				} catch (Exception e) {
-					data.logging(Log.ERROR, "db", "Failed to get connection to determinate type of driver: " + e.toString(), e);
-					if (retry > 0) {
-						try {
-							Thread.sleep(retry * 1000);
-						} catch (InterruptedException e2) {
-							data.logging(Log.ERROR, "db", "Failed to delay for " + retry + " seconds: " + e2.toString(), e2);
-						}
-					}
-				}
-			}
-			if (!found) {
-				throw new Exception("Failed to determinate database type");
-			}
-		}
-		if (dbType == DB_UNSET) {
-			if (dbms != null) {
-				if (dbms.equals("oracle")) {
-					dbType = DB_ORACLE;
-				} else if (dbms.equals("mysql") || dbms.equals("mariadb")) {
-					dbType = DB_MYSQL;
-				} else {
-					throw new Exception("Unsupported dbms found: " + dbms);
-				}
+		if (dbms != null) {
+			if (dbms.equals("oracle")) {
+				dbType = DB_ORACLE;
+			} else if (dbms.equals("mysql") || dbms.equals("mariadb")) {
+				dbType = DB_MYSQL;
 			} else {
-				if (data.dbDriver() == null) {
-					throw new Exception("No configured database driver found");
-				}
-				if ((data.dbDriver().toLowerCase().indexOf("mysql") == -1) && (data.dbDriver().toLowerCase().indexOf("mariadb") == -1)) {
-					dbType = DB_ORACLE;
-				} else {
-					dbType = DB_MYSQL;
-				}
+				throw new Exception("Unsupported dbms found: " + dbms);
+			}
+		} else {
+			if (data.dbDriver() == null) {
+				throw new Exception("No configured database driver found");
+			}
+			if ((data.dbDriver().toLowerCase().indexOf("mysql") == -1) && (data.dbDriver().toLowerCase().indexOf("mariadb") == -1)) {
+				dbType = DB_ORACLE;
+			} else {
+				dbType = DB_MYSQL;
 			}
 		}
-
-		if (dbType == DB_ORACLE) {
-			measureType = "usage";
-			nullQuery = "SELECT 1 FROM DUAL";
-		} else {
-			measureType = "`usage`";
-			nullQuery = "SELECT 1";
-		}
-		measureRepr = "usage";
 	}
 
 	/**
-	 * creates the default jdbc template for all accesses to the
+	 * creates the default cursor for all accesses to the
 	 * database, which do not colide with another connections
 	 *
 	 * @throws Exception
 	 */
 	public void initialize() throws SQLException {
-		jdbcTmpl = validateJdbc(null);
+		defaultCursor = db.cursor ();
+		data.logging (Log.DEBUG, "db", "Using " + dbImplementation  + " database interface implementation");
 		if (isOracle ()) {
 			Pattern	versionPattern = Pattern.compile ("Oracle Database.*Release ([0-9]+)");
 			
@@ -371,7 +672,7 @@ public class DBase {
 		}
 		if (query != null) {
 			try (With with = with()) {
-				rc = queryInt(with.jdbc(), query, "tableName", table) > 0;
+				rc = queryInt(with.cursor(), query, "tableName", table) > 0;
 			}
 		}
 		return rc;
@@ -401,7 +702,7 @@ public class DBase {
 
 		if (query != null) {
 			try (With with = with()) {
-				rc = queryInt(with.jdbc(), query, "viewName", view) > 0;
+				rc = queryInt(with.cursor(), query, "viewName", view) > 0;
 			}
 		}
 		return rc;
@@ -427,7 +728,7 @@ public class DBase {
 		}
 		if (query != null) {
 			try (With with = with()) {
-				rc = queryInt(with.jdbc(), query, "synonymName", synonym) > 0;
+				rc = queryInt(with.cursor(), query, "synonymName", synonym) > 0;
 			}
 		}
 		return rc;
@@ -456,10 +757,10 @@ public class DBase {
 			if (isOracle () && (dbVersion >= 18)) {
 				try (With with = with ()) {
 					if (schema == null) {
-						schema = queryString (with.jdbc (), "SELECT user FROM DUAL");
+						schema = queryString (with.cursor (), "SELECT user FROM DUAL");
 					}
 					if (schema != null) {
-						execute (with.jdbc (),
+						execute (with.cursor (),
 							 "begin\n" +
 							 "    dbms_stats.gather_table_stats(\n" +
 							 "        ownname => '" + schema + "',\n" +
@@ -482,58 +783,58 @@ public class DBase {
 	}
 
 	/**
-	 * returns the global jdbc instance
+	 * returns the global cursor
 	 *
-	 * @return the jdbc instance
+	 * @return the cursor instance
 	 */
-	public NamedParameterJdbcTemplate jdbc() {
-		return jdbcTmpl;
+	public Cursor cursor () {
+		return defaultCursor;
 	}
 
 	/**
-	 * returns the global jdbc instance
+	 * returns the global cursor
 	 * for invoking a specific query. This will log
 	 * the query and its parameter (if this is a prepared
 	 * statement with parameter).
 	 *
 	 * @param q     the query for which the connection will be used
 	 * @param param the optional parameter for a prepared statement
-	 * @return the jdbc instance
+	 * @return the cursor instance
 	 */
-	public NamedParameterJdbcTemplate jdbc(String q, Map<String, Object> param) {
+	public Cursor cursor(String q, Map<String, Object> param) {
 		show("JDB", q, param);
-		return jdbc();
+		return cursor();
 	}
 
-	public NamedParameterJdbcTemplate jdbc(String q) {
-		return jdbc(q, null);
+	public Cursor cursor(String q) {
+		return cursor(q, null);
 	}
 
 	static public class With implements Closeable {
-		private NamedParameterJdbcTemplate jdbc;
+		private Cursor cursor;
 		private DBase dbase;
 		private String query;
 		private Map<String, Object> param;
 
-		protected With(NamedParameterJdbcTemplate nJdbc, DBase nDbase, String nQuery, Map<String, Object> nParam) {
-			jdbc = nJdbc;
+		protected With(Cursor nCursor, DBase nDbase, String nQuery, Map<String, Object> nParam) {
+			cursor = nCursor;
 			dbase = nDbase;
 			query = nQuery;
 			param = nParam;
 		}
 
-		public NamedParameterJdbcTemplate jdbc() {
-			return jdbc;
+		public Cursor cursor () {
+			return cursor;
 		}
 
 		@Override
 		public void close() {
 			if (query != null) {
-				dbase.release(jdbc, query, param);
+				dbase.release(cursor, query, param);
 			} else {
-				dbase.release(jdbc);
+				dbase.release(cursor);
 			}
-			jdbc = null;
+			cursor = null;
 		}
 	}
 
@@ -554,123 +855,125 @@ public class DBase {
 	}
 
 	/**
-	 * requests a new jdbc template instance which will be created.
+	 * requests a new cursor instance which will be created.
 	 *
-	 * @return the new jdbc instance
+	 * @return the new cursor instance
 	 * @throws Exception
 	 */
-	public NamedParameterJdbcTemplate request() throws SQLException {
-		return validateJdbc(null);
+	public Cursor request() throws SQLException {
+		if (cursorCache.isEmpty ()) {
+			return db.cursor ();
+		}
+		return cursorCache.remove (cursorCache.size () - 1);
 	}
 
 	/**
-	 * requests a new jdbc template instance which will be created for
+	 * requests a new cursor template instance which will be created for
 	 * using the connection to execute query. This will be logged
 	 * including the optional parameter for a prepared statement.
 	 *
 	 * @param param the parameter for a prepared statement
-	 * @return the new jdbc instance
+	 * @return the new cursor instance
 	 * @throws Exception
-	 * @paran query the query the jdbc connection will be used
+	 * @paran query the query the cursor connection will be used
 	 */
-	public NamedParameterJdbcTemplate request(String query, Map<String, Object> param) throws SQLException {
+	public Cursor request(String query, Map<String, Object> param) throws SQLException {
 		show("REQ", query, param);
 		return request();
 	}
 
-	public NamedParameterJdbcTemplate request(String query) throws SQLException {
+	public Cursor  request(String query) throws SQLException {
 		return request(query, null);
 	}
 
 	/**
-	 * releases a former requested jdbc template
+	 * releases a former requested cursor template
 	 *
-	 * @param temp the jdbc instance to be released
+	 * @param temp the cursor instance to be released
 	 * @return null
 	 */
-	public NamedParameterJdbcTemplate release(NamedParameterJdbcTemplate temp) {
-		if (temp != jdbcTmpl) {
-			temp = null;
+	public void release(Cursor cursor) {
+		if (cursor != defaultCursor) {
+			cursorCache.add (cursor);
 		}
-		return null;
 	}
 
 	/**
-	 * releases a former requested jdbc template
+	 * releases a former requested cursor
 	 * including the query for which the template had been used for logging.
 	 *
-	 * @param temp  the jdbc instance to be released
+	 * @param temp  the cursor instance to be released
 	 * @param query the query for which the template had been used
 	 * @param param the optional parameter for a prepared statement
 	 * @return null
 	 */
-	public NamedParameterJdbcTemplate release(NamedParameterJdbcTemplate temp, String query, Map<String, Object> param) {
+	public void release(Cursor cursor, String query, Map<String, Object> param) {
 		show("REL", query, param);
-		return release(temp);
+		release(cursor);
 	}
 
-	public NamedParameterJdbcTemplate release(NamedParameterJdbcTemplate temp, String query) {
-		return release(temp, query, null);
+	public void release(Cursor cursor, String query) {
+		release(cursor, query, null);
 	}
 
-	public int queryInt(NamedParameterJdbcTemplate jdbc, String q, Object... param) throws SQLException {
-		return doQueryInt(jdbc, q, pack(param));
+	public int queryInt(Cursor cursor, String q, Object... param) throws SQLException {
+		return doQueryInt(cursor, q, pack(param));
 	}
 
 	public int queryInt(String q, Object... param) throws SQLException {
-		return doQueryInt(jdbc(), q, pack(param));
+		return doQueryInt(cursor(), q, pack(param));
 	}
 
-	public long queryLong(NamedParameterJdbcTemplate jdbc, String q, Object... param) throws SQLException {
-		return doQueryLong(jdbc, q, pack(param));
+	public long queryLong(Cursor cursor, String q, Object... param) throws SQLException {
+		return doQueryLong(cursor, q, pack(param));
 	}
 
 	public long queryLong(String q, Object... param) throws SQLException {
-		return doQueryLong(jdbc(), q, pack(param));
+		return doQueryLong(cursor(), q, pack(param));
 	}
 
-	public String queryString(NamedParameterJdbcTemplate jdbc, String q, Object... param) throws SQLException {
-		return doQueryString(jdbc, q, pack(param));
+	public String queryString(Cursor cursor, String q, Object... param) throws SQLException {
+		return doQueryString(cursor, q, pack(param));
 	}
 
 	public String queryString(String q, Object... param) throws SQLException {
-		return doQueryString(jdbc(), q, pack(param));
+		return doQueryString(cursor(), q, pack(param));
 	}
 
-	public Map<String, Object> querys(NamedParameterJdbcTemplate jdbc, String q, Object... param) throws SQLException {
-		return doQuerys(jdbc, q, pack(param));
+	public Map<String, Object> querys(Cursor cursor, String q, Object... param) throws SQLException {
+		return doQuerys(cursor, q, pack(param));
 	}
 
 	public Map<String, Object> querys(String q, Object... param) throws SQLException {
-		return doQuerys(jdbc(), q, pack(param));
+		return doQuerys(cursor(), q, pack(param));
 	}
 
-	public List<Map<String, Object>> query(NamedParameterJdbcTemplate jdbc, String q, Object... param) throws SQLException {
-		return doQuery(jdbc, q, pack(param));
+	public List<Map<String, Object>> query(Cursor cursor, String q, Object... param) throws SQLException {
+		return doQuery(cursor, q, pack(param));
 	}
 
 	public List<Map<String, Object>> query(String q, Object... param) throws SQLException {
-		return doQuery(jdbc(), q, pack(param));
+		return doQuery(cursor(), q, pack(param));
 	}
 
-	public int update(NamedParameterJdbcTemplate jdbc, String q, Object... param) throws SQLException {
-		return doUpdate(jdbc, q, pack(param));
+	public int update(Cursor cursor, String q, Object... param) throws SQLException {
+		return doUpdate(cursor, q, pack(param));
 	}
 
 	public int update(String q, Object... param) throws SQLException {
-		return doUpdate(jdbc(), q, pack(param));
+		return doUpdate(cursor(), q, pack(param));
 	}
 
-	public int update(NamedParameterJdbcTemplate jdbc, String q, Map<String, Object> param) throws SQLException {
-		return doUpdate(jdbc, q, param);
+	public int update(Cursor cursor, String q, Map<String, Object> param) throws SQLException {
+		return doUpdate(cursor, q, param);
 	}
 
-	public void execute(NamedParameterJdbcTemplate jdbc, String q) throws SQLException {
-		doExecute(jdbc, q);
+	public void execute(Cursor cursor, String q) throws SQLException {
+		doExecute(cursor, q);
 	}
 
 	public void execute(String q) throws SQLException {
-		doExecute(jdbc(), q);
+		doExecute(cursor(), q);
 	}
 
 	/**
@@ -724,7 +1027,21 @@ public class DBase {
 	}
 
 	public String asString(Object o, int minLength, String ifNull, boolean trim) {
-		String s = validate((String) o, minLength);
+		String	s;
+		
+		if ((o != null) && (o.getClass () == Clob.class)) {
+			try {
+				Clob	clob = (Clob) o;
+			
+				s = clob.getSubString (1, (int) clob.length ());
+			} catch (SQLException e) {
+				failure ("clob parse", e);
+				s = null;
+			}
+		} else {
+			s = (String) o;
+		}
+		s = validate (s, minLength);
 
 		return s != null ? (trim ? s.trim() : s) : ifNull;
 	}
@@ -886,7 +1203,7 @@ public class DBase {
 	 * the connection
 	 */
 	public Connection getConnection() throws SQLException {
-		Connection	conn = DATASOURCE.getConnection();
+		Connection	conn = db.dataSource ().getConnection();
 		
 		try {
 			if (conn.getAutoCommit ()) {
@@ -904,38 +1221,6 @@ public class DBase {
 	public Connection getConnection(String query, Object... param) throws SQLException {
 		showq("CONN", query, param);
 		return getConnection();
-	}
-
-	/**
-	 * Class to implement a retry concept for database queries where
-	 * recoverable queries are retried several times. To use this
-	 * one have to subclass this class (anonymous is okay) and overwrite
-	 * the method execute
-	 */
-	abstract public class Retry<T> {
-		public String name;
-		public DBase dbase;
-		public NamedParameterJdbcTemplate jdbc;
-		public T priv;
-		public SQLException error;
-
-		public Retry(String nName, DBase nDBase, NamedParameterJdbcTemplate nJdbc, T nPriv) {
-			name = nName;
-			dbase = nDBase;
-			jdbc = nJdbc;
-			priv = nPriv;
-			error = null;
-		}
-
-		public Retry(String nName, DBase nDBase, NamedParameterJdbcTemplate nJdbc) {
-			this(nName, nDBase, nJdbc, null);
-		}
-
-		public void reset() {
-			priv = null;
-		}
-
-		public abstract void execute() throws SQLException;
 	}
 
 	/**
@@ -985,19 +1270,6 @@ public class DBase {
 							Thread.sleep(state * 1000);
 						} catch (InterruptedException e2) {
 							data.logging(Log.WARNING, logid, "Interrupted during delay: " + e2.toString());
-						}
-						if (r.jdbc != null) {
-							NamedParameterJdbcTemplate jdbc = revalidateJdbc(r.jdbc);
-
-							if (jdbc == null) {
-								data.logging(Log.ERROR, logid, "Failed to revalidate jdbc connection");
-								break;
-							}
-							data.logging(Log.DEBUG, logid, "Got new jdbc connection");
-							if (r.jdbc == jdbcTmpl) {
-								jdbcTmpl = jdbc;
-							}
-							r.jdbc = jdbc;
 						}
 					}
 				}
@@ -1050,86 +1322,18 @@ public class DBase {
 		return true;
 	}
 	
-	private NamedParameterJdbcTemplate revalidateJdbc (NamedParameterJdbcTemplate jdbc) {
-		if (jdbc != null) {
-			try {
-				NamedParameterJdbcTemplate	newJdbc = request ();
-					
-				if (jdbc == jdbcTmpl) {
-					jdbcTmpl = newJdbc;
-					data.logging (Log.DEBUG, "db", "Replaced default jdbc connection");
-				} else {
-					data.logging (Log.DEBUG, "db", "Replaced local jdbc connection");
-				}
-				jdbc = newJdbc;
-			} catch (Exception e) {
-				data.logging (Log.ERROR, "db", "Failed to create replacement jdbc connection", e);
-				jdbc = null;
-			}
-		}
-		return jdbc;
-	}
-
-	private NamedParameterJdbcTemplate validateJdbc(NamedParameterJdbcTemplate jdbc) throws SQLException {
-		Retry<NamedParameterJdbcTemplate> r = new Retry<>("jdbc", this, null, jdbc) {
-			@Override
-			public void execute() throws SQLException {
-				int delay = 0;
-				NamedParameterJdbcTemplate oldJdbc = null;
-
-				do {
-					if (priv == null) {
-						priv = new NamedParameterJdbcTemplate(DATASOURCE);
-						if (priv == null) {
-							data.logging(Log.ERROR, "db", "Failed to get new connection");
-							break;
-						} else if (priv == oldJdbc) {
-							data.logging(Log.ERROR, "db", "Got old, invalid connections while trying to get a new one, abort");
-							break;
-						}
-						if (delay == 0) {
-							break;
-						}
-					}
-					try {
-						show("VAL", nullQuery, null);
-						(new DBAccessSingle<Integer>(data, priv)).query(nullQuery);
-					} catch (Throwable t) {
-						data.logging(Log.ERROR, "db", "connection invalid (" + t.toString() + "), reset " + (delay > 0 ? "after waitung " + delay + " seconds" : "now"));
-						oldJdbc = priv;
-						priv = null;
-						if (delay > 0) {
-							try {
-								Thread.sleep(delay * 1000);
-							} catch (InterruptedException e) {
-								// do nothing
-							}
-						}
-						if (delay < 30) {
-							++delay;
-						}
-					}
-				} while (priv == null);
-			}
-		};
-		if (retry(r)) {
-			return r.priv;
-		}
-		throw r.error;
-	}
-
 	@SuppressWarnings("unchecked")
 	private Map<String, Object> asMap(Object o) {
 		return (Map<String, Object>) o;
 	}
 
-	private int doQueryInt(NamedParameterJdbcTemplate jdbc, String q, Map<String, Object> packed) throws SQLException {
+	private int doQueryInt(Cursor cursor, String q, Map<String, Object> packed) throws SQLException {
 		show("QYI", q, packed);
 
-		Retry<Object> r = new Retry<>("queryInt", this, jdbc) {
+		Retry<Object> r = new Retry<>("queryInt", this, cursor) {
 			@Override
 			public void execute() throws SQLException {
-				priv = (new DBAccessSingle<Integer>(data, jdbc)).query(q, packed);
+				priv = cursor.querySingle (q, packed);
 			}
 		};
 		if (retry(r)) {
@@ -1138,13 +1342,13 @@ public class DBase {
 		throw failure(q, r.error);
 	}
 
-	private long doQueryLong(NamedParameterJdbcTemplate jdbc, String q, Map<String, Object> packed) throws SQLException {
+	private long doQueryLong(Cursor cursor, String q, Map<String, Object> packed) throws SQLException {
 		show("QYL", q, packed);
 
-		Retry<Object> r = new Retry<>("queryLong", this, jdbc) {
+		Retry<Object> r = new Retry<>("queryLong", this, cursor) {
 			@Override
 			public void execute() throws SQLException {
-				priv = (new DBAccessSingle<Long>(data, jdbc)).query(q, packed);
+				priv = cursor.querySingle (q, packed);
 			}
 		};
 		if (retry(r)) {
@@ -1153,13 +1357,13 @@ public class DBase {
 		throw failure(q, r.error);
 	}
 
-	private String doQueryString(NamedParameterJdbcTemplate jdbc, String q, Map<String, Object> packed) throws SQLException {
+	private String doQueryString(Cursor cursor, String q, Map<String, Object> packed) throws SQLException {
 		show("QYS", q, packed);
 
-		Retry<String> r = new Retry<>("queryString", this, jdbc) {
+		Retry<String> r = new Retry<>("queryString", this, cursor) {
 			@Override
 			public void execute() throws SQLException {
-				priv = (new DBAccessSingle<String>(data, jdbc)).query(q, packed);
+				priv = cursor.querySingle (q, packed);
 			}
 		};
 		if (retry(r)) {
@@ -1168,14 +1372,14 @@ public class DBase {
 		throw failure(q, r.error);
 	}
 
-	private Map<String, Object> doQuerys(NamedParameterJdbcTemplate jdbc, String q, Map<String, Object> packed) throws SQLException {
+	private Map<String, Object> doQuerys(Cursor cursor, String q, Map<String, Object> packed) throws SQLException {
 		show("QYM", q, packed);
 
-		Retry<Map<String, Object>> r = new Retry<>("queryMap", this, jdbc) {
+		Retry<Map<String, Object>> r = new Retry<>("queryMap", this, cursor) {
 			@Override
 			public void execute() throws SQLException {
 				try {
-					priv = jdbc.queryForMap(q, packed);
+					priv = cursor.queryForMap(q, packed);
 				} catch (org.springframework.dao.EmptyResultDataAccessException e) {
 					priv = null;
 				}
@@ -1187,13 +1391,13 @@ public class DBase {
 		throw failure(q, r.error);
 	}
 
-	private List<Map<String, Object>> doQuery(NamedParameterJdbcTemplate jdbc, String q, Map<String, Object> packed) throws SQLException {
+	private List<Map<String, Object>> doQuery(Cursor cursor, String q, Map<String, Object> packed) throws SQLException {
 		show("QLM", q, packed);
 
-		Retry<List<Map<String, Object>>> r = new Retry<>("queryList", this, jdbc) {
+		Retry<List<Map<String, Object>>> r = new Retry<>("queryList", this, cursor) {
 			@Override
 			public void execute() throws SQLException {
-				priv = jdbc.queryForList(q, packed);
+				priv = cursor.queryForList(q, packed);
 			}
 		};
 		if (retry(r)) {
@@ -1203,13 +1407,13 @@ public class DBase {
 	}
 
 	@DaoUpdateReturnValueCheck
-	private int doUpdate(NamedParameterJdbcTemplate jdbc, String q, Map<String, Object> packed) throws SQLException {
+	private int doUpdate(Cursor cursor, String q, Map<String, Object> packed) throws SQLException {
 		show("UPD", q, packed);
 
-		Retry<Integer> r = new Retry<>("update", this, jdbc) {
+		Retry<Integer> r = new Retry<>("update", this, cursor) {
 			@Override
 			public void execute() throws SQLException {
-				priv = jdbc.update(q, packed);
+				priv = cursor.update(q, packed);
 			}
 		};
 		if (retry(r)) {
@@ -1218,13 +1422,13 @@ public class DBase {
 		throw failure(q, r.error);
 	}
 
-	private void doExecute(NamedParameterJdbcTemplate jdbc, String q) throws SQLException {
+	private void doExecute(Cursor cursor, String q) throws SQLException {
 		show("EXE", q, null);
 
-		Retry<Object> r = new Retry<>("execute", this, jdbc) {
+		Retry<Object> r = new Retry<>("execute", this, cursor) {
 			@Override
 			public void execute() throws SQLException {
-				jdbc.getJdbcOperations().execute(q);
+				cursor.execute(q);
 			}
 		};
 		if (retry(r)) {

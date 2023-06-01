@@ -11,10 +11,12 @@
 package com.agnitas.emm.core.linkcheck.service;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.BiConsumer;
 
+import com.agnitas.emm.core.trackablelinks.exceptions.DependentTrackableLinkException;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.beans.ComTrackableLink;
@@ -69,6 +71,10 @@ public interface LinkService {
 	String validateLink(@VelocityCheck int companyId, String link, GridCustomPlaceholderType type);
 
 	List<LinkProperty> getDefaultExtensions(@VelocityCheck int companyId);
+
+    void assertChangedOrDeletedLinksNotDepended(
+            Collection<ComTrackableLink> oldLinks,
+            Collection<ComTrackableLink> newLinks) throws DependentTrackableLinkException;
 
 	class ParseLinkException extends Exception implements ErrorLinkStorage {
 		private static final long serialVersionUID = -4821051425601251856L;

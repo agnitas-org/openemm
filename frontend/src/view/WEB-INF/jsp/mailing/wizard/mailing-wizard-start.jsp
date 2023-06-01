@@ -27,7 +27,13 @@
             
             <emm:ShowByPermission token="mailing.classic">
                 <li>
-                    <html:link page="/mailingbase.do?action=${ACTION_MAILING_TEMPLATES}&mailingID=0&isTemplate=false&keepForward=${workflowId > 0}" styleClass="link-list-item">
+                    <emm:ShowByPermission token="mailing.create.classic.migration">
+                        <c:set var="standardBtnRef" value="/mailing/templates.action?keepForward=${workflowId > 0}"/>                         
+                    </emm:ShowByPermission>
+                    <emm:HideByPermission token="mailing.create.classic.migration">
+                        <c:set var="standardBtnRef" value="/mailingbase.do?action=${ACTION_MAILING_TEMPLATES}&mailingID=0&isTemplate=false&keepForward=${workflowId > 0}"/>
+                    </emm:HideByPermission>
+                    <html:link page="${standardBtnRef}" styleClass="link-list-item">
                         <div class="thumbnail">
                             <img alt="" class="media-object" src="${absoluteImagePath}/facelift/agn_mailing-new-standard.png">
                         </div>
@@ -42,6 +48,7 @@
                         <i class="nav-arrow icon icon-angle-right"></i>
                     </html:link>
                 </li>
+                <emm:ShowByPermission token="mailing.wizard">
 			    <li>
                     <html:link page="/mwStart.do?action=${ACTION_START}&keepForward=${workflowId > 0}" styleClass="link-list-item">
                         <div class="thumbnail">
@@ -58,6 +65,7 @@
                         <i class="nav-arrow icon icon-angle-right"></i>
                     </html:link>
                 </li>
+                </emm:ShowByPermission>
                 </emm:ShowByPermission>
                 <emm:ShowByPermission token="mailing.import">
                     <li>

@@ -15,11 +15,11 @@ import org.agnitas.beans.factory.BindingEntryFactory;
 import org.agnitas.beans.factory.RecipientFactory;
 import org.agnitas.beans.impl.RecipientImpl;
 import org.agnitas.emm.core.blacklist.service.BlacklistService;
-import org.agnitas.service.ColumnInfoService;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.dao.ComBindingEntryDao;
 import com.agnitas.dao.ComRecipientDao;
+import com.agnitas.service.ColumnInfoService;
 
 
 public class RecipientFactoryImpl implements RecipientFactory {

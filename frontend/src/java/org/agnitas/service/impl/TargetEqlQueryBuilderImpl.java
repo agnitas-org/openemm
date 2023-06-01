@@ -13,7 +13,6 @@ package org.agnitas.service.impl;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.agnitas.service.ColumnInfoService;
 import org.agnitas.service.TargetEqlQueryBuilder;
 import org.agnitas.target.ChainOperator;
 import org.agnitas.target.ConditionalOperator;
@@ -26,6 +25,7 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ProfileField;
+import com.agnitas.service.ColumnInfoService;
 
 /**
  * Helper-class for building the sql-query in /recipient/list.jsp

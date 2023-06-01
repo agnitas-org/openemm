@@ -66,7 +66,7 @@
                     <div class="col-sm-4">
                         <label for="formName" class="control-label">
                             <mvc:message var="nameMsg" code="default.Name"/>
-                            ${nameMsg}
+                            ${nameMsg}*
                         </label>
                     </div>
                     <div class="col-sm-8">
@@ -528,7 +528,7 @@
                 </div>
 
                 <div class="modal-body">
-                    <form id="choose-code-format-modal-form">
+                    <mvc:form id="choose-code-format-modal-form">
 
                         <div class="form-group">
                             <div class="row">
@@ -591,7 +591,7 @@
                         </div>
 
                         {{ } }}
-                    </form>
+                    </mvc:form>
                 </div>
 
                 <div class="modal-footer">

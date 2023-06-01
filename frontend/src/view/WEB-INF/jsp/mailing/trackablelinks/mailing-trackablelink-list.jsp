@@ -210,7 +210,7 @@
                 </div>
         
                 <div id="tile-trackableLinkEditAll" class="tile-content tile-content-forms">
-                    <%@include file="fragments-new/settings/link-extensions.jspf" %>
+                    <%@include file="fragments/settings/link-extensions.jspf" %>
         
                     <div class="form-group">
                         <div class="col-sm-4">
@@ -220,7 +220,7 @@
                             </label>
                         </div>
                         <div class="col-sm-8">
-                            <button type="button" class="btn btn-regular btn-primary" data-form-submit data-form-set="trackOnEveryPosition: true"
+                            <button type="button" class="btn btn-regular btn-primary" data-form-submit
                                 ${isTrackingOnEveryPositionAvailable ? '' : "disabled='disabled'"}
                                     data-form-url="<c:url value="/mailing/${mailingId}/trackablelink/activateTrackingLinksOnEveryPosition.action"/>">
                                 <span><mvc:message code="button.Activate" /></span>

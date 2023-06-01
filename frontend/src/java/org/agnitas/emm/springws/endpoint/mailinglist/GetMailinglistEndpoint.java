@@ -10,14 +10,13 @@
 
 package org.agnitas.emm.springws.endpoint.mailinglist;
 
-import jakarta.xml.bind.JAXBElement;
+import java.util.Objects;
 
-import org.agnitas.emm.core.mailinglist.service.MailinglistModel;
-import org.agnitas.emm.core.mailinglist.service.MailinglistService;
 import org.agnitas.emm.springws.endpoint.BaseEndpoint;
-import org.agnitas.emm.springws.endpoint.Utils;
+import org.agnitas.emm.springws.endpoint.Namespaces;
 import org.agnitas.emm.springws.jaxb.GetMailinglistRequest;
 import org.agnitas.emm.springws.jaxb.Mailinglist;
+import org.agnitas.emm.springws.util.SecurityContextAccess;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.ws.server.endpoint.annotation.Endpoint;
@@ -25,23 +24,25 @@ import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
 import org.springframework.ws.server.endpoint.annotation.RequestPayload;
 import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
+import com.agnitas.emm.core.mailinglist.service.MailinglistService;
+
+import jakarta.xml.bind.JAXBElement;
+
 @Endpoint
 public class GetMailinglistEndpoint extends BaseEndpoint {
 
-    private MailinglistService mailinglistService;
+    private final MailinglistService mailinglistService;
+    private final SecurityContextAccess securityContextAccess;
 
     @Autowired
-	public GetMailinglistEndpoint(@Qualifier("WS_mailinglistService") MailinglistService mailinglistService) {
-		this.mailinglistService = mailinglistService;
+	public GetMailinglistEndpoint(@Qualifier("MailinglistService") MailinglistService mailinglistService, final SecurityContextAccess securityContextAccess) {
+		this.mailinglistService = Objects.requireNonNull(mailinglistService, "mailinglistService");
+		this.securityContextAccess = Objects.requireNonNull(securityContextAccess, "securityContextAccess");
 	}
 
-    @PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "GetMailinglistRequest")
+    @PayloadRoot(namespace = Namespaces.AGNITAS_ORG, localPart = "GetMailinglistRequest")
     public @ResponsePayload JAXBElement<Mailinglist> getMailinglist(@RequestPayload GetMailinglistRequest request) throws Exception {
-		MailinglistModel model = new MailinglistModel();
-		model.setCompanyId(Utils.getUserCompany());
-		model.setMailinglistId(request.getMailinglistID());
-
-		Mailinglist mailinglist = new MailinglistResponseBuilder(mailinglistService.getMailinglist(model)).createResponse();
+		final Mailinglist mailinglist = new MailinglistResponseBuilder(mailinglistService.getMailinglist(request.getMailinglistID(), this.securityContextAccess.getWebserviceUserCompanyId())).createResponse();
 		return objectFactory.createGetMailinglistResponse(mailinglist);
     }
 }

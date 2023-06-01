@@ -15,6 +15,7 @@ import static org.agnitas.util.DateUtilities.DD_MM_YYYY_HH_MM;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
@@ -41,6 +42,7 @@ import org.agnitas.util.CsvReader;
 import org.agnitas.util.DbColumnType;
 import org.agnitas.util.DbUtilities;
 import org.agnitas.util.ImportUtils;
+import org.agnitas.util.TempFileInputStream;
 import org.agnitas.util.ZipUtilities;
 import org.agnitas.util.importvalues.Charset;
 import org.agnitas.util.importvalues.ImportMode;
@@ -48,6 +50,7 @@ import org.agnitas.util.importvalues.Separator;
 import org.agnitas.util.importvalues.TextRecognitionChar;
 import org.agnitas.web.ImportBaseFileAction;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
+import org.apache.commons.compress.utils.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -58,10 +61,11 @@ import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.ProfileField;
-import com.agnitas.dao.ComProfileFieldDao;
+import com.agnitas.beans.ProfileFieldMode;
 import com.agnitas.dao.ComRecipientDao;
+import com.agnitas.dao.ProfileFieldDao;
 import com.agnitas.dao.impl.ComCompanyDaoImpl;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.json.Json5Reader;
@@ -94,7 +98,7 @@ public class ImportProfileColumnsAction extends ImportBaseFileAction {
 
     protected ImportProfileService importProfileService;
     protected ComRecipientDao recipientDao;
-    protected ComProfileFieldDao profileFieldDao;
+    protected ProfileFieldDao profileFieldDao;
     protected ImportRecipientsDao importRecipientsDao;
 
     @Override
@@ -117,7 +121,7 @@ public class ImportProfileColumnsAction extends ImportBaseFileAction {
         }
     }
     
-	protected void initUI(final ImportProfileColumnsForm aForm, final ComAdmin admin, final ActionMessages errors) {
+	protected void initUI(final ImportProfileColumnsForm aForm, final Admin admin, final ActionMessages errors) {
 		// Nothing to do here
 	}
 	
@@ -163,7 +167,7 @@ public class ImportProfileColumnsAction extends ImportBaseFileAction {
         // Validate the request parameters specified by the user
         ImportProfileColumnsForm aForm;
         ActionMessages errors = new ActionMessages();
-        ComAdmin admin = AgnUtils.getAdmin(request);
+        Admin admin = AgnUtils.getAdmin(request);
 
         if (!AgnUtils.isUserLoggedIn(request)) {
             return mapping.findForward("logon");
@@ -316,7 +320,7 @@ public class ImportProfileColumnsAction extends ImportBaseFileAction {
     }
 
     @Required
-    public void setProfileFieldDao(ComProfileFieldDao profileFieldDao) {
+    public void setProfileFieldDao(ProfileFieldDao profileFieldDao) {
         this.profileFieldDao = profileFieldDao;
     }
 
@@ -334,7 +338,7 @@ public class ImportProfileColumnsAction extends ImportBaseFileAction {
      * @return true if errors are found
      * @throws Exception
      */
-    protected boolean checkErrorsOnSave(ComAdmin admin, ImportProfileColumnsForm aForm, ActionMessages errors) throws Exception {
+    protected boolean checkErrorsOnSave(Admin admin, ImportProfileColumnsForm aForm, ActionMessages errors) throws Exception {
         // Check for valid default values
         for (ColumnMapping mapping : aForm.getProfile().getColumnMapping()) {
             String dbColumnName = mapping.getDatabaseColumn();
@@ -452,7 +456,7 @@ public class ImportProfileColumnsAction extends ImportBaseFileAction {
         importProfileService.saveImportProfile(profile);
     }
 
-    private void logChangedMappings(ImportProfile newImport, ImportProfile oldProfile, ComAdmin admin) {
+    private void logChangedMappings(ImportProfile newImport, ImportProfile oldProfile, Admin admin) {
         List<ColumnMapping> mappings = newImport.getColumnMapping();
         Map<Integer, ColumnMapping> oldMappings = Collections.emptyMap();
         if (oldProfile != null) {
@@ -542,27 +546,27 @@ public class ImportProfileColumnsAction extends ImportBaseFileAction {
      * @throws Exception
      */
     protected void loadDbColumns(ImportProfileColumnsForm aForm, HttpServletRequest request) throws Exception {
-        ComAdmin admin = AgnUtils.getAdmin(request);
+        Admin admin = AgnUtils.getAdmin(request);
         aForm.setProfileFields(filterHiddenColumns(new TreeMap<>(profileFieldDao.getProfileFieldsMap(admin.getCompanyID(), admin.getAdminID())), aForm.getProfile().getKeyColumns(), admin));
 
         // load DB columns default values
-        List<ProfileField> profileFields = profileFieldDao.getProfileFields(AgnUtils.getCompanyID(request));
+        List<ProfileField> profileFields = profileFieldDao.getProfileFields(AgnUtils.getCompanyID(request), admin.getAdminID());
         for (ProfileField profileField : profileFields) {
-        	if (profileField.getModeEdit() == ProfileField.MODE_EDIT_EDITABLE || (profileField.getModeEdit() == ProfileField.MODE_EDIT_READONLY && aForm.getProfile().getKeyColumns().contains(profileField.getColumn()))) {
+        	if (profileField.getModeEdit() == ProfileFieldMode.Editable || (profileField.getModeEdit() == ProfileFieldMode.ReadOnly && aForm.getProfile().getKeyColumns().contains(profileField.getColumn()))) {
         		aForm.getDbColumnsDefaults().put(profileField.getColumn(), profileField.getDefaultValue());
         	}
         }
     }
     
-    private Map<String, ProfileField> filterHiddenColumns(Map<String, ProfileField> profileFields, List<String> keyColumns, ComAdmin admin) {
+    private Map<String, ProfileField> filterHiddenColumns(Map<String, ProfileField> profileFields, List<String> keyColumns, Admin admin) {
         for (String hiddenColumn : ImportUtils.getHiddenColumns(admin)) {
             profileFields.remove(hiddenColumn);
         }
         
         // User may also map readonly columns, but in import action, those are are checked to be only used as keycolumns
         return profileFields.entrySet().stream()
-    		.filter(e -> e.getValue().getModeEdit() == ProfileField.MODE_EDIT_EDITABLE
-        		|| (e.getValue().getModeEdit() == ProfileField.MODE_EDIT_READONLY && keyColumns.contains(e.getValue().getColumn())))
+    		.filter(e -> e.getValue().getModeEdit() == ProfileFieldMode.Editable
+        		|| (e.getValue().getModeEdit() == ProfileFieldMode.ReadOnly && keyColumns.contains(e.getValue().getColumn())))
         	.collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
     }
 
@@ -602,7 +606,7 @@ public class ImportProfileColumnsAction extends ImportBaseFileAction {
 				    List<String> fileHeaders = csvReader.readNextCsvLine();
 	
 				    if (!fileHeaders.isEmpty()) {
-				        ComAdmin admin = AgnUtils.getAdmin(request);
+				        Admin admin = AgnUtils.getAdmin(request);
 				        writeUserActivityLog(admin, UAL_ACTION, "Found columns based on csv - file import : " + fileHeaders.toString());
 				    }
 	
@@ -743,11 +747,11 @@ public class ImportProfileColumnsAction extends ImportBaseFileAction {
 		}
     }
     
-    private InputStream getImportInputStream(ImportProfile profile, File file) throws Exception {
-    	if (AgnUtils.isZipArchiveFile(file)) {
+    private InputStream getImportInputStream(ImportProfile profile, File importFile) throws Exception {
+    	if (AgnUtils.isZipArchiveFile(importFile)) {
 	    	try {
 	            if (profile.getZipPassword() == null) {
-	            	InputStream dataInputStream = ZipUtilities.openZipInputStream(new FileInputStream(file));
+	            	InputStream dataInputStream = ZipUtilities.openZipInputStream(new FileInputStream(importFile));
 	                try {
 						ZipEntry zipEntry = ((ZipInputStream) dataInputStream).getNextEntry();
 						if (zipEntry == null) {
@@ -756,27 +760,35 @@ public class ImportProfileColumnsAction extends ImportBaseFileAction {
 							return dataInputStream;
 						}
 					} catch (Exception e) {
-						dataInputStream.close();
+						if (dataInputStream != null) {
+							dataInputStream.close();
+							dataInputStream = null;
+						}
 						throw e;
 					}
 	            } else {
-					ZipFile zipFile = new ZipFile(file);
-					zipFile.setPassword(profile.getZipPassword().toCharArray());
-					List<FileHeader> fileHeaders = zipFile.getFileHeaders();
-					// Check if there is only one file within the zip file
-					if (fileHeaders == null || fileHeaders.size() != 1) {
-						throw new Exception("Invalid number of files included in zip file");
-					} else {
-						return zipFile.getInputStream(fileHeaders.get(0));
+	            	File tempImportFile = new File(importFile.getAbsolutePath() + ".tmp");
+					try (ZipFile zipFile = new ZipFile(importFile)) {
+						zipFile.setPassword(profile.getZipPassword().toCharArray());
+						List<FileHeader> fileHeaders = zipFile.getFileHeaders();
+						// Check if there is only one file within the zip file
+						if (fileHeaders == null || fileHeaders.size() != 1) {
+							throw new Exception("Invalid number of files included in zip file");
+						} else {
+							try (FileOutputStream tempImportFileOutputStream = new FileOutputStream(tempImportFile)) {
+								IOUtils.copy(zipFile.getInputStream(fileHeaders.get(0)), tempImportFileOutputStream);
+							}
+							return new TempFileInputStream(tempImportFile);
+						}
 					}
-	            }
+	    		}
 			} catch (ImportException e) {
 				throw e;
 			} catch (Exception e) {
 				throw new ImportException(false, "error.unzip", e.getMessage());
 			}
 	    } else {
-	        return new FileInputStream(file);
+	        return new FileInputStream(importFile);
 	    }
     }
 

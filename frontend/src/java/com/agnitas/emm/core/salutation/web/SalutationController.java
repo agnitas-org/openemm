@@ -14,6 +14,7 @@ import static com.agnitas.web.mvc.Pollable.DEFAULT_TIMEOUT;
 
 import java.util.concurrent.Callable;
 
+import com.agnitas.web.mvc.XssCheckAware;
 import org.agnitas.beans.Title;
 import org.agnitas.beans.impl.TitleImpl;
 import org.agnitas.service.WebStorage;
@@ -31,7 +32,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.ModelAndView;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.PollingUid;
 import com.agnitas.emm.core.salutation.form.SalutationForm;
 import com.agnitas.emm.core.salutation.service.SalutationService;
@@ -43,13 +44,14 @@ import jakarta.servlet.http.HttpSession;
 
 @Controller
 @RequestMapping("/salutation/")
-public class SalutationController {
+public class SalutationController implements XssCheckAware {
 
     private static final Logger logger = LogManager.getLogger(SalutationController.class);
 
     private static final String MESSAGES_VIEW = "messages";
     private static final String ERROR_MSG_KEY = "Error";
     private static final String PERMISSION_ERROR_MSG_KEY = "error.salutation.change.permission";
+    private static final String REDIRECT_TO_LIST = "redirect:/salutation/list.action";
 
     private final SalutationService salutationService;
     private final ConversionService conversionService;
@@ -63,11 +65,11 @@ public class SalutationController {
     }
 
     @RequestMapping(value = "/list.action")
-    public Pollable<ModelAndView> list(@ModelAttribute("form") SalutationForm form, ComAdmin admin, Model model, HttpSession session) {
+    public Pollable<ModelAndView> list(@ModelAttribute("form") SalutationForm form, Admin admin, Model model, HttpSession session) {
         FormUtils.syncNumberOfRows(webStorage, WebStorage.SALUTATION_OVERVIEW, form);
 
         return new Pollable<>(getPollingUid(form, session), DEFAULT_TIMEOUT,
-                new ModelAndView("redirect:/salutation/list.action", model.asMap()),
+                new ModelAndView(REDIRECT_TO_LIST, model.asMap()),
                 getListWorker(admin.getCompanyID(), form, model));
     }
 
@@ -86,10 +88,10 @@ public class SalutationController {
     }
 
     @RequestMapping("{id:\\d+}/view.action")
-    public String view(@PathVariable int id, ComAdmin admin, Model model, Popups popups) {
+    public String view(@PathVariable int id, Admin admin, Model model, Popups popups) {
         Title title = salutationService.get(id, admin.getCompanyID());
         if (title == null) {
-            logger.error("Could not delete salutation id: " + id + " not exist");
+            logger.error("Could not delete salutation id: {} not exist", id);
             popups.alert(ERROR_MSG_KEY);
             return MESSAGES_VIEW;
         }
@@ -99,7 +101,7 @@ public class SalutationController {
     }
 
     @PostMapping("/{salutationId:\\d+}/save.action")
-    public String save(@PathVariable int salutationId, ComAdmin admin, SalutationForm form, Popups popups) throws Exception {
+    public String save(@PathVariable int salutationId, Admin admin, SalutationForm form, Popups popups) throws Exception {
         Title salutationToSave = getSalutationToSave(form, salutationId, admin.getCompanyID());
         if (!isAllowedToChange(salutationToSave, admin.getCompanyID(), popups)) {
             return MESSAGES_VIEW;
@@ -107,7 +109,7 @@ public class SalutationController {
 
         salutationService.save(salutationToSave);
         popups.success("default.changes_saved");
-        return "redirect:/salutation/list.action";
+        return REDIRECT_TO_LIST;
     }
 
     private Title getSalutationToSave(SalutationForm form, int salutationId, int companyId) {
@@ -136,21 +138,30 @@ public class SalutationController {
             popups.alert(PERMISSION_ERROR_MSG_KEY);
             return false;
         }
-        if (StringUtils.length(title.getDescription()) < 3) {
+        
+        String titleDesc = title.getDescription();
+        
+        if (StringUtils.trimToNull(titleDesc) == null) {
+            popups.alert("error.name.is.empty");
+            return false;
+        }
+
+        if (StringUtils.trimToNull(titleDesc).length() < 3) {
             popups.alert("error.name.too.short");
             return false;
         }
+        
         return true;
     }
 
     @RequestMapping(value = {"/create.action", "/0/view.action"})
-    public String create(@ModelAttribute("form") SalutationForm form, ComAdmin admin) {
+    public String create(@ModelAttribute("form") SalutationForm form, Admin admin) {
         form.setDescription(I18nString.getLocaleString("default.salutation.shortname", admin.getLocale()));
         return "salutation_view";
     }
 
     @GetMapping("/{salutationId:\\d+}/confirmDelete.action")
-    public String confirmDelete(@PathVariable int salutationId, ComAdmin admin, Model model, Popups popups) {
+    public String confirmDelete(@PathVariable int salutationId, Admin admin, Model model, Popups popups) {
         Title title = salutationService.get(salutationId, admin.getCompanyID());
         if (title == null || (title.getCompanyID() < 1 && admin.getCompanyID() != 1)) {
             popups.alert(PERMISSION_ERROR_MSG_KEY);
@@ -162,12 +173,12 @@ public class SalutationController {
     }
 
     @PostMapping("{salutationId:\\d+}/delete.action")
-    public String delete(@PathVariable int salutationId, ComAdmin admin, Popups popups) {
+    public String delete(@PathVariable int salutationId, Admin admin, Popups popups) {
         deleteSalutation(salutationId, admin.getCompanyID(), popups);
         if (popups.hasAlertPopups()) {
             return MESSAGES_VIEW;
         }
-        return "redirect:/salutation/list.action";
+        return REDIRECT_TO_LIST;
     }
 
     private void deleteSalutation(int salutationId, int companyId, Popups popups) {
@@ -177,14 +188,14 @@ public class SalutationController {
                 if (salutationService.delete(salutationId, companyId)) {
                     popups.success("default.selection.deleted");
                 } else {
-                    logger.error("Could not delete salutation: " + salutationId);
+                    logger.error("Could not delete salutation: {}", salutationId);
                     popups.alert(ERROR_MSG_KEY);
                 }
             } else {
                 popups.alert(PERMISSION_ERROR_MSG_KEY);
             }
         } else {
-            logger.error("Could not delete salutation id: " + salutationId + " not exist");
+            logger.error("Could not delete salutation id: {} not exist", salutationId);
             popups.alert(ERROR_MSG_KEY);
         }
     }

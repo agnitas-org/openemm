@@ -17,14 +17,20 @@ import org.agnitas.util.DateUtilities;
  */
 public enum DateFormat {
 	ddMMyyyy("dd.MM.yyyy", 1),
-	ddMMyy("dd.MM.yy", 6),
 	ddMMyyyyHHmm("dd.MM.yyyy HH:mm", 0),
 	ddMMyyyyHHmmss("dd.MM.yyyy HH:mm:ss", 5),
+
+	ddMMyy("dd.MM.yy", 6),
+	ddMMyyHHmm("dd.MM.yy HH:mm", 13),
+	ddMMyyHHmmss("dd.MM.yy HH:mm:ss", 14),
 	
 	MMddyyyy("MM/dd/yyyy", 11),
-	MMddyy("MM/dd/yy", 12),
 	MMddyyyyhhmm("MM/dd/yyyy HH:mm", 10),
 	MMddyyyyhhmmss("MM/dd/yyyy HH:mm:ss", 7),
+	
+	MMddyy("MM/dd/yy", 12),
+	MMddyyhhmm("MM/dd/yy HH:mm", 15),
+	MMddyyhhmmss("MM/dd/yy HH:mm:ss", 16),
 	
 	yyyyMMdd("yyyyMMdd", 2),
 	yyyy_MM_dd("yyyy-MM-dd", 8),

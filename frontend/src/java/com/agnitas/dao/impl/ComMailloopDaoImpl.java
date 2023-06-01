@@ -64,7 +64,7 @@ public class ComMailloopDaoImpl extends PaginatedBaseDaoImpl implements Mailloop
 	@Override
 	public List<Mailloop> getMailloops(@VelocityCheck int companyId) {
 		return select(logger, "SELECT rid, company_id, description, shortname, forward, filter_address, forward_enable, ar_enable, timestamp, "
-				+ "subscribe_enable, mailinglist_id, form_id, autoresponder_mailing_id, security_token  FROM mailloop_tbl WHERE company_id = ?", 
+				+ "subscribe_enable, mailinglist_id, form_id, autoresponder_mailing_id, security_token  FROM mailloop_tbl WHERE company_id = ?",
 				new Mailloop_RowMapper(), companyId);
 	}
 	

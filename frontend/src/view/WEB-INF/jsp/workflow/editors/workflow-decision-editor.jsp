@@ -13,8 +13,10 @@
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
 <%--@elvariable id="profileFields" type="java.util.List<com.agnitas.beans.ComProfileField>"--%>
+<%--@elvariable id="anonymizeAllRecipients" type="java.lang.Boolean"--%>
 
 <c:set var="TYPE_DECISION" value="<%= WorkflowDecisionType.TYPE_DECISION %>"/>
 <c:set var="TYPE_AUTO_OPTIMIZATION" value="<%= WorkflowDecisionType.TYPE_AUTO_OPTIMIZATION %>"/>
@@ -44,7 +46,7 @@
 <%@include file="../fragments/workflow-decision-editor-revenue-settigs.jspf" %>
 
 <div id="decision-editor" data-initializer="decision-editor-initializer">
-    <form action="" id="decisionForm" name="decisionForm">
+    <mvc:form action="" id="decisionForm" name="decisionForm">
 
         <div class="status_error editor-error-messages well" style="display: none;">
         </div>
@@ -52,12 +54,22 @@
         <input name="id" type="hidden">
         <div class="form-group">
             <div class="col-sm-8 col-sm-push-4">
+                <c:choose>
+                    <c:when test="${anonymizeAllRecipients}">
+                        <label class="radio-inline" data-tooltip="<bean:message key='hint.workflow.followup.trackingveto'/>">
+                            <input type="radio" name="decisionType" id="typeDecision" data-action="decision-editor-type-change" value="${TYPE_DECISION}" data-tooltip="<bean:message key='hint.workflow.followup.trackingveto'/>" disabled>
+                            <bean:message key="workflow.decision"/>
+                        </label>
+                    </c:when>
+                    <c:otherwise>
+                        <label class="radio-inline">
+                            <input type="radio" name="decisionType" id="typeDecision" data-action="decision-editor-type-change" checked="checked" value="${TYPE_DECISION}">
+                            <bean:message key="workflow.decision"/>
+                        </label>
+                    </c:otherwise>
+                </c:choose>
                 <label class="radio-inline">
-                    <input type="radio" name="decisionType" id="typeDecision" data-action="decision-editor-type-change" checked="checked" value="${TYPE_DECISION}">
-                    <bean:message key="workflow.decision"/>
-                </label>
-                <label class="radio-inline">
-                    <input type="radio" name="decisionType" id="typeAutoOptimization" data-action="decision-editor-type-change" class="decision-type-radio" value="${TYPE_AUTO_OPTIMIZATION}">
+                    <input type="radio" name="decisionType" id="typeAutoOptimization" data-action="decision-editor-type-change" class="decision-type-radio" ${anonymizeAllRecipients ? "checked='checked'" : ""} value="${TYPE_AUTO_OPTIMIZATION}">
                     <bean:message key="mailing.autooptimization"/>
                 </label>
             </div>
@@ -166,6 +178,7 @@
                             </div>
                             <div class="col-sm-8">
                                 <select id="decisionProfileField" name="profileField" class="form-control js-select" data-action="decision-editor-profile-field-change">
+                                    <option value="">--</option>
                                     <logic:iterate id="profileField" collection="${profileFields}">
                                         <option value="${profileField.column}">${profileField.shortname}</option>
                                     </logic:iterate>
@@ -346,7 +359,7 @@
                 </div>
             </div>
         </div>
-    </form>
+    </mvc:form>
 
     <emm:instantiate var="decisionProfileFieldsTypes" type="java.util.HashMap">
         <c:forEach var="profileField" items="${profileFields}">

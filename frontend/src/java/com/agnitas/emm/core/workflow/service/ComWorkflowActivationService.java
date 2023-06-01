@@ -40,6 +40,7 @@ import org.agnitas.dao.MailingStatus;
 import org.agnitas.dao.exception.target.TargetGroupPersistenceException;
 import org.agnitas.emm.core.autoexport.service.AutoExportService;
 import org.agnitas.emm.core.autoimport.service.AutoImportService;
+import org.agnitas.emm.core.mailing.exception.MailingLockedException;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.target.TargetFactory;
@@ -51,7 +52,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.ComTarget;
 import com.agnitas.beans.CompositeKey;
 import com.agnitas.beans.Mailing;
@@ -102,7 +103,7 @@ import com.agnitas.service.ComMailingSendService.DeliveryType;
 
 public class ComWorkflowActivationService {
 
-	private static final transient Logger logger = LogManager.getLogger(ComWorkflowActivationService.class);
+	private static final Logger logger = LogManager.getLogger(ComWorkflowActivationService.class);
     public static final int DEFAULT_STEPPING = 60;
 
 	public static final List<Integer> ALL_MAILING_TYPES = Arrays.asList(
@@ -134,7 +135,7 @@ public class ComWorkflowActivationService {
 	private ComWorkflowEQLHelper eqlHelper;
 	private ComRecipientDao recipientDao;
 
-	public boolean activateWorkflow(int workflowId, ComAdmin admin, boolean testing, List<Message> warnings, List<Message> errors, List<UserAction> userActions) throws Exception {
+	public boolean activateWorkflow(int workflowId, Admin admin, boolean testing, List<Message> warnings, List<Message> errors, List<UserAction> userActions) throws Exception {
 		int companyId = admin.getCompanyID();
 		Set<WorkflowNode> processedNodes = new HashSet<>();
 		Map<Integer, Mailing> mailingsToUpdate = new HashMap<>();
@@ -160,7 +161,7 @@ public class ComWorkflowActivationService {
 		if (!testing) {
 			mailingSendingPropertiesMap = workflowIcons.stream()
 					.filter(icon -> icon.getType() == WorkflowIconType.MAILING.getId())
-					.map(icon -> (MailingSendingProperties) icon)
+					.map(MailingSendingProperties.class::cast)
 					.collect(Collectors.toMap(MailingSendingProperties::getMailingId, icon -> icon));
 		}
 
@@ -210,6 +211,9 @@ public class ComWorkflowActivationService {
 				mailing.setMailinglistID(recipientIcons.get(0).getMailinglistId());
 			});
 
+            //for users with ALTG add ALTG target group
+            processRecipientIconsIfAltgPresented(admin, assignedRecipients);
+
 			Map<Integer, Integer> assignedArchives = new HashMap<>();
 			// Collect archives (campaigns) and associate with mailings.
 			processArchiveIcons(workflowGraph, startIcon, assignedArchives);
@@ -246,8 +250,6 @@ public class ComWorkflowActivationService {
 						});
 			}
 
-			int accesLimitationTargetId = adminService.getAccessLimitTargetId(admin);
-
 			// Generate and assign target expressions for mailings
 			for (Entry<Integer, List<WorkflowRecipient>> entry : assignedRecipients.entrySet()) {
 				Integer mailingId = entry.getKey();
@@ -257,24 +259,6 @@ public class ComWorkflowActivationService {
 				List<WorkflowRecipient> recipientIcons = entry.getValue();
 				if (CollectionUtils.isNotEmpty(recipientIcons)) {
 					// Assign target groups from a recipient icon to the following mailings
-
-                    if (!adminService.isExtendedAltgEnabled(admin)) {
-                        if (accesLimitationTargetId > 0) {
-                            //for users with ALTG add ALTG target group
-                            recipientIcons
-                                    .forEach(recipient -> {
-                                        //for users with ALTG add ALTG target group is such the group is absent
-                                        if (!recipient.getTargets().contains(accesLimitationTargetId)) {
-                                            recipient.getTargets().add(accesLimitationTargetId);
-                                        }
-
-                                        //for user with ALTG is available only ALL_TARGETS_REQUIRED option
-                                        if (recipient.getTargetsOption() != ALL_TARGETS_REQUIRED) {
-                                            recipient.setTargetsOption(ALL_TARGETS_REQUIRED);
-                                        }
-                                    });
-                        }
-                    }
 
 					recipientIcons.stream()
 							.filter(recipient -> {
@@ -350,7 +334,7 @@ public class ComWorkflowActivationService {
 			}
 
 			// send/schedule mailings and reports
-			sendMailings(companyId, workflowGraph, mailingsSendDates, admin.getAdminID(), testing, warnings, errorsList, userActions);
+			sendMailings(admin, workflowGraph, mailingsSendDates, testing, warnings, errorsList, userActions);
 			sendReports(workflowGraph, companyId, workflowId, reportsSendDates);
 
 			updateAutoImportActivationDate(companyId, workflowGraph, importsActivationDates);
@@ -362,7 +346,24 @@ public class ComWorkflowActivationService {
 		return errorsList.isEmpty();
 	}
 
-    private String generateMailingTargetExpression(ComAdmin admin, ConditionGroup conditions) {
+    private void processRecipientIconsIfAltgPresented(Admin admin, Map<Integer, List<WorkflowRecipient>> assignedRecipients) {
+        int accessLimitationTargetId = adminService.getAccessLimitTargetId(admin);
+        if (!adminService.isExtendedAltgEnabled(admin) && accessLimitationTargetId > 0) {
+            assignedRecipients.values().stream().flatMap(Collection::stream)
+                    .forEach(recipient -> {
+                        //for users with ALTG add ALTG target group is such the group is absent
+                        if (!recipient.getTargets().contains(accessLimitationTargetId)) {
+                            recipient.getTargets().add(accessLimitationTargetId);
+                        }
+                        //for user with ALTG is available only ALL_TARGETS_REQUIRED option
+                        if (recipient.getTargetsOption() != ALL_TARGETS_REQUIRED) {
+                            recipient.setTargetsOption(ALL_TARGETS_REQUIRED);
+                        }
+                    });
+        }
+    }
+
+    private String generateMailingTargetExpression(Admin admin, ConditionGroup conditions) {
         String mailingTargetExpression = Condition.toReducedTargetExpression(conditions);
         Set<Integer> altgIds = admin.getAltgIds();
         if (CollectionUtils.isEmpty(altgIds)
@@ -373,7 +374,10 @@ public class ComWorkflowActivationService {
     }
 
 	private int createTargetWithDeadlineRespect(int companyId, int workflowId, WorkflowStart start, List<WorkflowIcon> deadlineIcons) {
-        List<WorkflowDeadline> deadlines = deadlineIcons.stream().map(icon -> ((WorkflowDeadline)icon)).collect(Collectors.toList());
+        List<WorkflowDeadline> deadlines = deadlineIcons.stream()
+				.map(WorkflowDeadline.class::cast)
+				.collect(Collectors.toList());
+
         String eql = eqlHelper.generateDateEQL(companyId, start.getDateProfileField(),
 				start.getDateFieldOperator(), start.getDateFormat(),
 				start.getDateFieldValue() + getDeadlineExpression(deadlines));
@@ -426,7 +430,7 @@ public class ComWorkflowActivationService {
 	private void processArchiveIcons(WorkflowGraph workflowGraph, WorkflowStart startIcon, Map<Integer, Integer> assignedArchives) {
 		workflowGraph.getAllNextIconsByType(startIcon, WorkflowIconType.ARCHIVE.getId(), Collections.emptySet())
 				.stream()
-				.map(icon -> (WorkflowArchive) icon)
+				.map(WorkflowArchive.class::cast)
 				.forEach(archiveIcon -> {
 					int archiveId = archiveIcon.getCampaignId();
 					workflowGraph.getAllNextParallelIconsByType(archiveIcon, ALL_MAILING_TYPES, Collections.emptySet(), false)
@@ -447,8 +451,9 @@ public class ComWorkflowActivationService {
 		}
 	}
 
-	private void sendMailings(int companyId, WorkflowGraph workflowGraph, Map<Integer, Date> mailingsSendDates, int adminId, boolean testing, List<Message> warnings, List<Message> errors, List<UserAction> userActions) throws Exception {
+	private void sendMailings(Admin admin, WorkflowGraph workflowGraph, Map<Integer, Date> mailingsSendDates, boolean testing, List<Message> warnings, List<Message> errors, List<UserAction> userActions) throws Exception {
 		Map<Integer, WorkflowMailingAware> mailingIconsMap = getMailingIconsMap(workflowGraph);
+		List<Integer> lockedMailings = new ArrayList<>();
 
 		for (Entry<Integer, Date> entry : mailingsSendDates.entrySet()) {
 			int mailingId = entry.getKey();
@@ -472,38 +477,52 @@ public class ComWorkflowActivationService {
 				deliveryType = testing ? DeliveryType.TEST : DeliveryType.WORLD;
 			}
 
-			if (iconType == WorkflowIconType.MAILING || iconType == WorkflowIconType.FOLLOWUP_MAILING) {
-				WorkflowMailing mailing = (WorkflowMailing) icon;
+			try {
+				if (iconType == WorkflowIconType.MAILING || iconType == WorkflowIconType.FOLLOWUP_MAILING) {
+					WorkflowMailing mailing = (WorkflowMailing) icon;
 
-				// Send normal or follow-up mailing.
-				MailingSendOptions options = MailingSendOptions.builder()
-						.setDate(sendDate)
-						.setAdminId(adminId)
-						.setMaxRecipients(mailing.getMaxRecipients())
-						.setBlockSize(mailing.getBlocksize())
-						.setDefaultStepping(DEFAULT_STEPPING)
-						.setFollowupFor(getBaseMailingId(icon))
-						.setDoubleChecking(mailing.isDoubleCheck())
-						.setSkipEmpty(mailing.isSkipEmptyBlocks())
-						.setReportSendDayOffset(mailing.getAutoReport())
-						.setGenerateAtSendDate(true)
-						.setDeliveryType(deliveryType)
-						.build();
+					// Send normal or follow-up mailing.
+					MailingSendOptions options = MailingSendOptions.builder()
+							.setDate(sendDate)
+							.setAdminId(admin.getAdminID())
+							.setMaxRecipients(mailing.getMaxRecipients())
+							.setBlockSize(mailing.getBlocksize())
+							.setDefaultStepping(DEFAULT_STEPPING)
+							.setFollowupFor(getBaseMailingId(icon))
+							.setDoubleChecking(mailing.isDoubleCheck())
+							.setSkipEmpty(mailing.isSkipEmptyBlocks())
+							.setReportSendDayOffset(mailing.getAutoReport())
+							.setGenerateAtSendDate(true)
+							.setDeliveryType(deliveryType)
+							.build();
 
-				mailingSendService.sendMailing(mailingId, companyId, options, warnings, errors, userActions);
-			} else {
-				// Send action-based or date-based mailing.
-				MailingSendOptions options = MailingSendOptions.builder()
-						.setDate(sendDate)
-						.setAdminId(adminId)
-						.setGenerateAtSendDate(true)
-						.setDeliveryType(deliveryType)
-						.build();
+					mailingSendService.sendMailing(mailingId, admin, options, warnings, errors, userActions);
+				} else {
+					// Send action-based or date-based mailing.
+					MailingSendOptions options = MailingSendOptions.builder()
+							.setDate(sendDate)
+							.setAdminId(admin.getAdminID())
+							.setGenerateAtSendDate(true)
+							.setDeliveryType(deliveryType)
+							.build();
 
-				mailingSendService.sendMailing(mailingId, companyId, options, warnings, errors, userActions);
-				// Use "test" mailing status on workflow test run.
-				mailingDao.updateStatus(mailingId, testing ? MailingStatus.TEST : MailingStatus.ACTIVE);
+					mailingSendService.sendMailing(mailingId, admin, options, warnings, errors, userActions);
+					// Use "test" mailing status on workflow test run.
+					mailingDao.updateStatus(mailingId, testing ? MailingStatus.TEST : MailingStatus.ACTIVE);
+				}
+			} catch (MailingLockedException mle) {
+				lockedMailings.add(mle.getMailingID());
 			}
+		}
+
+		if (!lockedMailings.isEmpty()) {
+			String usedMailingsStr = mailingDao.getMailingNames(lockedMailings, admin.getCompanyID())
+					.entrySet()
+					.stream()
+					.map(me -> AgnUtils.createHyperLink("/mailing/" + me.getKey() + "/settings.action", me.getValue()))
+					.collect(Collectors.joining(", ", "'", "'"));
+
+			errors.add(Message.of("error.mailing.approval.missing", usedMailingsStr));
 		}
 	}
 

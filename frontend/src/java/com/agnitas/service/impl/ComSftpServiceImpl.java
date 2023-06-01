@@ -69,8 +69,9 @@ public class ComSftpServiceImpl implements ComSftpService {
     }
 
     protected SFtpHelper open(String serverAndCredentials, String privateKey) throws Exception {
+    	SFtpHelper connection = null;
         try {
-            SFtpHelper connection = sFtpHelperFactory.createSFtpHelper(serverAndCredentials);
+            connection = sFtpHelperFactory.createSFtpHelper(serverAndCredentials);
 
             if (StringUtils.isNotBlank(privateKey)) {
                 connection.setPrivateSshKeyData(privateKey);
@@ -81,6 +82,10 @@ public class ComSftpServiceImpl implements ComSftpService {
 
             return connection;
         } catch (Exception e) {
+        	if (connection != null) {
+        		connection.close();
+        		connection = null;
+        	}
             throw new Exception("Cannot connect to SFTP server", e);
         }
     }

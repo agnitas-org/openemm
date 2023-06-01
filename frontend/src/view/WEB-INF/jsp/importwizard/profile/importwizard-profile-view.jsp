@@ -52,7 +52,7 @@
         <div class="tile-content tile-content-forms">
             <div class="form-group">
                 <div class="col-sm-4">
-                    <label for="profileName" class="control-label"><bean:message key="default.Name"/></label>
+                    <label for="profileName" class="control-label"><bean:message key="default.Name"/>*</label>
                 </div>
                 <div class="col-sm-8">
                     <html:text styleId="profileName" styleClass="form-control" property="profile.name" maxlength="99" />

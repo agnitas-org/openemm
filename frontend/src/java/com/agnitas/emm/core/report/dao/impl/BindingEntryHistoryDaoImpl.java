@@ -20,7 +20,6 @@ import javax.sql.DataSource;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.dao.impl.PaginatedBaseDaoImpl;
 import org.agnitas.dao.impl.mapper.MailinglistRowMapper;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.DbUtilities;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -51,7 +50,7 @@ public class BindingEntryHistoryDaoImpl extends PaginatedBaseDaoImpl implements 
     }
 
     @Override
-    public List<PlainBindingEntryHistory> getHistory(@VelocityCheck int companyId, int recipientId, int mailinglistId, int mediaType) {
+    public List<PlainBindingEntryHistory> getHistory(int companyId, int recipientId, int mailinglistId, int mediaType) {
 
         String recipientBindingHistoryTable = getRecipientBindingHistoryTableName(companyId);
 
@@ -72,7 +71,7 @@ public class BindingEntryHistoryDaoImpl extends PaginatedBaseDaoImpl implements 
     }
 
     @Override
-    public List<CompositeBindingEntryHistory> getHistoryOfNonexistentBindings(@VelocityCheck int companyId, int recipientId) {
+    public List<CompositeBindingEntryHistory> getHistoryOfNonexistentBindings(int companyId, int recipientId) {
 
         String recipientBindingHistoryTable = getRecipientBindingHistoryTableName(companyId);
         String recipientBindingTable = getRecipientBindingTableName(companyId);

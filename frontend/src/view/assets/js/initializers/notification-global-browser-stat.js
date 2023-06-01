@@ -43,7 +43,7 @@
 
         updateChart: function(url) {
             $.ajax({
-                type: "POST",
+                type: "GET",
                 url: url,
                 success: function (data) {
                     if (data && (data.warning && data.warning.length > 0)) {

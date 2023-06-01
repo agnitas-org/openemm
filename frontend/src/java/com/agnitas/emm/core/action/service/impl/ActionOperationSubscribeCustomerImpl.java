@@ -23,6 +23,8 @@ import org.agnitas.emm.core.commons.uid.ExtensibleUIDService;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.recipient.service.RecipientService;
+import org.agnitas.emm.core.recipient.service.SubscriberLimitCheck;
+import org.agnitas.emm.core.recipient.service.SubscriberLimitExceededException;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.HttpUtils;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
@@ -67,6 +69,8 @@ public class ActionOperationSubscribeCustomerImpl implements EmmActionOperation 
 
 	private BeanLookupFactory beanLookupFactory;
 	private ConfigService configService;
+	
+	private SubscriberLimitCheck subscriberLimitCheck;
 	
 	private int getDatasourceID(int companyID, String form) {
 		String description = "Form: " + form;
@@ -218,10 +222,18 @@ public class ActionOperationSubscribeCustomerImpl implements EmmActionOperation 
 		}
 
 		try {
+			if(aCust.getCustomerID() == 0) {
+				this.subscriberLimitCheck.checkSubscriberLimit(aCust.getCompanyID());
+			}
+			
 			if (!recipientService.updateRecipientInDB(aCust)) {
 				// return error on failure
 				return false;
 			}
+		} catch(final SubscriberLimitExceededException e) {
+			actionOperationErrors.addErrorCode(ErrorCode.SUBSCRIBER_LIMIT_EXCEEDED);
+			
+			throw e;
 		} catch (ViciousFormDataException dataException) {
 			throw dataException;
 		} catch (Exception e) {
@@ -331,5 +343,10 @@ public class ActionOperationSubscribeCustomerImpl implements EmmActionOperation 
 	@Required
 	public final void setMobilephoneNumberWhitelist(final MobilephoneNumberWhitelist whitelist) {
 		this.mobilephoneNumberWhitelist = Objects.requireNonNull(whitelist, "Mobilephone whitelist is null");
+	}
+	
+	@Required
+	public final void setSubscriberLimitCheck(final SubscriberLimitCheck check) {
+		this.subscriberLimitCheck = Objects.requireNonNull(check, "subscriberLimitCheck");
 	}
 }

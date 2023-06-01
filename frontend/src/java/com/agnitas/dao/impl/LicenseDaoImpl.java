@@ -114,7 +114,25 @@ public class LicenseDaoImpl extends BaseDaoImpl implements LicenseDao {
 	@Override
 	public int getHighestAccessLimitingTargetgroupsPerCompany() {
 		if (isAccessLimitingTargetgroupsSupported()) {
-			return selectIntWithDefaultValue(logger, "SELECT MAX(amount) FROM (SELECT company_id, COUNT(*) as amount from dyn_target_tbl where is_access_limiting = 1 GROUP BY company_id) subsel", 0);
+			return selectIntWithDefaultValue(logger, "SELECT MAX(amount) FROM (SELECT company_id, COUNT(*) as amount FROM dyn_target_tbl WHERE is_access_limiting = 1 GROUP BY company_id) subsel", 0);
+		} else {
+			return 0;
+		}
+	}
+
+	@Override
+	public int getNumberOfAccessLimitingMailinglists(int companyID) {
+		if (isDisabledMailingListsSupported()) {
+			return selectIntWithDefaultValue(logger, "SELECT COUNT(DISTINCT mailinglist_id) FROM disabled_mailinglist_tbl WHERE company_id = ?", 0, companyID);
+		} else {
+			return 0;
+		}
+	}
+
+	@Override
+	public int getNumberOfAccessLimitingTargetgroups(int companyID) {
+		if (isAccessLimitingTargetgroupsSupported()) {
+			return selectIntWithDefaultValue(logger, "SELECT COUNT(*) FROM disabled_mailinglist_tbl WHERE dyn_target_tbl WHERE is_access_limiting = 1 AND company_id = ?", 0, companyID);
 		} else {
 			return 0;
 		}

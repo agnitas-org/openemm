@@ -21,22 +21,34 @@
     <c:param name="page" value="1"/>
 </c:url>
 
-<c:url var="templateViewLink" value="/mailingbase.do">
-    <c:param name="action" value="${ACTION_VIEW}"/>
-    <c:param name="mailingID" value="${mailingContentForm.mailingID}"/>
-</c:url>
+<emm:ShowByPermission token="mailing.settings.migration">
+    <c:url var="templateViewLink" value="/mailing/${mailingContentForm.mailingID}/settings.action"/>
+</emm:ShowByPermission>
+<emm:HideByPermission token="mailing.settings.migration">
+    <c:url var="templateViewLink" value="/mailingbase.do">
+        <c:param name="action" value="${ACTION_VIEW}"/>
+        <c:param name="mailingID" value="${mailingContentForm.mailingID}"/>
+    </c:url>
+</emm:HideByPermission>
 
 <c:url var="mailingsOverviewLink" value="/mailingbase.do">
     <c:param name="action" value="${ACTION_LIST}"/>
     <c:param name="isTemplate" value="false"/>
 </c:url>
 
-<c:url var="mailingViewLink" value="/mailingbase.do">
-    <c:param name="action" value="${ACTION_VIEW}"/>
-    <c:param name="mailingID" value="${mailingContentForm.mailingID}"/>
-    <c:param name="keepForward" value="true"/>
-    <c:param name="init" value="true"/>
-</c:url>
+<emm:ShowByPermission token="mailing.settings.migration">
+    <c:url var="mailingViewLink" value="/mailing/${mailingContentForm.mailingID}/settings.action">
+        <c:param name="keepForward" value="true"/>
+    </c:url>
+</emm:ShowByPermission>
+<emm:HideByPermission token="mailing.settings.migration">
+    <c:url var="mailingViewLink" value="/mailingbase.do">
+        <c:param name="action" value="${ACTION_VIEW}"/>
+        <c:param name="mailingID" value="${mailingContentForm.mailingID}"/>
+        <c:param name="keepForward" value="true"/>
+        <c:param name="init" value="true"/>
+    </c:url>
+</emm:HideByPermission>
 
 <c:set var="sidemenu_active" 		value="Mailings" 				scope="request" />
 <c:set var="isBreadcrumbsShown" 	value="true" 					scope="request" />
@@ -54,10 +66,10 @@
         <c:set var="agnSubtitleKey"	 		value="Template" 									scope="request" />
         <c:set var="sidemenu_sub_active"	value="Templates" 									scope="request" />
         <c:set var="agnHighlightKey" 		value="default.Content" 							scope="request" />
-        <c:set var="agnHelpKey" 			value="default.Content" 									scope="request" />
+        <c:set var="agnHelpKey" 			value="default.Content" 							scope="request" />
 
         <emm:instantiate var="agnNavHrefParams" type="java.util.LinkedHashMap" scope="request">
-            <c:set target="${agnNavHrefParams}" property="mailingID" value="${mailingBaseForm.mailingID}"/>
+            <c:set target="${agnNavHrefParams}" property="mailingID" value="${mailingContentForm.mailingID}"/>
             <c:set target="${agnNavHrefParams}" property="init" value="true"/>
         </emm:instantiate>
         

@@ -10,9 +10,12 @@
 
 package com.agnitas.emm.springws.endpoint;
 
+import java.util.Objects;
+
 import org.agnitas.dao.SourceGroupType;
 import org.agnitas.emm.springws.endpoint.BaseEndpoint;
-import org.agnitas.emm.springws.endpoint.Utils;
+import org.agnitas.emm.springws.endpoint.Namespaces;
+import org.agnitas.emm.springws.util.SecurityContextAccess;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -28,31 +31,37 @@ import com.agnitas.service.FailedCreateDataSourceException;
 
 @Endpoint
 public class CreateDataSourceEndpoint extends BaseEndpoint {
-	private static final Logger classLogger = LogManager.getLogger(CreateDataSourceEndpoint.class);
+	
+	/** The logger. */
+	private static final Logger LOGGER = LogManager.getLogger(CreateDataSourceEndpoint.class);
 
 	private DataSourceService dataSourceService;
+	private SecurityContextAccess securityContextAccess;
 
-	public CreateDataSourceEndpoint(DataSourceService dataSourceService) {
-		this.dataSourceService = dataSourceService;
+	public CreateDataSourceEndpoint(DataSourceService dataSourceService, final SecurityContextAccess securityContextAccess) {
+		this.dataSourceService = Objects.requireNonNull(dataSourceService, "dataSourceService");
+		this.securityContextAccess = Objects.requireNonNull(securityContextAccess, "securityContextAccess");
 	}
 
-	@PayloadRoot(namespace = Utils.NAMESPACE_COM, localPart = "CreateDataSourceRequest")
+	@PayloadRoot(namespace = Namespaces.AGNITAS_COM, localPart = "CreateDataSourceRequest")
 	public @ResponsePayload CreateDataSourceResponse createDataSource(@RequestPayload CreateDataSourceRequest request) throws Exception {
-		if (classLogger.isInfoEnabled()) {
-			classLogger.info( "Entered CreateDataSourceEndpoint.createDataSource()");
+		if (LOGGER.isInfoEnabled()) {
+			LOGGER.info( "Entered CreateDataSourceEndpoint.createDataSource()");
 		}
 
-		validateDescriptor(request);
-		
-		CreateDataSourceResponse response = new CreateDataSourceResponse();
+		validateDescriptor(request);	// TODO Verification of input data should be part of the service layer method
 
-		int rs = dataSourceService.createDataSource(Utils.getUserCompany(), SourceGroupType.SoapWebservices,
-				request.getDescription(), request.getUrl());
+		final int rs = dataSourceService.createDataSource(
+				this.securityContextAccess.getWebserviceUserCompanyId(), 
+				SourceGroupType.SoapWebservices,
+				request.getDescription(), 
+				request.getUrl());
 		
+		final CreateDataSourceResponse response = new CreateDataSourceResponse();
 		response.setId(rs);
 		
-		if (classLogger.isInfoEnabled()) {
-			classLogger.info( "Leaving GetMailingContentEndpoint.createDataSource()");
+		if (LOGGER.isInfoEnabled()) {
+			LOGGER.info( "Leaving GetMailingContentEndpoint.createDataSource()");
 		}
 		
 		return response;

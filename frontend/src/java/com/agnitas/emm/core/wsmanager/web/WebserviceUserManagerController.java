@@ -12,6 +12,7 @@ package com.agnitas.emm.core.wsmanager.web;
 
 import java.util.Objects;
 
+import com.agnitas.web.mvc.XssCheckAware;
 import org.agnitas.emm.company.service.CompanyService;
 import org.agnitas.emm.core.commons.password.PasswordCheck;
 import org.agnitas.emm.core.commons.password.SpringPasswordCheckHandler;
@@ -36,7 +37,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.wsmanager.dto.WebserviceUserDto;
 import com.agnitas.emm.core.wsmanager.form.WebserviceUserForm;
@@ -52,13 +53,17 @@ import com.agnitas.emm.wsmanager.service.WebserviceUserServiceException;
 import com.agnitas.service.ComWebStorage;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.perm.annotations.PermissionMapping;
+import static org.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
+import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
 
 @Controller
 @RequestMapping(value = "/administration/wsmanager")
 @PermissionMapping(value = "webservice.manager.user")
-public class WebserviceUserManagerController {
+public class WebserviceUserManagerController implements XssCheckAware {
 
     private static final Logger logger = LogManager.getLogger(WebserviceUserManagerController.class);
+    
+    private static final String PASSWORD_STR = "password";
 
     private final ConfigService configService;
     private final WebserviceUserService webserviceUserService;
@@ -90,7 +95,7 @@ public class WebserviceUserManagerController {
     }
 
     @RequestMapping(value = "/users.action")
-    public String list(ComAdmin admin, @ModelAttribute WebserviceUserListForm userListForm, WebserviceUserForm userForm, Model model) throws WebserviceUserServiceException {
+    public String list(Admin admin, @ModelAttribute WebserviceUserListForm userListForm, WebserviceUserForm userForm, Model model) throws WebserviceUserServiceException {
         FormUtils.syncNumberOfRows(webStorage, ComWebStorage.WS_MANAGER_OVERVIEW, userListForm);
 
         model.addAttribute("webserviceUserList",
@@ -110,9 +115,9 @@ public class WebserviceUserManagerController {
     }
 
     @PostMapping(value = "/user/new.action")
-    public String create(ComAdmin admin, @ModelAttribute("webserviceUserForm") WebserviceUserForm userForm, Popups popups, final Model model) {
+    public String create(Admin admin, @ModelAttribute("webserviceUserForm") WebserviceUserForm userForm, Popups popups, final Model model) {
         processCompanyId(admin, userForm);
-        if (creationValidation(userForm, popups) ) {
+        if (creationValidation(userForm, popups)) {
             if (saveWebserviceUser(admin, true, userForm, popups)) {
                 return "redirect:/administration/wsmanager/users.action";
             }
@@ -125,7 +130,7 @@ public class WebserviceUserManagerController {
     }
 
     @PostMapping(value = "/user/update.action")
-    public String update(ComAdmin admin, @ModelAttribute("webserviceUserForm") WebserviceUserForm userForm, Popups popups) {
+    public String update(Admin admin, @ModelAttribute("webserviceUserForm") WebserviceUserForm userForm, Popups popups) {
         if (editingValidation(userForm, popups)) {
             if (saveWebserviceUser(admin, false, userForm, popups)) {
                 return "redirect:/administration/wsmanager/users.action";
@@ -133,18 +138,18 @@ public class WebserviceUserManagerController {
         }
         
         popups.alert("error.webserviceuser.cannot_update");
-        return "messages";
+        return MESSAGES_VIEW;
     }
 
-    private void processCompanyId(final ComAdmin admin, final WebserviceUserForm userForm) {
+    private void processCompanyId(final Admin admin, final WebserviceUserForm userForm) {
         if (!admin.permissionAllowed(Permission.MASTER_COMPANIES_SHOW)) {
             userForm.setCompanyId(admin.getCompanyID());
         }
     }
     
-    private boolean validateMaxNumberWSUsers(Popups popups) {
-        int currentNumberOfWebserviceUsers = webserviceUserService.getNumberOfWebserviceUsers();
-        int maxNumberWSUsers = configService.getIntegerValue(ConfigValue.System_License_MaximumNumberOfWebserviceUsers);
+    private boolean validateMaxNumberWSUsers(int companyID, Popups popups) {
+        int currentNumberOfWebserviceUsers = webserviceUserService.getNumberOfWebserviceUsers(companyID);
+        int maxNumberWSUsers = configService.getIntegerValue(ConfigValue.System_License_MaximumNumberOfWebserviceUsers, companyID);
         if (maxNumberWSUsers >= 0 && maxNumberWSUsers <= currentNumberOfWebserviceUsers) {
         	popups.alert("error.numberOfWebserviceUsersExceeded", currentNumberOfWebserviceUsers);
         	return false;
@@ -167,11 +172,11 @@ public class WebserviceUserManagerController {
         }
         
         if (StringUtils.isBlank(userForm.getPassword())) {
-            popups.field("password", "error.password.missing");
+            popups.field(PASSWORD_STR, "error.password.missing");
             valid = false;
         }
         
-        if (!passwordCheck.checkAdminPassword(userForm.getPassword(), null, new SpringPasswordCheckHandler(popups, "password"))) {
+        if (!passwordCheck.checkAdminPassword(userForm.getPassword(), null, new SpringPasswordCheckHandler(popups, PASSWORD_STR))) {
         	valid = false;
         }
         
@@ -180,7 +185,7 @@ public class WebserviceUserManagerController {
             valid = false;
         }
         
-        if (!validateMaxNumberWSUsers(popups)) {
+        if (!validateMaxNumberWSUsers(userForm.getCompanyId(), popups)) {
             valid = false;
         }
         
@@ -196,29 +201,29 @@ public class WebserviceUserManagerController {
             valid = false;
         }
         
-        if (!validateMaxNumberWSUsers(popups)) {
+        if (!validateMaxNumberWSUsers(userForm.getCompanyId(), popups)) {
             valid = false;
         }
         return valid;
     }
     
-    private boolean saveWebserviceUser(ComAdmin admin, boolean isNew, WebserviceUserForm userForm, Popups popups) {
+    private boolean saveWebserviceUser(Admin admin, boolean isNew, WebserviceUserForm userForm, Popups popups) {
         try {
             webserviceUserService.saveWebServiceUser(admin, conversionService.convert(userForm, WebserviceUserDto.class), isNew);
 
-            popups.success("default.changes_saved");
+            popups.success(CHANGES_SAVED_MSG);
 
             writeUserActivityLog(admin, (isNew ? "create " : "edit ") + "webservice user", getWsUserDescription(userForm));
             
         	return true;
         } catch (WebserviceUserAlreadyExistsException e) {
-            logger.error("Cannot create webservice user. " + e.getMessage());
+            logger.error("Cannot create webservice user. {}", e.getMessage());
             popups.field("userName", "error.webserviceuser.already_exists");
         } catch (UnknownWebserviceUsernameException e) {
-            logger.error("Cannot update webservice user. " + e.getMessage());
+            logger.error("Cannot update webservice user. {}", e.getMessage());
             popups.alert("error.webserviceuser.unknown_user");
         } catch (Exception e) {
-            logger.error("Cannot create webservice user. " + e.getMessage());
+            logger.error("Cannot create webservice user. {}", e.getMessage());
             popups.alert("error.default.message");
         }
         
@@ -226,48 +231,51 @@ public class WebserviceUserManagerController {
     }
 
     @GetMapping(value = "/user/{username}/view.action")
-    public String view(ComAdmin admin, @PathVariable String username, Model model, Popups popups) {
+    public String view(Admin admin, @PathVariable String username, Model model, Popups popups) {
         try {
         	final WebserviceUserDto webserviceUser = webserviceUserService.getWebserviceUserByUserName(username);
         	final WebserviceUserForm userForm = conversionService.convert(webserviceUser, WebserviceUserForm.class);
         	
-        	// Determine company ID of webservice user to show permissions only if WS permissions are enabled for his company!
-        	final int companyIdOfWebserviceUser = webserviceUser.getCompanyId();
-        	
-        	
             model.addAttribute("webserviceUserForm", userForm);
             model.addAttribute("PASSWORD_POLICY", "WEBSERVICE");
 
-            if (configService.getBooleanValue(Webservices.WebserviceEnablePermissions, companyIdOfWebserviceUser)) {
-            	final WebservicePermissions permissions = webservicePermissionService.listAllPermissions();
+            boolean permissionsEnabled = configService.getBooleanValue(Webservices.WebserviceEnablePermissions, webserviceUser.getCompanyId());
+
+            if (permissionsEnabled) {
+                // show permissions only if WS permissions are enabled for company of webservice user!
+                final WebservicePermissions permissions = webservicePermissionService.listAllPermissions();
             	final WebservicePermissionGroups permissionGroups = webservicePermissionGroupService.listAllPermissionGroups();
            	
 	            model.addAttribute("PERMISSIONS", permissions);
 	            model.addAttribute("PERMISSION_GROUPS", permissionGroups);
-	            model.addAttribute("PERMISSIONS_ENABLED", true);
-            } else {
-	            model.addAttribute("PERMISSIONS_ENABLED", false);
             }
+
+            model.addAttribute("PERMISSIONS_ENABLED", permissionsEnabled);
 
             writeUserActivityLog(admin, "view webservice user", getWsUserDescription(userForm));
 
             return "webserviceuser_view";
         } catch (UnknownWebserviceUsernameException e) {
-            logger.error("Cannot obtain webservice user. " + e.getMessage());
+            logger.error("Cannot obtain webservice user. {}", e.getMessage());
             popups.alert("error.webserviceuser.unknown_user");
         } catch (Exception e) {
-            logger.error("Cannot obtain webservice user. " + e.getMessage());
+            logger.error("Cannot obtain webservice user. {}", e.getMessage());
             popups.alert("error.default.message");
         }
 
-        return "messages";
+        return MESSAGES_VIEW;
     }
 
     private String getWsUserDescription(WebserviceUserForm userForm) {
         return String.format("%s - companyID %d", userForm.getUserName(), userForm.getCompanyId());
     }
 
-    private void writeUserActivityLog(ComAdmin admin, String action, String description) {
+    private void writeUserActivityLog(Admin admin, String action, String description) {
         userActivityLogService.writeUserActivityLog(admin, new UserAction(action, description), logger);
+    }
+
+    @Override
+    public boolean isParameterExcludedForUnsafeHtmlTagCheck(Admin admin, String param, String controllerMethodName) {
+        return PASSWORD_STR.equals(param);
     }
 }

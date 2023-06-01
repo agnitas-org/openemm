@@ -299,7 +299,7 @@ public class StrutsFormBase extends ActionForm {
 	protected ActionMessage mapHtmlErrorToActionMessage(final HtmlCheckError htmlCheckError) {
 		if (htmlCheckError instanceof AbstractTagError) {
 			if(htmlCheckError instanceof ForbiddenTagError) {
-				return new ActionMessage("GWUA.error.html.forbiddenTag", ((ForbiddenTagError) htmlCheckError).getTagName());
+				return new ActionMessage("error.html.forbiddenTag", ((ForbiddenTagError) htmlCheckError).getTagName());
 			} else if(htmlCheckError instanceof UnopenedTagError) {
 				return new ActionMessage("error.html.missingStartTag", ((UnopenedTagError) htmlCheckError).getTagName());
 			} else if(htmlCheckError instanceof UnclosedTagError) {

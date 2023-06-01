@@ -21,7 +21,7 @@ import org.agnitas.util.HttpUtils.RequestMethod;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.action.service.ComEmmActionService;
 import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
@@ -69,7 +69,7 @@ public class ActionExecuteRestfulServiceHandler implements RestfulServiceHandler
 	}
 
 	@Override
-	public void doService(HttpServletRequest request, HttpServletResponse response, ComAdmin admin, byte[] requestData, File requestDataFile, BaseRequestResponse restfulResponse, ServletContext context, RequestMethod requestMethod, boolean extendedLogging) throws Exception {
+	public void doService(HttpServletRequest request, HttpServletResponse response, Admin admin, byte[] requestData, File requestDataFile, BaseRequestResponse restfulResponse, ServletContext context, RequestMethod requestMethod, boolean extendedLogging) throws Exception {
 		if (requestMethod == RequestMethod.GET) {
 			restfulResponse.setError(new RestfulClientException("Invalid http method GET for actionExecute"), ErrorCode.REQUEST_DATA_ERROR);
 		} else if (requestMethod == RequestMethod.DELETE) {
@@ -94,7 +94,7 @@ public class ActionExecuteRestfulServiceHandler implements RestfulServiceHandler
 	 * @return
 	 * @throws Exception
 	 */
-	private Object executeEmmAction(HttpServletRequest request, byte[] requestData, File requestDataFile, ComAdmin admin) throws Exception {
+	private Object executeEmmAction(HttpServletRequest request, byte[] requestData, File requestDataFile, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.ACTIONS_SHOW)) {
 			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.ACTIONS_SHOW.toString() + "'");
 		}
@@ -135,6 +135,14 @@ public class ActionExecuteRestfulServiceHandler implements RestfulServiceHandler
 		} else if (params.containsKey("customer_id") && !params.containsKey("customerid")) {
 			params.put("customerid", params.get("customer_id"));
 		}
+		
+		// Enduser convenience
+		if (!params.containsKey("agnci")) {
+			params.put("agnci", admin.getCompanyID());
+		}
+
+		// Enduser convenience, to reuse existing scripts with "requestParameters" function calls
+		params.put("requestparameters", params);
 		
 		final EmmActionOperationErrors actionOperationErrors = new EmmActionOperationErrors();
 		params.put("actionErrors", actionOperationErrors);

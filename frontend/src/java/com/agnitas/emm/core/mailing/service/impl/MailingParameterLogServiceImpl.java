@@ -33,7 +33,7 @@ public class MailingParameterLogServiceImpl implements MailingParameterLogServic
 		
 		CollectionUtils.union(parametersOld.keySet(), parametersNew.keySet()).forEach(p -> {
 			List<String> changes = getParameterChanges(parametersOld.get(p), parametersNew.get(p));
-			if (changes.size() > 0) {
+			if (!changes.isEmpty()) {
 				userActions.add(new UserAction("edit mailing parameter",
 						String.format("Mailing ID (%d). Mailing parameter ID (%d) %n%s", mailingId, p,
 								StringUtils.join(changes, "; "))));
@@ -48,7 +48,7 @@ public class MailingParameterLogServiceImpl implements MailingParameterLogServic
         UserAction userAction = null;
 
         List<String> changes = getParameterChanges(parameterOld, parameterNew);
-        if (changes.size() > 0) {
+        if (!changes.isEmpty()) {
             userAction = new UserAction("edit mailing parameter",
                     String.format("Mailing ID (%d) %n Mailing parameter ID (%d) %n%s", mailingId, parameterId,
                             StringUtils.join(changes, "\n")));
@@ -62,7 +62,7 @@ public class MailingParameterLogServiceImpl implements MailingParameterLogServic
         UserAction userAction = null;
 
         List<String> changes = getParameterChanges(null, parameterNew);
-        if (changes.size() > 0) {
+        if (!changes.isEmpty()) {
             userAction = new UserAction("create mailing parameter",
                     String.format("Mailing ID (%d). Mailing parameter ID (%d) %n%s", mailingId, parameterNew.getMailingInfoID(),
                             StringUtils.join(changes, "; ")));
@@ -80,7 +80,7 @@ public class MailingParameterLogServiceImpl implements MailingParameterLogServic
     
         UserAction userAction = null;
         List<String> changes = getParameterChanges(parameterOld, null);
-        if (changes.size() > 0) {
+        if (!changes.isEmpty()) {
             userAction = new UserAction("delete mailing parameter",
                     String.format("Mailing ID (%d). Mailing parameter ID (%d) %n%s", parameterOld.getMailingID(), parameterId,
                             StringUtils.join(changes, "; ")));

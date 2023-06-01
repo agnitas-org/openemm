@@ -14,6 +14,7 @@ import org.springframework.core.convert.converter.Converter;
 import org.springframework.stereotype.Component;
 
 import com.agnitas.beans.ProfileField;
+import com.agnitas.beans.ProfileFieldMode;
 import com.agnitas.emm.core.profilefields.form.ProfileFieldForm;
 
 @Component
@@ -33,7 +34,7 @@ public class ComProfileFieldToProfileFieldFormConverter implements Converter<Pro
         form.setFieldSort(field.getSort());
         form.setLine(field.getLine() > 0);
         form.setInterest(field.isInterest());
-        form.setFieldVisible(field.getModeEdit() != ProfileField.MODE_EDIT_NOT_VISIBLE);
+        form.setFieldVisible(field.getModeEdit() != ProfileFieldMode.NotVisible);
         form.setIncludeInHistory(field.getHistorize());
         form.setAllowedValues(field.getAllowedValues());
         form.setUseAllowedValues(form.getAllowedValues() != null);

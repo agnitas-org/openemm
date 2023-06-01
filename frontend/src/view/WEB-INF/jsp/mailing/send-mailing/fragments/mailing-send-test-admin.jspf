@@ -1,0 +1,188 @@
+<%@ page import="com.agnitas.emm.core.components.service.MailingSendService" %>
+
+<%--@elvariable id="testForm" type="com.agnitas.emm.core.components.form.MailingTestSendForm"--%>
+<%--@elvariable id="externalEditorLink" type="java.lang.String"--%>
+<%--@elvariable id="adminTargetGroupList" type="java.util.List<com.agnitas.beans.TargetLight>"--%>
+
+<c:set var="ADMIN_TARGET_SINGLE_RECIPIENT" value="<%= MailingSendService.ADMIN_TARGET_SINGLE_RECIPIENT %>"/>
+
+<mvc:form servletRelativeAction="/mailing/send/${form.mailingID}" data-form="resource" modelAttribute="testForm">
+    <div class="tile">
+        <div class="tile-header">
+            <h2 class="headline">
+                <i class="icon icon-flask"></i>
+                <mvc:message code="mailing.testrun" />
+            </h2>
+        </div>
+
+        <div class="tile-content tile-content-forms">
+            <c:choose>
+                <c:when test="${not form.hasDeletedTargetGroups}">
+                    <div class="well block">
+                        <c:choose>
+                            <c:when test="${form.isTemplate}">
+                                <mvc:message code="template.send.test" />
+                            </c:when>
+                            <c:otherwise>
+                                <mvc:message code="mailing.send.test" />
+                            </c:otherwise>
+                        </c:choose>
+                    </div>
+
+                    <div id="test-send-controls-group" class="vspace-top-10">
+                        <emm:ShowByPermission token="mailing.send.admin.target">
+                            <div class="form-group">
+                                <div class="col-sm-4">
+                                    <label class="control-label" for="adminTargetGroupSelect">
+                                        <mvc:message code="mailing.send.admin.target.to" />
+                                    </label>
+                                </div>
+                                <div class="col-sm-8">
+                                    <mvc:select path="adminTargetGroupID" id="adminTargetGroupSelect" cssClass="form-control js-select"
+                                                data-action="admin-target-group" data-initializer="test-run-recipients-select">
+
+                                        <mvc:option value="0"> <mvc:message code="mailing.send.adminOrTest" /></mvc:option>
+                                        <mvc:option value="${ADMIN_TARGET_SINGLE_RECIPIENT}">
+                                            <mvc:message code="mailing.test.recipient.single" />
+                                        </mvc:option>
+
+                                        <mvc:options items="${adminTargetGroupList}" itemValue="id" itemLabel="targetName"/>
+                                    </mvc:select>
+                                </div>
+                            </div>
+                        </emm:ShowByPermission>
+                    </div>
+
+                    <div class="form-group ${testForm.adminTargetGroupID eq ADMIN_TARGET_SINGLE_RECIPIENT ? '' : 'hidden'}" id="test-recipients-table">
+                        <div class="col-sm-push-4 col-sm-8">
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-striped">
+                                    <thead>
+                                    <tr>
+                                        <th><mvc:message code="settings.Admin.email" /></th>
+                                        <th></th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    <c:set var="lastAddress" value="" />
+
+                                    <c:forEach var="address" items="${testForm.mailingTestRecipients}" varStatus="status">
+                                        <c:choose>
+                                            <c:when test="${status.last}">
+                                                <c:set var="lastAddress" value="${address}" />
+                                            </c:when>
+                                            <c:otherwise>
+                                                <tr>
+                                                    <td>
+                                                        <input type="text" name="mailingTestRecipients" class="form-control" value="${fn:escapeXml(address)}" data-action="edit-test-recipient" />
+                                                    </td>
+                                                    <td class="table-actions">
+                                                        <button type="button" class="btn btn-regular btn-alert recipient-remove-btn ${canLoadStatusBox ? 'hidden' : ''}"
+                                                                data-tooltip="<mvc:message code='button.Delete'/>" data-action="remove-test-recipient">
+                                                            <i class="icon icon-trash-o"></i>
+                                                        </button>
+
+                                                        <c:if test="${canLoadStatusBox}">
+                                                            <i class="icon icon-check transmission-mark" style="color: lightgreen"></i>
+                                                        </c:if>
+                                                    </td>
+                                                </tr>
+                                            </c:otherwise>
+                                        </c:choose>
+                                    </c:forEach>
+
+                                    <tr>
+                                        <td>
+                                            <input type="text" id="new-test-recipient" name="mailingTestRecipients" class="form-control" data-action="new-test-recipient" value="${fn:escapeXml(lastAddress)}" />
+                                        </td>
+                                        <td class="table-actions">
+                                            <c:set var="displayGreenMark" value="${not empty lastAddress and canLoadStatusBox}"/>
+
+                                            <button id="recipient-add-btn" type="button" class="btn btn-regular btn-primary ${displayGreenMark ? 'hidden' : ''}"
+                                                    data-tooltip="<mvc:message code='button.Add'/>" data-action="add-test-recipient">
+                                                <i class="icon icon-plus"></i>
+                                            </button>
+
+                                            <c:if test="${displayGreenMark}">
+                                                <i class="icon icon-check transmission-mark" style="color: lightgreen"></i>
+                                            </c:if>
+                                        </td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="col-sm-offset-1 col-sm-11">
+                            <div class="btn-group">
+                                <a href="#" id="adminSendButton" class="btn btn-regular btn-primary" data-action="start-delivery" data-action-value="/send-admin.action">
+                                    <i class="icon icon-send-o"></i>
+                                    <span class="text"><mvc:message code="adminMail" /></span>
+                                </a>
+
+                                <a href="#" class="btn btn-regular btn-primary" data-action="start-delivery" data-action-value="/send-test.action">
+                                    <i class="icon icon-send-o"></i>
+                                    <span class="text"><mvc:message code="testMail" /></span>
+                                </a>
+
+                                <c:if test="${not empty externalEditorLink}">
+                                    <a href="${externalEditorLink}" target="_POST_MailingTab" class="btn btn-regular btn-primary">
+                                        <i class="icon icon-send-o"></i>
+                                        <span class="text"><mvc:message code="openExternalEditor" /></span>
+                                    </a>
+                                </c:if>
+                            </div>
+                        </div>
+                    </div>
+                </c:when>
+                <c:otherwise>
+                    <div class="form-group">
+                        <div class="notification notification-warning">
+                            <div class="notification-header">
+                                <p class="headline">
+                                    <i class="icon icon-state-warning"></i>
+                                    <span class="text"><mvc:message code="error.mailing.send" /></span>
+                                </p>
+                            </div>
+
+                            <div class="notification-content">
+                                <p><mvc:message code="MailingTestAdmin.deleted_target_groups" /></p>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="form-group">
+                        <div class="notification notification-warning">
+                            <div class="notification-header">
+                                <p class="headline">
+                                    <i class="icon icon-state-warning"></i>
+                                    <span class="text"><mvc:message code="error.mailing.send" /></span>
+                                </p>
+                            </div>
+
+                            <div class="notification-content">
+                                <p><mvc:message code="MailingTestDistrib.deleted_target_groups" /></p>
+                            </div>
+                        </div>
+                    </div>
+                </c:otherwise>
+            </c:choose>
+        </div>
+    </div>
+</mvc:form>
+
+<script id="test-recipient-row" type="text/x-mustache-template">
+    <tr>
+        <td>
+            <input type="text" name="mailingTestRecipients" class="form-control" value="{{- value }}" data-action="edit-test-recipient" />
+        </td>
+        <td class="table-actions">
+            <button type="button" class="btn btn-regular btn-alert" data-tooltip="<mvc:message code='button.Delete'/>" data-action="remove-test-recipient">
+                <i class="icon icon-trash-o"></i>
+            </button>
+        </td>
+    </tr>
+</script>

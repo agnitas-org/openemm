@@ -10,31 +10,39 @@
 
 package com.agnitas.service.impl;
 
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.AgnTagAttributeDto;
+import com.agnitas.beans.AgnTagSelectAttributeDto;
+import com.agnitas.beans.ProfileField;
+import com.agnitas.emm.core.profilefields.service.ProfileFieldService;
+import com.agnitas.service.AgnTagAttributeResolver;
+import org.agnitas.backend.AgnTag;
+import org.agnitas.beans.LightProfileField;
+import org.springframework.stereotype.Component;
+
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.agnitas.beans.LightProfileField;
-import org.springframework.stereotype.Component;
-
-import com.agnitas.beans.AgnTagAttributeDto;
-import com.agnitas.beans.AgnTagSelectAttributeDto;
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.dao.ComProfileFieldDao;
-import com.agnitas.service.AgnTagAttributeResolver;
-
 @Component
 public class AgnTagColumnAttributeResolver implements AgnTagAttributeResolver {
-    private ComProfileFieldDao profileFieldDao;
 
-    public AgnTagColumnAttributeResolver(ComProfileFieldDao profileFieldDao) {
-        this.profileFieldDao = profileFieldDao;
+    private final ProfileFieldService profileFieldService;
+
+    public AgnTagColumnAttributeResolver(ProfileFieldService profileFieldService) {
+        this.profileFieldService = profileFieldService;
     }
 
     @Override
-	public AgnTagAttributeDto resolve(ComAdmin admin, String tag, String attribute) throws Exception {
+    public AgnTagAttributeDto resolve(Admin admin, String tag, String attribute) throws Exception {
         if (attribute.equals("column")) {
-            List<LightProfileField> fields = profileFieldDao.getLightProfileFields(admin.getCompanyID());
+            List<ProfileField> fields;
+            if (AgnTag.DB.getName().equals(tag)) {
+                fields = profileFieldService.getVisibleProfileFields(admin.getAdminID(), admin.getCompanyID());
+            } else {
+                fields = profileFieldService.getProfileFields(admin.getCompanyID());
+            }
+
             Map<String, String> options = new LinkedHashMap<>(fields.size());
 
             for (LightProfileField field : fields) {

@@ -8,6 +8,7 @@
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
 <%--@elvariable id="workflowForm" type="com.agnitas.emm.core.workflow.web.forms.ComWorkflowForm"--%>
 <%--@elvariable id="allMailinglists" type="java.util.List"--%>
@@ -25,7 +26,7 @@
 <c:set var="ONE_TARGET_REQUIRED" value="<%= WorkflowTargetOption.ONE_TARGET_REQUIRED %>"/>
 
 <div id="recipient-editor" data-initializer="recipient-editor-initializer">
-    <form action="" id="recipientForm" name="recipientForm">
+    <mvc:form action="" id="recipientForm" name="recipientForm">
         <div class="form-group">
             <div class="col-sm-4">
                 <label class="control-label" for="mailinglistSelect">
@@ -131,5 +132,5 @@
                 </div>
             </div>
         </div>
-    </form>
+    </mvc:form>
 </div>

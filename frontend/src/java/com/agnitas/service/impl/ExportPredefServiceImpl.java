@@ -17,7 +17,7 @@ import org.agnitas.dao.ExportPredefDao;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.service.ExportPredefService;
 
 public class ExportPredefServiceImpl implements ExportPredefService {
@@ -39,12 +39,12 @@ public class ExportPredefServiceImpl implements ExportPredefService {
     }
 
     @Override
-    public List<ExportPredef> getExportProfiles(ComAdmin admin) {
+    public List<ExportPredef> getExportProfiles(Admin admin) {
     	return exportPredefDao.getAllByCompany(admin.getCompanyID());
     }
 
     @Override
-    public List<Integer> getExportProfileIds(ComAdmin admin) {
+    public List<Integer> getExportProfileIds(Admin admin) {
     	return exportPredefDao.getAllIdsByCompany(admin.getCompanyID());
     }
 

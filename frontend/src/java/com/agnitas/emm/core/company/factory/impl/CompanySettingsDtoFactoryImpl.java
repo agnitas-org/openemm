@@ -50,7 +50,8 @@ public class CompanySettingsDtoFactoryImpl implements CompanySettingsDtoFactory 
         companySettingsDto.setRecipientExpireDays(configService.getIntegerValue(ConfigValue.ExpireRecipient));
         companySettingsDto.setStatisticsExpireDays(configService.getIntegerValue(ConfigValue.ExpireStatisticsMax));
         companySettingsDto.setSendPasswordChangedNotification(AgnUtils.interpretAsBoolean(ConfigValue.SendPasswordChangedNotification.getDefaultValue()));
-        
+        companySettingsDto.setSendEncryptedMailings(AgnUtils.interpretAsBoolean(ConfigValue.SendEncryptedMailings.getDefaultValue()));
+
         companySettingsDto.setDefaultLinkExtension(ConfigValue.DefaultLinkExtension.getDefaultValue());
         companySettingsDto.setLinkcheckerLinktimeout(Integer.parseInt(ConfigValue.Linkchecker_Linktimeout.getDefaultValue()));
         companySettingsDto.setLinkcheckerThreadcount(Integer.parseInt(ConfigValue.Linkchecker_Threadcount.getDefaultValue()));
@@ -71,13 +72,20 @@ public class CompanySettingsDtoFactoryImpl implements CompanySettingsDtoFactory 
         companySettingsDto.setAllowEmailWithWhitespace(AgnUtils.interpretAsBoolean(ConfigValue.AllowEmailWithWhitespace.getDefaultValue()));
         companySettingsDto.setAllowEmptyEmail(AgnUtils.interpretAsBoolean(ConfigValue.AllowEmptyEmail.getDefaultValue()));
         companySettingsDto.setExpireStatistics(Integer.parseInt(ConfigValue.ExpireStatistics.getDefaultValue()));
-        companySettingsDto.setExpireOnePixel(Integer.parseInt(ConfigValue.ExpireOnePixel.getDefaultValue()));
         companySettingsDto.setExpireSuccess(Integer.parseInt(ConfigValue.ExpireSuccess.getDefaultValue()));
         companySettingsDto.setExpireRecipient(Integer.parseInt(ConfigValue.ExpireRecipient.getDefaultValue()));
         companySettingsDto.setExpireBounce(Integer.parseInt(ConfigValue.ExpireBounce.getDefaultValue()));
         companySettingsDto.setExpireUpload(Integer.parseInt(ConfigValue.ExpireUpload.getDefaultValue()));
         companySettingsDto.setWriteCustomerOpenOrClickField(AgnUtils.interpretAsBoolean(ConfigValue.WriteCustomerOpenOrClickField.getDefaultValue()));
         companySettingsDto.setDefaultCompanyLinkTrackingMode(LinkTrackingMode.getDefault().getMode());
+        
+        int maxFieldsByLicense = configService.getIntegerValue(ConfigValue.MaxFields);
+        int maxFieldsByDefault = Integer.parseInt(ConfigValue.MaxFields.getDefaultValue());
+        if (maxFieldsByLicense == -1) {
+        	companySettingsDto.setMaxFields(maxFieldsByDefault);
+        } else {
+        	companySettingsDto.setMaxFields(maxFieldsByLicense);
+        }
 
         return companySettingsDto;
     }

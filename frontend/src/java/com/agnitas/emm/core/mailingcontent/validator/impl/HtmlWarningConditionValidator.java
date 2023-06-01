@@ -15,7 +15,7 @@ import java.util.List;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.mailingcontent.dto.DynContentDto;
 import com.agnitas.emm.core.mailingcontent.dto.DynTagDto;
 import com.agnitas.emm.core.mailingcontent.validator.DynTagValidator;
@@ -25,7 +25,7 @@ import com.agnitas.web.mvc.Popups;
 @Order(5)
 public class HtmlWarningConditionValidator implements DynTagValidator {
     @Override
-    public boolean validate(DynTagDto dynTagDto, Popups popups, ComAdmin admin) {
+    public boolean validate(DynTagDto dynTagDto, Popups popups, Admin admin) {
         List<DynContentDto> contentBlocks = dynTagDto.getContentBlocks();
         for (DynContentDto contentBlock : contentBlocks) {
             if (contentBlock.getContent().toLowerCase().contains("background=\"#")) {

@@ -10,10 +10,11 @@
 
 package com.agnitas.emm.core.commons.database.fulltext;
 
+import org.agnitas.util.FulltextSearchInvalidQueryException;
 import org.agnitas.util.FulltextSearchQueryException;
 
 public interface FulltextSearchQueryGenerator {
 
-    String generateSpecificQuery(String searchQuery) throws FulltextSearchQueryException;
+    String generateSpecificQuery(String searchQuery) throws FulltextSearchInvalidQueryException, FulltextSearchQueryException ;
 
 }

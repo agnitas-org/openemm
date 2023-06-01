@@ -89,8 +89,12 @@ For multi-selects you can also use `data-url` attributes on `<option>` elements 
         minimumResultsForSearch: 10
       };
 
-      if ( !$el.hasClass('js-select') ) {
+      if ( !$el.hasClass('js-select') && !$el.hasClass('js-select-tags')) {
         options.minimumResultsForSearch = -1;
+      }
+
+      if ( $el.hasClass('js-select-tags') ) {
+        options.inlineTags = true;
       }
 
       if ( $el.prop('multiple') ) {

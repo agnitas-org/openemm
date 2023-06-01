@@ -12,6 +12,7 @@ package com.agnitas.emm.core.commons.web;
 
 import java.util.concurrent.ThreadLocalRandom;
 
+import com.agnitas.web.mvc.XssCheckAware;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -20,7 +21,7 @@ import com.agnitas.web.perm.annotations.Anonymous;
 
 @Controller
 @RequestMapping("/connectionSpeed")
-public class ConnectionSpeedTestController {
+public class ConnectionSpeedTestController implements XssCheckAware {
 
     public static final int SPEED_TEST_RESOURCE_SIZE = 10000; // bytes
 
@@ -28,7 +29,7 @@ public class ConnectionSpeedTestController {
     @RequestMapping("/test.action")
     @ResponseBody
     public byte[] test() {
-        var r = new byte[SPEED_TEST_RESOURCE_SIZE];
+    	byte[] r = new byte[SPEED_TEST_RESOURCE_SIZE];
         ThreadLocalRandom.current().nextBytes(r);
         return r;
     }

@@ -14,7 +14,7 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.action.operations.ActionOperationParameters;
 import com.agnitas.emm.core.action.service.EmmActionValidationService;
 import com.agnitas.emm.core.action.validators.ActionOperationValidator;
@@ -40,7 +40,7 @@ public class EmmActionValidationServiceImpl implements EmmActionValidationServic
     }
 
     @Override
-    public SimpleServiceResult validate(ComAdmin admin, ActionOperationParameters operation) throws Exception {
+    public SimpleServiceResult validate(Admin admin, ActionOperationParameters operation) throws Exception {
         ActionOperationValidator validatorByType = getValidatorByType(operation.getClass());
         if (validatorByType == null) {
             return new SimpleServiceResult(true);

@@ -101,7 +101,7 @@ public interface ComCompanyDao {
 
 	Set<Permission> getCompanyPermissions(int companyID);
 
-	void setupPremiumFeaturePermissions(Set<String> allowedPremiumFeatures, Set<String> unAllowedPremiumFeatures, String comment);
+	void setupPremiumFeaturePermissions(Set<String> allowedPremiumFeatures, Set<String> unAllowedPremiumFeatures, String comment, int companyID);
 
 	void createCompanyPermission(int companyID, Permission permission, String comment);
 
@@ -142,4 +142,8 @@ public interface ComCompanyDao {
 	boolean createFrequencyFields(int companyID);
 
 	Company getCompanyByName(String clientName);
+
+	int getNumberOfCustomers(int companyID);
+
+	void cleanupPremiumFeaturePermissions(int companyID);
 }

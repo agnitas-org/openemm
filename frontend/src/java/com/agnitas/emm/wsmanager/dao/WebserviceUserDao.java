@@ -10,8 +10,6 @@
 
 package com.agnitas.emm.wsmanager.dao;
 
-import java.time.ZonedDateTime;
-
 import org.agnitas.beans.impl.PaginatedListImpl;
 
 import com.agnitas.emm.wsmanager.common.WebserviceUser;
@@ -87,11 +85,9 @@ public interface WebserviceUserDao {
 	PaginatedListImpl<WebserviceUserListItem> getWebserviceUserList(int companyID, String sortColumn, boolean sortDirectionAscending, int pageNumber, int pageSize) throws WebserviceUserDaoException;
 	PaginatedListImpl<WebserviceUserListItem> getWebserviceUserMasterList(String sortColumn, boolean sortDirectionAscending, int pageNumber, int pageSize) throws WebserviceUserDaoException;
 
-	int getNumberOfWebserviceUsers();
+	int getNumberOfWebserviceUsers(int companyID);
 
 	void saveGrantedPermissionsAndGroups(WebserviceUser user);
-
-	void updateLastLoginDate(final String username, final ZonedDateTime loginDate);
 
 	boolean deleteWebserviceUser(String username);
 }

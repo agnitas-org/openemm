@@ -10,7 +10,6 @@
 
 package com.agnitas.emm.wsmanager.service.impl;
 
-import java.time.ZonedDateTime;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -27,7 +26,7 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.wsmanager.dto.WebserviceUserDto;
 import com.agnitas.emm.core.wsmanager.dto.WebserviceUserEntryDto;
@@ -171,8 +170,7 @@ public class WebserviceUserServiceImpl implements WebserviceUserService {
 
 	@Transactional
 	@Override
-	public void saveWebServiceUser(ComAdmin admin, WebserviceUserDto user, boolean isNew) throws WebserviceUserException, WebserviceUserServiceException {
-		
+	public void saveWebServiceUser(Admin admin, WebserviceUserDto user, boolean isNew) throws WebserviceUserException, WebserviceUserServiceException {
 		if (!admin.permissionAllowed(Permission.MASTER_COMPANIES_SHOW)) {
             user.setCompanyId(admin.getCompanyID());
         }
@@ -197,8 +195,8 @@ public class WebserviceUserServiceImpl implements WebserviceUserService {
 	}
 
 	@Override
-	public int getNumberOfWebserviceUsers() {
-		return webserviceUserDao.getNumberOfWebserviceUsers();
+	public int getNumberOfWebserviceUsers(int companyID) {
+		return webserviceUserDao.getNumberOfWebserviceUsers(companyID);
 	}
 	
 	private final void sanitizePermissions(final WebserviceUser user) {
@@ -226,11 +224,6 @@ public class WebserviceUserServiceImpl implements WebserviceUserService {
 		}
 		
 		return optional.get();
-	}
-
-	@Override
-	public final void updateLastLoginDate(final String username) {
-		this.webserviceUserDao.updateLastLoginDate(username, ZonedDateTime.now());
 	}
 
 	@Override

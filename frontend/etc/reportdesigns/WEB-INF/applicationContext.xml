@@ -14,7 +14,7 @@
 		<context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
 		<context:exclude-filter type="annotation" expression="org.springframework.web.bind.annotation.ControllerAdvice"/>
 	</context:component-scan>
-
+	
 	<!-- thread pool for asynchronous calls -->
 	<bean id="WorkerExecutorService" class="java.util.concurrent.ScheduledThreadPoolExecutor">
 		<constructor-arg value="10" type="int" />
@@ -33,4 +33,44 @@
 	</bean>
 	-->
 	
+    <bean id="configService" class="org.agnitas.emm.core.commons.util.ConfigService">
+   		<property name="permissionService" ref="permissionService" />
+   		<property name="licenseDao" ref="licenseDao" />
+   		<property name="configTableDao" ref="configTableDao" />
+   		<property name="companyInfoDao" ref="companyInfoDao" />
+   		<property name="serverMessageDao" ref="serverMessageDao" />
+   		<property name="profileFieldService" ref="profileFieldService" />
+   	</bean>
+    
+    <bean id="permissionService" class="com.agnitas.emm.core.permission.service.PermissionServiceImpl">
+    	<property name="permissionDao" ref="permissionDao" />
+    </bean>
+	
+    <bean id="permissionDao" class="com.agnitas.dao.impl.PermissionDaoImpl" >
+        <property name="dataSource" ref="dataSource" />
+    </bean>
+    
+    <bean id="licenseDao" class="com.agnitas.dao.impl.LicenseDaoImpl">
+        <property name="dataSource" ref="dataSource" />
+    </bean>
+
+    <bean id="profileFieldDao" class="com.agnitas.dao.impl.ProfileFieldDaoImpl">
+   		<property name="dataSource" ref="dataSource" />
+   	</bean>
+    
+    <bean id="profileFieldService" class="com.agnitas.emm.core.profilefields.service.impl.ProfileFieldServiceImpl">
+   		<property name="profileFieldDao" ref="profileFieldDao" />
+    </bean>
+    
+    <bean id="configTableDao" class="com.agnitas.dao.impl.ConfigTableDaoImpl">
+   		<property name="dataSource" ref="dataSource" />
+   	</bean>
+    
+    <bean id="companyInfoDao" class="org.agnitas.emm.core.commons.util.CompanyInfoDao">
+   		<property name="dataSource" ref="dataSource" />
+   	</bean>
+    
+    <bean id="serverMessageDao" class="com.agnitas.dao.impl.ComServerMessageDaoImpl">
+   		<property name="dataSource" ref="dataSource" />
+   	</bean>
 </beans>

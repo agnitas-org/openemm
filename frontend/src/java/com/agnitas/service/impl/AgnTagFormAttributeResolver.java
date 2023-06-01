@@ -19,7 +19,7 @@ import org.springframework.stereotype.Component;
 
 import com.agnitas.beans.AgnTagAttributeDto;
 import com.agnitas.beans.AgnTagSelectAttributeDto;
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.dao.UserFormDao;
 import com.agnitas.service.AgnTagAttributeResolver;
 import com.agnitas.userform.bean.UserForm;
@@ -35,7 +35,7 @@ public class AgnTagFormAttributeResolver implements AgnTagAttributeResolver {
 
 
     @Override
-    public AgnTagAttributeDto resolve(final ComAdmin admin, final String tag, final String attribute) throws Exception {
+    public AgnTagAttributeDto resolve(final Admin admin, final String tag, final String attribute) throws Exception {
         if ("agnFORM".equals(tag) && "name".equals(attribute)) {
             final List<String> names = userFormDao.getUserForms(admin.getCompanyID())
                     .stream().filter(UserForm::isActive).map(UserForm::getFormName).collect(Collectors.toList());

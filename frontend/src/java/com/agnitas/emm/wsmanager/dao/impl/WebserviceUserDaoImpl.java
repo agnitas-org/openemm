@@ -12,9 +12,7 @@ package com.agnitas.emm.wsmanager.dao.impl;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.time.ZonedDateTime;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -188,8 +186,12 @@ public class WebserviceUserDaoImpl extends PaginatedBaseDaoImpl implements Webse
 	}
 
 	@Override
-	public int getNumberOfWebserviceUsers() {
-		return selectInt(logger, "SELECT COUNT(*) FROM webservice_user_tbl");
+	public int getNumberOfWebserviceUsers(int companyID) {
+		if (companyID > 0) {
+			return selectInt(logger, "SELECT COUNT(*) FROM webservice_user_tbl WHERE company_id = ?", companyID);
+		} else {
+			return selectInt(logger, "SELECT COUNT(*) FROM webservice_user_tbl");
+		}
 	}
 	
 	private final Set<String> loadGrantedPermissions(final String username) {
@@ -228,13 +230,6 @@ public class WebserviceUserDaoImpl extends PaginatedBaseDaoImpl implements Webse
 		for(final int groupID : user.getGrantedPermissionGroupIDs()) {
 			this.update(logger, insertGroups, user.getUsername(), groupID);
 		}
-	}
-
-	@Override
-	public final void updateLastLoginDate(final String username, final ZonedDateTime loginDate) {
-		final String sql = "UPDATE webservice_user_tbl SET last_login_date=? WHERE username=?";
-		
-		update(logger, sql, Date.from(loginDate.toInstant()), username);
 	}
 
 	@Override

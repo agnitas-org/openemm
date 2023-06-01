@@ -10,7 +10,7 @@
 
 package com.agnitas.emm.core.supervisor.service;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.supervisor.beans.Supervisor;
 
 /**
@@ -92,7 +92,7 @@ public class SupervisorUtil {
 	 * 
 	 * @return {@link Supervisor} or null
 	 */
-	public static Supervisor extractSupervisor(ComAdmin admin) {
+	public static Supervisor extractSupervisor(Admin admin) {
 		return admin.getSupervisor();
 	}
 }

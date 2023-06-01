@@ -168,10 +168,10 @@ currentrow = 0;]]></method>
             <method name="fetch"><![CDATA[if( currentrow < trackingPointsClicksList.size() ){
 	row["TARGET_GROUP"]=  trackingPointsClicksList.get(currentrow).getTargetGroup()
 	row["PAGETAG"] = trackingPointsClicksList.get(currentrow).getPagetag();
-	row["CLICKS_GROS"] = trackingPointsClicksList.get(currentrow).getClicks_gros();
-	row["CLICKS_NET"] = trackingPointsClicksList.get(currentrow).getClicks_net();
+	row["CLICKS_GROS"] = trackingPointsClicksList.get(currentrow).getClicksGross();
+	row["CLICKS_NET"] = trackingPointsClicksList.get(currentrow).getClicksNet();
 	row["TRACKINGPOINT"] = trackingPointsClicksList.get(currentrow).getTrackingPoint();
-	row["COLUMN_INDEX"] = trackingPointsClicksList.get(currentrow).getColumn_index();
+	row["COLUMN_INDEX"] = trackingPointsClicksList.get(currentrow).getColumnIndex();
 	currentrow++ ;
 	return  true;
 }

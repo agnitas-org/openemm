@@ -1,21 +1,18 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-<%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
-<emm:CheckLogon/>
-
-<%--@elvariable id="SHOW_SUPERVISOR_PERMISSION_MANAGEMENT" type="java.lang.Boolean"--%>
+<%--@elvariable id="showSupervisorPermissionManagement" type="java.lang.Boolean"--%>
 
 <c:choose>
-	<c:when test="${SHOW_SUPERVISOR_PERMISSION_MANAGEMENT}">
-		<c:set var="agnNavigationKey"		value="userselfservice_with_sv_login"				scope="request" />
-	</c:when>
-	<c:otherwise>
-		<c:set var="agnNavigationKey"		value="userselfservice"				scope="request" />
-	</c:otherwise>
+    <c:when test="${showSupervisorPermissionManagement}">
+        <c:set var="agnNavigationKey" value="userselfservice_with_sv_login" scope="request" />
+    </c:when>
+    <c:otherwise>
+        <c:set var="agnNavigationKey" value="userselfservice" scope="request" />
+    </c:otherwise>
 </c:choose>
-	
+
 <c:set var="agnTitleKey" 			value="settings.Admin" 			scope="request" />
 <c:set var="agnSubtitleKey" 		value="Welcome" 				scope="request" />
 <c:set var="sidemenu_active" 		value="none" 					scope="request" />

@@ -18,6 +18,7 @@ public interface MediatypeEmail extends Mediatype {
     String ONEPIXEL_TOP = "top";
     
 	String INTELLIAD_ENABLE_PARAM = "intelliad_enabled";
+	String SEND_ENCRYPTED_PARAM = "send_encrypted";
 	String INTELLIAD_STRING_PARAM = "intelliad_string";
 	String BCC_STRING_PARAM = "bcc";
     
@@ -188,6 +189,10 @@ public interface MediatypeEmail extends Mediatype {
      * @param mailingID New value of property mailingID.
      */
     void setMailingID(int mailingID);
+
+    void setEncryptedSend(boolean isEncryptedSend);
+
+    boolean isEncryptedSend();
     
 	/**
      * Getter for property envelopeAdr.
@@ -225,7 +230,7 @@ public interface MediatypeEmail extends Mediatype {
 	// for getting and setting the Follow-Up Method (for clickers, non-clickers and so on).
 	String getFollowUpMethod();
 
-	void setFollowUpMethod(String followUpMethod); 
+	void setFollowUpMethod(String followUpMethod);
 	
 	boolean isSkipempty();
 
@@ -235,7 +240,7 @@ public interface MediatypeEmail extends Mediatype {
 	void deleteFollowupParameters();
 
     /**
-     * Returns if IntelliAd is enabled for mailing. 
+     * Returns if IntelliAd is enabled for mailing.
      * 
      * @return true if IntelliAd is enabled
      */

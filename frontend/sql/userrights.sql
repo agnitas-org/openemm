@@ -82,7 +82,6 @@ INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT
 INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT admin_group_id, 'salutation.delete' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT admin_group_id, 'salutation.show' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT admin_group_id, 'server.status' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
-INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT admin_group_id, 'statistic.load.specific' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT admin_group_id, 'statistic.softbounces.show' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT admin_group_id, 'stats.domains' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT admin_group_id, 'stats.ecs' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
@@ -91,7 +90,6 @@ INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT
 INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT admin_group_id, 'stats.show' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT admin_group_id, 'stats.userform' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT admin_group_id, 'targets.change' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
-INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT admin_group_id, 'targets.createml' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT admin_group_id, 'targets.delete' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT admin_group_id, 'targets.lock' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
 INSERT INTO admin_group_permission_tbl (admin_group_id, permission_name) (SELECT admin_group_id, 'targets.show' FROM admin_group_tbl WHERE shortname = 'OpenEMM');
@@ -199,7 +197,6 @@ INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'salutat
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'salutation.delete');
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'salutation.show');
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'server.status');
-INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'statistic.load.specific');
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'statistic.softbounces.show');
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'stats.domains');
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'stats.ecs');
@@ -208,7 +205,6 @@ INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'stats.m
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'stats.show');
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'stats.userform');
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'targets.change');
-INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'targets.createml');
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'targets.delete');
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'targets.lock');
 INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (1, 'targets.show');

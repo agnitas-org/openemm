@@ -11,6 +11,11 @@
 package org.agnitas.service.impl;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.LineNumberReader;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -19,18 +24,27 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
+import com.agnitas.emm.core.upload.bean.DownloadData;
+import com.agnitas.emm.core.upload.dao.ComUploadDao;
+import com.agnitas.messages.Message;
+import com.agnitas.service.SimpleServiceResult;
 import org.agnitas.beans.impl.ImportStatusImpl;
 import org.agnitas.emm.core.blacklist.service.BlacklistService;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.service.ImportWizardHelper;
 import org.agnitas.service.ImportWizardService;
+import org.agnitas.util.AgnUtils;
 import org.agnitas.util.Blacklist;
 import org.agnitas.util.CsvColInfo;
+import org.agnitas.util.CsvDataInvalidItemCountException;
 import org.agnitas.util.CsvReader;
 import org.agnitas.util.ImportUtils.ImportErrorType;
 import org.agnitas.util.importvalues.ImportMode;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.struts.upload.FormFile;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.web.ComImportWizardForm;
@@ -41,10 +55,158 @@ public class ImportWizardServiceImpl implements ImportWizardService {
     private static final transient Logger logger = LogManager.getLogger(ImportWizardServiceImpl.class);
 
     protected BlacklistService blacklistService;
+    private ConfigService configService;
+    private ComUploadDao uploadDao;
 
     @Required
     public void setBlacklistService(BlacklistService blacklistService) {
         this.blacklistService = blacklistService;
+    }
+
+    @Required
+    public void setConfigService(ConfigService configService) {
+        this.configService = configService;
+    }
+
+    @Required
+    public void setUploadDao(ComUploadDao uploadDao) {
+        this.uploadDao = uploadDao;
+    }
+
+    @Override
+    public SimpleServiceResult checkAndReadCsvFile(int companyId, ComImportWizardForm form) {
+        List<Message> errors = new ArrayList<>();
+        FormFile importFile = null;
+
+        if (!form.isUseCsvUpload() && form.getCsvFile() != null) {
+            importFile = form.getCsvFile();
+            form.setAttachmentCsvFileID(0);
+        } else if (form.isUseCsvUpload() && form.getAttachmentCsvFileID() != 0) {
+            try {
+                importFile = getFormFileByUploadId(form.getAttachmentCsvFileID(), "text/csv");
+            } catch (CsvDataInvalidItemCountException e) {
+                errors.add(Message.of("error.import.data.itemcount", e.getExpected(), e.getActual(), e.getErrorLineNumber()));
+            } catch (Exception e) {
+                errors.add(Message.of("error.import.exception", e.getMessage()));
+            }
+        }
+
+        if (importFile == null) {
+            // bug-fix clean up csvData
+            form.getImportWizardHelper().setFileData(null);
+            form.setCsvFileName(null);
+            form.setAttachmentCsvFileID(0);
+
+            return SimpleServiceResult.simpleError(errors);
+        }
+
+        SimpleServiceResult checkedResult = checkAllowedImportFileSize(companyId, importFile);
+
+        if (checkedResult.isSuccess()) {
+            try {
+                form.getImportWizardHelper().setFileData(importFile.getFileData());
+                form.setCsvFileName(importFile.getFileName());
+            } catch (IOException e) {
+                logger.error("Error occured: " + e.getMessage(), e);
+            }
+        }
+
+        return checkedResult;
+    }
+
+    @Override
+    public FormFile getFormFileByUploadId(int uploadID, String mime) throws Exception {
+        DownloadData downloadData = uploadDao.getDownloadData(uploadID);
+        try (ByteArrayOutputStream os = new ByteArrayOutputStream()) {
+            uploadDao.sendDataToStream(uploadID, os);
+
+            final String fileName = downloadData.getFilename();
+            final byte[] fileData = os.toByteArray();
+            final Integer fileSize = downloadData.getFilesize();
+            final String mimeType = mime;
+
+            return new FormFile() {
+                @Override
+                public void destroy() {
+                    // nothing to do
+                }
+
+                @Override
+                public String getContentType() {
+                    return mimeType;
+                }
+
+                @Override
+                public byte[] getFileData() {
+                    return fileData;
+                }
+
+                @Override
+                public String getFileName() {
+                    return fileName;
+                }
+
+                @Override
+                public int getFileSize() {
+                    return fileSize;
+                }
+
+                @Override
+                public InputStream getInputStream() {
+                    return new ByteArrayInputStream(fileData);
+                }
+
+                @Override
+                public void setContentType(String contentType) {
+                    // nothing to do
+                }
+
+                @Override
+                public void setFileName(String fileNameUnused) {
+                    // nothing to do
+                }
+
+                @Override
+                public void setFileSize(int fileSizeUnused) {
+                    // nothing to do
+                }
+            };
+        } catch (Exception e) {
+            throw e;
+        }
+    }
+
+    private SimpleServiceResult checkAllowedImportFileSize(int companyID, FormFile csvFileToCheck) {
+        int maxSizeAllowedForClassicImport = configService.getIntegerValue(ConfigValue.ClassicImportMaxFileSize, companyID);
+        if (maxSizeAllowedForClassicImport >= 0) {
+            try {
+                int csvFileSize = csvFileToCheck.getFileSize();
+                if (csvFileSize > maxSizeAllowedForClassicImport) {
+                    return SimpleServiceResult.simpleError(Message.of("error.import.maximum_filesize_exceeded", AgnUtils.getHumanReadableNumber(maxSizeAllowedForClassicImport, "Byte", false)));
+                }
+            } catch (Exception e) {
+                return SimpleServiceResult.simpleError(Message.of("error.import.exception", e.getMessage()));
+            }
+        }
+
+        int maxRowsAllowedForClassicImport = configService.getIntegerValue(ConfigValue.ClassicImportMaxRows, companyID);
+        if (maxRowsAllowedForClassicImport >= 0) {
+            // Also there might be an error within the csv structure (escaped linebreaks in CSV), the linebreaks should be counted as csv entries.
+            // This is not fully correct, but allows the user to ignore some invalid csv lines later on in the GUI.
+            try (LineNumberReader lineNumberReader = new LineNumberReader(new InputStreamReader(csvFileToCheck.getInputStream()))) {
+                while ((lineNumberReader.readLine()) != null) {
+                    // Just read through the data to count the number of lines
+                }
+
+                if (lineNumberReader.getLineNumber() > maxRowsAllowedForClassicImport) {
+                    return SimpleServiceResult.simpleError(Message.of("error.import.maxlinesexceeded", lineNumberReader.getLineNumber(), maxRowsAllowedForClassicImport));
+                }
+            } catch (Exception e) {
+                return SimpleServiceResult.simpleError(Message.of("error.import.exception", e.getMessage()));
+            }
+        }
+
+        return new SimpleServiceResult(true);
     }
 
     @Override
@@ -68,7 +230,7 @@ public class ImportWizardServiceImpl implements ImportWizardService {
             helper.getDbAllColumns().remove("customer_id");
         }
 
-        helper.setCsvAllColumns(new ArrayList<CsvColInfo>());
+        helper.setCsvAllColumns(new ArrayList<>());
 
         try {
             char separator = helper.getStatus().getSeparator();
@@ -122,7 +284,7 @@ public class ImportWizardServiceImpl implements ImportWizardService {
         boolean hasKeyColumn = false;
 
         helper.setUniqueValues(new HashSet<>());
-        helper.setParsedContent(new LinkedList<LinkedList<Object>>());
+        helper.setParsedContent(new LinkedList<>());
         helper.setLinesOK(0);
 
         helper.setDbInsertStatus(0);
@@ -186,7 +348,7 @@ public class ImportWizardServiceImpl implements ImportWizardService {
                 String firstLineDataJoined = StringUtils.join(firstLineData, separator);
 
                 // prepare download-files for errors and parsed data
-                helper.setErrorData(new HashMap<ImportErrorType, StringBuffer>());
+                helper.setErrorData(new HashMap<>());
                 helper.getErrorData().put(ImportErrorType.DATE_ERROR, new StringBuffer(firstLineDataJoined + '\n'));
                 helper.getErrorData().put(ImportErrorType.EMAIL_ERROR, new StringBuffer(firstLineDataJoined + '\n'));
                 helper.getErrorData().put(ImportErrorType.KEYDOUBLE_ERROR, new StringBuffer(firstLineDataJoined + '\n'));

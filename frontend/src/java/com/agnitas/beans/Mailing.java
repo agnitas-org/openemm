@@ -17,10 +17,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
 
+import com.agnitas.web.mvc.Popups;
 import org.agnitas.actions.EmmAction;
 import org.agnitas.beans.MailingBase;
 import org.agnitas.beans.MailingComponent;
-import org.agnitas.beans.TrackableLink;
 import org.agnitas.preview.AgnTagError;
 import org.apache.struts.action.ActionMessages;
 import org.springframework.context.ApplicationContext;
@@ -38,8 +38,6 @@ public interface Mailing extends MailingBase {
 
 	String NONE_SPLIT = "none";
 	String YES_SPLIT = "yes";
-
-    void addAttachment(MailingComponent aComp);
 
     void addComponent(MailingComponent aComp);
 
@@ -76,8 +74,6 @@ public interface Mailing extends MailingBase {
 
     int getTargetMode();
 
-    int getTemplateOK();
-
     boolean isIsTemplate();
 
     List<String> cleanupDynTags(Vector<String> keepTags);
@@ -89,7 +85,7 @@ public interface Mailing extends MailingBase {
     boolean parseTargetExpression(String tExp);
 
     Vector<String> scanForLinks(String aText1, String textModuleName, ApplicationContext con, ActionMessages messages, ActionMessages errors) throws Exception;
-    Vector<String> scanForLinks(String aText1, String textModuleName, ApplicationContext con, ActionMessages messages, ActionMessages errors, ComAdmin admin) throws Exception;
+    Vector<String> scanForLinks(String aText1, String textModuleName, ApplicationContext con, ActionMessages messages, ActionMessages errors, Admin admin) throws Exception;
 
     /**
      * search for links
@@ -100,9 +96,10 @@ public interface Mailing extends MailingBase {
 
     /**
      * Sends mailing.
-     * @throws Exception
+     * TODO: use {@link com.agnitas.emm.core.components.service.MailingTriggerService}
      */
-    boolean triggerMailing(int maildropStatusId, Map<String, Object> opts, ApplicationContext con) throws Exception;
+    @Deprecated
+    boolean triggerMailing(int maildropStatusId) throws Exception;
 
     /**
      * Setter for property asciiTemplate.
@@ -149,8 +146,6 @@ public interface Mailing extends MailingBase {
     @Deprecated
     void setTargetMode(int targetMode);
 
-    void setTemplateOK(int templateOK);
-
     String getTargetExpression();
     void setTargetExpression(String targetExpression);
 
@@ -159,6 +154,8 @@ public interface Mailing extends MailingBase {
 
     MediatypeEmail getEmailParam();
 
+    boolean isEncryptedSend();
+
     Map<String, ComTrackableLink> getTrackableLinks();
     void setTrackableLinks(Map<String, ComTrackableLink> trackableLinks);
 
@@ -166,14 +163,13 @@ public interface Mailing extends MailingBase {
 
     DynamicTag getDynamicTagById(int dynId);
 
-    TrackableLink getTrackableLinkById(int urlID);
-
     /**
      * Search for all dependency
      */
     boolean buildDependencies(boolean scanDynTags, ApplicationContext con) throws Exception;
     boolean buildDependencies(boolean scanDynTags, List<String> dynNamesForDeletion, ApplicationContext con, ActionMessages messages, ActionMessages errors) throws Exception;
-    boolean buildDependencies(boolean scanDynTags, List<String> dynNamesForDeletion, ApplicationContext con, ActionMessages messages, ActionMessages errors, ComAdmin admin) throws Exception;
+    boolean buildDependencies(boolean scanDynTags, List<String> dynNamesForDeletion, ApplicationContext con, ActionMessages messages, ActionMessages errors, Admin admin) throws Exception;
+    boolean buildDependencies(Popups popups, boolean scanDynTags, List<String> dynNamesForDeletion, ApplicationContext con, Admin admin) throws Exception;
     boolean buildDependencies(boolean scanDynTags, List<String> dynNamesForDeletion, ApplicationContext con) throws Exception;
 
     Set<MaildropEntry> getMaildropStatus();
@@ -184,13 +180,12 @@ public interface Mailing extends MailingBase {
     int getDeleted();
     void setDeleted(int deleted);
 
-    Map<Integer, ComTarget> getAllowedTargets(ApplicationContext myContext);
-
     boolean getNeedsTarget();
     void setNeedsTarget(boolean needsTarget);
 
     int getLocked();
     void setLocked(int locked);
+    boolean isLocked();
 
     int getPriority();
     void setPriority(int priority);
@@ -234,7 +229,6 @@ public interface Mailing extends MailingBase {
     Integer getClearanceThreshold();
     void setClearanceThreshold(Integer clearanceThreshold);
 
-
     void setClearanceEmail(String clearanceEmail);
     String getClearanceEmail();
 
@@ -250,8 +244,6 @@ public interface Mailing extends MailingBase {
 	 * Returns a list of link properties with are contained in all links of thi mailing.
 	 * Link properties contained in a link but not in all the others are not contained in this list,
 	 * but are contained in the link property list of the specific link additionally to the links of this list.
-	 * 
-	 * @return
 	 */
 	List<LinkProperty> getCommonLinkExtensions();
 	
@@ -261,9 +253,9 @@ public interface Mailing extends MailingBase {
 	
 	Map<String, List<AgnTagError>> checkAgnTagSyntax(ApplicationContext applicationContext) throws Exception;
 
-	int getPreviewComponentId();
-	void setPreviewComponentId(int previewComponentId);
-	
+    int getPreviewComponentId();
+   	void setPreviewComponentId(int previewComponentId);
+
 	MailingContentType getMailingContentType();
 	void setMailingContentType(MailingContentType mailingContentType);
 	Set<Integer> getAllReferencedTargetGroups();

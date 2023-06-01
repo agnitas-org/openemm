@@ -29,7 +29,7 @@ public class MailinglistDAO {
 		Map<String, Object> row;
 
 		try (DBase.With with = dbase.with ()) {
-			row = dbase.querys (with.jdbc (),
+			row = dbase.querys (with.cursor (),
 					    "SELECT * " +
 					    "FROM mailinglist_tbl " +
 					    "WHERE (deleted IS NULL OR deleted = 0) AND mailinglist_id = :mailinglistID",

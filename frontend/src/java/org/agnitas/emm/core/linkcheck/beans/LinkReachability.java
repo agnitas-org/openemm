@@ -20,7 +20,7 @@ public class LinkReachability {
 	/**
 	 * Enumeration of possible availability states.
 	 */
-	public static enum Reachability {
+	public enum Reachability {
 		
 		/** URL target available. */
 		OK,

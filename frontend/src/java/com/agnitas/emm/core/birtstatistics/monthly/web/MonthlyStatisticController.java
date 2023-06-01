@@ -13,10 +13,11 @@ package com.agnitas.emm.core.birtstatistics.monthly.web;
 
 import java.util.Calendar;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.birtstatistics.monthly.dto.MonthlyStatisticDto;
 import com.agnitas.emm.core.birtstatistics.monthly.form.MonthlyStatisticForm;
 import com.agnitas.emm.core.birtstatistics.service.BirtStatisticsService;
+import com.agnitas.web.mvc.XssCheckAware;
 import com.agnitas.web.perm.annotations.PermissionMapping;
 import org.agnitas.service.UserActivityLogService;
 import org.agnitas.util.AgnUtils;
@@ -31,9 +32,8 @@ import org.springframework.web.context.request.RequestContextHolder;
 @Controller
 @RequestMapping("/statistics/monthly")
 @PermissionMapping("monthly.statistics")
-public class MonthlyStatisticController {
+public class MonthlyStatisticController implements XssCheckAware {
 	
-	/** The logger. */
 	private static final Logger logger = LogManager.getLogger(MonthlyStatisticController.class);
 	
 	private static final String MONTH_LIST = "monthList";
@@ -42,9 +42,9 @@ public class MonthlyStatisticController {
 	private static final String BIRT_STATISTIC_URL_WITHOUT_FORMAT = "birtStatisticUrlWithoutFormat";
 	private static final String BIRT_STATISTIC_URL_CSV_REPORT = "birtStatisticUrlCsvReport";
 	
-	private BirtStatisticsService birtStatisticsService;
-	private ConversionService conversionService;
-	private UserActivityLogService userActivityLogService;
+	private final BirtStatisticsService birtStatisticsService;
+	private final ConversionService conversionService;
+	private final UserActivityLogService userActivityLogService;
 	
 	public MonthlyStatisticController(BirtStatisticsService birtStatisticsService, ConversionService conversionService, UserActivityLogService userActivityLogService) {
 		this.birtStatisticsService = birtStatisticsService;
@@ -53,7 +53,7 @@ public class MonthlyStatisticController {
 	}
 	
 	@RequestMapping("/view.action")
-	public String view(ComAdmin admin, MonthlyStatisticForm form, Model model) throws Exception {
+	public String view(Admin admin, MonthlyStatisticForm form, Model model) throws Exception {
 		String sessionId = RequestContextHolder.getRequestAttributes().getSessionId();
 
 		Calendar currentDate = Calendar.getInstance(AgnUtils.getTimeZone(admin));

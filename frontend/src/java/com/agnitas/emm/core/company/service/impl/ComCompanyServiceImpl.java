@@ -22,6 +22,7 @@ import org.agnitas.beans.AdminEntry;
 import org.agnitas.beans.factory.CompanyFactory;
 import org.agnitas.beans.impl.CompanyStatus;
 import org.agnitas.beans.impl.PaginatedListImpl;
+import org.agnitas.dao.exception.target.TargetGroupPersistenceException;
 import org.agnitas.emm.core.commons.password.PasswordExpireSettings;
 import org.agnitas.emm.core.commons.password.policy.PasswordPolicies;
 import org.agnitas.emm.core.commons.util.ConfigService;
@@ -36,11 +37,15 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.ComTarget;
 import com.agnitas.beans.Company;
+import com.agnitas.beans.TargetLight;
 import com.agnitas.dao.ComCompanyDao;
+import com.agnitas.dao.ComTargetDao;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.admin.form.AdminForm;
+import com.agnitas.emm.core.admin.service.AdminGroupService;
 import com.agnitas.emm.core.admin.service.AdminSavingResult;
 import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.bounce.dto.BounceFilterDto;
@@ -60,16 +65,14 @@ import com.agnitas.emm.core.company.service.CompanyTokenService;
 import com.agnitas.emm.core.logon.common.HostAuthenticationCookieExpirationSettings;
 import com.agnitas.emm.core.recipient.service.RecipientProfileHistoryService;
 import com.agnitas.emm.premium.web.SpecialPremiumFeature;
+import com.agnitas.emm.wsmanager.service.WebserviceUserService;
 import com.agnitas.service.ExtendedConversionService;
 import com.agnitas.service.LicenseError;
 import com.agnitas.web.mvc.Popups;
 
 public class ComCompanyServiceImpl implements ComCompanyService {
 
-    /**
-     * The logger.
-     */
-    private static final transient Logger logger = LogManager.getLogger(ComCompanyServiceImpl.class);
+    private static final Logger logger = LogManager.getLogger(ComCompanyServiceImpl.class);
 
     private RecipientProfileHistoryService recipientProfileHistoryService;
     private UserActivityLogService userActivityLogService;
@@ -77,9 +80,12 @@ public class ComCompanyServiceImpl implements ComCompanyService {
     private CompanyFactory companyFactory;
     private ConfigService configService;
     private AdminService adminService;
+    private AdminGroupService adminGroupService;
+    private WebserviceUserService webserviceUserService;
     private BounceFilterService bounceFilterService;
     protected ComCompanyDao companyDao;
     private CompanyTokenService companyTokenService;
+    private ComTargetDao targetDao;
 
     @Override
     public boolean initTables(int companyID) {
@@ -146,7 +152,7 @@ public class ComCompanyServiceImpl implements ComCompanyService {
     }
 
     @Override
-    public int save(ComAdmin admin, CompanyCreateForm form, Popups popups, String sessionId) throws Exception {
+    public int create(Admin admin, CompanyCreateForm form, Popups popups, String sessionId) throws Exception {
         Company company = companyFactory.newCompany();
         company.setCreatorID(admin.getCompanyID());
         company.setStatus(CompanyStatus.ACTIVE);
@@ -178,7 +184,7 @@ public class ComCompanyServiceImpl implements ComCompanyService {
     }
 
     @Override
-    public int update(ComAdmin admin, CompanyViewForm form) throws Exception {
+    public int update(Admin admin, CompanyViewForm form) throws Exception {
         Company company = companyDao.getCompany(form.getCompanyInfoDto().getId());
         UserAction companyChangesLog = getCompanyChangesLog(form, company);
         setupInfo(company, form.getCompanyInfoDto());
@@ -285,7 +291,7 @@ public class ComCompanyServiceImpl implements ComCompanyService {
         company.setBusiness(settingsDto.getBusiness());
     }
 
-    protected void saveConfigValues(ComAdmin admin, int companyId, CompanySettingsDto settings) {
+    protected void saveConfigValues(Admin admin, int companyId, CompanySettingsDto settings) {
         if (admin.permissionAllowed(Permission.COMPANY_AUTHENTICATION)) {
             // Write 2FA settings
             writeHostAuthSettings(settings, companyId, admin);
@@ -332,15 +338,24 @@ public class ComCompanyServiceImpl implements ComCompanyService {
         // Write password policy
         writePasswordSecuritySettings(settings, companyId, admin);
 
-        checkChangeAndLogCompanyInfoBooleanValue(ConfigValue.SendPasswordChangedNotification, companyId, admin, settings.isSendPasswordChangedNotification()) ;
-        
+        checkChangeAndLogCompanyInfoBooleanValue(ConfigValue.SendPasswordChangedNotification, companyId, admin, settings.isSendPasswordChangedNotification());
+        checkChangeAndLogCompanyInfoBooleanValue(ConfigValue.SendEncryptedMailings, companyId, admin, settings.isSendEncryptedMailings());
+
         if (settings.getMaxAdminMails() > 0) {
         	checkChangeAndLogCompanyInfoIntegerValue(ConfigValue.MaxAdminMails, companyId, admin, settings.getMaxAdminMails()) ;
         } else {
         	checkChangeAndLogCompanyInfoIntegerValue(ConfigValue.MaxAdminMails, companyId, admin, Integer.parseInt(ConfigValue.MaxAdminMails.getDefaultValue()));
         }
         
+        if (settings.getMaxFields() > 0) {
+        	checkChangeAndLogCompanyInfoIntegerValue(ConfigValue.MaxFields, companyId, admin, settings.getMaxFields()) ;
+        } else {
+        	checkChangeAndLogCompanyInfoIntegerValue(ConfigValue.MaxFields, companyId, admin, Integer.parseInt(ConfigValue.MaxFields.getDefaultValue()));
+        }
+        
         checkChangeAndLogCompanyInfoValue(ConfigValue.ImportAlwaysInformEmail, companyId, admin, settings.getImportAlwaysInformEmail());
+        
+        checkChangeAndLogCompanyInfoBooleanValue(ConfigValue.AllowUnnormalizedEmails, companyId, admin, !settings.isNormalizeEmails());
         
         checkChangeAndLogCompanyInfoValue(ConfigValue.ExportAlwaysInformEmail, companyId, admin, settings.getExportAlwaysInformEmail());
         
@@ -377,8 +392,6 @@ public class ComCompanyServiceImpl implements ComCompanyService {
 	        	checkChangeAndLogCompanyInfoIntegerValue(ConfigValue.ExpireStatistics, companyId, admin, newExpireStatistics);
 	    	}
 	        
-	        checkChangeAndLogCompanyInfoIntegerValue(ConfigValue.ExpireOnePixel, companyId, admin, settings.getExpireOnePixel());
-	        
 	        checkChangeAndLogCompanyInfoIntegerValue(ConfigValue.ExpireSuccess, companyId, admin, settings.getExpireSuccess());
 	        
         	checkChangeAndLogCompanyInfoIntegerValue(ConfigValue.ExpireRecipient, companyId, admin, settings.getRecipientExpireDays());
@@ -388,11 +401,15 @@ public class ComCompanyServiceImpl implements ComCompanyService {
 	        checkChangeAndLogCompanyInfoIntegerValue(ConfigValue.ExpireUpload, companyId, admin, settings.getExpireUpload());
 	        
 	        checkChangeAndLogCompanyInfoBooleanValue(ConfigValue.WriteCustomerOpenOrClickField, companyId, admin, settings.isWriteCustomerOpenOrClickField());
-	        
+
+			if (settings.isRegenerateTargetSqlOnce()) {
+				regenerateTargetSql(companyId);
+				settings.setRegenerateTargetSqlOnce(false);
+			}
         }
     }
     
-    private final void writePasswordSecuritySettings(final CompanySettingsDto settings, final int companyId, final ComAdmin admin) {
+    private void writePasswordSecuritySettings(final CompanySettingsDto settings, final int companyId, final Admin admin) {
     	// Password policy
     	checkChangeAndLogCompanyInfoValue(ConfigValue.PasswordPolicy, companyId, admin, PasswordPolicies.findByName(settings.getPasswordPolicyName()).getPolicyName());
      	
@@ -411,7 +428,7 @@ public class ComCompanyServiceImpl implements ComCompanyService {
 		}
     }
 
-	private final void writeLoginLockSettingsConfigValues(final CompanySettingsDto companySettings, final int companyId, final ComAdmin admin) {
+	private void writeLoginLockSettingsConfigValues(final CompanySettingsDto companySettings, final int companyId, final Admin admin) {
     	if (companyId != 0) { // Do not overwrite global settings
     		final Optional<LoginlockSettings> settingsOptional = LoginlockSettings.fromName(companySettings.getLoginlockSettingsName());
     		
@@ -437,7 +454,7 @@ public class ComCompanyServiceImpl implements ComCompanyService {
     	}
     }
     
-    private final void writeHostAuthSettings(final CompanySettingsDto settings, final int companyId, final ComAdmin admin) {
+    private void writeHostAuthSettings(final CompanySettingsDto settings, final int companyId, final Admin admin) {
     	// Write global 2FA enable state
     	checkChangeAndLogCompanyInfoBooleanValue(ConfigValue.HostAuthentication, companyId, admin, settings.isHasTwoFactorAuthentication());
 
@@ -446,7 +463,7 @@ public class ComCompanyServiceImpl implements ComCompanyService {
     	checkChangeAndLogCompanyInfoIntegerValue(ConfigValue.HostAuthenticationHostIdCookieExpireDays, companyId, admin, cookieExpireSettings.getExpireDays());
     }
 
-    protected void checkChangeAndLogCompanyInfoValue(ConfigValue configValue, final int companyId, final ComAdmin admin, String newValue) {
+    protected void checkChangeAndLogCompanyInfoValue(ConfigValue configValue, final int companyId, final Admin admin, String newValue) {
 		String currentValue = configService.getValue(configValue, companyId);
 		if (currentValue == null) {
 			currentValue = "";
@@ -460,7 +477,7 @@ public class ComCompanyServiceImpl implements ComCompanyService {
 		}
 	}
 
-	protected void checkChangeAndLogCompanyInfoBooleanValue(ConfigValue configValue, final int companyId, final ComAdmin admin, boolean newValue) {
+	protected void checkChangeAndLogCompanyInfoBooleanValue(ConfigValue configValue, final int companyId, final Admin admin, boolean newValue) {
 		boolean currentValue = configService.getBooleanValue(configValue, companyId);
 		if (currentValue != newValue) {
 			configService.writeOrDeleteIfDefaultValue(configValue, companyId, newValue ? "true" : "false", "Changed by: " + admin.getUsername() + (admin.isSupervisor() ? "/" + admin.getSupervisor().getSupervisorName() : ""));
@@ -468,7 +485,7 @@ public class ComCompanyServiceImpl implements ComCompanyService {
 		}
 	}
 
-	protected void checkChangeAndLogCompanyInfoIntegerValue(ConfigValue configValue, final int companyId, final ComAdmin admin, int newValue) {
+	protected void checkChangeAndLogCompanyInfoIntegerValue(ConfigValue configValue, final int companyId, final Admin admin, int newValue) {
 		int currentValue = configService.getIntegerValue(configValue, companyId);
 		if (currentValue != newValue) {
 			configService.writeOrDeleteIfDefaultValue(configValue, companyId, Integer.toString(newValue), "Changed by: " + admin.getUsername() + (admin.isSupervisor() ? "/" + admin.getSupervisor().getSupervisorName() : ""));
@@ -476,7 +493,7 @@ public class ComCompanyServiceImpl implements ComCompanyService {
 		}
 	}
 
-    private int initTableAndCopyTemplates(Company company, String sessionId) throws Exception {
+    private void initTableAndCopyTemplates(Company company, String sessionId) throws Exception {
         int companyId = company.getId();
 
         if (initTables(companyId)) {
@@ -499,12 +516,9 @@ public class ComCompanyServiceImpl implements ComCompanyService {
             }
 
             generateMissingTemplateThumbnails(companyId, sessionId);
-
-            return companyId;
         }
 
         logger.info("Cannot successfully create new company: " + companyId);
-        return 0;
     }
 
     void generateMissingTemplateThumbnails(int companyId, String sessionId) {
@@ -515,7 +529,7 @@ public class ComCompanyServiceImpl implements ComCompanyService {
     	// do nothing
     }
 
-    private int createExecutiveAdmin(ComAdmin admin, CompanyInfoDto companyInfo, CompanyAdminDto companyAdmin, int newCompanyID, Popups popups) {
+    private int createExecutiveAdmin(Admin admin, CompanyInfoDto companyInfo, CompanyAdminDto companyAdmin, int newCompanyID, Popups popups) {
         AdminForm adminForm = new AdminForm();
         adminForm.setAdminID(0);
         adminForm.setCompanyID(newCompanyID);
@@ -528,9 +542,12 @@ public class ComCompanyServiceImpl implements ComCompanyService {
         adminForm.setFirstname(companyAdmin.getFirstName());
         adminForm.setFullname(companyAdmin.getLastName());
         adminForm.setPassword(companyAdmin.getPassword());
-        List<Integer> adminGroupIds = new ArrayList<>();
-        adminGroupIds.add(adminService.adminGroupExists(admin.getCompanyID(), "Administrator"));
-        adminForm.setGroupIDs(adminGroupIds);
+
+        if (adminGroupService.adminGroupExists(admin.getCompanyID(), "Administrator")) {
+            List<Integer> adminGroupIds = new ArrayList<>();
+            adminGroupIds.add(adminGroupService.getAdminGroupByName("Administrator", admin.getCompanyID()).getGroupID());
+        	adminForm.setGroupIDs(adminGroupIds);
+        }
 
         if (companyAdmin.getLanguage() != null) {
             int aPos = companyAdmin.getLanguage().indexOf('_');
@@ -544,7 +561,7 @@ public class ComCompanyServiceImpl implements ComCompanyService {
         AdminSavingResult result = adminService.saveAdmin(adminForm, false, admin);
 
         if (result.isSuccess()) {
-            ComAdmin savedAdmin = result.getResult();
+            Admin savedAdmin = result.getResult();
             return savedAdmin.getAdminID();
         } else {
             popups.alert(result.getError());
@@ -639,6 +656,16 @@ public class ComCompanyServiceImpl implements ComCompanyService {
     }
 
 	@Required
+    public void setAdminGroupService(AdminGroupService adminGroupService) {
+        this.adminGroupService = adminGroupService;
+    }
+
+	@Required
+    public void setWebserviceUserService(WebserviceUserService webserviceUserService) {
+        this.webserviceUserService = webserviceUserService;
+    }
+
+	@Required
     public void setCompanyDao(ComCompanyDao companyDao) {
         this.companyDao = companyDao;
     }
@@ -659,9 +686,27 @@ public class ComCompanyServiceImpl implements ComCompanyService {
 	public final void setCompanyTokenService(final CompanyTokenService service) {
 		this.companyTokenService = Objects.requireNonNull(service, "CompanyTokenService is null");
 	}
+	
+	@Required
+	public void setTargetDao(ComTargetDao targetDao) {
+	    this.targetDao = targetDao;
+	}
 
 	@Override
 	public int getNumberOfCompanies() {
 		return companyDao.getNumberOfCompanies();
+	}
+
+	private void regenerateTargetSql(int companyID) {
+		for (TargetLight targetLight : targetDao.getTargetLights(companyID, false)) {
+			if (!targetLight.isLocked()) {
+				try {
+					ComTarget target = targetDao.getTarget(targetLight.getId(), companyID);
+					targetDao.saveTarget(target);
+				} catch (TargetGroupPersistenceException e) {
+					e.printStackTrace();
+				}
+			}
+		}
 	}
 }

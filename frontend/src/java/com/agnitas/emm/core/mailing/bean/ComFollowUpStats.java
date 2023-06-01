@@ -15,9 +15,9 @@ import java.sql.Timestamp;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public class ComFollowUpStats {
-	private int resultID;	// 
-	private int companyID;	
-	private int basemailID;	
+	private int resultID;	//
+	private int companyID;
+	private int basemailID;
 	private int followupID;
 	private Timestamp creationDate;	// when was this entry created
 	private int duration;		// how long was this statement running
@@ -78,7 +78,7 @@ public class ComFollowUpStats {
 	}
 	public void setFollowupID(int followupID) {
 		this.followupID = followupID;
-	}	
+	}
 	
 	
 }

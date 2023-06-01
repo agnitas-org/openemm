@@ -10,6 +10,10 @@
 
 package com.agnitas.emm.core.birtreport.dto;
 
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.stream.Collectors;
+
 public enum ReportSettingsType {
 
     COMPARISON(1, "mailing.comparison", false, false),
@@ -51,5 +55,11 @@ public enum ReportSettingsType {
             }
         }
         return COMPARISON;
+    }
+
+    public static Collection<Integer> keys() {
+        return Arrays.stream(ReportSettingsType.values())
+                .map(ReportSettingsType::getKey)
+                .collect(Collectors.toList());
     }
 }

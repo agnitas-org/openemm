@@ -36,6 +36,6 @@ public final class ForbiddenTagError extends AbstractTagError {
 
 	@Override
 	public Message toMessage() {
-		return Message.of("GWUA.error.html.forbiddenTag", getTagName());
+		return Message.of("error.html.forbiddenTag", getTagName());
 	}
 }

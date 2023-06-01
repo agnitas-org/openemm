@@ -10,51 +10,27 @@
 
 package com.agnitas.reporting.birt.external.dataset;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.List;
-
+import com.agnitas.messages.I18nString;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.agnitas.messages.I18nString;
+import java.util.List;
 
 public class TargetDescriptionDataSet extends BIRTDataSet {
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(TargetDescriptionDataSet.class);
-	
-	private static final String ALL_TARGETS = "statistic.all_subscribers";
 
-	public List<String> getTargetDescription (String targetID, String language){
+    private static final Logger logger = LogManager.getLogger(TargetDescriptionDataSet.class);
 
-		if(StringUtils.isBlank(language)){
-			language = "EN";
-		}
-				
-		List<String> targetDescription = new ArrayList<>();
-		if(StringUtils.isBlank(targetID)){
-			targetDescription.add(I18nString.getLocaleString(ALL_TARGETS, language));
-			return targetDescription;
-		}
-		String query = getTargetDescriptionQuery(targetID);
-        try (Connection connection = getDataSource().getConnection();
-        		Statement statement = connection.createStatement();
-        		ResultSet resultSet = statement.executeQuery(query)) {
-			while (resultSet.next()){
-				targetDescription.add(resultSet.getString("target_name"));
-			}
-		} catch (SQLException e) {
-			logger.error(" SQL-Exception ! Target-Description-Query is: " + query , e);
-		}
-		return targetDescription;
-	}
+    public List<String> getTargetDescription(String targetID, String language) {
+        if (StringUtils.isBlank(targetID)) {
+            if (StringUtils.isBlank(language)) {
+                language = "EN";
+            }
 
-	private String getTargetDescriptionQuery(String targetID) {
-		return " select target_shortname target_name from dyn_target_tbl where target_id in (" + targetID +")";
-	}
+            return List.of(I18nString.getLocaleString(CommonKeys.ALL_SUBSCRIBERS, language));
+        }
 
+        String query = "SELECT target_shortname FROM dyn_target_tbl WHERE target_id IN (" + targetID + ")";
+        return select(logger, query, (rs, rowNum) -> rs.getString("target_shortname"));
+    }
 }

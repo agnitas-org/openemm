@@ -19,8 +19,8 @@ import com.agnitas.mailing.autooptimization.beans.ComOptimization;
 
 public interface ComOptimizationStatService {
 
-	public CampaignStatEntry getStat(int mailingID,@VelocityCheck int companyID);
+	CampaignStatEntry getStat(int mailingID, @VelocityCheck int companyID);
 	
-	public Hashtable<Integer, CampaignStatEntry> getStat(ComOptimization optimization);
+	Hashtable<Integer, CampaignStatEntry> getStat(ComOptimization optimization);
 	
 }

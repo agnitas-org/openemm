@@ -20,8 +20,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import jakarta.servlet.http.HttpServletRequest;
-
 import org.agnitas.beans.BindingEntry;
 import org.agnitas.beans.BindingEntry.UserType;
 import org.agnitas.beans.Recipient;
@@ -31,7 +29,6 @@ import org.agnitas.dao.UserStatus;
 import org.agnitas.emm.core.blacklist.service.BlacklistService;
 import org.agnitas.emm.core.recipient.RecipientUtils;
 import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.agnitas.service.ColumnInfoService;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.DbColumnType;
@@ -45,9 +42,12 @@ import org.apache.logging.log4j.Logger;
 import com.agnitas.beans.ProfileField;
 import com.agnitas.dao.ComBindingEntryDao;
 import com.agnitas.dao.ComRecipientDao;
-import com.agnitas.dao.impl.ComAdminDaoImpl;
+import com.agnitas.dao.impl.AdminDaoImpl;
 import com.agnitas.dao.impl.ComCompanyDaoImpl;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.service.ColumnInfoService;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 /**
  * Manually executed test
@@ -55,7 +55,7 @@ import com.agnitas.emm.core.mediatypes.common.MediaTypes;
  */
 public class RecipientImpl implements Recipient {
 	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(ComAdminDaoImpl.class);
+	private static final transient Logger logger = LogManager.getLogger(AdminDaoImpl.class);
 
 	protected ColumnInfoService columnInfoService;
 	protected ComRecipientDao recipientDao;

@@ -10,8 +10,6 @@
 
 package com.agnitas.reporting.birt.external.dataset;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -19,22 +17,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import com.agnitas.reporting.birt.external.beans.LightMailing;
 import com.agnitas.reporting.birt.external.beans.LightTarget;
 import com.agnitas.reporting.birt.external.beans.MailingClickStatsPerTargetRow;
 import com.agnitas.reporting.birt.external.beans.MailingClickStatsPerTargetWithMailingIdRow;
 import com.agnitas.reporting.birt.external.beans.SendStatRow;
 import com.agnitas.reporting.birt.external.beans.SendStatWithMailingIdRow;
 import com.agnitas.reporting.birt.external.utils.BirtReporUtils;
+import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class MailingStatisticDataSet extends BIRTDataSet {
-	private static final transient Logger logger = LogManager.getLogger(MailingStatisticDataSet.class);
+
+	private static final Logger logger = LogManager.getLogger(MailingStatisticDataSet.class);
 
     private final MailingSummaryDataSet mailingSummaryDataSet = new MailingSummaryDataSet();
     private final MailingURLClicksDataSet mailingURLClicksDataSet = new MailingURLClicksDataSet();
@@ -160,7 +156,7 @@ public class MailingStatisticDataSet extends BIRTDataSet {
             int tempTableID = prepareSummaryReport(mailingId, companyID, targetGroupIds, hiddenTargetGroup, CommonKeys.TYPE_ALL_SUBSCRIBERS, figures, dateFormats);
             List<MailingSummaryDataSet.MailingSummaryRow> summaryData = mailingSummaryDataSet.getSummaryData(tempTableID);
 
-            for (SendStatRow row : summaryData) {
+            for (SendStatRow row : summaryData) { 
                 if (row.getCategoryindex() == CommonKeys.REVENUE_INDEX) {
                     //cheat for possibility sort data by category index
                     //and this fix will let to place revenue to the bottom of table
@@ -189,42 +185,42 @@ public class MailingStatisticDataSet extends BIRTDataSet {
             List<MailingClickStatsPerTargetWithMailingIdRow> resultListAdministrativeLinks = new LinkedList<>();
             List<MailingClickStatsPerTargetRow> urlClicksData = mailingURLClicksDataSet.getUrlClicksData(tempTableID);
             for (MailingClickStatsPerTargetRow row : urlClicksData) {
-                if (!links.containsKey(row.getUrl_id())) {
+                if (!links.containsKey(row.getUrlId())) {
                     LinkGeneralInfo linkGeneralInfo = new LinkGeneralInfo();
-                    links.put(row.getUrl_id(), linkGeneralInfo);
+                    links.put(row.getUrlId(), linkGeneralInfo);
 
                     linkGeneralInfo.setMailingId(mailingId);
                     linkGeneralInfo.setUrl(row.getUrl());
-                    linkGeneralInfo.setUrlId(row.getUrl_id());
-                    linkGeneralInfo.setAdminLink(row.isAdmin_link());
-                    if (row.isAdmin_link()) {
+                    linkGeneralInfo.setUrlId(row.getUrlId());
+                    linkGeneralInfo.setAdminLink(row.isAdminLink());
+                    if (row.isAdminLink()) {
                         linkGeneralInfo.setLinkItemNumber(0);
-                        urlIdToItemLinkNumber.put(row.getUrl_id(), 0);
+                        urlIdToItemLinkNumber.put(row.getUrlId(), 0);
                     } else {
                         itemLinkNumber++;
                         linkGeneralInfo.setLinkItemNumber(itemLinkNumber);
-                        urlIdToItemLinkNumber.put(row.getUrl_id(), itemLinkNumber);
+                        urlIdToItemLinkNumber.put(row.getUrlId(), itemLinkNumber);
                     }
                 }
                 if (!row.isMobile()) {
-                    if (row.isAdmin_link()) {
+                    if (row.isAdminLink()) {
                         resultListAdministrativeLinks.add(new MailingClickStatsPerTargetWithMailingIdRow(row, mailingId, 0));
                     } else {
-                        resultListLeadingLinks.add(new MailingClickStatsPerTargetWithMailingIdRow(row, mailingId, urlIdToItemLinkNumber.get(row.getUrl_id())));
+                        resultListLeadingLinks.add(new MailingClickStatsPerTargetWithMailingIdRow(row, mailingId, urlIdToItemLinkNumber.get(row.getUrlId())));
                     }
-                    links.get(row.getUrl_id()).getTargetGroups().add(row.getTargetgroup());
+                    links.get(row.getUrlId()).getTargetGroups().add(row.getTargetgroup());
                 }
             }
 
             resultList.addAll(resultListLeadingLinks);
 
             for (MailingClickStatsPerTargetWithMailingIdRow administrativeLink : resultListAdministrativeLinks) {
-                if (links.get(administrativeLink.getUrl_id()).getLinkItemNumber() == 0) {
+                if (links.get(administrativeLink.getUrlId()).getLinkItemNumber() == 0) {
                     itemLinkNumber++;
-                    links.get(administrativeLink.getUrl_id()).setLinkItemNumber(itemLinkNumber);
-                    urlIdToItemLinkNumber.put(administrativeLink.getUrl_id(), itemLinkNumber);
+                    links.get(administrativeLink.getUrlId()).setLinkItemNumber(itemLinkNumber);
+                    urlIdToItemLinkNumber.put(administrativeLink.getUrlId(), itemLinkNumber);
                 }
-                administrativeLink.setLinkItemNumber(urlIdToItemLinkNumber.get(administrativeLink.getUrl_id()));
+                administrativeLink.setLinkItemNumber(urlIdToItemLinkNumber.get(administrativeLink.getUrlId()));
             }
             resultList.addAll(resultListAdministrativeLinks);
         }
@@ -236,10 +232,10 @@ public class MailingStatisticDataSet extends BIRTDataSet {
                     if (!entry.getTargetGroups().contains(target.getName())) {
                         MailingClickStatsPerTargetRow missedRow = new MailingClickStatsPerTargetRow();
                         missedRow.setTargetgroup(target.getName());
-                        missedRow.setUrl_id(entry.getUrlId());
+                        missedRow.setUrlId(entry.getUrlId());
                         missedRow.setUrl(entry.getUrl());
-                        missedRow.setAdmin_link(entry.isAdminLink());
-                        missedRow.setColumn_index(targets.indexOf(target) + 2);
+                        missedRow.setAdminLink(entry.isAdminLink());
+                        missedRow.setColumnIndex(targets.indexOf(target) + 2);
                         resultList.add(new MailingClickStatsPerTargetWithMailingIdRow(missedRow, entry.getMailingId(), entry.getLinkItemNumber()));
                     }
                 }
@@ -252,23 +248,23 @@ public class MailingStatisticDataSet extends BIRTDataSet {
             int totalGross = 0;
             int totalNet = 0;
             for (MailingClickStatsPerTargetWithMailingIdRow row : resultList) {
-                if (row.getMailingId() == mailingId && row.getColumn_index() == CommonKeys.ALL_SUBSCRIBERS_INDEX) {
-                    totalGross += row.getClicks_gross();
-                    totalNet += row.getClicks_net();
+                if (row.getMailingId() == mailingId && row.getColumnIndex() == CommonKeys.ALL_SUBSCRIBERS_INDEX) {
+                    totalGross += row.getClicksGross();
+                    totalNet += row.getClicksNet();
                 }
             }
             // count the rates
             for (MailingClickStatsPerTargetWithMailingIdRow row : resultList) {
                 if (row.getMailingId() == mailingId) {
                     if (totalGross != 0) {
-                        row.setClicks_gross_percent(((float) row.getClicks_gross()) / ((float) totalGross));
+                        row.setClicksGrossPercent(((float) row.getClicksGross()) / ((float) totalGross));
                     } else {
-                        row.setClicks_gross_percent(0.0f);
+                        row.setClicksGrossPercent(0.0f);
                     }
                     if (totalNet != 0) {
-                        row.setClicks_net_percent(((float) row.getClicks_net()) / ((float) totalNet));
+                        row.setClicksNetPercent(((float) row.getClicksNet()) / ((float) totalNet));
                     } else {
-                        row.setClicks_net_percent(0.0f);
+                        row.setClicksNetPercent(0.0f);
                     }
                 }
             }
@@ -279,62 +275,6 @@ public class MailingStatisticDataSet extends BIRTDataSet {
 
     public List<LightTarget> getTargets(@VelocityCheck int companyID, String targetGroupIds) {
         return getTargets(targetGroupIds, companyID);
-    }
-
-    public List<TargetGroupData> getTargetsByMailingIds(@VelocityCheck int companyID, String mailings) {
-        List<TargetGroupData> targetGroups = new ArrayList<>();
-        List<Integer> mailingIds = parseCommaSeparatedIds(mailings);
-        for (Integer mailingId : mailingIds) {
-            LightMailing mailing = mailingDataSet.getMailing(mailingId, companyID);
-            String targExp = mailing.getTargetExpression();
-            if (StringUtils.isBlank(targExp)) {
-                targetGroups.add(new TargetGroupData(0, mailingId, "statistic.all_subscribers"));
-            } else {
-                targExp = targExp.replace('&',',');
-                targExp = targExp.replace('|',',');
-                List<LightTarget> list = getTargets(Arrays.asList(targExp.split(",")), companyID);
-                for (LightTarget lt : list) {
-                    targetGroups.add(new TargetGroupData(lt.getId(), mailingId, lt.getName()));
-                }
-            }
-        }
-        return targetGroups;
-    }
-
-    public static class TargetGroupData {
-        private int targetGroupId;
-        private int mailingId;
-        private String name;
-
-        public TargetGroupData(int targetGroupId, int mailingId, String name) {
-            this.targetGroupId = targetGroupId;
-            this.mailingId = mailingId;
-            this.name = name;
-        }
-
-        public int getTargetGroupId() {
-            return targetGroupId;
-        }
-
-        public void setTargetGroupId(int targetGroupId) {
-            this.targetGroupId = targetGroupId;
-        }
-
-        public int getMailingId() {
-            return mailingId;
-        }
-
-        public void setMailingId(int mailingId) {
-            this.mailingId = mailingId;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
     }
 
     private static class LinkGeneralInfo {

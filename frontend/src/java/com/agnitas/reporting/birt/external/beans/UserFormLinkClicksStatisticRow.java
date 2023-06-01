@@ -15,13 +15,13 @@ package com.agnitas.reporting.birt.external.beans;
  */
 public class UserFormLinkClicksStatisticRow {
 	private String url;
-	private int url_id;
-	private int clicks_gros;
-	private int clicks_net;
-    private int clicks_gross_mobile;
-	private int clicks_net_mobile;
-	private int clicks_unique;
-    private int clicks_anonymous;
+	private int urlId;
+	private int clicksGross;
+	private int clicksNet;
+    private int clicksGrossMobile;
+	private int clicksNetMobile;
+	private int clicksUnique;
+    private int clicksAnonymous;
 	/**
 	 * @param url the url to set
 	 */
@@ -35,75 +35,75 @@ public class UserFormLinkClicksStatisticRow {
 		return url;
 	}
 	/**
-	 * @param url_id the url_id to set
+	 * @param urlId the url_id to set
 	 */
-	public void setUrl_id(int url_id) {
-		this.url_id = url_id;
+	public void setUrlId(int urlId) {
+		this.urlId = urlId;
 	}
 	/**
 	 * @return the url_id
 	 */
-	public int getUrl_id() {
-		return url_id;
+	public int getUrlId() {
+		return urlId;
 	}
 	/**
-	 * @param clicks_gros the clicks_gros to set
+	 * @param clicksGross the clicks_gros to set
 	 */
-	public void setClicks_gros(int clicks_gros) {
-		this.clicks_gros = clicks_gros;
+	public void setClicksGross(int clicksGross) {
+		this.clicksGross = clicksGross;
 	}
 	/**
 	 * @return the clicks_gros
 	 */
-	public int getClicks_gros() {
-		return clicks_gros;
+	public int getClicksGross() {
+		return clicksGross;
 	}
 	/**
-	 * @param clicks_net the clicks_net to set
+	 * @param clicksNet the clicks_net to set
 	 */
-	public void setClicks_net(int clicks_net) {
-		this.clicks_net = clicks_net;
+	public void setClicksNet(int clicksNet) {
+		this.clicksNet = clicksNet;
 	}
 	/**
 	 * @return the clicks_net
 	 */
-	public int getClicks_net() {
-		return clicks_net;
+	public int getClicksNet() {
+		return clicksNet;
 	}
 	/**
-	 * @param clicks_unique the clicks_unique to set
+	 * @param clicksUnique the clicks_unique to set
 	 */
-	public void setClicks_unique(int clicks_unique) {
-		this.clicks_unique = clicks_unique;
+	public void setClicksUnique(int clicksUnique) {
+		this.clicksUnique = clicksUnique;
 	}
 	/**
 	 * @return the clicks_unique
 	 */
-	public int getClicks_unique() {
-		return clicks_unique;
+	public int getClicksUnique() {
+		return clicksUnique;
 	}
 
-    public int getClicks_gross_mobile() {
-        return clicks_gross_mobile;
+    public int getClicksGrossMobile() {
+        return clicksGrossMobile;
     }
 
-    public void setClicks_gross_mobile(int clicks_gross_mobile) {
-        this.clicks_gross_mobile = clicks_gross_mobile;
+    public void setClicksGrossMobile(int clicksGrossMobile) {
+        this.clicksGrossMobile = clicksGrossMobile;
     }
 
-    public int getClicks_net_mobile() {
-        return clicks_net_mobile;
+    public int getClicksNetMobile() {
+        return clicksNetMobile;
     }
 
-    public void setClicks_net_mobile(int clicks_net_mobile) {
-        this.clicks_net_mobile = clicks_net_mobile;
+    public void setClicksNetMobile(int clicksNetMobile) {
+        this.clicksNetMobile = clicksNetMobile;
     }
 
-    public int getClicks_anonymous() {
-        return clicks_anonymous;
+    public int getClicksAnonymous() {
+        return clicksAnonymous;
     }
 
-    public void setClicks_anonymous(int clicks_anonymous) {
-        this.clicks_anonymous = clicks_anonymous;
+    public void setClicksAnonymous(int clicksAnonymous) {
+        this.clicksAnonymous = clicksAnonymous;
     }
 }

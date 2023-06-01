@@ -17,33 +17,31 @@ AGN.Opt.Templates['modal'] = '\
 
 AGN.Opt.Templates['modal-yes-no-cancel'] = '\
 <div class="modal"> \
-  <div class="modal-dialog {{= modalClass }}"> \
+  <div class="modal-dialog"> \
     <div class="modal-content"> \
-      <div class="modal-header"> \
-        <button type="button" class="close-icon close" data-dismiss="modal"> \
-          <i aria-hidden="true" class="icon icon-times-circle"></i> \
-        </button> \
-        <h4 class="modal-title">{{= title }}</h4> \
-      </div> \
-      <div class="modal-body"> \
-        {{= content }} \
-      </div> \
-      <div class="modal-footer"> \
-        <div class="btn-group"> \
-          <button type="button" class="btn btn-default btn-large pull-left" data-confirm-negative="cancel" data-dismiss="modal"> \
-            <i class="icon icon-times"></i> \
-            <span class="text">{{= t(\'defaults.cancel\') }}</span> \
+      <form action="{{= action }}" method="{{= method }}"> \
+        <div class="modal-header"> \
+          <button type="button" class="close-icon close" data-dismiss="modal"> \
+            <i aria-hidden="true" class="icon icon-times-circle"></i> \
           </button> \
-          <button type="button" class="btn btn-default btn-large" data-confirm-negative="no" data-dismiss="modal"> \
-            <i class="icon icon-times"></i> \
-            <span class="text">{{= t(\'defaults.no\') }}</span> \
-          </button> \
-          <button type="button" class="btn btn-primary btn-large" data-confirm-positive="yes" data-dismiss="modal"> \
-            <i class="icon icon-check"></i> \
-            <span class="text">{{= t(\'defaults.yes\') }}</span> \
-          </button> \
+          <h4 class="modal-title">{{= title }}</h4> \
         </div> \
-      </div> \
+        <div class="modal-body"> \
+          {{= content }} \
+        </div> \
+        <div class="modal-footer"> \
+          <div class="btn-group"> \
+            <button type="button" class="btn btn-default btn-large js-confirm-negative" data-dismiss="modal"> \
+              <i class="icon icon-times"></i> \
+              <span class="text">{{= t(\'defaults.no\') }}</span> \
+            </button> \
+            <button type="button" class="btn btn-primary btn-large js-confirm-positive" data-dismiss="modal"> \
+              <i class="icon icon-check"></i> \
+              <span class="text">{{= t(\'defaults.yes\') }}</span> \
+            </button> \
+          </div> \
+        </div> \
+      </form> \
     </div> \
   </div> \
 </div>';
@@ -321,3 +319,47 @@ AGN.Opt.Templates['trackablelink-extension-table-row'] = '\
         {{ } }} \
     </td> \
 </tr>';
+
+AGN.Opt.Templates['mailing-param-row'] = '\
+  <tr data-param-row="{{- index}}"> \
+      <td> \
+          <input type="text" value="{{- name}}" data-param-name class="form-control" data-action="param-enterdown"/> \
+      </td> \
+      <td> \
+          <input type="text" value="{{- value}}" data-param-value class="form-control" data-action="param-enterdown"/> \
+      </td> \
+      <td> \
+          <input type="text" value="{{- description}}" data-param-description class="form-control" data-action="param-enterdown"/> \
+      </td> \
+      {{ if (isChangeable) { }} \
+      <td class="table-actions"> \
+        {{ if (name == "" && value == "") { }} \
+            <a href="#" class="btn btn-regular btn-primary" data-action="add-param-row" id="newParamBtn"> \
+                <i class="icon icon-plus"></i> \
+            </a> \
+        {{ } else { }} \
+            <a href="#" class="btn btn-regular btn-alert" data-action="delete-param-row"> \
+                <i class="icon icon-trash-o"></i> \
+            </a> \
+        {{ } }} \
+      </td> \
+      {{ } }} \
+  </tr>';
+
+AGN.Opt.Templates['mailing-reference-content-item'] = ' \
+  <div class="form-group"> \
+      <div class="col-sm-4"> \
+          <label class="control-label" for="input-{{- name }}">{{- name }}</label> \
+      </div> \
+      <div class="col-sm-8"> \
+          <div class="input-group-controls"> \
+              <input type="text" class="form-control" name="referenceContentSettings.items" value="{{- value }}" id="input-{{- name }}"/> \
+          </div> \
+          <div class="input-group-btn"> \
+              <button type="button" class="btn btn-regular btn-alert" \
+                      data-action="delete-reference-content-item"> \
+                  <i class="icon icon-trash-o"></i> \
+              </button> \
+          </div> \
+      </div> \
+  </div>';

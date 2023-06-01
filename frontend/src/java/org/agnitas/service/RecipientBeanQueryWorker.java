@@ -30,9 +30,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.ProfileField;
-import com.agnitas.dao.ComProfileFieldDao;
+import com.agnitas.dao.ProfileFieldDao;
 import com.agnitas.dao.ComRecipientDao;
 
 /**
@@ -42,8 +42,8 @@ public class RecipientBeanQueryWorker implements Callable<PaginatedListImpl<Dyna
 	private static final transient Logger logger = LogManager.getLogger(RecipientBeanQueryWorker.class);
 	
 	protected ComRecipientDao recipientDao;
-	protected ComAdmin admin;
-	protected ComProfileFieldDao profileFieldDao;
+	protected Admin admin;
+	protected ProfileFieldDao profileFieldDao;
 	protected String sqlStatementForData;
 	protected Object[] sqlParametersForData;
 	protected String sortCriterion;
@@ -54,7 +54,7 @@ public class RecipientBeanQueryWorker implements Callable<PaginatedListImpl<Dyna
 	protected Set<String> columns;
 	protected Exception error;
 
-	public RecipientBeanQueryWorker(ComRecipientDao recipientDao, ComProfileFieldDao profileFieldDao, ComAdmin admin, @VelocityCheck int companyID, Set<String> columns, String sqlStatementForData, Object[] sqlParametersForData, String sortCriterion, boolean sortedAscending, int pageNumber, int rownums) {
+	public RecipientBeanQueryWorker(ComRecipientDao recipientDao, ProfileFieldDao profileFieldDao, Admin admin, @VelocityCheck int companyID, Set<String> columns, String sqlStatementForData, Object[] sqlParametersForData, String sortCriterion, boolean sortedAscending, int pageNumber, int rownums) {
 		this.recipientDao = recipientDao;
 		this.profileFieldDao = profileFieldDao;
 		this.admin = admin;

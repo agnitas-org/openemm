@@ -73,10 +73,18 @@
                         <label class="control-label"><bean:message key="mailing.SendPreviewMessage"/></label>
                     </div>
                     <div class="col-sm-8">
-                        <html:link styleClass="btn btn-primary btn-regular" page='/mailingsend.do?action=${ACTION_PREVIEW_SELECT}&mailingID=${mailingId}'>
-                            <i class="icon icon-eye"></i>
-                            <span class="text"><bean:message key="default.Preview"/></span>
-                        </html:link>
+                        <emm:ShowByPermission token="mailing.send.migration">
+                            <html:link styleClass="btn btn-primary btn-regular" page='/mailing/preview/${mailingId}/view.action'>
+                                <i class="icon icon-eye"></i>
+                                <span class="text"><bean:message key="default.Preview"/></span>
+                            </html:link>
+                        </emm:ShowByPermission>
+                        <emm:HideByPermission token="mailing.send.migration">
+                            <html:link styleClass="btn btn-primary btn-regular" page='/mailingsend.do?action=${ACTION_PREVIEW_SELECT}&mailingID=${mailingId}'>
+                                <i class="icon icon-eye"></i>
+                                <span class="text"><bean:message key="default.Preview"/></span>
+                            </html:link>
+                        </emm:HideByPermission>
                     </div>
                 </div>
                 <div class="form-group">

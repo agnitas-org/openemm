@@ -5,12 +5,13 @@
 <%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
 <c:set var="FORWARD_ARCHIVE_CREATE" value="<%= WorkflowController.FORWARD_ARCHIVE_CREATE%>" scope="page"/>
 
 
 <div id="archive-editor" data-initializer="archive-editor-initializer">
-    <form action="" id="archiveForm" name="archiveForm">
+    <mvc:form action="" id="archiveForm" name="archiveForm">
 
         <emm:ShowByPermission token="campaign.show">
             <div class="form-group">
@@ -61,5 +62,5 @@
                 </div>
             </div>
         </div>
-    </form>
+    </mvc:form>
 </div>

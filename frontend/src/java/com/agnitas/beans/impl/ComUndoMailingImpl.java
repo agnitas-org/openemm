@@ -22,7 +22,7 @@ public class ComUndoMailingImpl implements ComUndoMailing {
 	
 	@Override
 	public int getId() {
-		return this.id;	
+		return this.id;
 	}
 
 	@Override

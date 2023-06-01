@@ -3,7 +3,7 @@ package com.agnitas.emm.core.supervisor.dao.impl;
 import java.util.Date;
 import java.util.List;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.supervisor.beans.SupervisorLoginPermissionTableItem;
 import com.agnitas.emm.core.supervisor.dao.GrantedSupervisorLoginDao;
 import com.agnitas.emm.core.supervisor.service.UnknownSupervisorLoginPermissionException;
@@ -13,7 +13,7 @@ import com.agnitas.emm.core.supervisor.service.UnknownSupervisorLoginPermissionE
  */
 public class DefaultGrantedSupervisorLoginDaoImpl implements GrantedSupervisorLoginDao {
     @Override
-    public boolean isSupervisorLoginGranted(int supervisorID, ComAdmin admin) {
+    public boolean isSupervisorLoginGranted(int supervisorID, Admin admin) {
         return false;
     }
     

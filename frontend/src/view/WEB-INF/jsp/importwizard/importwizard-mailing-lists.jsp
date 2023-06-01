@@ -2,8 +2,9 @@
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+<%@ taglib prefix="agn" uri="https://emm.agnitas.de/jsp/jstl/tags" %>
 
-<html:form action="/newimportwizard">
+<agn:agnForm action="/newimportwizard">
     <html:hidden property="action"/>
     <html:errors/>
     <table border="0" cellspacing="0" cellpadding="0" width="100%">
@@ -41,4 +42,4 @@
 
     </table>
 
-</html:form>
+</agn:agnForm>

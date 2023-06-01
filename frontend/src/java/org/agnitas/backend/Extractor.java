@@ -13,12 +13,11 @@ package org.agnitas.backend;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.agnitas.util.Blackdata;
-import org.agnitas.util.Blacklist;
 import org.agnitas.util.Log;
 import org.agnitas.util.importvalues.MailType;
 import org.springframework.dao.DataAccessException;
@@ -28,7 +27,7 @@ public class Extractor implements ResultSetExtractor<Object> {
 	private Map<String, EMMTag> tagNames = null;
 	private MediaMap mmap;
 	private Data data;
-	private Blacklist blist;
+	private Blocklist blist;
 	private MailWriter mailer;
 	private boolean needSamples;
 	private Set<Long> seen;
@@ -45,7 +44,7 @@ public class Extractor implements ResultSetExtractor<Object> {
 	private long lastCid;
 	private boolean skip;
 
-	public Extractor(Map<String, EMMTag> tagNames, MediaMap mmap, Data nData, Custinfo nCinfo, Blacklist nBlist, MailWriter nMailer, boolean nNeedSamples, Set<Long> nSeen, boolean nMulti, boolean nHasOverwriteData, boolean nHasVirtualData, List<EMMTag> nEmailTags, int nEmailCount) {
+	public Extractor(Map<String, EMMTag> tagNames, MediaMap mmap, Data nData, Custinfo nCinfo, Blocklist nBlist, MailWriter nMailer, boolean nNeedSamples, Set<Long> nSeen, boolean nMulti, boolean nHasOverwriteData, boolean nHasVirtualData, List<EMMTag> nEmailTags, int nEmailCount) {
 		this.tagNames = tagNames;
 		this.mmap = mmap;
 		data = nData;
@@ -95,7 +94,7 @@ public class Extractor implements ResultSetExtractor<Object> {
 					}
 				}
 				if (c == null) {
-					String cname = meta.getColumnName(n + 1);
+					String cname = meta.getColumnName(n + 1).toLowerCase ();
 					int ctype = meta.getColumnType(n + 1);
 
 					if (Column.typeStr(ctype) != null) {
@@ -198,24 +197,24 @@ public class Extractor implements ResultSetExtractor<Object> {
 			}
 
 			if (!data.maildropStatus.isPreviewMailing()) {
-				boolean isBlacklisted = false;
+				boolean isBlocklisted = false;
 
 				for (Media m : data.media()) {
 					String check = cinfo.getMediaFieldContent(m);
 
 					if (check != null) {
 						String what = m.typeName();
-						Blackdata bl = blist.isBlackListed(check);
+						Blocklist.Entry bl = blist.isBlockListed(check);
 
 						if (bl != null) {
-							data.logging(Log.WARNING, "mailout", "Found " + what + ": " + check + " (" + cid + ") in " + bl.where() + " blacklist, ignored");
+							data.logging(Log.WARNING, "mailout", "Found " + what + ": " + check + " (" + cid + ") in " + bl.where() + " blocklist, ignored");
 							blist.writeBounce(data.mailing.id(), cid);
-							isBlacklisted = true;
+							isBlocklisted = true;
 						}
 					}
 				}
-				if (isBlacklisted) {
-					data.markBlacklisted(cid);
+				if (isBlocklisted) {
+					data.markBlocklisted(cid);
 					skip = true;
 					return;
 				}
@@ -244,22 +243,42 @@ public class Extractor implements ResultSetExtractor<Object> {
 			}
 
 			if (needSamples) {
-				List<String> v = StringOps.splitString(data.sampleEmails());
+				Set <String>	seen = new HashSet <> ();
+				
+				for (int state = 0; state < 2; ++state) {
+					String	source;
+					
+					switch (state) {
+					default:
+						source = null;
+						break;
+					case 0:
+						source = data.sampleEmails ();
+						break;
+					case 1:
+						source = data.deliveryCheckEmails ();
+						break;
+					}
+					if (source != null) {
+						List<String> v = StringOps.splitString(source);
 
-				for (int mcount = 0; mcount < v.size(); ++mcount) {
-					String email = validateSampleEmail(v.get(mcount));
+						for (int mcount = 0; mcount < v.size(); ++mcount) {
+							String email = validateSampleEmail(v.get(mcount));
 
-					if ((email != null) && (email.length() > 3) && (email.indexOf('@') != -1)) {
-						cinfo.setSampleEmail(email);
-						for (int n = 0; n < emailCount; ++n) {
-							emailTags.get(n).setTagValue(email);
-						}
-						for (int n = 0; (n < MailType.HTML_OFFLINE.getIntValue()) && (n <= data.masterMailtype); ++n) {
-							try {
-								mailer.writeMail(cinfo, mcount + 1, n, 0, Media.typeName(Media.TYPE_EMAIL), tagNames);
-								mailer.writeContent(cinfo, 0, tagNames, rmap);
-							} catch (Exception e) {
-								data.logging(Log.ERROR, "mailout", "Failed to write sample mail: " + e.toString(), e);
+							if ((email != null) && (email.length() > 3) && (email.indexOf('@') != -1) && (! seen.contains (email))) {
+								seen.add (email);
+								cinfo.setSampleEmail(email);
+								for (int n = 0; n < emailCount; ++n) {
+									emailTags.get(n).setTagValue(email);
+								}
+								for (int n = 0; (n < MailType.HTML_OFFLINE.getIntValue()) && (n <= data.masterMailtype); ++n) {
+									try {
+										mailer.writeMail(cinfo, mcount + 1, n, 0, Media.typeName(Media.TYPE_EMAIL), tagNames);
+										mailer.writeContent(cinfo, 0, tagNames, rmap);
+									} catch (Exception e) {
+										data.logging(Log.ERROR, "mailout", "Failed to write sample mail: " + e.toString(), e);
+									}
+								}
 							}
 						}
 					}

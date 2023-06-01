@@ -33,6 +33,7 @@
       autoSizePadding: 4,
       columnDefs: columns,
       enableSorting: true,
+      accentedSort: true,
       enableFilter: true,
       enableColResize: true,
       pagination: true,

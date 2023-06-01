@@ -16,7 +16,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.mailing.bean.ComMailingParameter;
 import com.agnitas.emm.core.mailing.dao.ComMailingParameterDao;
 import com.agnitas.emm.core.mailing.service.ComMailingParameterService;
@@ -44,7 +44,7 @@ public class ComMailingParameterServiceImpl implements ComMailingParameterServic
 	}
 
 	@Override
-	public List<ComMailingParameter> getAllParameters(@VelocityCheck int companyID, final ComAdmin admin) {
+	public List<ComMailingParameter> getAllParameters(@VelocityCheck int companyID, final Admin admin) {
 		if (companyID > 0) {
 			return this.mailingParameterDao.getAllParameters(companyID);
 		}
@@ -70,43 +70,52 @@ public class ComMailingParameterServiceImpl implements ComMailingParameterServic
 	}
 
 	@Override
-	public ComMailingParameter getParameter(int mailingInfoID, final ComAdmin admin) {
-		if(mailingInfoID > 0) {
+	public ComMailingParameter getParameter(int mailingInfoID, final Admin admin) {
+		if (mailingInfoID > 0) {
 			return this.mailingParameterDao.getParameter(mailingInfoID);
-		} else {
-			//error message not found
-			return null;
 		}
+
+		//error message not found
+		return null;
 	}
 	
+    @Override
+    public boolean saveParameter(ComMailingParameter parameter, final Admin admin) {
+        if (parameter.getMailingInfoID() > 0) {
+            return updateParameter(parameter, admin);
+        } else {
+            return insertParameter(parameter, admin);
+        }
+    }	
+	
 	@Override
-    public boolean insertParameter(ComMailingParameter parameter, final ComAdmin admin) {
+    public boolean insertParameter(ComMailingParameter parameter, final Admin admin) {
         if (parameter != null && parameter.getMailingInfoID() == 0) {
             return this.mailingParameterDao.insertParameter(parameter);
-        } else {
-            //error message parameter is null
-            return false;
         }
+
+		//error message parameter is null
+		return false;
     }
 
     @Override
-    public boolean updateParameter(ComMailingParameter parameter, final ComAdmin admin) {
+    public boolean updateParameter(ComMailingParameter parameter, final Admin admin) {
         if (parameter != null && parameter.getMailingInfoID() > 0) {
             return this.mailingParameterDao.updateParameter(parameter);
-        } else {
-            //error message parameter is null
-            return false;
         }
+
+		//error message parameter is null
+		return false;
     }
 
     @Override
-    public boolean deleteParameter(int mailingInfoID, final ComAdmin admin) {
+    public boolean deleteParameter(int mailingInfoID, final Admin admin) {
         if (mailingInfoID > 0) {
 			return this.mailingParameterDao.deleteParameter(mailingInfoID);
-        } else {
-            //error message id = 0
-            return false;
         }
+
+		//error message id = 0
+		return false;
     }
 
 	@Override

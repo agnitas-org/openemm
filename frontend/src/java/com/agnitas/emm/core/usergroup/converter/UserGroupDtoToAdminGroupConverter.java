@@ -18,15 +18,15 @@ import org.agnitas.beans.impl.AdminGroupImpl;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.stereotype.Component;
 
-import com.agnitas.dao.ComAdminGroupDao;
+import com.agnitas.dao.AdminGroupDao;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.usergroup.dto.UserGroupDto;
 
 @Component
 public class UserGroupDtoToAdminGroupConverter implements Converter<UserGroupDto, AdminGroup> {
-	private ComAdminGroupDao adminGroupDao;
+	private AdminGroupDao adminGroupDao;
 	
-	public UserGroupDtoToAdminGroupConverter(ComAdminGroupDao adminGroupDao) {
+	public UserGroupDtoToAdminGroupConverter(AdminGroupDao adminGroupDao) {
 		this.adminGroupDao = adminGroupDao;
 	}
 	

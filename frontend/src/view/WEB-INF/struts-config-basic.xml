@@ -4,25 +4,11 @@
 	<!-- ========== Form Bean Definitions =================================== -->
 	<form-beans type="org.apache.struts.action.ActionFormBean">
 
-		<form-bean name="campaignForm" type="com.agnitas.web.CampaignForm" />
-
-		<form-bean name="optimizationForm" type="com.agnitas.mailing.autooptimization.web.forms.ComOptimizationForm" />
-
-		<form-bean name="optimizationAjaxForm" type="com.agnitas.mailing.autooptimization.web.forms.ComOptimizationAjaxForm" />
-
-		<form-bean name="optimizationScheduleForm" type="com.agnitas.mailing.autooptimization.web.forms.ComOptimizationScheduleForm" />
-
-		<form-bean name="adminForm" type="com.agnitas.web.ComAdminForm" />
-
 		<form-bean name="mailingContentForm" type="com.agnitas.web.ComMailingContentForm" />
-
-		<form-bean name="mailingComponentsForm" type="com.agnitas.web.forms.ComMailingComponentsForm" />
 
 		<form-bean name="mailingSendForm" type="com.agnitas.web.ComMailingSendForm" />
 
 		<form-bean name="mailingWizardForm" type="org.agnitas.web.MailingWizardForm" />
-
-		<form-bean name="trackableLinkForm" type="com.agnitas.web.ComTrackableLinkForm" />
 
 		<form-bean name="importWizardForm" type="com.agnitas.web.ComImportWizardForm" />
 
@@ -52,10 +38,6 @@
 		<form-bean name="mailingGridForm" type="com.agnitas.web.forms.ComMailingGridForm" />
 		
 		<form-bean name="sendMailloopAutoresponderMailForm" type="com.agnitas.emm.core.mailloop.web.SendAutoresponderMailForm" />
-
-        <form-bean name="supervisorGrantLoginPermissionForm" type="com.agnitas.web.forms.SupervisorGrantLoginPermissionForm" />
-		<form-bean name="supervisorRevokeLoginPermissionForm" type="com.agnitas.web.forms.SupervisorRevokeLoginPermissionForm" />
-        
 	</form-beans>
 
 	<!-- ========== Global Exception Handling ============================== -->
@@ -83,25 +65,6 @@
 
 	<!-- ========== Action Mapping Definitions ============================== -->
 	<action-mappings type="org.apache.struts.action.ActionMapping">
-
-		<!-- Process an userselfservice -->
-		<action path="/selfservice" type="org.springframework.web.struts.DelegatingActionProxy" name="adminForm" scope="request" input="/selfservice.do?action=showChangeForm"
-			parameter="action">
-			<forward name="show" path="user_selfservice" />
-		</action>
-
-		<action path="/showSupervisorLoginPermission" type="org.springframework.web.struts.DelegatingActionProxy" scope="request">
-			<forward name="view" path="user_selfservice_sv_login" />
-		</action>
-		
-		<action path="/grantSupervisorLoginPermission" type="org.springframework.web.struts.DelegatingActionProxy" name="supervisorGrantLoginPermissionForm" scope="request">
-			<forward name="view" path="/showSupervisorLoginPermission.do" />
-		</action>
-		
-		<action path="/revokeSupervisorLoginPermission" type="org.springframework.web.struts.DelegatingActionProxy" name="supervisorRevokeLoginPermissionForm" scope="request">
-			<forward name="view" path="/showSupervisorLoginPermission.do" />
-		</action>
-
 		<!-- Process a mailing base information -->
 		<action path="/mailingbase" type="com.agnitas.web.perm.DelegatingActionProxySecured" name="mailingBaseForm" scope="session" input="/mailingbase.do?action=9">
 			<forward name="failure" path="mailing_view_base" />
@@ -128,23 +91,6 @@
 			<forward name="list" path="mailing_content_list" />
 			<forward name="generate_text_confirm" path="generate_text_question_ajax" />
 		</action>
-
-		<!-- Process MailingComponents -->
-		<action path="/mcomponents" type="com.agnitas.web.perm.DelegatingActionProxySecured" name="mailingComponentsForm" scope="request" input="mailing_components">
-			<forward name="list" path="mailing_components" />
-            <forward name="delete" path="mailing_components_delete_ajax" />
-            <forward name="bulk_delete_confirm" path="mailing_components_bulk_delete" />
-            <forward name="messages" path="messages" />
-		</action>
-
-		<!-- Process a trackable link -->
-		<action path="/tracklink" type="com.agnitas.web.perm.DelegatingActionProxySecured" name="trackableLinkForm" scope="request">
-			<forward name="view" path="mailing_trackablelink_view" />
-			<forward name="list" path="mailing_trackablelink_list" />
-			<forward name="bulk_clear_extensions_confirm" path="mailing_trackablelink_bulk_clear_extensions_confirm" />
-			<forward name="bulk_actions_show" path="mailing_trackablelink_bulk_actions_modal" />
-        </action>
-
 
 		<action path="/mailingsend_ajax" type="org.springframework.web.struts.DelegatingActionProxy" parameter="method">
 		</action>
@@ -237,15 +183,6 @@
 			<forward name="finish" path="mailing_wizard_finish" />
 		</action>
 
-		<!-- Process a campaign -->
-		<action path="/campaign" type="com.agnitas.web.perm.DelegatingActionProxySecured" name="campaignForm" scope="session" input="/campaign.do?action=9">
-			<forward name="list" path="campaign_list" />
-			<forward name="view" path="campaign_view" />
-			<forward name="delete" path="campaign_delete_ajax" />
-			<forward name="workflow_view" path="/workflow/{WORKFLOW_ID}/view.action" />
-			<forward name="mailing_create" path="/mailingbase.do?action=4" />
-		</action>
-
 		<action path="/mailingParameter" type="com.agnitas.web.perm.DelegatingActionProxySecured" name="mailingParameterForm" scope="request" input="mailingParameter_view" parameter="action">
 			<forward name="view" path="mailingParameter_view" />
 			<forward name="list" path="mailingParameter_list" />
@@ -314,7 +251,6 @@
         </action>
 
 		<!-- Temporary action to convert EMM actions -->
-		<action path="/convert_actions" type="org.springframework.web.struts.DelegatingActionProxy" />
 		<action path="/convert_mailloops" type="org.springframework.web.struts.DelegatingActionProxy" />
 
 		<action path="/permissionDenied" type="com.agnitas.web.perm.DelegatingActionProxySecured" parameter="permissionDenied">
@@ -326,25 +262,6 @@
 		</action>
 
 		<!-- Process an optimization -->
-		<action path="/optimize" type="org.springframework.web.struts.DelegatingActionProxy" name="optimizationForm" scope="request" input="/optimize.do?method=view" parameter="method">
-			<set-property property="cancellable" value="true" />
-			<forward name="list" path="campaign_autooptimization_list" />
-			<forward name="view" path="campaign_autooptimization_view" />
-			<forward name="confirmDelete" path="campaign_autooptimization_confirm_delete_ajax"/>
-		</action>
-
-		<action path="/optimize_ajax" type="org.springframework.web.struts.DelegatingActionProxy" scope="request"
-				name="optimizationAjaxForm" parameter="method">
-			<forward name="stats"
-					 path="/WEB-INF/jsp/campaign/autooptimization/autooptimization-stats.jsp" />
-		</action>
-
-		<action path="/optimize_schedule" type="org.springframework.web.struts.DelegatingActionProxy" validate="true" scope="request" name="optimizationScheduleForm" input="/optimize_schedule.do?method=showSchedule"
-				parameter="method">
-			<forward name="schedule" path="campaign_autooptimization_schedule" />
-			<forward name="unscheduleSuccess" path="/optimize.do?method=view" />
-		</action>
-	
 		<action path="/form" type="org.springframework.web.struts.DelegatingActionProxy">
 			<!-- Legacy form.do for redirection to form.action -->
 		</action>

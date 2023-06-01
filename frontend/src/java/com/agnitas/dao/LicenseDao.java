@@ -15,7 +15,7 @@ import java.util.Date;
 public interface LicenseDao {
 	byte[] getLicenseData() throws Exception;
 	
-	public void storeLicense(byte[] licenseData, byte[] licenseSignatureData, Date licenseDate) throws Exception;
+	void storeLicense(byte[] licenseData, byte[] licenseSignatureData, Date licenseDate) throws Exception;
 	
 	byte[] getLicenseSignatureData() throws Exception;
 
@@ -24,4 +24,8 @@ public interface LicenseDao {
 	int getHighestAccessLimitingMailinglistsPerCompany();
 
 	int getHighestAccessLimitingTargetgroupsPerCompany();
+	
+	int getNumberOfAccessLimitingMailinglists(int companyID);
+	
+	int getNumberOfAccessLimitingTargetgroups(int companyID);
 }

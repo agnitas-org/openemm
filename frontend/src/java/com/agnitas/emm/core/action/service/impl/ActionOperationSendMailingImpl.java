@@ -27,6 +27,7 @@ import com.agnitas.emm.core.action.operations.ActionOperationSendMailingParamete
 import com.agnitas.emm.core.action.operations.ActionOperationType;
 import com.agnitas.emm.core.action.service.EmmActionOperation;
 import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
+import com.agnitas.emm.core.action.service.EmmActionOperationErrors.ErrorCode;
 import com.agnitas.emm.core.mailing.service.MailgunOptions;
 import com.agnitas.emm.core.mailing.service.SendActionbasedMailingException;
 import com.agnitas.emm.core.mailing.service.SendActionbasedMailingService;
@@ -63,10 +64,12 @@ public class ActionOperationSendMailingImpl implements EmmActionOperation {
 		final int mailingID = actionOperationSendMailingParameters.getMailingID();
 
 		if (params.get("customerID") == null) {
+			errors.addErrorCode(ErrorCode.MISSING_CUSTOMER_ID);
 			return false;
 		} else {
 			final int customerID = (Integer) params.get("customerID");
 			if (customerID == 0) {
+				errors.addErrorCode(ErrorCode.INVALID_CUSTOMER_ID);
 				return false;
 			} else {
 				if (mailingDao.exist(mailingID, companyID)) {
@@ -100,6 +103,7 @@ public class ActionOperationSendMailingImpl implements EmmActionOperation {
 						return false;
 					}
 				} else {
+					errors.addErrorCode(ErrorCode.MAILING_NOT_FOUND);
 					return false;
 				}
 			}

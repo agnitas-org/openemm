@@ -26,11 +26,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.agnitas.backend.dao.TagDAO;
+import org.agnitas.backend.exceptions.EMMTagException;
 import org.agnitas.backend.tags.Tag;
 import org.agnitas.util.Log;
 import org.agnitas.util.Str;
 import org.agnitas.util.Title;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 import net.objecthunter.exp4j.Expression;
 import net.objecthunter.exp4j.ExpressionBuilder;
@@ -185,6 +185,10 @@ public class EMMTag {
 	 * Internal used column, if not current date
 	 */
 	protected Column dateColumn;
+	/**
+	 * Internal used base, if not current date
+	 */
+	protected String dateBase;
 	/**
 	 * Internal used date, if not column is specified, defaults to current date
 	 */
@@ -431,7 +435,7 @@ public class EMMTag {
 					mTagValue = dbColumn.get(dbFormat, dbExpression);
 				}
 				if (punycodeValue && (mTagValue != null)) {
-					mTagValue = StringOps.punycodeEMail(mTagValue);
+					mTagValue = Str.punycodeEMail(mTagValue);
 				}
 				break;
 			case TI_IMAGE:
@@ -445,7 +449,7 @@ public class EMMTag {
 				switch (emailCode) {
 					case 1:
 						if (mTagValue != null) {
-							mTagValue = StringOps.punycodeEMail(mTagValue.trim());
+							mTagValue = Str.punycodeEMail(mTagValue.trim());
 						}
 						break;
 					default:
@@ -514,7 +518,21 @@ public class EMMTag {
 					Date	value;
 				
 					if (dateColumn == null) {
-						value = dateValue;
+						if (dateBase == null) {
+							value = dateValue;
+						} else {
+							switch (dateBase) {
+							case "now":
+								value = new Date();
+								break;
+							case "senddate":
+								value = data.genericSendDate();
+								break;
+							default:
+								value = dateValue;
+								break;
+							}
+						}
 					} else if (dateColumn.getTypeID () == Column.DATE) {
 						value = (Date) dateColumn.getValue ();
 					} else {
@@ -664,6 +682,7 @@ public class EMMTag {
 	}
 
 	public void requestFields(Data data, Set<String> predef) throws Exception {
+		findColumns(mTagParameters.get("filter"), predef);
 		if (tagType == TAG_INTERNAL) {
 			switch (tagSpec) {
 				case TI_DB:
@@ -703,7 +722,6 @@ public class EMMTag {
 							}
 						}
 					}
-					findColumns(mTagParameters.get("filter"), predef);
 				}
 				break;
 				case TI_TITLE:
@@ -1066,6 +1084,8 @@ public class EMMTag {
 	 */
 	private void collectAllowedParameters(List<String> collect) {
 		collect.add("anon");
+		collect.add("filter");
+		collect.add("onerror");
 		switch (tagType) {
 			case TAG_DBASE:
 				collect.add("*");
@@ -1113,8 +1133,6 @@ public class EMMTag {
 					case TI_DYN:
 						collect.add("name");
 						collect.add("type");
-						collect.add("filter");
-						collect.add("onerror");
 						break;
 					case TI_DYNVALUE:
 						collect.add("name");
@@ -1355,6 +1373,7 @@ public class EMMTag {
 					} else {
 						type = 0;
 					}
+					dateBase = null;
 					if ((temp = mTagParameters.get("column")) != null) {
 						dateColumn = findColumn(data, strict, temp);
 						if (dateColumn != null) {
@@ -1370,18 +1389,16 @@ public class EMMTag {
 						dateValue = data.currentSendDate;
 						if ((temp = mTagParameters.get("base")) != null) {
 							switch (temp) {
-								default:
-									data.logging(Log.WARNING, "emmtag", mTagFullname + ": unknown base date value: " + temp);
-									if (strict) {
-										throw new EMMTagException(data, this, "unknown base date value " + temp + " for parameter \"base\"", "error.agnTag.baseDate.unknown", temp, "base");
-									}
-									break;
-								case "now":
-									dateValue = new Date();
-									break;
-								case "senddate":
-									dateValue = data.maildropStatus.genericSendDate();
-									break;
+							default:
+								data.logging(Log.WARNING, "emmtag", mTagFullname + ": unknown base date value: " + temp);
+								if (strict) {
+									throw new EMMTagException(data, this, "unknown base date value " + temp + " for parameter \"base\"", "error.agnTag.baseDate.unknown", temp, "base");
+								}
+								break;
+							case "now":
+							case "senddate":
+								dateBase = temp;
+								break;
 							}
 						}
 					}
@@ -1401,15 +1418,13 @@ public class EMMTag {
 					if ((temp = mTagParameters.get("format")) != null) {
 						typestr = temp;
 					} else {
-						NamedParameterJdbcTemplate jdbc = null;
 						String query = "SELECT format FROM date_tbl WHERE type = :type";
 
 						typestr = "d.M.yyyy";
-						try {
+						try (DBase.With with = data.dbase.with ()) {
 							Map<String, Object> row;
 
-							jdbc = data.dbase.request(query);
-							row = data.dbase.querys(jdbc, query, "type", type);
+							row = data.dbase.querys(with.cursor (), query, "type", type);
 							if (row != null) {
 								typestr = data.dbase.asString(row.get("format"));
 							} else {
@@ -1423,8 +1438,6 @@ public class EMMTag {
 							if (strict) {
 								throw new EMMTagException(data, this, e.toString(), "Error");
 							}
-						} finally {
-							data.dbase.release(jdbc, query);
 						}
 					}
 					if ((temp = mTagParameters.get("expression")) != null) {
@@ -1504,7 +1517,7 @@ public class EMMTag {
 						throw new EMMTagException(data, this, e.toString(), "Error");
 					}
 				}
-				if (dateColumn == null) {
+				if ((dateColumn == null) && (dateBase == null)) {
 					globalValue = true;
 				}
 				break;
@@ -1642,14 +1655,7 @@ public class EMMTag {
 				break;
 			case TI_SENDDATE:
 				String format = mTagParameters.get("format");
-				if (format == null) {
-					if (data.dbase.isOracle()) {
-						format = "YYYYMMDD";
-					} else {
-						format = "%Y%m%d";
-					}
-				}
-				mTagValue = data.maildropStatus.genericSendDate(format);
+				mTagValue = (new SimpleDateFormat (format != null ? format : "yyyyMMdd")).format(data.genericSendDate ());
 				fixedValue = true;
 				break;
 			case TI_GRIDPH:

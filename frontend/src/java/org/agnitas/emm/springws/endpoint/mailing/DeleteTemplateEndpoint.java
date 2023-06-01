@@ -10,11 +10,14 @@
 
 package org.agnitas.emm.springws.endpoint.mailing;
 
+import java.util.Objects;
+
 import org.agnitas.emm.core.mailing.service.MailingModel;
 import org.agnitas.emm.springws.endpoint.BaseEndpoint;
-import org.agnitas.emm.springws.endpoint.Utils;
+import org.agnitas.emm.springws.endpoint.Namespaces;
 import org.agnitas.emm.springws.jaxb.DeleteTemplateRequest;
 import org.agnitas.emm.springws.jaxb.DeleteTemplateResponse;
+import org.agnitas.emm.springws.util.SecurityContextAccess;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.ws.server.endpoint.annotation.Endpoint;
@@ -27,21 +30,24 @@ import com.agnitas.emm.core.mailing.service.MailingService;
 @Endpoint
 public class DeleteTemplateEndpoint extends BaseEndpoint {
 
-	private MailingService mailingService;
+	private final MailingService mailingService;
+	private final SecurityContextAccess securityContextAccess;
 
 	@Autowired
-	public DeleteTemplateEndpoint(@Qualifier("MailingService") MailingService mailingService) {
-		this.mailingService = mailingService;
+	public DeleteTemplateEndpoint(@Qualifier("MailingService") MailingService mailingService, final SecurityContextAccess securityContextAccess) {
+		this.mailingService = Objects.requireNonNull(mailingService, "mailingService");
+		this.securityContextAccess = Objects.requireNonNull(securityContextAccess, "securityContextAccess");
 	}
 
-	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "DeleteTemplateRequest")
+	@PayloadRoot(namespace = Namespaces.AGNITAS_ORG, localPart = "DeleteTemplateRequest")
 	public @ResponsePayload DeleteTemplateResponse deleteTemplate(@RequestPayload DeleteTemplateRequest request) {
-		DeleteTemplateResponse response = new DeleteTemplateResponse();
-		MailingModel model = new MailingModel();
-		model.setCompanyId(Utils.getUserCompany());
+		final MailingModel model = new MailingModel();
+		model.setCompanyId(this.securityContextAccess.getWebserviceUserCompanyId());
 		model.setMailingId(request.getTemplateID());
 		model.setTemplate(true);
 		mailingService.deleteMailing(model);
+		
+		final DeleteTemplateResponse response = new DeleteTemplateResponse();
 		return response;
 	}
 

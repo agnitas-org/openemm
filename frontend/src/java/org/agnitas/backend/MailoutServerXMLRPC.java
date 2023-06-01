@@ -34,7 +34,7 @@ public class MailoutServerXMLRPC extends XMLRPCServer {
 		log = new Log("mailoutserver", Log.INFO, 0);
 		log.setPrinter(System.out);
 		phm.addHandler("Merger", Merger.class);
-		log.out(Log.INFO, "server", "Listening to " + (hostname == null ? "*" : hostname) + ":" + port + " for XML-RPC requests running " + Systemconfig.version);
+		log.out(Log.INFO, "server", "Listening to " + (hostname == null ? "*" : hostname) + ":" + port + " for XML-RPC requests running " + Systemconfig.version + " (with default dbid \"" + Data.defaultDBID + "\")");
 	}
 
 	/**

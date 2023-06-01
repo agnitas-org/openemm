@@ -159,8 +159,10 @@ public class Json5Reader extends JsonReader {
 				} else if (openJsonItems.peek() == JsonToken.JsonObject_PropertyKey) {
 					openJsonItems.pop();
 					currentObject = readSimpleJsonValue(readUpToNext(false, null, ',', '}').trim());
-					char nextCharAfterSimpleValue = readNextNonWhitespace();
-					if (nextCharAfterSimpleValue == '}') {
+					Character nextCharAfterSimpleValue = readNextNonWhitespace();
+					if (nextCharAfterSimpleValue == null) {
+						throw new Exception("Invalid json data '" + currentChar + "' in line " + getReadLines() + " at overall index " + getReadCharacters());
+					} else if (nextCharAfterSimpleValue == '}') {
 						reuseCurrentChar();
 					}
 					jsonToken = JsonToken.JsonSimpleValue;

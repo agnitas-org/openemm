@@ -21,7 +21,7 @@ public interface MailloopService {
 	 * Send auto-responder mail defined in mailloop.
 	 * 
 	 * @param mailloopID ID of mailloop
-	 * @param companyID company ID of customer that triggered the auto-responder mail 
+	 * @param companyID company ID of customer that triggered the auto-responder mail
 	 * @param customerID customer ID that triggered the auto-responder mail
 	 * @param securityToken security token to verify validity of request
 	 * 

@@ -17,6 +17,8 @@ import java.util.Objects;
 import org.agnitas.dao.MailingStatus;
 import org.agnitas.emm.company.service.CompanyService;
 import org.agnitas.emm.core.commons.util.CompanyInfoDao;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.mailing.beans.LightweightMailing;
 import org.agnitas.emm.core.mailing.service.CopyMailingService;
 import org.agnitas.emm.core.mailing.service.MailingModel;
@@ -25,7 +27,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.Company;
 import com.agnitas.emm.core.maildrop.MaildropStatus;
 import com.agnitas.emm.core.maildrop.service.MaildropService;
@@ -61,6 +63,7 @@ public final class MailingStopServiceImpl implements MailingStopService {
 	private CompanyInfoDao companyInfoDao;
 	private EqlFacade eqlFacade;
 	private CompanyService companyService;
+	private ConfigService configService;
 	
 	@Override
 	public final boolean isStopped(final int mailingID) {
@@ -119,11 +122,18 @@ public final class MailingStopServiceImpl implements MailingStopService {
 		requireResumableMailing(mailing);
 		
 		// Resuming mailing is only possible with a ServerPriorService set for this service
-		return serverPrioService.resumeMailGenerationAndDelivery(mailingID);
+		final boolean result = serverPrioService.resumeMailGenerationAndDelivery(mailingID);
+		
+		// Update status to "generation finished" is resuming was successful
+		if(result) {
+    		mailingService.updateStatus(mailing.getCompanyID(), mailing.getMailingID(), MailingStatus.GENERATION_FINISHED);
+		}
+		
+		return result;
 	}
 
 	@Override
-	public final int copyMailingForResume(ComAdmin admin, int mailingID) throws MailingStopServiceException {
+	public final int copyMailingForResume(Admin admin, int mailingID) throws MailingStopServiceException {
 		final int companyId = admin.getCompanyID();
 
 		checkMailtrackingEnabled(companyId);
@@ -153,17 +163,21 @@ public final class MailingStopServiceImpl implements MailingStopService {
 		    			exclusionSqlCode.getSql(),
 		    			"Added by copying stopped mailing");
 		    	
-		    	
-		    	// Delete original mailing
-		    	final MailingModel mailingToDelete = new MailingModel();
-		    	mailingToDelete.setCompanyId(companyId);
-		    	mailingToDelete.setMailingId(mailingID);
-		    	mailingToDelete.setTemplate(false);
-		    	mailingService.deleteMailing(mailingToDelete);
+		    	if(configService.getBooleanValue(ConfigValue.Development.ChangeStatusOnCancelAndCopyMailing, companyId)) {
+		    		// Mark original mailing as canceled and copied
+		    		mailingService.updateStatus(mailing.getCompanyID(), mailing.getMailingID(), MailingStatus.CANCELED_AND_COPIED);
+		    	} else {
+			    	// Delete original mailing
+			    	final MailingModel mailingToDelete = new MailingModel();
+			    	mailingToDelete.setCompanyId(companyId);
+			    	mailingToDelete.setMailingId(mailingID);
+			    	mailingToDelete.setTemplate(false);
+			    	mailingService.deleteMailing(mailingToDelete);
+		    	}		    	
 		
 		    	return newMailingId;
 	    	} catch(final Exception e) {
-	    		// Clean up
+	    		// Clean up (delete copy of mailing)
 		    	final MailingModel mailingToDelete = new MailingModel();
 		    	mailingToDelete.setCompanyId(companyId);
 		    	mailingToDelete.setMailingId(newMailingId);
@@ -281,5 +295,10 @@ public final class MailingStopServiceImpl implements MailingStopService {
 	@Required
 	public final void setCompanyService(final CompanyService service) {
 		this.companyService = Objects.requireNonNull(service, "companyService");
+	}
+	
+	@Required
+	public final void setConfigService(final ConfigService service) {
+		this.configService = Objects.requireNonNull(service, "configService");
 	}
 }

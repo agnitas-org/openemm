@@ -1,0 +1,21 @@
+
+<mvc:form servletRelativeAction="/mailing/${form.mailingID}/trackablelink/check.action" data-form="resource">
+    <div class="tile">
+        <div class="tile-header">
+            <h2 class="headline">
+                <i class="icon icon-chain"></i>
+                <mvc:message code="link.check" />
+            </h2>
+        </div>
+        <div class="tile-content tile-content-forms">
+            <div class="well block vspace-bottom-10">
+                <mvc:message code="mailing.link.check.hint" />
+            </div>
+
+            <button class="btn btn-regular btn-primary" data-form-submit-event>
+                <i class="icon icon-refresh"></i>
+                <span class="text"><mvc:message code="button.check" /></span>
+            </button>
+        </div>
+    </div>
+</mvc:form>

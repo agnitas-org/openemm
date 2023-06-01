@@ -242,7 +242,8 @@ public class ComMailingContentServiceImpl implements ComMailingContentService {
         return StringUtils.isNotEmpty(textLink) ? " " + textLink + " " : textLink;
     }
 
-    private String generateDynName(String sourceName, Set<String> namesInUse) {
+    @Override
+    public String generateDynName(String sourceName, Set<String> namesInUse) {
         if (AgnUtils.DEFAULT_MAILING_HTML_DYNNAME.equals(sourceName)) {
             return AgnUtils.DEFAULT_MAILING_TEXT_DYNNAME;
         } else {

@@ -17,8 +17,6 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Locale;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
-
 import com.agnitas.emm.core.upload.dao.ComUploadDao;
 
 /**
@@ -49,7 +47,7 @@ public class DownloadData {
 		return companyID;
 	}
 
-	public void setCompanyID(@VelocityCheck int companyID) {
+	public void setCompanyID(int companyID) {
 		this.companyID = companyID;
 	}
 

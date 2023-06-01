@@ -14,7 +14,7 @@ import java.util.Objects;
 
 import org.agnitas.emm.core.mailing.service.MailingModel;
 import org.agnitas.emm.springws.endpoint.BaseEndpoint;
-import org.agnitas.emm.springws.endpoint.Utils;
+import org.agnitas.emm.springws.endpoint.Namespaces;
 import org.agnitas.emm.springws.jaxb.DeleteMailingRequest;
 import org.agnitas.emm.springws.jaxb.DeleteMailingResponse;
 import org.agnitas.emm.springws.util.SecurityContextAccess;
@@ -37,7 +37,7 @@ public class DeleteMailingEndpoint extends BaseEndpoint {
 		this.securityContextAccess = Objects.requireNonNull(securityContextAccess, "securityContextAccess");
 	}
 
-	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "DeleteMailingRequest")
+	@PayloadRoot(namespace = Namespaces.AGNITAS_ORG, localPart = "DeleteMailingRequest")
 	public @ResponsePayload DeleteMailingResponse deleteMailing(@RequestPayload DeleteMailingRequest request) {
 		DeleteMailingResponse response = new DeleteMailingResponse();
 		MailingModel model = new MailingModel();

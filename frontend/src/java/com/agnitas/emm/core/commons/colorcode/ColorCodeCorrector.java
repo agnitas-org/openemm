@@ -41,8 +41,9 @@ public class ColorCodeCorrector {
 			buffer.append(matcher.group(1));
 
 			String colorCode = matcher.group(2);
-			for(int i = 0; i < colorCode.length(); i++)
+			for(int i = 0; i < colorCode.length(); i++) {
 				buffer.append(colorCode.charAt(i)).append(colorCode.charAt(i));
+			}
 			
 			remnant = matcher.group(3);
 			

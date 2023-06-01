@@ -6,11 +6,11 @@ import javax.sql.DataSource;
 import org.agnitas.emm.core.commons.util.CompanyInfoDao;
 import org.agnitas.emm.core.commons.util.ConfigService;
 
-import com.agnitas.dao.ComAdminDao;
+import com.agnitas.dao.AdminDao;
 import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.dao.ConfigTableDao;
 import com.agnitas.dao.LicenseDao;
-import com.agnitas.dao.impl.ComAdminDaoImpl;
+import com.agnitas.dao.impl.AdminDaoImpl;
 import com.agnitas.dao.impl.ComCompanyDaoImpl;
 import com.agnitas.dao.impl.ConfigTableDaoImpl;
 import com.agnitas.dao.impl.LicenseDaoImpl;
@@ -55,9 +55,9 @@ public class BIRTDataSetHelper {
         ((LicenseDaoImpl) licenseDao).setJavaMailService(javaMailservice);
         newConfigService.setLicenseDao(licenseDao);
         
-        ComAdminDao adminDao = new ComAdminDaoImpl();
-        ((ComAdminDaoImpl) adminDao).setDataSource(dataSource);
-        ((ComAdminDaoImpl) adminDao).setJavaMailService(javaMailservice);
+        AdminDao adminDao = new AdminDaoImpl();
+        ((AdminDaoImpl) adminDao).setDataSource(dataSource);
+        ((AdminDaoImpl) adminDao).setJavaMailService(javaMailservice);
         newConfigService.setAdminDao(adminDao);
         
         // Use only the fully initialized object

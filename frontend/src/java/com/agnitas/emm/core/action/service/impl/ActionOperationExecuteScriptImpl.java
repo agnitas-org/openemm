@@ -20,6 +20,7 @@ import org.agnitas.beans.DatasourceDescription;
 import org.agnitas.beans.Recipient;
 import org.agnitas.dao.MailingDao;
 import org.agnitas.dao.SourceGroupType;
+import org.agnitas.emm.core.recipient.service.SubscriberLimitCheck;
 import org.agnitas.emm.core.velocity.VelocityResult;
 import org.agnitas.emm.core.velocity.VelocityWrapper;
 import org.agnitas.emm.core.velocity.VelocityWrapperFactory;
@@ -68,6 +69,8 @@ public class ActionOperationExecuteScriptImpl implements EmmActionOperation {
 	
 	private SendActionbasedMailingService sendActionbasedMailingService;
 	
+	private SubscriberLimitCheck subscriberLimitCheck;
+	
     protected TimeoutLRUMap<Integer, Integer> datasourceIdCache = new TimeoutLRUMap<>(100, 300000);
 
 	private final void registerRecipient(final Map<String, Object> params, final int companyID) {
@@ -93,7 +96,7 @@ public class ActionOperationExecuteScriptImpl implements EmmActionOperation {
 			logger.error("Cannot set velocity datasource_id in recipient for company " + companyID, e);
 		}
 
-		final VelocityRecipient apiClass = new VelocityRecipientWrapper(companyID, cust, this.companyAccessCheck);
+		final VelocityRecipient apiClass = new VelocityRecipientWrapper(companyID, cust, this.companyAccessCheck, this.subscriberLimitCheck);
 		params.put("Customer", apiClass);
 	}
 	
@@ -202,4 +205,10 @@ public class ActionOperationExecuteScriptImpl implements EmmActionOperation {
 	public final void setSendActionbasedMailingService(final SendActionbasedMailingService service) {
 		this.sendActionbasedMailingService = Objects.requireNonNull(service, "SendActionbasedMailingService is null");
 	}
+	
+	@Required
+	public final void setSubscriberLimitCheck(final SubscriberLimitCheck check) {
+		this.subscriberLimitCheck = Objects.requireNonNull(check, "subscriberLimitCheck");
+	}
+	
 }

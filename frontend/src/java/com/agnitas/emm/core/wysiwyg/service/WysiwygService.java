@@ -10,12 +10,12 @@
 
 package com.agnitas.emm.core.wysiwyg.service;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 
 import net.sf.json.JSONObject;
 
 public interface WysiwygService {
 
-    JSONObject getImagesLinksWithDescriptionJson(ComAdmin admin, int mailingId);
+    JSONObject getImagesLinksWithDescriptionJson(Admin admin, int mailingId);
 
 }

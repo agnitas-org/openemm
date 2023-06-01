@@ -39,6 +39,7 @@ public class UserSelfForm extends PaginationForm {
     private int livePreviewPosition;
     private int statisticLoadType;
     private String title;
+    private String currentPassword;
 
     public int getId() {
         return id;
@@ -78,6 +79,14 @@ public class UserSelfForm extends PaginationForm {
 
     public void setPasswordConfirm(String passwordConfirm) {
         this.passwordConfirm = passwordConfirm;
+    }
+
+    public String getCurrentPassword() {
+        return currentPassword;
+    }
+
+    public void setCurrentPassword(String currentPassword) {
+        this.currentPassword = currentPassword;
     }
 
     public int getCompanyID() {

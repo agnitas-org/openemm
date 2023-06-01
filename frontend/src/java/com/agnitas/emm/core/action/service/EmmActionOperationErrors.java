@@ -76,7 +76,16 @@ public final class EmmActionOperationErrors {
 		UNKNOWN_RECIPIENT,
 		
 		/** No sender address given. */
-		NO_SENDER_ADDRESS
+		NO_SENDER_ADDRESS,
+		
+		/** Subscriber limit exceeded. */
+		SUBSCRIBER_LIMIT_EXCEEDED, 
+		
+		/** Invalid customer ID. */
+		INVALID_CUSTOMER_ID, 
+		
+		/** Unknown mailing ID. */
+		MAILING_NOT_FOUND
 	}
 	
 	/** Set of codes representing errors occurred during processing. */

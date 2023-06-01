@@ -1,8 +1,9 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
 <div id="parameter-editor" data-initializer="parameter-editor-initializer" >
-    <form action="" id="parameterForm" name="parameterForm">
+    <mvc:form action="" id="parameterForm" name="parameterForm">
         <input name="id" type="hidden">
 
         <div class="form-group">
@@ -47,5 +48,5 @@
                 </div>
             </div>
         </div>
-    </form>
+    </mvc:form>
 </div>

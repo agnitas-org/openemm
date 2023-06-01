@@ -16,10 +16,10 @@ import com.agnitas.emm.core.stat.beans.MailingStatisticTgtGrp;
 
 public interface MailingStatTgtGrpDao {
 	
-	public int saveMalingStatTgtGrp(MailingStatisticTgtGrp malingStatTgtGrp); 
+	int saveMalingStatTgtGrp(MailingStatisticTgtGrp malingStatTgtGrp);
 
-	public MailingStatisticTgtGrp getMailingStatTgtGrpByJobId(int jobId, int targetGroupId);
+	MailingStatisticTgtGrp getMailingStatTgtGrpByJobId(int jobId, int targetGroupId);
 	
-	public void removeExpiredMailingStatTgtGrp(final ZonedDateTime threshold);
+	void removeExpiredMailingStatTgtGrp(final ZonedDateTime threshold);
 
 }

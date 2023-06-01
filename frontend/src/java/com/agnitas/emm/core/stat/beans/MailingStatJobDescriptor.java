@@ -22,7 +22,6 @@ public class MailingStatJobDescriptor {
 	public static final int RECIPIENT_TYPE_TEST = 2;
 	public static final int RECIPIENT_TYPE_ALL = 3;
 	
-	
 	private int id;
 	private int status;
 	private int mailingId;

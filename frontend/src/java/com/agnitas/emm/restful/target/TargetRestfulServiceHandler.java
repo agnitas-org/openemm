@@ -20,7 +20,6 @@ import java.util.Map.Entry;
 import java.util.TimeZone;
 
 import org.agnitas.emm.core.useractivitylog.dao.UserActivityLogDao;
-import org.agnitas.service.ColumnInfoService;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.DbColumnType.SimpleDataType;
@@ -29,7 +28,7 @@ import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.ComTarget;
 import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.TargetLight;
@@ -50,6 +49,7 @@ import com.agnitas.json.JsonArray;
 import com.agnitas.json.JsonDataType;
 import com.agnitas.json.JsonNode;
 import com.agnitas.json.JsonObject;
+import com.agnitas.service.ColumnInfoService;
 
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.http.HttpServletRequest;
@@ -100,7 +100,7 @@ public class TargetRestfulServiceHandler implements RestfulServiceHandler {
 	}
 
 	@Override
-	public void doService(HttpServletRequest request, HttpServletResponse response, ComAdmin admin, byte[] requestData, File requestDataFile, BaseRequestResponse restfulResponse, ServletContext context, RequestMethod requestMethod, boolean extendedLogging) throws Exception {
+	public void doService(HttpServletRequest request, HttpServletResponse response, Admin admin, byte[] requestData, File requestDataFile, BaseRequestResponse restfulResponse, ServletContext context, RequestMethod requestMethod, boolean extendedLogging) throws Exception {
 		if (requestMethod == RequestMethod.GET) {
 			((JsonRequestResponse) restfulResponse).setJsonResponseData(new JsonNode(getTarget(request, response, admin)));
 		} else if (requestMethod == RequestMethod.DELETE) {
@@ -124,7 +124,7 @@ public class TargetRestfulServiceHandler implements RestfulServiceHandler {
 	 * @return
 	 * @throws Exception
 	 */
-	protected Object getTarget(HttpServletRequest request, HttpServletResponse response, ComAdmin admin) throws Exception {
+	protected Object getTarget(HttpServletRequest request, HttpServletResponse response, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.TARGETS_SHOW)) {
 			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.TARGETS_SHOW.toString() + "'");
 		}
@@ -226,7 +226,7 @@ public class TargetRestfulServiceHandler implements RestfulServiceHandler {
 	 * @return
 	 * @throws Exception
 	 */
-	private Object deleteTarget(HttpServletRequest request, ComAdmin admin) throws Exception {
+	private Object deleteTarget(HttpServletRequest request, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.TARGETS_DELETE)) {
 			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.TARGETS_DELETE.toString() + "'");
 		}
@@ -267,7 +267,7 @@ public class TargetRestfulServiceHandler implements RestfulServiceHandler {
 	 * @return
 	 * @throws Exception
 	 */
-	protected Object createNewTarget(HttpServletRequest request, byte[] requestData, File requestDataFile, ComAdmin admin) throws Exception {
+	protected Object createNewTarget(HttpServletRequest request, byte[] requestData, File requestDataFile, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.TARGETS_CHANGE)) {
 			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.TARGETS_CHANGE.toString() + "'");
 		}
@@ -353,7 +353,7 @@ public class TargetRestfulServiceHandler implements RestfulServiceHandler {
 	 * @return
 	 * @throws Exception
 	 */
-	protected Object createOrUpdateTarget(HttpServletRequest request, byte[] requestData, File requestDataFile, ComAdmin admin) throws Exception {
+	protected Object createOrUpdateTarget(HttpServletRequest request, byte[] requestData, File requestDataFile, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.TARGETS_CHANGE)) {
 			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.TARGETS_CHANGE.toString() + "'");
 		}
@@ -447,7 +447,7 @@ public class TargetRestfulServiceHandler implements RestfulServiceHandler {
 		}
 	}
 
-	protected JsonObject getTargetJsonObject(ComAdmin admin, ComTarget target) {
+	protected JsonObject getTargetJsonObject(Admin admin, ComTarget target) {
 		JsonObject targetJsonObject = new JsonObject();
 		targetJsonObject.add("target_id", target.getId());
 		targetJsonObject.add("name", target.getTargetName());
@@ -463,7 +463,7 @@ public class TargetRestfulServiceHandler implements RestfulServiceHandler {
 	}
 
 	@SuppressWarnings("unused")
-	protected boolean handleExtendedAttribute(ComAdmin admin, ComTarget target, String key, Object value) throws RestfulClientException {
+	protected boolean handleExtendedAttribute(Admin admin, ComTarget target, String key, Object value) throws RestfulClientException {
 		return false;
 	}
 

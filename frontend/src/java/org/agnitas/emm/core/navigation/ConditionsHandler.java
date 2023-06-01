@@ -24,7 +24,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class ConditionsHandler {
 
-    private static final transient Logger LOGGER = LogManager.getLogger(ConditionsHandler.class);
+    private static final Logger LOGGER = LogManager.getLogger(ConditionsHandler.class);
 
     private final Map<String, NavItemCondition> conditionsMap = new HashMap<>();
 
@@ -32,13 +32,13 @@ public class ConditionsHandler {
         fillConditionsMap(conditions);
     }
 
-    public boolean checkCondition(final String conditionId) {
+    public boolean checkCondition(final String conditionId, int companyId) {
         final NavItemCondition condition = conditionsMap.get(conditionId);
         if(condition == null){
-            LOGGER.warn("Invalid condition id sent: " + conditionId + ".");
+            LOGGER.warn("Invalid condition id sent: {}.", conditionId);
             return false;
         }
-        return condition.isSatisfied();
+        return condition.isSatisfied(companyId);
     }
 
     private void fillConditionsMap(final Collection<NavItemCondition> conditions) {

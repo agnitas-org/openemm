@@ -24,6 +24,7 @@ import java.util.TimeZone;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 
+import com.agnitas.web.mvc.XssCheckAware;
 import org.agnitas.beans.AdminEntry;
 import org.agnitas.beans.FileResponseBody;
 import org.agnitas.beans.factory.UserActivityLogExportWorkerFactory;
@@ -44,13 +45,14 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.PollingUid;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.admin.service.AdminService;
@@ -61,18 +63,17 @@ import com.agnitas.web.perm.annotations.PermissionMapping;
 
 import jakarta.servlet.http.HttpSession;
 
-
 @Controller
 @RequestMapping("/administration/useractivitylog")
 @PermissionMapping("user.activity.log")
-public class UserActivityLogController {
+public class UserActivityLogController implements XssCheckAware {
 
     private static final String USER_ACTIVITY_LOG_KEY = "userActivityLogKey";
 
-    private WebStorage webStorage;
-    private AdminService adminService;
-    private UserActivityLogService userActivityLogService;
-    private UserActivityLogExportWorkerFactory exportWorkerFactory;
+    private final WebStorage webStorage;
+    private final AdminService adminService;
+    private final UserActivityLogService userActivityLogService;
+    private final UserActivityLogExportWorkerFactory exportWorkerFactory;
 
     @Autowired
     public UserActivityLogController(WebStorage webStorage,
@@ -86,8 +87,7 @@ public class UserActivityLogController {
     }
 
     @RequestMapping(value = "/list.action", method = {RequestMethod.GET, RequestMethod.POST})
-    public Pollable<ModelAndView> list(ComAdmin admin, UserActivityLogForm listForm, Model model, HttpSession session) {
-        String sessionId = session.getId();
+    public Pollable<ModelAndView> list(Admin admin, @ModelAttribute("form") UserActivityLogForm listForm, Model model, HttpSession session) {
         DateTimeFormatter datePickerFormatter = admin.getDateFormatter();
         SimpleDateFormat localTableFormat = admin.getDateTimeFormat();
 
@@ -115,7 +115,7 @@ public class UserActivityLogController {
         argumentsMap.put("dateTo.date", listForm.getDateTo().getDate());
         argumentsMap.put("description", listForm.getDescription());
 
-        PollingUid pollingUid = PollingUid.builder(sessionId, USER_ACTIVITY_LOG_KEY)
+        PollingUid pollingUid = PollingUid.builder(session.getId(), USER_ACTIVITY_LOG_KEY)
                 .arguments(argumentsMap.values().toArray(ArrayUtils.EMPTY_OBJECT_ARRAY))
                 .build();
 
@@ -133,7 +133,9 @@ public class UserActivityLogController {
                             listForm.getSort(),
                             listForm.getDir(),
                             adminsFilter);
-            model.addAttribute(USER_ACTIVITY_LOG_KEY, loggedUserActions);
+
+            FormUtils.setPaginationParameters(listForm, loggedUserActions);
+            model.addAttribute("actions", loggedUserActions);
 
             return new ModelAndView("useractivitylog_list", model.asMap());
         };
@@ -144,9 +146,8 @@ public class UserActivityLogController {
         return new Pollable<>(pollingUid, Pollable.DEFAULT_TIMEOUT, modelAndView, worker);
     }
 
-
     @PostMapping(value = "/download.action")
-    public ResponseEntity<StreamingResponseBody> download(ComAdmin admin, UserActivityLogForm form) throws Exception {
+    public ResponseEntity<StreamingResponseBody> download(Admin admin, UserActivityLogForm form) throws Exception {
         DateTimeFormatter datePickerFormatter = admin.getDateFormatter();
 
         LocalDate localDateFrom = form.getDateFrom().get(LocalDate.now(), datePickerFormatter);

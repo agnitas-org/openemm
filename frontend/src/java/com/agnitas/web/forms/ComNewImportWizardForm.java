@@ -32,6 +32,7 @@ import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 
 import com.agnitas.emm.core.imports.beans.ImportItemizedProgress;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.upload.bean.UploadData;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -47,7 +48,7 @@ public class ComNewImportWizardForm extends ImportBaseFileForm {
     private List<Integer> listsToAssign;
 	private boolean resultPagePrepared;
     private List<Mailinglist> assignedMailingLists;
-    private Map<Integer, Integer> mailinglistAssignStats;
+    private Map<MediaTypes, Map<Integer, Integer>> mailinglistAssignStats;
     private String calendarDateFormat;
     private String mailinglistAddMessage;
     private int completedPercent = -1;
@@ -141,11 +142,11 @@ public class ComNewImportWizardForm extends ImportBaseFileForm {
         this.assignedMailingLists = assignedMailingLists;
     }
 
-    public Map<Integer, Integer> getMailinglistAssignStats() {
+    public Map<MediaTypes, Map<Integer, Integer>> getMailinglistAssignStats() {
         return mailinglistAssignStats;
     }
 
-    public void setMailinglistAssignStats(Map<Integer, Integer> mailinglistAssignStats) {
+    public void setMailinglistAssignStats(Map<MediaTypes, Map<Integer, Integer>> mailinglistAssignStats) {
         this.mailinglistAssignStats = mailinglistAssignStats;
     }
 

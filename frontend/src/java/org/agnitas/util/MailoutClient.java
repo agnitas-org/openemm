@@ -57,7 +57,7 @@ public class MailoutClient {
 	 */
 	public void invoke (String command, String option) throws Exception {
 		String		message = "blank";
-		String		host = syscfg.get ("mailout-server", "openemm".equals (System.getenv ("USER")) ? "localhost" : hostname);
+		String		host = syscfg.get ("mailout-server", hostname);
 		int		port = syscfg.get ("mailout-port", portnumber);
 
 		if (syscfg.get ("mailout-dispatch-enabled", false)) {

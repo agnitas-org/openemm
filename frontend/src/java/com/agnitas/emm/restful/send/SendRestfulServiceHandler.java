@@ -52,7 +52,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.MaildropEntry;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MediatypeEmail;
@@ -175,7 +175,7 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler {
 	}
 
 	@Override
-	public void doService(HttpServletRequest request, HttpServletResponse response, ComAdmin admin, byte[] requestData, File requestDataFile, BaseRequestResponse restfulResponse, ServletContext context, RequestMethod requestMethod, boolean extendedLogging) throws Exception {
+	public void doService(HttpServletRequest request, HttpServletResponse response, Admin admin, byte[] requestData, File requestDataFile, BaseRequestResponse restfulResponse, ServletContext context, RequestMethod requestMethod, boolean extendedLogging) throws Exception {
 		if (requestMethod == RequestMethod.GET) {
 			throw new RestfulClientException("Invalid http request method 'GET'. Only 'PUT' or 'POST' are supported for 'send'.");
 		} else if (requestMethod == RequestMethod.DELETE) {
@@ -199,7 +199,7 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler {
 	 * @return
 	 * @throws Exception
 	 */
-	protected Object sendMailing(HttpServletRequest request, byte[] requestData, File requestDataFile, ComAdmin admin, boolean extendedLogging) throws Exception {
+	protected Object sendMailing(HttpServletRequest request, byte[] requestData, File requestDataFile, Admin admin, boolean extendedLogging) throws Exception {
 		if (!admin.permissionAllowed(Permission.MAILING_SEND_SHOW)) {
 			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.MAILING_SEND_SHOW.toString() + "'");
 		}
@@ -362,12 +362,12 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler {
 		return sendMailing(admin, maildropStatus, mailingID, sendDate, stepping, blockSize, customerID, userStatus, profileData);
 	}
 
-	protected String sendMailing(ComAdmin admin, MaildropStatus maildropStatus, int mailingID, Date sendDate, int stepping, int blockSize, int customerID, UserStatus userStatus, JsonObject profileData) throws Exception {
+	protected String sendMailing(Admin admin, MaildropStatus maildropStatus, int mailingID, Date sendDate, int stepping, int blockSize, int customerID, UserStatus userStatus, JsonObject profileData) throws Exception {
 		boolean adminSend = false;
 		boolean testSend = false;
 		boolean worldSend = false;
 		boolean isPreserveTrackableLinks = false;
-		java.util.Date genDate = new java.util.Date();
+		Date genDate = new Date();
 		int startGen = 1;
 		MaildropEntry maildropEntry = new MaildropEntryImpl();
 
@@ -471,7 +471,7 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler {
 			if (!maildropService.isActiveMailing(mailing.getId(), mailing.getCompanyID())) {
 				maildropEntry.setGenStatus(startGen);
 				maildropEntry.setGenDate(genDate);
-				maildropEntry.setGenChangeDate(new java.util.Date());
+				maildropEntry.setGenChangeDate(new Date());
 				maildropEntry.setMailingID(mailing.getId());
 				maildropEntry.setCompanyID(mailing.getCompanyID());
 				maildropEntry.setStepping(stepping);
@@ -554,7 +554,7 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler {
 			if (!worldSend || !maildropService.isActiveMailing(mailing.getId(), mailing.getCompanyID())) {
 				maildropEntry.setGenStatus(startGen);
 				maildropEntry.setGenDate(genDate);
-				maildropEntry.setGenChangeDate(new java.util.Date());
+				maildropEntry.setGenChangeDate(new Date());
 				maildropEntry.setMailingID(mailing.getId());
 				maildropEntry.setCompanyID(mailing.getCompanyID());
 				maildropEntry.setStepping(stepping);

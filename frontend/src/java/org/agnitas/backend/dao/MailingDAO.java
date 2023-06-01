@@ -58,7 +58,7 @@ public class MailingDAO {
 		Map<String, Object> row;
 
 		try (DBase.With with = dbase.with ()) {
-			row = dbase.querys (with.jdbc (),
+			row = dbase.querys (with.cursor (),
 					    "SELECT * " +
 					    "FROM mailing_tbl WHERE mailing_id = :mailingID",
 					    "mailingID", forMailingID);
@@ -92,14 +92,14 @@ public class MailingDAO {
 				// workflow related informations
 				int	dependencyTypeMailing = Const.WorkflowDependencyType.MAILING_DELIVERY;
 		
-				row = dbase.querys (with.jdbc (),
+				row = dbase.querys (with.cursor (),
 						    "SELECT COUNT(*) cnt FROM workflow_dependency_tbl WHERE type = :type AND entity_id = :mailingID",
 						    "type", dependencyTypeMailing,
 						    "mailingID", mailingID);
 				isWorkflowMailing = row != null ? (dbase.asInt (row.get ("cnt")) > 0) : false;
 				//
 				// media specific information from mailing_mt_tbl
-				rq = dbase.query (with.jdbc (),
+				rq = dbase.query (with.cursor (),
 						  "SELECT mediatype, param, priority, status FROM mailing_mt_tbl " +
 						  "WHERE mailing_id = :mailingID AND status = " + Media.STAT_ACTIVE,
 						  "mailingID", mailingID);
@@ -119,7 +119,7 @@ public class MailingDAO {
 				//
 				// mailing specific informations from mailing_info_tbl
 				info = new HashMap <> ();
-				rq = dbase.query (with.jdbc (),
+				rq = dbase.query (with.cursor (),
 						  "SELECT name, value FROM mailing_info_tbl " +
 						  "WHERE mailing_id = :mailingID OR (mailing_id = 0 AND company_id = :companyID) " +
 						  "ORDER BY mailing_id",
@@ -137,7 +137,7 @@ public class MailingDAO {
 				// mailing specific item definitions
 				item = null;
 				if (dbase.exists ("mailing_item_tbl")) {
-					rq = dbase.query (with.jdbc (),
+					rq = dbase.query (with.cursor (),
 							  "SELECT param FROM mailing_item_tbl WHERE mailing_id = :mailingID",
 							  "mailingID", mailingID);
 					for (int n = 0; n < rq.size (); ++n) {
@@ -160,7 +160,7 @@ public class MailingDAO {
 		
 				while ((scanID > 0L) && (! seen.contains (scanID))) {
 					seen.add (scanID);
-					row = dbase.querys (with.jdbc (),
+					row = dbase.querys (with.cursor (),
 							    "SELECT mailtemplate_id, is_template, deleted, priority " +
 							    "FROM mailing_tbl " +
 							    "WHERE mailing_id = :mailingID",
@@ -278,16 +278,26 @@ public class MailingDAO {
 	/**
 	 * set the working status for this mailing
 	 */
-	public boolean workStatus (DBase dbase, String newWorkStatus) throws SQLException {
+	public boolean workStatus (DBase dbase, String newWorkStatus, String oldWorkStatus) throws SQLException {
 		int	count = 0;
 		
 		try (DBase.With with = dbase.with ()) {
-			count = dbase.update (with.jdbc (),
-					      "UPDATE mailing_tbl " +
-					      "SET work_status = :workStatus " +
-					      "WHERE mailing_id = :mailingID",
-					      "workStatus", newWorkStatus,
-					      "mailingID", mailingID);
+			if (oldWorkStatus != null) {
+				count = dbase.update (with.cursor (),
+						      "UPDATE mailing_tbl " +
+						      "SET work_status = :newWorkStatus " +
+						      "WHERE mailing_id = :mailingID AND (work_status IS NULL OR work_status = :oldWorkStatus)",
+						      "oldWorkStatus", oldWorkStatus,
+						      "newWorkStatus", newWorkStatus,
+						      "mailingID", mailingID);
+			} else {
+				count = dbase.update (with.cursor (),
+						      "UPDATE mailing_tbl " +
+						      "SET work_status = :workStatus " +
+						      "WHERE mailing_id = :mailingID",
+						      "workStatus", newWorkStatus,
+						      "mailingID", mailingID);
+			}
 			if (count > 0) {
 				workStatus = newWorkStatus;
 			}
@@ -302,7 +312,7 @@ public class MailingDAO {
 		int	count = 0;
 		
 		try (DBase.With with = dbase.with ()) {
-			count = dbase.update (with.jdbc (),
+			count = dbase.update (with.cursor (),
 					      "UPDATE mailing_tbl " +
 					      "SET mailerset = :mailerset " +
 					      "WHERE mailing_id = :mailingID",

@@ -13,6 +13,7 @@ package org.agnitas.util;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.net.IDN;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -233,5 +234,64 @@ public class Str {
 			return homeDirectories.getOrDefault (element.substring (1), element);
 		}
 		return element;
+	}
+
+	/**
+	 * convert an email domain part into its punycode representation, if possible
+	 * 
+	 * @param domain the domain to convert
+	 * @return the converted domain, if convertion had been successful, the unmodified domain otherwise
+	 */
+	public static String punycodeDomain(String domain) {
+		if (domain != null) {
+			try {
+				return IDN.toASCII(domain);
+			} catch (Exception e) {
+				// do nothing
+			}
+		}
+		return domain;
+	}
+
+	/**
+	 * convert an email address into a version with the domain part in punycode, if possible
+	 * 
+	 * @param email the email to convert
+	 * @return the converted email, if possible, otherwise the unmodified email
+	 */
+	public static String punycodeEMail(String email) {
+		if (email != null) {
+			int at = email.lastIndexOf('@');
+
+			if (at != -1) {
+				return email.substring(0, at + 1) + punycodeDomain(email.substring(at + 1));
+			}
+		}
+		return email;
+	}
+	
+	/**
+	 * normalize an email for compare purpose
+	 * 
+	 * @param email the email address to convert
+	 * @param allowUnnormalizedEmails if true, then the local part is unchanged, otherwise it is converted to lower case
+	 * @return the converted email address
+	 */
+	public static String normalizeEMail (String email, boolean allowUnnormalizedEmails) {
+		if (email != null) {
+			email = email.trim ();
+			int at = email.lastIndexOf('@');
+
+			if (at != -1) {
+				if (allowUnnormalizedEmails) {
+					return email.substring(0, at + 1) + punycodeDomain (email.substring (at + 1).toLowerCase ());
+				} else {
+					return email.substring(0, at + 1).toLowerCase () + punycodeDomain (email.substring (at + 1).toLowerCase ());
+				}
+			} else {
+				return allowUnnormalizedEmails ? email : email.toLowerCase ();
+			}
+		}
+		return email;
 	}
 }

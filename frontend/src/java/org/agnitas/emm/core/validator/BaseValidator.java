@@ -12,6 +12,7 @@ package org.agnitas.emm.core.validator;
 
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
@@ -39,6 +40,17 @@ public abstract class BaseValidator {
             throwException("err.isPositiveOrZero", propertyNameCode);
         }
     }
+
+    protected void assertContainsPositiveOrZeroElementsOnly(Collection<?> propertyValue, String propertyNameCode) {
+        if (propertyValue != null) {
+            for (Object item : propertyValue) {
+                boolean validItem = (Integer) item >= 0;
+                if (!validItem) {
+                    throwException("err.isPositiveOrZeroCollection", propertyNameCode);
+                }
+            }
+        }
+    }
     
     protected void assertIsNotBlank(final String propertyValue, final String propertyNameCode) {
         if (StringUtils.isBlank(propertyValue)) {
@@ -51,10 +63,26 @@ public abstract class BaseValidator {
             throwException("err.maxLength", propertyNameCode, maxAllowedLength);
         }
     }
+    
+    protected void assertMinLength(final String value, final String propertyNameCode, final int minAllowedLength) {
+        if (StringUtils.length(value) < minAllowedLength) {
+            throwException("err.minLength", propertyNameCode, minAllowedLength);
+        }
+    }
 
     protected void assertIsNotEmpty(final byte[] propertyValue, final String propertyNameCode) {
         if (ArrayUtils.isEmpty(propertyValue)) {
             throwException("err.required", propertyNameCode);
+        }
+    }
+    
+    protected void assertNotNull(Object value, String propertyNameCode) {
+        assertNotNull(value, propertyNameCode, null);
+    }
+    
+    protected void assertNotNull(Object value, String propertyNameCode, String messageCode) {
+        if (value == null) {
+            throwException(StringUtils.isNotBlank(messageCode) ? messageCode : "err.required", propertyNameCode);
         }
     }
     
@@ -63,8 +91,14 @@ public abstract class BaseValidator {
             throwException("err.isEmail", propertyNameCode);
         }
     }
+    
+    protected void assertInRange(Number propertyValue, int min, int max, String propertyNameCode) {
+        if (propertyValue == null || propertyValue.doubleValue() < min || propertyValue.doubleValue() > max) {
+            throwException("err.intRange", propertyNameCode, min, max);
+        }
+    }
 
-    private void throwException(final String rootMessageCode, final Object... argsMessagesCodes) {
+    protected void throwException(final String rootMessageCode, final Object... argsMessagesCodes) {
         throw new IllegalArgumentException(getMessage(rootMessageCode, argsMessagesCodes));
     }
 

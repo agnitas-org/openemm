@@ -17,8 +17,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import org.agnitas.beans.BindingEntry.UserType;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.importvalues.MailType;
 import org.apache.logging.log4j.LogManager;
@@ -31,11 +29,23 @@ import com.agnitas.reporting.birt.external.beans.MonthDetailStatRow;
 import com.agnitas.reporting.birt.external.beans.MonthTotalStatRow;
 
 public class MonthStatDataSet extends BIRTDataSet {
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(MonthStatDataSet.class);
 
-	public List<MonthCounterStatRow> getMailingCounts(@VelocityCheck int companyID, int adminId, String startDateString, String endDateString) throws ParseException {
-		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
+	private static final Logger logger = LogManager.getLogger(MonthStatDataSet.class);
+	private static final String DATE_FORMAT_PATTERN = "yyyyMMdd";
+
+	/**
+	 * Get mailing statistics for a time period
+	 * This must include numbers of already deleted mailings and numbers of test mailings, because it will be compared to billing statistics by some users
+	 * 
+	 * @param companyID
+	 * @param adminId
+	 * @param startDateString
+	 * @param endDateString
+	 * @return
+	 * @throws ParseException
+	 */
+	public List<MonthCounterStatRow> getMailingCounts(int companyID, int adminId, String startDateString, String endDateString) throws ParseException {
+		SimpleDateFormat dateFormat = new SimpleDateFormat(DATE_FORMAT_PATTERN);
 		Date startDate = dateFormat.parse(startDateString);
 		Date endDate = DateUtilities.addDaysToDate(dateFormat.parse(endDateString), 1);
 		List<Object> params = new ArrayList<>();
@@ -43,23 +53,21 @@ public class MonthStatDataSet extends BIRTDataSet {
 		String query = "SELECT COUNT(DISTINCT a.mailing_id) mailing_count,"
 			+ " SUM(a.no_of_mailings) email_count,"
 			+ " SUM(a.no_of_bytes) / SUM(a.no_of_mailings) / 1024 kbPerMail"
-			+ " FROM mailing_account_tbl a"
-            + " JOIN mailing_tbl m ON a.mailing_id = m.mailing_id AND m.deleted = 0 ";
+			+ " FROM mailing_account_tbl a";
 		
 			if (adminId > 0 && isDisabledMailingListsSupported()) {
+				query += " JOIN mailing_tbl m ON a.mailing_id = m.mailing_id";
 				query += " AND m.mailinglist_id NOT IN (SELECT mailinglist_id FROM disabled_mailinglist_tbl WHERE admin_id = ?)";
 				params.add(adminId);
 			}
 			
-			query += " WHERE a.company_id = ? "
-			+ " AND a.timestamp >= ?"
-			+ " AND a.timestamp < ?"
-			+ " AND a.status_field NOT IN ('" + UserType.Admin.getTypeCode() + "', '" + UserType.TestUser.getTypeCode() + "', '" + UserType.TestVIP.getTypeCode() + "') ";
+			query += " WHERE a.company_id = ?"
+				+ " AND a.timestamp >= ?"
+				+ " AND a.timestamp < ?";
 		
 			params.add(companyID);
 			params.add(startDate);
 			params.add(endDate);
-		
 		return select(logger, query, (resultSet, rowNum) -> {
 			MonthCounterStatRow monthCounterRow = new MonthCounterStatRow();
 			monthCounterRow.setMailingCount(resultSet.getInt("mailing_count"));
@@ -69,8 +77,25 @@ public class MonthStatDataSet extends BIRTDataSet {
 		}, params.toArray());
 	}
 
-	public List<MonthDetailStatRow> getMonthDetails(@VelocityCheck int companyID, int adminId, String startDateString, String endDateString, int top10Metric) throws Exception {
-		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
+	/**
+	 * Get very detailed mailing statistics for a time period
+	 * This must include numbers of already deleted mailings and numbers of test mailings, because it will be compared to billing statistics by some users
+	 * 
+	 * @param companyID
+	 * @param adminId
+	 * @param startDateString
+	 * @param endDateString
+	 * @param top10Metric
+	 * @return
+	 * @throws Exception
+	 */
+	public List<MonthDetailStatRow> getMonthDetails(int companyID, int adminId, String startDateString, String endDateString, int top10Metric) throws Exception {
+		MonthlyStatType metric = MonthlyStatType.get(top10Metric);
+		if (metric == null) {
+			throw new Exception("Invalid top10Metric type: " + top10Metric);
+		}
+
+		SimpleDateFormat dateFormat = new SimpleDateFormat(DATE_FORMAT_PATTERN);
 		Date startDate = dateFormat.parse(startDateString);
 		Date endDate = DateUtilities.addDaysToDate(dateFormat.parse(endDateString), 1);
 		
@@ -80,11 +105,6 @@ public class MonthStatDataSet extends BIRTDataSet {
 			queryBuilder.append(", TO_CHAR(a.timestamp, 'DD.MM.YYYY') datum");
 		} else {
 			queryBuilder.append(", DATE_FORMAT(a.timestamp, '%d.%m.%Y') datum");
-		}
-
-		MonthlyStatType metric = MonthlyStatType.get(top10Metric);
-		if (metric == null) {
-			throw new Exception("Invalid top10Metric type: " + top10Metric);
 		}
 
 		switch (metric) {
@@ -124,12 +144,9 @@ public class MonthStatDataSet extends BIRTDataSet {
 		}
 		
 		queryBuilder.append(" FROM mailing_tbl m, mailing_account_tbl a")
-			.append(" WHERE m.company_id = ? AND m.deleted = 0")
+			.append(" WHERE m.company_id = ?")
 			.append(" AND m.mailing_id = a.mailing_id")
-			.append(" AND a.no_of_mailings <> 0 AND a.status_field NOT IN ('")
-			.append(UserType.Admin.getTypeCode()).append("', '")
-			.append(UserType.TestUser.getTypeCode()).append("', '")
-			.append(UserType.TestVIP.getTypeCode()).append("')");
+			.append(" AND a.no_of_mailings <> 0");
 		queryParameters.add(companyID);
 
 		queryBuilder.append(" AND a.timestamp >= ? AND a.timestamp < ?");
@@ -137,7 +154,7 @@ public class MonthStatDataSet extends BIRTDataSet {
 		queryParameters.add(endDate);
 		
 		if (adminId > 0 && isDisabledMailingListsSupported()) {
-			queryBuilder.append(" AND a.mailinglist_id NOT IN (SELECT mailinglist_id FROM disabled_mailinglist_tbl WHERE admin_id = ?) ");
+			queryBuilder.append(" AND m.mailinglist_id NOT IN (SELECT mailinglist_id FROM disabled_mailinglist_tbl WHERE admin_id = ?) ");
 			queryParameters.add(adminId);
 		}
 
@@ -168,18 +185,30 @@ public class MonthStatDataSet extends BIRTDataSet {
 		}, queryParameters.toArray(new Object[0]));
 	}
 
-	public List<MonthTotalStatRow> getMonthTotals(@VelocityCheck int companyID, int adminId, String startDateString, String endDateString, int top10Metric) throws Exception {
-		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
+	/**
+	 * Get detailed mailing statistics for a time period
+	 * This must include numbers of already deleted mailings and numbers of test mailings, because it will be compared to billing statistics by some users
+	 * 
+	 * @param companyID
+	 * @param adminId
+	 * @param startDateString
+	 * @param endDateString
+	 * @param top10Metric
+	 * @return
+	 * @throws Exception
+	 */
+	public List<MonthTotalStatRow> getMonthTotals(int companyID, int adminId, String startDateString, String endDateString, int top10Metric) throws Exception {
+		MonthlyStatType metric = MonthlyStatType.get(top10Metric);
+		if (metric == null) {
+			throw new Exception("Invalid top10Metric type: " + top10Metric);
+		}
+
+		SimpleDateFormat dateFormat = new SimpleDateFormat(DATE_FORMAT_PATTERN);
 		Date startDate = dateFormat.parse(startDateString);
 		Date endDate = DateUtilities.addDaysToDate(dateFormat.parse(endDateString), 1);
 		
 		List<Object> queryParameters = new ArrayList<>();
 		StringBuilder queryBuilder = new StringBuilder("SELECT m.mailing_id, m.shortname");
-
-		MonthlyStatType metric = MonthlyStatType.get(top10Metric);
-		if (metric == null) {
-			throw new Exception("Invalid top10Metric type: " + top10Metric);
-		}
 
 		switch (metric) {
 			case RECIPIENT_NUM:
@@ -218,12 +247,9 @@ public class MonthStatDataSet extends BIRTDataSet {
 		}
 
 		queryBuilder.append(" FROM mailing_tbl m, mailing_account_tbl a")
-			.append(" WHERE m.company_id = ? AND m.deleted = 0")
+			.append(" WHERE m.company_id = ?")
 			.append(" AND m.mailing_id = a.mailing_id")
-			.append(" AND a.no_of_mailings <> 0 AND a.status_field NOT IN ('")
-			.append(UserType.Admin.getTypeCode()).append("', '")
-			.append(UserType.TestUser.getTypeCode()).append("', '")
-			.append(UserType.TestVIP.getTypeCode()).append("')");
+			.append(" AND a.no_of_mailings <> 0");
 		queryParameters.add(companyID);
 
 		queryBuilder.append(" AND a.timestamp >= ? AND a.timestamp < ?");
@@ -231,7 +257,7 @@ public class MonthStatDataSet extends BIRTDataSet {
 		queryParameters.add(endDate);
 		
 		if (adminId > 0 && isDisabledMailingListsSupported()) {
-			queryBuilder.append(" AND a.mailinglist_id NOT IN (SELECT mailinglist_id FROM disabled_mailinglist_tbl WHERE admin_id = ?) ");
+			queryBuilder.append(" AND m.mailinglist_id NOT IN (SELECT mailinglist_id FROM disabled_mailinglist_tbl WHERE admin_id = ?) ");
 			queryParameters.add(adminId);
 		}
 		

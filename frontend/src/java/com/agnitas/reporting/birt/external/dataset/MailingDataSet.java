@@ -11,6 +11,7 @@
 package com.agnitas.reporting.birt.external.dataset;
 
 import java.text.DateFormat;
+import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -45,8 +46,8 @@ import com.agnitas.reporting.birt.external.dao.impl.LightMailingListDaoImpl;
 import com.agnitas.reporting.birt.external.dataset.MailingBouncesDataSet.BouncesRow;
 
 public class MailingDataSet extends BIRTDataSet {
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(MailingDataSet.class);
+
+	private static final Logger logger = LogManager.getLogger(MailingDataSet.class);
 	
 	public static class MailingData {
         int mailingId;
@@ -404,7 +405,6 @@ public class MailingDataSet extends BIRTDataSet {
 	/**
 	 * return an array with two ints [noOfSoftbounces,noOfHardbounces]
 	 * @return int [noOfSoftbounces,noOfHardbounces]
-	 * @throws Exception
 	 */
 	public int[] getBounces(Integer mailingId, Integer companyId, String language, String selectedTargets) throws Exception {
 		int soft = 0;
@@ -431,7 +431,7 @@ public class MailingDataSet extends BIRTDataSet {
             }
             return mailingIds;
         } catch (Exception e) {
-            logger.error("Error occured: " + e.getMessage(), e);
+            logger.error(MessageFormat.format("Error occured: {0}", e.getMessage()), e);
             return new LinkedList<>();
         }
     }

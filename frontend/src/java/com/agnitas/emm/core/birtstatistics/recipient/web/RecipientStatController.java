@@ -13,7 +13,10 @@ package com.agnitas.emm.core.birtstatistics.recipient.web;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.service.UserActivityLogService;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.web.forms.FormDate;
@@ -28,45 +31,49 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.context.request.RequestContextHolder;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.birtstatistics.recipient.dto.RecipientStatisticDto;
 import com.agnitas.emm.core.birtstatistics.recipient.forms.RecipientStatisticForm;
 import com.agnitas.emm.core.birtstatistics.service.BirtStatisticsService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
 import com.agnitas.emm.core.mediatypes.service.MediaTypesService;
 import com.agnitas.emm.core.target.service.ComTargetService;
+import com.agnitas.messages.Message;
 import com.agnitas.web.mvc.Popups;
+import com.agnitas.web.mvc.XssCheckAware;
 import com.agnitas.web.perm.annotations.PermissionMapping;
 
 @Controller
 @RequestMapping("/statistics/recipient")
 @PermissionMapping("recipient.stats")
-public class RecipientStatController {
+public class RecipientStatController implements XssCheckAware {
     
-	/** The logger. */
-    private static Logger logger = LogManager.getLogger(RecipientStatController.class);
+    private static final Logger logger = LogManager.getLogger(RecipientStatController.class);
 
-    private BirtStatisticsService birtStatisticsService;
-    private ComTargetService targetService;
-    private MediaTypesService mediaTypesService;
-    private ConversionService conversionService;
-    private MailinglistApprovalService mailinglistApprovalService;
-    private UserActivityLogService userActivityLogService;
+    private final BirtStatisticsService birtStatisticsService;
+    private final ComTargetService targetService;
+    private final MediaTypesService mediaTypesService;
+    private final ConversionService conversionService;
+    private final MailinglistApprovalService mailinglistApprovalService;
+    private final UserActivityLogService userActivityLogService;
+    private final ConfigService configService;
     
     public RecipientStatController(BirtStatisticsService birtStatisticsService, ComTargetService targetService,
                                    @Qualifier("MediaTypesService") MediaTypesService mediaTypesService, ConversionService conversionService,
-                                   MailinglistApprovalService mailinglistApprovalService, UserActivityLogService userActivityLogService) {
+                                   MailinglistApprovalService mailinglistApprovalService, UserActivityLogService userActivityLogService,
+                                   ConfigService configService) {
         this.birtStatisticsService = birtStatisticsService;
         this.targetService = targetService;
         this.mediaTypesService = mediaTypesService;
         this.conversionService = conversionService;
         this.mailinglistApprovalService = mailinglistApprovalService;
         this.userActivityLogService = userActivityLogService;
+		this.configService = configService;
     }
     
     @RequestMapping("/view.action")
-    public String view(ComAdmin admin, @ModelAttribute(name="form") RecipientStatisticForm form, Model model, Popups popups) throws Exception {
-        if(!validateDates(admin, form.getStartDate(), form.getEndDate(), popups)){
+    public String view(Admin admin, @ModelAttribute(name="form") RecipientStatisticForm form, Model model, Popups popups) throws Exception {
+        if (!validateDates(admin, form.getStartDate(), form.getEndDate(), popups)) {
             return "messages";
         }
     
@@ -80,6 +87,15 @@ public class RecipientStatController {
         form.getEndDate().setFormatter(admin.getDateFormatter());
         
         RecipientStatisticDto statisticDto = convertToDto(form, admin);
+        
+		int maxPeriodDays = configService.getIntegerValue(ConfigValue.MaximumRecipientDetailPeriodDays, admin.getCompanyID());
+    	long selectedDays = statisticDto.getLocaleStartDate().until(statisticDto.getLocalEndDate(), ChronoUnit.DAYS);
+    	if (selectedDays > maxPeriodDays) {
+    		LocalDate newEndDate = statisticDto.getLocaleStartDate().plus(maxPeriodDays, ChronoUnit.DAYS);
+			statisticDto.setLocalEndDate(newEndDate);
+    		popups.warning(Message.of("statistics.maximumRecipientDetailPeriodDays.exceeded", maxPeriodDays));
+    		form.getEndDate().set(newEndDate, DateTimeFormatter.ofPattern(datePickerFormat.toPattern()));
+    	}
 
         model.addAttribute("birtStatisticUrlWithoutFormat", birtStatisticsService.getRecipientStatisticUrlWithoutFormat(admin, sessionId, statisticDto));
         
@@ -97,13 +113,13 @@ public class RecipientStatController {
         return "stats_birt_recipient_stat";
     }
 
-    private RecipientStatisticDto convertToDto(final RecipientStatisticForm form, final ComAdmin admin) {
+    private RecipientStatisticDto convertToDto(final RecipientStatisticForm form, final Admin admin) {
         final RecipientStatisticDto statisticDto = conversionService.convert(form, RecipientStatisticDto.class);
         resolveDateModeDateRestrictions(statisticDto, form, admin);
         return statisticDto;
     }
 
-    private void resolveDateModeDateRestrictions(final RecipientStatisticDto dto, final RecipientStatisticForm form, final ComAdmin admin) {
+    private void resolveDateModeDateRestrictions(final RecipientStatisticDto dto, final RecipientStatisticForm form, final Admin admin) {
         switch (form.getDateMode()) {
             case LAST_WEEK:
                 LocalDate now = LocalDate.now();
@@ -146,7 +162,7 @@ public class RecipientStatController {
         }
     }
 
-    private boolean validateDates(final ComAdmin admin, final FormDate startDate, final FormDate endDate, final Popups popups) {
+    private boolean validateDates(final Admin admin, final FormDate startDate, final FormDate endDate, final Popups popups) {
         if(StringUtils.isBlank(startDate.getDate()) && StringUtils.isBlank(endDate.getDate())){
             return true;
         }

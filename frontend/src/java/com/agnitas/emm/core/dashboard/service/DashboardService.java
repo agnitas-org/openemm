@@ -14,16 +14,16 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import org.agnitas.beans.impl.PaginatedListImpl;
 
 import net.sf.json.JSONObject;
 
 public interface DashboardService {
 
-    PaginatedListImpl<Map<String, Object>> getMailings(ComAdmin admin, String sort, String direction, int rownums);
+    PaginatedListImpl<Map<String, Object>> getMailings(Admin admin, String sort, String direction, int rownums);
 
-    List<Map<String, Object>> getLastSentWorldMailings(ComAdmin admin, int rownums);
+    List<Map<String, Object>> getLastSentWorldMailings(Admin admin, int rownums);
 
     JSONObject getStatisticsInfo(int mailingId, Locale locale, int companyId) throws Exception;
 }

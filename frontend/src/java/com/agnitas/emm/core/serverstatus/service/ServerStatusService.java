@@ -15,9 +15,10 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
+import org.agnitas.emm.core.autoimport.bean.AutoImport;
 import org.agnitas.service.JobDto;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.serverstatus.bean.ServerStatus;
 import com.agnitas.emm.core.serverstatus.bean.VersionStatus;
 import com.agnitas.emm.core.serverstatus.dto.ConfigValueDto;
@@ -39,11 +40,11 @@ public interface ServerStatusService {
     
     Map<String, Object> getStatusProperties(ServletContext servletContext) throws Exception;
     
-    ServerStatus getServerStatus(ServletContext servletContext, ComAdmin admin);
+    ServerStatus getServerStatus(ServletContext servletContext, Admin admin);
     
-    SimpleServiceResult sendTestMail(ComAdmin admin, String testMailAddress);
+    SimpleServiceResult sendTestMail(Admin admin, String testMailAddress);
     
-    SimpleServiceResult sendDiagnosisInfo(ServletContext context, ComAdmin admin, String sendDiagnosisEmail);
+    SimpleServiceResult sendDiagnosisInfo(ServletContext context, Admin admin, String sendDiagnosisEmail);
     
     boolean saveServerConfig(int companyId, String configName, String configValue, String description);
     
@@ -54,8 +55,6 @@ public interface ServerStatusService {
 	boolean isJobQueueRunning();
 
 	boolean isJobQueueStatusOK();
-
-	boolean isImportStalling();
 
 	boolean isExportStalling();
 
@@ -82,4 +81,8 @@ public interface ServerStatusService {
 	List<String> getErroneousImports();
 
 	List<String> getErroneousExports();
+
+	List<AutoImport> getStallingAutoImports();
+
+	int getStallingImportsAmount();
 }

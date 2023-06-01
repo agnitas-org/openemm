@@ -1,4 +1,4 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 <%@ page import="com.agnitas.web.ComMailingContentAction" %>
 <%@ page import="com.agnitas.web.ComMailingSendActionBasic" %>
 <%@ page import="org.agnitas.beans.EmmLayoutBase" %>
@@ -38,8 +38,20 @@
 <c:set var="isMailingGrid" value="${mailingContentForm.gridTemplateId > 0}" scope="request"/>
 
 <emm:HideByPermission token="mailing.editor.hide">
+	<c:choose>
+		<c:when test="${emm:fullPackAllowed(pageContext.request)}">
+			<c:set var="toolbarType" value="Full"/>
+		</c:when>
+		<c:when test="${emm:isCKEditorTrimmed(pageContext.request)}">
+			<c:set var="toolbarType" value="Trimmed"/>
+		</c:when>
+		<c:otherwise>
+			<c:set var="toolbarType" value="EMM"/>
+		</c:otherwise>
+	</c:choose>
+
     <jsp:include page="/${emm:ckEditorPath(pageContext.request)}/ckeditor-emm-helper.jsp">
-        <jsp:param name="toolbarType" value="${emm:isCKEditorTrimmed(pageContext.request) ? 'Trimmed' : 'EMM'}"/>
+        <jsp:param name="toolbarType" value="${toolbarType}"/>
     </jsp:include>
 </emm:HideByPermission>                                    
 
@@ -72,24 +84,7 @@
 									<div class="tile-content-forms">
 										<%@include file="mailing-content-list-contentsource-list.jsp"  %>
 
-										<c:if test="${mailingContentForm.enableTextGeneration and not mailingContentForm.worldMailingSend}">
-											<div class="form-group">
-												<div class="col-sm-4">
-													<label class="control-label">
-														<bean:message key="mailing.option"/>
-													</label>
-												</div>
-
-												<div class="col-sm-8">
-													<agn:agnLink page="/mailingcontent.do?action=${ACTION_GENERATE_TEXT_FROM_HTML}&mailingID=${mailingContentForm.mailingID}"
-																 tabindex="-1" styleClass="btn btn-regular" data-controls-group="editing"
-																 data-confirm="">
-														<i class="icon icon-exchange"></i>
-														<span class="text"><bean:message key="mailing.GenerateText"/></span>
-													</agn:agnLink>
-												</div>
-											</div>
-										</c:if>
+										<%@include file="fragments/mailing-generate-text-from-html.jspf" %>
 
 										<%@include file="mailing-content-list-contentsource-datelimit.jsp" %>
 									</div>
@@ -137,12 +132,20 @@
 					<!-- col END -->
 
 					<emm:ShowByPermission token="mailing.send.show">
-						<c:url var="previewLink" value="/mailingsend.do">
-							<c:param name="action" value="${ACTION_PREVIEW_SELECT}"/>
-							<c:param name="mailingID" value="${mailingContentForm.mailingID}"/>
-							<c:param name="previewForm.pure" value="true"/>
-							<c:param name="previewForm.format" value="${mailingContentForm.showHTMLEditor ? PREVIEW_FORMAT_HTML : PREVIEW_FORMAT_TEXT}"/>
-						</c:url>
+						<emm:ShowByPermission token="mailing.send.migration">
+							<c:url var="previewLink" value="/mailing/preview/${mailingContentForm.mailingID}/view.action">
+								<c:param name="pure" value="true"/>
+								<c:param name="format" value="${mailingContentForm.showHTMLEditor ? PREVIEW_FORMAT_HTML : PREVIEW_FORMAT_TEXT}"/>
+							</c:url>
+						</emm:ShowByPermission>
+						<emm:HideByPermission token="mailing.send.migration">
+							<c:url var="previewLink" value="/mailingsend.do">
+								<c:param name="action" value="${ACTION_PREVIEW_SELECT}"/>
+								<c:param name="mailingID" value="${mailingContentForm.mailingID}"/>
+								<c:param name="previewForm.pure" value="true"/>
+								<c:param name="previewForm.format" value="${mailingContentForm.showHTMLEditor ? PREVIEW_FORMAT_HTML : PREVIEW_FORMAT_TEXT}"/>
+							</c:url>
+						</emm:HideByPermission>
 
 						<div class="hidden" data-view-split="col-md-6" data-view-block="col-xs-12" data-view-hidden="hidden">
 							<div data-load="${previewLink}" data-load-target="#preview"></div>

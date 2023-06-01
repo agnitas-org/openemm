@@ -15,7 +15,7 @@ import java.util.Objects;
 import org.agnitas.emm.core.blacklist.service.BlacklistModel;
 import org.agnitas.emm.core.blacklist.service.BlacklistService;
 import org.agnitas.emm.springws.endpoint.BaseEndpoint;
-import org.agnitas.emm.springws.endpoint.Utils;
+import org.agnitas.emm.springws.endpoint.Namespaces;
 import org.agnitas.emm.springws.jaxb.AddBlacklistRequest;
 import org.agnitas.emm.springws.jaxb.AddBlacklistResponse;
 import org.agnitas.emm.springws.util.SecurityContextAccess;
@@ -35,7 +35,7 @@ public class AddBlacklistEndpoint extends BaseEndpoint {
 		this.securityContextAccess = Objects.requireNonNull(securityContextAccess, "securityContextAccess");
 	}
 
-	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "AddBlacklistRequest")
+	@PayloadRoot(namespace = Namespaces.AGNITAS_ORG, localPart = "AddBlacklistRequest")
 	public @ResponsePayload AddBlacklistResponse addBlacklist(@RequestPayload AddBlacklistRequest request) throws Exception {
 		AddBlacklistResponse response = new AddBlacklistResponse();
 		

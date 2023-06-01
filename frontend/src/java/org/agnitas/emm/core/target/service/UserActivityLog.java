@@ -10,8 +10,8 @@
 
 package org.agnitas.emm.core.target.service;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 
 public interface UserActivityLog {		
-        public void write(ComAdmin admin, String action, String description);
+        public void write(Admin admin, String action, String description);
 }

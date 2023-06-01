@@ -18,13 +18,13 @@ import org.agnitas.beans.Mailinglist;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 
 public interface MailinglistApprovalService {
 
-	List<Mailinglist> getEnabledMailinglistsForAdmin(ComAdmin admin);
+	List<Mailinglist> getEnabledMailinglistsForAdmin(Admin admin);
 
-	List<Mailinglist> getEnabledMailinglistsNamesForAdmin(ComAdmin admin);
+	List<Mailinglist> getEnabledMailinglistsNamesForAdmin(Admin admin);
 	
 	Set<Integer> getAdminsAllowedToUseMailinglist(@VelocityCheck int companyId, int mailinglistId);
 
@@ -54,14 +54,14 @@ public interface MailinglistApprovalService {
 	/**
 	 * Check is admin have access to certain mailing list.
 	 */
-	boolean isAdminHaveAccess(ComAdmin admin, int mailingListId);
+	boolean isAdminHaveAccess(Admin admin, int mailingListId);
 
 	/**
 	 * Check is admin have any disabled mailing lists.
 	 */
-	boolean hasAnyDisabledMailingListsForAdmin(ComAdmin admin);
+	boolean hasAnyDisabledMailingListsForAdmin(Admin admin);
 
-	boolean hasAnyDisabledRecipientBindingsForAdmin(ComAdmin admin, int recipientId);
+	boolean hasAnyDisabledRecipientBindingsForAdmin(Admin admin, int recipientId);
 
 	boolean hasAnyDisabledMailingListsForAdmin(@VelocityCheck int companyId, int adminId);
 

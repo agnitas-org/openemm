@@ -47,7 +47,6 @@
 
                         <html:hidden property="generationOptimization" />
 
-                        <html:hidden property="autoExportId" />
                         <html:hidden property="autoImportId" />
 
                         <div class="modal-header">

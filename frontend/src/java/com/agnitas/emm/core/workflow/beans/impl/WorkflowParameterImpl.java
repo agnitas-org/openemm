@@ -10,10 +10,10 @@
 
 package com.agnitas.emm.core.workflow.beans.impl;
 
+import java.util.Objects;
+
 import com.agnitas.emm.core.workflow.beans.WorkflowIconType;
 import com.agnitas.emm.core.workflow.beans.WorkflowParameter;
-
-import java.util.Objects;
 
 public class WorkflowParameterImpl extends BaseWorkflowIcon implements WorkflowParameter {
 
@@ -36,9 +36,15 @@ public class WorkflowParameterImpl extends BaseWorkflowIcon implements WorkflowP
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
+        if (this == o) {
+			return true;
+		}
+        if (o == null || getClass() != o.getClass()) {
+			return false;
+		}
+        if (!super.equals(o)) {
+			return false;
+		}
         WorkflowParameterImpl that = (WorkflowParameterImpl) o;
         return value == that.value;
     }

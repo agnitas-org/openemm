@@ -25,7 +25,8 @@ public enum UserActivityLogActions {
     SERVER_CHANGE("UserActivitylog.Server_change", "server_change"),
     IMPORT("import.csv_upload", "import"),
     EXPORT("Export", "export"),
-    GRANT("UserActivitylog.Action.Grant", "grant");
+    GRANT("UserActivitylog.Action.Grant", "grant"),
+    APPROVAL("default.enabling", "approval");
 
     // message key in resource bundle to display value on pages
     private String publicValue;

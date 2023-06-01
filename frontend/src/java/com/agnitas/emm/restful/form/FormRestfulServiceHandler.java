@@ -26,7 +26,7 @@ import org.agnitas.util.HttpUtils.RequestMethod;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.LinkProperty;
 import com.agnitas.beans.LinkProperty.PropertyType;
 import com.agnitas.dao.UserFormDao;
@@ -87,7 +87,7 @@ public class FormRestfulServiceHandler implements RestfulServiceHandler {
 	}
 
 	@Override
-	public void doService(HttpServletRequest request, HttpServletResponse response, ComAdmin admin, byte[] requestData, File requestDataFile, BaseRequestResponse restfulResponse, ServletContext context, RequestMethod requestMethod, boolean extendedLogging) throws Exception {
+	public void doService(HttpServletRequest request, HttpServletResponse response, Admin admin, byte[] requestData, File requestDataFile, BaseRequestResponse restfulResponse, ServletContext context, RequestMethod requestMethod, boolean extendedLogging) throws Exception {
 		if (requestMethod == RequestMethod.GET) {
 			Object result = getUserForm(request, response, admin);
 			if (result != null && result == EXPORTED_TO_STREAM) {
@@ -114,7 +114,7 @@ public class FormRestfulServiceHandler implements RestfulServiceHandler {
 	 * @return
 	 * @throws Exception
 	 */
-	private Object getUserForm(HttpServletRequest request, HttpServletResponse response, ComAdmin admin) throws Exception {
+	private Object getUserForm(HttpServletRequest request, HttpServletResponse response, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.FORMS_SHOW)) {
 			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.FORMS_SHOW.toString() + "'");
 		}
@@ -173,7 +173,7 @@ public class FormRestfulServiceHandler implements RestfulServiceHandler {
 	 * @return
 	 * @throws Exception
 	 */
-	private Object deleteUserForm(HttpServletRequest request, ComAdmin admin) throws Exception {
+	private Object deleteUserForm(HttpServletRequest request, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.FORMS_DELETE)) {
 			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.FORMS_DELETE.toString() + "'");
 		}
@@ -210,7 +210,7 @@ public class FormRestfulServiceHandler implements RestfulServiceHandler {
 	 * @return
 	 * @throws Exception
 	 */
-	private Object createNewUserForm(HttpServletRequest request, byte[] requestData, File requestDataFile, ComAdmin admin) throws Exception {
+	private Object createNewUserForm(HttpServletRequest request, byte[] requestData, File requestDataFile, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.FORMS_IMPORT)) {
 			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.FORMS_IMPORT.toString() + "'");
 		}
@@ -257,7 +257,7 @@ public class FormRestfulServiceHandler implements RestfulServiceHandler {
 	 * @return
 	 * @throws Exception
 	 */
-	private Object updateUserForm(HttpServletRequest request, byte[] requestData, File requestDataFile, ComAdmin admin) throws Exception {
+	private Object updateUserForm(HttpServletRequest request, byte[] requestData, File requestDataFile, Admin admin) throws Exception {
 		if ((requestData == null || requestData.length == 0) && (requestDataFile == null || requestDataFile.length() <= 0)) {
 			throw new RestfulClientException("Missing request data");
 		}
@@ -318,7 +318,7 @@ public class FormRestfulServiceHandler implements RestfulServiceHandler {
 		}
 	}
 
-	private void fillUserformObject(ComAdmin admin, UserForm userForm, JsonObject jsonObject) throws RestfulClientException, Exception {
+	private void fillUserformObject(Admin admin, UserForm userForm, JsonObject jsonObject) throws RestfulClientException, Exception {
 		for (Entry<String, Object> entry : jsonObject.entrySet()) {
 			if ("formname".equals(entry.getKey()) || "name".equals(entry.getKey())) {
 				if (entry.getValue() != null && entry.getValue() instanceof String) {

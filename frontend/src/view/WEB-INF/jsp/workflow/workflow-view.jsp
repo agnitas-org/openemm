@@ -389,6 +389,9 @@
         <c:if test="${workflowToggleTestingButtonEnabled}">
             <jsp:include page="workflow-testing-dialog-new.jsp"/>
         </c:if>
+
+        <jsp:include page="editors/workflow-sms-mailing-editor.jsp"/>
+        <jsp:include page="editors/workflow-post-mailing-editor.jsp"/>
     </div>
 
     <mvc:form servletRelativeAction="/workflow/save.action" cssClass="form-vertical" id="workflowForm"  modelAttribute="workflowForm" data-form="resource">
@@ -576,6 +579,8 @@
                             <div class="toolbarButton js-draggable-button" data-type="datebased_mailing" title="<bean:message key="mailing.Rulebased_Mailing"/>"></div>
 
                             <%@include file="fragments/workflow-view-followup-button.jspf" %>
+                            <%@include file="fragments/workflow-view-sms-mailing-icon.jspf" %>
+                            <%@include file="fragments/workflow-view-post-mailing-icon.jspf" %>
                         </div>
                     </div>
 

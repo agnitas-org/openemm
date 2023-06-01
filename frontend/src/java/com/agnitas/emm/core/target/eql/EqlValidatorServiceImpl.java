@@ -10,7 +10,7 @@
 
 package com.agnitas.emm.core.target.eql;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.messages.Message;
 import org.agnitas.emm.core.commons.util.ConfigService;
@@ -32,7 +32,7 @@ public class EqlValidatorServiceImpl implements EqlValidatorService {
     private EqlFacade eqlFacade;
 
     @Override
-    public Collection<Message> validateEql(ComAdmin admin, String eql) {
+    public Collection<Message> validateEql(Admin admin, String eql) {
         String sql;
         try {
             sql = eqlFacade.convertEqlToSql(eql, admin.getCompanyID()).getSql();
@@ -48,7 +48,7 @@ public class EqlValidatorServiceImpl implements EqlValidatorService {
         return Collections.emptyList();
     }
 
-    private boolean validateGender(ComAdmin admin, String targetSql) {
+    private boolean validateGender(Admin admin, String targetSql) {
         if (targetSql.contains("cust.gender")) {
             final int maxGenderValue = getMaxGenderValue(admin);
 
@@ -68,7 +68,7 @@ public class EqlValidatorServiceImpl implements EqlValidatorService {
         return true;
     }
 
-    private int getMaxGenderValue(ComAdmin admin) {
+    private int getMaxGenderValue(Admin admin) {
         if (admin.permissionAllowed(Permission.RECIPIENT_GENDER_EXTENDED)) {
             return ConfigService.MAX_GENDER_VALUE_EXTENDED;
         } else {

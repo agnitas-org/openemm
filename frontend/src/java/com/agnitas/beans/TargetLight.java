@@ -63,7 +63,7 @@ public interface TargetLight {
 	
 	/**
 	 * Returns name of target group.
-	 *  
+	 * 
 	 * @return name of target group
 	 */
 	String getTargetName();

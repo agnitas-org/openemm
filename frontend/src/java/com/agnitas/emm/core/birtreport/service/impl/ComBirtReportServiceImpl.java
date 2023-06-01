@@ -62,7 +62,7 @@ import com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils;
 
 public class ComBirtReportServiceImpl implements ComBirtReportService {
     /** The logger. */
-    private static final transient Logger logger = LogManager.getLogger(ComBirtReportServiceImpl.class);
+    private static final Logger logger = LogManager.getLogger(ComBirtReportServiceImpl.class);
     
     public static final String KEY_START_DATE = "from";
     public static final String KEY_END_DATE = "to";
@@ -71,7 +71,7 @@ public class ComBirtReportServiceImpl implements ComBirtReportService {
     private ComBirtReportDao birtReportDao;
 
     /** DAO accessing mailing data. */
-    private ComMailingDao mailingDao;
+    protected ComMailingDao mailingDao;
 
     private DataSource dataSource;
 
@@ -330,10 +330,6 @@ public class ComBirtReportServiceImpl implements ComBirtReportService {
         this.mailingDao = mailingDao;
     }
 
-    public ComMailingDao getMailingDao() {
-        return mailingDao;
-    }
-
     @Required
     public void setDataSource(DataSource dataSource) {
         this.dataSource = dataSource;
@@ -358,23 +354,23 @@ public class ComBirtReportServiceImpl implements ComBirtReportService {
     public List<ComBirtReport> getReportsToSend(int maximumNumberOfReports, List<Integer> includedCompanyIds, List<Integer> excludedCompanyIds) {
         if (maximumNumberOfReports <= 0) {
             return new ArrayList<>();
-        } else {
-            final List<ComBirtReport> reportsList = birtReportDao.getReportsToSend(includedCompanyIds, excludedCompanyIds);
-            List<ComBirtReport> reportsToSend = new ArrayList<>();
-            for (ComBirtReport birtReport : reportsList) {
-                if (reportsToSend.size() < maximumNumberOfReports) {
-                    if (checkReportToSend(birtReport)) {
-                        reportsToSend.add(birtReport);
-                    } else if (birtReport.getNextStart() != null) {
-                        // Time triggered reports, which do have an additional unfulfilled condition for being sent will be retried after next interval
-                        // (e.g. reports for mailings of a defined mailinglists to be sent within the last week, when no fitting mailing was sent in that week)
-                        birtReport.setNextStart(DateUtilities.calculateNextJobStart(birtReport.getIntervalpattern()));
-                        birtReportDao.announceStart(birtReport);
-                        birtReportDao.announceEnd(birtReport);
-                    }
+        }
+
+        final List<ComBirtReport> reportsList = birtReportDao.getReportsToSend(includedCompanyIds, excludedCompanyIds);
+        List<ComBirtReport> reportsToSend = new ArrayList<>();
+        for (ComBirtReport birtReport : reportsList) {
+            if (reportsToSend.size() < maximumNumberOfReports) {
+                if (checkReportToSend(birtReport)) {
+                    reportsToSend.add(birtReport);
+                } else if (birtReport.getNextStart() != null) {
+                    // Time triggered reports, which do have an additional unfulfilled condition for being sent will be retried after next interval
+                    // (e.g. reports for mailings of a defined mailinglists to be sent within the last week, when no fitting mailing was sent in that week)
+                    birtReport.setNextStart(DateUtilities.calculateNextJobStart(birtReport.getIntervalpattern()));
+                    birtReportDao.announceStart(birtReport);
+                    birtReportDao.announceEnd(birtReport);
                 }
             }
-            return reportsToSend;
         }
+        return reportsToSend;
     }
 }

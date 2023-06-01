@@ -21,6 +21,7 @@ import java.security.PublicKey;
 import java.security.spec.EncodedKeySpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
+import java.text.MessageFormat;
 
 import javax.crypto.Cipher;
 
@@ -61,7 +62,7 @@ public class RSACryptUtil {
 			cipher.init(Cipher.ENCRYPT_MODE, key);
 			return cipher.doFinal(text);
 		} catch (Exception e) {
-			LOGGER.error("Error while encrypting: " + e.getMessage());
+			LOGGER.error(MessageFormat.format("Error while encrypting: {0}", e.getMessage()));
 			throw e;
 		}
 	}
@@ -74,8 +75,7 @@ public class RSACryptUtil {
 	 * @param publicKey
 	 *            The public key
 	 * @return Encrypted text encoded as BASE64
-	 * @throws java.lang.Exception
-	 * 
+	 *
 	 * @see {@link #encryptUrlSafe(String, String)}
 	 */
 	public static String encrypt(String text, String publicKey) throws Exception {
@@ -83,7 +83,7 @@ public class RSACryptUtil {
 			byte[] cipherText = encrypt(text.getBytes("UTF8"), publicKey);
 			return encodeBASE64(cipherText);
 		} catch (Exception e) {
-			LOGGER.error("Error while encrypting: " + e.getMessage());
+			LOGGER.error(MessageFormat.format("Error while encrypting: {0}", e.getMessage()));
 			throw e;
 		}
 	}
@@ -96,7 +96,6 @@ public class RSACryptUtil {
 	 * @param publicKey
 	 *            The public key
 	 * @return Encrypted text encoded as BASE64
-	 * @throws java.lang.Exception
 	 */
 	public static String encryptUrlSafe(String text, String publicKey) throws Exception {
 		try {
@@ -104,7 +103,7 @@ public class RSACryptUtil {
 
 			return encodeBASE64Url(cipherText);
 		} catch (Exception e) {
-			LOGGER.error("Error while encrypting: " + e.getMessage());
+			LOGGER.error(MessageFormat.format("Error while encrypting: {0}", e.getMessage()));
 			throw e;
 		}
 	}
@@ -117,7 +116,6 @@ public class RSACryptUtil {
 	 * @param privateKey
 	 *            The private key
 	 * @return The unencrypted text
-	 * @throws java.lang.Exception
 	 */
 	public static byte[] decrypt(byte[] text, String privateKey) throws Exception {
 		PrivateKey key = getPrivateKeyFromString(privateKey);
@@ -127,7 +125,7 @@ public class RSACryptUtil {
 			cipher.init(Cipher.DECRYPT_MODE, key);
 			return cipher.doFinal(text);
 		} catch (Exception e) {
-			LOGGER.error("Error while decrypting: " + e.getMessage());
+			LOGGER.error(MessageFormat.format("Error while decrypting: {0}", e.getMessage()));
 			throw e;
 		}
 	}
@@ -140,7 +138,6 @@ public class RSACryptUtil {
 	 * @param privateKey
 	 *            The private key
 	 * @return The unencrypted text encoded as UTF8
-	 * @throws java.lang.Exception
 	 */
 	public static String decrypt(String text, String privateKey) throws Exception {
 		try {
@@ -148,7 +145,7 @@ public class RSACryptUtil {
 			byte[] dectyptedText = decrypt(decodeBASE64(text), privateKey);
 			return new String(dectyptedText, "UTF8");
 		} catch (Exception e) {
-			LOGGER.error("Error while decrypting: " + e.getMessage());
+			LOGGER.error(MessageFormat.format("Error while decrypting: {0}", e.getMessage()));
 			throw e;
 		}
 	}
@@ -159,7 +156,6 @@ public class RSACryptUtil {
 	 * @param key
 	 *            The key (private or public)
 	 * @return A string representation of the key
-	 * @throws UnsupportedEncodingException
 	 */
 	public static String getKeyAsString(Key key) throws UnsupportedEncodingException {
 		return new String(Base64.encodeBase64(key.getEncoded()), "UTF-8");
@@ -171,13 +167,11 @@ public class RSACryptUtil {
 	 * @param key
 	 *            BASE64 encoded string which represents the key
 	 * @return The PrivateKey
-	 * @throws java.lang.Exception
 	 */
 	public static PrivateKey getPrivateKeyFromString(String key) throws Exception {
 		KeyFactory keyFactory = KeyFactory.getInstance(ALGORITHM, CryptographicUtilities.BOUNCY_CASTLE_PROVIDER);
 		EncodedKeySpec privateKeySpec = new PKCS8EncodedKeySpec(Base64.decodeBase64(key.getBytes("UTF-8")));
-		PrivateKey privateKey = keyFactory.generatePrivate(privateKeySpec);
-		return privateKey;
+		return keyFactory.generatePrivate(privateKeySpec);
 	}
 
 	/**
@@ -186,13 +180,11 @@ public class RSACryptUtil {
 	 * @param key
 	 *            BASE64 encoded string which represents the key
 	 * @return The PublicKey
-	 * @throws java.lang.Exception
 	 */
 	public static PublicKey getPublicKeyFromString(String key) throws Exception {
 		KeyFactory keyFactory = KeyFactory.getInstance(ALGORITHM, CryptographicUtilities.BOUNCY_CASTLE_PROVIDER);
 		EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(Base64.decodeBase64(key.getBytes("UTF-8")));
-		PublicKey publicKey = keyFactory.generatePublic(publicKeySpec);
-		return publicKey;
+		return keyFactory.generatePublic(publicKeySpec);
 	}
 
 	/**
@@ -201,10 +193,8 @@ public class RSACryptUtil {
 	 * Consider using {@link #encodeBASE64Url(byte[])}.
 	 * 
 	 * 
-	 * @param bytes
 	 * @return Encoded string
-	 * @throws UnsupportedEncodingException
-	 * 
+	 *
 	 * @see {@link #encodeBASE64Url(byte[])}
 	 */
 	private static String encodeBASE64(byte[] bytes) throws UnsupportedEncodingException {
@@ -214,9 +204,7 @@ public class RSACryptUtil {
 	/**
 	 * Encode bytes array to BASE64 string URL safe.
 	 * 
-	 * @param bytes
 	 * @return Encoded string
-	 * @throws UnsupportedEncodingException
 	 */
 	private static String encodeBASE64Url(byte[] bytes) throws UnsupportedEncodingException {
 		return Base64.encodeBase64URLSafeString(bytes);
@@ -228,7 +216,6 @@ public class RSACryptUtil {
 	 * @param text
 	 *            The string
 	 * @return Bytes array
-	 * @throws IOException
 	 */
 	private static byte[] decodeBASE64(String text) throws IOException {
 		return Base64.decodeBase64(text.getBytes("UTF-8"));
@@ -236,10 +223,6 @@ public class RSACryptUtil {
 
 	/**
 	 * avoid to read the publickey-file each time an encryption is requested
-	 * 
-	 * @param filename
-	 * @return
-	 * @throws IOException
 	 */
 	public static String getPublicKey(String filename) throws IOException {
 		return readKeyFromFile(filename, true);
@@ -247,10 +230,6 @@ public class RSACryptUtil {
 
 	/**
 	 * avoid to read the private-key file each time a decryption is requested
-	 * 
-	 * @param filename
-	 * @return
-	 * @throws IOException
 	 */
 
 	public static String getPrivateKey(String filename) throws IOException {
@@ -260,11 +239,9 @@ public class RSACryptUtil {
 	/**
 	 * Read a keyfile generated with 'openssl genrsa...' ,format it
 	 * 
-	 * @param filename
 	 * @param isPublic
 	 *            is it the public/private key ?
 	 * @return the key as a String
-	 * @throws IOException
 	 */
 	private static String readKeyFromFile(String filename, boolean isPublic) throws IOException {
 		StringBuffer keyBuffer = new StringBuffer();

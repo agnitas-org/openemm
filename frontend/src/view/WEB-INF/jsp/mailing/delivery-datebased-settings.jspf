@@ -16,154 +16,7 @@
 </div>
 
 <logic:equal name="mailingSendForm" property="isTemplate" value="false">
-    <emm:HideByPermission token="mailing.send.threshold">
 
-        <%-- Deativate buttons--%>
-        <logic:equal name="mailingSendForm" property="worldMailingSend" value="true">
-            <emm:ShowByPermission token="mailing.send.world">
-                <div class="form-group">
-                    <div class="col-sm-4">
-                        <label class="control-label">
-                            <bean:message key="MailingDeactivate" />
-                        </label>
-                    </div>
-                    <div class="col-sm-8">
-                        <c:if test="${not isWorkflowDriven}">
-                            <html:link styleClass="btn btn-regular btn-warning"
-                                       page='/mailingsend.do?action=${ACTION_DEACTIVATE_MAILING}&mailingID=${tmpMailingID}'>
-                                <i class="icon icon-ban"></i>
-                                <span class="text"><bean:message key="btndeactivate" /></span>
-                            </html:link>
-                        </c:if>
-                        <c:if test="${isWorkflowDriven}">
-                            <div class="input-group">
-                                <div class="input-group-btn">
-                                    <button class="btn btn-regular btn-warning" disabled='disabled'>
-                                        <i class="icon icon-ban"></i>
-                                        <span class="text"><bean:message key="btndeactivate" /></span>
-                                    </button>
-                                    <a href="${WORKFLOW_LINK}" class="btn btn-info btn-regular">
-                                        <i class="icon icon-linkage-campaignmanager"></i>
-                                        <strong><bean:message key="campaign.manager.icon"/></strong>
-                                    </a>
-                                </div>
-                            </div>
-                        </c:if>
-                    </div>
-                </div>
-            </emm:ShowByPermission>
-        </logic:equal>
-
-        <%-- Activate buttons--%>
-        <logic:equal name="mailingSendForm" property="worldMailingSend" value="false">
-            <emm:ShowByPermission token="mailing.send.world">
-                <c:choose>
-                    <c:when test="${not mailingSendForm.hasDeletedTargetGroups}">
-
-                        <agn:agnForm action="/mailingsend.do?action=${ACTION_ACTIVATE_RULEBASED}&mailingID=${tmpMailingID}" id="activateMailingForm" data-form="resource">
-                            <input type="hidden" name="action" value="${ACTION_ACTIVATE_RULEBASED}">
-                            <input type="hidden" name="to" value="4">
-                            <html:hidden property="mailingID" />
-                            <html:hidden property="autoImportId" />
-
-                            <div class="form-group">
-
-                                <div class="col-sm-4">
-                                    <label class="control-label"><bean:message key="MailingActivate" /></label>
-                                </div>
-                                <div class="col-sm-8">
-                                    <button type="button" tabindex="-1" class="btn btn-regular btn-primary" data-form-submit>
-                                        <span><bean:message key="button.Activate" /></span>
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="form-group">
-
-
-                            <div class="col-sm-4">
-                                    <label class="control-label" for="sendTime">
-                                        <bean:message key="SendingTimeDaily" />
-                                    </label>
-                                </div>
-
-                                <div class="col-sm-8">
-                                    <c:if test="${not isWorkflowDriven}">
-                                        <%
-                                            GregorianCalendar aDate = new GregorianCalendar(AgnUtils.getTimeZone(request));
-                                            DateFormat internalFormat = new SimpleDateFormat("yyyyMMdd");
-                                        %>
-
-                                        <input type="hidden" name="sendDate" value="<%= internalFormat.format(aDate.getTime()) %>">
-
-                                        <div class="input-group" data-field="split">
-                                            <div class="input-group-controls">
-                                                <c:set var="sendHour"><fmt:formatNumber minIntegerDigits="2" value="${mailingSendForm.sendHour}" /></c:set>
-                                                <c:set var="sendMinute"><fmt:formatNumber minIntegerDigits="2" value="${mailingSendForm.sendMinute}" /></c:set>
-
-                                                <input type="text" id="sendTime" name="sendTime" class="form-control js-timepicker" value="${sendHour}:${sendMinute}"
-                                                       data-field-split="sendHour, sendMinute" data-field-split-rule=":" data-timepicker-options="mask: 'h:00'" />
-                                            </div>
-                                            <div class="input-group-addon">
-                                                    <span class="addon">
-                                                        <i class="icon icon-clock-o"></i>
-                                                    </span>
-                                            </div>
-                                            <div class="input-group-addon">
-                                                    <span class="addon">
-                                                            ${emm:getTimeZoneId(pageContext.request)}
-                                                    </span>
-                                            </div>
-                                        </div>
-
-                                        <p class="help-block"><bean:message key="default.interval" />: <bean:message key="default.minutes.60" /></p>
-                                    </c:if>
-                                    <c:if test="${isWorkflowDriven}">
-                                        <div class="input-group" data-field="split">
-                                            <div class="input-group-controls">
-                                                <c:set var="sendHour"><fmt:formatNumber minIntegerDigits="2" value="${mailingSendForm.sendHour}" /></c:set>
-                                                <c:set var="sendMinute"><fmt:formatNumber minIntegerDigits="2" value="${mailingSendForm.sendMinute}" /></c:set>
-
-                                                <input type="text" id="sendTime" name="sendTime" class="form-control js-timepicker" value="${sendHour}:${sendMinute}"
-                                                       data-field-split="sendHour, sendMinute" data-field-split-rule=":" data-timepicker-options="mask: 'h:00'" disabled='disabled'/>
-                                            </div>
-                                            <div class="input-group-addon" disabled='disabled'>
-                                                    <span class="addon">
-                                                        <i class="icon icon-clock-o"></i>
-                                                    </span>
-                                            </div>
-                                            <div class="input-group-addon" disabled='disabled'>
-                                                    <span class="addon">
-                                                            ${emm:getTimeZoneId(pageContext.request)}
-                                                    </span>
-                                            </div>
-                                            <a href="${WORKFLOW_LINK}" class="btn btn-info btn-regular">
-                                                <i class="icon icon-linkage-campaignmanager"></i>
-                                                <strong><bean:message key="campaign.manager.icon"/></strong>
-                                            </a>
-                                        </div>
-                                    </c:if>
-                                </div>
-                            </div>
-                        </agn:agnForm>
-                    </c:when>
-                    <c:otherwise>
-                        <%@ include file="fragments/mailing-cannot-activate-message.jspf" %>
-                    </c:otherwise>
-                </c:choose>
-            </emm:ShowByPermission>
-        </logic:equal>
-
-        <%@ include file="mailing-send-size.jspf" %>
-
-        <%@ include file="mailing-send-prioritization.jspf" %>
-
-        <%-- Approve button --%>
-        <%@ include file="fragments/mailing-approve-button.jspf" %>
-
-        <%@ include file="fragments/mailing-notification-settings.jspf" %>
-    </emm:HideByPermission>
-
-    <emm:ShowByPermission token="mailing.send.threshold">
         <%@ include file="mailing-send-size.jspf" %>
 
         <%@ include file="mailing-send-prioritization.jspf" %>
@@ -283,16 +136,18 @@
                                 </div>
                             </div>
 
-                            <div class="form-group">
-                                <div class="col-sm-4">
-                                    <label class="control-label"><bean:message key="MailingActivate" /></label>
-                                </div>
-                                <div class="col-sm-8">
-                                    <button type="button" tabindex="-1" class="btn btn-regular btn-primary" data-form-submit>
-                                        <span><bean:message key="button.Activate" /></span>
-                                    </button>
-                                </div>
-                            </div>
+				        	<c:if test="${canSendOrActivateMailing}">
+	                            <div class="form-group">
+	                                <div class="col-sm-4">
+	                                    <label class="control-label"><bean:message key="MailingActivate" /></label>
+	                                </div>
+	                                <div class="col-sm-8">
+	                                    <button type="button" tabindex="-1" class="btn btn-regular btn-primary" data-form-submit>
+	                                        <span><bean:message key="button.Activate" /></span>
+	                                    </button>
+	                                </div>
+	                            </div>
+	                        </c:if>
                         </agn:agnForm>
                     </c:when>
                     <c:otherwise>
@@ -318,6 +173,5 @@
 
         <%-- Approve button --%>
         <%@ include file="fragments/mailing-approve-button.jspf" %>
-    </emm:ShowByPermission>
 
 </logic:equal>

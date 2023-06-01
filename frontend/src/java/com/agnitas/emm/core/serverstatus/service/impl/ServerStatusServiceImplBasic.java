@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipOutputStream;
 
 import org.agnitas.emm.core.autoexport.dao.AutoExportDao;
+import org.agnitas.emm.core.autoimport.bean.AutoImport;
 import org.agnitas.emm.core.autoimport.dao.AutoImportDao;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
@@ -41,7 +42,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.dao.ComServerStatusDao;
 import com.agnitas.emm.core.JavaMailService;
 import com.agnitas.emm.core.serverstatus.bean.ServerStatus;
@@ -61,7 +62,7 @@ public class ServerStatusServiceImplBasic implements ServerStatusService {
 	private static final Logger logger = LogManager.getLogger(ServerStatusService.class);
 	
 	private static final String ORACLE = "oracle";
-	private static final String MYSQL = "mysql";
+	private static final String MARIADB = "mariadb";
 	
 	private static final String ERROR = "ERROR";
 	private static final String OK = "OK";
@@ -249,20 +250,24 @@ public class ServerStatusServiceImplBasic implements ServerStatusService {
 	}
 	
 	@Override
-	public ServerStatus getServerStatus(ServletContext servletContext, ComAdmin admin) {
+	public ServerStatus getServerStatus(ServletContext servletContext, Admin admin) {
 		String version = configService.getValue(ConfigValue.ApplicationVersion);
 		String installPath = servletContext.getRealPath("/");
 		SimpleDateFormat dateTimeFormat = new SimpleDateFormat(DateUtilities.DD_MM_YYYY_HH_MM_SS);
+		
+		List<AutoImport> stallingAutoImports = getStallingAutoImports();
+		boolean importStatusOK = getStallingImportsAmount() == 0 && (stallingAutoImports == null || stallingAutoImports.size() == 0);
+		
 		return ServerStatus.builder(version, installPath, admin.getLocale(), configService)
 				.database(serverStatusDao.getDbVendor(), getDbUrl(), getDbVersion(), checkDatabaseConnection())
 				.dateTimeSettings(dateTimeFormat, configService.getStartupTime(), configService.getConfigurationExpirationTime())
-				.statuses(isOverallStatusOK(), isJobQueueStatusOK(), !isImportStalling(), !isExportStalling(), isDBStatusOK(), isReportStatusOK())
+				.statuses(isOverallStatusOK(), isJobQueueStatusOK(), importStatusOK, !isExportStalling(), isDBStatusOK(), isReportStatusOK())
 				.dbVersionStatuses(getLatestDBVersionsAndErrors())
 				.build();
 	}
 	
 	@Override
-	public SimpleServiceResult sendTestMail(ComAdmin admin, String testMailAddress) {
+	public SimpleServiceResult sendTestMail(Admin admin, String testMailAddress) {
 		boolean success = false;
 		Message message;
 		
@@ -291,7 +296,7 @@ public class ServerStatusServiceImplBasic implements ServerStatusService {
 	}
 	
 	@Override
-	public SimpleServiceResult sendDiagnosisInfo(ServletContext servletContext, ComAdmin admin, String sendDiagnosisEmail) {
+	public SimpleServiceResult sendDiagnosisInfo(ServletContext servletContext, Admin admin, String sendDiagnosisEmail) {
 		boolean success = false;
 		Message message;
 		
@@ -354,7 +359,9 @@ public class ServerStatusServiceImplBasic implements ServerStatusService {
 	}
 	
 	private boolean isOverallStatusOK() {
-		return isDBStatusOK() && isJobQueueRunning() && isJobQueueStatusOK() && !isImportStalling() && isReportStatusOK();
+		List<AutoImport> stallingAutoImports = getStallingAutoImports();
+		boolean importStatusOK = getStallingImportsAmount() == 0 && (stallingAutoImports == null || stallingAutoImports.size() == 0);
+		return isDBStatusOK() && isJobQueueRunning() && isJobQueueStatusOK() && importStatusOK && isReportStatusOK();
 	}
 
 	@Override
@@ -376,9 +383,23 @@ public class ServerStatusServiceImplBasic implements ServerStatusService {
 	}
 
 	@Override
-	public boolean isImportStalling() {
+	public List<AutoImport> getStallingAutoImports() {
 		// Only retrieve the status once per request for performance
-		return autoImportDao != null && autoImportDao.isImportStalling();
+		if (autoImportDao != null) {
+			return autoImportDao.getStallingAutoImports();
+		} else {
+			return null;
+		}
+	}
+
+	@Override
+	public int getStallingImportsAmount() {
+		// Only retrieve the status once per request for performance
+		if (autoImportDao != null) {
+			return autoImportDao.getStallingImportsAmount();
+		} else {
+			return 0;
+		}
 	}
 
 	@Override
@@ -389,7 +410,7 @@ public class ServerStatusServiceImplBasic implements ServerStatusService {
 	
 	private List<Version> getMandatoryDbVersions() {
 		List<Version> list = new ArrayList<>();
-		String dbVendor = ConfigService.isOracleDB() ? ORACLE : MYSQL;
+		String dbVendor = ConfigService.isOracleDB() ? ORACLE : MARIADB;
 		try {
 			List<String> versionStringList = IOUtils.readLines(getClass().getClassLoader()
 							.getResourceAsStream("mandatoryDbChanges_"+ dbVendor + ".csv"),
@@ -438,34 +459,34 @@ public class ServerStatusServiceImplBasic implements ServerStatusService {
 	@Override
 	public File downloadConfigFile() throws IOException, Exception {
 		File zippedFile = File.createTempFile(AgnUtils.getTempDir() + "/ConfigTables_", ".zip");
-		ZipOutputStream zipOutput = ZipUtilities.openNewZipOutputStream(zippedFile);
-		
-		String[] allTables = {"config_tbl", "company_tbl", "company_info_tbl", "serverset_tbl", "serverprop_tbl"};
-		
-		String[] allSelects = {"select * from config_tbl order by class, name",
-				"select * from company_tbl order by company_id",
-				"select * from company_info_tbl order by company_id, cname",
-				"select * from serverset_tbl order by set_id",
-				"select * from serverprop_tbl order by mailer, mvar"
-				};
-		
-		for (int i = 0; i < allTables.length; i++) {
-			try {
-				
-				File fullTbl = getFullTbl(allSelects[i], allTables[i]);
-				
-				if (fullTbl != null) {
-					ZipUtilities.addFileToOpenZipFileStream(fullTbl, zipOutput);
-				}
+		try (ZipOutputStream zipOutput = ZipUtilities.openNewZipOutputStream(zippedFile)) {
+			String[] allTables = {"config_tbl", "company_tbl", "company_info_tbl", "serverset_tbl", "serverprop_tbl"};
 			
-			} catch (IOException ex) {
-				ZipUtilities.closeZipOutputStream(zipOutput);
-				logger.error("Error writing file." + ex);
-				throw ex;
+			String[] allSelects = {"select * from config_tbl order by class, name",
+					"select * from company_tbl order by company_id",
+					"select * from company_info_tbl order by company_id, cname",
+					"select * from serverset_tbl order by set_id",
+					"select * from serverprop_tbl order by mailer, mvar"
+					};
+			
+			for (int i = 0; i < allTables.length; i++) {
+				try {
+					
+					File fullTbl = getFullTbl(allSelects[i], allTables[i]);
+					
+					if (fullTbl != null) {
+						ZipUtilities.addFileToOpenZipFileStream(fullTbl, zipOutput);
+					}
+				
+				} catch (IOException ex) {
+					ZipUtilities.closeZipOutputStream(zipOutput);
+					logger.error("Error writing file." + ex);
+					throw ex;
+				}
 			}
-		}
 		
-		ZipUtilities.closeZipOutputStream(zipOutput);
+			ZipUtilities.closeZipOutputStream(zipOutput);
+		}
 		
 		return zippedFile;
 	}
@@ -481,10 +502,12 @@ public class ServerStatusServiceImplBasic implements ServerStatusService {
 				"dbConnection",
 				"report"
 			};
+		List<AutoImport> stallingAutoImports = getStallingAutoImports();
+		boolean importStatusOK = getStallingImportsAmount() == 0 && (stallingAutoImports == null || stallingAutoImports.size() == 0);
 		boolean[] statusValues = {
 				isOverallStatusOK(),
 				isJobQueueStatusOK(),
-				!isImportStalling(),
+				importStatusOK,
 				isDBStatusOK(),
 				checkDatabaseConnection(),
 				isReportStatusOK()

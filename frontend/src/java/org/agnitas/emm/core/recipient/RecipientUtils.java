@@ -39,7 +39,7 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.ProfileField;
 import com.agnitas.dao.impl.ComCompanyDaoImpl;
 import com.agnitas.emm.core.recipient.forms.RecipientListBaseForm;
@@ -261,7 +261,7 @@ public class RecipientUtils {
         return false;
     }
 
-    public static String formatRecipientDateValue(ComAdmin admin, String value) throws Exception {
+    public static String formatRecipientDateValue(Admin admin, String value) throws Exception {
         if (DbUtilities.isNowKeyword(value)) {
             return LocalDate.now(AgnUtils.getZoneId(admin)).format(admin.getDateFormatter());
         }
@@ -273,7 +273,7 @@ public class RecipientUtils {
         return "";
     }
 
-    public static String formatRecipientDateTimeValue(ComAdmin admin, String value) throws Exception {
+    public static String formatRecipientDateTimeValue(Admin admin, String value) throws Exception {
         if (DbUtilities.isNowKeyword(value)) {
             return LocalDateTime.now(AgnUtils.getZoneId(admin)).format(admin.getDateTimeFormatter());
         }
@@ -295,19 +295,19 @@ public class RecipientUtils {
         return dateValue;
     }
 
-    public static String formatRecipientDateValue(ComAdmin admin, Date dateValue) {
+    public static String formatRecipientDateValue(Admin admin, Date dateValue) {
         return StringUtils.defaultString(DateUtilities.format(dateValue, admin.getDateFormat()));
     }
 
-    public static String formatRecipientDateTimeValue(ComAdmin admin, Date dateTimeValue) {
+    public static String formatRecipientDateTimeValue(Admin admin, Date dateTimeValue) {
         return StringUtils.defaultString(DateUtilities.format(dateTimeValue, admin.getDateTimeFormat()));
     }
 
-    public static String formatRecipientDoubleValue(ComAdmin admin, String value) {
+    public static String formatRecipientDoubleValue(Admin admin, String value) {
         return formatRecipientDoubleValue(admin, NumberUtils.toDouble(value));
     }
 
-    public static String formatRecipientDoubleValue(ComAdmin admin, double value) {
+    public static String formatRecipientDoubleValue(Admin admin, double value) {
         DecimalFormatSymbols decimalFormatSymbols = new DecimalFormatSymbols(admin.getLocale());
         DecimalFormat floatFormat = new DecimalFormat("###0.###", decimalFormatSymbols);
         return floatFormat.format(value);

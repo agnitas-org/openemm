@@ -376,9 +376,9 @@ return false;]]></method>
 	currentrow++;
 
 	row["DATETIME"] =  data.getClickTime();
-	row["OPENINGS_GROSS"] = data.getClicks_gross();
-	row["OPENERS_UNIQUE"] = data.getClicks_net();
-	row["OPENINGS_ANONYM"] = data.getClicks_anonymous();	
+	row["OPENINGS_GROSS"] = data.getClicksGross();
+	row["OPENERS_UNIQUE"] = data.getClicksNet();
+	row["OPENINGS_ANONYM"] = data.getClicksAnonymous();
 	row["DEVICECLASSID"] = data.getDeviceClassID();
 	row["TARGETGROUP"] = data.getTargetgroup();
 		
@@ -387,7 +387,7 @@ return false;]]></method>
 		row["TARGETGROUP"] = Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.all_subscribers", reportContext.getLocale());
 	}
 
-	row["COLUMN_INDEX"] = data.getColumn_index();
+	row["COLUMN_INDEX"] = data.getColumnIndex();
 	return  true;
 }
 return false;

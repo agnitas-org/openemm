@@ -18,10 +18,12 @@ import org.agnitas.emm.core.mailing.service.MailingModel;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.springws.endpoint.BaseEndpoint;
 import org.agnitas.emm.springws.endpoint.MailingEditableCheck;
-import org.agnitas.emm.springws.endpoint.Utils;
+import org.agnitas.emm.springws.endpoint.Namespaces;
 import org.agnitas.emm.springws.jaxb.UpdateMailingRequest;
 import org.agnitas.emm.springws.jaxb.UpdateMailingRequest.TargetIDList;
 import org.agnitas.emm.springws.jaxb.UpdateMailingResponse;
+import org.agnitas.emm.springws.util.SecurityContextAccess;
+import org.agnitas.emm.springws.util.UserActivityLogAccess;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -42,16 +44,20 @@ public class UpdateMailingEndpoint extends BaseEndpoint {
 	private final ThumbnailService thumbnailService;
 	private final MailingService mailingService;
 	private final MailingEditableCheck mailingEditableCheck;
+	private final SecurityContextAccess securityContextAccess;
+	private final UserActivityLogAccess userActivityLogAccess;
 
-	public UpdateMailingEndpoint(@Qualifier("MailingService") MailingService mailingService, final MailingEditableCheck mailingEditableCheck, final ThumbnailService thumbnailService) {
-		this.mailingService = Objects.requireNonNull(mailingService);
-		this.mailingEditableCheck = Objects.requireNonNull(mailingEditableCheck);
-		this.thumbnailService = Objects.requireNonNull(thumbnailService);
+	public UpdateMailingEndpoint(@Qualifier("MailingService") MailingService mailingService, final MailingEditableCheck mailingEditableCheck, final ThumbnailService thumbnailService, final SecurityContextAccess securityContextAccess, final UserActivityLogAccess userActivityLogAccess) {
+		this.mailingService = Objects.requireNonNull(mailingService, "mailingService");
+		this.mailingEditableCheck = Objects.requireNonNull(mailingEditableCheck, "mailingEditableCheck");
+		this.thumbnailService = Objects.requireNonNull(thumbnailService, "thumbnailService");
+		this.securityContextAccess = Objects.requireNonNull(securityContextAccess, "securityContextAccess");
+		this.userActivityLogAccess = Objects.requireNonNull(userActivityLogAccess, "userActivityLogAccess");
 	}
 
-	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "UpdateMailingRequest")
+	@PayloadRoot(namespace = Namespaces.AGNITAS_ORG, localPart = "UpdateMailingRequest")
 	public @ResponsePayload UpdateMailingResponse updateMailing(@RequestPayload UpdateMailingRequest request) throws Exception {
-		final int companyID = Utils.getUserCompany();
+		final int companyID = this.securityContextAccess.getWebserviceUserCompanyId();
 		
 		this.mailingEditableCheck.requireMailingEditable(request.getMailingID(), companyID);
 		
@@ -74,13 +80,13 @@ public class UpdateMailingEndpoint extends BaseEndpoint {
 		model.setReplyToAddress(request.getReplyToAddress());
 		model.setCharset(request.getCharset());
 		model.setLinefeed(request.getLinefeed());
-		model.setFormatString(request.getFormat());
-		model.setOnePixelString(request.getOnePixel());
+		model.setFormat(request.getFormat());
+		model.setOnePixel(request.getOnePixel());
 //		model.setAutoUpdate(request.isAutoUpdate());
 
 		final List<UserAction> userActions = new ArrayList<>();
 		mailingService.updateMailing(model, userActions);
-		Utils.writeLog(userActivityLogService, userActions);
+		this.userActivityLogAccess.writeLog(userActions);
 		
 		try {
 			this.thumbnailService.updateMailingThumbnailByWebservice(companyID, model.getMailingId());

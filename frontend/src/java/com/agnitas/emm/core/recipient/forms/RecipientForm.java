@@ -31,6 +31,7 @@ public class RecipientForm {
     private String email;
     private MailType mailtype = MailType.HTML;
     private boolean trackingVeto;
+    private boolean encryptedSend;
     private int latestDataSourceId;
     private int dataSourceId;
 
@@ -120,6 +121,14 @@ public class RecipientForm {
 
     public void setTrackingVeto(boolean trackingVeto) {
         this.trackingVeto = trackingVeto;
+    }
+
+    public boolean isEncryptedSend() {
+        return encryptedSend;
+    }
+
+    public void setEncryptedSend(boolean encryptedSend) {
+        this.encryptedSend = encryptedSend;
     }
 
     public Set<ProfileField> getSortedFields() {

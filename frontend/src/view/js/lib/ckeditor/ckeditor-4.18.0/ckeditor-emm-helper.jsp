@@ -1,4 +1,4 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" import="java.util.Locale"  errorPage="/error.do" %>
+<%@ page contentType="text/html; charset=utf-8" import="java.util.Locale" errorPage="/error.do" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
 <%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
@@ -8,23 +8,22 @@
 <c:set var="CKEDITOR_PATH" value="${emm:ckEditorPath(pageContext.request)}" scope="page"/>
 
 <script type="text/javascript">
-    var baseUrl = "${pageContext.request.contextPath}";
-    var isCKEditorActive = {};
+    const baseUrl = "${pageContext.request.contextPath}";
+    const isCKEditorActive = {};
 
     function toggleEditor(textAreaId, editorWidth, editorHeight, mailingId) {
         if (isEditorVisible(textAreaId)) {
             removeEditor(textAreaId);
-        }
-        else {
+        } else {
             createEditorExt(textAreaId, editorWidth, editorHeight, mailingId);
         }
     }
 
     function createEditorExt(textAreaId, editorWidth, editorHeight, mailingId, fullPage, isResizeNotEnabled, allowExternalScript) {
-        var imageBrowserUrl = !!mailingId ? '<html:rewrite page="/wysiwyg/image-browser.action?mailingID="/>' + mailingId : '';
+        const imageBrowserUrl = !!mailingId ? '<html:rewrite page="/wysiwyg/image-browser.action?mailingID="/>' + mailingId : '';
         if (!isEditorVisible(textAreaId)) {
 
-            var config = {
+            const config = {
                 customConfig: 'emm_config.js',
                 fullPage: fullPage,
                 toolbar: '${param.toolbarType}' ? '${param.toolbarType}' : 'EMM',
@@ -39,14 +38,14 @@
                 resize_enabled: !isResizeNotEnabled,
                 mailingId: mailingId,
                 on: {
-                    instanceReady: function(event) {
+                    instanceReady: function (event) {
                         if (fullPage) {
-                            var editor = event.editor,
+                            const editor = event.editor,
                                 rules = {
                                     elements: {
-                                        html: function( element ) {
-                                            var attrs = element.attributes;
-                                            switch ( attrs[ 'data-cke-editable' ] ) {
+                                        html: function (element) {
+                                            const attrs = element.attributes;
+                                            switch (attrs['data-cke-editable']) {
                                                 case 'true':
                                                     attrs.contenteditable = 'true';
                                                     break;
@@ -64,24 +63,24 @@
                             editor.dataProcessor.dataFilter.addRules(rules);
                         }
                     },
-                    toHtml: function(event) {
+                    toHtml: function (event) {
                         if (fullPage && event.data) {
                             if (repairFragment(event.data.dataValue, event.editor)) {
                                 // makes editor format the code and wrap it in full page tags
-                                setTimeout(function() {
+                                setTimeout(function () {
                                     event.editor.updateElement();
                                 }, 1);
                             }
                         }
                     },
-                    blur: function(event) {
+                    blur: function (event) {
                         event.editor.updateElement();
                     }
                 }
             };
 
             if (allowExternalScript) {
-                var elements = _.merge({}, CKEDITOR.dtd);
+                const elements = _.merge({}, CKEDITOR.dtd);
                 delete elements['script'];
 
                 config.allowedContent = {
@@ -116,7 +115,7 @@
     }
 
     function isFragmentCorrect(fragment) {
-        var contents = filterHtmlComment(fragment.children);
+        const contents = filterHtmlComment(fragment.children);
 
         switch (contents.length) {
             case 0:
@@ -150,7 +149,7 @@
     }
 
     function getNonBodyContentKeys() {
-        var nonBodyContent = CKEDITOR.dtd.$nonBodyContent;
+        const nonBodyContent = CKEDITOR.dtd.$nonBodyContent;
 
         //delete any element that has to be in body tag
         delete nonBodyContent['style'];
@@ -159,7 +158,7 @@
     }
 
     function eliminateNonFragmentTags(fragment, editor) {
-        var filter = new CKEDITOR.filter();
+        const filter = new CKEDITOR.filter();
 
         filter.allow({
             $1: {
@@ -192,7 +191,7 @@
     }
 
     function removeAllEditors() {
-        for (var textAreaId in isCKEditorActive) {
+        for (const textAreaId in isCKEditorActive) {
             if (isCKEditorActive[textAreaId]) {
                 toggleEditor(textAreaId, 0, 0);
             }
@@ -200,7 +199,7 @@
     }
 
     function openEditorsExist() {
-        for (var textAreaId in isCKEditorActive) {
+        for (const textAreaId in isCKEditorActive) {
             if (isCKEditorActive[textAreaId]) {
                 return true;
             }

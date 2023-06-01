@@ -27,7 +27,7 @@ public interface AdminPreferencesDao {
      *
      * @param adminPreferences
      *            The admin preferences that should be saved.
-     * @return 
+     * @return
      */
 	int save(AdminPreferences adminPreferences);
 

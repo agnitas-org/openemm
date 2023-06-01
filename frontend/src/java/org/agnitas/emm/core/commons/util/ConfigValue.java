@@ -98,8 +98,8 @@ public class ConfigValue {
 	/** Installation path of html to image converter application **/
 	public static final ConfigValue WkhtmlToImageToolPath = new ConfigValue("system.wkhtmltoimage", "/usr/bin/wkhtmltoimage");
 	
-	public static final ConfigValue UseLatestCkEditor = new ConfigValue("useLatestCkEditor", "false");
-	public static final ConfigValue UseLatestAceEditor = new ConfigValue("useLatestAceEditor", "false");
+	public static final ConfigValue UseLatestCkEditor = new ConfigValue("useLatestCkEditor", "true");
+	public static final ConfigValue UseLatestAceEditor = new ConfigValue("useLatestAceEditor", "true");
 
 	public static final ConfigValue System_Licence = new ConfigValue("system.licence"); // LicenseID
 	/** License types: SaaS, Inhouse **/
@@ -107,43 +107,46 @@ public class ConfigValue {
 	public static final ConfigValue System_License_Holder = new ConfigValue("licenseHolder");
 	public static final ConfigValue System_License_ExpirationDate = new ConfigValue("expirationDate");
 	public static final ConfigValue System_License_MaximumNumberOfCompanies = new ConfigValue("maximumNumberOfCompanies");
+	
+	/**
+     * @deprecated
+     * Use System_License_MaximumNumberOfGuiAdmins instead (LTS-877) when all Inhouse instances have the new license files (estimated in EMM LTS 23.04)
+	 */
+	@Deprecated
 	public static final ConfigValue System_License_MaximumNumberOfAdmins = new ConfigValue("maximumNumberOfAdmins");
+	public static final ConfigValue System_License_MaximumNumberOfGuiAdmins = new ConfigValue("maximumNumberOfGuiAdmins");
+	
 	public static final ConfigValue System_License_MaximumNumberOfWebserviceUsers = new ConfigValue("maximumNumberOfWebserviceUsers");
+	public static final ConfigValue System_License_MaximumNumberOfRestfulUsers = new ConfigValue("maximumNumberOfRestfulUsers");
 	public static final ConfigValue System_License_MaximumNumberOfSupervisors = new ConfigValue("maximumNumberOfSupervisors");
 	public static final ConfigValue System_License_MaximumNumberOfCustomers = new ConfigValue("maximumNumberOfCustomers");
+	/**
+	 * Maximum limit of company specific profile fields. Standard profile fields (see ComCompanyDaoImpl.STANDARD_CUSTOMER_FIELDS) do not count to this limit.
+	 */
 	public static final ConfigValue System_License_MaximumNumberOfProfileFields = new ConfigValue("maximumNumberOfProfileFields");
-	public static final ConfigValue System_License_MaximumNumberOfTestAccounts = new ConfigValue("maximumNumberOfTestAccounts", "100");
-	public static final ConfigValue System_License_MaximumLifetimeOfTestAccounts = new ConfigValue("maximumLifetimeOfTestAccounts", "3");
 	public static final ConfigValue System_License_AllowedPremiumFeatures = new ConfigValue("allowedPremiumFeatures");
 	public static final ConfigValue System_License_MaximumNumberOfReferenceTables = new ConfigValue("maximumNumberOfReferenceTables");
 	public static final ConfigValue System_License_AllowMailingSendForMasterCompany = new ConfigValue("allowMailingSendForMasterCompany");
-	
 	/**
 	 * Access Limiting Mailinglists (ALML)
 	 */
 	public static final ConfigValue System_License_MaximumNumberOfAccessLimitingMailinglistsPerCompany = new ConfigValue("maximumNumberOfAccessLimitingMailinglistsPerCompany", "3");
-	
-	/**
-	 * Access Limiting Mailinglists (ALML)
-	 */
-	public static final ConfigValue MaximumAccessLimitingMailinglists = new ConfigValue("mailinglist.maximumAccessLimitingMailinglists", "3");
-	
 	/**
 	 * Access Limiting Targetgroups (ALTG)
 	 */
 	public static final ConfigValue System_License_MaximumNumberOfAccessLimitingTargetgroupsPerCompany = new ConfigValue("maximumNumberOfAccessLimitingTargetgroupsPerCompany", "3");
 	
-	/**
-	 * Access Limiting Targetgroups (ALTG)
-	 */
-	public static final ConfigValue MaximumAccessLimitingTargetgroups = new ConfigValue("altg.maximumAccessLimitingTargetgroups", "3");
-	
 	public static final ConfigValue System_License_OpenEMMMasterCompany = new ConfigValue("openEMMMasterCompany");
 	public static final ConfigValue System_License_OpenEMMLoginUrl = new ConfigValue("openEMMLoginURL");
+	
+	/** OpenEMM Demo Account Management **/
+	public static final ConfigValue MaximumNumberOfTestAccounts = new ConfigValue("maximumNumberOfTestAccounts", "100");
+	/** OpenEMM Demo Account Management **/
+	public static final ConfigValue MaximumLifetimeOfTestAccounts = new ConfigValue("maximumLifetimeOfTestAccounts", "3");
 
 	public static final ConfigValue Linkchecker_Linktimeout = new ConfigValue("linkchecker.linktimeout", "30000");
 	public static final ConfigValue Linkchecker_Threadcount = new ConfigValue("linkchecker.threadcount", "25");
-	public static final ConfigValue LinkChecker_UserAgent = new ConfigValue("linkchecker.userAgent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:95.0) Gecko/20100101 Firefox/95.0");
+	public static final ConfigValue LinkChecker_UserAgent = new ConfigValue("linkchecker.userAgent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:103.0) Gecko/20100101 Firefox/103.0");
 
 	public static final ConfigValue Predelivery_Litmusapikey = new ConfigValue("predelivery.litmusapikey");
 	public static final ConfigValue Predelivery_Litmusapiurl = new ConfigValue("predelivery.litmusapiurl", "https://soap.litmusapp.com/soap/api");
@@ -163,12 +166,10 @@ public class ConfigValue {
 	
 	/** Height of thumbnail in inbox preview. */
 	public static final ConfigValue Thumbnail_Sizey = new ConfigValue("thumbnail.sizey", "84");
-	public static final ConfigValue Thumbnail_Treshold = new ConfigValue("thumbnail.treshold", "1.0");
+	public static final ConfigValue Thumbnail_Threshold = new ConfigValue("thumbnail.threshold", "1.0");
 
 	public static final ConfigValue VelocityRuntimeCheck = new ConfigValue("velocity.runtimecheck");
 	public static final ConfigValue VelocityScriptAbort = new ConfigValue("velocity.abortscripts");
-	/** Directory for velocity logs **/
-	public static final ConfigValue VelocityLogDir = new ConfigValue("velocity.logdir", "${home}/logs/velocity");
 
 	public static final ConfigValue RdirLandingpage = new ConfigValue("system.RdirLandingpage","https://www.agnitas.de/");
 
@@ -244,6 +245,7 @@ public class ConfigValue {
 
 	public static final ConfigValue CustomerInsightsCalculate = new ConfigValue("cust.insights_calculate", "true");
 	public static final ConfigValue CustomerInsightsTimespan = new ConfigValue("cust.insights_timespan", "90");
+	@Deprecated(forRemoval = true) // remove it and all appearance in DB after version is available on all systems: 22.07.027
 	public static final ConfigValue CustomerReactorHigh = new ConfigValue("cust.reactor_high_performance", "0.25");
 	public static final ConfigValue CustomerRebuyPeriod = new ConfigValue("cust.rebuy_period", "365");
 	public static final ConfigValue CustomerRevenueAverage = new ConfigValue("cust.revenue_average", "150");
@@ -310,9 +312,6 @@ public class ConfigValue {
 	/** Maximum value for age of entries in statistic tables **/
 	public static final ConfigValue ExpireStatisticsMax = new ConfigValue("expire.statistics.max", "1100");
 
-	/** Maximum value for age of entries in onepixellog tables **/
-	public static final ConfigValue ExpireOnePixelMax = new ConfigValue("expire.OnePixelMax", "1100");
-
 	/** Maximum value for age of entries in success tables **/
 	public static final ConfigValue ExpireSuccessMax = new ConfigValue("expire.SuccessMax", "1100");
 
@@ -360,7 +359,7 @@ public class ConfigValue {
 
 	public static final ConfigValue TablespacenameCustomerIndex = new ConfigValue("tablespace.cust.index");
 
-	/** Value for maximum number of fields in a customer table */
+	/** Value for maximum number of company specific profile fields in a customer table. Standard profile fields (see ComCompanyDaoImpl.STANDARD_CUSTOMER_FIELDS) do not count to this limit. */
 	public static final ConfigValue MaxFields = new ConfigValue("maxFields", "50");
 
 	/** Default value for maximum number of recipients for admin test mailing */
@@ -429,7 +428,6 @@ public class ConfigValue {
 	 */
 	// Introduced by LTS-911
 	public static final ConfigValue TrackableLinkDefaultTracking = new ConfigValue("trackableLinks.defaultTracking", Integer.toString(LinkTrackingMode.getDefault().getMode()));
-
 	/**
 	 * Default bcc address for all mailings.
 	 */
@@ -547,11 +545,8 @@ public class ConfigValue {
 	public static final ConfigValue LocaleTimezone = new ConfigValue("locale-timezone");
 
 	/** UID version used when new company is created. */
-	public static final ConfigValue UidVersionForNewCompanies = new ConfigValue("company.create.uidVersion", "4");
-
-	/** Version of currently enabled UID. */
-	public static final ConfigValue EnabledUIDVersion = new ConfigValue("company.enabledUIDVersion", "3");
-
+	public static final ConfigValue UidVersionForNewCompanies = new ConfigValue("company.create.uidVersion", "5");
+	
 	/** Enables anonymization of recipients with tracking veto set. */
 	public static final ConfigValue AnonymizeTrackingVetoRecipients = new ConfigValue("anonymizeTrackingVetoRecipients", "false");
 	
@@ -573,7 +568,7 @@ public class ConfigValue {
 	public static final ConfigValue EnableRestfulQuotas = new ConfigValue("restful.enableQuota", "false");
 	
 	/** Default settings for Restful quotas. */
-	public static final ConfigValue DefaultRestfulApiCallLimits = new ConfigValue("restful.quota.default_api_call_limits", "864000/P1D;2400/PT1M");
+	public static final ConfigValue DefaultRestfulApiCallLimits = new ConfigValue("restful.quota.default_api_call_limits", "432000/P1D;1200/PT1M");
 	
 	/** Retention time in seconds for caches Restful API invocation costs. */
 	public static final ConfigValue RestfulApiCostsCacheRetentionSeconds = new ConfigValue("restful.quota.costs_cache_retention_seconds", "300");
@@ -695,8 +690,8 @@ public class ConfigValue {
 		/** URL for webservices. */
 		public static final ConfigValue WebservicesUrl = new ConfigValue("webservices.url");
 
-		/** Default settings for API call limits. Current: 1.000 per hour and 10 per seconds. */
-		public static final ConfigValue DefaultApiCallLimits = new ConfigValue("webservice.default_api_call_limits", "864000/P1D;2400/PT1M");
+		/** Default settings for API call limits. */
+		public static final ConfigValue DefaultApiCallLimits = new ConfigValue("webservice.default_api_call_limits", "432000/P1D;1200/PT1M");
 
 		/** Retention time in seconds for cached SOAP API invocation costs. */
 		public static final ConfigValue WebserviceCostsCacheRetentionSeconds = new ConfigValue("webservice.costs_cache_retention_seconds", "300");
@@ -733,18 +728,27 @@ public class ConfigValue {
 	}
 	
 	/**
+	 * Collection of configuration values related to security features.
+	 */
+	public static final class Security {
+		/* 
+		 * Changing this configuration requires restart of EMM!
+		 * The value is read only at startup time.
+		 */
+		public static final ConfigValue CsrfProtectionEnabled = new ConfigValue("security.csrfProtection.enabled", "false");
+	}
+	
+	/**
 	 * Collection of config value for development purpose only.
 	 * 
 	 * All of these keys will be removed after successful rollout.
 	 */
 	public static final class Development {
-		public static final ConfigValue UseNewWebserviceRateLimiting = new ConfigValue("development.useNewWebserviceRateLimiting", "false");
-		
 		public static final ConfigValue EnableCheckForEditableMailing = new ConfigValue("development.webservices.enableMailingEditableCheck", "false");
 
 		public static final ConfigValue RestfulDisableForcedReactivation = new ConfigValue("development.restful.disableForcedReactivation", "false");
 		
-		public static final ConfigValue BirtReportUseNewHttpClient = new ConfigValue("development.birt.useNewHttpClient", "false");
+		public static final ConfigValue ChangeStatusOnCancelAndCopyMailing = new ConfigValue("development.mailingStop.changeStatusOnCancelAndCopy", "false");
 	}
 	
 	// Fallback values for backend
@@ -834,8 +838,6 @@ public class ConfigValue {
 
 	public static final ConfigValue ExpireStatistics = new ConfigValue("expire.statistics", "1100");
 
-	public static final ConfigValue ExpireOnePixel = new ConfigValue("expire.onepixel", "1100");
-
 	public static final ConfigValue ExpireSuccess = new ConfigValue("expire.success", "180");
 
 	public static final ConfigValue ExpireRecipient = new ConfigValue("expire.recipient", "30");
@@ -886,7 +888,17 @@ public class ConfigValue {
 	public static final ConfigValue MaximumContentLinesForUnindexedImport = new ConfigValue("import.maximumContentLinesForUnindexedImport", "-1");
 
 	public static final ConfigValue SendPasswordChangedNotification = new ConfigValue("notifications.sendPasswordChanged", "true");
+	public static final ConfigValue SendEncryptedMailings = new ConfigValue("company.mailingEncryptedSendingDefault", "false");
 
+	/**
+	 * Access Limiting Mailinglists (ALML)
+	 */
+	public static final ConfigValue MaximumAccessLimitingMailinglists = new ConfigValue("mailinglist.maximumAccessLimitingMailinglists", "3");
+	
+	/**
+	 * Access Limiting Targetgroups (ALTG)
+	 */
+	public static final ConfigValue MaximumAccessLimitingTargetgroups = new ConfigValue("altg.maximumAccessLimitingTargetgroups", "3");
 	
 	public static final ConfigValue MailtrackExtended = new ConfigValue("mailtrack-extended", "false");
 
@@ -902,8 +914,18 @@ public class ConfigValue {
 
 	public static final ConfigValue ExtendedRestfulLogging = new ConfigValue("restful.ExtendedLogging", "false");
 	
-	public static final ConfigValue SlowConnectionThresholdKbps = new ConfigValue("slowConnectionThresholdKbps", "0");
+	public static final ConfigValue SlowConnectionThresholdKbps = new ConfigValue("slowConnectionThresholdKbps", "750");
 
+	public static final ConfigValue UseAdvancedFileContentTypeDetection = new ConfigValue("upload.useAdvancedFileContentTypeDetection", "false");
+
+	public static final ConfigValue MaximumRecipientDetailPeriodDays = new ConfigValue("statistics.maximumRecipientDetailPeriodDays", "180");
+
+	public static final ConfigValue LogonTotpEnabled = new ConfigValue("logon.totp.enabled", "false");
+
+	/**
+	 * Check profilefields values of well known data types like german plz, when entered via webforms
+	 */
+	public static final ConfigValue CheckWellKnownProfileFields = new ConfigValue("CheckWellKnownProfileFields", "false");
 	
 	private final String name;
 	private final String defaultValue;

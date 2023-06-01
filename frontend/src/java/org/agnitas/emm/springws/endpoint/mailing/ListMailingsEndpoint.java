@@ -15,17 +15,19 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 
 import org.agnitas.dao.MailingStatus;
 import org.agnitas.emm.core.mailing.service.MailingModel;
 import org.agnitas.emm.springws.endpoint.BaseEndpoint;
-import org.agnitas.emm.springws.endpoint.Utils;
+import org.agnitas.emm.springws.endpoint.Namespaces;
 import org.agnitas.emm.springws.exception.InvalidFilterSettingsException;
 import org.agnitas.emm.springws.jaxb.ListMailingsRequest;
 import org.agnitas.emm.springws.jaxb.ListMailingsRequest.Filter;
 import org.agnitas.emm.springws.jaxb.ListMailingsRequest.Filter.SentAfter;
 import org.agnitas.emm.springws.jaxb.ListMailingsRequest.Filter.SentBefore;
 import org.agnitas.emm.springws.jaxb.ListMailingsResponse;
+import org.agnitas.emm.springws.util.SecurityContextAccess;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.ws.server.endpoint.annotation.Endpoint;
 import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
@@ -41,18 +43,20 @@ import com.agnitas.emm.core.mailing.service.MailingService;
 public class ListMailingsEndpoint extends BaseEndpoint {
 
 	private MailingService mailingService;
+	private SecurityContextAccess securityContextAccess;
 
-	public ListMailingsEndpoint(@Qualifier("MailingService") MailingService mailingService) {
-		this.mailingService = mailingService;
+	public ListMailingsEndpoint(@Qualifier("MailingService") MailingService mailingService, final SecurityContextAccess securityContextAccess) {
+		this.mailingService = Objects.requireNonNull(mailingService, "mailingService");
+		this.securityContextAccess = Objects.requireNonNull(securityContextAccess, "securityContextAccess");
 	}
 
-	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "ListMailingsRequest")
+	@PayloadRoot(namespace = Namespaces.AGNITAS_ORG, localPart = "ListMailingsRequest")
 	public @ResponsePayload ListMailingsResponse listMailings(@RequestPayload ListMailingsRequest request) {
 		final ListMailingsResponse response = new ListMailingsResponse();
 		
 		final List<Mailing> mailings = request.getFilter() == null 
-				? listAllMailings(Utils.getUserCompany())
-			    : listFilteredMailings(Utils.getUserCompany(), request.getFilter());
+				? listAllMailings(this.securityContextAccess.getWebserviceUserCompanyId())
+			    : listFilteredMailings(this.securityContextAccess.getWebserviceUserCompanyId(), request.getFilter());
 		
 		for (Mailing mailing : mailings) {
 			response.getItem().add(new MailingResponseBuilder().createResponse(mailing));
@@ -63,7 +67,7 @@ public class ListMailingsEndpoint extends BaseEndpoint {
 	
 	private final List<Mailing> listAllMailings(final int companyId) {
 		final MailingModel model = new MailingModel();
-		model.setCompanyId(Utils.getUserCompany());
+		model.setCompanyId(this.securityContextAccess.getWebserviceUserCompanyId());
 		model.setTemplate(false);
 		
 		return this.mailingService.getMailings(model);

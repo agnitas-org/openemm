@@ -15,12 +15,12 @@ import java.util.List;
 import org.agnitas.beans.ExportPredef;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 
 public interface ExportPredefService {
     ExportPredef get(int id, @VelocityCheck int companyId);
     ExportPredef create(@VelocityCheck int companyId);
     int save(ExportPredef src);
-    List<ExportPredef> getExportProfiles(ComAdmin admin);
-    List<Integer> getExportProfileIds(ComAdmin admin);
+    List<ExportPredef> getExportProfiles(Admin admin);
+    List<Integer> getExportProfileIds(Admin admin);
 }

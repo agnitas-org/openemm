@@ -66,13 +66,14 @@
             <h2 class="headline">
                 <mvc:message code="target.Edit" />
             </h2>
+            <mvc:checkbox path="favorite" id="favorite" cssClass="pull-right star-checkbox icon-fa5 far" cssStyle="margin-right: 20px; line-height: 22px; margin-top: 14px; font-size: 18px;" disabled="${isLocked}"/>
         </div>
         <div class="tile-content tile-content-forms">
             <div class="form-group">
                 <div class="col-sm-4">
                     <label class="control-label" for="shortname">
                         <mvc:message var="nameMsg" code="Name"/>
-                        ${nameMsg}
+                        ${nameMsg}*
                     </label>
                 </div>
                 <div class="col-sm-8">
@@ -109,7 +110,7 @@
     <div class="tile">
         <div class="tile-header">
             <h2 class="headline">
-                <mvc:message code="target.TargetDefinition"/>
+                <mvc:message code="target.TargetDefinition"/>*
             </h2>
 
             <ul class="tile-header-nav">

@@ -17,13 +17,13 @@ import org.agnitas.beans.AdminEntry;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.useractivitylog.LoggedUserAction;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 
 /**
  * Interface for accessing user activity log.
  */
 public interface UserActivityLogDao {
-	void writeUserActivityLog(ComAdmin admin, String action, String description);
+	void writeUserActivityLog(Admin admin, String action, String description);
 
 	PaginatedListImpl<LoggedUserAction> getUserActivityEntries(List<AdminEntry> visibleAdmins, String selectedAdmin, int selectedAction, Date from, Date to, String description, String sortColumn, String sortDirection, int pageNumber, int pageSize) throws Exception;
 
@@ -33,5 +33,5 @@ public interface UserActivityLogDao {
 	 * @param feature name of used feature
 	 * @param date timestamp, when feature was used.
      */
-	void addAdminUseOfFeature(ComAdmin admin, String feature, Date date);
+	void addAdminUseOfFeature(Admin admin, String feature, Date date);
 }

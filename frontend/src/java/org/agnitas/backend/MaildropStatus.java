@@ -20,10 +20,9 @@ import static com.agnitas.emm.core.maildrop.MaildropStatus.WORLD;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 
 import org.agnitas.backend.dao.MaildropStatusDAO;
+import org.agnitas.backend.exceptions.CancelException;
 import org.agnitas.util.Const;
 import org.agnitas.util.Log;
 
@@ -71,10 +70,6 @@ public class MaildropStatus {
 	/**
 	 * generic send date handling
 	 */
-	private Map<String, String> genericSendDateCache;
-	@SuppressWarnings("unused")
-	private Date genericSendDate;
-
 	public MaildropStatus(Data nData) {
 		data = nData;
 	}
@@ -143,25 +138,6 @@ public class MaildropStatus {
 		}
 	}
 
-	public String genericSendDate(String format) {
-		String rc = null;
-
-		if (genericSendDateCache == null) {
-			genericSendDateCache = new HashMap<>();
-		} else {
-			rc = genericSendDateCache.get(format);
-		}
-		if (rc == null) {
-			try {
-				rc = (exists() ? maildrop : new MaildropStatusDAO(data.dbase, 0, data.mailing.id())).formatRealSenddate(data.dbase, format);
-			} catch (SQLException e) {
-				data.logging(Log.ERROR, "senddate", "Failed to query senddate for format \"" + format + "\": " + e.toString());
-			}
-			genericSendDateCache.put(format, rc == null ? "" : rc);
-		}
-		return rc;
-	}
-
 	/**
 	 * Write all mailinglist related settings to logfile
 	 */
@@ -200,13 +176,22 @@ public class MaildropStatus {
 		if (maildrop.dependsOnAutoImportID () && (! maildrop.autoImportOK ())) {
 			if (isAdminMailing () || isTestMailing () || isWorldMailing ()) {
 				try {
-					setGenerationStatus (1, 3);
+					setGenerationStatus (1, 3, true);
 				} catch (Exception e) {
 					data.logging (Log.ERROR, "retrieve", "Failed to update gneration status: " + e.toString ());
 				}
 			}
-			throw new Exception ("Dependency on auto import(s) is not fullfilled");
+			if ((! isCampaignMailing ()) && (! isPreviewMailing ()) && (! isVerificationMailing ())) {
+				try {
+					updateGenerationChange ();
+					data.trigger ("import-dependency", id);
+				} catch (Exception e) {
+					data.logging (Log.ERROR, "retrieve", "Failed to update generation change: " + e.toString ());
+				}
+				throw new CancelException ("dependency on auto import(s) is not fullfilled");
+			}
 		}
+
 		for (int retry = 0; retry < 2; ++retry) {
 			if (isAdminMailing() || isTestMailing() || isWorldMailing() || isRuleMailing() || isOnDemandMailing()) {
 				try {
@@ -345,15 +330,26 @@ public class MaildropStatus {
 	 *
 	 * @param fromStatus the source status the entry must have (0 means any value)
 	 * @param toStatus   the new status to be set
-	 * @throws Exception
 	 */
-	public void setGenerationStatus(int fromStatus, int toStatus) throws Exception {
+	public void setGenerationStatus(int fromStatus, int toStatus, boolean forceSetProcessedBy) throws Exception {
 		if (exists()) {
-			if (!maildrop.updateGenStatus(data.dbase, fromStatus, toStatus)) {
+			if (!maildrop.updateGenStatus(data.dbase, fromStatus, toStatus, forceSetProcessedBy)) {
 				throw new Exception("failed to update genstatus for " + id);
 			}
 		} else {
 			throw new Exception("status entry for id " + id + " does not exist");
+		}
+	}
+	public void setGenerationStatus(int fromStatus, int toStatus) throws Exception {
+		setGenerationStatus (fromStatus, toStatus, false);
+	}
+	private void updateGenerationChange () throws Exception {
+		if (exists ()) {
+			if (! maildrop.updateGenChange (data.dbase)) {
+				throw new Exception ("failed to update genchange for " + id);
+			}
+		} else {
+			throw new Exception ("status entry for id " + id + " does not exist");
 		}
 	}
 

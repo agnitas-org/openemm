@@ -10,49 +10,37 @@
 
 package com.agnitas.reporting.birt.external.dataset;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.List;
-
+import com.agnitas.messages.I18nString;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.agnitas.messages.I18nString;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MailinglistDescriptionDataSet extends BIRTDataSet {
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(MailinglistDescriptionDataSet.class);
-	
-	private static final String ALL_MAILINGLISTS = "statistic.All_Mailinglists";
 
-	public List<String> getMailinglistDescription (int mailinglistID, String language){
-		if (StringUtils.isBlank(language)){
-			language = "EN";
-		}
+    private static final Logger logger = LogManager.getLogger(MailinglistDescriptionDataSet.class);
 
-		List<String> mailinglistDescription = new ArrayList<>();
-		if (mailinglistID == 0){
-			mailinglistDescription.add(I18nString.getLocaleString(ALL_MAILINGLISTS, language));
-			return mailinglistDescription;
-		}
-		String query = getMailinglistDescriptionQuery(mailinglistID);
-        try (Connection connection = getDataSource().getConnection();
-        		Statement statement = connection.createStatement();
-        		ResultSet resultSet = statement.executeQuery(query)) {
-			if (resultSet.next()){
-				mailinglistDescription.add(resultSet.getString("mailinglist_name"));
-			}
-		} catch (SQLException e) {
-			logger.error(" SQL-Exception ! Mailinglist-Description-Query is: " + query , e);
-		}
-		return mailinglistDescription;
-	}
+    public List<String> getMailinglistDescription(int mailinglistID, String language) {
+        List<String> mailinglistDescription = new ArrayList<>();
 
-	private String getMailinglistDescriptionQuery(int mailinglistID) {
-		return " select shortname mailinglist_name from mailinglist_tbl where mailinglist_id = " + (Integer.toString(mailinglistID)) ;
-	}
+        if (mailinglistID == 0) {
+            if (StringUtils.isBlank(language)) {
+                language = "EN";
+            }
+
+            mailinglistDescription.add(I18nString.getLocaleString(CommonKeys.ALL_MAILINGLISTS, language));
+            return mailinglistDescription;
+        }
+
+        String query = "SELECT shortname FROM mailinglist_tbl WHERE mailinglist_id = ?";
+        String name = selectWithDefaultValue(logger, query, String.class, "", mailinglistID);
+
+        if (!name.isBlank()) {
+            mailinglistDescription.add(name);
+        }
+
+        return mailinglistDescription;
+    }
 }

@@ -177,7 +177,7 @@ public class HtmlReporterHelper {
 			.append("								<td dir=\"ltr\" valign=\"top\" style=\"padding: 0;\">\n")
 			.append("									<div align=\"right\" style=\"float:right;\">\n")
 			.append("										<img src=\"" + ConfigService.getInstance().getValue(ConfigValue.SystemUrl) + "/layout/0/logo.svg\" align=\"left\" style=\"padding-top:5px; padding-right:5px;\">\n")
-			.append("									<div style=\"float: right; font-family: Proxima Nova Helvetica Neue,Arial,sans-serif; font-size: 28px; white-space: nowrap; color: #0071b9; text-align:left;\">EMM<div style=\"font-size: 13px; white-space: nowrap; color: #8d8d8f;\">").append(versionText).append("</div></div>\n")
+			.append("									<div style=\"float: right; font-family: Arial,sans-serif; font-size: 28px; white-space: nowrap; color: #0071b9; text-align:left;\">EMM<div style=\"font-size: 13px; white-space: nowrap; color: #8d8d8f;\">").append(versionText).append("</div></div>\n")
 			.append("									</div>\n")
 			.append("								</td>\n")
 			.append("							</tr>\n")

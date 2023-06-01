@@ -11,7 +11,6 @@
 package com.agnitas.emm.core.birtreport.service;
 
 import java.io.File;
-import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -21,9 +20,7 @@ import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.FileDownload;
-import org.agnitas.util.HttpUtils;
 import org.agnitas.web.ExportException;
-import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -55,19 +52,7 @@ public class BirtReportExecutor implements Runnable {
 		executeBirtReport();
 	}
 	
-	public void executeBirtReport() {
-		if(useNewHttpClient()) {
-			executeBirtReport_Client4();
-		} else {
-			executeBirtReport_Client3();
-		}
-	}
-	
-	private final boolean useNewHttpClient() {
-		return this.serviceLookupFactory.getBeanConfigService().getBooleanValue(ConfigValue.Development.BirtReportUseNewHttpClient);
-	}
-	
-	private final void executeBirtReport_Client4() {
+	private final void executeBirtReport() {
 		updateNextStart();
 		
 		if(!serviceLookupFactory.getBeanBirtReportService().announceStart(this.birtReport)) {
@@ -144,58 +129,6 @@ public class BirtReportExecutor implements Runnable {
         final String emailDescription = content;
         serviceLookupFactory.getBeanJavaMailService().sendEmail(birtReport.getCompanyID(), emailRecipientStringList, emailSubject, emailDescription, emailDescription, attachments.toArray(new JavaMailAttachment[0]));
 		serviceLookupFactory.getBeanBirtReportService().logSentReport(birtReport);
-	}
-	
-	private final void executeBirtReport_Client3() {
-    	try {
-    		updateNextStart();
-			
-			if (serviceLookupFactory.getBeanBirtReportService().announceStart(birtReport)) {
-				final String birtUrl = determineBirtUrl(birtReport.getCompanyID());
-		
-				HttpClient httpClient;
-				try {
-					httpClient = HttpUtils.initializeHttpClient(birtUrl + "/run");
-				} catch (MalformedURLException e) {
-					logger.fatal("Malformed report URL reported in report ID: " + birtReport.getId() + ": " + e.getMessage(), e);
-					for (Map.Entry<String, String> entry : urlsMap.entrySet()) {
-						logger.fatal(String.format("  + Report '%s' : %s", entry.getKey(), entry.getValue()));
-					}
-					return;
-				}
-		
-				final List<JavaMailAttachment> attachments = new ArrayList<>();
-		        for (final Map.Entry<String, String> entry : urlsMap.entrySet()) {
-		        	try {
-		                logger.info("BIRT report for sending\nreport id: " + birtReport.getId() + "\nURL:" + entry.getValue());
-						File temporaryFile = serviceLookupFactory.getBeanBirtStatisticsService().getBirtReportTmpFile(birtReport.getId(), entry.getValue(), httpClient, logger);
-		        		attachments.add(new JavaMailAttachment(entry.getKey(), FileUtils.readFileToByteArray(temporaryFile), String.format("application/%s", birtReport.getFormatName())));
-		        	} catch( Exception e) {
-		        		logger.error( "Error retrieving report data for BIRT report " + birtReport.getId() + "\nURL:" + entry.getValue(), e);
-		        	}
-		        }
-		
-		        final String emailRecipientStringList = StringUtils.join(birtReport.getEmailRecipientList(), ",");
-		        final String emailSubject = birtReport.getEmailSubject();
-		        String content = "";
-		        if (StringUtils.isBlank(birtReport.getEmailDescription())) {
-		        	content = I18nString.getLocaleString("report.body.text", new Locale(birtReport.getLanguage()));
-		        } else {
-		        	content = birtReport.getEmailDescription();
-		        }
-		        final String emailDescription = content;
-		        serviceLookupFactory.getBeanJavaMailService().sendEmail(birtReport.getCompanyID(), emailRecipientStringList, emailSubject, emailDescription, emailDescription, attachments.toArray(new JavaMailAttachment[0]));
-				serviceLookupFactory.getBeanBirtReportService().logSentReport(birtReport);
-				
-				birtReport.setLastresult("OK");
-				serviceLookupFactory.getBeanBirtReportService().announceEnd(birtReport);
-			} else {
-				logger.info("Cannot start BirtReportJob " + birtReport.getShortname() + "(" + birtReport.getId() + ") on host '" + AgnUtils.getHostName() + "'. Maybe some other host executes it already");
-			}
-		} catch (Throwable t) {
-			reportError(t);
-			throw new ExportException(false, null, t.getMessage());
-		}
 	}
 	
 	private final void reportError(final Throwable t) {

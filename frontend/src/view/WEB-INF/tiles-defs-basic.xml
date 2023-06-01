@@ -82,22 +82,12 @@
 	<definition name="user_selfservice" extends="base">
 		<put name="body" value="/WEB-INF/jsp/settings/admin/user_selfservice.jsp" type="page"/>
 		<put name="page-setup" value="/WEB-INF/jsp/settings/admin/user_selfservice-setup.jsp" type="page"/>
-	</definition>
-
-	<definition name="user_selfservice_new" extends="base">
-		<put name="body" value="/WEB-INF/jsp/settings/admin/user_selfservice-new.jsp" type="page"/>
-		<put name="page-setup" value="/WEB-INF/jsp/settings/admin/user_selfservice-new-setup.jsp" type="page"/>
 		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
 	</definition>
 
 	<definition name="user_selfservice_sv_login" extends="base">
 		<put name="body" value="/WEB-INF/jsp/settings/admin/user_selfservice_sv_login.jsp" type="page"/>
 		<put name="page-setup" value="/WEB-INF/jsp/settings/admin/user_selfservice_sv_login-setup.jsp" type="page"/>
-	</definition>
-
-	<definition name="user_selfservice_sv_login_new" extends="base">
-		<put name="body" value="/WEB-INF/jsp/settings/admin/user_selfservice_sv_login-new.jsp" type="page"/>
-		<put name="page-setup" value="/WEB-INF/jsp/settings/admin/user_selfservice_sv_login-new-setup.jsp" type="page"/>
 	</definition>
 
 	<definition name="dashboard_view" extends="dashboard_base">
@@ -129,49 +119,25 @@
 		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
 	</definition>
 
-	<definition name="campaign_list" extends="base">
-		<put name="body" value="/WEB-INF/jsp/campaign/campaign-list.jsp" type="page"/>
-		<put name="page-setup" value="/WEB-INF/jsp/campaign/campaign-list-setup.jsp" type="page"/>
+	<definition name="archive_list" extends="base">
+		<put name="body" value="/WEB-INF/jsp/campaign/archive-list.jsp" type="page"/>
+		<put name="page-setup" value="/WEB-INF/jsp/campaign/archive-list-setup.jsp" type="page"/>
 
 		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
 		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
 	</definition>
 
-	<definition name="campaign_view" extends="base">
-		<put name="body" value="/WEB-INF/jsp/campaign/campaign-view.jsp" type="page"/>
-		<put name="page-setup" value="/WEB-INF/jsp/campaign/campaign-view-setup.jsp" type="page"/>
+	<definition name="archive_view" extends="base">
+		<put name="body" value="/WEB-INF/jsp/campaign/archive-view.jsp" type="page"/>
+		<put name="page-setup" value="/WEB-INF/jsp/campaign/archive-view-setup.jsp" type="page"/>
 
 		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
 		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
 	</definition>
 
-	<definition name="campaign_list_new" extends="base">
-		<put name="body" value="/WEB-INF/jsp/campaign/campaign-list-new.jsp" type="page"/>
-		<put name="page-setup" value="/WEB-INF/jsp/campaign/campaign-list-new-setup.jsp" type="page"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
-		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
-	</definition>
-
-	<definition name="campaign_view_new" extends="base">
-		<put name="body" value="/WEB-INF/jsp/campaign/campaign-view-new.jsp" type="page"/>
-		<put name="page-setup" value="/WEB-INF/jsp/campaign/campaign-view-new-setup.jsp" type="page"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
-		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
-	</definition>
-
-	<definition name="campaign_delete_ajax_new" extends="base_ajax">
-		<put name="body" value="/WEB-INF/jsp/campaign/campaign-delete-new.jsp" type="page"/>
+	<definition name="archive_delete_ajax" extends="base_ajax">
+		<put name="body" value="/WEB-INF/jsp/campaign/archive-delete.jsp" type="page"/>
 		<put name="page-setup" value="" type="string"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
-		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
-	</definition>
-
-	<definition name="campaign_delete_ajax" extends="base_ajax">
-		<put name="body" value="/WEB-INF/jsp/campaign/campaign-delete.jsp" type="page"/>
-		<put name="page-setup" value="/WEB-INF/jsp/campaign/campaign-delete-setup.jsp" type="page"/>
 
 		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
 		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
@@ -195,15 +161,15 @@
 
 	<definition name="campaign_autooptimization_confirm_delete_ajax" extends="base_ajax">
 		<put name="body" value="/WEB-INF/jsp/campaign/autooptimization/autooptimization-confirm-delete.jsp" type="page"/>
-		<put name="page-setup" value="/WEB-INF/jsp/campaign/autooptimization/autooptimization-confirm-delete-setup.jsp" type="page"/>
+		<put name="page-setup" value="" type="string"/>
 
 		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
 		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
 	</definition>
 
-	<definition name="campaign_autooptimization_schedule" extends="base">
-	   <put name="body" value="/WEB-INF/jsp/campaign/autooptimization/campaign-autooptimization-schedule.jsp" type="page" />
-	   <put name="page-setup" value="/WEB-INF/jsp/campaign/autooptimization/campaign-autooptimization-schedule-setup.jsp" type="page" />
+	<definition name="campaign_autooptimization_stats" extends="base_ajax">
+		<put name="body" value="/WEB-INF/jsp/campaign/autooptimization/autooptimization-stats.jsp" type="page" />
+		<put name="page-setup" value="" type="string" />
 
 		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
 		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
@@ -520,9 +486,25 @@
 		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
 	</definition>
 
+    <definition name="mailing_settings_view" extends="base">
+   		<put name="body" value="/WEB-INF/jsp/mailing/settings/mailing-settings-view.jsp" type="page"/>
+   		<put name="page-setup" value="/WEB-INF/jsp/mailing/settings/mailing-settings-view-setup.jsp" type="page"/>
+   
+   		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
+   		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
+   	</definition>
+    
 	<definition name="mailing_view_templates" extends="base">
 		<put name="body" value="/WEB-INF/jsp/mailing/mailing-view-templates.jsp" type="page"/>
 		<put name="page-setup" value="/WEB-INF/jsp/mailing/mailing-view-templates-setup.jsp" type="page"/>
+
+		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
+		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
+	</definition>
+    
+	<definition name="mailing_templates" extends="base">
+		<put name="body" value="/WEB-INF/jsp/mailing/mailing-templates.jsp" type="page"/>
+		<put name="page-setup" value="/WEB-INF/jsp/mailing/mailing-templates-setup.jsp" type="page"/>
 
 		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
 		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
@@ -550,6 +532,14 @@
 		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
 		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
 	</definition>
+    
+    <definition name="mailing_undo" extends="base_ajax">
+   		<put name="body" value="/WEB-INF/jsp/mailing/mailing-undo.jsp" type="page"/>
+        <put name="page-setup" value="" type="string"/>
+   
+   		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
+   		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
+   	</definition>
 
 	<definition name="mailing_content_list" extends="base">
 		<put name="body" value="/WEB-INF/jsp/mailing/mailing-content-list.jsp" type="page"/>
@@ -559,8 +549,24 @@
 		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
 	</definition>
 
+	<definition name="mailing_content_list_new" extends="base">
+		<put name="body" value="/WEB-INF/jsp/mailing/content/mailing-content-list-new.jsp" type="page"/>
+		<put name="page-setup" value="/WEB-INF/jsp/mailing/content/mailing-content-list-new-setup.jsp" type="page"/>
+
+		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
+		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
+	</definition>
+
 	<definition name="generate_text_question_ajax" extends="base_ajax">
 		<put name="body" value="/WEB-INF/jsp/mailing/mailing-text-generation-question.jsp" type="page"/>
+		<put name="page-setup" value="" type="string"/>
+
+		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
+		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
+	</definition>
+
+	<definition name="generate_text_question_ajax_new" extends="base_ajax">
+		<put name="body" value="/WEB-INF/jsp/mailing/content/mailing-text-generation-question-new.jsp" type="page"/>
 		<put name="page-setup" value="" type="string"/>
 
 		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
@@ -575,6 +581,14 @@
 		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
 	</definition>
 
+    <definition name="mailing_delete" extends="base_ajax">
+   		<put name="body" value="/WEB-INF/jsp/mailing/mailing-delete-new.jsp" type="page"/>
+        <put name="page-setup" value="" type="string"/>
+   
+   		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
+   		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
+   	</definition>
+    
 	<definition name="mailing_bulk_delete_ajax" extends="base_ajax">
 		<put name="body" value="/WEB-INF/jsp/mailing/mailing-bulk-delete.jsp" type="page"/>
 		<put name="page-setup" value="/WEB-INF/jsp/mailing/mailing-bulk-delete-setup.jsp" type="page"/>
@@ -639,6 +653,71 @@
 		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
 	</definition>
 
+	<definition name="mailing_send_new" extends="base">
+		<put name="body" value="/WEB-INF/jsp/mailing/send-mailing/mailing-send-new.jsp" type="page"/>
+		<put name="page-setup" value="/WEB-INF/jsp/mailing/send-mailing/mailing-send-new-setup.jsp" type="page"/>
+
+		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
+		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
+	</definition>
+
+	<definition name="mailing_delivery_settings" extends="base">
+		<put name="body" value="/WEB-INF/jsp/mailing/send-mailing/mailing-delivery-settings.jsp" type="page"/>
+		<put name="page-setup" value="/WEB-INF/jsp/mailing/send-mailing/mailing-delivery-settings-setup.jsp" type="page"/>
+
+		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
+		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
+	</definition>
+
+	<definition name="mailing_delivery_status_box" extends="base_ajax">
+		<put name="body" value="/WEB-INF/jsp/mailing/send-mailing/delivery-status-box.jsp" type="page"/>
+		<put name="page-setup" value="" type="string"/>
+	</definition>
+
+	<definition name="mailing_cancel_generation_question_ajax_new" extends="base_ajax">
+		<put name="body" value="/WEB-INF/jsp/mailing/send-mailing/mailing-cancel-generation-question-new.jsp" type="page"/>
+		<put name="page-setup" value="" type="string"/>
+
+		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
+		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
+	</definition>
+
+	<definition name="mailing_resume_generation_question_ajax_new" extends="base_ajax">
+		<put name="body" value="/WEB-INF/jsp/mailing/send-mailing/mailing-resume-generation-question-new.jsp" type="page"/>
+		<put name="page-setup" value="" type="string"/>
+
+		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
+		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
+	</definition>
+
+	<definition name="mailing_resume_generation_by_copy_question_ajax_new" extends="base_ajax">
+		<put name="body" value="/WEB-INF/jsp/mailing/send-mailing/mailing-resume-generation-by-copy-question-new.jsp" type="page"/>
+		<put name="page-setup" value="" type="string"/>
+
+		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
+		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
+	</definition>
+
+	<definition name="mailing_send_confirm_ajax_new" extends="base_ajax">
+		<put name="body" value="/WEB-INF/jsp/mailing/send-mailing/mailing-send-confirm-new.jsp" type="page"/>
+		<put name="page-setup" value="" type="string"/>
+	</definition>
+
+	<definition name="date_based_activation_confirm" extends="base_ajax">
+		<put name="body" value="/WEB-INF/jsp/mailing/send-mailing/mailing-datebased-activate-confirm.jsp" type="page"/>
+		<put name="page-setup" value="" type="string"/>
+	</definition>
+
+	<definition name="action_based_activation_confirm" extends="base_ajax">
+		<put name="body" value="/WEB-INF/jsp/mailing/send-mailing/mailing-actionbased-activate-confirm.jsp" type="page"/>
+		<put name="page-setup" value="" type="string"/>
+	</definition>
+
+	<definition name="mailing_deactivation_confirm" extends="base_ajax">
+		<put name="body" value="/WEB-INF/jsp/mailing/send-mailing/mailing-confirm-deactivation.jsp" type="page"/>
+		<put name="page-setup" value="" type="string"/>
+	</definition>
+
 	<definition name="mailing_send" extends="base">
 		<put name="body" value="/WEB-INF/jsp/mailing/mailing-send.jsp" type="page"/>
 		<put name="page-setup" value="/WEB-INF/jsp/mailing/mailing-send-setup.jsp" type="page"/>
@@ -693,6 +772,59 @@
 
 		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
 		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
+	</definition>
+
+	<definition name="mailing_preview_select_new" extends="base">
+		<put name="body" value="/WEB-INF/jsp/mailing/preview/mailing-preview-select-new.jsp" type="page"/>
+		<put name="page-setup" value="/WEB-INF/jsp/mailing/preview/mailing-preview-select-new-setup.jsp" type="page"/>
+
+		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
+		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
+	</definition>
+
+	<definition name="mailing_preview_header" extends="base_ajax">
+		<put name="body" value="/WEB-INF/jsp/mailing/preview/preview-header-new.jsp" type="page"/>
+		<put name="page-setup" value="" type="string"/>
+		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
+	</definition>
+
+	<definition name="mailing_preview_errors" extends="base_ajax">
+		<put name="body" value="/WEB-INF/jsp/mailing/preview/preview-errors-new.jsp" type="page"/>
+		<put name="page-setup" value="" type="string"/>
+		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
+	</definition>
+
+	<definition name="base_mailing_preview" extends="base_ajax">
+		<put name="page-setup" value="" type="string"/>
+		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
+	</definition>
+
+	<definition name="preview.0" extends="base_mailing_preview">
+		<put name="body" value="/WEB-INF/jsp/mailing/preview/preview-text-new.jsp" type="page"/>
+	</definition>
+
+	<definition name="preview.1" extends="base_mailing_preview">
+		<put name="body" value="/WEB-INF/jsp/mailing/preview/preview-html-new.jsp" type="page"/>
+	</definition>
+
+	<definition name="preview.2" extends="base_mailing_preview">
+		<put name="body" value="/WEB-INF/jsp/mailing/preview/preview-fax-new.jsp" type="page"/>
+	</definition>
+
+	<definition name="preview.3" extends="base_mailing_preview">
+		<put name="body" value="/WEB-INF/jsp/mailing/preview/preview-text-new.jsp" type="page"/>
+	</definition>
+
+	<definition name="preview.4" extends="base_mailing_preview">
+		<put name="body" value="/WEB-INF/jsp/mailing/preview/preview-text-new.jsp" type="page"/>
+	</definition>
+
+	<definition name="preview.5" extends="base_mailing_preview">
+		<put name="body" value="/WEB-INF/jsp/mailing/preview/preview-sms-new.jsp" type="page"/>
+	</definition>
+
+	<definition name="preview.6" extends="base_mailing_preview">
+		<put name="body" value="/WEB-INF/jsp/mailing/preview/preview-html-new.jsp" type="page"/>
 	</definition>
 
 	<definition name="mailing_preview_select_ajax" extends="base_ajax">
@@ -1145,16 +1277,8 @@
 		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
 		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
 	</definition>
-
-	<definition name="mailing_trackablelink_list" extends="base">
-		<put name="body" value="/WEB-INF/jsp/mailing/mailing-trackablelink-list.jsp" type="page"/>
-		<put name="page-setup" value="/WEB-INF/jsp/mailing/mailing-trackablelink-list-setup.jsp" type="page"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
-		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
-	</definition>
     
-    <definition name="mailing_trackablelink_list_new" extends="base">
+    <definition name="mailing_trackablelink_list" extends="base">
    		<put name="body" value="/WEB-INF/jsp/mailing/trackablelinks/mailing-trackablelink-list.jsp" type="page"/>
    		<put name="page-setup" value="/WEB-INF/jsp/mailing/trackablelinks/mailing-trackablelink-list-setup.jsp" type="page"/>
    
@@ -1162,49 +1286,23 @@
    		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
    	</definition>
 
-    <definition name="mailing_trackablelink_bulk_clear_extensions_confirm" extends="base_ajax">
-        <put name="body" value="/WEB-INF/jsp/mailing/trackablelinks/clear-extensions.jsp" type="page"/>
-        <put name="page-setup" value="" type="string"/>
-    </definition>    
-
     <definition name="mailing_trackablelink_bulk_clear_extensions" extends="base_ajax">
         <put name="body" value="/WEB-INF/jsp/mailing/trackablelinks/bulk-clear-extensions.jsp" type="page"/>
         <put name="page-setup" value="" type="string"/>
     </definition>
     
-    <definition name="mailing_trackablelink_bulk_actions_modal" extends="base_ajax">
+    <definition name="mailing_trackablelink_bulk_actions" extends="base_ajax">
         <put name="body" value="/WEB-INF/jsp/mailing/trackablelinks/bulk-actions.jsp" type="page"/>
         <put name="page-setup" value="" type="string"/>
     </definition>
     
-    <definition name="mailing_trackablelink_bulk_actions" extends="base_ajax">
-        <put name="body" value="/WEB-INF/jsp/mailing/trackablelinks/bulk-actions-new.jsp" type="page"/>
-        <put name="page-setup" value="" type="string"/>
-    </definition>
-
-	<definition name="mailing_trackablelink_view" extends="base">
-		<put name="body" value="/WEB-INF/jsp/mailing/mailing-trackablelink-view.jsp" type="page"/>
-		<put name="page-setup" value="/WEB-INF/jsp/mailing/mailing-trackablelink-view-setup.jsp" type="page"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
-		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
-	</definition>
-    
-    <definition name="mailing_trackablelink_view_new" extends="base">
+    <definition name="mailing_trackablelink_view" extends="base">
    		<put name="body" value="/WEB-INF/jsp/mailing/trackablelinks/mailing-trackablelink-view.jsp" type="page"/>
    		<put name="page-setup" value="/WEB-INF/jsp/mailing/trackablelinks/mailing-trackablelink-view-setup.jsp" type="page"/>
    
    		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
    		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
    	</definition>
-
-	<definition name="mailing_components" extends="base">
-		<put name="body" value="/WEB-INF/jsp/mailing/mailing-components.jsp" type="page"/>
-		<put name="page-setup" value="/WEB-INF/jsp/mailing/mailing-components-setup.jsp" type="page"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
-		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
-	</definition>
     
     <definition name="mailing_images_list" extends="base">
    		<put name="body" value="/WEB-INF/jsp/mailing/images/mailing-images.jsp" type="page"/>
@@ -1213,25 +1311,9 @@
    		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
    		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
    	</definition>
-
-	<definition name="mailing_components_delete_ajax" extends="base_ajax">
-		<put name="body" value="/WEB-INF/jsp/mailing/mailing-components-delete.jsp" type="page"/>
-		<put name="page-setup" value="" type="string"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
-		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
-	</definition>
     
 	<definition name="mailing_images_delete" extends="base_ajax">
 		<put name="body" value="/WEB-INF/jsp/mailing/images/mailing-images-delete.jsp" type="page"/>
-		<put name="page-setup" value="" type="string"/>
-
-		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
-		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
-	</definition>
-
-	<definition name="mailing_components_bulk_delete" extends="base_ajax">
-		<put name="body" value="/WEB-INF/jsp/mailing/mailing-components-bulk-delete.jsp" type="page"/>
 		<put name="page-setup" value="" type="string"/>
 
 		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
@@ -1245,6 +1327,7 @@
    		<!-- This is for transitional phase only! For new pages, remove that "put" and use Struts messages and errors the correct way! -->
    		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
    	</definition>
+
 
 	<definition name="form_components" extends="base">
 		<put name="body" value="/WEB-INF/jsp/userform/userform-components.jsp" type="page"/>

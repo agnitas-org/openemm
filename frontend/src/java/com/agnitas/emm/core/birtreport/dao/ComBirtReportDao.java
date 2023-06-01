@@ -10,6 +10,7 @@
 
 package com.agnitas.emm.core.birtreport.dao;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -26,6 +27,8 @@ public interface ComBirtReportDao {
     boolean update(ComBirtReport report, List<Integer> justDeactivateSettingTypes) throws Exception;
 
     List<ComLightweightBirtReport> getLightweightBirtReportList(@VelocityCheck int companyID);
+
+    void deactivateReportSettings(int reportId, Collection<Integer> settingsTypes);
 
     void updateReportMailinglists(int reportId, int reportType, List<Integer> mailinglistIds);
 

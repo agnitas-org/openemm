@@ -19,7 +19,7 @@ import org.agnitas.beans.impl.PaginatedListImpl;
 import org.apache.struts.upload.FormFile;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.upload.bean.UploadData;
 import com.agnitas.emm.core.upload.service.dto.EmailEntry;
 import com.agnitas.emm.core.upload.service.dto.PageSetUp;
@@ -41,13 +41,13 @@ public interface UploadService {
 
     boolean hasPermissionForDelete(int id, int adminId, int companyId);
 
-	void uploadFiles(UploadFileDescription description, List<MultipartFile> files, Popups popups, ComAdmin admin);
+    List<UploadData> uploadFiles(UploadFileDescription description, List<MultipartFile> files, Popups popups, Admin admin);
 
     File getDataForDownload(int id);
 
     List<EmailEntry> getDefaultEmails(String email, Locale locale);
 
-    List<UploadData> getUploadsByExtension(ComAdmin admin, String extension);
+    List<UploadData> getUploadsByExtension(Admin admin, String extension);
 
     @Deprecated
     FormFile getFormFileByUploadId(int uploadID, String mime);

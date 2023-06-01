@@ -21,11 +21,11 @@ import org.agnitas.emm.core.binding.service.BindingModel;
 import org.agnitas.emm.core.binding.service.BindingNotExistException;
 import org.agnitas.emm.core.binding.service.BindingService;
 import org.agnitas.emm.core.binding.service.BindingServiceException;
+import org.agnitas.emm.core.binding.service.validation.BindingModelValidator;
 import org.agnitas.emm.core.mailing.service.MailingNotExistException;
 import org.agnitas.emm.core.mailinglist.service.MailinglistNotExistException;
 import org.agnitas.emm.core.mailinglist.service.impl.MailinglistException;
 import org.agnitas.emm.core.recipient.service.RecipientNotExistException;
-import org.agnitas.emm.core.validator.annotation.Validate;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.exceptions.InvalidUserStatusException;
 import org.apache.logging.log4j.LogManager;
@@ -49,6 +49,8 @@ public class BindingServiceImpl implements BindingService {
 
 	private BindingEntryFactory bindingEntryFactory;
 
+	protected BindingModelValidator bindingModelValidator;
+	
 	protected MailingDao mailingDao;
 	
 	@Required
@@ -76,10 +78,15 @@ public class BindingServiceImpl implements BindingService {
 		this.mailingDao = mailingDao;
 	}
 
+    @Required
+  	public void setBindingModelValidator(BindingModelValidator bindingModelValidator) {
+  		this.bindingModelValidator = bindingModelValidator;
+  	}
+	
 	@Override
 	@Transactional
-	@Validate(groups = BindingModel.GetGroup.class)
 	public BindingEntry getBinding(BindingModel model) {
+	    bindingModelValidator.assertIsValidToGetOrDelete(model);
 		BindingEntry bindingEntry = bindingEntryDao.get(model.getCustomerId(), model.getCompanyId(), model.getMailinglistId(), model.getMediatype());
 		if (bindingEntry == null) {
 			throw new BindingNotExistException();
@@ -89,8 +96,8 @@ public class BindingServiceImpl implements BindingService {
 
 	@Override
 	@Transactional
-	@Validate(groups = BindingModel.SetGroup.class)
 	public void setBinding(BindingModel model) throws MailinglistException {
+	    bindingModelValidator.assertIsValidToSet(model);
 		if (!mailinglistDao.exist(model.getMailinglistId(), model.getCompanyId())) {
 			throw new MailinglistNotExistException(model.getMailinglistId(), model.getCompanyId());
 		}
@@ -124,8 +131,8 @@ public class BindingServiceImpl implements BindingService {
 
 	@Override
 	@Transactional
-	@Validate(groups = BindingModel.GetGroup.class)
 	public void deleteBinding(BindingModel model) {
+        bindingModelValidator.assertIsValidToGetOrDelete(model);
 		if (!bindingEntryDao.exist(model.getCustomerId(), model.getCompanyId(), model.getMailinglistId(), model.getMediatype())) {
 			throw new BindingNotExistException();
 		}
@@ -134,8 +141,8 @@ public class BindingServiceImpl implements BindingService {
 	
 	@Override
 	@Transactional
-	@Validate(groups = BindingModel.ListGroup.class)
 	public List<BindingEntry> getBindings(BindingModel model) {
+	    bindingModelValidator.assertIsValidToList(model);
 		if (!recipientDao.exist(model.getCustomerId(), model.getCompanyId())) {
 			throw new RecipientNotExistException();
 		}

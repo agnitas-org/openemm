@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-	Application context definition for Agnitas EMM business layer.
+	Application context definition for AGNITAS OpenEMM business layer.
 	Contains bean references to the transaction manager and to the DAOs in
 	dataAccessContext.xml (see web.xml's "contextConfigLocation").
 -->
@@ -60,7 +60,8 @@
 		<property name="mailingStatisticsDao" ref="MailingStatisticsDao" />
 		<property name="mailingParameterDao" ref="MailingParameterDao" />
         <property name="mailingSizeCalculationService" ref="mailingSizeCalculationService"/>
-		<property name="mailingDeliveryLockService" ref="MailingDeliveryLockService"/>
+		<property name="mailingDeliveryBlockingService" ref="MailingDeliveryBlockingService"/>
+        <property name="mailingSendService" ref="mailingSendService2"/>
 	</bean>
 
 	<bean name="/importprofile" class="org.agnitas.web.ImportProfileAction">

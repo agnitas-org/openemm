@@ -29,7 +29,10 @@ public enum ExtensibleUidVersion {
 	UID_WITH_BITFIELD_USING_SHA512(3),
 	
 	/** Version of UID with company ID. */
-	V4_WITH_COMPANY_ID(4);
+	V4_WITH_COMPANY_ID(4),
+	
+	/** Version of UID with agnostic data storage */
+	V5_AGNOSTIC(5);
 	
 	private final int versionCode;
 	
@@ -47,6 +50,14 @@ public enum ExtensibleUidVersion {
 		throw new NoSuchElementException(String.format("Invalid UID version %d", version));
 	}
 	
+	/*
+	 * Do not use anymore!
+	 * 
+	 * The enabledUidVersion=0 for latest version is very dangerous.
+	 * It is very likely, that code using the newest (and untested)
+	 * UID version is deployed before database is configures correctly.
+	 */
+	@Deprecated(forRemoval = true)
 	public static ExtensibleUidVersion latest() {
 		return newerOf(values());
 	}

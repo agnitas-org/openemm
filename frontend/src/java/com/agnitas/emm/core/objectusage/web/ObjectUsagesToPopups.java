@@ -33,7 +33,10 @@ import com.agnitas.web.mvc.Popups;
 public final class ObjectUsagesToPopups {
 
 	/** Maximum number of using objects shown in error message. */
-	public static final int MAX_OBJECTS_PER_MESSAGE = 5;
+	private static final int MAX_OBJECTS_PER_MESSAGE = 5;
+
+	private ObjectUsagesToPopups() {
+    }
 
 	/**
 	 * Converts {@link ObjectUsages} to {@link Popups}. All using objects (up to limit defined in {@link #MAX_OBJECTS_PER_MESSAGE}),
@@ -45,15 +48,16 @@ public final class ObjectUsagesToPopups {
 	 * @param errors list of messages to add new message
 	 * @param locale locale of current user
 	 */
-	public static final void objectUsagesToPopups(final String errorMessageKey, final String errorMessageWithMoreKey, final ObjectUsages usages, final Popups errors, final Locale locale) {
-		if(!usages.isEmpty()) {
-			if(usages.size() <= MAX_OBJECTS_PER_MESSAGE) {
-				errors.alert(errorMessageKey, itemsToHtmlList(usages, locale));
-			} else {
-				errors.alert(errorMessageKey, itemsToHtmlList(usages, locale), usages.size() - MAX_OBJECTS_PER_MESSAGE);
-			}
+	public static void objectUsagesToPopups(final String errorMessageKey, final String errorMessageWithMoreKey, final ObjectUsages usages, final Popups errors, final Locale locale) {
+		if (usages.isEmpty()) {
+		    return;
 		}
-	}
+        if (usages.size() <= MAX_OBJECTS_PER_MESSAGE) {
+            errors.alert(errorMessageKey, itemsToHtmlList(usages, locale));
+        } else {
+            errors.alert(errorMessageWithMoreKey, itemsToHtmlList(usages, locale), usages.size() - MAX_OBJECTS_PER_MESSAGE);
+        }
+    }
 	
 	/**
 	 * Converts object usages to a HTML list.
@@ -63,7 +67,7 @@ public final class ObjectUsagesToPopups {
 	 * 
 	 * @return HTML code for list
 	 */
-	private static final String itemsToHtmlList(final ObjectUsages usages, final Locale locale) {
+	private static String itemsToHtmlList(final ObjectUsages usages, final Locale locale) {
 		final StringBuffer buffer = new StringBuffer("<ul>");
 		
 		int count = 0;

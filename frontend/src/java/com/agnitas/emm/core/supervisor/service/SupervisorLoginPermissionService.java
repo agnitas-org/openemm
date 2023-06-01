@@ -13,7 +13,7 @@ package com.agnitas.emm.core.supervisor.service;
 import java.util.Date;
 import java.util.List;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.departments.beans.Department;
 import com.agnitas.emm.core.departments.exceptions.UnknownDepartmentIdException;
 import com.agnitas.emm.core.supervisor.beans.SupervisorLoginPermissionTableItem;
@@ -21,14 +21,14 @@ import com.agnitas.emm.core.supervisor.common.SupervisorException;
 
 public interface SupervisorLoginPermissionService {
 
-	void grantLoginPermissionToDepartment(final ComAdmin admin, final int departmentID, final Date expireDate) throws SupervisorException, UnknownDepartmentIdException;
-	void grantLoginPermissionToAllDepartments(final ComAdmin admin, final Date expireDate) throws SupervisorException;
-	void grantUnlimitedLoginPermissionToDepartment(final ComAdmin admin, final int departmentID) throws SupervisorException, UnknownDepartmentIdException;
-	void grantUnlimitedLoginPermissionToAllDepartments(final ComAdmin admin) throws SupervisorException;
+	void grantLoginPermissionToDepartment(final Admin admin, final int departmentID, final Date expireDate) throws SupervisorException, UnknownDepartmentIdException;
+	void grantLoginPermissionToAllDepartments(final Admin admin, final Date expireDate) throws SupervisorException;
+	void grantUnlimitedLoginPermissionToDepartment(final Admin admin, final int departmentID) throws SupervisorException, UnknownDepartmentIdException;
+	void grantUnlimitedLoginPermissionToAllDepartments(final Admin admin) throws SupervisorException;
 	
 	void revokeSupervisorLoginPermission(int adminID, int permissionID) throws UnknownSupervisorLoginPermissionException;
 	
-	List<SupervisorLoginPermissionTableItem> listActiveSupervisorLoginPermissions(final ComAdmin admin);
+	List<SupervisorLoginPermissionTableItem> listActiveSupervisorLoginPermissions(final Admin admin);
 	
 	/**
 	 * Returns the department for login permission. If permission was granted to all departments, <code>null</code> is returned.

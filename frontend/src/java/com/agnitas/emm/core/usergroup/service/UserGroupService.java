@@ -19,32 +19,32 @@ import org.agnitas.beans.AdminGroup;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.admin.web.PermissionsOverviewData;
 import com.agnitas.emm.core.usergroup.dto.UserGroupDto;
 
 public interface UserGroupService {
     
-    PaginatedListImpl<UserGroupDto> getUserGroupPaginatedList(ComAdmin admin, String sort, String sortDirection, int page, int rownumber);
+    PaginatedListImpl<UserGroupDto> getUserGroupPaginatedList(Admin admin, String sort, String sortDirection, int page, int rownumber);
     
-    UserGroupDto getUserGroup(ComAdmin admin, int userGroupId);
+    UserGroupDto getUserGroup(Admin admin, int userGroupId);
     
-    int saveUserGroup(ComAdmin admin, UserGroupDto userGroupDto) throws Exception;
+    int saveUserGroup(Admin admin, UserGroupDto userGroupDto) throws Exception;
     
     boolean isShortnameUnique(String shortname, int userGroupId, @VelocityCheck int companyId);
     
-    boolean isUserGroupPermissionChangeable(ComAdmin admin, Permission permission, Set<Permission> companyPermissions);
+    boolean isUserGroupPermissionChangeable(Admin admin, Permission permission, Set<Permission> companyPermissions);
     
-    List<String> getUserGroupPermissionCategories(int groupId, int groupCompanyId, ComAdmin admin);
+    List<String> getUserGroupPermissionCategories(int groupId, int groupCompanyId, Admin admin);
     
     List<String> getAdminNamesOfGroup(int userGroupId, @VelocityCheck int companyId);
     
     List<String> getGroupNamesUsingGroup(int userGroupId, @VelocityCheck int companyId);
     
-    boolean deleteUserGroup(int userGroupId, ComAdmin admin);
+    boolean deleteUserGroup(int userGroupId, Admin admin);
     
-    Map<String, PermissionsOverviewData.PermissionCategoryEntry> getPermissionOverviewData(ComAdmin admin, int groupId, int groupCompanyId);
+    Map<String, PermissionsOverviewData.PermissionCategoryEntry> getPermissionOverviewData(Admin admin, int groupId, int groupCompanyId);
 
 	List<AdminGroup> getAdminGroupsByCompanyId(int companyID);
 
@@ -52,5 +52,5 @@ public interface UserGroupService {
 
 	AdminGroup getAdminGroup(int userGroupId, int companyID);
 
-    int copyUserGroup(int id, ComAdmin admin) throws Exception;
+    int copyUserGroup(int id, Admin admin) throws Exception;
 }

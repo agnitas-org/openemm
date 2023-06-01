@@ -1,4 +1,0 @@
-<HelpBalloon>
-	<title>ExportType: Reactions</title>
-	<content><![CDATA[All reactions of the previous day are summarized in this export. The following fields are available: Mailing_ID, Customer_ID, E-Mail, Event (1=link click, 2=opening, 3=unsubscribe, 4=delivery, 5=softbounce, 6=hardbounce, 7=blacklist, 8=Revenue), Timestamp (for the reaction), Link (if it was a link click) and Revenue.]]></content>
-</HelpBalloon>

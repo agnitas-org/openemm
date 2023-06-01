@@ -29,7 +29,8 @@ By default a `GET` HTTP method is used. But you can specify an HTTP method to us
 
   var Loader = AGN.Lib.Loader,
       Template  = AGN.Lib.Template,
-      Page   = AGN.Lib.Page;
+      Page   = AGN.Lib.Page,
+      CSRF = AGN.Lib.CSRF;
 
   var AjaxLoader = {
     initialize: function(options) {
@@ -76,10 +77,12 @@ By default a `GET` HTTP method is used. But you can specify an HTTP method to us
 
   $(document).ajaxSend(function(e, jqxhr, options) {
     AjaxLoader.show(options);
+    CSRF.setTokenToReqHeader(jqxhr, options.type);
   });
 
   $(document).ajaxComplete(function(e, jqxhr, options) {
     AjaxLoader.hide(options);
+    CSRF.updateTokenInDOM();
   });
 
   $(document).ajaxError(function(e, jqxhr, options) {

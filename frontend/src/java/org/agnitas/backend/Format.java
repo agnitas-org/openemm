@@ -24,6 +24,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TimeZone;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Generic class to format values retrieved from the database
@@ -77,7 +79,32 @@ public class Format {
 		return rc;
 	}
 
+	private static Pattern stringFormater = Pattern.compile ("\\$\\$?", Pattern.MULTILINE);
 	public String format(String val) {
+		if (format != null) {
+			StringBuffer	result = new StringBuffer ();
+			Matcher		m = stringFormater.matcher (format);
+			int		pos = 0;
+			
+			while (m.find (pos)) {
+				int	start = m.start ();
+				
+				if (start > pos) {
+					result.append (format, pos, start);
+				}
+				String	match = m.group ();
+				if ("$".equals (match)) {
+					result.append (val);
+				} else {
+					result.append ("$");
+				}
+				pos = m.end ();
+			}
+			if (pos < format.length ()) {
+				result.append (format.substring (pos));
+			}
+			return result.toString ();
+		}
 		return val;
 	}
 

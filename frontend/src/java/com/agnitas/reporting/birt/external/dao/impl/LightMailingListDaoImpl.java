@@ -27,8 +27,8 @@ import com.agnitas.reporting.birt.external.beans.LightMailingList;
 import com.agnitas.reporting.birt.external.dao.LightMailingListDao;
 
 public class LightMailingListDaoImpl extends BaseDaoImpl implements LightMailingListDao {
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(LightMailingListDaoImpl.class);
+
+	private static final Logger logger = LogManager.getLogger(LightMailingListDaoImpl.class);
 
 	public LightMailingListDaoImpl(DataSource dataSource) {
 		setDataSource(dataSource);
@@ -41,14 +41,14 @@ public class LightMailingListDaoImpl extends BaseDaoImpl implements LightMailing
 
 	@Override
 	public List<LightMailingList> getMailingLists(List<Integer> mailingListIDs, @VelocityCheck int companyID) {
-		if (mailingListIDs == null || mailingListIDs.size() < 1) {
+		if (mailingListIDs == null || mailingListIDs.isEmpty()) {
 			return null;
-		} else {
-			return select(logger, "SELECT mailinglist_id, shortname, company_id FROM mailinglist_tbl WHERE mailinglist_id IN (" + StringUtils.join(mailingListIDs, ", ") + ") AND company_id = ?", new LightMailingListRowMapper(), companyID);
 		}
+
+		return select(logger, "SELECT mailinglist_id, shortname, company_id FROM mailinglist_tbl WHERE mailinglist_id IN (" + StringUtils.join(mailingListIDs, ", ") + ") AND company_id = ?", new LightMailingListRowMapper(), companyID);
 	}
 	
-    protected class LightMailingListRowMapper implements RowMapper<LightMailingList> {
+    protected static class LightMailingListRowMapper implements RowMapper<LightMailingList> {
 		@Override
 		public LightMailingList mapRow(ResultSet resultSet, int row) throws SQLException {
 			LightMailingList readItem = new LightMailingList();

@@ -13,6 +13,7 @@ package com.agnitas.emm.core.mailing.web;
 import java.util.List;
 
 import org.agnitas.emm.core.mailing.beans.LightweightMailing;
+import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.service.WebStorage;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.HttpUtils;
@@ -29,7 +30,7 @@ import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.mailing.bean.ComMailingParameter;
 import com.agnitas.emm.core.mailing.forms.ComMailingParameterForm;
 import com.agnitas.emm.core.mailing.service.ComMailingParameterService;
@@ -60,7 +61,7 @@ public class ComMailingParameterAction extends BaseDispatchAction {
 	 * @return corresponding template
 	 */
 	public ActionForward list(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
-		final ComAdmin admin = AgnUtils.getAdmin(request);
+		final Admin admin = AgnUtils.getAdmin(request);
 		AgnUtils.setAdminDateTimeFormatPatterns(request);
 
 		// parameter name or description
@@ -104,7 +105,7 @@ public class ComMailingParameterAction extends BaseDispatchAction {
 	public ActionForward search(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
 		final String parameterQuery = request.getParameter("parameterSearchQuery");
 		final String mailingQuery = request.getParameter("mailingSearchQuery");
-		final ComAdmin admin = AgnUtils.getAdmin(request);
+		final Admin admin = AgnUtils.getAdmin(request);
 		
 		assert (admin != null);
 		
@@ -137,7 +138,7 @@ public class ComMailingParameterAction extends BaseDispatchAction {
 		ActionErrors errors = new ActionErrors();
 		
 		// load Data...
-		ComAdmin admin = AgnUtils.getAdmin(request);
+		Admin admin = AgnUtils.getAdmin(request);
 		int adminId = admin.getAdminID();
 		ComMailingParameter parameter = fillBeanWithData((ComMailingParameterForm) form);
 		parameter.setCompanyID(AgnUtils.getCompanyID(request));
@@ -148,7 +149,10 @@ public class ComMailingParameterAction extends BaseDispatchAction {
 		if (parameter.getMailingInfoID() > 0) {
 			ComMailingParameter oldParameter = mailingParameterService.getParameter(parameter.getMailingInfoID(), admin);
 			result = mailingParameterService.updateParameter(parameter, admin);
-			writeUserActivityLog(admin, mailingParameterLogService.getMailingParameterChangeLog(parameter.getMailingID(), parameter.getMailingInfoID(), oldParameter, parameter));
+            UserAction userAction = mailingParameterLogService.getMailingParameterChangeLog(parameter.getMailingID(), parameter.getMailingInfoID(), oldParameter, parameter);
+            if (userAction != null) {
+                writeUserActivityLog(admin, userAction);
+            }
 		} else {
 			result = mailingParameterService.insertParameter(parameter, admin);
 			writeUserActivityLog(admin, mailingParameterLogService.getMailingParameterCreateLog(parameter.getMailingID(), parameter));
@@ -167,7 +171,7 @@ public class ComMailingParameterAction extends BaseDispatchAction {
 	
 	public ActionForward delete(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) {
 		ActionErrors errors = new ActionErrors();
-		ComAdmin admin = AgnUtils.getAdmin(request);
+		Admin admin = AgnUtils.getAdmin(request);
 		int mailingInfoID = ((ComMailingParameterForm) form).getMailingInfoID();
 		boolean result = mailingParameterService.deleteParameter(mailingInfoID, admin);
 		final ComMailingParameter parameter = mailingParameterService.getParameter(mailingInfoID, admin);

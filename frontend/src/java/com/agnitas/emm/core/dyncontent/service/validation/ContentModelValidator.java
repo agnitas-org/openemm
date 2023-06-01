@@ -52,6 +52,5 @@ public class ContentModelValidator extends BaseValidator {
     public void assertIsValidToGetList(final ContentModel model) {
         assertPositive(model.getCompanyId(), COMPANY_ID);
         assertPositive(model.getMailingId(), MAILING_ID);
-
     }    
 }

@@ -37,6 +37,7 @@ public class LightMailingList {
 	public int getCompanyId() {
 		return companyId;
 	}
+
 	public void setCompanyId(@VelocityCheck int companyId) {
 		this.companyId = companyId;
 	}

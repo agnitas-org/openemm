@@ -12,10 +12,13 @@ package com.agnitas.service;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -28,12 +31,14 @@ import org.agnitas.service.UpdateMethod;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.CsvReader;
 import org.agnitas.util.DbColumnType;
+import org.agnitas.util.TempFileInputStream;
 import org.agnitas.util.ZipUtilities;
 import org.agnitas.util.importvalues.CheckForDuplicates;
 import org.agnitas.util.importvalues.DateFormat;
 import org.agnitas.util.importvalues.TextRecognitionChar;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
+import org.apache.commons.compress.utils.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.agnitas.emm.core.referencetable.beans.ComReferenceTable;
@@ -87,6 +92,8 @@ public class CsvImportExportDescription {
 	private String mailForError;
 	
 	private String mailForReport;
+
+	private Locale locale = new Locale("en", "US");
 
 	public int getId() {
 		return id;
@@ -398,14 +405,19 @@ public class CsvImportExportDescription {
 						throw e;
 					}
 				} else {
-					ZipFile zipFile = new ZipFile(importFile);
-					zipFile.setPassword(getZipPassword().toCharArray());
-					List<FileHeader> fileHeaders = zipFile.getFileHeaders();
-					// Check if there is only one file within the zip file
-					if (fileHeaders == null || fileHeaders.size() != 1) {
-						throw new Exception("Invalid number of files included in zip file");
-					} else {
-						return zipFile.getInputStream(fileHeaders.get(0));
+					File tempImportFile = new File(importFile.getAbsolutePath() + ".tmp");
+					try (ZipFile zipFile = new ZipFile(importFile)) {
+						zipFile.setPassword(getZipPassword().toCharArray());
+						List<FileHeader> fileHeaders = zipFile.getFileHeaders();
+						// Check if there is only one file within the zip file
+						if (fileHeaders == null || fileHeaders.size() != 1) {
+							throw new Exception("Invalid number of files included in zip file");
+						} else {
+							try (FileOutputStream tempImportFileOutputStream = new FileOutputStream(tempImportFile)) {
+								IOUtils.copy(zipFile.getInputStream(fileHeaders.get(0)), tempImportFileOutputStream);
+							}
+							return new TempFileInputStream(tempImportFile);
+						}
 					}
 				}
 			} catch (ImportException e) {
@@ -592,6 +604,10 @@ public class CsvImportExportDescription {
 	}
 
 	public String getTimezone() {
+		if (StringUtils.isBlank(timezone)) {
+			timezone = "Europe/Berlin";
+		}
+		
 		return timezone;
 	}
 
@@ -605,5 +621,21 @@ public class CsvImportExportDescription {
 
 	public void setDecimalSeparator(String decimalSeparator) {
 		this.decimalSeparator = decimalSeparator;
+	}
+
+	public void setLocale(Locale locale) {
+		this.locale = locale;
+	}
+
+	public Locale getLocale() {
+		if (locale == null) {
+			locale = new Locale("en", "US");
+		}
+		
+		return locale;
+	}
+
+	public DateTimeFormatter getDateTimeFormatter() {
+		return AgnUtils.getDateTimeFormatter(getTimezone(), getLocale());
 	}
 }

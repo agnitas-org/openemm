@@ -10,7 +10,7 @@
 
 package com.agnitas.emm.core.user.service.impl;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.user.service.UserSelfService;
 import org.agnitas.emm.core.logintracking.bean.LoginData;
 import org.agnitas.emm.core.logintracking.service.LoginTrackService;
@@ -28,7 +28,7 @@ public class UserSelfServiceImpl implements UserSelfService {
     private LoginTrackService loginTrackService;
 
     @Override
-    public List<LoginData> getLoginTrackingList(ComAdmin admin, int minPeriodDays, SimpleDateFormat loginTimeFormat) {
+    public List<LoginData> getLoginTrackingList(Admin admin, int minPeriodDays, SimpleDateFormat loginTimeFormat) {
         Calendar calendar = new GregorianCalendar();
         calendar.add(Calendar.DAY_OF_YEAR, -minPeriodDays);
         Date xDaysBefore = calendar.getTime();

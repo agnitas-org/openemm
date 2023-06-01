@@ -33,6 +33,7 @@ import jakarta.xml.bind.annotation.XmlType;
  *         &lt;element name="fileName" type="{http://www.w3.org/2001/XMLSchema}string"/&gt;
  *         &lt;element name="description" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/&gt;
  *         &lt;element name="URL" type="{http://www.w3.org/2001/XMLSchema}string" minOccurs="0"/&gt;
+ *         &lt;element name="replaceExisting" type="{http://www.w3.org/2001/XMLSchema}boolean" minOccurs="0"/&gt;
  *       &lt;/all&gt;
  *     &lt;/restriction&gt;
  *   &lt;/complexContent&gt;
@@ -57,6 +58,7 @@ public class AddMailingImageRequest {
     protected String description;
     @XmlElement(name = "URL")
     protected String url;
+    protected Boolean replaceExisting;
 
     /**
      * Gets the value of the mailingID property.
@@ -168,6 +170,30 @@ public class AddMailingImageRequest {
      */
     public void setURL(String value) {
         this.url = value;
+    }
+
+    /**
+     * Gets the value of the replaceExisting property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link Boolean }
+     *     
+     */
+    public Boolean isReplaceExisting() {
+        return replaceExisting;
+    }
+
+    /**
+     * Sets the value of the replaceExisting property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link Boolean }
+     *     
+     */
+    public void setReplaceExisting(Boolean value) {
+        this.replaceExisting = value;
     }
 
 }

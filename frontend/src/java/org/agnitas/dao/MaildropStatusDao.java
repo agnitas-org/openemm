@@ -12,14 +12,17 @@ package org.agnitas.dao;
 
 import java.time.ZonedDateTime;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
 import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.agnitas.util.importvalues.MailType;
 
 import com.agnitas.beans.MaildropEntry;
 import com.agnitas.emm.core.maildrop.MaildropGenerationStatus;
 import com.agnitas.emm.core.maildrop.MaildropStatus;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 
 public interface MaildropStatusDao {
     /**
@@ -96,7 +99,6 @@ public interface MaildropStatusDao {
 	 * @param entry entry to save
 	 * 
 	 * @return ID of maildrop entry
-	 * @throws Exception
 	 */
 	int saveMaildropEntry(final MaildropEntry entry) throws Exception;
 
@@ -129,4 +131,8 @@ public interface MaildropStatusDao {
 	boolean reactivateMaildropStatusEntry(int maildropStatusID);
 	
 	void removeOutdatedFindLastNewsletterEntries(final int companyID, final ZonedDateTime olderThan);
+
+	void writeMailingSendStatisticsEntry(int companyID, int mailingID, MaildropStatus maildropStatus, MediaTypes mediaType, MailType mailType, int amount, int dataSize, Date sendDate, String mailerHostname);
+
+	List<Integer> getMailingsSentBetween(int companyID, Date startDateIncluded, Date endDateExcluded);
 }

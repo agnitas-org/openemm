@@ -1,4 +1,8 @@
 <HelpBalloon>
 	<title><![CDATA[taille maximale des courriels]]></title>
-	<content><![CDATA[Cette valeur est calcul&eacute;e en d&eacute;terminant la variante d'envoi ayant le plus grand volume de donn&eacute;es, en tenant compte de tous les modules &agrave; contenu variable et facultatif ainsi que des images. Si une deuxi&egrave;me valeur est affich&eacute;e entre parenth&egrave;ses, cette valeur inclut &eacute;galement les images externes.]]></content>
+	<content><![CDATA[La valeur "Taille d'envoi" indique la taille du volume de donn&eacute;es du mailing (HTML et, le cas &eacute;ch&eacute;ant, fichiers joints) lors de l'envoi. Si vous envoyez le mailing en HTML hors ligne, les images sont &eacute;galement envoy&eacute;es et prises en compte ici dans cette valeur.
+
+Comme les images ne sont g&eacute;n&eacute;ralement pas livr&eacute;es directement avec le mailing, mais sont r&eacute;cup&eacute;r&eacute;es lors de l'ouverture, la valeur "images incluses" indique en cons&eacute;quence la taille du mailing, une fois que les images ont &eacute;galement &eacute;t&eacute; charg&eacute;es.
+
+Les deux valeurs sont calcul&eacute;es en tenant compte de tous les modules de contenu optionnels et variables.]]></content>
 </HelpBalloon>

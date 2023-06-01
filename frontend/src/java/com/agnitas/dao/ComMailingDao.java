@@ -18,7 +18,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import com.agnitas.beans.ComAdmin;
 import org.agnitas.beans.MailingBase;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.MailingDao;
@@ -26,22 +25,27 @@ import org.agnitas.dao.MailingStatus;
 import org.agnitas.emm.core.mailing.beans.LightweightMailing;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.ComRdirMailingData;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MailingContentType;
 import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.mailing.TooManyTargetGroupsInMailingException;
-import com.agnitas.emm.core.mailing.bean.ComFollowUpStats;
 import com.agnitas.emm.core.mailing.service.ListMailingFilter;
 import com.agnitas.emm.core.mailing.web.MailingSendSecurityOptions;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 
 public interface ComMailingDao extends MailingDao {
-    List<Map<String, Object>> getMailingsForMLIDs(Set<Integer> mailinglistIds, @VelocityCheck int companyId);
+	// Deprecated. GWUA-5122 TODO: Remove after 29.10.2022
+//    List<Map<String, Object>> getMailingsForMLIDs(Set<Integer> mailinglistIds, @VelocityCheck int companyId);
 
 	Mailing getMailingWithDeletedDynTags(int mailingID, @VelocityCheck int companyID);
-	
+
+	boolean updateStatus(Mailing mailing, MailingStatus mailingStatus);
+
 	boolean updateStatus(int mailingID, MailingStatus mailingStatus);
+	
+	boolean updateStatus(int mailingID, MailingStatus mailingStatus, Date sendDate);
 	
 	// returns all Mailings in a linked List.
 	List<Integer> getAllMailings(@VelocityCheck int companyID);
@@ -77,7 +81,6 @@ public interface ComMailingDao extends MailingDao {
      * Get mailings which is set as the followup to given one,
      *
      * @param mailingID - target mailing id
-     * @param companyID
      * @param includeUnscheduled - w@Override
 	hether the unscheduled followup mailings will be included.
      * @return - list of followup mailings id. Is not recursive.
@@ -86,12 +89,12 @@ public interface ComMailingDao extends MailingDao {
 
 	/**
 	 * The last send-date of a mailing. The state 'W' will be preferred even if there a later send-dates with state 'A' or 'T' !
-	 * @param mailingID
 	 * @return - the send-date , null if the mailing has not been sent yet
 	 */
 	Timestamp getLastSendDate(int mailingID) ;
 
-    Date getStartDate(int companyId, int mailingId);
+	// Deprecated. GWUA-5122 TODO: Remove after 29.10.2022
+//    Date getStartDate(int companyId, int mailingId);
 
     /**
 	 * Get a list of mailing data (mailing_id, shortname, description and mailinglist's shortname).
@@ -114,13 +117,15 @@ public interface ComMailingDao extends MailingDao {
      * @param pageSize a pagination parameter (rows count per page).
      * @return an instance of {@link org.agnitas.beans.impl.PaginatedListImpl} that holds resulting list and sorting/pagination parameters.
      */
-	PaginatedListImpl<Map<String, Object>> getMailingShortList(@VelocityCheck int companyID, String searchQuery, boolean searchName, boolean searchDescription, String sortCriteria, boolean sortAscending, int pageNumber, int pageSize);
+	// Deprecated. GWUA-5122 TODO: Remove after 29.10.2022
+//	PaginatedListImpl<Map<String, Object>> getMailingShortList(@VelocityCheck int companyID, String searchQuery, boolean searchName, boolean searchDescription, String sortCriteria, boolean sortAscending, int pageNumber, int pageSize);
 
     int saveUndoMailing(int mailingId, int adminId);
 
     void deleteUndoDataOverLimit(int mailingId);
 
-	int getFollowUpStat(ComFollowUpStats comFollowUpStats, boolean useTargetGroups) throws Exception;
+	// Deprecated. GWUA-5122 TODO: Remove after 29.10.2022
+//	int getFollowUpStat(ComFollowUpStats comFollowUpStats, boolean useTargetGroups) throws Exception;
 
     boolean isMailingMarkedDeleted(int mailingID, @VelocityCheck int companyID);
 
@@ -128,12 +133,11 @@ public interface ComMailingDao extends MailingDao {
 	 * returns the type of a Followup Mailing as String.
 	 * The String can be fount in the mailing-class (eg. FollowUpType.TYPE_FOLLOWUP_CLICKER)
 	 * if no followup is found, null is the returnvalue!
-	 * @param mailingID
-	 * @return
 	 */
 	String getFollowUpType(int mailingID);
 
-    String getTargetExpressionForId(int expressionID);
+	// Deprecated. GWUA-5122 TODO: Remove after 29.10.2022
+//    String getTargetExpressionForId(int expressionID);
 
     int getCompanyIdForMailingId(int mailingId);
 	
@@ -141,49 +145,38 @@ public interface ComMailingDao extends MailingDao {
 	
 	/**
 	 * returns the base mailing for the given one.
-	 * @param mailingID
-	 * @return
-	 * @throws Exception
 	 */
 	String getFollowUpFor(int mailingID) throws Exception;
 	
 	/**
 	 * returns the last change timestamp of the given mailing.
-	 * @param mailingID
-	 * @return
 	 */
-	Date getChangeDate(int mailingID);
+	// Deprecated. GWUA-5122 TODO: Remove after 29.10.2022
+//	Date getChangeDate(int mailingID);
 	
-    PaginatedListImpl<Map<String, Object>> getDashboardMailingList(ComAdmin admin, String sort, String direction, int rownums);
+    PaginatedListImpl<Map<String, Object>> getDashboardMailingList(Admin admin, String sort, String direction, int rownums);
 
     /**
      * Get the last n sent world mailings in descend order
-     * @param companyId
-     * @param adminId
 	 * @param number number of mailings you want to achieve
 	 * @return a list of hashmaps. Currently there are the keys mailingid (int) and shortname (string) available
      */
-    List<Map<String, Object>> getLastSentWorldMailings(ComAdmin admin, int number);
+    List<Map<String, Object>> getLastSentWorldMailings(Admin admin, int number);
 
-    int getLastSentMailingId(@VelocityCheck int companyID);
+	// Deprecated. GWUA-5122 TODO: Remove after 29.10.2022
+//    int getLastSentMailingId(@VelocityCheck int companyID);
 	    
     Date getSendDate(@VelocityCheck int companyId, int mailingId);
     
     
     /**
      * this method returns the mailing-ID for the last sent world mailing.
-     * @param companyID
-     * @param customerID
-     * @return
      */
     int getLastSentMailing(@VelocityCheck int companyID, int customerID);
     
     /**
 	 * This method returns the mailing ID for a already sent world-mailing with the given companyID and
 	 * (if given) the mailingListID. If no mailingListID is given (null or "0") it will be ignored.
-	 * @param companyID
-	 * @param mailingListID
-	 * @return
 	 */
     int getLastSentWorldMailingByCompanyAndMailinglist(@VelocityCheck int companyID, int mailingListID);
 
@@ -193,9 +186,9 @@ public interface ComMailingDao extends MailingDao {
 
 	List<MailingBase> getPredefinedNormalMailingsForReports(@VelocityCheck int companyId, Date from, Date to, int filterType, int filterValue, String orderKey, int targetId, Set<Integer> adminAltgIds);
 
-	List<Map<String, Object>> getSentAndScheduled(ComAdmin admin, Date startDate, Date endDate);
+	List<Map<String, Object>> getSentAndScheduled(Admin admin, Date startDate, Date endDate);
 
-	List<Map<String, Object>> getPlannedMailings(ComAdmin admin, Date startDate, Date endDate);
+	List<Map<String, Object>> getPlannedMailings(Admin admin, Date startDate, Date endDate);
 
 	Map<Integer, Integer> getOpeners(@VelocityCheck int companyId, List<Integer> mailingsId);
 
@@ -227,17 +220,17 @@ public interface ComMailingDao extends MailingDao {
 
 	Map<Integer, Integer> getSentNumber(@VelocityCheck int companyId, Collection<Integer> mailingsId);
 
-	PaginatedListImpl<Map<String, Object>> getUnsentMailings(ComAdmin admin, int rownums);
+	PaginatedListImpl<Map<String, Object>> getUnsentMailings(Admin admin, int rownums);
 
-	PaginatedListImpl<Map<String, Object>> getPlannedMailings(ComAdmin admin, int rownums);
+	PaginatedListImpl<Map<String, Object>> getPlannedMailings(Admin admin, int rownums);
 
-	List<LightweightMailing> getMailingNames(ComAdmin admin);
+	List<LightweightMailing> getMailingNames(Admin admin);
 
-    List<LightweightMailing> getAllMailingsSorted(ComAdmin admin, String sortFiled, String sortDirection);
+    List<LightweightMailing> getAllMailingsSorted(Admin admin, String sortFiled, String sortDirection);
 
-    List<LightweightMailing> getMailingsDateSorted(ComAdmin admin);
+    List<LightweightMailing> getMailingsDateSorted(Admin admin);
 
-	List<Map<String, Object>> getMailingsNamesByStatus(ComAdmin admin, List<MailingType> mailingTypes,
+	List<Map<String, Object>> getMailingsNamesByStatus(Admin admin, List<MailingType> mailingTypes,
 			String workStatus, String mailingStatus,
 			boolean takeMailsForPeriod, String sort, String order);
 
@@ -388,6 +381,13 @@ public interface ComMailingDao extends MailingDao {
 
 	boolean isThresholdClearanceExceeded(int mailingId);
 
-	void removeApproval(Mailing mailing);
 	void removeApproval(int mailingID, int companyID);
+
+	boolean isApproved(int mailingId, int companyId);
+
+	/**
+	 * Only store changed shortname, description an archiveid.
+	 * Those are the values that are allowed for change even after a mailing was delievered
+	 */
+	boolean saveMailingDescriptiveData(Mailing mailing);
 }

@@ -58,7 +58,7 @@ public class MediapoolDAO {
 		BlockData rc = null;
 
 		if (dbase.exists (table)) try (DBase.With with = dbase.with ()) {
-			Map <String, Object>	row = dbase.querys (with.jdbc (),
+			Map <String, Object>	row = dbase.querys (with.cursor (),
 								    "SELECT content, mime_type " +
 								    "FROM " + table + " " +
 								    "WHERE " + idColumn + " = :imageID",
@@ -82,7 +82,7 @@ public class MediapoolDAO {
 		List<Map<String, Object>> rq;
 
 		if (dbase.exists (table)) {
-			rq = dbase.query (with.jdbc (),
+			rq = dbase.query (with.cursor (),
 					  "SELECT " + idColumn + ", filename, mime_type " +
 					  "FROM  " + table + " " +
 					  "WHERE company_id IN (0, :companyID) AND filename IS NOT NULL " +

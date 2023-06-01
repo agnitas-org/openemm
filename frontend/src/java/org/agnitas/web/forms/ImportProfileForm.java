@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.StringTokenizer;
 
@@ -36,7 +37,7 @@ import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.ImportProcessAction;
 import com.agnitas.beans.ProfileField;
 import com.agnitas.emm.core.Permission;
@@ -203,10 +204,13 @@ public class ImportProfileForm extends StrutsFormBase {
 	@Override
 	public ActionErrors formSpecificValidate(ActionMapping actionMapping, HttpServletRequest request) {
         ActionErrors actionErrors = new ActionErrors();
+        String shortname = profile.getName();
 
         if (action == ImportProfileAction.ACTION_SAVE) {
             if (AgnUtils.parameterNotEmpty(request, "save")) {
-                if (profile.getName() == null || profile.getName().length() < 3) {
+            	if (StringUtils.trimToNull(shortname) == null) {
+                    actionErrors.add("shortname", new ActionMessage("error.name.is.empty"));
+                } else if (StringUtils.trimToNull(shortname).length() < 3) {
                     actionErrors.add("shortname", new ActionMessage("error.name.too.short"));
                 }
                 if (StringUtils.isNotBlank(profile.getMailForReport())) {
@@ -240,7 +244,7 @@ public class ImportProfileForm extends StrutsFormBase {
 	
 	@Override
 	protected void loadNonFormDataForErrorView(ActionMapping mapping, HttpServletRequest request) {
-		ComAdmin admin = AgnUtils.getAdmin(request);
+		Admin admin = AgnUtils.getAdmin(request);
 		
 		request.setAttribute("isCustomerIdImportNotAllowed", !admin.permissionAllowed(Permission.IMPORT_CUSTOMERID));
 		
@@ -341,5 +345,14 @@ public class ImportProfileForm extends StrutsFormBase {
 	
 	public void clearLists() {
 		this.mailinglists.clear();
+	}
+
+	public void setReportLocaleString(String localeString) {
+		String[] localeStringParts = localeString.split("_");
+		getProfile().setReportLocale(new Locale(localeStringParts[0], localeStringParts[1]));
+	}
+
+	public String getReportLocaleString() {
+		return getProfile().getReportLocale().getLanguage() + "_" + getProfile().getReportLocale().getCountry();
 	}
 }

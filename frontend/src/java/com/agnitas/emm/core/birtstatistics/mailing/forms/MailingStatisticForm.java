@@ -70,6 +70,7 @@ public class MailingStatisticForm {
     
     private int urlID;
     private String description;
+    private boolean show10HoursTab;
 
     public String getShortname() {
         return shortname;
@@ -216,5 +217,13 @@ public class MailingStatisticForm {
 
     public String getDescription() {
         return description;
+    }
+
+    public boolean isShow10HoursTab() {
+        return show10HoursTab;
+    }
+
+    public void setShow10HoursTab(boolean show10HoursTab) {
+        this.show10HoursTab = show10HoursTab;
     }
 }

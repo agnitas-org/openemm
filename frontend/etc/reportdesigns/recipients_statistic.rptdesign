@@ -222,7 +222,16 @@ reportContext.setPersistentGlobalVariable("message_report.openers.tablet.shortna
 reportContext.setPersistentGlobalVariable("message_report.openers.mobile.shortname", I18nString.getLocaleString("report.openers.mobile.shortname", reportContext.getLocale()));
 reportContext.setPersistentGlobalVariable("message_report.openers.smarttv.shortname", I18nString.getLocaleString("report.openers.smarttv.shortname", reportContext.getLocale()));
 reportContext.setPersistentGlobalVariable("message_report.openers.multiple-devices.shortname", I18nString.getLocaleString("report.openers.multiple-devices.shortname", reportContext.getLocale()));
-reportContext.setPersistentGlobalVariable("statistic.blacklisted", I18nString.getLocaleString("recipient.MailingState6", reportContext.getLocale()))]]></method>
+reportContext.setPersistentGlobalVariable("statistic.blacklisted", I18nString.getLocaleString("recipient.MailingState6", reportContext.getLocale()));
+
+//BIRT label report item onCreate Script
+importPackage(Packages.org.springframework.context);
+importPackage(Packages.org.springframework.web.context.support);
+var sc = reportContext.getHttpServletRequest().getSession().getServletContext();
+//ApplicationContext 
+spring = WebApplicationContextUtils.getWebApplicationContext(sc);
+var configService = spring.getBean("configService");
+reportContext.setPersistentGlobalVariable("logo", configService.getValue(Packages.org.agnitas.emm.core.commons.util.ConfigValue.SystemUrl)  + "/layout/0/report_logo.png");]]></method>
     <property name="iconFile">/templates/blank_report.gif</property>
     <property name="layoutPreference">auto layout</property>
     <property name="bidiLayoutOrientation">ltr</property>
@@ -2157,10 +2166,11 @@ return true;]]></method>
                 <grid id="2293">
                     <property name="style">birt-report-header</property>
                     <property name="width">100%</property>
-                    <column id="2294"/>
-                    <column id="2295"/>
+                    <column id="2294">
+                        <property name="width">250px</property>
+                    </column>
                     <column id="2296">
-                        <property name="width">310px</property>
+                        <property name="width">100%</property>
                     </column>
                     <row id="2297">
                         <property name="height">10mm</property>
@@ -2172,18 +2182,17 @@ return true;]]></method>
                                 <text-property name="text">EMM Report</text-property>
                             </label>
                         </cell>
-                        <cell id="2299"/>
                         <cell id="2300">
                             <property name="paddingTop">0pt</property>
                             <property name="paddingLeft">0pt</property>
                             <property name="paddingBottom">0pt</property>
                             <property name="paddingRight">0pt</property>
                             <property name="textAlign">right</property>
+                            <property name="verticalAlign">bottom</property>
                             <image id="2309">
                                 <property name="height">51px</property>
-                                <property name="width">200px</property>
-                                <property name="source">embed</property>
-                                <property name="imageName">logo.png</property>
+                                <property name="source">url</property>
+                                <expression name="uri" type="javascript">reportContext.getPersistentGlobalVariable("logo")</expression>
                             </image>
                         </cell>
                     </row>
@@ -2196,7 +2205,6 @@ return true;]]></method>
                             <property name="textAlign">left</property>
                             <property name="verticalAlign">bottom</property>
                         </cell>
-                        <cell id="2350"/>
                         <cell id="2351">
                             <property name="paddingTop">0pt</property>
                             <property name="paddingLeft">0pt</property>
@@ -2211,7 +2219,6 @@ return true;]]></method>
                             <property name="textAlign">left</property>
                             <property name="verticalAlign">bottom</property>
                         </cell>
-                        <cell id="2354"/>
                         <cell id="2355">
                             <property name="paddingTop">0pt</property>
                             <property name="paddingLeft">0pt</property>
@@ -5979,7 +5986,7 @@ itemGroupNumber = 0;]]></method>
                             <property name="sortDirection">asc</property>
                             <expression name="keyExpr" type="javascript">row["mailingListId"]</expression>
                             <structure name="toc">
-                                <expression name="expressionValue" type="javascript">row["mailingListId"]</expression>
+                                <expression name="expressionValue" type="javascript">I18nString.getLocaleString("Mailinglist", reportContext.getLocale())+": "+row["MAILINGLIST"]</expression>
                             </structure>
                             <property name="repeatHeader">true</property>
                             <property name="hideDetail">false</property>
@@ -8894,7 +8901,7 @@ function beforeGeneration(chart, icsc) {
                             <property name="groupName">groupMailingListId</property>
                             <expression name="keyExpr" type="javascript">row["mailingListId"]</expression>
                             <structure name="toc">
-                                <expression name="expressionValue" type="javascript">row["mailingListId"]</expression>
+                                <expression name="expressionValue" type="javascript">I18nString.getLocaleString("Mailinglist", reportContext.getLocale())+": "+row["mailingListName"]</expression>
                             </structure>
                             <property name="hideDetail">false</property>
                             <method name="onCreate"><![CDATA[mailingListNumber++;
@@ -8911,7 +8918,7 @@ targetGroupNumber = 0;]]></method>
                             <property name="groupName">groupTargetGroupId</property>
                             <expression name="keyExpr" type="javascript">row["targetGroupId"]</expression>
                             <structure name="toc">
-                                <expression name="expressionValue" type="javascript">row["targetGroupId"]</expression>
+                                <expression name="expressionValue" type="javascript">I18nString.getLocaleString("Target", reportContext.getLocale())+": "+row["targetGroupName"]</expression>
                             </structure>
                             <property name="hideDetail">false</property>
                             <list-property name="sort">
@@ -16651,128 +16658,6 @@ currentMailingListNumber++;]]></method>
                 e0J0AlGcqFbUrm0oPH97kL0lOvL/QrhK2KGB7z40bOUlrn1Kgud5ttRK+T4VUldXty/6TlNbW8v6/X6X
                 s/r2qZyampoDBw6wANDZ2cmVu6HDPu5hGKazs5NhrNGgLMvLy8tkPsk+VaempqajowOd+eYQHABEUUwm
                 k5jd3rr7PiXAMEx9fX19ff2BAwdIdP5/NozuG5Lct4oAAAAASUVORK5CYII=
-</property>
-        </structure>
-        <structure>
-            <property name="name">logo.png</property>
-            <property name="type">image/png</property>
-            <property name="data">
-                iVBORw0KGgoAAAANSUhEUgAAAMgAAAAzCAIAAABdb9ATAAAa1klEQVR42u2dCYxVVZrHXyedmBinp6Xd
-                WofWMQ6mM8YY49ijttM9Rqen40zbtmbacYkbDBEBAa0AokKQQRod1LGx3FAQEFpZpZoCqoqykKILqqAo
-                LLZincIS2bukAoLb/C5/+Dycc++t+4qiIB2Sk5f77jvLt/y/5Sz3vtzX33yZV/ms5c97mnfvaN5rha8q
-                3s3sfe5p2V80t7S4rHx+SVS4mDOvOF/CrOw/sG/n7u100rPPo/9y479e2PmiH557/vnnXdD5gh/d/Mt/
-                HzTgibIFlVB48MsDrXb1yc7d9GNFtK1dt0a/fvPVN2GTfV98vXzpCqtsZU3Dqi++OmitxlZ9PKJ84wtl
-                hwvXFG6qE8nBLSYcr1uXtiU1VUmMLKpZ5vW2YfN6SM0uVYhHTTTs27vfddf8FHki1XPPPu+an1z7SM8+
-                H1ZU8qsrlly+akNAS6trFy+r41OFa/crBTZW1Ndl7/ON19787ndO+6vT/9oKX1F/G1DF0I/1LfjxpX9/
-                +mlnfP97nc4+61z4t8JXbvLTFZdf+dzIUSsb1qf3NvX9Io8wCqIEuInSb94NmhnCbcJXqDrwxedW88z+
-                pWf2mO2VLk8v0K8Q6Q2apfzs+p8nWRpG5ZLE9a/+7Za8UDVx/KTrr/sn2kIbeJKtmki/d8b36RB4WZO2
-                AAuLrF6+YsXy+pq6ej6t2FcuVq6uz97n5ZddYbSKXMqdd9ydsfk3X32hi4LHnwBSsKrejHkr9pUKZ3U6
-                5+qr/rFw9KspPRfNnoXIaHXOOZ3dfn43fGSSwwNYiNgI0KCQhKd0gQWGcr2Kc31K3HLmM4cVAw7c4ayf
-                2AJt4gt/HEvSe5On0KHLAtegYUNjU0YJd3uwu7gwAYYXyLPLJZdO+MMUaaQtwAJVFNCTVPg1O7CAOUy6
-                ghOhoG3L5qZ0M/pWnTubsacQTB6wXA3Z9YCCgdh07BAz/jhHwPJ6OO+HF61dtU40GBmKLBmBlRuyMB1Y
-                HpTbDCyouueue0NpIHMYz6Igax4rSe8aw65YVNVGj5WOqnyBde8997vuSvRFFxdc/NaYcR6AYkvDpkZQ
-                RSdJoo8tJhGgM+SpobHYMmB5rQAK8U6EeeQZsNxWbQBWXrykAGvFmgbivinerc8orcoWD+S6z1bJgNMH
-                7uu67/OWXIZAc1SKumXD+nYBlux7c+NGMO4RbcoDcy379qYzz2QCRWJ/MtyjoHm0KEPJutiKNd8QWNYJ
-                94cNf9rlJQuwLGpnBJbGMp8UQrxVYE2cNMESzZB3fk2RLVOcm2+51fW+1gk3vW4Nu/yEqeeyxJrP9x2c
-                /tE25iwvVzVaHCTTOnaPRdoug/DQoPK3F15MNEwClu4DPqJ7aEyuf0YxiizefbcmZEBMdmBF5F3SZeHi
-                6qQcK2+P1avYknfXY4XUxrorPn/5i5s9XwDib7v1dsuNPPFy/R+3/zZFOys/Wh2bpGLGeMEbb7gpNlIj
-                MTL9VoC1eVfLXW/URCJQ6V78zvzalbXLUlCVHVh4I8XBJL8KiYqGSYW0NGzusoqGLux8EQDlk5ICLAqz
-                aCbhrkXFAssdCLXhMtsIrH5HgNWvuHOf2VxcNqJCv15ycRcRrGK25xHs1qGEE73Grdu9/NWjH3zU1q9O
-                Eu+702cyDXTFJYfE3MXyIsVZV5iMyBQ4l7IaNKJ842E8mQgeLn1v/pLaumVCzzECa/X6jcwjYm3Rcl7m
-                9ilBkAl2THImd3LhxWSduPot23ZguM37DyDBYSOexc5cD+e6MSQy+qXCVj2WOxwUYp1ufM8IrJFlW/57
-                zkavvFmzS79u3fYJpWn7Lsq2HZ9iXS62dAGSmIBTgZrwyEW4CPLkoMEwlSRe0f/KmLeSJAyADJf2yVTa
-                nVSNnThJyzpW+EqalUtKgIZMW3kYVW4S0GM2wKqprW4VWOSMWeJgbGrsJhZYTBhubJHJnJD7SUPwOq+4
-                JHYBcPvWnc+NHCVZoH6VH5wVJQ2dOp2Pq7CFvizAohVN6DNfj7VuVf2iinKvEApiOZ05fZaXdclycEhJ
-                yav8LnViXZ1LGNEQq4sdt0fvPhihJa9qS068tLrW6gBrerjzjrut8BUJxwNrat3WMLU0j6WVqvQcKwuw
-                8EZKAF0+Pb/KHRxPrPjwt8oePMGhA1x0yrgHvzwwbcqMq668OixIzV2/TgGWEQkNltxkB5a2BFC8Fb4S
-                WGMJnjx1ujdPFLA2fbw1CVWWJ3iwCHGWsqA1+Onh5vDcJUACBfM+W23h2i1kOIS7XEgQVc/sX5oFWFop
-                NZApr1dpFVi4vdNPO8PDECrBAdhNCQWJ4+rDHBlchpKik7LykiyLFFlmLSnJu1uQtSX+GYEVro/wNWmF
-                U8DyOI0FllsgQ/7bXV/gpmeNQGfIU0OT1hpg3wsIYoeYUFW5RGs0nqj1NReCndTqvJ5zYlB1JBQKWK5/
-                8hwY160CCz/kuStwNr+knPCM+/U8kJf6UDAyhX/P4eGKMZpjQVWr61ixIfvyy64gZWwbsExb6cDK4rHc
-                CR0keQsE9P9hRaVx5EbV2E5QooJp7GozamLuVTS3VN7LK7nQTM98pjIJWLixmWXVK+rrSIS1exNd1NeR
-                HOCBzF1FwErdK8QDheEf2SF6HLgWpVxOCNs4WLcHIEj65QmIHsJUlOSXXIQRsxQlwmZjSR4rXL8BFmQk
-                WZJ3de55LIWYJGARuPMF1quFr7syFA3k8vzEPM6GllUAEcQeum1yr24Pdk9a/Re2IINMgIw2EVja4qGv
-                KA72K04CFkn9u3OXUsaX1FB0PaF4+ZYN68lsVDY0bNrcuDElyrwwutBbbYLEnj168RNI1ZKpq0Lu4AiP
-                SvzHjQ9VHuXs5QvCjcgsS8aUC0DmoaJNiYw5lpus4A+0YNu+oTBfYEEDpuhumFKoz3SHX4cNPSpzUm/k
-                fEkZC1JNX0KTVTzSM7Irc09+8l7X1BwB69DiShK2yLT0SWTUNRd5HWtR+HcLrM4ummOhxFvM5Fdvt9jL
-                K1XA3+JlvqfkZsbdHhsURaaEQubbAwoGxsLr0r/7MVPxEw6sDZvXh8t1TE1k7QQ4bxFBoiP+JC0Wkvi6
-                50TcvM3UhKBI6vEpicACPYTCKBraumivBJAdWd+jQnZgESvNJxl9+BUtTmr1RdS7i3Jowo3XWmIJPZZ7
-                ciMvYLkymjZjaorHAlh4ZUzc9QeSdadOUdQ2wzhRyTs+ySVbkrRFdvzZ1dde7+3PUv73+ZeSVEYcADSC
-                o+kl3BjQuqMOI+XWrlqnsnJ1PViuWr7mN698EJYrn5qfCC881jNZz04x1cf3eMvBMEnSbduCxWXlSM1l
-                QAaBW04PhbQyZ3MsHstWzmKBhemTipGqa6E1XODV6lq7Ayu7x4IA16lwTee2kAsZA54c7M6cxMVtt96e
-                cjyzafuuQUOGwrI35QpjIhk9CVXOncrpk0zcK+tW1f969JIkYBEH+723KnscvPGGm1yZSgSuuRCqiSne
-                pjJYvL9bdy95D2eFeDtvSihgeUam3cMkj2UKSwKWYkpoIUl5bkcCC3frrbZL3+4q6Mzps8KVGpLLVufy
-                wIt0nqHDPTG7QC9Lq2tzHqpiFzzXfLTirpfLU4C1+P/2ZgQWgdwFhD4htPJPC90lj64PPUxY8cyOzx3N
-                ey2NCJcbuMYV404889W5R68kAQsVpi83GLAAim3xtnqYpMOAxRzNOzWJm/GWXteuW0NA9wIZnNomYPpC
-                4IbGJqItPbiJl9HGcCTyufQDMAas20YvjAdWr2KcGSLLuHQE3sMIAon89PbYCfc80BVH+sB9XbUJ6C3N
-                Ucyx4bRpFa7dgRhNqo2eotmzMFCvTH7nXa2vhvNnVwfpHouypKYK53ryAIs5tVaYXfGeftoZRXNLWz7b
-                Bw333HUvEuYzTHMhgCTV80+f7Ny9c/d2Fa4p7ioXCUy4+EI/V1x+5bECiylkxdodGVFF2pgUJvi1b+9+
-                3tGfvznb3yr+55t+IfUQUqnvHZihvhbf3xw7JtxR8FYrQkrwYTrykR1YNtWwmH5igTVsxLOWrbsLhHta
-                9jdu3X7dNT91Jdz5nJjjJDZxAYhaYQepKlxTXC6YAut0g7dxxEXrwGISR44VAyxy9v6lL5RtTNGfV/A3
-                kqY7mYIZbe3hP2NX4VyHhJ1VVS5xJ+He1NfdY4k9FEqqEeZGbg/uOnIWYNmm5wn3WFqp8QTC0OSmDA2w
-                rrn2htCWvNTbFrRwUdpz82YnDZsa3ecM5LS8rjIBi8TrW2BpcevQwlWXpxe8XNWYtAMau22so2GeNBUH
-                DVitxpTnRo7Sgwxw7h2b8TYN8fmoBI+NAyfxgpexEycR6bT/FTYEbaQOrR6bCYFFACLzTTm82zHAwgXY
-                s26uHCb8YQohpWnrxyGwwsJAlsK7m7mGGO845M233BqGwssvuyIfYHWP8MQnkBpZtmXzrpaMe7060Fix
-                6Kh0xFIigBICKzwvZdLHpCyFR2S2sRge5OUnxAQO0CJRAKfNV/cAhScRKsh3pmxC07kHLJnT6JcKU47U
-                dQywtLbneQ58PICDI0wrBFbssUfbk/aenlLohP15xSXwQgaGHRqU7VN7iJlCYU1tdf36piUNuynNn+W9
-                lYvbRPqwbfHCPeRqR1zcHMt7/sRbd9BGpNR/593/eXg2cHbn2B29pOMi4df/efH3WY4mhx5LeS7TsfCZ
-                hY4EFhj6wVlHcUSfBEedcY2AdeQ8SOx2p3t2XqarY9/eQmv67pZyGyJDpuR98bK68OBKXkWPcXrbrtqi
-                skU5smB8hlvcTUMXWNpVPOwwPm9BSbHH3rM/30JzJqQZH6YIgSWIY8cy3xMCLEYncnmTaC7M/aDBX//q
-                NzghV8J2eMHrWbulBIQUN5wkTLRGlpLJY1G8xaF8Cz5Pq3beAawBTw42caOt2rpl5CsqKz9a/d7kKd6s
-                2B6LcJf78HnYoqenlIPeIVKJwhkf/0oBFmVAwcBwda19geWedXGBhYm6EwjRQOZne1wwiKCQcHQspb4u
-                KsvrdXbZc13KNZWWwWwKsGInQDh+2mbyWABLHouIZtOB2DcXJBV8TAgsRIPm0g/ceatNQpUdTjeNoul/
-                +MlV8lvhAzmxqLKHzPr1H+g9ENEqsJL2UpCJlg3z8lg2I8vosVT/Rxd2MTI2NGzS7MHjDrNM18vCxdX2
-                2KCXfWuGRKruLuUk7eTI4AnERF6ZaFaPFXu8Ovs2Tuy2Ghpq9SlvPHksVmgbC98wu0rxWCDbngKKnYXk
-                CyxtLbTBY0md7hHnvDyWpOSlp7ZWnFIIRN5UXZ0QVeeVzrVJVUYrpStz/Dm90iO9LKpZdiw51vMvjtIr
-                OrySdMTbO8QYbshI2RUffhDztoW5pb+96x4slWraMbUJgZ6x5D6GhV4RuvsQRNJTDN/9zmne6EnP/suF
-                gx4w5DWBBaKkCyzQCRceUynAghevTyQgsyShwa+HIoJy0olWJfxY34JQNRCsBS3ZG+b3s+t/jvSSRIpM
-                vJWanPvuoZSS9HaDLKWsvOTtsRMmjp/kljfGjccRZmnuNbSS9MQE6fzS6lpGxIFhQ6SoWjhG+kAZ/slz
-                M74PY8Pm9dDpjTttxtSk0GlugOzQYxb7dJ3i1PeLPJnwtbisPOkdAsyzvMpk1iIDYE2bMiOUD00y7d6u
-                afA6V1uvOUxhZtgM8RqRahWeuH/nHXe/Wvh6uHud+7o9zoZnfDahg3vAQwAy0vyWfXspXGAeWV6LlT5u
-                ex2oD/vJ3nN70ZDvKCTZyFBS3dOynwu+utW+fYdAB9B3okpeLxY7SUyoDX12DMjyHfEvGVinynE12nS7
-                PQWsU+W4BIdTwDpVjkvJdbDzNGgnOVJl3CdtEtbxeduJpaHNY+U6bGLCfJUZ8gdlC5igvTt9JiVm56eu
-                /vUxr730ymtFc0uPXz5rv84umvPe5CnbdnyahX5m9VQWYZV/WvjKmLeSXnF7/HLqPc27J0+d7grHRmnH
-                uSpaeOO1N5u2fszUb9qUGUWzZ53UHmvFmoa+vfsVjn4V6QwbOjx8XwCcDCgY+EjPPj179Hqsb8H8kvLj
-                TdLvho8cNOAJe+wsvWz6eCuVdQJi4qToFHXSQ7nHbxYZiejJwSnPabULsGb8cU63B7ujLzQFy/biwryo
-                zbk7lCvq6xq3bncXiL0hcTbEKdirrV/NqAe/PMDnytX1tKUHW8OIDuscqsMn11pA4mLb7uaWz6KXsAMs
-                b6FWb7kFT3C1ZXMTCNM5Lc8V08lnLX+GhpUN6+EceqABXwjlGstdJgUx3N/RvFdLWfxKZbHAT1wzhAFL
-                r0nRKhc1gRFtxZetUkqpEdct+5u276Ka0cPo1PcWTvmqR8NtOS12vwsCJE+u6Zn+6VYEWx3uI39qGg16
-                lk5DoAIjXm+0M5I+2blbr2iXmlwaIo3s+FSii7KUQ4tSlKnvF0XAqq+jwp6dzXb6ja/ojvvRO+KPpCsi
-                la+YmSQgleV0chk139+tuwrBKHZlmZbS9wP3daVwjVMBCtgurYaNeFYnIGiLI+3e7SHqPNT9YVwUNV8t
-                fJ3mTw4a/NaYcVRguMFPDw9dGr0RB4lQ+DZb+XUNpWJRFS4Nbycannnu+WkzpmosZPHm2DFimLHwRtzh
-                Pl2hCXomfq1dtQ4kDR82ovvDvakjYHGB9CESqoAL5BHm4KjrQw/TA/0AMsTHr3RFP1gwAQIy4Hfh4mr1
-                L3r6Fgyw7QSGo3Pd5wJSaeK9iQpN07/q9Ojd541x4/HWq9dvnDOvmK96qpuhEQXEyNOLBlgARvNK53Kt
-                5lzMK1/ATSTAQIOGDKUr3SfrgDtVQ3RmSPhduuUmzMICnaM4yEY4tGIg9IuI5CARy8TxkyRqCgRotb24
-                rFyiE3j69R+oc4U5WIU3iIAsqr49dkLEYfA2Tj30o/GQJpXpjmvktfKj1UgEanQOH+iAJ3rACssWVCJT
-                RcDI2goGcj8ElqAD0kGehoAZ1AnnXrKFV6Nzmq9YXk+2QWWoBQcgBmTTUI+RIT6Ei/qhARfY+9ECvlZ8
-                +AHVFG3JG+SxGBHCRr9U2LPPo3pO9YXRhUiDdBBp6I8Y6Fkb0pIgQ5BsUQdDpwkX4GlpdS0V6AS+MHrG
-                hTZ4h2CuYYdqUO4CC/9Nz6gWD8FYfHJtwIJIvakLYKEUdAawkIZoqKpcAhnwBf2LapZRCh6P5FxTW80Q
-                9MNP6Aiq8HD0ySdkIDHq6BkvGER0qI+MCi4glWqyf8I915PfeTeS6tDhCh2wDP0IClIhg7YIGTuUiLim
-                E9RNHfqM3pqMh8QuyamNYYiAXMyRMaKX99VWwyHCQtN0Ya9zYTxkp0cb+LXbf3UFNLhKJMJPdnwPq4JJ
-                AxbNYz0W4sNXCVVwhZJAFdLUu0AsIKInqBUCUAx2QxN5SuiEK7wd1EIDxFi8oCvuoAk5RcRnLCBQLIGb
-                erAHIrl2k5iZ02dhpriWLdt2IBYd1/GAZU+2IDoUzH2q0Y+9XAQK5ULcCS/ERBY4brz77BBjmccyYHFf
-                wBINkIdARhf+nuZ26gQd0xZeiFzcR5gKjkiS+yYxyIBl6AFeDGFqwmsIWDIhhAyq6ErAAqyw4/5tAmaA
-                SPXvKahM/xsgs6Qm3eawY5wNndKXCuOBAEQsUFO4CWIAFn3ZbE76sNcVUYdOaUVXUUg68uIRkiEMOt1j
-                6XkEegP4SJOfNC4dei+7QlWIWA+K8BOsglpVwAyQIMCSVtzcHx5hXh6L+hiuAUuRhSKRgU68jlhWgR1K
-                WXkJygA3St6RDF5BwGJQHIY65FfUBnkQBrMo0pIkGKeJAQuaaUv/eresWID3SKPr1ogF/A1ilMdiFAEL
-                EQEsOoyGeLy/6/L5CRdINeFVKRoSE0r0n0XUAfrYCQhTmqu2YAjI6s0rOCSETB0F31HPvQDZhD+9rEb1
-                AQMkcYfKSM+2zwmXfEXF0bEZBsbC+I1K84pLiOgIDiQBBVhFaohA2Rnc2ssRYoGF9OGKC8t5cWmux0oC
-                lkxfr1nCS9GEsXQM0AKlBywFcWoKEwYsAERbsyF5HXmsEFiQhJ6Al25GZtC7H0JnaKRBoR+STohHqQYs
-                PFYssIgCqA1KlNXV1i2zf6FS1Pt830H3VC1Cc4860q08FjhGjHJ4kcc6lLO6wOImn7BpsZUhoBxHBUSQ
-                pAELrhlFL+owYMEOKnBP8mzfupPm8lghsBgFAbqvv4M2RqEmNqD0zt51exhYNGYA7AwMASaSD1Qe+yZd
-                5KXEJQlYYhhlQyLVABnmSLSC/xRgmWPjV9hG3BCH+vGjUOWdjYEfTCcFWNgQ/dOWLBL1MOsB2YgyCViY
-                KSGJfuBFfwsFqqiDHJAGxEA/cLGpfqvA0myA+4wImJAPOkOeCAFNuDkWzRkdd76oohzfhotFAtSBHrhG
-                nmhU2Qi8eMDSIXf65Joohmw1OcA7gB4qxwILyQhY1AElqEnrVcgTUTB0ksfiJizQP4wz0QEqiAJqqSNg
-                WXz4FljyFlRS9CEQFPR/LHbpTx7LtALpKMDeEk6OBa0IDkLlb1Rggz6xJKjn2maFtjrinruyhogSI4Bz
-                ceUGNcRkoRDNWRSDPKwc58Q1btgIEA18Akp0xhD29rrDyXtjE7pHalwzQdYM0drSv+II2QzSxBlbjsUd
-                AcvehwvsGEvkwSn0W6gFQGDRW8rRxMLGUqKt2Ras2X3qaFYInSDj+RdHyZNFWfahwC3F8ZVAgQrMY2G0
-                CoWuxwL6qICcDCFbc4agoCYBS00ELNlVtIxHmnikPhwJCVTmpuuxlLodXsdCdtyiXyxeVuWdW9IfpiEI
-                O9JFBkCndrKUBBYpS3DcJIJoAR2/Baj5CRfNBToAEPgSvYI2PIKNRGirpBJPgAjcHAvTJMlT7kJwJJfH
-                cEUqTUCVkccFqR6+HckSXPBAtIUY6tu5SmAKSRqLaSa8601JkMooZMdQosOiYh9/oCwYc2Is7gBKGLeV
-                UsaiDs31yknGAl5whNwVJb1H4vSUKXWItrTVkT1UrrUoeoYGKMftQRtyAxn4Bs18Dx+iXFCJL6HYv/DR
-                LbRhWhILKOer+gR2+nNDpXpax2cImIVgpCHugBRNMDCqQbmd1I2mpbNnUR+OzKHgtLgpW1J85+u3b00+
-                gaXdtz7cf+TqyP0yd1CtBRCngAvQIeIQXMJ/YEyhM69nVdpR7Nnvpws5d7LtsP7FFLw1cVAhhmARuZyT
-                T7zHj6T/BybhuIFH+R7lAAAAAElFTkSuQmCC
 </property>
         </structure>
     </list-property>

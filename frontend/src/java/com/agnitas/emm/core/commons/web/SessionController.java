@@ -17,7 +17,7 @@ import org.agnitas.util.AgnUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.web.perm.annotations.Anonymous;
 
 import net.sf.json.JSONObject;
@@ -28,7 +28,7 @@ public class SessionController {
 	@Anonymous
     @RequestMapping("/info.action")
     public JSONObject info(HttpServletRequest request) {
-    	ComAdmin sessionAdmin = AgnUtils.getAdmin(request);
+    	Admin sessionAdmin = AgnUtils.getAdmin(request);
     	if (sessionAdmin == null) {
     		return null;
     	} else {

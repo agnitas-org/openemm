@@ -26,10 +26,7 @@ public class ComCompanyDaoImpl extends BaseDaoImpl implements ComCompanyDao {
 		if (!DbUtilities.checkIfTableExists(getDataSource(), "rdirlog_" + companyID + "_val_alpha_tbl")) {
 			return false;
 		}
-		if (!DbUtilities.checkIfTableExists(getDataSource(), "rdirlog_" + companyID + "_ext_link_tbl")) {
-			return false;
-		}
 
-		return true;
+		return DbUtilities.checkIfTableExists(getDataSource(), "rdirlog_" + companyID + "_ext_link_tbl");
 	}
 }

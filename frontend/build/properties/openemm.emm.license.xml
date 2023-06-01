@@ -8,6 +8,7 @@
 	<maximumNumberOfSupervisors>-1</maximumNumberOfSupervisors>
 	<maximumNumberOfAdmins>-1</maximumNumberOfAdmins>
 	<maximumNumberOfWebserviceUsers>-1</maximumNumberOfWebserviceUsers>
+	<maximumNumberOfRestfulUsers>-1</maximumNumberOfRestfulUsers>
 	<maximumNumberOfCustomers>-1</maximumNumberOfCustomers>
 	<maximumNumberOfProfileFields>-1</maximumNumberOfProfileFields>
 	<allowedPremiumFeatures>

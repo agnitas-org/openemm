@@ -24,6 +24,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import org.agnitas.beans.AdminEntry;
 import org.agnitas.beans.impl.PaginatedListImpl;
@@ -40,7 +41,7 @@ import org.springframework.beans.factory.annotation.Required;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.emm.core.JavaMailService;
 import com.agnitas.emm.core.admin.service.AdminService;
@@ -114,23 +115,23 @@ public class UploadServiceImpl implements UploadService {
     }
 
     @Override
-    public void uploadFiles(UploadFileDescription description, List<MultipartFile> files, Popups popups, final ComAdmin admin) {
+    public List<UploadData> uploadFiles(UploadFileDescription description, List<MultipartFile> files, Popups popups, final Admin admin) {
     	long uploadSizeBytes = uploadDao.getCurrentUploadOverallSizeBytes(description.getCompanyId());
     	long maximumOverallSizeBytes = configService.getLongValue(ConfigValue.UploadMaximumOverallSizeBytes, description.getCompanyId());
     	if (uploadSizeBytes > maximumOverallSizeBytes) {
     		popups.alert("error.upload.overallsize", AgnUtils.getHumanReadableNumber(maximumOverallSizeBytes, "Byte", false, admin.getLocale(), false));
-    		return;
+    		return Collections.emptyList();
     	}
     	long maximumSingleFileSizeBytes = configService.getLongValue(ConfigValue.UploadMaximumSizeBytes, description.getCompanyId());
     	for (MultipartFile multipartFile : files) {
     		if (multipartFile.getSize() > maximumSingleFileSizeBytes) {
         		popups.alert("error.upload.filesize", AgnUtils.getHumanReadableNumber(maximumSingleFileSizeBytes, "Byte", false, admin.getLocale(), false), multipartFile.getOriginalFilename(), AgnUtils.getHumanReadableNumber(multipartFile.getSize(), "Byte", false, admin.getLocale(), false));
-        		return;
+                return Collections.emptyList();
         	}
     		uploadSizeBytes += multipartFile.getSize();
     		if (uploadSizeBytes > maximumOverallSizeBytes) {
         		popups.alert("error.upload.overallsize", AgnUtils.getHumanReadableNumber(maximumOverallSizeBytes, "Byte", false, admin.getLocale(), false));
-        		return;
+                return Collections.emptyList();
         	}
     	}
     	
@@ -139,9 +140,10 @@ public class UploadServiceImpl implements UploadService {
             uploadDao.updateData(data);
         }
 
-        files.stream()
+        return files.stream()
                 .map(file -> saveFile(file, description))
-                .forEach(data -> sendNotification(data, admin));
+                .peek(data -> sendNotification(data, admin))
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -168,23 +170,28 @@ public class UploadServiceImpl implements UploadService {
     public List<EmailEntry> getDefaultEmails(String email, Locale locale) {
         List<EmailEntry> emails = new ArrayList<>();
 
-        String localeSupportName = SafeString.getLocaleString("upload.agnitas.support", locale);
         String supportEmail = configService.getValue(ConfigValue.MailAddress_UploadSupport);
-        String localeDatebaseName = SafeString.getLocaleString("upload.agnitas.database", locale);
-        String datebaseEmail = configService.getValue(ConfigValue.MailAddress_UploadDatabase);
-        String localeUserName = SafeString.getLocaleString("upload.account.user", locale);
+        if (StringUtils.isNotBlank(supportEmail)) {
+	        String localeSupportName = SafeString.getLocaleString("upload.agnitas.support", locale);
+	        EmailEntry entry = new EmailEntry(localeSupportName, supportEmail);
+	        emails.add(entry);
+        }
 
-        EmailEntry entry = new EmailEntry(localeSupportName, supportEmail);
-        emails.add(entry);
-        entry = new EmailEntry(localeDatebaseName, datebaseEmail);
-        emails.add(entry);
-        entry = new EmailEntry(localeUserName, email);
+        String datebaseEmail = configService.getValue(ConfigValue.MailAddress_UploadDatabase);
+        if (StringUtils.isNotBlank(datebaseEmail)) {
+	        String localeDatebaseName = SafeString.getLocaleString("upload.agnitas.database", locale);
+	        EmailEntry entry = new EmailEntry(localeDatebaseName, datebaseEmail);
+	        emails.add(entry);
+        }
+        
+        String localeUserName = SafeString.getLocaleString("upload.account.user", locale);
+        EmailEntry entry = new EmailEntry(localeUserName, email);
         emails.add(entry);
 
         return emails;
     }
 
-    private void sendNotification(UploadData data, final ComAdmin admin) {
+    private void sendNotification(UploadData data, final Admin admin) {
         Locale aLoc = data.getLocale();
         int companyID = data.getCompanyID();
 
@@ -232,7 +239,7 @@ public class UploadServiceImpl implements UploadService {
 
     // TODO: GWUA-4801 replace magic "pdf" or "csv" extension string by constant or enum
     @Override
-    public List<UploadData> getUploadsByExtension(ComAdmin admin, String extension) {
+    public List<UploadData> getUploadsByExtension(Admin admin, String extension) {
         return uploadDao.getOverviewListByExtention(admin, Collections.singletonList(Objects.requireNonNull(extension)));
     }
 

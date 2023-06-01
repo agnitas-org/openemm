@@ -16,7 +16,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.agnitas.emm.core.recipient.dto.BindingAction;
 import org.agnitas.beans.BindingEntry;
 import org.agnitas.beans.Recipient;
 import org.agnitas.beans.impl.PaginatedListImpl;
@@ -27,11 +26,12 @@ import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.springframework.cache.annotation.Cacheable;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.impl.ComRecipientLiteImpl;
 import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.emm.core.recipient.dto.BindingAction;
 import com.agnitas.emm.core.recipient.dto.RecipientBindingsDto;
 import com.agnitas.emm.core.recipient.dto.RecipientDto;
 import com.agnitas.emm.core.recipient.dto.RecipientFieldDto;
@@ -63,17 +63,17 @@ public interface RecipientService {
 
 	boolean updateSubscriber(RecipientModel model, String username) throws Exception;
 
-	List<RecipientLightDto> getDuplicateRecipients(ComAdmin admin, String fieldName, int recipientId) throws Exception;
+	List<RecipientLightDto> getDuplicateRecipients(Admin admin, String fieldName, int recipientId) throws Exception;
 
-	ServiceResult<FieldsSaveResults> saveBulkRecipientFields(ComAdmin admin, int targetId, int mailinglistId, Map<String, RecipientFieldDto> fieldChanges);
+	ServiceResult<FieldsSaveResults> saveBulkRecipientFields(Admin admin, int targetId, int mailinglistId, Map<String, RecipientFieldDto> fieldChanges);
 	
-	File getDuplicateAnalysisCsv(ComAdmin admin, String searchFieldName, Map<String, String> fieldsMap, Set<String> selectedColumns, String sort, String order) throws Exception;
+	File getDuplicateAnalysisCsv(Admin admin, String searchFieldName, Map<String, String> fieldsMap, Set<String> selectedColumns, String sort, String order) throws Exception;
 
-    Set<ProfileField> getRecipientColumnInfos(ComAdmin admin);
+    Set<ProfileField> getRecipientColumnInfos(Admin admin);
 
 	RecipientLightDto getRecipientLightDto(@VelocityCheck int companyId, int recipientId);
 
-	RecipientDto getRecipientDto(ComAdmin admin, int recipientId);
+	RecipientDto getRecipientDto(Admin admin, int recipientId);
 
     List<ComRecipientLiteImpl> getAdminAndTestRecipients(@VelocityCheck int companyId, int mailinglistId);
     
@@ -91,21 +91,21 @@ public interface RecipientService {
 
 	void confirmEmailAddressChange(ComExtensibleUID uid, String confirmationCode) throws Exception;
 	
-	List<ProfileField> getRecipientBulkFields(final int companyID, final int recipientID);
+	List<ProfileField> getRecipientBulkFields(int companyID, int adminID);
     
-    int calculateRecipient(ComAdmin admin, int targetId, int mailinglistId);
+    int calculateRecipient(Admin admin, int targetId, int mailinglistId);
 	
-	boolean deleteRecipients(ComAdmin admin, Set<Integer> bulkIds);
+	boolean deleteRecipients(Admin admin, Set<Integer> bulkIds);
 
-	PaginatedListImpl<RecipientDto> getPaginatedRecipientList(ComAdmin admin, RecipientSearchParamsDto searchParams, String sort, String order, int page, int rownums, Map<String, String> fields) throws Exception;
+	PaginatedListImpl<RecipientDto> getPaginatedRecipientList(Admin admin, RecipientSearchParamsDto searchParams, String sort, String order, int page, int rownums, Map<String, String> fields) throws Exception;
 
-	PaginatedListImpl<RecipientDto> getPaginatedDuplicateList(ComAdmin admin, String searchFieldName, boolean caseSensitive, String sort, String order, int page, int rownums, Map<String, String> fields) throws Exception;
+	PaginatedListImpl<RecipientDto> getPaginatedDuplicateList(Admin admin, String searchFieldName, boolean caseSensitive, String sort, String order, int page, int rownums, Map<String, String> fields) throws Exception;
 	
 	List<Integer> listRecipientIdsByTargetGroup(final int targetId, final int companyId);
 
 	JSONArray getDeviceHistoryJson(@VelocityCheck int companyId, int recipientId);
 
-	JSONArray getWebtrackingHistoryJson(ComAdmin admin, int recipientId);
+	JSONArray getWebtrackingHistoryJson(Admin admin, int recipientId);
 
 	JSONArray getContactHistoryJson(@VelocityCheck int companyId, int recipientId);
 
@@ -150,19 +150,25 @@ public interface RecipientService {
     void updateBindings(List<BindingEntry> bindings, int companyId) throws Exception;
 
 	@Cacheable(cacheManager = "requestCacheManager", cacheNames = "editableFields")
-	Map<String, ProfileField> getEditableColumns(ComAdmin admin);
+	Map<String, ProfileField> getEditableColumns(Admin admin);
 
-	ServiceResult<Integer> saveRecipient(ComAdmin admin, SaveRecipientDto recipient, List<UserAction> userActions);
+	ServiceResult<Integer> saveRecipient(Admin admin, SaveRecipientDto recipient, List<UserAction> userActions);
 
-	SimpleServiceResult isRecipientMatchAltgTarget(ComAdmin admin, SaveRecipientDto recipient);
+	SimpleServiceResult isRecipientMatchAltgTarget(Admin admin, SaveRecipientDto recipient);
 
-	ServiceResult<List<BindingAction>> saveRecipientBindings(ComAdmin admin, int recipientId, RecipientBindingsDto bindings, UserStatus newStatusForUnsubscribing);
+	ServiceResult<List<BindingAction>> saveRecipientBindings(Admin admin, int recipientId, RecipientBindingsDto bindings, UserStatus newStatusForUnsubscribing);
 
-	int getRecipientIdByAddress(ComAdmin admin, int recipientId, String email);
+	int getRecipientIdByAddress(Admin admin, int recipientId, String email);
 
-	JSONArray getRecipientStatusChangesHistory(ComAdmin admin, int recipientId);
+	JSONArray getRecipientStatusChangesHistory(Admin admin, int recipientId);
 
 	BindingEntry getMailinglistBinding(int companyID, int customerID, int mailinglistID, int mediaCode) throws Exception;
 
-	List<ComRecipientLiteImpl> listAdminAndTestRecipients(final ComAdmin admin);
+	List<ComRecipientLiteImpl> listAdminAndTestRecipients(final Admin admin);
+
+	int getMinimumCustomerId(int companyID);
+	
+	boolean isRecipientTrackingAllowed(final int companyID, final int recipientID);
+	
+	int countSubscribers(final int companyID);
 }

@@ -10,7 +10,6 @@
 
 package org.agnitas.service.impl;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -68,8 +67,8 @@ import com.agnitas.json.JsonReader;
 import jakarta.annotation.Resource;
 
 public class MailingImporterImpl extends ActionImporter implements MailingImporter {
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(MailingImporterImpl.class);
+    
+	private static final Logger logger = LogManager.getLogger(MailingImporterImpl.class);
 	
 	@Resource(name="CompanyDao")
 	protected ComCompanyDao companyDao;
@@ -115,7 +114,7 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
      */
 	@Override
 	public ImportResult importMailingFromJson(int companyID, InputStream input, boolean importAsTemplate, String shortName, String description, boolean overwriteTemplate, boolean isGrid, Set<Integer> adminAltgIds) throws Exception {
-		return importMailingFromJson(companyID, input, importAsTemplate, shortName, description, true, overwriteTemplate, isGrid, adminAltgIds);
+		return importMailingFromJson(companyID, input, importAsTemplate, shortName, description, overwriteTemplate, true, isGrid, adminAltgIds);
 	}
 	
 	@Override
@@ -187,7 +186,7 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
         return CollectionUtils.isNotEmpty(adminAltgIds) && CollectionUtils.intersection(targetIds, adminAltgIds).isEmpty();
     }
 
-    protected int importMailingData(Mailing mailing, int companyID, boolean importAsTemplate, String shortName, String description, Map<String, Object[]> warnings, JsonObject jsonObject, Map<Integer, Integer> actionIdMappings, Map<Integer, Integer> targetIdMappings, Set<Integer> adminAltgIds) throws Exception, IOException {
+    protected int importMailingData(Mailing mailing, int companyID, boolean importAsTemplate, String shortName, String description, Map<String, Object[]> warnings, JsonObject jsonObject, Map<Integer, Integer> actionIdMappings, Map<Integer, Integer> targetIdMappings, Set<Integer> adminAltgIds) throws Exception {
 		String rdirDomain = companyDao.getRedirectDomain(companyID);
 		
 		mailing.setCompanyID(companyID);

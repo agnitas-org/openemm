@@ -1,64 +1,62 @@
-<%@ page language="java" contentType="text/html; charset=utf-8"  errorPage="/error.do" %>
-<%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
-<%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
-<%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 <%@ taglib uri="http://displaytag.sf.net" prefix="display" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+
+<%--@elvariable id="form" type="com.agnitas.mailing.autooptimization.form.OptimizationForm"--%>
 
 <div class="tile">
     <div class="tile-header">
         <h2 class="headline">
-            <bean:message key="mailing.autooptimization"/>
+            <mvc:message code="mailing.autooptimization"/>
         </h2>
         <ul class="tile-header-actions">
             <li>
-                <emm:HideByPermission token="campaign.migration">
-                    <a href="<html:rewrite page="/optimize.do?method=newOptimization&campaignID=${optimizationForm.campaignID}"/>" class="btn btn-regular btn-primary">
-                        <i class="icon icon-plus"></i>
-                        <span class="text"><bean:message key="button.New"/></span>
-                    </a>
-                </emm:HideByPermission>
-                <emm:ShowByPermission token="campaign.migration">
-                    <a href="<html:rewrite page="/optimize.do?method=newOptimization&campaignID=${optimizationForm.campaignID}&campaignName=${optimizationForm.campaignName}"/>" class="btn btn-regular btn-primary">
-                        <i class="icon icon-plus"></i>
-                        <span class="text"><bean:message key="button.New"/></span>
-                    </a>
-                </emm:ShowByPermission>
+                <c:url var="createNewLink" value="/optimization/create.action">
+                    <c:param name="campaignID" value="${form.campaignID}"/>
+                    <c:param name="campaignName" value="${form.campaignName}"/>
+                </c:url>
+
+                <a href="${createNewLink}" class="btn btn-regular btn-primary">
+                    <i class="icon icon-plus"></i>
+                    <span class="text"><mvc:message code="button.New"/></span>
+                </a>
             </li>
         </ul>
     </div>
     <div class="tile-content">
-
         <div class="table-wrapper">
-            <display:table
-                class="table table-bordered table-striped table-hover js-table"
-                id="optimization"
-                name="optimizations">
+            <display:table class="table table-bordered table-striped table-hover js-table" id="optimization" name="optimizations" requestURI="/optimization/list.action">
+
+                <%--@elvariable id="optimization" type="com.agnitas.mailing.autooptimization.beans.ComOptimization"--%>
+
                 <display:column headerClass="js-table-sort" titleKey="mailing.autooptimization" property="shortname" />
                 <display:column headerClass="js-table-sort" titleKey="default.description" property="description" />
 
                 <display:column headerClass="squeeze-column">
                     <emm:ShowByPermission token="campaign.change">
-                        <html:link styleClass="hidden js-row-show" titleKey="mailing.autooptimization.edit"
-                               page="/optimize.do?method=view&optimizationID=${optimization.id}"/>
+                        <c:url var="viewLink" value="/optimization/${optimization.id}/view.action">
+                            <c:param name="campaignID" value="${form.campaignID}"/>
+                            <c:param name="campaignName" value="${form.campaignName}"/>
+                        </c:url>
+
+                        <a href="${viewLink}" class="hidden js-row-show"></a>
                     </emm:ShowByPermission>
                     <emm:ShowByPermission token="campaign.delete">
+                        <c:url var="deletionLink" value="/optimization/${optimization.id}/confirmDelete.action">
+                            <c:param name="campaignID" value="${form.campaignID}"/>
+                            <c:param name="campaignName" value="${form.campaignName}"/>
+                        </c:url>
+                        <mvc:message var="deletionTooltip" code="campaign.autoopt.delete"/>
 
-                        <c:set var="autoOptDeleteMessage" scope="page">
-                            <bean:message key="campaign.autoopt.delete"/>
-                        </c:set>
-                        <agn:agnLink class="btn btn-regular btn-alert js-row-delete"
-                            data-tooltip="${autoOptDeleteMessage}"
-                            page="/optimize.do?method=confirmDelete&optimizationID=${optimization.id}&companyID=${optimization.companyID}">
+                        <a href="${deletionLink}" class="btn btn-regular btn-alert js-row-delete" data-tooltip="${deletionTooltip}">
                             <i class="icon icon-trash-o"></i>
-                        </agn:agnLink>
-
+                        </a>
                     </emm:ShowByPermission>
 
                 </display:column>
             </display:table>
         </div>
-
     </div>
 </div>

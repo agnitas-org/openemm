@@ -18,7 +18,7 @@ import java.util.Map;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.upload.bean.DownloadData;
 import com.agnitas.emm.core.upload.bean.UploadData;
 
@@ -32,7 +32,7 @@ public interface ComUploadDao {
 	 * 
 	 * @return
 	 */
-	List<UploadData> getOverviewList(ComAdmin admin);
+	List<UploadData> getOverviewList(Admin admin);
 
 	/**
         * This method loads ONLY a few fields from the database for given file extentions. NOT fetched from the db is the
@@ -45,7 +45,7 @@ public interface ComUploadDao {
         * @param extentions
         * @return
         */
-	List<UploadData> getOverviewListByExtention(ComAdmin admin, List<String> extentions);
+	List<UploadData> getOverviewListByExtention(Admin admin, List<String> extentions);
 	
 	/**
      * This method returns the file associated with the given uploadID.
@@ -86,7 +86,7 @@ public interface ComUploadDao {
 	 * @param uploadID
 	 * @return
 	 */
-	boolean isOwnerOrAdmin(ComAdmin admin, int uploadID);
+	boolean isOwnerOrAdmin(Admin admin, int uploadID);
 	
 	List<Map<String, Object>> getUploadIdsToDelete(int daysToHold, @VelocityCheck int companyID);
 

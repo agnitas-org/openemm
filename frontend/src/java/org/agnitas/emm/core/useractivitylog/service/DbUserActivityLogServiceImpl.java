@@ -26,7 +26,7 @@ import org.agnitas.util.DateUtilities;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 
 /**
  * Implementation of {@link UserActivityLogService}.
@@ -52,7 +52,7 @@ public class DbUserActivityLogServiceImpl implements UserActivityLogService {
 	// ----------------------------------------------------------------------------------------------------------- Business Code
 	
 	@Override
-	public PaginatedListImpl<LoggedUserAction> getUserActivityLogByFilter(ComAdmin admin, String username, int action, LocalDate fromDate, LocalDate toDate,
+	public PaginatedListImpl<LoggedUserAction> getUserActivityLogByFilter(Admin admin, String username, int action, LocalDate fromDate, LocalDate toDate,
 																		  String description, int pageNumber, int pageSize, String sortColumn,
 																		  String sortDirection, List<AdminEntry> visibleAdmins) throws Exception {
 		ZoneId zoneId = AgnUtils.getZoneId(admin);
@@ -62,18 +62,18 @@ public class DbUserActivityLogServiceImpl implements UserActivityLogService {
 	}
 	
 	@Override
-	public void writeUserActivityLog(ComAdmin admin, String action, String description) {
+	public void writeUserActivityLog(Admin admin, String action, String description) {
 		userActivityLogDao.writeUserActivityLog(admin, action, description);
 		userActivityLogDao.addAdminUseOfFeature(admin, action.trim(), new Date());
 	}
 
 	@Override
-	public void writeUserActivityLog(ComAdmin admin, UserAction action) {
+	public void writeUserActivityLog(Admin admin, UserAction action) {
 		writeUserActivityLog(admin, action.getAction(), action.getDescription());
 	}
 
     @Override
-    public void writeUserActivityLog(ComAdmin admin, String action, String description, Logger callerLog) {
+    public void writeUserActivityLog(Admin admin, String action, String description, Logger callerLog) {
         try {
             this.writeUserActivityLog(admin,action,description);
         } catch (Exception e) {
@@ -83,7 +83,7 @@ public class DbUserActivityLogServiceImpl implements UserActivityLogService {
     }
 
     @Override
-	public void writeUserActivityLog(ComAdmin admin, UserAction action, Logger callerLog) {
+	public void writeUserActivityLog(Admin admin, UserAction action, Logger callerLog) {
 		writeUserActivityLog(admin, action.getAction(), action.getDescription(), callerLog);
 	}
 

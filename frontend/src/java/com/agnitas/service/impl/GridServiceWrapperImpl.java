@@ -23,7 +23,7 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.Mailing;
 import com.agnitas.emm.core.mailing.service.ComMailingGridService;
 import com.agnitas.emm.grid.grid.beans.ComGridTemplate;
@@ -69,12 +69,12 @@ public class GridServiceWrapperImpl implements GridServiceWrapper {
     }
 
     @Override
-    public ComTemplateSettings getGridTemplateSettings(int templateId, ComAdmin admin) {
+    public ComTemplateSettings getGridTemplateSettings(int templateId, Admin admin) {
         return checkAndReturn(gridTemplateService, () -> gridTemplateService.getGridTemplateSettings(templateId, admin));
     }
 
     @Override
-    public Mailing createGridMailing(ComAdmin admin, int templateId, MailingCreationOptions creationOptions) throws Exception {
+    public Mailing createGridMailing(Admin admin, int templateId, MailingCreationOptions creationOptions) throws Exception {
         if (gridTemplateService != null) {
             return gridTemplateService.createMailing(admin, templateId, creationOptions);
         } else {

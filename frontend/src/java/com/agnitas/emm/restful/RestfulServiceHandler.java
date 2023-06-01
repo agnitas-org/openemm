@@ -20,7 +20,7 @@ import org.agnitas.util.AgnUtils;
 import org.agnitas.util.HttpUtils.RequestMethod;
 import org.apache.commons.lang3.StringUtils;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.Permission;
 
 import jakarta.servlet.ServletContext;
@@ -29,7 +29,7 @@ import jakarta.servlet.http.HttpServletResponse;
 
 public interface RestfulServiceHandler {
 	ResponseType getResponseType();
-	void doService(HttpServletRequest request, HttpServletResponse response, ComAdmin admin, byte[] requestData, File requestDataTempFile, BaseRequestResponse restfulResponse, ServletContext context, RequestMethod requestMethod, boolean extendedLogging) throws Exception;
+	void doService(HttpServletRequest request, HttpServletResponse response, Admin admin, byte[] requestData, File requestDataTempFile, BaseRequestResponse restfulResponse, ServletContext context, RequestMethod requestMethod, boolean extendedLogging) throws Exception;
 	RestfulServiceHandler redirectServiceHandlerIfNeeded(ServletContext context, HttpServletRequest request, String restfulSubInterfaceName) throws Exception;
 	static String[] getRestfulContext(HttpServletRequest request, String namespace, int minimumItems, int maximumItems) throws Exception {
 		String requestUri = request.getRequestURI();
@@ -76,7 +76,7 @@ public interface RestfulServiceHandler {
 		}
 	}
 	
-	static void checkPermission(ComAdmin admin, Permission permission) throws RestfulClientException {
+	static void checkPermission(Admin admin, Permission permission) throws RestfulClientException {
 		if (!admin.permissionAllowed(Permission.WEBSERVICE_USER_CREATE)) {
 			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.WEBSERVICE_USER_CREATE.toString() + "'");
 		}

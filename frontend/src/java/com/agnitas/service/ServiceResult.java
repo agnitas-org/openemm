@@ -15,6 +15,7 @@ import java.util.Collections;
 import java.util.List;
 
 import org.agnitas.util.GuiConstants;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.struts.action.ActionMessages;
 
 import com.agnitas.messages.Message;
@@ -107,6 +108,10 @@ public class ServiceResult<T> {
 
     public List<Message> getErrorMessages() {
         return errorMessages;
+    }
+
+    public boolean hasErrorMessages() {
+        return CollectionUtils.isNotEmpty(errorMessages);
     }
 
     public T getResult() {

@@ -13,8 +13,6 @@ package org.agnitas.beans;
 import java.util.List;
 import java.util.Set;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
-
 import com.agnitas.emm.core.Permission;
 
 /**
@@ -74,7 +72,7 @@ public interface AdminGroup {
      * 
      * @param id companyID
      */
-    void setCompanyID( @VelocityCheck int id);
+    void setCompanyID(int id);
 
     /**
      * Setter for property description.

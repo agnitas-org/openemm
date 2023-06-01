@@ -1,4 +1,0 @@
-<HelpBalloon>
-	<title>Importing CSV files without column headers</title>
-	<content><![CDATA[Importing CSV files without column headings is possible, but runs the risk of confusing of columns should change their order for later import.]]></content>
-</HelpBalloon>

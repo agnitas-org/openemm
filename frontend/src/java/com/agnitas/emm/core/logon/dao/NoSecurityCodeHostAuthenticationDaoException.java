@@ -22,7 +22,7 @@ public class NoSecurityCodeHostAuthenticationDaoException extends HostAuthentica
 	 * Creates a new exception.
 	 */
 	public NoSecurityCodeHostAuthenticationDaoException() {
-		super( "No security code found!"); 
+		super( "No security code found!");
 	}
 	
 }

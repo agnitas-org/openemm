@@ -12,9 +12,10 @@ package com.agnitas.dao;
 
 import java.util.List;
 
+import org.agnitas.emm.core.velocity.VelocityCheck;
+
 import com.agnitas.beans.FormComponent;
 import com.agnitas.beans.FormComponent.FormComponentType;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 /**
  * The Interface FormComponentDao.

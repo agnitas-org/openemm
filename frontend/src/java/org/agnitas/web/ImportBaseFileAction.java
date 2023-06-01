@@ -38,7 +38,7 @@ import org.apache.struts.action.ActionMessages;
 import org.apache.struts.upload.FormFile;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 
 /**
  * Base action that manages csv file uploading and storing. When user uploads
@@ -171,7 +171,7 @@ public abstract class ImportBaseFileAction extends StrutsActionBase {
      */
     private String generateSavePath(HttpSession session) {
         try {
-        	ComAdmin admin = ((ComAdmin) session.getAttribute(AgnUtils.SESSION_CONTEXT_KEYNAME_ADMIN));
+        	Admin admin = ((Admin) session.getAttribute(AgnUtils.SESSION_CONTEXT_KEYNAME_ADMIN));
 			int companyId = admin.getCompanyID();
 			int adminId = admin.getAdminID();
 			return File.createTempFile("upload_csv_file_" + companyId + "_" + adminId + "_", ".csv", AgnUtils.createDirectory(IMPORT_FILE_DIRECTORY + "/" + admin.getCompanyID())).getAbsolutePath();

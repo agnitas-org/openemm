@@ -24,6 +24,8 @@ import org.agnitas.util.Blacklist;
 import org.agnitas.util.CsvColInfo;
 import org.agnitas.util.ImportUtils.ImportErrorType;
 
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+
 public interface ImportWizardHelper {
 
 	/**
@@ -273,7 +275,7 @@ public interface ImportWizardHelper {
 	 * 
 	 * @return Value of property resultMailingListAdded.
 	 */
-	public abstract Map<String, String> getResultMailingListAdded();
+	public abstract Map<MediaTypes, Map<String, String>> getResultMailingListAdded();
 
 	/**
 	 * Setter for property resultMailingListAdded.
@@ -281,7 +283,7 @@ public interface ImportWizardHelper {
 	 * @param resultMailingListAdded
 	 *            New value of property resultMailingListAdded.
 	 */
-	public abstract void setResultMailingListAdded(Map<String, String> resultMailingListAdded);
+	public abstract void setResultMailingListAdded(Map<MediaTypes, Map<String, String>> resultMailingListAdded);
 
 //	/**
 //	 * Getter for property blacklist.

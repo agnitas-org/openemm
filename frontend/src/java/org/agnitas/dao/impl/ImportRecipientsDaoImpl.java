@@ -99,6 +99,8 @@ public class ImportRecipientsDaoImpl extends RetryUpdateBaseDaoImpl implements I
 			execute(logger, "CREATE TABLE " + tempTableName + tablespacePart + " AS SELECT * FROM customer_" + companyID + "_tbl WHERE 1 = 0");
 		} else {
 			execute(logger, "CREATE TABLE " + tempTableName + " ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci AS SELECT * FROM customer_" + companyID + "_tbl WHERE 1 = 0");
+			execute(logger, "ALTER TABLE " + tempTableName + " MODIFY firstname VARCHAR(100) CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci");
+			execute(logger, "ALTER TABLE " + tempTableName + " MODIFY lastname VARCHAR(100) CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci");
 		}
 		
 		// Make all columns nullable

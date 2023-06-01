@@ -10,7 +10,6 @@
 
 package com.agnitas.beans;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.springframework.context.ApplicationContext;
 
 import com.agnitas.beans.impl.CampaignStatsImpl;
@@ -40,7 +39,7 @@ public interface ComOptimization {
     
     public int getCompanyID();
     
-    public void setCompanyID(@VelocityCheck int companyID);
+    public void setCompanyID(int companyID);
     
     /** Getter for property campaignID.
      * @return Value of property campaignID.

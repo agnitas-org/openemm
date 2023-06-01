@@ -14,9 +14,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 
 import org.agnitas.dao.impl.BaseDaoImpl;
+import org.agnitas.dao.impl.mapper.IntegerRowMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.jdbc.core.RowMapper;
@@ -46,21 +46,6 @@ public class ComUndoMailingDaoImpl extends BaseDaoImpl implements ComUndoMailing
 		"DELETE FROM undo_mailing_tbl " +
 		"WHERE undo_id = ?";
 	
-	private static final String DELETE_OUTDATED_MAILING_STATEMENT =
-		"DELETE FROM undo_mailing_tbl " +
-		"WHERE undo_id <= ?";
-	
-	private static final String SELECT_YOUNGEST_OUTDATED_UNDO_ID =
-		"SELECT max(undo_id) " +
-		"FROM undo_mailing_tbl " +
-		"WHERE undo_creation_date <= SYSDATE - ?";
-
-	private static final String SELECT_YOUNGEST_OUTDATED_UNDO_ID_MYSQL =
-		"SELECT max(undo_id) " +
-		"FROM undo_mailing_tbl " +
-		"WHERE undo_creation_date <= DATE_SUB(CURRENT_TIMESTAMP, INTERVAL ? DAY);";
-
-	
 	private static final String DELETE_UNDODATA_FOR_MAILING_STATEMENT =
 		"DELETE FROM undo_mailing_tbl " +
 		"WHERE mailing_id = ?";
@@ -80,34 +65,7 @@ public class ComUndoMailingDaoImpl extends BaseDaoImpl implements ComUndoMailing
 	private static final String DELETE_UNDODATA_OVER_LIMIT_FOR_MAILING_STATEMENT =
 		"DELETE FROM undo_mailing_tbl " +
 		"WHERE mailing_id = ? AND undo_id <= ?";
-	
-	private static final String SELECT_SENT_MAILING_IDS =
-		"SELECT um.mailing_id " +
-		"FROM maildrop_status_tbl mds, mailing_account_tbl ma, undo_mailing_tbl um " +
-		"WHERE " +
-		"um.mailing_id = mds.mailing_id " +
-		"AND um.mailing_id = ma.mailing_id " +
-		"AND mds.status_field = 'W' " +
-		"AND mds.genstatus = 3";
-	/*
-		SELECT
-			um.mailing_id
-		FROM
-			maildrop_status_tbl mds,
-			mailing_account_tbl ma,
-			undo_mailing_tbl um
-		WHERE
-			um.mailing_id = mds.mailing_id
-			AND um.mailing_id = ma.mailing_id
-			AND mds.status_field = 'W'
-			AND mds.genstatus = 3
-		;
-		
-		==> Undo-Daten werden geloescht, wenn:
-			a) World-Versand,
-			b) Generierung vollstaendig und
-			c) Eintrag ueber Versandmenge vorhanden ist
-	 */
+
 	
 	// --------------------------------------------------------------------------------------------------------------------------------------- DI code
 
@@ -171,22 +129,16 @@ public class ComUndoMailingDaoImpl extends BaseDaoImpl implements ComUndoMailing
 	public void deleteUndoData(int undoId) {
 		update(logger, DELETE_MAILING_STATEMENT, new Object[] { undoId });
 	}
-
+	
 	@Override
-	@DaoUpdateReturnValueCheck
-	public void deleteOutdatedUndoData(int lastUndoId) {
-		update(logger, DELETE_OUTDATED_MAILING_STATEMENT, new Object[] { lastUndoId });
+	public final List<Integer> findUndoIdsToCleanup(final int retentionTime) {
+		final String sql = isOracleDB()
+				? "select distinct(undo_id) from (SELECT undo_id FROM undo_mailing_tbl WHERE undo_creation_date <= SYSDATE - ? union all SELECT DISTINCT um.undo_id FROM maildrop_status_tbl mds, mailing_account_tbl ma, undo_mailing_tbl um  WHERE um.mailing_id = mds.mailing_id AND um.mailing_id = ma.mailing_id AND mds.status_field = 'W' AND mds.genstatus = 3) subsel"
+				: "select distinct(undo_id) from (SELECT undo_id FROM undo_mailing_tbl WHERE undo_creation_date <= DATE_SUB(CURRENT_TIMESTAMP, INTERVAL ? DAY) union all SELECT DISTINCT um.undo_id FROM maildrop_status_tbl mds, mailing_account_tbl ma, undo_mailing_tbl um WHERE um.mailing_id = mds.mailing_id AND um.mailing_id = ma.mailing_id AND mds.status_field = 'W' AND mds.genstatus = 3) subsel";
+		
+		return select(logger, sql, IntegerRowMapper.INSTANCE, retentionTime);
 	}
 
-	@Override
-    public int getYoungestOutdatedUndoId(int retentionTime) {
-        if (isOracleDB()) {
-            return selectInt(logger, SELECT_YOUNGEST_OUTDATED_UNDO_ID, new Object[]{retentionTime});
-        } else {
-            return selectInt(logger, SELECT_YOUNGEST_OUTDATED_UNDO_ID_MYSQL, new Object[]{retentionTime});
-        }
-    }
-	
 	@Override
 	@DaoUpdateReturnValueCheck
 	public void deleteUndoDataForMailing(int mailingID) {
@@ -209,19 +161,7 @@ public class ComUndoMailingDaoImpl extends BaseDaoImpl implements ComUndoMailing
             return selectInt(logger, SELECT_FIRST_UNDO_ID_OVER_LIMIT, mailingId, undoLimit);
         } else {
             return selectInt(logger, SELECT_FIRST_UNDO_ID_OVER_LIMIT_SQL, mailingId, undoLimit);
-
         }
     }
 
-    @Override
-	public void deleteUndoForSentMailings() {
-    	List<Map<String, Object>> mailingIds = select(logger, SELECT_SENT_MAILING_IDS);
-		for (Map<String, Object> row : mailingIds) {
-			int mailingId = ((Number) row.get("MAILING_ID")).intValue();
-			
-			deleteUndoDataForMailing( mailingId);
-			undoComponentDao.deleteUndoDataForMailing( mailingId);
-			undoDynContentDao.deleteUndoDataForMailing( mailingId);
-		}
-	}
 }

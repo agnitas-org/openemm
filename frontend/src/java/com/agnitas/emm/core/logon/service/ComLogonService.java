@@ -14,7 +14,7 @@ import java.util.Date;
 
 import org.agnitas.beans.EmmLayoutBase;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.AdminPreferences;
 import com.agnitas.emm.core.commons.password.PasswordState;
 import com.agnitas.emm.core.logon.web.LogonFailedException;
@@ -30,7 +30,7 @@ public interface ComLogonService {
 	public static final int TOKEN_EXPIRATION_DAYS = 3;
 	
 	/**
-	 * Returns {@link ComAdmin} for given user name and password. A {@link LogonFailedException}
+	 * Returns {@link Admin} for given user name and password. A {@link LogonFailedException}
 	 * is thrown when logon failed for some reason (invalid combination of user name and
 	 * password, account blocked, ...)
 	 * 
@@ -39,38 +39,38 @@ public interface ComLogonService {
 	 * @param username user name
 	 * @param password password
 	 * @param hostIpAddress IP address of host
-	 * @return {@link ComAdmin}
+	 * @return {@link Admin}
 	 * 
 	 * @throws LogonFailedException if there is no user for given credentials
 	 * @throws LogonServiceException on errors during login
 	 */
-	ComAdmin getAdminByCredentials(String username, String password, String hostIpAddress) throws LogonServiceException;
+	Admin getAdminByCredentials(String username, String password, String hostIpAddress) throws LogonServiceException;
 
-	ServiceResult<ComAdmin> authenticate(String username, String password, String clientIp);
+	ServiceResult<Admin> authenticate(String username, String password, String clientIp);
 
 	SimpleServiceResult checkDatabase();
 
-	AdminPreferences getPreferences(ComAdmin admin);
+	AdminPreferences getPreferences(Admin admin);
 
-	EmmLayoutBase getEmmLayoutBase(ComAdmin admin);
+	EmmLayoutBase getEmmLayoutBase(Admin admin);
 
 	String getLayoutDirectory(String serverName);
 
-	String getHelpLanguage(ComAdmin admin);
+	String getHelpLanguage(Admin admin);
 
-	PasswordState getPasswordState(ComAdmin admin);
+	PasswordState getPasswordState(Admin admin);
 
-	Date getPasswordExpirationDate(ComAdmin admin);
+	Date getPasswordExpirationDate(Admin admin);
 
-	SimpleServiceResult setPassword(ComAdmin admin, String password);
+	SimpleServiceResult setPassword(Admin admin, String password);
 
 	SimpleServiceResult requestPasswordReset(String username, String email, String clientIp, String linkPattern);
 
-    ServiceResult<ComAdmin> resetPassword(String username, String token, String password, String clientIp);
+    ServiceResult<Admin> resetPassword(String username, String token, String password, String clientIp);
     
     String getPasswordResetLink(String linkPattern, String username, String token);
     
-    SimpleServiceResult sendWelcomeMail(ComAdmin admin, String clientIp, String linkPattern);
+    SimpleServiceResult sendWelcomeMail(Admin admin, String clientIp, String linkPattern);
 
 	boolean existsPasswordResetTokenHash(String username, String token);
 
@@ -78,5 +78,5 @@ public interface ComLogonService {
 
 	void riseErrorCount(String username);
 
-	void updateSessionsLanguagesAttributes(ComAdmin admin);
+	void updateSessionsLanguagesAttributes(Admin admin);
 }

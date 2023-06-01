@@ -72,7 +72,7 @@ public final class HashTagContext {
 	}
 
 	/**
-	 * Returns the customer ID, for that the hash tag is processed. 
+	 * Returns the customer ID, for that the hash tag is processed.
 	 * 
 	 * @return customer ID
 	 */

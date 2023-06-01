@@ -20,18 +20,16 @@ public class MailingClickStatsPerTargetWithMailingIdRow extends MailingClickStat
         this.linkItemNumber = linkItemNumber;
         this.mailingId = mailingId;
         super.setUrl(mailingClickStatsPerTargetRow.getUrl());
-        super.setUrl_id(mailingClickStatsPerTargetRow.getUrl_id());
-        super.setAdmin_link(mailingClickStatsPerTargetRow.isAdmin_link());
-        super.setClicks_gross(mailingClickStatsPerTargetRow.getClicks_gross());
-        super.setClicks_gross_percent(mailingClickStatsPerTargetRow.getClicks_gross_percent());
-        super.setClicks_net(mailingClickStatsPerTargetRow.getClicks_net());
-        super.setClicks_net_percent(mailingClickStatsPerTargetRow.getClicks_net_percent());
-        super.setColumn_index(mailingClickStatsPerTargetRow.getColumn_index());
+        super.setUrlId(mailingClickStatsPerTargetRow.getUrlId());
+        super.setAdminLink(mailingClickStatsPerTargetRow.isAdminLink());
+        super.setClicksGross(mailingClickStatsPerTargetRow.getClicksGross());
+        super.setClicksGrossPercent(mailingClickStatsPerTargetRow.getClicksGrossPercent());
+        super.setClicksNet(mailingClickStatsPerTargetRow.getClicksNet());
+        super.setClicksNetPercent(mailingClickStatsPerTargetRow.getClicksNetPercent());
+        super.setColumnIndex(mailingClickStatsPerTargetRow.getColumnIndex());
         super.setDeleted(mailingClickStatsPerTargetRow.isDeleted());
         super.setMobile(mailingClickStatsPerTargetRow.isMobile());
-        super.setRow_index(mailingClickStatsPerTargetRow.getRow_index());
-        super.setTotal_clicks_gros(mailingClickStatsPerTargetRow.getTotal_clicks_gros());
-        super.setTotal_clicks_net(mailingClickStatsPerTargetRow.getTotal_clicks_net());
+        super.setRowIndex(mailingClickStatsPerTargetRow.getRowIndex());
         super.setTargetgroup(mailingClickStatsPerTargetRow.getTargetgroup());
     }
 

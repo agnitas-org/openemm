@@ -10,6 +10,8 @@
 
 package com.agnitas.post;
 
+import java.util.Objects;
+
 public class TriggerdialogField {
 	private int companyID;
 	private int mailingID;
@@ -56,5 +58,18 @@ public class TriggerdialogField {
 
 	public void setFieldType(VariableType fieldType) {
 		this.fieldType = fieldType;
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+		TriggerdialogField field = (TriggerdialogField) o;
+		return companyID == field.companyID && mailingID == field.mailingID && Objects.equals(fieldName, field.fieldName) && fieldType == field.fieldType;
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(companyID, mailingID, fieldName, fieldType);
 	}
 }

@@ -31,7 +31,6 @@ import org.agnitas.emm.core.commons.uid.builder.impl.exception.RequiredInformati
 import org.agnitas.emm.core.commons.uid.builder.impl.exception.UIDStringBuilderException;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.recipient.service.RecipientService;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.logging.log4j.LogManager;
@@ -65,12 +64,12 @@ public class AgnTagResolverFactoryImpl implements AgnTagResolverFactory {
     private CompanyTokenService companyTokenService;
 
     @Override
-    public AgnTagResolver create(@VelocityCheck int companyId, int mailingId, int mailingListId, int customerId) {
+    public AgnTagResolver create(int companyId, int mailingId, int mailingListId, int customerId) {
         return new AgnTagResolverImpl(companyId, mailingId, mailingListId, customerId);
     }
 
     @Override
-    public AgnTagResolver create(@VelocityCheck int companyId) {
+    public AgnTagResolver create(int companyId) {
         return new AgnTagResolverImpl(companyId, 0, 0, 0);
     }
 

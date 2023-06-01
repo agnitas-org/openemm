@@ -13,6 +13,7 @@
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
 <%--@elvariable id="helplanguage" type="java.lang.String"--%>
 
@@ -63,7 +64,7 @@
 <%-- Editor main container should have id="<icon type>-editor" - in that case the campaign manager will be able to find it --%>
 <div id="start-editor" title="Define Start of a Campaign" data-initializer="start-editor-initializer">
 
-    <form action="" id="startForm" name="startForm">
+    <mvc:form action="" id="startForm" name="startForm">
 
         <div class="status_error editor-error-messages well" style="display: none;"></div>
 
@@ -172,6 +173,7 @@
                             <div class="col-sm-8">
                                 <select id="startProfileField" name="profileField" class="form-control js-select"
                                        data-action="start-editor-profile-field-changed">
+                                    <option value="">--</option>
                                     <logic:iterate id="profileField" collection="${profileFieldsHistorized}">
                                         <option value="${profileField.column}">${profileField.shortname}</option>
                                     </logic:iterate>
@@ -295,6 +297,7 @@
                     </div>
                     <div class="col-sm-8">
                         <select id="dateProfileField" name="dateProfileField" class="form-control js-select">
+                            <option value="">--</option>
                             <logic:iterate id="profileField" collection="${profileFields}">
                                 <c:if test="${profileField.dataType == 'DATE' or profileField.dataType == 'DATETIME'}">
                                     <option value="${profileField.column}">${profileField.shortname}</option>
@@ -548,7 +551,7 @@
                 </div>
             </div>
         </div>
-    </form>
+    </mvc:form>
 
 
     <script id="config:start-editor-initializer" type="application/json">

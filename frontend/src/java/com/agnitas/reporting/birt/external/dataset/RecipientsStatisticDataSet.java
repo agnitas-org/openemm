@@ -52,44 +52,45 @@ import com.agnitas.reporting.birt.external.beans.LightTarget;
 import com.agnitas.reporting.birt.external.utils.BirtReporUtils;
 
 public class RecipientsStatisticDataSet extends RecipientsBasedDataSet {
-    private static final transient Logger logger = LogManager.getLogger(RecipientsStatisticDataSet.class);
 
-    public final static String OPENERS = "report.opens";
-    public final static int OPENERS_INDEX = 3;
-    public final static String CLICKER = "statistic.clicker";
-    public final static int CLICKER_INDEX = 6;
+    private static final Logger logger = LogManager.getLogger(RecipientsStatisticDataSet.class);
 
-    public final static String OPENERS_TRACKED = "report.individual.opens.measured";
-    public final static String OPENERS_PC = "report.individual.opens.pc";
-    public final static String OPENERS_MOBILE = "report.individual.opens.mobile";
-    public final static String OPENERS_TABLET = "report.individual.opens.tablet";
-    public final static String OPENERS_SMARTTV = "report.opens.smarttv";
-    public final static String OPENERS_MULTIPLE_DEVICES = "report.openers.multiple-devices";
+    public static final String OPENERS = "report.opens";
+    public static final int OPENERS_INDEX = 3;
+    public static final String CLICKER = "statistic.clicker";
+    public static final int CLICKER_INDEX = 6;
 
-    public final static String CLICKER_TRACKED = "statistic.clicker";
-    public final static int CLICKER_TRACKED_INDEX = 19;
+    public static final String OPENERS_TRACKED = "report.individual.opens.measured";
+    public static final String OPENERS_PC = "report.individual.opens.pc";
+    public static final String OPENERS_MOBILE = "report.individual.opens.mobile";
+    public static final String OPENERS_TABLET = "report.individual.opens.tablet";
+    public static final String OPENERS_SMARTTV = "report.opens.smarttv";
+    public static final String OPENERS_MULTIPLE_DEVICES = "report.openers.multiple-devices";
 
-    public final static int ACTIVE_START_DATE_INDEX = 25;
-    public final static int ACTIVE_END_DATE_INDEX = 26;
-    public final static int CLICKER_END_DATE_INDEX = 27;
-    public final static int OPENERS_END_DATE_INDEX = 28;
-    public final static int CLICKER_TRACKED_END_DATE_INDEX = 29;
-    public final static int CLICKER_PC_END_DATE_INDEX = 30;
-    public final static int CLICKER_MOBILE_END_DATE_INDEX = 31;
-    public final static int CLICKER_TABLET_END_DATE_INDEX = 32;
-    public final static int CLICKER_SMARTTV_END_DATE_INDEX = 33;
-    public final static int CLICKER_MULTIPLE_DEVICES_END_DATE_INDEX = 34;
-    public final static int OPENERS_TRACKED_END_DATE_INDEX = 35;
-    public final static int OPENERS_PC_END_DATE_INDEX = 36;
-    public final static int OPENERS_MOBILE_END_DATE_INDEX = 37;
-    public final static int OPENERS_TABLET_END_DATE_INDEX = 38;
-    public final static int OPENERS_SMARTTV_END_DATE_INDEX = 39;
-    public final static int OPENERS_MULTIPLE_DEVICES_END_DATE_INDEX = 40;
+    public static final String CLICKER_TRACKED = "statistic.clicker";
+    public static final int CLICKER_TRACKED_INDEX = 19;
 
-    public final static int DATE_CONSTRAINT_BETWEEN = 0;
-    public final static int DATE_CONSTRAINT_LESS_THAN_START = 1;
-    public final static int DATE_CONSTRAINT_LESS_THAN_STOP = 2;
-    public final static int DATE_CONSTRAINT_GREATER_THAN_START = 3;
+    public static final int ACTIVE_START_DATE_INDEX = 25;
+    public static final int ACTIVE_END_DATE_INDEX = 26;
+    public static final int CLICKER_END_DATE_INDEX = 27;
+    public static final int OPENERS_END_DATE_INDEX = 28;
+    public static final int CLICKER_TRACKED_END_DATE_INDEX = 29;
+    public static final int CLICKER_PC_END_DATE_INDEX = 30;
+    public static final int CLICKER_MOBILE_END_DATE_INDEX = 31;
+    public static final int CLICKER_TABLET_END_DATE_INDEX = 32;
+    public static final int CLICKER_SMARTTV_END_DATE_INDEX = 33;
+    public static final int CLICKER_MULTIPLE_DEVICES_END_DATE_INDEX = 34;
+    public static final int OPENERS_TRACKED_END_DATE_INDEX = 35;
+    public static final int OPENERS_PC_END_DATE_INDEX = 36;
+    public static final int OPENERS_MOBILE_END_DATE_INDEX = 37;
+    public static final int OPENERS_TABLET_END_DATE_INDEX = 38;
+    public static final int OPENERS_SMARTTV_END_DATE_INDEX = 39;
+    public static final int OPENERS_MULTIPLE_DEVICES_END_DATE_INDEX = 40;
+
+    public static final int DATE_CONSTRAINT_BETWEEN = 0;
+    public static final int DATE_CONSTRAINT_LESS_THAN_START = 1;
+    public static final int DATE_CONSTRAINT_LESS_THAN_STOP = 2;
+    public static final int DATE_CONSTRAINT_GREATER_THAN_START = 3;
 
 
     private List<RecipientsStatisticCommonRow> statList = new ArrayList<>();
@@ -97,9 +98,6 @@ public class RecipientsStatisticDataSet extends RecipientsBasedDataSet {
 
     /**
      * Generates temp table name with specific ID
-     *
-     * @param tempTableId
-     * @return
      */
     private static String getTempReportTableName(int tempTableId) {
         return "tmp_report_aggregation_" + tempTableId + "_tbl";
@@ -156,14 +154,9 @@ public class RecipientsStatisticDataSet extends RecipientsBasedDataSet {
     /**
      * This method returns prepared data by temporary table id Data consists values
      * groped by mailinglists and target groups
-     *
-     * @param tempTableId
-     * @return
-     * @throws Exception
-     * @throws
      */
     public List<RecipientsStatisticCommonRow> getRecipientsStatistic(int tempTableId) throws Exception {
-        if (statList.size() == 0) {
+        if (statList.isEmpty()) {
             String selectMailinglistSql = "SELECT mailinglist_id, mailinglist_name, mailinglist_group_id, targetgroup_id, mailinglist_name, targetgroup_name, count_type_text, count_type_html,"
                     + " count_type_offline_html, count_active, count_active_for_period, count_waiting_for_confirm, count_blacklisted, count_optout, count_bounced, count_gender_male,"
                     + " count_gender_female, count_gender_unknown, count_recipient, count_target_group, count_active_as_of, count_blacklisted_as_of, count_optout_as_of, count_bounced_as_of,"
@@ -330,7 +323,6 @@ public class RecipientsStatisticDataSet extends RecipientsBasedDataSet {
      * Prepare report by collecting the values from different queries in one table
      *
      * @return id of the created temporary table
-     * @throws Exception
      **/
     private int prepareReport(@VelocityCheck int companyId, String selectedTargetsAsString,
                               String selectedMailingListsAsString, String startDateString, String endDateString, String figuresOptions,
@@ -378,10 +370,7 @@ public class RecipientsStatisticDataSet extends RecipientsBasedDataSet {
     /**
      * Get collected values by temporary table id
      *
-     * @param tempTableId
      * @return list
-     * @throws Exception
-     * @throws DataAccessException
      */
     public List<RecipientCollectedStatisticRow> getData(int tempTableId) throws Exception {
         if (collectedStatisticList == null) {
@@ -409,8 +398,6 @@ public class RecipientsStatisticDataSet extends RecipientsBasedDataSet {
      * report in one table
      *
      * @return id of the create temporary table
-     * @throws Exception
-     * @throws
      **/
     private int createTempTable() throws Exception {
         int tempTableId = getNextTmpID();
@@ -478,15 +465,6 @@ public class RecipientsStatisticDataSet extends RecipientsBasedDataSet {
 
     /**
      * Collect clickers recipients values
-     *
-     * @param tempTableId
-     * @param companyId
-     * @param targetGroups
-     * @param mailingListIds
-     * @param startDate
-     * @param endDate
-     * @param calculateDeviceClasses
-     * @throws Exception
      */
     private void insertClickersIntoTempTable(int tempTableId, @VelocityCheck int companyId, List<LightTarget> targetGroups,
                                              List<Integer> mailingListIds, Date startDate, Date endDate, boolean calculateDeviceClasses,
@@ -701,11 +679,8 @@ public class RecipientsStatisticDataSet extends RecipientsBasedDataSet {
     /**
      * Calculate rates for collected calues
      *
-     * @param tempTableId
-     * @param companyId
      * @param targetGroups list of selected target groups
      * @param figures      report checkbox parameters
-     * @throws Exception
      */
     private void updateAllRates(int tempTableId, @VelocityCheck int companyId, List<LightTarget> targetGroups, List<BirtReporUtils.BirtReportFigure> figures) throws Exception {
         if (figures.contains(BirtReporUtils.BirtReportFigure.CLICKERS_TOTAL)
@@ -1156,9 +1131,6 @@ public class RecipientsStatisticDataSet extends RecipientsBasedDataSet {
 
     /**
      * Returns query for inserting collected values into temporary table
-     *
-     * @param tempTableId
-     * @return
      */
     private String getTempInsertQuery(int tempTableId) {
         return "INSERT INTO " + getTempReportTableName(tempTableId) +

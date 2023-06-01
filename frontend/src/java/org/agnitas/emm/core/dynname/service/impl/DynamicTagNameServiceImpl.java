@@ -15,8 +15,8 @@ import java.util.List;
 import org.agnitas.dao.MailingDao;
 import org.agnitas.emm.core.dynname.service.DynamicTagNameService;
 import org.agnitas.emm.core.dynname.service.NameModel;
+import org.agnitas.emm.core.dynname.service.validation.NameModelValidator;
 import org.agnitas.emm.core.mailing.service.MailingNotExistException;
-import org.agnitas.emm.core.validator.annotation.Validate;
 
 import com.agnitas.beans.DynamicTag;
 import com.agnitas.dao.DynamicTagDao;
@@ -29,14 +29,15 @@ public class DynamicTagNameServiceImpl implements DynamicTagNameService {
 	private DynamicTagDao dynamicTagDao;
 	@Resource(name="MailingDao")
 	private MailingDao mailingDao;
+	@Resource(name="nameModelValidator")
+	private NameModelValidator nameModelValidator;
 
 	@Override
-	@Validate
 	public List<DynamicTag> getNameList(NameModel model) {
+	    nameModelValidator.assertIsValidToGet(model);
 		if (!mailingDao.exist(model.getMailingId(), model.getCompanyId())) {
 			throw new MailingNotExistException(model.getCompanyId(), model.getMailingId());
 		}
 		return dynamicTagDao.getNameList(model.getCompanyId(), model.getMailingId());
 	}
-
 }

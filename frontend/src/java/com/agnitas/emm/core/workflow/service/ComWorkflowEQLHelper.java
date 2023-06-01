@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
-import org.agnitas.service.ColumnInfoService;
 import org.agnitas.target.ConditionalOperator;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.DbColumnType;
@@ -39,6 +38,7 @@ import com.agnitas.emm.core.target.eql.emm.resolver.EmmProfileFieldResolverFacto
 import com.agnitas.emm.core.workflow.beans.WorkflowDecision;
 import com.agnitas.emm.core.workflow.beans.WorkflowRule;
 import com.agnitas.emm.core.workflow.service.util.WorkflowUtils;
+import com.agnitas.service.ColumnInfoService;
 
 @Component("WorkflowEQLHelper")
 public class ComWorkflowEQLHelper {

@@ -16,15 +16,18 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.TimeZone;
 
+import com.agnitas.beans.ComTrackableLink;
+import com.agnitas.emm.core.workflow.beans.Workflow;
+import com.agnitas.emm.core.workflow.beans.WorkflowDependencyType;
 import org.agnitas.beans.CompaniesConstraints;
 import org.agnitas.beans.impl.CompanyStatus;
 import org.agnitas.dao.UserStatus;
 import org.agnitas.dao.impl.BaseDaoImpl;
 import org.agnitas.dao.impl.mapper.IntegerRowMapper;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.DbUtilities;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -62,13 +65,13 @@ public class ComWorkflowReactionDaoImpl extends BaseDaoImpl implements ComWorkfl
     private RecipientProfileHistoryService recipientProfileHistoryService;
 
     @Override
-    public boolean exists(int reactionId, @VelocityCheck int companyId) {
+    public boolean exists(int reactionId, int companyId) {
         String sqlGetCount = "SELECT COUNT(*) FROM workflow_reaction_tbl WHERE company_id = ? AND reaction_id = ?";
         return selectInt(logger, sqlGetCount, companyId, reactionId) > 0;
     }
 
     @Override
-    public ComWorkflowReaction getReaction(int reactionId, @VelocityCheck int companyId) {
+    public ComWorkflowReaction getReaction(int reactionId, int companyId) {
         String sqlGetReaction = "SELECT * FROM workflow_reaction_tbl WHERE reaction_id = ? AND company_id = ?";
         ComWorkflowReaction reaction = selectObjectDefaultNull(logger, sqlGetReaction, new ReactionRowMapper(), reactionId, companyId);
         if (reaction != null) {
@@ -222,7 +225,7 @@ public class ComWorkflowReactionDaoImpl extends BaseDaoImpl implements ComWorkfl
 
     @Override
     @DaoUpdateReturnValueCheck
-    public void saveReactionStepDeclarations(List<WorkflowReactionStepDeclaration> declarations, int reactionId, @VelocityCheck int companyId) {
+    public void saveReactionStepDeclarations(List<WorkflowReactionStepDeclaration> declarations, int reactionId, int companyId) {
         if (exists(reactionId, companyId)) {
             deleteReactionStepDeclarations(reactionId, companyId);
             for (WorkflowReactionStepDeclaration declaration : declarations) {
@@ -231,7 +234,7 @@ public class ComWorkflowReactionDaoImpl extends BaseDaoImpl implements ComWorkfl
         }
     }
 
-    protected void saveReactionStepDeclaration(WorkflowReactionStepDeclaration declaration, int reactionId, @VelocityCheck int companyId) {
+    protected void saveReactionStepDeclaration(WorkflowReactionStepDeclaration declaration, int reactionId, int companyId) {
         String sqlSaveStepDeclaration = "INSERT INTO workflow_reaction_decl_tbl (" +
             "step_id, previous_step_id, reaction_id, company_id, deadline_relative, deadline_hours, deadline_minutes, target_id, is_target_positive, mailing_id" +
             ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
@@ -262,7 +265,7 @@ public class ComWorkflowReactionDaoImpl extends BaseDaoImpl implements ComWorkfl
 
     @Override
     @DaoUpdateReturnValueCheck
-    public void deactivateWorkflowReactions(int workflowId, @VelocityCheck int companyId) {
+    public void deactivateWorkflowReactions(int workflowId, int companyId) {
         int reactionId = getReactionId(workflowId, companyId);
         if (reactionId > 0) {
             deactivateReaction(reactionId, companyId);
@@ -271,17 +274,17 @@ public class ComWorkflowReactionDaoImpl extends BaseDaoImpl implements ComWorkfl
 
     @Override
     @DaoUpdateReturnValueCheck
-    public void deactivateReaction(int reactionId, @VelocityCheck int companyId) {
+    public void deactivateReaction(int reactionId, int companyId) {
         update(logger, "UPDATE workflow_reaction_tbl SET active = 0 WHERE company_id = ? AND reaction_id = ?", companyId, reactionId);
         clearReactionLog(reactionId, companyId, true);
         clearReactionLegacyLog(reactionId, companyId);
     }
 
-    protected void deleteReactionStepDeclarations(int reactionId, @VelocityCheck int companyId) {
+    protected void deleteReactionStepDeclarations(int reactionId, int companyId) {
         update(logger, "DELETE FROM workflow_reaction_decl_tbl WHERE company_id = ? AND reaction_id = ?", companyId, reactionId);
     }
 
-    protected void clearReactionLog(int reactionId, @VelocityCheck int companyId, boolean preserveTriggerStepLog) {
+    protected void clearReactionLog(int reactionId, int companyId, boolean preserveTriggerStepLog) {
         String sqlPackTriggerStepLog = "INSERT INTO workflow_reaction_out_tbl (case_id, step_id, reaction_id, company_id, customer_id, step_date) " +
             "SELECT 0, 0, reaction_id, company_id, customer_id, MAX(step_date) FROM workflow_reaction_out_tbl " +
             "WHERE company_id = ? AND reaction_id = ? AND step_id = 0 AND case_id <> 0 " +
@@ -307,7 +310,7 @@ public class ComWorkflowReactionDaoImpl extends BaseDaoImpl implements ComWorkfl
      * For legacy mode only.
      */
     @Deprecated
-    private void clearReactionLegacyLog(int reactionId, @VelocityCheck int companyId) {
+    private void clearReactionLegacyLog(int reactionId, int companyId) {
         String sqlClearLog = "DELETE FROM workflow_reaction_log_tbl WHERE company_id = ? AND reaction_id = ?";
         update(logger, sqlClearLog, companyId, reactionId);
         String sqlClearMailingsToSend = "DELETE FROM workflow_reaction_mailing_tbl WHERE company_id = ? AND reaction_id = ?";
@@ -318,7 +321,7 @@ public class ComWorkflowReactionDaoImpl extends BaseDaoImpl implements ComWorkfl
 
     @Override
     @DaoUpdateReturnValueCheck
-    public void deleteWorkflowReactions(int workflowId, @VelocityCheck int companyId) {
+    public void deleteWorkflowReactions(int workflowId, int companyId) {
         int reactionId = getReactionId(workflowId, companyId);
         if (reactionId > 0) {
             deleteReaction(reactionId, companyId);
@@ -327,7 +330,7 @@ public class ComWorkflowReactionDaoImpl extends BaseDaoImpl implements ComWorkfl
 
     @Override
     @DaoUpdateReturnValueCheck
-    public void deleteReactions(@VelocityCheck int companyId) {
+    public void deleteReactions(int companyId) {
         update(logger, "DELETE FROM workflow_reaction_mailing_tbl WHERE company_id = ?", companyId);
         update(logger, "DELETE FROM workflow_reaction_log_tbl WHERE company_id = ?", companyId);
         update(logger, "DELETE FROM workflow_reaction_out_tbl WHERE company_id = ?", companyId);
@@ -339,7 +342,7 @@ public class ComWorkflowReactionDaoImpl extends BaseDaoImpl implements ComWorkfl
 
     @Override
     @DaoUpdateReturnValueCheck
-    public void deleteReaction(int reactionId, @VelocityCheck int companyId) {
+    public void deleteReaction(int reactionId, int companyId) {
         clearReactionLog(reactionId, companyId, false);
         clearReactionLegacyLog(reactionId, companyId);
         deleteReactionStepDeclarations(reactionId, companyId);
@@ -720,7 +723,7 @@ public class ComWorkflowReactionDaoImpl extends BaseDaoImpl implements ComWorkfl
 
         if (CollectionUtils.isNotEmpty(recipients)) {
             List<Object[]> sqlParameters = new ArrayList<>(recipients.size());
-            for (int recipientId : recipients) {
+            for (int recipientId : new HashSet<>(recipients)) {
                 sqlParameters.add(new Object[]{caseId, reactionId, companyId, recipientId, reactionDate});
             }
             batchupdate(logger, sqlLogRecipients, sqlParameters);
@@ -783,7 +786,7 @@ public class ComWorkflowReactionDaoImpl extends BaseDaoImpl implements ComWorkfl
 
     @Override
     @DaoUpdateReturnValueCheck
-    public void addDeferredActionMailings(int reactionId, int mailingId, List<Integer> customersId, Date sendDate, @VelocityCheck int companyId) {
+    public void addDeferredActionMailings(int reactionId, int mailingId, List<Integer> customersId, Date sendDate, int companyId) {
         ArrayList<Object[]> params = new ArrayList<>();
         for (Integer customerId : customersId) {
             if (isOracleDB()) {
@@ -821,9 +824,23 @@ public class ComWorkflowReactionDaoImpl extends BaseDaoImpl implements ComWorkfl
     }
 
     @Override
-    public int getReactionId(int workflowId, @VelocityCheck int companyId) {
+    public int getReactionId(int workflowId, int companyId) {
         String sqlGetReactionId = "SELECT reaction_id FROM workflow_reaction_tbl WHERE workflow_id = ? AND company_id = ?";
         return selectInt(logger, sqlGetReactionId, workflowId, companyId);
+    }
+    
+    @Override
+    public boolean isLinkUsedInActiveWorkflow(ComTrackableLink link) {
+        String query = "SELECT " + (isOracleDB() ? "1 FROM DUAL WHERE" : "") +
+                " EXISTS (SELECT 1 FROM dyn_target_tbl t, workflow_reaction_tbl wr" +
+                "    WHERE (t.target_id IN (" +
+                "        SELECT wd.entity_id FROM workflow_tbl w JOIN workflow_dependency_tbl wd ON w.workflow_id = wd.workflow_id" +
+                "        WHERE w.status = ? AND wd.type = ?)" +
+                "    AND eql LIKE '%CLICKED LINK " + link.getId() + " IN MAILING " + link.getMailingID() + "%')) " +
+                "OR EXISTS (SELECT 1 FROM workflow_reaction_tbl WHERE trigger_link_id = ? AND active = 1)";
+        
+        return selectInt(logger, query, Workflow.WorkflowStatus.STATUS_ACTIVE.getId(),
+                WorkflowDependencyType.TARGET_GROUP_CONDITION.getId(), link.getId()) == 1;
     }
 
     @Required

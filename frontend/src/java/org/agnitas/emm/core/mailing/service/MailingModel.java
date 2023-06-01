@@ -25,35 +25,9 @@ import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.maildrop.MaildropStatus;
 import com.agnitas.emm.core.report.enums.DatabaseField;
 import com.agnitas.emm.core.report.enums.DatabaseFieldUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public class MailingModel {
-	public interface AddGroup {
-    	// do nothing
-    }
-	
-	public interface AddFromTemplateGroup {
-    	// do nothing
-    }
-	
-	public interface GetGroup {
-    	// do nothing
-    }
-	
-	public interface UpdateGroup {
-    	// do nothing
-    }
-	
-	public interface SendGroup {
-    	// do nothing
-    }
-	
-	public interface CompanyGroup {
-    	// do nothing
-    }
-	
-	public interface GetForMLID {
-    	// do nothing
-    }
 
 	public enum Format implements DatabaseField<Integer, Format> {
 		TEXT(0, "text", "MailType.0"),
@@ -125,7 +99,7 @@ public class MailingModel {
 		}
 	}
 
-	public final static Map<String, Format> formatMap;
+    public static final Map<String, Format> formatMap;
 	static {
 		formatMap = new HashMap<>(3);
 		formatMap.put(Format.TEXT.getName(), Format.TEXT);
@@ -133,7 +107,7 @@ public class MailingModel {
 		formatMap.put(Format.OFFLINE_HTML.getName(), Format.OFFLINE_HTML);
 	}
 
-	public final static Map<Integer, Format> formatValueMap;
+    public static final Map<Integer, Format> formatValueMap;
 	static {
 		formatValueMap = new LinkedHashMap<>(3);
 		formatValueMap.put(Format.TEXT.getValue(), Format.TEXT);
@@ -180,7 +154,7 @@ public class MailingModel {
 		}
 	}
 
-	public final static Map<String, OnePixel> onePixelMap;
+    public static final Map<String, OnePixel> onePixelMap;
 	static {
 		onePixelMap = new HashMap<>(3);
 		onePixelMap.put(OnePixel.TOP.getName(), OnePixel.TOP);
@@ -197,7 +171,7 @@ public class MailingModel {
 		return onePixel;
 	}
 
-	public static enum TargetMode {
+	public enum TargetMode {
 		OR("one", 0), AND("all", 1);
 
 		private final String name;
@@ -217,14 +191,14 @@ public class MailingModel {
 		}
 	}
 
-	public final static Map<String, TargetMode> targetModeMap;
+    public static final Map<String, TargetMode> targetModeMap;
 	static {
 		targetModeMap = new HashMap<>(2);
 		targetModeMap.put(TargetMode.OR.getName(), TargetMode.OR);
 		targetModeMap.put(TargetMode.AND.getName(), TargetMode.AND);
 	}
 
-	public final static Map<Integer, TargetMode> targetModeValueMap;
+    public static final Map<Integer, TargetMode> targetModeValueMap;
 	static {
 		targetModeValueMap = new HashMap<>(2);
 		targetModeValueMap.put(TargetMode.OR.getValue(), TargetMode.OR);
@@ -250,11 +224,7 @@ public class MailingModel {
 
 	public static MaildropStatus getMaildropStatus(String maildropStatusString) throws Exception {
 		maildropStatusString = maildropStatusString != null ? maildropStatusString.toLowerCase() : null;
-		MaildropStatus maildropStatus = MaildropStatus.fromName(maildropStatusString);
-		if (maildropStatus == null) {
-			throw new RuntimeException("Invalid targetMode");
-		}
-		return maildropStatus;
+        return MaildropStatus.fromName(maildropStatusString);
 	}
 
 	private int companyId;
@@ -270,18 +240,13 @@ public class MailingModel {
 	private String replyToAddress;
 	private String charset;
 	private int linefeed;
-	private String formatString;
 	private Format format;
-	private String onePixelString;
 	private OnePixel onePixel;
 	private boolean template;
 	private int templateId;
 	private boolean autoUpdate;
 	private int mailingId;
-	private String targetModeString;
 	private TargetMode targetMode;
-	
-	private String maildropStatusString;
 	private MaildropStatus maildropStatus;
 	private Date sendDate;
 	private int stepping;
@@ -423,35 +388,19 @@ public class MailingModel {
 		this.linefeed = linefeed;
 	}
 
-	public String getFormatString() {
-		return formatString;
-	}
-
-	public void setFormatString(String formatString) {
-		this.formatString = formatString;
-		format = null;
+	public void setFormat(String formatString) {
+        format = formatMap.get(StringUtils.lowerCase(formatString));
 	}
 
 	public Format getFormat() {
-		if (format == null && formatString != null) {
-			format = getFormat(formatString);
-		}
 		return format;
 	}
 
-	public String getOnePixelString() {
-		return onePixelString;
-	}
-
-	public void setOnePixelString(String onePixelString) {
-		this.onePixelString = onePixelString;
-		onePixel = null;
+	public void setOnePixel(String onePixelString) {
+        onePixel = onePixelMap.get(StringUtils.lowerCase(onePixelString));
 	}
 
 	public OnePixel getOnePixel() {
-		if (onePixel == null && onePixelString != null) {
-			onePixel = getOnePixel(onePixelString);
-		}
 		return onePixel;
 	}
 
@@ -487,37 +436,25 @@ public class MailingModel {
 		this.mailingId = mailingId;
 	}
 
-	public String getTargetModeString() {
-		return targetModeString;
-	}
-
 	public void setTargetMode(String targetModeString) {
-		this.targetModeString = targetModeString;
-		targetMode = null;
+		targetMode = targetModeMap.get(StringUtils.lowerCase(targetModeString));
 	}
 
 	public TargetMode getTargetMode() {
-		if (targetMode == null && targetModeString != null) {
-			targetMode = getTargetMode(targetModeString);
-		}
 		return targetMode;
 	}
 
-	public String getMaildropStatusString() {
-		return maildropStatusString;
-	}
-
-	public MaildropStatus getMaildropStatus() throws Exception {
-		if (maildropStatus == null && maildropStatusString != null) {
-			maildropStatus = getMaildropStatus(maildropStatusString);
-		}
+	public MaildropStatus getMaildropStatus() {
 		return maildropStatus;
 	}
 
 	public void setMaildropStatus(String maildropStatusString) {
-		this.maildropStatusString = maildropStatusString;
-		this.maildropStatus = null;
-	}
+        try {
+            this.maildropStatus = getMaildropStatus(maildropStatusString);
+        } catch (Exception e) {
+            this.maildropStatus = null;
+        }
+    }
 
 	public Date getSendDate() {
 		return sendDate;

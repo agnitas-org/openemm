@@ -31,13 +31,12 @@ import com.agnitas.emm.core.stat.dao.MailingStatTgtGrpDao;
 
 public class MailingStatTgtGrpDaoImpl extends BaseDaoImpl implements MailingStatTgtGrpDao {
 	
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(MailingStatTgtGrpDaoImpl.class);
+	private static final Logger logger = LogManager.getLogger(MailingStatTgtGrpDaoImpl.class);
 
 	@Override
 	@DaoUpdateReturnValueCheck
 	public int saveMalingStatTgtGrp(MailingStatisticTgtGrp stat) {
-		int newId = 0;
+		int newId;
 		if (isOracleDB()) {
 			newId = selectInt(logger, "SELECT mailing_stat_tgtgrp_tbl_seq.NEXTVAL FROM dual");
 			update(logger, "INSERT INTO mailing_statistic_tgtgrp_tbl" +
@@ -68,7 +67,7 @@ public class MailingStatTgtGrpDaoImpl extends BaseDaoImpl implements MailingStat
 
 	@Override
 	public MailingStatisticTgtGrp getMailingStatTgtGrpByJobId(int jobId, int targetGroupId) {
-		MailingStatisticTgtGrp statTgtGrp = selectObject(logger, "SELECT * FROM mailing_statistic_tgtgrp_tbl WHERE mailing_stat_job_id = ? AND target_group_id = ?", 
+		MailingStatisticTgtGrp statTgtGrp = selectObject(logger, "SELECT * FROM mailing_statistic_tgtgrp_tbl WHERE mailing_stat_job_id = ? AND target_group_id = ?",
 				new MailingStatTgtGrpMapper(), jobId, targetGroupId);
 		List<Map<String,Object>> stats = select(logger, "SELECT * FROM mailing_statistic_value_tbl WHERE mailing_stat_tgtgrp_id = ?", 
 				statTgtGrp.getId());
@@ -107,7 +106,7 @@ public class MailingStatTgtGrpDaoImpl extends BaseDaoImpl implements MailingStat
 		update(logger, deleteTargetGroupsSql, thresholdDate);
 	}
 
-    private class MailingStatTgtGrpMapper implements RowMapper<MailingStatisticTgtGrp> {
+    private static class MailingStatTgtGrpMapper implements RowMapper<MailingStatisticTgtGrp> {
 
 		@Override
 		public MailingStatisticTgtGrp mapRow(ResultSet resultSet, int row) throws SQLException {

@@ -5,6 +5,7 @@
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jsp/common" prefix="emm" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core"  prefix="c" %>
+<%@ taglib prefix="agn" uri="https://emm.agnitas.de/jsp/jstl/tags" %>
 
 <%--@elvariable id="mailingContentForm" type="com.agnitas.web.ComMailingContentForm"--%>
 
@@ -14,7 +15,7 @@
     <div class="modal-dialog">
         <div class="modal-content">
 
-            <html:form action="/mailingcontent" >
+            <agn:agnForm action="/mailingcontent" >
                 <html:hidden property="mailingID" value="${mailingContentForm.mailingID}"/>
                 <html:hidden property="action" value="${ACTION_GENERATE_TEXT_FROM_HTML}"/>
 
@@ -41,7 +42,7 @@
                     </div>
                 </div>
 
-            </html:form>
+            </agn:agnForm>
         </div>
     </div>
 </div>

@@ -14,9 +14,8 @@ import java.util.Date;
 import java.util.Map;
 
 import org.agnitas.beans.BindingEntry;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.dao.ComBindingEntryDao;
 import com.agnitas.emm.core.binding.service.BindingUtils;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
@@ -162,7 +161,7 @@ public class BindingEntryImpl implements BindingEntry {
 	 */
 	@Deprecated
 	@Override
-	public boolean updateStatusInDB(@VelocityCheck int companyID) {
+	public boolean updateStatusInDB(int companyID) {
 		return bindingEntryDao.updateStatus(this, companyID);
 	}
 
@@ -172,7 +171,7 @@ public class BindingEntryImpl implements BindingEntry {
 	}
 
 	@Override
-	public boolean saveBindingInDB(@VelocityCheck int companyID, Map<Integer, Map<Integer, BindingEntry>> allCustLists, ComAdmin admin) throws Exception {
+	public boolean saveBindingInDB(int companyID, Map<Integer, Map<Integer, BindingEntry>> allCustLists, Admin admin) throws Exception {
 		Map<Integer, BindingEntry> types = allCustLists.get(mailinglistID);
 		if (types != null) {
 			BindingEntry old = types.get(mediaType);
@@ -213,7 +212,7 @@ public class BindingEntryImpl implements BindingEntry {
 		}
 	}
 
-	private String getUserRemarkForStatusByAdmin(int newUserStatus, ComAdmin admin) {
+	private String getUserRemarkForStatusByAdmin(int newUserStatus, Admin admin) {
 		return BindingUtils.getUserRemarkForStatusByAdmin(admin, newUserStatus);
 	}
 
@@ -225,17 +224,17 @@ public class BindingEntryImpl implements BindingEntry {
 	 *            The company ID of the Binding
 	 */
 	@Override
-	public boolean updateBindingInDB(@VelocityCheck int companyID) {
+	public boolean updateBindingInDB(int companyID) {
 		return bindingEntryDao.updateBinding(this, companyID);
 	}
 
 	@Override
-	public boolean insertNewBindingInDB(@VelocityCheck int companyID) {
+	public boolean insertNewBindingInDB(int companyID) {
 		return bindingEntryDao.insertNewBinding(this, companyID);
 	}
 
 	@Override
-	public boolean optOutEmailAdr(String email, @VelocityCheck int companyID) {
+	public boolean optOutEmailAdr(String email, int companyID) {
 		return bindingEntryDao.optOutEmailAdr(email, companyID);
 	}
 
@@ -269,7 +268,7 @@ public class BindingEntryImpl implements BindingEntry {
 	}
 
 	@Override
-	public boolean getUserBindingFromDB(@VelocityCheck int companyID) {
+	public boolean getUserBindingFromDB(int companyID) {
 		return bindingEntryDao.getUserBindingFromDB(this, companyID);
 	}
 

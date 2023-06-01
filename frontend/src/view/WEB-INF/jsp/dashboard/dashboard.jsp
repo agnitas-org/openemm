@@ -70,12 +70,16 @@
                             <ul class="link-list">
                                 <c:forEach var="mailing" items="${mailinglist.list}" begin="0" step="1">
                                     <li>
-                                        <c:url var="mailingLink" value="/mailingbase.do">
-                                            <c:param name="action" value="${ACTION_VIEW_MAILING}"/>
-                                            <c:param name="mailingID" value="${mailing.mailingid}"/>
-                                            <c:param name="isTemplate" value="false"/>
-                                        </c:url>
-
+                                        <emm:ShowByPermission token="mailing.settings.migration">
+                                            <c:url var="mailingLink" value="/mailing/${mailing.mailingid}/settings.action"/>
+                                        </emm:ShowByPermission>
+                                        <emm:HideByPermission token="mailing.settings.migration">
+                                            <c:url var="mailingLink" value="/mailingbase.do">
+                                                <c:param name="action" value="${ACTION_VIEW_MAILING}"/>
+                                                <c:param name="mailingID" value="${mailing.mailingid}"/>
+                                                <c:param name="isTemplate" value="false"/>
+                                            </c:url>
+                                        </emm:HideByPermission>
                                         <c:if test="${mailing.workstatus == 'mailing.status.sent' or mailing.workstatus == 'mailing.status.norecipients'}">
                                             <emm:ShowByPermission token="stats.mailing">
                                                 <c:url var="mailingLink" value="/statistics/mailing/${mailing.mailingid}/view.action"/>
@@ -129,12 +133,16 @@
                             <div class="row">
                                 <c:forEach var="mailing" items="${mailinglist.list}" begin="0" step="1">
                                     <div class="col-xs-4" data-view-split="col-xs-4" data-view-block="col-xs-3" data-view-hidden="col-xs-3">
-
+                                        <emm:ShowByPermission token="mailing.settings.migration">
+                                            <c:url var="mailingLink" value="/mailing/${mailing.mailingid}/settings.action"/>
+                                        </emm:ShowByPermission>
+                                        <emm:HideByPermission token="mailing.settings.migration">
                                             <c:url var="mailingLink" value="/mailingbase.do">
                                                 <c:param name="action" value="${ACTION_VIEW_MAILING}"/>
                                                 <c:param name="mailingID" value="${mailing.mailingid}"/>
                                                 <c:param name="isTemplate" value="false"/>
                                             </c:url>
+                                        </emm:HideByPermission>
                                         <c:if test="${mailing.workstatus == 'mailing.status.sent' or mailing.workstatus == 'mailing.status.norecipients'}">
                                             <emm:ShowByPermission token="stats.mailing">
                                                 <c:url var="mailingStatLink" value="/statistics/mailing/${mailing.mailingid}/view.action"/>

@@ -498,6 +498,8 @@
       }
     },
     mailing: MAILING_TITLE_CONFIG,
+    mailing_mediatype_sms: MAILING_TITLE_CONFIG,
+    mailing_mediatype_post: MAILING_TITLE_CONFIG,
     actionbased_mailing: MAILING_TITLE_CONFIG,
     datebased_mailing: MAILING_TITLE_CONFIG,
     followup_mailing: {

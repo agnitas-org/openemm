@@ -18,7 +18,7 @@ import org.agnitas.beans.AdminEntry;
 import org.agnitas.beans.AdminGroup;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.dao.ComAdminGroupDao;
+import com.agnitas.dao.AdminGroupDao;
 import com.agnitas.service.ComPDFService;
 import com.lowagie.text.Document;
 import com.lowagie.text.DocumentException;
@@ -27,10 +27,10 @@ import com.lowagie.text.pdf.PdfWriter;
 
 public class ComPDFServiceImpl implements ComPDFService {
     /** DAO for accessing admin group data. */
-    protected ComAdminGroupDao adminGroupDao;
+    protected AdminGroupDao adminGroupDao;
     
     @Required
-    public void setAdminGroupDao(ComAdminGroupDao adminGroupDao) {
+    public void setAdminGroupDao(AdminGroupDao adminGroupDao) {
         this.adminGroupDao = adminGroupDao;
     }
 

@@ -8,6 +8,7 @@
 <c:set var="RESTORE_SEARCH_PARAM_NAME" value="<%= FormSearchParams.RESTORE_PARAM_NAME%>"/>
 
 <%--@elvariable id="form" type="com.agnitas.emm.core.recipient.forms.RecipientForm"--%>
+<%--@elvariable id="isSaveButtonDisabled" type="java.lang.Boolean"--%>
 
 <c:url var="recipientsOverviewLink" value="/recipient/list.action">
     <c:param name="${RESTORE_SEARCH_PARAM_NAME}" value="true"/>
@@ -161,7 +162,7 @@
             <emm:instantiate var="element" type="java.util.LinkedHashMap">
                 <c:set target="${itemActionsSettings}" property="1" value="${element}"/>
 
-                <c:set target="${element}" property="btnCls" value="btn btn-regular btn-inverse"/>
+                <c:set target="${element}" property="btnCls" value="btn btn-regular btn-inverse ${isSaveButtonDisabled ? 'disabled' : ''}"/>
                 <c:set target="${element}" property="type" value="button"/>
                 <c:set target="${element}" property="extraAttributes" value="data-form-target='#recipientForm' data-form-submit-event data-action='toggleSaveAndBack'"/>
                 <c:set target="${element}" property="iconBefore" value="icon-save"/>

@@ -28,7 +28,7 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.jdbc.core.RowMapper;
 
 public abstract class RecipientsBasedDataSet extends BIRTDataSet {
-    private static final transient Logger logger = LogManager.getLogger(RecipientsBasedDataSet.class);
+    private static final Logger logger = LogManager.getLogger(RecipientsBasedDataSet.class);
 	
     protected static String getCustomerBindingTableName(int companyId) {
 		return "customer_" + companyId + "_binding_tbl";

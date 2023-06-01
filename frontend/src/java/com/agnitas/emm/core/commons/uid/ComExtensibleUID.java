@@ -25,21 +25,21 @@ import org.agnitas.beans.Recipient;
 public interface ComExtensibleUID {
 	
 	/**
-	 * Enum to name bits of the bit field. 
+	 * Enum to name bits of the bit field.
 	 */
 	enum NamedUidBit {
 
-		/** 
+		/**
 		 * Was previously <i>Do not track</i> bit.
-		 * 
-		 * Do not use this bit for links in mailings. 
+		 *
+		 * Do not use this bit for links in mailings.
 		 * The tracking veto state for recipients is determined from DB.
-		 * 
+		 *
 		 * This bit is currently for internal purpose only to propagate the tracking veto state
 		 * in a performant way. This should be not longer done, too.
-		 * 
+		 *
 		 * @see Recipient#isDoNotTrackMe()
-		 * @see Recipient#setDoNotTrackMe(boolean) 
+		 * @see Recipient#setDoNotTrackMe(boolean)
 		 */
 		@Deprecated
 		RESERVED(0),
@@ -50,9 +50,9 @@ public interface ComExtensibleUID {
 		/** Position of the bit. */
 		private final int bit;
 		
-		/** 
+		/**
 		 * Creates named bit.
-		 * 
+		 *
 		 * @param bitNumber number of the bit
 		 */
 		NamedUidBit(final int bitNumber) {
@@ -61,7 +61,7 @@ public interface ComExtensibleUID {
 		
 		/**
 		 * Returns the number of the named bit.
-		 * 
+		 *
 		 * @return position
 		 */
 		public final int getBitPosition() {
@@ -70,11 +70,11 @@ public interface ComExtensibleUID {
 		
 		/**
 		 * Converts a list of {@link NamedUidBit}s to a corresponding long value.
-		 * 
+		 *
 		 * @param bits list of {@link NamedUidBit}s (can contain <code>null</code> values, which are ignored)
-		 * 
+		 *
 		 * @return corresponding long value
-		 * 
+		 *
 		 * @throws NullPointerException if one of the given {@link NamedUidBit}s is <code>null</code>
 		 */
 		public static final long namedBitsToLong(final NamedUidBit...bits) {
@@ -120,50 +120,64 @@ public interface ComExtensibleUID {
 	
 	/**
 	 * Returns the prefix.
-	 * 
+	 *
 	 * @return prefix
 	 */
-    String getPrefix();
+	String getPrefix();
 
-    /**
-     * Returns the company ID.
-     * 
-     * @return company ID
-     */
-    int getCompanyID();
+	/**
+	 * Returns the company ID.
+	 *
+	 * @return company ID
+	 */
+	int getCompanyID();
 
-    /**
-     * Returns the customer ID.
-     * 
-     * @return customer ID
-     */
-    int getCustomerID();
+	/**
+	 * Returns the customer ID.
+	 *
+	 * @return customer ID
+	 */
+	int getCustomerID();
 
-    /**
-     * Returns the mailing ID.
-     * 
-     * @return mailing ID
-     */
-    int getMailingID();
+	/**
+	 * Returns the mailing ID.
+	 *
+	 * @return mailing ID
+	 */
+	int getMailingID();
 
-    /**
-     * Returns the URL ID.
-     * 
-     * @return URL ID
-     */
-    int getUrlID();
+	/**
+	 * Returns the URL ID.
+	 *
+	 * @return URL ID
+	 */
+	int getUrlID();
 	
 	/**
 	 * Returns the license ID.
-	 * 
+	 *
 	 * @return license ID
 	 */
 	int getLicenseID();
 	
 	/**
 	 * Returns the value of the bit field.
-	 * 
+	 *
 	 * @return value of the bit field
 	 */
 	long getBitField();
+	
+	/**
+	 * Returns the senddate in seconds(!) since 1.1.1970 (the unix epoch)
+	 * 
+	 * @return the senddate or 0, if not set
+	 */
+	long getSendDate ();
+	
+	/**
+	 * Update UID seting a send date
+	 * 
+	 * @return the instance of the ComExtensibleUID for daisy chaining
+	 */
+	ComExtensibleUID setSendDate (long sendDate);
 }

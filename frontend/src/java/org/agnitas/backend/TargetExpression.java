@@ -42,6 +42,10 @@ public class TargetExpression {
 	 */
 	private String subselect;
 	/**
+	 * force resolving of target expressions by database
+	 */
+	private boolean forceResolveByDatabase;
+	/**
 	 * keep track of collected targets
 	 */
 	private Map<Long, Target> targets;
@@ -70,6 +74,10 @@ public class TargetExpression {
 	public String subselect() {
 		return subselect;
 	}
+	
+	public void forceResolveByDatabase (boolean nForceResolveByDatabase) {
+		forceResolveByDatabase = nForceResolveByDatabase;
+	}
 
 	/**
 	 * Clear all set target relevant values
@@ -96,6 +104,7 @@ public class TargetExpression {
 		data.logging(Log.DEBUG, "init", "\ttargetExpression.splitID = " + splitID);
 		data.logging(Log.DEBUG, "init", "\ttargetExpression.deliveryRestrictID = " + deliveryRestrictID);
 		data.logging(Log.DEBUG, "init", "\ttargetExpression.subselect = " + (subselect == null ? "*not set*" : subselect));
+		data.logging(Log.DEBUG, "init", "\ttargetExpression.forceResolveByDatabase = " + forceResolveByDatabase);
 	}
 
 	/**
@@ -272,7 +281,7 @@ public class TargetExpression {
 							sql = null;
 							reason = "invalid sql";
 						}
-						databaseOnly = (data.dbase.asInt(row.get("component_hide")) == 1) && (data.dbase.asString(row.get("eql")) != null);
+						databaseOnly = (data.dbase.asInt(row.get("component_hide")) == 1) && (row.get("eql") != null);
 					}
 				} else {
 					data.logging(Log.ERROR, "targets", "No target with ID " + tid + " found in dyn_target_tbl");
@@ -330,7 +339,7 @@ public class TargetExpression {
 				targets
 					.values ()
 					.stream ()
-					.filter ((t) -> t.databaseOnly () && t.needEvaluation ())
+					.filter ((t) -> (forceResolveByDatabase || t.databaseOnly ()) && t.needEvaluation ())
 					.forEach ((t) -> resolveByDatabase.add (t));
 			}
 		}

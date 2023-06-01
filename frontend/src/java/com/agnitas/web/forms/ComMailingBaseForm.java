@@ -363,12 +363,12 @@ public class ComMailingBaseForm extends MailingBaseForm {
 		ActionErrors actionErrors = new ActionErrors();
 
 		if (action == MailingBaseAction.ACTION_SAVE || action == MailingBaseAction.ACTION_SAVE_MAILING_GRID) {
-			if (shortname.length() >= 100) {
-				actionErrors.add("shortname", new ActionMessage("error.shortname_too_long"));
-			}
-
-			if (shortname.length() < 3) {
+			if (StringUtils.trimToNull(shortname) == null) {
+				actionErrors.add("shortname", new ActionMessage("error.name.is.empty"));
+			} else if (StringUtils.trimToNull(shortname).length() < 3) {
 				actionErrors.add("shortname", new ActionMessage("error.name.too.short"));
+			} else if (shortname.length() >= 100) {
+				actionErrors.add("shortname", new ActionMessage("error.shortname_too_long"));
 			}
 
 			if (StringUtils.length(getDescription()) > 500) {

@@ -133,7 +133,7 @@ public class DBConfig {
 		if (content == null) {
 			String		filename = configPath != null ? configPath : System.getenv ("DBCFG_PATH");
 			File		fdesc = new File (filename != null ? filename : defaultConfigPath);
-			
+
 			try (FileInputStream stream = new FileInputStream (fdesc)) {
 				byte[]	buffer = new byte[(int) fdesc.length ()];
 				int	n = stream.read (buffer);

@@ -10,6 +10,8 @@
 
 package com.agnitas.emm.core.commons.database.fulltext;
 
+import org.agnitas.util.FulltextSearchInvalidQueryException;
+
 import java.util.List;
 
 public interface FulltextSearchReservedLiteralsConfig {
@@ -40,5 +42,9 @@ public interface FulltextSearchReservedLiteralsConfig {
 
     default boolean isContainsDateBaseDependentControlCharacters(String searchQuery) {
         return false;
+    }
+
+    default void validateTokens(String[] tokens) throws FulltextSearchInvalidQueryException {
+        // nothing to do
     }
 }

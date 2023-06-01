@@ -25,8 +25,8 @@ import com.agnitas.reporting.birt.external.beans.LightTarget;
 import com.agnitas.reporting.birt.external.dao.LightTargetDao;
 
 public class LightTargetDaoImpl extends BaseDaoImpl implements LightTargetDao {
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(LightTargetDaoImpl.class);
+
+	private static final Logger logger = LogManager.getLogger(LightTargetDaoImpl.class);
 
 	@Override
 	public LightTarget getTarget(int targetID, @VelocityCheck int companyID) {
@@ -36,15 +36,15 @@ public class LightTargetDaoImpl extends BaseDaoImpl implements LightTargetDao {
 
 	@Override
 	public List<LightTarget> getTargets(List<String> targetIDs, @VelocityCheck int companyID) {
-		if (targetIDs == null || targetIDs.size() < 1) {
+		if (targetIDs == null || targetIDs.isEmpty()) {
 			return null;
-		} else {
-			String query = "SELECT target_id, target_description, target_shortname, target_sql FROM dyn_target_tbl WHERE target_id IN (" + StringUtils.join(targetIDs, ", ") + ") AND company_id = ? ORDER By target_id";
-			return select(logger, query, new LightTarget_RowMapper(), companyID);
 		}
+
+		String query = "SELECT target_id, target_description, target_shortname, target_sql FROM dyn_target_tbl WHERE target_id IN (" + StringUtils.join(targetIDs, ", ") + ") AND company_id = ? ORDER By target_id";
+		return select(logger, query, new LightTarget_RowMapper(), companyID);
 	}
 	
-    protected class LightTarget_RowMapper implements RowMapper<LightTarget> {
+    protected static class LightTarget_RowMapper implements RowMapper<LightTarget> {
 		@Override
 		public LightTarget mapRow(ResultSet resultSet, int row) throws SQLException {
 			LightTarget target = new LightTarget();

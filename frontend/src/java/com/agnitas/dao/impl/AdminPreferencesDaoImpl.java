@@ -131,17 +131,17 @@ public class AdminPreferencesDaoImpl extends BaseDaoImpl implements AdminPrefere
     }
 
 	@DaoUpdateReturnValueCheck
-    private int updatePreferences(AdminPreferences comAdminPreferences){
-        int adminId = comAdminPreferences.getAdminID();
+    private int updatePreferences(AdminPreferences adminPreferences){
+        int adminId = adminPreferences.getAdminID();
         update(logger, DELETE_PREFERENCES_BY_ADMIN_ID, adminId);
         
         int touchedLines = 0;
 
-        touchedLines += update(logger, INSERT, adminId, PREFERENCE_DASHBOARD_MAILING, comAdminPreferences.getDashboardMailingsView());
-        touchedLines += update(logger, INSERT, adminId, PREFERENCE_MAILING_LIVE_PREVIEW, comAdminPreferences.getLivePreviewPosition());
-        touchedLines += update(logger, INSERT, adminId, PREFERENCE_CONTENTBLOCKS, comAdminPreferences.getMailingContentView());
-        touchedLines += update(logger, INSERT, adminId, PREFERENCE_MAILING_SETTINGS, comAdminPreferences.getMailingSettingsView());
-        touchedLines += update(logger, INSERT, adminId, PREFERENCE_STATISTIC_LOADTYPE, comAdminPreferences.getStatisticLoadType());
+        touchedLines += update(logger, INSERT, adminId, PREFERENCE_DASHBOARD_MAILING, adminPreferences.getDashboardMailingsView());
+        touchedLines += update(logger, INSERT, adminId, PREFERENCE_MAILING_LIVE_PREVIEW, adminPreferences.getLivePreviewPosition());
+        touchedLines += update(logger, INSERT, adminId, PREFERENCE_CONTENTBLOCKS, adminPreferences.getMailingContentView());
+        touchedLines += update(logger, INSERT, adminId, PREFERENCE_MAILING_SETTINGS, adminPreferences.getMailingSettingsView());
+        touchedLines += update(logger, INSERT, adminId, PREFERENCE_STATISTIC_LOADTYPE, adminPreferences.getStatisticLoadType());
         
         return touchedLines;
     }

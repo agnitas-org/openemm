@@ -17,7 +17,7 @@ import java.util.Date;
  */
 public interface ComRecipientHistory extends Comparable<ComRecipientHistory> {
 
-    // todo: replace with RecipientFields enum
+    // TODO: replace with RecipientFields enum
     String USER_TYPE = "USER_TYPE";
     String USER_STATUS = "USER_STATUS";
     String USER_REMARK = "USER_REMARK";

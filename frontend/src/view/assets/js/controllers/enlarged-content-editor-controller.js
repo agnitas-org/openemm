@@ -8,7 +8,16 @@ AGN.Lib.Controller.new("enlarged-content-editor-controller", function () {
     var config = Modal.get($modal);
     content = config.content;
     synchronizeEditorTab(config.editorType);
+    displayCharCounter();
   });
+  
+  function displayCharCounter() {
+    if (getActiveEditor() === 'html') {
+      showCharCounter();
+    } else {
+      hideCharCounter();
+    }
+  }
 
   this.addAction({
     click: 'updateContent'
@@ -63,4 +72,34 @@ AGN.Lib.Controller.new("enlarged-content-editor-controller", function () {
       tabLink.trigger("click");
     }
   };
+  
+  const updateCharsCounter = function($el) {
+      const count = $el.val().length;
+      $('[data-enlarged-char-counter-for="' + $el.attr('id') + '"]')
+        .find('span:first')
+        .text(t('fields.content.charactersEntered', count));
+  }
+  
+  this.addAction({
+    'editor:create': 'count-enlarged-textarea-chars',
+    'editor:change': 'count-enlarged-textarea-chars'
+  }, function() {
+    updateCharsCounter(this.el);
+  });
+  
+  this.addAction({click: 'hide-enlarged-char-counter'}, function() {
+    hideCharCounter();
+  });
+
+  this.addAction({click: 'show-enlarged-char-counter'}, function() {
+    showCharCounter();
+  });
+  
+  function showCharCounter() {
+    $('[data-enlarged-char-counter-for]').first().show();
+  }
+  
+  function hideCharCounter() {
+    $('[data-enlarged-char-counter-for]').first().hide();
+  }
 });

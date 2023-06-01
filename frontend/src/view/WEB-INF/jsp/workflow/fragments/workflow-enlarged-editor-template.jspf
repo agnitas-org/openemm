@@ -1,1 +1,32 @@
-<%-- This file was left empty intentionally. --%>
+
+<script id="enlarged-editor-template" type="text/x-mustache-template">
+    <div class="modal modal-editor">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close-icon close js-confirm-negative" data-dismiss="modal">
+                        <i aria-hidden="true" class="icon icon-times-circle"></i>
+                    </button>
+                    <h4 class="modal-title"><bean:message key="workflow.editor"/></h4>
+                </div>
+                <div class="modal-body">
+                    <div id="modalCampaignEditorContainer"></div>
+                </div>
+                <div class="modal-footer">
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-default btn-large js-confirm-negative" data-dismiss="modal">
+                            <i class="icon icon-times"></i>
+                            <span class="text"><bean:message key="button.Cancel"/></span>
+                        </button>
+                        <emm:HideByPermission token="mailing.content.readonly" ignoreException="true">
+                                <button type="button" class="btn btn-primary btn-large js-confirm-positive" data-dismiss="modal">
+                                    <i class="icon icon-save"></i>
+                                    <span class="text"><bean:message key="button.Save"/></span>
+                                </button>
+                        </emm:HideByPermission>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</script>

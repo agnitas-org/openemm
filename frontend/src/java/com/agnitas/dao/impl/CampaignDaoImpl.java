@@ -20,6 +20,17 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import com.agnitas.beans.Campaign;
+import com.agnitas.beans.CampaignStats;
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.ComTarget;
+import com.agnitas.beans.impl.CampaignImpl;
+import com.agnitas.dao.CampaignDao;
+import com.agnitas.dao.ComRevenueDao;
+import com.agnitas.dao.ComTargetDao;
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.emm.core.maildrop.MaildropStatus;
+import com.agnitas.messages.I18nString;
 import org.agnitas.beans.BindingEntry.UserType;
 import org.agnitas.beans.MailingBase;
 import org.agnitas.beans.Mailinglist;
@@ -30,20 +41,10 @@ import org.agnitas.dao.UserStatus;
 import org.agnitas.dao.impl.BaseDaoImpl;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.stat.CampaignStatEntry;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.jdbc.core.RowMapper;
-
-import com.agnitas.beans.Campaign;
-import com.agnitas.beans.CampaignStats;
-import com.agnitas.beans.ComTarget;
-import com.agnitas.beans.impl.CampaignImpl;
-import com.agnitas.dao.CampaignDao;
-import com.agnitas.dao.ComRevenueDao;
-import com.agnitas.dao.ComTargetDao;
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.emm.core.maildrop.MaildropStatus;
-import com.agnitas.messages.I18nString;
 
 public class CampaignDaoImpl extends BaseDaoImpl implements CampaignDao {
 	/** The logger. */
@@ -167,12 +168,17 @@ public class CampaignDaoImpl extends BaseDaoImpl implements CampaignDao {
 	}
 	
 	@Override
-	public List<MailingBase> getCampaignMailings(int campaignID, @VelocityCheck int companyID) {
+	public List<MailingBase> getCampaignMailings(int campaignID, Admin admin) {
+        List<Object> params = new ArrayList<>();
+        params.add(MaildropStatus.WORLD.getCodeString());
+        params.add(admin.getCompanyID());
+        params.add(campaignID);
 		String sql = "SELECT a.mailing_id, a.shortname, a.description, b.shortname AS listname, (SELECT min(c.timestamp)"
 				+ " FROM mailing_account_tbl c WHERE a.mailing_id = c.mailing_id AND c.status_field = ?) AS senddate FROM mailing_tbl a, mailinglist_tbl b WHERE a.company_id = ?"
-				+ " AND a.campaign_id = ? AND b.deleted = 0 AND a.deleted = 0 AND a.is_template = 0 AND a.mailinglist_id = b.mailinglist_id ORDER BY senddate DESC, mailing_id DESC";
+				+ " AND a.campaign_id = ? AND b.deleted = 0 AND a.deleted = 0 AND a.is_template = 0 AND a.mailinglist_id = b.mailinglist_id " + 
+                getTargetRestrictions(admin, params, "a") + " ORDER BY senddate DESC, mailing_id DESC";
 
-		List<Map<String, Object>> tmpList = select(logger, sql, MaildropStatus.WORLD.getCodeString(), companyID, campaignID);
+		List<Map<String, Object>> tmpList = select(logger, sql, params.toArray());
 		List<MailingBase> result = new ArrayList<>();
 
 		for (Map<String, Object> row : tmpList) {
@@ -191,7 +197,22 @@ public class CampaignDaoImpl extends BaseDaoImpl implements CampaignDao {
 
 		return result;
 	}
+
+	@Override
+	public boolean isContainMailings(int campaignId, Admin admin) {
+		return selectInt(logger, "SELECT COUNT(*) FROM mailing_tbl WHERE campaign_id = ? AND company_id = ? AND deleted = 0 ",
+				campaignId, admin.getCompanyID()) > 0;
+	}
+
+	@Override
+	public boolean isDefinedForAutoOptimization(int campaignId, Admin admin) {
+		return selectInt(logger, "SELECT COUNT(*) FROM auto_optimization_tbl WHERE campaign_id = ? AND company_id = ? AND deleted = 0", campaignId, admin.getCompanyID()) > 0;
+	}
 	
+    protected String getTargetRestrictions(Admin admin, List<Object> queryParams, String tableAlias) {
+        return StringUtils.EMPTY;
+    }
+
 	@Override
 	public List<Campaign> getCampaignList(@VelocityCheck int companyID, String sort, int order) {
 		if(!SORTABLE_FIELDS.contains(sort)) {

@@ -16,6 +16,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.agnitas.web.mvc.XssCheckAware;
+import jakarta.servlet.http.HttpSession;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.exception.target.TargetGroupTooLargeException;
 import org.agnitas.emm.core.commons.util.ConfigService;
@@ -27,6 +29,7 @@ import org.agnitas.service.UserActivityLogService;
 import org.agnitas.service.WebStorage;
 import org.agnitas.target.TargetFactory;
 import org.agnitas.util.AgnUtils;
+import org.agnitas.web.forms.WorkflowParametersHelper;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -40,7 +43,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.ComTarget;
 import com.agnitas.emm.core.beans.Dependent;
 import com.agnitas.emm.core.birtstatistics.recipient.dto.RecipientStatusStatisticDto;
@@ -68,13 +71,18 @@ import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.perm.annotations.PermissionMapping;
 
 import jakarta.servlet.http.HttpServletRequest;
+import static com.agnitas.emm.core.Permission.RECIPIENT_PROFILEFIELD_HTML_ALLOWED;
 
 @Controller
 @RequestMapping("/target")
 @PermissionMapping("target")
-public class QueryBuilderTargetController {
+public class QueryBuilderTargetController implements XssCheckAware {
 
-    private static final Logger logger = LogManager.getLogger(TargetController.class);
+    private static final Logger logger = LogManager.getLogger(QueryBuilderTargetController.class);
+
+    private static final String TARGET_SAVING_ERROR_KEY = "error.target.saving";
+    private static final String CHANGES_SAVED_MSG_KEY = "default.changes_saved";
+    private static final String MESSAGES_VIEW = "messages";
 
     private final ConfigService configService;
     private final MailinglistApprovalService mailinglistApprovalService;
@@ -111,14 +119,14 @@ public class QueryBuilderTargetController {
     }
 
     @RequestMapping("/{targetId:\\d+}/view.action")
-    public String view(@PathVariable int targetId, ComAdmin admin, Model model, @ModelAttribute("targetEditForm") TargetEditForm form,
+    public String view(@PathVariable int targetId, Admin admin, Model model, @ModelAttribute("targetEditForm") TargetEditForm form,
                        Popups popups, HttpServletRequest request, @RequestParam(required = false) boolean isMailingWizard) {
         WorkflowUtils.updateForwardParameters(request);
 
         if (targetId > 0 && form.getPreviousViewFormat() == null) {
             boolean exists = fillFormIfTargetExists(admin.getCompanyID(), form);
             if (!exists) {
-                logger.warn("Target group does not exists. Company ID: " + admin.getCompanyID() + " Target ID: " + form.getTargetId());
+                logger.warn("Target group does not exists. Company ID: {} Target ID: {}", admin.getCompanyID(), form.getTargetId());
                 return "redirect:/target/list.action";
             }
         }
@@ -131,11 +139,11 @@ public class QueryBuilderTargetController {
     }
 
     @RequestMapping("/{targetId:\\d+}/save.action")
-    public String save(ComAdmin admin,
+    public String save(Admin admin,
                        @ModelAttribute("targetEditForm") TargetEditForm form,
                        @RequestParam(required = false) boolean showStatistic,
                        Popups popups, RedirectAttributes redirectAttributes,
-                       @RequestParam(required = false) boolean isMailingWizard)
+                       @RequestParam(required = false) boolean isMailingWizard, HttpSession session)
             throws UnknownTargetGroupIdException {
 
         int mailinglistId = form.getMailinglistId();
@@ -143,12 +151,12 @@ public class QueryBuilderTargetController {
 
         boolean isPrepared = doSavingPreparations(admin, form, popups);
         if (!isPrepared) {
-            return "messages";
+            return MESSAGES_VIEW;
         }
 
         int targetId = trySave(admin, form, popups);
         if (targetId <= 0 || popups.hasAlertPopups()) {
-            return "messages";
+            return MESSAGES_VIEW;
         }
 
         analyzeComplexity(admin.getCompanyID(), targetId, popups);
@@ -163,16 +171,23 @@ public class QueryBuilderTargetController {
             redirectAttributes.addAttribute("viewFormat", previousFormat);
         }
 
-        popups.success("default.changes_saved");
+        popups.success(CHANGES_SAVED_MSG_KEY);
 
-        if(isMailingWizard) {
+        int workflowId = WorkflowParametersHelper.getWorkflowIdFromSession(session);
+        if (workflowId > 0) {
+            WorkflowParametersHelper.addEditedElemRedirectAttrs(redirectAttributes, session, targetId);
+            return String.format("redirect:/workflow/%d/view.action", workflowId);
+        }
+        if (isMailingWizard) {
             return "redirect:/mwTarget.do?action=viewTarget&viewTargetId="+targetId;
         }
-        return "redirect:/target/" + targetId + "/view.action";
+        return redirectToView(targetId);
     }
 
     @RequestMapping("/create.action")
-    public String create(ComAdmin admin, Model model, TargetEditForm form, Popups popups) {
+    public String create(Admin admin, Model model, TargetEditForm form,
+                         HttpServletRequest req, Popups popups) {
+        WorkflowUtils.updateForwardParameters(req);
 
         form.setViewFormat(TargetgroupViewFormat.QUERY_BUILDER);
 
@@ -182,39 +197,39 @@ public class QueryBuilderTargetController {
     }
 
     @RequestMapping("/{targetId:\\d+}/lock.action")
-    public String lock(@PathVariable int targetId, ComAdmin admin, Popups popups) throws UnknownTargetGroupIdException {
+    public String lock(@PathVariable int targetId, Admin admin, Popups popups) throws UnknownTargetGroupIdException {
         if (targetService.lockTargetGroup(admin.getCompanyID(), targetId)) {
             final ComTarget target = targetService.getTargetGroup(targetId, admin.getCompanyID());
             String logAction = "do lock target group";
             String logDescription = target.getTargetName() + " (" + targetId + ")";
             userActivityLogService.writeUserActivityLog(admin, logAction, logDescription, logger);
 
-            popups.success("default.changes_saved");
+            popups.success(CHANGES_SAVED_MSG_KEY);
         } else {
             popups.alert("error.target.not_saved");
         }
 
-        return "redirect:/target/" + targetId + "/view.action";
+        return redirectToView(targetId);
     }
 
     @RequestMapping("/{targetId:\\d+}/unlock.action")
-    public String unlock(@PathVariable int targetId, ComAdmin admin, Popups popups) throws UnknownTargetGroupIdException {
+    public String unlock(@PathVariable int targetId, Admin admin, Popups popups) throws UnknownTargetGroupIdException {
         if (targetService.unlockTargetGroup(admin.getCompanyID(), targetId)) {
             final ComTarget target = targetService.getTargetGroup(targetId, admin.getCompanyID());
             String logAction = "do unlock target group";
             String logDescription = target.getTargetName() + " (" + targetId + ")";
             userActivityLogService.writeUserActivityLog(admin, logAction, logDescription, logger);
 
-            popups.success("default.changes_saved");
+            popups.success(CHANGES_SAVED_MSG_KEY);
         } else {
             popups.alert("error.target.not_saved");
         }
 
-        return "redirect:/target/" + targetId + "/view.action";
+        return redirectToView(targetId);
     }
 
     @RequestMapping("/{targetId:\\d+}/copy.action")
-    public final String copy(@PathVariable int targetId, ComAdmin admin, TargetEditForm form, Popups popups) throws Exception {
+    public final String copy(@PathVariable int targetId, Admin admin, TargetEditForm form, Popups popups) throws Exception {
         int companyId = admin.getCompanyID();
         ComTarget copiedTarget = form.getTargetId() != 0
                 ? targetService.getTargetGroup(form.getTargetId(), companyId)
@@ -243,11 +258,11 @@ public class QueryBuilderTargetController {
             form.setTargetId(e.getTargetId());
         }
 
-        return "redirect:/target/" + form.getTargetId() + "/view.action";
+        return redirectToView(form.getTargetId());
     }
 
     @RequestMapping("/{targetId:\\d+}/dependents.action")
-    public String dependents(@PathVariable int targetId, ComAdmin admin, @ModelAttribute("dependentsForm") TargetDependentsListForm form, Model model) {
+    public String dependents(@PathVariable int targetId, Admin admin, @ModelAttribute("dependentsForm") TargetDependentsListForm form, Model model) {
         final int companyId = admin.getCompanyID();
 
         webStorage.access(WebStorage.TARGET_DEPENDENTS_OVERVIEW, entry -> {
@@ -279,7 +294,7 @@ public class QueryBuilderTargetController {
         return "target_dependents_list";
     }
 
-    private String viewQB(ComAdmin admin, Model model, TargetEditForm form, Popups popups, boolean isMailingWizard) {
+    private String viewQB(Admin admin, Model model, TargetEditForm form, Popups popups, boolean isMailingWizard) {
         if (form.getPreviousViewFormat() == null) {
             form.setPreviousViewFormat(TargetgroupViewFormat.EQL);
         }
@@ -317,7 +332,7 @@ public class QueryBuilderTargetController {
         return "target_view";
     }
 
-    private String viewEQL(ComAdmin admin, Model model, TargetEditForm form, Popups popups) {
+    private String viewEQL(Admin admin, Model model, TargetEditForm form, Popups popups) {
         if (form.getPreviousViewFormat() == null) {
             form.setPreviousViewFormat(TargetgroupViewFormat.EQL);
         }
@@ -325,7 +340,7 @@ public class QueryBuilderTargetController {
         form.setViewFormat(viewFormat);
 
         if (popups.hasWarningPopups() || popups.hasAlertPopups()) {
-            return "messages";
+            return MESSAGES_VIEW;
         }
 
         if (viewFormat != TargetgroupViewFormat.EQL) {
@@ -343,7 +358,7 @@ public class QueryBuilderTargetController {
         return TargetUtils.getComplexityGrade(complexityIndex, recipientsCount);
     }
 
-    private String getReportUrl(ComAdmin admin, String sessionId, int targetId, int mailinglistIs) {
+    private String getReportUrl(Admin admin, String sessionId, int targetId, int mailinglistIs) {
         try {
             RecipientStatusStatisticDto statisticDto = new RecipientStatusStatisticDto();
             statisticDto.setMediaType(0);
@@ -353,13 +368,13 @@ public class QueryBuilderTargetController {
 
             return birtStatisticsService.getRecipientStatusStatisticUrl(admin, sessionId, statisticDto);
         } catch (Exception e) {
-            logger.error("Error during generation statistic url " + e);
+            logger.error("Error during generation statistic url ", e);
         }
 
         return StringUtils.EMPTY;
     }
 
-    private void setupCommonViewPageParams(ComAdmin admin, int targetId, String eql, Model model) {
+    private void setupCommonViewPageParams(Admin admin, int targetId, String eql, Model model) {
         boolean isLocked = targetService.isLocked(admin.getCompanyID(), targetId) || targetService.isEqlContainsInvisibleFields(eql, admin.getCompanyID(), admin.getAdminID());
 
         model.addAttribute("mailinglists", mailinglistApprovalService.getEnabledMailinglistsForAdmin(admin));
@@ -377,6 +392,7 @@ public class QueryBuilderTargetController {
             form.setEql(target.getEQL());
             form.setUseForAdminAndTestDelivery(target.isAdminTestDelivery());
             form.setAccessLimitation(target.isAccessLimitation());
+            form.setFavorite(target.isFavorite());
             return true;
         } catch (final UnknownTargetGroupIdException e) {
             logger.warn(String.format("Unknown target group ID %d", form.getTargetId()), e);
@@ -384,7 +400,7 @@ public class QueryBuilderTargetController {
         }
     }
 
-    private TargetgroupViewFormat trySynchronizeForView(ComAdmin admin, TargetEditForm form, Popups popups, TargetgroupViewFormat defaultFormat) {
+    private TargetgroupViewFormat trySynchronizeForView(Admin admin, TargetEditForm form, Popups popups, TargetgroupViewFormat defaultFormat) {
         if (form.getPreviousViewFormat() == form.getViewFormatOrDefault()) {
             return form.getPreviousViewFormat();
         }
@@ -395,13 +411,13 @@ public class QueryBuilderTargetController {
             popups.warning("targetgroup.tooComplex");
 
             logger.info("There was an error synchronizing editor content. Keeping current view format.", e);
-            logger.warn("EQL: " + form.getEql(), e);
+            logger.warn("EQL: {}", form.getEql(), e);
 
             return defaultFormat;
         }
     }
 
-    private boolean trySynchronizeToEqlForSave(ComAdmin admin, TargetEditForm form, Popups popups) {
+    private boolean trySynchronizeToEqlForSave(Admin admin, TargetEditForm form, Popups popups) {
         if (form.getPreviousViewFormat() == TargetgroupViewFormat.EQL) {
             return true;
         }
@@ -410,12 +426,12 @@ public class QueryBuilderTargetController {
             return true;
         } catch (final EditorContentSynchronizationException e) {
             logger.info("There was an error synchronizing editor content.", e);
-            popups.alert("error.target.saving");
+            popups.alert(TARGET_SAVING_ERROR_KEY);
             return false;
         }
     }
 
-    private int trySave(ComAdmin admin, TargetEditForm form, Popups popups) throws UnknownTargetGroupIdException {
+    private int trySave(Admin admin, TargetEditForm form, Popups popups) throws UnknownTargetGroupIdException {
         int companyId = admin.getCompanyID();
         // Load target group or create new one
         final ComTarget oldTarget;
@@ -462,7 +478,7 @@ public class QueryBuilderTargetController {
         } catch (final Exception e) {
             logger.warn("There was an error Saving the target group. ", e);
 
-            popups.alert("error.target.saving");
+            popups.alert(TARGET_SAVING_ERROR_KEY);
         }
         return 0;
     }
@@ -477,7 +493,7 @@ public class QueryBuilderTargetController {
         }
     }
 
-    private void analyzeEqlForSaving(ComAdmin admin, String eql, Popups popups) {
+    private void analyzeEqlForSaving(Admin admin, String eql, Popups popups) {
         EqlDetailedAnalysisResult analysisResult = eqlFacade.analyseEqlSafely(eql);
         if (!analysisResult.isAnaliseSuccess()) {
             analysisResult.getSyntaxErrors().forEach(syntaxError ->
@@ -488,10 +504,10 @@ public class QueryBuilderTargetController {
         }
     }
 
-    private boolean doSavingPreparations(ComAdmin admin, TargetEditForm form, Popups popups) {
+    private boolean doSavingPreparations(Admin admin, TargetEditForm form, Popups popups) {
         if (form.getPreviousViewFormat() == null) {
             logger.warn("There is not previous view format. We do not know which tab use for saving.");
-            popups.alert("error.target.saving");
+            popups.alert(TARGET_SAVING_ERROR_KEY);
             return false;
         }
 
@@ -506,10 +522,17 @@ public class QueryBuilderTargetController {
         }
 
         analyzeEqlForSaving(admin, form.getEql(), popups);
-        if (popups.hasAlertPopups()) {
-            return false;
-        }
+        return !popups.hasAlertPopups();
+    }
 
-        return true;
+    private String redirectToView(int targetId) {
+        return String.format("redirect:/target/%d/view.action", targetId);
+    }
+
+    @Override
+    public boolean isParameterExcludedForUnsafeHtmlTagCheck(Admin admin, String param, String controllerMethodName) {
+        return "save".equals(controllerMethodName)
+                && admin.permissionAllowed(RECIPIENT_PROFILEFIELD_HTML_ALLOWED)
+                && ("queryBuilderRules".equals(param) || param.matches("targetgroup-querybuilder_rule_\\d+_value_\\d+"));
     }
 }

@@ -16,9 +16,9 @@ import org.springframework.context.ApplicationContext;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 
 public interface Mediatype {
-    public static final int DB_SAVE_MODE_MAILING = 1;
+    int DB_SAVE_MODE_MAILING = 1;
     
-    public static final int DB_SAVE_MODE_TEMPLATE = 2;
+    int DB_SAVE_MODE_TEMPLATE = 2;
     
     static boolean isActive(Mediatype mediaType) {
         return mediaType != null && MediaTypeStatus.Active.getCode() == mediaType.getStatus();

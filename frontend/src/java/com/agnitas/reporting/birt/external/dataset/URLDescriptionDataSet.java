@@ -10,38 +10,17 @@
 
 package com.agnitas.reporting.birt.external.dataset;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.List;
+
 public class URLDescriptionDataSet extends BIRTDataSet {
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(URLDescriptionDataSet.class);
 
-	public List<String> getURLDescription (int urlID){
+    private static final Logger logger = LogManager.getLogger(URLDescriptionDataSet.class);
 
-		List<String> urlDescription = new ArrayList<>();
-		String query = getURLDescriptionQuery(urlID);
-        try (Connection connection = getDataSource().getConnection();
-        		Statement statement = connection.createStatement();
-        		ResultSet resultSet = statement.executeQuery(query)) {
-			if (resultSet.next()){
-				urlDescription.add(resultSet.getString("url_name"));
-			}
-		} catch (SQLException e) {
-			logger.error(" SQL-Exception ! URL-Description-Query is: " + query , e);
-		}
-		return urlDescription;
-	}
-
-	private String getURLDescriptionQuery(int urlID) {
-		return "select full_url url_name from rdir_url_tbl where url_id = " + (Integer.toString(urlID)) ;
-	}
-
+    public List<String> getURLDescription(int urlID) {
+        String query = "SELECT full_url FROM rdir_url_tbl WHERE url_id = ?";
+        return select(logger, query, (rs, rowNum) -> rs.getString("full_url"), urlID);
+    }
 }

@@ -132,7 +132,7 @@ public class ComWorkflowStatisticsService {
 		}
 
 		return recipientDao.getDateMatchingRecipients(companyId, allDates, startIcon.getDateProfileField(),
-				operator, startIcon.getDateFieldValue(), startIcon.getDateFormat());
+				operator, startIcon.getDateFormat());
 	}
 
 	private void generateParametersStatistics(int companyId, int workflowID, WorkflowGraph workflowGraph) {

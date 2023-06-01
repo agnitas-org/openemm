@@ -73,13 +73,22 @@ var $modal = AGN.Lib.Template.dom('modal', {
 */
 
 (function() {
-  var templates = AGN.Opt.Templates;
+  const CSRF = AGN.Lib.CSRF;
+  const templates = AGN.Opt.Templates;
 
   function prepare(name) {
     if (name in templates) {
-      return _.template(templates[name]);
+      const templateFunc = _.template(templates[name]);
+      return createTemplateDecorator(templateFunc);
     }
     throw new Error("There's no template `" + name + "` registered");
+  }
+
+  function createTemplateDecorator(templateFunc) {
+    return function () {
+      const template = templateFunc.apply(this, arguments);
+      return CSRF.updateTokenInDOM(template, true);
+    }
   }
 
   function text(name, parameters) {

@@ -22,13 +22,13 @@ import org.agnitas.util.DateUtilities;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.dao.DataAccessException;
 
 import com.agnitas.emm.core.mobile.bean.DeviceClass;
 import com.agnitas.reporting.birt.external.beans.LightTarget;
 
 public class MailingOpenersTimeBasedDataSet extends TimeBasedDataSet {
-	private static final transient Logger logger = LogManager.getLogger(MailingOpenersTimeBasedDataSet.class);
+
+	private static final Logger logger = LogManager.getLogger(MailingOpenersTimeBasedDataSet.class);
 
 	public List<TimeBasedClickStatRow> getData(int tempTableID) throws Exception {
         List<TimeBasedClickStatRow> returnList = new ArrayList<>();
@@ -36,13 +36,13 @@ public class MailingOpenersTimeBasedDataSet extends TimeBasedDataSet {
         for (Map<String, Object> row : result) {
 			TimeBasedClickStatRow readItem = new TimeBasedClickStatRow();
 			
-			readItem.setClicks_net(((Number) row.get("net")).intValue());
-			readItem.setClicks_gross(((Number) row.get("gross")).intValue());
-			readItem.setClicks_anonymous(((Number) row.get("anonymous")).intValue());
+			readItem.setClicksNet(((Number) row.get("net")).intValue());
+			readItem.setClicksGross(((Number) row.get("gross")).intValue());
+			readItem.setClicksAnonymous(((Number) row.get("anonymous")).intValue());
 			readItem.setClickTime((Date) row.get("statistic_date"));
 			readItem.setDeviceClass(DeviceClass.fromId(((Number) row.get("device_class")).intValue()));
 			readItem.setTargetgroup((String) row.get("target_group"));
-			readItem.setColumn_index(((Number) row.get("target_group_index")).intValue());
+			readItem.setColumnIndex(((Number) row.get("target_group_index")).intValue());
 			
 			returnList.add(readItem);
         }
@@ -60,7 +60,7 @@ public class MailingOpenersTimeBasedDataSet extends TimeBasedDataSet {
 		return "tmp_open_prog_" + tempTableID + "_tbl";
 	}
 	
-	private int createTempTable() throws DataAccessException, Exception {
+	private int createTempTable() throws Exception {
 		int tempTableID = getNextTmpID();
 		executeEmbedded(logger,
 			"CREATE TABLE " + getTempTableName(tempTableID) + " ("
@@ -111,10 +111,10 @@ public class MailingOpenersTimeBasedDataSet extends TimeBasedDataSet {
 			boolean mustJoinCustomerData = false;
 	        String recipientTypeSqlPart = "";
 	        if (CommonKeys.TYPE_ADMIN_AND_TEST.equals(recipientType)) {
-	        	recipientTypeSqlPart = " AND cust.customer_id IN (SELECT customer_id FROM customer_" + companyID + "_binding_tbl bind WHERE bind.user_type IN ('" + UserType.Admin.getTypeCode() + "', '" + UserType.TestUser.getTypeCode() + "', '" + UserType.TestVIP.getTypeCode() + "') AND bind.mailinglist_id = (SELECT mailinglist_id FROM mailing_tbl ml WHERE ml.mailing_id = opl.mailing_id)) cust";
+	        	recipientTypeSqlPart = " AND cust.customer_id IN (SELECT customer_id FROM customer_" + companyID + "_binding_tbl bind WHERE bind.user_type IN ('" + UserType.Admin.getTypeCode() + "', '" + UserType.TestUser.getTypeCode() + "', '" + UserType.TestVIP.getTypeCode() + "') AND bind.mailinglist_id = (SELECT mailinglist_id FROM mailing_tbl ml WHERE ml.mailing_id = opl.mailing_id))";
 	        	mustJoinCustomerData = true;
 	        } else if (CommonKeys.TYPE_WORLDMAILING.equals(recipientType)) {
-	        	recipientTypeSqlPart = " AND cust.customer_id IN (SELECT customer_id FROM customer_" + companyID + "_binding_tbl bind WHERE bind.user_type NOT IN ('" + UserType.Admin.getTypeCode() + "', '" + UserType.TestUser.getTypeCode() + "', '" + UserType.TestVIP.getTypeCode() + "') AND bind.mailinglist_id = (SELECT mailinglist_id FROM mailing_tbl ml WHERE ml.mailing_id = opl.mailing_id)) cust";
+	        	recipientTypeSqlPart = " AND cust.customer_id IN (SELECT customer_id FROM customer_" + companyID + "_binding_tbl bind WHERE bind.user_type NOT IN ('" + UserType.Admin.getTypeCode() + "', '" + UserType.TestUser.getTypeCode() + "', '" + UserType.TestVIP.getTypeCode() + "') AND bind.mailinglist_id = (SELECT mailinglist_id FROM mailing_tbl ml WHERE ml.mailing_id = opl.mailing_id))";
 	        	mustJoinCustomerData = true;
 	        }
 	        

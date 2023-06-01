@@ -6,8 +6,9 @@
 <%@ taglib uri="http://displaytag.sf.net" prefix="display" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="agn" uri="https://emm.agnitas.de/jsp/jstl/tags" %>
 
-<html:form action="/mailingbase" styleClass="top_10">
+<agn:agnForm action="/mailingbase" styleClass="top_10">
     <html:hidden property="mailingID"/>
     <html:hidden property="action"/>
 
@@ -46,4 +47,4 @@
         </div>
     </div>
 
-</html:form>
+</agn:agnForm>

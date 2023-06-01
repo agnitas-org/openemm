@@ -16,7 +16,6 @@ import java.util.Map;
 import org.agnitas.emm.core.binding.service.BindingModel;
 import org.agnitas.emm.core.binding.service.impl.BindingServiceImpl;
 import org.agnitas.emm.core.mailinglist.service.impl.MailinglistException;
-import org.agnitas.emm.core.validator.annotation.Validate;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.agnitas.emm.core.action.service.ComEmmActionService;
@@ -31,9 +30,9 @@ public class ComBindingServiceImpl extends BindingServiceImpl implements ComBind
 	private ComEmmActionService emmActionService;
 	
 	@Override
-	@Validate(groups = BindingModel.SetGroup.class)
 	public final boolean setBindingWithActionId(final BindingModel model, final boolean runActionInBackground) throws MailinglistException {
-		setBindingInTransaction(model);  // Need this method call to set bindings (and only bindings) within transation
+	    bindingModelValidator.assertIsValidToSet(model);
+		setBindingInTransaction(model);  // Need this method call to set bindings (and only bindings) within transaction
 
 		final EmmActionOperationErrors actionOperationErrors = new EmmActionOperationErrors();
 		
@@ -41,16 +40,13 @@ public class ComBindingServiceImpl extends BindingServiceImpl implements ComBind
 		params.put("customerID", model.getCustomerId());
 		params.put("actionErrors", actionOperationErrors);
 		
-		final Runnable actionRunner = new Runnable() {
-			@Override
-			public final void run() {
-				try {
-					emmActionService.executeActions(model.getActionId(), model.getCompanyId(), params, actionOperationErrors);
-				} catch (Exception e) {
-					throw new RuntimeException(e);
-				}
-			}
-		};
+		final Runnable actionRunner = () -> {
+            try {
+                emmActionService.executeActions(model.getActionId(), model.getCompanyId(), params, actionOperationErrors);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        };
 		
 
 		if(runActionInBackground) {
@@ -66,5 +62,4 @@ public class ComBindingServiceImpl extends BindingServiceImpl implements ComBind
 	protected void setBindingInTransaction(final BindingModel model) throws MailinglistException {
 		setBinding(model);
 	}
-
 }

@@ -233,13 +233,13 @@ totalrows = userFormClickList.size();
 currentrow = 0;]]></method>
             <method name="fetch"><![CDATA[if( currentrow < userFormClickList.size() ){
 	row["URL"]=  userFormClickList.get(currentrow).getUrl();
-	row["URL_ID"]= userFormClickList.get(currentrow).getUrl_id();
-	row["clicks_gros"]= userFormClickList.get(currentrow).getClicks_gros();
-	row["clicks_net"]= userFormClickList.get(currentrow).getClicks_net();
-	row["clicks_unique"]= userFormClickList.get(currentrow).getClicks_unique();
-	row["clicks_mobile_gross"]= userFormClickList.get(currentrow).getClicks_gross_mobile();
-	row["clicks_mobile_net"]= userFormClickList.get(currentrow).getClicks_net_mobile();
-	row["clicks_anonym"]= userFormClickList.get(currentrow).getClicks_anonymous();
+	row["URL_ID"]= userFormClickList.get(currentrow).getUrlId();
+	row["clicks_gros"]= userFormClickList.get(currentrow).getClicksGross();
+	row["clicks_net"]= userFormClickList.get(currentrow).getClicksNet();
+	row["clicks_unique"]= userFormClickList.get(currentrow).getClicksUnique();
+	row["clicks_mobile_gross"]= userFormClickList.get(currentrow).getClicksGrossMobile();
+	row["clicks_mobile_net"]= userFormClickList.get(currentrow).getClicksNetMobile();
+	row["clicks_anonym"]= userFormClickList.get(currentrow).getClicksAnonymous();
 	currentrow++ ;
 	return  true;
 }

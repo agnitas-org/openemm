@@ -15,7 +15,6 @@ import java.util.List;
 import org.agnitas.beans.SalutationEntry;
 import org.agnitas.beans.Title;
 import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public interface ComTitleDao {
 	/**
@@ -25,7 +24,7 @@ public interface ComTitleDao {
 	 * @param companyID the id of the company for the given title.
 	 * @return the loaded title.
 	 */
-	Title getTitle(int titleID, @VelocityCheck int companyID);
+	Title getTitle(int titleID, int companyID);
 
 	/**
 	 * Delete a title in the database.
@@ -34,7 +33,7 @@ public interface ComTitleDao {
 	 * @param companyID the id of the company for the given title.
 	 * @return true on success.
 	 */
-	boolean delete(int titleID, @VelocityCheck int companyID);
+	boolean delete(int titleID, int companyID);
 
     /**
      * Loads all titles of certain company and creates paginated list according to given criteria for sorting and pagination
@@ -51,7 +50,7 @@ public interface ComTitleDao {
      *                The number of rows to be shown on page
      * @return  PaginatedList of Title or empty list.
      */
-	PaginatedListImpl<SalutationEntry> getSalutationList( @VelocityCheck int companyID, String sort, String direction, int page, int rownums);
+	PaginatedListImpl<SalutationEntry> getSalutationList(int companyID, String sort, String direction, int page, int rownums);
     
     void save(Title title) throws Exception;
     

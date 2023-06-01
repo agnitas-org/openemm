@@ -15,6 +15,7 @@ import java.util.Objects;
 
 import org.agnitas.beans.BindingEntry;
 import org.agnitas.beans.Recipient;
+import org.agnitas.emm.core.recipient.service.SubscriberLimitCheck;
 
 public final class VelocityRecipientWrapper implements VelocityRecipient {
 	
@@ -23,11 +24,13 @@ public final class VelocityRecipientWrapper implements VelocityRecipient {
 	
 	private final Recipient recipient;
 	private final CompanyAccessCheck companyAccessCheck;
+	private final SubscriberLimitCheck subscriberLimitCheck;
 	
-	public VelocityRecipientWrapper(final int runningCompanyId, final Recipient recipient, final CompanyAccessCheck companyAccessCheck) {
+	public VelocityRecipientWrapper(final int runningCompanyId, final Recipient recipient, final CompanyAccessCheck companyAccessCheck, final SubscriberLimitCheck subscriberLimitCheck) {
 		this.runningCompanyId = runningCompanyId;
 		this.recipient = Objects.requireNonNull(recipient, "Recipient is null");
 		this.companyAccessCheck = Objects.requireNonNull(companyAccessCheck, "companyAccessCheck is null");
+		this.subscriberLimitCheck = Objects.requireNonNull(subscriberLimitCheck, "subscriberLimitCheck");
 	}
 	
 	public final Recipient getWrappedRecipient() {
@@ -76,6 +79,7 @@ public final class VelocityRecipientWrapper implements VelocityRecipient {
 	@Override
 	public final int insertNewCust() {
 		this.companyAccessCheck.checkCompanyAccess(this.recipient.getCompanyID(), this.runningCompanyId);
+		this.subscriberLimitCheck.checkSubscriberLimit(this.recipient.getCompanyID());
 		
 		try {
 			return this.recipient.insertNewCustWithException();

@@ -10,11 +10,14 @@
 
 package org.agnitas.emm.springws.endpoint.blacklist;
 
+import java.util.Objects;
+
 import org.agnitas.emm.core.blacklist.service.BlacklistService;
 import org.agnitas.emm.springws.endpoint.BaseEndpoint;
-import org.agnitas.emm.springws.endpoint.Utils;
+import org.agnitas.emm.springws.endpoint.Namespaces;
 import org.agnitas.emm.springws.jaxb.GetBlacklistItemsRequest;
 import org.agnitas.emm.springws.jaxb.GetBlacklistItemsResponse;
+import org.agnitas.emm.springws.util.SecurityContextAccess;
 import org.springframework.ws.server.endpoint.annotation.Endpoint;
 import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
 import org.springframework.ws.server.endpoint.annotation.RequestPayload;
@@ -23,16 +26,19 @@ import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 @Endpoint
 public class GetBlacklistItemsEndpoint extends BaseEndpoint {
 
-	private BlacklistService blacklistService;
+	private final BlacklistService blacklistService;
+	private final SecurityContextAccess securityContextAccess;
 
-	public GetBlacklistItemsEndpoint(BlacklistService blacklistService) {
-		this.blacklistService = blacklistService;
+	public GetBlacklistItemsEndpoint(final BlacklistService blacklistService, final SecurityContextAccess securityContextAccess) {
+		this.blacklistService = Objects.requireNonNull(blacklistService, "blacklistService");
+		this.securityContextAccess = Objects.requireNonNull(securityContextAccess, "securityContextAccess");
 	}
 
-	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "GetBlacklistItemsRequest")
+	@PayloadRoot(namespace = Namespaces.AGNITAS_ORG, localPart = "GetBlacklistItemsRequest")
 	public  @ResponsePayload GetBlacklistItemsResponse getBlacklistItems(@RequestPayload GetBlacklistItemsRequest request) throws Exception {
-		GetBlacklistItemsResponse response = new GetBlacklistItemsResponse();
-		response.getEmail().addAll(blacklistService.getEmailList(Utils.getUserCompany()));
+		final GetBlacklistItemsResponse response = new GetBlacklistItemsResponse();
+		response.getEmail().addAll(blacklistService.getEmailList(this.securityContextAccess.getWebserviceUserCompanyId()));
+		
 		return response;
 	}
 }

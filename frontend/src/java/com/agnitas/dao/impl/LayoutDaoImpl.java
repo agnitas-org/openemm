@@ -51,4 +51,14 @@ public class LayoutDaoImpl extends BaseDaoImpl implements LayoutDao {
 		}
 		updateBlob(logger, "UPDATE layout_tbl SET data = ? WHERE company_id = ? AND item_name = ?", data, companyID, itemName);
 	}
+	
+	@Override
+	public void updateItemImage(String itemName, byte[] newImage, int companyId) {
+        try {
+            updateBlob(logger, "UPDATE layout_tbl SET data = ? WHERE company_id = ? AND item_name = ?",
+                    newImage, companyId, itemName);
+        } catch (Exception e) {
+            logger.error("Error saving item_name={}, company_id={} image in layout_tbl", itemName, companyId, e);
+        }
+    }
 }

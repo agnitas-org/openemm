@@ -44,7 +44,7 @@ public class UnencodedProfileFieldHashTag extends AbstractColonHashTag {
 
 	@Override
 	public String encodeResult(String unencodedResult) {
-		// This hash tag does not URL-encode the result 
+		// This hash tag does not URL-encode the result
 		return unencodedResult;
 	}
 

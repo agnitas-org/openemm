@@ -25,7 +25,6 @@ import org.agnitas.beans.impl.MailinglistImpl;
 import org.agnitas.dao.MailinglistDao;
 import org.agnitas.dao.UserStatus;
 import org.agnitas.emm.core.useractivitylog.dao.UserActivityLogDao;
-import org.agnitas.service.ColumnInfoService;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.DbColumnType.SimpleDataType;
@@ -34,7 +33,7 @@ import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.ProfileField;
 import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.emm.core.Permission;
@@ -51,6 +50,7 @@ import com.agnitas.json.JsonArray;
 import com.agnitas.json.JsonDataType;
 import com.agnitas.json.JsonNode;
 import com.agnitas.json.JsonObject;
+import com.agnitas.service.ColumnInfoService;
 
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.http.HttpServletRequest;
@@ -96,7 +96,7 @@ public class MailinglistRestfulServiceHandler implements RestfulServiceHandler {
 	}
 
 	@Override
-	public void doService(HttpServletRequest request, HttpServletResponse response, ComAdmin admin, byte[] requestData, File requestDataFile, BaseRequestResponse restfulResponse, ServletContext context, RequestMethod requestMethod, boolean extendedLogging) throws Exception {
+	public void doService(HttpServletRequest request, HttpServletResponse response, Admin admin, byte[] requestData, File requestDataFile, BaseRequestResponse restfulResponse, ServletContext context, RequestMethod requestMethod, boolean extendedLogging) throws Exception {
 		if (requestMethod == RequestMethod.GET) {
 			((JsonRequestResponse) restfulResponse).setJsonResponseData(new JsonNode(getMailinglistData(request, admin)));
 		} else if (requestMethod == RequestMethod.DELETE) {
@@ -120,7 +120,7 @@ public class MailinglistRestfulServiceHandler implements RestfulServiceHandler {
 	 * @return
 	 * @throws Exception
 	 */
-	private Object getMailinglistData(HttpServletRequest request, ComAdmin admin) throws Exception {
+	private Object getMailinglistData(HttpServletRequest request, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.MAILINGLIST_SHOW)) {
 			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.MAILINGLIST_SHOW.toString() + "'");
 		}
@@ -234,7 +234,7 @@ public class MailinglistRestfulServiceHandler implements RestfulServiceHandler {
 	 * @return
 	 * @throws Exception
 	 */
-	private Object deleteMailinglist(HttpServletRequest request, ComAdmin admin) throws Exception {
+	private Object deleteMailinglist(HttpServletRequest request, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.MAILINGLIST_DELETE)) {
 			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.MAILINGLIST_DELETE.toString() + "'");
 		}
@@ -272,7 +272,7 @@ public class MailinglistRestfulServiceHandler implements RestfulServiceHandler {
 	 * @return
 	 * @throws Exception
 	 */
-	private Object createNewMailinglist(HttpServletRequest request, byte[] requestData, File requestDataFile, ComAdmin admin) throws Exception {
+	private Object createNewMailinglist(HttpServletRequest request, byte[] requestData, File requestDataFile, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.MAILINGLIST_CHANGE)) {
 			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.MAILINGLIST_CHANGE.toString() + "'");
 		}
@@ -347,7 +347,7 @@ public class MailinglistRestfulServiceHandler implements RestfulServiceHandler {
 	 * @return
 	 * @throws Exception
 	 */
-	private Object createOrUpdateMailinglist(HttpServletRequest request, byte[] requestData, File requestDataFile, ComAdmin admin) throws Exception {
+	private Object createOrUpdateMailinglist(HttpServletRequest request, byte[] requestData, File requestDataFile, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.MAILINGLIST_CHANGE)) {
 			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.MAILINGLIST_CHANGE.toString() + "'");
 		}

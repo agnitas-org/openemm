@@ -253,15 +253,18 @@
                     </emm:ShowByPermission>
 
                     <%@include file="mailing-reference-content-tile.jspf" %>
-
-                    <jsp:include page="/WEB-INF/jsp/mailing/interval.jsp"/>
                 </agn:agnForm>
             </div>
 
             <c:if test="${not isPostMailing and not isMailingGrid and mailingBaseForm.mailingID ne 0}">
                 <emm:ShowByPermission token="mailing.send.show">
                     <div id="mailing-preview-wrapper" class="hidden" data-view-split="col-md-6" data-view-block="col-xs-12" data-view-hidden="hidden">
-                        <div data-load="<html:rewrite page="/mailingsend.do?action=${ACTION_PREVIEW_SELECT}&mailingID=${mailingBaseForm.mailingID}&previewForm.pure=true"/>" data-load-target="#preview"></div>
+                        <emm:ShowByPermission token="mailing.send.migration">
+                            <div data-load="<html:rewrite page="/mailing/preview/${mailingBaseForm.mailingID}/view.action?pure=true"/>" data-load-target="#preview"></div>
+                        </emm:ShowByPermission>
+                        <emm:HideByPermission token="mailing.send.migration">
+                            <div data-load="<html:rewrite page="/mailingsend.do?action=${ACTION_PREVIEW_SELECT}&mailingID=${mailingBaseForm.mailingID}&previewForm.pure=true"/>" data-load-target="#preview"></div>
+                        </emm:HideByPermission>
                     </div>
                 </emm:ShowByPermission>
             </c:if>

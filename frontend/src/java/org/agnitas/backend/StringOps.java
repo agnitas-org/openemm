@@ -11,7 +11,6 @@
 package org.agnitas.backend;
 
 import java.io.UnsupportedEncodingException;
-import java.net.IDN;
 import java.sql.Blob;
 import java.sql.Clob;
 import java.sql.SQLException;
@@ -318,23 +317,6 @@ public class StringOps {
 			str = r.toString();
 		}
 		return str;
-	}
-
-	public static String punycodeDomain(String domain) {
-		try {
-			return IDN.toASCII(domain);
-		} catch (Exception e) {
-			return domain;
-		}
-	}
-
-	public static String punycodeEMail(String email) {
-		int at = email.lastIndexOf('@');
-
-		if (at != -1) {
-			return email.substring(0, at + 1) + punycodeDomain(email.substring(at + 1));
-		}
-		return email;
 	}
 
 	/**

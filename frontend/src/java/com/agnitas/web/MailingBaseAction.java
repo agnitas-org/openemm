@@ -10,6 +10,10 @@
 
 package com.agnitas.web;
 
+import static com.agnitas.emm.core.mailing.dao.ComMailingParameterDao.ReservedMailingParam.ERROR;
+import static com.agnitas.emm.core.mailing.dao.ComMailingParameterDao.ReservedMailingParam.INTERVAL;
+import static com.agnitas.emm.core.mailing.dao.ComMailingParameterDao.ReservedMailingParam.NEXT_START;
+import static com.agnitas.emm.core.mailing.dao.ComMailingParameterDao.ReservedMailingParam.isReservedParam;
 import static com.agnitas.emm.core.workflow.service.util.WorkflowUtils.updateForwardParameters;
 
 import java.io.File;
@@ -41,16 +45,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.regex.Pattern;
 
-import com.agnitas.emm.core.workflow.beans.Workflow;
-import com.agnitas.emm.core.workflow.beans.WorkflowIcon;
-import com.agnitas.emm.core.workflow.beans.WorkflowIconType;
-import com.agnitas.emm.core.workflow.beans.WorkflowMailing;
-import com.agnitas.emm.core.workflow.beans.impl.WorkflowMailingImpl;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.beans.factory.DynamicTagContentFactory;
 import org.agnitas.beans.factory.MailingFactory;
-import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.FollowUpType;
 import org.agnitas.dao.MailingStatus;
 import org.agnitas.emm.core.commons.util.ConfigService;
@@ -113,7 +111,7 @@ import org.springframework.core.convert.ConversionService;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MailingsListProperties;
 import com.agnitas.beans.Mediatype;
@@ -131,7 +129,7 @@ import com.agnitas.emm.core.linkcheck.service.LinkService;
 import com.agnitas.emm.core.maildrop.service.MaildropService;
 import com.agnitas.emm.core.mailing.TooManyTargetGroupsInMailingException;
 import com.agnitas.emm.core.mailing.bean.ComMailingParameter;
-import com.agnitas.emm.core.mailing.dao.ComMailingParameterDao;
+import com.agnitas.emm.core.mailing.bean.MailingsListResult;
 import com.agnitas.emm.core.mailing.dao.ComMailingParameterDao.IntervalType;
 import com.agnitas.emm.core.mailing.dto.CalculationRecipientsConfig;
 import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
@@ -141,8 +139,8 @@ import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.emm.core.mailing.service.MailingStopService;
 import com.agnitas.emm.core.mailing.service.MailingStopServiceException;
 import com.agnitas.emm.core.mailing.web.RequestAttributesHelper;
-import com.agnitas.emm.core.mailinglist.service.ComMailinglistService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
+import com.agnitas.emm.core.mailinglist.service.MailinglistService;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.objectusage.common.ObjectUsages;
 import com.agnitas.emm.core.objectusage.service.ObjectUsageService;
@@ -151,7 +149,12 @@ import com.agnitas.emm.core.target.TargetExpressionUtils;
 import com.agnitas.emm.core.target.service.ComTargetService;
 import com.agnitas.emm.core.thumbnails.service.ThumbnailService;
 import com.agnitas.emm.core.trackablelinks.web.LinkScanResultToActionMessages;
+import com.agnitas.emm.core.workflow.beans.Workflow;
+import com.agnitas.emm.core.workflow.beans.WorkflowIcon;
+import com.agnitas.emm.core.workflow.beans.WorkflowIconType;
+import com.agnitas.emm.core.workflow.beans.WorkflowMailing;
 import com.agnitas.emm.core.workflow.beans.WorkflowReactionType;
+import com.agnitas.emm.core.workflow.beans.impl.WorkflowMailingImpl;
 import com.agnitas.emm.core.workflow.service.ComWorkflowService;
 import com.agnitas.emm.core.workflow.service.util.WorkflowUtils;
 import com.agnitas.emm.grid.grid.beans.ComGridTemplate;
@@ -215,15 +218,9 @@ public class MailingBaseAction extends StrutsActionBase {
     public static final String MAILING_ID = "mailingID";
     public static final String CAMPAIGN_ID = "campaignID";
     
-    private static final String[] RESERVED_PARAMETER_NAMES = new String[]{
-            ComMailingParameterDao.PARAMETERNAME_INTERVAL,
-            ComMailingParameterDao.PARAMETERNAME_ERROR,
-            ComMailingParameterDao.PARAMETERNAME_NEXT_START
-    };
-
-    protected ComMailinglistService mailinglistService;
+    protected MailinglistService mailinglistService;
     protected ComMailingDao mailingDao;
-    protected Map<String, Future<PaginatedListImpl<Map<String, Object>>>> futureHolder;
+    protected Map<String, Future<MailingsListResult>> futureHolder;
 
     /** DAO accessing target groups. */
     protected ComTargetService targetService;
@@ -339,7 +336,7 @@ public class MailingBaseAction extends StrutsActionBase {
 
 	@Override
 	public ActionForward execute(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) throws Exception {
-        ComAdmin admin = AgnUtils.getAdmin(request);
+        Admin admin = AgnUtils.getAdmin(request);
 
 		// Validate the request parameters specified by the user
 		ComMailingBaseForm mailingBaseForm = (ComMailingBaseForm) form;
@@ -453,7 +450,7 @@ public class MailingBaseAction extends StrutsActionBase {
 	                    	Mailing mailing = gridService.createGridMailing(admin, gridTemplate.getId(), options);
 	                        mailingBaseForm.setMailingID(mailing.getId());
 	                        previewImageService.generateMailingPreview(admin, request.getSession(false).getId(), mailing.getId(), true);
-	                        saveMailingData(mailingBaseForm, request, errors, messages);
+	                        saveMailingData(mailingBaseForm, request, errors, messages, true);
 	                        mailingBaseForm.setAction(ACTION_SAVE);
 	                        resetShowTemplate(request, mailingBaseForm);
 	                        loadMailing(mailingBaseForm, request);
@@ -555,7 +552,13 @@ public class MailingBaseAction extends StrutsActionBase {
 	                                    boolean isNewMailingFromCampaign = mailingBaseForm.getMailingID() == 0 && isMailingWorkflowDriven(mailingBaseForm);
 	
 	                                    try {
-	                                        validateMailingMod(mailingBaseForm, request);
+	                                    	Mailing mailing;
+	                                    	if (mailingBaseForm.getMailingID() > 0) {
+	                                    		mailing = mailingDao.getMailing(mailingBaseForm.getMailingID(), AgnUtils.getCompanyID(request));
+	                                    	} else {
+	                                    		mailing = null;
+	                                    	}
+	                                        characterEncodingValidator.validateMod(mailingBaseForm, mailing);
 	                                    } catch (CharacterEncodingValidationExceptionMod e) {
 	                                        if (e.getSubjectErrors().size() > 0) {
 	                                            errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.charset.subject"));
@@ -893,7 +896,7 @@ public class MailingBaseAction extends StrutsActionBase {
                 String key =  FUTURE_TASK+"@"+ request.getSession(false).getId();
 
                 if( !futureHolder.containsKey(key) ) {
-                    Future<PaginatedListImpl<Map<String, Object>>> mailingListFuture = getMailingListFuture(errors, request, mailingBaseForm.isIsTemplate(), mailingBaseForm);
+                    Future<MailingsListResult> mailingListFuture = getMailingListFuture(errors, request, mailingBaseForm.isIsTemplate(), mailingBaseForm);
                     futureHolder.put(key, mailingListFuture);
                 }
 
@@ -909,7 +912,17 @@ public class MailingBaseAction extends StrutsActionBase {
 
                 if (futureHolder.containsKey(key) && futureHolder.get(key).isDone()) {
                     // Method Future.get() could throw an exception so at first we have to remove one from a holder
-                    request.setAttribute("mailinglist", futureHolder.remove(key).get());
+					MailingsListResult result = futureHolder.remove(key).get();
+
+					if (result.getErrorMessage() != null) {
+						if (mailingBaseForm.getErrors() == null) {
+							mailingBaseForm.setErrors(errors);
+						}
+
+						mailingBaseForm.getErrors().add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage(result.getErrorMessage().getCode(), result.getErrorMessage().getArguments()));
+					}
+
+					request.setAttribute("mailinglist", result.getMailingsList());
                     destination = mapping.findForward("list");
                     mailingBaseForm.setRefreshMillis(StrutsFormBase.DEFAULT_REFRESH_MILLIS);
                     saveMessages(request, mailingBaseForm.getMessages());
@@ -1020,7 +1033,7 @@ public class MailingBaseAction extends StrutsActionBase {
 
     private void updateMailingIconInRelatedWorkflowIfNeeded(boolean isNewMailingFromCampaign, HttpServletRequest req, ComMailingBaseForm mailingBaseForm) {
         if (isNewMailingFromCampaign) {
-            ComAdmin admin = AgnUtils.getAdmin(req);
+            Admin admin = AgnUtils.getAdmin(req);
             int workflowId = mailingBaseForm.getWorkflowId();
             Workflow workflow = workflowService.getWorkflow(workflowId, admin.getCompanyID());
 
@@ -1039,11 +1052,12 @@ public class MailingBaseAction extends StrutsActionBase {
         }
     }
 
-    protected void setTargetsToForm(ComAdmin admin, ComMailingBaseForm mailingBaseForm, List<TargetLight> allTargets) {
+    protected void setTargetsToForm(Admin admin, ComMailingBaseForm mailingBaseForm, List<TargetLight> allTargets) {
         mailingBaseForm.setTargets(allTargets);
     }
 
-    protected void processSuccessfulImportResult(ComAdmin admin, ActionMessages messages, ImportResult result) throws TooManyTargetGroupsInMailingException {
+    @SuppressWarnings("unused")
+	protected void processSuccessfulImportResult(Admin admin, ActionMessages messages, ImportResult result) throws TooManyTargetGroupsInMailingException {
         messages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("mailing.imported"));
         for (Entry<String, Object[]> warningEntry : result.getWarnings().entrySet()) {
             messages.add(GuiConstants.ACTIONMESSAGE_CONTAINER_WARNING, new ActionMessage(warningEntry.getKey(), warningEntry.getValue()));
@@ -1051,12 +1065,12 @@ public class MailingBaseAction extends StrutsActionBase {
         writeUserActivityLog(admin, "import mailing", result.getMailingID());
     }
 
-    protected ImportResult importMailingDataFromJson(ComAdmin admin, InputStream input, ComMailingBaseForm mailingBaseForm) throws Exception {
+    protected ImportResult importMailingDataFromJson(Admin admin, InputStream input, ComMailingBaseForm mailingBaseForm) throws Exception {
         return mailingImporter.importMailingFromJson(admin.getCompanyID(), input, mailingBaseForm.isIsTemplate(),
                 mailingBaseForm.isImportTemplateOverwrite(), mailingBaseForm.isIsGrid());
     }
 
-    private void warnIfTargetsHaveDisjunction(ComAdmin admin, ComMailingBaseForm form, ActionMessages messages) throws Exception {
+    private void warnIfTargetsHaveDisjunction(Admin admin, ComMailingBaseForm form, ActionMessages messages) throws Exception {
         if (MailingType.fromCode(form.getMailingType()) == MailingType.DATE_BASED) {
             if (CollectionUtils.size(form.getTargetGroups()) > 1) {
                 boolean conjunction = isMailingTargetsHaveConjunction(admin, form);
@@ -1067,11 +1081,11 @@ public class MailingBaseAction extends StrutsActionBase {
         }
     }
     
-    protected boolean isMailingTargetsHaveConjunction(ComAdmin admin, ComMailingBaseForm form) {
+    protected boolean isMailingTargetsHaveConjunction(Admin admin, ComMailingBaseForm form) {
         return form.getTargetMode() == Mailing.TARGET_MODE_AND;
     }
 
-    private void insertTargetModeCheckboxControlAttribute(final HttpServletRequest request, final ComMailingBaseForm mailingBaseForm, final ComAdmin admin) {
+    private void insertTargetModeCheckboxControlAttribute(final HttpServletRequest request, final ComMailingBaseForm mailingBaseForm, final Admin admin) {
     	request.setAttribute("SHOW_TARGET_MODE_CHECKBOX", this.isTargetModeCheckboxVisible(mailingBaseForm));
     	request.setAttribute("DISABLE_TARGET_MODE_CHECKBOX", this.isTargetModeCheckboxDisabled(admin, mailingBaseForm));
 	}
@@ -1103,7 +1117,7 @@ public class MailingBaseAction extends StrutsActionBase {
     }
     
     protected ActionForward viewImportedMailing(final ImportResult result, final ComMailingBaseForm mailingBaseForm, final HttpServletRequest request, final ActionMapping mapping, final HttpSession session, ActionMessages errors, ActionMessages messages) throws Exception {
-        final ComAdmin admin = AgnUtils.getAdmin(request);
+        final Admin admin = AgnUtils.getAdmin(request);
         
         mailingBaseForm.setMailingID(result.getMailingID());
         mailingBaseForm.setTemplateID(0);
@@ -1114,7 +1128,7 @@ public class MailingBaseAction extends StrutsActionBase {
 		return mapping.findForward("view");
 	}
 
-    protected Mailing getImportedMailingFromImportResult(ImportResult result, ComAdmin admin) {
+    protected Mailing getImportedMailingFromImportResult(ImportResult result, Admin admin) {
         return null;
     }
 
@@ -1123,7 +1137,7 @@ public class MailingBaseAction extends StrutsActionBase {
     }
     
 	protected Mailing prepareMailingView(HttpServletRequest request, ComMailingBaseForm mailingBaseForm, HttpSession session, boolean showTagWarnings, ActionMessages errors, ActionMessages messages) throws Exception {
-        final ComAdmin admin = AgnUtils.getAdmin(request);
+        final Admin admin = AgnUtils.getAdmin(request);
         
 		Integer forwardTargetItemId;
 		updateForwardParameters(request, true);
@@ -1163,7 +1177,7 @@ public class MailingBaseAction extends StrutsActionBase {
     }
 
 	protected void setMailingWorkflowParameters(HttpServletRequest request, ComMailingBaseForm aForm) {
-        ComAdmin admin = AgnUtils.getAdmin(request);
+        Admin admin = AgnUtils.getAdmin(request);
         WorkflowParameters workflowParameters = WorkflowParametersHelper.defaultIfEmpty(request, aForm.getWorkflowId());
         if (workflowParameters.getWorkflowId() > 0) {
             int workflowId = workflowParameters.getWorkflowId();
@@ -1190,7 +1204,7 @@ public class MailingBaseAction extends StrutsActionBase {
         }
     }
 
-    protected void setMailingTargetsToForm(ComMailingBaseForm form, ComAdmin admin, Mailing mailing) {
+    protected void setMailingTargetsToForm(ComMailingBaseForm form, Admin admin, Mailing mailing) {
         form.setTargetGroups(mailing.getTargetGroups());
         form.setTargetMode(mailing.getTargetMode());
         form.setComplexTargetExpression(mailing.hasComplexTargetExpression());
@@ -1231,7 +1245,7 @@ public class MailingBaseAction extends StrutsActionBase {
     }
 
 	protected void processDependantMailings(int mailingID, HttpServletRequest req) {
-        final ComAdmin admin = AgnUtils.getAdmin(req);
+        final Admin admin = AgnUtils.getAdmin(req);
         final int companyId = admin.getCompanyID();
 
         List<Integer> followupMailings = mailingDao.getFollowupMailings(mailingID, companyId, true);
@@ -1249,7 +1263,7 @@ public class MailingBaseAction extends StrutsActionBase {
         }
     }
 
-    private void setMailingParameters(ComAdmin admin, int mailingId, List<ComMailingParameter> parameters) {
+    private void setMailingParameters(Admin admin, int mailingId, List<ComMailingParameter> parameters) {
         List<UserAction> userActions = new ArrayList<>();
         mailingParameterService.updateParameters(admin.getCompanyID(), mailingId, parameters, admin.getAdminID(), userActions);
 
@@ -1307,7 +1321,7 @@ public class MailingBaseAction extends StrutsActionBase {
         String planDateAsString = form.getPlanDate();
 
         if (StringUtils.isNotEmpty(planDateAsString)) {
-            ComAdmin admin = AgnUtils.getAdmin(req);
+            Admin admin = AgnUtils.getAdmin(req);
 
             assert (admin != null);
 
@@ -1392,7 +1406,7 @@ public class MailingBaseAction extends StrutsActionBase {
         validateNeedExtendedTarget(AgnUtils.getAdmin(req), errors, form);
     }
 
-    protected void validateNeedExtendedTarget(ComAdmin admin, ActionMessages errors, ComMailingBaseForm form) {
+    protected void validateNeedExtendedTarget(Admin admin, ActionMessages errors, ComMailingBaseForm form) {
         // nothing to do
     }
 
@@ -1419,7 +1433,7 @@ public class MailingBaseAction extends StrutsActionBase {
         }
     }
 
-    private boolean isBaseMailingTrackingDataAvailable(int baseMailingId, ComAdmin admin) {
+    private boolean isBaseMailingTrackingDataAvailable(int baseMailingId, Admin admin) {
         List<Mailing> availableBaseMailings;
         availableBaseMailings = mailingDao.getMailings(admin.getCompanyID(), admin.getAdminID(), ComMailingLightService.TAKE_ALL_MAILINGS, "W", true);
         // Check if base mailing tracking data is available
@@ -1449,11 +1463,12 @@ public class MailingBaseAction extends StrutsActionBase {
 	}
 
 	private boolean saveGridMailing(ComMailingBaseForm form, HttpServletRequest request, ActionMessages errors, ActionMessages messages) throws Exception {
-        final ComAdmin admin = AgnUtils.getAdmin(request);
+        final Admin admin = AgnUtils.getAdmin(request);
         final int companyId = AgnUtils.getCompanyID(request);
         final boolean isNewMailingFromCampaign = form.getMailingID() == 0 && isMailingWorkflowDriven(form);
+        boolean isMailingExists = mailingBaseService.isMailingExists(form.getMailingID(), companyId, false);
 
-        if (!mailingBaseService.isMailingExists(form.getMailingID(), companyId, false)) {
+        if (!isMailingExists) {
             int mailingListId = form.getMailinglistID();
             if (mailingListId <= 0 || !mailinglistService.exist(mailingListId, companyId)) {
                 List<Mailinglist> mailingLists = mailinglistApprovalService.getEnabledMailinglistsForAdmin(admin);
@@ -1523,6 +1538,7 @@ public class MailingBaseAction extends StrutsActionBase {
             form.setMailingID(mailing.getId());
             form.setGridTemplateId(templateId);
             form.setTargetGroups(mailing.getTargetGroups());
+            form.setParameterMap(toFormParametersMap(mailing.getParameters()));
 
             // Keep an HTML provided by grid template
             MailingComponent component = mailing.getHtmlTemplate();
@@ -1532,7 +1548,7 @@ public class MailingBaseAction extends StrutsActionBase {
         }
 
         form.setMailingGrid(true);
-        saveMailingData(form, request, errors, messages);
+        saveMailingData(form, request, errors, messages, !isMailingExists);
         previewImageService.generateMailingPreview(admin, request.getSession(false).getId(), form.getMailingID(), true);
         updateMailingIconInRelatedWorkflowIfNeeded(isNewMailingFromCampaign, request, form);
         messages.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("default.changes_saved"));
@@ -1543,7 +1559,7 @@ public class MailingBaseAction extends StrutsActionBase {
         return true;
     }
 
-    protected String generateTargetExpression(ComAdmin admin, ComMailingBaseForm form) {
+    protected String generateTargetExpression(Admin admin, ComMailingBaseForm form) {
         String targetExpression = form.getTargetExpression();
 
         if (StringUtils.isBlank(targetExpression)) {
@@ -1557,7 +1573,7 @@ public class MailingBaseAction extends StrutsActionBase {
     protected boolean saveMailing(ComMailingBaseForm form, HttpServletRequest req, ActionMessages errors, ActionMessages messages) {
         boolean saved = false;
         try {
-            saveMailingData(form, req, errors, messages);
+            saveMailingData(form, req, errors, messages, false);
 
             if (form.isMailingChanged() && form.getMailingID() != 0) {
                 mailingService.updateStatus(form.getCompanyID(), form.getMailingID(), MailingStatus.EDIT);
@@ -1615,22 +1631,23 @@ public class MailingBaseAction extends StrutsActionBase {
 	 * and trackable links)
 	 *
 	 * @param form struts form bean object
+	 * @param isEmcCreation determine if it is EMC mailing creation process (if so, mailing was created earlier)
 	 * @param request  request
 	 * @param warnings  warnings
 	 * @throws Exception if anything went wrong
 	 */
-	protected void saveMailingData(ComMailingBaseForm form, HttpServletRequest request, ActionMessages errors, ActionMessages warnings) throws Exception {
+	protected void saveMailingData(ComMailingBaseForm form, HttpServletRequest request, ActionMessages errors, ActionMessages warnings, boolean isEmcCreation) throws Exception {
         final int companyId = AgnUtils.getCompanyID(request);
-        final ComAdmin admin = AgnUtils.getAdmin(request);
+        final Admin admin = AgnUtils.getAdmin(request);
         final ApplicationContext applicationContext = getApplicationContext(request);
         
 		Mailing aMailing;
         int gridTemplateId = 0;
-		boolean mailingIsNew;
+		boolean mailingExists = false;
 		if (mailingBaseService.isMailingExists(form.getMailingID(), companyId)) {
 			// Use existing mailing and fill in changed data from form afterwards
 			aMailing = mailingDao.getMailing(form.getMailingID(), companyId);
-			mailingIsNew = false;
+			mailingExists = true;
 		} else if (mailingBaseService.isMailingExists(form.getTemplateID(), companyId)) {
 			// Make a copy of the template mailing and fill in changed data from form afterwards
 			final String type = (form.isIsTemplate() ? "template" : "mailing");
@@ -1639,7 +1656,7 @@ public class MailingBaseAction extends StrutsActionBase {
 			aMailing = mailingDao.getMailing(copiedMailingID, companyId);
 			aMailing.setCompanyID(companyId);
 			aMailing.setMailTemplateID(form.getTemplateID());
-			mailingIsNew = false;
+			mailingExists = true;
 		} else {
 			// Create a new empty mailing and fill in data from form afterwards
 			form.setMailingID(0);
@@ -1647,24 +1664,33 @@ public class MailingBaseAction extends StrutsActionBase {
             aMailing.init(companyId, applicationContext);
             aMailing.setId(0);
             aMailing.setCompanyID(companyId);
-            mailingIsNew = true;
+		}
+
+		if (!mailingExists || isEmcCreation) {
+			Mediatype emailMediatype = form.getMediatypes().get(MediaTypes.EMAIL.getMediaCode());
+			if (emailMediatype instanceof MediatypeEmail) {
+				((MediatypeEmail) emailMediatype).setEncryptedSend(configService.getBooleanValue(ConfigValue.SendEncryptedMailings, companyId));
+			}
 		}
 
         List<String> userActions = new LinkedList<>();
-        if (!mailingIsNew) {
-            gridTemplateId = gridService.getGridTemplateIdByMailingId(aMailing.getId());
-            userActions.addAll(getEditActionStrings(form, aMailing));
-        }
+		if (mailingExists && !isEmcCreation) {
+			userActions.addAll(getEditActionStrings(form, aMailing));
+		}
 
-        // repairs mailing html template
-        // problem occurs while saving different mailing via two different tabs
-        // see GWUA-4079
-        if (!mailingIsNew && gridTemplateId > 0) {
-            MailingComponent htmlTemplate = aMailing.getHtmlTemplate();
-            if (Objects.nonNull(htmlTemplate)) {
-                form.setHtmlTemplate(htmlTemplate.getEmmBlock());
-            }
-        }
+		if (mailingExists) {
+			gridTemplateId = gridService.getGridTemplateIdByMailingId(aMailing.getId());
+
+			// repairs mailing html template
+			// problem occurs while saving different mailing via two different tabs
+			// see GWUA-4079
+			if (gridTemplateId > 0) {
+				MailingComponent htmlTemplate = aMailing.getHtmlTemplate();
+				if (Objects.nonNull(htmlTemplate)) {
+					form.setHtmlTemplate(htmlTemplate.getEmmBlock());
+				}
+			}
+		}
 
         // Grid-based mailings have generated HTML template (not user-defined).
         if (gridTemplateId == 0) {
@@ -1811,7 +1837,7 @@ public class MailingBaseAction extends StrutsActionBase {
         }
 
 	    if (AgnUtils.allowed(request, Permission.MAILING_CHANGE)) {
-            List<ComMailingParameter> parameters = collectMailingParameters(form, request, mailingIsNew ? null : userActions, warnings);
+            List<ComMailingParameter> parameters = collectMailingParameters(form, request, mailingExists ? userActions : null, warnings);
             aMailing.setParameters(parameters);
 	    	setMailingParameters(admin, aMailing.getId(), parameters);
 	    }
@@ -1824,7 +1850,7 @@ public class MailingBaseAction extends StrutsActionBase {
 
         final String type = (form.isIsTemplate() ? "template" : "mailing");
         final String description = form.getShortname() + " (" + form.getMailingID() + ")";
-        if (mailingIsNew) {
+        if (!mailingExists || isEmcCreation) {
             writeUserActivityLog(admin, "create " + type, description);
         } else {
             if (userActions.size() > 0) {
@@ -1833,7 +1859,7 @@ public class MailingBaseAction extends StrutsActionBase {
         }
 	}
 
-    protected void updateMailingTargetExpression(ComMailingBaseForm form, ComAdmin admin, Mailing aMailing) {
+    protected void updateMailingTargetExpression(ComMailingBaseForm form, Admin admin, Mailing aMailing) {
         if (!aMailing.hasComplexTargetExpression() && form.getAssignTargetGroups()) {
             // Only change target expressions, that are NOT complex and not managed by workflowmanager
 
@@ -1879,7 +1905,7 @@ public class MailingBaseAction extends StrutsActionBase {
     private boolean deleteMailingsBulk(ComMailingBaseForm form, HttpServletRequest req) {
         Set<Integer> ids = form.getBulkIds();
         if (CollectionUtils.isNotEmpty(ids)) {
-            final ComAdmin admin = AgnUtils.getAdmin(req);
+            final Admin admin = AgnUtils.getAdmin(req);
             final int companyId = AgnUtils.getCompanyID(req);
 
             // It only changes the 'deleted' column value
@@ -1895,7 +1921,7 @@ public class MailingBaseAction extends StrutsActionBase {
     }
 
     protected MailingsQueryWorker createMailingsQueryWorker(ActionMessages errors, MailingBaseForm mailingBaseForm, HttpServletRequest request, String types, boolean isTemplate, String sort, String direction, int page, int rownums, final boolean includeTargetGroups) throws Exception {
-    	ComAdmin admin = AgnUtils.getAdmin(request);
+    	Admin admin = AgnUtils.getAdmin(request);
     	
         ComMailingBaseForm comMailingBaseForm = (ComMailingBaseForm) mailingBaseForm;
 
@@ -2010,7 +2036,7 @@ public class MailingBaseAction extends StrutsActionBase {
     }
 
     private List<ComMailingParameter> collectMailingParameters(ComMailingBaseForm form, HttpServletRequest request, List<String> userActions, ActionMessages messages) throws Exception {
-        final ComAdmin admin = AgnUtils.getAdmin(request);
+        final Admin admin = AgnUtils.getAdmin(request);
         final int mailingId = form.getMailingID();
 
         assert (admin != null);
@@ -2031,7 +2057,7 @@ public class MailingBaseAction extends StrutsActionBase {
 
             for (ComMailingParameter parameter : form.getParameterMap().values()) {
                 if (StringUtils.isNotEmpty(parameter.getName())) {
-                    if (ArrayUtils.contains(RESERVED_PARAMETER_NAMES, parameter.getName())) {
+                    if (isReservedParam(parameter.getName())) {
                         logger.error("User tried to use reserved mailing parameter name: " + parameter.getName());
                         continue;
                     }
@@ -2058,7 +2084,7 @@ public class MailingBaseAction extends StrutsActionBase {
         List<ComMailingParameter> removed = new ArrayList<>();
 
         parameters.removeIf(parameter -> {
-            if (ArrayUtils.contains(RESERVED_PARAMETER_NAMES, parameter.getName())) {
+            if (isReservedParam(parameter.getName())) {
                 removed.add(parameter);
                 return true;
             }
@@ -2068,7 +2094,7 @@ public class MailingBaseAction extends StrutsActionBase {
         return removed;
     }
 
-    private List<ComMailingParameter> generateIntervalParameters(ComAdmin admin, int mailingId, String intervalValue, List<ComMailingParameter> previousReservedParameters, List<String> userActions) {
+    private List<ComMailingParameter> generateIntervalParameters(Admin admin, int mailingId, String intervalValue, List<ComMailingParameter> previousReservedParameters, List<String> userActions) {
         final int companyId = admin.getCompanyID();
         final int adminId = admin.getAdminID();
         final Date now = new Date();
@@ -2076,7 +2102,7 @@ public class MailingBaseAction extends StrutsActionBase {
         List<ComMailingParameter> parameters = new ArrayList<>();
 
         Map<String, ComMailingParameter> previousReservedParametersMap = toParametersMap(previousReservedParameters);
-        ComMailingParameter intervalParameter = previousReservedParametersMap.get(ComMailingParameterDao.PARAMETERNAME_INTERVAL);
+        ComMailingParameter intervalParameter = previousReservedParametersMap.get(INTERVAL.getName());
 
         if (userActions != null) {
             if (!StringUtils.equals(intervalParameter == null ? "" : intervalParameter.getValue(), intervalValue == null ? "" : intervalValue)) {
@@ -2086,7 +2112,7 @@ public class MailingBaseAction extends StrutsActionBase {
 
         if (intervalValue != null) {
             if (intervalParameter == null) {
-                intervalParameter = new ComMailingParameter(0, mailingId, companyId, ComMailingParameterDao.PARAMETERNAME_INTERVAL, "", "", now, now, adminId, adminId);
+                intervalParameter = new ComMailingParameter(0, mailingId, companyId, INTERVAL.getName(), "", "", now, now, adminId, adminId);
             }
 
             intervalParameter.setValue(intervalValue);
@@ -2094,19 +2120,19 @@ public class MailingBaseAction extends StrutsActionBase {
             intervalParameter.setChangeAdminID(adminId);
             parameters.add(intervalParameter);
 
-            ComMailingParameter errorParameter = previousReservedParametersMap.get(ComMailingParameterDao.PARAMETERNAME_ERROR);
+            ComMailingParameter errorParameter = previousReservedParametersMap.get(ERROR.getName());
             if (errorParameter != null) {
                 parameters.add(errorParameter);
             }
 
             // Evaluate and assign the next start date for interval mailing.
-            ComMailingParameter nextStartParameter = previousReservedParametersMap.get(ComMailingParameterDao.PARAMETERNAME_NEXT_START);
+            ComMailingParameter nextStartParameter = previousReservedParametersMap.get(NEXT_START.getName());
             if (nextStartParameter == null) {
                 nextStartParameter = new ComMailingParameter();
                 nextStartParameter.setCreationAdminID(adminId);
             }
             nextStartParameter.setChangeAdminID(adminId);
-            nextStartParameter.setName(ComMailingParameterDao.PARAMETERNAME_NEXT_START);
+            nextStartParameter.setName(NEXT_START.getName());
             nextStartParameter.setValue(new SimpleDateFormat(DateUtilities.YYYY_MM_DD_HH_MM).format(DateUtilities.calculateNextJobStart(intervalValue)));
             nextStartParameter.setCompanyID(companyId);
             nextStartParameter.setMailingID(mailingId);
@@ -2275,7 +2301,7 @@ public class MailingBaseAction extends StrutsActionBase {
 	}
 
 	protected Mailing loadMailing(ComMailingBaseForm form, HttpServletRequest request, boolean preserveCmListSplit, boolean showTagWarnings, ActionMessages errors, ActionMessages messages) throws Exception {
-	    final ComAdmin admin = AgnUtils.getAdmin(request);
+	    final Admin admin = AgnUtils.getAdmin(request);
 	    final int companyId = admin.getCompanyID();
 
 		Mailing aMailing;
@@ -2324,12 +2350,12 @@ public class MailingBaseAction extends StrutsActionBase {
 
         form.setMediatypes(aMailing.getMediatypes());
 
-        MediatypeEmail type = aMailing.getEmailParam();
-		if (type != null) {
-            form.setEmailOnepixel(type.getOnepixel());
+        MediatypeEmail emailMediatype = aMailing.getEmailParam();
+		if (emailMediatype != null) {
+            form.setEmailOnepixel(emailMediatype.getOnepixel());
 
 			// Set Followup-Parameter (if any)
-			String followUpFor = type.getFollowupFor();
+			String followUpFor = emailMediatype.getFollowupFor();
             form.setFollowMailing(followUpFor);
 
             int parentMailingId = 0;
@@ -2343,37 +2369,36 @@ public class MailingBaseAction extends StrutsActionBase {
 			}
 
 			form.setParentMailing(parentMailingId);
-            form.setFollowUpMailingType(type.getFollowUpMethod());
+            form.setFollowUpMailingType(emailMediatype.getFollowUpMethod());
 
 			try {
-                form.setEmailReplytoEmail(new InternetAddress(type.getReplyAdr()).getAddress());
+                form.setEmailReplytoEmail(new InternetAddress(emailMediatype.getReplyAdr()).getAddress());
 			} catch (Exception e) {
 				// do nothing
 			}
 			try {
-                form.setEmailReplytoFullname(new InternetAddress(type.getReplyAdr()).getPersonal());
+                form.setEmailReplytoFullname(new InternetAddress(emailMediatype.getReplyAdr()).getPersonal());
 			} catch (Exception e) {
 				// do nothing
 			}
 			try {
-                form.setEnvelopeEmail(new InternetAddress(type.getEnvelopeEmail()).getAddress());
+                form.setEnvelopeEmail(new InternetAddress(emailMediatype.getEnvelopeEmail()).getAddress());
 			} catch (Exception e) {
 				// do nothing
 				if (logger.isInfoEnabled()) {
 					logger.info("info:" + e, e);
 				}
 			}
-            form.setEmailLinefeed(type.getLinefeed());
-            form.setEmailCharset(type.getCharset());
+            form.setEmailLinefeed(emailMediatype.getLinefeed());
+            form.setEmailCharset(emailMediatype.getCharset());
 		}
 
-		final String[] labels = { "Text", "FAX", "Post", "MMS", "SMS" };
         MailingComponent comp;
 
-		for (int c = 0; c < labels.length; c++) {
-			comp = aMailing.getTemplate(labels[c]);
+        for (MediaTypes type : MediaTypes.values()) {
+			comp = aMailing.getTemplate(type.getKey());
 			if (comp != null) {
-                form.getMedia(c).setTemplate(comp.getEmmBlock());
+                form.getMedia(type.getMediaCode()).setTemplate(comp.getEmmBlock());
 			}
 		}
 
@@ -2457,7 +2482,7 @@ public class MailingBaseAction extends StrutsActionBase {
     private Map<String, Object> saveMailingGridInfo(ComMailingBaseForm form, HttpServletRequest request) {
         Map<String, Object> data = new HashMap<>();
 
-        ComAdmin admin = AgnUtils.getAdmin(request);
+        Admin admin = AgnUtils.getAdmin(request);
 
         data.put("TEMPLATE_ID", form.getGridTemplateId());
         data.put("OWNER", admin.getAdminID());
@@ -2475,7 +2500,7 @@ public class MailingBaseAction extends StrutsActionBase {
         Map<String, ComMailingParameter> reservedParametersMap = toParametersMap(removeReservedParameters(parameters));
 
         // Load interval data from the corresponding parameter.
-        loadIntervalData(form, reservedParametersMap.get(ComMailingParameterDao.PARAMETERNAME_INTERVAL));
+        loadIntervalData(form, reservedParametersMap.get(INTERVAL.getName()));
 
         form.setParameterMap(toFormParametersMap(parameters));
     }
@@ -2513,6 +2538,7 @@ public class MailingBaseAction extends StrutsActionBase {
 		}
 
 		form.setTargetMode(template.getTargetMode());
+        setTargetModeToForm(form, template, AgnUtils.getAdmin(req));
 		form.setMediatypes(template.getMediatypes());
 		form.setArchived(template.getArchived() != 0);
 		form.setNeedsTarget(template.getNeedsTarget());
@@ -2564,8 +2590,12 @@ public class MailingBaseAction extends StrutsActionBase {
 
 		form.setParameterMap(toFormParametersMap(newParameters));
 	}
+	
+    protected void setTargetModeToForm(ComMailingBaseForm form, Mailing mailing, Admin admin) {
+        form.setTargetMode(mailing.getTargetMode());
+    }
 
-	private JSONObject calculateRecipients(ComAdmin admin, ComMailingBaseForm form) {
+	private JSONObject calculateRecipients(Admin admin, ComMailingBaseForm form) {
         final JSONObject data = new JSONObject();
 
         CalculationRecipientsConfig config = conversionService.convert(form, CalculationRecipientsConfig.class);
@@ -2589,13 +2619,8 @@ public class MailingBaseAction extends StrutsActionBase {
         return data;
 	}
 
-    protected void setCalculationRecipientsConfigExtendedParams(ComAdmin admin, ComMailingBaseForm form, CalculationRecipientsConfig config) {
+    protected void setCalculationRecipientsConfigExtendedParams(Admin admin, ComMailingBaseForm form, CalculationRecipientsConfig config) {
         // nothing to do
-    }
-
-    private void validateMailingMod(ComMailingBaseForm form, HttpServletRequest request) throws Exception {
-        Mailing mailing = mailingDao.getMailing(form.getMailingID(), AgnUtils.getCompanyID(request));
-        characterEncodingValidator.validateMod(form, mailing);
     }
 
     /**
@@ -2613,7 +2638,7 @@ public class MailingBaseAction extends StrutsActionBase {
     }
 
     private boolean validateMailingListId(Mailing mailing, HttpServletRequest request, ActionMessages errors) {
-        final ComAdmin admin = AgnUtils.getAdmin(request);
+        final Admin admin = AgnUtils.getAdmin(request);
         
         if (mailinglistService.existAndEnabled(admin, mailing.getMailinglistID())) {
             return true;
@@ -2908,7 +2933,7 @@ public class MailingBaseAction extends StrutsActionBase {
     }
 	
     // Delete after GWUA-4957 has been successfully tested
-	protected void addUiControlAttributes(final ComAdmin admin, final HttpServletRequest request, final MailingBaseForm form) {
+	protected void addUiControlAttributes(final Admin admin, final HttpServletRequest request, final MailingBaseForm form) {
         // nothing to do
 	}
 
@@ -2970,7 +2995,7 @@ public class MailingBaseAction extends StrutsActionBase {
      * So user will be able to only see the disabled mailinglist, but not to change it. <br>
      * @param admin current admin
      */
-	protected void prepareMailinglists(MailingBaseForm form, ComAdmin admin){
+	protected void prepareMailinglists(MailingBaseForm form, Admin admin){
         List<Mailinglist> enabledMailinglists = mailinglistApprovalService.getEnabledMailinglistsForAdmin(admin);
         boolean exists = mailinglistService.exist(form.getMailinglistID(), admin.getCompanyID());
 
@@ -3153,7 +3178,7 @@ public class MailingBaseAction extends StrutsActionBase {
         form.setCanChangeEmailSettings(form.isIsTemplate() || !AgnUtils.allowed(req, Permission.MAILING_SETTINGS_HIDE));
     }
 	
-	protected boolean isTargetModeCheckboxDisabled(final ComAdmin admin, final ComMailingBaseForm form) {
+	protected boolean isTargetModeCheckboxDisabled(final Admin admin, final ComMailingBaseForm form) {
         return isMailingWorkflowDriven(form) || isMailingWorldSent(form);
 	}
 	
@@ -3287,7 +3312,7 @@ public class MailingBaseAction extends StrutsActionBase {
         this.mailingDao = mailingDao;
     }
 
-    public void setFutureHolder(Map<String, Future<PaginatedListImpl<Map<String, Object>>>> futureHolder) {
+    public void setFutureHolder(Map<String, Future<MailingsListResult>> futureHolder) {
         this.futureHolder = futureHolder;
     }
 
@@ -3296,7 +3321,7 @@ public class MailingBaseAction extends StrutsActionBase {
     }
 
     @Required
-    public void setMailinglistService(ComMailinglistService mailinglistService) {
+    public void setMailinglistService(MailinglistService mailinglistService) {
         this.mailinglistService = mailinglistService;
     }
 
@@ -3401,7 +3426,7 @@ public class MailingBaseAction extends StrutsActionBase {
     	aForm.setActions(map);
     }
     
-    public Future<PaginatedListImpl<Map<String, Object>>> getMailingListFuture(ActionMessages errors, HttpServletRequest req, boolean isTemplate, MailingBaseForm form) throws Exception {
+    public Future<MailingsListResult> getMailingListFuture(ActionMessages errors, HttpServletRequest req, boolean isTemplate, MailingBaseForm form) throws Exception {
     	String sort = getSort(req, form);
      	String direction = form.getDir();
 

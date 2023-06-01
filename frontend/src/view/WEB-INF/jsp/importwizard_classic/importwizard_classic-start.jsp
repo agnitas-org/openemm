@@ -1,4 +1,4 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
@@ -6,7 +6,7 @@
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
-<agn:agnForm action="/importwizard" enctype="multipart/form-data" data-form="static">
+<agn:agnForm action="/importwizard" enctype="multipart/form-data" data-form="resource">
     <html:hidden property="action" value="4"/>
 
     <div class="col-md-10 col-md-push-1 col-lg-8 col-lg-push-2">
@@ -43,7 +43,7 @@
                 <div class="form-group">
                     <div class="col-sm-4">
                         <label class="control-label">
-                            <bean:message key="settings.FileName"/>
+                            <bean:message key="settings.FileName"/>*
                             <button type="button" class="icon icon-help" data-help="help_${helplanguage}/importwizard/step_1/FileName.xml"></button>
                         </label>
                     </div>

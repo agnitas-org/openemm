@@ -11,8 +11,8 @@
 package com.agnitas.service;
 
 import com.agnitas.beans.AgnTagAttributeDto;
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 
 public interface AgnTagAttributeResolver {
-    AgnTagAttributeDto resolve(ComAdmin admin, String tag, String attribute) throws Exception;
+    AgnTagAttributeDto resolve(Admin admin, String tag, String attribute) throws Exception;
 }

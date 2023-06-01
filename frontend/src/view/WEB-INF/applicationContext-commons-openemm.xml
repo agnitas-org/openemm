@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-	Application context definition for beans used across layers.
+	Application context definition for AGNITAS OpenEMM beans used across layers.
 
 	No DAOs, service layer classes, actions or endpoints here!
 -->
@@ -226,6 +226,7 @@
 	<bean id="ScriptHelper" class="com.agnitas.util.ScriptHelper" scope="prototype">
 		<property name="helperService" ref="ScriptHelperService" />
 		<property name="mailingDao" ref="MailingDao" />
+		<property name="mailinglistService" ref="MailinglistService" />
 		<property name="recipientDao" ref="RecipientDao" />
 		<property name="bindingEntryDao" ref="BindingEntryDao" />
 		<property name="scripthelperEmailLogDao" ref="ScripthelperEmailLogDao" />

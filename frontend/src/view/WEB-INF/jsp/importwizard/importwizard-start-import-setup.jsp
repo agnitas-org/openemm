@@ -1,4 +1,4 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
@@ -29,7 +29,7 @@
         <c:set target="${itemActionsSettings}" property="0" value="${element}"/>
         <c:set target="${element}" property="btnCls" value="btn btn-inverse btn-regular"/>
         <c:set target="${element}" property="iconAfter" value="icon icon-share"/>
-        <c:set target="${element}" property="extraAttributes" value="data-form-target='#newImportWizardForm' data-form-persist='start_proceed: proceed' data-form-submit-static=''" />
+        <c:set target="${element}" property="extraAttributes" value="data-form-target='#newImportWizardForm' data-form-persist='start_proceed: proceed' data-form-submit=''" />
         <c:set target="${element}" property="name">
             <bean:message key="button.Proceed"/>
         </c:set>

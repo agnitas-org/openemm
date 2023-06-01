@@ -23,6 +23,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
+import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -44,7 +45,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
-import org.springframework.dao.DataAccessException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.dao.QueryTimeoutException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -72,7 +72,7 @@ public abstract class BaseDaoImpl {
 	/**
 	 * General logger of this class. This logger is not used for the select and update actions.
 	 */
-	private static final transient Logger baseDaoImplLogger = LogManager.getLogger(BaseDaoImpl.class);
+	private static final Logger baseDaoImplLogger = LogManager.getLogger(BaseDaoImpl.class);
 
 	private static Integer MYSQL_MAXPACKETSIZE = null;
 	
@@ -165,7 +165,7 @@ public abstract class BaseDaoImpl {
 		return "mariadb".equalsIgnoreCase(getDbVendorName());
 	}
 	
-	private final String getDbVendorName() {
+	private String getDbVendorName() {
 		if (dbVendor == null) {
 			if (DbUtilities.checkDbVendorIsOracle(getDataSource())) {
 				dbVendor = "oracle";
@@ -182,16 +182,13 @@ public abstract class BaseDaoImpl {
 	/**
 	 * Logs the sql statement. This is typically used before db executions.
 	 * This method is also included in select and update methods of this class, so they don't have to be called explicitly
-	 * @param logger
-	 * @param statement
-	 * @param parameter
 	 */
 	protected void logSqlStatement(Logger logger, String statement, Object... parameter) {
 		if (logger.isDebugEnabled()) {
 			if (parameter != null && parameter.length > 0) {
-				logger.debug("SQL: " + statement + "\nParameter: " + getParameterStringList(parameter));
+				logger.debug(MessageFormat.format("SQL: {0}\nParameter: {1}", statement, getParameterStringList(parameter)));
 			} else {
-				logger.debug("SQL: " + statement);
+				logger.debug(MessageFormat.format("SQL: {0}", statement));
 			}
 		}
 	}
@@ -199,17 +196,12 @@ public abstract class BaseDaoImpl {
 	/**
 	 * Logs the sql statement and an occurred error. This is typically used after db executions.
 	 * This method is also included in select and update methods of this class, so they don't have to be called explicitly
-	 * 
-	 * @param e
-	 * @param logger
-	 * @param statement
-	 * @param parameter
 	 */
 	protected void logSqlError(Exception e, org.apache.logging.log4j.Logger logger, String statement, Object... parameter) {
 		if (parameter != null && parameter.length > 0) {
-			logger.error("Error: " + e.getMessage() + "\nSQL: " + statement + "\nParameter: " + getParameterStringList(parameter), e);
+			logger.error(MessageFormat.format("Error: {0}\nSQL: {1}\nParameter: {2}", e.getMessage(), statement, getParameterStringList(parameter)), e);
 		} else {
-			logger.error("Error: " + e.getMessage() + "\nSQL: " + statement, e);
+			logger.error(MessageFormat.format("Error: {0}\nSQL: {1}", e.getMessage(), statement), e);
 		}
 		if (javaMailService != null) {
 			javaMailService.sendExceptionMail(0, "SQL: " + statement + "\nParameter: " + getParameterStringList(parameter), e);
@@ -249,7 +241,6 @@ public abstract class BaseDaoImpl {
 	/**
 	 * Closes SQL Statement object without throwing Exceptions.
 	 * Exceptions are still loged as errors.
-	 * @param statements
 	 */
 	protected void closeSilently(Statement... statements) {
 		for (Statement statement : statements) {
@@ -257,7 +248,7 @@ public abstract class BaseDaoImpl {
 				try {
 					statement.close();
 				} catch (SQLException e) {
-					baseDaoImplLogger.error("Error occured: " + e.getMessage(), e);
+					baseDaoImplLogger.error(MessageFormat.format("Error occurred: {0}", e.getMessage()), e);
 				}
 			}
 		}
@@ -274,7 +265,7 @@ public abstract class BaseDaoImpl {
 				try {
 					connection.close();
 				} catch (SQLException e) {
-					baseDaoImplLogger.error("Error occured: " + e.getMessage(), e);
+					baseDaoImplLogger.error(MessageFormat.format("Error occurred: {0}", e.getMessage()), e);
 				}
 			}
 		}
@@ -282,10 +273,7 @@ public abstract class BaseDaoImpl {
 	
 	/**
 	 * Logs the statement and parameter in debug-level, executes select and logs error.
-	 * 
-	 * @param logger
-	 * @param statement
-	 * @param parameter
+	 *
 	 * @return List of db entries represented as caseinsensitive maps
 	 */
 	protected List<Map<String, Object>> select(Logger logger, String statement, Object... parameter) {
@@ -294,9 +282,6 @@ public abstract class BaseDaoImpl {
 			validateParameters(parameter);
 			logSqlStatement(logger, statement, parameter);
 			return getJdbcTemplate().queryForList(statement, parameter);
-		} catch (DataAccessException e) {
-			logSqlError(e, logger, statement, parameter);
-			throw e;
 		} catch (RuntimeException e) {
 			logSqlError(e, logger, statement, parameter);
 			throw e;
@@ -306,10 +291,6 @@ public abstract class BaseDaoImpl {
 	/**
 	 * Logs the statement and parameter in debug-level, executes select and logs error.
 	 * 
-	 * @param logger
-	 * @param statement
-	 * @param rowMapper
-	 * @param parameter
 	 * @return List of db entries represented as objects
 	 */
 	protected <T> List<T> select(Logger logger, String statement, RowMapper<T> rowMapper, Object... parameter) {
@@ -318,9 +299,6 @@ public abstract class BaseDaoImpl {
 			validateParameters(parameter);
 			logSqlStatement(logger, statement, parameter);
 			return getJdbcTemplate().query(statement, rowMapper, parameter);
-		} catch (DataAccessException e) {
-			logSqlError(e, logger, statement, parameter);
-			throw e;
 		} catch (RuntimeException e) {
 			logSqlError(e, logger, statement, parameter);
 			throw e;
@@ -341,9 +319,6 @@ public abstract class BaseDaoImpl {
 			validateParameters(parameter);
 			logSqlStatement(logger, statement, parameter);
 			getJdbcTemplate().query(statement, rowHandler, parameter);
-		} catch (DataAccessException e) {
-			logSqlError(e, logger, statement, parameter);
-			throw e;
 		} catch (RuntimeException e) {
 			logSqlError(e, logger, statement, parameter);
 			throw e;
@@ -353,9 +328,6 @@ public abstract class BaseDaoImpl {
 	/**
 	 * Logs the statement and parameter in debug-level, executes select and logs error.
 	 * 
-	 * @param logger
-	 * @param statement
-	 * @param parameter
 	 * @return List of db entries represented as caseinsensitive maps
 	 */
 	protected Map<String, Object> selectSingleRow(Logger logger, String statement, Object... parameter) {
@@ -364,9 +336,6 @@ public abstract class BaseDaoImpl {
 			validateParameters(parameter);
 			logSqlStatement(logger, statement, parameter);
 			return getJdbcTemplate().queryForMap(statement, parameter);
-		} catch (DataAccessException e) {
-			logSqlError(e, logger, statement, parameter);
-			throw e;
 		} catch (RuntimeException e) {
 			logSqlError(e, logger, statement, parameter);
 			throw e;
@@ -376,10 +345,6 @@ public abstract class BaseDaoImpl {
 	/**
 	 * Logs the statement and parameter in debug-level, executes select and logs error.
 	 * 
-	 * @param logger
-	 * @param statement
-	 * @param requiredType
-	 * @param parameter
 	 * @return single db entry as object
 	 */
 	protected <T> T select(Logger logger, String statement, Class<T> requiredType, Object... parameter) {
@@ -388,9 +353,6 @@ public abstract class BaseDaoImpl {
 			validateParameters(parameter);
 			logSqlStatement(logger, statement, parameter);
 			return getJdbcTemplate().queryForObject(statement, requiredType, parameter);
-		} catch (DataAccessException e) {
-			logSqlError(e, logger, statement, parameter);
-			throw e;
 		} catch (RuntimeException e) {
 			logSqlError(e, logger, statement, parameter);
 			throw e;
@@ -401,10 +363,6 @@ public abstract class BaseDaoImpl {
 	 * Logs the statement and parameter in debug-level, executes select and logs error.
 	 * If the searched entry does not exist an DataAccessException is thrown.
 	 * 
-	 * @param logger
-	 * @param statement
-	 * @param rowMapper
-	 * @param parameter
 	 * @return single db entry as object
 	 */
 	protected <T> T selectObject(Logger logger, String statement, RowMapper<T> rowMapper, Object... parameter) {
@@ -413,9 +371,6 @@ public abstract class BaseDaoImpl {
 			validateParameters(parameter);
 			logSqlStatement(logger, statement, parameter);
 			return getJdbcTemplate().queryForObject(statement, rowMapper, parameter);
-		} catch (DataAccessException e) {
-			logSqlError(e, logger, statement, parameter);
-			throw e;
 		} catch (RuntimeException e) {
 			logSqlError(e, logger, statement, parameter);
 			throw e;
@@ -427,17 +382,13 @@ public abstract class BaseDaoImpl {
 	 * If the searched entry does not exist, then null is returned as default value.
 	 * If more than one item is found it throws an error saying so.
 	 * 
-	 * @param logger
-	 * @param statement
-	 * @param rowMapper
-	 * @param parameter
 	 * @return single db entry as object, null if no entry was found
 	 */
 	protected <T> T selectObjectDefaultNull(Logger logger, String statement, RowMapper<T> rowMapper, Object... parameter) {
 		List<T> list = select(logger, statement, rowMapper, parameter);
 		if (list.size() == 1) {
 			return list.get(0);
-		} else if (list.size() == 0) {
+		} else if (list.isEmpty()) {
 			return null;
 		} else {
 			throw new RuntimeException("Found invalid number of items: " + list.size());
@@ -447,9 +398,6 @@ public abstract class BaseDaoImpl {
 	/**
 	 * Logs the statement and parameter in debug-level, executes select and logs error.
 	 * 
-	 * @param logger
-	 * @param statement
-	 * @param parameter
 	 * @return single db entry as int value or 0 in case of nothing was found
 	 */
 	protected int selectInt(Logger logger, String statement, Object... parameter) {
@@ -459,13 +407,10 @@ public abstract class BaseDaoImpl {
 	/**
 	 * Logs the statement and parameter in debug-level, executes select and logs error.
 	 *
-	 * @param logger
-	 * @param statement
-	 * @param parameter
 	 * @return single db entry as int value or 0 in case of nothing was found
 	 */
 	protected long selectLong(Logger logger, String statement, Object... parameter) {
-		return selectLongWithDefaultValue(logger, statement, 0l, parameter);
+		return selectLongWithDefaultValue(logger, statement, 0L, parameter);
 	}
 	
 	/**
@@ -474,10 +419,6 @@ public abstract class BaseDaoImpl {
 	 * which indicates that the selected value is missing and no rows are returned by DB.
 	 * All other Exceptions are not touched and will be thrown in the usual way.
 	 * 
-	 * @param logger
-	 * @param statement
-	 * @param defaultValue
-	 * @param parameter
 	 * @return single db entry as int value, default value if not found
 	 */
 	protected int selectIntWithDefaultValue(Logger logger, String statement, int defaultValue, Object... parameter) {
@@ -490,12 +431,9 @@ public abstract class BaseDaoImpl {
 			return value != null ? value : defaultValue;
 		} catch (EmptyResultDataAccessException e) {
 			if (logger.isDebugEnabled()) {
-				logger.debug("Empty result, using default value: " + defaultValue);
+				logger.debug(MessageFormat.format("Empty result, using default value: {0}", defaultValue));
 			}
 			return defaultValue;
-		} catch (DataAccessException e) {
-			logSqlError(e, logger, statement, parameter);
-			throw e;
 		} catch (RuntimeException e) {
 			logSqlError(e, logger, statement, parameter);
 			throw e;
@@ -508,10 +446,6 @@ public abstract class BaseDaoImpl {
 	 * which indicates that the selected value is missing and no rows are returned by DB.
 	 * All other Exceptions are not touched and will be thrown in the usual way.
 	 *
-	 * @param logger
-	 * @param statement
-	 * @param defaultValue
-	 * @param parameter
 	 * @return single db entry as int value, default value if not found
 	 */
 	protected long selectLongWithDefaultValue(Logger logger, String statement, long defaultValue, Object... parameter) {
@@ -524,12 +458,9 @@ public abstract class BaseDaoImpl {
 			return value != null ? value : defaultValue;
 		} catch (EmptyResultDataAccessException e) {
 			if (logger.isDebugEnabled()) {
-				logger.debug("Empty result, using default value: " + defaultValue);
+				logger.debug(MessageFormat.format("Empty result, using default value: {0}", defaultValue));
 			}
 			return defaultValue;
-		} catch (DataAccessException e) {
-			logSqlError(e, logger, statement, parameter);
-			throw e;
 		} catch (RuntimeException e) {
 			logSqlError(e, logger, statement, parameter);
 			throw e;
@@ -539,10 +470,6 @@ public abstract class BaseDaoImpl {
 	/**
 	 * Logs the statement and parameter in debug-level, executes select and logs error.
 	 * 
-	 * @param logger
-	 * @param statement
-	 * @param requiredType
-	 * @param parameter
 	 * @return single db entry as object
 	 */
 	protected <T> T selectWithDefaultValue(Logger logger, String statement, Class<T> requiredType, T defaultValue, Object... parameter) {
@@ -553,12 +480,9 @@ public abstract class BaseDaoImpl {
 			return getJdbcTemplate().queryForObject(statement, requiredType, parameter);
 		} catch (EmptyResultDataAccessException e) {
 			if (logger.isDebugEnabled()) {
-				logger.debug("Empty result, using default value: " + defaultValue);
+				logger.debug(MessageFormat.format("Empty result, using default value: {0}", defaultValue));
 			}
 			return defaultValue;
-		} catch (DataAccessException e) {
-			logSqlError(e, logger, statement, parameter);
-			throw e;
 		} catch (RuntimeException e) {
 			logSqlError(e, logger, statement, parameter);
 			throw e;
@@ -568,9 +492,6 @@ public abstract class BaseDaoImpl {
 	/**
 	 * Logs the statement and parameter in debug-level, executes update and logs error.
 	 * 
-	 * @param logger
-	 * @param statement
-	 * @param parameter
 	 * @return number of touched lines in db
 	 */
 	protected int update(Logger logger, String statement, Object... parameter) {
@@ -580,12 +501,9 @@ public abstract class BaseDaoImpl {
 			logSqlStatement(logger, statement, parameter);
 			int touchedLines = getJdbcTemplate().update(statement, parameter);
 			if (logger.isDebugEnabled()) {
-				logger.debug("lines changed by update: " + touchedLines);
+				logger.debug(MessageFormat.format("lines changed by update: {0}", touchedLines));
 			}
 			return touchedLines;
-		} catch (DataAccessException e) {
-			logSqlError(e, logger, statement, parameter);
-			throw e;
 		} catch (RuntimeException e) {
 			logSqlError(e, logger, statement, parameter);
 			throw e;
@@ -594,19 +512,12 @@ public abstract class BaseDaoImpl {
 	
 	/**
 	 * Logs the statement and parameter in debug-level, executes a DDL SQL Statement.
-	 * 
-	 * @param logger
-	 * @param statement
-	 * @return number of touched lines in db
 	 */
 	protected void execute(Logger logger, String statement) {
 		try {
 			validateStatement(statement);
 			logSqlStatement(logger, statement);
 			getJdbcTemplate().execute(statement);
-		} catch (DataAccessException e) {
-			logSqlError(e, logger, statement);
-			throw e;
 		} catch (RuntimeException e) {
 			logSqlError(e, logger, statement);
 			throw e;
@@ -616,11 +527,7 @@ public abstract class BaseDaoImpl {
 	/**
 	 * Execute DDL statements with retry on "busy resource",
 	 * 
-	 * @param logger
 	 * @param timeoutSeconds (0 = EMM System default)
-	 * @param maxNumberOfAttempts
-	 * @param waitTimeSeconds
-	 * @param statement
 	 */
 	protected void executeWithRetry(Logger logger, int timeoutSeconds, int maxNumberOfAttempts, int waitTimeSeconds, String statement) {
 		try {
@@ -636,9 +543,9 @@ public abstract class BaseDaoImpl {
 					jdbcTemplateWithTimeout.setQueryTimeout(timeoutSeconds);
 					jdbcTemplateWithTimeout.execute(statement);
 					return;
-				} catch(QueryTimeoutException qe) {
+				} catch (QueryTimeoutException qe) {
 					if (tryCount < maxNumberOfAttempts) {
-						logger.warn("Execute statement reached timeout of " + timeoutSeconds + " seconds. Attempt " + tryCount + " of maximum " + maxNumberOfAttempts + ".\n" + statement);
+						logger.warn(MessageFormat.format("Execute statement reached timeout of {0} seconds. Attempt {1} of maximum {2}.\n{3}", timeoutSeconds, tryCount, maxNumberOfAttempts, statement));
 					} else {
 						String errorText = "Execute statement reached final timeout of " + timeoutSeconds + " seconds after " + tryCount + " attempts.\n" + statement;
 						logger.error(errorText);
@@ -654,14 +561,11 @@ public abstract class BaseDaoImpl {
 				}
 				
 				try {
-					Thread.sleep(waitTimeSeconds * 1000);
+					Thread.sleep(waitTimeSeconds * 1000L);
 				} catch (InterruptedException e) {
 					// Do nothing, just continue
 				}
 			}
-		} catch (DataAccessException e) {
-			logSqlError(e, logger, statement);
-			throw e;
 		} catch (RuntimeException e) {
 			logSqlError(e, logger, statement);
 			throw e;
@@ -691,12 +595,9 @@ public abstract class BaseDaoImpl {
 				return ps;
 			}, keys);
 			if (logger.isDebugEnabled()) {
-				logger.debug("lines changed by update: " + touchedLines);
+				logger.debug(MessageFormat.format("lines changed by update: {0}", touchedLines));
 			}
 			return touchedLines;
-		} catch (DataAccessException e) {
-			logSqlError(e, logger, statement, parameter);
-			throw e;
 		} catch (RuntimeException e) {
 			logSqlError(e, logger, statement, parameter);
 			throw e;
@@ -758,11 +659,6 @@ public abstract class BaseDaoImpl {
 	 * 
 	 * Example: updateBlob(logger, "UPDATE tableName SET blobField = ? WHERE idField1 = ? AND idField2 = ?", blobDataArray, id1Object, id2Object);
 	 * 
-	 * @param logger
-	 * @param statement
-	 * @param blobData
-	 * @param parameter
-	 * @throws Exception
 	 */
 	public void updateBlob(Logger logger, String statement, final byte[] blobData, final Object... parameter) throws Exception {
 		if (blobData == null) {
@@ -779,11 +675,6 @@ public abstract class BaseDaoImpl {
 	 * 
 	 * Example: updateBlob(logger, "UPDATE tableName SET blobField = ? WHERE idField1 = ? AND idField2 = ?", blobDataInputSTream, id1Object, id2Object);
 	 *
-	 * @param logger
-	 * @param statement
-	 * @param blobDataInputStream
-	 * @param parameter
-	 * @throws Exception
 	 */
 	public void updateBlob(Logger logger, String statement, final InputStream blobDataInputStream, final Object... parameter) throws Exception {
 		if (blobDataInputStream == null) {
@@ -836,12 +727,6 @@ public abstract class BaseDaoImpl {
 	 * Write the data of a blob into an outputstream.
 	 * The selectBlobStatement must return a single column of type Blob.
 	 * 
-	 * @param logger
-	 * @param selectBlobStatement
-	 * @param outputStream
-	 * @param parameter
-	 * @throws SQLException
-	 * @throws IOException
 	 */
 	public void writeBlobInStream(Logger logger, String selectBlobStatement, OutputStream outputStream, final Object... parameter) throws Exception {
 		try {
@@ -857,9 +742,6 @@ public abstract class BaseDaoImpl {
 					IOUtils.copy(inputStream, outputStream);
 				}
 			}
-		} catch (DataAccessException e) {
-			logSqlError(e, logger, selectBlobStatement, parameter);
-			throw e;
 		} catch (RuntimeException e) {
 			logSqlError(e, logger, selectBlobStatement, parameter);
 			throw e;
@@ -871,10 +753,6 @@ public abstract class BaseDaoImpl {
 	 * Logs the statement and parameter in debug-level, executes update and logs error.<br />
 	 * Watch out: Oracle returns value -2 (= Statement.SUCCESS_NO_INFO) per line for success with no "lines touched" info<br />
 	 * 
-	 * @param logger
-	 * @param statement
-	 * @param values
-	 * @return
 	 */
 	public int[] batchupdate(Logger logger, String statement, List<Object[]> values) {
 		try {
@@ -882,14 +760,14 @@ public abstract class BaseDaoImpl {
 			logSqlStatement(logger, statement, "BatchUpdateParameterList(Size: " + values.size() + ")");
 			int[] touchedLines = getJdbcTemplate().batchUpdate(statement, values);
 			if (logger.isDebugEnabled()) {
-				logger.debug("lines changed by update: " + Arrays.toString(touchedLines));
+				logger.debug(MessageFormat.format("lines changed by update: {0}", Arrays.toString(touchedLines)));
 			}
 			return touchedLines;
 		} catch (RuntimeException e) {
 			logSqlError(e, logger, statement, "BatchUpdateParameterList(Size: " + values.size() + ")");
 
-			if (values != null && values.size() > 0 && values.get(0) != null) {
-				logger.error("Error: " + e.getMessage() + "\nSQL: " + statement + "\nFirstBatchParameterList: " + getParameterStringList(values.get(0)), e);
+			if (!values.isEmpty() && values.get(0) != null) {
+				logger.error(MessageFormat.format("Error: {0}\nSQL: {1}\nFirstBatchParameterList: {2}", e.getMessage(), statement, getParameterStringList(values.get(0))), e);
 			}
 			throw e;
 		}
@@ -921,7 +799,7 @@ public abstract class BaseDaoImpl {
 				}
 			}
 			if (logger.isDebugEnabled()) {
-				logger.debug("keys inserted by batch insert: " + StringUtils.join(generatedKeys, ", "));
+				logger.debug(MessageFormat.format("keys inserted by batch insert: {0}", StringUtils.join(generatedKeys, ", ")));
 			}
 			return generatedKeys.stream().mapToInt(i->i).toArray();
 		} catch (RuntimeException e) {
@@ -1000,10 +878,6 @@ public abstract class BaseDaoImpl {
 	 * This method makes an insert into a mysql table with an autoincrement column.
 	 * Logs the statement and parameter in debug-level, executes insert and logs error.
 	 * 
-	 * @param logger
-	 * @param autoincrementColumn
-	 * @param insertStatement
-	 * @param parameter
 	 * @return inserted id
 	 */
 	@DaoUpdateReturnValueCheck
@@ -1043,7 +917,7 @@ public abstract class BaseDaoImpl {
 
 			SqlUpdate sqlUpdate = new SqlUpdate(getDataSource(), insertStatement, insertParameterTypes);
 			sqlUpdate.setReturnGeneratedKeys(true);
-			sqlUpdate.setGeneratedKeysColumnNames(new String[] { autoincrementColumn });
+			sqlUpdate.setGeneratedKeysColumnNames(autoincrementColumn);
 			sqlUpdate.compile();
 			GeneratedKeyHolder generatedKeyHolder = new GeneratedKeyHolder();
 
@@ -1055,9 +929,6 @@ public abstract class BaseDaoImpl {
 			}
 			
 			return autoincrementedValue;
-		} catch (DataAccessException e) {
-			logSqlError(e, logger, insertStatement + " autoincrement: " + autoincrementColumn, parameter);
-			throw e;
 		} catch (RuntimeException e) {
 			logSqlError(e, logger, insertStatement + " autoincrement: " + autoincrementColumn, parameter);
 			throw e;
@@ -1068,10 +939,6 @@ public abstract class BaseDaoImpl {
 	 * This method makes multiple inserts into a mysql table with an autoincrement column.
 	 * Logs the statement and parameter in debug-level, executes insert and logs error.
 	 * 
-	 * @param logger
-	 * @param autoincrementColumn
-	 * @param insertStatement
-	 * @param parameter
 	 * @return number of touched lines in db
 	 */
 	@DaoUpdateReturnValueCheck
@@ -1104,14 +971,11 @@ public abstract class BaseDaoImpl {
 
 			SqlUpdate sqlUpdate = new SqlUpdate(getDataSource(), insertStatement, insertParameterTypes);
 			sqlUpdate.setReturnGeneratedKeys(true);
-			sqlUpdate.setGeneratedKeysColumnNames(new String[] { autoincrementColumn });
+			sqlUpdate.setGeneratedKeysColumnNames(autoincrementColumn);
 			sqlUpdate.compile();
 			GeneratedKeyHolder generatedKeyHolder = new GeneratedKeyHolder();
 			
 			return sqlUpdate.update(parameter, generatedKeyHolder);
-		} catch (DataAccessException e) {
-			logSqlError(e, logger, insertStatement + " autoincrement: " + autoincrementColumn, parameter);
-			throw e;
 		} catch (RuntimeException e) {
 			logSqlError(e, logger, insertStatement + " autoincrement: " + autoincrementColumn, parameter);
 			throw e;

@@ -21,24 +21,24 @@ import com.agnitas.dao.ComMailingDao;
 
 public class ScriptHelperService {
 	private ComMailingDao mailingDao;
-	private PreviewFactory previewFactory;	
+	private PreviewFactory previewFactory;
 	
 	/**
-	 * this method returns the mailingID for last sent mailing for the given company,customer.	 
-	 * ATTENTION! Only already sent World-Mailings will be found!  
+	 * this method returns the mailingID for last sent mailing for the given company,customer.
+	 * ATTENTION! Only already sent World-Mailings will be found!
 	 * @param companyID
-	 * @param customerID	
+	 * @param customerID
 	 * @return
 	 */
 	public int getLastSentMailingID(@VelocityCheck int companyID, int customerID) {
 		int returnValue = -1;
-		returnValue = mailingDao.getLastSentMailing(companyID, customerID);		
+		returnValue = mailingDao.getLastSentMailing(companyID, customerID);
 		return returnValue;
 	}
 
 	/**
 	 * This method returns the mailing ID for a already sent world-mailing with the given companyID and
-	 * (if given) the mailingListID. If no mailingListID is given (null or "0") it will be ignored. 
+	 * (if given) the mailingListID. If no mailingListID is given (null or "0") it will be ignored.
 	 * @param companyID
 	 * @param mailingListID
 	 * @return
@@ -55,7 +55,7 @@ public class ScriptHelperService {
 			throw new Exception("No Mailing found with companyID: " + companyID + " and customerID: " + customerID);
 		}
 		return generateBackEndPreview(lastNewsletter, customerID);
-	}	
+	}
 	
 	/**
 	 * This method returns the HTML Part for the given customerID and the given mailingID.
@@ -69,7 +69,7 @@ public class ScriptHelperService {
 		try {
 			returnObject = generateBackEndHTMLPreview(mailingID, customerID);
 		} catch (Exception e) {
-			throw new Exception("ScriptHelperService failed to generate the html preview: " + e); 
+			throw new Exception("ScriptHelperService failed to generate the html preview: " + e);
 		}
 		if (returnObject == null) {
 			throw new Exception("ScriptHelperService failed to generate the html preview. MailingID: " + mailingID + ", customerID: " + customerID);
@@ -82,20 +82,20 @@ public class ScriptHelperService {
 		// PreviewFactory previewFactory = (PreviewFactory) con.getBean("PreviewFactory");
 		Preview preview = previewFactory.createPreview();
 		// get a anonymized Fullview.
-		Map<String,Object> output = preview.createPreview (mailingID,customerID,null,true, false);	
+		Map<String,Object> output = preview.createPreview (mailingID,customerID,null,true, false);
 		preview.done();
 		return output;
 	}
 	
-	/** 
+	/**
 	 * generates a html representation of the given mailing (mailingID) with the given Customer.
 	 * @param mailingID
 	 * @param customerID
 	 * @return
-	 * @throws Exception 
+	 * @throws Exception
 	 */
 	protected Object generateBackEndHTMLPreview(int mailingID, int customerID) throws Exception {
-		return generateBackEndHTMLPreview(mailingID, customerID, false);		 		
+		return generateBackEndHTMLPreview(mailingID, customerID, false);
 	}
 	
 	/**
@@ -104,7 +104,7 @@ public class ScriptHelperService {
 	 * the normal html part will be returned!
 	 * @param mailingID
 	 * @param customerID
-	 * @param mobile 
+	 * @param mobile
 	 * @return
 	 * @throws Exception
 	 */
@@ -115,7 +115,7 @@ public class ScriptHelperService {
 			throw new Exception("ScriptHelperService::generateBackEndHTMLPreview: Error generating preview. mailingID: " + mailingID +
 					" customerID: " + customerID + "\n previewError: " + page.getError());
 		}
-		return page.getHTML();		
+		return page.getHTML();
 	}
 	
 	public void setMailingDao(ComMailingDao mailingDao) {

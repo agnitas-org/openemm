@@ -53,23 +53,6 @@
 </emm:instantiate>
 
 <emm:instantiate var="itemActionsSettings" type="java.util.LinkedHashMap" scope="request">
-    <c:if test="${userGroupForm.id ne 0}">
-        <emm:ShowByPermission token="role.change">
-            <emm:instantiate var="element" type="java.util.LinkedHashMap">
-                <c:set target="${itemActionsSettings}" property="2" value="${element}"/>
-                <c:set target="${element}" property="btnCls" value="btn btn-regular btn-inverse"/>
-                <c:set target="${element}" property="type" value="href"/>
-                <c:set target="${element}" property="url">
-                    <c:url value="/administration/usergroup/${userGroupForm.id}/copy.action"/>
-                </c:set>
-                <c:set target="${element}" property="iconBefore" value="icon-copy"/>
-                    <c:set target="${element}" property="name">
-                        <mvc:message code="button.Copy"/>
-                    </c:set>
-            </emm:instantiate>
-        </emm:ShowByPermission>
-    </c:if>
-    
     <c:choose>
         <c:when test="${userGroupIsNew}">
             <emm:ShowByPermission token="role.change">
@@ -85,6 +68,20 @@
             </emm:ShowByPermission>
         </c:when>
         <c:otherwise>
+        <emm:ShowByPermission token="role.change">
+            <emm:instantiate var="element" type="java.util.LinkedHashMap">
+                <c:set target="${itemActionsSettings}" property="2" value="${element}"/>
+                <c:set target="${element}" property="btnCls" value="btn btn-regular btn-inverse"/>
+                <c:set target="${element}" property="type" value="href"/>
+                <c:set target="${element}" property="url">
+                    <c:url value="/administration/usergroup/${userGroupForm.id}/copy.action"/>
+                </c:set>
+                <c:set target="${element}" property="iconBefore" value="icon-copy"/>
+                    <c:set target="${element}" property="name">
+                        <mvc:message code="button.Copy"/>
+                    </c:set>
+            </emm:instantiate>
+        </emm:ShowByPermission>
             <logic:notEqual name="groupID" scope="session" value="${userGroupForm.id}">
             	<c:if test="${userGroupForm.companyId eq admin.companyID or admin.companyID eq ROOT_COMPANY_ID}">
                 	<emm:ShowByPermission token="role.delete">

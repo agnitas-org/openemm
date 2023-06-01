@@ -42,7 +42,6 @@ public class MaildropStatusDAO {
 	private boolean		selectedTestRecipients;
 	private boolean		dependsOnAutoImportID;
 	private boolean		autoImportOK;
-	private long		realSendDateStatusID;
 	private Date		realSendDate;
 		
 	public MaildropStatusDAO (DBase dbase, long forStatusID, long forMailingID) throws SQLException {
@@ -50,7 +49,7 @@ public class MaildropStatusDAO {
 		Map <String, Object>		row;
 	
 		try (DBase.With with = dbase.with ()) {
-			row = dbase.querys (with.jdbc (),
+			row = dbase.querys (with.cursor (),
 					    "SELECT status_id, company_id, mailing_id, status_field, senddate, " +
 					    "       step, blocksize, genstatus, max_recipients, " +
 					    "       admin_test_target_id, optimize_mail_generation, selected_test_recipients " +
@@ -73,7 +72,7 @@ public class MaildropStatusDAO {
 				adminTestTargetID = dbase.asLong (row.get ("admin_test_target_id"));
 				optimizeMailGeneration = dbase.asString (row.get ("optimize_mail_generation"));
 				selectedTestRecipients = dbase.asInt (row.get ("selected_test_recipients")) == 1;
-				rq = dbase.query (with.jdbc (),
+				rq = dbase.query (with.cursor (),
 						  "SELECT auto_import_id, status_ok " +
 						  "FROM mailing_import_lock_tbl " +
 						  "WHERE maildrop_status_id = :statusID",
@@ -147,58 +146,14 @@ public class MaildropStatusDAO {
 		return realSendDate;
 	}
 
-	/**
-	 * get the senddate in a specific format
-	 */
-	public String formatRealSenddate (DBase dbase, String format) throws SQLException {
-		String	rc = "";
-		
-		try (DBase.With with = dbase.with ()) {
-			String				query = null;
-			List <Map <String, Object>>	rq;
-			Map <String, Object>		row;
-			
-			if (realSendDateStatusID > 0L) {
-				if (dbase.isOracle ()) {
-					query = "SELECT to_char (senddate, :fmt) fmt FROM maildrop_status_tbl WHERE status_id = :statusID";
-				} else {
-					query = "SELECT cast(date_format(senddate, :fmt) AS char) fmt FROM maildrop_status_tbl WHERE status_id = :statusID";
-				}
-				rq = dbase.query (with.jdbc(),
-						  query,
-						  "fmt", format, "statusID", realSendDateStatusID);
-				if (rq.size () > 0) {
-					row = rq.get (0);
-					rc = dbase.asString (row.get ("fmt"));
-				}
-			}
-			if (rc == null) {
-				if (dbase.isOracle ()) {
-					query = "SELECT to_char (sysdate, :fmt) fmt FROM dual";
-				} else {
-					query = "SELECT cast(date_format(current_date, :fmt) AS char) fmt";
-				}
-				rq = dbase.query (with.jdbc (),
-						  query,
-						  "fmt", format);
-				if (rq.size () > 0) {
-					row = rq.get (0);
-					rc = dbase.asString (row.get ("fmt"));
-				}
-			}
-		}
-		return rc;
-	}
-
 	private void determinateRealSendDate (DBase dbase) throws SQLException {
 		char				currentStatus = '\0';
 		List <Map <String, Object>>	rq;
 		Map <String, Object>		row;
 
-		realSendDateStatusID = statusID;
 		realSendDate = null;
 		try (DBase.With with = dbase.with ()) {
-			rq = dbase.query (with.jdbc (),
+			rq = dbase.query (with.cursor (),
 					  "SELECT status_id, status_field, senddate " +
 					  "FROM maildrop_status_tbl " +
 					  "WHERE mailing_id = :mailingID",
@@ -232,14 +187,9 @@ public class MaildropStatusDAO {
 					}
 					if (hit) {
 						currentStatus = status;
-						realSendDateStatusID = dbase.asLong (row.get ("status_id"));
 						realSendDate = dbase.asDate (row.get ("senddate"));
 					}
 				}
-			}
-			if (realSendDate == null) {
-				realSendDateStatusID = 0;
-				realSendDate = new Date ();
 			}
 		}
 		if (realSendDate == null) {
@@ -251,7 +201,7 @@ public class MaildropStatusDAO {
 		List <Map <String, Object>>	rq;
 
 		try (DBase.With with = dbase.with ()) {
-			rq = dbase.query (with.jdbc (),
+			rq = dbase.query (with.cursor (),
 					  "SELECT status_id " +
 					  "FROM maildrop_status_tbl " +
 					  "WHERE mailing_id = :mailingID AND status_field = :statusField " +
@@ -276,15 +226,48 @@ public class MaildropStatusDAO {
 	static public long findSmallestStatusIDForWorldMailing (DBase dbase, long mailingID) throws SQLException {
 		return findStatusIDForWorldMailing (dbase, mailingID, "ASC");
 	}
-
+	/**
+	 * update genchange for statusID
+	 */
+	public boolean updateGenChange (DBase dbase, Date genchange) throws SQLException {
+		try (DBase.With with = dbase.with ()) {
+			DBase.Retry <Integer>	r = dbase.new Retry <> ("genchange", dbase, with.cursor ()) {
+				@Override
+				public void execute () throws SQLException {
+					if (genchange == null) {
+						priv = dbase.update (cursor,
+								     "UPDATE maildrop_status_tbl " +
+								     "SET genchange = CURRENT_TIMESTAMP " + 
+								     "WHERE status_id = :statusID",
+								     "statusID", statusID);
+					} else {
+						priv = dbase.update (cursor,
+								     "UPDATE maildrop_status_tbl " +
+								     "SET genchange = :genchange " +
+								     "WHERE status_id = :statusID",
+								     "genchange", genchange,
+								     "statusID", statusID);
+					}
+				}
+			};
+			if (dbase.retry (r)) {
+				dbase.logging (Log.INFO, "genchange", "Update genchange to " + (genchange != null ? genchange.toString () : "now") + " had been " + (r.priv == 1 ? "" : "NOT ") + "successful");
+				return r.priv == 1;
+			}
+			throw r.error;
+		}
+	}
+	public boolean updateGenChange (DBase dbase) throws SQLException {
+		return updateGenChange (dbase, null);
+	}
 	/**
 	 * update genstatus for statusID
 	 */
-	public boolean updateGenStatus (DBase dbase, int fromStatus, int toStatus) throws SQLException {
+	public boolean updateGenStatus (DBase dbase, int fromStatus, int toStatus, boolean forceSetProcessedBy) throws SQLException {
 		try (DBase.With with = dbase.with ()) {
 			int	count;
 		
-			DBase.Retry <Integer>	r = dbase.new Retry <> ("genstatus", dbase, with.jdbc ()) {
+			DBase.Retry <Integer>	r = dbase.new Retry <> ("genstatus", dbase, with.cursor ()) {
 				@Override
 				public void execute () throws SQLException {
 					Map <String, Object>	parameter = new HashMap <> ();
@@ -296,7 +279,7 @@ public class MaildropStatusDAO {
 					
 					parameter.put ("toStatus", toStatus);
 					parameter.put ("statusID", statusID);
-					if (toStatus == 2) {
+					if (forceSetProcessedBy || (toStatus == 2)) {
 						query += ", processed_by = :processedBy";
 					} else {
 						clause += " AND processed_by = :processedBy";
@@ -307,11 +290,11 @@ public class MaildropStatusDAO {
 						parameter.put ("fromStatus", fromStatus);
 					}
 					query += " " + clause;
-					priv = dbase.update (jdbc, query, parameter);
+					priv = dbase.update (cursor, query, parameter);
 					if (priv == 1) {
 						Map <String, Object>	rq;
 						
-						rq = dbase.querys (jdbc,
+						rq = dbase.querys (cursor,
 								   "SELECT genstatus " +
 								   "FROM maildrop_status_tbl " +
 								   "WHERE status_id = :statusID",
@@ -331,10 +314,10 @@ public class MaildropStatusDAO {
 								} else {
 									dbase.logging (Log.INFO, "genstatus", "genStatus = " + genStatus + " as expected for status_id " + statusID);
 									if (toStatus == 1) {
-										dbase.update (jdbc,
+										dbase.update (cursor,
 											      "UPDATE mailing_import_lock_tbl " +
-											      "SET status_ok = 0 " + 
-											      "WHERE maildrop_status_id = :statusID",
+											      "SET status_ok = 0, change_date = CURRENT_TIMESTAMP " +
+											      "WHERE maildrop_status_id = :statusID AND status_ok = 1",
 											      "statusID", statusID);
 									}
 								}
@@ -363,7 +346,7 @@ public class MaildropStatusDAO {
 	 */
 	public boolean remove (DBase dbase) throws SQLException {
 		try (DBase.With with = dbase.with ()) {
-			return dbase.update (with.jdbc (),
+			return dbase.update (with.cursor (),
 					     "DELETE FROM maildrop_status_tbl " +
 					     "WHERE status_id = :statusID",
 					     "statusID", statusID) == 1;

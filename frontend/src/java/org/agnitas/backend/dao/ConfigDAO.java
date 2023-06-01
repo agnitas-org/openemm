@@ -32,7 +32,7 @@ public class ConfigDAO {
 		try (DBase.With with = dbase.with ()) {
 			Set <String>	seenByHost = new HashSet <> ();
 			
-			for (Map <String, Object> row : dbase.query (with.jdbc (), "SELECT class, name, value, hostname FROM config_tbl")) {
+			for (Map <String, Object> row : dbase.query (with.cursor (), "SELECT class, name, value, hostname FROM config_tbl")) {
 				String	configClass = dbase.asString (row.get ("class"));
 				String	configName = dbase.asString (row.get ("name"));
 				String	configValue = dbase.asString (row.get ("value"));
@@ -64,7 +64,7 @@ public class ConfigDAO {
 	
 	public void add (DBase dbase, String className, String name, String value, String hostname, String description) throws SQLException {
 		try (DBase.With with = dbase.with ()) {
-			if (dbase.update (with.jdbc (),
+			if (dbase.update (with.cursor (),
 					  "UPDATE config_tbl " +
 					  "SET value = :value, change_date = current_timestamp " +
 					  "WHERE class = :class AND name = :name AND hostname = :hostname",
@@ -72,7 +72,7 @@ public class ConfigDAO {
 					  "class", className,
 					  "name", name,
 					  "hostname", hostname) == 0) {
-				dbase.update (with.jdbc (),
+				dbase.update (with.cursor (),
 					      "INSERT INTO config_tbl " +
 					      "       (class, name, value, hostname, description, creation_date, change_date) " +
 					      "VALUES " +

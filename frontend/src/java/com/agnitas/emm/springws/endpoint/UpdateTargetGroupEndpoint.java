@@ -10,8 +10,11 @@
 
 package com.agnitas.emm.springws.endpoint;
 
+import java.util.Objects;
+
 import org.agnitas.emm.springws.endpoint.BaseEndpoint;
-import org.agnitas.emm.springws.endpoint.Utils;
+import org.agnitas.emm.springws.endpoint.Namespaces;
+import org.agnitas.emm.springws.util.SecurityContextAccess;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.ws.server.endpoint.annotation.Endpoint;
 import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
@@ -27,26 +30,30 @@ import com.agnitas.emm.springws.jaxb.UpdateTargetGroupResponse;
 @Endpoint
 public class UpdateTargetGroupEndpoint extends BaseEndpoint {
 
-    private ComTargetService targetService;
+    private final ComTargetService targetService;
+    private final SecurityContextAccess securityContextAccess;
 
-    public UpdateTargetGroupEndpoint(ComTargetService targetService) {
-        this.targetService = targetService;
+    public UpdateTargetGroupEndpoint(final ComTargetService targetService, final SecurityContextAccess securityContextAccess) {
+        this.targetService = Objects.requireNonNull(targetService, "targetService");
+        this.securityContextAccess = Objects.requireNonNull(securityContextAccess, "securityContextAccess");
     }
 
-    @PayloadRoot(namespace = Utils.NAMESPACE_COM, localPart = "UpdateTargetGroupRequest")
+    @PayloadRoot(namespace = Namespaces.AGNITAS_COM, localPart = "UpdateTargetGroupRequest")
     public @ResponsePayload UpdateTargetGroupResponse updateTargetGroup(@RequestPayload UpdateTargetGroupRequest request) throws Exception {
-        int companyId = Utils.getUserCompany();
-        int targetId = request.getTargetID();
-        ComTarget target = targetService.getTargetGroup(targetId, companyId);
+        final int companyId = this.securityContextAccess.getWebserviceUserCompanyId();
+        
+        final int targetId = request.getTargetID();
+        final ComTarget target = targetService.getTargetGroup(targetId, companyId);
         fillUpdatedFields(request, target);
         targetService.saveTarget(target);
+        
         return new UpdateTargetGroupResponse();
     }
 
     private void fillUpdatedFields(UpdateTargetGroupRequest request, ComTarget existingTarget) {
-        String description = request.getDescription();
-        String eql = request.getEql();
-        String targetName = request.getTargetName();
+        final String description = request.getDescription();
+        final String eql = request.getEql();
+        final String targetName = request.getTargetName();
         validateRequestFields(description, eql, targetName);
         if (description != null) {
             existingTarget.setTargetDescription(description);

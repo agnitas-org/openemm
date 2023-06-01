@@ -14,13 +14,10 @@ import java.util.List;
 
 import org.agnitas.util.SqlPreparedStatementManager;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 
 public interface RecipientQueryBuilder {
-	SqlPreparedStatementManager getRecipientListSQLStatement(ComAdmin admin, RecipientSqlOptions options) throws Exception;
-
-	SqlPreparedStatementManager getRecipientListSQLStatementNew(ComAdmin admin, RecipientSqlOptions options, boolean includeBounceLoad) throws Exception;
-
-	SqlPreparedStatementManager getDuplicateAnalysisSQLStatement(ComAdmin admin, RecipientDuplicateSqlOptions options, boolean includeBounceLoad) throws Exception;
-    SqlPreparedStatementManager getDuplicateAnalysisSQLStatement(ComAdmin admin, RecipientDuplicateSqlOptions options, List<String> selectedColumns, boolean includeBounceLoad) throws Exception;
+	SqlPreparedStatementManager getDuplicateAnalysisSQLStatement(Admin admin, RecipientDuplicateSqlOptions options, boolean includeBounceLoad) throws Exception;
+	
+    SqlPreparedStatementManager getDuplicateAnalysisSQLStatement(Admin admin, RecipientDuplicateSqlOptions options, List<String> selectedColumns, boolean includeBounceLoad) throws Exception;
 }

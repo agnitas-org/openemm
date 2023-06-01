@@ -10,23 +10,12 @@
 
 package com.agnitas.emm.core.profilefields.service.impl;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.ProfileField;
+import com.agnitas.beans.ProfileFieldMode;
 import com.agnitas.beans.TargetLight;
-import com.agnitas.dao.ComProfileFieldDao;
+import com.agnitas.beans.impl.ProfileFieldImpl;
+import com.agnitas.dao.ProfileFieldDao;
 import com.agnitas.emm.core.beans.Dependent;
 import com.agnitas.emm.core.profilefields.ProfileFieldException;
 import com.agnitas.emm.core.profilefields.bean.ProfileFieldDependentType;
@@ -35,16 +24,34 @@ import com.agnitas.emm.core.profilefields.service.ProfileFieldService;
 import com.agnitas.emm.core.target.service.ComTargetService;
 import com.agnitas.emm.core.workflow.beans.Workflow;
 import com.agnitas.emm.core.workflow.service.ComWorkflowService;
-import com.agnitas.service.ComColumnInfoService;
+import com.agnitas.post.MandatoryField;
+import com.agnitas.service.ColumnInfoService;
+import org.agnitas.beans.LightProfileField;
+import org.agnitas.beans.impl.PaginatedListImpl;
+import org.agnitas.emm.core.useractivitylog.UserAction;
+import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Required;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public final class ProfileFieldServiceImpl implements ProfileFieldService {
-    /**
-     * The logger.
-     */
+
     private static final Logger logger = LogManager.getLogger(ProfileFieldServiceImpl.class);
 
-    private ComProfileFieldDao profileFieldDao;
-    private ComColumnInfoService columnInfoService;
+    private ProfileFieldDao profileFieldDao;
+    private ColumnInfoService columnInfoService;
     private ComWorkflowService workflowService;
     private ComTargetService targetService;
 
@@ -54,30 +61,17 @@ public final class ProfileFieldServiceImpl implements ProfileFieldService {
     }
 
     @Required
-    public void setColumnInfoService(ComColumnInfoService columnInfoService) {
+    public void setColumnInfoService(ColumnInfoService columnInfoService) {
         this.columnInfoService = columnInfoService;
     }
 
     @Required
-    public final void setProfileFieldDao(final ComProfileFieldDao dao) {
+    public final void setProfileFieldDao(final ProfileFieldDao dao) {
         this.profileFieldDao = Objects.requireNonNull(dao, "Profile field DAO cannot be null");
     }
 
     public void setWorkflowService(ComWorkflowService workflowService) {
         this.workflowService = workflowService;
-    }
-
-    @Override
-    public final boolean checkDatabaseNameExists(@VelocityCheck final int companyID, final String fieldNameOnDatabase) throws ProfileFieldException {
-        try {
-            return profileFieldDao.checkProfileFieldExists(companyID, fieldNameOnDatabase);
-        } catch (final Exception e) {
-            final String msg = String.format("Cannot check, if profile field '%s' (company ID %d) exists", fieldNameOnDatabase, companyID);
-
-            logger.error(msg, e);
-
-            throw new ProfileFieldException(msg, e);
-        }
     }
 
     @Override
@@ -107,11 +101,11 @@ public final class ProfileFieldServiceImpl implements ProfileFieldService {
 	}
 
 	@Override
-    public List<ProfileField> getProfileFieldsWithInterest(ComAdmin admin) {
+    public List<ProfileField> getProfileFieldsWithInterest(Admin admin) {
         try {
             return profileFieldDao.getProfileFieldsWithInterest(admin.getCompanyID(), admin.getAdminID());
         } catch (Exception e) {
-            logger.error("Error occurred: " + e.getMessage(), e);
+            logger.error(String.format("Error occurred: %s", e.getMessage()), e);
         }
 
         return new ArrayList<>();
@@ -120,6 +114,58 @@ public final class ProfileFieldServiceImpl implements ProfileFieldService {
     @Override
     public boolean isAddingNearLimit(@VelocityCheck int companyId) {
         return profileFieldDao.isNearLimit(companyId);
+    }
+
+    @Override
+    public PaginatedListImpl<ProfileField> getPaginatedFieldsList(int companyId, String sortColumn, String order, int page, int rowsCount) throws Exception {
+        List<ProfileField> fields = getSortedColumnInfo(companyId);
+        sortProfileFields(fields, sortColumn, order);
+
+        List<ProfileField> partialFields = buildPartialProfileFieldList(fields, page, rowsCount);
+
+        return new PaginatedListImpl<>(partialFields, fields.size(), rowsCount, page, sortColumn, order);
+    }
+
+    private void sortProfileFields(List<ProfileField> profileFields, String column, String order) {
+        if (CollectionUtils.isEmpty(profileFields) || StringUtils.isBlank(column)) {
+            return;
+        }
+
+        Map<String, Comparator<ProfileField>> sortableColumns = new HashMap<>();
+
+        sortableColumns.put("shortname", Comparator.comparing(pf -> pf.getShortname().toLowerCase()));
+        sortableColumns.put("column", Comparator.comparing(pf -> pf.getColumn().toLowerCase()));
+        sortableColumns.put("dataType", Comparator.comparing(pf -> pf.getDataType().toLowerCase()));
+        sortableColumns.put("dataTypeLength", Comparator.comparing(ProfileField::getDataTypeLength));
+        sortableColumns.put("defaultValue", Comparator.comparing(pf -> pf.getDefaultValue().toLowerCase()));
+        sortableColumns.put("modeEdit", Comparator.comparing(pf -> pf.getModeEdit().getStorageCode()));
+        sortableColumns.put("sort", Comparator.comparing(ProfileField::getSort));
+
+        if (sortableColumns.containsKey(column)) {
+            Comparator<ProfileField> comparator = sortableColumns.get(column);
+
+            boolean isAscendingOrder = "asc".equalsIgnoreCase(order) || "ascending".equalsIgnoreCase(order);
+            if (!isAscendingOrder) {
+                comparator = comparator.reversed();
+            }
+
+            profileFields.sort(comparator);
+        } else {
+            logger.error("Profile field comparator was not found for property '{}'!", column);
+        }
+    }
+
+    private List<ProfileField> buildPartialProfileFieldList(List<ProfileField> fields, int pageNumber, int rowsCount) {
+        int entriesOffset = 0;
+
+        if (pageNumber > 1) {
+            entriesOffset = rowsCount * (pageNumber - 1);
+        }
+
+       return fields.stream()
+                .skip(entriesOffset)
+                .limit(rowsCount)
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -133,6 +179,19 @@ public final class ProfileFieldServiceImpl implements ProfileFieldService {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public List<String> getAllExceptSpecifiedNames(List<String> excludedFields, int companyId) {
+        // Get all available customer fields
+        List<String> availableCustomerFields = getSortedColumnInfo(companyId)
+                .stream()
+                .map(LightProfileField::getColumn)
+                .collect(Collectors.toList());
+
+        availableCustomerFields.removeAll(excludedFields);
+
+        return availableCustomerFields;
     }
 
     @Override
@@ -186,22 +245,6 @@ public final class ProfileFieldServiceImpl implements ProfileFieldService {
     }
 
     @Override
-    public List<String> getDependentWorkflows(@VelocityCheck int companyId, String fieldName) {
-        List<String> dependentWorkflows = null;
-
-        List<Workflow> workflows = workflowService.getActiveWorkflowsDependentOnProfileField(fieldName, companyId);
-
-        if (!workflows.isEmpty()) {
-            dependentWorkflows = workflows.stream()
-                    .map(Workflow::getShortname)
-                    .distinct()
-                    .collect(Collectors.toList());
-        }
-
-        return dependentWorkflows;
-    }
-
-    @Override
     public String getTrackingDependentWorkflows(@VelocityCheck int companyId, String fieldName) {
         String workflowName = null;
 
@@ -220,7 +263,33 @@ public final class ProfileFieldServiceImpl implements ProfileFieldService {
     }
 
     @Override
-    public boolean createNewField(ProfileField field, ComAdmin admin) {
+    public void createMandatoryFieldsIfNotExist(Admin admin) {
+        int companyID = admin.getCompanyID();
+
+        if (!exists(companyID, MandatoryField.STRASSE.getName())) {
+            createNewVarcharField(MandatoryField.STRASSE.getName(), 200, admin);
+        }
+        if (!exists(companyID, MandatoryField.PLZ.getName())) {
+            createNewVarcharField(MandatoryField.PLZ.getName(), 5, admin);
+        }
+        if (!exists(companyID, MandatoryField.ORT.getName())) {
+            createNewVarcharField(MandatoryField.ORT.getName(), 100, admin);
+        }
+    }
+
+    private boolean createNewVarcharField(String column, int length, Admin admin) {
+        ProfileField profileField = new ProfileFieldImpl();
+
+        profileField.setCompanyID(admin.getCompanyID());
+        profileField.setColumn(column);
+        profileField.setDataType("VARCHAR");
+        profileField.setDataTypeLength(length);
+
+       return createNewField(profileField, admin);
+    }
+
+    @Override
+    public boolean createNewField(ProfileField field, Admin admin) {
         try {
             return profileFieldDao.saveProfileField(field, admin);
         } catch (Exception e) {
@@ -240,7 +309,7 @@ public final class ProfileFieldServiceImpl implements ProfileFieldService {
     }
 
     @Override
-    public boolean updateField(ProfileField field, ComAdmin admin) {
+    public boolean updateField(ProfileField field, Admin admin) {
         try {
             return profileFieldDao.saveProfileField(field, admin);
         } catch (Exception e) {
@@ -249,6 +318,7 @@ public final class ProfileFieldServiceImpl implements ProfileFieldService {
             return false;
         }
     }
+
 
     @Override
     public UserAction getCreateFieldLog(String shortName) {
@@ -319,10 +389,10 @@ public final class ProfileFieldServiceImpl implements ProfileFieldService {
         String existingShortName = field.getShortname();
 
         //log if "Field visible" checkbox changed
-        if ((field.getModeEdit() == 2) && (form.isFieldVisible())) {
+        if ((field.getModeEdit() == ProfileFieldMode.NotVisible) && (form.isFieldVisible())) {
             changes.add("Field visible checked");
         }
-        if ((field.getModeEdit() == 0) && (!form.isFieldVisible())) {
+        if ((field.getModeEdit() == ProfileFieldMode.Editable) && (!form.isFieldVisible())) {
             changes.add("Field visible unchecked");
         }
         //log if "Line after this field" checkbox changed
@@ -355,6 +425,7 @@ public final class ProfileFieldServiceImpl implements ProfileFieldService {
         return userAction;
     }
 
+    // TODO check after ProfileFieldsControllerOld.java has been removed
     @Override
     public List<Dependent<ProfileFieldDependentType>> getDependents(@VelocityCheck int companyId, String fieldName) {
         List<Workflow> dependentWorkflows = workflowService.getActiveWorkflowsDependentOnProfileField(fieldName, companyId);
@@ -390,6 +461,37 @@ public final class ProfileFieldServiceImpl implements ProfileFieldService {
         return profileFieldDao.getComProfileFields(companyId, adminId);
     }
 
+    @Override
+    public List<ProfileField> getVisibleProfileFields(int companyId) {
+        try {
+            List<ProfileField> profileFields = getProfileFields(companyId);
+            return filterVisibleFields(profileFields);
+        } catch (Exception e) {
+            logger.error("Can't retrieve visible profile fields!", e);
+        }
+
+        return Collections.emptyList();
+    }
+
+    @Override
+    public List<ProfileField> getVisibleProfileFields(int adminId, int companyId) {
+        try {
+            List<ProfileField> profileFields = getProfileFields(companyId, adminId);
+            return filterVisibleFields(profileFields);
+        } catch (Exception e) {
+            logger.error("Can't retrieve visible profile fields!", e);
+        }
+
+        return Collections.emptyList();
+    }
+
+    private List<ProfileField> filterVisibleFields(List<ProfileField> fields) {
+        return fields
+                .stream()
+                .filter(pf -> !ProfileFieldMode.NotVisible.equals(pf.getModeEdit()))
+                .collect(Collectors.toList());
+    }
+
 	@Override
 	public boolean isReservedKeyWord(String fieldname) {
 		return profileFieldDao.isReservedKeyWord(fieldname);
@@ -400,8 +502,12 @@ public final class ProfileFieldServiceImpl implements ProfileFieldService {
 		return profileFieldDao.getMaximumNumberOfCompanySpecificProfileFields();
 	}
 
-	@Override
-	public ProfileField getProfileFieldByShortname(int companyID, String shortname) throws Exception {
-		return profileFieldDao.getProfileFieldByShortname(companyID, shortname);
-	}
+    @Override
+    public ProfileField getProfileFieldByShortname(int companyID, String shortname) {
+        try {
+            return profileFieldDao.getProfileFieldByShortname(companyID, shortname);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
 }

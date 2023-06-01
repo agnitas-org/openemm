@@ -10,11 +10,13 @@
 
 package org.agnitas.beans.impl;
 
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -68,6 +70,9 @@ public class ImportProfileImpl implements ImportProfile {
     // Used to get mapping from form. Try to delete this field or replace
     // Map<String, Integer> genderMapping with Map<Integer, Set<String>> genderMapping while migration to Spring
     protected Map<Integer, String> genderMappingsToSave = new HashMap<>();
+
+	private Locale reportLocale = new Locale("en", "US");
+	private String reportTimezone = "Europe/Berlin";
     
     public ImportProfileImpl() {
     	keyColumns = new ArrayList<>();
@@ -535,5 +540,38 @@ public class ImportProfileImpl implements ImportProfile {
 	@Override
 	public boolean isMailinglistsAll() {
 		return mailinglistsAll;
+	}
+
+	@Override
+	public void setReportLocale(Locale reportLocale) {
+		this.reportLocale = reportLocale;
+	}
+
+	@Override
+	public Locale getReportLocale() {
+		if (reportLocale == null) {
+			reportLocale = new Locale("en", "US");
+		}
+		
+		return reportLocale;
+	}
+
+	@Override
+	public void setReportTimezone(String reportTimezone) {
+		this.reportTimezone = reportTimezone;
+	}
+
+	@Override
+	public String getReportTimezone() {
+		if (StringUtils.isBlank(reportTimezone)) {
+			reportTimezone = "Europe/Berlin";
+		}
+		
+		return reportTimezone;
+	}
+
+	@Override
+	public DateTimeFormatter getReportDateTimeFormatter() {
+		return AgnUtils.getDateTimeFormatter(getReportTimezone(), getReportLocale());
 	}
 }

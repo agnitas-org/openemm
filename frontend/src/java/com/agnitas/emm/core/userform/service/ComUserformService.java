@@ -20,7 +20,7 @@ import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.userforms.UserformService;
 import org.agnitas.util.DbColumnType;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.userform.dto.UserFormDto;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.userform.bean.UserForm;
@@ -39,7 +39,7 @@ public interface ComUserformService extends UserformService {
 
 	boolean isFormNameUnique(String formName, int formId, int companyId);
 
-	ServiceResult<Integer> saveUserForm(ComAdmin admin, UserFormDto userFormDto) throws Exception;
+	ServiceResult<Integer> saveUserForm(Admin admin, UserFormDto userFormDto) throws Exception;
 
 	List<UserFormDto> bulkDeleteUserForm(List<Integer> bulkIds, int companyId);
 
@@ -47,20 +47,20 @@ public interface ComUserformService extends UserformService {
 
 	String getCloneUserFormName(String name, int companyId, Locale locale);
 
-	ServiceResult<Integer> cloneUserForm(ComAdmin admin, int userFormId);
+	ServiceResult<Integer> cloneUserForm(Admin admin, int userFormId);
 
-	File exportUserForm(ComAdmin admin, int userFormId, String userFormName);
+	File exportUserForm(Admin admin, int userFormId, String userFormName);
 	
-	String getUserFormUrlPattern(final ComAdmin admin, final String formName, final boolean resolveUID, final Optional<String> companyToken);
-	List<UserFormTestUrl> getUserFormUrlForAllAdminAndTestRecipients(final ComAdmin admin, final String formName, final Optional<String> companyToken);
-	String getUserFormUrlWithoutUID(ComAdmin admin, String formName, Optional<String> companyToken);
+	String getUserFormUrlPattern(final Admin admin, final String formName, final boolean resolveUID, final Optional<String> companyToken);
+	List<UserFormTestUrl> getUserFormUrlForAllAdminAndTestRecipients(final Admin admin, final String formName, final Optional<String> companyToken);
+	String getUserFormUrlWithoutUID(Admin admin, String formName, Optional<String> companyToken);
 
-    JSONArray getUserFormsJson(ComAdmin admin);
+    JSONArray getUserFormsJson(Admin admin);
 
     List<String> getUserFormNames(int companyId);
 
-	Map<String, String> getMediapoolImages(ComAdmin admin);
+	Map<String, String> getMediapoolImages(Admin admin);
 
-	Map<String, String> getProfileFields(ComAdmin admin, DbColumnType.SimpleDataType... allowedTypes);
+	Map<String, String> getProfileFields(Admin admin, DbColumnType.SimpleDataType... allowedTypes);
 
 }

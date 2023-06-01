@@ -28,7 +28,7 @@ import org.apache.struts.upload.MultipartRequestHandler;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.Permission;
 
 public abstract class ComAjaxServletBase extends HttpServlet {
@@ -81,7 +81,7 @@ public abstract class ComAjaxServletBase extends HttpServlet {
      * @return {@code true} if user is authenticated or {@code false} otherwise.
      */
     protected final boolean checkAuthenticated(HttpServletRequest request, HttpServletResponse response) {
-    	ComAdmin admin = AgnUtils.getAdmin(request);
+    	Admin admin = AgnUtils.getAdmin(request);
 		if (admin == null) {
 		    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 
@@ -114,7 +114,7 @@ public abstract class ComAjaxServletBase extends HttpServlet {
         return false;
     }
 
-    protected void writeUserActivityLog(ComAdmin admin, String action, String description)  {
+    protected void writeUserActivityLog(Admin admin, String action, String description)  {
         try {
             if (userActivityLogService == null) {
                 userActivityLogService = getApplicationContext().getBean("UserActivityLogService", UserActivityLogService.class);
@@ -126,7 +126,7 @@ public abstract class ComAjaxServletBase extends HttpServlet {
         }
     }
 
-    protected void writeUserActivityLog(ComAdmin admin, String action, int description)  {
+    protected void writeUserActivityLog(Admin admin, String action, int description)  {
         writeUserActivityLog(admin, action, Integer.toString(description));
     }
 

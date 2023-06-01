@@ -67,9 +67,9 @@ public class ComBirtReportMailingSettings extends ComBirtReportSettings {
     public String getReportName(String reportFormat) {
         if (StringUtils.equalsIgnoreCase(ComBirtReport.FORMAT_CSV, reportFormat)) {
             return "mailing_statistic_csv.rptdesign";
-        } else {
-            return "mailing_statistic.rptdesign";
         }
+
+        return "mailing_statistic.rptdesign";
     }
 
     @Override

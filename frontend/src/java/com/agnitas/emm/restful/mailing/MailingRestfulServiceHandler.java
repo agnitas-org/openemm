@@ -33,7 +33,7 @@ import org.agnitas.util.HttpUtils.RequestMethod;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.ComTrackableLink;
 import com.agnitas.beans.LinkProperty;
 import com.agnitas.beans.LinkProperty.PropertyType;
@@ -120,7 +120,7 @@ public class MailingRestfulServiceHandler implements RestfulServiceHandler {
 	}
 
 	@Override
-	public void doService(HttpServletRequest request, HttpServletResponse response, ComAdmin admin, byte[] requestData, File requestDataFile, BaseRequestResponse restfulResponse, ServletContext context, RequestMethod requestMethod, boolean extendedLogging) throws Exception {
+	public void doService(HttpServletRequest request, HttpServletResponse response, Admin admin, byte[] requestData, File requestDataFile, BaseRequestResponse restfulResponse, ServletContext context, RequestMethod requestMethod, boolean extendedLogging) throws Exception {
 		if (requestMethod == RequestMethod.GET) {
 			Object result = getMailing(request, response, admin);
 			if (result != null && result == EXPORTED_TO_STREAM) {
@@ -147,7 +147,7 @@ public class MailingRestfulServiceHandler implements RestfulServiceHandler {
 	 * @return
 	 * @throws Exception
 	 */
-	private Object getMailing(HttpServletRequest request, HttpServletResponse response, ComAdmin admin) throws Exception {
+	private Object getMailing(HttpServletRequest request, HttpServletResponse response, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.MAILING_SHOW)) {
 			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.MAILING_SHOW.toString() + "'");
 		}
@@ -217,7 +217,7 @@ public class MailingRestfulServiceHandler implements RestfulServiceHandler {
 	 * @return
 	 * @throws Exception
 	 */
-	private Object deleteMailing(HttpServletRequest request, ComAdmin admin) throws Exception {
+	private Object deleteMailing(HttpServletRequest request, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.MAILING_DELETE)) {
 			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.MAILING_DELETE.toString() + "'");
 		}
@@ -254,7 +254,7 @@ public class MailingRestfulServiceHandler implements RestfulServiceHandler {
 	 * @return
 	 * @throws Exception
 	 */
-	private Object createNewMailing(HttpServletRequest request, byte[] requestData, File requestDataFile, ComAdmin admin) throws Exception {
+	private Object createNewMailing(HttpServletRequest request, byte[] requestData, File requestDataFile, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.MAILING_IMPORT)) {
 			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.MAILING_IMPORT.toString() + "'");
 		}
@@ -307,7 +307,7 @@ public class MailingRestfulServiceHandler implements RestfulServiceHandler {
 	 * @return
 	 * @throws Exception
 	 */
-	private Object updateMailing(HttpServletRequest request, byte[] requestData, File requestDataFile, ComAdmin admin) throws Exception {
+	private Object updateMailing(HttpServletRequest request, byte[] requestData, File requestDataFile, Admin admin) throws Exception {
 		if ((requestData == null || requestData.length == 0) && (requestDataFile == null || requestDataFile.length() <= 0)) {
 			throw new RestfulClientException("Missing request data");
 		}

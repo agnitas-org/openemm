@@ -1,4 +1,0 @@
-<HelpBalloon>
-	<title>Auto mapping</title>
-	<content><![CDATA[With the option Automatic mapping the EMM will match the columns of the csv file automatically with the existing profile fields. Therefore the headers in the csv file have to match the database field names in which data should be imported. Large and lower case is irrelevant.]]></content>
-</HelpBalloon>

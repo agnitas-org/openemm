@@ -21,5 +21,6 @@ import com.agnitas.reporting.birt.external.beans.LightMailingList;
  */
 public interface LightMailingListDao {
 	LightMailingList getMailingList(int mailingListID, @VelocityCheck int companyID);
+
 	List<LightMailingList> getMailingLists(List<Integer> mailingListIDs, int companyID);
 }

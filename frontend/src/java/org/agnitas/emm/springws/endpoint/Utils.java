@@ -10,32 +10,22 @@
 
 package org.agnitas.emm.springws.endpoint;
 
-import java.util.List;
 import java.util.Map.Entry;
 import java.util.OptionalInt;
 
-import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.springws.jaxb.Map;
 import org.agnitas.emm.springws.jaxb.MapItem;
 import org.agnitas.emm.springws.util.SecurityContextAccess;
-import org.agnitas.emm.springws.util.UserActivityLogAccess;
-import org.agnitas.service.UserActivityLogService;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.w3c.dom.Element;
 
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.impl.ComAdminImpl;
 import com.agnitas.emm.springws.WebserviceUserDetails;
 import com.agnitas.emm.springws.exception.BulkSizeLimitExeededExeption;
 import com.agnitas.emm.wsmanager.bean.WebserviceUserSettings;
 import com.agnitas.emm.wsmanager.service.WebserviceUserService;
 
 public class Utils {
-
-	public static final String NAMESPACE_ORG = "http://agnitas.org/ws/schemas";
-	public static final String NAMESPACE_COM = "http://agnitas.com/ws/schemas";
 
 	public static CaseInsensitiveMap<String, Object> toCaseInsensitiveMap(Map map, final boolean extractStringFromSubXml) {
 		if (map == null || map.getItem() == null) {
@@ -72,14 +62,6 @@ public class Utils {
 	}
 	
 	/**
-	 * @see SecurityContextAccess#isAuthorityGranted(GrantedAuthority)
-	 */
-	@Deprecated	// TODO Remove after migrating all endpoints to use SecurityContextAccess
-	public static final boolean isAuthorityGranted(final GrantedAuthority authority) {
-		return getWebserviceUserDetails().getAuthorities().contains(authority);
-	}
-	
-	/**
 	 * @see SecurityContextAccess#getWebserviceUserCompanyId() 
 	 */
 	@Deprecated	// TODO Remove after migrating all endpoints to use SecurityContextAccess
@@ -91,7 +73,7 @@ public class Utils {
 	 * @see SecurityContextAccess#getWebserviceUserName() 
 	 */
 	@Deprecated	// TODO Remove after migrating all endpoints to use SecurityContextAccess
-    public static String getUserName(){
+    private static String getUserName(){
     	return getWebserviceUserDetails().getUsername();
     }
     
@@ -99,27 +81,9 @@ public class Utils {
 	 * @see SecurityContextAccess#getWebserviceUserDetails() 
 	 */
 	@Deprecated	// TODO Remove after migrating all endpoints to use SecurityContextAccess
-    public static final WebserviceUserDetails getWebserviceUserDetails() {
+    private static final WebserviceUserDetails getWebserviceUserDetails() {
     	return ((WebserviceUserDetails)SecurityContextHolder.getContext().getAuthentication().getPrincipal());
     }
-
-	@Deprecated // TODO Remove after migrating all endpoints to use SecurityContextAccess
-    private static ComAdmin getAdminForUserActivityLog() {
-		ComAdmin admin = new ComAdminImpl();
-		admin.setUsername(getUserName());
-		return admin;
-	}
-
-	/**
-	 * @see UserActivityLogAccess#writeLog(List)
-	 */
-	@Deprecated // TODO Remove after migrating all endpoints to use SecurityContextAccess
-	public static void writeLog(UserActivityLogService service, List<UserAction> userActions) {
-		ComAdmin admin = Utils.getAdminForUserActivityLog();
-		for (UserAction action : userActions) {
-			service.writeUserActivityLog(admin, action);
-		}
-	}
 
 	public static Map toJaxbMap(java.util.Map<String, Object> map) {
 		if (map == null) {

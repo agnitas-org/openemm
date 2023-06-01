@@ -17,7 +17,7 @@ import java.util.Map;
 import org.agnitas.ecs.backend.beans.ClickStatColor;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 
 public interface EcsService {
     /**
@@ -42,5 +42,5 @@ public interface EcsService {
      * Generate a PDF representation of the heat map by url.
      * @return a generated document.
      */
-    File generatePDF(ComAdmin admin, String url, String title);
+    File generatePDF(Admin admin, String url, String title);
 }

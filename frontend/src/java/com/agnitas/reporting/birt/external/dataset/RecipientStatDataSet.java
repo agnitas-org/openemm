@@ -42,8 +42,8 @@ import com.agnitas.reporting.birt.external.beans.RecipientMaxValues;
 import com.agnitas.reporting.birt.external.beans.RecipientStatusRow;
 
 public class RecipientStatDataSet extends RecipientsBasedDataSet {
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(RecipientStatDataSet.class);
+
+	private static final Logger logger = LogManager.getLogger(RecipientStatDataSet.class);
 
 	public List<RecipientStatusRow> getRecipientStatus(@VelocityCheck int companyID, String targetIdStr, Integer mailinglistID,
 			int mediaType, String language, final String hiddenFilterTargetIdStr) {
@@ -183,16 +183,6 @@ public class RecipientStatDataSet extends RecipientsBasedDataSet {
 	 *  Get recipient statistic entries on the user binding status
 	 *
 	 *  The day of stopDateString is included in statistics output
-	 *
-	 * @param companyID
-	 * @param targetID
-	 * @param mailinglistID
-	 * @param mediaType
-	 * @param startDateString
-	 * @param stopDateString
-	 * @param hourScale
-	 * @return
-	 * @throws Exception
 	 */
     public List<RecipientDetailRow> getRecipientDetails(@VelocityCheck int companyID, String targetID,
 			Integer mailinglistID, Integer mediaType, String startDateString,
@@ -332,8 +322,7 @@ public class RecipientStatDataSet extends RecipientsBasedDataSet {
 			}
 		}
 	}
-	
-	
+
 	private static class RecipientDetailsMapCallback implements RowCallbackHandler {
         private Map<String, RecipientDetailRow> dateMap;
         private RecipientMaxValues recipientMaxValues;

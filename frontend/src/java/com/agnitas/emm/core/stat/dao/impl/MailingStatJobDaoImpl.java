@@ -27,13 +27,12 @@ import com.agnitas.emm.core.stat.dao.MailingStatJobDao;
 
 public class MailingStatJobDaoImpl extends BaseDaoImpl implements MailingStatJobDao {
 	
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(MailingStatJobDaoImpl.class);
+	private static final Logger logger = LogManager.getLogger(MailingStatJobDaoImpl.class);
 
 	@Override
 	@DaoUpdateReturnValueCheck
 	public int createMailingStatJob(MailingStatJobDescriptor job) {
-		int newId = 0;
+		int newId;
 		if (isOracleDB()) {
 			newId = selectInt(logger, "SELECT mailing_stat_job_tbl_seq.NEXTVAL FROM dual");
 			update(logger, "INSERT INTO mailing_statistic_job_tbl (mailing_stat_job_id, job_status, mailing_id, target_groups, recipients_type, change_date, job_status_descr) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?)",
@@ -69,7 +68,7 @@ public class MailingStatJobDaoImpl extends BaseDaoImpl implements MailingStatJob
 			String tgComd = (targetGroups == null || targetGroups.isEmpty()) ? "(target_groups like ? or target_groups is null)" : "target_groups like ?";
 			return select(logger, "SELECT * FROM mailing_statistic_job_tbl WHERE mailing_id = ? AND " + tgComd +
 					" AND recipients_type = ? AND creation_date > SYSDATE - ?/24/60/60 ORDER BY creation_date DESC",
-						new MailingStatJobRowMapper(), mailingId, targetGroups, recipientsType, maxAgeSeconds);
+					new MailingStatJobRowMapper(), mailingId, targetGroups, recipientsType, maxAgeSeconds);
 		} else {
 			return select(logger, "SELECT * FROM mailing_statistic_job_tbl WHERE mailing_id = ? AND target_groups = ?" +
 				" AND recipients_type = ? AND creation_date > (NOW() - INTERVAL ? SECOND) ORDER BY creation_date DESC",
@@ -91,7 +90,7 @@ public class MailingStatJobDaoImpl extends BaseDaoImpl implements MailingStatJob
 		update(logger, "DELETE FROM mailing_statistic_job_tbl WHERE mailing_stat_job_id = ?", id);
 	}
 
-    private class MailingStatJobRowMapper implements RowMapper<MailingStatJobDescriptor> {
+    private static class MailingStatJobRowMapper implements RowMapper<MailingStatJobDescriptor> {
 		@Override
 		public MailingStatJobDescriptor mapRow(ResultSet resultSet, int row) throws SQLException {
 			MailingStatJobDescriptor job = new MailingStatJobDescriptor();

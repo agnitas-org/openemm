@@ -11,11 +11,15 @@
 package org.agnitas.emm.springws.endpoint.mailing;
 
 import com.agnitas.beans.Mailing;
+
+import java.util.Objects;
+
 import org.agnitas.emm.core.mailing.service.MailingModel;
 import org.agnitas.emm.springws.endpoint.BaseEndpoint;
-import org.agnitas.emm.springws.endpoint.Utils;
+import org.agnitas.emm.springws.endpoint.Namespaces;
 import org.agnitas.emm.springws.jaxb.ListTemplatesRequest;
 import org.agnitas.emm.springws.jaxb.ListTemplatesResponse;
+import org.agnitas.emm.springws.util.SecurityContextAccess;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.ws.server.endpoint.annotation.Endpoint;
 import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
@@ -27,20 +31,21 @@ import com.agnitas.emm.core.mailing.service.MailingService;
 @Endpoint
 public class ListTemplatesEndpoint extends BaseEndpoint {
 
-	private MailingService mailingService;
+	private final MailingService mailingService;
+	private final SecurityContextAccess securityContextAccess;
 
-	public ListTemplatesEndpoint(@Qualifier("MailingService") MailingService mailingService) {
-		this.mailingService = mailingService;
+	public ListTemplatesEndpoint(@Qualifier("MailingService") MailingService mailingService, final SecurityContextAccess securityContextAccess) {
+		this.mailingService = Objects.requireNonNull(mailingService, "mailingService");
+		this.securityContextAccess = Objects.requireNonNull(securityContextAccess, "securityContextAccess");
 	}
 
-	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "ListTemplatesRequest")
+	@PayloadRoot(namespace = Namespaces.AGNITAS_ORG, localPart = "ListTemplatesRequest")
 	public @ResponsePayload ListTemplatesResponse listTemplatesResponse(@RequestPayload ListTemplatesRequest request) {
-		ListTemplatesResponse response = new ListTemplatesResponse();
-
-		MailingModel model = new MailingModel();
-		model.setCompanyId(Utils.getUserCompany());
+		final MailingModel model = new MailingModel();
+		model.setCompanyId(this.securityContextAccess.getWebserviceUserCompanyId());
 		model.setTemplate(true);
 		
+		final ListTemplatesResponse response = new ListTemplatesResponse();
 		for (Mailing mailing : mailingService.getMailings(model)) {
 			response.getItem().add(new MailingResponseBuilder().createTemplateResponse(mailing));
 		}

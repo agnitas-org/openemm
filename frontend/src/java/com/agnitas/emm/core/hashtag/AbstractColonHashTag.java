@@ -24,7 +24,7 @@ import com.agnitas.emm.core.hashtag.exception.HashTagException;
  */
 public abstract class AbstractColonHashTag implements HashTag {
 	
-	private static final transient Logger LOGGER = LogManager.getLogger(AbstractColonHashTag.class); 
+	private static final transient Logger LOGGER = LogManager.getLogger(AbstractColonHashTag.class);
 
 	@Override
 	public boolean canHandle(final HashTagContext context, final String tagString) {
@@ -65,7 +65,7 @@ public abstract class AbstractColonHashTag implements HashTag {
 	
 	/**
 	 * Checks, if the implementation supports given tag name with or without colon in tag string.
-	 *   
+	 * 
 	 * @param tagName name of tag
 	 * @param hasColon <code>true</code> if tag string contains colon
 	 * 
@@ -84,5 +84,5 @@ public abstract class AbstractColonHashTag implements HashTag {
 	 * 
 	 * @return Resulting text of tag handling
 	 */
-	public abstract String handleInternal(HashTagContext context, String tagName, String appendix) throws HashTagException; 
+	public abstract String handleInternal(HashTagContext context, String tagName, String appendix) throws HashTagException;
 }

@@ -36,7 +36,7 @@ public class ContentDAO {
 		try (DBase.With with = dbase.with ()) {
 			List <Map <String, Object>>	rq;
 	
-			rq = dbase.query (with.jdbc (),
+			rq = dbase.query (with.cursor (),
 					  "SELECT dyn_name_id, dyn_name, interest_group, no_link_extension " +
 					  "FROM dyn_name_tbl " +
 					  "WHERE mailing_id = :mailingID AND company_id = :companyID AND (deleted IS NULL OR deleted = 0)",
@@ -58,7 +58,7 @@ public class ContentDAO {
 					dbase.logging(Log.DEBUG, "content", "Skip already recorded name " + name);
 			}
 			
-			rq = dbase.query (with.jdbc (),
+			rq = dbase.query (with.cursor (),
 					  "SELECT dyn_content_id, dyn_name_id, target_id, dyn_order, dyn_content FROM dyn_content_tbl " +
 					  "WHERE dyn_name_id IN (" +
 					  "      SELECT dyn_name_id FROM dyn_name_tbl WHERE mailing_id = :mailingID AND company_id = :companyID AND (deleted IS NULL OR deleted = 0)" +

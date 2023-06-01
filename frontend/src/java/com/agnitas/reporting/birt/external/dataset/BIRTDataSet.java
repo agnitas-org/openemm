@@ -61,13 +61,12 @@ import com.agnitas.emm.core.JavaMailService;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.reporting.birt.external.beans.LightMailingList;
 import com.agnitas.reporting.birt.external.beans.LightTarget;
-import com.agnitas.reporting.birt.external.dao.LightTargetDao;
 import com.agnitas.reporting.birt.external.dao.impl.LightMailingListDaoImpl;
 import com.agnitas.reporting.birt.external.dao.impl.LightTargetDaoImpl;
 import com.agnitas.util.LongRunningSelectResultCacheDao;
 
 public class BIRTDataSet extends LongRunningSelectResultCacheDao {
-	private static final transient Logger logger = LogManager.getLogger(BIRTDataSet.class);
+	private static final Logger logger = LogManager.getLogger(BIRTDataSet.class);
 	
 	private static final String TEMPTABLECACHE_TABLENAME = "temp_cache_tbl";
 
@@ -120,7 +119,7 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 			
 			int tempTableID = selectEmbeddedIntWithDefault(childClassLogger, "SELECT MAX(temptableid) FROM " + TEMPTABLECACHE_TABLENAME + " WHERE type = ? AND parameter = ? AND validity_date >= ?", 0, statisticsType, parameterString, new Date());
 			List<Map<String, Object>> resultTables = selectEmbedded(childClassLogger, "SELECT table_name FROM " + TEMPTABLECACHE_TABLENAME + " WHERE temptableid = ?", tempTableID);
-			if (resultTables.size() > 0) {
+			if (!resultTables.isEmpty()) {
 				String tableName = (String) resultTables.get(0).get("table_name");
 				if (checkEmbeddedTableExists(tableName)) {
 					return tempTableID;
@@ -264,12 +263,12 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 			} else {
 				formater = new SimpleDateFormat(DATE_PARAMETER_FORMAT);
 			}
-			if (startDate.indexOf(":") != -1  && !hourScale) {
+			if (startDate.contains(":") && !hourScale) {
 				this.startDate = startDate.substring(0, startDate.indexOf(":"));
 			} else {
 				this.startDate = startDate;
 			}
-			if (stopDate.indexOf(":") != -1  && !hourScale) {
+			if (stopDate.contains(":") && !hourScale) {
 				this.stopDate = stopDate.substring(0, stopDate.indexOf(":"));
 			} else {
 				this.stopDate = stopDate;
@@ -352,8 +351,8 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 		List<String> targetSql = new ArrayList<>();
 		try {
 			if (!StringUtils.isEmpty(selectedTargets)) {
-				LightTargetDao lightTargetDao = new LightTargetDaoImpl();
-				((LightTargetDaoImpl) lightTargetDao).setDataSource(getDataSource());
+				LightTargetDaoImpl lightTargetDao = new LightTargetDaoImpl();
+				lightTargetDao.setDataSource(getDataSource());
 				
 				List<LightTarget> targets = lightTargetDao.getTargets(Arrays.asList(selectedTargets.split(",")), companyId);
 				for (LightTarget target : targets) {
@@ -371,8 +370,8 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 	protected List<LightTarget> getTargets(String selectedTargets, Integer companyID) {
 		try {
 			if (StringUtils.isNotEmpty(selectedTargets)) {
-				LightTargetDao lightTargetDao = new LightTargetDaoImpl();
-				((LightTargetDaoImpl) lightTargetDao).setDataSource(getDataSource());
+				LightTargetDaoImpl lightTargetDao = new LightTargetDaoImpl();
+				lightTargetDao.setDataSource(getDataSource());
 				
 				return lightTargetDao.getTargets(Arrays.asList(selectedTargets.split(",")), companyID);
 			}
@@ -385,8 +384,8 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 	protected List<LightTarget> getTargets(List<String> selectedTargets, Integer companyID) {
 		try {
 			if (selectedTargets != null && !selectedTargets.isEmpty()) {
-				LightTargetDao lightTargetDao = new LightTargetDaoImpl();
-				((LightTargetDaoImpl) lightTargetDao).setDataSource(getDataSource());
+				LightTargetDaoImpl lightTargetDao = new LightTargetDaoImpl();
+				lightTargetDao.setDataSource(getDataSource());
 				
 				return lightTargetDao.getTargets(selectedTargets, companyID);
 			}
@@ -398,8 +397,8 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 	
 	protected LightTarget getTarget(int targetID, int companyID) {
 		try {
-			LightTargetDao lightTargetDao = new LightTargetDaoImpl();
-			((LightTargetDaoImpl) lightTargetDao).setDataSource(getDataSource());
+			LightTargetDaoImpl lightTargetDao = new LightTargetDaoImpl();
+			lightTargetDao.setDataSource(getDataSource());
 			
 			return lightTargetDao.getTarget(targetID, companyID);
 		} catch (Exception e) {
@@ -450,14 +449,18 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 	}
 
 	protected String joinWhereClause(final String leftClause, final String rightClause) {
-		if(StringUtils.isBlank(leftClause) && StringUtils.isBlank(rightClause)) {
+		if (StringUtils.isBlank(leftClause) && StringUtils.isBlank(rightClause)) {
 			return "";
 		}
-		if(StringUtils.isBlank(leftClause)) {
+
+		if (StringUtils.isBlank(leftClause)) {
 			return rightClause;
-		} else if(StringUtils.isBlank(rightClause)) {
+		}
+
+		if (StringUtils.isBlank(rightClause)) {
 			return leftClause;
 		}
+
 		return StringUtils.join(leftClause, " AND " , rightClause);
 	}
 	
@@ -577,7 +580,7 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
         List<Integer> result = new ArrayList<>();
 		String query = "SELECT group1_id, group2_id, group3_id, group4_id, group5_id, final_mailing_id FROM auto_optimization_tbl WHERE optimization_id=? and company_id=?";
         List<Map<String, Object>> optimizationElements = select(logger, query, optimizationID, companyID);
-        if (optimizationElements.size() > 0) {
+        if (!optimizationElements.isEmpty()) {
         	Map<String, Object> map = optimizationElements.get(0);
             for (int i = 1; i <= 5; i++ ){
                 int groupId = ((Number) map.get("group" + i + "_id")).intValue();
@@ -594,11 +597,11 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
     }
     
     protected List<LightMailingList> getMailingLists(List<Integer> mailingListIds, Integer companyID) {
-    	if (mailingListIds != null && mailingListIds.size() > 0) {
+    	if (mailingListIds != null && !mailingListIds.isEmpty()) {
 			return new LightMailingListDaoImpl(getDataSource()).getMailingLists(mailingListIds, companyID);
-        } else {
-            return new ArrayList<>();
         }
+
+		return new ArrayList<>();
     }
 	
     protected List<Integer> parseCommaSeparatedIds(String stringOfIds) {
@@ -618,9 +621,9 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
     protected MailingType getMailingType(int mailingId) throws Exception {
     	if (mailingId <= 0) {
     		throw new RuntimeException("Invalid mailing id");
-    	} else {
-    		return MailingType.fromCode(select(logger, "SELECT mailing_type FROM mailing_tbl WHERE mailing_id = ?", Integer.class, mailingId));
     	}
+
+		return MailingType.fromCode(select(logger, "SELECT mailing_type FROM mailing_tbl WHERE mailing_id = ?", Integer.class, mailingId));
     }
 	
     protected int getNumberSentMailings(int companyID, int mailingID, String recipientsType, String targetSql, String startDateString, String endDateString) throws Exception {
@@ -690,18 +693,16 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
         		int numberSentMailingsByMailTrack = selectIntWithDefaultValue(logger, queryBuilder.toString(), 0, parameters.toArray(new Object[0]));
         		
         		if (numberSentMailingsByMailTrack == 0 && !useTargetGroup) {
-        			// Fallback for newly activated automationpackage with newly created and therefor empty mailtrack table
+        			// Fallback for newly activated automation package with newly created and therefore empty mailtrack table
         			StringBuilder queryBuilderMailingAccount = new StringBuilder("SELECT SUM(no_of_mailings) FROM mailing_account_tbl WHERE mailing_id = ?");
             		List<Object> parametersMailingAccount = new ArrayList<>();
             		parametersMailingAccount.add(mailingID);
-                    
-                    if (mailingType == MailingType.INTERVAL) {
-                    	queryBuilderMailingAccount.append(" AND status_field = 'D'");
-                    } else if (CommonKeys.TYPE_ADMIN_AND_TEST.equals(recipientsType)) {
-                    	queryBuilderMailingAccount.append(" AND status_field IN ('A', 'T')");
-                    } else {
-                    	queryBuilderMailingAccount.append(" AND status_field NOT IN ('A', 'T', 'V')");
-                    }
+
+					if (CommonKeys.TYPE_ADMIN_AND_TEST.equals(recipientsType)) {
+						queryBuilderMailingAccount.append(" AND status_field IN ('A', 'T')");
+					} else {
+						queryBuilderMailingAccount.append(" AND status_field NOT IN ('A', 'T', 'V')");
+					}
 
                 	if (startDate != null && endDate != null) {
                 		queryBuilderMailingAccount.append(" AND (? <= timestamp AND timestamp < ?)");
@@ -718,14 +719,12 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
                 StringBuilder queryBuilder = new StringBuilder("SELECT SUM(no_of_mailings) FROM mailing_account_tbl WHERE mailing_id = ?");
         		List<Object> parameters = new ArrayList<>();
         		parameters.add(mailingID);
-                
-                if (mailingType == MailingType.INTERVAL) {
-                    queryBuilder.append(" AND status_field = 'D'");
-                } else if (CommonKeys.TYPE_ADMIN_AND_TEST.equals(recipientsType)) {
-                    queryBuilder.append(" AND status_field IN ('A', 'T')");
-                } else {
-            		queryBuilder.append(" AND status_field NOT IN ('A', 'T', 'V')");
-                }
+
+				if (CommonKeys.TYPE_ADMIN_AND_TEST.equals(recipientsType)) {
+					queryBuilder.append(" AND status_field IN ('A', 'T')");
+				} else {
+					queryBuilder.append(" AND status_field NOT IN ('A', 'T', 'V')");
+				}
 
             	if (startDate != null && endDate != null) {
         			queryBuilder.append(" AND (? <= timestamp AND timestamp < ?)");
@@ -771,7 +770,7 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 			parameters.add(parseStatisticDate(startDateString));
 			parameters.add(parseStatisticEndDate(endDateString));
 		}
-
+		
     	boolean useTargetGroup = (targetSql != null && StringUtils.isNotBlank(targetSql) && !targetSql.replace(" ", "").equals("1=1"));
 		if (useTargetGroup) {
 			queryBuilder.append(" AND (").append(targetSql).append(")");
@@ -821,12 +820,6 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 	/**
 	 * Gets data from embedded derby database.
 	 * Logs the statement and parameter in debug-level, executes select and logs error.
-	 * 
-	 * @param childClassLogger
-	 * @param statement
-	 * @param parameter
-	 * @return List of db entries represented as caseinsensitive maps
-	 * @throws Exception
 	 */
 	protected List<Map<String, Object>> selectEmbedded(Logger childClassLogger, String statement, Object... parameter) throws Exception {
 		try {
@@ -844,13 +837,6 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 	/**
 	 * Gets data from embedded derby database.
 	 * Logs the statement and parameter in debug-level, executes select and logs error.
-	 * 
-	 * @param childClassLogger
-	 * @param statement
-	 * @param rowMapper
-	 * @param parameter
-	 * @return List of db entries represented as objects
-	 * @throws Exception
 	 */
 	protected <T> List<T> selectEmbedded(Logger childClassLogger, String statement, RowMapper<T> rowMapper, Object... parameter) throws Exception {
 		try {
@@ -868,13 +854,6 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 	/**
 	 * Gets data from embedded derby database.
 	 * Logs the statement and parameter in debug-level, executes select and logs error.
-	 * 
-	 * @param childClassLogger
-	 * @param statement
-	 * @param requiredType
-	 * @param parameter
-	 * @return single db entry as object
-	 * @throws Exception
 	 */
 	protected <T> T selectEmbedded(Logger childClassLogger, String statement, Class<T> requiredType, Object... parameter) throws Exception {
 		try {
@@ -892,13 +871,6 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 	/**
 	 * Gets data from embedded derby database.
 	 * Logs the statement and parameter in debug-level, executes select and logs error.
-	 *
-	 * @param childClassLogger
-	 * @param statement
-	 * @param defaultValue
-	 * @param parameter
-	 * @return single db entry as object
-	 * @throws Exception
 	 */
 	protected int selectEmbeddedIntWithDefault(Logger childClassLogger, String statement, int defaultValue, Object... parameter) throws Exception {
 		try {
@@ -926,12 +898,6 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 	/**
 	 * Updates data in embedded derby database.
 	 * Logs the statement and parameter in debug-level, executes update and logs error.
-	 * 
-	 * @param childClassLogger
-	 * @param statement
-	 * @param parameter
-	 * @return number of touched lines in db
-	 * @throws Exception
 	 */
 	protected int updateEmbedded(Logger childClassLogger, String statement, Object... parameter) throws Exception {
 		try {
@@ -953,19 +919,11 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 	/**
 	 * Execute ddl-statement in embedded derby database.
 	 * Logs the statement and parameter in debug-level, executes a DDL SQL Statement.
-	 * 
-	 * @param childClassLogger
-	 * @param statement
-	 * @return number of touched lines in db
-	 * @throws Exception
 	 */
 	protected void executeEmbedded(Logger childClassLogger, String statement) throws Exception {
 		try {
 			logSqlStatement(childClassLogger, "EMBEDDED: " + statement);
 			getEmbeddedJdbcTemplate().execute(statement);
-		} catch (DataAccessException e) {
-			logSqlError(e, childClassLogger, "EMBEDDED: " + statement);
-			throw e;
 		} catch (RuntimeException e) {
 			logSqlError(e, childClassLogger, "EMBEDDED: " + statement);
 			throw e;
@@ -976,12 +934,6 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
 	 * Method to update multiple data entries at once.<br />
 	 * Logs the statement and parameter in debug-level, executes update and logs error.<br />
 	 * Watch out: Oracle returns value -2 (= Statement.SUCCESS_NO_INFO) per line for success with no "lines touched" info<br />
-	 * 
-	 * @param childClassLogger
-	 * @param statement
-	 * @param values
-	 * @return
-	 * @throws Exception
 	 */
 	public int[] batchupdateEmbedded(Logger childClassLogger, String statement, List<Object[]> values) throws Exception {
 		try {
@@ -1001,19 +953,15 @@ public class BIRTDataSet extends LongRunningSelectResultCacheDao {
         int periodicallySendEntries = selectInt(logger, "SELECT COUNT(mst.mailing_id) AS count FROM maildrop_status_tbl mst JOIN mailing_tbl mt ON mst.mailing_id = mt.mailing_id WHERE mst.mailing_id = ? AND mst.status_field IN ('C', 'E', 'R', 'D') AND mt.work_status = '" + MailingStatus.ACTIVE.getDbKey() + "' AND mst.senddate < CURRENT_TIMESTAMP", mailingID);
         if (periodicallySendEntries > 0) {
         	return false;
-        } else {
-        	int expirePeriod = getConfigService().getIntegerValue(ConfigValue.ExpireSuccess, companyID);
-    		if (expirePeriod <= 0) {
-    			return false;
-    		} else {
-		        int countOfOnceSending = selectInt(logger, "SELECT COUNT(mst.mailing_id) AS count FROM maildrop_status_tbl mst WHERE mst.mailing_id = ? AND mst.status_field IN ('W') AND mst.senddate < CURRENT_TIMESTAMP AND mst.senddate >= ?", mailingID, DateUtilities.getDateOfDaysAgo(expirePeriod));
-		        if (countOfOnceSending > 0) {
-		        	return false;
-		        } else {
-		        	return true;
-		        }
-	        }
+        }
+
+		int expirePeriod = getConfigService().getIntegerValue(ConfigValue.ExpireSuccess, companyID);
+		if (expirePeriod <= 0) {
+			return false;
 		}
+
+		int countOfOnceSending = selectInt(logger, "SELECT COUNT(mst.mailing_id) AS count FROM maildrop_status_tbl mst WHERE mst.mailing_id = ? AND mst.status_field IN ('W') AND mst.senddate < CURRENT_TIMESTAMP AND mst.senddate >= ?", mailingID, DateUtilities.getDateOfDaysAgo(expirePeriod));
+		return countOfOnceSending <= 0;
     }
 	
 	public boolean checkEmbeddedTableExists(String tableName) throws Exception {

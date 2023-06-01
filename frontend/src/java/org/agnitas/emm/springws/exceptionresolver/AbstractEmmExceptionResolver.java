@@ -27,8 +27,10 @@ import org.agnitas.emm.core.mailing.service.WorldMailingWithoutNormalTypeExcepti
 import org.agnitas.emm.core.mailinglist.service.MailinglistNotExistException;
 import org.agnitas.emm.core.recipient.service.InvalidDataException;
 import org.agnitas.emm.core.recipient.service.RecipientNotExistException;
+import org.agnitas.emm.core.recipient.service.SubscriberLimitExceededException;
 import org.agnitas.emm.core.recipient.service.impl.ProfileFieldNotExistException;
 import org.agnitas.emm.core.target.service.TargetNotExistException;
+import org.agnitas.emm.springws.endpoint.dyncontent.InvalidMailingContentException;
 import org.agnitas.emm.springws.exception.DateFormatException;
 import org.agnitas.emm.springws.exception.InvalidFilterSettingsException;
 import org.agnitas.emm.springws.exception.MailingNotEditableException;
@@ -52,7 +54,8 @@ import com.agnitas.emm.springws.subscriptionrejection.exceptions.SubscriptionRej
 
 public abstract class AbstractEmmExceptionResolver extends AbstractSoapFaultDefinitionExceptionResolver {
 
-	private static final transient Logger classLogger = LogManager.getLogger(AbstractEmmExceptionResolver.class);
+	/** The logger. */
+	private static final transient Logger LOGGER = LogManager.getLogger(AbstractEmmExceptionResolver.class);
 
     protected AbstractEmmExceptionResolver() {
         setOrder(1);
@@ -60,7 +63,7 @@ public abstract class AbstractEmmExceptionResolver extends AbstractSoapFaultDefi
 
     protected SoapFaultDefinition getDefaultDefinition(Exception ex) {
 		if (!(ex instanceof InvalidDataException)) {
-			classLogger.error("Exception", ex);
+			LOGGER.error("Exception", ex);
 		} else {
         	// TODO: Log output in user error log
         }
@@ -153,8 +156,14 @@ public abstract class AbstractEmmExceptionResolver extends AbstractSoapFaultDefi
         	definition.setFaultStringOrReason(ex.getMessage());
         } else if(ex instanceof MissingKeyColumnOrValueException) {
         	definition.setFaultStringOrReason("Key column or value missing or empty");
+        } else if(ex instanceof InvalidMailingContentException) {
+        	definition.setFaultStringOrReason(ex.getMessage());
+        } else if(ex instanceof SubscriberLimitExceededException) {
+        	definition.setFaultStringOrReason(ex.getMessage());
         } else {
             definition.setFaultStringOrReason("Unknown error");
+            
+            LOGGER.warn("Exception not handled by exception resolver", ex);
         }
         return definition;
     }

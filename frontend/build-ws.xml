@@ -2,7 +2,7 @@
 <project basedir="." default="all" name="OpenEMM_WS">
 	<import file="build.xml" />
 
-	<target name="all" depends="checkForPropertiesFile, setupBuildPaths, createPropertiesFiles, copyEhcacheConfig, replaceEmmPropertiesPlaceholders, compile, deploy, setupContexts, applicationContext" description="Build everything.">
+	<target name="all" depends="checkForPropertiesFile, setupBuildPaths, createPropertiesFiles, replaceEmmPropertiesPlaceholders, compile, deploy, setupContexts, applicationContext" description="Build everything.">
 		<echo message="Application built."/>
 	</target>
 	

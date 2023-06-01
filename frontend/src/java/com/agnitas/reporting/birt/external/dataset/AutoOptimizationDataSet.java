@@ -22,7 +22,7 @@ import com.agnitas.reporting.birt.external.beans.LightMailing;
 import com.agnitas.reporting.birt.external.dao.impl.LightMailingDaoImpl;
 
 public class AutoOptimizationDataSet extends BIRTDataSet {
-	private static final transient Logger logger = LogManager.getLogger(AutoOptimizationDataSet.class);
+	private static final Logger logger = LogManager.getLogger(AutoOptimizationDataSet.class);
 
 	public static class AutoOptimizationData {
 		String autoOptimizationName;
@@ -118,7 +118,7 @@ public class AutoOptimizationDataSet extends BIRTDataSet {
         String shortname = null;
 		String query = "SELECT shortname FROM auto_optimization_tbl WHERE optimization_id=? and company_id=?";
 		List<Map<String, Object>> optimizationElements = select(logger, query, optimizationID, companyID);
-        if (optimizationElements.size() > 0) {
+        if (!optimizationElements.isEmpty()) {
         	Map<String, Object> map = optimizationElements.get(0);
             shortname = (String) map.get("shortname");
         }

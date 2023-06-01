@@ -57,7 +57,7 @@ AGN.Lib.Controller.new('dashboard', function() {
 
   function updateCharts(mailingId) {
     jQuery.ajax({
-      type: "POST",
+      type: "GET",
       url: statisticConfig.urls.STATISTICS,
       data: {
         mailingId: mailingId

@@ -12,14 +12,17 @@ package org.agnitas.emm.springws.endpoint.recipient;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import org.agnitas.emm.core.recipient.service.RecipientModel;
 import org.agnitas.emm.core.recipient.service.RecipientService;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.springws.endpoint.BaseEndpoint;
-import org.agnitas.emm.springws.endpoint.Utils;
+import org.agnitas.emm.springws.endpoint.Namespaces;
 import org.agnitas.emm.springws.jaxb.DeleteSubscriberRequest;
 import org.agnitas.emm.springws.jaxb.DeleteSubscriberResponse;
+import org.agnitas.emm.springws.util.SecurityContextAccess;
+import org.agnitas.emm.springws.util.UserActivityLogAccess;
 import org.springframework.ws.server.endpoint.annotation.Endpoint;
 import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
 import org.springframework.ws.server.endpoint.annotation.RequestPayload;
@@ -28,29 +31,35 @@ import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 @Endpoint
 public class DeleteSubscriberEndpoint extends BaseEndpoint {
 
-	private RecipientService recipientService;
+	private final RecipientService recipientService;
+	private final SecurityContextAccess securityContextAccess;
+	private final UserActivityLogAccess userActivityLogAccess;
 
-	public DeleteSubscriberEndpoint(RecipientService recipientService) {
-		this.recipientService = recipientService;
+	public DeleteSubscriberEndpoint(final RecipientService recipientService, final SecurityContextAccess securityContextAccess, final UserActivityLogAccess userActivityLogAccess) {
+		this.recipientService = Objects.requireNonNull(recipientService, "recipientService");
+		this.securityContextAccess = Objects.requireNonNull(securityContextAccess, "securityContextAccess");
+		this.userActivityLogAccess = Objects.requireNonNull(userActivityLogAccess, "userActivityLogAccess");
 	}
 
-	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "DeleteSubscriberRequest")
+	@PayloadRoot(namespace = Namespaces.AGNITAS_ORG, localPart = "DeleteSubscriberRequest")
 	public @ResponsePayload DeleteSubscriberResponse deleteSubscriber(@RequestPayload DeleteSubscriberRequest request) {
-		DeleteSubscriberResponse response = new DeleteSubscriberResponse();
+		final RecipientModel model = parseModel(request, this.securityContextAccess);
 
-		RecipientModel model = parseModel(request);
-
-		List<UserAction> userActions = new ArrayList<>();
+		final List<UserAction> userActions = new ArrayList<>();
 		recipientService.deleteSubscriber(model, userActions);
-		Utils.writeLog(userActivityLogService, userActions);
 
-		return response;
+		// Write UAL entries
+		this.userActivityLogAccess.writeLog(userActions);
+
+		return new DeleteSubscriberResponse();
 	}
 
-	static RecipientModel parseModel(DeleteSubscriberRequest request) {
-		RecipientModel model = new RecipientModel();
-		model.setCompanyId(Utils.getUserCompany());
+	static RecipientModel parseModel(DeleteSubscriberRequest request, final SecurityContextAccess securityContextAccess) {
+		final RecipientModel model = new RecipientModel();
+		
+		model.setCompanyId(securityContextAccess.getWebserviceUserCompanyId());
 		model.setCustomerId(request.getCustomerID());
+		
 		return model;
 	}
 }

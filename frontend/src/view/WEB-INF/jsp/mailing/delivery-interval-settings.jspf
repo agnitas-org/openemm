@@ -32,51 +32,55 @@
     <%-- Activate buttons--%>
     <logic:equal name="mailingSendForm" property="workStatus" value="<%= MailingStatus.DISABLE.getDbKey() %>">
         <emm:ShowByPermission token="mailing.send.world">
-            <c:choose>
-                <c:when test="${not mailingSendForm.hasDeletedTargetGroups}">
-                    <div class="form-group">
-                        <div class="col-sm-4">
-                            <label class="control-label">
-                                <bean:message key="MailingActivate" />
-                            </label>
-                        </div>
-                        <div class="col-sm-8">
-                            <html:link styleClass="btn btn-regular btn-primary"
-                                       page="/mailingsend.do?action=${ACTION_ACTIVATE_INTERVALMAILING}&mailingID=${tmpMailingID}">
-                                <i class="icon icon-check-circle-o"></i>
-                                <span class="text"><bean:message key="button.Activate" /></span>
-                            </html:link>
-                        </div>
-                    </div>
-                </c:when>
-                <c:otherwise>
-                    <%@ include file="fragments/mailing-cannot-activate-message.jspf" %>
-                </c:otherwise>
-            </c:choose>
+        	<c:if test="${canSendOrActivateMailing}">
+	            <c:choose>
+	                <c:when test="${not mailingSendForm.hasDeletedTargetGroups}">
+	                    <div class="form-group">
+	                        <div class="col-sm-4">
+	                            <label class="control-label">
+	                                <bean:message key="MailingActivate" />
+	                            </label>
+	                        </div>
+	                        <div class="col-sm-8">
+	                            <html:link styleClass="btn btn-regular btn-primary"
+	                                       page="/mailingsend.do?action=${ACTION_ACTIVATE_INTERVALMAILING}&mailingID=${tmpMailingID}">
+	                                <i class="icon icon-check-circle-o"></i>
+	                                <span class="text"><bean:message key="button.Activate" /></span>
+	                            </html:link>
+	                        </div>
+	                    </div>
+	                </c:when>
+	                <c:otherwise>
+	                    <%@ include file="fragments/mailing-cannot-activate-message.jspf" %>
+	                </c:otherwise>
+	            </c:choose>
+	        </c:if>
         </emm:ShowByPermission>
     </logic:equal>
     <logic:equal name="mailingSendForm" property="workStatus" value="<%= MailingStatus.NEW.getDbKey() %>">
         <emm:ShowByPermission token="mailing.send.world">
-            <c:choose>
-                <c:when test="${not mailingSendForm.hasDeletedTargetGroups}">
-                    <div class="form-group">
-                        <div class="col-sm-4">
-                            <label class="control-label">
-                                <bean:message key="MailingActivate" />
-                            </label>
-                        </div>
-                        <div class="col-sm-8">
-                            <html:link styleClass="btn btn-regular btn-primary" page="/mailingsend.do?action=${ACTION_ACTIVATE_INTERVALMAILING}&mailingID=${tmpMailingID}">
-                                <i class="icon icon-ban"></i>
-                                <span class="text"><bean:message key="button.Activate" /></span>
-                            </html:link>
-                        </div>
-                    </div>
-                </c:when>
-                <c:otherwise>
-                    <%@ include file="fragments/mailing-cannot-activate-message.jspf" %>
-                </c:otherwise>
-            </c:choose>
+        	<c:if test="${canSendOrActivateMailing}">
+	            <c:choose>
+	                <c:when test="${not mailingSendForm.hasDeletedTargetGroups}">
+	                    <div class="form-group">
+	                        <div class="col-sm-4">
+	                            <label class="control-label">
+	                                <bean:message key="MailingActivate" />
+	                            </label>
+	                        </div>
+	                        <div class="col-sm-8">
+	                            <html:link styleClass="btn btn-regular btn-primary" page="/mailingsend.do?action=${ACTION_ACTIVATE_INTERVALMAILING}&mailingID=${tmpMailingID}">
+	                                <i class="icon icon-ban"></i>
+	                                <span class="text"><bean:message key="button.Activate" /></span>
+	                            </html:link>
+	                        </div>
+	                    </div>
+	                </c:when>
+	                <c:otherwise>
+	                    <%@ include file="fragments/mailing-cannot-activate-message.jspf" %>
+	                </c:otherwise>
+	            </c:choose>
+	        </c:if>
         </emm:ShowByPermission>
     </logic:equal>
 

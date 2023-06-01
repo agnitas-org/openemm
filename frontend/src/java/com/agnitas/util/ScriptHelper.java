@@ -11,8 +11,6 @@
 
 package com.agnitas.util;
 
-import java.io.File;
-import java.io.FileWriter;
 import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -38,6 +36,7 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import org.agnitas.beans.BindingEntry;
 import org.agnitas.beans.DatasourceDescription;
+import org.agnitas.beans.Mailinglist;
 import org.agnitas.beans.Recipient;
 import org.agnitas.beans.impl.BindingEntryImpl;
 import org.agnitas.dao.MaildropStatusDao;
@@ -75,9 +74,9 @@ import com.agnitas.beans.MaildropEntry;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.impl.MaildropEntryImpl;
 import com.agnitas.dao.ComBindingEntryDao;
-import com.agnitas.dao.DatasourceDescriptionDao;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.dao.ComRecipientDao;
+import com.agnitas.dao.DatasourceDescriptionDao;
 import com.agnitas.dao.ScripthelperEmailLogDao;
 import com.agnitas.dao.impl.ComCompanyDaoImpl;
 import com.agnitas.emm.core.JavaMailService;
@@ -88,6 +87,7 @@ import com.agnitas.emm.core.maildrop.MaildropStatus;
 import com.agnitas.emm.core.mailing.service.MailgunOptions;
 import com.agnitas.emm.core.mailing.service.SendActionbasedMailingService;
 import com.agnitas.emm.core.mailing.service.impl.UnableToSendActionbasedMailingException;
+import com.agnitas.emm.core.mailinglist.service.MailinglistService;
 import com.agnitas.emm.core.scripthelper.service.ScriptHelperService;
 import com.agnitas.json.Json5Reader;
 import com.agnitas.json.JsonObject;
@@ -106,6 +106,8 @@ public class ScriptHelper {
 	private ComMailingDao mailingDao;
 
 	private MaildropStatusDao maildropStatusDao;
+	
+	private MailinglistService mailinglistService;
 
 	/** DAO accessing ScripthelperEmailLog. */
 	private ScripthelperEmailLogDao scripthelperEmailLogDao;
@@ -218,27 +220,6 @@ public class ScriptHelper {
     	 */
 
 		return Long.toString(i);
-	}
-
-	public void logFile(@VelocityCheck final int companyIdToLog, final String fName, final String content) {
-
-    	/*
-    	 * **************************************************
-    	 *   IMPORTANT  IMPORTANT    IMPORTANT    IMPORTANT
-    	 * **************************************************
-    	 *
-    	 * DO NOT REMOVE METHOD OR CHANGE SIGNATURE!!!
-    	 */
-
-		try {
-			final DecimalFormat aFormat = new DecimalFormat("0000");
-			final File tmpFile = File.createTempFile(aFormat.format(companyIdToLog) + "_", "_" + fName, new File(configService.getValue(ConfigValue.VelocityLogDir)));
-			try (FileWriter aWriter = new FileWriter(tmpFile)) {
-				aWriter.write(content);
-			}
-		} catch (final Exception e) {
-			logger.error("could not log script: " + e + "\n" + companyIdToLog + " " + fName + " " + content, e);
-		}
 	}
 
 	/**
@@ -1469,6 +1450,10 @@ public class ScriptHelper {
 		
 		bindingEntryDao.save(companyID, bindingEntry);
 	}
+	
+	public Mailinglist getMailinglist(int mailinglistID) {
+		return mailinglistService.getMailinglist(mailinglistID, companyID);
+	}
 
 	public void setMailingDao(final ComMailingDao mailingDao) {
 
@@ -1494,6 +1479,19 @@ public class ScriptHelper {
     	 */
 
 		this.maildropStatusDao = maildropStatusDao;
+	}
+
+	public void setMailinglistService(final MailinglistService mailinglistService) {
+
+    	/*
+    	 * **************************************************
+    	 *   IMPORTANT  IMPORTANT    IMPORTANT    IMPORTANT
+    	 * **************************************************
+    	 *
+    	 * DO NOT REMOVE METHOD OR CHANGE SIGNATURE!!!
+    	 */
+
+		this.mailinglistService = mailinglistService;
 	}
 
 	public void setRecipientDao(final ComRecipientDao recipientDao) {

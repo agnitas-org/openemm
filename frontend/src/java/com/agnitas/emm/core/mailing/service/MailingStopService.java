@@ -12,7 +12,7 @@ package com.agnitas.emm.core.mailing.service;
 
 import java.util.Date;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 
 /**
  * Service to stop delivery / generation of mailings. 
@@ -52,7 +52,7 @@ public interface MailingStopService {
 	 * @throws MailingStopServiceException on errors during processing
 	 * @throws MailtrackingNotEnabledException if mailtracking is not enabled for company
 	 */
-	int copyMailingForResume(final ComAdmin admin, final int mailingID) throws MailingStopServiceException;
+	int copyMailingForResume(final Admin admin, final int mailingID) throws MailingStopServiceException;
 	
 	boolean isStopped(final int mailingID);
 	

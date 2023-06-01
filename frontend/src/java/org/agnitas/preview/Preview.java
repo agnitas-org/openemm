@@ -18,16 +18,29 @@ public interface Preview {
 	 * Preview size constants
 	 */
 	enum Size {
-		DESKTOP(1), MOBILE_PORTRAIT(2), MOBILE_LANDSCAPE(3), TABLET_PORTRAIT(4), TABLET_LANDSCAPE(5);
+		DESKTOP(1, 1022, false, "predelivery.desktop"),
+        MOBILE_PORTRAIT(2, 320, true, "mailing.PreviewSize.MobilePortrait"),
+        MOBILE_LANDSCAPE(3, 356, true, "mailing.PreviewSize.MobileLandscape"),
+        TABLET_PORTRAIT(4, 768, true, "mailing.PreviewSize.TabletPortrait"),
+        TABLET_LANDSCAPE(5, 1024, false, "mailing.PreviewSize.TabletLandscape");
 
 		private final int value;
+		private final int width;
+        private final boolean mediaQuery;
+        private final String msgCode;
 
 		/**
-		 * @param value preview size integer constant used in front-end
-		 */
-		Size(int value) {
+         * @param value preview size integer constant used in front-end
+         * @param width default width of the device
+         * @param mediaQuery media query
+         * @param msgCode message code for i18n
+         */
+		Size(int value, int width, boolean mediaQuery, String msgCode) {
 			this.value = value;
-		}
+            this.width = width;
+            this.mediaQuery = mediaQuery;
+            this.msgCode = msgCode;
+        }
 
 		public static Size getSizeById(int previewSize) {
 			for (Size size : values()) {
@@ -44,7 +57,19 @@ public interface Preview {
 		public int getValue() {
 			return value;
 		}
-	}
+
+        public int getWidth() {
+            return width;
+        }
+
+        public boolean isMediaQuery() {
+            return mediaQuery;
+        }
+
+        public String getMsgCode() {
+            return msgCode;
+        }
+    }
 
 	/* Special IDs for identifing parts of message */
 	/**
@@ -93,19 +118,20 @@ public interface Preview {
 	 * to true, the result is cached for speed up future
 	 * access.
 	 *
-	 * @param mailingID       the mailing-id to create the preview for
-	 * @param customerID      the customer-id to create the preview for
-	 * @param selector        optional selector for selecting different version of cached page
-	 * @param anon            if we should anonymize the result
-	 * @param convertEntities replace non ascii characters by ther HTML entity representation
-	 * @param ecsUIDs         if set we should use ecs (extended click statistics) style UIDs
-	 * @param createAll       if set create all displayable parts of the mailing
-	 * @param cachable        if the result should be cached
-	 * @param targetIDs       targetID is considered as true during text block creation for previewing
-	 * @param isMobile        parameter for preview purpose to resolve image url
+	 * @param mailingID		 the mailing-id to create the preview for
+	 * @param customerID		 the customer-id to create the preview for
+	 * @param selector		 optional selector for selecting different version of cached page
+	 * @param anon			 if we should anonymize the result
+	 * @param convertEntities	 replace non ascii characters by ther HTML entity representation
+	 * @param ecsUIDs		 if set we should use ecs (extended click statistics) style UIDs
+	 * @param createAll		 if set create all displayable parts of the mailing
+	 * @param cachable		 if the result should be cached
+	 * @param targetIDs		 targetID is considered as true during text block creation for previewing
+	 * @param isMobile		 parameter for preview purpose to resolve image url
+	 * @param sendDate		 sendDate of original mailing as unix epoch
 	 * @return the preview
 	 */
-	Page makePreview(long mailingID, long customerID, String selector, String text, boolean anon, boolean convertEntities, boolean ecsUIDs, boolean createAll, boolean cachable, long[] targetIDs, boolean isMobile);
+	Page makePreview(long mailingID, long customerID, String selector, String text, boolean anon, boolean convertEntities, boolean ecsUIDs, boolean createAll, boolean cachable, long[] targetIDs, boolean isMobile, long sendDate);
 
 	Page makePreview(long mailingID, long customerID, String selector, String text, boolean anon, boolean convertEntities, boolean ecsUIDs, boolean createAll, boolean cachable);
 
@@ -115,13 +141,17 @@ public interface Preview {
 
 	Page makePreview(long mailingID, long customerID, String selector, boolean anon, boolean cachable);
 
+	Page makePreview(long mailingID, long customerID, String selector, boolean anon, boolean cachable, long sendDate);
+
 	Page makePreview(long mailingID, long customerID, boolean cachable);
 
-    Page makePreview(long mailingID, long customerID, boolean cachable, boolean isMobile);
+	Page makePreview(long mailingID, long customerID, boolean cachable, long sendDate);
 
-    Page makePreview(long mailingID, long customerID, long targetID);
+	Page makePreview(long mailingID, long customerID, boolean cachable, boolean isMobile);
 
-    Page makePreview(long mailingID, long customerID, long targetID, boolean isMobile);
+	Page makePreview(long mailingID, long customerID, long targetID);
+
+	Page makePreview(long mailingID, long customerID, long targetID, boolean isMobile);
 
 	String makePreview(long mailingID, long customerID, String text, boolean cachable);
 

@@ -20,7 +20,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.DbUtilities;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
@@ -37,43 +36,22 @@ import com.agnitas.reporting.birt.external.beans.LightTarget;
 import com.agnitas.reporting.birt.external.dao.impl.LightMailingDaoImpl;
 
 public class TotalOptimizationDataSet extends MailingSummaryDataSet {
-	private static final transient Logger logger = LogManager.getLogger(TotalOptimizationDataSet.class);
+	
+	private static final Logger logger = LogManager.getLogger(TotalOptimizationDataSet.class);
 	
 	private int mailingTempTableId;
 	private int summaryTempTableId;
 	
-	public int getMailingTempTableId() {
-		if(mailingTempTableId == 0) {
-			logger.error("Report mailing data wasn't initialized");
-		}
-		return mailingTempTableId;
-	}
-	
-	public int getSummaryTempTableId() {
-		if (summaryTempTableId == 0) {
-			logger.error("Report summary data wasn't initialized");
-		}
-		return summaryTempTableId;
-	}
-	
 	/**
 	 * This method has to be called in initialize function of the report, otherwise getOptimizationMailings will fail!
-	 * @param optimizationId
-	 * @param companyId
-	 * @param showSoftbounces
-	 * @throws Exception
 	 */
-	public void prepareOptimizationReport(int optimizationId, @VelocityCheck int companyId, Boolean showSoftbounces) throws Exception {
+	public void prepareOptimizationReport(int optimizationId, int companyId, Boolean showSoftbounces) throws Exception {
 		this.mailingTempTableId = prepareOptimizationMailingsData(optimizationId, companyId);
 		this.summaryTempTableId = prepareTotalOptimizationSummaryData(companyId, showSoftbounces);
 	}
 	
 	/**
 	 * This method has to be called in initialize function of the report, otherwise getOptimizationMailings, getTotalOptimizationSummaryData will fail!
-	 * @param optimizationId
-	 * @param companyId
-	 * @return
-	 * @throws Exception
 	 */
 	private int prepareOptimizationMailingsData(int optimizationId, int companyId) throws Exception {
 		int tempTableID = createTempTable();
@@ -89,7 +67,7 @@ public class TotalOptimizationDataSet extends MailingSummaryDataSet {
 		return tempTableID;
 	}
 
-	private int prepareTotalOptimizationSummaryData(@VelocityCheck int companyID, Boolean showSoftbounces) throws Exception {
+	private int prepareTotalOptimizationSummaryData(int companyID, Boolean showSoftbounces) throws Exception {
 		int tempSummaryTableID = createSummaryTempTable();
 		List<OptimizationMailingData> optimizationMailingsData = getOptimizationMailings();
 		String targetSQL = allocateTargetSQL(optimizationMailingsData, companyID);
@@ -150,8 +128,8 @@ public class TotalOptimizationDataSet extends MailingSummaryDataSet {
 				"LEFT JOIN tmp_report_aggregation_" + mailingTempTableId + "_tbl mt ON mt.mailing_id = st.mailing_id AND mt.group_id = st.group_id " +
 				"ORDER BY st.category_index, st.mailing_id";
 
-        List<OptimizationMailingSummaryRow> list = selectEmbedded(logger, query, (resultSet, rowNum) -> {
-            OptimizationMailingSummaryRow row = new OptimizationMailingSummaryRow();
+		return selectEmbedded(logger, query, (resultSet, rowNum) -> {
+			OptimizationMailingSummaryRow row = new OptimizationMailingSummaryRow();
 			row.setCategory(resultSet.getString("category"));
 			row.setCategoryindex(resultSet.getInt("category_index"));
 			row.setMailingId(resultSet.getInt("mailing_id"));
@@ -165,9 +143,8 @@ public class TotalOptimizationDataSet extends MailingSummaryDataSet {
 			row.setCount(resultSet.getInt("value"));
 			row.setRate(resultSet.getDouble("rate"));
 			row.setDeliveredRate(resultSet.getDouble("rate_delivered"));
-            return row;
-        });
-        return list;
+			return row;
+		});
     }
 	
 	private List<OptimizationMailingData> getOptimizationMailingsData(int optimizationId, int companyId) {
@@ -216,10 +193,9 @@ public class TotalOptimizationDataSet extends MailingSummaryDataSet {
     private String getSubjectFromMTParam(String mtParam) {
         if (mtParam == null) {
             return "";
-        } else {
-            return StringUtils.defaultString(
-                    com.agnitas.reporting.birt.external.utils.StringUtils.findParam("subject", mtParam), "");
         }
+		return StringUtils.defaultString(
+				com.agnitas.reporting.birt.external.utils.StringUtils.findParam("subject", mtParam), "");
     }
 
 	public long getAvgMailingSize(Integer mailingId, int companyId) {
@@ -449,17 +425,15 @@ public class TotalOptimizationDataSet extends MailingSummaryDataSet {
 	@DaoUpdateReturnValueCheck
 	private void insertBouncesIntoTempTable(int tempTableID, OptimizationMailingData data, int companyID, String targetSQL) throws Exception {
         int mailingId = data.getMailingId();
+		int hardbounces;
 		if (!isMailingBouncesExpire(companyID, mailingId) || !isOracleDB()) {
-			int hardbounces = selectHardbouncesFromBounces(companyID, mailingId, targetSQL, CommonKeys.TYPE_ALL_SUBSCRIBERS, null, null);
-
-			insertIntoSummaryTempTable(tempTableID, CommonKeys.HARD_BOUNCES, CommonKeys.HARD_BOUNCES_INDEX,
-					mailingId, hardbounces, data.getGroupId());
+		 	hardbounces = selectHardbouncesFromBounces(companyID, mailingId, targetSQL, CommonKeys.TYPE_ALL_SUBSCRIBERS, null, null);
 		} else {
-			int hardbounces = selectHardbouncesFromBindings(companyID, mailingId, targetSQL, CommonKeys.TYPE_ALL_SUBSCRIBERS, null, null);
-			
-			insertIntoSummaryTempTable(tempTableID, CommonKeys.HARD_BOUNCES, CommonKeys.HARD_BOUNCES_INDEX,
-					mailingId, hardbounces, data.getGroupId());
+		 	hardbounces = selectHardbouncesFromBindings(companyID, mailingId, targetSQL, CommonKeys.TYPE_ALL_SUBSCRIBERS, null, null);
 		}
+
+		insertIntoSummaryTempTable(tempTableID, CommonKeys.HARD_BOUNCES, CommonKeys.HARD_BOUNCES_INDEX,
+				mailingId, hardbounces, data.getGroupId());
 	}
 	
 	@DaoUpdateReturnValueCheck
@@ -526,7 +500,7 @@ public class TotalOptimizationDataSet extends MailingSummaryDataSet {
 	
 	private void insertOpenersIntoTempTable(int tempTableID, OptimizationMailingData data, int companyID, String targetSQL) throws Exception {
         int mailingId = data.getMailingId();
-		int totalOpeners = selectOpeners(companyID, mailingId, CommonKeys.TYPE_ALL_SUBSCRIBERS, targetSQL, null, null);
+		int totalOpeners = selectOpeners(companyID, mailingId, CommonKeys.TYPE_ALL_SUBSCRIBERS, targetSQL, null, null, null);
 		
 		insertIntoSummaryTempTable(tempTableID, CommonKeys.OPENERS_MEASURED, CommonKeys.OPENERS_MEASURED_INDEX,
 				mailingId, totalOpeners, data.getGroupId());
@@ -586,7 +560,7 @@ public class TotalOptimizationDataSet extends MailingSummaryDataSet {
 	}
 	
 	@DaoUpdateReturnValueCheck
-	public int insertSendIntoTempTable(int tempTableID, OptimizationMailingData data, @VelocityCheck int companyID, String targetSql) throws Exception {
+	public int insertSendIntoTempTable(int tempTableID, OptimizationMailingData data, int companyID, String targetSql) throws Exception {
 		String recipientsType = data.getTargetGroupId() == ALL_SUBSCRIBERS_TARGETGROUPID ? CommonKeys.TYPE_WORLDMAILING : CommonKeys.TYPE_ALL_SUBSCRIBERS;
 		int mailsSent = getNumberSentMailings(companyID, data.getMailingId(), recipientsType, targetSql, null, null);
 
@@ -596,9 +570,8 @@ public class TotalOptimizationDataSet extends MailingSummaryDataSet {
         return mailsSent;
 	}
 	
-	
 	@DaoUpdateReturnValueCheck
-	public void insertClickersIntoTempTable(int tempTableID, OptimizationMailingData data, @VelocityCheck int companyID, String targetSql, String recipientsType) throws Exception {
+	public void insertClickersIntoTempTable(int tempTableID, OptimizationMailingData data, int companyID, String targetSql, String recipientsType) throws Exception {
         int mailingId = data.getMailingId();
 		int totalClicks = selectClicks(companyID, mailingId, recipientsType, targetSql, null, null);
 		int totalClickers = selectClickers(companyID, mailingId, recipientsType, targetSql, null, null);

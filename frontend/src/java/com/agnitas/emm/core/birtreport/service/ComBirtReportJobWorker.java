@@ -10,6 +10,7 @@
 
 package com.agnitas.emm.core.birtreport.service;
 
+import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -31,8 +32,8 @@ import com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings;
 import com.agnitas.emm.core.birtstatistics.service.BirtStatisticsService;
 
 public class ComBirtReportJobWorker extends JobWorker {
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(ComBirtReportJobWorker.class);
+
+	private static final Logger logger = LogManager.getLogger(ComBirtReportJobWorker.class);
 
 	@Override
 	public String runJob() {
@@ -56,7 +57,7 @@ public class ComBirtReportJobWorker extends JobWorker {
 	        	sendReports(reportsForSend, false);
 	        }
 		} catch (Exception e) {
-			logger.error("Unknown error in ComBirtReportJobWorker.runJob(): " + e.getMessage(), e);
+			logger.error(MessageFormat.format("Unknown error in ComBirtReportJobWorker.runJob(): {0}", e.getMessage()), e);
 		}
 		
 		return null;
@@ -81,7 +82,7 @@ public class ComBirtReportJobWorker extends JobWorker {
 					if (sendAsWorkflowTriggeredReport || !report.isTriggeredByMailing()) {
 						// time-triggered report (daily, weekly etc.)
 						urlsMap.putAll(birtStatisticsService.getReportStatisticsUrlMap(reportSettings, new Date(), report, companyID, accountId));
-						startReportExecution(birtStatisticsService, report, urlsMap);
+						startReportExecution(report, urlsMap);
 					} else {
 						// mailing-triggered report (After mailing dispatch option)
 						// even if we have several mailing ids - we need to send each report separately as the report is triggered
@@ -91,20 +92,20 @@ public class ComBirtReportJobWorker extends JobWorker {
 						for (Integer mailingId : mailingsIdsToSend) {
 							mailingSettings.setMailingsToSend(Collections.singletonList(mailingId));
 							urlsMap.putAll(birtStatisticsService.getReportStatisticsUrlMap(Collections.singletonList(mailingSettings), new Date(), report, companyID, accountId));
-							startReportExecution(birtStatisticsService, report, urlsMap);
+							startReportExecution(report, urlsMap);
 						}
 	
 						// Restore previously separated list of mailing IDs
 						mailingSettings.setMailingsToSend(mailingsIdsToSend);
 					}
 				} catch (Exception e) {
-					logger.error("Error processing report ID: " + report.getId() + ": " + e.getMessage(), e);
+					logger.error(MessageFormat.format("Error processing report ID: {0}: {1}", report.getId(), e.getMessage()), e);
 				}
 			}
 		}
 	}
 
-	private void startReportExecution(BirtStatisticsService birtStatisticsService, ComBirtReport birtReport, Map<String, String> urlsMap) {
+	private void startReportExecution(ComBirtReport birtReport, Map<String, String> urlsMap) {
 		BirtReportExecutor birtReportExecutor = new BirtReportExecutor(serviceLookupFactory, birtReport, urlsMap);
 		Thread executorThread = new Thread(birtReportExecutor);
 		executorThread.start();

@@ -18,7 +18,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.action.operations.ActionOperationParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationServiceMailParameters;
 import com.agnitas.emm.core.blacklist.dao.ComBlacklistDao;
@@ -40,7 +40,7 @@ public class ServiceMailingValidator implements ActionOperationValidator {
     }
 
     @Override
-    public SimpleServiceResult validate(ComAdmin admin, ActionOperationParameters target) {
+    public SimpleServiceResult validate(Admin admin, ActionOperationParameters target) {
         ActionOperationServiceMailParameters operation = (ActionOperationServiceMailParameters) target;
         List<Message> errors = new ArrayList<>();
         int companyId = admin.getCompanyID();

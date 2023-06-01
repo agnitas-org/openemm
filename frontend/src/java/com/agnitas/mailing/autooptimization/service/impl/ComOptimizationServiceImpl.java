@@ -47,12 +47,9 @@ import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Required;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.ComTarget;
 import com.agnitas.beans.DeliveryStat;
 import com.agnitas.beans.MaildropEntry;
@@ -77,9 +74,8 @@ import com.agnitas.mailing.autooptimization.service.ComOptimizationStatService;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
-public class ComOptimizationServiceImpl implements ComOptimizationService, ApplicationContextAware { // TODO: Remove dependency to ApplicationContextAware
+public class ComOptimizationServiceImpl implements ComOptimizationService { 
 	
-	/** The logger. */
 	private static final transient Logger logger = LogManager.getLogger(ComOptimizationServiceImpl.class);
 	
 	/** This flag indicates, that finishOptimizationsSingle() is already running. */
@@ -92,9 +88,6 @@ public class ComOptimizationServiceImpl implements ComOptimizationService, Appli
 	
 	/** DAO accessing mailings. */
 	private ComMailingDao mailingDao;
-
-	private ApplicationContext applicationContext; // when we will get rid off that ???
-	// you can't reuse anything from existing code without a huge refactoring and/or including side effects and/or work with that ugly stuff ..
 	
 	private ComOptimizationCommonService optimizationCommonService;
 	private ComOptimizationStatService optimizationStatService;
@@ -153,24 +146,30 @@ public class ComOptimizationServiceImpl implements ComOptimizationService, Appli
 	 */
 	@Override
 	public ComOptimization get(int optimizationID, @VelocityCheck int companyID) {
-		ComOptimization comOptimization = optimizationDao.get(optimizationID, companyID);
-		 
-		// For the send date use the 1st testmailing and take the maildrop status entry where the status_field = 'W' or 'T'
-		int firstTestMailingID = comOptimization.getGroup1();
-		if( firstTestMailingID != 0) {
-			Mailing mailing = mailingDao.getMailing(firstTestMailingID, companyID);
-			MaildropEntry entry = getEffectiveMaildrop(mailing.getMaildropStatus(), comOptimization.isTestRun());
+		ComOptimization comOptimization = null;
 
-			// set the testmailings senddate
-			if (entry != null) {
-				comOptimization.setTestMailingsSendDate(entry.getGenDate());
+		try {
+			 comOptimization = optimizationDao.get(optimizationID, companyID);
+
+			// For the send date use the 1st testmailing and take the maildrop status entry where the status_field = 'W' or 'T'
+			int firstTestMailingID = comOptimization.getGroup1();
+			if( firstTestMailingID != 0) {
+				Mailing mailing = mailingDao.getMailing(firstTestMailingID, companyID);
+				MaildropEntry entry = getEffectiveMaildrop(mailing.getMaildropStatus(), comOptimization.isTestRun());
+
+				// set the testmailings senddate
+				if (entry != null) {
+					comOptimization.setTestMailingsSendDate(entry.getGenDate());
+				}
 			}
+
+			// refresh the state from maildrop_status_tbl;
+
+			comOptimization.setStatus(getState(comOptimization));
+		}catch (Exception e) {
+			e.printStackTrace();
 		}
-	
-		// refresh the state from maildrop_status_tbl;
-		
-		comOptimization.setStatus(getState(comOptimization));
-		
+
 		return comOptimization;
 	}
     
@@ -242,12 +241,12 @@ public class ComOptimizationServiceImpl implements ComOptimizationService, Appli
 
 		mailing.getMaildropStatus().add(drop);
 		mailingDao.saveMailing(mailing, false);
-		mailingDao.updateStatus(drop.getMailingID(), testRun ? MailingStatus.TEST : MailingStatus.SCHEDULED);
+		mailingDao.updateStatus(drop.getMailingID(), testRun ? MailingStatus.TEST : MailingStatus.SCHEDULED, now);
 
 		if (testRun) {
 			return true;
 		} else {
-			return mailing.triggerMailing(drop.getId(), new Hashtable<>(), applicationContext);
+			return mailing.triggerMailing(drop.getId());
 		}
 	}
 
@@ -360,7 +359,6 @@ public class ComOptimizationServiceImpl implements ComOptimizationService, Appli
 	
 	@Override
 	public int calculateBestMailing(ComOptimization optimization) {
-
 		Hashtable<Integer , CampaignStatEntry> stats = optimizationStatService.getStat(optimization);
 
 		if(MapUtils.isEmpty(stats)) {
@@ -490,7 +488,6 @@ public class ComOptimizationServiceImpl implements ComOptimizationService, Appli
 	
 	/**
 	 * get all the optimizations where the threshold has been reached
-	 * @return
 	 */
 	@Override
 	public List<ComOptimization> getDueOnThresholdOptimizations(List<Integer> includedCompanyIds, List<Integer> excludedCompanyIds) {
@@ -701,7 +698,7 @@ public class ComOptimizationServiceImpl implements ComOptimizationService, Appli
 	}
 
 	@Override
-	public JSONArray getOptimizationsAsJson(ComAdmin admin, LocalDate startDate, LocalDate endDate, DateTimeFormatter formatter) {
+	public JSONArray getOptimizationsAsJson(Admin admin, LocalDate startDate, LocalDate endDate, DateTimeFormatter formatter) {
 		JSONArray result = new JSONArray();
 
 		if (startDate.isAfter(endDate)) {
@@ -812,12 +809,6 @@ public class ComOptimizationServiceImpl implements ComOptimizationService, Appli
 			autoOptimizationLight = new AutoOptimizationLight();
 		}
 		return autoOptimizationLight;
-	}
-	
-	// make properties 'injectable'
-	@Override
-	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-		this.applicationContext = applicationContext;
 	}
 
 	@Required

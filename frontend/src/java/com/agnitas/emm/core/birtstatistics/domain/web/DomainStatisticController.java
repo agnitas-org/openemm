@@ -10,6 +10,7 @@
 
 package com.agnitas.emm.core.birtstatistics.domain.web;
 
+import com.agnitas.web.mvc.XssCheckAware;
 import org.agnitas.service.UserActivityLogService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -19,7 +20,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.context.request.RequestContextHolder;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.birtstatistics.domain.dto.DomainStatisticDto;
 import com.agnitas.emm.core.birtstatistics.domain.form.DomainStatisticForm;
 import com.agnitas.emm.core.birtstatistics.service.BirtStatisticsService;
@@ -30,9 +31,8 @@ import com.agnitas.web.perm.annotations.PermissionMapping;
 @Controller
 @RequestMapping(value = "/statistics/domain")
 @PermissionMapping("domain.statistics")
-public class DomainStatisticController {
+public class DomainStatisticController implements XssCheckAware {
 	
-	/** The logger. */
 	private static final Logger logger = LogManager.getLogger(DomainStatisticController.class);
 	
 	private static final String BIRT_STATISTIC_URL_WITHOUT_FORMAT = "birtStatisticUrlWithoutFormat";
@@ -58,7 +58,7 @@ public class DomainStatisticController {
 	}
 	
 	@RequestMapping("/view.action")
-	public String view(ComAdmin admin, DomainStatisticForm form, Model model) throws Exception {
+	public String view(Admin admin, DomainStatisticForm form, Model model) throws Exception {
 		String sessionId = RequestContextHolder.getRequestAttributes().getSessionId();
 		model.addAttribute(TARGET_LIST, targetService.getTargetLights(admin));
 		model.addAttribute(MAILING_LISTS, mailinglistApprovalService.getEnabledMailinglistsNamesForAdmin(admin));

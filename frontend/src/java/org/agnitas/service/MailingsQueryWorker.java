@@ -10,27 +10,42 @@
 
 package org.agnitas.service;
 
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.MailingsListProperties;
+import com.agnitas.emm.core.mailing.bean.MailingsListResult;
+import com.agnitas.messages.Message;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.MailingDao;
+import org.agnitas.util.FulltextSearchInvalidQueryException;
 
-public class MailingsQueryWorker implements Callable<PaginatedListImpl<Map<String, Object>>> {
-	private MailingDao mDao;
-	private ComAdmin admin;
+public class MailingsQueryWorker implements Callable<MailingsListResult> {
+
+	private MailingDao mailingDao;
+	private Admin admin;
 	private MailingsListProperties props;
 
-	public MailingsQueryWorker(MailingDao dao, ComAdmin admin, MailingsListProperties props) {
-		this.mDao = dao;
+	public MailingsQueryWorker(MailingDao mailingDao, Admin admin, MailingsListProperties props) {
+		this.mailingDao = mailingDao;
 		this.admin = admin;
 		this.props = props;
 	}
 
 	@Override
-	public PaginatedListImpl<Map<String, Object>> call() throws Exception {
-		return mDao.getMailingList(admin, props);
+	public MailingsListResult call() throws Exception {
+		Message errorMessage = null;
+		PaginatedListImpl<Map<String, Object>> mailingList;
+
+		try {
+			mailingList =  mailingDao.getMailingList(admin, props);
+		} catch (FulltextSearchInvalidQueryException e) {
+			errorMessage = e.getUiMessage();
+			mailingList = new PaginatedListImpl<>(new ArrayList<>(), 0, props.getRownums(), props.getPage(), "senddate", true);
+		}
+
+		return new MailingsListResult(mailingList, errorMessage);
 	}
 }

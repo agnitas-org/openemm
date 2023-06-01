@@ -11,7 +11,7 @@
 package com.agnitas.emm.springws.endpoint;
 
 import org.agnitas.emm.springws.endpoint.BaseEndpoint;
-import org.agnitas.emm.springws.endpoint.Utils;
+import org.agnitas.emm.springws.endpoint.Namespaces;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.ws.server.endpoint.annotation.Endpoint;
@@ -33,7 +33,7 @@ public class MailingSummaryStatisticJobEndpoint extends BaseEndpoint {
 		this.mailingSummaryStatisticJobService = mailingSummaryStatisticJobService;
 	}
 
-	@PayloadRoot(namespace = Utils.NAMESPACE_COM, localPart = "MailingSummaryStatisticJobRequest")
+	@PayloadRoot(namespace = Namespaces.AGNITAS_COM, localPart = "MailingSummaryStatisticJobRequest")
 	public @ResponsePayload MailingSummaryStatisticJobResponse mailingSummaryStatisticJob(@RequestPayload MailingSummaryStatisticJobRequest request) throws Exception {
 		if (classLogger.isInfoEnabled()) {
 			classLogger.info( "Entered MailingSummaryStatisticJobEndpoint.mailingSummaryStatisticJob()");

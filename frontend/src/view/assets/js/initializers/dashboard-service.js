@@ -132,7 +132,7 @@
 
     updateCharts: function(mailingId) {
       jQuery.ajax({
-        type: "POST",
+        type: "GET",
         url: AGN.url("/dashboard/statistics.action"),
         data: {
           mailingId: mailingId

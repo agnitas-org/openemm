@@ -12,7 +12,7 @@
 	<c:set var="importAction" value="${ACTION_IMPORT_TEMPLATES}"/>
 </c:if>
 
-<agn:agnForm action="/mailingbase" id="mailingImport" enctype="multipart/form-data" data-form="static">
+<agn:agnForm action="/mailingbase" id="mailingImport" enctype="multipart/form-data" data-form="resource">
 	<html:hidden property="action"/>
 	<html:hidden property="isGrid" value="false"/>
 	<html:hidden property="isTemplate" value="false"/>

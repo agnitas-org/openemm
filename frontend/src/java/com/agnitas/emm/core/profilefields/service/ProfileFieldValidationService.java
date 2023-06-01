@@ -15,7 +15,7 @@ import java.util.Locale;
 
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.recipient.dto.RecipientFieldDto;
 import com.agnitas.service.ServiceResult;
 
@@ -46,7 +46,7 @@ public interface ProfileFieldValidationService {
 
     boolean isStandardColumn(String fieldName);
     
-    ServiceResult<Object> validateNewProfileFieldValue(ComAdmin admin, RecipientFieldDto field);
+    ServiceResult<Object> validateNewProfileFieldValue(Admin admin, RecipientFieldDto field);
 
 	boolean isInvalidFloatField(String fieldType, String fieldDefault, Locale locale);
 }

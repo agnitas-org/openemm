@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.agnitas.beans.BindingEntry;
-import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.agnitas.dao.UserStatus;
 
 import com.agnitas.beans.ComTarget;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
@@ -24,9 +24,9 @@ import com.agnitas.emm.core.report.bean.PlainBindingEntry;
 
 public interface ComBindingEntryDao {
 
-	boolean getExistingRecipientIDByMailinglistID(Set<Integer> mailinglistIds, @VelocityCheck int companyId);
+	boolean getExistingRecipientIDByMailinglistID(Set<Integer> mailinglistIds, int companyId);
 
-    void deleteRecipientBindingsByMailinglistID(Set<Integer> mailinglistIds, @VelocityCheck int companyId);
+    void deleteRecipientBindingsByMailinglistID(Set<Integer> mailinglistIds, int companyId);
 
     /**
 	 * Loads a binding from database. Uses recipientID, mailinglistID and
@@ -38,7 +38,7 @@ public interface ComBindingEntryDao {
      * @param mediaType The value of mediatype for the binding.
 	 * @return The BindingEntry or null on failure.
 	 */
-	BindingEntry get(int recipientID, @VelocityCheck int companyID, int mailinglistID, int mediaType);
+	BindingEntry get(int recipientID, int companyID, int mailinglistID, int mediaType);
 
 	/**
 	 * Loads bindings from database by recipient id and mailing id.
@@ -48,7 +48,7 @@ public interface ComBindingEntryDao {
 	 * @param mailingId The id of the mailing for the mailing list.
 	 * @return The BindingEntry or null on failure.
 	 */
-	List<PlainBindingEntry> get(@VelocityCheck int companyId, int recipientId, int mailingId);
+	List<PlainBindingEntry> get(int companyId, int recipientId, int mailingId);
 
     /**
      * Updates existing Binding in Database or create new Binding.
@@ -56,7 +56,7 @@ public interface ComBindingEntryDao {
      * @param companyID The id of the company for the binding
      * @param entry The Binding to update or create
      */
-	void save(@VelocityCheck int companyID, BindingEntry entry);
+	void save(int companyID, BindingEntry entry);
 
 	/**
 	 * Updates the Binding in the Database
@@ -65,11 +65,11 @@ public interface ComBindingEntryDao {
 	 * @param companyID The company ID of the Binding
 	 * @return true if success and false if failure
 	 */
-	boolean updateBinding(BindingEntry entry, @VelocityCheck int companyID);
+	boolean updateBinding(BindingEntry entry, int companyID);
 
-	void updateBindings(@VelocityCheck int companyId, List<BindingEntry> bindings) throws Exception;
+	void updateBindings(int companyId, List<BindingEntry> bindings) throws Exception;
 
-	void insertBindings(@VelocityCheck int companyId, List<BindingEntry> bindings) throws Exception;
+	void insertBindings(int companyId, List<BindingEntry> bindings) throws Exception;
 
 	/**
 	 * Inserts a new binding into the database.
@@ -78,7 +78,7 @@ public interface ComBindingEntryDao {
 	 * @param companyID The company we are working on.
 	 * @return true on success.
 	 */
-	boolean insertNewBinding(BindingEntry entry, @VelocityCheck int companyID);
+	boolean insertNewBinding(BindingEntry entry, int companyID);
 
     /**
      * Update the status for the binding. Also updates exit_mailing_id and
@@ -88,7 +88,7 @@ public interface ComBindingEntryDao {
      * @param companyID The company we are working on.
      * @return true on success.
      */
-	boolean updateStatus(BindingEntry entry, @VelocityCheck int companyID);
+	boolean updateStatus(BindingEntry entry, int companyID);
 
     /**
      * Set given email to status optout. The given email can be an sql
@@ -97,7 +97,7 @@ public interface ComBindingEntryDao {
      * @param email The sql like pattern of the email-address.
      * @param CompanyID Only update addresses for this company.
      */
-	boolean optOutEmailAdr(String email, @VelocityCheck int CompanyID);
+	boolean optOutEmailAdr(String email, int CompanyID);
 
     /**
      * Subscribes all customers in the given target group to the given mailinglist.
@@ -107,7 +107,7 @@ public interface ComBindingEntryDao {
      * @param target The target describing the recipients that shall be added.
      * @return true on success.
      */
-    boolean addTargetsToMailinglist(@VelocityCheck int companyID, int mailinglistID, ComTarget target, Set<MediaTypes> mediaTypes);
+    boolean addTargetsToMailinglist(int companyID, int mailinglistID, ComTarget target, Set<MediaTypes> mediaTypes);
 
     /* moved form BindingEntry */
 	/**
@@ -118,7 +118,7 @@ public interface ComBindingEntryDao {
 	 * @param companyID The id of the company for the binding.
 	 * @return true if success and false if failure
 	 */
-    boolean getUserBindingFromDB(BindingEntry entry, @VelocityCheck int companyID);
+    boolean getUserBindingFromDB(BindingEntry entry, int companyID);
 
     /**
      * Check if Binding entry exists.
@@ -129,9 +129,9 @@ public interface ComBindingEntryDao {
      * @param mediatype The value of mediatype for the binding.
      * @return true if the Binding exists and false otherwise
      */
-    boolean exist(int customerId, @VelocityCheck int companyId, int mailinglistId, int mediatype);
+    boolean exist(int customerId, int companyId, int mailinglistId, int mediatype);
 
-    boolean exist(@VelocityCheck int companyId, int mailinglistId);
+    boolean exist(int companyId, int mailinglistId);
 
     /**
      * Delete Binding. Uses customerId, companyId, mailinglistId and
@@ -142,7 +142,7 @@ public interface ComBindingEntryDao {
      * @param mailinglistId The id of the mailinglist for the binding.
      * @param mediatype The value of mediatype for the binding.
      */
-    void delete(int customerId, @VelocityCheck int companyId, int mailinglistId, int mediatype);
+    void delete(int customerId, int companyId, int mailinglistId, int mediatype);
 
     /**
      * Load list of Bindings by companyId and recipientID.
@@ -151,11 +151,17 @@ public interface ComBindingEntryDao {
      * @param recipientID The id of the recipient for the binding.
      * @return Binding entity
      */
-	List<BindingEntry> getBindings(@VelocityCheck int companyId, int recipientID);
+	List<BindingEntry> getBindings(int companyId, int recipientID);
 
-	List<CompositeBindingEntry> getCompositeBindings(@VelocityCheck int companyID, int recipientID);
+	List<CompositeBindingEntry> getCompositeBindings(int companyID, int recipientID);
 
-	void updateBindingStatusByEmailPattern(@VelocityCheck int companyId, String emailPattern, int userStatus, String remark) throws Exception;
+	void updateBindingStatusByEmailPattern(int companyId, String emailPattern, int userStatus, String remark) throws Exception;
 
 	void lockBindings(int companyId, List<SimpleEntry<Integer, Integer>> cmPairs);
+
+	int bulkUpdateStatus(int companyID, List<Integer> mailinglistIds, MediaTypes mediatype, UserStatus userStatus, String userRemark, List<Integer> customerIDs);
+
+	int bulkDelete(int companyID, List<Integer> mailinglistIds, MediaTypes mediatype, List<Integer> customerIDs);
+
+	int bulkCreate(int companyID, List<Integer> mailinglistIds, MediaTypes mediatype, UserStatus userStatus, String userRemark, List<Integer> customerIDs);
 }

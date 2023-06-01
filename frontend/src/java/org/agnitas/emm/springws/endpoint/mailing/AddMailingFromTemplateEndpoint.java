@@ -14,9 +14,10 @@ import java.util.Objects;
 
 import org.agnitas.emm.core.mailing.service.MailingModel;
 import org.agnitas.emm.springws.endpoint.BaseEndpoint;
-import org.agnitas.emm.springws.endpoint.Utils;
+import org.agnitas.emm.springws.endpoint.Namespaces;
 import org.agnitas.emm.springws.jaxb.AddMailingFromTemplateRequest;
 import org.agnitas.emm.springws.jaxb.AddMailingFromTemplateResponse;
+import org.agnitas.emm.springws.util.SecurityContextAccess;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -35,15 +36,17 @@ public class AddMailingFromTemplateEndpoint extends BaseEndpoint {
 
 	private final ThumbnailService thumbnailService;
 	private final MailingService mailingService;
-
-	public AddMailingFromTemplateEndpoint(@Qualifier("MailingService") MailingService mailingService, final ThumbnailService thumbnailService) {
-		this.mailingService = mailingService;
-		this.thumbnailService = Objects.requireNonNull(thumbnailService);
+	private final SecurityContextAccess securityContextAccess;
+	
+	public AddMailingFromTemplateEndpoint(@Qualifier("MailingService") MailingService mailingService, final ThumbnailService thumbnailService, final SecurityContextAccess securityContextAccess) {
+		this.mailingService = Objects.requireNonNull(mailingService, "mailingService");
+		this.thumbnailService = Objects.requireNonNull(thumbnailService, "thumbnailService");
+		this.securityContextAccess = Objects.requireNonNull(securityContextAccess, "securityContextAccess");
 	}
 
-	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "AddMailingFromTemplateRequest")
+	@PayloadRoot(namespace = Namespaces.AGNITAS_ORG, localPart = "AddMailingFromTemplateRequest")
 	public @ResponsePayload AddMailingFromTemplateResponse addMailingFromTemplate(@RequestPayload AddMailingFromTemplateRequest request) {
-		final int companyID = Utils.getUserCompany();
+		final int companyID = this.securityContextAccess.getWebserviceUserCompanyId();
 		
 		final MailingModel model = new MailingModel();
 		model.setCompanyId(companyID);

@@ -14,7 +14,7 @@ import java.sql.Timestamp;
 
 import org.agnitas.beans.AdminEntry;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 
 public class AdminEntryImpl implements AdminEntry {
     private int companyID;
@@ -29,7 +29,7 @@ public class AdminEntryImpl implements AdminEntry {
     private Timestamp loginDate;
     private boolean passwordExpired;
 
-    public AdminEntryImpl(ComAdmin admin) {
+    public AdminEntryImpl(Admin admin) {
         this(admin.getCompanyID(), admin.getAdminID(), admin.getUsername(), admin.getFullname(), admin.getFirstName(), admin.getShortname(), admin.getEmail());
     }
 

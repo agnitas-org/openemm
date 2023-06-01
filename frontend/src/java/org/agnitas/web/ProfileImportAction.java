@@ -74,12 +74,12 @@ import org.apache.struts.action.ActionMessages;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.http.MediaType;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.dao.DatasourceDescriptionDao;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.action.service.EmmActionService;
-import com.agnitas.emm.core.mailinglist.service.ComMailinglistService;
+import com.agnitas.emm.core.mailinglist.service.MailinglistService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
 import com.agnitas.emm.core.recipientsreport.service.impl.RecipientReportUtils;
 import com.agnitas.messages.I18nString;
@@ -130,7 +130,7 @@ public class ProfileImportAction extends ImportBaseFileAction {
 	public static final int RECIPIENT_TYPE_DUPLICATE_IN_NEW_DATA_RECIPIENT = 6;
 	public static final int RESULT_TYPE = 7;
 
-	private ComMailinglistService mailinglistService;
+	private MailinglistService mailinglistService;
 	
 	private ComRecipientDao recipientDao;
 
@@ -160,7 +160,7 @@ public class ProfileImportAction extends ImportBaseFileAction {
     }
 
 	@Required
-	public void setMailinglistService(ComMailinglistService mailinglistService) {
+	public void setMailinglistService(MailinglistService mailinglistService) {
 		this.mailinglistService = mailinglistService;
 	}
 
@@ -238,7 +238,7 @@ public class ProfileImportAction extends ImportBaseFileAction {
 		}
 	}
 	
-	protected void initUI(final ComNewImportWizardForm aForm, final ComAdmin admin, final ActionMessages errors) {
+	protected void initUI(final ComNewImportWizardForm aForm, final Admin admin, final ActionMessages errors) {
 		// Nothing to do here
 	}
 
@@ -247,7 +247,7 @@ public class ProfileImportAction extends ImportBaseFileAction {
 		ActionMessages messages = new ActionMessages();
 		ActionMessages errors = new ActionMessages();
 		ActionForward destination = null;
-		ComAdmin admin = AgnUtils.getAdmin(request);
+		Admin admin = AgnUtils.getAdmin(request);
 
 		ComNewImportWizardForm aForm;
 		if (form != null) {
@@ -393,8 +393,11 @@ public class ProfileImportAction extends ImportBaseFileAction {
 					}
 					profileFits = false;
 				} catch (ImportException e) {
+					errors.add("csvFile", new ActionMessage(e.getErrorMessageKey(), e.getAdditionalErrorData()));
+					profileFits = false;
+				} catch (Exception e) {
 					errors.add("csvFile", new ActionMessage("error.import.exception", e.getMessage()));
-					profileFits = true;
+					profileFits = false;
 				}
 				
 				boolean keyColumnValid = isProfileKeyColumnValid(importPreviewProfile, errors);
@@ -545,7 +548,7 @@ public class ProfileImportAction extends ImportBaseFileAction {
 						clearSessionsProfileImportWorker(request);
 
 						// TODO: Show near limit warning
-						profileImportReporter.fillProfileImportForm(profileImportWorker, aForm, admin.getLocale());
+						profileImportReporter.fillProfileImportForm(profileImportWorker, aForm);
 						profileImportWorker.cleanUp();
 
 						destination = mapping.findForward("result_page");
@@ -815,7 +818,7 @@ public class ProfileImportAction extends ImportBaseFileAction {
 	 * @param admin current user
 	 * @return all mailing lists for current company id
 	 */
-	private List<Mailinglist> getAllMailingLists(ComAdmin admin) {
+	private List<Mailinglist> getAllMailingLists(Admin admin) {
 		return mailinglistApprovalService.getEnabledMailinglistsForAdmin(admin);
 	}
 
@@ -882,7 +885,7 @@ public class ProfileImportAction extends ImportBaseFileAction {
 	 * @param admin current user
 	 * @return list of import profiles for overview page with current company id
 	 */
-	private List<ImportProfile> getProfileList(ComAdmin admin) {
+	private List<ImportProfile> getProfileList(Admin admin) {
 		return importProfileService.getImportProfilesByCompanyId(admin.getCompanyID());
 	}
 
@@ -925,7 +928,7 @@ public class ProfileImportAction extends ImportBaseFileAction {
 	}
 
 	private ProfileImportWorker createNewProfileImportWorker(ComNewImportWizardForm aForm, HttpServletRequest request, ImportProfile importProfile) throws Exception {
-		ComAdmin admin = AgnUtils.getAdmin(request);
+		Admin admin = AgnUtils.getAdmin(request);
 
 		// set datasource id
 		DatasourceDescription dsDescription = new DatasourceDescriptionImpl();
@@ -981,7 +984,7 @@ public class ProfileImportAction extends ImportBaseFileAction {
 		return sort;
 	}
 
-	private void writeImportLog(ComAdmin admin, ComNewImportWizardForm aForm) {
+	private void writeImportLog(Admin admin, ComNewImportWizardForm aForm) {
 		try {
 			List<Mailinglist> allMailingLists = aForm.getAllMailingLists();
 			List<Integer> listsToAssign = aForm.getListsToAssign();

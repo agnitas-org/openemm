@@ -10,7 +10,7 @@
 
 package com.agnitas.emm.core.user.service;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import org.agnitas.emm.core.logintracking.bean.LoginData;
 
 import java.text.SimpleDateFormat;
@@ -21,5 +21,5 @@ public interface UserSelfService {
     /** Default value for minimum period of days for login data. */
     int DEFAULT_LOGIN_MIN_PERIOD_DAYS = 14;
 
-    List<LoginData> getLoginTrackingList(ComAdmin admin, int minPeriodDays, SimpleDateFormat loginTimeFormat);
+    List<LoginData> getLoginTrackingList(Admin admin, int minPeriodDays, SimpleDateFormat loginTimeFormat);
 }

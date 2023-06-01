@@ -1,7 +1,7 @@
 var applicationCommonFiles = [
   '<%= config.runtimeLibs %>/jquery/jquery-3.5.1.js',
-  '<%= config.assets %>/js/vendor/jquery-ui-1.12.1.js',
-  '<%= config.runtimeLibs %>/lodash/lodash-4.17.20.js',
+  '<%= config.assets %>/js/vendor/jquery-ui-1.13.1.js',
+  '<%= config.runtimeLibs %>/lodash/lodash-4.17.21.js',
   '<%= config.assets %>/js/vendor/jquery-i18n-1.1.1.js',
   '<%= config.assets %>/js/vendor/jquery-select2-3.5.2.js',
   '<%= config.assets %>/js/vendor/jquery-endless-scroll-1.6.0.js',
@@ -27,7 +27,7 @@ var applicationCommonFiles = [
   '<%= config.assets %>/js/vendor/jquery-perfect-scrollbar-0.5.7.js',
   '<%= config.assets %>/js/vendor/jquery-mousewheel-3.1.9.js',
   '<%= config.assets %>/js/vendor/jquery-doublescroll-0.4.js',
-  '<%= config.assets %>/js/vendor/iframe-resizer-host-window-2.7.1.js',
+  '<%= config.assets %>/js/vendor/iframe-resizer-host-window-4.3.2.js',
   '<%= config.assets %>/js/vendor/jquery-inputmask-3.1.63.js',
   '<%= config.assets %>/js/vendor/jquery-iframe-transport.js',
   '<%= config.assets %>/js/vendor/dragster.js',
@@ -75,7 +75,7 @@ var applicationCommonFiles = [
 applicationDevFiles = applicationCommonFiles.concat(['<%= config.assets %>/js/vendor/jquery-migrate-3.3.2.js']),
 applicationMinFiles = applicationCommonFiles.concat(['<%= config.assets %>/js/vendor/jquery-migrate-3.3.2.min.js']),//migrate min file does not have logs about deprecated functions
 birtFiles = [
-  '<%= config.assets %>/js/vendor/iframe-resizer-content-window-2.7.1.js',
+  '<%= config.assets %>/js/vendor/iframe-resizer-content-window-4.3.2.js',
   '<%= config.assets %>/js/birt/*.js'
 ];
 
@@ -108,7 +108,7 @@ module.exports = {
     },
     options: {
       mangle: true,
-      compress: {},
+      compress: false,
       beautify: false,
       sourcemap: false
     }

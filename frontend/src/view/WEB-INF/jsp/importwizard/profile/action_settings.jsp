@@ -1,3 +1,4 @@
+<%@page import="java.util.TimeZone"%>
 <%@ page language="java"
          import="org.agnitas.beans.Recipient"
          contentType="text/html; charset=utf-8"  errorPage="/error.do" %>
@@ -74,7 +75,7 @@
 						<div class="list-group-item disabled">${importProfileForm.profile.firstKeyColumn}</div>
 					</c:when>
 					<c:otherwise>
-		                <html:select styleId="import_key_column" styleClass="form-control" property="profile.firstKeyColumn" >
+		                <html:select styleId="import_key_column" styleClass="form-control js-select" property="profile.firstKeyColumn" >
 		                	<c:forEach var="availableImportProfileField" items="${importProfileForm.availableImportProfileFields}">
 		                		<html:option value='${availableImportProfileField.column}'>
 		                            ${availableImportProfileField.shortname}
@@ -208,6 +209,42 @@
                 </logic:messagesPresent>
             </div>
         </div>
+
+		<div class="form-group <logic:messagesPresent property="reportLocale">has-alert has-feedback</logic:messagesPresent>">
+			<div class="col-sm-4">
+				<label class="control-label">
+					<label for="reportLocale"> <bean:message key="import.report.locale" /></label>
+				</label>
+			</div>
+			<div class="col-sm-8">
+				<agn:agnSelect property="reportLocaleString" styleClass="form-control js-select" styleId="profile" data-action="change-import-profile">
+					<html:option value="de_DE"><bean:message key="settings.German" /></html:option>
+					<html:option value="en_US"><bean:message key="settings.English" /></html:option>
+					<html:option value="fr_FR"><bean:message key="settings.French" /></html:option>
+					<html:option value="es_ES"><bean:message key="settings.Spanish" /></html:option>
+					<html:option value="pt_PT"><bean:message key="settings.Portuguese" /></html:option>
+					<html:option value="nl_NL"><bean:message key="settings.Dutch" /></html:option>
+					<html:option value="it_IT"><bean:message key="settings.Italian" /></html:option>
+				</agn:agnSelect>
+			</div>
+		</div>
+
+		<div class="form-group <logic:messagesPresent property="reportTimezone">has-alert has-feedback</logic:messagesPresent>">
+			<div class="col-sm-4">
+				<label class="control-label">
+					<label for="reportTimezone"> <bean:message key="import.report.timezone" /></label>
+				</label>
+			</div>
+
+			<c:set var="availableTimeZones" value="<%= TimeZone.getAvailableIDs() %>" />
+			<div class="col-sm-8">
+				<agn:agnSelect property="profile.reportTimezone" styleClass="form-control js-select" styleId="profile" data-action="change-import-profile">
+					<c:forEach var="timeZone" items="${availableTimeZones}">
+						<html:option value="${timeZone}">${timeZone}</html:option>
+					</c:forEach>
+				</agn:agnSelect>
+			</div>
+		</div>
 
 		<%@include file="/WEB-INF/jsp/importwizard/profile/action_settings-extended_actions.jspf" %>
 

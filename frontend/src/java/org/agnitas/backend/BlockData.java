@@ -28,7 +28,6 @@ public class BlockData implements Comparable<BlockData> {
 	public static final int ATTACHMENT_BINARY = 6;
 	public final static int FONT = 7;
 	public final static int PDF = 8;
-	public final static int MMS = 9;
 	public final static int SMS = 10;
 
 	/**
@@ -262,11 +261,6 @@ public class BlockData implements Comparable<BlockData> {
 			return null;
 		}
 
-		// if this is the first time, cleanup all tags
-		if (current_pos == 0) {
-			cleanupTags();
-		}
-
 		int end_position;
 		int new_position = getNextOpeningTag();
 		if (new_position == -1) {
@@ -441,35 +435,6 @@ public class BlockData implements Comparable<BlockData> {
 
 		current_pos = 0;
 		return -1;
-	}
-
-	private void cleanupTags() {
-		int start, end = 0;
-
-		while ((start = content.indexOf("[", end)) != -1) {
-			int cBegin = start + 1;
-
-			if (content.startsWith("/", cBegin)) {
-				cBegin++;
-			}
-			end = endOfTag(start);
-
-			if (matchOpeningTagName(cBegin)) {
-				for (int n = start; n < end; ++n) {
-					char ch = content.charAt(n);
-					int count = 0;
-
-					while ((n + count + 1 < end) && Character.isWhitespace(ch)) {
-						count++;
-						ch = content.charAt(n + count);
-					}
-					if (count > 0) {
-						content = content.substring(0, n) + ' ' + content.substring(n + count);
-						end -= count - 1;
-					}
-				}
-			}
-		}
 	}
 
 	private int norm(int cType) {

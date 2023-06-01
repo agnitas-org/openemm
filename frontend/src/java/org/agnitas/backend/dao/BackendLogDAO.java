@@ -28,7 +28,7 @@ public class BackendLogDAO {
 		mailingID = forMailingID;
 		isWorldMailing = nIsWorldMailing;
 		try (DBase.With with = dbase.with ()) {
-			dbase.update (with.jdbc (),
+			dbase.update (with.cursor (),
 				      "INSERT INTO mailing_backend_log_tbl " +
 				      "            (status_id, mailing_id, current_mails, total_mails, timestamp, creation_date) " +
 				      "VALUES " +
@@ -52,7 +52,7 @@ public class BackendLogDAO {
 	 */
 	public void update (DBase dbase, long mailCount, long totalCount) throws SQLException {
 		try (DBase.With with = dbase.with ()) {
-			dbase.update (with.jdbc (),
+			dbase.update (with.cursor (),
 				      "UPDATE mailing_backend_log_tbl " + 
 				      "SET current_mails = :currentMails, total_mails = :totalMails, timestamp = CURRENT_TIMESTAMP " + 
 				      "WHERE status_id = :statusID",
@@ -73,7 +73,7 @@ public class BackendLogDAO {
 	 */
 	public void freeze (DBase dbase, long totalCount) throws SQLException {
 		try (DBase.With with = dbase.with ()) {
-			dbase.update (with.jdbc (),
+			dbase.update (with.cursor (),
 				      "UPDATE mailing_backend_log_tbl " +
 				      "SET current_mails = :totalMails, total_mails = :totalMails, timestamp = CURRENT_TIMESTAMP " +
 				      "WHERE status_id = :statusID",
@@ -81,7 +81,7 @@ public class BackendLogDAO {
 				      "statusID", statusID);
 			dbase.logging (Log.VERBOSE, "backendLog", "Freeze backend log to " + totalCount);
 			if (isWorldMailing) {
-				dbase.update (with.jdbc (),
+				dbase.update (with.cursor (),
 					      "INSERT INTO world_mailing_backend_log_tbl " +
 					      "            (mailing_id, current_mails, total_mails, timestamp, creation_date) " +
 					      "VALUES " +

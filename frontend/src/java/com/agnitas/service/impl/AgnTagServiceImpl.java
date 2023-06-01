@@ -27,7 +27,6 @@ import java.util.stream.Collectors;
 import org.agnitas.beans.TagDetails;
 import org.agnitas.beans.factory.DynamicTagFactory;
 import org.agnitas.dao.TagDao;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.DynTagException;
 import org.agnitas.util.MissingEndTagException;
 import org.agnitas.util.UnclosedTagException;
@@ -38,7 +37,7 @@ import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.AgnTagAttributeDto;
 import com.agnitas.beans.AgnTagDto;
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.DynamicTag;
 import com.agnitas.beans.factory.TagDetailsFactory;
 import com.agnitas.service.AgnDynTagGroupResolver;
@@ -79,6 +78,20 @@ public class AgnTagServiceImpl implements AgnTagService {
             }
         }
         return tags;
+    }
+
+    @Override
+    public List<String> getDynTagsNames(String content, AgnDynTagGroupResolver resolver) {
+        try {
+            return getDynTags(content, resolver)
+                    .stream()
+                    .map(DynamicTag::getDynName)
+                    .collect(Collectors.toList());
+        } catch (DynTagException e) {
+            logger.error("Error occurred while get of dyn tags!", e);
+        }
+
+        return new ArrayList<>();
     }
 
     @Override
@@ -159,23 +172,23 @@ public class AgnTagServiceImpl implements AgnTagService {
     }
 
     @Override
-    public String resolveTags(String content, @VelocityCheck int companyId, int mailingId, int mailingListId, int customerId) throws Exception {
+    public String resolveTags(String content, int companyId, int mailingId, int mailingListId, int customerId) throws Exception {
         return resolveTags(content, agnTagResolverFactory.create(companyId, mailingId, mailingListId, customerId));
     }
 
     @Override
-    public String resolve(TagDetails tag, @VelocityCheck int companyId, int mailingId, int mailingListId, int customerId) {
+    public String resolve(TagDetails tag, int companyId, int mailingId, int mailingListId, int customerId) {
         return agnTagResolverFactory.create(companyId, mailingId, mailingListId, customerId).resolve(tag);
     }
 
     @Override
-    public List<AgnTagDto> getSupportedAgnTags(ComAdmin admin) {
+    public List<AgnTagDto> getSupportedAgnTags(Admin admin) {
         List<AgnTagDto> tags = new ArrayList<>();
         tagDao.getSelectValues(admin.getCompanyID()).forEach((name, selectValue) -> tags.add(getSupportedAgnTag(admin, name, selectValue)));
         return tags;
     }
 
-    private AgnTagDto getSupportedAgnTag(ComAdmin admin, String name, String selectValue) {
+    private AgnTagDto getSupportedAgnTag(Admin admin, String name, String selectValue) {
         AgnTagDto tag = new AgnTagDto();
 
         tag.setName(name);
@@ -184,7 +197,7 @@ public class AgnTagServiceImpl implements AgnTagService {
         return tag;
     }
 
-    private List<AgnTagAttributeDto> getSupportedAttributes(ComAdmin admin, String name, String selectValue) {
+    private List<AgnTagAttributeDto> getSupportedAttributes(Admin admin, String name, String selectValue) {
         return getAttributesFromSelectValue(selectValue)
                 .stream()
                 .map(attribute -> agnTagAttributeResolverRegistry.resolve(admin, name, attribute))

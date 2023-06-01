@@ -24,7 +24,7 @@ import org.agnitas.util.HttpUtils.RequestMethod;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.DynamicTag;
 import com.agnitas.beans.impl.DynamicTagImpl;
 import com.agnitas.dao.ComMailingDao;
@@ -97,7 +97,7 @@ public class ContentRestfulServiceHandler implements RestfulServiceHandler {
 	}
 
 	@Override
-	public void doService(HttpServletRequest request, HttpServletResponse response, ComAdmin admin, byte[] requestData, File requestDataFile, BaseRequestResponse restfulResponse, ServletContext context, RequestMethod requestMethod, boolean extendedLogging) throws Exception {
+	public void doService(HttpServletRequest request, HttpServletResponse response, Admin admin, byte[] requestData, File requestDataFile, BaseRequestResponse restfulResponse, ServletContext context, RequestMethod requestMethod, boolean extendedLogging) throws Exception {
 		if (requestMethod == RequestMethod.GET) {
 			((JsonRequestResponse) restfulResponse).setJsonResponseData(new JsonNode(getContent(request, response, admin)));
 		} else if (requestMethod == RequestMethod.DELETE) {
@@ -121,7 +121,7 @@ public class ContentRestfulServiceHandler implements RestfulServiceHandler {
 	 * @return
 	 * @throws Exception
 	 */
-	private Object getContent(HttpServletRequest request, HttpServletResponse response, ComAdmin admin) throws Exception {
+	private Object getContent(HttpServletRequest request, HttpServletResponse response, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.MAILING_CONTENT_SHOW)) {
 			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.MAILING_CONTENT_SHOW.toString() + "'");
 		}
@@ -184,7 +184,7 @@ public class ContentRestfulServiceHandler implements RestfulServiceHandler {
 	 * @return
 	 * @throws Exception
 	 */
-	private Object deleteContent(HttpServletRequest request, ComAdmin admin) throws Exception {
+	private Object deleteContent(HttpServletRequest request, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.MAILING_CHANGE)) {
 			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.MAILING_CHANGE.toString() + "'");
 		}
@@ -232,7 +232,7 @@ public class ContentRestfulServiceHandler implements RestfulServiceHandler {
 	 * @return
 	 * @throws Exception
 	 */
-	private Object createNewContent(HttpServletRequest request, byte[] requestData, File requestDataFile, ComAdmin admin) throws Exception {
+	private Object createNewContent(HttpServletRequest request, byte[] requestData, File requestDataFile, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.MAILING_CHANGE)) {
 			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.MAILING_CHANGE.toString() + "'");
 		}
@@ -271,7 +271,7 @@ public class ContentRestfulServiceHandler implements RestfulServiceHandler {
 	 * @return
 	 * @throws Exception
 	 */
-	private Object createOrUpdateContent(HttpServletRequest request, byte[] requestData, File requestDataFile, ComAdmin admin) throws Exception {
+	private Object createOrUpdateContent(HttpServletRequest request, byte[] requestData, File requestDataFile, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.MAILING_CHANGE)) {
 			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.MAILING_CHANGE.toString() + "'");
 		}
@@ -382,7 +382,7 @@ public class ContentRestfulServiceHandler implements RestfulServiceHandler {
 		return dynamicTagJsonObject;
 	}
 
-	private DynamicTag parseContentJsonObject(byte[] requestData, File requestDataFile, ComAdmin admin) throws Exception {
+	private DynamicTag parseContentJsonObject(byte[] requestData, File requestDataFile, Admin admin) throws Exception {
 		DynamicTag dynamicTag = new DynamicTagImpl();
 		dynamicTag.setCompanyID(admin.getCompanyID());
 		

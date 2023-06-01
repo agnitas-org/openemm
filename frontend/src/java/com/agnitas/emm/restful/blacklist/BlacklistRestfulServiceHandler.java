@@ -22,7 +22,7 @@ import org.agnitas.util.HttpUtils.RequestMethod;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.blacklist.dao.ComBlacklistDao;
 import com.agnitas.emm.restful.BaseRequestResponse;
@@ -70,7 +70,7 @@ public class BlacklistRestfulServiceHandler implements RestfulServiceHandler {
 	}
 
 	@Override
-	public void doService(HttpServletRequest request, HttpServletResponse response, ComAdmin admin, byte[] requestData, File requestDataFile, BaseRequestResponse restfulResponse, ServletContext context, RequestMethod requestMethod, boolean extendedLogging) throws Exception {
+	public void doService(HttpServletRequest request, HttpServletResponse response, Admin admin, byte[] requestData, File requestDataFile, BaseRequestResponse restfulResponse, ServletContext context, RequestMethod requestMethod, boolean extendedLogging) throws Exception {
 		if (requestMethod == RequestMethod.GET) {
 			((JsonRequestResponse) restfulResponse).setJsonResponseData(new JsonNode(getBlacklistData(request, admin)));
 		} else if (requestMethod == RequestMethod.DELETE) {
@@ -94,7 +94,7 @@ public class BlacklistRestfulServiceHandler implements RestfulServiceHandler {
 	 * @return
 	 * @throws Exception
 	 */
-	private Object getBlacklistData(HttpServletRequest request, ComAdmin admin) throws Exception {
+	private Object getBlacklistData(HttpServletRequest request, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.BLACKLIST)) {
 			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.BLACKLIST.toString() + "'");
 		}
@@ -144,7 +144,7 @@ public class BlacklistRestfulServiceHandler implements RestfulServiceHandler {
 	 * @return
 	 * @throws Exception
 	 */
-	private Object deleteBlacklistEntry(HttpServletRequest request, ComAdmin admin) throws Exception {
+	private Object deleteBlacklistEntry(HttpServletRequest request, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.BLACKLIST)) {
 			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.BLACKLIST.toString() + "'");
 		}
@@ -172,7 +172,7 @@ public class BlacklistRestfulServiceHandler implements RestfulServiceHandler {
 	 * @return
 	 * @throws Exception
 	 */
-	private Object createNewBlacklistEntry(HttpServletRequest request, byte[] requestData, File requestDataFile, ComAdmin admin) throws Exception {
+	private Object createNewBlacklistEntry(HttpServletRequest request, byte[] requestData, File requestDataFile, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.BLACKLIST)) {
 			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.BLACKLIST.toString() + "'");
 		}
@@ -245,7 +245,7 @@ public class BlacklistRestfulServiceHandler implements RestfulServiceHandler {
 	 * @return
 	 * @throws Exception
 	 */
-	private Object createOrUpdateBlacklistEntry(HttpServletRequest request, byte[] requestData, File requestDataFile, ComAdmin admin) throws Exception {
+	private Object createOrUpdateBlacklistEntry(HttpServletRequest request, byte[] requestData, File requestDataFile, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.BLACKLIST)) {
 			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.BLACKLIST.toString() + "'");
 		}

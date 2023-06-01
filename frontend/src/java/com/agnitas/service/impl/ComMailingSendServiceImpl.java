@@ -13,6 +13,8 @@ package com.agnitas.service.impl;
 import java.util.Date;
 import java.util.List;
 
+import com.agnitas.beans.Admin;
+import com.agnitas.emm.core.Permission;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.dao.MaildropStatusDao;
@@ -22,6 +24,7 @@ import org.agnitas.dao.OnepixelDao;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.commons.util.DateUtil;
+import org.agnitas.emm.core.mailing.exception.MailingLockedException;
 import org.agnitas.emm.core.mailing.service.MailingModel;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.velocity.VelocityCheck;
@@ -39,10 +42,9 @@ import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MailingSendOptions;
 import com.agnitas.beans.MediatypeEmail;
 import com.agnitas.beans.impl.MaildropEntryImpl;
-import com.agnitas.beans.impl.MailingImpl;
 import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.dao.ComMailingDao;
-import com.agnitas.dao.ComTrackableLinkDao;
+import com.agnitas.dao.TrackableLinkDao;
 import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.maildrop.MaildropGenerationStatus;
 import com.agnitas.emm.core.maildrop.MaildropStatus;
@@ -62,7 +64,7 @@ public class ComMailingSendServiceImpl implements ComMailingSendService {
     private ComCompanyDao companyDao;
     private MailinglistDao mailinglistDao;
     private ClassicTemplateGenerator classicTemplateGenerator;
-    private ComTrackableLinkDao trackableLinkDao;
+    private TrackableLinkDao trackableLinkDao;
     private MaildropStatusDao maildropStatusDao;
     private OnepixelDao onepixelDao;
     private MaildropService maildropService;
@@ -72,7 +74,8 @@ public class ComMailingSendServiceImpl implements ComMailingSendService {
     private ConfigService configService;
 
     @Override
-    public void sendMailing(int mailingId, @VelocityCheck int companyId, MailingSendOptions options, List<Message> warnings, List<Message> errors, List<UserAction> userActions) throws Exception {
+    public void sendMailing(int mailingId, Admin admin, MailingSendOptions options, List<Message> warnings, List<Message> errors, List<UserAction> userActions) throws Exception {
+        int companyId = admin.getCompanyID();
         if (companyId == 1 && !configService.getBooleanValue(ConfigValue.System_License_AllowMailingSendForMasterCompany)) {
             errors.add(Message.of("error.company.mailings.sent.forbidden"));
             return;
@@ -88,7 +91,7 @@ public class ComMailingSendServiceImpl implements ComMailingSendService {
 
         MaildropEntry drop = new MaildropEntryImpl();
         boolean world = false;
-        boolean admin = false;
+        boolean isAdmin = false;
         boolean test = false;
 
         switch (options.getDeliveryType()) {
@@ -98,7 +101,7 @@ public class ComMailingSendServiceImpl implements ComMailingSendService {
                     case NORMAL:
                     case FOLLOW_UP:
                         drop.setStatus(MaildropStatus.WORLD.getCode());
-                        admin = true;
+                        isAdmin = true;
                         test = true;
                         break;
 
@@ -118,17 +121,21 @@ public class ComMailingSendServiceImpl implements ComMailingSendService {
 
             case TEST:
                 drop.setStatus(MaildropStatus.TEST.getCode());
-                admin = true;
+                isAdmin = true;
                 test = true;
                 break;
 
             case ADMIN:
                 drop.setStatus(MaildropStatus.ADMIN.getCode());
-                admin = true;
+                isAdmin = true;
                 break;
                 
 			default:
 				break;
+        }
+
+        if (world && mailing.getLocked() == 1 && !admin.permissionAllowed(Permission.MAILING_CAN_SEND_ALWAYS)) {
+            throw new MailingLockedException(companyId, mailingId);
         }
 
         if (drop.getStatus() == MaildropStatus.WORLD.getCode() || drop.getStatus() == MaildropStatus.DATE_BASED.getCode() ||
@@ -156,11 +163,11 @@ public class ComMailingSendServiceImpl implements ComMailingSendService {
             blocksize = 0;
         }
 
-        int activeRecipientsCount = mailinglistDao.getNumberOfActiveSubscribers(admin, test, world, mailing.getTargetID(), aList.getCompanyID(), aList.getId());
+        int activeRecipientsCount = mailinglistDao.getNumberOfActiveSubscribers(isAdmin, test, world, mailing.getTargetID(), aList.getCompanyID(), aList.getId());
         if (activeRecipientsCount == 0) {
             warnings.add(Message.of("error.mailing.no_subscribers"));
         } else if (!world && activeRecipientsCount > maxAdminMails) {
-            errors.add(Message.of("error.mailing.send.admin.maxMails", maxAdminMails));
+            errors.add(Message.of("error.mailing.send.isAdmin.maxMails", maxAdminMails));
             return;
         }
 
@@ -300,7 +307,7 @@ public class ComMailingSendServiceImpl implements ComMailingSendService {
 
         if (startGen == MaildropGenerationStatus.NOW.getCode() && drop.getStatus() != MaildropStatus.ACTION_BASED.getCode() && drop.getStatus() != MaildropStatus.DATE_BASED.getCode()) {
             classicTemplateGenerator.generate(mailingId, options.getAdminId(), companyId, true, true);
-            ((MailingImpl)mailing).triggerMailing(drop.getId());
+            mailing.triggerMailing(drop.getId());
             updateStatusByMaildrop(mailingId, drop);
         }
 
@@ -370,7 +377,7 @@ public class ComMailingSendServiceImpl implements ComMailingSendService {
     }
 
     @Required
-    public void setTrackableLinkDao(ComTrackableLinkDao trackableLinkDao) {
+    public void setTrackableLinkDao(TrackableLinkDao trackableLinkDao) {
         this.trackableLinkDao = trackableLinkDao;
     }
 

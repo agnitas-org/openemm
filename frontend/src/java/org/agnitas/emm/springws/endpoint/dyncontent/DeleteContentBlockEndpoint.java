@@ -20,10 +20,12 @@ import org.agnitas.emm.core.dyncontent.service.DynamicTagContentService;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.springws.endpoint.BaseEndpoint;
 import org.agnitas.emm.springws.endpoint.MailingEditableCheck;
-import org.agnitas.emm.springws.endpoint.Utils;
+import org.agnitas.emm.springws.endpoint.Namespaces;
 import org.agnitas.emm.springws.exception.MailingNotEditableException;
 import org.agnitas.emm.springws.jaxb.DeleteContentBlockRequest;
 import org.agnitas.emm.springws.jaxb.DeleteContentBlockResponse;
+import org.agnitas.emm.springws.util.SecurityContextAccess;
+import org.agnitas.emm.springws.util.UserActivityLogAccess;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.ws.server.endpoint.annotation.Endpoint;
@@ -36,21 +38,26 @@ import com.agnitas.emm.core.thumbnails.service.ThumbnailService;
 @Endpoint
 public class DeleteContentBlockEndpoint extends BaseEndpoint {
 
+	/** The logger. */
 	private static final transient Logger LOGGER = LogManager.getLogger(DeleteContentBlockEndpoint.class);
 
 	private final ThumbnailService thumbnailService;
 	private final DynamicTagContentService dynamicTagContentService;
 	private final MailingEditableCheck mailingEditableCheck;
+	private final SecurityContextAccess securityContextAccess;
+	private final UserActivityLogAccess userActivityLogAccess;
 
-	public DeleteContentBlockEndpoint(DynamicTagContentService dynamicTagContentService, final MailingEditableCheck mailingEditableCheck, final ThumbnailService thumbnailService) {
-		this.dynamicTagContentService = Objects.requireNonNull(dynamicTagContentService);
-		this.mailingEditableCheck = Objects.requireNonNull(mailingEditableCheck);
-		this.thumbnailService = Objects.requireNonNull(thumbnailService);
+	public DeleteContentBlockEndpoint(DynamicTagContentService dynamicTagContentService, final MailingEditableCheck mailingEditableCheck, final ThumbnailService thumbnailService, final SecurityContextAccess securityContextAccess, final UserActivityLogAccess userActivityLogAccess) {
+		this.dynamicTagContentService = Objects.requireNonNull(dynamicTagContentService, "dynamicTagContentService");
+		this.mailingEditableCheck = Objects.requireNonNull(mailingEditableCheck, "mailingEditableCheck");
+		this.thumbnailService = Objects.requireNonNull(thumbnailService, "thumbnailService");
+		this.securityContextAccess = Objects.requireNonNull(securityContextAccess, "securityContextAccess");
+		this.userActivityLogAccess = Objects.requireNonNull(userActivityLogAccess, "userActivityLogAccess");
 	}
 
-	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "DeleteContentBlockRequest")
+	@PayloadRoot(namespace = Namespaces.AGNITAS_ORG, localPart = "DeleteContentBlockRequest")
 	public @ResponsePayload DeleteContentBlockResponse deleteContentBlock(@RequestPayload DeleteContentBlockRequest request) throws MailingNotEditableException {
-		final int companyID = Utils.getUserCompany();
+		final int companyID = this.securityContextAccess.getWebserviceUserCompanyId();
 		
 		this.mailingEditableCheck.requireMailingForContentBlockEditable(request.getContentID(), companyID);
 		
@@ -63,7 +70,7 @@ public class DeleteContentBlockEndpoint extends BaseEndpoint {
 		final DeleteContentBlockResponse response = new DeleteContentBlockResponse();
 		final List<UserAction> userActions = new ArrayList<>();
 		response.setValue(dynamicTagContentService.deleteContent(model, userActions));
-		Utils.writeLog(userActivityLogService, userActions);
+		this.userActivityLogAccess.writeLog(userActions);
 
 		try {
 			final DynamicTagContent currentContent = this.dynamicTagContentService.getContent(model);

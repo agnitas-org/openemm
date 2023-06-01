@@ -83,7 +83,7 @@ Clicking on a tab of a closed tile will automatically open the tile
 
 (function(){
 
-  var Storage = AGN.Lib.Storage;
+  const Storage = AGN.Lib.Storage;
 
   var init,
       toggle,
@@ -93,11 +93,21 @@ Clicking on a tab of a closed tile will automatically open the tile
 
 
   init = function($trigger) {
-    var target = $trigger.data('toggle-tile'),
-        conf = Storage.get('toggle_tile' + target);
+    const target = $trigger.data('toggle-tile'),
+          conf = Storage.get('toggle_tile' + target);
 
-    if (!conf) {
-      return;
+      if (!conf) {
+        const defaultState = $trigger.data('toggle-tile-default-state');
+
+        if (typeof defaultState !== 'undefined') {
+          if (defaultState === 'open') {
+            showTile($trigger, false);
+          } else {
+            hideTile($trigger, false);
+          }
+        }
+
+       return;
     }
 
     if (conf.hidden) {
@@ -105,11 +115,10 @@ Clicking on a tab of a closed tile will automatically open the tile
     } else {
       show($trigger);
     }
-
   }
 
   toggle = function($trigger) {
-    var $target = $($trigger.data('toggle-tile'));
+    const $target = $($trigger.data('toggle-tile'));
 
     if ($target.hasClass('hidden')) {
       show($trigger);
@@ -119,7 +128,11 @@ Clicking on a tab of a closed tile will automatically open the tile
   }
 
   show = function($trigger) {
-    var $icon = $trigger.find('.icon'),
+    showTile($trigger, true);
+  }
+
+  function showTile($trigger, updateStorage) {
+    const $icon = $trigger.find('.icon'),
         target = $trigger.data('toggle-tile'),
         $target = $(target);
 
@@ -127,7 +140,9 @@ Clicking on a tab of a closed tile will automatically open the tile
     $icon.addClass('icon-angle-up');
     $icon.removeClass('icon-angle-down');
 
-    Storage.set('toggle_tile' + target, {hidden: false});
+    if (updateStorage) {
+      Storage.set('toggle_tile' + target, {hidden: false});
+    }
 
     // Load lazy data if any
     AGN.Lib.CoreInitializer.run('load', $target);
@@ -140,14 +155,20 @@ Clicking on a tab of a closed tile will automatically open the tile
   }
 
   hide = function($trigger) {
-    var $icon = $trigger.find('.icon'),
+    hideTile($trigger, true);
+  }
+
+  function hideTile($trigger, updateStorage) {
+    const $icon = $trigger.find('.icon'),
         target = $trigger.data('toggle-tile');
 
     $(target).addClass('hidden');
     $icon.addClass('icon-angle-down');
     $icon.removeClass('icon-angle-up');
 
-    Storage.set('toggle_tile' + target, {hidden: true})
+    if (updateStorage) {
+      Storage.set('toggle_tile' + target, {hidden: true})
+    }
   }
 
   AGN.Lib.Tile = {

@@ -16,8 +16,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.agnitas.dao.ComMessageDao;
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import org.agnitas.dao.impl.BaseDaoImpl;
 import org.agnitas.dao.impl.mapper.StringRowMapper;
 import org.agnitas.util.AgnUtils;
@@ -25,6 +23,9 @@ import org.agnitas.util.DbUtilities;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import com.agnitas.dao.ComMessageDao;
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
 
 public class ComMessageDaoImpl extends BaseDaoImpl implements ComMessageDao {
 	

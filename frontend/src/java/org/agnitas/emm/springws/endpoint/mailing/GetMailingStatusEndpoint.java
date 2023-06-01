@@ -10,11 +10,14 @@
 
 package org.agnitas.emm.springws.endpoint.mailing;
 
+import java.util.Objects;
+
 import org.agnitas.emm.core.mailing.service.MailingModel;
 import org.agnitas.emm.springws.endpoint.BaseEndpoint;
-import org.agnitas.emm.springws.endpoint.Utils;
+import org.agnitas.emm.springws.endpoint.Namespaces;
 import org.agnitas.emm.springws.jaxb.GetMailingStatusRequest;
 import org.agnitas.emm.springws.jaxb.GetMailingStatusResponse;
+import org.agnitas.emm.springws.util.SecurityContextAccess;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.ws.server.endpoint.annotation.Endpoint;
 import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
@@ -27,15 +30,17 @@ import com.agnitas.emm.core.mailing.service.MailingService;
 public class GetMailingStatusEndpoint extends BaseEndpoint {
 
 	private MailingService mailingService;
+	private SecurityContextAccess securityContextAccess;
 
-	public GetMailingStatusEndpoint(@Qualifier("MailingService") MailingService mailingService) {
-		this.mailingService = mailingService;
+	public GetMailingStatusEndpoint(@Qualifier("MailingService") MailingService mailingService, final SecurityContextAccess securityContextAccess) {
+		this.mailingService = Objects.requireNonNull(mailingService, "mailingService");
+		this.securityContextAccess = Objects.requireNonNull(securityContextAccess, "securityContextAccess");
 	}
 
-	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "GetMailingStatusRequest")
+	@PayloadRoot(namespace = Namespaces.AGNITAS_ORG, localPart = "GetMailingStatusRequest")
 	public @ResponsePayload GetMailingStatusResponse getMailingStatus(@RequestPayload GetMailingStatusRequest request) {
 		MailingModel model = new MailingModel();
-		model.setCompanyId(Utils.getUserCompany());
+		model.setCompanyId(this.securityContextAccess.getWebserviceUserCompanyId());
 		model.setMailingId(request.getMailingID());
 
 		GetMailingStatusResponse response = new GetMailingStatusResponse();

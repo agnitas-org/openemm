@@ -13,7 +13,6 @@ package com.agnitas.reporting.birt.external.dataset;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -25,7 +24,6 @@ import java.util.regex.Pattern;
 
 import org.agnitas.beans.BindingEntry.UserType;
 import org.agnitas.dao.impl.mapper.StringRowMapper;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.DbUtilities;
 import org.agnitas.util.importvalues.MailType;
 import org.apache.commons.collections4.CollectionUtils;
@@ -50,15 +48,17 @@ import com.agnitas.reporting.birt.external.utils.BirtReporUtils;
  * Otherwise there will be some InvocationTargetException because of different used Classlodaers, etc.
  */
 public class MailingSummaryDataSet extends ComparisonBirtDataSet {
-    private static final transient Logger logger = LogManager.getLogger(MailingSummaryDataSet.class);
+    private static final Logger logger = LogManager.getLogger(MailingSummaryDataSet.class);
+    private static final int APPLE_PROXY_DEVICE_ID = 1484;
 
-    private class TempRow {
+    private static class TempRow {
         private String category;
         private int categoryIndex;
         private int targetGroupId;
         private String targetGroup;
         private int targetGroupIndex;
         private int value;
+        private int partialValue;
 
         public String getCategory() {
             return category;
@@ -107,12 +107,18 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
         public void setValue(int value) {
             this.value = value;
         }
+
+        public int getPartialValue() {
+            return partialValue;
+        }
+
+        public void setPartialValue(int partialValue) {
+            this.partialValue = partialValue;
+        }
     }
 
     /**
      * Create a temporary table to collect the values from different queries for the report in one table.
-     *
-     * @throws Exception
      */
     public int createTempTable() throws Exception {
         int tempTableID = getNextTmpID();
@@ -125,6 +131,7 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
                 .append(", targetgroup VARCHAR(200)")
                 .append(", targetgroup_index INTEGER")
                 .append(", value INTEGER")
+                .append(", partial_value INTEGER")
                 .append(", rate DOUBLE")
                 .append(", rate_delivered DOUBLE")
                 .append(")");
@@ -134,14 +141,8 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
 
     /**
      * This method has to be called in initialize function of the report, otherwise getSummaryData will fail !
-     *
-     * @param mailingID
-     * @param companyID
-     * @param selectedTargetsAsString
-     * @return
-     * @throws Exception
      */
-    public int prepareReport(int mailingID, @VelocityCheck int companyID, String selectedTargetsAsString, String recipientsType, Boolean showSoftbounces, String startDate, String stopDate, Boolean hourScale) throws Exception {
+    public int prepareReport(int mailingID, int companyID, String selectedTargetsAsString, String recipientsType, Boolean showSoftbounces, String startDate, String stopDate, Boolean hourScale) throws Exception {
         int tempTableID = createTempTable();
         List<LightTarget> targets = Optional.ofNullable(getTargets(selectedTargetsAsString, companyID)).orElse(new ArrayList<>());
         DateFormats dateFormats = new DateFormats(startDate, stopDate, hourScale);
@@ -162,11 +163,11 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
     }
 
     @DaoUpdateReturnValueCheck
-    public int prepareReportOptimization(int optimizationID, @VelocityCheck int companyID, String selectedTargetsAsString, String recipientsType, Boolean showSoftbounces, String startDate, String stopDate, Boolean hourScale) throws Exception {
+    public int prepareReportOptimization(int optimizationID, int companyID, String selectedTargetsAsString, String recipientsType, Boolean showSoftbounces, String startDate, String stopDate, Boolean hourScale) throws Exception {
         int cumulateTableId = createTempTable();
         List<Integer> mailings = getAutoOptimizationMailings(optimizationID, companyID);
 
-        if ((mailings != null) && (mailings.size() > 0)) {
+        if (!CollectionUtils.isEmpty(mailings)) {
             List<Integer> mailingTempTablesId = new ArrayList<>();
             List<List<MailingSummaryRow>> mailingTempTablesContent = new ArrayList<>();
             for (Integer mailingID : mailings) {
@@ -177,9 +178,8 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
                 }
             }
             int countTables = mailingTempTablesId.size();
-            int countRows = 0;
             if (countTables > 0) {
-                countRows = mailingTempTablesContent.get(0).size();
+                int countRows = mailingTempTablesContent.get(0).size();
                 for (int i = 0; i < countRows; i++) {
                     String category = mailingTempTablesContent.get(0).get(i).getCategory();
                     int categoryIndex = mailingTempTablesContent.get(0).get(i).getCategoryindex();
@@ -187,7 +187,7 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
                     for (int j = 0; j < countTables; j++) {
                         value += mailingTempTablesContent.get(j).get(i).getCount();
                     }
-                    insertIntoTempTable(cumulateTableId, category, categoryIndex, CommonKeys.ALL_SUBSCRIBERS, CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID, CommonKeys.ALL_SUBSCRIBERS_INDEX, value);
+                    insertIntoTempTable(cumulateTableId, category, categoryIndex, CommonKeys.ALL_SUBSCRIBERS, CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID, CommonKeys.ALL_SUBSCRIBERS_INDEX, value, 0);
                 }
                 for (Integer tempID : mailingTempTablesId) {
                     dropTempTable(tempID);
@@ -200,7 +200,7 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
         return cumulateTableId;
     }
 
-    public void insertDeliveredIntoTempTable(int tempTableID, int mailingID, @VelocityCheck int companyID, List<LightTarget> targets,
+    public void insertDeliveredIntoTempTable(int tempTableID, int mailingID, int companyID, List<LightTarget> targets,
                                              String hiddenTargetSql, String recipientsType, DateFormats dateFormats) throws Exception {
         if (successTableActivated(companyID) && hasSuccessTableData(companyID, mailingID)) {
             insertDeliveredMailsFromSuccessTbl(tempTableID, mailingID, companyID, targets, hiddenTargetSql, recipientsType, dateFormats);
@@ -210,7 +210,12 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
     }
 
     @DaoUpdateReturnValueCheck
-    public void insertMailformatsIntoTempTable(int tempTableID, int mailingID, @VelocityCheck int companyID, List<BirtReporUtils.BirtReportFigure> figures, String startDateString, String endDateString) throws Exception {
+    public void insertMailformatsIntoTempTable(int tempTableID, int mailingID, int companyID, List<BirtReporUtils.BirtReportFigure> figures, String startDateString, String endDateString) throws Exception {
+        if (!(figures.contains(BirtReporUtils.BirtReportFigure.HTML) || figures.contains(BirtReporUtils.BirtReportFigure.TEXT) ||
+                figures.contains(BirtReporUtils.BirtReportFigure.OFFLINE_HTML))) {
+            return;
+        }
+
         StringBuilder queryBuilder = new StringBuilder();
         List<Object> parameters = new ArrayList<>();
 
@@ -256,11 +261,6 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
 
         queryBuilder.append("GROUP BY mailtypes.id");
 
-        if (!(figures.contains(BirtReporUtils.BirtReportFigure.HTML) || figures.contains(BirtReporUtils.BirtReportFigure.TEXT) ||
-                figures.contains(BirtReporUtils.BirtReportFigure.OFFLINE_HTML))) {
-            return;
-        }
-
         List<Map<String, Object>> resultList = select(logger, queryBuilder.toString(), parameters.toArray(new Object[0]));
         // variable to count both mail type "2" and "3" as Offline-HTML
         int sentOfflineHtml = 0;
@@ -284,19 +284,19 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
                 if (categoryIndex == CommonKeys.SENT_OFFLINE_HTML_INDEX) {
                     sentOfflineHtml += mailsSent;
                 } else {
-                    insertIntoTempTable(tempTableID, category, categoryIndex, CommonKeys.ALL_SUBSCRIBERS, CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID, CommonKeys.ALL_SUBSCRIBERS_INDEX, mailsSent);
+                    insertIntoTempTable(tempTableID, category, categoryIndex, CommonKeys.ALL_SUBSCRIBERS, CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID, CommonKeys.ALL_SUBSCRIBERS_INDEX, mailsSent, 0);
                     insertMailformatRate(tempTableID, CommonKeys.ALL_SUBSCRIBERS_INDEX, categoryIndex);
                 }
             }
         }
         // Inserts the Offline-HTML value witch was deferred
         if (figures.contains(BirtReporUtils.BirtReportFigure.OFFLINE_HTML)) {
-            insertIntoTempTable(tempTableID, CommonKeys.SENT_OFFILE_HTML, CommonKeys.SENT_OFFLINE_HTML_INDEX, CommonKeys.ALL_SUBSCRIBERS, CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID, CommonKeys.ALL_SUBSCRIBERS_INDEX, sentOfflineHtml);
+            insertIntoTempTable(tempTableID, CommonKeys.SENT_OFFILE_HTML, CommonKeys.SENT_OFFLINE_HTML_INDEX, CommonKeys.ALL_SUBSCRIBERS, CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID, CommonKeys.ALL_SUBSCRIBERS_INDEX, sentOfflineHtml, 0);
             insertMailformatRate(tempTableID, CommonKeys.ALL_SUBSCRIBERS_INDEX, CommonKeys.SENT_OFFLINE_HTML_INDEX);
         }
     }
 
-    public int prepareDashboardForCharts(int mailingID, @VelocityCheck int companyID) throws Exception {
+    public int prepareDashboardForCharts(int mailingID, int companyID) throws Exception {
         int tempTableID = createTempTable();
         DateFormats dateFormats = new DateFormats();
         insertSendIntoTempTable(mailingID, tempTableID, companyID, null, null, CommonKeys.TYPE_ALL_SUBSCRIBERS, dateFormats);
@@ -309,7 +309,7 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
     }
 
     @DaoUpdateReturnValueCheck
-    public void insertOpenersIntoTempTable(int mailingID, int tempTableID, @VelocityCheck int companyID, List<LightTarget> targets,
+    public void insertOpenersIntoTempTable(int mailingID, int tempTableID, int companyID, List<LightTarget> targets,
                                            String hiddenTargetSql, String recipientsType, boolean readForAllDeviceClasses,
                                            boolean useOwnTargetGroups, DateFormats dateFormats) throws Exception {
         List<LightTarget> needTargets = useOwnTargetGroups ? getTargets(getTargetIds(mailingID, companyID), companyID) : targets;
@@ -322,7 +322,8 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
 
             String resultTargetSql = joinWhereClause(target.getTargetSQL(), hiddenTargetSql);
 
-            int totalOpeners = selectOpeners(companyID, mailingID, recipientsType, resultTargetSql, dateFormats.getStartDate(), dateFormats.getStopDate());
+            int totalOpeners = selectOpeners(companyID, mailingID, recipientsType, resultTargetSql, dateFormats.getStartDate(), dateFormats.getStopDate(), null);
+            int proxyOpenersCount = selectOpeners(companyID, mailingID, recipientsType, resultTargetSql, dateFormats.getStartDate(), dateFormats.getStopDate(), APPLE_PROXY_DEVICE_ID);
 
             TempRow allSubscribersRow = new TempRow();
             allSubscribersRow.setCategory(target.getId() == CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID && !readForAllDeviceClasses ? CommonKeys.OPENERS : CommonKeys.OPENERS_MEASURED);
@@ -331,7 +332,17 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
             allSubscribersRow.setTargetGroupId(target.getId());
             allSubscribersRow.setTargetGroupIndex(targetDisplayIndex);
             allSubscribersRow.setValue(totalOpeners);
+            allSubscribersRow.setPartialValue(proxyOpenersCount);
             results.add(allSubscribersRow);
+
+            TempRow proxyOpenersRow = new TempRow();
+            proxyOpenersRow.setCategory(CommonKeys.OPENERS_PROXY);
+            proxyOpenersRow.setCategoryIndex(CommonKeys.OPENERS_PROXY_INDEX);
+            proxyOpenersRow.setTargetGroup(target.getName());
+            proxyOpenersRow.setTargetGroupId(target.getId());
+            proxyOpenersRow.setTargetGroupIndex(targetDisplayIndex);
+            proxyOpenersRow.setValue(proxyOpenersCount);
+            results.add(proxyOpenersRow);
 
             if (readForAllDeviceClasses) {
                 // If a customer is within one of theses deviceclasses he hasn't opened the mail with any other deviceclass.
@@ -407,8 +418,12 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
         insertIntoTempTable(tempTableID, results);
     }
 
+    public DateFormats getDateFormatsInstance(String startDate, String stopDate, Boolean hourScale) {
+        return new DateFormats(startDate, stopDate, hourScale);
+    }
+
     @DaoUpdateReturnValueCheck
-    public void insertClickersIntoTempTable(int mailingID, int tempTableID, @VelocityCheck int companyID, List<LightTarget> targets,
+    public void insertClickersIntoTempTable(int mailingID, int tempTableID, int companyID, List<LightTarget> targets,
                                             String hiddenTargetSql, String recipientsType, boolean readForAllDeviceClasses,
                                             DateFormats dateFormats) throws Exception {
         List<LightTarget> allTargets = getTargetListWithAllSubscriberTarget(targets);
@@ -516,7 +531,7 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
     }
 
     @DaoUpdateReturnValueCheck
-    public void insertClicksAnonymousIntoTempTable(int mailingID, int tempTableID, @VelocityCheck int companyID, DateFormats dateFormats) throws Exception {
+    public void insertClicksAnonymousIntoTempTable(int mailingID, int tempTableID, int companyID, DateFormats dateFormats) throws Exception {
         int anonymousClicks = selectAnonymousClicks(companyID, mailingID, dateFormats.getStartDate(), dateFormats.getStopDate());
 
         insertIntoTempTable(tempTableID,
@@ -525,7 +540,8 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
                 CommonKeys.ALL_SUBSCRIBERS,
                 CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID,
                 CommonKeys.ALL_SUBSCRIBERS_INDEX,
-                anonymousClicks);
+                anonymousClicks,
+                0);
     }
 
     @DaoUpdateReturnValueCheck
@@ -539,31 +555,27 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
                     CommonKeys.ALL_SUBSCRIBERS,
                     CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID,
                     CommonKeys.ALL_SUBSCRIBERS_INDEX,
-                    mailsNum);
+                    mailsNum,
+                    0);
         } catch (Exception ex) {
             logger.error("Please check RecipientsNumber method !", ex);
         }
     }
 
     @DaoUpdateReturnValueCheck
-    public void updateRates(int tempTableID, @VelocityCheck int companyID, List<LightTarget> targets) throws Exception {
-        List<Integer> totalIndexes = new ArrayList<>();
-        totalIndexes.add(CommonKeys.DELIVERED_EMAILS_INDEX);
-
-        List<Integer> totalIndexesDelivered = new ArrayList<>();
-        totalIndexesDelivered.add(CommonKeys.DELIVERED_EMAILS_DELIVERED_INDEX);
-
+    public void updateRates(int tempTableID, int companyID, List<LightTarget> targets) throws Exception {
         Map<Integer, Integer> allTargets = getTargetMap(
                 isMailingTrackingActivated(companyID) ? getTargetListWithAllSubscriberTarget(targets) : getTargetListWithAllSubscriberTarget(null),
                 CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID
         );
+
         List<Integer> categoryIndexes = new ArrayList<>();
         for (int i = 1; i <= CommonKeys.SENT_OFFLINE_HTML_INDEX; i++) {
             categoryIndexes.add(i);
         }
 
-        updateRatesByCategories(tempTableID, totalIndexes, new ArrayList<>(allTargets.values()), categoryIndexes);
-        updateDeliveredRatesByCategories(tempTableID, totalIndexesDelivered, new ArrayList<>(allTargets.values()), categoryIndexes);
+        updateRatesByCategories(tempTableID, List.of(CommonKeys.DELIVERED_EMAILS_INDEX), new ArrayList<>(allTargets.values()), categoryIndexes);
+        updateDeliveredRatesByCategories(tempTableID, List.of(CommonKeys.DELIVERED_EMAILS_DELIVERED_INDEX), new ArrayList<>(allTargets.values()), categoryIndexes);
 
         // mobile/PC clicks
         allTargets.clear();
@@ -662,13 +674,13 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
         if (tempTableID == null) {
             logger.error("tempTableID is null in call for getSummaryData");
             throw new Exception("tempTableID is null in call for getSummaryData");
-        } else {
-            return getResultsFromTempTable(tempTableID);
         }
+
+        return getResultsFromTempTable(tempTableID);
     }
 
     @DaoUpdateReturnValueCheck
-    public void insertRevenueIntoTempTable(int mailingID, int tempTableID, @VelocityCheck int companyID, List<LightTarget> targets,
+    public void insertRevenueIntoTempTable(int mailingID, int tempTableID, int companyID, List<LightTarget> targets,
                                            String hiddenTargetSql, DateFormats dateFormats) throws Exception {
         if (DbUtilities.checkIfTableExists(getDataSource(), "rdirlog_" + companyID + "_val_num_tbl")) {
             List<LightTarget> allTargets = getTargetListWithAllSubscriberTarget(targets);
@@ -697,7 +709,7 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
     }
 
     @DaoUpdateReturnValueCheck
-    public void insertOptOutsIntoTempTable(int mailingID, int tempTableID, @VelocityCheck int companyID, List<LightTarget> targets,
+    public void insertOptOutsIntoTempTable(int mailingID, int tempTableID, int companyID, List<LightTarget> targets,
                                            String hiddenTargetSql, String recipientsType, DateFormats dateFormats) throws Exception {
         List<LightTarget> allTargets = getTargetListWithAllSubscriberTarget(targets);
 
@@ -725,7 +737,7 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
         insertIntoTempTable(tempTableID, results);
     }
 
-    public void insertOpenedGrossIntoTempTable(int mailingID, int tempTableID, @VelocityCheck int companyID, List<LightTarget> targets, DateFormats dateFormats) throws Exception {
+    public void insertOpenedGrossIntoTempTable(int mailingID, int tempTableID, int companyID, List<LightTarget> targets, DateFormats dateFormats) throws Exception {
         List<LightTarget> allTargets = getTargetListWithAllSubscriberTarget(targets);
 
         List<TempRow> results = new ArrayList<>();
@@ -748,7 +760,7 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
     }
 
     @DaoUpdateReturnValueCheck
-    public void insertOpenedAnonymousIntoTempTable(int mailingID, int tempTableID, @VelocityCheck int companyID, DateFormats dateFormats) throws Exception {
+    public void insertOpenedAnonymousIntoTempTable(int mailingID, int tempTableID, int companyID, DateFormats dateFormats) throws Exception {
         int anonymousOpenings = selectAnonymousOpenings(companyID, mailingID, dateFormats.getStartDate(), dateFormats.getStopDate());
 
         insertIntoTempTable(tempTableID,
@@ -757,16 +769,17 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
                 CommonKeys.ALL_SUBSCRIBERS,
                 CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID,
                 CommonKeys.ALL_SUBSCRIBERS_INDEX,
-                anonymousOpenings);
+                anonymousOpenings,
+                0);
     }
 
-    public void insertOpenedInvisibleIntoTempTable(int mailingID, int tempTableID, @VelocityCheck int companyID, List<LightTarget> targets,
+    public void insertOpenedInvisibleIntoTempTable(int mailingID, int tempTableID, int companyID, List<LightTarget> targets,
                                                    String hiddenTargetSql, String recipientsType, DateFormats dateFormats) throws Exception {
         insertOpenedInvisibleIntoTempTable(mailingID, tempTableID, companyID, targets, hiddenTargetSql, recipientsType, false, dateFormats);
     }
 
     @DaoUpdateReturnValueCheck
-    public void insertOpenedInvisibleIntoTempTable(int mailingID, int tempTableID, @VelocityCheck int companyID, List<LightTarget> subTargets,
+    public void insertOpenedInvisibleIntoTempTable(int mailingID, int tempTableID, int companyID, List<LightTarget> subTargets,
                                                    String hiddenTargetSql, String recipientsType, boolean useOwnTargetGroups, DateFormats dateFormats) throws Exception {
         Map<Integer, Integer> measuredAll = getMeasuredFromTempTable(tempTableID);
         List<LightTarget> needTargets = useOwnTargetGroups ? getTargets(getTargetIds(mailingID, companyID), companyID) : subTargets;
@@ -796,8 +809,7 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
                 } else {
                     if (StringUtils.isBlank(resultTargetSql) || resultTargetSql.replace(" ", "").equals("1=1")) {
                         // this calculation only works for the "all_recipients" target
-                        int mailsSent = getNumberSentMailings(companyID, mailingID, CommonKeys.TYPE_WORLDMAILING, null, dateFormats.getStartDate(), dateFormats.getStopDate());
-                        maximumOverallOpeners = mailsSent;
+                        maximumOverallOpeners = getNumberSentMailings(companyID, mailingID, CommonKeys.TYPE_WORLDMAILING, null, dateFormats.getStartDate(), dateFormats.getStopDate());
                     } else {
                         maximumOverallOpeners = 0;
                     }
@@ -841,7 +853,7 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
         insertIntoTempTable(tempTableID, results);
     }
 
-    public void insertBouncesIntoTempTable(int mailingID, int tempTableID, @VelocityCheck int companyID, List<LightTarget> targets,
+    public void insertBouncesIntoTempTable(int mailingID, int tempTableID, int companyID, List<LightTarget> targets,
                                            String hiddenTargetSql, String recipientsType, boolean includeSoftbounces,
                                            DateFormats dateFormats) throws Exception {
         List<LightTarget> allTargets = getTargetListWithAllSubscriberTarget(targets);
@@ -916,23 +928,8 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
     }
 
     @DaoUpdateReturnValueCheck
-    public void insertSendIntoTempTable(int mailingID, int tempTableID, @VelocityCheck int companyID, List<LightTarget> targets,
+    public void insertSendIntoTempTable(int mailingID, int tempTableID, int companyID, List<LightTarget> targets,
                                         String hiddenTargetSql, String recipientsType, DateFormats dateFormats) throws Exception {
-		/*
-		Date startDate = null;
-		Date endDate = null;
-
-		if (dateFormats.isDateSlice()) {
-			SimpleDateFormat dateFormat;
-			if (dateFormats.isHourScale()) {
-				dateFormat = DATEFORMAT_HOURLY;
-			} else {
-				dateFormat = DATEFORMAT_DAILY;
-			}
-			startDate = dateFormat.parse(dateFormats.getStartDate());
-			endDate = dateFormat.parse(dateFormats.getStopDate());
-		}
-		*/
 
         int mailsSent = getNumberSentMailings(companyID, mailingID, CommonKeys.TYPE_WORLDMAILING, hiddenTargetSql, dateFormats.getStartDate(), dateFormats.getStopDate());
 
@@ -982,7 +979,7 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
     }
 
     @DaoUpdateReturnValueCheck
-    private void insertDeliveredMailsCalculated(int tempTableID, @VelocityCheck int companyID) throws Exception {
+    private void insertDeliveredMailsCalculated(int tempTableID, int companyID) throws Exception {
         final boolean isActivated = isMailingTrackingActivated(companyID);
         StringBuilder queryBuilder = new StringBuilder();
         queryBuilder
@@ -1012,13 +1009,14 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
                     targetGroupName,
                     targetGroupId,
                     targetGroupIndex,
-                    value
+                    value,
+                    0
             );
         }
     }
 
     @DaoUpdateReturnValueCheck
-    private void insertDeliveredMailsFromSuccessTbl(int tempTableID, int mailingID, @VelocityCheck int companyID, List<LightTarget> targets,
+    private void insertDeliveredMailsFromSuccessTbl(int tempTableID, int mailingID, int companyID, List<LightTarget> targets,
                                                     String hiddenTargetSql, String recipientsType, DateFormats dateFormats) throws Exception {
         boolean isMailingNotExpired = isMailingNotExpired(mailingID);
         List<LightTarget> allTargets = getTargetListWithAllSubscriberTarget(targets);
@@ -1060,7 +1058,7 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
     }
 
     @DaoUpdateReturnValueCheck
-    private void insertSoftbouncesUndeliverable(int mailingID, int tempTableID, @VelocityCheck int companyID, List<LightTarget> targets, String recipientsType, boolean showSoftbounces) throws Exception {
+    private void insertSoftbouncesUndeliverable(int mailingID, int tempTableID, int companyID, List<LightTarget> targets, String recipientsType, boolean showSoftbounces) throws Exception {
         if (!successTableActivated(companyID) || !showSoftbounces) {
             return;
         }
@@ -1069,7 +1067,7 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
         if (mailing != null && mailing.getMailingType() == MailingType.NORMAL.getCode()) {
             int deliveredMails = selectNumberOfDeliveredMails(companyID, mailingID, recipientsType, null, null, null);
             insertSoftbouncesIntoTempTable(tempTableID, deliveredMails, null, CommonKeys.ALL_SUBSCRIBERS_INDEX);
-            if (targets != null && targets.size() > 0) {
+            if (targets != null && !targets.isEmpty()) {
                 int targetGroupIndex = CommonKeys.ALL_SUBSCRIBERS_INDEX;
                 for (LightTarget target : targets) {
                     targetGroupIndex++;
@@ -1088,7 +1086,7 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
 
         int value = sentMails - deliveredMails - hardBounces;
         value = Math.max(0, value);
-        insertIntoTempTable(tempTableID, CommonKeys.SOFT_BOUNCES_UNDELIVERABLE, CommonKeys.SOFT_BOUNCES_UNDELIVERABLE_INDEX, target.getName(), target.getId(), targetGroupIndex, value);
+        insertIntoTempTable(tempTableID, CommonKeys.SOFT_BOUNCES_UNDELIVERABLE, CommonKeys.SOFT_BOUNCES_UNDELIVERABLE_INDEX, target.getName(), target.getId(), targetGroupIndex, value, 0);
     }
 
     protected int selectOpeningClickers(int companyID, int mailingID, String recipientsType, String targetSql, String startDateString, String endDateString) throws Exception {
@@ -1107,7 +1105,7 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
 
         parameters.add(mailingID);
 
-        if (targetSql != null && StringUtils.isNotBlank(targetSql) && !targetSql.replace(" ", "").equals("1=1")) {
+        if (targetSql!= null && StringUtils.isNotBlank(targetSql) && !targetSql.replace(" ", "").equals("1=1")) {
             queryBuilder.append(" AND (").append(targetSql).append(")");
         }
 
@@ -1129,9 +1127,9 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
         queryBuilder.append(" AND EXISTS (SELECT 1 FROM onepixellog_" + companyID + "_tbl o WHERE o.mailing_id = r.mailing_id AND o.customer_id = r.customer_id)");
 
         if (CommonKeys.TYPE_WORLDMAILING.equals(recipientsType)) {
-            queryBuilder.append(" AND EXISTS (SELECT 1 FROM customer_" + companyID + "_binding_tbl bind WHERE bind.user_type IN ('" + UserType.World.getTypeCode() + "', '" + UserType.WorldVIP.getTypeCode() + "') AND bind.mailinglist_id = (SELECT mtbl.mailinglist_id FROM mailing_tbl mtbl WHERE mtbl.mailing_id = r.mailing_id) AND bind.customer_id = r.customer_id)");
+            queryBuilder.append(" AND EXISTS (SELECT 1 FROM customer_" + companyID + "_binding_tbl bind WHERE bind.user_type IN ('" + UserType.World.getTypeCode() + "', '" + UserType.WorldVIP.getTypeCode() + "') AND bind.mailinglist_id IN (SELECT mtbl.mailinglist_id FROM mailing_tbl mtbl WHERE mtbl.mailing_id = r.mailing_id) AND bind.customer_id = r.customer_id)");
         } else if (CommonKeys.TYPE_ADMIN_AND_TEST.equals(recipientsType)) {
-            queryBuilder.append(" AND EXISTS (SELECT 1 FROM customer_" + companyID + "_binding_tbl bind WHERE bind.user_type IN ('" + UserType.Admin.getTypeCode() + "', '" + UserType.TestUser.getTypeCode() + "', '" + UserType.TestVIP.getTypeCode() + "') AND bind.mailinglist_id = (SELECT mtbl.mailinglist_id FROM mailing_tbl mtbl WHERE mtbl.mailing_id = r.mailing_id) AND bind.customer_id = r.customer_id)");
+            queryBuilder.append(" AND EXISTS (SELECT 1 FROM customer_" + companyID + "_binding_tbl bind WHERE bind.user_type IN ('" + UserType.Admin.getTypeCode() + "', '" + UserType.TestUser.getTypeCode() + "', '" + UserType.TestVIP.getTypeCode() + "') AND bind.mailinglist_id IN (SELECT mtbl.mailinglist_id FROM mailing_tbl mtbl WHERE mtbl.mailing_id = r.mailing_id) AND bind.customer_id = r.customer_id)");
         }
 
         List<Map<String, Object>> result = selectLongRunning(logger, queryBuilder.toString(), parameters.toArray(new Object[0]));
@@ -1154,7 +1152,7 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
 
         parameters.add(mailingID);
 
-        if (targetSql != null && StringUtils.isNotBlank(targetSql) && !targetSql.replace(" ", "").equals("1=1")) {
+        if (targetSql!= null && StringUtils.isNotBlank(targetSql) && !targetSql.replace(" ", "").equals("1=1")) {
             queryBuilder.append(" AND (").append(targetSql).append(")");
         }
 
@@ -1176,84 +1174,13 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
         queryBuilder.append(" AND NOT EXISTS (SELECT 1 FROM onepixellog_" + companyID + "_tbl o WHERE o.mailing_id = r.mailing_id AND o.customer_id = r.customer_id)");
 
         if (CommonKeys.TYPE_WORLDMAILING.equals(recipientsType)) {
-            queryBuilder.append(" AND EXISTS (SELECT 1 FROM customer_" + companyID + "_binding_tbl bind WHERE bind.user_type IN ('" + UserType.World.getTypeCode() + "', '" + UserType.WorldVIP.getTypeCode() + "') AND bind.mailinglist_id = (SELECT mtbl.mailinglist_id FROM mailing_tbl mtbl WHERE mtbl.mailing_id = r.mailing_id) AND bind.customer_id = r.customer_id)");
+            queryBuilder.append(" AND EXISTS (SELECT 1 FROM customer_" + companyID + "_binding_tbl bind WHERE bind.user_type IN ('" + UserType.World.getTypeCode() + "', '" + UserType.WorldVIP.getTypeCode() + "') AND bind.mailinglist_id IN (SELECT mtbl.mailinglist_id FROM mailing_tbl mtbl WHERE mtbl.mailing_id = r.mailing_id) AND bind.customer_id = r.customer_id)");
         } else if (CommonKeys.TYPE_ADMIN_AND_TEST.equals(recipientsType)) {
-            queryBuilder.append(" AND EXISTS (SELECT 1 FROM customer_" + companyID + "_binding_tbl bind WHERE bind.user_type IN ('" + UserType.Admin.getTypeCode() + "', '" + UserType.TestUser.getTypeCode() + "', '" + UserType.TestVIP.getTypeCode() + "') AND bind.mailinglist_id = (SELECT mtbl.mailinglist_id FROM mailing_tbl mtbl WHERE mtbl.mailing_id = r.mailing_id) AND bind.customer_id = r.customer_id)");
+            queryBuilder.append(" AND EXISTS (SELECT 1 FROM customer_" + companyID + "_binding_tbl bind WHERE bind.user_type IN ('" + UserType.Admin.getTypeCode() + "', '" + UserType.TestUser.getTypeCode() + "', '" + UserType.TestVIP.getTypeCode() + "') AND bind.mailinglist_id IN (SELECT mtbl.mailinglist_id FROM mailing_tbl mtbl WHERE mtbl.mailing_id = r.mailing_id) AND bind.customer_id = r.customer_id)");
         }
 
         List<Map<String, Object>> result = selectLongRunning(logger, queryBuilder.toString(), parameters.toArray(new Object[0]));
         return ((Number) result.get(0).get("counter")).intValue();
-    }
-
-    /**
-     * Selects a map with numbers of clickers per deviceclass for a single mailingid.
-     * Watch out:
-     * If a customer is within one of these deviceclasses, then he hasn't clicked in the mail with any other deviceclass.
-     * Mixed combination clickers are explicitly excluded by intent.
-     * This means: totalClicks - deviceclass1_clicks - deviceclass2_clicks ... - deviceclassX_clicks
-     * = clicks of clickers that clicked a link of this mailing with any combination of more than one deviceclass
-     *
-     * @param companyID
-     * @param mailingID
-     * @param recipientsType
-     * @param targetSql
-     * @param startDate
-     * @param endDate
-     * @return
-     * @throws Exception
-     */
-    @SuppressWarnings("unused")
-    private Map<DeviceClass, Integer> selectClicksByDeviceClass(int companyID, int mailingID, String recipientsType, String targetSql, Date startDate, Date endDate) throws Exception {
-        StringBuilder queryBuilder = new StringBuilder("SELECT r.device_class_id AS deviceClassId, COUNT(*) AS counter FROM rdirlog_" + companyID + "_tbl r");
-
-        if (targetSql != null && targetSql.contains("cust.")) {
-            queryBuilder.append(", customer_" + companyID + "_tbl cust");
-            queryBuilder.append(" WHERE r.mailing_id = ? AND r.customer_id = cust.customer_id");
-        } else {
-            queryBuilder.append(" WHERE r.mailing_id = ?");
-        }
-
-        // Exclude clicks of clickers with combinations of deviceclasses
-        queryBuilder.append(" AND NOT EXISTS (SELECT 1 FROM rdirlog_" + companyID + "_tbl rdir WHERE rdir.device_class_id != r.device_class_id AND rdir.mailing_id = r.mailing_id AND rdir.customer_id = r.customer_id)");
-
-        if (startDate != null && endDate != null) {
-            queryBuilder.append(" AND ? <= r.timestamp AND r.timestamp <= ?");
-        }
-
-        if (targetSql != null && StringUtils.isNotBlank(targetSql) && !targetSql.replace(" ", "").equals("1=1")) {
-            queryBuilder.append(" AND (").append(targetSql).append(")");
-        }
-
-        if (CommonKeys.TYPE_WORLDMAILING.equals(recipientsType)) {
-            queryBuilder.append(" AND EXISTS (SELECT 1 FROM customer_" + companyID + "_binding_tbl bind WHERE bind.user_type IN ('" + UserType.World.getTypeCode() + "', '" + UserType.WorldVIP.getTypeCode() + "') AND bind.mailinglist_id = (SELECT mtbl.mailinglist_id FROM mailing_tbl mtbl WHERE mtbl.mailing_id = r.mailing_id) AND bind.customer_id = r.customer_id)");
-        } else if (CommonKeys.TYPE_ADMIN_AND_TEST.equals(recipientsType)) {
-            queryBuilder.append(" AND EXISTS (SELECT 1 FROM customer_" + companyID + "_binding_tbl bind WHERE bind.user_type IN ('" + UserType.Admin.getTypeCode() + "', '" + UserType.TestUser.getTypeCode() + "', '" + UserType.TestVIP.getTypeCode() + "') AND bind.mailinglist_id = (SELECT mtbl.mailinglist_id FROM mailing_tbl mtbl WHERE mtbl.mailing_id = r.mailing_id) AND bind.customer_id = r.customer_id)");
-        }
-
-        queryBuilder.append(" GROUP BY r.device_class_id");
-
-        List<Map<String, Object>> result;
-        if (startDate != null && endDate != null) {
-            result = selectLongRunning(logger, queryBuilder.toString(), mailingID, startDate, endDate);
-        } else {
-            result = selectLongRunning(logger, queryBuilder.toString(), mailingID);
-        }
-
-        Map<DeviceClass, Integer> returnMap = new HashMap<>();
-        // Initialize default values 0 for no clickers at all
-        for (DeviceClass deviceClass : CommonKeys.AVAILABLE_DEVICECLASSES) {
-            returnMap.put(deviceClass, 0);
-        }
-        for (Map<String, Object> row : result) {
-            if (row.get("deviceClassId") == null) {
-                // Some old entries dont't have a deviceclassid, those are desktop values
-                returnMap.put(DeviceClass.DESKTOP, ((Number) row.get("counter")).intValue());
-            } else {
-                returnMap.put(DeviceClass.fromId(((Number) row.get("deviceClassId")).intValue()), ((Number) row.get("counter")).intValue());
-            }
-        }
-
-        return returnMap;
     }
 
     protected int selectClicks(int companyID, int mailingID, String recipientsType, String targetSql, String startDateString, String endDateString) throws Exception {
@@ -1282,17 +1209,17 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
             }
         }
 
-        if (targetSql != null && StringUtils.isNotBlank(targetSql) && !targetSql.replace(" ", "").equals("1=1")) {
+        if (targetSql!= null && StringUtils.isNotBlank(targetSql) && !targetSql.replace(" ", "").equals("1=1")) {
             queryBuilder.append(" AND (").append(targetSql).append(")");
         }
 
         if (CommonKeys.TYPE_WORLDMAILING.equals(recipientsType)) {
             queryBuilder.append(" AND EXISTS (SELECT 1 FROM customer_").append(companyID).append("_binding_tbl bind WHERE bind.user_type IN ('")
                     .append(UserType.World.getTypeCode()).append("', '").append(UserType.WorldVIP.getTypeCode())
-                    .append("') AND bind.mailinglist_id = (SELECT mtbl.mailinglist_id FROM mailing_tbl mtbl WHERE mtbl.mailing_id = r.mailing_id) AND bind.customer_id = r.customer_id)");
+                    .append("') AND bind.mailinglist_id IN (SELECT mtbl.mailinglist_id FROM mailing_tbl mtbl WHERE mtbl.mailing_id = r.mailing_id) AND bind.customer_id = r.customer_id)");
         } else if (CommonKeys.TYPE_ADMIN_AND_TEST.equals(recipientsType)) {
             queryBuilder.append(" AND EXISTS (SELECT 1 FROM customer_").append(companyID).append("_binding_tbl bind WHERE bind.user_type IN ('")
-                    .append(UserType.Admin.getTypeCode()).append("', '").append(UserType.TestUser.getTypeCode()).append("', '").append(UserType.TestVIP.getTypeCode()).append("') AND bind.mailinglist_id = (SELECT mtbl.mailinglist_id FROM mailing_tbl mtbl WHERE mtbl.mailing_id = r.mailing_id) AND bind.customer_id = r.customer_id)");
+                    .append(UserType.Admin.getTypeCode()).append("', '").append(UserType.TestUser.getTypeCode()).append("', '").append(UserType.TestVIP.getTypeCode()).append("') AND bind.mailinglist_id IN (SELECT mtbl.mailinglist_id FROM mailing_tbl mtbl WHERE mtbl.mailing_id = r.mailing_id) AND bind.customer_id = r.customer_id)");
         }
 
         List<Map<String, Object>> result = selectLongRunning(logger, queryBuilder.toString(), parameters.toArray(new Object[0]));
@@ -1333,15 +1260,6 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
      * Mixed combination clickers are explicitly excluded by intent.
      * This means: totalClickers - deviceclass1_clickers - deviceclass2_clickers ... - deviceclassX_clickers
      * = clickers that clicked a link of this mailing with any combination of more than one deviceclass
-     *
-     * @param companyID
-     * @param mailingID
-     * @param recipientsType
-     * @param targetSql
-     * @param startDateString
-     * @param endDateString
-     * @return
-     * @throws Exception
      */
     protected Map<DeviceClass, Integer> selectClickersByDeviceClassWithoutCombinations(int companyID, int mailingID, String recipientsType, String targetSql, String startDateString, String endDateString) throws Exception {
         StringBuilder queryBuilder = new StringBuilder("SELECT r.device_class_id AS deviceClassId, COUNT(DISTINCT r.customer_id) AS counter FROM rdirlog_" + companyID + "_tbl r");
@@ -1376,14 +1294,14 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
             }
         }
 
-        if (targetSql != null && StringUtils.isNotBlank(targetSql) && !targetSql.replace(" ", "").equals("1=1")) {
+        if (targetSql!= null && StringUtils.isNotBlank(targetSql) && !targetSql.replace(" ", "").equals("1=1")) {
             queryBuilder.append(" AND (").append(targetSql).append(")");
         }
 
         if (CommonKeys.TYPE_WORLDMAILING.equals(recipientsType)) {
-            queryBuilder.append(" AND EXISTS (SELECT 1 FROM customer_" + companyID + "_binding_tbl bind WHERE bind.user_type IN ('" + UserType.World.getTypeCode() + "', '" + UserType.WorldVIP.getTypeCode() + "') AND bind.mailinglist_id = (SELECT mtbl.mailinglist_id FROM mailing_tbl mtbl WHERE mtbl.mailing_id = r.mailing_id) AND bind.customer_id = r.customer_id)");
+            queryBuilder.append(" AND EXISTS (SELECT 1 FROM customer_" + companyID + "_binding_tbl bind WHERE bind.user_type IN ('" + UserType.World.getTypeCode() + "', '" + UserType.WorldVIP.getTypeCode() + "') AND bind.mailinglist_id IN (SELECT mtbl.mailinglist_id FROM mailing_tbl mtbl WHERE mtbl.mailing_id = r.mailing_id) AND bind.customer_id = r.customer_id)");
         } else if (CommonKeys.TYPE_ADMIN_AND_TEST.equals(recipientsType)) {
-            queryBuilder.append(" AND EXISTS (SELECT 1 FROM customer_" + companyID + "_binding_tbl bind WHERE bind.user_type IN ('" + UserType.Admin.getTypeCode() + "', '" + UserType.TestUser.getTypeCode() + "', '" + UserType.TestVIP.getTypeCode() + "') AND bind.mailinglist_id = (SELECT mtbl.mailinglist_id FROM mailing_tbl mtbl WHERE mtbl.mailing_id = r.mailing_id) AND bind.customer_id = r.customer_id)");
+            queryBuilder.append(" AND EXISTS (SELECT 1 FROM customer_" + companyID + "_binding_tbl bind WHERE bind.user_type IN ('" + UserType.Admin.getTypeCode() + "', '" + UserType.TestUser.getTypeCode() + "', '" + UserType.TestVIP.getTypeCode() + "') AND bind.mailinglist_id IN (SELECT mtbl.mailinglist_id FROM mailing_tbl mtbl WHERE mtbl.mailing_id = r.mailing_id) AND bind.customer_id = r.customer_id)");
         }
 
         queryBuilder.append(" GROUP BY r.device_class_id");
@@ -1437,14 +1355,14 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
             }
         }
 
-        if (targetSql != null && StringUtils.isNotBlank(targetSql) && !targetSql.replace(" ", "").equals("1=1")) {
+        if (targetSql!= null && StringUtils.isNotBlank(targetSql) && !targetSql.replace(" ", "").equals("1=1")) {
             queryBuilder.append(" AND (").append(targetSql).append(")");
         }
 
         if (CommonKeys.TYPE_WORLDMAILING.equals(recipientsType)) {
-            queryBuilder.append(" AND EXISTS (SELECT 1 FROM customer_").append(companyID).append("_binding_tbl bind WHERE bind.user_type IN ('").append(UserType.World.getTypeCode()).append("', '").append(UserType.WorldVIP.getTypeCode()).append("') AND bind.mailinglist_id = (SELECT mtbl.mailinglist_id FROM mailing_tbl mtbl WHERE mtbl.mailing_id = r.mailing_id) AND bind.customer_id = r.customer_id)");
+            queryBuilder.append(" AND EXISTS (SELECT 1 FROM customer_").append(companyID).append("_binding_tbl bind WHERE bind.user_type IN ('").append(UserType.World.getTypeCode()).append("', '").append(UserType.WorldVIP.getTypeCode()).append("') AND bind.mailinglist_id IN (SELECT mtbl.mailinglist_id FROM mailing_tbl mtbl WHERE mtbl.mailing_id = r.mailing_id) AND bind.customer_id = r.customer_id)");
         } else if (CommonKeys.TYPE_ADMIN_AND_TEST.equals(recipientsType)) {
-            queryBuilder.append(" AND EXISTS (SELECT 1 FROM customer_").append(companyID).append("_binding_tbl bind WHERE bind.user_type IN ('").append(UserType.Admin.getTypeCode()).append("', '").append(UserType.TestUser.getTypeCode()).append("', '").append(UserType.TestVIP.getTypeCode()).append("') AND bind.mailinglist_id = (SELECT mtbl.mailinglist_id FROM mailing_tbl mtbl WHERE mtbl.mailing_id = r.mailing_id) AND bind.customer_id = r.customer_id)");
+            queryBuilder.append(" AND EXISTS (SELECT 1 FROM customer_").append(companyID).append("_binding_tbl bind WHERE bind.user_type IN ('").append(UserType.Admin.getTypeCode()).append("', '").append(UserType.TestUser.getTypeCode()).append("', '").append(UserType.TestVIP.getTypeCode()).append("') AND bind.mailinglist_id IN (SELECT mtbl.mailinglist_id FROM mailing_tbl mtbl WHERE mtbl.mailing_id = r.mailing_id) AND bind.customer_id = r.customer_id)");
         }
 
         List<Map<String, Object>> result = selectLongRunning(logger, queryBuilder.toString(), parameters.toArray(new Object[0]));
@@ -1459,15 +1377,6 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
      * Mixed combination openers are explicitly excluded by intent.
      * This means: totalOpeners - deviceclass1_openers - deviceclass2_openers ... - deviceclassX_openers
      * = openers that opened this mailing with any combination of more than one deviceclass
-     *
-     * @param companyID
-     * @param mailingID
-     * @param recipientsType
-     * @param targetSql
-     * @param startDateString
-     * @param endDateString
-     * @return
-     * @throws Exception
      */
     protected Map<DeviceClass, Integer> selectOpenersByDeviceClassWithoutCombinations(int companyID, int mailingID, String recipientsType, String targetSql, String startDateString, String endDateString) throws Exception {
         StringBuilder queryBuilder = new StringBuilder("SELECT o.device_class_id AS deviceClassId, COUNT(DISTINCT o.customer_id) AS counter FROM onepixellog_device_" + companyID + "_tbl o");
@@ -1502,14 +1411,14 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
             }
         }
 
-        if (targetSql != null && StringUtils.isNotBlank(targetSql) && !targetSql.replace(" ", "").equals("1=1")) {
+        if (targetSql!= null && StringUtils.isNotBlank(targetSql) && !targetSql.replace(" ", "").equals("1=1")) {
             queryBuilder.append(" AND (").append(targetSql).append(")");
         }
 
         if (CommonKeys.TYPE_WORLDMAILING.equals(recipientsType)) {
-            queryBuilder.append(" AND EXISTS (SELECT 1 FROM customer_" + companyID + "_binding_tbl bind WHERE bind.user_type IN ('" + UserType.World.getTypeCode() + "', '" + UserType.WorldVIP.getTypeCode() + "') AND bind.mailinglist_id = (SELECT mtbl.mailinglist_id FROM mailing_tbl mtbl WHERE mtbl.mailing_id = o.mailing_id) AND bind.customer_id = o.customer_id)");
+            queryBuilder.append(" AND EXISTS (SELECT 1 FROM customer_" + companyID + "_binding_tbl bind WHERE bind.user_type IN ('" + UserType.World.getTypeCode() + "', '" + UserType.WorldVIP.getTypeCode() + "') AND bind.mailinglist_id IN (SELECT mtbl.mailinglist_id FROM mailing_tbl mtbl WHERE mtbl.mailing_id = o.mailing_id) AND bind.customer_id = o.customer_id)");
         } else if (CommonKeys.TYPE_ADMIN_AND_TEST.equals(recipientsType)) {
-            queryBuilder.append(" AND EXISTS (SELECT 1 FROM customer_" + companyID + "_binding_tbl bind WHERE bind.user_type IN ('" + UserType.Admin.getTypeCode() + "', '" + UserType.TestUser.getTypeCode() + "', '" + UserType.TestVIP.getTypeCode() + "') AND bind.mailinglist_id = (SELECT mtbl.mailinglist_id FROM mailing_tbl mtbl WHERE mtbl.mailing_id = o.mailing_id) AND bind.customer_id = o.customer_id)");
+            queryBuilder.append(" AND EXISTS (SELECT 1 FROM customer_" + companyID + "_binding_tbl bind WHERE bind.user_type IN ('" + UserType.Admin.getTypeCode() + "', '" + UserType.TestUser.getTypeCode() + "', '" + UserType.TestVIP.getTypeCode() + "') AND bind.mailinglist_id IN (SELECT mtbl.mailinglist_id FROM mailing_tbl mtbl WHERE mtbl.mailing_id = o.mailing_id) AND bind.customer_id = o.customer_id)");
         }
 
         queryBuilder.append(" GROUP BY o.device_class_id");
@@ -1533,7 +1442,7 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
         return returnMap;
     }
 
-    protected int selectOpeners(int companyID, int mailingID, String recipientsType, String targetSql, String startDateString, String endDateString) throws Exception {
+    protected int selectOpeners(int companyID, int mailingID, String recipientsType, String targetSql, String startDateString, String endDateString, Integer deviceId) throws Exception {
         StringBuilder queryBuilder = new StringBuilder("SELECT COUNT(DISTINCT o.customer_id) AS counter FROM onepixellog_device_" + companyID + "_tbl o");
         List<Object> parameters = new ArrayList<>();
 
@@ -1549,6 +1458,11 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
 
         parameters.add(mailingID);
 
+        if (deviceId != null) {
+            queryBuilder.append(" AND device_id = ?");
+            parameters.add(deviceId);
+        }
+
         if (StringUtils.isNotBlank(startDateString) && StringUtils.isNotBlank(endDateString)) {
             queryBuilder.append(" AND (? <= o.creation AND o.creation < ?)");
             if (startDateString.contains(":")) {
@@ -1563,14 +1477,14 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
             }
         }
 
-        if (targetSql != null && StringUtils.isNotBlank(targetSql) && !targetSql.replace(" ", "").equals("1=1")) {
+        if (targetSql!= null && StringUtils.isNotBlank(targetSql) && !targetSql.replace(" ", "").equals("1=1")) {
             queryBuilder.append(" AND (").append(targetSql).append(")");
         }
 
         if (CommonKeys.TYPE_WORLDMAILING.equals(recipientsType)) {
-            queryBuilder.append(" AND EXISTS (SELECT 1 FROM customer_" + companyID + "_binding_tbl bind WHERE bind.user_type IN ('" + UserType.World.getTypeCode() + "', '" + UserType.WorldVIP.getTypeCode() + "') AND bind.mailinglist_id = (SELECT mtbl.mailinglist_id FROM mailing_tbl mtbl WHERE mtbl.mailing_id = o.mailing_id) AND bind.customer_id = o.customer_id)");
+            queryBuilder.append(" AND EXISTS (SELECT 1 FROM customer_" + companyID + "_binding_tbl bind WHERE bind.user_type IN ('" + UserType.World.getTypeCode() + "', '" + UserType.WorldVIP.getTypeCode() + "') AND bind.mailinglist_id IN (SELECT mtbl.mailinglist_id FROM mailing_tbl mtbl WHERE mtbl.mailing_id = o.mailing_id) AND bind.customer_id = o.customer_id)");
         } else if (CommonKeys.TYPE_ADMIN_AND_TEST.equals(recipientsType)) {
-            queryBuilder.append(" AND EXISTS (SELECT 1 FROM customer_" + companyID + "_binding_tbl bind WHERE bind.user_type IN ('" + UserType.Admin.getTypeCode() + "', '" + UserType.TestUser.getTypeCode() + "', '" + UserType.TestVIP.getTypeCode() + "') AND bind.mailinglist_id = (SELECT mtbl.mailinglist_id FROM mailing_tbl mtbl WHERE mtbl.mailing_id = o.mailing_id) AND bind.customer_id = o.customer_id)");
+            queryBuilder.append(" AND EXISTS (SELECT 1 FROM customer_" + companyID + "_binding_tbl bind WHERE bind.user_type IN ('" + UserType.Admin.getTypeCode() + "', '" + UserType.TestUser.getTypeCode() + "', '" + UserType.TestVIP.getTypeCode() + "') AND bind.mailinglist_id IN (SELECT mtbl.mailinglist_id FROM mailing_tbl mtbl WHERE mtbl.mailing_id = o.mailing_id) AND bind.customer_id = o.customer_id)");
         }
 
         List<Map<String, Object>> result = selectLongRunning(logger, queryBuilder.toString(), parameters.toArray(new Object[0]));
@@ -1645,12 +1559,6 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
         return ((Number) result.get(0).get("counter")).intValue();
     }
 
-    @SuppressWarnings("unused")
-    private int getTempTableValuesByCategoryAndTargetGroupIndex(int tempTableID, String category, int targetGroupIndex) throws Exception {
-        String query = "SELECT value FROM " + getTempTableName(tempTableID) + " WHERE category = ? AND targetgroup_index = ?";
-        return selectEmbedded(logger, query, Integer.class, category, targetGroupIndex);
-    }
-
     private int getTempTableValuesByCategoryAndTargetGroupId(int tempTableID, String category, int targetGroupId) throws Exception {
         String query = "SELECT value FROM " + getTempTableName(tempTableID) + " WHERE category = ? AND targetgroup_id = ?";
         int value;
@@ -1663,7 +1571,7 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
         return value;
     }
 
-    private String getTargetIds(int mailingId, @VelocityCheck int companyId) throws Exception {
+    private String getTargetIds(int mailingId, int companyId) {
         String query = "SELECT target_expression FROM mailing_tbl WHERE mailing_id = ? AND company_id = ?";
         String targetExpression = selectObjectDefaultNull(logger, query, StringRowMapper.INSTANCE, mailingId, companyId);
         final Pattern pattern = Pattern.compile("^.*?(\\d+)(.*)$");
@@ -1681,13 +1589,13 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
 
     private void insertIntoTempTable(int tempTableID, List<TempRow> rows) throws Exception {
         for (TempRow tempRow : rows) {
-            insertIntoTempTable(tempTableID, tempRow.getCategory(), tempRow.getCategoryIndex(), tempRow.getTargetGroup(), tempRow.getTargetGroupId(), tempRow.getTargetGroupIndex(), tempRow.getValue());
+            insertIntoTempTable(tempTableID, tempRow.getCategory(), tempRow.getCategoryIndex(), tempRow.getTargetGroup(), tempRow.getTargetGroupId(), tempRow.getTargetGroupIndex(), tempRow.getValue(), tempRow.getPartialValue());
         }
     }
 
-    private void insertIntoTempTable(int tempTableID, String category, int categoryIndex, String targetgroup, int targetgroupId, int targetgroupIndex, int value) throws Exception {
-        String insertSql = "INSERT INTO " + getTempTableName(tempTableID) + " (category, category_index, targetgroup, targetgroup_id, targetgroup_index, value, rate) values (?, ?, ?, ?, ?, ?, 0)";
-        updateEmbedded(logger, insertSql, category, categoryIndex, targetgroup, targetgroupId, targetgroupIndex, value);
+    private void insertIntoTempTable(int tempTableID, String category, int categoryIndex, String targetgroup, int targetgroupId, int targetgroupIndex, int value, int partialValue) throws Exception {
+        String insertSql = "INSERT INTO " + getTempTableName(tempTableID) + " (category, category_index, targetgroup, targetgroup_id, targetgroup_index, value, partial_value, rate) values (?, ?, ?, ?, ?, ?, ?, 0)";
+        updateEmbedded(logger, insertSql, category, categoryIndex, targetgroup, targetgroupId, targetgroupIndex, value, partialValue);
     }
 
     private String getUpdateResponseRateQuery(int tempTableID) {
@@ -1699,20 +1607,20 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
     }
 
     private List<MailingSummaryRow> getResultsFromTempTable(int tempTableID) throws Exception {
-        String query = "SELECT category, category_index, targetgroup_id, targetgroup, targetgroup_index, value , rate, rate_delivered "
+        String query = "SELECT category, category_index, targetgroup_id, targetgroup, targetgroup_index, value , partial_value, rate, rate_delivered "
                 + "FROM " + getTempTableName(tempTableID) + " ORDER BY category_index, targetgroup_index ";
-        List<MailingSummaryRow> list = selectEmbedded(logger, query, (resultSet, rowNum) -> {
+        return selectEmbedded(logger, query, (resultSet, rowNum) -> {
             MailingSummaryRow row = new MailingSummaryRow();
             row.setCategory(resultSet.getString("category"));
             row.setCategoryindex(resultSet.getInt("category_index"));
             row.setTargetgroup(resultSet.getString("targetgroup"));
             row.setTargetgroupindex(resultSet.getInt("targetgroup_index"));
             row.setCount(resultSet.getInt("value"));
+            row.setPartialCount(resultSet.getInt("partial_value"));
             row.setRate(resultSet.getDouble("rate"));
             row.setDeliveredRate(resultSet.getDouble("rate_delivered"));
             return row;
         });
-        return list;
     }
 
     private String getTempTableName(int id) {
@@ -1821,14 +1729,6 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
 
     /**
      * Read softbounces from binding table
-     *
-     * @param companyID
-     * @param mailingID
-     * @param targetSql
-     * @param recipientsType
-     * @param dateFormats
-     * @return
-     * @throws Exception
      */
     protected int selectSoftbouncesFromBindings(int companyID, int mailingID, String targetSql, String recipientsType, String startDateString, String endDateString) throws Exception {
         StringBuilder queryBuilder = new StringBuilder("SELECT COUNT(DISTINCT b.customer_id) AS softbounces FROM customer_" + companyID + "_binding_tbl b");
@@ -1875,14 +1775,6 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
 
     /**
      * Read hardbounces from binding table
-     *
-     * @param companyID
-     * @param mailingID
-     * @param targetSql
-     * @param recipientsType
-     * @param dateFormats
-     * @return
-     * @throws Exception
      */
     protected int selectHardbouncesFromBindings(int companyID, int mailingID, String targetSql, String recipientsType, String startDateString, String endDateString) throws Exception {
         StringBuilder queryBuilder = new StringBuilder("SELECT COUNT(DISTINCT b.customer_id) AS hardbounces FROM customer_" + companyID + "_binding_tbl b");
@@ -1929,14 +1821,6 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
 
     /**
      * Read softbounces from bounces table
-     *
-     * @param companyID
-     * @param mailingID
-     * @param targetSql
-     * @param recipientsType
-     * @param dateFormats
-     * @return
-     * @throws Exception
      */
     protected int selectSoftbouncesFromBounces(int companyID, int mailingID, String targetSql, String recipientsType, String startDateString, String endDateString) throws Exception {
         StringBuilder queryBuilder = new StringBuilder("SELECT COUNT(DISTINCT b.customer_id) AS softbounces FROM bounce_tbl b");
@@ -1952,9 +1836,9 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
         parameters.add(mailingID);
 
         if (CommonKeys.TYPE_WORLDMAILING.equals(recipientsType)) {
-            queryBuilder.append(" AND EXISTS (SELECT 1 FROM customer_" + companyID + "_binding_tbl bind WHERE bind.user_type IN ('" + UserType.World.getTypeCode() + "', '" + UserType.WorldVIP.getTypeCode() + "') AND bind.mailinglist_id = (SELECT mtbl.mailinglist_id FROM mailing_tbl mtbl WHERE mtbl.mailing_id = b.mailing_id) AND bind.customer_id = b.customer_id)");
+            queryBuilder.append(" AND EXISTS (SELECT 1 FROM customer_" + companyID + "_binding_tbl bind WHERE bind.user_type IN ('" + UserType.World.getTypeCode() + "', '" + UserType.WorldVIP.getTypeCode() + "') AND bind.mailinglist_id IN (SELECT mtbl.mailinglist_id FROM mailing_tbl mtbl WHERE mtbl.mailing_id = b.mailing_id) AND bind.customer_id = b.customer_id)");
         } else if (CommonKeys.TYPE_ADMIN_AND_TEST.equals(recipientsType)) {
-            queryBuilder.append(" AND EXISTS (SELECT 1 FROM customer_" + companyID + "_binding_tbl bind WHERE bind.user_type IN ('" + UserType.Admin.getTypeCode() + "', '" + UserType.TestUser.getTypeCode() + "', '" + UserType.TestVIP.getTypeCode() + "') AND bind.mailinglist_id = (SELECT mtbl.mailinglist_id FROM mailing_tbl mtbl WHERE mtbl.mailing_id = b.mailing_id) AND bind.customer_id = b.customer_id)");
+            queryBuilder.append(" AND EXISTS (SELECT 1 FROM customer_" + companyID + "_binding_tbl bind WHERE bind.user_type IN ('" + UserType.Admin.getTypeCode() + "', '" + UserType.TestUser.getTypeCode() + "', '" + UserType.TestVIP.getTypeCode() + "') AND bind.mailinglist_id IN (SELECT mtbl.mailinglist_id FROM mailing_tbl mtbl WHERE mtbl.mailing_id = b.mailing_id) AND bind.customer_id = b.customer_id)");
         }
 
         if (StringUtils.isNotBlank(startDateString) && StringUtils.isNotBlank(endDateString)) {
@@ -1982,14 +1866,6 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
 
     /**
      * Read hardbounces from bounces table
-     *
-     * @param companyID
-     * @param mailingID
-     * @param targetSql
-     * @param recipientsType
-     * @param dateFormats
-     * @return
-     * @throws Exception
      */
     protected int selectHardbouncesFromBounces(int companyID, int mailingID, String targetSql, String recipientsType, String startDateString, String endDateString) throws Exception {
         StringBuilder queryBuilder = new StringBuilder("SELECT COUNT(DISTINCT b.customer_id) AS hardbounces FROM bounce_tbl b");
@@ -2005,9 +1881,9 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
         parameters.add(mailingID);
 
         if (CommonKeys.TYPE_WORLDMAILING.equals(recipientsType)) {
-            queryBuilder.append(" AND EXISTS (SELECT 1 FROM customer_" + companyID + "_binding_tbl bind WHERE bind.user_type IN ('" + UserType.World.getTypeCode() + "', '" + UserType.WorldVIP.getTypeCode() + "') AND bind.mailinglist_id = (SELECT mtbl.mailinglist_id FROM mailing_tbl mtbl WHERE mtbl.mailing_id = b.mailing_id) AND bind.customer_id = b.customer_id)");
+            queryBuilder.append(" AND EXISTS (SELECT 1 FROM customer_" + companyID + "_binding_tbl bind WHERE bind.user_type IN ('" + UserType.World.getTypeCode() + "', '" + UserType.WorldVIP.getTypeCode() + "') AND bind.mailinglist_id IN (SELECT mtbl.mailinglist_id FROM mailing_tbl mtbl WHERE mtbl.mailing_id = b.mailing_id) AND bind.customer_id = b.customer_id)");
         } else if (CommonKeys.TYPE_ADMIN_AND_TEST.equals(recipientsType)) {
-            queryBuilder.append(" AND EXISTS (SELECT 1 FROM customer_" + companyID + "_binding_tbl bind WHERE bind.user_type IN ('" + UserType.Admin.getTypeCode() + "', '" + UserType.TestUser.getTypeCode() + "', '" + UserType.TestVIP.getTypeCode() + "') AND bind.mailinglist_id = (SELECT mtbl.mailinglist_id FROM mailing_tbl mtbl WHERE mtbl.mailing_id = b.mailing_id) AND bind.customer_id = b.customer_id)");
+            queryBuilder.append(" AND EXISTS (SELECT 1 FROM customer_" + companyID + "_binding_tbl bind WHERE bind.user_type IN ('" + UserType.Admin.getTypeCode() + "', '" + UserType.TestUser.getTypeCode() + "', '" + UserType.TestVIP.getTypeCode() + "') AND bind.mailinglist_id IN (SELECT mtbl.mailinglist_id FROM mailing_tbl mtbl WHERE mtbl.mailing_id = b.mailing_id) AND bind.customer_id = b.customer_id)");
         }
 
         if (StringUtils.isNotBlank(startDateString) && StringUtils.isNotBlank(endDateString)) {
@@ -2036,6 +1912,7 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
     public static class MailingSummaryRow extends SendStatRow {
 
         private double deliveredRate;
+        private int partialCount;
 
         public MailingSummaryRow() {
         }
@@ -2051,6 +1928,14 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
 
         public void setDeliveredRate(double deliveredRate) {
             this.deliveredRate = deliveredRate;
+        }
+
+        public int getPartialCount() {
+            return partialCount;
+        }
+
+        public void setPartialCount(int partialCount) {
+            this.partialCount = partialCount;
         }
     }
 }

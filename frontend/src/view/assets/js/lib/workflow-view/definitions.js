@@ -14,6 +14,32 @@
                 [0.5, 0.78, 0, 1]
             ]
         },
+        mailing_mediatype_sms: {
+            icons: {
+                inactive: 'icon_sms_g.png',
+                active: 'icon_sms_l.png',
+                dialog: 'icon_sms_s.png'
+            },
+            anchors: [
+                [0.07, 0.5, -1, 0],
+                [0.5, 0.22, 0, -1],
+                [0.9, 0.5, 1, 0],
+                [0.5, 0.78, 0, 1]
+            ]
+        },
+        mailing_mediatype_post: {
+            icons: {
+                inactive: 'icon_post_g.png',
+                active: 'icon_post_l.png',
+                dialog: 'icon_post_s.png'
+            },
+            anchors: [
+                [0.07, 0.5, -1, 0],
+                [0.5, 0.22, 0, -1],
+                [0.9, 0.5, 1, 0],
+                [0.5, 0.78, 0, 1]
+            ]
+        },
         archive: {
             icons: {
                 inactive: 'icon_archive_g.png',
@@ -286,6 +312,8 @@
             recipient: true,
             form: true,
             archive: true,
+            mailing_mediatype_sms: true,
+            mailing_mediatype_post: true,
             actionbased_mailing: true,
             datebased_mailing: true,
             followup_mailing: true,
@@ -300,6 +328,8 @@
             recipient: true,
             form: true,
             archive: true,
+            mailing_mediatype_sms: true,
+            mailing_mediatype_post: true,
             actionbased_mailing: true,
             datebased_mailing: true,
             followup_mailing: true,
@@ -311,6 +341,8 @@
             report: true,
             recipient: true,
             archive: true,
+            mailing_mediatype_sms: true,
+            mailing_mediatype_post: true,
             actionbased_mailing: true,
             datebased_mailing: true,
             followup_mailing: true,
@@ -326,6 +358,8 @@
             report: true,
             recipient: true,
             archive: true,
+            mailing_mediatype_sms: true,
+            mailing_mediatype_post: true,
             actionbased_mailing: true,
             datebased_mailing: true,
             followup_mailing: true,
@@ -341,6 +375,8 @@
             recipient: true,
             form: true,
             archive: true,
+            mailing_mediatype_sms: true,
+            mailing_mediatype_post: true,
             actionbased_mailing: true,
             datebased_mailing: true,
             followup_mailing: true,
@@ -396,6 +432,30 @@
             import: true,
             export: true
         },
+        mailing_mediatype_sms: {
+            stop: true,
+            decision: true,
+            parameter: true,
+            deadline: true,
+            report: true,
+            recipient: true,
+            form: true,
+            archive: true,
+            import: true,
+            export: true
+        },
+        mailing_mediatype_post: {
+            stop: true,
+            decision: true,
+            parameter: true,
+            deadline: true,
+            report: true,
+            recipient: true,
+            form: true,
+            archive: true,
+            import: true,
+            export: true
+        },
         archive: {
             decision: true,
             parameter: true,
@@ -403,6 +463,8 @@
             report: true,
             recipient: true,
             actionbased_mailing: true,
+            mailing_mediatype_sms: true,
+            mailing_mediatype_post: true,
             datebased_mailing: true,
             followup_mailing: true,
             mailing: true,
@@ -419,6 +481,8 @@
             form: true,
             archive: true,
             actionbased_mailing: true,
+            mailing_mediatype_sms: true,
+            mailing_mediatype_post: true,
             datebased_mailing: true,
             followup_mailing: true,
             mailing: true,
@@ -438,6 +502,8 @@
             report: true,
             recipient: true,
             actionbased_mailing: true,
+            mailing_mediatype_sms: true,
+            mailing_mediatype_post: true,
             datebased_mailing: true,
             followup_mailing: true,
             mailing: true,
@@ -534,12 +600,14 @@
         NODE_TYPE_SC_DOI: 'scDOI',
         NODE_TYPE_SC_ABTEST: 'scABTest',
         NODE_TYPE_ACTION_BASED_MAILING: 'actionbased_mailing',
+        NODE_TYPE_MAILING_MEDIATYPE_SMS: 'mailing_mediatype_sms',
+        NODE_TYPE_MAILING_MEDIATYPE_POST: 'mailing_mediatype_post',
         NODE_TYPE_DATE_BASED_MAILING: 'datebased_mailing',
         NODE_TYPE_FOLLOWUP_MAILING: 'followup_mailing',
         NODE_TYPE_IMPORT: 'import',
         NODE_TYPE_EXPORT: 'export',
 
-        NODE_TYPES_MAILING: ['mailing', 'followup_mailing', 'actionbased_mailing', 'datebased_mailing'],
+        NODE_TYPES_MAILING: ['mailing', 'followup_mailing', 'actionbased_mailing', 'datebased_mailing', 'mailing_mediatype_sms', 'mailing_mediatype_post'],
         NODE_TYPES_IMPORT_EXPORT: ['import', 'export'],
 
         NODE_TYPE_START_ID: 0,
@@ -561,6 +629,8 @@
         NODE_TYPE_FOLLOWUP_MAILING_ID: 16,
         NODE_TYPE_IMPORT_ID: 17,
         NODE_TYPE_EXPORT_ID: 18,
+        NODE_TYPE_MAILING_MEDIATYPE_SMS_ID: 19,
+        NODE_TYPE_MAILING_MEDIATYPE_POST_ID: 20,
 
         MAILING_PARAM_MAILING_LIST: 1,
         MAILING_PARAM_TARGET_GROUPS: 2,
@@ -604,6 +674,7 @@
 
         CONNECTION_CONSTRAINTS: CONNECTION_CONSTRAINTS,
 
-        NODE_POPOVER_TEMPLATE: '<div class="popover popover-wide" role="tooltip" ><div class="arrow"></div><div class="popover-content" style="width: auto; height: auto; max-width: 300px; max-height: 350px; overflow: auto;"></div></div>'
+        NODE_POPOVER_TEMPLATE: '<div class="popover popover-wide" role="tooltip" ><div class="arrow"></div><div class="popover-content" style="width: auto; height: auto; max-width: 300px; max-height: 350px; overflow: auto;"></div></div>',
+        EMPTY_OPTION_PLACEHOLDER: '--'
     };
 })();

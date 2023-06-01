@@ -10,11 +10,11 @@
 
 package com.agnitas.emm.core.action.service;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.action.operations.ActionOperationParameters;
 import com.agnitas.service.SimpleServiceResult;
 
 public interface EmmActionValidationService {
 
-	SimpleServiceResult validate(ComAdmin admin, ActionOperationParameters operation) throws Exception;
+	SimpleServiceResult validate(Admin admin, ActionOperationParameters operation) throws Exception;
 }

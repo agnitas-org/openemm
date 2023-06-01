@@ -13,6 +13,7 @@ package com.agnitas.dao.impl.mapper;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import org.agnitas.util.DbUtilities;
 import org.springframework.jdbc.core.RowMapper;
 
 import com.agnitas.beans.TargetLight;
@@ -24,7 +25,7 @@ import com.agnitas.beans.impl.TargetLightImpl;
 public class TargetLightRowMapper implements RowMapper<TargetLight> {
 	
 	/** Singleton instance for use in persistence layer. */
-	public static final transient TargetLightRowMapper INSTANCE = new TargetLightRowMapper();
+	public static final TargetLightRowMapper INSTANCE = new TargetLightRowMapper();
 	
     @Override
     public TargetLight mapRow(ResultSet resultSet, int row) throws SQLException {
@@ -41,7 +42,9 @@ public class TargetLightRowMapper implements RowMapper<TargetLight> {
             readTarget.setComponentHide(resultSet.getBoolean("component_hide"));
             readTarget.setComplexityIndex(resultSet.getInt("complexity"));
             readTarget.setValid(!resultSet.getBoolean("invalid"));
-            readTarget.setFavorite(resultSet.getBoolean("favorite"));
+            if (DbUtilities.resultsetHasColumn(resultSet, "favorite")) {
+                readTarget.setFavorite(resultSet.getBoolean("favorite"));
+            }
 
             return readTarget;
         } catch (Exception e) {

@@ -84,6 +84,12 @@
 			<ThresholdFilter level="debug" onMatch="ACCEPT" onMisMatch="DENY" />
 			<TimeBasedTriggeringPolicy />
 		</RollingFile>
+		
+		<RollingFile name="SPRING_SECURITY_LOG" fileName="${sys:user.home}/logs/webapps/spring-security.log" filePattern="${sys:user.home}/logs/webapps/timing.mediapool.log.%d{yyyy-MM-dd}">
+			<PatternLayout pattern="%d: %-5p [%t] %c - %m%n" />
+			<ThresholdFilter level="debug" onMatch="ACCEPT" onMisMatch="DENY" />
+			<TimeBasedTriggeringPolicy />
+		</RollingFile>
 	</Appenders>
 	
 	<Loggers>
@@ -166,5 +172,14 @@
 		<Logger name="com.agnitas.dev.logging.TimingLogger" level="debug">
 			<AppenderRef ref="MEDIAPOOL_TIMING_LOG" />
 		</Logger>
+		
+		<Logger name="org.springframework.security" level="debug">
+			<AppenderRef ref="SPRING_SECURITY_LOG" />
+		</Logger>
+			
+		<Logger name="com.agnitas.spring.WebSecurityConfiguration" level="debug">
+			<AppenderRef ref="SPRING_SECURITY_LOG" />
+		</Logger>
+		
 	</Loggers>
 </Configuration>

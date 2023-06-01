@@ -3,6 +3,7 @@
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
 <%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
+<%@ taglib prefix="agn" uri="https://emm.agnitas.de/jsp/jstl/tags" %>
 
 <div class="modal">
     <div class="modal-dialog">
@@ -14,7 +15,7 @@
                 </h4>
             </div>
 
-            <html:form action="/mailingParameter">
+            <agn:agnForm action="/mailingParameter">
                 <html:hidden property="mailingInfoID"/>
                 <input type="hidden" name="action" value="delete">
 
@@ -35,7 +36,7 @@
                     </div>
                 </div>
 
-            </html:form>
+            </agn:agnForm>
 
         </div>
     </div>

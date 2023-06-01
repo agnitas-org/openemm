@@ -120,6 +120,17 @@ public class StrutsPopups implements Popups {
         messages.add(GuiConstants.ACTIONMESSAGE_CONTAINER_WARNING, popup.toStrutsMessage());
         return this;
     }
+    
+    @Override
+    public Popups permanentWarning(String code, Object ...arguments) {
+        return permanentWarning(new Message(code, arguments));
+    }
+    
+    @Override
+    public Popups permanentWarning(Message popup) {
+        messages.add(GuiConstants.ACTIONMESSAGE_CONTAINER_WARNING_PERMANENT, popup.toStrutsMessage());
+        return this;
+    }
 
     @Override
     public Popups warning(String code, Object ...arguments) {
@@ -212,11 +223,11 @@ public class StrutsPopups implements Popups {
         messages.clear();
     }
 
-    ActionMessages getMessages() {
+    public ActionMessages getMessages() {
         return messages;
     }
 
-    ActionErrors getErrors() {
+    public ActionErrors getErrors() {
         return errors;
     }
 }

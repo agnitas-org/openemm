@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import com.agnitas.emm.core.workflow.service.ComWorkflowService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
@@ -30,15 +31,16 @@ import com.agnitas.emm.core.target.service.ReferencedItemsService;
  */
 public class ObjectUsageServiceImpl implements ObjectUsageService {
 	
-	/** The logger. */
-	private static final transient Logger LOGGER = LogManager.getLogger(ObjectUsageServiceImpl.class);
+	private static final Logger LOGGER = LogManager.getLogger(ObjectUsageServiceImpl.class);
 
 	/** Service to detect objects referencing target groups. */
 	private ReferencedItemsService referencedItemsService;
 	
 	/** Service service handling profile fields. */
 	private ProfileFieldService profileFieldService;
-	
+
+    private ComWorkflowService workflowService;
+
 	@Override
 	public final ObjectUsages listUsageOfAutoImport(final int companyID, final int autoImportID) {
 		final List<ObjectUsage> list = new ArrayList<>();
@@ -60,29 +62,34 @@ public class ObjectUsageServiceImpl implements ObjectUsageService {
 	}
 
 	@Override
-	public final ObjectUsages listUsageOfProfileFieldByVisibleName(final int companyID, final String visibleName) {
-		final List<ObjectUsage> list = new ArrayList<>();
-		
-		list.addAll(ObjectUsageServiceHelper.targetGroupsToObjectUsage(this.referencedItemsService.listTargetGroupsReferencingProfileFieldByVisibleName(companyID, visibleName)));
+	public final List<ObjectUsage> listUsageOfProfileFieldByVisibleName(final int companyID, final String visibleName) {
+		return ObjectUsageServiceHelper.targetGroupsToObjectUsage(referencedItemsService
+                .listTargetGroupsReferencingProfileFieldByVisibleName(companyID, visibleName));
 		// TODO List other objects referencing to mailings here
-
-		return new ObjectUsages(list);
 	}
 
 	@Override
 	public final ObjectUsages listUsageOfProfileFieldByDatabaseName(final int companyID, final String databaseName) {
 		try {
-			final String visibleName = this.profileFieldService.translateDatabaseNameToVisibleName(companyID, databaseName);
-			
-			return listUsageOfProfileFieldByVisibleName(companyID, visibleName);
-		} catch(final ProfileFieldException e) {
-			if(LOGGER.isInfoEnabled()) {
+            List<ObjectUsage> usages = new ArrayList<>();
+		    String visibleName = this.profileFieldService.translateDatabaseNameToVisibleName(companyID, databaseName);
+
+		    usages.addAll(collectWorkflowUsagesOfProfileField(companyID, databaseName));
+            usages.addAll(listUsageOfProfileFieldByVisibleName(companyID, visibleName));
+
+			return new ObjectUsages(usages);
+		} catch (final ProfileFieldException e) {
+			if (LOGGER.isInfoEnabled()) {
 				LOGGER.info(String.format("No profile field with database name '%s'", databaseName));
 			}
-			
 			return ObjectUsages.empty();
 		}
 	}
+
+    private List<ObjectUsage> collectWorkflowUsagesOfProfileField(int companyID, String column) {
+        return ObjectUsageServiceHelper
+                .workflowToObjectUsage(workflowService.getActiveWorkflowsDependentOnProfileField(column, companyID));
+    }
 
 	@Override
 	public final ObjectUsages listUsageOfLink(final int companyID, final int linkID) {
@@ -129,4 +136,14 @@ public class ObjectUsageServiceImpl implements ObjectUsageService {
 	public final void setProfileFieldService(final ProfileFieldService service) {
 		this.profileFieldService = Objects.requireNonNull(service, "ProfileFieldService is null");
 	}
+
+    /**
+   	 * Set service handling workflows.
+   	 *
+   	 * @param workflowService service handling workflows
+   	 */
+   	@Required
+   	public final void setWorkflowService(final ComWorkflowService workflowService) {
+   		this.workflowService = Objects.requireNonNull(workflowService, "ComWorkflowService is null");
+   	}
 }

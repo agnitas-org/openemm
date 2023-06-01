@@ -17,10 +17,6 @@ import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.DbColumnType.SimpleDataType;
 
 public interface ProfileField extends LightProfileField {
-	int MODE_EDIT_EDITABLE = 0;
-	int MODE_EDIT_READONLY = 1;
-	int MODE_EDIT_NOT_VISIBLE = 2;
-	
 	int getCompanyID();
 
 	void setCompanyID( @VelocityCheck int company);
@@ -52,18 +48,10 @@ public interface ProfileField extends LightProfileField {
 	/**
 	 * ModeEdit
 	 * Usage mode of this field in the GUI when creating or changing a customer
-	 * 
-	 * Allowed values:
-	 * 	MODE_EDIT_NOT_VISIBLE:
-	 * 		This field is not intended to be shown in the GUI
-	 * 	MODE_EDIT_READONLY:
-	 * 		This field is shown but can not be edited by the user
-	 * 	MODE_EDIT_EDITABLE and all others:
-	 * 		Show this field in GUI for edit
 	 */
-	int getModeEdit();
+	ProfileFieldMode getModeEdit();
 
-	void setModeEdit(int edit);
+	void setModeEdit(ProfileFieldMode edit);
 
 	int getModeInsert();
 

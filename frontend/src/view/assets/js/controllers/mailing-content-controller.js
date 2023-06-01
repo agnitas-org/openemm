@@ -1,6 +1,6 @@
 AGN.Lib.Controller.new('mailing-content-controller', function () {
-  var Confirm = AGN.Lib.Confirm;
-  var Template = AGN.Lib.Template;
+  const Confirm = AGN.Lib.Confirm;
+  const Template = AGN.Lib.Template;
 
   var mailingContent;
   var preparedTableEntryTemplate;
@@ -16,10 +16,10 @@ AGN.Lib.Controller.new('mailing-content-controller', function () {
 
     isMailingExclusiveLockingAcquired = this.config.isMailingExclusiveLockingAcquired;
     isEditableMailing = this.config.isEditableMailing;
-    var dynTagsMap = this.config.dynTagsMap;
-    var targetGroups = this.config.targetGroupList;
-    var interestGroups = this.config.interestGroupList;
-    var dynTagNames = this.config.dynTagNames;
+    const dynTagsMap = this.config.dynTagsMap;
+    const targetGroups = this.config.targetGroupList;
+    const interestGroups = this.config.interestGroupList;
+    const dynTagNames = this.config.dynTagNames;
 
     mailingContent = new MailingContent(dynTagsMap, targetGroups, interestGroups, dynTagNames);
     initTableContent();
@@ -36,22 +36,22 @@ AGN.Lib.Controller.new('mailing-content-controller', function () {
   });
   
   this.addAction({click: 'createContentEditorModal'}, function() {
-    var dynNameId = parseInt(this.el.data('dyn-name-id'));
+    const dynNameId = parseInt(this.el.data('dyn-name-id'));
 
     if (dynNameId > 0) {
       $.ajax({
-        url: AGN.url('/mailingcontent/name/{id}/view.action'.replace('{id}', dynNameId.toString())),
+        url: AGN.url('/mailing/content/name/{id}/view.action'.replace('{id}', dynNameId.toString())),
         method: 'GET',
         dataType: 'json',
         success: function(resp) {
-          var dynTag = new DynTag(resp);
-          var isHtmlContentBlock = mailingContent.isHtmlContentBlock(dynTag.name);
+          const dynTag = new DynTag(resp);
+          const isHtmlContentBlock = mailingContent.isHtmlContentBlock(dynTag.name);
 
-          var promise = Confirm.createFromTemplate({
+          const promise = Confirm.createFromTemplate({
             dynTag: dynTag,
             targetGroups: _.cloneDeep(mailingContent.targetGroups),
             interestGroups: _.cloneDeep(mailingContent.interestGroups),
-            saveUrl: AGN.url('/mailingcontent/save.action'),
+            saveUrl: AGN.url('/mailing/content/save.action'),
             DynTagObject: DynTag,
             isFullHtmlTags: dynTag.name == 'HTML-Version',
             showHTMLEditor: isHtmlContentBlock,
@@ -74,7 +74,7 @@ AGN.Lib.Controller.new('mailing-content-controller', function () {
   });
 
   this.addAction({click: 'createGridTemplateTextContentEditorModal'}, function() {
-    var dynNameId = parseInt(this.el.data('dyn-name-id'));
+    const dynNameId = parseInt(this.el.data('dyn-name-id'));
 
     if (dynNameId > 0) {
       $.ajax({
@@ -82,10 +82,10 @@ AGN.Lib.Controller.new('mailing-content-controller', function () {
         method: 'GET',
         dataType: 'json',
         success: function(resp) {
-          var dynTag = new DynTag(resp);
-          var isHtmlContentBlock = mailingContent.isHtmlContentBlock(dynTag.name);
+          const dynTag = new DynTag(resp);
+          const isHtmlContentBlock = mailingContent.isHtmlContentBlock(dynTag.name);
 
-          var promise = Confirm.createFromTemplate({
+          const promise = Confirm.createFromTemplate({
             dynTag: dynTag,
             targetGroups: _.cloneDeep(mailingContent.targetGroups),
             interestGroups: _.cloneDeep(mailingContent.interestGroups),
@@ -110,48 +110,48 @@ AGN.Lib.Controller.new('mailing-content-controller', function () {
     }
   });
   
-  var updatePreview = function () {
-    var form = AGN.Lib.Form.get($('#preview'));
+  const updatePreview = function () {
+    const form = AGN.Lib.Form.get($('#preview'));
     form.setValue('previewForm.reload', false);
     form.setResourceSelectorOnce('#preview');
     form.submit();
   };
 
-  var initTableContent = function() {
+  const initTableContent = function() {
     mailingContent.dynTags.forEach(function (dynTag) {
       $tableBody.append(getFilledTemplate(dynTag));
     })
   };
 
-  var replaceTableContent = function(dynTag) {
-    var html = getFilledTemplate(dynTag);
+  const replaceTableContent = function(dynTag) {
+    const html = getFilledTemplate(dynTag);
     $tableBody.find('[data-dyn-name-id="' + dynTag.id + '"]').replaceWith(html);
   };
 
-  var getFilledTemplate = function(dynTag) {
-    var targetGroups = dynTag.contentBlocks.map(function (contentBlock) {
+  const getFilledTemplate = function(dynTag) {
+    const targetGroups = dynTag.contentBlocks.map(function (contentBlock) {
       return getTargetGroupName(contentBlock);
     }, []);
 
-    var contents = dynTag.contentBlocks.map(function (contentBlock) {
+    const contents = dynTag.contentBlocks.map(function (contentBlock) {
       return contentBlock.content.length > 35 ? contentBlock.content.substring(0, 35) + '...' : contentBlock.content;
     }, []);
 
     return preparedTableEntryTemplate({id: dynTag.id, name: dynTag.name, targetGroups: targetGroups, contents: contents, editable: !!isMailingExclusiveLockingAcquired});
   };
 
-  var getTargetGroupName = function (dynContent) {
+  const getTargetGroupName = function (dynContent) {
     var targetGroupName = t('mailing.default.target_group_name');
     if (dynContent.targetId > 0) {
-      var targetGroup = mailingContent.getTargetGroupById(dynContent.targetId);
-      var description = targetGroup.deleted ? t('mailing.default.target_group_deleted') : targetGroup.id;
+      const targetGroup = mailingContent.getTargetGroupById(dynContent.targetId);
+      const description = targetGroup.deleted ? t('mailing.default.target_group_deleted') : targetGroup.id;
       targetGroupName = targetGroup.targetName + ' (' + description + ')';
     }
 
     return targetGroupName;
   };
 
-  var MailingContent = function MailingContent(contentData, availableTargetGroups, interestGroups, dynTagNames) {
+  const MailingContent = function MailingContent(contentData, availableTargetGroups, interestGroups, dynTagNames) {
     this.dynTags = Object.entries(contentData).map(function (entry) {
       return new DynTag(entry[1]);
     }, []);
@@ -176,15 +176,15 @@ AGN.Lib.Controller.new('mailing-content-controller', function () {
     };
 
     this.getDynTagById = function (id) {
-      var filteredBlocks = this.dynTags.filter(function (block) {
+      const filteredBlocks = this.dynTags.filter(function (block) {
         return block.id === id;
       });
       return filteredBlocks[0];
     };
 
     this.setDynTag = function (dynTag) {
-      var currentDynTag = this.getDynTagById(dynTag.id);
-      var index = this.dynTags.indexOf(currentDynTag);
+      const currentDynTag = this.getDynTagById(dynTag.id);
+      const index = this.dynTags.indexOf(currentDynTag);
       if (index > -1) {
         this.dynTags[index] = dynTag.clone();
       }
@@ -198,7 +198,7 @@ AGN.Lib.Controller.new('mailing-content-controller', function () {
     };
   };
 
-  var DynTag = function (dynTagData) {
+  const DynTag = function (dynTagData) {
     this.id = dynTagData.id || 0;
     this.name = dynTagData.dynName === undefined ? dynTagData.name : dynTagData.dynName;
     this.mailingId = dynTagData.mailingID === undefined ? dynTagData.mailingId : dynTagData.mailingID;
@@ -217,13 +217,13 @@ AGN.Lib.Controller.new('mailing-content-controller', function () {
     }
 
     this.contentBlocks.__proto__.swap = function (indexFrom, indexTo) {
-      var temp = this[indexFrom];
+      const temp = this[indexFrom];
       this[indexFrom] = this[indexTo];
       this[indexTo] = temp;
       return this;
     };
 
-    var defaultContentBlock = {
+    const defaultContentBlock = {
       id: 0,
       index: 0,
       targetId: 0,
@@ -231,21 +231,21 @@ AGN.Lib.Controller.new('mailing-content-controller', function () {
     };
 
     this.getContentBlockByTargetId = function (targetId) {
-      var filteredBlocks = this.contentBlocks.filter(function (block) {
+      const filteredBlocks = this.contentBlocks.filter(function (block) {
         return block.targetId === targetId;
       });
       return filteredBlocks[0];
     };
 
     this.getContentBlockById = function (id) {
-      var filteredBlocks = this.contentBlocks.filter(function (block) {
+      const filteredBlocks = this.contentBlocks.filter(function (block) {
         return block.uniqueId === id;
       });
       return filteredBlocks[0];
     };
 
     this.createNewContentBlock = function () {
-      var newContentBlock = new DynContent(defaultContentBlock);
+      const newContentBlock = new DynContent(defaultContentBlock);
       newContentBlock.index = this.contentBlocks.length;
       this.contentBlocks.push(newContentBlock);
       recalculateIndexes(this.contentBlocks);
@@ -253,7 +253,7 @@ AGN.Lib.Controller.new('mailing-content-controller', function () {
     };
 
     this.moveUpContentBlock = function (contentBlockId) {
-      var contentBlock = this.getContentBlockById(contentBlockId);
+      const contentBlock = this.getContentBlockById(contentBlockId);
       if (contentBlock.index > 1) {
         this.contentBlocks.swap(contentBlock.index - 1, contentBlock.index - 2);
         recalculateIndexes(this.contentBlocks);
@@ -261,7 +261,7 @@ AGN.Lib.Controller.new('mailing-content-controller', function () {
     };
 
     this.moveDownContentBlock = function (contentBlockId) {
-      var contentBlock = this.getContentBlockById(contentBlockId);
+      const contentBlock = this.getContentBlockById(contentBlockId);
       if (contentBlock.index < this.contentBlocks.length) {
         this.contentBlocks.swap(contentBlock.index - 1, contentBlock.index);
         recalculateIndexes(this.contentBlocks);
@@ -269,25 +269,25 @@ AGN.Lib.Controller.new('mailing-content-controller', function () {
     };
 
     this.setFirstContentBlock = function (contentBlockId) {
-      var contentBlock = this.getContentBlockById(contentBlockId);
+      const contentBlock = this.getContentBlockById(contentBlockId);
       if (contentBlock.index > 1) {
-        var removedContentBlock = this.contentBlocks.splice(contentBlock.index - 1, 1);
+        const removedContentBlock = this.contentBlocks.splice(contentBlock.index - 1, 1);
         this.contentBlocks = removedContentBlock.concat(this.contentBlocks);
         recalculateIndexes(this.contentBlocks);
       }
     };
 
     this.setLastContentBlock = function (contentBlockId) {
-      var contentBlock = this.getContentBlockById(contentBlockId);
+      const contentBlock = this.getContentBlockById(contentBlockId);
       if (contentBlock.index < this.contentBlocks.length) {
-        var removedContentBlock = this.contentBlocks.splice(contentBlock.index - 1, 1);
+        const removedContentBlock = this.contentBlocks.splice(contentBlock.index - 1, 1);
         this.contentBlocks = this.contentBlocks.concat(removedContentBlock);
         recalculateIndexes(this.contentBlocks);
       }
     };
 
     this.changeTargetGroup = function (contentBlockId, newTargetGroupId) {
-      var contentBlock = this.getContentBlockById(contentBlockId);
+      const contentBlock = this.getContentBlockById(contentBlockId);
       contentBlock.targetId = newTargetGroupId;
       return contentBlock;
     };
@@ -297,13 +297,13 @@ AGN.Lib.Controller.new('mailing-content-controller', function () {
     };
 
     this.changeContent = function (contentBlockId, newContent) {
-      var contentBlock = this.getContentBlockById(contentBlockId);
+      const contentBlock = this.getContentBlockById(contentBlockId);
       contentBlock.content = newContent || '';
       return contentBlock;
     };
 
     this.changeOrder = function (newOrder) {
-      var func = function (self) {
+      const func = function (self) {
         return function (id) {
           return self.getContentBlockById(parseInt(id));
         };
@@ -313,8 +313,8 @@ AGN.Lib.Controller.new('mailing-content-controller', function () {
     };
 
     this.remove = function(id) {
-      var currentContentBlock = this.getContentBlockById(id);
-      var index = this.contentBlocks.indexOf(currentContentBlock);
+      const currentContentBlock = this.getContentBlockById(id);
+      const index = this.contentBlocks.indexOf(currentContentBlock);
       if (index > -1) {
         this.contentBlocks.splice(index, 1);
         recalculateIndexes(this.contentBlocks);
@@ -329,14 +329,14 @@ AGN.Lib.Controller.new('mailing-content-controller', function () {
       return new DynTag(this);
     };
 
-    var recalculateIndexes = function (contentBlocks) {
+    const recalculateIndexes = function (contentBlocks) {
       contentBlocks.forEach(function (contentBlock, index) {
         contentBlock.index = index + 1;
       });
     };
   };
 
-  var DynContent = function (dynContentData) {
+  const DynContent = function (dynContentData) {
     if (typeof DynContent.uniqueIdCounter === 'undefined' ) {
       DynContent.uniqueIdCounter = 0;
     }

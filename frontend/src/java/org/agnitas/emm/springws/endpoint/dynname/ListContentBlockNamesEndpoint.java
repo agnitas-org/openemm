@@ -11,14 +11,16 @@
 package org.agnitas.emm.springws.endpoint.dynname;
 
 import java.util.List;
+import java.util.Objects;
 
 import org.agnitas.emm.core.dynname.service.DynamicTagNameService;
 import org.agnitas.emm.core.dynname.service.NameModel;
 import org.agnitas.emm.springws.endpoint.BaseEndpoint;
-import org.agnitas.emm.springws.endpoint.Utils;
+import org.agnitas.emm.springws.endpoint.Namespaces;
 import org.agnitas.emm.springws.jaxb.ListContentBlockNamesRequest;
 import org.agnitas.emm.springws.jaxb.ListContentBlockNamesResponse;
 import org.agnitas.emm.springws.jaxb.ListContentBlockNamesResponse.ContentBlockName;
+import org.agnitas.emm.springws.util.SecurityContextAccess;
 import org.springframework.ws.server.endpoint.annotation.Endpoint;
 import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
 import org.springframework.ws.server.endpoint.annotation.RequestPayload;
@@ -29,23 +31,24 @@ import com.agnitas.beans.DynamicTag;
 @Endpoint
 public class ListContentBlockNamesEndpoint extends BaseEndpoint {
 
-	private DynamicTagNameService dynamicTagNameService;
+	private final DynamicTagNameService dynamicTagNameService;
+	private final SecurityContextAccess securityContextAccess;
 
-	public ListContentBlockNamesEndpoint(DynamicTagNameService dynamicTagNameService) {
-		this.dynamicTagNameService = dynamicTagNameService;
+	public ListContentBlockNamesEndpoint(DynamicTagNameService dynamicTagNameService, final SecurityContextAccess securityContextAccess) {
+		this.dynamicTagNameService = Objects.requireNonNull(dynamicTagNameService, "dynamicTagNameService");
+		this.securityContextAccess = Objects.requireNonNull(securityContextAccess, "securityContextAccess");
 	}
 
-	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "ListContentBlockNamesRequest")
+	@PayloadRoot(namespace = Namespaces.AGNITAS_ORG, localPart = "ListContentBlockNamesRequest")
 	public  @ResponsePayload ListContentBlockNamesResponse listContentBlockNames(@RequestPayload ListContentBlockNamesRequest request) {
-		ListContentBlockNamesResponse response = new ListContentBlockNamesResponse();
-		
-		NameModel model = new NameModel();
-		model.setCompanyId(Utils.getUserCompany());
+		final NameModel model = new NameModel();
+		model.setCompanyId(this.securityContextAccess.getWebserviceUserCompanyId());
 		model.setMailingId(request.getMailingID());
 		
-		List<DynamicTag> list = dynamicTagNameService.getNameList(model);
-		List<ContentBlockName> responseList = response.getContentBlockName();
-		for (DynamicTag name : list) {
+		final ListContentBlockNamesResponse response = new ListContentBlockNamesResponse();
+		final List<DynamicTag> list = dynamicTagNameService.getNameList(model);
+		final List<ContentBlockName> responseList = response.getContentBlockName();
+		for (final DynamicTag name : list) {
 			ContentBlockName responseContentBlock = new ListContentBlockNamesResponse.ContentBlockName();
 			responseContentBlock.setNameID(name.getId());
 			responseContentBlock.setName(name.getDynName());

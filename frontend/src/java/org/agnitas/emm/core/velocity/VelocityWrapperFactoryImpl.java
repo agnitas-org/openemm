@@ -10,7 +10,11 @@
 
 package org.agnitas.emm.core.velocity;
 
+import java.util.Objects;
+
+import org.agnitas.emm.core.velocity.emmapi.CompanyAccessCheck;
 import org.agnitas.util.TimeoutLRUMap;
+import org.springframework.beans.factory.annotation.Required;
 
 /**
  * Implementation of {@link VelocityWrapperFactory} that caches existing {@link VelocityWrapper}
@@ -41,26 +45,19 @@ public class VelocityWrapperFactoryImpl implements VelocityWrapperFactory {
 	 * @throws Exception on errors creating new instance
 	 */
 	protected VelocityWrapper createVelocityWrapper( int companyId) throws Exception {
-		return new VelocityWrapperImpl(companyId, factory);
+		return new VelocityWrapperImpl(companyId, companyAccessCheck);
 	}
 	
-	/**
-	 * Returns the factory for Uberspect delegate targets used in this
-	 * Velocity wrapper factory.
-	 * 
-	 * @return factory for Uberspect delegate targets
-	 */
-	public UberspectDelegateTargetFactory getUberspectDelegateTargetFactory() {
-		return factory;
-	}
+    public CompanyAccessCheck getCompanyAccessCheck() {
+        return companyAccessCheck;
+    }
 
 	// --------------------------------------------------------------------------- Dependency Injection
 	
 	/** LRU map caching the VelocityWrapper instances. */
 	private TimeoutLRUMap<Integer, VelocityWrapper> cache;
 	
-	/** Factory for Uberspect delegate targets. */
-	private UberspectDelegateTargetFactory factory;
+    private CompanyAccessCheck companyAccessCheck;
 
 	/**
 	 * Sets the LRU map for caching.
@@ -71,12 +68,8 @@ public class VelocityWrapperFactoryImpl implements VelocityWrapperFactory {
 		this.cache = cache;
 	}
 
-	/**
-	 * Set factory for Uberspect delegate targets.
-	 * 
-	 * @param factory factory for Uberspect delegate targets
-	 */
-	public void setUberspectDelegateTargetFactory( UberspectDelegateTargetFactory factory) {
-		this.factory = factory;
-	}
+    @Required
+   	public final void setCompanyAccessCheck(final CompanyAccessCheck check) {
+   		this.companyAccessCheck = Objects.requireNonNull(check, "CompanyAccessCheck is null");
+   	}
 }

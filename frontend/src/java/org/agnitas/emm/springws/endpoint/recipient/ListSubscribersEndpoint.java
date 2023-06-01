@@ -12,6 +12,7 @@ package org.agnitas.emm.springws.endpoint.recipient;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.OptionalInt;
 
 import org.agnitas.emm.core.recipient.service.RecipientService;
@@ -19,11 +20,12 @@ import org.agnitas.emm.core.recipient.service.RecipientsModel;
 import org.agnitas.emm.core.recipient.service.impl.RecipientWrongRequestException;
 import org.agnitas.emm.core.recipient.service.impl.RecipientsSizeLimitExceededExeption;
 import org.agnitas.emm.springws.endpoint.BaseEndpoint;
-import org.agnitas.emm.springws.endpoint.Utils;
+import org.agnitas.emm.springws.endpoint.Namespaces;
 import org.agnitas.emm.springws.jaxb.Criteria;
 import org.agnitas.emm.springws.jaxb.Equals;
 import org.agnitas.emm.springws.jaxb.ListSubscribersRequest;
 import org.agnitas.emm.springws.jaxb.ListSubscribersResponse;
+import org.agnitas.emm.springws.util.SecurityContextAccess;
 import org.springframework.ws.server.endpoint.annotation.Endpoint;
 import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
 import org.springframework.ws.server.endpoint.annotation.RequestPayload;
@@ -35,21 +37,23 @@ import com.agnitas.emm.wsmanager.service.WebserviceUserService;
 @Endpoint
 public class ListSubscribersEndpoint extends BaseEndpoint {
 
-	private RecipientService recipientService;
-	private WebserviceUserService webserviceUserService;
+	private final RecipientService recipientService;
+	private final WebserviceUserService webserviceUserService;
+	private final SecurityContextAccess securityContextAccess;
 
-	public ListSubscribersEndpoint(RecipientService recipientService, WebserviceUserService webserviceUserService) {
-		this.recipientService = recipientService;
-		this.webserviceUserService = webserviceUserService;
+	public ListSubscribersEndpoint(RecipientService recipientService, WebserviceUserService webserviceUserService, final SecurityContextAccess securityContextAccess) {
+		this.recipientService = Objects.requireNonNull(recipientService, "recipientService");
+		this.webserviceUserService = Objects.requireNonNull(webserviceUserService, "webserviceUserService");
+		this.securityContextAccess = Objects.requireNonNull(securityContextAccess, "securityContextAccess");
 	}
 
-	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "ListSubscribersRequest")
+	@PayloadRoot(namespace = Namespaces.AGNITAS_ORG, localPart = "ListSubscribersRequest")
 	public @ResponsePayload ListSubscribersResponse listSubscribers(@RequestPayload ListSubscribersRequest request) {
 		ListSubscribersResponse response = new ListSubscribersResponse();
 
 		RecipientsModel model = parseModel(request);
 		
-		final String username = Utils.getUserName();
+		final String username = this.securityContextAccess.getWebserviceUserName();
 		final int size = recipientService.getSubscribersSize(model);
         checkResultListSize(username, size);
 	        
@@ -58,14 +62,14 @@ public class ListSubscribersEndpoint extends BaseEndpoint {
 		return response;
 	}
 	
-	static RecipientsModel parseModel(ListSubscribersRequest request) {
+	RecipientsModel parseModel(ListSubscribersRequest request) {
 	    Criteria criteria = request.getCriteria();
 	    if (criteria == null) {
             throw new RecipientWrongRequestException("Criteria are empty.");
         }
 	    
         RecipientsModel model = new RecipientsModel();
-        model.setCompanyId(Utils.getUserCompany());
+        model.setCompanyId(securityContextAccess.getWebserviceUserCompanyId());
         List<RecipientsModel.CriteriaEquals> criteriaEqualsList = new ArrayList<>();
         model.setCriteriaEquals(criteriaEqualsList);
         model.setMatchAll(criteria.isMatchAll());

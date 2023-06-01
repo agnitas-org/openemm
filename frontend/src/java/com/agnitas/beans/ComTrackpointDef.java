@@ -10,8 +10,6 @@
 
 package com.agnitas.beans;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
-
 public interface ComTrackpointDef {
 
     int TYPE_SIMPLE = 0;
@@ -91,5 +89,5 @@ public interface ComTrackpointDef {
 
     void setActionID(int actionID);
 
-    void setCompanyID(@VelocityCheck int companyID);
+    void setCompanyID(int companyID);
 }

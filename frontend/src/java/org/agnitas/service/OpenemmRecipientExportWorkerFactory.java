@@ -3,16 +3,16 @@ package org.agnitas.service;
 import org.agnitas.beans.ExportPredef;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.target.service.ComTargetService;
-import com.agnitas.service.ComColumnInfoService;
+import com.agnitas.service.ColumnInfoService;
 
 public class OpenemmRecipientExportWorkerFactory implements RecipientExportWorkerFactory {
 	private ComTargetService targetService;
-	private ComColumnInfoService columnInfoService;
+	private ColumnInfoService columnInfoService;
 
 	@Override
-	public RecipientExportWorker newWorker(ExportPredef exportProfile, ComAdmin admin) throws Exception {
+	public RecipientExportWorker newWorker(ExportPredef exportProfile, Admin admin) throws Exception {
 		return new RecipientExportWorker(exportProfile, admin, targetService, columnInfoService);
 	}
 
@@ -22,7 +22,7 @@ public class OpenemmRecipientExportWorkerFactory implements RecipientExportWorke
 	}
 
 	@Required
-	public void setColumnInfoService(final ComColumnInfoService columnInfoService) {
+	public void setColumnInfoService(final ColumnInfoService columnInfoService) {
 		this.columnInfoService = columnInfoService;
 	}
 }

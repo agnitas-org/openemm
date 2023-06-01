@@ -11,12 +11,14 @@
 package org.agnitas.emm.springws.endpoint.trackablelink;
 
 import java.util.List;
+import java.util.Objects;
 
 import org.agnitas.emm.springws.endpoint.BaseEndpoint;
-import org.agnitas.emm.springws.endpoint.Utils;
+import org.agnitas.emm.springws.endpoint.Namespaces;
 import org.agnitas.emm.springws.jaxb.ListTrackableLinksRequest;
 import org.agnitas.emm.springws.jaxb.ListTrackableLinksResponse;
 import org.agnitas.emm.springws.jaxb.ListTrackableLinksResponse.TrackableLink;
+import org.agnitas.emm.springws.util.SecurityContextAccess;
 import org.agnitas.util.AgnUtils;
 import org.springframework.ws.server.endpoint.annotation.Endpoint;
 import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
@@ -29,30 +31,31 @@ import com.agnitas.emm.core.trackablelinks.service.ComTrackableLinkService;
 @Endpoint
 public class ListTrackableLinksEndpoint extends BaseEndpoint {
 
-    private ComTrackableLinkService trackableLinkService;
+    private final ComTrackableLinkService trackableLinkService;
+    private final SecurityContextAccess securityContextAccess;
 
-    public ListTrackableLinksEndpoint(ComTrackableLinkService trackableLinkService) {
-        this.trackableLinkService = trackableLinkService;
+    public ListTrackableLinksEndpoint(ComTrackableLinkService trackableLinkService, final SecurityContextAccess securityContextAccess) {
+        this.trackableLinkService = Objects.requireNonNull(trackableLinkService, "trackableLinkService");
+        this.securityContextAccess = Objects.requireNonNull(securityContextAccess, "securityContextAccess");
     }
 
-    @PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "ListTrackableLinksRequest")
+    @PayloadRoot(namespace = Namespaces.AGNITAS_ORG, localPart = "ListTrackableLinksRequest")
     public @ResponsePayload ListTrackableLinksResponse listTrackableLinks(@RequestPayload ListTrackableLinksRequest request) throws Exception {
-        ListTrackableLinksResponse response = new ListTrackableLinksResponse();
+    	final int companyId = this.securityContextAccess.getWebserviceUserCompanyId();
+        final int mailingId = request.getMailingID();
+        final List<TrackableLinkListItem> trackableLinksList = trackableLinkService.getTrackableLinkItems(mailingId, companyId);
 
-        int companyId = Utils.getUserCompany();
-        int mailingId = request.getMailingID();
-        List<TrackableLinkListItem> trackableLinksList = trackableLinkService.getTrackableLinkItems(mailingId, companyId);
-
+        final ListTrackableLinksResponse response = new ListTrackableLinksResponse();
         setTrackableLinksToResponse(response, trackableLinksList);
 
         return response;
     }
 
     private void setTrackableLinksToResponse(ListTrackableLinksResponse response, List<TrackableLinkListItem> trackableLinksList) {
-        List<TrackableLink> trackableLinksListResponse = response.getTrackableLink();
+    	final List<TrackableLink> trackableLinksListResponse = response.getTrackableLink();
 
         for (TrackableLinkListItem trackableLinkItem : trackableLinksList) {
-            TrackableLink trackableLink = new ListTrackableLinksResponse.TrackableLink();
+           final  TrackableLink trackableLink = new ListTrackableLinksResponse.TrackableLink();
 
             trackableLink.setUrlID(trackableLinkItem.getId());
             trackableLink.setUrl(AgnUtils.getStringIfStringIsNull(trackableLinkItem.getFullUrl()));

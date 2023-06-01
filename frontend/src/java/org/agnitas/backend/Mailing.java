@@ -236,21 +236,17 @@ public class Mailing {
 		return exists() ? mailing.workStatus() : null;
 	}
 
-	public boolean workStatus(String newWorkStatus) throws SQLException {
-		return exists() && mailing.workStatus(data.dbase, newWorkStatus);
-	}
-
-	public void setWorkStatus(String newWorkStatus) {
-		if (data.maildropStatus.isWorldMailing()) {
-			String oldWorkStatus = workStatus();
+	public void setWorkStatus(String newWorkStatus, String oldWorkStatus) {
+		if (exists () && data.maildropStatus.isWorldMailing()) {
+			String currentWorkStatus = workStatus();
 			try {
-				if (data.mailing.workStatus(newWorkStatus)) {
-					data.logging(Log.INFO, "workstatus", "Updated working status from " + oldWorkStatus + " to " + newWorkStatus);
+				if (mailing.workStatus(data.dbase, newWorkStatus, oldWorkStatus)) {
+					data.logging(Log.INFO, "workstatus", "Updated working status from " + currentWorkStatus + " to " + newWorkStatus);
 				} else {
-					data.logging(Log.WARNING, "workstatus", "Failed to update working status from " + oldWorkStatus + " to " + newWorkStatus);
+					data.logging(Log.WARNING, "workstatus", "Failed to update working status from " + currentWorkStatus + " to " + newWorkStatus);
 				}
 			} catch (Exception e) {
-				data.logging(Log.ERROR, "workstatus", "Failed to update working status from " + oldWorkStatus + " to " + newWorkStatus + " due to " + e.toString(), e);
+				data.logging(Log.ERROR, "workstatus", "Failed to update working status from " + currentWorkStatus + " to " + newWorkStatus + " due to " + e.toString(), e);
 			}
 		}
 	}

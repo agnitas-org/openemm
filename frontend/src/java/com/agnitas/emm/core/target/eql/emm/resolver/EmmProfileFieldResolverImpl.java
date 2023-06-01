@@ -23,7 +23,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.agnitas.beans.ProfileField;
-import com.agnitas.dao.ComProfileFieldDao;
+import com.agnitas.dao.ProfileFieldDao;
 import com.agnitas.emm.core.target.eql.codegen.DataType;
 import com.agnitas.emm.core.target.eql.codegen.resolver.ProfileFieldNameResolver;
 import com.agnitas.emm.core.target.eql.codegen.resolver.ProfileFieldResolveException;
@@ -81,7 +81,7 @@ public class EmmProfileFieldResolverImpl implements EmmProfileFieldResolver {
 	 * 
 	 * @throws ProfileFieldResolveException on errors reading profile field data
 	 */
-	public EmmProfileFieldResolverImpl(@VelocityCheck int companyId, ComProfileFieldDao profileFieldDao)
+	public EmmProfileFieldResolverImpl(@VelocityCheck int companyId, ProfileFieldDao profileFieldDao)
 			throws ProfileFieldResolveException {
 		try {
 			this.shortNameToInfoMap = readProfileFields(companyId, profileFieldDao);
@@ -91,7 +91,7 @@ public class EmmProfileFieldResolverImpl implements EmmProfileFieldResolver {
 		}
 	}
 
-	public EmmProfileFieldResolverImpl(@VelocityCheck int companyId, ComProfileFieldDao profileFieldDao,
+	public EmmProfileFieldResolverImpl(@VelocityCheck int companyId, ProfileFieldDao profileFieldDao,
 			QueryBuilderConfiguration configuration) throws ProfileFieldResolveException {
 		try {
 			this.shortNameToInfoMap = readProfileFields(companyId, profileFieldDao);
@@ -122,7 +122,7 @@ public class EmmProfileFieldResolverImpl implements EmmProfileFieldResolver {
 	 * 
 	 * @throws Exception on errors reading or extracting profile field data
 	 */
-	private static Map<String, ColumnNameAndType> readProfileFields(int companyId, ComProfileFieldDao dao)
+	private static Map<String, ColumnNameAndType> readProfileFields(int companyId, ProfileFieldDao dao)
 			throws Exception {
 		Map<String, ColumnNameAndType> map = new HashMap<>();
 

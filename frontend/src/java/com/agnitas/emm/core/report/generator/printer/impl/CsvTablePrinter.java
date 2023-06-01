@@ -25,8 +25,8 @@ import com.agnitas.messages.I18nString;
 public class CsvTablePrinter implements GenericTablePrinter<Table> {
 
     private static final String WORD_SEPARATOR = ";";
-    private String lineBreaker;
-    private String emptyValue;
+    private final String lineBreaker;
+    private final String emptyValue;
 
     public CsvTablePrinter(String lineBreaker, String emptyValue) {
         this.lineBreaker = lineBreaker;

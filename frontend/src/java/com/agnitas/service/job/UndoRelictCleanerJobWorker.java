@@ -10,6 +10,8 @@
 
 package com.agnitas.service.job;
 
+import java.util.List;
+
 import org.agnitas.service.JobWorker;
 import org.apache.commons.lang3.StringUtils;
 
@@ -31,19 +33,22 @@ public class UndoRelictCleanerJobWorker extends JobWorker {
 	 * Default retention time for undo records in days.
 	 */
 	public static final int DEFAULT_RETENTION_TIME = 60;
+	
+	public static final int UNDO_ID_BLOCK_SIZE = 10;
 		
 	@Override
 	public String runJob() throws Exception {
 		final int retentionTime = readRetentionTime();
-		final int lastUndoId = findLastUndoId(retentionTime);
+		final List<Integer> undoIdList = findUndoIdsToCleanup(retentionTime);
 		
-		doCleanUp(lastUndoId);
+		doCleanUp(undoIdList);
 		
 		return null;
 	}
 	
-	private final int findLastUndoId(final int retentionTime) {
-        return daoLookupFactory.getBeanUndoMailingDao().getYoungestOutdatedUndoId(retentionTime);
+	private final List<Integer> findUndoIdsToCleanup(final int retentionTime) {
+        return daoLookupFactory.getBeanUndoMailingDao().findUndoIdsToCleanup(retentionTime);
+
 	}
 	
 	private final int readRetentionTime() throws Exception {
@@ -56,18 +61,23 @@ public class UndoRelictCleanerJobWorker extends JobWorker {
 		} catch (Exception e) {
 			throw new Exception("Parameter retentionTime is missing or invalid", e);
 		}
-
 	}
 	
-	void doCleanUp(final int lastUndoId) throws Exception {
+	void doCleanUp(final List<Integer> undoIds) throws Exception {
+		undoIds.sort(Integer::compare);
+
+		for(final int undoId : undoIds) {
+			doCleanUp(undoId);
+		}
+	}
+	
+	void doCleanUp(final int undoId) throws Exception {
         final ComUndoMailingDao undoMailingDao = daoLookupFactory.getBeanUndoMailingDao();
         final ComUndoMailingComponentDao undoMailingComponentDao = daoLookupFactory.getBeanUndoMailingComponentDao();
         final ComUndoDynContentDao undoDynContentDao = daoLookupFactory.getBeanUndoDynContentDao();
 
-        undoMailingComponentDao.deleteOutdatedUndoData(lastUndoId);
-		undoDynContentDao.deleteOutdatedUndoData(lastUndoId);
-		undoMailingDao.deleteOutdatedUndoData(lastUndoId);
-
-		undoMailingDao.deleteUndoForSentMailings();
+        undoMailingComponentDao.deleteUndoData(undoId);
+		undoDynContentDao.deleteUndoData(undoId);
+		undoMailingDao.deleteUndoData(undoId);
 	}
 }

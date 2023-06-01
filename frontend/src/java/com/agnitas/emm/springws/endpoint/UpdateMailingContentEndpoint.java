@@ -16,8 +16,9 @@ import java.util.Objects;
 import org.agnitas.emm.core.component.service.ComponentModel;
 import org.agnitas.emm.springws.endpoint.BaseEndpoint;
 import org.agnitas.emm.springws.endpoint.MailingEditableCheck;
-import org.agnitas.emm.springws.endpoint.Utils;
+import org.agnitas.emm.springws.endpoint.Namespaces;
 import org.agnitas.emm.springws.endpoint.mailing.AddMailingFromTemplateEndpoint;
+import org.agnitas.emm.springws.util.SecurityContextAccess;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -41,14 +42,16 @@ public class UpdateMailingContentEndpoint extends BaseEndpoint {
 	private final ThumbnailService thumbnailService;
     private final ComComponentService componentService;
 	private final MailingEditableCheck mailingEditableCheck;
+	private final SecurityContextAccess securityContextAccess;
 
-    public UpdateMailingContentEndpoint(@Qualifier("componentService") ComComponentService componentService, final MailingEditableCheck mailingEditableCheck, final ThumbnailService thumbnailService) {
-        this.componentService = Objects.requireNonNull(componentService);
-		this.mailingEditableCheck = Objects.requireNonNull(mailingEditableCheck);
-		this.thumbnailService = Objects.requireNonNull(thumbnailService);
+    public UpdateMailingContentEndpoint(@Qualifier("componentService") ComComponentService componentService, final MailingEditableCheck mailingEditableCheck, final ThumbnailService thumbnailService, final SecurityContextAccess securityContextAccess) {
+        this.componentService = Objects.requireNonNull(componentService, "componentService");
+		this.mailingEditableCheck = Objects.requireNonNull(mailingEditableCheck, "mailingEditableCheck");
+		this.thumbnailService = Objects.requireNonNull(thumbnailService, "thumbnailService");
+		this.securityContextAccess = Objects.requireNonNull(securityContextAccess, "securityContextAccess");
     }
 
-    @PayloadRoot(namespace = Utils.NAMESPACE_COM, localPart = "UpdateMailingContentRequest")
+    @PayloadRoot(namespace = Namespaces.AGNITAS_COM, localPart = "UpdateMailingContentRequest")
     public @ResponsePayload UpdateMailingContentResponse updateMailingContent(@RequestPayload UpdateMailingContentRequest request) throws Exception {
         if (request.getMailingID() <= 0) {
             throw new IllegalArgumentException("Invalid mailing ID");
@@ -58,7 +61,7 @@ public class UpdateMailingContentEndpoint extends BaseEndpoint {
             throw new IllegalArgumentException("Invalid component name");
         }
         
-        final int companyID = Utils.getUserCompany();
+        final int companyID = securityContextAccess.getWebserviceUserCompanyId();
         
         this.mailingEditableCheck.requireMailingEditable(request.getMailingID(), companyID);
         componentService.updateMailingContent(parseModel(request));
@@ -75,7 +78,7 @@ public class UpdateMailingContentEndpoint extends BaseEndpoint {
     private ComponentModel parseModel(UpdateMailingContentRequest request) {
         ComponentModel model = new ComponentModel();
 
-        model.setCompanyId(Utils.getUserCompany());
+        model.setCompanyId(securityContextAccess.getWebserviceUserCompanyId());
         model.setMailingId(request.getMailingID());
         model.setComponentName(request.getComponentName());
 

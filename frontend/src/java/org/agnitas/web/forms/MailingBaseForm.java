@@ -441,11 +441,11 @@ public class MailingBaseForm extends StrutsFormBase {
         ActionErrors actionErrors = new ActionErrors();
 
         if (action == MailingBaseAction.ACTION_SAVE) {
-            if (this.shortname.length() < 3) {
+            if (StringUtils.trimToNull(this.shortname) == null) {
+                actionErrors.add("shortname", new ActionMessage("error.name.is.empty"));
+            } else if (StringUtils.trimToNull(this.shortname).length() < 3) {
                 actionErrors.add("shortname", new ActionMessage("error.name.too.short"));
-            }
-
-        	if (this.shortname.length() > 99) {
+            } else if (this.shortname.length() > 99) {
                 actionErrors.add("shortname", new ActionMessage("error.shortname_too_long"));
             }
 

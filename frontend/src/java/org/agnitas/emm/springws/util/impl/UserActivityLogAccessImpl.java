@@ -18,8 +18,8 @@ import org.agnitas.emm.springws.util.SecurityContextAccess;
 import org.agnitas.emm.springws.util.UserActivityLogAccess;
 import org.agnitas.service.UserActivityLogService;
 
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.impl.ComAdminImpl;
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.impl.AdminImpl;
 
 public final class UserActivityLogAccessImpl implements UserActivityLogAccess {
 
@@ -33,15 +33,15 @@ public final class UserActivityLogAccessImpl implements UserActivityLogAccess {
 	
 	@Override
 	public void writeLog(List<UserAction> userActions) {
-		final ComAdmin admin = getAdminForUserActivityLog();
+		final Admin admin = getAdminForUserActivityLog();
 		
 		for(final UserAction action : userActions) {
 			service.writeUserActivityLog(admin, action);
 		}
 	}
 
-    private final ComAdmin getAdminForUserActivityLog() {
-		final ComAdmin admin = new ComAdminImpl();
+    private final Admin getAdminForUserActivityLog() {
+		final Admin admin = new AdminImpl();
 		admin.setUsername(this.securityContextAccess.getWebserviceUserName());
 		
 		return admin;

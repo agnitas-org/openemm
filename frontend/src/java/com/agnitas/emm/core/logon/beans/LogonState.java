@@ -12,6 +12,8 @@ package com.agnitas.emm.core.logon.beans;
 
 public enum LogonState {
     PENDING,
+    TOTP,
+    NEW_TOTP_SECRET,
     HOST_AUTHENTICATION,
     HOST_AUTHENTICATION_SECURITY_CODE,
     MAINTAIN_PASSWORD,

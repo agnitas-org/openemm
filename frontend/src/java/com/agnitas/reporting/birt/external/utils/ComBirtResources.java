@@ -28,13 +28,15 @@ public class ComBirtResources {
     public static String getMessage(String key, Locale locale) {
     	if (I18nString.hasMessageForKey(key)) {
     		return I18nString.getLocaleString(key, locale);
-    	} else if (BirtResources.getMessage(key) != null) {
+    	}
+
+    	if (BirtResources.getMessage(key) != null) {
     		// Use Birt-internal message texts for keys like "birt.viewer.dialog.ok"
     		return BirtResources.getMessage(key);
-    	} else {
-    		// Returns error message text for missing key
-    		return I18nString.getLocaleString(key, locale);
     	}
+
+        // Returns error message text for missing key
+        return I18nString.getLocaleString(key, locale);
     }
 
     public static String getJavaScriptMessage(String key) {

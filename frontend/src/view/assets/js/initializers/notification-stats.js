@@ -88,7 +88,7 @@
 
         updateCharts: function(pushId, url) {
             $.ajax({
-                type: "POST",
+                type: "GET",
                 url: url,
                 data: {
                     pushID: pushId

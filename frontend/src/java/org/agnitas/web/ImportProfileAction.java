@@ -61,7 +61,7 @@ import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.ImportProcessAction;
 import com.agnitas.beans.ProfileField;
 import com.agnitas.dao.ImportProcessActionDao;
@@ -71,7 +71,7 @@ import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.messages.I18nString;
-import com.agnitas.service.ComColumnInfoService;
+import com.agnitas.service.ColumnInfoService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -101,7 +101,7 @@ public class ImportProfileAction extends StrutsActionBase {
 	private ImportProfileService importProfileService;
 	private ImportRecipientsDao importRecipientsDao;
 	private AutoImportService autoImportService = null;
-	private ComColumnInfoService columnInfoService;
+	private ColumnInfoService columnInfoService;
 	private WebStorage webStorage;
     private MailinglistApprovalService mailinglistApprovalService;
     
@@ -145,7 +145,7 @@ public class ImportProfileAction extends StrutsActionBase {
 	}
 
 	@Required
-	public void setColumnInfoService(ComColumnInfoService columnInfoService) {
+	public void setColumnInfoService(ColumnInfoService columnInfoService) {
 		this.columnInfoService = columnInfoService;
 	}
 
@@ -210,7 +210,7 @@ public class ImportProfileAction extends StrutsActionBase {
      */
 	@Override
 	public ActionForward execute(ActionMapping mapping, ActionForm form, HttpServletRequest request, HttpServletResponse response) throws Exception {
-		ComAdmin admin = AgnUtils.getAdmin(request);
+		Admin admin = AgnUtils.getAdmin(request);
 
         assert (admin != null);
         
@@ -388,13 +388,13 @@ public class ImportProfileAction extends StrutsActionBase {
         return destination;
     }
 
-    protected boolean isValidImportToSave(ComAdmin admin, ImportProfileForm form) throws Exception {
+    protected boolean isValidImportToSave(Admin admin, ImportProfileForm form) throws Exception {
         return isUserHasPermissionForSelectedMode(admin, form)
                 && (form.getProfile().getImportProcessActionID() == 0 || admin.permissionAllowed(Permission.IMPORT_PREPROCESSING))
                 && (!"json".equalsIgnoreCase(form.getProfile().getDatatype()));
     }
 
-    protected boolean isUserHasPermissionForSelectedMode(ComAdmin admin, ImportProfileForm aForm) throws Exception {
+    protected boolean isUserHasPermissionForSelectedMode(Admin admin, ImportProfileForm aForm) throws Exception {
         return admin.permissionAllowed(Permission
                 .getPermissionByToken(ImportMode.getFromInt(aForm.getProfile().getImportMode()).getMessageKey()));
 	}
@@ -414,7 +414,7 @@ public class ImportProfileAction extends StrutsActionBase {
                 .collect(Collectors.toList());
     }
 
-    private void setUpViewPageVariables(HttpServletRequest request, ImportProfileForm form, ComAdmin admin) throws Exception {
+    private void setUpViewPageVariables(HttpServletRequest request, ImportProfileForm form, Admin admin) throws Exception {
 		form.setAvailableImportProfileFields(getAvailableImportProfileFields(admin));
 		form.setAvailableMailinglists(mailinglistApprovalService.getEnabledMailinglistsForAdmin(admin));
 		
@@ -521,10 +521,10 @@ public class ImportProfileAction extends StrutsActionBase {
      */
     private void setDefaultProfile(ImportProfileForm aForm, HttpServletRequest request) throws Exception {
         int defaultProfileId = aForm.getDefaultProfileId();
-        ComAdmin admin = AgnUtils.getAdmin(request);
+        Admin admin = AgnUtils.getAdmin(request);
         admin.setDefaultImportProfileID(defaultProfileId);
 
-        final ComAdmin adminFromDao = adminService.getAdmin(admin.getAdminID(), admin.getCompanyID());
+        final Admin adminFromDao = adminService.getAdmin(admin.getAdminID(), admin.getCompanyID());
         adminFromDao.setDefaultImportProfileID(defaultProfileId);
         adminService.save(adminFromDao);
     }
@@ -537,7 +537,7 @@ public class ImportProfileAction extends StrutsActionBase {
      * @param request request
      */
     private void createEmptyProfile(ImportProfileForm aForm, HttpServletRequest request) {
-        ComAdmin admin = AgnUtils.getAdmin(request);
+        Admin admin = AgnUtils.getAdmin(request);
         ImportProfile newProfile = new ImportProfileImpl();
 
         if (Objects.nonNull(admin)) {
@@ -546,6 +546,8 @@ public class ImportProfileAction extends StrutsActionBase {
             newProfile.setKeyColumn("email");
             newProfile.setCheckForDuplicates(1);
             newProfile.setDefaultMailType(1);
+            newProfile.setReportLocale(admin.getLocale());
+            newProfile.setReportTimezone(admin.getAdminTimezone());
             aForm.setProfile(newProfile);
             aForm.setProfileId(0);
         }
@@ -586,7 +588,7 @@ public class ImportProfileAction extends StrutsActionBase {
      * @param aForm a form
      */
     private void saveImportProfile(ImportProfileForm aForm, HttpServletRequest request) {
-    	ComAdmin admin = AgnUtils.getAdmin(request);
+    	Admin admin = AgnUtils.getAdmin(request);
     	
         ImportProfile importProfile = aForm.getProfile();
         importProfile.setId(aForm.getProfileId());
@@ -627,7 +629,7 @@ public class ImportProfileAction extends StrutsActionBase {
                 });
     }
 
-    private void writeImportChangeLog(ImportProfile oldImport, ImportProfile newImport, ImportProfileForm form, ComAdmin admin) {
+    private void writeImportChangeLog(ImportProfile oldImport, ImportProfile newImport, ImportProfileForm form, Admin admin) {
         StringBuilder logDescription = new StringBuilder();
         logDescription.append(addChangedFieldLog("Import name", newImport.getName(), oldImport.getName()));
         try {
@@ -802,7 +804,7 @@ public class ImportProfileAction extends StrutsActionBase {
 		}
 	}
 
-	private List<ProfileField> getAvailableImportProfileFields(ComAdmin admin) throws Exception {
+	private List<ProfileField> getAvailableImportProfileFields(Admin admin) throws Exception {
 		List<ProfileField> dbColumnsAvailable = columnInfoService.getComColumnInfos(admin.getCompanyID(), admin.getAdminID(), true);
         for (String hiddenColumn : ImportUtils.getHiddenColumns(admin)) {
         	for (int i = 0; i < dbColumnsAvailable.size(); i++) {

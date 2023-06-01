@@ -94,6 +94,10 @@ public interface MailinglistDao {
 	int getNumberOfActiveSubscribers(boolean admin, boolean test, boolean world, int targetId,
 									 @VelocityCheck int companyId, int id);
 
+	int getNumberOfActiveTestSubscribers(int targetId, int companyId, int id);
+	int getNumberOfActiveAdminSubscribers(int targetId, int companyId, int id);
+	int getNumberOfActiveWorldSubscribers(int targetId, int companyId, int id);
+
 	/**
 	 * Checks if mailing list with given name exists.
 	 * 

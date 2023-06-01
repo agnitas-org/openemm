@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 import org.agnitas.beans.ExportColumnMapping;
 import org.agnitas.beans.ExportPredef;
 
-import com.agnitas.service.ComColumnInfoService;
+import com.agnitas.service.ColumnInfoService;
 
 public final class ExportWizardUtils {
 
@@ -26,7 +26,7 @@ public final class ExportWizardUtils {
 
     public static List<ExportColumnMapping> getCustomColumnMappingsFromExport(ExportPredef export,
                                                                               int companyId, int adminId,
-                                                                              ComColumnInfoService columnInfoService)
+                                                                              ColumnInfoService columnInfoService)
             throws Exception {
         Set<String> profileFieldNames = getProfileFieldNames(companyId, adminId, columnInfoService);
         profileFieldNames.add("mailing_bounce");
@@ -37,7 +37,7 @@ public final class ExportWizardUtils {
 
     public static List<ExportColumnMapping> getProfileFieldColumnsFromExport(ExportPredef export,
                                                                              int companyId, int adminId,
-                                                                             ComColumnInfoService columnInfoService)
+                                                                             ColumnInfoService columnInfoService)
             throws Exception {
         Set<String> customColumns = getCustomColumnMappingsFromExport(export, companyId, adminId, columnInfoService)
                 .stream().map(ExportColumnMapping::getDbColumn).collect(Collectors.toSet());
@@ -46,7 +46,7 @@ public final class ExportWizardUtils {
     }
 
     private static Set<String> getProfileFieldNames(int companyId, int adminId,
-                                                    ComColumnInfoService columnInfoService) throws Exception {
+                                                    ColumnInfoService columnInfoService) throws Exception {
         return columnInfoService.getComColumnInfos(companyId, adminId)
                 .stream()
                 .map(profileField -> profileField.getColumn().toLowerCase())

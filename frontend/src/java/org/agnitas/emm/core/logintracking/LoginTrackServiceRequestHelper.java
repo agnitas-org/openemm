@@ -20,7 +20,7 @@ import org.agnitas.emm.core.logintracking.bean.LoginData;
 import org.agnitas.emm.core.logintracking.service.LoginTrackService;
 import org.agnitas.emm.core.logintracking.service.LoginTrackServiceException;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -48,7 +48,7 @@ public class LoginTrackServiceRequestHelper {
 	 * 
 	 * @throws LoginTrackServiceException on errors accessing login data
 	 */
-	public void setLoginTrackingDataToRequest(HttpServletRequest request, ComAdmin admin, int minPeriodDays) throws LoginTrackServiceException {
+	public void setLoginTrackingDataToRequest(HttpServletRequest request, Admin admin, int minPeriodDays) throws LoginTrackServiceException {
 		Calendar before14DaysCal = new GregorianCalendar();
 		before14DaysCal.add(Calendar.DAY_OF_YEAR, -minPeriodDays);
 		Date before14Days = before14DaysCal.getTime();

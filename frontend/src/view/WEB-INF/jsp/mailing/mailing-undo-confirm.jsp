@@ -3,6 +3,7 @@
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib prefix="logic" uri="http://struts.apache.org/tags-logic" %>
+<%@ taglib prefix="agn" uri="https://emm.agnitas.de/jsp/jstl/tags" %>
 
 <c:choose>
     <c:when test="${excludeDialog}">
@@ -26,7 +27,7 @@
                         </h4>
                     </div>
 
-                    <html:form action="/mailingbase">
+                    <agn:agnForm action="/mailingbase">
                         <html:hidden property="mailingID"/>
                         <html:hidden property="action"/>
                         <html:hidden property="isTemplate"/>
@@ -56,7 +57,7 @@
                                 </button>
                             </div>
                         </div>
-                    </html:form>
+                    </agn:agnForm>
 
                 </div>
             </div>

@@ -68,7 +68,8 @@ public class TagDAO {
 		try (DBase.With with = dbase.with()) {
 			List<Map<String, Object>> rq;
 
-			rq = dbase.query(with.jdbc(), "SELECT tagname, selectvalue, type " +
+			rq = dbase.query(with.cursor(),
+					 "SELECT tagname, selectvalue, type " +
 					"FROM tag_tbl " +
 					"WHERE company_id IN (0, :companyID) ORDER BY company_id", "companyID", companyID);
 			for (int n = 0; n < rq.size(); ++n) {
@@ -93,7 +94,8 @@ public class TagDAO {
 			try (DBase.With with = dbase.with()) {
 				List<Map<String, Object>> rq;
 
-				rq = dbase.query(with.jdbc(), "SELECT lang, code " +
+				rq = dbase.query(with.cursor(),
+						 "SELECT lang, code " +
 						"FROM tag_function_tbl " +
 						"WHERE name = :name AND company_id IN (0, :companyID) ORDER BY company_id DESC",
 						"name", functionName, "companyID", companyID);

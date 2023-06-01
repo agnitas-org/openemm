@@ -14,9 +14,11 @@ import java.util.Date;
 import java.util.List;
 
 import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.agnitas.util.importvalues.MailType;
 
 import com.agnitas.emm.core.maildrop.MaildropException;
 import com.agnitas.emm.core.maildrop.MaildropStatus;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 
 public interface MaildropService {		// TODO: Complete JavaDoc
 
@@ -96,4 +98,7 @@ public interface MaildropService {		// TODO: Complete JavaDoc
 	 */
     void selectTestRecipients(@VelocityCheck int companyId, int maildropStatusId, List<Integer> customerIds);
 
+	void writeMailingSendStatisticsEntry(int companyID, int mailingID, MaildropStatus maildropStatus, MediaTypes mediaType, MailType mailType, int amount, int dataSize, Date sendDate, String mailerHostname);
+
+	public List<Integer> getMailingsSentBetween(int companyID, Date startDateIncluded, Date endDateExcluded);
 }

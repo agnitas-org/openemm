@@ -10,29 +10,17 @@
 
 package com.agnitas.reporting.birt.external.dataset;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
-import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.agnitas.dao.impl.mapper.StringRowMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.List;
+
 public class CompanyDescriptionDataSet extends BIRTDataSet {
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(CompanyDescriptionDataSet.class);
 
-	public List<String> getCompanyDescription (@VelocityCheck int companyID){
-		List<String> companyDescription = new ArrayList<>();
-		String query = getCompanyDescriptionQuery(companyID);
-    	List<Map<String, Object>> result = select(logger, query);
-		if (result.size() > 0){
-			companyDescription.add((String) result.get(0).get("company_name"));
-		}
-		return companyDescription;
-	}
+    private static final Logger logger = LogManager.getLogger(CompanyDescriptionDataSet.class);
 
-	private String getCompanyDescriptionQuery(@VelocityCheck int companyID) {
-		return "select shortname company_name from company_tbl where company_id = " + (Integer.toString(companyID)) ;
-	}
+    public List<String> getCompanyDescription(int companyID) {
+        return select(logger, "SELECT shortname FROM company_tbl WHERE company_id = ?", StringRowMapper.INSTANCE, companyID);
+    }
 }

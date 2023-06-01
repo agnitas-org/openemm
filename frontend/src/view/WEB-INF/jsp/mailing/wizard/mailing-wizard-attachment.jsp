@@ -17,7 +17,7 @@
 <c:set var="TYPE_ATTACHMENT" value="<%= MailingComponentType.Attachment %>"/>
 <c:set var="TYPE_PERSONALIZED_ATTACHMENT" value="<%= MailingComponentType.PersonalizedAttachment %>"/>
 
-<agn:agnForm action="/mwAttachment" id="wizard-step-10" enctype="multipart/form-data" data-form="static">
+<agn:agnForm action="/mwAttachment" id="wizard-step-10" enctype="multipart/form-data" data-form="resource">
     <html:hidden property="action" value="${ACTION_FINISH}"/>
     <html:hidden property="keepForward" value="${not empty workflowId and workflowId gt 0 ? true : false}"/>
 

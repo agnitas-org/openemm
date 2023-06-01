@@ -14,12 +14,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import org.apache.commons.collections4.CollectionUtils;
+
 import com.agnitas.emm.core.workflow.beans.WorkflowDependency;
 import com.agnitas.emm.core.workflow.beans.WorkflowDependencyType;
 import com.agnitas.emm.core.workflow.beans.WorkflowIconType;
 import com.agnitas.emm.core.workflow.beans.WorkflowRecipient;
-
-import org.apache.commons.collections4.CollectionUtils;
 
 public class WorkflowRecipientImpl extends BaseWorkflowIcon implements WorkflowRecipient {
 	private int mailinglistId;
@@ -99,9 +99,15 @@ public class WorkflowRecipientImpl extends BaseWorkflowIcon implements WorkflowR
 
 	@Override
 	public boolean equals(Object o) {
-		if (this == o) return true;
-		if (o == null || getClass() != o.getClass()) return false;
-		if (!super.equals(o)) return false;
+		if (this == o) {
+			return true;
+		}
+		if (o == null || getClass() != o.getClass()) {
+			return false;
+		}
+		if (!super.equals(o)) {
+			return false;
+		}
 		WorkflowRecipientImpl that = (WorkflowRecipientImpl) o;
 		return mailinglistId == that.mailinglistId &&
 				Objects.equals(targets, that.targets) &&

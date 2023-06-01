@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import com.agnitas.web.mvc.XssCheckAware;
 import jakarta.servlet.http.HttpServletRequest;
 
 import org.agnitas.dao.exception.target.TargetGroupLockedException;
@@ -40,7 +41,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.ComTarget;
 import com.agnitas.beans.TargetLight;
 import com.agnitas.emm.core.Permission;
@@ -55,7 +56,7 @@ import com.agnitas.service.SimpleServiceResult;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.perm.annotations.PermissionMapping;
 
-public class TargetController {
+public class TargetController implements XssCheckAware {
 
     private static final Logger logger = LogManager.getLogger(TargetController.class);
 
@@ -76,7 +77,7 @@ public class TargetController {
     }
 
     @RequestMapping("/list.action")
-    public String list(@ModelAttribute TargetForm targetForm, final ComAdmin admin, final Model model,
+    public String list(@ModelAttribute TargetForm targetForm, final Admin admin, final Model model,
                        final HttpServletRequest request) {
         prepareListParameters(targetForm, admin);
         AgnUtils.setAdminDateTimeFormatPatterns(request);
@@ -99,7 +100,7 @@ public class TargetController {
     }
 
     @PostMapping("/bulk/delete.action")
-    public String bulkDelete(@ModelAttribute("form") BulkActionForm form, final ComAdmin admin,
+    public String bulkDelete(@ModelAttribute("form") BulkActionForm form, final Admin admin,
                              final Popups popups) {
         final int companyId = admin.getCompanyID();
 
@@ -122,7 +123,7 @@ public class TargetController {
     }
 
     @RequestMapping("{id:\\d+}/confirm/delete.action")
-    public String confirmDelete(@PathVariable final int id, final ComAdmin admin, @ModelAttribute SimpleActionForm simpleActionForm,
+    public String confirmDelete(@PathVariable final int id, final Admin admin, @ModelAttribute SimpleActionForm simpleActionForm,
                                 @RequestParam(required = false) boolean isWizard,
                                 final Popups popups, final Model model) {
         final int companyId = admin.getCompanyID();
@@ -148,7 +149,7 @@ public class TargetController {
     }
 
     @PostMapping("/delete.action")
-    public String delete(final ComAdmin admin, @ModelAttribute SimpleActionForm simpleActionForm, final Popups popups) {
+    public String delete(final Admin admin, @ModelAttribute SimpleActionForm simpleActionForm, final Popups popups) {
         final boolean success = deleteTarget(simpleActionForm.getId(), admin, popups);
         if (success) {
             return "redirect:/target/list.action";
@@ -159,7 +160,7 @@ public class TargetController {
 
     @PostMapping("/wizardDelete.action")
     @PermissionMapping("delete")
-    public String wizardDelete(final ComAdmin admin, @ModelAttribute SimpleActionForm simpleActionForm, final Popups popups) {
+    public String wizardDelete(final Admin admin, @ModelAttribute SimpleActionForm simpleActionForm, final Popups popups) {
         final boolean success = deleteTarget(simpleActionForm.getId(), admin, popups);
         if (success) {
             return "redirect:/mwTarget.do?action=newTarget";
@@ -170,10 +171,10 @@ public class TargetController {
 
     @RequestMapping("/{id:\\d+}/confirm/delete/recipients.action")
     public String confirmDeleteRecipients(final Model model, @PathVariable final int id,
-                                          final ComAdmin admin, final Popups popups) {
+                                          final Admin admin, final Popups popups) {
         final Optional<Integer> numOfRecipientsOpt = targetService.getNumberOfRecipients(id, admin.getCompanyID());
         if(!numOfRecipientsOpt.isPresent()) {
-            logger.warn("It is not possible to delete recipients for target with id: " + id);
+            logger.warn("It is not possible to delete recipients for target with id: {}", id);
             popups.alert("Error");
             return "messages";
         }
@@ -183,11 +184,11 @@ public class TargetController {
     }
 
     @PostMapping("/{id:\\d+}/delete/recipients.action")
-    public String deleteRecipients(final ComAdmin admin, @PathVariable final int id, final Popups popups) {
+    public String deleteRecipients(final Admin admin, @PathVariable final int id, final Popups popups) {
         final boolean deletedSuccessfully = targetService.deleteRecipients(id, admin.getCompanyID());
 
         if (!deletedSuccessfully) {
-            logger.warn("Could not delete recipients for target with id: " + id);
+            logger.warn("Could not delete recipients for target with id: {}", id);
             popups.alert("Error");
             return "messages";
         }
@@ -199,7 +200,7 @@ public class TargetController {
     }
 
     @RequestMapping("/{id:\\d+}/addToFavorites.action")
-    public ResponseEntity<Object> addToFavorites(@PathVariable final int id, ComAdmin admin) {
+    public ResponseEntity<Object> addToFavorites(@PathVariable final int id, Admin admin) {
         try {
             targetService.addToFavorites(id, admin.getCompanyID());
             return ResponseEntity.ok().build();
@@ -210,7 +211,7 @@ public class TargetController {
     }
 
     @RequestMapping("/{id:\\d+}/removeFromFavorites.action")
-    public ResponseEntity<Object> removeFromFavorites(@PathVariable final int id, ComAdmin admin) {
+    public ResponseEntity<Object> removeFromFavorites(@PathVariable final int id, Admin admin) {
         try {
             targetService.removeFromFavorites(id, admin.getCompanyID());
             return ResponseEntity.ok().build();
@@ -220,11 +221,11 @@ public class TargetController {
         }
     }
 
-    private List<TargetLight> getTargetGroupsOverview(final TargetForm form, final ComAdmin admin) {
+    private List<TargetLight> getTargetGroupsOverview(final TargetForm form, final Admin admin) {
         return targetService.getTargetLights(getOverviewTargetLightsOptionsBuilder(admin, form).build());
     }
     
-    protected TargetLightsOptions.Builder getOverviewTargetLightsOptionsBuilder(ComAdmin admin, TargetForm form) {
+    protected TargetLightsOptions.Builder getOverviewTargetLightsOptionsBuilder(Admin admin, TargetForm form) {
         return TargetLightsOptions.builder()
                         .setCompanyId(admin.getCompanyID())
                         .setWorldDelivery(form.isShowWorldDelivery())
@@ -234,7 +235,7 @@ public class TargetController {
                         .setSearchText(form.getSearchQueryText());
     }
 
-    private void prepareListParameters(final TargetForm form, final ComAdmin admin) {
+    private void prepareListParameters(final TargetForm form, final Admin admin) {
         synchronized (ComWebStorage.TARGET_OVERVIEW) {
             final boolean isBundlePresented = webStorage.isPresented(ComWebStorage.TARGET_OVERVIEW);
             webStorage.access(ComWebStorage.TARGET_OVERVIEW, storage -> {
@@ -298,11 +299,11 @@ public class TargetController {
         }
     }
 
-    private boolean deleteTarget(final int targetId, final ComAdmin admin, final Popups popups) {
+    private boolean deleteTarget(final int targetId, final Admin admin, final Popups popups) {
         final int companyId = admin.getCompanyID();
         final String name = targetService.getTargetName(targetId, companyId);
         if (name == null) {
-            logger.error("No target exists, ID: " + targetId);
+            logger.error("No target exists, ID: {}", targetId);
             popups.alert("error.target.delete");
             return false; // failed- not exists
         }

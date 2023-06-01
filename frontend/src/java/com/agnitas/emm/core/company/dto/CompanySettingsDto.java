@@ -30,6 +30,7 @@ public class CompanySettingsDto {
     private int sector;
     private int business;
     private int maxAdminMails = -1;
+    private int maxFields = -1;
     private boolean hasTwoFactorAuthentication;
     private int recipientAnonymization;
     private int recipientCleanupTracking;
@@ -39,11 +40,13 @@ public class CompanySettingsDto {
     private int passwordExpireDays;
     private int hostauthCookieExpireDays;
     private boolean sendPasswordChangedNotification;
+    private boolean sendEncryptedMailings;
     private String defaultLinkExtension;
     private int linkcheckerLinktimeout;
     private int linkcheckerThreadcount;
     private int mailingUndoLimit;
     private boolean prefillCheckboxSendDuplicateCheck;
+    private boolean regenerateTargetSqlOnce = false;
     private String fullviewFormName;
     private boolean deleteSuccessfullyImportedFiles;
 	private String importAlwaysInformEmail;
@@ -55,7 +58,6 @@ public class CompanySettingsDto {
 	private boolean allowEmailWithWhitespace;
 	private boolean allowEmptyEmail;
 	private int expireStatistics;
-	private int expireOnePixel;
 	private int expireSuccess;
 	private int expireRecipient;
 	private int expireBounce;
@@ -63,6 +65,7 @@ public class CompanySettingsDto {
 	private boolean writeCustomerOpenOrClickField;
 	private boolean trackingVetoAllowTransactionTracking;
 	private List<Integer> optionsMaxAdminMails = Arrays.asList(25, 50, 100);
+    private boolean normalizeEmails;
     private int defaultCompanyLinkTrackingMode;
 
 	public boolean isHasMailTracking() {
@@ -193,6 +196,14 @@ public class CompanySettingsDto {
 		this.maxAdminMails = maxAdminMails;
 	}
 
+	public int getMaxFields() {
+		return maxFields;
+	}
+
+	public void setMaxFields(int maxFields) {
+		this.maxFields = maxFields;
+	}
+
 	public final String getLoginlockSettingsName() {
 		return loginlockSettingsName;
 	}
@@ -255,6 +266,14 @@ public class CompanySettingsDto {
 
 	public void setSendPasswordChangedNotification(boolean sendPasswordChangedNotification) {
 		this.sendPasswordChangedNotification = sendPasswordChangedNotification;
+	}
+
+	public boolean isSendEncryptedMailings() {
+		return sendEncryptedMailings;
+	}
+
+	public void setSendEncryptedMailings(boolean sendEncryptedMailings) {
+		this.sendEncryptedMailings = sendEncryptedMailings;
 	}
 
 	public String getDefaultLinkExtension() {
@@ -385,14 +404,6 @@ public class CompanySettingsDto {
 		this.expireStatistics = expireStatistics;
 	}
 
-	public int getExpireOnePixel() {
-		return expireOnePixel;
-	}
-
-	public void setExpireOnePixel(int expireOnePixel) {
-		this.expireOnePixel = expireOnePixel;
-	}
-
 	public int getExpireSuccess() {
 		return expireSuccess;
 	}
@@ -445,6 +456,14 @@ public class CompanySettingsDto {
 		return optionsMaxAdminMails;
 	}
 
+	public boolean isNormalizeEmails() {
+		return normalizeEmails;
+	}
+
+	public void setNormalizeEmails(boolean normalizeEmails) {
+		this.normalizeEmails = normalizeEmails;
+	}
+
 	public int getDefaultCompanyLinkTrackingMode() {
 		return defaultCompanyLinkTrackingMode;
 	}
@@ -453,4 +472,11 @@ public class CompanySettingsDto {
 		this.defaultCompanyLinkTrackingMode = defaultCompanyLinkTrackingMode;
 	}
 	
+	public boolean isRegenerateTargetSqlOnce() {
+		return regenerateTargetSqlOnce;
+	}
+	
+	public void setRegenerateTargetSqlOnce(boolean regenerateTargetSqlOnce) {
+		this.regenerateTargetSqlOnce = regenerateTargetSqlOnce;
+	}
 }

@@ -60,21 +60,23 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 import org.w3c.dom.Document;
+import org.w3c.dom.Node;
 
-import com.agnitas.dao.ComAdminDao;
+import com.agnitas.dao.AdminDao;
 import com.agnitas.dao.ComCompanyDao;
-import com.agnitas.dao.ComProfileFieldDao;
+import com.agnitas.dao.ProfileFieldDao;
 import com.agnitas.dao.ComServerMessageDao;
 import com.agnitas.dao.ConfigTableDao;
 import com.agnitas.dao.LicenseDao;
 import com.agnitas.dao.PermissionDao;
-import com.agnitas.dao.impl.ComProfileFieldDaoImpl;
+import com.agnitas.dao.impl.ProfileFieldDaoImpl;
 import com.agnitas.dao.impl.ComServerMessageDaoImpl;
 import com.agnitas.dao.impl.ConfigTableDaoImpl;
 import com.agnitas.dao.impl.LicenseDaoImpl;
 import com.agnitas.dao.impl.PermissionDaoImpl;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.PermissionType;
+import com.agnitas.emm.core.company.bean.CompanyEntry;
 import com.agnitas.emm.core.permission.service.PermissionService;
 import com.agnitas.emm.core.permission.service.PermissionServiceImpl;
 import com.agnitas.emm.core.profilefields.service.ProfileFieldService;
@@ -99,7 +101,7 @@ import jakarta.servlet.http.HttpServletRequest;
 public class ConfigService {
 	
 	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(ConfigService.class);
+	private static final Logger logger = LogManager.getLogger(ConfigService.class);
 
 	private static final String PUBLIC_LICENSE_KEYSTRING = "-----BEGIN PUBLIC KEY-----\nMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCcdArGIy/hseE9bz53siYnClOQ\nABrRFRVs/zdN8HpweXxpFqa4SUcp9SFIjqgQ5l/FRdEE9EFc865oGZI1H2RK9Jl1\nb7NxFBwu6S4kWFpy+0Xlp+FCLMXVkBDxLB3vv96VR714n2bFh11/UanlfptqMYPQ\nq7gZCmP5Bc06ORaxrQIDAQAB\n-----END PUBLIC KEY-----";
 
@@ -129,7 +131,7 @@ public class ConfigService {
 	protected ComCompanyDao companyDao;
 	
 	/** DAO for access admin table. */
-	protected ComAdminDao adminDao; // TODO Replace by AdminService
+	protected AdminDao adminDao; // TODO Replace by AdminService
 	
 	/** DAO for access webservice user table. */
 	protected WebserviceUserDao webserviceUserDao;
@@ -195,8 +197,8 @@ public class ConfigService {
 			((PermissionServiceImpl) permissionService).setPermissionDao(permissionDao);
 			instance.setPermissionService(permissionService);
 			
-			ComProfileFieldDao profileFieldDao = new ComProfileFieldDaoImpl();
-			((ComProfileFieldDaoImpl) profileFieldDao).setDataSource(dataSource);
+			ProfileFieldDao profileFieldDao = new ProfileFieldDaoImpl();
+			((ProfileFieldDaoImpl) profileFieldDao).setDataSource(dataSource);
 			ProfileFieldService profileFieldService = new ProfileFieldServiceImpl();
 			((ProfileFieldServiceImpl) profileFieldService).setProfileFieldDao(profileFieldDao);
 			instance.setProfileFieldService(profileFieldService);
@@ -211,7 +213,6 @@ public class ConfigService {
 	/**
 	 * This method may only be called in mock-test environments, where there is no real db to detect its vendor
 	 * 
-	 * @param isOracleDB
 	 */
 	public static void setDbVendorForMockTestingIsOracleDB(boolean isOracleDB) {
 		IS_ORACLE_DB = isOracleDB;
@@ -283,7 +284,7 @@ public class ConfigService {
 	 * @param adminDao DAO accessing admin data
 	 */
 	@Required
-	public void setAdminDao(ComAdminDao adminDao) {
+	public void setAdminDao(AdminDao adminDao) {
 		this.adminDao = adminDao;
 		invalidateCache();
 		LICENSE_VALUES = null;
@@ -331,7 +332,6 @@ public class ConfigService {
 	/**
 	 * Set ProfileFieldService
 	 * 
-	 * @param profileFieldService
 	 */
 	@Required
 	public void setProfileFieldService(ProfileFieldService profileFieldService) {
@@ -351,14 +351,6 @@ public class ConfigService {
 				// On ConfigService startup check db vendor
 				IS_ORACLE_DB = ((ConfigTableDaoImpl) configTableDao).isOracleDB();
 			}
-
-			if (LICENSE_VALUES == null) {
-				// On ConfigService startup read license data and check licensefile signature
-				LICENSE_VALUES = readLicenseData();
-
-				// On ConfigService startup check licensefile data
-				checkLicenseData();
-			}
 			
 			if (EMM_PROPERTIES_VALUES == null) {
 				// On ConfigService startup read emm.properties file
@@ -374,12 +366,20 @@ public class ConfigService {
 				
 	    		configTableDao.checkAndSetReleaseVersion();
 			}
+
+			if (LICENSE_VALUES == null) {
+				// On ConfigService startup read license data and check licensefile signature
+				LICENSE_VALUES = readLicenseData();
+
+				// On ConfigService startup check licensefile data
+				checkLicenseData();
+			}
 			
 			if (CONFIGURATIONVALUES == null || EXPIRATIONTIME == null || GregorianCalendar.getInstance().after(EXPIRATIONTIME)) {
 				Date now = new Date();
 				
 				// Check for server reset commands
-				if (LICENSE_VALUES != null && serverMessageDao.getCommand(LASTREFRESHTIME, now, Server.ALL, Command.RELOAD_LICENSE_DATA).size() > 0) {
+				if (LICENSE_VALUES != null && !serverMessageDao.getCommand(LASTREFRESHTIME, now, Server.ALL, Command.RELOAD_LICENSE_DATA).isEmpty()) {
 					// This is needed to allow checkLicenseData() to not get stuck in dead lock
 					LASTREFRESHTIME = now;
 					
@@ -517,14 +517,35 @@ public class ConfigService {
 
 			Map<String, Map<Integer, String>> licenseData = new HashMap<>();
 			Document licenseDocument = XmlUtilities.parseXMLDataAndXSDVerifyByDOM(licenseDataArray, "UTF-8", null);
-			Map<String, String> licenseDataFromXml = XmlUtilities.getSimpleValuesOfNode(licenseDocument.getElementsByTagName("emm.license").item(0));
-			for (Entry<String, String> entry : licenseDataFromXml.entrySet()) {
-				Map<Integer, String> configValueMap = licenseData.get(entry.getKey());
-				if (configValueMap == null) {
-					configValueMap = new HashMap<>();
-					licenseData.put(entry.getKey(), configValueMap);
+			List<Node> licenseDataNodes = XmlUtilities.getSubNodes((licenseDocument.getElementsByTagName("emm.license").item(0)));
+			for (Node licenseValueNode : licenseDataNodes) {
+				if (licenseValueNode.getNodeType() == Node.ELEMENT_NODE) {
+					if ("companies".equals(licenseValueNode.getLocalName())) {
+						List<Node> companyNodes = XmlUtilities.getSubNodes(licenseValueNode);
+						for (Node companyNode : companyNodes) {
+							if (companyNode.getNodeType() == Node.ELEMENT_NODE) {
+								int companyID = Integer.parseInt(XmlUtilities.getAttributeValue(companyNode, "id"));
+								for (Node companyValueNode : XmlUtilities.getSubNodes(companyNode)) {
+									if (companyValueNode.getNodeType() == Node.ELEMENT_NODE) {
+										Map<Integer, String> configValueMap = licenseData.get(companyValueNode.getNodeName());
+										if (configValueMap == null) {
+											configValueMap = new HashMap<>();
+											licenseData.put(companyValueNode.getNodeName(), configValueMap);
+										}
+										configValueMap.put(companyID, XmlUtilities.getNodeValue(companyValueNode));
+									}
+								}
+							}
+						}
+					} else {
+						Map<Integer, String> configValueMap = licenseData.get(licenseValueNode.getNodeName());
+						if (configValueMap == null) {
+							configValueMap = new HashMap<>();
+							licenseData.put(licenseValueNode.getNodeName(), configValueMap);
+						}
+						configValueMap.put(0, XmlUtilities.getNodeValue(licenseValueNode));
+					}
 				}
-				configValueMap.put(0, entry.getValue());
 			}
 	
 			// Handle different names
@@ -563,147 +584,176 @@ public class ConfigService {
 	}
 	
 	private void checkLicenseData() throws Exception {
-		// Check validity of license data to current db data
-		
-		if (LICENSE_VALUES == null) {
-			throw new LicenseError("Missing License data");
-		}
-		
-		if (configTableDao != null) {
-			if (NumberUtils.toInt(LICENSE_VALUES.get(ConfigValue.System_Licence.toString()).get(0)) > 0) {
-				// Check or set license ID in DB
-				try {
-					String storedLicenseID = configTableDao.getAllEntriesForThisHost().get(ConfigValue.System_Licence.toString()).get(0);
-					if (StringUtils.isBlank(storedLicenseID)) {
-						configTableDao.storeEntry("system", "licence", null,  LICENSE_VALUES.get(ConfigValue.System_Licence.toString()).get(0), "store licence value by EMM");
-						logger.info("Writing new LicenseID: " + LICENSE_VALUES.get(ConfigValue.System_Licence.toString()).get(0));
-					} else if (!storedLicenseID.equals(LICENSE_VALUES.get(ConfigValue.System_Licence.toString()).get(0))) {
-						throw new LicenseError("Invalid LicenseID", LICENSE_VALUES.get(ConfigValue.System_Licence.toString()).get(0), storedLicenseID);
+		if (applicationType == Server.STATISTICS) {
+			// Statistics server may start without license check
+			return;
+		} else {
+			// Check validity of license data to current db data
+			
+			if (LICENSE_VALUES == null) {
+				throw new LicenseError("Missing License data");
+			}
+			
+			if (configTableDao != null) {
+				if (NumberUtils.toInt(LICENSE_VALUES.get(ConfigValue.System_Licence.toString()).get(0)) > 0) {
+					// Check or set license ID in DB
+					try {
+						String storedLicenseID = configTableDao.getAllEntriesForThisHost().get(ConfigValue.System_Licence.toString()).get(0);
+						if (StringUtils.isBlank(storedLicenseID)) {
+							configTableDao.storeEntry("system", "licence", null,  LICENSE_VALUES.get(ConfigValue.System_Licence.toString()).get(0), "store licence value by EMM");
+							logger.info("Writing new LicenseID: " + LICENSE_VALUES.get(ConfigValue.System_Licence.toString()).get(0));
+						} else if (!storedLicenseID.equals(LICENSE_VALUES.get(ConfigValue.System_Licence.toString()).get(0))) {
+							throw new LicenseError("Invalid LicenseID", LICENSE_VALUES.get(ConfigValue.System_Licence.toString()).get(0), storedLicenseID);
+						}
+					} catch (Exception e) {
+						throw new LicenseError("Error while checking license id: " + e.getMessage(), e);
 					}
-				} catch (Exception e) {
-					throw new LicenseError("Error while checking license id: " + e.getMessage(), e);
+				
+					// Check license ID in licence.cfg file, if exists
+					String	licenceCfgLicenseId = (new Systemconfig ()).get ("licence");
+					
+					if ((licenceCfgLicenseId != null) && (!licenceCfgLicenseId.equals(LICENSE_VALUES.get(ConfigValue.System_Licence.toString()).get(0)))) {
+						throw new LicenseError("Invalid LicenseID in licence.cfg", LICENSE_VALUES.get(ConfigValue.System_Licence.toString()).get(0), licenceCfgLicenseId);
+					}
+				}
+			}
+			
+			// Check validity time limit
+			Date validUntil;
+			if (StringUtils.isNotBlank(LICENSE_VALUES.get(ConfigValue.System_License_ExpirationDate.toString()).get(0))) {
+				try {
+					validUntil = new SimpleDateFormat(DateUtilities.DD_MM_YYYY_HH_MM_SS).parse(LICENSE_VALUES.get(ConfigValue.System_License_ExpirationDate.toString()).get(0) + " 23:59:59");
+				} catch (ParseException e) {
+					throw new LicenseError("Invalid validity data: " + e.getMessage(), e);
+				}
+				if (new Date().after(validUntil)) {
+					throw new LicenseError("error.license.outdated", LICENSE_VALUES.get(ConfigValue.System_License_ExpirationDate.toString()).get(0), EMM_PROPERTIES_VALUES.get(ConfigValue.Mailaddress_Support.toString()).get(0));
+				}
+			}
+	
+			if (companyDao != null) {
+				// Check maximum number of companies
+				int maximumNumberOfCompanies = NumberUtils.toInt(LICENSE_VALUES.get(ConfigValue.System_License_MaximumNumberOfCompanies.toString()).get(0));
+				if (maximumNumberOfCompanies >= 0) {
+					int numberOfCompanies = companyDao.getNumberOfCompanies();
+					if (numberOfCompanies > maximumNumberOfCompanies) {
+						throw new LicenseError("Invalid Number of accounts", maximumNumberOfCompanies, numberOfCompanies);
+					}
+				}
+			}
+	
+			if (supervisorDao != null) {
+				// Check maximum number of supervisors
+				int maximumNumberOfSupervisors = NumberUtils.toInt(LICENSE_VALUES.get(ConfigValue.System_License_MaximumNumberOfSupervisors.toString()).get(0));
+				if (maximumNumberOfSupervisors >= 0) {
+					int numberOfSupervisors = supervisorDao.getNumberOfSupervisors();
+					if (numberOfSupervisors > maximumNumberOfSupervisors) {
+						throw new LicenseError("Invalid Number of supervisors", maximumNumberOfSupervisors, numberOfSupervisors);
+					}
+				}
+			}
+	
+			if (companyDao != null) {
+				for (CompanyEntry activeCompany : companyDao.getActiveCompaniesLight(false)) {
+					checkCompany(activeCompany.getCompanyId());
+				}
+			}
+	
+			// Company 0 must be checked after the other existing companies because it may change those, too
+			checkCompany(0);
+		}
+	}
+	
+	private void checkCompany(int companyID) {
+		if (companyID > 0) {
+			if (adminDao != null) {
+				// Check maximum number of admins
+				int maximumNumberOfAdmins = getLicenseValue(ConfigValue.System_License_MaximumNumberOfAdmins, companyID);
+				if (maximumNumberOfAdmins >= 0) {
+					int numberOfAdmins = adminDao.getNumberOfGuiAdmins(companyID);
+					if (numberOfAdmins > maximumNumberOfAdmins) {
+						throw new LicenseError("Invalid Number of admins of company " + companyID + "", maximumNumberOfAdmins, numberOfAdmins);
+					}
+				}
+			}
+	
+			if (webserviceUserDao != null) {
+				// Check maximum number of Webservice users
+				int maximumNumberOfWebserviceUsers = getLicenseValue(ConfigValue.System_License_MaximumNumberOfWebserviceUsers, companyID);
+				if (maximumNumberOfWebserviceUsers >= 0) {
+					int numberOfWebserviceUsers = webserviceUserDao.getNumberOfWebserviceUsers(companyID);
+					if (numberOfWebserviceUsers > maximumNumberOfWebserviceUsers) {
+						throw new LicenseError("Invalid Number of Webservice Users of company " + companyID + "", maximumNumberOfWebserviceUsers, numberOfWebserviceUsers);
+					}
+				}
+			}
+	
+			if (adminDao != null) {
+				// Check maximum number of Restful users
+				int maximumNumberOfRestfulUsers = 0;
+				if (LICENSE_VALUES.containsKey(ConfigValue.System_License_MaximumNumberOfRestfulUsers.toString())) {
+					maximumNumberOfRestfulUsers = getLicenseValue(ConfigValue.System_License_MaximumNumberOfRestfulUsers, companyID);
+				}
+				if (maximumNumberOfRestfulUsers >= 0) {
+					int numberOfRestfulUsers = adminDao.getNumberOfRestfulUsers(companyID);
+					if (numberOfRestfulUsers > maximumNumberOfRestfulUsers) {
+						throw new LicenseError("Invalid Number of Restful Users of company " + companyID + "", maximumNumberOfRestfulUsers, numberOfRestfulUsers);
+					}
+				}
+			}
+		}
+	
+		if (companyDao != null) {
+			if (companyID > 0) {
+				// Check maximum number of customers
+				int maximumNumberOfCustomers = getLicenseValue(ConfigValue.System_License_MaximumNumberOfCustomers, companyID);
+				if (maximumNumberOfCustomers >= 0) {
+					int numberOfCustomers = companyDao.getNumberOfCustomers(companyID);
+					if (numberOfCustomers > maximumNumberOfCustomers) {
+						throw new LicenseError("Invalid Number of customers of company " + companyID + "", maximumNumberOfCustomers, numberOfCustomers);
+					}
 				}
 			
-				// Check license ID in licence.cfg file, if exists
-				String	licenceCfgLicenseId = (new Systemconfig ()).get ("licence");
-				
-				if ((licenceCfgLicenseId != null) && (!licenceCfgLicenseId.equals(LICENSE_VALUES.get(ConfigValue.System_Licence.toString()).get(0)))) {
-					throw new LicenseError("Invalid LicenseID in licence.cfg", LICENSE_VALUES.get(ConfigValue.System_Licence.toString()).get(0), licenceCfgLicenseId);
+				// Check maximum number of profile fields
+				int maximumNumberOfProfileFields = getLicenseValue(ConfigValue.System_License_MaximumNumberOfProfileFields, companyID);
+				if (maximumNumberOfProfileFields >= 0) {
+					int numberOfCompanySpecificProfileFields;
+					try {
+						numberOfCompanySpecificProfileFields = profileFieldService.getMaximumNumberOfCompanySpecificProfileFields();
+					} catch (Exception e) {
+						throw new LicenseError("Cannot detect number of profileFields of company " + companyID + ": " + e.getMessage(), e);
+					}
+				 	if (numberOfCompanySpecificProfileFields > maximumNumberOfProfileFields) {
+				 		throw new LicenseError("Invalid Number of profileFields", maximumNumberOfProfileFields, numberOfCompanySpecificProfileFields);
+				 	}
 				}
-			}
-		}
-		
-		// Check validity time limit
-		Date validUntil;
-		if (StringUtils.isNotBlank(LICENSE_VALUES.get(ConfigValue.System_License_ExpirationDate.toString()).get(0))) {
-			try {
-				validUntil = new SimpleDateFormat(DateUtilities.DD_MM_YYYY_HH_MM_SS).parse(LICENSE_VALUES.get(ConfigValue.System_License_ExpirationDate.toString()).get(0) + " 23:59:59");
-			} catch (ParseException e) {
-				throw new LicenseError("Invalid validity data: " + e.getMessage(), e);
-			}
-			if (new Date().after(validUntil)) {
-				throw new LicenseError("error.license.outdated", LICENSE_VALUES.get(ConfigValue.System_License_ExpirationDate.toString()).get(0), EMM_PROPERTIES_VALUES.get(ConfigValue.Mailaddress_Support.toString()).get(0));
-			}
-		}
-
-		if (companyDao != null) {
-			// Check maximum number of companies
-			int maximumNumberOfCompanies = NumberUtils.toInt(LICENSE_VALUES.get(ConfigValue.System_License_MaximumNumberOfCompanies.toString()).get(0));
-			if (maximumNumberOfCompanies >= 0) {
-				int numberOfCompanies = companyDao.getNumberOfCompanies();
-				if (numberOfCompanies > maximumNumberOfCompanies) {
-					throw new LicenseError("Invalid Number of accounts", maximumNumberOfCompanies, numberOfCompanies);
+			
+				// Check maximum number of AccessLimitingMailingLists (ALML) per company
+				int numberOfAccessLimitingMailinglistsPerCompany = licenseDao.getNumberOfAccessLimitingMailinglists(companyID);
+				int licenseMaximumOfAccessLimitingMailinglists = getLicenseValue(ConfigValue.System_License_MaximumNumberOfAccessLimitingMailinglistsPerCompany, companyID);
+				if (licenseMaximumOfAccessLimitingMailinglists >= 0 && licenseMaximumOfAccessLimitingMailinglists < numberOfAccessLimitingMailinglistsPerCompany) {
+					throw new LicenseError("Invalid Number of AccessLimitingMailingLists of company " + companyID + "", licenseMaximumOfAccessLimitingMailinglists, numberOfAccessLimitingMailinglistsPerCompany);
 				}
-			}
-		}
-
-		if (adminDao != null) {
-			// Check maximum number of admins
-			int maximumNumberOfAdmins = NumberUtils.toInt(LICENSE_VALUES.get(ConfigValue.System_License_MaximumNumberOfAdmins.toString()).get(0));
-			if (maximumNumberOfAdmins >= 0) {
-				int numberOfAdmins = adminDao.getNumberOfAdmins();
-				if (numberOfAdmins > maximumNumberOfAdmins) {
-					throw new LicenseError("Invalid Number of admins", maximumNumberOfAdmins, numberOfAdmins);
+			
+				// Check maximum number of AccessLimitingTargetgroups (ALTG) per company
+				int numberOfAccessLimitingTargetgroupsPerCompany = licenseDao.getHighestAccessLimitingTargetgroupsPerCompany();
+				int licenseMaximumOfAccessLimitingTargetgroups = getLicenseValue(ConfigValue.System_License_MaximumNumberOfAccessLimitingTargetgroupsPerCompany, companyID);
+				if (licenseMaximumOfAccessLimitingTargetgroups >= 0 && licenseMaximumOfAccessLimitingTargetgroups < numberOfAccessLimitingTargetgroupsPerCompany) {
+					throw new LicenseError("Invalid Number of AccessLimitingTargetgroups of company " + companyID + "", licenseMaximumOfAccessLimitingTargetgroups, numberOfAccessLimitingTargetgroupsPerCompany);
 				}
-			}
-		}
-
-		if (webserviceUserDao != null) {
-			// Check maximum number of admins
-			int maximumNumberOfWebserviceUsers = NumberUtils.toInt(LICENSE_VALUES.get(ConfigValue.System_License_MaximumNumberOfWebserviceUsers.toString()).get(0));
-			if (maximumNumberOfWebserviceUsers >= 0) {
-				int numberOfWebserviceUsers = webserviceUserDao.getNumberOfWebserviceUsers();
-				if (numberOfWebserviceUsers > maximumNumberOfWebserviceUsers) {
-					throw new LicenseError("Invalid Number of Webservice Users", maximumNumberOfWebserviceUsers, numberOfWebserviceUsers);
-				}
-			}
-		}
-
-		if (supervisorDao != null) {
-			// Check maximum number of supervisors
-			int maximumNumberOfSupervisors = NumberUtils.toInt(LICENSE_VALUES.get(ConfigValue.System_License_MaximumNumberOfSupervisors.toString()).get(0));
-			if (maximumNumberOfSupervisors >= 0) {
-				int numberOfSupervisors = supervisorDao.getNumberOfSupervisors();
-				if (numberOfSupervisors > maximumNumberOfSupervisors) {
-					throw new LicenseError("Invalid Number of supervisors", maximumNumberOfSupervisors, numberOfSupervisors);
-				}
-			}
-		}
-
-		if (companyDao != null) {
-			// Check maximum number of customers
-			int maximumNumberOfCustomers = NumberUtils.toInt(LICENSE_VALUES.get(ConfigValue.System_License_MaximumNumberOfCustomers.toString()).get(0));
-			if (maximumNumberOfCustomers >= 0) {
-				int numberOfCustomers = companyDao.getMaximumNumberOfCustomers();
-				if (numberOfCustomers > maximumNumberOfCustomers) {
-					throw new LicenseError("Invalid Number of customers", maximumNumberOfCustomers, numberOfCustomers);
-				}
-			}
-		
-			// Check maximum number of profile fields
-			int maximumNumberOfProfileFields = NumberUtils.toInt(LICENSE_VALUES.get(ConfigValue.System_License_MaximumNumberOfProfileFields.toString()).get(0));
-			if (maximumNumberOfProfileFields >= 0) {
-				int numberOfCompanySpecificProfileFields;
-				try {
-					numberOfCompanySpecificProfileFields = profileFieldService.getMaximumNumberOfCompanySpecificProfileFields();
-				} catch (Exception e) {
-					throw new LicenseError("Cannot detect number of profileFields: " + e.getMessage(), e);
-				}
-			 	if (numberOfCompanySpecificProfileFields > maximumNumberOfProfileFields) {
-			 		throw new LicenseError("Invalid Number of profileFields", maximumNumberOfProfileFields, numberOfCompanySpecificProfileFields);
-			 	}
-			}
-		
-			// Check maximum number of AccessLimitingMailingLists (ALML) per company
-			int highestNumberOfAccessLimitingMailinglistsPerCompany = licenseDao.getHighestAccessLimitingMailinglistsPerCompany();
-			int licenseMaximumOfAccessLimitingMailinglistsPerCompany;
-	        Map<Integer, String> licenseStringValuesMaximumOfAccessLimitingMailinglistsPerCompany = LICENSE_VALUES.get(ConfigValue.System_License_MaximumNumberOfAccessLimitingMailinglistsPerCompany.toString());
-	        if (licenseStringValuesMaximumOfAccessLimitingMailinglistsPerCompany != null && licenseStringValuesMaximumOfAccessLimitingMailinglistsPerCompany.get(0) != null) {
-	        	licenseMaximumOfAccessLimitingMailinglistsPerCompany = NumberUtils.toInt(licenseStringValuesMaximumOfAccessLimitingMailinglistsPerCompany.get(0));
-	        } else {
-	        	licenseMaximumOfAccessLimitingMailinglistsPerCompany = NumberUtils.toInt(ConfigValue.System_License_MaximumNumberOfAccessLimitingMailinglistsPerCompany.getDefaultValue());
-	        }
-			if (licenseMaximumOfAccessLimitingMailinglistsPerCompany >= 0 && licenseMaximumOfAccessLimitingMailinglistsPerCompany < highestNumberOfAccessLimitingMailinglistsPerCompany) {
-				throw new LicenseError("Invalid Number of AccessLimitingMailingLists", licenseMaximumOfAccessLimitingMailinglistsPerCompany, highestNumberOfAccessLimitingMailinglistsPerCompany);
-			}
-		
-			// Check maximum number of AccessLimitingTargetgroups (ALTG) per company
-			int highestNumberOfAccessLimitingTargetgroupsPerCompany = licenseDao.getHighestAccessLimitingTargetgroupsPerCompany();
-			int licenseMaximumOfAccessLimitingTargetgroupsPerCompany;
-	        Map<Integer, String> licenseStringValuesMaximumOfAccessLimitingTargetgroupsPerCompany = LICENSE_VALUES.get(ConfigValue.System_License_MaximumNumberOfAccessLimitingTargetgroupsPerCompany.toString());
-	        if (licenseStringValuesMaximumOfAccessLimitingTargetgroupsPerCompany != null && licenseStringValuesMaximumOfAccessLimitingTargetgroupsPerCompany.get(0) != null) {
-	        	licenseMaximumOfAccessLimitingTargetgroupsPerCompany = NumberUtils.toInt(licenseStringValuesMaximumOfAccessLimitingTargetgroupsPerCompany.get(0));
-	        } else {
-	        	licenseMaximumOfAccessLimitingTargetgroupsPerCompany = NumberUtils.toInt(ConfigValue.System_License_MaximumNumberOfAccessLimitingTargetgroupsPerCompany.getDefaultValue());
-	        }
-			if (licenseMaximumOfAccessLimitingTargetgroupsPerCompany >= 0 && licenseMaximumOfAccessLimitingTargetgroupsPerCompany < highestNumberOfAccessLimitingTargetgroupsPerCompany) {
-				throw new LicenseError("Invalid Number of AccessLimitingTargetgroups", licenseMaximumOfAccessLimitingTargetgroupsPerCompany, highestNumberOfAccessLimitingTargetgroupsPerCompany);
 			}
 		
 			// Check allowed premium features
-			String allowedPremiumFeaturesData = LICENSE_VALUES.get(ConfigValue.System_License_AllowedPremiumFeatures.toString()).get(0);
+			boolean companyHasOwnPremiumFeatures;
+			String allowedPremiumFeaturesData = LICENSE_VALUES.get(ConfigValue.System_License_AllowedPremiumFeatures.toString()).get(companyID);
 			Set<String> allowedPremiumFeatures = new HashSet<>();
 			Set<String> unAllowedPremiumFeatures = new HashSet<>();
+			if (allowedPremiumFeaturesData != null) {
+				companyHasOwnPremiumFeatures = true;
+			} else {
+				companyHasOwnPremiumFeatures = false;
+				allowedPremiumFeaturesData = LICENSE_VALUES.get(ConfigValue.System_License_AllowedPremiumFeatures.toString()).get(0);
+			}
 			for (String allowedPremiumFeature : allowedPremiumFeaturesData.split(" |;|,|\\t|\\n")) {
 				if (StringUtils.isNotBlank(allowedPremiumFeature) && !allowedPremiumFeature.trim().startsWith("<!--")) {
 					allowedPremiumFeatures.add(allowedPremiumFeature.trim());
@@ -724,15 +774,38 @@ public class ConfigService {
 						unAllowedPremiumFeatures.add(permission.toString());
 					}
 				}
-				adminDao.deleteFeaturePermissions(unAllowedPremiumFeatures);
-				companyDao.setupPremiumFeaturePermissions(allowedPremiumFeatures, unAllowedPremiumFeatures, "Initial license setup");
+				
+				adminDao.deleteFeaturePermissions(unAllowedPremiumFeatures, companyID);
+				if (!companyHasOwnPremiumFeatures) {
+					companyDao.cleanupPremiumFeaturePermissions(companyID);
+				} else {
+					companyDao.setupPremiumFeaturePermissions(allowedPremiumFeatures, unAllowedPremiumFeatures, "Initial license setup", companyID);
+				}
 			} else {
 				// Init the permission system anyway and assign categories to the rights etc.
 				permissionService.getAllPermissions();
 			}
 		}
 	}
-	
+
+	private int getLicenseValue(ConfigValue licenseValue, int companyID) {
+		if (LICENSE_VALUES.containsKey(licenseValue.toString())) {
+			if (LICENSE_VALUES.get(licenseValue.toString()).containsKey(companyID)) {
+				return NumberUtils.toInt(LICENSE_VALUES.get(licenseValue.toString()).get(companyID));
+			} else if (LICENSE_VALUES.get(licenseValue.toString()).containsKey(0)) {
+				return NumberUtils.toInt(LICENSE_VALUES.get(licenseValue.toString()).get(0));
+			} else if (StringUtils.isNotBlank(licenseValue.getDefaultValue())) {
+				return NumberUtils.toInt(licenseValue.getDefaultValue());
+			} else {
+				return 0;
+			}
+		} else if (StringUtils.isNotBlank(licenseValue.getDefaultValue())) {
+			return NumberUtils.toInt(licenseValue.getDefaultValue());
+		} else {
+			return 0;
+		}
+	}
+
 	public void writeValue(final ConfigValue configurationValueID, final String value, String description) {
 		String[] parts = configurationValueID.toString().split("\\.", 2);
 		
@@ -926,9 +999,8 @@ public class ConfigService {
 		// We encountered an invalid value for the enum type.
 		
 		// List allowed values, ...
-		final String allowed = Arrays.asList(enumClass.getEnumConstants())
-				.stream()
-				.map(e -> e.name())
+		final String allowed = Arrays.stream(enumClass.getEnumConstants())
+				.map(Enum::name)
 				.collect(Collectors.joining());
 		
 		// ... log error message, ...
@@ -1301,4 +1373,8 @@ public class ConfigService {
 	public static void setApplicationVersionInstallationTime(Date applicationVersionInstallationTime) {
 		ConfigService.applicationVersionInstallationTime = applicationVersionInstallationTime;
 	}
+	
+	public boolean isBasicLB(int companyId) {
+        return getBooleanValue(ConfigValue.LayoutBuilderBasic, companyId);
+    }
 }

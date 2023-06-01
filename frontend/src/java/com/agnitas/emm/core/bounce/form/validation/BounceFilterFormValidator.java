@@ -27,11 +27,10 @@ public class BounceFilterFormValidator {
 
 	private boolean validateShortName(final BounceFilterForm form, final Popups popups) {
 		final String shortName = form.getShortName();
-		if (StringUtils.isBlank(shortName)) {
+		if (StringUtils.trimToNull(shortName) == null) {
 			popups.field("shortName", "error.name.is.empty");
 			return false;
-		}
-		if (StringUtils.length(shortName) < 3) {
+		} else if (StringUtils.trimToNull(shortName).length() < 3) {
 			popups.field("shortName", "error.name.too.short");
 			return false;
 		}

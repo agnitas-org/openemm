@@ -14,7 +14,7 @@ import java.util.List;
 
 import com.agnitas.beans.AgnTagAttributeDto;
 import com.agnitas.beans.AgnTagTextAttributeDto;
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.service.AgnTagAttributeResolver;
 import com.agnitas.service.AgnTagAttributeResolverRegistry;
 import org.apache.logging.log4j.LogManager;
@@ -34,7 +34,7 @@ public class AgnTagAttributeResolverRegistryImpl implements AgnTagAttributeResol
     }
 
     @Override
-    public AgnTagAttributeDto resolve(ComAdmin admin, String tag, String attribute) {
+    public AgnTagAttributeDto resolve(Admin admin, String tag, String attribute) {
         for (AgnTagAttributeResolver resolver : resolvers) {
             try {
                 AgnTagAttributeDto dto = resolver.resolve(admin, tag, attribute);

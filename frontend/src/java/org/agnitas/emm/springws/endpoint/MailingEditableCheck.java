@@ -69,13 +69,13 @@ public class MailingEditableCheck {
 	 * 
 	 * @throws MailingNotEditableException if given mailing is not editable
 	 */
-	public final void requireMailingEditable(final int mailingId, final int companyId) throws MailingNotEditableException {
+	public void requireMailingEditable(final int mailingId, final int companyId) throws MailingNotEditableException {
 		if(isCheckEnabled(companyId)) {
 			doCheck(mailingId, companyId);
 		}
 	}
 	
-	public final void requireMailingForComponentEditable(final int componentId, final int companyId) throws MailingNotEditableException {
+	public void requireMailingForComponentEditable(final int componentId, final int companyId) throws MailingNotEditableException {
 		if(isCheckEnabled(companyId)) {
 			final ComponentModel model = new ComponentModel();
 			model.setCompanyId(companyId);
@@ -89,7 +89,7 @@ public class MailingEditableCheck {
 		}
 	}
 
-	public final void requireMailingForContentBlockEditable(final int contentId, final int companyId) throws MailingNotEditableException {
+	public void requireMailingForContentBlockEditable(final int contentId, final int companyId) throws MailingNotEditableException {
 		if(isCheckEnabled(companyId)) {
 			final DynamicTagContent content = this.dynamicTagContentService.getContent(companyId, contentId);
 			
@@ -99,7 +99,7 @@ public class MailingEditableCheck {
 		}
 	}
 	
-	public final void requireMailingForTrackableLinkEditable(final int urlId, final int companyId) throws MailingNotEditableException {
+	public void requireMailingForTrackableLinkEditable(final int urlId, final int companyId) throws MailingNotEditableException {
 		if(isCheckEnabled(companyId)) {
 			final ComTrackableLink link = this.trackableLinkService.getTrackableLink(companyId, urlId);
 			
@@ -109,11 +109,11 @@ public class MailingEditableCheck {
 		}
 	}
 
-	private final boolean isCheckEnabled(final int companyId) {
+	private boolean isCheckEnabled(final int companyId) {
 		return configService.getBooleanValue(ConfigValue.Development.EnableCheckForEditableMailing, companyId);
 	}
 	
-	private final void doCheck(final int mailingId, final int companyId) throws MailingNotEditableException {
+	private void doCheck(final int mailingId, final int companyId) throws MailingNotEditableException {
 		if(mailingPropertiesRules.mailingIsWorldSentOrActive(mailingId, companyId)) {
 			throw new MailingNotEditableException();
 		}

@@ -31,6 +31,36 @@ import jakarta.servlet.FilterConfig;
  * <ul>
  *   <li><b>source.config-file</b> name of configuration file relative to deployment directory of the web application</li>
  * </ul> 
+ * 
+ * Example for a configuration file:
+ * 
+ * <pre>
+#
+#
+# HTTP header sent in response
+#
+#
+# ("[" app-types "]") <header-name> ("[" <options> "]") <header-value>
+#
+# app-types: comma-separated list of applications (see org.agnitas.util.ServerCommand.Server for values; compares case-insensitive)
+#           - if given: header is only emitted for given application types
+#           - if not given: header is emitted for all application types
+#         
+# options:	- overwrite
+#
+
+# Forces browser to use https:// instead of http://
+			Strict-Transport-Security		[overwrite]			max-age=15768000; includeSubDomains
+
+# Browser does not sent "Referrer" header
+			Referrer-Policy					[overwrite]			no-referrer
+
+# Prevents browsers from loading EMM pages inside a &lt;frame> or &lt;iframe>
+# Keep set to 'self' otherwise preview won't work
+# Exclude header for RDIRs otherwise, web forms may not be embeddable in iframes
+[emm] 		Content-Security-Policy			[overwrite]			frame-ancestors 'self';
+
+</pre>
  */
 public final class SimpleFileHeaderConfigSource implements HeaderConfigSource {
 

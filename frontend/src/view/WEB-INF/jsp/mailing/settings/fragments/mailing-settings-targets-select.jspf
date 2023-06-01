@@ -1,0 +1,140 @@
+<%@ page import="com.agnitas.emm.core.target.beans.TargetComplexityGrade" %>
+
+<c:set var="COMPLEXITY_RED" value="<%= TargetComplexityGrade.RED.toString() %>" scope="page"/>
+<c:set var="COMPLEXITY_YELLOW" value="<%= TargetComplexityGrade.YELLOW.toString() %>" scope="page"/>
+<c:set var="COMPLEXITY_GREEN" value="<%= TargetComplexityGrade.GREEN.toString() %>" scope="page"/>
+<c:set var="allSubscribersMessage"><mvc:message code="statistic.all_subscribers"/></c:set>
+<c:set var="workflowDriven" value="${workflowId gt 0}"/>
+
+<%--@elvariable id="targetComplexities" type="java.util.Map<java.lang.Integer, com.agnitas.emm.core.target.beans.TargetComplexityGrade>"--%>
+<%--@elvariable id="targets" type="java.util.List<com.agnitas.beans.TargetLight>"--%>
+<%--@elvariable id="isTargetExpressionComplex" type="java.lang.Boolean"--%>
+<%--@elvariable id="worldMailingSend" type="java.lang.Boolean"--%>
+<%--@elvariable id="altgId" type="java.lang.Integer"--%>
+
+<c:set var="targetsSelect">
+    <%-- Target groups are editable unless mailing is sent --%>
+    <%-- Target groups aren't editable if mailing has complex target expression or is managed by campaign except new one created from campaing--%>
+    <c:choose>
+        <c:when test="${isTargetExpressionComplex or workflowDriven}">
+            <c:set var="isNewMailingFromCampaign" value="${workflowDriven and mailingId == 0}"/>
+            <mvc:hidden path="assignTargetGroups" id="assignTargetGroups" value="${isNewMailingFromCampaign}"/>
+            <c:if test="${isNewMailingFromCampaign}">
+                <mvc:hidden path="targetExpression"/>
+            </c:if>
+            <c:set var="disabledTargetsInput" value="true"/>
+        </c:when>
+        <c:otherwise>
+            <mvc:hidden id="assignTargetGroups" path="assignTargetGroups" value="${not worldMailingSend}"/>
+            <c:set var="disabledTargetsInput" value="${worldMailingSend}"/>
+        </c:otherwise>
+    </c:choose>
+
+    <c:if test="${isTargetExpressionComplex}">
+        <mvc:hidden path="targetGroupIds"/>         
+    </c:if>
+    
+    <mvc:select path="targetGroupIds" id="targetGroupIds"
+                cssClass="form-control js-select"
+                disabled="${disabledTargetsInput}"
+                multiple="true"
+                data-placeholder="${allSubscribersMessage}"
+                data-result-template="target-group-result-item"
+                data-selection-template="target-group-selection-item"
+                data-action="selectTargetGroups">
+
+        <c:forEach var="target" items="${targets}">
+            <c:set var="targetLink" value=""/>
+            <c:if test="${not target.accessLimitation}">
+                <%-- Build link to target group editor --%>
+                <c:url var="targetLink" value="/target/${target.id}/view.action"/>
+            </c:if>
+
+            <mvc:option value="${target.id}"
+                        data-complexity-grade="${targetComplexities[target.id]}"
+                        data-url="${targetLink}"
+                        data-locked="${!(isTargetExpressionComplex or workflowDriven) and target.id eq altgId}">
+                ${fn:escapeXml(target.targetName)} (${target.id})
+            </mvc:option>
+        </c:forEach>
+    </mvc:select>
+</c:set>
+
+<c:choose>
+    <c:when test="${isTargetExpressionComplex or workflowDriven}">
+        <div class="form-group ${isTargetExpressionComplex ? 'has-feedback has-alert' : ''}">
+            <div class="col-sm-4">
+                <label class="control-label">
+                    <mvc:message code="Targets"/>
+                </label>
+            </div>
+            <div class="col-sm-8">
+                <div class="input-group">
+                    <div class="input-group-controls">
+                        <c:choose>
+                            <c:when test="${isTargetExpressionComplex}">
+                                <div class="well block">
+                                    <mvc:message code="targetgroup.tooComplex"/>
+                                </div>
+                                <i class="icon icon-state-alert form-control-feedback"></i>
+                            </c:when>
+                            <c:otherwise>
+                                <div class="well block">
+                                    <span><mvc:message code="mailing.EditWithCampaignManager"/></span>
+                                </div>
+                            </c:otherwise>
+                        </c:choose>
+                    </div>
+                    <%@include file="edit-with-campaign-btn.jspf" %>                     
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-sm-offset-4 col-sm-8">
+                ${targetsSelect}
+            </div>
+        </div>
+    </c:when>
+    <c:otherwise>
+        <div class="form-group">
+            <div class="col-sm-4">
+                <label class="control-label">
+                    <mvc:message code="Targets"/>
+                </label>
+            </div>
+            <div class="col-sm-8">
+                ${targetsSelect}
+            </div>
+        </div>
+    </c:otherwise>
+</c:choose>
+
+<script id="target-group-selection-item" type="text/x-mustache-template">
+    {{ if(element.dataset.url && element.dataset.url.length) { }}
+    <a href="{{= element.dataset.url }}">{{-text }}</a>
+    {{ } else { }}
+    <span>{{-text }}</span>
+    {{ } }}
+    {{ if (element.dataset.complexityGrade == '${COMPLEXITY_RED}') { }}
+    <span class="circle-complexity complexity-red"></span>
+    <i class="icon icon-exclamation-triangle pull-right complexity-red" style="margin-right: 4px;"
+       data-tooltip="<mvc:message code="warning.target.group.performance.red"/>"></i>
+    {{ } else if (element.dataset.complexityGrade == '${COMPLEXITY_YELLOW}') { }}
+    <span class="circle-complexity complexity-yellow"></span>
+    <i class="icon icon-exclamation-triangle pull-right complexity-yellow" style="margin-right: 4px;"
+       data-tooltip="<mvc:message code="warning.target.group.performance.yellow"/>"></i>
+    {{ } else if (element.dataset.complexityGrade == '${COMPLEXITY_GREEN}') { }}
+    <span class="circle-complexity complexity-green"></span>
+    {{ } }}
+</script>
+
+<script id="target-group-result-item" type="text/x-mustache-template">
+    {{- text }}
+    {{ if (element.dataset.complexityGrade == '${COMPLEXITY_RED}') { }}
+    <span class="circle-complexity complexity-red"></span>
+    {{ } else if (element.dataset.complexityGrade == '${COMPLEXITY_YELLOW}') { }}
+    <span class="circle-complexity complexity-yellow"></span>
+    {{ } else if (element.dataset.complexityGrade == '${COMPLEXITY_GREEN}') { }}
+    <span class="circle-complexity complexity-green"></span>
+    {{ } }}
+</script>

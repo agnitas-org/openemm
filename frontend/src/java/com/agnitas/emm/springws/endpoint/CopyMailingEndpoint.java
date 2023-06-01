@@ -14,8 +14,9 @@ import java.util.Objects;
 
 import org.agnitas.emm.core.mailing.service.CopyMailingService;
 import org.agnitas.emm.springws.endpoint.BaseEndpoint;
-import org.agnitas.emm.springws.endpoint.Utils;
+import org.agnitas.emm.springws.endpoint.Namespaces;
 import org.agnitas.emm.springws.endpoint.mailing.AddMailingFromTemplateEndpoint;
+import org.agnitas.emm.springws.util.SecurityContextAccess;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -33,23 +34,26 @@ import com.agnitas.emm.springws.jaxb.CopyMailingResponse;
 @Endpoint
 public class CopyMailingEndpoint extends BaseEndpoint {
 	
+	/** The logger. */
 	private static final transient Logger LOGGER = LogManager.getLogger(AddMailingFromTemplateEndpoint.class);
 
 	private final ThumbnailService thumbnailService;
     private CopyMailingService copyMailingService;
+    private SecurityContextAccess securityContextAccess;
 
     @Autowired
-    public CopyMailingEndpoint(CopyMailingService copyMailingService, final ThumbnailService thumbnailService) {
-        this.copyMailingService = copyMailingService;
-		this.thumbnailService = Objects.requireNonNull(thumbnailService);
+    public CopyMailingEndpoint(CopyMailingService copyMailingService, final ThumbnailService thumbnailService, final SecurityContextAccess securityContextAccess) {
+        this.copyMailingService = Objects.requireNonNull(copyMailingService, "copyMailingService");
+		this.thumbnailService = Objects.requireNonNull(thumbnailService, "thumbnailService");
+		this.securityContextAccess = Objects.requireNonNull(securityContextAccess, "securityContextAccess");
    }
 
-    @PayloadRoot(namespace = Utils.NAMESPACE_COM, localPart = "CopyMailingRequest")
+    @PayloadRoot(namespace = Namespaces.AGNITAS_COM, localPart = "CopyMailingRequest")
     public @ResponsePayload CopyMailingResponse copyMailing(@RequestPayload CopyMailingRequest request) throws Exception {
         validateRequest(request);
         
-        final int companyID = Utils.getUserCompany();
-        final int copyId = copyMailingService.copyMailing(Utils.getUserCompany(), request.getMailingId(), Utils.getUserCompany(), request.getNameOfCopy(), request.getDescriptionOfCopy());
+        final int companyID = this.securityContextAccess.getWebserviceUserCompanyId();
+        final int copyId = copyMailingService.copyMailing(companyID, request.getMailingId(), companyID, request.getNameOfCopy(), request.getDescriptionOfCopy());
         
 		try {
 			this.thumbnailService.updateMailingThumbnailByWebservice(companyID, copyId);

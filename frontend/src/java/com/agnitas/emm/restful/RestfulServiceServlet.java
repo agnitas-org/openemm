@@ -33,7 +33,7 @@ import org.springframework.beans.factory.annotation.Required;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.logon.service.ComLogonService;
 import com.agnitas.emm.core.logon.web.LogonFailedException;
 import com.agnitas.emm.util.quota.api.QuotaLimitExceededException;
@@ -82,7 +82,7 @@ public class RestfulServiceServlet extends BaseRequestServlet {
 		BaseRequestResponse restfulResponse = new JsonRequestResponse(); // Default response type is json
 		RestfulServiceHandler serviceHandler;
 
-		ComAdmin admin = null;
+		Admin admin = null;
 		
 		try {
 			// Read restful interface to be called
@@ -223,6 +223,7 @@ public class RestfulServiceServlet extends BaseRequestServlet {
 			writeErrorLogFile(request, requestMethod, admin, e);
 			restfulResponse.setError(e);
 			writeResponse(response, restfulResponse);
+			logger.error("Error in Restful handler", e);
 		} finally {
 			if (request.getSession() != null) {
 				request.getSession().invalidate();
@@ -230,7 +231,7 @@ public class RestfulServiceServlet extends BaseRequestServlet {
 		}
 	}
 
-	private void writeErrorLogFile(HttpServletRequest request, RequestMethod requestMethod, ComAdmin admin, Exception errorToLog) {
+	private void writeErrorLogFile(HttpServletRequest request, RequestMethod requestMethod, Admin admin, Exception errorToLog) {
 		try {
 			if (admin != null) {
 				final File companyLogfileDirectory = new File(AgnUtils.getTempDir() + File.separator + "Restful" + File.separator + admin.getCompanyID() + File.separator + new SimpleDateFormat(DateUtilities.YYYYMMDD).format(new Date()));
@@ -277,7 +278,7 @@ public class RestfulServiceServlet extends BaseRequestServlet {
 		}
 	}
 	
-	private final void checkQuotas(final ComAdmin admin, final Class<? extends RestfulServiceHandler> serviceHandlerClass) throws QuotaLimitExceededException, QuotaServiceException {
+	private final void checkQuotas(final Admin admin, final Class<? extends RestfulServiceHandler> serviceHandlerClass) throws QuotaLimitExceededException, QuotaServiceException {
 		if(getConfigService().getBooleanValue(ConfigValue.EnableRestfulQuotas, admin.getCompanyID())) {
 			final String serviceHandlerName = classToServiceName(serviceHandlerClass);
 			

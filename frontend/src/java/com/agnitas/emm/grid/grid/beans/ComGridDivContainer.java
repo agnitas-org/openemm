@@ -70,4 +70,8 @@ public interface ComGridDivContainer {
     String getFilter();
 
     void setFilter(String filter);
+
+    GridDivContainerEditMode getModeEdit();
+
+    void setModeEdit(GridDivContainerEditMode modeEdit);
 }

@@ -33,7 +33,7 @@ public interface ComPasswordCheck extends PasswordCheck {
 	 * 
 	 * @throws SupervisorException on errors accessing supervisor data
 	 * 
-	 * @see PasswordCheck#checkAdminPassword(String, com.agnitas.beans.ComAdmin, PasswordCheckHandler)
+	 * @see PasswordCheck#checkAdminPassword(String, com.agnitas.beans.Admin, PasswordCheckHandler)
 	 */
 	boolean checkSupervisorPassword(String password, Supervisor supervisor, PasswordCheckHandler handler) throws SupervisorException;
 
@@ -57,7 +57,7 @@ public interface ComPasswordCheck extends PasswordCheck {
 	 *
 	 * @return {@code true} if password is ok, otherwise {@code false}
 	 *
-	 * @see PasswordCheck#checkAdminPassword(String, com.agnitas.beans.ComAdmin, PasswordCheckHandler)
+	 * @see PasswordCheck#checkAdminPassword(String, com.agnitas.beans.Admin, PasswordCheckHandler)
 	 */
 	boolean checkSupervisorPassword(String password, PasswordCheckHandler handler);
 

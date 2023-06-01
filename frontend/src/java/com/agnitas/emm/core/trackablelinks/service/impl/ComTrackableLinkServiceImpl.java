@@ -10,8 +10,6 @@
 
 package com.agnitas.emm.core.trackablelinks.service.impl;
 
-import static org.agnitas.beans.BaseTrackableLink.KEEP_UNCHANGED;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -20,21 +18,19 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import com.agnitas.emm.grid.grid.beans.ComGridTemplate;
 import org.agnitas.beans.BaseTrackableLink;
 import org.agnitas.beans.TrackableLink;
 import org.agnitas.dao.MailingDao;
 import org.agnitas.emm.core.mailing.service.MailingModel;
 import org.agnitas.emm.core.mailing.service.MailingNotExistException;
 import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.ComTrackableLink;
 import com.agnitas.beans.LinkProperty;
 import com.agnitas.beans.Mailing;
@@ -42,7 +38,7 @@ import com.agnitas.beans.TrackableLinkListItem;
 import com.agnitas.beans.TrackableLinkModel;
 import com.agnitas.beans.TrackableLinkSettings;
 import com.agnitas.beans.impl.MailingImpl;
-import com.agnitas.dao.ComTrackableLinkDao;
+import com.agnitas.dao.TrackableLinkDao;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.emm.core.trackablelinks.exceptions.MailingNotSentException;
@@ -64,7 +60,7 @@ public class ComTrackableLinkServiceImpl implements ComTrackableLinkService {
     private static final transient Logger logger = LogManager.getLogger(ComTrackableLinkServiceImpl.class);
     
     /** DAO for accessing trackable links. */
-    private ComTrackableLinkDao trackableLinkDao;
+    private TrackableLinkDao trackableLinkDao;
     
     @Resource(name="MailingDao")
     protected MailingDao mailingDao;
@@ -123,19 +119,6 @@ public class ComTrackableLinkServiceImpl implements ComTrackableLinkService {
     }
 
     @Override
-    public void setStandardDeeptracking(Mailing aMailing, Set<Integer> bulkLinkIds, int deepTracking, Map<Integer, Integer> getLinkItemsDeepTracking) {
-        for (TrackableLink aLink : aMailing.getTrackableLinks().values()) {
-            int id = aLink.getId();
-            int linkItemDeepTracking = getLinkItemsDeepTracking.getOrDefault(id, 0);
-            if (aLink.getDeepTracking() != linkItemDeepTracking) {
-                aLink.setDeepTracking(linkItemDeepTracking);
-            } else if ((deepTracking != KEEP_UNCHANGED) && bulkLinkIds.contains(id)) {
-                aLink.setDeepTracking(deepTracking);
-            }
-        }
-    }
-
-    @Override
     public void setShortname(Mailing aMailing, Map<Integer, String> linkItemNames) {
         try {
             for (TrackableLink trackableLink : aMailing.getTrackableLinks().values()) {
@@ -148,18 +131,18 @@ public class ComTrackableLinkServiceImpl implements ComTrackableLinkService {
     }
 
     @Override
-    public List<TrackableLinkListItem> getMailingLinks(int mailingID, @VelocityCheck int companyId) {
+    public List<TrackableLinkListItem> getMailingLinks(int mailingID, int companyId) {
         return trackableLinkDao.listTrackableLinksForMailing(companyId, mailingID);
     }
 
     @Override
-    public List<TrackableLinkListItem> getTrackableLinkItems(int mailingID, @VelocityCheck int companyId) {
+    public List<TrackableLinkListItem> getTrackableLinkItems(int mailingID, int companyId) {
         checkMailing(mailingID, companyId);
         return trackableLinkDao.listTrackableLinksForMailing(companyId, mailingID);
     }
 
     @Override
-    public List<ComTrackableLink> getTrackableLinks(int mailingId, @VelocityCheck int companyId) {
+    public List<ComTrackableLink> getTrackableLinks(int mailingId, int companyId) {
         if (companyId < 0) {
             return new ArrayList<>();
         }
@@ -183,12 +166,12 @@ public class ComTrackableLinkServiceImpl implements ComTrackableLinkService {
     }
 
     @Override
-    public ComTrackableLink getTrackableLink(@VelocityCheck int companyId, int linkId) {
+    public ComTrackableLink getTrackableLink(int companyId, int linkId) {
         return trackableLinkDao.getTrackableLink(linkId, companyId);
     }
     
     @Override
-    public TrackableLinkSettings getTrackableLinkSettings(int linkID, @VelocityCheck int companyId) {
+    public TrackableLinkSettings getTrackableLinkSettings(int linkID, int companyId) {
         ComTrackableLink trackableLink = trackableLinkDao.getTrackableLink(linkID, companyId);
         if (trackableLink == null) {
             throw new TrackableLinkUnknownLinkIdException(linkID);
@@ -199,7 +182,7 @@ public class ComTrackableLinkServiceImpl implements ComTrackableLinkService {
         return new TrackableLinkSettings(trackableLink, linkProperties);
     }
 
-    private void checkMailing(int mailingID, @VelocityCheck int companyID) {
+    private void checkMailing(int mailingID, int companyID) {
         Mailing mailing = mailingDao.getMailing(mailingID, companyID);
 
         if (mailing == null || mailing.getId() == 0) {
@@ -245,7 +228,7 @@ public class ComTrackableLinkServiceImpl implements ComTrackableLinkService {
      * 
      * @throws TrackableLinkException if URL editing is not allowed
      */
-    private void checkUrlEditingAllowed(int mailingID, @VelocityCheck int companyID) throws TrackableLinkException {
+    private void checkUrlEditingAllowed(int mailingID, int companyID) throws TrackableLinkException {
 		MailingModel model = new MailingModel();
 		model.setMailingId(mailingID);
 		model.setCompanyId(companyID);
@@ -263,10 +246,6 @@ public class ComTrackableLinkServiceImpl implements ComTrackableLinkService {
 
     private void userActionLogMailingLinksCreated(List<UserAction> userActions, Mailing aMailing, List<LinkProperty> passedLinkProperties, List<LinkProperty> commonLinkProperties, ComTrackableLink comLink) {
         userActionLogLinksCreated(aMailing.getId(), "edit mailing links", userActions, passedLinkProperties, commonLinkProperties, comLink);
-    }
-
-    private void userActionLogTemplateLinksCreated(List<UserAction> userActions, ComGridTemplate template, List<LinkProperty> passedLinkProperties, List<LinkProperty> commonLinkProperties, ComTrackableLink comLink) {
-        userActionLogLinksCreated(template.getId(), "edit template links", userActions, passedLinkProperties, commonLinkProperties, comLink);
     }
 
     private void userActionLogLinksCreated(int creatorId, String actionMessage, List<UserAction> userActions, List<LinkProperty> passedLinkProperties, List<LinkProperty> commonLinkProperties, ComTrackableLink comLink) {
@@ -292,7 +271,7 @@ public class ComTrackableLinkServiceImpl implements ComTrackableLinkService {
     }
 
     @Override
-    public boolean isUrlEditingAllowed(ComAdmin admin, int mailingID) {
+    public boolean isUrlEditingAllowed(Admin admin, int mailingID) {
         if (!admin.permissionAllowed(Permission.MAILING_TRACKABLELINKS_URL_CHANGE)) {
             return false;
         }
@@ -354,7 +333,7 @@ public class ComTrackableLinkServiceImpl implements ComTrackableLinkService {
     }
 
     @Override
-    public boolean isTrackingOnEveryPositionAvailable(@VelocityCheck int companyId, int mailingId) {
+    public boolean isTrackingOnEveryPositionAvailable(int companyId, int mailingId) {
         return trackableLinkDao.isTrackingOnEveryPositionAvailable(companyId, mailingId);
     }
 
@@ -432,7 +411,7 @@ public class ComTrackableLinkServiceImpl implements ComTrackableLinkService {
 	 * @param trackableLinkDao DAO for accessing trackable links.
 	 */
     @Required
-	public void setTrackableLinkDao(ComTrackableLinkDao trackableLinkDao) {
+	public void setTrackableLinkDao(TrackableLinkDao trackableLinkDao) {
 		this.trackableLinkDao = trackableLinkDao;
 	}
 

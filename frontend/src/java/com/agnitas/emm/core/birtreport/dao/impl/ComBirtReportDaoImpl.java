@@ -16,6 +16,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -48,8 +49,8 @@ import com.agnitas.emm.core.birtreport.dto.FilterType;
 import com.agnitas.emm.core.birtreport.dto.ReportSettingsType;
 
 public class ComBirtReportDaoImpl extends PaginatedBaseDaoImpl implements ComBirtReportDao {
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(ComBirtReportDaoImpl.class);
+
+	private static final Logger logger = LogManager.getLogger(ComBirtReportDaoImpl.class);
 	
 	private BirtReportFactory birtReportFactory;
 
@@ -57,7 +58,7 @@ public class ComBirtReportDaoImpl extends PaginatedBaseDaoImpl implements ComBir
 	@DaoUpdateReturnValueCheck
 	public boolean insert(ComBirtReport report) throws Exception {
 		if (report.getId() != 0) {
-			logger.error("ReportID is invalid for insert of new report: " + report.getId());
+			logger.error("ReportID is invalid for insert of new report: {}", report.getId());
 			return false;
 		} else if (CollectionUtils.isEmpty(report.getEmailRecipientList())) {
 			throw new Exception("Recipients for report are empty: " + report.getId());
@@ -135,7 +136,7 @@ public class ComBirtReportDaoImpl extends PaginatedBaseDaoImpl implements ComBir
 			report.getSettings().forEach(setting -> insertReportProperties(report.getId(), setting));
 			return true;
 		} catch (Exception e) {
-			logger.error("error in insert: " + e, e);
+			logger.error("error in insert: {}", e, e);
 			return false;
 		}
 	}
@@ -185,7 +186,7 @@ public class ComBirtReportDaoImpl extends PaginatedBaseDaoImpl implements ComBir
 			
 			return true;
 		} catch (Exception e) {
-			logger.error("Error updating report " + report.getId(), e);
+			logger.error("Error updating report {}", report.getId(), e);
 			// logging is already done
 			return false;
 		}
@@ -200,7 +201,8 @@ public class ComBirtReportDaoImpl extends PaginatedBaseDaoImpl implements ComBir
 		}
 	}
 	
-    private void deactivateReportSettings(int reportId, List<Integer> settingsType) {
+	@Override
+    public void deactivateReportSettings(int reportId, Collection<Integer> settingsType) {
         if (CollectionUtils.isNotEmpty(settingsType)) {
             update(logger, "UPDATE birtreport_parameter_tbl SET parameter_value = ? " +
 					"WHERE report_id = ? AND parameter_name = ? AND report_type IN (" + joinForIn(settingsType) + ")",

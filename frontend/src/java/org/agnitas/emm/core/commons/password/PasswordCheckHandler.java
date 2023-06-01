@@ -18,36 +18,36 @@ public interface PasswordCheckHandler {
 	/**
 	 * Callback method indicating that password does not contain lowercase letters.
 	 */
-	public void handleNoLowerCaseLettersException();
+	void handleNoLowerCaseLettersException();
 
 	/**
 	 * Callback method indicating that password does not contain uppercase letters.
 	 */
-	public void handleNoUpperCaseLettersException();
+	void handleNoUpperCaseLettersException();
 
 	/**
 	 * Callback method indicating that password does not contain digits.
 	 */
-	public void handleNoDigitsException();
+	void handleNoDigitsException();
 
 	/**
 	 * Callback method indicating that password does not contain punctuation.
 	 */
-	public void handleNoPunctuationException();
+	void handleNoPunctuationException();
 
 	/**
 	 * Callback method indicating that password is too short.
 	 */
-	public void handlePasswordTooShort();
+	void handlePasswordTooShort();
 
 	/**
 	 * Callback method indicating that password does not differ from current password.
 	 */
-	public void handleMatchesCurrentPassword();
+	void handleMatchesCurrentPassword();
 
 	/**
 	 * Callback method indicating a general or uncategorized error in password.
 	 */
-	public void handleGenericError();
+	void handleGenericError();
 
 }

@@ -22,7 +22,8 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
 import com.agnitas.beans.ProfileField;
-import com.agnitas.service.ComColumnInfoService;
+import com.agnitas.beans.ProfileFieldMode;
+import com.agnitas.service.ColumnInfoService;
 
 import jakarta.servlet.jsp.JspException;
 import jakarta.servlet.jsp.JspTagException;
@@ -50,7 +51,7 @@ public class ComShowColumnInfoTag extends TagSupport implements BodyTag {
     	this.bodyContent = bodyContent;
     }
 	
-	private static ComColumnInfoService COLUMNINFOSERVICE;
+	private static ColumnInfoService COLUMNINFOSERVICE;
 
 	protected String iteratorID = null;
 	protected int table = 0;
@@ -106,9 +107,9 @@ public class ComShowColumnInfoTag extends TagSupport implements BodyTag {
 		super.release();
 	}
 
-	private ComColumnInfoService getColumnInfoService() {
+	private ColumnInfoService getColumnInfoService() {
 		if (COLUMNINFOSERVICE == null) {
-			COLUMNINFOSERVICE = (ComColumnInfoService) WebApplicationContextUtils.getWebApplicationContext(this.pageContext.getServletContext()).getBean("ColumnInfoService");
+			COLUMNINFOSERVICE = (ColumnInfoService) WebApplicationContextUtils.getWebApplicationContext(this.pageContext.getServletContext()).getBean("ColumnInfoService");
 		}
 		return COLUMNINFOSERVICE;
 	}
@@ -150,7 +151,7 @@ public class ComShowColumnInfoTag extends TagSupport implements BodyTag {
 		try {
 			while (profileFieldIterator.hasNext()) {
 				ProfileField fieldMap = profileFieldIterator.next();
-				if (sys_columns == null || !sys_columns.contains(fieldMap.getColumn().toLowerCase())) {
+				if ((sys_columns == null || !sys_columns.contains(fieldMap.getColumn().toLowerCase())) && fieldMap.getModeEdit() != ProfileFieldMode.NotVisible) {
 	 				if (fieldMap.getDataType() != null) {
 						pageContext.setAttribute("_" + iteratorID + "_data_type", fieldMap.getDataType());
 						pageContext.setAttribute("_" + iteratorID + "_column_name",	fieldMap.getColumn().toUpperCase());

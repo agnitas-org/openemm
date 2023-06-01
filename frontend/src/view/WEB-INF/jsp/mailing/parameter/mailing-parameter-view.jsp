@@ -65,7 +65,7 @@
                     </div>
                     <div class="col-sm-8">
                         <html:select property="mailingID" size="1" styleId="mailinglistID" styleClass="js-select form-control">
-                            <html:option value="0"><bean:message key="mailing.MailingParameter.forMailing.allMailings"/></html:option>
+                            <html:option value="0"><bean:message key="NoMailing"/></html:option>
                              <c:forEach var="mailing" items="${mailings}">
                                 <html:option value="${mailing.mailingID}">
                                     ${mailing.shortname}

@@ -105,7 +105,7 @@
                     "editable": false,
                     "field": "numberOfDeliveries",
                     "cellRenderer": "RecipientSuccessDeliveryInfoRenderer",
-                    "cellRendererParams": {"deliveryHistoryEnabled": ${deliveryHistoryEnabled}, "recipientId": ${recipient.customerId}}
+                    "cellRendererParams": {"deliveryHistoryEnabled": true, "recipientId": ${recipient.customerId}}
                 },
                 {
                     "headerName": "<mvc:message code='recipient.Mailings.openings'/>",

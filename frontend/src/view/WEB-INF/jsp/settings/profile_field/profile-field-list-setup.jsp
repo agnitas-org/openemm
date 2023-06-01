@@ -1,7 +1,7 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-<%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
 <c:set var="agnNavigationKey" 		value="profiledb" 				scope="request" />
 <c:set var="agnTitleKey" 			value="recipient.fields" 		scope="request" />
@@ -18,7 +18,7 @@
         <c:url value="/profiledb/new.action" />
     </c:set>
     <c:set var="createNewItemLabel" scope="request">
-        <bean:message key="settings.NewProfileDB_Field"/>
+        <mvc:message code="settings.NewProfileDB_Field"/>
     </c:set>
 </emm:ShowByPermission>
 

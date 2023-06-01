@@ -23,7 +23,7 @@ import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.ComRecipientHistory;
-import com.agnitas.dao.ComProfileFieldDao;
+import com.agnitas.dao.ProfileFieldDao;
 import com.agnitas.emm.core.recipient.ProfileFieldHistoryFeatureNotEnabledException;
 import com.agnitas.emm.core.recipient.RecipientProfileHistoryException;
 import com.agnitas.emm.core.recipient.RecipientProfileHistoryUtil;
@@ -46,7 +46,7 @@ public class RecipientProfileHistoryBasicServiceImpl implements RecipientProfile
 	protected ConfigService configService;
 	
 	/** DAO accessing profile fields data. */
-	protected ComProfileFieldDao profileFieldDao;
+	protected ProfileFieldDao profileFieldDao;
 
 	@Override
 	public void afterProfileFieldStructureModification(@VelocityCheck int companyId) throws RecipientProfileHistoryException {
@@ -125,7 +125,7 @@ public class RecipientProfileHistoryBasicServiceImpl implements RecipientProfile
 	 * @param profileFieldDao DAO accessing profile field data
 	 */
 	@Required
-	public void setProfileFieldDao(final ComProfileFieldDao profileFieldDao) {
+	public void setProfileFieldDao(final ProfileFieldDao profileFieldDao) {
 		this.profileFieldDao = profileFieldDao;
 	}
 

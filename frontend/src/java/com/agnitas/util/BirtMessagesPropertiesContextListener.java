@@ -32,7 +32,7 @@ import com.agnitas.reporting.birt.external.dataset.BIRTDataSet;
 
 public class BirtMessagesPropertiesContextListener implements ServletContextListener {
 
-	private static final transient Logger logger = LogManager.getLogger(BirtMessagesPropertiesContextListener.class);
+	private static final Logger logger = LogManager.getLogger(BirtMessagesPropertiesContextListener.class);
 
     @Override
     public void contextInitialized(ServletContextEvent event) {
@@ -58,7 +58,7 @@ public class BirtMessagesPropertiesContextListener implements ServletContextList
 		// nothing to do
 	}
 
-	private void createMessagesPropertiesFiles(ServletContext servletContext) throws Exception {
+	private void createMessagesPropertiesFiles(ServletContext servletContext) {
 		try {
 			logger.info("Creating MessagesPropertiesFiles");
 

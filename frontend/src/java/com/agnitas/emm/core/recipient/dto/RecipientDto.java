@@ -13,6 +13,7 @@ package com.agnitas.emm.core.recipient.dto;
 import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_DATASOURCE_ID;
 import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_DO_NOT_TRACK;
 import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_EMAIL;
+import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_ENCRYPTED_SENDING;
 import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_FIRSTNAME;
 import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_GENDER;
 import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_LASTNAME;
@@ -33,7 +34,7 @@ import org.agnitas.util.importvalues.MailType;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.BooleanUtils;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.ProfileField;
 
 public class RecipientDto {
@@ -111,7 +112,7 @@ public class RecipientDto {
         }
     }
 
-    public String getColumnFormattedValue(ComAdmin admin, String columnName) {
+    public String getColumnFormattedValue(Admin admin, String columnName) {
         ProfileField profileField = getDbColumns().get(columnName);
         if (profileField == null) {
             return "";
@@ -168,6 +169,10 @@ public class RecipientDto {
 
     public boolean isTrackingVeto() {
         return BooleanUtils.toBoolean(getIntValue(COLUMN_DO_NOT_TRACK));
+    }
+
+    public boolean isEncryptedSend() {
+        return BooleanUtils.toBoolean(getIntValue(COLUMN_ENCRYPTED_SENDING));
     }
 
     public int getLatestDataSourceId() {

@@ -12,10 +12,10 @@ package com.agnitas.emm.core.mailing.dto.converter;
 
 import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.core.convert.converter.Converter;
+import org.springframework.stereotype.Component;
 
 import com.agnitas.emm.core.mailing.dto.CalculationRecipientsConfig;
 import com.agnitas.web.forms.ComMailingBaseForm;
-import org.springframework.stereotype.Component;
 
 @Component
 public class ComMailingBaseFormToCalculationRecipientConfigConverter implements Converter<ComMailingBaseForm, CalculationRecipientsConfig> {

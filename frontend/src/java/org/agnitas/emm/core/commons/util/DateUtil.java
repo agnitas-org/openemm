@@ -21,6 +21,9 @@ import org.agnitas.util.SafeString;
  * Use this class to handle standard formats
  */
 public class DateUtil {
+
+	public static final int FAIRNESS_PERIOD_IN_MINUTES = 5;
+
 	public static String getTimespanString(long timespanInMillis, Locale locale) {
 		int days = (int) (timespanInMillis / Constants.MILLISECONDS_PER_DAY);
 		int leftover = (int) (timespanInMillis % Constants.MILLISECONDS_PER_DAY);
@@ -82,7 +85,7 @@ public class DateUtil {
         actionDateCalendar.setTime(actionDate);
 
         // Move "current time" 5 minutes into future, so we get a 5 minute fairness period
-        now.add(Calendar.MINUTE, 5);
+        now.add(Calendar.MINUTE, FAIRNESS_PERIOD_IN_MINUTES);
         
         // Do the hard work!
         return !now.before(actionDateCalendar);
@@ -97,7 +100,7 @@ public class DateUtil {
         sendDateCalendar.setTime( sendDate);
 
         // Move "current time" 5 minutes into future, so we get a 5 minute fairness period
-        now.add( Calendar.MINUTE, -5);
+        now.add( Calendar.MINUTE, -FAIRNESS_PERIOD_IN_MINUTES);
         
         // Do the hard work!
         return now.before( sendDateCalendar);

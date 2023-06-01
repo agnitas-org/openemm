@@ -28,7 +28,7 @@ public interface ComRevenueDao {
 	
 	/**
 	 * returns the revenue as Double-Value
-	 */	
+	 */
 	public Double getRevenue(@VelocityCheck int company_Id, int mailing_Id);
 	
 	/**

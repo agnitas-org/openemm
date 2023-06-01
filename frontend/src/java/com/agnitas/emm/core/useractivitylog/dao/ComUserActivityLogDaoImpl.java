@@ -25,7 +25,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 
 /**
@@ -39,7 +39,7 @@ public class ComUserActivityLogDaoImpl extends PaginatedBaseDaoImpl implements U
 
 	@Override
 	@DaoUpdateReturnValueCheck
-	public void writeUserActivityLog(ComAdmin admin, String action, String description) {
+	public void writeUserActivityLog(Admin admin, String action, String description) {
 		String username = "";
 		String supervisorName = null;
 
@@ -123,7 +123,7 @@ public class ComUserActivityLogDaoImpl extends PaginatedBaseDaoImpl implements U
     }
 
 	@Override
-	public void addAdminUseOfFeature(ComAdmin admin, String feature, Date date) {
+	public void addAdminUseOfFeature(Admin admin, String feature, Date date) {
 		if (admin != null && admin.getAdminID() != 0) {
 			if (isOracleDB()) {
 				String updateSql = "UPDATE admin_use_tbl SET use_count = use_count + 1, last_use = ? WHERE admin_id = ? AND feature = ?";

@@ -22,8 +22,9 @@ import jakarta.servlet.http.HttpServletRequestWrapper;
  */
 public class ForceLocaleRequestWrapper extends HttpServletRequestWrapper {
 
-	private Locale locale;
-	private Vector<Locale> locales;
+	private final Locale locale;
+	private final Vector<Locale> locales;
+
 	public ForceLocaleRequestWrapper(HttpServletRequest request, String language) {
 		super(request);
 		this.locale = new Locale(language.toLowerCase());

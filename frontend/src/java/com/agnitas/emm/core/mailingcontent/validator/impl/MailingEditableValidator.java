@@ -15,7 +15,7 @@ import java.util.Objects;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.mailing.service.MailingPropertiesRules;
 import com.agnitas.emm.core.mailingcontent.dto.DynTagDto;
 import com.agnitas.emm.core.mailingcontent.validator.DynTagValidator;
@@ -25,14 +25,14 @@ import com.agnitas.web.mvc.Popups;
 @Order(0)
 public class MailingEditableValidator implements DynTagValidator {
 
-    private MailingPropertiesRules mailingPropertiesRules;
+    private final MailingPropertiesRules mailingPropertiesRules;
 
     public MailingEditableValidator(final MailingPropertiesRules rules) {
     	this.mailingPropertiesRules = Objects.requireNonNull(rules, "MailingPropertiesRules is null");
     }
 
     @Override
-    public final boolean validate(final DynTagDto dynTagDto, final Popups popups, final ComAdmin admin) {
+    public final boolean validate(final DynTagDto dynTagDto, final Popups popups, final Admin admin) {
         if (!isMailingGridEditable(dynTagDto.getMailingId(), admin)) {
             popups.alert("status_changed");
             return false;
@@ -41,7 +41,7 @@ public class MailingEditableValidator implements DynTagValidator {
         return true;
     }
 
-    private final boolean isMailingGridEditable(final int mailingID, final ComAdmin admin) {
-    	return this.mailingPropertiesRules.isMailingContentEditable(mailingID, admin);
+    private boolean isMailingGridEditable(final int mailingID, final Admin admin) {
+        return mailingID <= 0 || this.mailingPropertiesRules.isMailingContentEditable(mailingID, admin);
     }
 }

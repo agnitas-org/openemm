@@ -11,13 +11,16 @@
 package org.agnitas.emm.springws.endpoint.recipient;
 
 import java.util.Map;
+import java.util.Objects;
 
 import org.agnitas.emm.core.recipient.service.RecipientModel;
 import org.agnitas.emm.core.recipient.service.RecipientService;
 import org.agnitas.emm.springws.endpoint.BaseEndpoint;
+import org.agnitas.emm.springws.endpoint.Namespaces;
 import org.agnitas.emm.springws.endpoint.Utils;
 import org.agnitas.emm.springws.jaxb.GetSubscriberRequest;
 import org.agnitas.emm.springws.jaxb.GetSubscriberResponse;
+import org.agnitas.emm.springws.util.SecurityContextAccess;
 import org.agnitas.util.CaseInsensitiveSet;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -29,30 +32,33 @@ import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 @Endpoint
 public class GetSubscriberEndpoint extends BaseEndpoint {
 
-	private RecipientService recipientService;
+	private final RecipientService recipientService;
+	private final SecurityContextAccess securityContextAccess;
 
-	public GetSubscriberEndpoint(RecipientService recipientService) {
-		this.recipientService = recipientService;
+	public GetSubscriberEndpoint(final RecipientService recipientService, final SecurityContextAccess securityContextAccess) {
+		this.recipientService = Objects.requireNonNull(recipientService, "recipientService");
+		this.securityContextAccess = Objects.requireNonNull(securityContextAccess, "securityContextAccess");
 	}
 
-	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "GetSubscriberRequest")
+	@PayloadRoot(namespace = Namespaces.AGNITAS_ORG, localPart = "GetSubscriberRequest")
 	public @ResponsePayload GetSubscriberResponse getSubscriber(@RequestPayload GetSubscriberRequest request) {
-		GetSubscriberResponse response = new GetSubscriberResponse();
-
-		RecipientModel model = parseModel(request);
+		final RecipientModel model = parseModel(request, this.securityContextAccess);
 
 		// Validate requested profile fields
 		recipientService.checkColumnsAvailable(model);
 
-		Map<String, Object> parameters = recipientService.getSubscriber(model);
+		final Map<String, Object> parameters = recipientService.getSubscriber(model);
+		
+		final GetSubscriberResponse response = new GetSubscriberResponse();
 		populateResponse(request, response, parameters);
+		
 		return response;
 	}
 	
-	static RecipientModel parseModel(GetSubscriberRequest request) {
-		RecipientModel model = new RecipientModel();
+	static RecipientModel parseModel(GetSubscriberRequest request, final SecurityContextAccess securityContextAccess) {
+		final RecipientModel model = new RecipientModel();
 
-		model.setCompanyId(Utils.getUserCompany());
+		model.setCompanyId(securityContextAccess.getWebserviceUserCompanyId());
 		model.setCustomerId(request.getCustomerID());
 
 		GetSubscriberRequest.Profilefields profileFields = request.getProfilefields();

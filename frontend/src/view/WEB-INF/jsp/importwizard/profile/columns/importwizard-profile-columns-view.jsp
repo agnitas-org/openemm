@@ -1,4 +1,4 @@
-<%@ page language="java" import="com.agnitas.web.ImportProfileColumnsAction" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
+<%@ page import="com.agnitas.web.ImportProfileColumnsAction" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 <%@ page import="org.agnitas.beans.ColumnMapping" %>
 <%@ page import="org.agnitas.web.ProfileImportAction" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
@@ -10,7 +10,7 @@
 <c:set var="ACTION_BULK_REMOVE" value="<%= ImportProfileColumnsAction.ACTION_BULK_REMOVE %>"/>
 <c:set var="ACTION_UPLOAD" value="<%= ImportProfileColumnsAction.ACTION_UPLOAD %>"/>
 
-<agn:agnForm action="/importprofile_columns" id="importProfileColumnsForm" enctype="multipart/form-data" data-form="static"
+<agn:agnForm action="/importprofile_columns" id="importProfileColumnsForm" enctype="multipart/form-data" data-form="resource"
              data-controller="importprofile-fields"
              data-initializer="importprofile-fields"   
              data-validator="importprofile-fields/form">
@@ -49,7 +49,7 @@
 
 				<div class="form-group">
 					<label class="control-label">
-						<bean:message key="import.csv.file"/>
+						<bean:message key="import.csv.file"/>*
 					</label>
 					<c:set var="currentFileName" value="${importProfileColumnsForm.currentFileName}" scope="page" />
 					<c:set var="hasFile" value="${importProfileColumnsForm.hasFile}" scope="page" />

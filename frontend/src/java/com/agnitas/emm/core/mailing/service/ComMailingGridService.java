@@ -18,7 +18,7 @@ import com.agnitas.beans.Mailing;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.grid.grid.beans.ComGridTemplate;
 
 public interface ComMailingGridService {
@@ -31,7 +31,7 @@ public interface ComMailingGridService {
     
     void saveMailingGridInfo(int mailingID, int companyID, Map<String, Object> mailingGridInfo);
     
-    List<ComGridTemplate> getReleasedGridTemplates(final ComAdmin admin, String sort, String direction);
+    List<ComGridTemplate> getReleasedGridTemplates(final Admin admin, String sort, String direction);
 
     @Transactional
     void saveUndoGridMailing(int mailingId, int gridTemplateId, int adminId);

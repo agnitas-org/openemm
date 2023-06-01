@@ -13,7 +13,6 @@ package com.agnitas.emm.core.serverstatus.web;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -21,6 +20,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import com.agnitas.web.mvc.XssCheckAware;
+import org.agnitas.emm.core.autoimport.bean.AutoImport;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.useractivitylog.UserAction;
@@ -56,7 +57,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.util.UriUtils;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.dao.ComServerMessageDao;
 import com.agnitas.dao.LicenseDao;
@@ -86,7 +87,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import net.sf.json.JSONArray;
 
-public class ServerStatusControllerBasic {
+public class ServerStatusControllerBasic implements XssCheckAware {
+
 	private static final Logger logger = LogManager.getLogger(ServerStatusControllerBasic.class);
 	
 	private static final String TEMP_LICENSE_DIRECTORY = AgnUtils.getTempDir() + File.separator + "License";
@@ -127,14 +129,14 @@ public class ServerStatusControllerBasic {
 	}
 
 	@RequestMapping(value = "/view.action", method = { RequestMethod.GET, RequestMethod.POST })
-	public String view(HttpServletRequest request, ComAdmin admin, Model model, ServerStatusForm form) {
+	public String view(HttpServletRequest request, Admin admin, Model model, ServerStatusForm form) {
 		model.addAttribute("serverStatus", serverStatusService.getServerStatus(request.getServletContext(), admin));
 
 		return "server_status_view";
 	}
 
 	@PostMapping("/config/save.action")
-	public String saveConfig(ComAdmin admin, ServerStatusForm form, Popups popups) throws UnsupportedEncodingException {
+	public String saveConfig(Admin admin, ServerStatusForm form, Popups popups) {
 		if(!configFormValidator.validate(form.getConfigForm(), popups)) {
 			return "messages";
 		}
@@ -153,7 +155,7 @@ public class ServerStatusControllerBasic {
 	}
 
 	@RequestMapping(value = "/config/view.action", method = { RequestMethod.GET, RequestMethod.POST })
-	public String viewConfig(ComAdmin admin, RedirectAttributes model, ServerStatusForm form, Popups popups) {
+	public String viewConfig(Admin admin, RedirectAttributes model, ServerStatusForm form, Popups popups) {
 		ServerConfigForm configForm = form.getConfigForm();
 
 		int clientId = configForm.getCompanyId();
@@ -198,7 +200,7 @@ public class ServerStatusControllerBasic {
 	}
 	
 	@RequestMapping(value = "/job/start.action", method = { RequestMethod.GET, RequestMethod.POST })
-	public String startJob(ComAdmin admin, RedirectAttributes model, ServerStatusForm form, Popups popups) {
+	public String startJob(Admin admin, RedirectAttributes model, ServerStatusForm form, Popups popups) {
 		if (!statusFormValidator.validateJobDescription(form, popups)) {
 			return "messages";
 		}
@@ -222,7 +224,7 @@ public class ServerStatusControllerBasic {
 	}
 
 	@RequestMapping(value = "/testemail/send.action", method = { RequestMethod.GET, RequestMethod.POST })
-	public String sendTestEmail(ComAdmin admin, ServerStatusForm form, RedirectAttributes model, Popups popups) {
+	public String sendTestEmail(Admin admin, ServerStatusForm form, RedirectAttributes model, Popups popups) {
 		if(!statusFormValidator.validateTestEmail(form, popups)) {
 			return "messages";
 		}
@@ -240,7 +242,7 @@ public class ServerStatusControllerBasic {
 	}
 
 	@RequestMapping(value = "/diagnosis/show.action", method = { RequestMethod.GET, RequestMethod.POST })
-	public String diagnosisView(HttpServletRequest request, ComAdmin admin, ServerStatusForm form, RedirectAttributes model, Popups popups) {
+	public String diagnosisView(HttpServletRequest request, Admin admin, ServerStatusForm form, RedirectAttributes model, Popups popups) {
 		if (!statusFormValidator.validateDiagnosticEmail(form, popups)) {
 			return "messages";
 		}
@@ -256,7 +258,7 @@ public class ServerStatusControllerBasic {
 	}
 
 	@RequestMapping(value = "/logfile/download.action", method = { RequestMethod.GET, RequestMethod.POST }, produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-	public @ResponseBody FileSystemResource logFileDownload(ComAdmin admin, HttpServletResponse response) throws IOException {
+	public @ResponseBody FileSystemResource logFileDownload(Admin admin, HttpServletResponse response) throws IOException {
 		String logFilePath = AgnUtils.getUserHomeDir() + "/logs/webapps/emm.log";
 		File zippedLogFile = ZipUtilities.zipFile(new File(logFilePath));
 		String downloadFileName = String.format("emm_logfile_%s.zip", new SimpleDateFormat(FILE_NAME_DATE_FORMAT).format(new Date()));
@@ -270,7 +272,7 @@ public class ServerStatusControllerBasic {
 	}
 
 	@RequestMapping(value = "/logfile/view.action", method = { RequestMethod.GET, RequestMethod.POST })
-	public String logFileView(ComAdmin admin, Model model) {
+	public String logFileView(Admin admin, Model model) {
 		String logFilePath = AgnUtils.getUserHomeDir() + "/logs/webapps/emm.log";
 
 		String logFileContent = "";
@@ -288,7 +290,7 @@ public class ServerStatusControllerBasic {
 	}
 
 	@RequestMapping(value = "/jobqueue/view.action", method = { RequestMethod.GET, RequestMethod.POST })
-	public String jobQueueView(ComAdmin admin, Model model) {
+	public String jobQueueView(Admin admin, Model model) {
 		model.addAttribute("activeJobQueueList", jobQueueService.getAllActiveJobs());
 		model.addAttribute("dateTimeFormat", admin.getDateTimeFormat());
 		userActivityLogService.writeUserActivityLog(admin, new UserAction("server status", "job queue view"), logger);
@@ -362,7 +364,7 @@ public class ServerStatusControllerBasic {
 			JsonObject resultJsonObject = new JsonObject();
 			int responseCode;
 			
-			ComAdmin admin = AgnUtils.getAdmin(request);
+			Admin admin = AgnUtils.getAdmin(request);
 			if (admin == null) {
 				admin = loginAdminByRequestParameters(request, admin);
 			}
@@ -375,6 +377,9 @@ public class ServerStatusControllerBasic {
 				responseCode = 403;
 			} else {
 				try {
+					List<AutoImport> stallingAutoImports = serverStatusService.getStallingAutoImports();
+					int stallingImports = serverStatusService.getStallingImportsAmount();
+					
 					if (!serverStatusService.isJobQueueRunning()) {
 						resultJsonObject.add("status", "ERROR: Jobqueue is not running");
 						responseCode = 500;
@@ -401,8 +406,26 @@ public class ServerStatusControllerBasic {
 							erroneousJobsArray.add(erroneousJobObject);
 						}
 						responseCode = 409;
-					} else if (serverStatusService.isImportStalling()) {
-						resultJsonObject.add("status", "ERROR: Some import job is stalling");
+					} else if (stallingAutoImports != null && stallingAutoImports.size() > 0) {
+						List<String> stallingAutoImportTexts = new ArrayList<>();
+						for (AutoImport stallingAutoImport : stallingAutoImports) {
+							stallingAutoImportTexts.add("\"" + stallingAutoImport.getDescription() + "\" (CompanyID: " + stallingAutoImport.getCompanyId() + ", AutoImportID: " + stallingAutoImport.getAutoImportId() + ")");
+						}
+						
+						resultJsonObject.add("status", "ERROR: Some auto import job is stalling (" + StringUtils.join(stallingAutoImportTexts, ", ") + ")");
+						
+						JsonArray erroneousImportsArray = new JsonArray();
+						List<String> erroneousImports = serverStatusService.getErroneousImports();
+						for (String importName : erroneousImports) {
+							JsonObject erroneousJobObject = new JsonObject();
+							erroneousJobObject.add("description", importName);
+							erroneousImportsArray.add(erroneousJobObject);
+						}
+						resultJsonObject.add("erroneousJobs", erroneousImportsArray);
+						
+						responseCode = 409;
+					} else if (stallingImports > 0) {
+						resultJsonObject.add("status", "ERROR: Some import is stalling (Amount: " + stallingImports + ")");
 						
 						JsonArray erroneousImportsArray = new JsonArray();
 						List<String> erroneousImports = serverStatusService.getErroneousImports();
@@ -448,7 +471,7 @@ public class ServerStatusControllerBasic {
 	@Anonymous
 	@RequestMapping(value = "/dbstatus.action", method = { RequestMethod.GET, RequestMethod.POST }, produces = MediaType.TEXT_PLAIN_VALUE)
 	public @ResponseBody String showDbStatus(HttpServletRequest request, HttpServletResponse response) {
-		ComAdmin admin = AgnUtils.getAdmin(request);
+		Admin admin = AgnUtils.getAdmin(request);
 		if (admin == null) {
 			try {
 				// User has no session, but try to logon user by given parameters
@@ -487,7 +510,7 @@ public class ServerStatusControllerBasic {
 	@Anonymous
 	@RequestMapping(value = "/overallstatus.action", method = { RequestMethod.GET, RequestMethod.POST }, produces = MediaType.TEXT_PLAIN_VALUE)
 	public @ResponseBody String showOverallStatus(HttpServletRequest request, HttpServletResponse response) {
-		ComAdmin admin = AgnUtils.getAdmin(request);
+		Admin admin = AgnUtils.getAdmin(request);
 		if (admin == null) {
 			try {
 				admin = loginAdminByRequestParameters(request, admin);
@@ -509,14 +532,21 @@ public class ServerStatusControllerBasic {
 				foundError = true;
 			}
 		}
+
+		List<AutoImport> stallingAutoImports = serverStatusService.getStallingAutoImports();
+		int stallingImports = serverStatusService.getStallingImportsAmount();
+		
 		if (serverStatusService.checkActiveNode() && !serverStatusService.isJobQueueRunning()) {
 			result = "\nJobqueue is not running";
 			foundError = true;
 		} else if (!serverStatusService.isJobQueueStatusOK()) {
 			result = "\nSome jobqueue jobs have errors";
 			foundError = true;
-		} else if (serverStatusService.isImportStalling()) {
-			result = "\nSome import job is stalling";
+		} else if (stallingAutoImports != null && stallingAutoImports.size() > 0) {
+			result = "\nSome auto import job is stalling";
+			foundError = true;
+		} else if (stallingImports > 0) {
+			result = "\nSome import is stalling";
 			foundError = true;
 		}
 
@@ -534,7 +564,7 @@ public class ServerStatusControllerBasic {
 	
     @RequestMapping(value = "/licensedata/licenseupload.action", method = { RequestMethod.GET, RequestMethod.POST }, produces = MediaType.TEXT_PLAIN_VALUE, consumes = {"multipart/form-data"})
     public String licenseFileUpload(@RequestParam("file") MultipartFile file, RedirectAttributes redirectAttributes, Model model, HttpServletRequest request) {
-    	ComAdmin admin = AgnUtils.getAdmin(request);
+    	Admin admin = AgnUtils.getAdmin(request);
 		if (admin == null) {
 			try {
 				admin = loginAdminByRequestParameters(request, admin);
@@ -630,7 +660,7 @@ public class ServerStatusControllerBasic {
     }
 
 	@RequestMapping(value = "/updatecheck.action", method = { RequestMethod.GET, RequestMethod.POST })
-    public String updateCheck(HttpServletRequest request, ComAdmin admin, Model model, ServerStatusForm form, Popups popups) {
+    public String updateCheck(HttpServletRequest request, Admin admin, Model model, ServerStatusForm form, Popups popups) {
     	try {
 			String currentVersionString = configService.getValue(ConfigValue.ApplicationVersion);
 			Version currentVersion = new Version(currentVersionString);
@@ -662,7 +692,7 @@ public class ServerStatusControllerBasic {
 		return serverStatusService.getSystemStatus();
 	}
 
-	private ComAdmin loginAdminByRequestParameters(HttpServletRequest request, ComAdmin admin) throws LogonServiceException {
+	private Admin loginAdminByRequestParameters(HttpServletRequest request, Admin admin) throws LogonServiceException {
 		String basicAuthorizationUsername = HttpUtils.getBasicAuthenticationUsername(request);
 		String basicAuthorizationPassword = HttpUtils.getBasicAuthenticationPassword(request);
 		String username = StringUtils.isNotBlank(basicAuthorizationUsername) ? basicAuthorizationUsername : request.getParameter("username");

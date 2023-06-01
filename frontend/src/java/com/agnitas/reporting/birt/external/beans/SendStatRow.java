@@ -37,49 +37,61 @@ public class SendStatRow {
 	public String getCategory() {
 		return category;
 	}
+
 	public void setCategory(String category) {
 		this.category = category;
 	}
+
 	public int getCategoryindex() {
 		return categoryindex;
 	}
+
 	public void setCategoryindex(int categoryindex) {
 		this.categoryindex = categoryindex;
 	}
+
 	public String getTargetgroup() {
 		return targetgroup;
 	}
+
 	public void setTargetgroup(String targetgroup) {
 		this.targetgroup = targetgroup;
 	}
+
 	public int getTargetgroupindex() {
 		return targetgroupindex;
 	}
+
 	public void setTargetgroupindex(int targetgroupindex) {
 		this.targetgroupindex = targetgroupindex;
 	}
+
 	public int getCount() {
 		return count;
 	}
+
 	public void setCount(int count) {
 		this.count = count;
 	}
+
 	public double getRate() {
 		return rate;
 	}
+
 	public void setRate(double rate) {
 		this.rate = rate;
 	}
+
     public Date getDt() {
         return dt;
     }
+
 	public void setDt(Date dt) {
         this.dt = dt;
     }
 
 	@Override
 	public String toString() {
-		
 		return "SendStatRow : \n" + "Category: " + getCategory() + "\n" +
 				"CategoryIndex: " + getCategoryindex() + "\n" +
 				"Targetgroup: " + getTargetgroup() + "\n" +

@@ -51,9 +51,9 @@ public class ComBirtReportComparisonSettings extends ComBirtReportSettings {
     public String getReportName(String reportFormat) {
         if (StringUtils.equalsIgnoreCase(ComBirtReport.FORMAT_CSV, reportFormat)) {
             return "mailings_compare_report_csv.rptdesign";
-        } else {
-            return "mailings_compare_report.rptdesign";
         }
+
+        return "mailings_compare_report.rptdesign";
     }
 
     public String getSortBy() {

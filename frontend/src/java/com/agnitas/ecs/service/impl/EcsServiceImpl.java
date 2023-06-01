@@ -22,7 +22,7 @@ import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.ecs.service.EcsService;
 import com.agnitas.emm.core.workflow.service.GenerationPDFService;
@@ -48,7 +48,7 @@ public class EcsServiceImpl implements EcsService {
     }
 
     @Override
-    public File generatePDF(ComAdmin admin, String url, String title) {
+    public File generatePDF(Admin admin, String url, String title) {
         return generationPDFService.generatePDF(configService.getValue(ConfigValue.WkhtmlToPdfToolPath),
                 url,
                 StringUtils.defaultString(title),

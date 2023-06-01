@@ -10,13 +10,16 @@
 
 package org.agnitas.emm.springws.endpoint.binding;
 
+import java.util.Objects;
+
 import org.agnitas.beans.BindingEntry;
 import org.agnitas.emm.core.binding.service.BindingModel;
 import org.agnitas.emm.core.binding.service.BindingService;
 import org.agnitas.emm.springws.endpoint.BaseEndpoint;
-import org.agnitas.emm.springws.endpoint.Utils;
+import org.agnitas.emm.springws.endpoint.Namespaces;
 import org.agnitas.emm.springws.jaxb.ListSubscriberBindingRequest;
 import org.agnitas.emm.springws.jaxb.ListSubscriberBindingResponse;
+import org.agnitas.emm.springws.util.SecurityContextAccess;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.ws.server.endpoint.annotation.Endpoint;
 import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
@@ -26,21 +29,22 @@ import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 @Endpoint
 public class ListSubscriberBindingEndpoint extends BaseEndpoint {
 
-	private BindingService bindingService;
+	private final BindingService bindingService;
+	private final SecurityContextAccess securityContextAccess;
 
-	public ListSubscriberBindingEndpoint(@Qualifier("BindingService") BindingService bindingService) {
-		this.bindingService = bindingService;
+	public ListSubscriberBindingEndpoint(@Qualifier("BindingService") BindingService bindingService, final SecurityContextAccess securityContextAccess) {
+		this.bindingService = Objects.requireNonNull(bindingService, "bindingService");
+		this.securityContextAccess = Objects.requireNonNull(securityContextAccess, "securityContextAccess");
 	}
 
-	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "ListSubscriberBindingRequest")
+	@PayloadRoot(namespace = Namespaces.AGNITAS_ORG, localPart = "ListSubscriberBindingRequest")
 	public @ResponsePayload ListSubscriberBindingResponse listSubscriberBinding(@RequestPayload ListSubscriberBindingRequest request) {
-		ListSubscriberBindingResponse response = new ListSubscriberBindingResponse();
-		
-		BindingModel model = parseModel(request);
+		final BindingModel model = parseModel(request, this.securityContextAccess);
         if (request.isUseISODateFormat() == null) {
             request.setUseISODateFormat(false);
         }
 
+        final ListSubscriberBindingResponse response = new ListSubscriberBindingResponse();
 		for (BindingEntry binding : bindingService.getBindings(model)) {
 			response.getItem().add(new SubscriberBindingResponseBuilder().createResponse(binding, request.isUseISODateFormat()));
 		}
@@ -48,10 +52,11 @@ public class ListSubscriberBindingEndpoint extends BaseEndpoint {
 		return response;
 	}
 
-	public static BindingModel parseModel(ListSubscriberBindingRequest request) {
-		BindingModel model = new BindingModel();
+	public static BindingModel parseModel(ListSubscriberBindingRequest request, final SecurityContextAccess securityContextAccess) {
+		final BindingModel model = new BindingModel();
 		model.setCustomerId(request.getCustomerID());
-		model.setCompanyId(Utils.getUserCompany());
+		model.setCompanyId(securityContextAccess.getWebserviceUserCompanyId());
+		
 		return model;
 	}
 }

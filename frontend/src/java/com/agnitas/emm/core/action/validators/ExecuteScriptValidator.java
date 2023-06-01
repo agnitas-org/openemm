@@ -15,7 +15,7 @@ import org.agnitas.emm.core.velocity.scriptvalidator.ScriptValidationException;
 import org.agnitas.emm.core.velocity.scriptvalidator.ScriptValidator;
 import org.springframework.stereotype.Component;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.action.operations.ActionOperationExecuteScriptParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationParameters;
 import com.agnitas.messages.Message;
@@ -36,7 +36,7 @@ public class ExecuteScriptValidator implements ActionOperationValidator {
     }
 
     @Override
-    public SimpleServiceResult validate(ComAdmin admin, ActionOperationParameters target) {
+    public SimpleServiceResult validate(Admin admin, ActionOperationParameters target) {
         ActionOperationExecuteScriptParameters operation = (ActionOperationExecuteScriptParameters) target;
         try {
             velocityDirectiveScriptValidator.validateScript(operation.getScript());

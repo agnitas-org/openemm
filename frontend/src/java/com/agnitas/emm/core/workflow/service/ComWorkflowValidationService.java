@@ -45,6 +45,8 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.stream.Collectors;
 
+import com.agnitas.beans.ComTrackableLink;
+import com.agnitas.emm.core.trackablelinks.service.ComTrackableLinkService;
 import com.agnitas.emm.core.workflow.beans.impl.WorkflowDateBasedMailingImpl;
 import com.agnitas.emm.core.workflow.beans.impl.WorkflowRecipientImpl;
 import org.agnitas.dao.MaildropStatusDao;
@@ -69,7 +71,7 @@ import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.MaildropEntry;
 import com.agnitas.dao.ComMailingDao;
-import com.agnitas.dao.ComProfileFieldDao;
+import com.agnitas.dao.ProfileFieldDao;
 import com.agnitas.dao.ComTargetDao;
 import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.maildrop.MaildropGenerationStatus;
@@ -231,12 +233,13 @@ public class ComWorkflowValidationService {
     // Allowed statuses for base mailings (for follow-up)
     private static final Set<String> FOLLOWED_MAILING_STATUSES = new HashSet<>();
 
+    private ComTrackableLinkService trackableLinkService;
     private ComWorkflowService workflowService;
     private AutoImportService autoImportService;
     private AutoExportService autoExportService;
     private ComMailingDao mailingDao;
     private MaildropStatusDao maildropStatusDao;
-    private ComProfileFieldDao profileFieldDao;
+    private ProfileFieldDao profileFieldDao;
     private ComTargetDao targetDao;
 
     static {
@@ -350,6 +353,9 @@ public class ComWorkflowValidationService {
                                 messages.add(Message.of("error.workflow.reaction.trigger.unique", name));
                             }
                         }
+                        if (WorkflowReactionType.CLICKED_LINK == start.getReaction() && start.getLinkId() > 0) {
+                            validateClickedLink(companyId, messages, start.getLinkId());
+                        }
                         break;
                     case RULE:
                         String rule = start.getDateFieldValue();
@@ -359,9 +365,7 @@ public class ComWorkflowValidationService {
                         }
                         break;
                     case REGULAR:
-                        break;
                     case UNKNOWN:
-                        break;
                     default:
                         break;
                 }
@@ -369,6 +373,13 @@ public class ComWorkflowValidationService {
         }
 
         return messages;
+    }
+
+    private void validateClickedLink(int companyId, List<Message> messages, int linkId) {
+        ComTrackableLink link = trackableLinkService.getTrackableLink(companyId, linkId);
+        if (link == null) {
+            messages.add(Message.of("error.workflow.link.removed"));
+        }
     }
 
     public boolean isAutoImportMisused(List<WorkflowIcon> icons) {
@@ -586,21 +597,23 @@ public class ComWorkflowValidationService {
     }
 
     public boolean isInvalidDelayForDateBase(List<WorkflowIcon> workflowIcons) {
-        boolean isDateBaseCampaign = workflowIcons.stream()
-                .filter(icon -> WorkflowIconType.fromId(icon.getType()) == WorkflowIconType.START)
-                .map(icon -> (WorkflowStart) icon)
-                .anyMatch(start -> WorkflowUtils.is(start, WorkflowStartEventType.EVENT_DATE));
-
-        if (isDateBaseCampaign) {
+        if (isDateBaseCampaign(workflowIcons)) {
             return workflowIcons.stream()
                     .filter(icon -> WorkflowIconType.fromId(icon.getType()) == WorkflowIconType.DEADLINE)
-                    .map(icon -> (WorkflowDeadline) icon)
+                    .map(WorkflowDeadline.class::cast)
                     .filter(WorkflowIcon::isFilled)
                     .filter(deadline -> deadline.getTimeUnit() == WorkflowDeadline.WorkflowDeadlineTimeUnit.TIME_UNIT_MINUTE)
                     .anyMatch(deadline -> deadline.getDelayValue() < Duration.ofHours(1).toMinutes());
         }
 
         return false;
+    }
+
+    public boolean isDateBaseCampaign(List<WorkflowIcon> workflowIcons) {
+        return workflowIcons.stream()
+                .filter(icon -> WorkflowIconType.fromId(icon.getType()) == WorkflowIconType.START)
+                .map(WorkflowStart.class::cast)
+                .anyMatch(start -> WorkflowUtils.is(start, WorkflowStartEventType.EVENT_DATE));
     }
 
     public boolean isAnyTargetForDateBased(List<WorkflowIcon> workflowIcons) {
@@ -1644,6 +1657,15 @@ public class ComWorkflowValidationService {
                 .collect(Collectors.toList());
     }
 
+    public List<Message> validateDecisionReaction(WorkflowDecision decision, int companyId) {
+        List<Message> messages = new ArrayList<>();
+        if (WorkflowReactionType.CLICKED_LINK == decision.getReaction() && decision.getLinkId() > 0) {
+            validateClickedLink(companyId, messages, decision.getLinkId());
+        }
+        return messages;
+    }
+    
+    
     public List<Message> validateDecisionRules(WorkflowDecision decision, int companyId) {
         // checking is field exist in recipient table
         DbColumnType columnType = profileFieldDao.getColumnType(companyId, decision.getProfileField());
@@ -1793,12 +1815,17 @@ public class ComWorkflowValidationService {
     }
 
     @Required
-    public void setProfileFieldDao(ComProfileFieldDao profileFieldDao) {
+    public void setProfileFieldDao(ProfileFieldDao profileFieldDao) {
         this.profileFieldDao = profileFieldDao;
     }
 
     @Required
     public void setTargetDao(ComTargetDao targetDao) {
         this.targetDao = targetDao;
+    }
+    
+    @Required
+    public void setTrackableLinkService(ComTrackableLinkService trackableLinkService) {
+        this.trackableLinkService = trackableLinkService;
     }
 }

@@ -10,7 +10,7 @@
 
 package com.agnitas.emm.core.mailing.service.impl;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.DynamicTag;
 import com.agnitas.beans.Mailing;
 import com.agnitas.emm.core.components.service.ComMailingComponentsService;
@@ -18,6 +18,7 @@ import com.agnitas.emm.core.linkcheck.service.LinkService;
 import com.agnitas.emm.core.mailing.service.MailingSizeCalculationService;
 import com.agnitas.service.AgnTagService;
 import com.agnitas.util.Span;
+import org.agnitas.backend.AgnTag;
 import org.agnitas.beans.DynamicTagContent;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.util.AgnTagUtils;
@@ -41,15 +42,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static java.text.MessageFormat.format;
+
 public class MailingSizeCalculationServiceImpl implements MailingSizeCalculationService {
 
     private static final Logger logger = LogManager.getLogger(MailingSizeCalculationServiceImpl.class);
 
     private static final double QUOTED_PRINTABLE_OVERHEAD_RATIO = 8.f / 7.f;  // Quoted-printable notation uses 7 bit out of 8
     private static final double BASE64_OVERHEAD_RATIO = 8.f / 6.f;  // Base64 uses 6 bit out of 8 (padding is neglectable)
-
-    private static final String AGN_TAG_IMAGE = "agnIMAGE";
-    private static final String AGN_TAG_IMGLINK = "agnIMGLINK";
 
     private final ComMailingComponentsService mailingComponentsService;
     private final AgnTagService agnTagService;
@@ -62,8 +62,8 @@ public class MailingSizeCalculationServiceImpl implements MailingSizeCalculation
     }
 
     @Override
-    public Tuple<Long, Long> calculateSize(Mailing mailing, ComAdmin admin) {
-        return new MailingSizeCalculation(mailing).calculate();
+    public Tuple<Long, Long> calculateSize(Mailing mailing, Admin admin) {
+        return new MailingSizeCalculator(mailing).calculate();
     }
 
     public static class Block {
@@ -175,18 +175,18 @@ public class MailingSizeCalculationServiceImpl implements MailingSizeCalculation
         }
     }
 
-    protected class MailingSizeCalculation {
+    protected class MailingSizeCalculator {
         private Mailing mailing;
         private Map<String, List<Block>> blockMap;
         private Map<String, Integer> imageSizeMap;
         private Map<String, Integer> mediapoolImageSizeMap = new HashMap<>();
 
-        public MailingSizeCalculation(Mailing mailing) {
+        public MailingSizeCalculator(Mailing mailing) {
             this.mailing = mailing;
             this.blockMap = getBlockMap(mailing.getDynTags().values());
         }
 
-        public MailingSizeCalculation(Mailing mailing, Map<String, Integer> mediapoolImageSizeMap) {
+        public MailingSizeCalculator(Mailing mailing, Map<String, Integer> mediapoolImageSizeMap) {
             this(mailing);
             this.mediapoolImageSizeMap = mediapoolImageSizeMap;
         }
@@ -211,7 +211,7 @@ public class MailingSizeCalculationServiceImpl implements MailingSizeCalculation
 
             imageSizeMap = sizeMapWithoutExternalImages;
 
-            long attachmentsSize = mailingComponentsService.getAttachmentsSize(mailing.getCompanyID(), mailing.getId());
+            long attachmentsSize = calculateAttachmentsSize(mailing.getCompanyID(), mailing.getId());
             long size1 = Math.max(calculate(textMarkup), calculate(htmlMarkup)) + attachmentsSize;
 
             boolean notExistExternalImages = sizeMapWithExternalImages.size() == sizeMapWithoutExternalImages.size();
@@ -305,7 +305,7 @@ public class MailingSizeCalculationServiceImpl implements MailingSizeCalculation
             long ownSize = AgnUtils.countBytes(content);
 
             // Erase content (simple text/html or other agn-tags) embraced with disabled (not defined by user) dynamic tags (if any).
-            if (dynamicTags.size() > 0) {
+            if (!dynamicTags.isEmpty()) {
                 List<Span> excludedSpans = collectExcludedSpans(dynamicTags);
                 Iterator<DynamicTag> iterator = dynamicTags.iterator();
 
@@ -397,10 +397,10 @@ public class MailingSizeCalculationServiceImpl implements MailingSizeCalculation
             for (DynamicTag tag : tags) {
                 List<DynamicTagContent> contents = new ArrayList<>(tag.getDynContent().values());
 
-                if (contents.size() > 0) {
-                    List<Block> blocks = new ArrayList<>(contents.size());
-
+                if (!contents.isEmpty()) {
                     contents.sort(Comparator.comparingInt(DynamicTagContent::getDynOrder));
+
+                    List<Block> blocks = new ArrayList<>(contents.size());
 
                     for (DynamicTagContent content : contents) {
                         blocks.add(new Block(tag.getDynName(), content.getDynContent()));
@@ -469,11 +469,19 @@ public class MailingSizeCalculationServiceImpl implements MailingSizeCalculation
         }
     }
 
+    private long calculateAttachmentsSize(int companyId, int mailingId) {
+        List<MailingComponent> attachments = mailingComponentsService.getPreviewHeaderComponents(companyId, mailingId);
+
+        return attachments.stream()
+                .map(attachment -> StringUtils.length(AgnUtils.encodeBase64(attachment.getBinaryBlock())))
+                .reduce(0, Integer::sum);
+    }
+
     private List<DynamicTag> getDynamicTags(String content) {
         try {
             return agnTagService.getDynTags(content);
         } catch (DynTagException e) {
-            logger.error("Error occurred: " + e.getMessage(), e);
+            logger.error(format("Error occurred: {0}", e.getMessage()), e);
             return Collections.emptyList();
         }
     }
@@ -492,14 +500,14 @@ public class MailingSizeCalculationServiceImpl implements MailingSizeCalculation
                 }
             });
         } catch (Exception e) {
-            logger.error("Error occurred: " + e.getMessage(), e);
+            logger.error(format("Error occurred: {0}", e.getMessage()), e);
         }
 
         try {
-            agnTagService.collectTags(content, tag -> AGN_TAG_IMAGE.equals(tag.getTagName()) || AGN_TAG_IMGLINK.equals(tag.getTagName()))
+            agnTagService.collectTags(content, tag -> AgnTag.IMAGE.getName().equals(tag.getTagName()) || AgnTag.IMG_LINK.getName().equals(tag.getTagName()))
                     .forEach(tag -> imageLinks.add(new ImageLinkSpan(tag.getName(), tag.getStartPos(), tag.getEndPos())));
         } catch (Exception e) {
-            logger.error("Error occurred: " + e.getMessage(), e);
+            logger.error(format("Error occurred: {0}", e.getMessage()), e);
         }
 
         return imageLinks;

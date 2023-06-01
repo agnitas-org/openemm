@@ -11,6 +11,7 @@
 package com.agnitas.service;
 
 import org.agnitas.beans.RowsCountAndSelectedFieldsWebStorageEntry;
+import org.agnitas.beans.RowsCountAndSortingWebStorageEntry;
 import org.agnitas.beans.RowsCountWebStorageEntry;
 import org.agnitas.beans.SortingWebStorageEntry;
 import org.agnitas.service.WebStorage;
@@ -24,7 +25,7 @@ public interface ComWebStorage extends WebStorage {
     WebStorageBundle<ComMailingOverviewWebStorageEntry> MAILING_OVERVIEW = WebStorageBundle.define("mailing-overview", ComMailingOverviewWebStorageEntry.class);
     WebStorageBundle<RowsCountWebStorageEntry> MAILING_PARAMETER_OVERVIEW = WebStorageBundle.define("mailing-parameter-overview", RowsCountWebStorageEntry.class);
     WebStorageBundle<RowsCountWebStorageEntry> WORKFLOW_OVERVIEW = WebStorageBundle.define("workflow-overview", RowsCountWebStorageEntry.class);
-    WebStorageBundle<RowsCountWebStorageEntry> PROFILE_FIELD_OVERVIEW = WebStorageBundle.define("profile-field-overview", RowsCountWebStorageEntry.class);
+    WebStorageBundle<RowsCountAndSortingWebStorageEntry> PROFILE_FIELD_OVERVIEW = WebStorageBundle.define("profile-field-overview", RowsCountAndSortingWebStorageEntry.class);
     WebStorageBundle<RowsCountWebStorageEntry> BLACKLIST_OVERVIEW = WebStorageBundle.define("blacklist-overview", RowsCountWebStorageEntry.class);
     WebStorageBundle<RowsCountWebStorageEntry> AUTO_IMPORT_OVERVIEW = WebStorageBundle.define("auto-import-overview", RowsCountWebStorageEntry.class);
     WebStorageBundle<RowsCountWebStorageEntry> AUTO_EXPORT_OVERVIEW = WebStorageBundle.define("auto-export-overview", RowsCountWebStorageEntry.class);

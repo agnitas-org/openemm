@@ -19,15 +19,15 @@ import org.agnitas.beans.AdminGroup;
 import org.agnitas.util.CsvWriter;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.dao.ComAdminGroupDao;
+import com.agnitas.dao.AdminGroupDao;
 import com.agnitas.service.ComCSVService;
 
 public class ComCSVServiceImpl implements ComCSVService {
     /** DAO for accessing admin group data. */
-	protected ComAdminGroupDao adminGroupDao;
+	protected AdminGroupDao adminGroupDao;
 	
     @Required
-	public void setAdminGroupDao(ComAdminGroupDao adminGroupDao) {
+	public void setAdminGroupDao(AdminGroupDao adminGroupDao) {
 		this.adminGroupDao = adminGroupDao;
 	}
 

@@ -1,3 +1,6 @@
+
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+
 <script id="mailing-content-entry-template" type="text/x-mustache-template">
     <div id="{{-id}}" class="l-mailing-content-entry" data-action="selectContentEntry">
         <div class="l-name">
@@ -22,7 +25,7 @@
          data-controller="mailing-content-editor-controller"
          data-initializer="mailing-content-editor-initializer">
         <div class="modal-dialog">
-            <form class="modal-fixed-content" data-form="">
+            <mvc:form cssClass="modal-fixed-content" data-form="">
                 <div class="modal-fixed-header standard-header">
                     <div class="row full-width no-margin">
                         <div class="col-sm-6">
@@ -102,14 +105,16 @@
                                         <div class="col-sm-4 no-padding">
                                             {{ if (showHTMLEditor) { }}
                                             <ul id="editor_tabs" class="inline-tile-header-nav">
-                                                <li class="active">
-                                                    <a href="#" data-toggle-tab="#tab-content-html" style="line-height: 28px;">
-                                                        <bean:message key="HTML"/>
-                                                    </a>
-                                                </li>
+                                                <emm:HideByPermission token="mailing.editor.hide.html">
+                                                    <li class="active">
+                                                        <a href="#" data-toggle-tab="#tab-content-html" data-action="show-char-counter" style="line-height: 28px;">
+                                                            <bean:message key="HTML"/>
+                                                        </a>
+                                                    </li>
+                                                </emm:HideByPermission>
                                                 <emm:HideByPermission token="mailing.editor.hide">
                                                     <li>
-                                                        <a href="#" data-toggle-tab="#tab-content-wysiwyg" style="line-height: 28px;">
+                                                        <a href="#" data-toggle-tab="#tab-content-wysiwyg" data-action="hide-char-counter" style="line-height: 28px;">
                                                             <bean:message key="mailingContentHTMLEditor"/>
                                                         </a>
                                                     </li>
@@ -121,23 +126,29 @@
                                 </div>
                                 <div class="fixed-body">
                                     <emm:ShowByPermission token="mailing.editor.hide">
-                                        <div id="tab-content-html" class="{{- showHTMLEditor ? 'hidden' : ''}} full-height" data-tab-show="true">
-                                            <div id="contentEditor" class="form-control" {{- readonly }}></div>
-                                            <textarea id="content" class="form-control js-editor" {{- readonly }}></textarea>
-                                        </div>
+                                        <emm:HideByPermission token="mailing.editor.hide.html">
+                                            <div id="tab-content-html" class="{{- showHTMLEditor ? 'hidden' : ''}} full-height" data-tab-show="true">
+                                                <div id="contentEditor" class="form-control" {{- readonly }}></div>
+                                                <textarea id="content" data-action="count-textarea-chars" class="form-control js-editor" {{- readonly }}></textarea>
+                                            </div>
+                                        </emm:HideByPermission>
                                     </emm:ShowByPermission>
                                     <emm:HideByPermission token="mailing.editor.hide">
                                         <div id="tab-content-html" class="{{- showHTMLEditor ? 'hidden' : ''}} full-height">
                                             <div id="contentEditor" class="form-control" {{- readonly }}></div>
                                         </div>
-                                        <div id="tab-content-wysiwyg" class="{{- showHTMLEditor ? '' : 'hidden'}} full-height" >
+                                        <div id="tab-content-wysiwyg" class="{{- showHTMLEditor ? '' : 'hidden'}} full-height">
                                             <textarea id="content"
                                                       name="content"
                                                       class="form-control js-editor js-wysiwyg full-height"
+                                                      data-action="count-textarea-chars"
                                                       data-editor-options="isFullHtml: {{- isFullHtmlTags }}, browseMailingId: ${mailingId}"
                                                       {{- readonly }}></textarea>
                                         </div>
                                     </emm:HideByPermission>
+                                    <div class="modal-char-counter" data-char-counter-for="content">
+                                        <span class="small status">&nbsp;</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -161,7 +172,7 @@
                         {{ } }}
                     </div>
                 </div>
-            </form>
+            </mvc:form>
         </div>
     </div>
 </script>

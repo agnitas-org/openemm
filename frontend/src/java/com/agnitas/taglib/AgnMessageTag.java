@@ -19,7 +19,7 @@ import org.apache.struts.taglib.TagUtils;
 import org.apache.struts.taglib.bean.MessageTag;
 import org.apache.taglibs.standard.functions.Functions;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.messages.I18nString;
 
 import jakarta.servlet.jsp.JspException;
@@ -166,7 +166,7 @@ public class AgnMessageTag extends MessageTag {
 
 	private Locale resolveLocale() {
 		// Use admin's configured language if available, otherwise use the client's browser language
-		ComAdmin admin = AgnUtils.getAdmin(pageContext);
+		Admin admin = AgnUtils.getAdmin(pageContext);
 
 		if (admin != null) {
 			Locale locale = admin.getLocale();

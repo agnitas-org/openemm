@@ -10,10 +10,10 @@
 
 package com.agnitas.emm.core.mailingcontent.validator;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.mailingcontent.dto.DynTagDto;
 import com.agnitas.web.mvc.Popups;
 
 public interface DynTagValidator {
-    boolean validate(DynTagDto dynTagDto, Popups popups, ComAdmin admin);
+    boolean validate(DynTagDto dynTagDto, Popups popups, Admin admin);
 }

@@ -10,10 +10,10 @@
 
 package com.agnitas.web.mvc;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 
 public interface XssCheckAware {
-	default boolean isParameterExcludedForUnsafeHtmlTagCheck(ComAdmin admin, String parameter, String controllerMethodName) {
+	default boolean isParameterExcludedForUnsafeHtmlTagCheck(Admin admin, String parameter, String controllerMethodName) {
 		return false;
 	}
 }

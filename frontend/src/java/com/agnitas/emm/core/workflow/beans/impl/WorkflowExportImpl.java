@@ -49,9 +49,15 @@ public class WorkflowExportImpl extends BaseWorkflowIcon implements WorkflowExpo
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
+        if (this == o) {
+			return true;
+		}
+        if (o == null || getClass() != o.getClass()) {
+			return false;
+		}
+        if (!super.equals(o)) {
+			return false;
+		}
         WorkflowExportImpl that = (WorkflowExportImpl) o;
         return autoExportId == that.autoExportId;
     }

@@ -18,7 +18,7 @@ import java.util.Set;
 import org.agnitas.emm.core.mailinglist.service.MailinglistNotExistException;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.ComTrackableLink;
 import com.agnitas.beans.LinkProperty;
@@ -58,7 +58,7 @@ public interface ComTrackableLinkService {
 	 * @param mailingID mailing ID
 	 * @return true if editing is allowed, otherwise false
 	 */
-	boolean isUrlEditingAllowed(ComAdmin admin, int mailingID);
+	boolean isUrlEditingAllowed(Admin admin, int mailingID);
 
     void addExtensions(Mailing aMailing, Set<Integer> linksIds, List<LinkProperty> extensions, List<UserAction> userActions);
 
@@ -67,8 +67,6 @@ public interface ComTrackableLinkService {
 	void setMailingLinkExtension(Mailing aMailing, String linkExtension);
 
     void setLegacyLinkExtensionMarker(Mailing aMailing, Map<Integer, Boolean> linksToExtends);
-	
-	void setStandardDeeptracking(Mailing aMailing, Set<Integer> bulkLinkIds, int deepTracking, Map<Integer, Integer> getLinkItemsDeepTracking);
 	
 	void setShortname(Mailing aMailing, Map<Integer, String> linkItemNames);
 	

@@ -10,23 +10,23 @@
 
 package org.agnitas.emm.core.autoexport.service;
 
-import java.io.File;
-import java.util.Date;
-import java.util.List;
-
+import com.agnitas.beans.Admin;
+import com.agnitas.emm.core.autoexport.beans.AutoExportJobStatus;
+import com.agnitas.emm.core.referencetable.beans.ComReferenceTable;
+import com.agnitas.emm.core.workflow.beans.Workflow;
+import com.agnitas.service.CsvImportExportDescription;
 import org.agnitas.beans.ExportPredef;
 import org.agnitas.emm.core.autoexport.bean.AutoExport;
 import org.agnitas.emm.core.autoexport.bean.AutoExport.AutoExportType;
 import org.agnitas.emm.core.autoexport.bean.AutoExportWsJobState;
 
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.emm.core.autoexport.beans.AutoExportJobStatus;
-import com.agnitas.emm.core.referencetable.beans.ComReferenceTable;
-import com.agnitas.emm.core.workflow.beans.Workflow;
-import com.agnitas.service.CsvImportExportDescription;
+import java.io.File;
+import java.util.Date;
+import java.util.List;
 
 public interface AutoExportService {
-    List<AutoExport> getAutoExportsOverview(ComAdmin admin);
+
+    List<AutoExport> getAutoExportsOverview(Admin admin);
 
     List<AutoExport> getAutoExportsToRun(List<Integer> includedCompanyIds, List<Integer> excludedCompanyIds);
 
@@ -48,7 +48,7 @@ public interface AutoExportService {
 
     AutoExport getAutoExport(int autoExportId, int companyId);
 
-    List<ExportPredef> getExportProfiles(ComAdmin admin);
+    List<ExportPredef> getExportProfiles(Admin admin);
 
     boolean deleteAutoExport(int autoExportId, int companyId);
 
@@ -58,21 +58,15 @@ public interface AutoExportService {
 
     AutoExportStatus doExportReferenceTableData(AutoExport autoExport) throws Exception;
 
-    boolean announceStart(int autoExportId, Date nextStart);
+    boolean announceStart(int autoExportId, Date currentStart, Date nextStart);
 
     void announceEnd(AutoExport autoExport, int durationInSeconds, String result, int fieldCount, int exportCount, long fileSize) throws Exception;
 
     void finishMailingAutoExport(AutoExport autoExport);
 
     List<AutoExport> getAutoExports(int companyId, boolean active);
-    
-    List<AutoExport> getMailingAutoExports(int companyId, boolean active);
-    
-    void saveMailingAutoExport(ComAdmin admin, int autoExportId, int mailingId, Date activationAutoExportDate);
 
-    void createMailingAutoExport(ComAdmin admin, int autoExportId, int mailingId, Date activationAutoExportDate);
-    
-    void updateMailingAutoExport(ComAdmin admin, int autoExportId, int mailingId, Date activationAutoExportDate);
+    List<AutoExport> getMailingAutoExports(int companyId, boolean active);
 
     /**
      * Returns temporary auto-export file
@@ -83,16 +77,18 @@ public interface AutoExportService {
 
     AutoExportStatus doExportReactionsData(AutoExport autoExport) throws Exception;
 
-    AutoExport copyAutoExport(ComAdmin admin, int autoExportId) throws Exception;
+	AutoExportStatus doExportReactionsAndStatusData(AutoExport autoExport) throws Exception;
 
-	AutoExportStatus doExportBlacklistData(AutoExport autoExport) throws Exception;
-	
+    AutoExport copyAutoExport(Admin admin, int autoExportId) throws Exception;
+
+    AutoExportStatus doExportBlacklistData(AutoExport autoExport) throws Exception;
+
     int saveNewWsJobState(int companyId, int autoExportId, AutoExportJobStatus status, int expirationTimeout);
 
-	void saveWsJobState(int jobId, int companyID, AutoExportWsJobState state, int expirationTimeoutDefaultSeconds);
+    void saveWsJobState(int jobId, int companyID, AutoExportWsJobState state, int expirationTimeoutDefaultSeconds);
 
-	AutoExportWsJobState getWsJobState(int jobId, int companyId);
-	
-	void removeExpiredWsJobs();
+    AutoExportWsJobState getWsJobState(int jobId, int companyId);
+
+    void removeExpiredWsJobs();
 
 }

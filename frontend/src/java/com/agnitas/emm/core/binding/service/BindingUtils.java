@@ -13,12 +13,12 @@ package com.agnitas.emm.core.binding.service;
 import org.agnitas.dao.UserStatus;
 import org.agnitas.dao.exception.UnknownUserStatusException;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.recipient.service.RecipientType;
 
 public class BindingUtils {
 
-    public static String getUserRemarkForStatusByAdmin(ComAdmin admin, int newUserStatus) {
+    public static String getUserRemarkForStatusByAdmin(Admin admin, int newUserStatus) {
         try {
             return getUserRemarkForStatusByAdmin(admin, UserStatus.getUserStatusByID(newUserStatus));
         } catch (UnknownUserStatusException e) {
@@ -26,7 +26,7 @@ public class BindingUtils {
         }
 	}
 
-	public static String getUserRemarkForStatusByAdmin(ComAdmin admin, UserStatus userStatus) {
+	public static String getUserRemarkForStatusByAdmin(Admin admin, UserStatus userStatus) {
         if (userStatus == null) {
             return "Unknown status by ADMIN (" + admin.getUsername() + ")";
         }

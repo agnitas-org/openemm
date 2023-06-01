@@ -60,9 +60,15 @@ public class WorkflowArchiveImpl extends BaseWorkflowIcon implements WorkflowArc
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
+        if (this == o) {
+			return true;
+		}
+        if (o == null || getClass() != o.getClass()) {
+			return false;
+		}
+        if (!super.equals(o)) {
+			return false;
+		}
         WorkflowArchiveImpl that = (WorkflowArchiveImpl) o;
         return campaignId == that.campaignId &&
                 archived == that.archived;

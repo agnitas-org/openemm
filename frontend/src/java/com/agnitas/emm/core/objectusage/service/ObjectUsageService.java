@@ -10,6 +10,9 @@
 
 package com.agnitas.emm.core.objectusage.service;
 
+import java.util.List;
+
+import com.agnitas.emm.core.objectusage.common.ObjectUsage;
 import com.agnitas.emm.core.objectusage.common.ObjectUsages;
 
 /**
@@ -25,7 +28,7 @@ public interface ObjectUsageService {
 	 * 
 	 * @return list of objects referencing given auto import
 	 */
-	public ObjectUsages listUsageOfAutoImport(final int companyID, final int autoImportID);
+	ObjectUsages listUsageOfAutoImport(final int companyID, final int autoImportID);
 	
 	/**
 	 * Lists all objects of company referencing given mailing.
@@ -35,7 +38,7 @@ public interface ObjectUsageService {
 	 * 
 	 * @return list of objects referencing given mailing
 	 */
-	public ObjectUsages listUsageOfMailing(final int companyID, final int mailingID);
+    ObjectUsages listUsageOfMailing(final int companyID, final int mailingID);
 	
 	/**
 	 * Lists all objects of company referencing profile fields by given visible name.
@@ -45,7 +48,7 @@ public interface ObjectUsageService {
 	 * 
 	 * @return list of objects referencing given profile field
 	 */
-	public ObjectUsages listUsageOfProfileFieldByVisibleName(final int companyID, final String visibleName);
+    List<ObjectUsage> listUsageOfProfileFieldByVisibleName(final int companyID, final String visibleName);
 	
 	/**
 	 * Lists all objects of company referencing profile fields by given database name.
@@ -55,7 +58,7 @@ public interface ObjectUsageService {
 	 * 
 	 * @return list of objects referencing given profile field
 	 */
-	public ObjectUsages listUsageOfProfileFieldByDatabaseName(final int companyID, final String databaseName);
+    ObjectUsages listUsageOfProfileFieldByDatabaseName(final int companyID, final String databaseName);
 	
 	/**
 	 * Lists all objects of company referencing given link.
@@ -65,7 +68,7 @@ public interface ObjectUsageService {
 	 * 
 	 * @return list of objects referencing given link
 	 */
-	public ObjectUsages listUsageOfLink(final int companyID, final int linkID);
+    ObjectUsages listUsageOfLink(final int companyID, final int linkID);
 	
 	/**
 	 * Lists all objects of company referencing given reference table.
@@ -75,7 +78,7 @@ public interface ObjectUsageService {
 	 * 
 	 * @return list of objects referencing given reference table
 	 */
-	public ObjectUsages listUsageOfReferenceTable(final int companyID, final int tableID);
+    ObjectUsages listUsageOfReferenceTable(final int companyID, final int tableID);
 
 	/**
 	 * Lists all objects of company referencing given reference table column.
@@ -86,5 +89,5 @@ public interface ObjectUsageService {
 	 * 
 	 * @return list of objects referencing given reference table column
 	 */
-	public ObjectUsages listUsageOfReferenceTableColumn(final int companyID, final int tableID, final String columnName);
+    ObjectUsages listUsageOfReferenceTableColumn(final int companyID, final int tableID, final String columnName);
 }

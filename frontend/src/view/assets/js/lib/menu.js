@@ -4,9 +4,9 @@
 
   Menu = {
     init: function() {
-      var conf = AGN.Lib.Storage.get('menu_state') || 'open';
+      var conf = AGN.Lib.Storage.get('menu_state') || 'close';
 
-      if  (conf == 'open') {
+      if (conf == 'open') {
         this.openDirectly();
       } else {
         this.closeDirectly();

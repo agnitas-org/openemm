@@ -126,7 +126,7 @@ public class Dkim {
 					use = content != null;
 					dkimReportCache.put(domain, use);
 				} catch (Exception e) {
-					data.logging (Log.ERROR, "dkim", "Failed to query \"" + domain + "\": " + e.toString ());
+					data.logging (Log.ERROR, "dkim", "Failed to query \"" + domain + "\": " + e.toString (), e);
 				}
 			}
 			if (use != null) {

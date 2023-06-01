@@ -38,7 +38,7 @@ public class GetMailingTrackableLinks extends ComAjaxJsonServletBase {
         JSONObject responseJson = new JSONObject();
 
         ApplicationContext applicationContext = WebApplicationContextUtils.getWebApplicationContext(getServletContext());
-        ComTrackableLinkService trackableLinkService = applicationContext.getBean("TrackeableLinkService", ComTrackableLinkService.class);
+        ComTrackableLinkService trackableLinkService = applicationContext.getBean("TrackableLinkService", ComTrackableLinkService.class);
 
         try {
             int mailingId = Integer.parseInt(request.getParameter("mailingId"));

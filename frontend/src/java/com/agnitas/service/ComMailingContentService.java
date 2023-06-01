@@ -13,7 +13,10 @@ package com.agnitas.service;
 import com.agnitas.beans.Mailing;
 import org.agnitas.util.DynTagException;
 
+import java.util.Set;
+
 public interface ComMailingContentService {
     boolean isGenerationAvailable(Mailing mailing);
     void generateTextContent(Mailing mailing) throws DynTagException;
+    String generateDynName(String sourceName, Set<String> namesInUse);
 }

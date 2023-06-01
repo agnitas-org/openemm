@@ -11,6 +11,7 @@ image/gif                       gif GIF Gif
 image/tiff                      tif tiff TIF TIFF Tif Tiff
 image/bmp                       bmp BMP Bmp
 image/svg+xml                   svg SVG Svg
+image/x-icon                    ico ICO Ico
 
 application/zip                 zip ZIP Zip
 application/pdf                 pdf PDF Pdf

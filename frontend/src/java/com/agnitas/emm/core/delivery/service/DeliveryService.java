@@ -12,7 +12,7 @@ package com.agnitas.emm.core.delivery.service;
 
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 
 import net.sf.json.JSONArray;
 
@@ -22,6 +22,6 @@ public interface DeliveryService {
 
     JSONArray getSuccessfulDeliveriesInfo(int companyId, int mailingId, int recipientId);
 
-    boolean isDeliveryHistoryEnabled(ComAdmin admin);
+    boolean isDeliveryHistoryEnabled(Admin admin);
 
 }

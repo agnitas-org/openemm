@@ -9,6 +9,7 @@
 <%@ taglib prefix="c"       uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fn"      uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="emm"     uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
 <%--@elvariable id="helplanguage" type="java.lang.String"--%>
 <%--@elvariable id="localeDatePattern" type="java.lang.String"--%>
@@ -26,7 +27,7 @@
 
     <div class="status_error editor-error-messages well" style="margin-bottom: 10px; display: none;"></div>
 
-    <form action="" id="deadlineForm" name="deadlineForm">
+    <mvc:form action="" id="deadlineForm" name="deadlineForm">
         <input name="id" type="hidden">
         <div class="form-group">
             <div class="col-sm-8 col-sm-push-4">
@@ -227,5 +228,5 @@
                 </div>
             </div>
         </div>
-    </form>
+    </mvc:form>
 </div>

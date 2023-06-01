@@ -16,11 +16,12 @@ import java.util.Objects;
 
 import org.agnitas.emm.springws.endpoint.BaseEndpoint;
 import org.agnitas.emm.springws.endpoint.MailingEditableCheck;
-import org.agnitas.emm.springws.endpoint.Utils;
+import org.agnitas.emm.springws.endpoint.Namespaces;
 import org.agnitas.emm.springws.jaxb.UpdateTrackableLinkSettingsRequest;
 import org.agnitas.emm.springws.jaxb.UpdateTrackableLinkSettingsRequest.LinkExtensions;
 import org.agnitas.emm.springws.jaxb.UpdateTrackableLinkSettingsRequest.LinkExtensions.LinkExtension;
 import org.agnitas.emm.springws.jaxb.UpdateTrackableLinkSettingsResponse;
+import org.agnitas.emm.springws.util.SecurityContextAccess;
 import org.springframework.ws.server.endpoint.annotation.Endpoint;
 import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
 import org.springframework.ws.server.endpoint.annotation.RequestPayload;
@@ -36,26 +37,27 @@ public class UpdateTrackableLinkSettingsEndpoint extends BaseEndpoint {
 
     private final ComTrackableLinkService trackableLinkService;
     private final MailingEditableCheck mailingEditableCheck;
+    private final SecurityContextAccess securityContextAccess;
 
-    public UpdateTrackableLinkSettingsEndpoint(ComTrackableLinkService trackableLinkService, final MailingEditableCheck mailingEditableCheck) {
-        this.trackableLinkService = Objects.requireNonNull(trackableLinkService);
-        this.mailingEditableCheck = Objects.requireNonNull(mailingEditableCheck);
+    public UpdateTrackableLinkSettingsEndpoint(ComTrackableLinkService trackableLinkService, final MailingEditableCheck mailingEditableCheck, final SecurityContextAccess securityContextAccess) {
+        this.trackableLinkService = Objects.requireNonNull(trackableLinkService, "trackableLinkService");
+        this.mailingEditableCheck = Objects.requireNonNull(mailingEditableCheck, "mailingEditableCheck");
+        this.securityContextAccess = Objects.requireNonNull(securityContextAccess, "securityContextAccess");
     }
 
-    @PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "UpdateTrackableLinkSettingsRequest")
+    @PayloadRoot(namespace = Namespaces.AGNITAS_ORG, localPart = "UpdateTrackableLinkSettingsRequest")
     public @ResponsePayload UpdateTrackableLinkSettingsResponse updateTrackableLinkSettingsResponse(@RequestPayload UpdateTrackableLinkSettingsRequest request) throws Exception {
-    	this.mailingEditableCheck.requireMailingForTrackableLinkEditable(request.getUrlID(), Utils.getUserCompany());
-    	
-        UpdateTrackableLinkSettingsResponse response = new UpdateTrackableLinkSettingsResponse();
+    	this.mailingEditableCheck.requireMailingForTrackableLinkEditable(request.getUrlID(), this.securityContextAccess.getWebserviceUserCompanyId());
 
-        TrackableLinkModel trackableLinkModel = getTrackableLinkModel(request);
+    	final TrackableLinkModel trackableLinkModel = getTrackableLinkModel(request);
         trackableLinkService.updateTrackableLinkSettings(trackableLinkModel);
 
+        final UpdateTrackableLinkSettingsResponse response = new UpdateTrackableLinkSettingsResponse();
         return response;
     }
 
     private TrackableLinkModel getTrackableLinkModel(UpdateTrackableLinkSettingsRequest req) {
-        TrackableLinkModel trackableLinkModel = new TrackableLinkModel();
+        final TrackableLinkModel trackableLinkModel = new TrackableLinkModel();
         trackableLinkModel.setId(req.getUrlID());
         trackableLinkModel.setFullUrl(req.getUrl());
         trackableLinkModel.setActionID(req.getActionID());
@@ -64,10 +66,9 @@ public class UpdateTrackableLinkSettingsEndpoint extends BaseEndpoint {
         trackableLinkModel.setAltText(req.getAltText());
         trackableLinkModel.setAdminLink(req.isIsAdminLink());
         trackableLinkModel.setUsage(req.getTracking());
-        trackableLinkModel.setCompanyID(Utils.getUserCompany());
+        trackableLinkModel.setCompanyID(this.securityContextAccess.getWebserviceUserCompanyId());
 
-        List<LinkProperty> linkProperties = getLinkProperties(req);
-
+        final List<LinkProperty> linkProperties = getLinkProperties(req);
         trackableLinkModel.setLinkProperties(linkProperties);
 
         return trackableLinkModel;

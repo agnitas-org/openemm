@@ -19,7 +19,7 @@ import org.springframework.stereotype.Component;
 
 import com.agnitas.beans.AgnTagAttributeDto;
 import com.agnitas.beans.AgnTagSelectAttributeDto;
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.dao.ComTitleDao;
 import com.agnitas.service.AgnTagAttributeResolver;
 
@@ -32,7 +32,7 @@ public class AgnTagTitleTypeAttributeResolver implements AgnTagAttributeResolver
     }
 
     @Override
-	public AgnTagAttributeDto resolve(ComAdmin admin, String tag, String attribute) {
+	public AgnTagAttributeDto resolve(Admin admin, String tag, String attribute) {
         if (tag.startsWith("agnTITLE") && attribute.equals("type")) {
             List<Title> titles = titleDao.getTitles(admin.getCompanyID());
             Map<String, String> options = new LinkedHashMap<>(titles.size());

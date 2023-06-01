@@ -30,7 +30,7 @@ public class TitleDAO {
 			
 		titles = new HashMap <> ();
 		try (DBase.With with = dbase.with ()) {
-			rq = dbase.query (with.jdbc (),
+			rq = dbase.query (with.cursor (),
 					  "SELECT title_id, title, gender FROM title_gender_tbl " +
 					  "WHERE title_id IN (SELECT title_id FROM title_tbl WHERE company_id = :companyID OR company_id = 0 OR company_id IS null)",
 					  "companyID", forCompanyID);

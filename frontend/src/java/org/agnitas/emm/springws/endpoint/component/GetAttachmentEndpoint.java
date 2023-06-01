@@ -12,13 +12,16 @@ package org.agnitas.emm.springws.endpoint.component;
 
 import jakarta.xml.bind.JAXBElement;
 
+import java.util.Objects;
+
 import org.agnitas.beans.MailingComponentType;
 import org.agnitas.emm.core.component.service.ComponentModel;
 import org.agnitas.emm.core.component.service.ComponentService;
 import org.agnitas.emm.springws.endpoint.BaseEndpoint;
-import org.agnitas.emm.springws.endpoint.Utils;
+import org.agnitas.emm.springws.endpoint.Namespaces;
 import org.agnitas.emm.springws.jaxb.Attachment;
 import org.agnitas.emm.springws.jaxb.GetAttachmentRequest;
+import org.agnitas.emm.springws.util.SecurityContextAccess;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.ws.server.endpoint.annotation.Endpoint;
 import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
@@ -29,15 +32,18 @@ import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 public class GetAttachmentEndpoint extends BaseEndpoint {
 
 	private ComponentService componentService;
+	
+	private SecurityContextAccess securityContextAccess;
 
-	public GetAttachmentEndpoint(@Qualifier("componentService") ComponentService componentService) {
-		this.componentService = componentService;
+	public GetAttachmentEndpoint(@Qualifier("componentService") ComponentService componentService, final SecurityContextAccess securityContextAccess) {
+		this.componentService = Objects.requireNonNull(componentService, "componentService");
+		this.securityContextAccess = Objects.requireNonNull(securityContextAccess, "securityContextAccess");
 	}
 
-	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "GetAttachmentRequest")
+	@PayloadRoot(namespace = Namespaces.AGNITAS_ORG, localPart = "GetAttachmentRequest")
 	public @ResponsePayload JAXBElement<Attachment> getAttachment(@RequestPayload GetAttachmentRequest request) {
-		ComponentModel model = new ComponentModel();
-		model.setCompanyId(Utils.getUserCompany());
+		final ComponentModel model = new ComponentModel();
+		model.setCompanyId(this.securityContextAccess.getWebserviceUserCompanyId());
 		model.setComponentId(request.getComponentID());
 		model.setComponentType(MailingComponentType.Attachment);
 

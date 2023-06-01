@@ -26,7 +26,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.ComTrackpointDef;
 import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.dao.ComTrackpointDao;
@@ -53,7 +53,7 @@ public class UpdateCustomerValidator implements ActionOperationValidator {
     }
 
     @Override
-    public SimpleServiceResult validate(ComAdmin admin, ActionOperationParameters target) throws Exception {
+    public SimpleServiceResult validate(Admin admin, ActionOperationParameters target) throws Exception {
         ActionOperationUpdateCustomerParameters operation = (ActionOperationUpdateCustomerParameters) target;
         DbColumnType dataType;
         List<Message> errors = new ArrayList<>();
@@ -77,7 +77,7 @@ public class UpdateCustomerValidator implements ActionOperationValidator {
         return new SimpleServiceResult(valid, errors);
     }
 
-    private boolean validateColumnName(ComAdmin admin, ActionOperationUpdateCustomerParameters operation, List<Message> errors, DbColumnType.SimpleDataType simpleDataType) throws Exception {
+    private boolean validateColumnName(Admin admin, ActionOperationUpdateCustomerParameters operation, List<Message> errors, DbColumnType.SimpleDataType simpleDataType) throws Exception {
         List<Message> errorMessages = new ArrayList<>();
 
         String columnName = operation.getColumnName();
@@ -168,7 +168,7 @@ public class UpdateCustomerValidator implements ActionOperationValidator {
         return errorMessages.isEmpty();
     }
 
-    private boolean validateTrackingPoint(ComAdmin admin, ActionOperationUpdateCustomerParameters operation, DbColumnType.SimpleDataType simpleDataType, DbColumnType dataType, List<Message> messages) {
+    private boolean validateTrackingPoint(Admin admin, ActionOperationUpdateCustomerParameters operation, DbColumnType.SimpleDataType simpleDataType, DbColumnType dataType, List<Message> messages) {
         List<Message> errorMessages = new ArrayList<>();
         if (operation.getTrackingPointId() == -1) {
             if (simpleDataType != DbColumnType.SimpleDataType.Numeric && simpleDataType != DbColumnType.SimpleDataType.Float) {

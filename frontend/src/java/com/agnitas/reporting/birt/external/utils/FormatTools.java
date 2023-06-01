@@ -17,13 +17,10 @@ public class FormatTools {
 
 	/**
 	 * rounds a double from it's 1/10000 place
-	 * @param gros_percent
-	 * @return
 	 */
 	public static double roundDecimal(double value, int size) {
 		BigDecimal decimal = BigDecimal.valueOf( value );
 		decimal = decimal.setScale(size, RoundingMode.HALF_UP);
 		return decimal.doubleValue();
 	}
-	
 }

@@ -15,11 +15,10 @@ import java.util.regex.Pattern;
 
 public class EmailParamExtractor {
 
-	
 	public static String getOnepixelParam(String emailParam) {
 		Pattern pattern  = Pattern.compile("onepixlog=\"([A-Za-z_]+)\"");		
 		Matcher matcher = pattern.matcher(emailParam);
-		if( matcher.find()) {
+		if (matcher.find()) {
 			return matcher.group(1);
 		}		
 		return null;		
@@ -28,7 +27,7 @@ public class EmailParamExtractor {
 	public static String getMailformat(String emailParam) {
 		Pattern pattern  = Pattern.compile("mailformat=\"([0-9]+)\"");		
 		Matcher matcher = pattern.matcher(emailParam);
-		if( matcher.find()) {
+		if (matcher.find()) {
 			return matcher.group(1);
 		}		
 		return null;

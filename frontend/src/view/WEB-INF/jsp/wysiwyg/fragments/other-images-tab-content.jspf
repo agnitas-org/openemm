@@ -1,12 +1,12 @@
 <%@ page import="org.agnitas.emm.core.commons.util.ConfigService" %>
-<%@ page import="com.agnitas.beans.ComAdmin" %>
+<%@ page import="com.agnitas.beans.Admin" %>
 <%@ page import="com.agnitas.beans.Company" %>
 <%@ page import="org.agnitas.util.AgnUtils" %>
 <%@ page import="org.apache.commons.lang3.math.NumberUtils" %>
 
 <%
     int tmpMailingID = NumberUtils.toInt(request.getParameter("mailingID"));
-    Company company = ((ComAdmin) session.getAttribute(AgnUtils.SESSION_CONTEXT_KEYNAME_ADMIN)).getCompany();
+    Company company = ((Admin) session.getAttribute(AgnUtils.SESSION_CONTEXT_KEYNAME_ADMIN)).getCompany();
 %>
 
 <%
@@ -29,7 +29,7 @@
 %>
 
 <div id="other-images-tab">
-    <form>
+    <mvc:form>
         <div>
             <div class="float_left fckeditor_select_panel">
                 <div class="float_left">
@@ -45,7 +45,7 @@
             <div class="dotted_line fckeditor_dotted_line"></div>
             <br>
         </div>
-    </form>
+    </mvc:form>
 
     <div class="row align-center">
         <img class="image-preview" style="width: auto;">

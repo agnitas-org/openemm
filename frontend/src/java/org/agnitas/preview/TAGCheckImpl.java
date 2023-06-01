@@ -21,7 +21,7 @@ import org.agnitas.backend.BlockCollection;
 import org.agnitas.backend.BlockData;
 import org.agnitas.backend.Data;
 import org.agnitas.backend.EMMTag;
-import org.agnitas.backend.EMMTagException;
+import org.agnitas.backend.exceptions.EMMTagException;
 import org.agnitas.util.Log;
 import org.apache.commons.lang3.StringUtils;
 
@@ -44,7 +44,8 @@ public class TAGCheckImpl implements TAGCheck {
 	private final Locale locale;
 
 	public TAGCheckImpl(int mailingId, Locale locale) throws Exception {
-		data = new Data("tagcheck", "preview:" + mailingId, "silent");
+		data = new Data("tagcheck", "silent");
+		data.setup ("preview:" + mailingId);
 
 		BlockCollection bc = new BlockCollection();
 		data.setBlocks(bc);
@@ -55,7 +56,8 @@ public class TAGCheckImpl implements TAGCheck {
 	}
 
 	public TAGCheckImpl(int companyId, int mailinglistId, Locale locale) throws Exception {
-		data = new Data("tagcheck", "preview:0," + companyId + "," + mailinglistId, "silent");
+		data = new Data("tagcheck", "silent");
+		data.setup ("preview:0," + companyId + "," + mailinglistId);
 
 		BlockCollection bc = new BlockCollection();
 		data.setBlocks(bc);
@@ -66,7 +68,8 @@ public class TAGCheckImpl implements TAGCheck {
 	}
 
 	public TAGCheckImpl(int companyId, int mailingId, int mailinglistId, Locale locale) throws Exception {
-		data = new Data("tagcheck", "preview:" + mailingId + "," + companyId + "," + mailinglistId, "silent");
+		data = new Data("tagcheck", "silent");
+		data.setup ("preview:" + mailingId + "," + companyId + "," + mailinglistId);
 
 		BlockCollection bc = new BlockCollection();
 		data.setBlocks(bc);

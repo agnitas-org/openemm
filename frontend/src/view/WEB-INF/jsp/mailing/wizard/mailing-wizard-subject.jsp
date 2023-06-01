@@ -54,7 +54,7 @@
             <div class="tile-content tile-content-forms">
                 <div class="form-group">
                     <div class="col-sm-4">
-                        <label class="control-label" for="emailSubject"><bean:message key="mailing.Subject"/></label>
+                        <label class="control-label" for="emailSubject"><bean:message key="mailing.Subject"/>*</label>
                     </div>
                     <div class="col-sm-8">
                         <html:text styleId="emailSubject" styleClass="form-control" property="emailSubject" maxlength="99" size="42"/>

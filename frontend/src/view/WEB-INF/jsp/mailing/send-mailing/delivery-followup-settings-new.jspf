@@ -1,0 +1,28 @@
+<div class="form-group">
+    <div class="well block">
+        <c:choose>
+            <c:when test="${form.worldMailingSend}">
+                <mvc:message code="mailing.send.finished"/>
+            </c:when>
+            <c:otherwise>
+                <mvc:message code="mailing.send.ready"/>
+            </c:otherwise>
+        </c:choose>
+    </div>
+</div>
+
+<c:if test="${not form.isTemplate}">
+    <%@ include file="fragments/mailing-send-prioritization-new.jspf" %>
+    <%@ include file="fragments/mailing-send-encrypted.jspf" %>
+    <%@ include file="fragments/mailing-send-size-new.jspf" %>
+
+    <%-- Configure button --%>
+    <%@ include file="fragments/mailing-configure-button-new.jspf" %>
+
+    <%-- Approve button --%>
+    <%@ include file="fragments/mailing-approve-button-new.jspf" %>
+</c:if>
+
+<c:if test="${form.worldMailingSend && not form.isTemplate}">
+    <%@ include file="fragments/mailing-notification-settings-new.jspf" %>
+</c:if>

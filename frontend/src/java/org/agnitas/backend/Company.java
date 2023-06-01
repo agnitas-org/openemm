@@ -48,6 +48,10 @@ public class Company {
 	 */
 	private Map<String, String> info;
 	/**
+	 * the permissions available for this company
+	 */
+	private Set <String> permissions;
+	/**
 	 * configuration from company table
 	 */
 	private boolean mailtracking;
@@ -55,6 +59,7 @@ public class Company {
 	private String mailtrackingTable;
 	private String rdirDomain;
 	private String mailloopDomain;
+	private boolean allowUnnormalizedEmails;
 	/**
 	 * Secrect items from database
 	 */
@@ -118,6 +123,10 @@ public class Company {
 
 	public String mailloopDomain() {
 		return mailloopDomain;
+	}
+	
+	public boolean allowUnnormalizedEmails () {
+		return allowUnnormalizedEmails;
 	}
 
 	public String secretKey() {
@@ -317,6 +326,9 @@ public class Company {
 		return info != null ? info.get(key) : null;
 	}
 
+	public boolean isPermitted (String permission_name) {
+		return permissions != null ? permissions.contains (permission_name) : false;
+	}
 	/**
 	 * Write all company related settings to logfile
 	 */
@@ -327,6 +339,7 @@ public class Company {
 		}
 		data.logging(Log.DEBUG, "init", "\tcompany.rdirDomain = " + (rdirDomain == null ? "*unset*" : rdirDomain));
 		data.logging(Log.DEBUG, "init", "\tcompany.mailloopDomain = " + (mailloopDomain == null ? "*unset*" : mailloopDomain));
+		data.logging(Log.DEBUG, "init", "\tcompany.allowUnnormalizedEmails = " + allowUnnormalizedEmails);
 		data.logging(Log.DEBUG, "init", "\tcompany.mailsPerDay = " + (mailsPerDay == null ? "*unset*" : mailsPerDay));
 		data.logging(Log.DEBUG, "init", "\tcompany.baseID = " + baseID);
 		data.logging(Log.DEBUG, "init", "\tcompany.baseMailsPerDay = " + (baseMailsPerDay == null ? "*unset*" : baseMailsPerDay));
@@ -403,5 +416,7 @@ public class Company {
 		if ((mailloopDomain == null) || "".equals (mailloopDomain)) {
 			mailloopDomain = Data.syscfg.get ("filter-name");
 		}
+		allowUnnormalizedEmails = Str.atob (info ("AllowUnnormalizedEmails", data.mailing.id ()), false);
+		permissions = company.permissions ();
 	}
 }

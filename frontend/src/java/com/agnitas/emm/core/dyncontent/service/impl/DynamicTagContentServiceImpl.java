@@ -41,23 +41,25 @@ import com.agnitas.dao.ComMailingDao;
 import com.agnitas.dao.ComTargetDao;
 import com.agnitas.emm.core.dyncontent.service.validation.ContentModelValidator;
 
-import jakarta.annotation.Resource;
-
 public class DynamicTagContentServiceImpl implements DynamicTagContentService, ApplicationContextAware {  // TODO: Do we really need to implement ApplicationContextAware? No better ideas here???
 
 	/** The logger. */
 	private static final transient Logger LOGGER = LogManager.getLogger(DynamicTagContentServiceImpl.class);
-	
-	@Resource(name="DynamicTagContentDao")
-	private DynamicTagContentDao dynamicTagContentDao;
-	@Resource(name="MailingDao")
-	private ComMailingDao mailingDao;
-	@Resource(name="TargetDao")
-	private ComTargetDao targetDao;
-	@Resource(name="contentModelValidator")
-    private ContentModelValidator contentModelValidator;
 
-    private ApplicationContext applicationContext;
+	private final DynamicTagContentDao dynamicTagContentDao;
+	private final ComMailingDao mailingDao;
+	private final ComTargetDao targetDao;
+	private final ContentModelValidator contentModelValidator;
+	private ApplicationContext applicationContext;
+
+	public DynamicTagContentServiceImpl(DynamicTagContentDao dynamicTagContentDao, ComMailingDao mailingDao, ComTargetDao targetDao,
+										ContentModelValidator contentModelValidator, ApplicationContext applicationContext) {
+		this.dynamicTagContentDao = dynamicTagContentDao;
+		this.mailingDao = mailingDao;
+		this.targetDao = targetDao;
+		this.contentModelValidator = contentModelValidator;
+		this.applicationContext = applicationContext;
+	}
 
 	protected boolean deleteContentImpl(ContentModel model, List<UserAction> userActions) {
         if (dynamicTagContentDao.deleteContent(model.getCompanyId(), model.getContentId())) {
@@ -295,10 +297,6 @@ public class DynamicTagContentServiceImpl implements DynamicTagContentService, A
 	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
 		this.applicationContext = applicationContext;
 	}
-
-    public void setMailingDao(ComMailingDao mailingDao) {
-        this.mailingDao = mailingDao;
-    }
 
 	@Override
 	@Transactional

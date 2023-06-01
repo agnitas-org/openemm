@@ -4,6 +4,9 @@ AGN.Lib.Validator.new('required-id', {
   },
 
   errors: function($e, options) {
+    if ($e.data('select2') && !$e.parent().find('.select2-container').is(":visible")) {
+      return [];
+    }
     var content = $e.val();
     var value = parseInt(content);
     var errors = [];

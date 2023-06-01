@@ -17,28 +17,22 @@ import com.agnitas.emm.core.stat.beans.MailingStatJobDescriptor;
 
 public interface MailingStatJobDao {
 
-	public int createMailingStatJob(MailingStatJobDescriptor job);
+	int createMailingStatJob(MailingStatJobDescriptor job);
 	
 	/**
 	 * Changes job status to given and changeDate to now.
-	 * @param status
 	 */
-	public void updateMailingStatJob(int id, int status, String statusDescription);
+	void updateMailingStatJob(int id, int status, String statusDescription);
 	
-	public MailingStatJobDescriptor getMailingStatJob(int id);
+	MailingStatJobDescriptor getMailingStatJob(int id);
 	
 	/**
 	 * Looks for jobs with given properties not older than (now - maxAge).
-	 * @param mailingId
-	 * @param recipientsTyp
-	 * @param targetGroups
-	 * @param maxAge
 	 * @return Descending by creation time sorted jobs list.
 	 */
-	public List<MailingStatJobDescriptor> findMailingStatJobs(int mailingId, int recipientsTyp, String targetGroups, int maxAgeSeconds);
+	List<MailingStatJobDescriptor> findMailingStatJobs(int mailingId, int recipientsTyp, String targetGroups, int maxAgeSeconds);
 
-	public void removeExpiredMailingStatJobs(final ZonedDateTime threshold);
+	void removeExpiredMailingStatJobs(final ZonedDateTime threshold);
 	
-	public void deleteMailingStatJob(int id);
-	
+	void deleteMailingStatJob(int id);
 }

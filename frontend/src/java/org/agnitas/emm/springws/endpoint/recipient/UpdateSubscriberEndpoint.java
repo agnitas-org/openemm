@@ -10,12 +10,16 @@
 
 package org.agnitas.emm.springws.endpoint.recipient;
 
+import java.util.Objects;
+
 import org.agnitas.emm.core.recipient.service.RecipientModel;
 import org.agnitas.emm.core.recipient.service.RecipientService;
 import org.agnitas.emm.springws.endpoint.BaseEndpoint;
+import org.agnitas.emm.springws.endpoint.Namespaces;
 import org.agnitas.emm.springws.endpoint.Utils;
 import org.agnitas.emm.springws.jaxb.UpdateSubscriberRequest;
 import org.agnitas.emm.springws.jaxb.UpdateSubscriberResponse;
+import org.agnitas.emm.springws.util.SecurityContextAccess;
 import org.springframework.ws.server.endpoint.annotation.Endpoint;
 import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
 import org.springframework.ws.server.endpoint.annotation.RequestPayload;
@@ -25,26 +29,28 @@ import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 public class UpdateSubscriberEndpoint extends BaseEndpoint {
 
 	private RecipientService recipientService;
+	private SecurityContextAccess securityContextAccess;
 
-	public UpdateSubscriberEndpoint(RecipientService recipientService) {
-		this.recipientService = recipientService;
+	public UpdateSubscriberEndpoint(RecipientService recipientService, final SecurityContextAccess securityContextAccess) {
+		this.recipientService = Objects.requireNonNull(recipientService, "recipientService");
+		this.securityContextAccess = Objects.requireNonNull(securityContextAccess, "securityContextAccess");
 	}
 
-	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "UpdateSubscriberRequest")
+	@PayloadRoot(namespace = Namespaces.AGNITAS_ORG, localPart = "UpdateSubscriberRequest")
 	public @ResponsePayload UpdateSubscriberResponse updateSubscriber(@RequestPayload UpdateSubscriberRequest request) throws Exception {
-		UpdateSubscriberResponse response = new UpdateSubscriberResponse();
+		final RecipientModel model = parseModel(request, this.securityContextAccess);
 
-		RecipientModel model = parseModel(request);
+		final String username = this.securityContextAccess.getWebserviceUserName();
 
-		String username = Utils.getUserName();
-
+		final UpdateSubscriberResponse response = new UpdateSubscriberResponse();
 		response.setValue(recipientService.updateSubscriber(model, username));
+		
 		return response;
 	}
 	
-	static RecipientModel parseModel(UpdateSubscriberRequest request) {
+	static RecipientModel parseModel(UpdateSubscriberRequest request, final SecurityContextAccess securityContextAccess) {
 		RecipientModel model = new RecipientModel();
-		model.setCompanyId(Utils.getUserCompany());
+		model.setCompanyId(securityContextAccess.getWebserviceUserCompanyId());
 		model.setCustomerId(request.getCustomerID());
 		model.setParameters(Utils.toCaseInsensitiveMap(request.getParameters(), true));
 		return model;

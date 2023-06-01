@@ -10,6 +10,7 @@
 
 package com.agnitas.emm.core.components.form;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import org.agnitas.web.forms.PaginationForm;
@@ -18,7 +19,7 @@ import com.agnitas.emm.core.components.dto.UploadMailingImageDto;
 
 public class UploadMailingImagesForm extends PaginationForm {
 
-    private Map<Integer, UploadMailingImageDto> images;
+    private Map<Integer, UploadMailingImageDto> images = new HashMap<>();
 
     public Map<Integer, UploadMailingImageDto> getImages() {
         return images;

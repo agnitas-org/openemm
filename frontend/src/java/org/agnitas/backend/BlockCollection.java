@@ -23,6 +23,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import org.agnitas.backend.dao.ComponentDAO;
+import org.agnitas.backend.exceptions.EMMTagException;
 import org.agnitas.beans.MailingComponentType;
 import org.agnitas.util.Bit;
 import org.agnitas.util.Const;

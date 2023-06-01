@@ -1,0 +1,43 @@
+body {
+    Margin: 0;
+    padding: 0;
+    min-width: 100%;
+    mso-line-height-rule:exactly;
+}
+
+.basic-lb-content {
+    Margin: 0 auto;
+    width: 100%;
+    color: #f6f6f6;
+    background-color: #e0e0e0;
+    font-family: sans-serif;
+    word-break: break-word;
+}
+
+#set ($GRID_TEMPLATE_WIDTH_PLUS = $GRID_TEMPLATE_WIDTH + 1)
+
+/* Max Width Apple Hack */
+@media only screen and (min-width: ${GRID_TEMPLATE_WIDTH_PLUS}px) {
+    .webkit {
+        width: ${GRID_TEMPLATE_WIDTH}px !important;
+    }
+}
+
+table {
+    border-spacing: 0;
+    font-family: sans-serif;
+    color: #f6f6f6;
+}
+
+td {
+    word-break: break-word;
+    -webkit-hyphens: auto;
+    -moz-hyphens: auto;
+    hyphens: auto;
+    border-collapse: collapse !important;
+}
+
+.div-container {
+    display: inline-block;
+    background-color: #626364;
+}

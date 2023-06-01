@@ -20,13 +20,12 @@ import java.util.Map;
 import java.util.Set;
 
 import org.agnitas.dao.MailingStatus;
+import org.agnitas.backend.exceptions.CancelException;
 import org.agnitas.util.Bit;
-import org.agnitas.util.Blacklist;
 import org.agnitas.util.Log;
 import org.agnitas.util.Str;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.ResultSetExtractor;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 /**
  * Central control class for generating mails
@@ -46,9 +45,9 @@ public class MailgunImpl implements Mailgun {
 	protected Map<String, EMMTag> tagNames = null;
 	protected MediaMap mmap;
 	/**
-	 * The blacklist information for this mailing
+	 * The blocklist information for this mailing
 	 */
-	protected Blacklist blist = null;
+	protected Blocklist blist = null;
 	/**
 	 * Query for normal selection
 	 */
@@ -89,14 +88,19 @@ public class MailgunImpl implements Mailgun {
 	 */
 	@Override
 	public void initialize(String status_id) throws Exception {
-		data = null;
+		data = new Data ("mailout");
 		try {
-			data = new Data("mailout", status_id, "meta:xml/gz");
+			data.setup (status_id);
+		} catch (CancelException e) {
+			throw e;
 		} catch (Exception e) {
 			done();
-			throw new Exception("Error reading ini file: " + e.toString(), e);
+			throw e;
+		} finally {
+			if (data != null) {
+				data.suspend();
+			}
 		}
-		data.suspend();
 	}
 
 	/**
@@ -127,7 +131,9 @@ public class MailgunImpl implements Mailgun {
 			try {
 				doExecute(opts);
 			} catch (Exception e) {
-				data.suspend();
+				if (data != null) {
+					data.suspend();
+				}
 				throw e;
 			}
 		}
@@ -140,11 +146,12 @@ public class MailgunImpl implements Mailgun {
 	 * @return Status string
 	 */
 	@Override
-	public String fire(String custid) throws Exception {
+	public String fire(String status_id, String custid) throws Exception {
 		String str;
 
 		str = null;
 		try {
+			initialize (status_id);
 			data.logging(Log.INFO, "mailout", "Starting up");
 			Map<String, Object> opts = new HashMap<>();
 
@@ -154,19 +161,25 @@ public class MailgunImpl implements Mailgun {
 			doPrepare(opts);
 			doExecute(opts);
 			str = "Success: Mailout fired.";
+		} catch (CancelException e) {
+			str = e.reason ();
+			data.logging (Log.WARNING, "mailout", "Creation has canceled due to " + str);
 		} catch (Exception e) {
-			data.logging(Log.ERROR, "mailout", "Creation failed: " + e.toString(), e);
-			if (data.mailing.id() > 0) {
-				Destroyer d = new Destroyer(data.mailing.id());
-
-				data.logging(Log.INFO, "mailout", "Try to remove failed mailing: " + e);
-				str = d.destroy();
-				d.done();
+			if (data != null) {
+				data.logging(Log.ERROR, "mailout", "Creation failed: " + e.toString(), e);
+				if (data.mailing.id() > 0) {
+					try (Destroyer d = new Destroyer (data.mailing.id ())) {
+						data.logging(Log.INFO, "mailout", "Try to remove failed mailing: " + e);
+						data.logging(Log.INFO, "mailout", "Remove already generated files lead to " + d.destroy ());
+					}
+				}
 			}
 			try {
 				done();
 			} catch (Exception temp) {
-				data.logging(Log.ERROR, "mailout", "Failed to finalize mailout (after failure): " + temp.toString(), temp);
+				if (data != null) {
+					data.logging(Log.ERROR, "mailout", "Failed to finalize mailout (after failure): " + temp.toString(), temp);
+				}
 			}
 			throw e;
 		}
@@ -202,7 +215,7 @@ public class MailgunImpl implements Mailgun {
 
 		allBlocks.replaceFixedTags(tagNames);
 
-		readBlacklist();
+		readBlocklist();
 		data.suspend();
 	}
 
@@ -244,7 +257,7 @@ public class MailgunImpl implements Mailgun {
 		try {
 			data.logging(Log.INFO, "execute", "Start creation of mails");
 
-			boolean needSamples = data.maildropStatus.isWorldMailing() && (data.sampleEmails() != null) && Bit.isset(data.availableMedias, Media.TYPE_EMAIL);
+			boolean needSamples = data.maildropStatus.isWorldMailing() && Bit.isset(data.availableMedias, Media.TYPE_EMAIL);
 			List<String> clist = data.generationClauses();
 			Set<Long> seen = prepareCollection();
 			boolean multi = data.useMultipleRecords();
@@ -276,7 +289,7 @@ public class MailgunImpl implements Mailgun {
 				}
 				mailer.checkBlock((mailer.blockSize > 0) && (mailer.inBlockCount > 0));
 
-				data.dbase.jdbc(query).query(query, ex);
+				data.dbase.cursor(query).query(query, null, ex);
 
 				mailer.writeMailDone();
 			}
@@ -298,9 +311,9 @@ public class MailgunImpl implements Mailgun {
 	}
 
 	/**
-	 * Retrieve blacklist from database
+	 * Retrieve blocklist from database
 	 */
-	private void retrieveBlacklist () throws Exception {
+	private void retrieveBlocklist () throws Exception {
 		String	bouncelog;
 		
 		if ((bouncelog = data.company.infoSubstituted ("bounce-log")) == null) {
@@ -310,16 +323,16 @@ public class MailgunImpl implements Mailgun {
 		}
 		blist.setBouncelog(bouncelog);
 
-		List<String> blacklistTables = new ArrayList<>();
+		List<String> blocklistTables = new ArrayList<>();
 		int isLocal;
 
 		if (data.dbase.exists("cust_ban_tbl")) {
-			blacklistTables.add("cust_ban_tbl");
+			blocklistTables.add("cust_ban_tbl");
 		}
-		blacklistTables.add("cust" + data.company.id() + "_ban_tbl");
-		isLocal = blacklistTables.size() - 1;
+		blocklistTables.add("cust" + data.company.id() + "_ban_tbl");
+		isLocal = blocklistTables.size() - 1;
 
-		String extraTables = data.company.info("blacklist-tables");
+		String extraTables = data.company.info("blocklist-tables");
 		if (extraTables != null) {
 			String[] tables = extraTables.split(", *");
 
@@ -327,14 +340,14 @@ public class MailgunImpl implements Mailgun {
 				String table = tables[n].trim();
 
 				if (table.length() > 0) {
-					blacklistTables.add(table);
+					blocklistTables.add(table);
 				}
 			}
 		}
 
-		data.logging (Log.INFO, "readblist", "Using simplified blacklist wildcard matching");
-		for (int blacklistIndex = 0; blacklistIndex < blacklistTables.size(); ++blacklistIndex) {
-			String table = blacklistTables.get(blacklistIndex);
+		data.logging (Log.INFO, "readblist", "Using simplified blocklist wildcard matching");
+		for (int blocklistIndex = 0; blocklistIndex < blocklistTables.size(); ++blocklistIndex) {
+			String table = blocklistTables.get(blocklistIndex);
 			List<Map<String, Object>> rq;
 			Map<String, Object> row;
 
@@ -345,31 +358,31 @@ public class MailgunImpl implements Mailgun {
 
 					String email = data.dbase.asString(row.get("email"));
 					if (email != null) {
-						blist.add(email, blacklistIndex != isLocal);
+						blist.add(email, blocklistIndex != isLocal);
 					}
 				}
 			} catch (Exception e) {
-				data.logging(Log.FATAL, "readblist", "Failed reading blacklist table " + table + ": " + e);
-				throw new Exception("Failed reading blacklist table " + table + " (" + e.toString() + ")", e);
+				data.logging(Log.FATAL, "readblist", "Failed reading blocklist table " + table + ": " + e);
+				throw new Exception("Failed reading blocklist table " + table + " (" + e.toString() + ")", e);
 			}
 		}
 	}
 
 	/**
-	 * Read in the global and local blacklist
+	 * Read in the global and local blocklist
 	 */
-	protected void readBlacklist() throws Exception {
-		blist = new Blacklist();
+	protected void readBlocklist() throws Exception {
+		blist = new Blocklist(data.log, data.company.allowUnnormalizedEmails ());
 		if (!data.maildropStatus.isPreviewMailing()) {
 			try {
-				retrieveBlacklist();
+				retrieveBlocklist();
 			} catch (Exception e) {
-				data.logging (Log.FATAL, "readblist", "Unable to get blacklist: " + e.toString (), e);
-				throw new Exception ("Unable to get blacklist: " + e.toString (), e);
+				data.logging (Log.FATAL, "readblist", "Unable to get blocklist: " + e.toString (), e);
+				throw new Exception ("Unable to get blocklist: " + e.toString (), e);
 			}
 
-			data.logging (Log.INFO, "readblist", "Found " + blist.globalCount () + " entr" + Log.exty (blist.globalCount ()) + " in global blacklist, " +
-				      blist.localCount () + " entr" + Log.exty (blist.localCount ()) + " in local blacklist");
+			data.logging (Log.INFO, "readblist", "Found " + blist.globalCount () + " entr" + Log.exty (blist.globalCount ()) + " in global blocklist, " +
+				      blist.localCount () + " entr" + Log.exty (blist.localCount ()) + " in local blocklist");
 		}
 	}
 
@@ -398,7 +411,7 @@ public class MailgunImpl implements Mailgun {
 		String bindQuery = data.getBindingQuery();
 
 		mmap = new MediaMap(data);
-		data.dbase.jdbc(bindQuery).query(bindQuery, new ExtractorMediaMap(mmap));
+		data.dbase.cursor(bindQuery).query(bindQuery, null, new ExtractorMediaMap(mmap));
 		return new HashSet<>();
 	}
 
@@ -410,10 +423,41 @@ public class MailgunImpl implements Mailgun {
 	protected void finalizeMailingToDatabase(MailWriter mailer) throws Exception {
 		//
 		// EMM-4150 & EMM-7151
-		data.mailing.setWorkStatus(data.totalReceivers == 0 ? MailingStatus.NORECIPIENTS.getDbKey() : MailingStatus.GENERATION_FINISHED.getDbKey());
-
+		data.mailing.setWorkStatus(data.totalReceivers == 0 ? MailingStatus.NORECIPIENTS.getDbKey() : MailingStatus.GENERATION_FINISHED.getDbKey(), MailingStatus.IN_GENERATION.getDbKey());
 		data.toMailtrack();
+		//
+		// EMM-2952 & BAUR-790
+		String	profileUpdateBaseStatement = null;
+		if ((! data.company.mailtracking ()) || (! data.company.mailtrackingExtended ())) {
+			//
+			// 1.) AGNEMM-2952: Set last sent date, if applicated
+			List<String> profileUpdates = new ArrayList<>();
 
+			String lastsendDateColumn = "lastsend_date";
+
+			if (data.columnByName(lastsendDateColumn) != null) {
+				profileUpdates.add("cust." + lastsendDateColumn + " = CURRENT_TIMESTAMP");
+			} else {
+				data.logging(Log.INFO, "execute", "Column " + lastsendDateColumn + " not set as not present in table");
+			}
+			//
+			// 2.) BAUR-790: Update frequency counter
+			if (data.mailinglist.frequencyCounterEnabled () && (! data.mailing.frequencyCounterDisabled ())) {
+				for (String column : new String[] { "freq_count_day", "freq_count_week", "freq_count_month" }) {
+					if (data.columnByName (column) != null) {
+						profileUpdates.add ("cust." + column + " = COALESCE(cust." + column + " + 1, 1)");
+					}
+				}
+			}
+			//
+			// X.) Add statement, if there are customer profile columns to update
+			if (profileUpdates.size () > 0) {
+				profileUpdateBaseStatement = 
+					"UPDATE customer_" + data.company.id () + "_tbl cust " +
+					"SET " + profileUpdates.stream ().reduce ((s, e) -> s + ", " + e).orElse (null);
+			}
+		}
+		
 		Map<String, String> extra = new HashMap<>();
 		long chunks = data.limitBlockChunks();
 
@@ -441,25 +485,9 @@ public class MailgunImpl implements Mailgun {
 			    data.maildropStatus.isOnDemandMailing () ||
 			    data.maildropStatus.isWorldMailing ()) {
 				//
-				// 1.) AGNEMM-2952: Set last sent date, if applicated
-				List<String> profileUpdates = new ArrayList<>();
-
-				if (!data.company.mailtrackingExtended()) {
-					String column = "lastsend_date";
-
-					if (data.columnByName(column) != null) {
-						profileUpdates.add("cust." + column + " = CURRENT_TIMESTAMP");
-					} else {
-						data.logging(Log.INFO, "execute", "Column " + column + " not set as not present in table");
-					}
-				} else {
-					data.logging(Log.DEBUG, "execute", "profile updates will occur later");
-				}
-				CustomProfiles.add(data, profileUpdates);
-				if (profileUpdates.size () > 0) {
-					postexecs.add ("UPDATE customer_" + data.company.id () + "_tbl cust " +
-						       "SET " + profileUpdates.stream ().reduce ((s, e) -> s + ", " + e).orElse (null) + " " +
-						       "WHERE " + where);
+				// 1.) profile updates, if available
+				if (profileUpdateBaseStatement != null) {
+					postexecs.add (profileUpdateBaseStatement + " WHERE " + where);
 				}
 				//
 				// 2.) If optional post execution is set in database
@@ -482,17 +510,12 @@ public class MailgunImpl implements Mailgun {
 				while ((!success) && (retry-- > 0)) {
 					try {
 						synchronized (postlock.get(data.company.id())) {
-							NamedParameterJdbcTemplate jdbc = null;
-
-							try {
-								jdbc = data.dbase.request(stmt);
+							try (DBase.With with = data.dbase.with (stmt)) {
 								if (stmt.toLowerCase().startsWith("update ")) {
-									data.dbase.update(jdbc, stmt);
+									data.dbase.update(with.cursor (), stmt);
 								} else {
-									data.dbase.execute(jdbc, stmt);
+									data.dbase.execute(with.cursor (), stmt);
 								}
-							} finally {
-								data.dbase.release(jdbc, stmt);
 							}
 						}
 						success = true;

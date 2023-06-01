@@ -61,12 +61,15 @@
             <div class="form-group">
                 <div class="col-sm-offset-4 col-sm-8">
                     <ul class="list-group">
-                    <c:forEach var="assignedList" items="${newImportWizardForm.assignedMailingLists}">
-                        <li class="list-group-item">
-                            <span class="badge">${newImportWizardForm.mailinglistAssignStats[assignedList.id]}</span>
-                            <bean:message key="${newImportWizardForm.mailinglistAddMessage}"/> ${assignedList.shortname}
-                        </li>
-                    </c:forEach>
+	                <c:forEach var="mailinglistAssignStatByMediaType" items="${newImportWizardForm.mailinglistAssignStats}">
+	                	<bean:message key="mediatype"/> ${mailinglistAssignStatByMediaType.key}:
+                    	<c:forEach var="assignedList" items="${newImportWizardForm.assignedMailingLists}">
+	                        <li class="list-group-item">
+	                            <span class="badge">${mailinglistAssignStatByMediaType.value[assignedList.id]}</span>
+	                            <bean:message key="${newImportWizardForm.mailinglistAddMessage}"/> ${assignedList.shortname}
+	                        </li>
+	                    </c:forEach>
+	                </c:forEach>
                     </ul>
                 </div>
             </div>

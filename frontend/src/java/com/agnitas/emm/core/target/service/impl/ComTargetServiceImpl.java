@@ -27,11 +27,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import com.agnitas.beans.ProfileField;
+import com.agnitas.beans.ProfileFieldMode;
 import com.agnitas.emm.core.target.eql.emm.querybuilder.EqlReferenceItemsExtractor;
 import org.agnitas.beans.DynamicTagContent;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.MailingComponentType;
+import org.agnitas.beans.TrackableLink;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.MailingComponentDao;
 import org.agnitas.dao.exception.target.TargetGroupPersistenceException;
@@ -42,8 +43,6 @@ import org.agnitas.emm.core.target.exception.UnknownTargetGroupIdException;
 import org.agnitas.emm.core.target.service.TargetGroupLocator;
 import org.agnitas.emm.core.target.service.UserActivityLog;
 import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.agnitas.service.ColumnInfoService;
 import org.agnitas.target.TargetFactory;
 import org.agnitas.util.beanshell.BeanShellInterpreterFactory;
 import org.apache.commons.collections4.CollectionUtils;
@@ -55,7 +54,7 @@ import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.ComTarget;
 import com.agnitas.beans.DynamicTag;
 import com.agnitas.beans.ListSplit;
@@ -65,7 +64,6 @@ import com.agnitas.dao.ComMailingDao;
 import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.dao.ComTargetDao;
 import com.agnitas.emm.core.Permission;
-import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.beans.Dependent;
 import com.agnitas.emm.core.profilefields.ProfileFieldException;
 import com.agnitas.emm.core.profilefields.service.ProfileFieldService;
@@ -97,8 +95,9 @@ import com.agnitas.emm.core.target.service.ReferencedItemsService;
 import com.agnitas.emm.core.target.service.TargetLightsOptions;
 import com.agnitas.emm.core.target.service.TargetSavingAndAnalysisResult;
 import com.agnitas.messages.Message;
+import com.agnitas.service.ColumnInfoService;
 import com.agnitas.service.SimpleServiceResult;
-import com.phloc.commons.collections.pair.Pair;
+import com.helger.collection.pair.Pair;
 
 import bsh.Interpreter;
 
@@ -148,8 +147,6 @@ public class ComTargetServiceImpl implements ComTargetService {
 	
 	private ReferencedItemsService referencedItemsService;
 
-	private AdminService adminService;
-
 	private TargetFactory targetFactory;
 
 	private QueryBuilderToEqlConverter queryBuilderToEqlConverter;
@@ -167,7 +164,7 @@ public class ComTargetServiceImpl implements ComTargetService {
 	}
 	
     @Override
-	public void deleteTargetGroup(int targetGroupID, @VelocityCheck int companyID) throws TargetGroupException, TargetGroupPersistenceException {
+	public void deleteTargetGroup(int targetGroupID, int companyID) throws TargetGroupException, TargetGroupPersistenceException {
 		if (logger.isInfoEnabled()) {
 			logger.info("Deleting target group " + targetGroupID + " of company " + companyID);
 		}
@@ -336,14 +333,14 @@ public class ComTargetServiceImpl implements ComTargetService {
     }
 
     @Override
-    public int saveTarget(ComAdmin admin, ComTarget newTarget, ComTarget target, ActionMessages errors, UserActivityLog userActivityLog) throws Exception {	// TODO: Remove "ActionMessages" to remove dependencies to Struts
+    public int saveTarget(Admin admin, ComTarget newTarget, ComTarget target, ActionMessages errors, UserActivityLog userActivityLog) throws Exception {	// TODO: Remove "ActionMessages" to remove dependencies to Struts
     	final TargetSavingAndAnalysisResult result = saveTargetWithAnalysis(admin, newTarget, target, errors, userActivityLog);
 
     	return result.getTargetID();
     }
 
 	@Override
-	public TargetSavingAndAnalysisResult saveTargetWithAnalysis(ComAdmin admin, ComTarget newTarget, ComTarget target, ActionMessages errors, UserActivityLog userActivityLog) throws Exception {	// TODO: Remove "ActionMessages" to remove dependencies to Struts
+	public TargetSavingAndAnalysisResult saveTargetWithAnalysis(Admin admin, ComTarget newTarget, ComTarget target, ActionMessages errors, UserActivityLog userActivityLog) throws Exception {	// TODO: Remove "ActionMessages" to remove dependencies to Struts
 		if (target == null) {
 			// be sure to use id 0 if there is no existing object
 			newTarget.setId(0);
@@ -370,7 +367,7 @@ public class ComTargetServiceImpl implements ComTargetService {
 	}
 
     @Override
-    public int saveTarget(ComAdmin admin, ComTarget newTarget, ComTarget target, List<Message> errors, List<UserAction> userActions) throws TargetGroupPersistenceException {
+    public int saveTarget(Admin admin, ComTarget newTarget, ComTarget target, List<Message> errors, List<UserAction> userActions) throws TargetGroupPersistenceException {
         if (target == null) {
             // be sure to use id 0 if there is no existing object
             newTarget.setId(0);
@@ -396,7 +393,7 @@ public class ComTargetServiceImpl implements ComTargetService {
     }
 
     @Override
-    public int saveTarget(ComAdmin admin, ComTarget newTarget, ComTarget target, List<Message> errors, UserActivityLog userActivityLog) throws Exception {
+    public int saveTarget(Admin admin, ComTarget newTarget, ComTarget target, List<Message> errors, UserActivityLog userActivityLog) throws Exception {
         List<UserAction> userActions = new LinkedList<>();
         int newTargetId = saveTarget(admin, newTarget, target, errors, userActions);
         userActions.forEach(userAction -> userActivityLog.write(admin, userAction.getAction(), userAction.getDescription()));
@@ -422,7 +419,7 @@ public class ComTargetServiceImpl implements ComTargetService {
 	}
 
 	@Override
-	public void bulkDelete( Set<Integer> targetIds, @VelocityCheck int companyId) throws TargetGroupPersistenceException, TargetGroupException {
+	public void bulkDelete( Set<Integer> targetIds, int companyId) throws TargetGroupPersistenceException, TargetGroupException {
 		for(int targetId : targetIds) {
 		    this.deleteTargetGroup(targetId, companyId);
 		}
@@ -443,12 +440,12 @@ public class ComTargetServiceImpl implements ComTargetService {
 	}
 
 	@Override
-	public String getSQLFromTargetExpression(String targetExpression, @VelocityCheck int companyId) {
+	public String getSQLFromTargetExpression(String targetExpression, int companyId) {
 		return getSQLFromTargetExpression(targetExpression, new TargetSqlCachingResolver(companyId));
 	}
 
 	@Override
-	public String getSQLFromTargetExpression(String targetExpression, int splitId, @VelocityCheck int companyId) {
+	public String getSQLFromTargetExpression(String targetExpression, int splitId, int companyId) {
 		if (splitId > 0) {
 			if (StringUtils.isNotBlank(targetExpression)) {
 				targetExpression = "(" + targetExpression + ")&" + splitId;
@@ -511,7 +508,7 @@ public class ComTargetServiceImpl implements ComTargetService {
 	}
 
 	@Override
-	public String getTargetSQL(int targetId, @VelocityCheck int companyId) {
+	public String getTargetSQL(int targetId, int companyId) {
     	String sql = targetDao.getTargetSQL(targetId, companyId);
 
 		if (StringUtils.isBlank(sql)) {
@@ -522,7 +519,7 @@ public class ComTargetServiceImpl implements ComTargetService {
 	}
 
 	@Override
-	public String getTargetSQL(int targetId, @VelocityCheck int companyId, boolean isPositive) {
+	public String getTargetSQL(int targetId, int companyId, boolean isPositive) {
 		String sql = getTargetSQL(targetId, companyId);
 
 		if (sql == null || isPositive) {
@@ -533,7 +530,7 @@ public class ComTargetServiceImpl implements ComTargetService {
 	}
 
 	@Override
-	public String getMailingSqlTargetExpression(int mailingId, @VelocityCheck int companyId, boolean appendListSplit) {
+	public String getMailingSqlTargetExpression(int mailingId, int companyId, boolean appendListSplit) {
     	String expression = mailingDao.getTargetExpression(mailingId, companyId, appendListSplit);
     	return getSQLFromTargetExpression(expression, new TargetSqlCachingResolver(companyId));
 	}
@@ -583,7 +580,7 @@ public class ComTargetServiceImpl implements ComTargetService {
 	}
 
 	@Override
-	public boolean lockTargetGroup(@VelocityCheck int companyId, int targetId) {
+	public boolean lockTargetGroup(int companyId, int targetId) {
 		if (targetId > 0) {
 			targetDao.updateTargetLockState(targetId, companyId, true);
 			return true;
@@ -592,7 +589,7 @@ public class ComTargetServiceImpl implements ComTargetService {
 	}
 
 	@Override
-	public boolean unlockTargetGroup(@VelocityCheck int companyId, int targetId) {
+	public boolean unlockTargetGroup(int companyId, int targetId) {
 		if (targetId > 0) {
 			targetDao.updateTargetLockState(targetId, companyId, false);
 			return true;
@@ -604,23 +601,23 @@ public class ComTargetServiceImpl implements ComTargetService {
 	 * Removes recipients affected in a target group.
 	 */
 	@Override
-	public boolean deleteRecipients(int targetId, @VelocityCheck int companyId) {
+	public boolean deleteRecipients(int targetId, int companyId) {
 		ComTarget target = targetDao.getTarget(targetId, companyId);
 		return recipientDao.deleteRecipients(companyId, target.getTargetSQL());
 	}
 
 	@Override
-	public String getTargetName(int targetId, @VelocityCheck int companyId) {
+	public String getTargetName(int targetId, int companyId) {
 		return getTargetName(targetId, companyId, false);
 	}
 
 	@Override
-	public String getTargetName(int targetId, @VelocityCheck int companyId, boolean includeDeleted) {
+	public String getTargetName(int targetId, int companyId, boolean includeDeleted) {
 		return targetDao.getTargetName(targetId, companyId, includeDeleted);
 	}
 
 	@Override
-	public boolean checkIfTargetNameAlreadyExists(@VelocityCheck int companyId, String targetName, int targetId) {
+	public boolean checkIfTargetNameAlreadyExists(int companyId, String targetName, int targetId) {
 		String existingName = StringUtils.defaultString(targetDao.getTargetName(targetId, companyId, true));
 
 		// Allow to keep existing name anyway.
@@ -646,7 +643,7 @@ public class ComTargetServiceImpl implements ComTargetService {
 	}
 
 	@Override
-	public List<TargetLight> getTargetLights(final ComAdmin admin) {
+	public List<TargetLight> getTargetLights(final Admin admin) {
 		return getTargetLights(admin, true, true, false);
 	}
 	
@@ -664,12 +661,12 @@ public class ComTargetServiceImpl implements ComTargetService {
 	}
 
 	@Override
-	public List<TargetLight> getTargetLights(final ComAdmin admin, boolean worldDelivery, boolean adminTestDelivery, boolean content) {
+	public List<TargetLight> getTargetLights(final Admin admin, boolean worldDelivery, boolean adminTestDelivery, boolean content) {
 		return getTargetLights(admin.getCompanyID(), false, worldDelivery, adminTestDelivery, content);
 	}
 
 	@Override
-	public List<TargetLight> getTargetLights(final ComAdmin admin,  boolean includeDeleted, boolean worldDelivery, boolean adminTestDelivery, boolean content) {
+	public List<TargetLight> getTargetLights(final Admin admin,  boolean includeDeleted, boolean worldDelivery, boolean adminTestDelivery, boolean content) {
 		return getTargetLights(admin.getCompanyID(), includeDeleted,worldDelivery, adminTestDelivery, content);
 	}
 
@@ -685,7 +682,7 @@ public class ComTargetServiceImpl implements ComTargetService {
 	}
 
 	@Override
-	public List<ListSplit> getListSplits(@VelocityCheck int companyId) {
+	public List<ListSplit> getListSplits(int companyId) {
 		List<TargetLight> targets = targetDao.getSplitTargetLights(companyId, "");
 
 		if (CollectionUtils.isNotEmpty(targets)) {
@@ -758,7 +755,7 @@ public class ComTargetServiceImpl implements ComTargetService {
 	}
 
 	@Override
-	public final List<TargetLight> listTargetGroupsUsingProfileFieldByDatabaseName(final String fieldNameOnDatabase, @VelocityCheck final int companyID) {
+	public final List<TargetLight> listTargetGroupsUsingProfileFieldByDatabaseName(final String fieldNameOnDatabase, final int companyID) {
 		try {
 			final String visibleShortname = profileFieldService.translateDatabaseNameToVisibleName(companyID, fieldNameOnDatabase);
 	
@@ -767,11 +764,10 @@ public class ComTargetServiceImpl implements ComTargetService {
 			set.addAll(listTargetGroupsUsingProfileFieldByDatabaseNameLegacy(visibleShortname, companyID));
 	
 			return new ArrayList<>(set);
-		} catch(final ProfileFieldException e) {
-			if(logger.isDebugEnabled()) {
+		} catch (final ProfileFieldException e) {
+			if (logger.isDebugEnabled()) {
 				logger.debug("Cannot determine visible name for profile field", e);
 			}
-			
 			return Collections.emptyList();
 		}
 	}
@@ -867,17 +863,17 @@ public class ComTargetServiceImpl implements ComTargetService {
 	}
 
 	@Override
-	public List<TargetLight> getTargetLights(@VelocityCheck int companyId, Collection<Integer> targetGroups, boolean includeDeleted) {
+	public List<TargetLight> getTargetLights(int companyId, Collection<Integer> targetGroups, boolean includeDeleted) {
 		return targetDao.getTargetLights(companyId, targetGroups, includeDeleted);
 	}
 
 	@Override
-	public List<TargetLight> getSplitTargetLights(@VelocityCheck int companyId, String splitType) {
+	public List<TargetLight> getSplitTargetLights(int companyId, String splitType) {
 		return targetDao.getSplitTargetLights(companyId, splitType);
 	}
 
 	@Override
-	public PaginatedListImpl<Dependent<TargetGroupDependentType>> getDependents(@VelocityCheck int companyId, int targetId,
+	public PaginatedListImpl<Dependent<TargetGroupDependentType>> getDependents(int companyId, int targetId,
                                                                                 Set<TargetGroupDependentType> allowedTypes, int pageNumber,
                                                                                 int pageSize, String sortColumn, String order) {
 		return targetDao.getDependents(companyId, targetId, allowedTypes, pageNumber, pageSize, sortColumn, order);
@@ -898,7 +894,7 @@ public class ComTargetServiceImpl implements ComTargetService {
 	}
 
 	@Override
-	public TargetComplexityGrade getTargetComplexityGrade(@VelocityCheck int companyId, int targetId) {
+	public TargetComplexityGrade getTargetComplexityGrade(int companyId, int targetId) {
 		Integer complexityIndex = targetDao.getTargetComplexityIndex(companyId, targetId);
 
 		if (complexityIndex == null || complexityIndex < 0) {
@@ -909,12 +905,12 @@ public class ComTargetServiceImpl implements ComTargetService {
 	}
 
 	@Override
-	public int calculateComplexityIndex(String eql, @VelocityCheck int companyId) {
+	public int calculateComplexityIndex(String eql, int companyId) {
 		return calculateComplexityIndex(eql, companyId, new TargetComplexityEvaluationCacheImpl());
 	}
 
 	@Override
-	public int calculateComplexityIndex(String eql, @VelocityCheck int companyId, TargetComplexityEvaluationCache cache) {
+	public int calculateComplexityIndex(String eql, int companyId, TargetComplexityEvaluationCache cache) {
 		try {
 			return complexityEvaluator.evaluate(eql, companyId, cache);
 		} catch (Exception e) {
@@ -924,7 +920,7 @@ public class ComTargetServiceImpl implements ComTargetService {
 	}
 
 	@Override
-	public void initializeComplexityIndex(@VelocityCheck int companyId) {
+	public void initializeComplexityIndex(int companyId) {
 		Map<Integer, Integer> complexities = new HashMap<>();
 		TargetComplexityEvaluationCache cache = new TargetComplexityEvaluationCacheImpl();
 
@@ -956,7 +952,7 @@ public class ComTargetServiceImpl implements ComTargetService {
     }
     
     @Override
-    public List<TargetLight> extractAdminAltgsFromTargetLights(List<TargetLight> targets, ComAdmin admin) {
+    public List<TargetLight> extractAdminAltgsFromTargetLights(List<TargetLight> targets, Admin admin) {
         return Collections.emptyList();
     }
     
@@ -978,7 +974,7 @@ public class ComTargetServiceImpl implements ComTargetService {
 	}
 
 	@Override
-	public boolean isRecipientMatchTarget(ComAdmin admin, int targetGroupId, int customerId) {
+	public boolean isRecipientMatchTarget(Admin admin, int targetGroupId, int customerId) {
 		try {
 			String targetExpression = targetDao.getTargetSQL(targetGroupId, admin.getCompanyID());
 			if (StringUtils.isEmpty(targetExpression)) {
@@ -993,7 +989,7 @@ public class ComTargetServiceImpl implements ComTargetService {
 	}
 
 	@Override
-	public void checkRecipientTargetGroupAccess(ComAdmin admin, int customerId) throws RejectAccessByTargetGroupLimit {
+	public void checkRecipientTargetGroupAccess(Admin admin, int customerId) throws RejectAccessByTargetGroupLimit {
         // nothing to do
     }
     
@@ -1032,7 +1028,7 @@ public class ComTargetServiceImpl implements ComTargetService {
     }
 
 	@Override
-	public int saveTargetFromRecipientSearch(ComAdmin admin, RecipientSaveTargetDto targetDto, List<Message> errors, List<UserAction> userActions) {
+	public int saveTargetFromRecipientSearch(Admin admin, RecipientSaveTargetDto targetDto, List<Message> errors, List<UserAction> userActions) {
 		int targetId = 0;
 		try {
 			final ComTarget oldTarget = getTargetGroupOrNull(targetDto.getTargetId(), admin.getCompanyID());
@@ -1062,9 +1058,9 @@ public class ComTargetServiceImpl implements ComTargetService {
 					.getReferencedProfileFields();
 
 			return referencedProfileFields.stream()
-					.map(pf -> profileFieldService.getProfileField(companyId, pf, adminId))
+					.map(pf -> profileFieldService.getProfileFieldByShortname(companyId, pf))
 					.filter(Objects::nonNull)
-					.anyMatch(pf -> pf.getModeEdit() == (ProfileField.MODE_EDIT_NOT_VISIBLE));
+					.anyMatch(pf -> ProfileFieldMode.NotVisible.equals(pf.getModeEdit()));
 		} catch (EqlParserException e) {
 			logger.error("Could not retrieve profile fields from EQL.", e);
 			return false;
@@ -1168,11 +1164,6 @@ public class ComTargetServiceImpl implements ComTargetService {
 	}
 
 	@Required
-	public void setAdminService(AdminService adminService) {
-		this.adminService = adminService;
-	}
-
-	@Required
 	public void setTargetFactory(TargetFactory targetFactory) {
 		this.targetFactory = targetFactory;
 	}
@@ -1187,7 +1178,7 @@ public class ComTargetServiceImpl implements ComTargetService {
         this.eqlValidatorService = eqlValidatorService;
     }
 
-	private int getMaxGenderValue(ComAdmin admin) {
+	private int getMaxGenderValue(Admin admin) {
 		if (admin.permissionAllowed(Permission.RECIPIENT_GENDER_EXTENDED)) {
 			return ConfigService.MAX_GENDER_VALUE_EXTENDED;
 		} else {
@@ -1334,7 +1325,7 @@ public class ComTargetServiceImpl implements ComTargetService {
 		return Collections.emptyList();
 	}
 
-	private List<ActionMessage> postValidation(ComAdmin admin, ComTarget target) {
+	private List<ActionMessage> postValidation(Admin admin, ComTarget target) {
 		// Check for maximum "compare to"-value of gender equations
 		// Must be done after saveTarget(..)-call because there the new target sql expression is generated
 		if (target.getTargetSQL().contains("cust.gender")) {
@@ -1368,4 +1359,9 @@ public class ComTargetServiceImpl implements ComTargetService {
 	public int getAccessLimitingTargetgroupsAmount(int companyId) {
 		return 0;
 	}
+	
+	@Override
+	public boolean isLinkUsedInTarget(TrackableLink link) {
+	    return targetDao.isLinkUsedInTarget(link);
+    }
 }

@@ -12,6 +12,7 @@ package org.agnitas.service;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
@@ -37,6 +38,7 @@ import org.agnitas.util.CsvDataInvalidItemCountException;
 import org.agnitas.util.CsvDataInvalidTextAfterQuoteException;
 import org.agnitas.util.CsvReader;
 import org.agnitas.util.DbColumnType;
+import org.agnitas.util.TempFileInputStream;
 import org.agnitas.util.ZipDataException;
 import org.agnitas.util.ZipUtilities;
 import org.agnitas.util.importvalues.Charset;
@@ -44,6 +46,7 @@ import org.agnitas.util.importvalues.ImportMode;
 import org.agnitas.util.importvalues.Separator;
 import org.agnitas.util.importvalues.TextRecognitionChar;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
+import org.apache.commons.compress.utils.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
@@ -149,7 +152,7 @@ public class ProfileImportCsvPreviewLoader {
 					}
 					
 					if (jsonReader.getCurrentToken() != JsonToken.JsonArray_Open) {
-						throw new Exception("Json data does not contain expected JsonArray");
+						throw new ImportException(false, "import.error.noJsonArray");
 					}
 
 					// Check for duplicate json property keys
@@ -177,6 +180,8 @@ public class ProfileImportCsvPreviewLoader {
 					}
 				}
 			}
+		} catch (ImportException e) {
+			throw e;
 		} catch (UnsupportedEncodingException e) {
 			throw new ImportWizardContentParseException("error.import.charset", e);
 		} catch (ZipDataException e) {
@@ -204,18 +209,26 @@ public class ProfileImportCsvPreviewLoader {
 						}
 						return dataInputStream;
 					} catch (Exception e) {
-						dataInputStream.close();
+						if (dataInputStream != null) {
+							dataInputStream.close();
+							dataInputStream = null;
+						}
 						throw e;
 					}
 				} else {
-					ZipFile zipFile = new ZipFile(importFile);
-					zipFile.setPassword(importProfile.getZipPassword().toCharArray());
-					List<FileHeader> fileHeaders = zipFile.getFileHeaders();
-					// Check if there is only one file within the zip file
-					if (fileHeaders == null || fileHeaders.size() != 1) {
-						throw new Exception("Invalid number of files included in zip file");
-					} else {
-						return zipFile.getInputStream(fileHeaders.get(0));
+					File tempImportFile = new File(importFile.getAbsolutePath() + ".tmp");
+					try (ZipFile zipFile = new ZipFile(importFile)) {
+						zipFile.setPassword(importProfile.getZipPassword().toCharArray());
+						List<FileHeader> fileHeaders = zipFile.getFileHeaders();
+						// Check if there is only one file within the zip file
+						if (fileHeaders == null || fileHeaders.size() != 1) {
+							throw new Exception("Invalid number of files included in zip file");
+						} else {
+							try (FileOutputStream tempImportFileOutputStream = new FileOutputStream(tempImportFile)) {
+								IOUtils.copy(zipFile.getInputStream(fileHeaders.get(0)), tempImportFileOutputStream);
+							}
+							return new TempFileInputStream(tempImportFile);
+						}
 					}
 				}
 			} catch (ImportException e) {

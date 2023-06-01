@@ -113,7 +113,6 @@
       listItemsWidth += $(this).outerWidth(true);
     });
 
-    return listItemsWidth <= maximumWidth;
+    return Math.floor(listItemsWidth) <= Math.floor(maximumWidth);
   }
-
 })();

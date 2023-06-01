@@ -38,7 +38,7 @@ import com.agnitas.dao.FormComponentDao;
 import javax.imageio.ImageIO;
 
 public class ComponentServiceImpl implements ComponentService {
-	private static final transient Logger logger = LogManager.getLogger(ComponentServiceImpl.class);
+	private static final Logger logger = LogManager.getLogger(ComponentServiceImpl.class);
 
 	public static final int THUMBNAIL_WIDTH = 56;
 	public static final int THUMBNAIL_HEIGHT = 79;

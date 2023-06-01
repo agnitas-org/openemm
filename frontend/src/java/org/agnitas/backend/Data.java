@@ -41,9 +41,9 @@ import org.agnitas.backend.dao.TitleDAO;
 import org.agnitas.dao.FollowUpType;
 import org.agnitas.dao.MailingStatus;
 import org.agnitas.dao.UserStatus;
+import org.agnitas.backend.exceptions.CancelException;
 import org.agnitas.preview.Page;
 import org.agnitas.util.Bit;
-import org.agnitas.util.Blacklist;
 import org.agnitas.util.DBConfig;
 import org.agnitas.util.Log;
 import org.agnitas.util.Str;
@@ -52,7 +52,6 @@ import org.agnitas.util.Systemconfig;
 import org.agnitas.util.Title;
 import org.agnitas.util.importvalues.MailType;
 import org.springframework.jdbc.core.ResultSetExtractor;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.emm.common.MailingType;
@@ -173,6 +172,7 @@ public class Data {
 	 * Send samples of worldmailing to dedicated address(es)
 	 */
 	protected String sampleEmails = null;
+	protected String deliveryCheckEmails = null;
 
 	/**
 	 * the user_status for this query
@@ -253,7 +253,7 @@ public class Data {
 	 */
 	private List<String> bcc = null;
 	private int bccBaseIndex = 0;
-	private boolean bccBaseIsBlacklistChecked = false;
+	private boolean bccBaseIsBlocklistChecked = false;
 	/**
 	 * overwtite existing database fields
 	 */
@@ -299,6 +299,10 @@ public class Data {
 	 */
 	public long sendSeconds = 0;
 	/**
+	 * display send date
+	 */
+	public Date genericSendDate = null;
+	/**
 	 * force start of new block
 	 */
 	public boolean forceNewBlock = false;
@@ -342,9 +346,9 @@ public class Data {
 	 */
 	public long availableMedias = 0;
 	/**
-	 * colect blacklisted recipients
+	 * colect blocklisted recipients
 	 */
-	public Set<Long> blacklisted = null;
+	public Set<Long> blocklisted = null;
 	/**
 	 * number of all subscriber of a mailing
 	 */
@@ -494,27 +498,36 @@ public class Data {
 		String[]	dbids = dbcfg.ids ();
 		defaultDBID = (dbids != null) && (dbids.length == 1) ? dbids[0] : "emm";
 	}
-	protected Data() {
-		//nothing do
-	}
 
 	/**
 	 * Constructor for the class
 	 *
 	 * @param program   the name of the program (for logging setup)
-	 * @param status_id the status_id to read the mailing information from
-	 * @param option    output option
+	 * @param option    output option for logging
 	 */
-	public Data(String program, String status_id, String option) throws Exception {
+	public Data (String program, String option) {
 		setupLogging(program, (option == null || !option.equals("silent")));
+	}
+	public Data (String program) {
+		this (program, null);
+	}
+	
+	/**
+	 * Setup data
+	 *
+	 * @param generation_spec the status_id to read the mailing information from
+	 */
+	public void setup (String generation_spec) throws Exception {
 		configuration();
 
-		logging(Log.DEBUG, "init", "Data read" + (status_id != null ? " for " + status_id : ""));
+		logging(Log.DEBUG, "init", "Data read" + (generation_spec != null ? " for " + generation_spec : ""));
 		setupDatabase();
 		logging(Log.DEBUG, "init", "Initial database connection established");
-		if (status_id != null) {
+		if (generation_spec != null) {
 			try {
-				getMailingInformations(status_id);
+				getMailingInformations(generation_spec);
+			} catch (CancelException e) {
+				throw e;
 			} catch (Exception e) {
 				throw new Exception("Database failure: " + e, e);
 			}
@@ -524,17 +537,8 @@ public class Data {
 			if (islog(Log.DEBUG)) {
 				logSettings();
 			}
-			mailing.setWorkStatus(MailingStatus.IN_GENERATION.getDbKey());
+			mailing.setWorkStatus(MailingStatus.IN_GENERATION.getDbKey(), null);
 		}
-	}
-
-	/**
-	 * Constructor for non mailing based instances
-	 *
-	 * @param program the program name for logging
-	 */
-	public Data(String program) throws Exception {
-		this(program, null, null);
 	}
 
 	/**
@@ -603,8 +607,10 @@ public class Data {
 	 *
 	 */
 	public void suspend() throws Exception {
-		if (maildropStatus.isCampaignMailing() || maildropStatus.isVerificationMailing() || maildropStatus.isPreviewMailing()) {
-			closeDatabase();
+		if (maildropStatus != null) {
+			if (maildropStatus.isCampaignMailing() || maildropStatus.isVerificationMailing() || maildropStatus.isPreviewMailing()) {
+				closeDatabase();
+			}
 		}
 	}
 
@@ -649,6 +655,7 @@ public class Data {
 		logging(Log.DEBUG, "init", "\txmlBack = " + xmlBack);
 		logging(Log.DEBUG, "init", "\txmlValidate = " + xmlValidate);
 		logging(Log.DEBUG, "init", "\tsampleEmails = " + sampleEmails);
+		logging(Log.DEBUG, "init", "\tdeliveryCheckEmails = " + deliveryCheckEmails);
 		logging(Log.DEBUG, "init", "\tdefaultUserStatus = " + defaultUserStatus);
 		logging(Log.DEBUG, "init", "\tdefaultCampaignForceSending = " + defaultCampaignForceSending);
 		logging(Log.DEBUG, "init", "\tdefaultCampaignEnableTargetGroups = " + defaultCampaignEnableTargetGroups);
@@ -787,6 +794,10 @@ public class Data {
 		if (((sampleEmails = cfg.cget("sample_emails", sampleEmails)) != null) && ((sampleEmails.length() == 0) || sampleEmails.equals("-"))) {
 			sampleEmails = null;
 		}
+		if (((deliveryCheckEmails = cfg.cget ("delivery_check_emails", deliveryCheckEmails)) != null) && ((deliveryCheckEmails.length () == 0) || deliveryCheckEmails.equals ("-"))) {
+			deliveryCheckEmails = null;
+		}
+		
 		licenceID = syscfg.get ("licence", licenceID);
 		limitBlockOperations = cfg.cget("limit_block_operations", limitBlockOperations);
 		limitBlockOperationsMax = cfg.cget("limit_block_operations_max", limitBlockOperationsMax);
@@ -844,20 +855,32 @@ public class Data {
 	/**
 	 * query all basic information about this mailing
 	 *
-	 * @param status_id the reference to the mailing or company and mailinglist
+	 * @param generation_spec the reference to the mailing or company and mailinglist
 	 */
 	@DaoUpdateReturnValueCheck
-	private void getMailingInformations(String status_id) throws Exception {
+	private void getMailingInformations(String generation_spec) throws Exception {
 		try {
-			String[] sdetail = status_id.split(":", 2);
+			String[] sdetail = generation_spec.split(":", 2);
 
 			if (sdetail.length == 2) {
 				setupMailingInformations(sdetail[0], sdetail[1]);
 			} else {
-				maildropStatus.id(Long.parseLong(status_id));
+				maildropStatus.id(Long.parseLong(generation_spec));
 				maildropStatus.retrieveInformation();
 			}
 			company.retrieveInformation();
+			if (company.id () > 0) {
+				String	newLogLevel = company.info ("merger:loglevel");
+				
+				if (newLogLevel != null) {
+					try {
+						logging (Log.INFO, "init", "Change loglevel to " + newLogLevel);
+						log.levelDescription (newLogLevel);
+					} catch (Exception e) {
+						logging (Log.ERROR, "init", "Failed to set loglevel to new level " + newLogLevel + ": " + e.toString ());
+					}
+				}
+			}
 			if (dbase.exists("reference_tbl")) {
 				retrieveReferenceTableDefinitions(mailing.id());
 			}
@@ -871,6 +894,8 @@ public class Data {
 			retrieveURLsForMeasurement();
 			retrieveCustomerTableLayout();
 			finalizeConfiguration();
+		} catch (CancelException e) {
+			throw e;
 		} catch (Exception e) {
 			logging(Log.ERROR, "init", "Error in quering initial data: " + e.toString(), e);
 			throw new Exception("Database error/initial query: " + e, e);
@@ -1067,10 +1092,10 @@ public class Data {
 	}
 
 	private void parseMediaStaticInformation() throws Exception {
-		int usedMedia;
-
+		int usedMedia = 0;
+		Map <String, String> mediaConfig = configEntry ("media");
+		
 		availableMedias = 0;
-		usedMedia = 0;
 		for (Media tmp : media()) {
 			String	config = cfg.cget ("media-" + Media.typeName (tmp.type) + "-config");
 			
@@ -1143,6 +1168,19 @@ public class Data {
 					availableMedias = Bit.set(availableMedias, tmp.type);
 					++usedMedia;
 				}
+				if (mediaConfig != null) {
+					String	mediaName = Media.typeName (tmp.type);
+				
+					for (Map.Entry <String, String> es : mediaConfig.entrySet ()) {
+						String[] keyParts = es.getKey ().split (":", 2);
+					
+						if ((keyParts.length == 2) &&
+						    mediaName.equals (keyParts[0].toLowerCase ()) &&
+						    (! tmp.containsKey (keyParts[1]))) {
+							tmp.setParameter (keyParts[1], es.getValue ());
+						}
+					}
+				}
 			}
 		}
 		if (usedMedia > 0) {
@@ -1185,8 +1223,10 @@ public class Data {
 
 		URLlist = new ArrayList<>();
 		if (mailing.id() > 0) {
+			String	escape = dbase.isOracle () ? "" : "`";
+			
 			rc = dbase.query(
-				"SELECT url_id, full_url, " + dbase.measureType + ", admin_link, original_url, static_value " +
+				"SELECT url_id, full_url, " + escape + "usage" + escape + ", admin_link, original_url, static_value " +
 			 	"FROM rdir_url_tbl " +
 			 	"WHERE company_id = :companyID AND mailing_id = :mailingID AND (deleted IS NULL OR deleted = 0)",
 				"companyID", company.id(), "mailingID", mailing.id());
@@ -1194,7 +1234,7 @@ public class Data {
 				Map<String, Object> row = rc.get(n);
 				long id = dbase.asLong(row.get("url_id"));
 				String dest = dbase.asString(row.get("full_url"));
-				long usage = dbase.asLong(row.get(dbase.measureRepr));
+				long usage = dbase.asLong(row.get("usage"));
 
 				if (usage != 0) {
 					URL url = new URL(id, dest, usage);
@@ -1261,6 +1301,9 @@ public class Data {
 
 		if (Str.atob(company.info("opt-in-mailing", mailing.id()), false)) {
 			defaultUserStatus = UserStatus.WaitForConfirm.getStatusCode();
+		}
+		if (Str.atob(company.info("resolve-target-groups-by-database", mailing.id()), false)) {
+			targetExpression.forceResolveByDatabase (true);
 		}
 
 		imageTemplate = company.infoSubstituted("imagelink-template", mailing.id(), "%(rdir-domain)/image/%(licence-id)/%(company-id)/%(mailing-id)/[name]");
@@ -1483,18 +1526,9 @@ public class Data {
 			msg += "\tstatus_field must be one of A, V, T, E, R, D, W or P (" + maildropStatus.statusField() + ")\n";
 		}
 
-		long now = System.currentTimeMillis() / 1000;
-		Timestamp sendDate = maildropStatus.sendDate();
-
-		if (sendDate != null) {
-			sendSeconds = sendDate.getTime() / 1000;
-			if (sendSeconds < now) {
-				sendSeconds = now;
-			}
-		} else {
-			sendSeconds = now;
-		}
-		currentSendDate = new Date(sendSeconds * 1000);
+		currentSendDate = currentSendDate (maildropStatus.sendDate());
+		sendSeconds = currentSendDate.getTime () / 1000;
+		
 		if ((autoURL == null) || (autoURL.length() == 0)) {
 			++cnt;
 			msg += "\tmissing or empty auto_url\n";
@@ -1802,26 +1836,26 @@ public class Data {
 		return rc;
 	}
 
-	public void markBlacklisted(Long cid) {
-		if (blacklisted == null) {
-			blacklisted = new HashSet<>();
+	public void markBlocklisted(Long cid) {
+		if (blocklisted == null) {
+			blocklisted = new HashSet<>();
 		}
-		if (!blacklisted.contains(cid)) {
-			blacklisted.add(cid);
+		if (!blocklisted.contains(cid)) {
+			blocklisted.add(cid);
 			totalReceivers--;
 		}
 	}
 
 	public void correctReceiver() {
-		if (blacklisted != null) {
-			for (Long cid : blacklisted) {
+		if (blocklisted != null) {
+			for (Long cid : blocklisted) {
 				bigClause.removeReceiver(cid);
 			}
 		}
 	}
 
-	public int getNoOfBlacklisted() {
-		return blacklisted == null ? 0 : blacklisted.size();
+	public int getNoOfBlocklisted() {
+		return blocklisted == null ? 0 : blocklisted.size();
 	}
 
 	public String boundary() {
@@ -1851,7 +1885,7 @@ public class Data {
 			int ccnt = meta.getColumnCount();
 
 			for (int n = 0; n < ccnt; ++n) {
-				String cname = meta.getColumnName(n + 1);
+				String cname = meta.getColumnName(n + 1).toLowerCase ();
 				int ctype = meta.getColumnType(n + 1);
 				String tname = meta.getColumnTypeName(n + 1);
 
@@ -1879,13 +1913,13 @@ public class Data {
 
 	protected void getTableLayout(String table, String ref) throws Exception {
 		Data data = this;
-		DBase.Retry<List<Column>> r = dbase.new Retry<>("layout", dbase, dbase.jdbc()) {
+		DBase.Retry<List<Column>> r = dbase.new Retry<>("layout", dbase, dbase.cursor()) {
 			@Override
 			public void execute() throws SQLException {
 				String query = "SELECT * FROM " + table + " WHERE 1 = 0";
 				Layout temp = new Layout(data, table, layout, ref);
 
-				jdbc.query(query, temp);
+				cursor.query(query, null, temp);
 				priv = temp.getLayout();
 			}
 		};
@@ -2028,7 +2062,7 @@ public class Data {
 	 * Sanity check for mismatch company_id and perhaps deleted
 	 * mailing
 	 */
-	public void sanityCheck(Blacklist blacklist) throws Exception {
+	public void sanityCheck(Blocklist blocklist) throws Exception {
 		if (!maildropStatus.isPreviewMailing()) {
 			if (!mailing.exists()) {
 				throw new Exception("No entry for mailingID " + mailing.id() + " in mailing table found");
@@ -2047,11 +2081,11 @@ public class Data {
 			if (bcc != null) {
 				int size = bcc.size();
 
-				for (int n = bccBaseIsBlacklistChecked ? bccBaseIndex : 0; n < size; ) {
+				for (int n = bccBaseIsBlocklistChecked ? bccBaseIndex : 0; n < size; ) {
 					String recv = bcc.get(n);
 
-					if (blacklist.isBlackListed(recv) != null) {
-						logging(Log.ERROR, "bcc", "Address \"" + recv + "\" is on blacklist, do not use it");
+					if (blocklist.isBlockListed(recv) != null) {
+						logging(Log.ERROR, "bcc", "Address \"" + recv + "\" is on blocklist, do not use it");
 						bcc.remove(n);
 						--size;
 						if (n < bccBaseIndex) {
@@ -2061,7 +2095,7 @@ public class Data {
 						++n;
 					}
 				}
-				bccBaseIsBlacklistChecked = true;
+				bccBaseIsBlocklistChecked = true;
 			}
 		} else {
 			previewClearData = false;
@@ -2109,8 +2143,8 @@ public class Data {
 		if (!bigClause.prepareQueryParts()) {
 			throw new Exception("Failed to setup the query parts");
 		}
-		if (blacklisted != null) {
-			blacklisted.clear();
+		if (blocklisted != null) {
+			blocklisted.clear();
 		}
 		totalSubscribers = bigClause.subscriber();
 		totalReceivers = bigClause.receiver();
@@ -2213,10 +2247,7 @@ public class Data {
 			String query = bigClause.intervalStatement(intervalTrackTable);
 
 			try {
-				Date	sendDate = maildropStatus.sendDate ();
-				Date	now = new Date ();
-				
-				dbase.update(query, "mailingID", mailing.id(), "sendDate", (sendDate  == null) || sendDate.before (now) ? now : sendDate);
+				dbase.update(query, "mailingID", mailing.id(), "sendDate", currentSendDate (maildropStatus.sendDate ()));
 			} catch (Exception e) {
 				logging(Log.ERROR, "mailtrack", "Failed to save interval mailing information: " + e.toString(), e);
 			}
@@ -2407,6 +2438,16 @@ public class Data {
 			} else {
 				previewCustomerID = 0;
 			}
+			genericSendDate = null;
+			if ((tmp = opts.get ("preview-senddate")) != null) {
+				long	epoch = obj2long (tmp, "preview-senddate");
+
+				if (epoch > 0) {
+					genericSendDate = new Date (epoch * 1000);
+					logging(Log.DEBUG, "options2", "--> preview-senddate = " + epoch + " (" + genericSendDate.toString () + ")");
+				}
+			}
+				
 			if ((previewOutput = (Page) opts.get("preview-output")) != null) {
 				logging(Log.DEBUG, "options2", "--> preview-output = " + previewOutput);
 			}
@@ -2417,7 +2458,7 @@ public class Data {
 				previewAnon = false;
 			}
 			if ((previewSelector = (String) opts.get("preview-selector")) != null) {
-				logging(Log.DEBUG, "options2", "--> preview-selector= " + previewSelector);
+				logging(Log.DEBUG, "options2", "--> preview-selector = " + previewSelector);
 			}
 			if ((tmp = opts.get("preview-cachable")) != null) {
 				previewCachable = obj2bool(tmp, "preview-cachable");
@@ -2455,7 +2496,7 @@ public class Data {
 				}
 				logging(Log.DEBUG, "options2", "--> send-date = " + currentSendDate);
 			} else {
-				currentSendDate = maildropStatus.sendDate();
+				currentSendDate = currentSendDate (maildropStatus.sendDate());
 			}
 			if (currentSendDate != null) {
 				sendSeconds = currentSendDate.getTime() / 1000;
@@ -2885,7 +2926,7 @@ public class Data {
 	}
 
 	public boolean isDirect() {
-		return directPath && maildropStatus.isCampaignMailing() && (mailing.stepping() == 0) && (sendSeconds <= System.currentTimeMillis() / 1000);
+		return directPath && maildropStatus.isCampaignMailing() && (mailing.stepping() == 0) && (sendSeconds <= System.currentTimeMillis() / 1000 + 1);
 	}
 
 	/**
@@ -2926,7 +2967,12 @@ public class Data {
 	public String sampleEmails() {
 		return sampleEmails;
 	}
-
+	/**
+	 * returns the emails to be used by delivery check
+	 */
+	public String deliveryCheckEmails () {
+		return company.isPermitted ("mia.premium") ? deliveryCheckEmails : null;
+	}
 	/**
 	 * if this is a dryrun test run
 	 *
@@ -3231,6 +3277,22 @@ public class Data {
 		}
 		return inc + maildropStatus.statusField () + mailing.id ();
 	}
+	
+	public Date currentSendDate (Date sendDate) {
+		Date	now = new Date ();
+		
+		return (sendDate == null) || sendDate.before (now) ? now : sendDate;
+	}
+	
+	public Date genericSendDate () {
+		if (genericSendDate != null) {
+			return genericSendDate;
+		}
+		if (maildropStatus.isCampaignMailing () || maildropStatus.isRuleMailing () || maildropStatus.isOnDemandMailing ()) {
+			return currentSendDate;
+		}
+		return maildropStatus.genericSendDate ();
+	}
 
 	public String ahvTable() {
 		return "ahv_" + company.id() + "_tbl";
@@ -3324,10 +3386,6 @@ public class Data {
 			}
 		}
 		return startIndex;
-	}
-
-	public Date sendDate() {
-		return maildropStatus.genericSendDate();
 	}
 
 	public List<String> getReduction() {
@@ -3506,35 +3564,35 @@ public class Data {
 		url = URLTable.get(rqurl);
 		if (url == null) {
 			synchronized (lock) {
-				NamedParameterJdbcTemplate jdbc = null;
 				String query = null;
-				List<Map<String, Object>> rq;
-				Map<String, Object> row;
-
-				try {
+				
+				try (DBase.With with = dbase.with ()) {
+					List<Map<String, Object>> rq;
+					Map<String, Object> row;
 					long urlID;
 
 					urlID = 0;
-					jdbc = dbase.request();
 					query = "SELECT url_id FROM rdir_url_tbl WHERE mailing_id = :mailingID AND company_id = :companyID AND full_url = :fullURL AND (deleted IS NULL OR deleted = 0)";
-					rq = dbase.query(jdbc, query, "mailingID", mailing.id(), "companyID", company.id(), "fullURL", rqurl);
+					rq = dbase.query(with.cursor (), query, "mailingID", mailing.id(), "companyID", company.id(), "fullURL", rqurl);
 					if (rq.size() > 0) {
 						row = rq.get(0);
-
 						urlID = dbase.asLong(row.get("url_id"));
 					}
 					if (urlID == 0) {
 						if (name != null && name.length() > 1000) {
 							throw new Exception("Value for rdir_url_tbl.shortname is to long (Maximum: 1000, Current: " + name.length() + ")");
 						}
-						
 						if (dbase.isOracle()) {
 							query = "SELECT rdir_url_tbl_seq.nextval FROM dual";
-							urlID = dbase.queryLong(jdbc, query);
+							urlID = dbase.queryLong(with.cursor (), query);
 							if (urlID > 0) {
-								query = "INSERT INTO rdir_url_tbl (url_id, full_url, mailing_id, company_id, " + dbase.measureType + ", action_id, shortname, deep_tracking, alt_text, extend_url, admin_link, from_mailing) " + "VALUES (:urlID, :fullURL, :mailingID, :companyID, :measure, :actionID, :shortname, :deepTracking, :altText, :extendURL, :adminLink, :fromMailing)";
-								dbase.update(jdbc, query,
-									     "urlID", urlID, "fullURL", rqurl,
+								query = "INSERT INTO rdir_url_tbl " +
+									"(url_id, full_url, mailing_id, company_id, usage, action_id, shortname, deep_tracking, alt_text, extend_url, admin_link, from_mailing) " +
+									"VALUES " +
+									"(:urlID, :fullURL, :mailingID, :companyID, :measure, :actionID, :shortname, :deepTracking, :altText, :extendURL, :adminLink, :fromMailing)";
+								dbase.update(with.cursor (), query,
+									     "urlID", urlID,
+									     "fullURL", rqurl,
 									     "mailingID", mailing.id(),
 									     "companyID", company.id(),
 									     "measure", 3, "actionID", 0,
@@ -3546,11 +3604,11 @@ public class Data {
 									     "fromMailing", 1);
 							}
 						} else {
-							query = "INSERT INTO rdir_url_tbl (full_url, mailing_id, company_id, " + dbase.measureType +
-							", action_id, shortname, deep_tracking, alt_text, extend_url, admin_link, from_mailing) " +
-							"VALUES (:fullURL, :mailingID, :companyID, :measure, :actionID, :shortname, :deepTracking, :altText, :extendURL, :adminLink, :fromMailing)";
-							dbase.update(jdbc, query,
-								     "urlID", urlID,
+							query = "INSERT INTO rdir_url_tbl " + 
+								"(full_url, mailing_id, company_id, `usage`, action_id, shortname, deep_tracking, alt_text, extend_url, admin_link, from_mailing) " +
+								"VALUES " + 
+								"(:fullURL, :mailingID, :companyID, :measure, :actionID, :shortname, :deepTracking, :altText, :extendURL, :adminLink, :fromMailing)";
+							dbase.update(with.cursor (), query,
 								     "fullURL", rqurl,
 								     "mailingID", mailing.id(),
 								     "companyID", company.id(),
@@ -3562,7 +3620,7 @@ public class Data {
 								     "adminLink", (isAdminLink ? 1 : 0),
 								     "fromMailing", 1);
 							query = "SELECT last_insert_id()";
-							urlID = dbase.queryLong(jdbc, query);
+							urlID = dbase.queryLong(with.cursor (), query);
 						}
 					}
 					if (urlID > 0) {
@@ -3572,11 +3630,11 @@ public class Data {
 						URLTable.put(rqurl, url);
 						++urlcount;
 						logging(Log.VERBOSE, "rqurl", "Added missing URL " + rqurl);
+					} else {
+						logging(Log.ERROR, "rqurl", "Failed to add missing URL " + rqurl);
 					}
 				} catch (Exception e) {
 					logging(Log.ERROR, "rqurl", "Failed to insert new URL " + rqurl + " into database: " + e.toString() + (query != null ? " (query " + query + ")" : ""), e);
-				} finally {
-					dbase.release(jdbc);
 				}
 			}
 		}
@@ -3589,5 +3647,15 @@ public class Data {
 			swyn.setup();
 		}
 		return swyn;
+	}
+	
+	/**
+	 * write a log line which triggers an external process for further actions
+	 * 
+	 * @param name the name of the trigger to address
+	 * @param options further options for the triggered method
+	 */
+	public void trigger (String name, Object options) {
+		logging (Log.TRIGGER, "trigger", "--== trigger[" + name + "]: " + (options != null ? options.toString () : ""));
 	}
 }

@@ -1,4 +1,4 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 <%@ page import="org.agnitas.web.ImportProfileAction" %>
 
 <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
@@ -10,7 +10,7 @@
 
 <%--@elvariable id="newImportWizardForm" type="com.agnitas.web.forms.ComNewImportWizardForm"--%>
 
-<agn:agnForm action="/newimportwizard" id="newImportWizardForm" enctype="multipart/form-data" data-form="static">
+<agn:agnForm action="/newimportwizard" id="newImportWizardForm" enctype="multipart/form-data" data-form="resource">
     <html:hidden property="action"/>
     <html:hidden property="upload_file" value="1"/>
     <input type="hidden" id="start_proceed" name="start_proceed" value="" />
@@ -26,7 +26,7 @@
 
                 <div class="form-group">
                     <label class="control-label">
-                        <bean:message key="import.csv.file"/>
+                        <bean:message key="import.csv.file"/>*
                     </label>
                     <c:set var="currentFileName" value="${newImportWizardForm.currentFileName}" scope="page" />
                     <c:set var="hasFile" value="${newImportWizardForm.hasFile}" scope="page" />

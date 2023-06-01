@@ -26,7 +26,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.emm.core.dashboard.service.DashboardService;
 import com.agnitas.reporting.birt.external.beans.SendStatRow;
@@ -38,12 +38,11 @@ import net.sf.json.JSONObject;
 
 public class DashboardServiceImpl implements DashboardService {
 	
-	/** The logger. */
-    private Logger logger = LogManager.getLogger(DashboardServiceImpl.class);
+    private static final Logger logger = LogManager.getLogger(DashboardServiceImpl.class);
     
     private static final int DEFAULT_STATISTIC_VALUE = 0;
 
-    private MailingSummaryDataSetFactory summaryDataSetFactory;
+    private MailingSummaryDataSetFactory mailingSummaryDataSetFactory;
     private ComMailingDao mailingDao;
     
     private static final List<Integer> OPENERS_STATISTIC_INDEXES = new ArrayList<>(Arrays.asList(
@@ -60,8 +59,8 @@ public class DashboardServiceImpl implements DashboardService {
     }
 
     @Required
-    public void setSummaryDataSetFactory(MailingSummaryDataSetFactory summaryDataSetFactory) {
-        this.summaryDataSetFactory = summaryDataSetFactory;
+    public void setMailingSummaryDataSetFactory(MailingSummaryDataSetFactory mailingSummaryDataSetFactory) {
+        this.mailingSummaryDataSetFactory = mailingSummaryDataSetFactory;
     }
 
     public ComMailingDao getMailingDao() {
@@ -69,12 +68,12 @@ public class DashboardServiceImpl implements DashboardService {
     }
 
     @Override
-    public PaginatedListImpl<Map<String, Object>> getMailings(ComAdmin admin, String sort, String direction, int rownums) {
+    public PaginatedListImpl<Map<String, Object>> getMailings(Admin admin, String sort, String direction, int rownums) {
         return mailingDao.getDashboardMailingList(admin, sort, direction, rownums);
     }
 
     @Override
-    public List<Map<String, Object>> getLastSentWorldMailings(ComAdmin admin, int rownums) {
+    public List<Map<String, Object>> getLastSentWorldMailings(Admin admin, int rownums) {
         return mailingDao.getLastSentWorldMailings(admin, rownums);
     }
 
@@ -107,7 +106,7 @@ public class DashboardServiceImpl implements DashboardService {
     }
 
     private Map<Integer, Integer> getReportData(int mailingId, int companyId) throws Exception {
-        MailingSummaryDataSet mailingSummaryDataSet = summaryDataSetFactory.create();
+        MailingSummaryDataSet mailingSummaryDataSet = mailingSummaryDataSetFactory.create();
         Map<Integer, Integer> data = new HashMap<>();
 
         if (mailingId != 0) {

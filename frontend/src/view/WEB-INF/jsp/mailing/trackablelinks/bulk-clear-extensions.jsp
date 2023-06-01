@@ -18,7 +18,7 @@
             </div>
 
             <mvc:form servletRelativeAction="/mailing/${mailingId}/trackablelink/bulkClearExtensions.action" modelAttribute="trackableLinksForm">
-                <%@include file="fragments-new/bulk_action/link-clear-extensions.jspf" %>
+                <%@include file="fragments/bulk_action/link-clear-extensions.jspf" %>
             </mvc:form>
         </div>
     </div>

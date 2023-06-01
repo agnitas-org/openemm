@@ -12,6 +12,7 @@ package com.agnitas.emm.core.recipientsreport.web;
 
 import java.util.Date;
 
+import com.agnitas.web.mvc.XssCheckAware;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.service.UserActivityLogService;
@@ -34,7 +35,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.recipientsreport.bean.RecipientsReport;
 import com.agnitas.emm.core.recipientsreport.dto.DownloadRecipientReport;
@@ -48,14 +49,13 @@ import com.agnitas.web.perm.annotations.PermissionMapping;
 @Controller
 @RequestMapping("/recipientsreport")
 @PermissionMapping("recipientsreport")
-public class RecipientsReportController {
+public class RecipientsReportController implements XssCheckAware {
 	
-	/** The logger. */
-    private static final transient Logger logger = LogManager.getLogger(RecipientsReportController.class);
+    private static final Logger logger = LogManager.getLogger(RecipientsReportController.class);
     
-    private RecipientsReportService recipientsReportService;
-    private WebStorage webStorage;
-    private UserActivityLogService userActivityLogService;
+    private final RecipientsReportService recipientsReportService;
+    private final WebStorage webStorage;
+    private final UserActivityLogService userActivityLogService;
 
     public RecipientsReportController(RecipientsReportService recipientsReportService, WebStorage webStorage,
                                       UserActivityLogService userActivityLogService) {
@@ -65,7 +65,7 @@ public class RecipientsReportController {
     }
 
     @RequestMapping("/list.action")
-    public String list(ComAdmin admin, RecipientsReportForm reportForm, Model model) {
+    public String list(Admin admin, RecipientsReportForm reportForm, Model model) {
         FormUtils.syncNumberOfRows(webStorage, ComWebStorage.IMPORT_EXPORT_LOG_OVERVIEW, reportForm);
 
         Date startDate = reportForm.getFilterDateStart().get(admin.getDateFormat());
@@ -89,7 +89,7 @@ public class RecipientsReportController {
     }
 
     @GetMapping("/{reportId:\\d+}/view.action")
-    public String view(ComAdmin admin, @PathVariable int reportId, Model model) {
+    public String view(Admin admin, @PathVariable int reportId, Model model) {
         String reportContent = recipientsReportService.getImportReportContent(admin.getCompanyID(), reportId);
     
         if (StringUtils.isBlank(reportContent)) {
@@ -111,7 +111,7 @@ public class RecipientsReportController {
     }
 
     @GetMapping("/{reportId:\\d+}/download.action")
-    public ResponseEntity<Resource> download(ComAdmin admin, @PathVariable int reportId) throws Exception {
+    public ResponseEntity<Resource> download(Admin admin, @PathVariable int reportId) throws Exception {
         RecipientsReport.RecipientReportType reportType = recipientsReportService.getReportType(admin.getCompanyID(), reportId);
         
         if (reportType != null) {
@@ -134,7 +134,7 @@ public class RecipientsReportController {
         return null;
     }
 
-    private ResponseEntity<Resource> handleExportReportDownload(int reportId, ComAdmin admin) throws Exception {
+    private ResponseEntity<Resource> handleExportReportDownload(int reportId, Admin admin) throws Exception {
         DownloadRecipientReport fileData = recipientsReportService.getExportDownloadFileData(admin, reportId);
         
         if (fileData == null) {
@@ -149,7 +149,7 @@ public class RecipientsReportController {
                 .body(new ByteArrayResource(fileData.getContent()));
     }
     
-    private ResponseEntity<Resource> handleImportReportDownload(int reportId, ComAdmin admin) throws Exception {
+    private ResponseEntity<Resource> handleImportReportDownload(int reportId, Admin admin) throws Exception {
         DownloadRecipientReport fileData = recipientsReportService.getImportDownloadFileData(admin, reportId);
         
         if (fileData == null) {
@@ -168,11 +168,11 @@ public class RecipientsReportController {
                 .body(new ByteArrayResource(fileData.getContent()));
     }
     
-    private void writeUserActivityLog(ComAdmin admin, String action, String description) {
+    private void writeUserActivityLog(Admin admin, String action, String description) {
         userActivityLogService.writeUserActivityLog(admin, new UserAction(action, description), logger);
     }
 
-    private void writeDownloadUserActivityLog(ComAdmin admin, String fileName, int reportId, String downloadType) {
+    private void writeDownloadUserActivityLog(Admin admin, String fileName, int reportId, String downloadType) {
         writeUserActivityLog(admin, "Import/Export logs download",
                 String.format("%s - report ID: %d, file name: %s", downloadType, reportId, fileName));
     }

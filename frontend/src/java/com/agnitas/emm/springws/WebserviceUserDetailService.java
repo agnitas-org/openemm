@@ -36,10 +36,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 public class WebserviceUserDetailService extends BaseDaoImpl implements UserDetailsService {
-    /**
-     * The logger.
-     */
-    private static final transient Logger logger = LogManager.getLogger(WebserviceUserDetailService.class);
+
+    private static final Logger logger = LogManager.getLogger(WebserviceUserDetailService.class);
 
     private WebservicePasswordEncryptor webservicePasswordEncryptor;
     private ConfigService configService;
@@ -59,20 +57,20 @@ public class WebserviceUserDetailService extends BaseDaoImpl implements UserDeta
         final String usersByUsernameQuery = "SELECT w.password_encrypted, w.company_id FROM webservice_user_tbl w, company_tbl c WHERE w.username = ? AND w.active = 1 AND w.company_id = c.company_id and c.status = '" + CompanyStatus.ACTIVE.getDbValue() + "'";
         
         final List<Map<String, Object>> result = select(logger, usersByUsernameQuery, username);
-        if (result.size() == 0) {
+        if (result.isEmpty()) {
             throw new UsernameNotFoundException("Username " + username + " not found");
-        } else {
-            final Map<String, Object> userRow = result.get(0);
-            final int companyID = ((Number) userRow.get("company_id")).intValue();
-            final String encryptedPasswordBase64 = (String) userRow.get("password_encrypted");
-
-            // Decrypt the encrypted password
-            final String password = decryptPassword(encryptedPasswordBase64, username);
-           
-            final Collection<GrantedAuthority> grantedAuthorities = loadGrantedAuthorities(companyID, username);
-            
-            return new WebserviceUserDetails(username, companyID, password, true, true, true, true, grantedAuthorities);
         }
+
+        final Map<String, Object> userRow = result.get(0);
+        final int companyID = ((Number) userRow.get("company_id")).intValue();
+        final String encryptedPasswordBase64 = (String) userRow.get("password_encrypted");
+
+        // Decrypt the encrypted password
+        final String password = decryptPassword(encryptedPasswordBase64, username);
+
+        final Collection<GrantedAuthority> grantedAuthorities = loadGrantedAuthorities(companyID, username);
+
+        return new WebserviceUserDetails(username, companyID, password, true, true, true, true, grantedAuthorities);
     }
     
     public final Optional<Integer> findCompanyIDForUsername(final String username) {
@@ -85,7 +83,7 @@ public class WebserviceUserDetailService extends BaseDaoImpl implements UserDeta
         		: Optional.of(result.get(0));
     }
     
-    private final String decryptPassword(final String encryptedPasswordBase64, final String username) throws UsernameNotFoundException {
+    private String decryptPassword(final String encryptedPasswordBase64, final String username) throws UsernameNotFoundException {
         try {
             return webservicePasswordEncryptor.decrypt(username, encryptedPasswordBase64);
         } catch (Exception e) {
@@ -93,7 +91,7 @@ public class WebserviceUserDetailService extends BaseDaoImpl implements UserDeta
         }
     }
     
-    private final boolean areWebservicePermissionsEnabled(final int companyID) {
+    private boolean areWebservicePermissionsEnabled(final int companyID) {
     	final boolean enabled = this.configService.getBooleanValue(Webservices.WebserviceEnablePermissions, companyID);
     	
     	if(logger.isDebugEnabled()) {
@@ -103,7 +101,7 @@ public class WebserviceUserDetailService extends BaseDaoImpl implements UserDeta
     	return enabled;
     }
     
-    private final List<GrantedAuthority> loadGrantedAuthorities(final int companyID, final String username) {
+    private List<GrantedAuthority> loadGrantedAuthorities(final int companyID, final String username) {
         final List<GrantedAuthority> grantedAuthorities = new ArrayList<>();
         
         if(areWebservicePermissionsEnabled(companyID)) {

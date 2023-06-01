@@ -133,7 +133,13 @@
                         <c:choose>
                             <c:when test="${item.type == 'MAILING'}">
                                 <emm:ShowByPermission token="mailing.show">
-                                    <a href="<c:url value='/mailingbase.do?action=${ACTION_MAILING_VIEW}&mailingID=${item.id}'/>" class="hidden js-row-show" ></a>
+                                    <emm:ShowByPermission token="mailing.settings.migration">
+                                        <c:url var="mailingViewUrl" value="/mailing/${item.id}/settings.action"/>
+                                    </emm:ShowByPermission>
+                                    <emm:HideByPermission token="mailing.settings.migration">
+                                        <c:url var="mailingViewUrl" value='/mailingbase.do?action=${ACTION_MAILING_VIEW}&mailingID=${item.id}'/>
+                                    </emm:HideByPermission>
+                                    <a href="${mailingViewUrl}" class="hidden js-row-show" ></a>
                                 </emm:ShowByPermission>
                                 <mvc:message code="Mailings"/>
                             </c:when>
@@ -157,7 +163,13 @@
                                             <a href="<c:url value='/layoutbuilder/template/${templateId}/view.action'/>" class="hidden js-row-show" ></a>
                                         </c:when>
                                         <c:otherwise>
-                                            <a href="<c:url value='/mailingcontent.do?action=${ACTION_MAILING_VIEW_CONTENT}&mailingID=${item.id}'/>" class="hidden js-row-show" ></a>
+                                            <emm:ShowByPermission token="mailing.content.migration">
+                                                <c:url var="contentViewLink" value='/mailing/content/${item.id}/view.action'/>
+                                            </emm:ShowByPermission>
+                                            <emm:HideByPermission token="mailing.content.migration">
+                                                <c:url var="contentViewLink" value='/mailingcontent.do?action=${ACTION_MAILING_VIEW_CONTENT}&mailingID=${item.id}'/>
+                                            </emm:HideByPermission>
+                                            <a href="${contentViewLink}" class="hidden js-row-show" ></a>
                                         </c:otherwise>
                                     </c:choose>
                                 </emm:ShowByPermission>

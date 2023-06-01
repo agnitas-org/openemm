@@ -16,7 +16,7 @@ import org.agnitas.util.AgnUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.action.operations.ActionOperationParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationSendMailingParameters;
 import com.agnitas.emm.core.blacklist.dao.ComBlacklistDao;
@@ -39,7 +39,7 @@ public class SendMailingValidator implements ActionOperationValidator {
     }
 
     @Override
-    public SimpleServiceResult validate(ComAdmin admin, ActionOperationParameters target) {
+    public SimpleServiceResult validate(Admin admin, ActionOperationParameters target) {
         String bcc = ((ActionOperationSendMailingParameters) target).getBcc();
 
         Locale locale = admin.getLocale();

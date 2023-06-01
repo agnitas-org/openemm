@@ -19,6 +19,7 @@ import org.agnitas.util.DbColumnType.SimpleDataType;
 import org.apache.commons.lang3.StringUtils;
 
 import com.agnitas.beans.ProfileField;
+import com.agnitas.beans.ProfileFieldMode;
 
 public class ProfileFieldImpl extends LightProfileFieldImpl implements ProfileField {
 	protected int companyID = -1;
@@ -30,7 +31,7 @@ public class ProfileFieldImpl extends LightProfileFieldImpl implements ProfileFi
 	private long maxDataSize;
 	protected String defaultValue = "";
 	protected boolean nullable = true;
-	protected int modeEdit = 0;
+	protected ProfileFieldMode modeEdit = ProfileFieldMode.Editable;
 	protected int modeInsert = 0;
 	protected String label;
 	
@@ -95,12 +96,12 @@ public class ProfileFieldImpl extends LightProfileFieldImpl implements ProfileFi
 	}
 
 	@Override
-	public int getModeEdit() {
+	public ProfileFieldMode getModeEdit() {
 		return modeEdit;
 	}
 	
 	@Override
-	public void setModeEdit(int modeEdit) {
+	public void setModeEdit(ProfileFieldMode modeEdit) {
 		this.modeEdit = modeEdit;
 	}
 

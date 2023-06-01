@@ -10,6 +10,7 @@
 
 package com.agnitas.emm.core.upselling.web;
 
+import com.agnitas.web.mvc.XssCheckAware;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.apache.commons.lang3.ArrayUtils;
@@ -18,13 +19,13 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.upselling.form.UpsellingForm;
 import com.agnitas.web.perm.annotations.AlwaysAllowed;
 
 @Controller
 @AlwaysAllowed
-public class UpsellingController {
+public class UpsellingController implements XssCheckAware {
     private static final String GENERAL_VIEW = "general_upselling";
 
     private static final String[] CUSTOM_VIEWS = new String[]{
@@ -44,9 +45,8 @@ public class UpsellingController {
         this.configService = configService;
     }
 
-
     @GetMapping("/upselling.action")
-    public String view(final ComAdmin admin, final UpsellingForm form, final Model model) {
+    public String view(final Admin admin, final UpsellingForm form, final Model model) {
         String featureName = form.getFeatureNameKey();
         String activeSideMenu = StringUtils.defaultIfEmpty(form.getSidemenuActive(), featureName);
 
@@ -67,7 +67,7 @@ public class UpsellingController {
         return GENERAL_VIEW;
     }
 
-    private String getUpsellingInfoPageUrl(final ComAdmin admin) {
+    private String getUpsellingInfoPageUrl(final Admin admin) {
         if("en".equalsIgnoreCase(admin.getAdminLang())) {
             return configService.getValue(ConfigValue.UpsellingInfoUrlEnglish);
         }

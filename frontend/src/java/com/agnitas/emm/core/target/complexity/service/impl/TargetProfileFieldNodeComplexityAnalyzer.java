@@ -16,7 +16,7 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.agnitas.beans.ProfileField;
-import com.agnitas.dao.ComProfileFieldDao;
+import com.agnitas.dao.ProfileFieldDao;
 import com.agnitas.emm.core.target.complexity.bean.CustomerTableColumnMetadata;
 import com.agnitas.emm.core.target.complexity.bean.TargetComplexityEvaluationCache;
 import com.agnitas.emm.core.target.complexity.bean.TargetComplexityEvaluationState;
@@ -29,9 +29,9 @@ import com.agnitas.emm.core.target.eql.ast.ProfileFieldAtomEqlNode;
 public final class TargetProfileFieldNodeComplexityAnalyzer extends AbstractTargetComplexityAnalyzer<ProfileFieldAtomEqlNode> {
     private static final Logger logger = LogManager.getLogger(TargetProfileFieldNodeComplexityAnalyzer.class);
 
-    private ComProfileFieldDao profileFieldDao;
+    private ProfileFieldDao profileFieldDao;
 
-    public TargetProfileFieldNodeComplexityAnalyzer(ComProfileFieldDao profileFieldDao) {
+    public TargetProfileFieldNodeComplexityAnalyzer(ProfileFieldDao profileFieldDao) {
         super(ProfileFieldAtomEqlNode.class);
         this.profileFieldDao = profileFieldDao;
     }

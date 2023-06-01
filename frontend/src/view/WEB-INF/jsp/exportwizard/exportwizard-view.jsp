@@ -63,7 +63,7 @@
                 <div class="col-sm-4">
                     <label for="recipient-export-name" class="control-label">
                         <c:set var="nameMsg"><bean:message key="default.Name"/></c:set>
-                        ${nameMsg}
+                        ${nameMsg}*
                     </label>
                 </div>
                 <div class="col-sm-8">
@@ -179,6 +179,7 @@
                 <bean:message key="export.columns"/>
             </a>
         </div>
+
 
         <div class="tile-content tile-content-forms" id="recipient-export-tile-columns">
             <div class="form-group">
@@ -374,6 +375,23 @@
                     </html:select>
                 </div>
             </div>
+		
+			<div class="form-group">
+				<div class="col-sm-4">
+					<label class="control-label" for="locale"><bean:message key="import.report.locale" /></label>
+				</div>
+				<div class="col-sm-8">
+					<agn:agnSelect property="localeString" styleClass="form-control js-select" styleId="profile">
+						<html:option value="de_DE"><bean:message key="settings.German" /></html:option>
+						<html:option value="en_US"><bean:message key="settings.English" /></html:option>
+						<html:option value="fr_FR"><bean:message key="settings.French" /></html:option>
+						<html:option value="es_ES"><bean:message key="settings.Spanish" /></html:option>
+						<html:option value="pt_PT"><bean:message key="settings.Portuguese" /></html:option>
+						<html:option value="nl_NL"><bean:message key="settings.Dutch" /></html:option>
+						<html:option value="it_IT"><bean:message key="settings.Italian" /></html:option>
+					</agn:agnSelect>
+				</div>
+			</div>
             
             <div class="form-group">
                 <div class="col-sm-4">
@@ -404,7 +422,6 @@
                 </div>
             </div>
         </div>
-
     </div>
 
     <div class="tile">

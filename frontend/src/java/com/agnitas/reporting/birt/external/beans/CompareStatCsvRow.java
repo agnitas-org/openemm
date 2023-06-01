@@ -10,7 +10,6 @@
 
 package com.agnitas.reporting.birt.external.beans;
 
-
 public class CompareStatCsvRow {
 
 	private int mailingId;

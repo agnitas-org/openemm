@@ -10,8 +10,6 @@
 
 package org.agnitas.emm.core.recipient.service.impl;
 
-import static com.agnitas.beans.ProfileField.MODE_EDIT_EDITABLE;
-import static com.agnitas.dao.impl.ComCompanyDaoImpl.OLD_SOCIAL_MEDIA_FIELDS;
 import static com.agnitas.emm.core.binding.service.BindingUtils.getRecipientTypeTitleByLetter;
 import static com.agnitas.emm.core.target.TargetExpressionUtils.SIMPLE_TARGET_EXPRESSION;
 import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_CUSTOMER_ID;
@@ -71,11 +69,11 @@ import org.agnitas.emm.core.recipient.service.RecipientModel;
 import org.agnitas.emm.core.recipient.service.RecipientNotExistException;
 import org.agnitas.emm.core.recipient.service.RecipientService;
 import org.agnitas.emm.core.recipient.service.RecipientsModel;
+import org.agnitas.emm.core.recipient.service.SubscriberLimitCheck;
+import org.agnitas.emm.core.recipient.service.validation.RecipientModelValidator;
 import org.agnitas.emm.core.target.exception.UnknownTargetGroupIdException;
 import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.emm.core.validator.annotation.Validate;
 import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.agnitas.service.ColumnInfoService;
 import org.agnitas.service.ImportException;
 import org.agnitas.service.RecipientDuplicateSqlOptions;
 import org.agnitas.service.RecipientQueryBuilder;
@@ -99,20 +97,21 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.ComRecipientHistory;
 import com.agnitas.beans.ComRecipientMailing;
 import com.agnitas.beans.ComRecipientReaction;
 import com.agnitas.beans.ComTarget;
 import com.agnitas.beans.ProfileField;
+import com.agnitas.beans.ProfileFieldMode;
 import com.agnitas.beans.WebtrackingHistoryEntry;
-import com.agnitas.beans.impl.ComAdminImpl;
+import com.agnitas.beans.impl.AdminImpl;
 import com.agnitas.beans.impl.ComRecipientLiteImpl;
 import com.agnitas.dao.ComBindingEntryDao;
 import com.agnitas.dao.ComCompanyDao;
-import com.agnitas.dao.ComProfileFieldDao;
 import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.dao.ComTargetDao;
+import com.agnitas.dao.ProfileFieldDao;
 import com.agnitas.dao.impl.ComCompanyDaoImpl;
 import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.admin.service.AdminService;
@@ -139,8 +138,10 @@ import com.agnitas.emm.core.target.eql.EqlFacade;
 import com.agnitas.emm.core.target.eql.codegen.sql.SqlCode;
 import com.agnitas.emm.core.target.eql.parser.EqlParserException;
 import com.agnitas.emm.core.target.service.ComTargetService;
+import com.agnitas.exception.ValidationException;
 import com.agnitas.messages.I18nString;
 import com.agnitas.messages.Message;
+import com.agnitas.service.ColumnInfoService;
 import com.agnitas.service.ExtendedConversionService;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.service.SimpleServiceResult;
@@ -151,10 +152,8 @@ import net.sf.json.JSONObject;
 
 public class RecipientServiceImpl implements RecipientService {
 
-	/**
-	 * The logger.
-	 */
-	private static final transient Logger logger = LogManager.getLogger(RecipientServiceImpl.class);
+	private static final Logger logger = LogManager.getLogger(RecipientServiceImpl.class);
+	
 	public static final List<String> DEFAULT_COLUMNS = Arrays.asList(
 			COLUMN_CUSTOMER_ID,
 			COLUMN_EMAIL,
@@ -164,25 +163,27 @@ public class RecipientServiceImpl implements RecipientService {
     private static final String INVALID_DATE_FIELD_EROR_CODE = "error.value.notADateForField";
 
 	protected ComRecipientDao recipientDao;
-	private ComCompanyDao companyDao;
-	private ExtensibleUIDService uidService;
 	protected ComTargetService targetService;
-	private MailinglistDao mailinglistDao;
-	private RecipientFactory recipientFactory;
-	private ConfigService configService;
-	private SendActionbasedMailingService sendActionbasedMailingService;
-	private ComProfileFieldDao profileFieldDao;
-	private ProfileFieldValidationService profileFieldValidationService;
+	protected ConfigService configService;
 	protected ColumnInfoService columnInfoService;
 	protected TargetEqlQueryBuilder targetEqlQueryBuilder;
 	protected RecipientQueryBuilder recipientQueryBuilder;
-	private RecipientWorkerFactory recipientWorkerFactory;
 	protected AdminService adminService;
 	protected ComBindingEntryDao bindingEntryDao;
 	protected BindingEntryFactory bindingEntryFactory;
 	protected ExtendedConversionService conversionService;
+	protected SubscriberLimitCheck subscriberLimitCheck;
 	protected ComTargetDao targetDao;
 	protected EqlFacade eqlFacade;
+	private ComCompanyDao companyDao;
+	private ExtensibleUIDService uidService;
+	private MailinglistDao mailinglistDao;
+	private RecipientFactory recipientFactory;
+	private SendActionbasedMailingService sendActionbasedMailingService;
+	private ProfileFieldDao profileFieldDao;
+	private ProfileFieldValidationService profileFieldValidationService;
+	private RecipientWorkerFactory recipientWorkerFactory;
+	private RecipientModelValidator recipientModelValidator;
 
 	@Required
 	public void setMailinglistDao(MailinglistDao mailinglistDao) {
@@ -208,6 +209,11 @@ public class RecipientServiceImpl implements RecipientService {
 	public void setRecipientWorkerFactory(RecipientWorkerFactory recipientWorkerFactory) {
 		this.recipientWorkerFactory = recipientWorkerFactory;
 	}
+
+    @Required
+  	public void setRecipientModelValidator(RecipientModelValidator recipientModelValidator) {
+  		this.recipientModelValidator = recipientModelValidator;
+  	}
     
     @Required
 	public void setTargetDao(ComTargetDao targetDao) {
@@ -217,6 +223,11 @@ public class RecipientServiceImpl implements RecipientService {
     @Required
 	public void setEqlFacade(EqlFacade eqlFacade) {
 		this.eqlFacade = eqlFacade;
+	}
+  	
+	@Override
+	public int countSubscribers(final int companyID) {
+		return this.recipientDao.getNumberOfRecipients(companyID);
 	}
 
 	@Override
@@ -252,8 +263,8 @@ public class RecipientServiceImpl implements RecipientService {
 
 	@Override
 	@Transactional
-	@Validate(groups = RecipientModel.DeleteGroup.class) // TODO Check, why use "deleteSubscriber" validation rule here???
 	public Map<String, Object> getSubscriber(RecipientModel model) {
+	    recipientModelValidator.assertIsValidToGetOrDelete(model);
 		Set<String> columns = model.getColumns();
 		if (CollectionUtils.isEmpty(columns)) {
 			return recipientDao.getCustomerDataFromDb(model.getCompanyId(), model.getCustomerId());
@@ -264,8 +275,8 @@ public class RecipientServiceImpl implements RecipientService {
 
 	@Override
 	@Transactional
-	@Validate(groups = RecipientModel.DeleteGroup.class) // TODO Validation rule taken from getSubscriber() above. Check, if this is correct
 	public Recipient getRecipient(final RecipientModel model) throws RecipientNotExistException {
+	    recipientModelValidator.assertIsValidToGetOrDelete(model);
 		return getRecipient(model.getCompanyId(), model.getCustomerId());
 	}
 
@@ -368,14 +379,20 @@ public class RecipientServiceImpl implements RecipientService {
 
 	@Override
 	@Transactional
-	@Validate(groups = RecipientModel.AddGroup.class)
 	public int addSubscriber(RecipientModel model, final String username, final int companyId, List<UserAction> userActions) throws Exception {
+	    recipientModelValidator.assertIsValidToAdd(model);
 		recipientDao.checkParameters(model.getParameters(), model.getCompanyId());
+		
+		this.subscriberLimitCheck.checkSubscriberLimit(companyId);
 
 		int returnValue;
 		int tmpCustID;
 
-		model.setEmail(model.getEmail().toLowerCase());
+		if (configService.getBooleanValue(ConfigValue.AllowUnnormalizedEmails, model.getCompanyId())) {
+			model.setEmail(model.getEmail());
+		} else {
+			model.setEmail(AgnUtils.normalizeEmail(model.getEmail()));
+		}
 
 		final Recipient newCustomer = recipientFactory.newRecipient(model.getCompanyId());
 
@@ -511,11 +528,11 @@ public class RecipientServiceImpl implements RecipientService {
 
 	@Override
 	@Transactional
-	@Validate(groups = RecipientModel.UpdateGroup.class)
 	public boolean updateSubscriber(RecipientModel model, String username) throws Exception {
+	    recipientModelValidator.assertIsValidToUpdate(model);
 		recipientDao.checkParameters(model.getParameters(), model.getCompanyId());
 
-		final ComAdmin admin = new ComAdminImpl();
+		final Admin admin = new AdminImpl();
 		admin.setUsername(username);
 
 		final Recipient aCust = this.recipientFactory.newRecipient(model.getCompanyId());
@@ -525,7 +542,11 @@ public class RecipientServiceImpl implements RecipientService {
 
 		String email = model.getEmail();
 		if (email != null) {
-			model.setEmail(email.toLowerCase());
+			if (configService.getBooleanValue(ConfigValue.AllowUnnormalizedEmails, model.getCompanyId())) {
+				model.setEmail(model.getEmail());
+			} else {
+				model.setEmail(AgnUtils.normalizeEmail(model.getEmail()));
+			}
 		}
 
 		aCust.setCustParameters(data);
@@ -681,8 +702,8 @@ public class RecipientServiceImpl implements RecipientService {
 
 	@Override
 	@Transactional
-	@Validate(groups = RecipientModel.DeleteGroup.class)
 	public void deleteSubscriber(RecipientModel model, List<UserAction> userActions) {
+	    recipientModelValidator.assertIsValidToGetOrDelete(model);
 		final int companyId = model.getCompanyId();
 		final int recipientId = model.getCustomerId();
 		CaseInsensitiveMap<String, Object> customerData = recipientDao.getCustomerDataFromDb(companyId, recipientId, DEFAULT_COLUMNS);
@@ -710,15 +731,15 @@ public class RecipientServiceImpl implements RecipientService {
 	}
 
 	@Override
-	public List<ProfileField> getRecipientBulkFields(final int companyID, final int recipientID) {
+	public List<ProfileField> getRecipientBulkFields(int companyID, int adminID) {
 		List<ProfileField> profileFields = Collections.emptyList();
 		try {
 			Set<String> immutableField = new CaseInsensitiveSet(Arrays.asList(ComCompanyDaoImpl.GUI_BULK_IMMUTABALE_FIELDS));
-			List<ProfileField> allFields = profileFieldDao.getComProfileFields(companyID, recipientID);
+			List<ProfileField> allFields = profileFieldDao.getComProfileFields(companyID, adminID);
 			if (allFields != null) {
 				profileFields = allFields.stream()
-						.filter(field -> field.getModeEdit() == ProfileField.MODE_EDIT_EDITABLE &&
-								!immutableField.contains(field.getColumn()))
+						.filter(field -> field.getModeEdit() == ProfileFieldMode.Editable
+								&& !immutableField.contains(field.getColumn()))
 						.collect(Collectors.toList());
 			}
 		} catch (Exception e) {
@@ -729,7 +750,7 @@ public class RecipientServiceImpl implements RecipientService {
 	}
 
 	@Override
-	public int calculateRecipient(ComAdmin admin, int targetId, int mailinglistId) {
+	public int calculateRecipient(Admin admin, int targetId, int mailinglistId) {
 		int companyId = admin.getCompanyID();
 		String targetExpression;
 		if (targetId > 0) {
@@ -757,7 +778,7 @@ public class RecipientServiceImpl implements RecipientService {
 	}
 
 	@Override
-	public boolean deleteRecipients(ComAdmin admin, Set<Integer> recipientIds) {
+	public boolean deleteRecipients(Admin admin, Set<Integer> recipientIds) {
 		if (CollectionUtils.isNotEmpty(recipientIds)) {
 			try {
 				recipientDao.deleteRecipients(admin.getCompanyID(), new ArrayList<>(recipientIds));
@@ -769,7 +790,7 @@ public class RecipientServiceImpl implements RecipientService {
 		return false;
 	}
 
-	protected RecipientSqlOptions getRecipientOptions(ComAdmin admin, String sort, String order, RecipientSearchParamsDto searchParams) {
+	protected RecipientSqlOptions getRecipientOptions(Admin admin, String sort, String order, RecipientSearchParamsDto searchParams) {
 		RecipientSqlOptions.Builder builder = RecipientSqlOptions.builder()
 				.setDirection(order)
 				.setSort(sort)
@@ -786,11 +807,11 @@ public class RecipientServiceImpl implements RecipientService {
         return builder.build();
 	}
 
-    protected void setRecipientSqlOptionsBuilderExtendedParams(ComAdmin admin, RecipientSqlOptions.Builder builder, RecipientSearchParamsDto searchParams) {
+    protected void setRecipientSqlOptionsBuilderExtendedParams(Admin admin, RecipientSqlOptions.Builder builder, RecipientSearchParamsDto searchParams) {
         // nothing to do
     }
 
-	protected RecipientDuplicateSqlOptions getDuplicateOptions(ComAdmin admin, String sort, String order, String searchFieldName, boolean caseSensitive) {
+	protected RecipientDuplicateSqlOptions getDuplicateOptions(Admin admin, String sort, String order, String searchFieldName, boolean caseSensitive) {
 		RecipientDuplicateSqlOptions.Builder builder = RecipientDuplicateSqlOptions.builder()
 				.setCheckParenthesisBalance(true)
 				.setSearchFieldName(searchFieldName)
@@ -804,14 +825,12 @@ public class RecipientServiceImpl implements RecipientService {
 		return builder.build();
 	}
 
-    protected void setRecipientDuplicateSqlOptionsBuilderExtendedParams(ComAdmin admin, RecipientDuplicateSqlOptions.Builder builder) {
+    protected void setRecipientDuplicateSqlOptionsBuilderExtendedParams(Admin admin, RecipientDuplicateSqlOptions.Builder builder) {
         // nothing to do
     }
 	
-
-	
 	@Override
-	public PaginatedListImpl<RecipientDto> getPaginatedRecipientList(ComAdmin admin, RecipientSearchParamsDto searchParams, String sortColumn, String order, int page, int rownums, Map<String, String> fields) throws Exception {
+	public PaginatedListImpl<RecipientDto> getPaginatedRecipientList(Admin admin, RecipientSearchParamsDto searchParams, String sortColumn, String order, int page, int rownums, Map<String, String> fields) throws Exception {
 		String sort = StringUtils.defaultIfEmpty(sortColumn, "email");
 		RecipientSqlOptions options = getRecipientOptions(admin, StringUtils.defaultIfEmpty(sort, "email"), order, searchParams);
 		
@@ -847,25 +866,29 @@ public class RecipientServiceImpl implements RecipientService {
             	SqlPreparedStatementManager sqlCheckBinding = new SqlPreparedStatementManager("SELECT 1 FROM customer_" + companyID + "_binding_tbl bind");
                 sqlCheckBinding.addWhereClause("bind.customer_id = cust.customer_id");
 
-                if (options.getListId() != 0) {
-                    sqlCheckBinding.addWhereClause("bind.mailinglist_id = ?", options.getListId());
-                }
-                    
-                if (options.getUserStatus() != 0) {
-                    // Check for valid UserStatus code
-                    UserStatus.getUserStatusByID(options.getUserStatus());
+                if (options.getListId() == -1) {
+					sqlStatementManagerForDataSelect.addWhereClause("NOT EXISTS (" + sqlCheckBinding.getPreparedSqlString() + ")");
+				} else {
+					if (options.getListId() != 0) {
+						sqlCheckBinding.addWhereClause("bind.mailinglist_id = ?", options.getListId());
+					}
 
-                    sqlCheckBinding.addWhereClause("bind.user_status = ?", options.getUserStatus());
-                }
+					if (options.getUserStatus() != 0) {
+						// Check for valid UserStatus code
+						UserStatus.getUserStatusByID(options.getUserStatus());
 
-                if (StringUtils.isNotBlank(options.getUserType())) {
-                    // Check for valid UserType code
-                	BindingEntry.UserType.getUserTypeByString(options.getUserType());
-                	
-                    sqlCheckBinding.addWhereClause("bind.user_type = ?", options.getUserType());
-                }
+						sqlCheckBinding.addWhereClause("bind.user_status = ?", options.getUserStatus());
+					}
 
-                sqlStatementManagerForDataSelect.addWhereClause("EXISTS (" + sqlCheckBinding.getPreparedSqlString() + ")", sqlCheckBinding.getPreparedSqlParameters());
+					if (StringUtils.isNotBlank(options.getUserType())) {
+						// Check for valid UserType code
+						BindingEntry.UserType.getUserTypeByString(options.getUserType());
+
+						sqlCheckBinding.addWhereClause("bind.user_type = ?", options.getUserType());
+					}
+
+					sqlStatementManagerForDataSelect.addWhereClause("EXISTS (" + sqlCheckBinding.getPreparedSqlString() + ")", sqlCheckBinding.getPreparedSqlParameters());
+				}
             }
         } catch (final EqlParserException e) {
             logger.error("Unable to create SQL statement for recipient search", e);
@@ -884,7 +907,7 @@ public class RecipientServiceImpl implements RecipientService {
 		return getRecipientDtoPaginatedList(admin, paginatedList);
 	}
 
-	private PaginatedListImpl<RecipientDto> getRecipientDtoPaginatedList(ComAdmin admin, PaginatedListImpl<Map<String, Object>> paginatedList) {
+	protected PaginatedListImpl<RecipientDto> getRecipientDtoPaginatedList(Admin admin, PaginatedListImpl<Map<String, Object>> paginatedList) {
 		List<RecipientDto> partialList = new ArrayList<>();
 		Map<String, ProfileField> dbColumns = getRecipientColumnInfos(admin).stream().collect(Collectors.toMap(ProfileField::getColumn, Function.identity()));
 		for (Map<String, Object> parameters : paginatedList.getList()) {
@@ -905,7 +928,7 @@ public class RecipientServiceImpl implements RecipientService {
 	}
 
 	@Override
-	public PaginatedListImpl<RecipientDto> getPaginatedDuplicateList(ComAdmin admin, String searchFieldName, boolean caseSensitive, String sort, String order, int page, int rownums, Map<String, String> fields) throws Exception {
+	public PaginatedListImpl<RecipientDto> getPaginatedDuplicateList(Admin admin, String searchFieldName, boolean caseSensitive, String sort, String order, int page, int rownums, Map<String, String> fields) throws Exception {
 		sort = StringUtils.defaultIfEmpty(sort, "email");
 		RecipientDuplicateSqlOptions options = getDuplicateOptions(admin, sort, order, searchFieldName, caseSensitive);
 		SqlPreparedStatementManager sqlStatementManagerForDataSelect = recipientQueryBuilder.getDuplicateAnalysisSQLStatement(admin, options, true);
@@ -920,7 +943,7 @@ public class RecipientServiceImpl implements RecipientService {
 	}
 
 	@Override
-	public File getDuplicateAnalysisCsv(ComAdmin admin, String searchFieldName, Map<String, String> fieldsMap, Set<String> selectedColumns, String sort, String order) throws Exception {
+	public File getDuplicateAnalysisCsv(Admin admin, String searchFieldName, Map<String, String> fieldsMap, Set<String> selectedColumns, String sort, String order) throws Exception {
 		sort = StringUtils.defaultIfEmpty(sort, COLUMN_EMAIL);
 		String tempFileName = String.format("duplicate-recipients-%s.csv", UUID.randomUUID());
         File duplicateRecipientsExportTempDirectory = AgnUtils.createDirectory(AgnUtils.getTempDir() + File.separator + "DuplicateRecipientExport");
@@ -956,7 +979,7 @@ public class RecipientServiceImpl implements RecipientService {
 	}
 
 	@Override
-	public RecipientDto getRecipientDto(ComAdmin admin, int recipientId) {
+	public RecipientDto getRecipientDto(Admin admin, int recipientId) {
 		RecipientDto recipient = new RecipientDto();
 		recipient.setId(recipientId);
 		try {
@@ -974,10 +997,10 @@ public class RecipientServiceImpl implements RecipientService {
 	}
 
 	@Override
-	public Set<ProfileField> getRecipientColumnInfos(ComAdmin admin) {
+	public Set<ProfileField> getRecipientColumnInfos(Admin admin) {
 		try {
 			return columnInfoService.getColumnInfos(admin.getCompanyID(), admin.getAdminID()).stream()
-					.filter(column -> !ArrayUtils.contains(OLD_SOCIAL_MEDIA_FIELDS, column.getColumn()))
+					.filter(column -> !ArrayUtils.contains(ComCompanyDaoImpl.OLD_SOCIAL_MEDIA_FIELDS, column.getColumn()))
 					.sorted(Comparator.comparing(ProfileField::getSort))
 					.collect(Collectors.toCollection(LinkedHashSet::new));
 
@@ -989,7 +1012,7 @@ public class RecipientServiceImpl implements RecipientService {
 	}
 
 	@Override
-	public List<RecipientLightDto> getDuplicateRecipients(ComAdmin admin, String fieldName, int recipientId) throws Exception {
+	public List<RecipientLightDto> getDuplicateRecipients(Admin admin, String fieldName, int recipientId) throws Exception {
 		RecipientDuplicateSqlOptions options = RecipientDuplicateSqlOptions.builder()
 				.setCheckParenthesisBalance(true)
 				.setUserType(BindingEntry.UserType.World.getTypeCode())
@@ -1006,7 +1029,7 @@ public class RecipientServiceImpl implements RecipientService {
 	}
 
 	@Override
-	public ServiceResult<FieldsSaveResults> saveBulkRecipientFields(ComAdmin admin, int targetId, int mailinglistId, Map<String, RecipientFieldDto> fieldChanges) {
+	public ServiceResult<FieldsSaveResults> saveBulkRecipientFields(Admin admin, int targetId, int mailinglistId, Map<String, RecipientFieldDto> fieldChanges) {
 		if (fieldChanges.isEmpty()) {
 			return new ServiceResult<>(new FieldsSaveResults(), true, Collections.emptyList());
 		}
@@ -1072,7 +1095,7 @@ public class RecipientServiceImpl implements RecipientService {
 	}
 
 	@Override
-	public final List<ComRecipientLiteImpl> listAdminAndTestRecipients(final ComAdmin admin) {
+	public final List<ComRecipientLiteImpl> listAdminAndTestRecipients(final Admin admin) {
 		return recipientDao.listAdminAndTestRecipientsByAdmin(admin.getCompanyID(), admin.getAdminID());
 	}
 
@@ -1115,7 +1138,7 @@ public class RecipientServiceImpl implements RecipientService {
 	}
 
     @Override
-    public JSONArray getWebtrackingHistoryJson(ComAdmin admin, int recipientId) {
+    public JSONArray getWebtrackingHistoryJson(Admin admin, int recipientId) {
 		JSONArray actionsJson = new JSONArray();
 
 		List<WebtrackingHistoryEntry> webtrackingHistoryEntries = recipientDao.getRecipientWebtrackingHistory(admin.getCompanyID(), recipientId);
@@ -1142,7 +1165,7 @@ public class RecipientServiceImpl implements RecipientService {
     @Override
     public JSONArray getContactHistoryJson(@VelocityCheck int companyId, int recipientId) {
 		JSONArray data = new JSONArray();
-		List<ComRecipientMailing> historyList = recipientDao.getMailingsSentToRecipient(recipientId, companyId);
+		List<ComRecipientMailing> historyList = recipientDao.getMailingsDeliveredToRecipient(recipientId, companyId);
 		List<ComRecipientMailing> sorted = historyList.stream().sorted((h1, h2) -> h2.getSendDate().compareTo(h1.getSendDate())).collect(Collectors.toList());
 		for (ComRecipientMailing history: sorted) {
 			JSONObject entry = new JSONObject();
@@ -1588,9 +1611,14 @@ public class RecipientServiceImpl implements RecipientService {
     }
 
 	@Override
-	public ServiceResult<Integer> saveRecipient(ComAdmin admin, SaveRecipientDto recipient, List<UserAction> userActions) {
+	public ServiceResult<Integer> saveRecipient(Admin admin, SaveRecipientDto recipient, List<UserAction> userActions) {
 		int companyId = admin.getCompanyID();
 		boolean isNew = recipient.getId() == 0;
+		
+		if(isNew) {
+			this.subscriberLimitCheck.checkSubscriberLimit(companyId);
+		}
+		
 		if (isNew && !recipientDao.mayAdd(companyId, 1)) {
 			return new ServiceResult<>(0, false,
 					Message.of("error.maxcustomersexceeded",
@@ -1618,15 +1646,15 @@ public class RecipientServiceImpl implements RecipientService {
 	}
 
 	@Override
-	public SimpleServiceResult isRecipientMatchAltgTarget(ComAdmin admin, SaveRecipientDto recipient) {
+	public SimpleServiceResult isRecipientMatchAltgTarget(Admin admin, SaveRecipientDto recipient) {
         return new SimpleServiceResult(true);
 	}
 
-	public Map<String, Object> collectRecipientData(ComAdmin admin, SaveRecipientDto recipient) throws UserMessageException {
+	public Map<String, Object> collectRecipientData(Admin admin, SaveRecipientDto recipient) throws UserMessageException {
 		return collectRecipientData(admin, recipient, Collections.emptyMap());
 	}
 
-	protected Map<String, Object> collectRecipientData(ComAdmin admin, SaveRecipientDto recipient, Map<String, Object> savedData) throws UserMessageException {
+	protected Map<String, Object> collectRecipientData(Admin admin, SaveRecipientDto recipient, Map<String, Object> savedData) throws UserMessageException {
 		boolean isNew = recipient.getId() == 0;
 
 		Supplier<String> currentTimestampSupplier = () -> "CURRENT_TIMESTAMP";
@@ -1647,10 +1675,10 @@ public class RecipientServiceImpl implements RecipientService {
 				rowValues.put(COLUMN_LATEST_DATASOURCE_ID, dataSourceId);
             } else if (column.equals(COLUMN_TIMESTAMP)) {
                 rowValues.put(COLUMN_TIMESTAMP, null);
-			} else if (type.getModeEdit() != MODE_EDIT_EDITABLE && replacedBySavedData) {
+			} else if (type.getModeEdit() != ProfileFieldMode.Editable && replacedBySavedData) {
 				//if not new and saved data map is not empty add to rowValues saved data from db
 				rowValues.put(column, savedData.get(column));
-			} if (isNew || type.getModeEdit() == MODE_EDIT_EDITABLE) {
+			} if (isNew || type.getModeEdit() == ProfileFieldMode.Editable) {
 				//don't add not editable fields if update recipient
 				if (!type.getNullable() && isEmptyColumnValue(type, value)) {
 					value = type.getDefaultValue();
@@ -1769,7 +1797,7 @@ public class RecipientServiceImpl implements RecipientService {
 
 	@Override
 	@Transactional
-	public ServiceResult<List<BindingAction>> saveRecipientBindings(ComAdmin admin, int recipientId, RecipientBindingsDto bindings, UserStatus newStatusForUnsubscribing) {
+	public ServiceResult<List<BindingAction>> saveRecipientBindings(Admin admin, int recipientId, RecipientBindingsDto bindings, UserStatus newStatusForUnsubscribing) {
 		int companyId = admin.getCompanyID();
 		Map<Integer, Map<Integer, BindingEntry>> mailinglistBindings = getMailinglistBindings(companyId, recipientId);
 		List<Integer> existingMailinglistIds = mailinglistDao.getMailinglistIds(companyId);
@@ -1780,7 +1808,7 @@ public class RecipientServiceImpl implements RecipientService {
 		try {
 			List<BindingEntry> updateBindings = new ArrayList<>();
 			List<BindingEntry> insertBindings = new ArrayList<>();
-			for (RecipientBindingDto bindingDto: bindings.getBindings()) {
+			for (RecipientBindingDto bindingDto : bindings.getBindings()) {
 				if (existingMailinglistIds.contains(bindingDto.getMailinglistId())) {
 					BindingEntry bindingForSave = mailinglistBindings
                             .getOrDefault(bindingDto.getMailinglistId(), new HashMap<>())
@@ -1819,18 +1847,21 @@ public class RecipientServiceImpl implements RecipientService {
 			bindingEntryDao.updateBindings(companyId, updateBindings);
 
 			return new ServiceResult<>(bindingActions, true);
+		} catch (ValidationException ve) {
+			return ServiceResult.error(new ArrayList<>(ve.getErrors()));
 		} catch (Exception e) {
 			logger.error("Saving bindings failed: ", e);
 		}
+
 		return ServiceResult.error(Collections.emptyList());
 	}
 
-	protected void changeBindingUserTypeIfNeeded(RecipientBindingDto binding, BindingEntry existingBinding, ComAdmin admin) {
+	protected void changeBindingUserTypeIfNeeded(RecipientBindingDto binding, BindingEntry existingBinding, Admin admin) {
 		// empty
 	}
 
     private void updateBinding(BindingEntry bindingToUpdate, RecipientBindingDto bindingDto, int recipientId,
-							   ComAdmin admin, UserStatus oldUserStatus, UserStatus newUserStatus) {
+							   Admin admin, UserStatus oldUserStatus, UserStatus newUserStatus) {
 
 		bindingToUpdate.setCustomerID(recipientId);
         bindingToUpdate.setMailinglistID(bindingDto.getMailinglistId());
@@ -1874,7 +1905,7 @@ public class RecipientServiceImpl implements RecipientService {
         }
     }
 
-    private BindingEntry generateBindingToInsert(RecipientBindingDto bindingDto, int recipientId, ComAdmin admin, UserStatus newUserStatus) {
+    private BindingEntry generateBindingToInsert(RecipientBindingDto bindingDto, int recipientId, Admin admin, UserStatus newUserStatus) {
         BindingEntry binding = new BindingEntryImpl();
 
         binding.setCustomerID(recipientId);
@@ -1889,12 +1920,12 @@ public class RecipientServiceImpl implements RecipientService {
     }
 
 	@Override
-	public int getRecipientIdByAddress(ComAdmin admin, int recipientId, String email) {
+	public int getRecipientIdByAddress(Admin admin, int recipientId, String email) {
 		return recipientDao.getRecipientIdByAddress(StringUtils.trimToEmpty(email), recipientId, admin.getCompanyID());
 	}
 
     @Override
-    public JSONArray getRecipientStatusChangesHistory(ComAdmin admin, int recipientId) {
+    public JSONArray getRecipientStatusChangesHistory(Admin admin, int recipientId) {
 		int companyId = admin.getCompanyID();
 
 		Map<Date, List<JSONObject>> groupedMap = new HashMap<>();
@@ -2066,7 +2097,7 @@ public class RecipientServiceImpl implements RecipientService {
 		}
 	}
 
-	private Object toDaoValue(ComAdmin admin, ProfileField type, String column, String value, Supplier<String> currentTimestampSupplier) throws UserMessageException {
+	private Object toDaoValue(Admin admin, ProfileField type, String column, String value, Supplier<String> currentTimestampSupplier) throws UserMessageException {
 		if (StringUtils.isEmpty(value)) {
 			return null;
 		}
@@ -2112,13 +2143,17 @@ public class RecipientServiceImpl implements RecipientService {
 		}
 	}
 
-
     @Override
-    public Map<String, ProfileField> getEditableColumns(ComAdmin admin) {
+	public boolean isRecipientTrackingAllowed(int companyID, int recipientID) {
+    	return this.recipientDao.isRecipientTrackingAllowed(companyID, recipientID);
+	}
+
+	@Override
+    public Map<String, ProfileField> getEditableColumns(Admin admin) {
 		Set<ProfileField> columns = getRecipientColumnInfos(admin);
 		Map<String, ProfileField> map = new CaseInsensitiveMap<>();
 		for (ProfileField column : columns) {
-			if (column.getModeEdit() == MODE_EDIT_EDITABLE) {
+			if (column.getModeEdit() == ProfileFieldMode.Editable) {
 				map.put(column.getShortname(), column);
 			}
 		}
@@ -2161,7 +2196,7 @@ public class RecipientServiceImpl implements RecipientService {
 	}
 
 	@Required
-	public void setProfileFieldDao(ComProfileFieldDao profileFieldDao) {
+	public void setProfileFieldDao(ProfileFieldDao profileFieldDao) {
 		this.profileFieldDao = profileFieldDao;
 	}
 
@@ -2195,7 +2230,17 @@ public class RecipientServiceImpl implements RecipientService {
 		return recipientDao.getMailinglistBinding(companyID, customerID, mailinglistID, mediaCode);
 	}
 
-	public void addExtendedSearchOptions(ComAdmin admin, SqlPreparedStatementManager sqlStatement, RecipientSqlOptions options) throws Exception {
+	@Override
+	public int getMinimumCustomerId(int companyID) {
+		return recipientDao.getMinimumCustomerId(companyID);
+	}
+	
+	@Required
+	public final void setSubscriberLimitCheck(final SubscriberLimitCheck check) {
+		this.subscriberLimitCheck = Objects.requireNonNull(check, "subscriberLimitCheck");
+	}
+
+	public void addExtendedSearchOptions(Admin admin, SqlPreparedStatementManager sqlStatement, RecipientSqlOptions options) throws Exception {
 		// Do nothing
 	}
 }

@@ -12,6 +12,7 @@ package com.agnitas.emm.core.objectusage.web;
 
 import java.util.Locale;
 
+import com.agnitas.web.mvc.Popups;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 
@@ -56,6 +57,26 @@ public final class ObjectUsagesToActionMessages {
 			}
 		}
 	}
+	
+    /**
+  	 * Converts {@link ObjectUsages} to {@link com.agnitas.web.mvc.Popups}. All using objects (up to limit defined in {@link #MAX_OBJECTS_PER_MESSAGE}),
+  	 * are shown in a single message.
+  	 * 
+  	 * @param errorMessageKey message key for error message (without placeholder for number of usages not shown)
+  	 * @param errorMessageWithMoreKey message key for error message (with placeholder for number of usages not shown) 
+  	 * @param usages object usages
+  	 * @param popups popups to add new message
+  	 * @param locale locale of current user
+  	 */
+  	public static void objectUsagesToActionMessages(final String errorMessageKey, final String errorMessageWithMoreKey, final ObjectUsages usages, final Popups popups, final Locale locale) {
+  		if(!usages.isEmpty()) {
+  			if(usages.size() <= MAX_OBJECTS_PER_MESSAGE) {
+  				popups.alert(errorMessageKey, itemsToHtmlList(usages, locale));
+  			} else {
+  				popups.alert(errorMessageWithMoreKey, itemsToHtmlList(usages, locale), usages.size() - MAX_OBJECTS_PER_MESSAGE);
+  			}
+  		}
+  	}
 
 	/**
 	 * Converts object usages to a HTML list.

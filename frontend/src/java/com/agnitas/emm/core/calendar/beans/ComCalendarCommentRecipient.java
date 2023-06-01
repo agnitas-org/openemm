@@ -11,15 +11,15 @@
 package com.agnitas.emm.core.calendar.beans;
 
 public interface ComCalendarCommentRecipient {
-    public String getAddress();
+    String getAddress();
 
-    public void setAddress(String address);
+    void setAddress(String address);
 
-    public int getAdminId();
+    int getAdminId();
 
-    public void setAdminId(int adminId);
+    void setAdminId(int adminId);
 
-    public boolean isNotified();
+    boolean isNotified();
 
-    public void setNotified(boolean notified);
+    void setNotified(boolean notified);
 }

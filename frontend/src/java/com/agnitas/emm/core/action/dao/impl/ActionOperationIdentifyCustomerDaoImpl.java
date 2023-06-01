@@ -32,8 +32,8 @@ public class ActionOperationIdentifyCustomerDaoImpl extends AbstractActionOperat
 	@Override
 	@DaoUpdateReturnValueCheck
 	protected void processSaveOperation(ActionOperationIdentifyCustomerParameters operation) {
-		update(logger, "insert into actop_identify_customer_tbl (action_operation_id, key_column, pass_column) values (?,?,?)", 
-				operation.getId(), 
+		update(logger, "insert into actop_identify_customer_tbl (action_operation_id, key_column, pass_column) values (?,?,?)",
+				operation.getId(),
 				operation.getKeyColumn(),
 				operation.getPassColumn());
 	}
@@ -41,7 +41,7 @@ public class ActionOperationIdentifyCustomerDaoImpl extends AbstractActionOperat
 	@Override
 	@DaoUpdateReturnValueCheck
 	protected void processUpdateOperation(ActionOperationIdentifyCustomerParameters operation) {
-		update(logger, "update actop_identify_customer_tbl set key_column=?, pass_column=? where action_operation_id=?", 
+		update(logger, "update actop_identify_customer_tbl set key_column=?, pass_column=? where action_operation_id=?",
 				operation.getKeyColumn(),
 				operation.getPassColumn(),
 				operation.getId());

@@ -1,6 +1,0 @@
-<HelpBalloon>
-	<title><![CDATA[Affectation des colonnes]]></title>
-	<content><![CDATA[La page suivante vous permet d'assigner des colonnes du fichier csv aux colonnes utilis&egrave;es dans la base de donn&egrave;es. Si les colonnes du fichier csv ont exactement les m&ecirc;mes noms que ceux de la base de donn&egrave;es, elles seront automatiquement appari&egrave;es. Sinon, une liste d&egrave;roulante vous permet d'affecter les colonnes correctement. Il est &egrave;galement possible de marquer les colonnes que vous ne voulez pas du tout importer en cliquant simplement sur le bouton Continuer.
-
-Traduit avec www.DeepL.com/Translator]]></content>
-</HelpBalloon>

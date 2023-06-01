@@ -26,6 +26,8 @@ import org.agnitas.util.ImportUtils.ImportErrorType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+
 public class ImportStatusImpl implements ImportStatus {
 	/** The logger. */
 	private static final transient Logger logger = LogManager.getLogger(ImportStatusImpl.class);
@@ -96,7 +98,7 @@ public class ImportStatusImpl implements ImportStatus {
 	
 	private Set<String> errorColumns = new HashSet<>();
 
-	private Map<Integer, Integer> mailinglistStatistics = new HashMap<>();
+	private Map<MediaTypes, Map<Integer, Integer>> mailinglistStatistics = new HashMap<>();
 	
 	private boolean nearLimit = false;
 
@@ -507,12 +509,12 @@ public class ImportStatusImpl implements ImportStatus {
 	}
 	
 	@Override
-	public Map<Integer, Integer> getMailinglistStatistics() {
+	public Map<MediaTypes, Map<Integer, Integer>> getMailinglistStatistics() {
 		return mailinglistStatistics;
 	}
 	
 	@Override
-	public void setMailinglistStatistics(Map<Integer, Integer> mailinglistStatistics) {
+	public void setMailinglistStatistics(Map<MediaTypes, Map<Integer, Integer>> mailinglistStatistics) {
 		this.mailinglistStatistics = mailinglistStatistics;
 	}
 

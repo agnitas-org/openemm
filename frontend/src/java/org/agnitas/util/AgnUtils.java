@@ -17,7 +17,6 @@ import java.io.ByteArrayInputStream;
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -34,14 +33,22 @@ import java.net.Socket;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
+import java.text.MessageFormat;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.ZoneId;
+import java.time.chrono.IsoChronology;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.format.FormatStyle;
+import java.time.format.ResolverStyle;
+import java.time.temporal.ChronoField;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -71,6 +78,7 @@ import java.util.stream.Collectors;
 
 import javax.crypto.Cipher;
 
+import com.agnitas.emm.validator.ApacheTikaUtils;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.web.forms.WorkflowParameters;
@@ -91,7 +99,7 @@ import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
 import com.agnitas.beans.AdminPreferences;
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.Company;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.commons.encoder.Sha512Encoder;
@@ -112,10 +120,12 @@ public class AgnUtils {
 	public static final Pattern APPLICATION_VERSION_PATTERN = Pattern.compile(APPLICATION_VERSION_REGEX);
 
 	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(AgnUtils.class);
+	private static final Logger logger = LogManager.getLogger(AgnUtils.class);
 
 	public static final String DEFAULT_MAILING_HTML_DYNNAME = "HTML-Version";
 	public static final String DEFAULT_MAILING_TEXT_DYNNAME = "Text";
+
+	public static final String TOC_ITEM_SUFFIX = " (TOC Item)";
 
 	public static final String SESSION_CONTEXT_KEYNAME_ADMIN = "emm.admin";
 	public static final String SESSION_CONTEXT_KEYNAME_ADMINPREFERENCES = "emm.adminPreferences";
@@ -143,16 +153,16 @@ public class AgnUtils {
 	private static final int CHAR_BYTES_MASK_4 = 0xFFE00000;
 	private static final int CHAR_BYTES_MASK_5 = 0xFC000000;
 	private static final int CHAR_BYTES_MASK_6 = 0x80000000;
+	
+    private static final byte[] PDF_SIGNATURE = "%PDF".getBytes(StandardCharsets.US_ASCII);
 
 	/**
 	 * Creates a String of an Throwable item and its causes. Cause level is
 	 * limited by a maximum of 100 to prevent cyclic or excessive causes.
 	 *
-	 * @param throwable
 	 * @param maxSubCauseLevel
 	 *            maximum level of causes to show (maximum is 100, -1 equals
 	 *            maximum)
-	 * @return
 	 */
 	public static String throwableToString(Throwable throwable, int maxSubCauseLevel) {
 		StringBuilder returnBuilder = new StringBuilder(throwable.getClass().getSimpleName()
@@ -168,16 +178,19 @@ public class AgnUtils {
 		while ((maxSubCauseLevel < 0 || level < maxSubCauseLevel)
 				&& level <= 100 && subThrowable != null
 				&& previousSubThrowable != subThrowable) {
-			returnBuilder.append("\n\ncaused by\n"
-					+ subThrowable.getClass().getSimpleName() + ":\n"
-					+ subThrowable.getMessage() + "\nStackTrace:\n"
-					+ getStackTraceAsString(subThrowable));
+
+			returnBuilder.append("\n\ncaused by\n")
+					.append(subThrowable.getClass().getSimpleName())
+					.append(":\n")
+					.append(subThrowable.getMessage())
+					.append("\nStackTrace:\n")
+					.append(getStackTraceAsString(subThrowable));
+
 			level++;
 			subThrowable = subThrowable.getCause();
 		}
 		if (level == maxSubCauseLevel) {
-			returnBuilder.append("\n\n... cut after level " + maxSubCauseLevel
-					+ " ...");
+			returnBuilder.append("\n\n... cut after level ").append(maxSubCauseLevel).append(" ...");
 		}
 		return returnBuilder.toString();
 	}
@@ -199,9 +212,8 @@ public class AgnUtils {
 	public static String getStackTraceAsString(StackTraceElement[] stackTraceElements) {
 		StringBuilder traceStringBuilder = new StringBuilder();
 		if (stackTraceElements != null) {
-			for (int i = 0; i < stackTraceElements.length; i++) {
-				traceStringBuilder.append(stackTraceElements[i].toString()
-						+ "\n");
+			for (StackTraceElement stackTraceElement : stackTraceElements) {
+				traceStringBuilder.append(stackTraceElement.toString()).append("\n");
 			}
 		}
 		return traceStringBuilder.toString();
@@ -209,9 +221,6 @@ public class AgnUtils {
 
 	/**
 	 * Utility method to show stacktrace in db table
-	 *
-	 * @param t
-	 * @return
 	 */
 	public static String getStackTraceString(Throwable t) {
 		StringBuilder traceStringBuilder = new StringBuilder();
@@ -220,7 +229,7 @@ public class AgnUtils {
 			StackTraceElement[] stackTraceElements = t.getStackTrace();
 			if (stackTraceElements != null && stackTraceElements.length > 0) {
 				for (int level = 0; level < stackTraceElements.length && level < 5; level++) {
-					traceStringBuilder.append(stackTraceElements[level].toString() + "\n");
+					traceStringBuilder.append(stackTraceElements[level].toString()).append("\n");
 				}
 			}
 		}
@@ -239,7 +248,7 @@ public class AgnUtils {
 		try {
 			return FileUtils.readFileToString(new File(path), "UTF-8");
 		} catch (Exception e) {
-			logger.warn("Error reading file " + path, e);
+			logger.warn(MessageFormat.format("Error reading file {0}", path), e);
 			return null;
 		}
 	}
@@ -262,21 +271,12 @@ public class AgnUtils {
 
 	/**
 	 * Get year for statistics overview from which should starts year list
-	 *
-	 * @param admin
-	 * @return
 	 */
-	public static int getStatStartYearForCompany(ComAdmin admin) {
+	public static int getStatStartYearForCompany(Admin admin) {
 		return getStatStartYearForCompany(admin, -1);
 	}
 
-	/**
-	 *
-	 * @param admin
-	 * @param initialYear
-	 * @return
-	 */
-	public static int getStatStartYearForCompany(ComAdmin admin, int initialYear) {
+	public static int getStatStartYearForCompany(Admin admin, int initialYear) {
 		GregorianCalendar startDate = new GregorianCalendar();
 		Company company = AgnUtils.getCompany(admin);
 		assert (company != null);
@@ -342,7 +342,7 @@ public class AgnUtils {
 	 */
 	public static Map<String, String> getReqParameters(HttpServletRequest req) {
 		Map<String, String> params = new HashMap<>();
-		String parName = null;
+		String parName;
 
 		Enumeration<String> aEnum1 = req.getParameterNames();
 		while (aEnum1.hasMoreElements()) {
@@ -370,7 +370,7 @@ public class AgnUtils {
 	 * Checks whether a user has any of demanded permissions.
 	 */
 	public static boolean allowed(HttpServletRequest req, Permission... permissions) {
-		ComAdmin admin = getAdmin(req);
+		Admin admin = getAdmin(req);
 		return admin != null && admin.permissionAllowed(permissions);
 	}
 
@@ -394,7 +394,7 @@ public class AgnUtils {
 		}
 	}
 
-	public static ComAdmin getAdmin(HttpServletRequest request) {
+	public static Admin getAdmin(HttpServletRequest request) {
 		try {
 			return getAdmin(request.getSession(false));
 		} catch (Exception e) {
@@ -403,13 +403,13 @@ public class AgnUtils {
 		}
 	}
 
-	public static ComAdmin getAdmin(HttpSession session) {
+	public static Admin getAdmin(HttpSession session) {
 		try {
 			if (session == null) {
 				logger.debug("no request session found for getAdmin", new Exception());
 				return null;
 			} else {
-				ComAdmin admin = (ComAdmin) session.getAttribute(SESSION_CONTEXT_KEYNAME_ADMIN);
+				Admin admin = (Admin) session.getAttribute(SESSION_CONTEXT_KEYNAME_ADMIN);
 				if (admin == null) {
 					logger.debug("no admin found in request session data", new Exception());
 					return null;
@@ -425,7 +425,7 @@ public class AgnUtils {
 
 	public static int getAdminId(HttpServletRequest request) {
 		try {
-			ComAdmin admin = getAdmin(request);
+			Admin admin = getAdmin(request);
 			if (admin == null) {
 				logger.error("AgnUtils: getAdminId - no adminID found (admin is null)");
 				return 0;
@@ -438,7 +438,7 @@ public class AgnUtils {
 		}
 	}
 
-	public static void setAdmin(HttpServletRequest request, ComAdmin admin) {
+	public static void setAdmin(HttpServletRequest request, Admin admin) {
 		try {
 			HttpSession session = request.getSession();
 			if (session != null) {
@@ -464,14 +464,14 @@ public class AgnUtils {
 		}
 	}
 
-	public static ComAdmin getAdmin(PageContext pageContext) {
+	public static Admin getAdmin(PageContext pageContext) {
 		try {
 			HttpSession session = pageContext.getSession();
 			if (session == null) {
 				logger.error("No pageContext data found for getAdmin");
 				return null;
 			} else {
-				ComAdmin admin = (ComAdmin) session.getAttribute(SESSION_CONTEXT_KEYNAME_ADMIN);
+				Admin admin = (Admin) session.getAttribute(SESSION_CONTEXT_KEYNAME_ADMIN);
 				if (admin == null) {
 					logger.debug("No admin found in pageContext data");
 					return null;
@@ -544,7 +544,7 @@ public class AgnUtils {
 		return getTimeZone(getAdmin(req));
 	}
 
-	public static TimeZone getTimeZone(ComAdmin admin) {
+	public static TimeZone getTimeZone(Admin admin) {
 		try {
 			if (admin == null) {
 				return DateUtilities.UTC;
@@ -557,7 +557,7 @@ public class AgnUtils {
 		}
 	}
 
-	public static ZoneId getZoneId(ComAdmin admin) {
+	public static ZoneId getZoneId(Admin admin) {
 		ZoneId zone = DateUtilities.UTC_ZONE;
 
 		try {
@@ -579,7 +579,7 @@ public class AgnUtils {
 	 * @return Value of property company.
 	 */
 	public static Company getCompany(HttpServletRequest req) {
-		ComAdmin admin = getAdmin(req);
+		Admin admin = getAdmin(req);
 		if (admin == null) {
 			logger.error("AgnUtils: getCompany: no admin found in request");
 			return null;
@@ -593,7 +593,7 @@ public class AgnUtils {
 	 *
 	 * @return Value of property company.
 	 */
-	public static Company getCompany(ComAdmin admin) {
+	public static Company getCompany(Admin admin) {
 		try {
 			Company company = admin.getCompany();
 			if (company == null) {
@@ -612,7 +612,7 @@ public class AgnUtils {
 		}
 	}
 
-	public static boolean isMailTrackingAvailable(ComAdmin admin) {
+	public static boolean isMailTrackingAvailable(Admin admin) {
 		return isMailTrackingAvailable(getCompany(admin));
 	}
 	
@@ -622,10 +622,6 @@ public class AgnUtils {
 
 	/**
 	 * Used only by BSH-Interpreter
-	 *
-	 * @param mask
-	 * @param target
-	 * @return
 	 */
 	public static boolean match(String mask, String target) {
 		// if anything is null, no match
@@ -639,7 +635,7 @@ public class AgnUtils {
 			return true; // match!
 		}
 
-		boolean matched = true;
+		boolean matched;
 		if (mask.indexOf('%') >= 0 || mask.indexOf('_') >= 0) {
 			matched = rmatch(mask, target); // find match incl wildcards
 		} else {
@@ -661,10 +657,7 @@ public class AgnUtils {
 		}
 
 		if (pattern == -1) {
-			if (mask.compareTo(target) == 0) {
-				return true; // match!
-			}
-			return false;
+			return mask.compareTo(target) == 0;
 		}
 
 		if (!mask.regionMatches(0, target, 0, pattern)) {
@@ -675,10 +668,10 @@ public class AgnUtils {
 			// '_' found
 			return rmatch(mask.substring(pattern + 1), target.substring(pattern + 1));
 		}
-		String after = mask.substring(moreCharacters + 1, mask.length());
+		String after = mask.substring(moreCharacters + 1);
 
 		for (int c = pattern; c < target.length(); c++) {
-			if (rmatch(after, target.substring(c, target.length()))) {
+			if (rmatch(after, target.substring(c))) {
 				return true;
 			}
 		}
@@ -687,9 +680,6 @@ public class AgnUtils {
 
 	/**
 	 * Escapes any HTML sequence in all values in the given map.
-	 *
-	 * @param htmlMap
-	 * @return
 	 */
 	public static Map<String, Object> escapeHtmlInValues(Map<String, Object> htmlMap) {
 		Map<String, Object> result = new CaseInsensitiveMap<>();
@@ -714,7 +704,6 @@ public class AgnUtils {
 
 	/**
 	 *
-	 * @param startYear
 	 * @return a list of years from the current year back to the start year
 	 */
 	public static List<Integer> getYearList(int startYear) {
@@ -781,11 +770,12 @@ public class AgnUtils {
 		if (value == null) {
 			return false;
 		}
+
 		if (value instanceof String) {
 			return StringUtils.isNotBlank(value.toString());
-		} else {
-			return true;
 		}
+
+		return true;
 	}
 
 	public static String bytesToKbStr(int bytes) {
@@ -794,19 +784,15 @@ public class AgnUtils {
 	}
 
 	public static int decryptLayoutID(String layout) {
-		int layoutID = 0;
 		int index = layout.indexOf('.');
 		layout = layout.substring(0, index);
-		layoutID = Integer.parseInt(layout, 36);
-		return layoutID;
+		return Integer.parseInt(layout, 36);
 	}
 
 	public static int decryptCompanyID(String company) {
-		int companyID = 0;
 		int index = company.indexOf('.');
 		company = company.substring(index + 1);
-		companyID = Integer.parseInt(company, 36);
-		return companyID;
+		return Integer.parseInt(company, 36);
 	}
 
 	public static File createDirectory(String path) {
@@ -894,10 +880,6 @@ public class AgnUtils {
 	/**
 	 * Build a string of x repetitions of another string. An optional separator
 	 * is placed between each repetition. 0 repetitions return an empty string.
-	 *
-	 * @param itemString
-	 * @param repeatTimes
-	 * @return
 	 */
 	public static String repeatString(String itemString, int repeatTimes) {
 		return repeatString(itemString, repeatTimes, null);
@@ -906,11 +888,6 @@ public class AgnUtils {
 	/**
 	 * Build a string of x repetitions of another string. An optional separator
 	 * is placed between each repetition. 0 repetitions return an empty string.
-	 *
-	 * @param itemString
-	 * @param separatorString
-	 * @param repeatTimes
-	 * @return
 	 */
 	public static String repeatString(String itemString, int repeatTimes, String separatorString) {
 		StringBuilder returnStringBuilder = new StringBuilder();
@@ -925,10 +902,6 @@ public class AgnUtils {
 
 	/**
 	 * Sort a map by a Comparator for the keytype
-	 *
-	 * @param mapToSort
-	 * @param comparator
-	 * @return
 	 */
 	public static <KeyType, ValueType> Map<KeyType, ValueType> sortMap(Map<KeyType, ValueType> mapToSort, Comparator<KeyType> comparator) {
         return mapToSort.entrySet().stream()
@@ -938,9 +911,6 @@ public class AgnUtils {
 
 	/**
 	 * Sorts Lists and Sets into a new List with all items sorted by their comparator
-	 *
-	 * @param c
-	 * @return
 	 */
 	public static <T extends Comparable<? super T>> List<T> getSortedList(Collection<T> c) {
 		List<T> list = new ArrayList<>(c);
@@ -985,11 +955,9 @@ public class AgnUtils {
 			}
 			if (textToken != null) {
 				tokens.add(textToken.toString());
-				textToken = null;
 			}
 			if (numberToken != null) {
 				tokens.add(numberToken.toString());
-				numberToken = null;
 			}
 		}
 		return tokens;
@@ -998,9 +966,6 @@ public class AgnUtils {
 	/**
 	 * Check if a string only consists of digits. No signing (+-) or punctuation
 	 * is allowed.
-	 *
-	 * @param value
-	 * @return
 	 */
 	public static boolean isDigit(String value) {
 		for (char charValue : value.toCharArray()) {
@@ -1012,15 +977,14 @@ public class AgnUtils {
 	}
 
 	public static boolean interpretAsBoolean(String value) {
-		return value != null
-				&& ("true".equalsIgnoreCase(value)
-						|| "yes".equalsIgnoreCase(value)
-						|| "on".equalsIgnoreCase(value)
-						|| "allowed".equalsIgnoreCase(value)
-						|| "1".equals(value)
-						|| "+".equals(value)
-						|| "enabled".equalsIgnoreCase(value)
-						|| "active".equalsIgnoreCase(value));
+		return ("true".equalsIgnoreCase(value)
+				|| "yes".equalsIgnoreCase(value)
+				|| "on".equalsIgnoreCase(value)
+				|| "allowed".equalsIgnoreCase(value)
+				|| "1".equals(value)
+				|| "+".equals(value)
+				|| "enabled".equalsIgnoreCase(value)
+				|| "active".equalsIgnoreCase(value));
 	}
 
 	public static URL addUrlParameter(URL url, String parameterName, String parameterValue) throws UnsupportedEncodingException, MalformedURLException {
@@ -1064,7 +1028,7 @@ public class AgnUtils {
 		// Find html link anchor but ignore agnHashTags
 		int hpos = indexOf(url, "#", "##");
 		if (hpos > -1) {
-			newUrl.append(url.substring(0, hpos));
+			newUrl.append(url, 0, hpos);
 		} else {
 			newUrl.append(url);
 		}
@@ -1192,8 +1156,6 @@ public class AgnUtils {
 	/**
 	 * Get the hostname of the current running server.
 	 * This can be set explicitly in the file "$HOME/conf/hostname"
-	 *
-	 * @return
 	 */
 	public static String getHostName() {
 		if (HOSTNAME == null) {
@@ -1203,7 +1165,7 @@ public class AgnUtils {
 			}
 
 			if (StringUtils.isBlank(confDir) || !new File(confDir).exists()) {
-				logger.error("Cannot find runtime configuration directory: " + confDir);
+				logger.error(MessageFormat.format("Cannot find runtime configuration directory: {0}", confDir));
 			}
 
 			File hostnameConfigFile = new File(confDir + File.separatorChar + "hostname");
@@ -1250,8 +1212,6 @@ public class AgnUtils {
 	/**
 	 * Get the IP-address of the current running server.
 	 * This is the IP which is known to the DNS System for the hostname of this machine
-	 *
-	 * @return
 	 */
 	public static String getHostIpAddress() {
 		try {
@@ -1305,24 +1265,28 @@ public class AgnUtils {
 	public static <T> List<List<T>> chopToChunks(List<T> originalList, int subListMaxSize) throws IllegalArgumentException {
 		if (originalList == null) {
 			throw new IllegalArgumentException("Null list not allowed to chopToChunks");
-		} else if (subListMaxSize <= 0) {
-			throw new IllegalArgumentException("SubListMaxSize <= 0 not allowed for chopToChunks");
-		} else if (originalList.size() == 0) {
-			return new ArrayList<>();
-		} else {
-			List<List<T>> returnList = new ArrayList<>((originalList.size() + subListMaxSize - 1) / subListMaxSize);
-			List<T> currentListToAdd = new ArrayList<>(subListMaxSize);
-			returnList.add(currentListToAdd);
-
-			for (T item : originalList) {
-				if (currentListToAdd.size() >= subListMaxSize) {
-					currentListToAdd = new ArrayList<>(subListMaxSize);
-					returnList.add(currentListToAdd);
-				}
-				currentListToAdd.add(item);
-			}
-			return returnList;
 		}
+
+		if (subListMaxSize <= 0) {
+			throw new IllegalArgumentException("SubListMaxSize <= 0 not allowed for chopToChunks");
+		}
+
+		if (originalList.isEmpty()) {
+			return new ArrayList<>();
+		}
+
+		List<List<T>> returnList = new ArrayList<>((originalList.size() + subListMaxSize - 1) / subListMaxSize);
+		List<T> currentListToAdd = new ArrayList<>(subListMaxSize);
+		returnList.add(currentListToAdd);
+
+		for (T item : originalList) {
+			if (currentListToAdd.size() >= subListMaxSize) {
+				currentListToAdd = new ArrayList<>(subListMaxSize);
+				returnList.add(currentListToAdd);
+			}
+			currentListToAdd.add(item);
+		}
+		return returnList;
 	}
 
 	/**
@@ -1332,24 +1296,28 @@ public class AgnUtils {
 	public static <T> List<Set<T>> chopToChunks(Set<T> originalSet, int subSetMaxSize) throws IllegalArgumentException {
 		if (originalSet == null) {
 			throw new IllegalArgumentException("Null set not allowed to chopToChunks");
-		} else if (subSetMaxSize <= 0) {
-			throw new IllegalArgumentException("SubSetMaxSize <= 0 not allowed for chopToChunks");
-		} else if (originalSet.size() == 0) {
-			return new ArrayList<>();
-		} else {
-			List<Set<T>> returnList = new ArrayList<>((originalSet.size() + subSetMaxSize - 1) / subSetMaxSize);
-			Set<T> currentSetToAdd = new HashSet<>(subSetMaxSize);
-			returnList.add(currentSetToAdd);
-
-			for (T item : originalSet) {
-				if (currentSetToAdd.size() >= subSetMaxSize) {
-					currentSetToAdd = new HashSet<>(subSetMaxSize);
-					returnList.add(currentSetToAdd);
-				}
-				currentSetToAdd.add(item);
-			}
-			return returnList;
 		}
+
+		if (subSetMaxSize <= 0) {
+			throw new IllegalArgumentException("SubSetMaxSize <= 0 not allowed for chopToChunks");
+		}
+
+		if (originalSet.isEmpty()) {
+			return new ArrayList<>();
+		}
+
+		List<Set<T>> returnList = new ArrayList<>((originalSet.size() + subSetMaxSize - 1) / subSetMaxSize);
+		Set<T> currentSetToAdd = new HashSet<>(subSetMaxSize);
+		returnList.add(currentSetToAdd);
+
+		for (T item : originalSet) {
+			if (currentSetToAdd.size() >= subSetMaxSize) {
+				currentSetToAdd = new HashSet<>(subSetMaxSize);
+				returnList.add(currentSetToAdd);
+			}
+			currentSetToAdd.add(item);
+		}
+		return returnList;
 	}
 
 	public static UUID generateNewUUID() {
@@ -1538,9 +1506,6 @@ public class AgnUtils {
 	 * Call lowercase and trim on email address. Watch out: apostrophe and other
 	 * special characters !#$%&'*+-/=?^_`{|}~ are allowed in local parts of
 	 * emailaddresses
-	 *
-	 * @param email
-	 * @return
 	 */
 	public static String normalizeEmail(String email) {
 		if (StringUtils.isBlank(email)) {
@@ -1582,10 +1547,6 @@ public class AgnUtils {
     /**
      * Compare two lists.
      * Equity is checked by ".equals" of all list elements.
-     *
-     * @param listActually
-     * @param listExpected
-     * @return
      */
 	public static boolean compareLists(List<?> listExpected, List<?> listActually) {
 		if (listExpected == null && listActually == null) {
@@ -1611,10 +1572,6 @@ public class AgnUtils {
     /**
      * Compare two lists.
      * Equity is checked by ".equals" of all list elements.
-     *
-     * @param listActually
-     * @param checkedIndexes
-     * @return
      */
 	public static boolean compareLists(List<?> listExpected, List<?> listActually, int... checkedIndexes) {
 		if (listExpected == null && listActually == null) {
@@ -1661,10 +1618,6 @@ public class AgnUtils {
 
 	/**
 	 * @deprecated Use "com.agnitas.emm.core.LinkServiceImpl.personalizeLink(ComTrackableLink, String, int, String)" instead
-	 *
-	 * @param hashTagString
-	 * @param replacementMaps
-	 * @return
 	 */
 	@Deprecated
 	public static String replaceHashTags(String hashTagString, @SuppressWarnings("unchecked") Map<String, Object>... replacementMaps) {
@@ -1972,7 +1925,7 @@ public class AgnUtils {
 		return 0;
 	}
 	
-	public static int getCompanyMaxRecipients(ComAdmin admin) {
+	public static int getCompanyMaxRecipients(Admin admin) {
 		Company company = AgnUtils.getCompany(admin);
 		if (company != null) {
 			return company.getMaxRecipients();
@@ -2028,9 +1981,6 @@ public class AgnUtils {
 	/**
 	 * This method splits a String list at the characters ',' ';' and '|' and
 	 * trims the resulting items
-	 *
-	 * @param stringList
-	 * @return
 	 */
 	public static List<String> splitAndTrimStringlist(String stringList) {
 		if (stringList == null) {
@@ -2067,9 +2017,6 @@ public class AgnUtils {
 
 	/**
 	 * This method acts like splitAndTrimStringlist, but also splits at blanks
-	 *
-	 * @param stringList
-	 * @return
 	 */
 	public static List<String> splitAndTrimList(String stringList) {
 		if (stringList == null) {
@@ -2104,11 +2051,8 @@ public class AgnUtils {
 			Calendar end = Calendar.getInstance();
 			start.setTime(new SimpleDateFormat(datePattern).parse(startDate));
 			end.setTime(new SimpleDateFormat(datePattern).parse(endDate));
-			if (start.before(end)) {
-				return true;
-			} else {
-				return false;
-			}
+
+			return start.before(end);
 		} catch (ParseException e) {
 			return false;
 		}
@@ -2117,9 +2061,9 @@ public class AgnUtils {
 	public static String shortenStringToMaxLength(String value, int maxLength) {
 		if (value != null && value.length() > maxLength) {
 			return value.substring(0, maxLength - 4) + " ...";
-		} else {
-			return value;
 		}
+
+		return value;
 	}
 
 	public static String getTempDir() {
@@ -2255,9 +2199,6 @@ public class AgnUtils {
 	 * Examples:
 	 *   "abc@xyz" <abc@def.de> => def.de
 	 *   abc@def.de => def.de
-	 *
-	 * @param emailAddress
-	 * @return
 	 */
 	public static String getDomainFromEmail(String emailAddress) {
 		int domainTextDelimiterIndex = emailAddress.lastIndexOf("@");
@@ -2298,11 +2239,6 @@ public class AgnUtils {
 
 	/**
 	 * Search for the next index of any of the given search Strings after the startIndex in a data String
-	 *
-	 * @param dataString
-	 * @param startIndex
-	 * @param searchStrings
-	 * @return
 	 */
 	public static int searchNext(String dataString, int startIndex, String... searchStrings) {
 		int foundIndex = -1;
@@ -2334,10 +2270,6 @@ public class AgnUtils {
 
 	/**
 	 * Get line number at a given text position
-	 *
-	 * @param dataString
-	 * @param textPosition
-	 * @return
 	 */
 	public static int getLineNumberOfTextposition(String dataString, int textPosition) {
 		if (dataString == null) {
@@ -2362,10 +2294,6 @@ public class AgnUtils {
 
 	/**
 	 * Get the number of lines in a text
-	 *
-	 * @param dataString
-	 * @return
-	 * @throws IOException
 	 */
 	public static int getLineCount(String dataString) throws IOException {
 		if (dataString == null) {
@@ -2389,10 +2317,6 @@ public class AgnUtils {
 
 	/**
 	 * Get the startindex of the line at a given position within the text
-	 *
-	 * @param dataString
-	 * @param index
-	 * @return
 	 */
 	public static int getStartIndexOfLineAtIndex(String dataString, int index) {
 		if (dataString == null || index < 0) {
@@ -2462,11 +2386,6 @@ public class AgnUtils {
 
 	  /**
 	   * Make a number with unitsign human readable
-	   *
-	   * @param value
-	   * @param unitTypeSign
-	   * @param siUnits
-	   * @return
 	   */
 	public static String getHumanReadableNumber(Number value, String unitTypeSign, boolean siUnits, Locale locale, boolean keepTrailingZeros) {
 		int unit = siUnits ? 1000 : 1024;
@@ -2560,7 +2479,6 @@ public class AgnUtils {
 			reaturnValue += minutes + "m ";
 		}
 		if (showOthers || seconds > 0) {
-			showOthers = true;
 			reaturnValue += seconds + "s ";
 		}
 		if (milliseconds > 0) {
@@ -2572,9 +2490,6 @@ public class AgnUtils {
 
 	/**
 	 * Make a number human readable
-	 *
-	 * @param value
-	 * @return
 	 */
 	public static String getHumanReadableNumber(Number value, Locale locale) {
 		return NumberFormat.getInstance(locale).format(value);
@@ -2582,10 +2497,6 @@ public class AgnUtils {
 
 	/**
 	 * Escape a char by adding the same char to it like escaping "\" by "\\"
-	 *
-	 * @param input
-	 * @param charToEscape
-	 * @return
 	 */
     public static String escapeChars(String input, String charToEscape) {
     	if (StringUtils.isEmpty(input) || StringUtils.isEmpty(charToEscape)) {
@@ -2670,7 +2581,6 @@ public class AgnUtils {
 	 *  TODO: Check when using newer Strusts version (1.3.10), if Struts-bug still exists
 	 *
 	 *  This method replaces the String[]-values with their last element
-	 * @param formMap
 	 */
 	public static Map<String, String> repairFormMap(Map<String, String> formMap) {
 		Map<String, String> resultMap = new HashMap<>();
@@ -2688,7 +2598,7 @@ public class AgnUtils {
 	}
 
 	public static Locale getLocale(HttpServletRequest request) {
-        ComAdmin admin = getAdmin(request);
+        Admin admin = getAdmin(request);
         return (admin == null)
         		? Locale.getDefault() //(Locale)request.getSession().getAttribute(org.apache.struts.Globals.LOCALE_KEY)
         		: admin.getLocale();
@@ -2704,12 +2614,10 @@ public class AgnUtils {
 				array = new Object[0];
 			}
 			Object[] extendedParameters = new Object[array.length + objects.length];
-			for (int i = 0; i < array.length; i++) {
-				extendedParameters[i] = array[i];
-			}
-			for (int i = 0; i < objects.length; i++) {
-				extendedParameters[array.length + i] = objects[i];
-			}
+
+			System.arraycopy(array, 0, extendedParameters, 0, array.length);
+			System.arraycopy(objects, 0, extendedParameters, array.length, objects.length);
+
 			return extendedParameters;
 		} else {
 			return array;
@@ -2807,7 +2715,7 @@ public class AgnUtils {
 	 * The result is cached.
 	 */
 	public static String getCkEditorPath(HttpServletRequest request) throws Exception {
-		ComAdmin admin = getAdmin(request);
+		Admin admin = getAdmin(request);
 		int companyID = 0;
 
 		if (admin != null) {
@@ -2829,7 +2737,7 @@ public class AgnUtils {
 	}
 
 	public static String getAceEditorPath(HttpServletRequest request) throws Exception {
-		ComAdmin admin = getAdmin(request);
+		Admin admin = getAdmin(request);
 		int companyID = 0;
 
 		if (admin != null) {
@@ -2913,13 +2821,19 @@ public class AgnUtils {
 		if (data == suffix) {
 			// both null or same object
 			return true;
-		} else if (data == null) {
+		}
+
+		if (data == null) {
 			// data is null but suffix is not
 			return false;
-		} else if (suffix == null) {
+		}
+
+		if (suffix == null) {
 			// suffix is null but data is not
 			return true;
-		} else if (data.toLowerCase().endsWith(suffix.toLowerCase())) {
+		}
+
+		if (data.toLowerCase().endsWith(suffix.toLowerCase())) {
 			// both are set, so ignore the case for standard endsWith-method
 			return true;
 		} else {
@@ -2932,33 +2846,29 @@ public class AgnUtils {
 		if (data == part) {
 			// both null or same object
 			return 0;
-		} else if (data == null || part == null) {
+		}
+
+		if (data == null || part == null) {
 			// suffix is null but data is not or vice versa
 			return -1;
-		} else {
-			// anything else
-			return data.toLowerCase().indexOf(part.toLowerCase());
 		}
+
+		// anything else
+		return data.toLowerCase().indexOf(part.toLowerCase());
 	}
 
 	public static List<String> getArrayListOfStrings(String... values) {
 		List<String> returnList = new ArrayList<>();
 		if (values != null) {
-			for (String value : values) {
-				returnList.add(value);
-			}
+			returnList.addAll(Arrays.asList(values));
 		}
+
 		return returnList;
 	}
 
 	/**
 	 * Get the preceding character at a index position within a text.
 	 * Some characters may be are ignored while searching.
-	 *
-	 * @param text
-	 * @param startIndex
-	 * @param ignoredCharacters
-	 * @return
 	 */
 	public static char getCharacterBefore(String text, int startIndex, char... ignoredCharacters) {
 		try {
@@ -2977,11 +2887,6 @@ public class AgnUtils {
 
 	/**
 	 * Get the next position of any of the given characters within a text
-	 *
-	 * @param text
-	 * @param startIndex
-	 * @param searchedCharacters
-	 * @return
 	 */
 	public static int getNextIndexOf(String text, int startIndex, char... searchedCharacters) {
 		try {
@@ -3001,12 +2906,6 @@ public class AgnUtils {
 	/**
 	 * Check if a searchString is included in a text berore a given index position.
 	 * Some characters may be are ignored while comparing.
-	 *
-	 * @param text
-	 * @param startIndex
-	 * @param searchString
-	 * @param ignoredCharacters
-	 * @return
 	 */
 	public static boolean checkPreviousTextEquals(String text, int startIndex, String searchString, char... ignoredCharacters) {
 		try {
@@ -3197,7 +3096,7 @@ public class AgnUtils {
 	 * @return first value - blocksize, second value - stepping
 	 */
 	public static Tuple<Integer, Integer> makeBlocksizeAndSteppingFromBlocksize(int blocksize, int defaultStepping){
-		int stepping = 0;
+		int stepping;
 		switch (blocksize) {
 			case 0:
 				stepping = 0;
@@ -3322,7 +3221,7 @@ public class AgnUtils {
 	 * <fmt:formatDate value="${change_date}" pattern="${adminDateTimeFormat}" timeZone="${adminTimeZone}" />
 	 */
 	public static void setAdminDateTimeFormatPatterns(HttpServletRequest request) {
-		ComAdmin admin = AgnUtils.getAdmin(request);
+		Admin admin = AgnUtils.getAdmin(request);
 		if (admin != null) {
 	        request.setAttribute("adminTimeZone", admin.getAdminTimezone());
 
@@ -3346,7 +3245,7 @@ public class AgnUtils {
 	 * ...
 	 * <fmt:formatDate value="${change_date}" pattern="${adminDateTimeFormat}" timeZone="${adminTimeZone}" />
 	 */
-	public static void setAdminDateTimeFormatPatterns(ComAdmin admin, Model model) {
+	public static void setAdminDateTimeFormatPatterns(Admin admin, Model model) {
 		if (admin != null) {
 	        model.addAttribute("adminTimeZone", admin.getAdminTimezone());
 
@@ -3391,9 +3290,6 @@ public class AgnUtils {
 	/**
 	 * Change all linebreaks ("\r", "\n", "\r\n") into "\r\n",
 	 * so that Windows systems can handle them naturally, Linux and MAC systems will use some internal workaround
-	 *
-	 * @param text
-	 * @return
 	 */
 	public static String normalizeTextLineBreaks(String text) {
 		if (text == null) {
@@ -3578,6 +3474,10 @@ public class AgnUtils {
 		return expression;
 	}
 
+	public static String createHyperLink(String url, String text) {
+		return String.format("<a href=\"%s\" data-relative=\"\">%s</a>", url, text);
+	}
+
 	public static boolean isBalancedBrackets(String expression) {
 		int level = 0;
 		for (char nextChar : expression.toCharArray()) {
@@ -3659,29 +3559,30 @@ public class AgnUtils {
 	
 	public static List<String> sortCollectionWithItemsFirst(Collection<String> sourceCollection, String... keepItemsFirst) {
 		List<String> list = new ArrayList<>(sourceCollection);
-		Collections.sort(list, new Comparator<String>() {
-			@Override
-			public int compare(String o1, String o2) {
-				if (o1 == o2) {
-					return 0;
-				} else if (o1 == null) {
-					return 1;
-				} else if (o1.equals(o2)) {
-					return 0;
-				} else {
-					for (String item : keepItemsFirst) {
-						if (o1.equalsIgnoreCase(item)) {
-							return -1;
-						}
-					}
-					for (String item : keepItemsFirst) {
-						if (o2.equalsIgnoreCase(item)) {
-							return 1;
-						}
-					}
-					return o1.compareTo(o2);
+		list.sort((o1, o2) -> {
+			if (o1 == o2) {
+				return 0;
+			}
+
+			if (o1 == null) {
+				return 1;
+			}
+
+			if (o1.equals(o2)) {
+				return 0;
+			}
+
+			for (String item : keepItemsFirst) {
+				if (o1.equalsIgnoreCase(item)) {
+					return -1;
 				}
 			}
+			for (String item : keepItemsFirst) {
+				if (o2.equalsIgnoreCase(item)) {
+					return 1;
+				}
+			}
+			return o1.compareTo(o2);
 		});
 		return list;
 	}
@@ -3709,11 +3610,42 @@ public class AgnUtils {
         return isValidNumberWithGroupingSeparator(number, groupingSeparator, decimalSeparator);
     }
     
-    public static boolean isZipArchiveFile(File potentialZipFile) throws FileNotFoundException, IOException {
+    public static boolean isZipArchiveFile(File potentialZipFile) throws IOException {
         try (FileInputStream inputStream = new FileInputStream(potentialZipFile)) {
             byte[] magicBytes = new byte[4];
             int readBytes = inputStream.read(magicBytes);
             return readBytes == 4 && magicBytes[0] == 0x50 && magicBytes[1] == 0x4B && magicBytes[2] == 0x03 && magicBytes[3] == 0x04;
         }
     }
+    
+	public static boolean isValidPdf(byte[] data, boolean useAdvancedFileContentTypeDetection) {
+		boolean isValid = AgnUtils.startsWith(data, PDF_SIGNATURE);
+		if (isValid && useAdvancedFileContentTypeDetection) {
+			return ApacheTikaUtils.isValidPdf(data);
+		}
+		return isValid;
+	}
+	
+
+	public static DateTimeFormatter getDateTimeFormatter(String timezone, Locale locale) {
+		String dateTimeFormatPattern = DateTimeFormatterBuilder.getLocalizedDateTimePattern(FormatStyle.SHORT, null, IsoChronology.INSTANCE, locale);
+		dateTimeFormatPattern = dateTimeFormatPattern.replaceFirst("y+", "yyyy").replaceFirst(", ", " ") + " HH:mm";
+
+		return getDateTimeFormatterByPattern(dateTimeFormatPattern, locale, true)
+				.withZone(TimeZone.getTimeZone(timezone).toZoneId())
+				.withResolverStyle(ResolverStyle.STRICT);
+	}
+
+	public static DateTimeFormatter getDateTimeFormatterByPattern(String pattern, Locale locale, boolean useYYYYPattern) {
+		if (useYYYYPattern) {
+			return new DateTimeFormatterBuilder().appendPattern(pattern)
+					//fix to use yyyy instead uuuu
+					//Java 8 uses uuuu for year, not yyyy. In Java 8, yyyy means "year of era" (BC or AD)
+					.parseDefaulting(ChronoField.ERA, 1)
+					.toFormatter(locale);
+		} else {
+			return new DateTimeFormatterBuilder().appendPattern(pattern)
+					.toFormatter(locale);
+		}
+	}
 }

@@ -25,7 +25,7 @@ public class DefaultHtmlCheckErrorToActionErrorsMapper implements HtmlCheckError
 	public ActionMessage mapToActionError(final HtmlCheckError error) {
 		if(error instanceof AbstractTagError) {
 			if(error instanceof ForbiddenTagError) {
-				return new ActionMessage("GWUA.error.html.forbiddenTag", ((ForbiddenTagError) error).getTagName());
+				return new ActionMessage("error.html.forbiddenTag", ((ForbiddenTagError) error).getTagName());
 			} else if(error instanceof UnopenedTagError) {
 				return new ActionMessage("error.html.missingStartTag", ((UnopenedTagError) error).getTagName());
 			} else if(error instanceof UnclosedTagError) {

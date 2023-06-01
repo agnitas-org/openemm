@@ -23,12 +23,12 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.Objects;
 import java.util.Vector;
+import java.util.regex.Pattern;
 
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.http.HttpHost;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpRequestBase;
@@ -100,73 +100,16 @@ public class NetworkUtil {
 	}
 	
 	public static void setHttpClientProxyFromSystem(final RequestConfig.Builder configBuilder, final String url) {
-		// TODO Change code to use determineProxySettingsFromSystem(String)
-		String proxyHost = System.getProperty("http.proxyHost");
-		if (StringUtils.isNotBlank(proxyHost)) {
-			String proxyPort = System.getProperty("http.proxyPort");
-			String nonProxyHosts = System.getProperty("http.nonProxyHosts");
-		
-			if (StringUtils.isBlank(nonProxyHosts)) {
-				if (StringUtils.isNotBlank(proxyHost)) {
-					if (StringUtils.isNotBlank(proxyPort) && AgnUtils.isNumber(proxyPort)) {
-						configBuilder.setProxy(new HttpHost(proxyHost, Integer.parseInt(proxyPort)));
-					} else {
-						configBuilder.setProxy(new HttpHost(proxyHost, 8080));
-					}
-				}
-			} else {
-				boolean ignoreProxy = false;
-				String urlDomain = getDomainFromUrl(url);
-				if (urlDomain != null) {
-					urlDomain = urlDomain.trim().toLowerCase();
-					for (String nonProxyHost : nonProxyHosts.split("\\||,|;| ")) {
-						nonProxyHost = nonProxyHost.trim().toLowerCase();
-						if (urlDomain.equals(nonProxyHost) || urlDomain.endsWith("." + nonProxyHost)) {
-							ignoreProxy = true;
-							break;
-						}
-					}
-					if (!ignoreProxy) {
-						if (StringUtils.isNotBlank(proxyHost)) {
-							if (StringUtils.isNotBlank(proxyPort) && AgnUtils.isNumber(proxyPort)) {
-								configBuilder.setProxy(new HttpHost(proxyHost, Integer.parseInt(proxyPort)));
-							} else {
-								configBuilder.setProxy(new HttpHost(proxyHost, 8080));
-							}
-						}
-					}
-				}
-			}
+		Proxy proxyToUse = getProxyFromSystem(url);
+		if (proxyToUse != null && proxyToUse != Proxy.NO_PROXY) {
+			configBuilder.setProxy(new HttpHost(((InetSocketAddress) proxyToUse.address()).getAddress().getHostAddress(), ((InetSocketAddress) proxyToUse.address()).getPort()));
 		}
 	}
 
 	public static void setHttpClientProxyFromSystem(HttpClient httpClient, String url) {
-		// TODO Change code to use determineProxySettingsFromSystem(String)
-		String proxyHost = System.getProperty("http.proxyHost");
-		if (StringUtils.isNotBlank(proxyHost)) {
-			String nonProxyHosts = System.getProperty("http.nonProxyHosts");
-			String proxyPort = System.getProperty("http.proxyPort");
-
-			if (StringUtils.isBlank(nonProxyHosts)) {
-				httpClient.getHostConfiguration().setProxy(proxyHost, NumberUtils.toInt(proxyPort, 8080));
-			} else {
-				boolean ignoreProxy = false;
-				String urlDomain = getDomainFromUrl(url);
-				if (urlDomain != null) {
-					urlDomain = urlDomain.trim().toLowerCase();
-					for (String nonProxyHost : nonProxyHosts.split("\\||,|;| ")) {
-						nonProxyHost = nonProxyHost.trim().toLowerCase();
-						if (urlDomain.equals(nonProxyHost) || urlDomain.endsWith("." + nonProxyHost)) {
-							ignoreProxy = true;
-							break;
-						}
-					}
-
-					if (!ignoreProxy) {
-						httpClient.getHostConfiguration().setProxy(proxyHost, NumberUtils.toInt(proxyPort, 8080));
-					}
-				}
-			}
+		Proxy proxyToUse = getProxyFromSystem(url);
+		if (proxyToUse != null && proxyToUse != Proxy.NO_PROXY) {
+			httpClient.getHostConfiguration().setProxy(((InetSocketAddress) proxyToUse.address()).getAddress().getHostAddress(), ((InetSocketAddress) proxyToUse.address()).getPort());
 		}
 	}
 	
@@ -184,37 +127,9 @@ public class NetworkUtil {
 	}
 
 	public static void setHttpClientProxyFromSystem(HttpRequestBase request, String url) {
-		// TODO Change code to use determineProxySettingsFromSystem(String)
-		String proxyHost = System.getProperty("http.proxyHost");
-		if (StringUtils.isNotBlank(proxyHost)) {
-			String proxyPort = System.getProperty("http.proxyPort");
-			String nonProxyHosts = System.getProperty("http.nonProxyHosts");
-			
-			if (StringUtils.isBlank(nonProxyHosts)) {
-				if (StringUtils.isNotBlank(proxyPort) && AgnUtils.isNumber(proxyPort)) {
-					request.setConfig(RequestConfig.custom().setProxy(new HttpHost(proxyHost, Integer.parseInt(proxyPort), "http")).build());
-				} else {
-					request.setConfig(RequestConfig.custom().setProxy(new HttpHost(proxyHost, 8080, "http")).build());
-				}
-			} else {
-				boolean ignoreProxy = false;
-				String urlDomain = getDomainFromUrl(url);
-				if (urlDomain != null) {
-					urlDomain = urlDomain.trim().toLowerCase();
-					for (String nonProxyHost : nonProxyHosts.split("\\||,|;| ")) {
-						nonProxyHost = nonProxyHost.trim().toLowerCase();
-						if (urlDomain.equals(nonProxyHost) || urlDomain.endsWith("." + nonProxyHost)) {
-							ignoreProxy = true;
-							break;
-						}
-					}
-
-					if (!ignoreProxy) {
-						request.setConfig(RequestConfig.custom()
-								.setProxy(new HttpHost(proxyHost, NumberUtils.toInt(proxyPort, 8080), "http")).build());
-					}
-				}
-			}
+		Proxy proxyToUse = getProxyFromSystem(url);
+		if (proxyToUse != null && proxyToUse != Proxy.NO_PROXY) {
+			request.setConfig(RequestConfig.custom().setProxy(new HttpHost(((InetSocketAddress) proxyToUse.address()).getAddress().getHostAddress(), ((InetSocketAddress) proxyToUse.address()).getPort(), "http")).build());
 		}
 	}
 	
@@ -238,7 +153,7 @@ public class NetworkUtil {
 	}
 	
 	/**
-	 * Determines to proxy port. 
+	 * Determines to proxy port.
 	 * If nothing is configured, the default port ({@value #PROXY_DEFAULT_PORT}) is returned.
 	 * 
 	 * @return proxy port
@@ -249,6 +164,29 @@ public class NetworkUtil {
 		return StringUtils.isNotBlank(proxyPort) && AgnUtils.isNumber(proxyPort)
 			? Integer.parseInt(proxyPort)
 			: 8080;
+	}
+
+	/**
+	 * This proxy will be used as default proxy.
+	 * To override default proxy usage use "Proxy.NO_PROXY"
+	 *
+	 * It is set via JVM properties on startup:
+	 * java ... -Dhttp.proxyHost=proxy.url.local -Dhttp.proxyPort=8080 -Dhttp.nonProxyHosts='127.0.0.1|localhost'
+	 */
+	public static Proxy getProxyFromSystem(final String url) {
+		final String proxyHost = System.getProperty("http.proxyHost");
+		if (StringUtils.isNotBlank(proxyHost)) {
+			if (NetworkUtil.isProxiedHost(url)) {
+				final String proxyPort = System.getProperty("http.proxyPort");
+				if (StringUtils.isNotBlank(proxyPort) && AgnUtils.isNumber(proxyPort)) {
+					return new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHost, Integer.parseInt(proxyPort)));
+				} else {
+					return new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHost, 8080));
+				}
+			}
+		}
+
+		return Proxy.NO_PROXY;
 	}
 	
 	/**
@@ -261,20 +199,26 @@ public class NetworkUtil {
 	private static final boolean isProxiedHost(final String url) {
 		final String urlDomain = getDomainFromUrl(url);
 		
-		if (urlDomain == null) { 
+		if (urlDomain == null) {
 			return false;
-		}
-		
-		final String nonProxyHosts = System.getProperty("http.nonProxyHosts");
-
-		for (String nonProxyHost : nonProxyHosts.split("\\||,|;| ")) {
-			nonProxyHost = nonProxyHost.trim().toLowerCase();
-			if (urlDomain.equals(nonProxyHost) || urlDomain.endsWith("." + nonProxyHost)) {
-				return false;
+		} else {
+			final String nonProxyHosts = System.getProperty("http.nonProxyHosts");
+	
+			for (String nonProxyHost : nonProxyHosts.split("\\||,|;| ")) {
+				nonProxyHost = nonProxyHost.trim().toLowerCase();
+				if (nonProxyHost.startsWith(".")) {
+					nonProxyHost = nonProxyHost.substring(1);
+				}
+				if (nonProxyHost.contains("*") || nonProxyHost.contains("?")) {
+					if (Pattern.matches(nonProxyHost.replace(".", "\\.").replace("*", ".*").replace("?", "."), urlDomain)) {
+						return false;
+					}
+				} else if (urlDomain.equals(nonProxyHost) || urlDomain.endsWith("." + nonProxyHost)) {
+					return false;
+				}
 			}
+			
+			return true;
 		}
-		
-		return true;
 	}
-
 }

@@ -88,7 +88,8 @@ public class DateUtilities {
 	private static final Pattern MONTH_RULE_PATTERN = Pattern.compile("\\d{0,2}M\\d{2}:\\d{4}");
 	private static final Pattern WEEKDAILY_RULE_PATTERN = Pattern.compile("\\d\\D\\D:\\d{4}");
 
-	public static long A_DAYS_MILLISECONDS = 1000 * 60 * 60 * 24;
+	public static long A_MINUTE_MILLISECONDS = 1000 * 60;
+	public static long A_DAYS_MILLISECONDS = A_MINUTE_MILLISECONDS * 60 * 24;
 
 	private final static Pattern MONTH_REGEX = Pattern.compile("m+",  Pattern.CASE_INSENSITIVE);
 	private final static Pattern DAY_REGEX = Pattern.compile("d+",  Pattern.CASE_INSENSITIVE);
@@ -735,6 +736,13 @@ public class DateUtilities {
 		return returnDate.getTime();
     }
 
+	public static Date addHoursToDate(Date initDate, int hoursToAdd) {
+		GregorianCalendar returnDate = new GregorianCalendar();
+		returnDate.setTime(initDate);
+		returnDate.add(Calendar.HOUR_OF_DAY, hoursToAdd);
+		return returnDate.getTime();
+    }
+
 	public static Date addMinutesToDate(Date initDate, int minutesToAdd) {
 		GregorianCalendar returnDate = new GregorianCalendar();
 		returnDate.setTime(initDate);
@@ -770,6 +778,10 @@ public class DateUtilities {
 		returnDate.add(Calendar.HOUR, -hoursAgo);
 		return returnDate.getTime();
     }
+
+    public static Date getDateOfNextDay(Date initDate) {
+		return addDaysToDate(initDate, 1);
+	}
     
     public static Date getDateOfHoursAgo(int hoursAgo) {
     	return getDateOfHoursAgo(new Date(), hoursAgo);
@@ -1415,5 +1427,9 @@ public class DateUtilities {
         }
         Collections.reverse(days);
 		return days;
+	}
+
+	public static long millisecondsToMinutes(long ms) {
+		return ms / A_MINUTE_MILLISECONDS;
 	}
 }

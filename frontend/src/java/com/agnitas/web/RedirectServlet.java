@@ -44,7 +44,7 @@ import com.agnitas.beans.ComTrackableLink;
 import com.agnitas.beans.Company;
 import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.dao.ComMailingDao;
-import com.agnitas.dao.ComTrackableLinkDao;
+import com.agnitas.dao.TrackableLinkDao;
 import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
 import com.agnitas.emm.core.action.service.EmmActionService;
 import com.agnitas.emm.core.commons.intelliad.IntelliAdMailingSettings;
@@ -92,7 +92,7 @@ public class RedirectServlet extends HttpServlet {
 	private ComDeviceService deviceService;
 	private ClientService clientService;
 	private ExtensibleUIDService extensibleUIDService;
-	private ComTrackableLinkDao trackableLinkDao;
+	private TrackableLinkDao trackableLinkDao;
 	private EmmActionService emmActionService;
 	private ComCompanyDao companyDao;
 	private ConfigService configService;
@@ -332,14 +332,14 @@ public class RedirectServlet extends HttpServlet {
         
         // Execute the mailing click action
         final int clickActionID = getMailingDao().getMailingClickAction(mailingID, companyID);
-        executeLinkAction(clickActionID, deviceID, companyID, customerID, mailingID, deviceClass, request);
+        executeLinkAction(clickActionID, deviceID, uid, companyID, customerID, mailingID, deviceClass, request);
         
         final int linkActionID = trackableLink.getActionID();
-        executeLinkAction(linkActionID, deviceID, companyID, customerID, mailingID, deviceClass, request);
+        executeLinkAction(linkActionID, deviceID, uid, companyID, customerID, mailingID, deviceClass, request);
 	
 	}
 	
-	private final void executeLinkAction(final int actionID, final int deviceID, final int companyID, final int customerID, final int mailingID, final DeviceClass deviceClass, final HttpServletRequest request) throws Exception {
+	private final void executeLinkAction(final int actionID, final int deviceID, final ComExtensibleUID uid, final int companyID, final int customerID, final int mailingID, final DeviceClass deviceClass, final HttpServletRequest request) throws Exception {
 		if (actionID != 0) {
 			// "_request" is the original unmodified request which might be needed (and used) somewhere else ...
 			final Map<String, String> tmpRequestParams = AgnUtils.getReqParameters(request);
@@ -350,6 +350,7 @@ public class RedirectServlet extends HttpServlet {
 			final CaseInsensitiveMap<String, Object> params = new CaseInsensitiveMap<>();
 			params.put("requestParameters", tmpRequestParams);
 			params.put("_request", request);
+			params.put("_uid", uid);
 			params.put("customerID", customerID);
 			params.put("mailingID", mailingID);
 			params.put("actionErrors", actionOperationErrors);
@@ -482,13 +483,13 @@ public class RedirectServlet extends HttpServlet {
 	}
 
 	@Required
-	public void setTrackableLinkDao(ComTrackableLinkDao trackableLinkDao) {
+	public void setTrackableLinkDao(TrackableLinkDao trackableLinkDao) {
 		this.trackableLinkDao = trackableLinkDao;
 	}
 
-	private ComTrackableLinkDao getTrackableLinkDao() {
+	private TrackableLinkDao getTrackableLinkDao() {
 		if (trackableLinkDao == null) {
-			trackableLinkDao = (ComTrackableLinkDao) getApplicationContext().getBean("TrackableLinkDao");
+			trackableLinkDao = (TrackableLinkDao) getApplicationContext().getBean("TrackableLinkDao");
 		}
 		return trackableLinkDao;
 	}

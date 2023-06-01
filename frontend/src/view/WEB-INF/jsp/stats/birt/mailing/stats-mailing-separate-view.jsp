@@ -147,11 +147,14 @@
 
                                 <c:if test="${isReportCanBeShown && (mailingStatisticForm.dateSelectMode ne 'NONE')}">
                                     <ul class="tile-header-nav">
-                                        <li class="${mailingStatisticForm.dateSelectMode == 'LAST_TENHOURS' ? 'active' : ''}">
-                                            <a href="#" data-form-set="dateSelectMode:LAST_TENHOURS, statisticType:${mailingStatisticForm.statisticType}, startDate.date: '', endDate.date: ''" data-form-submit>
-                                                <mvc:message code="TenHours"/>
-                                            </a>
-                                        </li>
+                                        <c:if test="${mailingStatisticForm.show10HoursTab}">
+                                            <li class="${mailingStatisticForm.dateSelectMode == 'LAST_TENHOURS' ? 'active' : ''}">
+                                                <a href="#" data-form-set="dateSelectMode:LAST_TENHOURS, statisticType:${mailingStatisticForm.statisticType}, startDate.date: '', endDate.date: ''" data-form-submit>
+                                                    <mvc:message code="TenHours"/>
+                                                </a>
+                                            </li>
+                                        </c:if>
+
                                         <li class="${mailingStatisticForm.dateSelectMode == 'SELECT_DAY' ? 'active' : ''}">
                                             <a href="#" data-form-set="dateSelectMode:SELECT_DAY, statisticType:${mailingStatisticForm.statisticType}, startDate.date: '', endDate.date: ''" data-form-submit>
                                                 <mvc:message code="Day"/>
@@ -201,7 +204,7 @@
                                                 <div class="notification-header">
                                                     <p class="headline">
                                                         <i class="icon icon-state-info"></i>
-                                                        <span class="text"><mvc:message code="GWUA.info.statistics.endDeviceAndModels"/></span>
+                                                        <span class="text"><mvc:message code="info.statistics.endDeviceAndModels"/></span>
                                                     </p>
                                                 </div>
                                             </div>

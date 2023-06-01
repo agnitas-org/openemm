@@ -20,7 +20,7 @@ import org.agnitas.preview.PreviewFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.JavaMailService;
 import com.agnitas.emm.core.admin.service.AdminPasswordChangedNotifier;
 import com.agnitas.emm.core.admin.service.AdminService;
@@ -28,8 +28,7 @@ import com.agnitas.messages.I18nString;
 
 public final class MailAdminPasswordChangedNotifier implements AdminPasswordChangedNotifier {
 
-	/** The logger. */
-	private static final transient Logger LOGGER = LogManager.getLogger(MailAdminPasswordChangedNotifier.class);
+	private static final Logger LOGGER = LogManager.getLogger(MailAdminPasswordChangedNotifier.class);
 
 	private final ConfigService configService;
 	private final AdminService adminService;
@@ -44,7 +43,7 @@ public final class MailAdminPasswordChangedNotifier implements AdminPasswordChan
 	}
 
 	@Override
-	public final void notifyAdminAboutChangedPassword(final ComAdmin admin) {
+	public final void notifyAdminAboutChangedPassword(final Admin admin) {
 		if (LOGGER.isInfoEnabled()) {
 			LOGGER.info(String.format("Password for admin '%s' (admin ID %d, company ID %d) has been changed", admin.getUsername(), admin.getAdminID(), admin.getCompanyID()));
 		}

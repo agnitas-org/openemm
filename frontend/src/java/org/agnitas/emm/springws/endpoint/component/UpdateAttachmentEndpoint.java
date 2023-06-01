@@ -17,9 +17,10 @@ import org.agnitas.emm.core.component.service.ComponentModel;
 import org.agnitas.emm.core.component.service.ComponentService;
 import org.agnitas.emm.springws.endpoint.BaseEndpoint;
 import org.agnitas.emm.springws.endpoint.MailingEditableCheck;
-import org.agnitas.emm.springws.endpoint.Utils;
+import org.agnitas.emm.springws.endpoint.Namespaces;
 import org.agnitas.emm.springws.jaxb.UpdateAttachmentRequest;
 import org.agnitas.emm.springws.jaxb.UpdateAttachmentResponse;
+import org.agnitas.emm.springws.util.SecurityContextAccess;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.ws.server.endpoint.annotation.Endpoint;
 import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
@@ -29,22 +30,22 @@ import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 @Endpoint
 public class UpdateAttachmentEndpoint extends BaseEndpoint {
 
-	private ComponentService componentService;
+	private final ComponentService componentService;
 	private final MailingEditableCheck mailingEditableCheck;
+	private final SecurityContextAccess securityContextAccess;
 
-	public UpdateAttachmentEndpoint(@Qualifier("componentService") ComponentService componentService, final MailingEditableCheck mailingEditableCheck) {
-		this.componentService = componentService;
-		this.mailingEditableCheck = Objects.requireNonNull(mailingEditableCheck);
+	public UpdateAttachmentEndpoint(@Qualifier("componentService") ComponentService componentService, final MailingEditableCheck mailingEditableCheck, final SecurityContextAccess securityContextAccess) {
+		this.componentService = Objects.requireNonNull(componentService, "componentService");
+		this.mailingEditableCheck = Objects.requireNonNull(mailingEditableCheck, "mailingEditableCheck");
+		this.securityContextAccess = Objects.requireNonNull(securityContextAccess, "securityContextAccess");
 	}
 
-	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "UpdateAttachmentRequest")
+	@PayloadRoot(namespace = Namespaces.AGNITAS_ORG, localPart = "UpdateAttachmentRequest")
 	public @ResponsePayload UpdateAttachmentResponse updateAttachment(@RequestPayload UpdateAttachmentRequest request) throws Exception {
-		this.mailingEditableCheck.requireMailingForComponentEditable(request.getComponentID(), Utils.getUserCompany());
-		
-		UpdateAttachmentResponse response = new UpdateAttachmentResponse();
+		this.mailingEditableCheck.requireMailingForComponentEditable(request.getComponentID(), this.securityContextAccess.getWebserviceUserCompanyId());
 
-		ComponentModel model = new ComponentModel();
-		model.setCompanyId(Utils.getUserCompany());
+		final ComponentModel model = new ComponentModel();
+		model.setCompanyId(this.securityContextAccess.getWebserviceUserCompanyId());
 		model.setComponentId(request.getComponentID());
 		model.setMimeType(request.getMimeType());
 		model.setComponentType(MailingComponentType.Attachment);
@@ -52,6 +53,8 @@ public class UpdateAttachmentEndpoint extends BaseEndpoint {
 		model.setData(request.getData());
 
 		componentService.updateComponent(model);
+		
+		final UpdateAttachmentResponse response = new UpdateAttachmentResponse();
 		return response;
 	}
 

@@ -49,7 +49,6 @@ import org.agnitas.emm.core.recipient.RecipientUtils;
 import org.agnitas.emm.core.recipient.service.SubscriberLimitCheck;
 import org.agnitas.emm.core.recipient.service.SubscriberLimitExceededException;
 import org.agnitas.emm.core.useractivitylog.dao.UserActivityLogDao;
-import org.agnitas.service.ColumnInfoService;
 import org.agnitas.service.ProfileImportWorker;
 import org.agnitas.service.ProfileImportWorkerFactory;
 import org.agnitas.util.AgnUtils;
@@ -68,9 +67,10 @@ import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.ComRecipientMailing;
 import com.agnitas.beans.ProfileField;
+import com.agnitas.beans.ProfileFieldMode;
 import com.agnitas.dao.ComBindingEntryDao;
 import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.dao.DatasourceDescriptionDao;
@@ -92,6 +92,7 @@ import com.agnitas.json.JsonNode;
 import com.agnitas.json.JsonObject;
 import com.agnitas.json.JsonReader.JsonToken;
 import com.agnitas.json.JsonWriter;
+import com.agnitas.service.ColumnInfoService;
 
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.http.HttpServletRequest;
@@ -175,7 +176,7 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 	}
 
 	@Override
-	public void doService(HttpServletRequest request, HttpServletResponse response, ComAdmin admin, byte[] requestData, File requestDataFile, BaseRequestResponse restfulResponse, ServletContext context, RequestMethod requestMethod, boolean extendedLogging) throws Exception {
+	public void doService(HttpServletRequest request, HttpServletResponse response, Admin admin, byte[] requestData, File requestDataFile, BaseRequestResponse restfulResponse, ServletContext context, RequestMethod requestMethod, boolean extendedLogging) throws Exception {
 		if (requestMethod == RequestMethod.GET) {
 			((JsonRequestResponse) restfulResponse).setJsonResponseData(new JsonNode(getCustomerData(request, admin)));
 		} else if (requestMethod == RequestMethod.DELETE) {
@@ -199,7 +200,7 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 	 * @return
 	 * @throws Exception
 	 */
-	private Object getCustomerData(HttpServletRequest request, ComAdmin admin) throws Exception {
+	private Object getCustomerData(HttpServletRequest request, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.RECIPIENT_SHOW)) {
 			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.RECIPIENT_SHOW.toString() + "'");
 		}
@@ -242,7 +243,7 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 				JsonObject customerJsonObject = new JsonObject();
 				for (String key : AgnUtils.sortCollectionWithItemsFirst(customerDataMap.keySet(), "customer_id", "email")) {
 					ProfileField profileField = profileFields.get(key);
-					if (profileField != null && profileField.getModeEdit() != ProfileField.MODE_EDIT_NOT_VISIBLE) {
+					if (profileField != null && profileField.getModeEdit() != ProfileFieldMode.NotVisible) {
 						if (profileField.getSimpleDataType() == SimpleDataType.Date && customerDataMap.get(key) instanceof Date) {
 							customerJsonObject.add(key.toLowerCase(), new SimpleDateFormat(DateUtilities.ISO_8601_DATE_FORMAT_NO_TIMEZONE).format(customerDataMap.get(key)));
 						} else if (profileField.getSimpleDataType() == SimpleDataType.DateTime && customerDataMap.get(key) instanceof Date) {
@@ -264,7 +265,7 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 			JsonObject customerJsonObject = new JsonObject();
 			for (String key : AgnUtils.sortCollectionWithItemsFirst(customerDataMap.keySet(), "customer_id", "email")) {
 				ProfileField profileField = profileFields.get(key);
-				if (profileField != null && profileField.getModeEdit() != ProfileField.MODE_EDIT_NOT_VISIBLE) {
+				if (profileField != null && profileField.getModeEdit() != ProfileFieldMode.NotVisible) {
 					if (profileField.getSimpleDataType() == SimpleDataType.Date && customerDataMap.get(key) instanceof Date) {
 						customerJsonObject.add(key.toLowerCase(), new SimpleDateFormat(DateUtilities.ISO_8601_DATE_FORMAT_NO_TIMEZONE).format(customerDataMap.get(key)));
 					} else if (profileField.getSimpleDataType() == SimpleDataType.DateTime && customerDataMap.get(key) instanceof Date) {
@@ -318,7 +319,7 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 	 * @return
 	 * @throws Exception
 	 */
-	private Object deleteCustomer(HttpServletRequest request, byte[] requestData, File requestDataFile, ComAdmin admin) throws Exception {
+	private Object deleteCustomer(HttpServletRequest request, byte[] requestData, File requestDataFile, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.RECIPIENT_DELETE)) {
 			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.RECIPIENT_DELETE.toString() + "'");
 		}
@@ -415,7 +416,7 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 	 * @return
 	 * @throws Exception
 	 */
-	private Object createNewCustomer(HttpServletRequest request, byte[] requestData, File requestDataFile, ComAdmin admin) throws Exception {
+	private Object createNewCustomer(HttpServletRequest request, byte[] requestData, File requestDataFile, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.RECIPIENT_CREATE)) {
 			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.RECIPIENT_CREATE.toString() + "'");
 		}
@@ -602,7 +603,7 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 					JsonObject customerJsonObject = new JsonObject();
 					for (String key : AgnUtils.sortCollectionWithItemsFirst(customerDataMap.keySet(), "customer_id", "email")) {
 						ProfileField profileField = profileFields.get(key);
-						if (profileField != null && profileField.getModeEdit() != ProfileField.MODE_EDIT_NOT_VISIBLE) {
+						if (profileField != null && profileField.getModeEdit() != ProfileFieldMode.NotVisible) {
 							if (profileField.getSimpleDataType() == SimpleDataType.Date && customerDataMap.get(key) instanceof Date) {
 								customerJsonObject.add(key.toLowerCase(), new SimpleDateFormat(DateUtilities.ISO_8601_DATE_FORMAT_NO_TIMEZONE).format(customerDataMap.get(key)));
 							} else if (profileField.getSimpleDataType() == SimpleDataType.DateTime && customerDataMap.get(key) instanceof Date) {
@@ -729,7 +730,7 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 	 * @return
 	 * @throws Exception
 	 */
-	private Object createOrUpdateCustomer(HttpServletRequest request, byte[] requestData, File requestDataFile, ComAdmin admin) throws Exception {
+	private Object createOrUpdateCustomer(HttpServletRequest request, byte[] requestData, File requestDataFile, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.RECIPIENT_CHANGE)) {
 			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.RECIPIENT_CHANGE.toString() + "'");
 		}
@@ -1026,7 +1027,7 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 					JsonObject customerJsonObject = new JsonObject();
 					for (String key : AgnUtils.sortCollectionWithItemsFirst(customerDataMap.keySet(), "customer_id", "email")) {
 						ProfileField profileField = profileFields.get(key);
-						if (profileField != null && profileField.getModeEdit() != ProfileField.MODE_EDIT_NOT_VISIBLE) {
+						if (profileField != null && profileField.getModeEdit() != ProfileFieldMode.NotVisible) {
 							if (profileField.getSimpleDataType() == SimpleDataType.Date && customerDataMap.get(key) instanceof Date) {
 								customerJsonObject.add(key.toLowerCase(), new SimpleDateFormat(DateUtilities.ISO_8601_DATE_FORMAT_NO_TIMEZONE).format(customerDataMap.get(key)));
 							} else if (profileField.getSimpleDataType() == SimpleDataType.DateTime && customerDataMap.get(key) instanceof Date) {
@@ -1154,7 +1155,7 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 			|| StringUtils.endsWithIgnoreCase(item.getKey(), ComRecipientDao.SUPPLEMENTAL_DATECOLUMN_SUFFIX_SECOND));
 	}
 
-	private ImportStatus importRecipients(ComAdmin admin, ImportMode importMode, String keyColumn, List<Integer> mailingListIdsToAssign, File temporaryImportFile, String sessionID, Set<MediaTypes> mediaTypes) throws Exception {
+	private ImportStatus importRecipients(Admin admin, ImportMode importMode, String keyColumn, List<Integer> mailingListIdsToAssign, File temporaryImportFile, String sessionID, Set<MediaTypes> mediaTypes) throws Exception {
 		ImportProfile importProfile = new ImportProfileImpl();
 		importProfile.setCompanyId(admin.getCompanyID());
 		importProfile.setAdminId(admin.getAdminID());
@@ -1169,6 +1170,8 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 		importProfile.setDatatype("JSON"); // use JSON Import
 		importProfile.setCharset(Charset.UTF_8.getIntValue());
 		importProfile.setMediatypes(mediaTypes);
+		importProfile.setReportLocale(admin.getLocale());
+		importProfile.setReportTimezone(admin.getAdminTimezone());
 
 		DatasourceDescription dsDescription = new DatasourceDescriptionImpl();
 		dsDescription.setId(0);

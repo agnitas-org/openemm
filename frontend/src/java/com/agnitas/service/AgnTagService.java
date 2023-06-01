@@ -15,11 +15,10 @@ import java.util.Set;
 import java.util.function.Predicate;
 
 import org.agnitas.beans.TagDetails;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.DynTagException;
 
 import com.agnitas.beans.AgnTagDto;
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.DynamicTag;
 
 public interface AgnTagService {
@@ -37,6 +36,8 @@ public interface AgnTagService {
      * @throws DynTagException if parsing error occurred.
      */
     List<DynamicTag> getDynTags(String content, AgnDynTagGroupResolver resolver) throws DynTagException;
+
+    List<String> getDynTagsNames(String content, AgnDynTagGroupResolver resolver);
 
     /**
      * Perform a search for all agn-tags (except dynamic tags) and filter them by given {@code predicate}.
@@ -77,7 +78,7 @@ public interface AgnTagService {
      * @return translated content.
      * @throws Exception if parsing error occurred.
      */
-    String resolveTags(String content, @VelocityCheck int companyId, int mailingId, int mailingListId, int customerId) throws Exception;
+    String resolveTags(String content, int companyId, int mailingId, int mailingListId, int customerId) throws Exception;
 
     /**
      * Generate a text content that a {@code tag} should be replaced with.
@@ -89,9 +90,9 @@ public interface AgnTagService {
      * @param customerId an identifier of a recipient or 0.
      * @return a text content that a referenced tag produces.
      */
-    String resolve(TagDetails tag, @VelocityCheck int companyId, int mailingId, int mailingListId, int customerId);
+    String resolve(TagDetails tag, int companyId, int mailingId, int mailingListId, int customerId);
 
-    List<AgnTagDto> getSupportedAgnTags(ComAdmin admin);
+    List<AgnTagDto> getSupportedAgnTags(Admin admin);
 
     boolean isContainsThirdPartyText(String text);
 

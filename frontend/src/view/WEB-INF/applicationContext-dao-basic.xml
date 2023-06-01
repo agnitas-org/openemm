@@ -33,7 +33,7 @@
 	</bean>
 
 <!-- ============================================================================================================================== Admin -->
-	<bean id="AdminGroupDao" class="com.agnitas.dao.impl.ComAdminGroupDaoImpl">
+	<bean id="AdminGroupDao" class="com.agnitas.dao.impl.AdminGroupDaoImpl">
 		<property name="dataSource" ref="dataSource" />
 		<property name="javaMailService" ref="JavaMailService" />
 		<property name="companyDao" ref="CompanyDao" />
@@ -54,13 +54,6 @@
 	<bean id="StatDao" class="com.agnitas.mailing.autooptimization.dao.impl.ComOptimizationStatDaoImpl">
 		<property name="dataSource" ref="dataSource" />
 		<property name="javaMailService" ref="JavaMailService" />
-	</bean>
-
-<!-- ============================================================================================================================== Binding entry -->
-	<bean id="BindingEntryDao" class="com.agnitas.dao.impl.ComBindingEntryDaoImpl">
-		<property name="dataSource" ref="dataSource" />
-		<property name="javaMailService" ref="JavaMailService" />
-		<property name="recipientDao" ref="RecipientDao" />
 	</bean>
 
 <!-- ============================================================================================================================== Blacklist -->
@@ -342,7 +335,7 @@
 	</bean>
 
 <!-- ============================================================================================================================== Mailing delivery lock -->
-	<bean id="MailingDeliveryLockDao" class="com.agnitas.emm.core.mailing.dao.impl.MailingDeliveryLockDaoImpl">
+	<bean id="MailingDeliveryBlockingDao" class="com.agnitas.emm.core.mailing.dao.impl.MailingDeliveryBlockingDaoImpl">
 		<property name="dataSource" ref="dataSource" />
 		<property name="javaMailService" ref="JavaMailService" />
 	</bean>
@@ -383,7 +376,7 @@
 	</bean>
 
 <!-- ============================================================================================================================== Profile fields -->
-	<bean id="ProfileFieldDao" class="com.agnitas.dao.impl.ComProfileFieldDaoImpl">
+	<bean id="ProfileFieldDao" class="com.agnitas.dao.impl.ProfileFieldDaoImpl">
 		<property name="dataSource" ref="dataSource" />
 		<property name="javaMailService" ref="JavaMailService" />
 		<property name="configService" ref="ConfigService" />
@@ -461,7 +454,7 @@
 	</bean>
 	
 <!-- ============================================================================================================================== Trackable links -->
-	<bean id="TrackableLinkDao" class="com.agnitas.dao.impl.ComTrackableLinkDaoImpl">
+	<bean id="TrackableLinkDao" class="com.agnitas.dao.impl.TrackableLinkDaoImpl">
 		<property name="dataSource" ref="dataSource" />
 		<property name="javaMailService" ref="JavaMailService" />
 		<property name="configService" ref="ConfigService" />
@@ -505,12 +498,6 @@
 
 <!-- ============================================================================================================================== RecipientsReport -->
 	<bean id="RecipientsReportDao" class="com.agnitas.emm.core.recipientsreport.dao.impl.RecipientsReportDaoImpl">
-		<property name="dataSource" ref="dataSource" />
-		<property name="javaMailService" ref="JavaMailService" />
-	</bean>
-	
-<!-- ============================================================================================================================== Download -->
-	<bean id="DownloadDao" class="com.agnitas.emm.core.download.dao.impl.DownloadDaoImpl">
 		<property name="dataSource" ref="dataSource" />
 		<property name="javaMailService" ref="JavaMailService" />
 	</bean>
@@ -647,9 +634,12 @@
 	</bean>
 
     <bean id="MailingStatisticsDao" class="com.agnitas.dao.impl.MailingStatisticsDaoImpl">
+    	<constructor-arg ref="ConfigService" />
+    	<constructor-arg ref="TargetDao" />
+    	<constructor-arg ref="targetService" />
+		
+		
 		<property name="dataSource" ref="dataSource" />
 		<property name="javaMailService" ref="JavaMailService" />
-		<property name="configService" ref="ConfigService" />
-		<property name="targetDao" ref="TargetDao" />
     </bean>
 </beans>

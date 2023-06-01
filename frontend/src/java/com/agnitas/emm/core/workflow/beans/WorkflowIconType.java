@@ -25,6 +25,8 @@ public enum WorkflowIconType implements IntEnum {
     FORM(Constants.FORM_VALUE, Constants.FORM_ID),
     MAILING(Constants.MAILING_VALUE, Constants.MAILING_ID),
 
+	MAILING_MEDIATYPE_SMS(Constants.MAILING_MEDIATYPE_SMS_VALUE, Constants.MAILING_MEDIATYPE_SMS_ID),
+	MAILING_MEDIATYPE_POST(Constants.MAILING_MEDIATYPE_POST_VALUE, Constants.MAILING_MEDIATYPE_POST_ID),
 	ACTION_BASED_MAILING(Constants.ACTION_BASED_MAILING_VALUE, Constants.ACTION_BASED_MAILING_ID),
 	DATE_BASED_MAILING(Constants.DATE_BASED_MAILING_VALUE, Constants.DATE_BASED_MAILING_ID),
 	FOLLOWUP_MAILING(Constants.FOLLOWUP_MAILING_VALUE, Constants.FOLLOWUP_MAILING_ID),
@@ -71,6 +73,8 @@ public enum WorkflowIconType implements IntEnum {
 		public static final String SC_BIRTHDAY_VALUE = "scBirthday";
 		public static final String SC_DOI_VALUE = "scDOI";
 		public static final String SC_ABTEST_VALUE = "scABTest";*/
+		public static final String MAILING_MEDIATYPE_SMS_VALUE = "mailing_mediatype_sms";
+		public static final String MAILING_MEDIATYPE_POST_VALUE = "mailing_mediatype_post";
 		public static final String ACTION_BASED_MAILING_VALUE = "actionbased_mailing";
 		public static final String DATE_BASED_MAILING_VALUE = "datebased_mailing";
 		public static final String FOLLOWUP_MAILING_VALUE = "followup_mailing";
@@ -96,6 +100,8 @@ public enum WorkflowIconType implements IntEnum {
 		public static final int FOLLOWUP_MAILING_ID    = 16;
 		public static final int IMPORT_ID    = 17;
 		public static final int EXPORT_ID    = 18;
+		public static final int MAILING_MEDIATYPE_SMS_ID = 19;
+		public static final int MAILING_MEDIATYPE_POST_ID = 20;
     }
 
 }

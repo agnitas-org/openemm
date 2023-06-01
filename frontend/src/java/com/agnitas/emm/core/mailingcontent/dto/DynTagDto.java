@@ -11,6 +11,7 @@
 package com.agnitas.emm.core.mailingcontent.dto;
 
 import java.util.List;
+import java.util.Objects;
 
 public class DynTagDto {
 
@@ -67,5 +68,18 @@ public class DynTagDto {
 
     public void setCompanyId(int companyId) {
         this.companyId = companyId;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        DynTagDto dynTagDto = (DynTagDto) o;
+        return id == dynTagDto.id && mailingId == dynTagDto.mailingId && companyId == dynTagDto.companyId && Objects.equals(name, dynTagDto.name);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, mailingId, companyId, name);
     }
 }

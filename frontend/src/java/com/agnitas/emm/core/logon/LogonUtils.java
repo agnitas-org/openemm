@@ -14,7 +14,7 @@ import jakarta.servlet.http.HttpServletRequest;
 
 import org.springframework.web.util.WebUtils;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.logon.beans.LogonState;
 import com.agnitas.emm.core.logon.beans.LogonStateBundle;
 
@@ -37,7 +37,7 @@ public class LogonUtils {
         return null;
     }
 
-    public static ComAdmin getAdmin(HttpServletRequest request) {
+    public static Admin getAdmin(HttpServletRequest request) {
         LogonStateBundle bundle = getBundle(request, false);
 
         if (bundle == null) {

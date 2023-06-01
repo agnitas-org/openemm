@@ -12,12 +12,14 @@
 package com.agnitas.emm.springws.permissions;
 
 import java.util.Locale;
+import java.util.Objects;
 
-import org.agnitas.emm.springws.endpoint.Utils;
 import org.agnitas.emm.springws.security.authorities.AllEndpointsAuthority;
 import org.agnitas.emm.springws.security.authorities.EndpointAuthority;
+import org.agnitas.emm.springws.util.SecurityContextAccess;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.ws.context.MessageContext;
 import org.springframework.ws.soap.SoapBody;
 import org.springframework.ws.soap.SoapHeaderElement;
@@ -39,6 +41,14 @@ public final class PermissionCheckingEndpointInterceptor implements SoapEndpoint
 	
 	/** The logger. */
 	private static final transient Logger LOGGER = LogManager.getLogger(PermissionCheckingEndpointInterceptor.class);
+	
+	/** Accessor for Spring WS security context. */
+	private SecurityContextAccess securityContextAccess;
+	
+	@Autowired
+	public PermissionCheckingEndpointInterceptor(final SecurityContextAccess securityContextAccess) {
+		this.securityContextAccess = Objects.requireNonNull(securityContextAccess, "securityContextAccess");
+	}
 
 	@Override
 	public final void afterCompletion(final MessageContext messageContext, final Object endpoint, final Exception arg2) throws Exception {
@@ -53,8 +63,8 @@ public final class PermissionCheckingEndpointInterceptor implements SoapEndpoint
 	@Override
 	public final boolean handleRequest(final MessageContext messageContext, final Object endpoint) throws Exception {
 		final String endpointName = permissionFromEndpointInstance(endpoint);
-		
-		if (Utils.isAuthorityGranted(new EndpointAuthority(endpointName)) || Utils.isAuthorityGranted(AllEndpointsAuthority.INSTANCE)) {
+	
+		if (this.securityContextAccess.isAuthorityGranted(new EndpointAuthority(endpointName)) || this.securityContextAccess.isAuthorityGranted(AllEndpointsAuthority.INSTANCE)) {
 			return true;
 		} else {
             final SoapBody response = ((SoapMessage) messageContext.getResponse()).getSoapBody();

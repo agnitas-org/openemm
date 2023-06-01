@@ -38,12 +38,13 @@ import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.ProfileField;
+import com.agnitas.beans.ProfileFieldMode;
 import com.agnitas.dao.impl.ComCompanyDaoImpl;
 import com.agnitas.emm.core.export.util.ExportWizardUtils;
 import com.agnitas.emm.core.target.service.ComTargetService;
-import com.agnitas.service.ComColumnInfoService;
+import com.agnitas.service.ColumnInfoService;
 
 public class RecipientExportWorker extends GenericExportWorker {
 
@@ -53,10 +54,10 @@ public class RecipientExportWorker extends GenericExportWorker {
 	public static final String ALL_BINDING_TYPES = "E";
 
 	private final ComTargetService targetService;
-    private final ComColumnInfoService columnInfoService;
+    private final ColumnInfoService columnInfoService;
 
 	private ExportPredef exportProfile;
-	private ComAdmin admin;
+	private Admin admin;
     
 	/**
 	 * Descriptive username for manually executed exports (non-AutoExport)
@@ -95,11 +96,11 @@ public class RecipientExportWorker extends GenericExportWorker {
 		this.remoteFile = remoteFile;
 	}
 	
-	public final ComAdmin getAdmin() {
+	public final Admin getAdmin() {
 		return this.admin;
 	}
 
-	public RecipientExportWorker(ExportPredef exportProfile, ComAdmin admin, final ComTargetService targetService, final ComColumnInfoService columnInfoService) throws Exception {
+	public RecipientExportWorker(ExportPredef exportProfile, Admin admin, final ComTargetService targetService, final ColumnInfoService columnInfoService) throws Exception {
 		super();
 		this.exportProfile = exportProfile;
 		this.admin = admin;
@@ -152,8 +153,8 @@ public class RecipientExportWorker extends GenericExportWorker {
 			boolean isFirstColumn = true;
             List<ExportColumnMapping> profileFieldsToExport = getProfileFieldsToExport(companyID, adminId);
 
-            CaseInsensitiveMap<String, ProfileField> profilefields = columnInfoService.getColumnInfoMap(companyID, admin.getAdminID());
-            
+    		CaseInsensitiveMap<String, ProfileField> profilefields = columnInfoService.getColumnInfoMap(companyID, admin.getAdminID());
+    		
             for (String columnName : getSplittedColumnNames(profileFieldsToExport)) {
 				if ("mailing_bounce".equalsIgnoreCase(columnName)) {
 					if (exportProfile.getUserStatus() == UserStatus.Bounce.getStatusCode()) {
@@ -168,7 +169,7 @@ public class RecipientExportWorker extends GenericExportWorker {
 							customerTableSql.append("bounce.exit_mailing_id AS ExitMailingID, bounce.mailinglist_id AS Mailinglist, bounce.detail AS BounceDetail");
 						}
 					}
-				} else if (profilefields.get(columnName).getModeEdit() != ProfileField.MODE_EDIT_EDITABLE && profilefields.get(columnName).getModeEdit() != ProfileField.MODE_EDIT_READONLY) {
+				} else if (profilefields.get(columnName).getModeEdit() != ProfileFieldMode.Editable && profilefields.get(columnName).getModeEdit() != ProfileFieldMode.ReadOnly) {
 					throw new ExportException(false, ExportException.Reason.ColumnNotExportableError, columnName);
 				} else {
 					if (isFirstColumn) {
@@ -422,7 +423,7 @@ public class RecipientExportWorker extends GenericExportWorker {
 	            .filter(new Predicate<ProfileField>() {
 					@Override
 					public boolean test(ProfileField profileField) {
-						return profileField.getModeEdit() != ProfileField.MODE_EDIT_NOT_VISIBLE;
+						return profileField.getModeEdit() != ProfileFieldMode.NotVisible;
 					}
 				})
 	            .map(profileField -> {

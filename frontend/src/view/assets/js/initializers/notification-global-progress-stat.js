@@ -50,7 +50,7 @@
             var endDayFromDatePicker = $('#endDay').val();
 
             $.ajax({
-                type: "POST",
+                type: "GET",
                 url: url,
                 data: {
                     dateMode: dateMode,

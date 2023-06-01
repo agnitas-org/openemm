@@ -30,7 +30,7 @@ import org.springframework.beans.factory.annotation.Required;
 import org.springframework.http.MediaType;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.recipientsreport.bean.RecipientsReport;
 import com.agnitas.emm.core.recipientsreport.dao.RecipientsReportDao;
@@ -63,9 +63,9 @@ public class RecipientsReportServiceImpl implements RecipientsReportService {
     }
     
     @Override
-    public RecipientsReport createAndSaveImportReport(ComAdmin admin, String filename, int datasourceId, Date reportDate, String content, int autoImportID, boolean isError) throws Exception {
+    public RecipientsReport createAndSaveImportReport(int companyID, int adminID, String filename, int datasourceId, Date reportDate, String content, int autoImportID, boolean isError) throws Exception {
         RecipientsReport report = new RecipientsReport();
-        report.setAdminId(admin.getAdminID());
+        report.setAdminId(adminID);
         report.setDatasourceId(datasourceId);
         report.setFilename(filename);
         report.setReportDate(reportDate);
@@ -74,19 +74,19 @@ public class RecipientsReportServiceImpl implements RecipientsReportService {
         	report.setAutoImportID(autoImportID);
         }
         report.setIsError(isError);
-        recipientsReportDao.createReport(admin.getCompanyID(), report, content);
+        recipientsReportDao.createReport(companyID, report, content);
         return report;
     }
 
     @Override
-    public RecipientsReport createAndSaveExportReport(ComAdmin admin, String filename, Date reportDate, String content, boolean isError) throws Exception {
+    public RecipientsReport createAndSaveExportReport(int companyID, int adminID, String filename, Date reportDate, String content, boolean isError) throws Exception {
         RecipientsReport report = new RecipientsReport();
-        report.setAdminId(admin.getAdminID());
+        report.setAdminId(adminID);
         report.setFilename(filename);
         report.setReportDate(reportDate);
         report.setType(RecipientsReport.RecipientReportType.EXPORT_REPORT);
         report.setIsError(isError);
-        recipientsReportDao.createReport(admin.getCompanyID(), report, content);
+        recipientsReportDao.createReport(companyID, report, content);
         return report;
     }
 
@@ -107,7 +107,7 @@ public class RecipientsReportServiceImpl implements RecipientsReportService {
 
     @Override
     @Transactional
-    public PaginatedListImpl<RecipientsReport> deleteOldReportsAndGetReports(ComAdmin admin, int pageNumber, int pageSize, String sortProperty, String dir, Date startDate, Date finishDate, RecipientsReport.RecipientReportType...types){
+    public PaginatedListImpl<RecipientsReport> deleteOldReportsAndGetReports(Admin admin, int pageNumber, int pageSize, String sortProperty, String dir, Date startDate, Date finishDate, RecipientsReport.RecipientReportType...types){
         int companyId = admin.getCompanyID();
         PaginatedListImpl<RecipientsReport> returnList = getReports(companyId, pageNumber, pageSize, sortProperty, dir, startDate, finishDate, getAllowedReportTypes(types, admin));
         DateTimeFormatter formatter = admin.getDateTimeFormatter();
@@ -136,7 +136,7 @@ public class RecipientsReportServiceImpl implements RecipientsReportService {
     }
     
     @Override
-    public DownloadRecipientReport getExportDownloadFileData(ComAdmin admin, int reportId) throws UnsupportedEncodingException {
+    public DownloadRecipientReport getExportDownloadFileData(Admin admin, int reportId) throws UnsupportedEncodingException {
         RecipientsReport report = getReport(admin.getCompanyID(), reportId);
         if (report != null) {
             String reportContent = getImportReportContent(admin.getCompanyID(), reportId);
@@ -146,7 +146,7 @@ public class RecipientsReportServiceImpl implements RecipientsReportService {
         return null;
     }
     
-    private DownloadRecipientReport getDownloadReportData(ComAdmin admin, String filename, String reportContent) throws UnsupportedEncodingException {
+    private DownloadRecipientReport getDownloadReportData(Admin admin, String filename, String reportContent) throws UnsupportedEncodingException {
         DownloadRecipientReport recipientReport = new DownloadRecipientReport();
         if (StringUtils.isBlank(reportContent)) {
             reportContent = I18nString.getLocaleString("recipient.reports.notAvailable", admin.getLocale());
@@ -166,7 +166,7 @@ public class RecipientsReportServiceImpl implements RecipientsReportService {
     }
     
     @Override
-    public DownloadRecipientReport getImportDownloadFileData(ComAdmin admin, int reportId) throws Exception {
+    public DownloadRecipientReport getImportDownloadFileData(Admin admin, int reportId) throws Exception {
         int companyId = admin.getCompanyID();
         RecipientsReport report = getReport(companyId, reportId);
         
@@ -191,9 +191,9 @@ public class RecipientsReportServiceImpl implements RecipientsReportService {
     }
     
     @Override
-	public void createSupplementalReportData(ComAdmin admin, String filename, int datasourceId, Date reportDate, File temporaryDataFile, String textContent, int autoImportID, boolean isError) throws Exception {
+	public void createSupplementalReportData(int companyID, int adminID, String filename, int datasourceId, Date reportDate, File temporaryDataFile, String textContent, int autoImportID, boolean isError) throws Exception {
         RecipientsReport report = new RecipientsReport();
-        report.setAdminId(admin.getAdminID());
+        report.setAdminId(adminID);
         report.setDatasourceId(datasourceId);
         report.setFilename(filename);
         report.setReportDate(reportDate);
@@ -202,10 +202,10 @@ public class RecipientsReportServiceImpl implements RecipientsReportService {
         	report.setAutoImportID(autoImportID);
         }
         report.setIsError(isError);
-		recipientsReportDao.createSupplementalReportData(admin.getCompanyID(), report, temporaryDataFile, textContent);
+		recipientsReportDao.createSupplementalReportData(companyID, report, temporaryDataFile, textContent);
 	}
 
-    private RecipientsReport.RecipientReportType[] getAllowedReportTypes(final RecipientsReport.RecipientReportType[] reportTypes, final ComAdmin admin) {
+    private RecipientsReport.RecipientReportType[] getAllowedReportTypes(final RecipientsReport.RecipientReportType[] reportTypes, final Admin admin) {
         RecipientsReport.RecipientReportType[] result;
         if (reportTypes == null) {
             result = RecipientsReport.RecipientReportType.values();

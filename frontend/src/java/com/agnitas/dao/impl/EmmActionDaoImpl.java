@@ -68,7 +68,7 @@ public class EmmActionDaoImpl  extends PaginatedBaseDaoImpl implements EmmAction
 					} else {
 						String sql = "INSERT INTO rdir_action_tbl (company_id, description, shortname, creation_date, change_date, action_type, active)"
 							+ " VALUES (?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?)";
-						int newID = insertIntoAutoincrementMysqlTable(logger, "action_id", sql, 
+						int newID = insertIntoAutoincrementMysqlTable(logger, "action_id", sql,
 							action.getCompanyID(),
 							action.getDescription(),
 							action.getShortname(),

@@ -16,7 +16,7 @@ import jakarta.servlet.http.HttpServletRequest;
 
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.Mailing;
 import com.agnitas.emm.core.mailing.service.MailingPropertiesRules;
 
@@ -26,7 +26,7 @@ public final class RequestAttributesHelper {
 	
 	private MailingPropertiesRules mailingPropertiesRules;
 	
-	public final void addMailingEditableAttribute(final Mailing mailing, final ComAdmin admin, final HttpServletRequest request) {
+	public final void addMailingEditableAttribute(final Mailing mailing, final Admin admin, final HttpServletRequest request) {
 		request.setAttribute(MAILNG_EDITABLE_REQUEST_ATTRIBUTE_NAME, mailingPropertiesRules.isMailingContentEditable(mailing, admin));
 	}
 	

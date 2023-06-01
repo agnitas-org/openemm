@@ -47,7 +47,7 @@ import org.springframework.beans.factory.annotation.Required;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.emm.core.mailing.web.MailingPreviewHelper;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
@@ -79,7 +79,7 @@ public class PreviewImageServiceImpl implements PreviewImageService {
     protected PreviewImageGenerationQueue queue;
 
     @Override
-    public void generateMailingPreview(ComAdmin admin, String sessionId, int mailingId, boolean async) {
+    public void generateMailingPreview(Admin admin, String sessionId, int mailingId, boolean async) {
         int customerId = recipientDao.getPreviewRecipient(admin.getCompanyID(), mailingId);
         MediaTypes activeMediaType = mediaTypesService.getActiveMediaType(admin.getCompanyID(), mailingId);
         if (customerId > 0) {

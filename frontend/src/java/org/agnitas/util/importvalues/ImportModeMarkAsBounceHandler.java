@@ -58,16 +58,18 @@ public class ImportModeMarkAsBounceHandler implements ImportModeHandler {
 	}
 
 	@Override
-	public Map<Integer, Integer> handlePostProcessing(EmmActionService emmActionService, ImportStatus status, ImportProfile importProfile, String temporaryImportTableName, int datasourceId, List<Integer> mailingListIdsToAssign, Set<MediaTypes> mediatypes) throws Exception {
+	public Map<MediaTypes, Map<Integer, Integer>> handlePostProcessing(EmmActionService emmActionService, ImportStatus status, ImportProfile importProfile, String temporaryImportTableName, int datasourceId, List<Integer> mailingListIdsToAssign, Set<MediaTypes> mediatypes) throws Exception {
 		// Mark customers bounced in binding table if current status is active
 		if (mailingListIdsToAssign != null) {
-			Map<Integer, Integer> mailinglistAssignStatistics = new HashMap<>();
+			Map<MediaTypes, Map<Integer, Integer>> mailinglistAssignStatistics = new HashMap<>();
 	    	for (int mailingListId : mailingListIdsToAssign) {
-	    		int changed = 0;
 	    		for (MediaTypes mediatype : mediatypes) {
-	    			changed += importRecipientsDao.changeStatusInMailingList(temporaryImportTableName, importProfile.getKeyColumns(), importProfile.getCompanyId(), mailingListId, mediatype, UserStatus.Active.getStatusCode(), UserStatus.Bounce.getStatusCode(), "Mass Bounce by Admin");
+	    			int changed = importRecipientsDao.changeStatusInMailingList(temporaryImportTableName, importProfile.getKeyColumns(), importProfile.getCompanyId(), mailingListId, mediatype, UserStatus.Active.getStatusCode(), UserStatus.Bounce.getStatusCode(), "Mass Bounce by Admin");
+	    			if (!mailinglistAssignStatistics.containsKey(mediatype)) {
+		    			mailinglistAssignStatistics.put(mediatype, new HashMap<Integer, Integer>());
+		    		}
+		    		mailinglistAssignStatistics.get(mediatype).put(mailingListId, changed);
 	    		}
-	    		mailinglistAssignStatistics.put(mailingListId, changed);
 	    	}
 			return mailinglistAssignStatistics;
 		} else {

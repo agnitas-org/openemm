@@ -20,7 +20,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -29,6 +28,7 @@ import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
 
+import com.agnitas.emm.validator.ApacheTikaUtils;
 import org.apache.commons.collections4.SetUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -42,14 +42,7 @@ public class ImageUtils {
 
 	public static final String MOBILE_IMAGE_PREFIX = "mobile_";
 
-	private static final Set<String> availableImageExtensions = new HashSet<>();
-
-	static {
-		availableImageExtensions.add("png");
-		availableImageExtensions.add("gif");
-		availableImageExtensions.add("jpg");
-		availableImageExtensions.add("jpeg");
-	}
+	public static final Set<String> availableImageExtensions = Set.of("png", "gif", "jpg", "jpeg", "svg", "ico");
 
 	public static boolean isValidImageFileExtension(String format) {
 		return availableImageExtensions.contains(format.toLowerCase());
@@ -67,23 +60,29 @@ public class ImageUtils {
 	 * @param stream {@link InputStream} File input stream
 	 * @return true if validation pass, false in other case
 	 */
-	public static boolean isValidImage(InputStream stream) {
+	public static boolean isValidImage(InputStream stream, boolean useAdvancedFileContentTypeDetection) {
 		if (stream == null) {
 			throw new IllegalArgumentException("File stream could not be empty.");
 		}
-		
+
+		if (useAdvancedFileContentTypeDetection) {
+        	// Detect mimetype by file content (not file name extension)
+			String extension = ApacheTikaUtils.getFileExtension(stream, false);
+			return ApacheTikaUtils.isValidImage(stream) && isValidImageFileExtension(extension);
+		}
+
 		try (ImageInputStream iis = ImageIO.createImageInputStream(stream)) {
 			Iterator<ImageReader> iterator = ImageIO.getImageReaders(iis);
 
 			if (iterator.hasNext()) {
 				ImageReader reader = iterator.next();
 				return isValidImageFileExtension(reader.getFormatName());
+			} else {
+				return false;
 			}
 		} catch (IOException e) {
-			// Do nothing
+			return false;
 		}
-
-		return false;
 	}
 
 	/**
@@ -92,17 +91,18 @@ public class ImageUtils {
 	 * @param data image file content.
 	 * @return true if validation pass, false in other case
 	 */
-	public static boolean isValidImage(byte[] data) {
+	public static boolean isValidImage(byte[] data, boolean useAdvancedFileContentTypeDetection) {
 		boolean valid;
 		try (InputStream stream = new ByteArrayInputStream(data)) {
-			valid = isValidImage(stream);
+			valid = isValidImage(stream, useAdvancedFileContentTypeDetection);
 		} catch (IOException e) {
 			valid = false;
 		}
 
-		if(!valid) {
+		if (!valid) {
 			valid = validateSvgContent(data);
 		}
+		
 		return valid;
 	}
 
@@ -181,7 +181,9 @@ public class ImageUtils {
 		try (ByteArrayInputStream inputStream = new ByteArrayInputStream(data)) {
 				BufferedImage image = ImageIO.read(inputStream);
 
-			return new Dimension(image.getWidth(), image.getHeight());
+			if (image != null) {
+				return new Dimension(image.getWidth(), image.getHeight());
+			}
 		} catch (IOException e) {
 			logger.error("Could not get image dimensions" + e.getMessage());
 		}
@@ -206,7 +208,7 @@ public class ImageUtils {
 	}
 
 	private static boolean validateSvgContent(final byte[] data) {
-		if(data == null) {
+		if (data == null) {
 			return false;
 		}
 		try {

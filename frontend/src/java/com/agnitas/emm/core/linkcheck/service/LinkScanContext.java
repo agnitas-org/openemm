@@ -37,8 +37,11 @@ final class LinkScanContext {
 	private boolean protocolSchemaPresent;
 	private String protocolSchema;
 	
-	public LinkScanContext(final String fullText, final int start, final int end, final List<ComTrackableLink> foundTrackableLinks, final List<String> foundImages, final List<String> foundNotTrackableLinks, final List<ErroneousLink> foundErroneousLinks, final List<ErroneousLink> localLinks, final List<LinkWarning> linkWarnings) {
+	public LinkScanContext(final String fullText, final String fullTextWithReplacedTags, final int start, final int end, final List<ComTrackableLink> foundTrackableLinks, final List<String> foundImages, final List<String> foundNotTrackableLinks, final List<ErroneousLink> foundErroneousLinks, final List<ErroneousLink> localLinks, final List<LinkWarning> linkWarnings) {
+		assert fullTextWithReplacedTags == null || fullText.length() == fullTextWithReplacedTags.length();
+		
 		this.fullText = Objects.requireNonNull(fullText);
+		this.fullTextWithTagsReplaced = fullTextWithReplacedTags;
 		this.start = start;
 		this.end = end;
 		this.foundTrackableLinks = Objects.requireNonNull(foundTrackableLinks);
@@ -85,6 +88,8 @@ final class LinkScanContext {
 	public final String getTextWithAgnTagsReplaced() {
 		if(this.fullTextWithTagsReplaced == null) {
 			this.fullTextWithTagsReplaced = LinkServiceImpl.getTextWithReplacedAgnTags(this.fullText, "x");
+			
+			assert fullTextWithTagsReplaced == null || fullText.length() == fullTextWithTagsReplaced.length();
 		}
 		
 		return this.fullTextWithTagsReplaced;

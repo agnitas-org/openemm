@@ -31,37 +31,31 @@ import org.apache.logging.log4j.Logger;
 import com.agnitas.beans.ComTrackableLink;
 import com.agnitas.beans.LinkProperty;
 import com.agnitas.dao.ComRecipientDao;
-import com.agnitas.dao.ComTrackableLinkDao;
+import com.agnitas.dao.TrackableLinkDao;
 import com.agnitas.util.LinkUtils;
 
 /**
- * Event Code 1=Linkklick, 2=Opening, 3=Unsubscribtion, 4=Mail-Delivery, 5=Softbounce, 6=Hardbounce, 7=Blacklist 8=Revenue
+ * Event Code 1=Linkklick, 2=Opening, 3=Unsubscribtion, 4=Mail-Delivery, 5=Softbounce, 6=Hardbounce, 7=Blacklist, 8=Revenue
  */
 public class RecipientReactionsExportWorker extends GenericExportWorker {
-	private static final transient Logger logger = LogManager.getLogger(RecipientReactionsExportWorker.class);
+	private static final Logger logger = LogManager.getLogger(RecipientReactionsExportWorker.class);
 
-	private ComRecipientDao recipientDao;
-	private ComTrackableLinkDao trackableLinkDao;
+	protected ComRecipientDao recipientDao;
+	protected TrackableLinkDao trackableLinkDao;
 	
-	public static final int MAILING_RECIPIENTS_ALL = 0;
-	public static final int MAILING_RECIPIENTS_OPENED = 1;
-	public static final int MAILING_RECIPIENTS_CLICKED = 2;
-	public static final int MAILING_RECIPIENTS_BOUNCED = 3;
-	public static final int MAILING_RECIPIENTS_UNSUBSCRIBED = 4;
-	
-	private Date exportDataStartDate;
-	private Date exportDataEndDate;
+	protected Date exportDataStartDate;
+	protected Date exportDataEndDate;
 
 	/**
 	 * Descriptive username for manually executed exports (non-AutoExport)
 	 */
-	private String username = null;
+	protected String username = null;
 		
-	private AutoExport autoExport = null;
+	protected AutoExport autoExport = null;
 
-	private RemoteFile remoteFile = null;
+	protected RemoteFile remoteFile = null;
 	
-	private List<String> additionalCustomerFields = null;
+	protected List<String> additionalCustomerFields = null;
 
 	public String getUsername() {
 		return username;
@@ -95,9 +89,7 @@ public class RecipientReactionsExportWorker extends GenericExportWorker {
 		return exportDataEndDate;
 	}
 
-	public RecipientReactionsExportWorker(ComRecipientDao recipientDao, ComTrackableLinkDao trackableLinkDao, AutoExport autoExport, Date exportDataStartDate, Date exportDataEndDate, List<String> additionalCustomerFields) {
-		super();
-
+	public RecipientReactionsExportWorker(ComRecipientDao recipientDao, TrackableLinkDao trackableLinkDao, AutoExport autoExport, Date exportDataStartDate, Date exportDataEndDate, List<String> additionalCustomerFields) {
 		this.recipientDao = recipientDao;
 		this.trackableLinkDao = trackableLinkDao;
 		
@@ -105,6 +97,10 @@ public class RecipientReactionsExportWorker extends GenericExportWorker {
 		this.exportDataStartDate = exportDataStartDate;
 		this.exportDataEndDate = exportDataEndDate;
 		this.additionalCustomerFields = additionalCustomerFields;
+	}
+	
+	public GenericExportWorker genericExportCall() throws Exception {
+		return super.call();
 	}
 
 	@Override
@@ -117,13 +113,13 @@ public class RecipientReactionsExportWorker extends GenericExportWorker {
 			csvFileHeaders.add("CUSTOMER_ID");
 			csvFileHeaders.add("EMAIL");
 			if (additionalCustomerFields != null && additionalCustomerFields.size() > 0) {
- 				for (String additionalField : additionalCustomerFields) {
+				for (String additionalField : additionalCustomerFields) {
 					if (StringUtils.isNotBlank(additionalField)) {
 						csvFileHeaders.add(additionalField.toUpperCase());
 						additionalCustomerFieldsSqlPart += ", cust." + additionalField.toLowerCase();
 					}
 				}
- 			}
+			}
 			csvFileHeaders.add("EVENT");
 			csvFileHeaders.add("TIMESTAMP");
 			csvFileHeaders.add("LINK");
@@ -297,7 +293,7 @@ public class RecipientReactionsExportWorker extends GenericExportWorker {
 		return this;
 	}
 
-	private String createDirectLinkWithOptionalExtensions(int companyID, int mailingID, int customerID, int linkID) throws Exception {
+	protected String createDirectLinkWithOptionalExtensions(int companyID, int mailingID, int customerID, int linkID) throws Exception {
 		ComTrackableLink trackableLink = trackableLinkDao.getTrackableLink(linkID, companyID, true);
 		if (trackableLink != null) {
 			String linkString = trackableLink.getFullUrl();

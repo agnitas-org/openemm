@@ -1,24 +1,29 @@
+<%@page import="org.agnitas.util.AgnUtils"%>
 <%@ page isErrorPage="true" language="java" pageEncoding="UTF-8" %>
 <%@ taglib prefix="bean" uri="http://struts.apache.org/tags-bean" %>
-<%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
-
-<emm:setAbsolutePath var="absoluteImagePath" path="${emmLayoutBase.imagesURL}"/>
+<%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %><emm:setAbsolutePath var="absoluteImagePath" path="${emmLayoutBase.imagesURL}"/>
 
 <div class="login_page_root_container">
-    <div class="login_page_top_spacer"></div>
-    <div class="loginbox_container">
-
-        <div class="loginbox_top"></div>
-
-        <div class="loginbox_content">
-            <img src="/layout/0/logo.png" border="0" class="logon_image">
-            <br>
-            <span class="logon_page_emm_title"><bean:message key="permission.denied.title"/></span>
-            <div class="loginbox_row">
-                <bean:message key="permission.denied.message"/>
-            </div>
-        </div>
-
-        <div class="loginbox_bottom"></div>
-    </div>
+	<div class="login_page_top_spacer"></div>
+	<div class="col-sm-12">
+		<div class="col-sm-4"></div>
+		<div class="col-sm-4">
+			<div class="tile">
+				<div class="tile-header">
+					<p class="headline">
+						<i class="icon-fa5 icon-fa5-ban"></i>
+						<bean:message key="permission.denied.title"/>
+					</p>
+				</div>
+				<div class="tile-content tile-content-forms">
+					<p class="well no-border">
+						<bean:message key="permission.denied.message"/>
+						<br/>
+						<bean:message key="permission.denied.message.extended"/> (<%= AgnUtils.getAdmin(request).getFirstName() %> <%= AgnUtils.getAdmin(request).getFullname() %>, <a href="mailto:<%= AgnUtils.getAdmin(request).getEmail() %>"><%= AgnUtils.getAdmin(request).getEmail() %></a>)
+					</p>
+				</div>
+			</div>
+		</div>
+		<div class="col-sm-4"></div>
+	</div>
 </div>

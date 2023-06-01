@@ -13,8 +13,8 @@ package com.agnitas.reporting.birt.external.beans;
 import org.agnitas.util.importvalues.MailType;
 
 public class RecipientMailtypeRow {
-    private int mailTypeIndex;
-	private int mailTypeCount;
+    private final int mailTypeIndex;
+	private final int mailTypeCount;
 
 	public RecipientMailtypeRow(int mailTypeIndex, int mailTypeCount) {
 		this.mailTypeIndex = mailTypeIndex;

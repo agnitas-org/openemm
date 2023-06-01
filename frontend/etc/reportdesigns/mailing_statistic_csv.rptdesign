@@ -1026,18 +1026,18 @@ return true;]]></method>
 	row["mailingId"] = mailingClicksData.get(currentrow).getMailingId();
 	row["linkItemNumber"] = mailingClicksData.get(currentrow).getLinkItemNumber();
 	row["URL"] = mailingClicksData.get(currentrow).getUrl();
-	row["URL_ID"] = mailingClicksData.get(currentrow).getUrl_id();
-	row["clicks_gross"] = mailingClicksData.get(currentrow).getClicks_gross();
-	row["clicks_net"] = mailingClicksData.get(currentrow).getClicks_net();
-	row["clicks_percent_gross"] = mailingClicksData.get(currentrow).getClicks_gross_percent();
-	row["clicks_percent_net"] = mailingClicksData.get(currentrow).getClicks_net_percent();
-	row["column_index"] = mailingClicksData.get(currentrow).getColumn_index();
-	row["row_index"] = mailingClicksData.get(currentrow).getRow_index();
-	row["admin_link"] = mailingClicksData.get(currentrow).isAdmin_link();
+	row["URL_ID"] = mailingClicksData.get(currentrow).getUrlId();
+	row["clicks_gross"] = mailingClicksData.get(currentrow).getClicksGross();
+	row["clicks_net"] = mailingClicksData.get(currentrow).getClicksNet();
+	row["clicks_percent_gross"] = mailingClicksData.get(currentrow).getClicksGrossPercent();
+	row["clicks_percent_net"] = mailingClicksData.get(currentrow).getClicksNetPercent();
+	row["column_index"] = mailingClicksData.get(currentrow).getColumnIndex();
+	row["row_index"] = mailingClicksData.get(currentrow).getRowIndex();
+	row["admin_link"] = mailingClicksData.get(currentrow).isAdminLink();
 	row["mobile"] = mailingClicksData.get(currentrow).isMobile();
 	row["deleted"] = mailingClicksData.get(currentrow).isDeleted();
 	// do some i18n stuff
-	if (mailingClicksData.get(currentrow).getColumn_index() == 1) {
+	if (mailingClicksData.get(currentrow).getColumnIndex() == 1) {
 		row["targetgroup"] = Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.all_subscribers", reportContext.getLocale());
 	} else {
 		row["targetgroup"] = mailingClicksData.get(currentrow).getTargetgroup();

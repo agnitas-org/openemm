@@ -16,7 +16,7 @@ import java.util.Objects;
 
 import org.agnitas.emm.core.mailing.service.MailingModel;
 import org.agnitas.emm.springws.endpoint.BaseEndpoint;
-import org.agnitas.emm.springws.endpoint.Utils;
+import org.agnitas.emm.springws.endpoint.Namespaces;
 import org.agnitas.emm.springws.jaxb.GetMailingRequest;
 import org.agnitas.emm.springws.jaxb.Mailing;
 import org.agnitas.emm.springws.util.SecurityContextAccess;
@@ -39,7 +39,7 @@ public class GetMailingEndpoint extends BaseEndpoint {
 		this.securityContextAccess = Objects.requireNonNull(securityContextAccess, "securityContextAccess");
 	}
 
-	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "GetMailingRequest")
+	@PayloadRoot(namespace = Namespaces.AGNITAS_ORG, localPart = "GetMailingRequest")
 	public @ResponsePayload JAXBElement<Mailing> getMailing(@RequestPayload GetMailingRequest request) {
 		MailingModel model = new MailingModel();
 		model.setCompanyId(this.securityContextAccess.getWebserviceUserCompanyId());

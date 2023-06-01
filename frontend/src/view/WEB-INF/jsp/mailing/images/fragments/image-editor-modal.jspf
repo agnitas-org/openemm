@@ -10,7 +10,7 @@
                 </div>
                 <c:url var="actionUrl" value="/mailing/${mailingId}/images/{id}/edit.action" />
                 {{ var action = '${actionUrl}'.replace('{id}', imageId); }}
-                <form id="l-editor-form" action="{{- action}}" data-form="static" method="POST" enctype="multipart/form-data">
+                <mvc:form id="l-editor-form" action="{{- action}}" data-form="static" method="POST" enctype="multipart/form-data">
                     <input type="hidden" name="imgBase64" id="editor-result"/>
                     <div class="modal-body">
                         <div id="l-img-editor" data-initializer="img-editor-init">
@@ -73,7 +73,7 @@
                             <i class="icon icon-save"></i><span class="text"><mvc:message code="button.Save"/></span>
                         </button>
                     </div>
-                </form>
+                </mvc:form>
             </div>
         </div>
     </div>

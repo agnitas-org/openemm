@@ -13,5 +13,5 @@ package org.agnitas.emm.core.navigation;
 public interface NavItemCondition {
     String getId();
 
-    boolean isSatisfied();
+    boolean isSatisfied(int companyId);
 }

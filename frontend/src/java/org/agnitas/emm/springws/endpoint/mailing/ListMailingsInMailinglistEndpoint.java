@@ -11,11 +11,15 @@
 package org.agnitas.emm.springws.endpoint.mailing;
 
 import com.agnitas.beans.Mailing;
+
+import java.util.Objects;
+
 import org.agnitas.emm.core.mailing.service.MailingModel;
 import org.agnitas.emm.springws.endpoint.BaseEndpoint;
-import org.agnitas.emm.springws.endpoint.Utils;
+import org.agnitas.emm.springws.endpoint.Namespaces;
 import org.agnitas.emm.springws.jaxb.ListMailingsInMailinglistRequest;
 import org.agnitas.emm.springws.jaxb.ListMailingsInMailinglistResponse;
+import org.agnitas.emm.springws.util.SecurityContextAccess;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.ws.server.endpoint.annotation.Endpoint;
 import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
@@ -28,17 +32,19 @@ import com.agnitas.emm.core.mailing.service.MailingService;
 public class ListMailingsInMailinglistEndpoint extends BaseEndpoint {
 
 	private MailingService mailingService;
+	private SecurityContextAccess securityContextAccess;
 
-	public ListMailingsInMailinglistEndpoint(@Qualifier("MailingService") MailingService mailingService) {
-		this.mailingService = mailingService;
+	public ListMailingsInMailinglistEndpoint(@Qualifier("MailingService") MailingService mailingService, final SecurityContextAccess securityContextAccess) {
+		this.mailingService = Objects.requireNonNull(mailingService, "mailingService");
+		this.securityContextAccess = Objects.requireNonNull(securityContextAccess, "securityContextAccess");
 	}
 
-	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "ListMailingsInMailinglistRequest")
+	@PayloadRoot(namespace = Namespaces.AGNITAS_ORG, localPart = "ListMailingsInMailinglistRequest")
 	public @ResponsePayload ListMailingsInMailinglistResponse listMailingsInMailinglist(@RequestPayload ListMailingsInMailinglistRequest request) throws Exception {
 		ListMailingsInMailinglistResponse response = new ListMailingsInMailinglistResponse();
 
 		MailingModel model = new MailingModel();
-		model.setCompanyId(Utils.getUserCompany());
+		model.setCompanyId(this.securityContextAccess.getWebserviceUserCompanyId());
 		model.setMailinglistId(request.getMailinglistID());
 		
 		for (Mailing mailing : mailingService.getMailingsForMLID(model)) {

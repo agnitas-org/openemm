@@ -46,6 +46,7 @@ import java.util.TimeZone;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -60,7 +61,6 @@ import org.agnitas.beans.impl.BindingEntryImpl;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.beans.impl.RecipientImpl;
 import org.agnitas.beans.impl.ViciousFormDataException;
-import org.agnitas.dao.ProfileFieldDao;
 import org.agnitas.dao.SourceGroupType;
 import org.agnitas.dao.UserStatus;
 import org.agnitas.dao.impl.PaginatedBaseDaoImpl;
@@ -72,7 +72,6 @@ import org.agnitas.emm.core.recipient.RecipientUtils;
 import org.agnitas.emm.core.recipient.service.InvalidDataException;
 import org.agnitas.emm.core.recipient.service.RecipientsModel.CriteriaEquals;
 import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.agnitas.service.ColumnInfoService;
 import org.agnitas.service.ImportException;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.CaseInsensitiveSet;
@@ -112,6 +111,7 @@ import com.agnitas.beans.ComRecipientMailing;
 import com.agnitas.beans.ComRecipientReaction;
 import com.agnitas.beans.ComTarget;
 import com.agnitas.beans.ProfileField;
+import com.agnitas.beans.ProfileFieldMode;
 import com.agnitas.beans.WebtrackingHistoryEntry;
 import com.agnitas.beans.impl.ComRecipientHistoryImpl;
 import com.agnitas.beans.impl.ComRecipientLiteImpl;
@@ -121,8 +121,10 @@ import com.agnitas.beans.impl.RecipientDates;
 import com.agnitas.dao.ComBindingEntryDao;
 import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.dao.ComRecipientDao;
+import com.agnitas.dao.ComTargetDao;
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.dao.DatasourceDescriptionDao;
+import com.agnitas.dao.ProfileFieldDao;
 import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.action.operations.ActionOperationUpdateCustomerParameters;
 import com.agnitas.emm.core.mailing.bean.MailingRecipientStatRow;
@@ -131,6 +133,8 @@ import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.profilefields.ProfileFieldBulkUpdateException;
 import com.agnitas.emm.core.recipient.ProfileFieldHistoryFeatureNotEnabledException;
 import com.agnitas.emm.core.recipient.service.RecipientProfileHistoryService;
+import com.agnitas.emm.core.target.eql.EqlFacade;
+import com.agnitas.service.ColumnInfoService;
 import com.agnitas.util.NumericUtil;
 
 public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComRecipientDao {
@@ -167,6 +171,10 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 	protected ComBindingEntryDao bindingEntryDao;
 
 	protected BindingEntryFactory bindingEntryFactory;
+	
+	protected ComTargetDao targetDao;
+	
+    protected EqlFacade eqlFacade;
 
 	/** Factory creating Recipients. */
 	protected RecipientFactory recipientFactory;
@@ -231,6 +239,16 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 	@Required
 	public void setBindingEntryFactory(BindingEntryFactory bindingEntryFactory) {
 		this.bindingEntryFactory = bindingEntryFactory;
+	}
+
+	@Required
+	public void setTargetDao(ComTargetDao targetDao) {
+		this.targetDao = targetDao;
+	}
+
+	@Required
+	public void setEqlFacade(EqlFacade eqlFacade) {
+		this.eqlFacade = eqlFacade;
 	}
 
 	/**
@@ -361,15 +379,11 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 		}
 		if (allowedRecipientNumber >= 0) {
 			int finalRecipientNumber = getNumberOfRecipients(companyID) + count;
-			if (finalRecipientNumber > allowedRecipientNumber) {
-				return false;
-			} else {
-				return true;
-			}
-		} else {
-			//allowed number of recipients is negative, means no limitation
-			return true;
+			return finalRecipientNumber <= allowedRecipientNumber;
 		}
+
+		//allowed number of recipients is negative, means no limitation
+		return true;
 	}
 
 	@Override
@@ -603,8 +617,7 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 
 		String modifiedSqlStatementForData = statement;
 
-		int maxRecipients = companyDao.getCompany(companyID).getMaxRecipients();
-		if (maxRecipients > 0 && totalRows > maxRecipients) {
+		if (isRecipientsNumberExceedsLimit(totalRows, companyID)) {
 			// if the maximum number of recipients to show is exceeded, only the first page of unsorted recipients is shown to discharge the database and its performance
 			pageNumber= 1;
 			if (isOracleDB()) {
@@ -639,6 +652,11 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 		}
 
 		return new PaginatedListImpl<>(new ArrayList<>(), 0, pageSize, 1, sortColumn, sortedAscending);
+	}
+
+	protected boolean isRecipientsNumberExceedsLimit(int totalRows, int companyID) {
+		int maxRecipients = companyDao.getCompany(companyID).getMaxRecipients();
+		return maxRecipients > 0 && totalRows > maxRecipients;
 	}
 
 	@Override
@@ -1103,9 +1121,7 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 	}
 
 	@Override
-	public List<Integer> getDateMatchingRecipients(int companyId, List<Date> allDates, String dateProfileField, String dateFieldOperator, String dateFieldValue, String dateFormat) {
-		dateFieldValue = dateFieldValue.toLowerCase().trim().replace("now()", "?").replace("sysdate", "?").replace("current_timestamp", "?");
-
+	public List<Integer> getDateMatchingRecipients(int companyId, List<Date> allDates, String dateProfileField, String dateFieldOperator, String dateFormat) {
 		StringBuilder queryBuilder = new StringBuilder();
 		if (isOracleDB()) {
 			for (int i = 0; i < allDates.size(); i++) {
@@ -1113,7 +1129,7 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 					queryBuilder.append(" OR");
 				}
 			
-				queryBuilder.append(" TO_CHAR(cust.").append(dateProfileField).append(", '").append(dateFormat).append("') ").append(dateFieldOperator).append(" TO_CHAR(").append(dateFieldValue).append(", '").append(dateFormat).append("')");
+				queryBuilder.append(" TO_CHAR(cust.").append(dateProfileField).append(", '").append(dateFormat).append("') ").append(dateFieldOperator).append(" TO_CHAR(?, '").append(dateFormat).append("')");
 			}
 		} else {
 			dateFormat = DbUtilities.convertOracleDateFormatToMySqlDateFormat(dateFormat);
@@ -1123,16 +1139,11 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 					queryBuilder.append(" OR");
 				}
 			
-				queryBuilder.append(" DATE_FORMAT(cust.").append(dateProfileField).append(", '").append(dateFormat).append("') ").append(dateFieldOperator).append(" DATE_FORMAT(").append(dateFieldValue).append(", '").append(dateFormat).append("')");
+				queryBuilder.append(" DATE_FORMAT(cust.").append(dateProfileField).append(", '").append(dateFormat).append("') ").append(dateFieldOperator).append(" DATE_FORMAT(?, '").append(dateFormat).append("')");
 			}
 		}
 	
 		return select(logger, "SELECT cust.customer_id FROM " + getCustomerTableName(companyId) + " cust WHERE " + queryBuilder.toString(), IntegerRowMapper.INSTANCE, allDates.toArray());
-	}
-
-	@Override
-	public boolean successTableActivated(@VelocityCheck int companyID) {
-		return companyDao.getCompany(companyID).getMailtracking() > 0;
 	}
 
 	@Override
@@ -1152,6 +1163,40 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
        			+ "   track.mailing_id, "
        			+ "   MAX(track.timestamp) AS send_date, "
        			+ "   count(track.timestamp) as send_count, "
+       			+ "   mail.shortname AS shortname, "
+       			+ "   mail.mailing_type as mailing_type, "
+       			+ "   mt.param AS mt_param, "
+       			+ "   succ.timestamp AS delivery_date, "
+       			+ "   opl.openings AS openings, "
+       			+ "   rlog.clicks AS clicks "
+       			+ "FROM "
+       			+ "   mailtrack_%1$d_tbl track "
+       			+ "   JOIN mailing_tbl mail ON mail.mailing_id = track.mailing_id "
+       			+ "   JOIN mailing_mt_tbl mt ON mt.mailing_id = track.mailing_id AND mt.mediatype IN (0,4) "
+       			+ "   LEFT OUTER JOIN (select mailing_id, max(timestamp) timestamp from success_%1$d_tbl where customer_id = ? group by mailing_id) succ ON succ.mailing_id = track.mailing_id "
+       			+ "   LEFT OUTER JOIN (select mailing_id,COUNT(DISTINCT creation) AS openings from onepixellog_device_%1$d_tbl where customer_id = ? group by mailing_id) opl ON opl.mailing_id = track.mailing_id "
+       			+ "    LEFT OUTER JOIN (select mailing_id, COUNT(DISTINCT timestamp) AS clicks from rdirlog_%1$d_tbl where customer_id = ? group by mailing_id) rlog ON rlog.mailing_id = track.mailing_id "
+       			+ " WHERE "
+       			+ "   track.customer_id = ? "
+       			+ "GROUP BY "
+       			+ "   track.mailing_id, mail.shortname, mail.mailing_type, mt.param, succ.timestamp, opl.openings, rlog.clicks "
+       			+ "ORDER BY "
+       			+ "   send_date", companyID);
+        	
+    	
+            return select(logger, sql, RecipientMailingRowMapper.INSTANCE, customerID, customerID, customerID, customerID);
+    }
+
+    @Override
+    public List<ComRecipientMailing> getMailingsDeliveredToRecipient(int customerID, int companyID) {
+    	if(!isMailtrackingEnabled(companyID)) {
+    		return new ArrayList<>();
+    	}
+    	
+       	final String sql = String.format(" SELECT "
+       			+ "   track.mailing_id, "
+       			+ "   MAX(track.timestamp) AS send_date, "
+       			+ "   count(succ.timestamp) as send_count, "
        			+ "   mail.shortname AS shortname, "
        			+ "   mail.mailing_type as mailing_type, "
        			+ "   mt.param AS mt_param, "
@@ -1955,6 +2000,13 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 		} else if (lastname != null && lastname instanceof String && (((String) lastname).length() > 100)) {
 			throw new ViciousFormDataException("Cannot create customer, because customer data field \"lastname\" is to long (maximum 100) characters");
 		}
+		
+		if (customer.getCustParameters().containsKey("plz") && configService.getBooleanValue(ConfigValue.CheckWellKnownProfileFields, customer.getCompanyID())) {
+			String plzValue = customer.getCustParameters().get("plz") == null ? null : customer.getCustParameters().get("plz").toString();
+			if (StringUtils.isNotBlank(plzValue) && !Pattern.matches("^[0-9]{5}$", plzValue)) {
+				throw new ViciousFormDataException("Cannot create customer, because customer data field \"plz\" is invalid");
+			}
+		}
 	
 		final CaseInsensitiveMap<String, ProfileField> customerTableStructure = loadCustDBProfileStructure(companyID);
 		final SqlPreparedInsertStatementManager insertStatementManager = prepareInsertStatement(customerTableStructure, customer, false);
@@ -2010,10 +2062,18 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 			throw new ViciousFormDataException("Cannot update customer, because customer data field \"lastname\" is to long (maximum 100) characters");
 		}
 		
+		if (customer.getCustParameters().containsKey("plz") && configService.getBooleanValue(ConfigValue.CheckWellKnownProfileFields, customer.getCompanyID())) {
+			String plzValue = customer.getCustParameters().get("plz") == null ? null : customer.getCustParameters().get("plz").toString();
+			if (StringUtils.isNotBlank(plzValue) && !Pattern.matches("^[0-9]{5}$", plzValue)) {
+				throw new ViciousFormDataException("Cannot update customer, because customer data field \"plz\" is invalid");
+			}
+		}
+		
 		if (customer.getCustomerID() == 0) {
 			if (logger.isInfoEnabled()) {
 				logger.info("updateInDB: creating new customer");
 			}
+			
 			return insertNewCustWithException(customer) > 0;
 		}
 		if (!customer.isChangeFlag()) {
@@ -2427,12 +2487,14 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 	@Override
 	public CaseInsensitiveMap<String, CsvColInfo> readDBColumns(int companyID, int adminID, List<String> keyColumns) {
 		CaseInsensitiveMap<String, CsvColInfo> dbAllColumns = new CaseInsensitiveMap<>();
+		
+		CaseInsensitiveSet keyColumnsSet = new CaseInsensitiveSet(keyColumns);
 
 		try {
 			CaseInsensitiveMap<String, ProfileField> profileFields = profileFieldDao.getProfileFieldsMap(companyID, adminID);
 
 			for (ProfileField profileField : profileFields.values()) {
-	        	if (profileField.getModeEdit() == ProfileField.MODE_EDIT_EDITABLE || (profileField.getModeEdit() == ProfileField.MODE_EDIT_READONLY && keyColumns.contains(profileField.getColumn()))) {
+	        	if (profileField.getModeEdit() == ProfileFieldMode.Editable || (profileField.getModeEdit() == ProfileFieldMode.ReadOnly && keyColumnsSet.contains(profileField.getColumn().toLowerCase()))) {
 					CsvColInfo csvColInfo = new CsvColInfo();
 
 					csvColInfo.setName(profileField.getColumn());
@@ -2791,6 +2853,11 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 		CaseInsensitiveMap<String, ProfileField> custDBStructure = new CaseInsensitiveMap<>();
 		for (ProfileField fieldDescription : columnInfoService.getColumnInfos(companyID)) {
 			custDBStructure.put(fieldDescription.getColumn(), fieldDescription);
+			
+			// TODO Remove me after testing for LTS-900
+			if(companyID == 7 && ("cleaned_date".equalsIgnoreCase(fieldDescription.getColumn()) || "creation_date".equalsIgnoreCase(fieldDescription.getColumn()) || "timestamp".equalsIgnoreCase(fieldDescription.getColumn()))) {
+				logger.fatal(String.format("Encountered date field: %s", fieldDescription));
+			}
 		}
 		return custDBStructure;
 	}

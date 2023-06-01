@@ -24,8 +24,6 @@ import org.agnitas.emm.core.velocity.VelocityCheck;
 import com.agnitas.emm.core.workflow.beans.WorkflowDecision;
 import com.agnitas.mailing.autooptimization.beans.impl.AutoOptimizationStatus;
 
-
-
 public interface ComOptimization {
 
     int STATUS_NOT_STARTED = 0;
@@ -34,16 +32,8 @@ public interface ComOptimization {
     int STATUS_FINISHED = 3;
     int STATUS_SCHEDULED = 4;
 
-    /**
-     * Getter for property optimization.
-     * @return Value of property optimization.
-     */
     int getId();
 
-    /**
-     * Setter for property optimization.
-     * @param optimization New value of property optimization.
-     */
     void setId(int id);
 
     int getCompanyID();
@@ -128,7 +118,6 @@ public interface ComOptimization {
     /**
      * Before the send date of the final mailing is reached, you can check for a threshold.
      * If the given threshold is reached ( clicks, openings ) the final mailing will be sent.
-     * @return
      */
     int getThreshold();
     void setThreshold(int threshold);

@@ -145,8 +145,8 @@
                         </div>
                     </div>
 
-                    <%@include file="fragments-new/mailing-trackablelink-view-revenue.jspf" %>
-                    <%@include file="fragments-new/mailing-trackablelink-static-link.jsp" %>
+                    <%@include file="fragments/mailing-trackablelink-view-revenue.jspf" %>
+                    <%@include file="fragments/mailing-trackablelink-static-link.jsp" %>
 
                     <div class="form-group">
                         <div class="col-sm-4">
@@ -178,7 +178,7 @@
                                     "extensions": ${emm:toJson(trackableLinkForm.extensions)}
                                 }
                             </script>
-                            <%@ include file="fragments-new/extensions-table.jspf" %>
+                            <%@ include file="fragments/extensions-table.jspf" %>
                         </div>
                     </emm:ShowByPermission>
                 </div>

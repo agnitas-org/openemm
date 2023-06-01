@@ -1,6 +1,5 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" buffer="32kb" errorPage="/error.do" %>
+<%@ page contentType="text/html; charset=utf-8" buffer="32kb" errorPage="/error.do" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-<%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
 <c:set var="agnNavigationKey" 		value="userlogs" 			scope="request" />

@@ -1,4 +1,4 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 <%@ page import="org.agnitas.util.DbColumnType" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
@@ -8,6 +8,8 @@
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
 <%--@elvariable id="profileForm" type="com.agnitas.emm.core.profilefields.form.ProfileFieldForm"--%>
+<%--@elvariable id="HISTORY_FEATURE_ENABLED" type="java.lang.Boolean"--%>
+<%--@elvariable id="helplanguage" type="java.lang.String"--%>
 <%--@elvariable id="isNewField" type="java.lang.Boolean"--%>
 
 <c:set var="GENERIC_TYPE_INTEGER" value="<%= DbColumnType.GENERIC_TYPE_INTEGER %>"/>
@@ -18,26 +20,14 @@
 
 <mvc:form servletRelativeAction="/profiledb/save.action" data-form="resource" id="profileFieldForm" method="POST"
 		  data-controller="profile-field-view" modelAttribute="profileForm">
-
-	<script type="application/json" data-initializer="profile-field-view">
-		{
-			"isHistorizationFeatureEnabled": ${HISTORY_FEATURE_ENABLED},
-			"isHistorizationEnabled": "${profileForm.includeInHistory}",
-			"dependentWorkflowName": "${emm:escapeJs(profileForm.dependentWorkflowName)}",
-			"translations": {
-				"warning.profilefield.inuse": "<bean:message key="warning.profilefield.inuse" arg0="%s"/>"
-			}
-		}
-	</script>
-
 	<div class="tile">
 		<div class="tile-header">
-			<h2 class="headline"><bean:message key="settings.EditProfileDB_Field"/></h2>
+			<h2 class="headline"><mvc:message code="settings.EditProfileDB_Field"/></h2>
 		</div>
 		<div class="tile-content tile-content-forms">
 			<div class="form-group" data-field="required">
 				<div class="col-sm-4">
-					<label class="control-label" for="fieldShortname"><bean:message key="settings.FieldName"/> *</label>
+					<label class="control-label" for="fieldShortname"><mvc:message code="settings.FieldName"/> *</label>
 				</div>
 				<div class="col-sm-8">
 					<mvc:text path="shortname" id="fieldShortname" cssClass="form-control" maxlength="99" size="32" data-field-required=""/>
@@ -45,12 +35,12 @@
 			</div>
 			<div class="form-group has-info has-feedback">
 				<div class="col-sm-4">
-					<label class="control-label" for="fieldDescription"><bean:message key="Description"/></label>
+					<label class="control-label" for="fieldDescription"><mvc:message code="Description"/></label>
 				</div>
 				<div class="col-sm-8">
 					<mvc:text path="description" id="fieldDescription" cssClass="form-control"/>
 					<span class="icon icon-state-info form-control-feedback"></span>
-					<div class="form-control-feedback-message"><bean:message key="profiledb.description.hint"/></div>
+					<div class="form-control-feedback-message"><mvc:message code="profiledb.description.hint"/></div>
 				</div>
 			</div>
 		</div>
@@ -58,13 +48,13 @@
 
 	<div class="tile">
 		<div class="tile-header">
-			<h2 class="headline"><bean:message key="default.settings"/></h2>
+			<h2 class="headline"><mvc:message code="default.settings"/></h2>
 		</div>
 		<div class="tile-content tile-content-forms">
 
 			<div class="form-group" data-field="required">
 				<div class="col-sm-4">
-					<label class="control-label"><bean:message key="settings.FieldNameDB"/> *</label>
+					<label class="control-label"><mvc:message code="settings.FieldNameDB"/> *</label>
 				</div>
 				<div class="col-sm-8">
 					<c:choose>
@@ -82,32 +72,32 @@
 			<div data-field="toggle-vis">
 				<div class="form-group">
 					<div class="col-sm-4">
-						<label class="control-label" for="fieldType"><bean:message key="default.Type"/></label>
+						<label class="control-label" for="fieldType"><mvc:message code="default.Type"/></label>
 					</div>
 					<div class="col-sm-8">
 						<c:if test="${isNewField}">
 							<mvc:select path="fieldType" size="1" id="fieldType" cssClass="form-control js-select" data-field-vis="">
 								<mvc:option value="INTEGER" data-field-vis-hide="#fieldLengthDiv" data-field-vis-show="#interestDiv, #defaultFieldDiv, #nullAllowedDiv">
-									<bean:message key="settings.fieldType.INTEGER"/>
+									<mvc:message code="settings.fieldType.INTEGER"/>
 								</mvc:option>
 								<mvc:option value="FLOAT" data-field-vis-hide="#fieldLengthDiv" data-field-vis-show="#interestDiv, #defaultFieldDiv, #nullAllowedDiv">
-									<bean:message key="settings.fieldType.Float"/>
+									<mvc:message code="settings.fieldType.Float"/>
 								</mvc:option>
 								<mvc:option value="VARCHAR" data-field-vis-hide="#interestDiv" data-field-vis-show="#fieldLengthDiv, #defaultFieldDiv, #nullAllowedDiv">
-									<bean:message key="settings.fieldType.VARCHAR"/>
+									<mvc:message code="settings.fieldType.VARCHAR"/>
 								</mvc:option>
 								<mvc:option value="DATE" data-field-vis-hide="#fieldLengthDiv, #interestDiv, #defaultFieldDiv, #nullAllowedDiv">
-									<bean:message key="settings.fieldType.DATE"/>
+									<mvc:message code="settings.fieldType.DATE"/>
 								</mvc:option>
 								<mvc:option value="DATETIME" data-field-vis-hide="#fieldLengthDiv, #interestDiv, #defaultFieldDiv, #nullAllowedDiv">
-									<bean:message key="settings.fieldType.DATETIME"/>
+									<mvc:message code="settings.fieldType.DATETIME"/>
 								</mvc:option>
 							</mvc:select>
 						</c:if>
 						<c:if test="${not isNewField}">
 							<mvc:hidden path="fieldType"/>
 							<div class="form-badge">
-								<bean:message key="settings.fieldType.${profileForm.fieldType}"/>
+								<mvc:message code="settings.fieldType.${profileForm.fieldType}"/>
 							</div>
 						</c:if>
 					</div>
@@ -116,7 +106,7 @@
 				<c:if test="${isNewField}">
 					<div id="fieldLengthDiv" class="form-group" data-field="validator">
 						<div class="col-sm-4">
-							<label class="control-label" for="fieldLength"><bean:message key="settings.Length"/></label>
+							<label class="control-label" for="fieldLength"><mvc:message code="settings.Length"/></label>
 						</div>
 						<div class="col-sm-8">
 							<mvc:text path="fieldLength" id="fieldLength" cssClass="form-control"
@@ -130,7 +120,7 @@
 					<c:if test="${profileForm.fieldType == GENERIC_TYPE_VARCHAR}">
 						<div class="form-group">
 							<div class="col-sm-4">
-								<label class="control-label"><bean:message key="settings.Length"/></label>
+								<label class="control-label"><mvc:message code="settings.Length"/></label>
 							</div>
 							<div class="col-sm-8">
 								<div class="form-control-static">
@@ -145,7 +135,7 @@
                 <c:if test="${profileForm.fieldType != GENERIC_TYPE_DATE && profileForm.fieldType != GENERIC_TYPE_DATETIME}">
                     <div id="defaultFieldDiv" class="form-group">
                         <div class="col-sm-4">
-                            <label class="control-label" for="fieldDefault"><bean:message key="settings.Default_Value"/></label>
+                            <label class="control-label" for="fieldDefault"><mvc:message code="settings.Default_Value"/></label>
                         </div>
                         <div class="col-sm-8">
                             <mvc:text path="fieldDefault" id="fieldDefault" cssClass="form-control" readonly="${!isNewField}" size="32"  maxlength="199"/>
@@ -155,7 +145,7 @@
 
 				<div id="nullAllowedDiv" class="form-group">
 					<div class="col-sm-4">
-						<label class="control-label" for="fieldNull"><bean:message key="settings.NullAllowed"/></label>
+						<label class="control-label" for="fieldNull"><mvc:message code="settings.NullAllowed"/></label>
 					</div>
 					<div class="col-sm-8">
 						<c:choose>
@@ -170,10 +160,10 @@
 								<div class="form-badge">
 									<c:choose>
 										<c:when test="${profileForm.fieldNull}">
-											<bean:message key="default.Yes"/>
+											<mvc:message code="default.Yes"/>
 										</c:when>
 										<c:otherwise>
-											<bean:message key="No"/>
+											<mvc:message code="No"/>
 										</c:otherwise>
 									</c:choose>
 								</div>
@@ -185,7 +175,7 @@
 				<emm:ShowByPermission token="profileField.visible">
 					<div class="form-group">
 						<div class="col-sm-4">
-							<label class="control-label" for="fieldVisible"><bean:message key="FieldVisible"/></label>
+							<label class="control-label" for="fieldVisible"><mvc:message code="FieldVisible"/></label>
 						</div>
 						<div class="col-sm-8">
 							<label class="toggle">
@@ -198,7 +188,7 @@
 
 				<div class="form-group">
 					<div class="col-sm-4">
-						<label class="control-label" for="line"><bean:message key="line_after"/></label>
+						<label class="control-label" for="line"><mvc:message code="line_after"/></label>
 					</div>
 					<div class="col-sm-8">
 						<label class="toggle">
@@ -210,7 +200,7 @@
 				<c:if test="${profileForm.fieldType == GENERIC_TYPE_INTEGER || profileForm.fieldType == GENERIC_TYPE_FLOAT}">
 					<div id="interestDiv" class="form-group">
 						<div class="col-sm-4">
-							<label class="control-label" for="interest"><bean:message key="FieldIsInterest"/></label>
+							<label class="control-label" for="interest"><mvc:message code="FieldIsInterest"/></label>
 						</div>
 						<div class="col-sm-8">
 							<label class="toggle">
@@ -226,13 +216,13 @@
 				<div class="form-group">
 					<div class="col-sm-4">
 						<label class="control-label" for="includeInHistory">
-							<bean:message key="profileHistory.includeField"/>
+							<mvc:message code="profileHistory.includeField"/>
 							<button type="button" data-help="help_${helplanguage}/recipient/profileField/HistorisationAdd.xml" class="icon icon-help"></button>
 						</label>
 					</div>
 					<div class="col-sm-8">
 						<label class="toggle">
-							<mvc:checkbox path="includeInHistory" id="includeInHistory" data-action="toggleHistorization"/>
+							<mvc:checkbox path="includeInHistory" id="includeInHistory" />
 							<div class="toggle-control"></div>
 						</label>
 					</div>
@@ -241,18 +231,18 @@
 
 			<div class="form-group">
 				<div class="col-sm-4">
-					<label class="control-label" for="fieldSort"><bean:message key="FieldSort"/>:</label>
+					<label class="control-label" for="fieldSort"><mvc:message code="FieldSort"/>:</label>
 				</div>
 				<div class="col-sm-8">
 					<select class="form-control js-select" name="fieldSort" id="fieldSort">
 						<option value="1000"<c:if test="${profileForm.fieldSort == 1000}"> selected</c:if>>
-							<bean:message key="noSort"/></option>
-						<option value="1"<c:if test="${profileForm.fieldSort == 1}"> selected</c:if>><bean:message key="first"/></option>
+							<mvc:message code="noSort"/></option>
+						<option value="1"<c:if test="${profileForm.fieldSort == 1}"> selected</c:if>><mvc:message code="first"/></option>
 
 						<c:forEach var="field" items="${fieldsWithIndividualSortOrder}">
 							<option value='${field.sort + 1}' <c:if
 									test="${profileForm.fieldSort == field.sort + 1}"> selected</c:if>>
-								<bean:message key="after"/> ${field.shortname}</option>
+								<mvc:message code="after"/> ${field.shortname}</option>
 						</c:forEach>
 					</select>
 				</div>
@@ -274,7 +264,7 @@
 			<c:if test="${not empty changeDate}">
 				<div class="form-group">
 					<div class="col-sm-4">
-						<label class="control-label" for="changeDate"><bean:message key="default.changeDate"/></label>
+						<label class="control-label" for="changeDate"><mvc:message code="default.changeDate"/></label>
 					</div>
 					<div class="col-sm-8">
 						<input type="text" class="form-control" readonly value="${changeDate}"/>
@@ -288,7 +278,7 @@
 				<div class="form-group">
 					<div class="col-sm-4">
 						<label class="control-label" for="useAllowedValues">
-							<bean:message key="settings.FieldFixedValue"/>
+							<mvc:message code="settings.FieldFixedValue"/>
 							<button class="icon icon-help"
 									data-help="help_${helplanguage}/recipient/profileField/FixedValue.xml"
 									tabindex="-1"
@@ -310,7 +300,7 @@
 							<table class="table table-bordered table-striped">
 								<thead>
 								<tr>
-									<th><bean:message key="Value"/></th>
+									<th><mvc:message code="Value"/></th>
 									<th class="squeeze-column"></th>
 								</tr>
 								</thead>
@@ -328,7 +318,7 @@
 													<input type="text" name="allowedValues" class="form-control" value="${fn:escapeXml(allowedValue)}">
 													<c:if test="${isInvalid}">
 														<div class="form-control-feedback-message js-form-error-msg">
-															<bean:message key="default.Invalid"/>
+															<mvc:message code="default.Invalid"/>
 														</div>
 													</c:if>
 												</td>

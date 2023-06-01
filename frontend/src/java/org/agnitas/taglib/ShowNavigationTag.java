@@ -17,11 +17,13 @@ import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import java.util.Vector;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.jsp.JspException;
 import jakarta.servlet.jsp.tagext.BodyContent;
 import jakarta.servlet.jsp.tagext.BodyTagSupport;
 
 import org.agnitas.emm.core.navigation.ConditionsHandler;
+import org.agnitas.util.AgnUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -234,7 +236,8 @@ public class ShowNavigationTag extends BodyTagSupport {
             logger.error("Conditions handler is not allowed!!!");
             return false;
         }
-        return conditionsHandler.checkCondition(conditionId);
+        int companyId = AgnUtils.getCompanyID((HttpServletRequest) pageContext.getRequest());
+        return conditionsHandler.checkCondition(conditionId, companyId);
     }
 
 	private void setBodyAttributes() {

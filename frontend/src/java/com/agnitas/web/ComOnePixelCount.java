@@ -14,15 +14,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Objects;
 
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-
 import org.agnitas.actions.EmmAction;
-import com.agnitas.beans.Company;
-import org.agnitas.beans.Recipient;
-import org.agnitas.beans.factory.RecipientFactory;
 import org.agnitas.beans.impl.CompanyStatus;
 import org.agnitas.dao.EmmActionDao;
 import org.agnitas.dao.MailingDao;
@@ -40,6 +32,7 @@ import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
+import com.agnitas.beans.Company;
 import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
 import com.agnitas.emm.core.action.service.EmmActionService;
 import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
@@ -49,11 +42,20 @@ import com.agnitas.emm.core.mobile.service.ClientService;
 import com.agnitas.emm.core.mobile.service.ComAccessDataService;
 import com.agnitas.emm.core.mobile.service.ComDeviceService;
 
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+
 public class ComOnePixelCount extends HttpServlet {
+	
+	/** Serial version UID. */
 	private static final long serialVersionUID = 9217593068580606726L;
 
+	/** The logger. */
 	private static final transient Logger logger = LogManager.getLogger(ComOnePixelCount.class);
 
+	/** Raw GIF data for 1x1 pixel transparent image. */
 	public static final byte[] ONEPIXELGIF_DATA = { 71, 73, 70, 56, 57, 97, 1, 0, 1, 0, -128, -1, 0, -64, -64, -64, 0, 0, 0, 33, -7, 4, 1, 0, 0, 0, 0, 44, 0, 0, 0, 0, 1, 0, 1, 0, 0, 2, 2, 68, 1, 0, 59 };
 
 	private CompanyDaoCache companyDaoCache;
@@ -66,7 +68,6 @@ public class ComOnePixelCount extends HttpServlet {
 	private MailingDao mailingDao;
 	private EmmActionDao actionDao;
 	
-	private RecipientFactory recipientFactory;
 	private RecipientService recipientService;
 	
 	public void setComAccessDataService(ComAccessDataService accessDataService) {
@@ -152,8 +153,7 @@ public class ComOnePixelCount extends HttpServlet {
 			companyDaoCache = (CompanyDaoCache) applicationContext.getBean("CompanyDaoCache");
 			uidService = (ExtensibleUIDService) applicationContext.getBean(ExtensibleUIDConstants.SERVICE_BEAN_NAME);
 			
-			this.recipientFactory = applicationContext.getBean("RecipientFactory", RecipientFactory.class);
-			this.recipientService = applicationContext.getBean("recipientService", RecipientService.class);
+			recipientService = applicationContext.getBean("recipientService", RecipientService.class);
 			
 		} catch (NoSuchBeanDefinitionException e) {
 			logger.error("Cannot instantiate ComOnePixelCount servlet: " + e.getMessage(), e);
@@ -229,12 +229,9 @@ public class ComOnePixelCount extends HttpServlet {
 						DeviceClass deviceClass = getComDeviceService().getDeviceClassForStatistics(deviceID);
 						if (deviceID != ComDeviceService.DEVICE_BLACKLISTED_NO_COUNT) {
 							if (!noCount) {
-								final Recipient recipient = recipientFactory.newRecipient(uid.getCompanyID());
-
-								recipient.setCustomerID(uid.getCustomerID());
-								recipient.setCustParameters(recipientService.getCustomerDataFromDb(uid.getCompanyID(), uid.getCustomerID(), recipient.getDateFormat()));
+								final boolean doNotTrack = !recipientService.isRecipientTrackingAllowed(uid.getCompanyID(), uid.getCustomerID());
 								
-								getOpenTrackingService().trackOpening(uid, recipient.isDoNotTrackMe(), request.getRemoteAddr(), deviceClass, deviceID, clientID);
+								getOpenTrackingService().trackOpening(uid, doNotTrack, request.getRemoteAddr(), deviceClass, deviceID, clientID);
 								if (logger.isInfoEnabled()) {
 									logger.info("OnepixelLog: cust: " + uid.getCustomerID() + " mi: " + uid.getMailingID() + " ci: " + uid.getCompanyID());
 								}
@@ -280,6 +277,7 @@ public class ComOnePixelCount extends HttpServlet {
 				CaseInsensitiveMap<String, Object> params = new CaseInsensitiveMap<>();
 				params.put("requestParameters", AgnUtils.getReqParameters(req));
 				params.put("_request", req);
+				params.put("_uid", uid);
 				params.put("customerID", customerID);
 				params.put("mailingID", mailingID);
 				params.put("actionErrors", actionOperationErrors);

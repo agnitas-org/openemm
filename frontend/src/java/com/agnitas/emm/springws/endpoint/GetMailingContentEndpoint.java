@@ -10,9 +10,12 @@
 
 package com.agnitas.emm.springws.endpoint;
 
+import java.util.Objects;
+
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.emm.springws.endpoint.BaseEndpoint;
-import org.agnitas.emm.springws.endpoint.Utils;
+import org.agnitas.emm.springws.endpoint.Namespaces;
+import org.agnitas.emm.springws.util.SecurityContextAccess;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -28,15 +31,19 @@ import com.agnitas.emm.springws.jaxb.MailingContent;
 
 @Endpoint
 public class GetMailingContentEndpoint extends BaseEndpoint {
+	
+	/** The logger. */
 	private static final Logger classLogger = LogManager.getLogger(GetMailingContentEndpoint.class);
 
 	private MailingService mailingService;
+	private SecurityContextAccess securityContextAccess;
 
-	public GetMailingContentEndpoint(@Qualifier("MailingService") MailingService mailingService) {
-		this.mailingService = mailingService;
+	public GetMailingContentEndpoint(@Qualifier("MailingService") MailingService mailingService, final SecurityContextAccess securityContextAccess) {
+		this.mailingService = Objects.requireNonNull(mailingService, "mailingService");
+		this.securityContextAccess = Objects.requireNonNull(securityContextAccess, "securityContextAccess");
 	}
 
-	@PayloadRoot(namespace = Utils.NAMESPACE_COM, localPart = "GetMailingContentRequest")
+	@PayloadRoot(namespace = Namespaces.AGNITAS_COM, localPart = "GetMailingContentRequest")
 	public @ResponsePayload GetMailingContentResponse getMailingcontent(@RequestPayload GetMailingContentRequest request) {
 		if (classLogger.isInfoEnabled()) {
 			classLogger.info( "Entered MailingTemplatesContentEndpoint.getMailingcontent()");
@@ -45,7 +52,7 @@ public class GetMailingContentEndpoint extends BaseEndpoint {
 		GetMailingContentResponse response = new GetMailingContentResponse();
 
 		int mailingId = request.getMailingId();
-		int companyId = Utils.getUserCompany();
+		int companyId = this.securityContextAccess.getWebserviceUserCompanyId();
 
 		GetMailingContentResponse.Items items = new GetMailingContentResponse.Items();
 		for (MailingComponent component : mailingService.getMailingComponents(mailingId, companyId)) {

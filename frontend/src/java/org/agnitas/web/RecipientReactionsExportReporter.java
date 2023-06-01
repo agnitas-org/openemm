@@ -18,8 +18,10 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
 
+import org.agnitas.emm.core.autoexport.bean.AutoExport;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.service.RecipientReactionsAndStatusExportWorker;
 import org.agnitas.service.RecipientReactionsExportWorker;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
@@ -28,7 +30,7 @@ import org.agnitas.util.importvalues.TextRecognitionChar;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.Company;
 import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.emm.core.JavaMailService;
@@ -80,25 +82,28 @@ public class RecipientReactionsExportReporter {
 	 * @param admin
 	 * @throws Exception
 	 */
-	public void sendExportReportMail(RecipientReactionsExportWorker exportWorker, ComAdmin admin) throws Exception {
+	public void sendExportReportMail(RecipientReactionsExportWorker exportWorker) throws Exception {
+		Locale locale = exportWorker.getAutoExport().getLocale();
+		int companyID = exportWorker.getAutoExport().getCompanyId();
+		
 		Set<String> emailRecipients = new HashSet<>();
 		
 		String additionalContent = "";
-		Company comp = companyDao.getCompany(admin.getCompanyID());
+		Company comp = companyDao.getCompany(companyID);
 		if (comp.getExportNotifyAdmin() > 0) {
-			final ComAdmin notifyAdmin = adminService.getAdmin(comp.getExportNotifyAdmin(), admin.getCompanyID());
+			final Admin notifyAdmin = adminService.getAdmin(comp.getExportNotifyAdmin(), companyID);
 
 			if (notifyAdmin != null && StringUtils.isNotBlank(notifyAdmin.getEmail())) {
 				emailRecipients.add(AgnUtils.normalizeEmail(notifyAdmin.getEmail()));
 			} else {
 				emailRecipients.add(AgnUtils.normalizeEmail(configService.getValue(ConfigValue.Mailaddress_Error)));
-				additionalContent = "Admin User or Email for this export was not available: CompanyID: " + admin.getCompanyID() + " / AdminID: " + comp.getExportNotifyAdmin() + " \n\n";
+				additionalContent = "Admin User or Email for this export was not available: CompanyID: " + companyID + " / AdminID: " + comp.getExportNotifyAdmin() + " \n\n";
 			}
 		}
 		
-		if (StringUtils.isNotBlank(configService.getValue(ConfigValue.ExportAlwaysInformEmail, admin.getCompanyID()))) {
-			if (StringUtils.isNotBlank(configService.getValue(ConfigValue.ExportAlwaysInformEmail, admin.getCompanyID()))) {
-				for (String email : AgnUtils.splitAndTrimList(configService.getValue(ConfigValue.ExportAlwaysInformEmail, admin.getCompanyID()))) {
+		if (StringUtils.isNotBlank(configService.getValue(ConfigValue.ExportAlwaysInformEmail, companyID))) {
+			if (StringUtils.isNotBlank(configService.getValue(ConfigValue.ExportAlwaysInformEmail, companyID))) {
+				for (String email : AgnUtils.splitAndTrimList(configService.getValue(ConfigValue.ExportAlwaysInformEmail, companyID))) {
 					emailRecipients.add(AgnUtils.normalizeEmail(email));
 				}
 			}
@@ -111,43 +116,48 @@ public class RecipientReactionsExportReporter {
 		}
 
 		if (!emailRecipients.isEmpty()) {
-			Locale locale = admin.getLocale();
-			Company company = companyDao.getCompany(exportWorker.getAutoExport().getCompanyId());
+			Company company = companyDao.getCompany(companyID);
 			
-			String subject = I18nString.getLocaleString("ResultMsg", locale) + " \"" + I18nString.getLocaleString("statistic.reactions", locale) + "\" (" + I18nString.getLocaleString("Company", locale) + ": " + company.getShortname() + ")";
-			String bodyHtml = generateLocalizedExportHtmlReport(exportWorker, admin) + "\n" + additionalContent;
-			String bodyText = generateLocalizedExportTextReport(exportWorker, admin) + "\n" + additionalContent;
+			String subject = I18nString.getLocaleString("ResultMsg", locale) + " \"" + I18nString.getLocaleString(exportWorker instanceof RecipientReactionsAndStatusExportWorker ? "statistic.reactionsAndStatus" : "statistic.reactions", locale) + "\" (" + I18nString.getLocaleString("Company", locale) + ": " + company.getShortname() + ")";
+			String bodyHtml = generateLocalizedExportHtmlReport(exportWorker) + "\n" + additionalContent;
+			String bodyText = generateLocalizedExportTextReport(exportWorker) + "\n" + additionalContent;
 			
 			javaMailService.sendEmail(company.getId(), StringUtils.join(emailRecipients, ", "), subject, bodyText, bodyHtml);
 		}
 	}
 
-	private String generateLocalizedExportTextReport(RecipientReactionsExportWorker exportWorker, ComAdmin admin) throws Exception {
-		Locale locale = admin.getLocale();
+	private String generateLocalizedExportTextReport(RecipientReactionsExportWorker exportWorker) throws Exception {
+		Locale locale = exportWorker.getAutoExport().getLocale();
 		
-		String reportContent = I18nString.getLocaleString("ResultMsg", locale) + " \"" + I18nString.getLocaleString("statistic.reactions", locale) + "\":\n\n";
+		String reportContent = I18nString.getLocaleString("ResultMsg", locale) + " \"" + I18nString.getLocaleString(exportWorker instanceof RecipientReactionsAndStatusExportWorker ? "statistic.reactionsAndStatus" : "statistic.reactions", locale) + "\":\n\n";
 
 		reportContent += I18nString.getLocaleString("decode.licenseID", locale) + ": " + configService.getValue(ConfigValue.System_Licence) + "\n";
 		
 		Company company = companyDao.getCompany(exportWorker.getAutoExport().getCompanyId());
 		reportContent += I18nString.getLocaleString("Company", locale) + ": " + (company == null ? "Unknown" : company.getShortname() + " (ID: " + company.getId() + ")") + "\n";
 		
-		reportContent += I18nString.getLocaleString("report.data", locale) + " " + I18nString.getLocaleString("StartTime", locale) + ": " + admin.getDateTimeFormatWithSeconds().format(exportWorker.getExportDataStartDate()) + "\n";
-		reportContent += I18nString.getLocaleString("report.data", locale) + " " + I18nString.getLocaleString("EndTime", locale) + ": " + admin.getDateTimeFormatWithSeconds().format(exportWorker.getExportDataEndDate()) + "\n";
 		
+		if (exportWorker.getDateTimeFormat() != null) {
+			reportContent += I18nString.getLocaleString("report.data", locale) + " " + I18nString.getLocaleString("StartTime", locale) + ": " + (exportWorker.getExportDataStartDate() == null ? I18nString.getLocaleString("Unknown", locale) : exportWorker.getDateTimeFormat().format(exportWorker.getExportDataStartDate())) + "\n";
+			reportContent += I18nString.getLocaleString("report.data", locale) + " " + I18nString.getLocaleString("EndTime", locale) + ": " + (exportWorker.getExportDataEndDate() == null ? I18nString.getLocaleString("Unknown", locale) : exportWorker.getDateTimeFormat().format(exportWorker.getExportDataEndDate())) + "\n";
+		} else {
+			reportContent += I18nString.getLocaleString("report.data", locale) + " " + I18nString.getLocaleString("StartTime", locale) + ": " + (exportWorker.getExportDataStartDate() == null ? I18nString.getLocaleString("Unknown", locale) : DateUtilities.getDateTimeString(exportWorker.getExportDataStartDate(), TimeZone.getTimeZone(exportWorker.getExportTimezone()).toZoneId(), exportWorker.getDateTimeFormatter())) + "\n";
+			reportContent += I18nString.getLocaleString("report.data", locale) + " " + I18nString.getLocaleString("EndTime", locale) + ": " + (exportWorker.getExportDataEndDate() == null ? I18nString.getLocaleString("Unknown", locale) : DateUtilities.getDateTimeString(exportWorker.getExportDataEndDate(), TimeZone.getTimeZone(exportWorker.getExportTimezone()).toZoneId(), exportWorker.getDateTimeFormatter())) + "\n";
+		}
+				
 		if (exportWorker.getAutoExport() != null) {
 			reportContent += "AutoExport: " + exportWorker.getAutoExport().getShortname() + " (ID: " + exportWorker.getAutoExport().getAutoExportId() + ")" + "\n";
 			reportContent += I18nString.getLocaleString("error.import.profile.email", locale) + ": " + (StringUtils.isBlank(exportWorker.getAutoExport().getEmailOnError()) ? I18nString.getLocaleString("default.none", locale) : exportWorker.getAutoExport().getEmailOnError());
 			reportContent += I18nString.getLocaleString("autoImport.fileServer", locale) + ": " + exportWorker.getAutoExport().getFileServerWithoutCredentials();
 			reportContent += I18nString.getLocaleString("autoImport.filePath", locale) + ": " + exportWorker.getAutoExport().getFilePath();
-			reportContent += I18nString.getLocaleString("settings.FileName", locale) + ": " + exportWorker.getAutoExport().getFileNameWithPatterns();
+			reportContent += I18nString.getLocaleString("autoExport.fileNamePattern", locale) + ": " + (StringUtils.isBlank(exportWorker.getAutoExport().getFileNameWithPatterns()) ? AutoExport.DEFAULT_EXPORT_FILENAME_PATTERN : exportWorker.getAutoExport().getFileNameWithPatterns());
 		}
 		
 		if (exportWorker.getUsername() != null) {
 			reportContent += "User: " + exportWorker.getUsername();
 		}
 		
-		reportContent += I18nString.getLocaleString("export.type", locale) + ": " + I18nString.getLocaleString("statistic.reactions", locale) + "\n";
+		reportContent += I18nString.getLocaleString("export.type", locale) + ": " + I18nString.getLocaleString(exportWorker instanceof RecipientReactionsAndStatusExportWorker ? "statistic.reactionsAndStatus" : "statistic.reactions", locale) + "\n";
 		
 		String profileContent = "";
 
@@ -191,13 +201,14 @@ public class RecipientReactionsExportReporter {
 		return reportContent;
 	}
 
-	private String generateLocalizedExportHtmlReport(RecipientReactionsExportWorker exportWorker, ComAdmin admin) throws Exception {
-		Locale locale = admin.getLocale();
+	private String generateLocalizedExportHtmlReport(RecipientReactionsExportWorker exportWorker) throws Exception {
+		Locale locale = exportWorker.getAutoExport().getLocale();
+		
 		String title;
 		if (exportWorker.getAutoExport() != null) {
 			title = "AutoExport: " + exportWorker.getAutoExport().getShortname() + " (ID: " + exportWorker.getAutoExport().getAutoExportId() + ")";
 		} else {
-			title = "Export: \"" + I18nString.getLocaleString("statistic.reactions", locale) + "\"";
+			title = "Export: \"" + I18nString.getLocaleString(exportWorker instanceof RecipientReactionsAndStatusExportWorker ? "statistic.reactionsAndStatus" : "statistic.reactions", locale) + "\"";
 		}
 		
 		StringBuilder htmlContent = new StringBuilder(HtmlReporterHelper.getHtmlPrefixWithCssStyles(title));
@@ -240,22 +251,27 @@ public class RecipientReactionsExportReporter {
 		Company company = companyDao.getCompany(exportWorker.getAutoExport().getCompanyId());
 		htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("Company", locale), (company == null ? "Unknown" : company.getShortname() + " (ID: " + company.getId() + ")")));
 		
-		htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("report.data", locale) + " " + I18nString.getLocaleString("StartTime", locale), admin.getDateTimeFormatWithSeconds().format(exportWorker.getExportDataStartDate())));
-		htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("report.data", locale) + " " + I18nString.getLocaleString("EndTime", locale), admin.getDateTimeFormatWithSeconds().format(exportWorker.getExportDataEndDate())));
+		if (exportWorker.getDateTimeFormat() != null) {
+			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("report.data", locale) + " " + I18nString.getLocaleString("StartTime", locale), (exportWorker.getStartTime() == null ? I18nString.getLocaleString("Unknown", locale) : exportWorker.getDateTimeFormat().format(exportWorker.getStartTime()))));
+			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("report.data", locale) + " " + I18nString.getLocaleString("EndTime", locale), (exportWorker.getEndTime() == null ? I18nString.getLocaleString("Unknown", locale) : exportWorker.getDateTimeFormat().format(exportWorker.getEndTime()))));
+		} else {
+			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("report.data", locale) + " " + I18nString.getLocaleString("StartTime", locale), (exportWorker.getStartTime() == null ? I18nString.getLocaleString("Unknown", locale) : DateUtilities.getDateTimeString(exportWorker.getStartTime(), TimeZone.getTimeZone(exportWorker.getExportTimezone()).toZoneId(), exportWorker.getDateTimeFormatter()))));
+			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("report.data", locale) + " " + I18nString.getLocaleString("EndTime", locale), (exportWorker.getEndTime() == null ? I18nString.getLocaleString("Unknown", locale) : DateUtilities.getDateTimeString(exportWorker.getEndTime(), TimeZone.getTimeZone(exportWorker.getExportTimezone()).toZoneId(), exportWorker.getDateTimeFormatter()))));
+		}
 		
 		if (exportWorker.getAutoExport() != null) {
 			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine("AutoExport", exportWorker.getAutoExport().getShortname() + " (ID: " + exportWorker.getAutoExport().getAutoExportId() + ")"));
 			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("error.import.profile.email", locale), (StringUtils.isBlank(exportWorker.getAutoExport().getEmailOnError()) ? I18nString.getLocaleString("default.none", locale) : exportWorker.getAutoExport().getEmailOnError())));
 			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("autoImport.fileServer", locale), exportWorker.getAutoExport().getFileServerWithoutCredentials()));
 			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("autoImport.filePath", locale), exportWorker.getAutoExport().getFilePath()));
-			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("settings.FileName", locale), exportWorker.getAutoExport().getFileNameWithPatterns()));
+			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("autoExport.fileNamePattern", locale), (StringUtils.isBlank(exportWorker.getAutoExport().getFileNameWithPatterns()) ? AutoExport.DEFAULT_EXPORT_FILENAME_PATTERN : exportWorker.getAutoExport().getFileNameWithPatterns())));
 		}
 		
 		if (exportWorker.getUsername() != null) {
 			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine("User", exportWorker.getUsername()));
 		}
 		
-		htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("export.type", locale), I18nString.getLocaleString("statistic.reactions", locale)));
+		htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("export.type", locale), I18nString.getLocaleString(exportWorker instanceof RecipientReactionsAndStatusExportWorker ? "statistic.reactionsAndStatus" : "statistic.reactions", locale)));
 				
 		htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("Charset", locale), exportWorker.getEncoding()));
 
@@ -272,9 +288,14 @@ public class RecipientReactionsExportReporter {
 		}
 		htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("csv.alwaysQuote", locale), I18nString.getLocaleString(exportWorker.getAlwaysQuote() ? "delimiter.always" : "delimiter.ifneeded", locale)));
 		
-		htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("StartTime", locale), (exportWorker.getStartTime() == null ? I18nString.getLocaleString("Unknown", locale) : DateUtilities.getDateTimeString(exportWorker.getStartTime(), TimeZone.getTimeZone(admin.getAdminTimezone()).toZoneId(), admin.getDateTimeFormatter()))));
-		htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("EndTime", locale), (exportWorker.getEndTime() == null ? I18nString.getLocaleString("Unknown", locale) : DateUtilities.getDateTimeString(exportWorker.getEndTime(), TimeZone.getTimeZone(admin.getAdminTimezone()).toZoneId(), admin.getDateTimeFormatter()))));
-
+		if (exportWorker.getDateTimeFormat() != null) {
+			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("StartTime", locale), (exportWorker.getStartTime() == null ? I18nString.getLocaleString("Unknown", locale) : exportWorker.getDateTimeFormat().format(exportWorker.getStartTime()))));
+			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("EndTime", locale), (exportWorker.getEndTime() == null ? I18nString.getLocaleString("Unknown", locale) : exportWorker.getDateTimeFormat().format(exportWorker.getEndTime()))));
+		} else {
+			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("StartTime", locale), (exportWorker.getStartTime() == null ? I18nString.getLocaleString("Unknown", locale) : DateUtilities.getDateTimeString(exportWorker.getStartTime(), TimeZone.getTimeZone(exportWorker.getExportTimezone()).toZoneId(), exportWorker.getDateTimeFormatter()))));
+			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("EndTime", locale), (exportWorker.getEndTime() == null ? I18nString.getLocaleString("Unknown", locale) : DateUtilities.getDateTimeString(exportWorker.getEndTime(), TimeZone.getTimeZone(exportWorker.getExportTimezone()).toZoneId(), exportWorker.getDateTimeFormatter()))));
+		}
+		
 		if (exportWorker.getRemoteFile() != null) {
 			htmlContent.append(HtmlReporterHelper.getOutputTableInfoContentLine(I18nString.getLocaleString("settings.FileName", locale), StringUtils.isBlank(exportWorker.getRemoteFile().getRemoteFilePath()) ? I18nString.getLocaleString("Unknown", locale) : exportWorker.getRemoteFile().getRemoteFilePath()));
 			if (exportWorker.getRemoteFile().getDownloadDurationMillis() > -1) {
@@ -290,24 +311,27 @@ public class RecipientReactionsExportReporter {
 		return htmlContent.toString();
 	}
 
-	public void sendExportErrorMail(RecipientReactionsExportWorker exportWorker, ComAdmin admin) throws Exception {
+	public void sendExportErrorMail(RecipientReactionsExportWorker exportWorker) throws Exception {
+		Locale locale = exportWorker.getAutoExport().getLocale();
+		int companyID = exportWorker.getAutoExport().getCompanyId();
+		
 		Set<String> emailRecipients = new HashSet<>();
 
 		String additionalContent = "";
-		Company comp = companyDao.getCompany(admin.getCompanyID());
+		Company comp = companyDao.getCompany(companyID);
 		if (comp.getExportNotifyAdmin() > 0) {
-			final ComAdmin notifyAdmin = adminService.getAdmin(comp.getExportNotifyAdmin(), admin.getCompanyID());
+			final Admin notifyAdmin = adminService.getAdmin(comp.getExportNotifyAdmin(), companyID);
 
 			if (notifyAdmin != null && StringUtils.isNotBlank(notifyAdmin.getEmail())) {
 				emailRecipients.add(AgnUtils.normalizeEmail(notifyAdmin.getEmail()));
 			} else {
 				emailRecipients.add(AgnUtils.normalizeEmail(configService.getValue(ConfigValue.Mailaddress_Error)));
-				additionalContent = "Admin User or Email for this export was not available: CompanyID: " + admin.getCompanyID() + " / AdminID: " + comp.getExportNotifyAdmin() + " \n\n";
+				additionalContent = "Admin User or Email for this export was not available: CompanyID: " + companyID + " / AdminID: " + comp.getExportNotifyAdmin() + " \n\n";
 			}
 		}
 
-		if (StringUtils.isNotBlank(configService.getValue(ConfigValue.ExportAlwaysInformEmail, admin.getCompanyID()))) {
-			for (String email : AgnUtils.splitAndTrimList(configService.getValue(ConfigValue.ExportAlwaysInformEmail, admin.getCompanyID()))) {
+		if (StringUtils.isNotBlank(configService.getValue(ConfigValue.ExportAlwaysInformEmail, companyID))) {
+			for (String email : AgnUtils.splitAndTrimList(configService.getValue(ConfigValue.ExportAlwaysInformEmail, companyID))) {
 				emailRecipients.add(AgnUtils.normalizeEmail(email));
 			}
 		}
@@ -329,18 +353,17 @@ public class RecipientReactionsExportReporter {
 		}
 
 		if (!emailRecipients.isEmpty()) {
-			Locale locale = admin.getLocale();
 			Company company = companyDao.getCompany(exportWorker.getAutoExport().getCompanyId());
 			
-			String subject = "Export-ERROR: " + I18nString.getLocaleString("ResultMsg", locale) + ": " + " \"" + I18nString.getLocaleString("statistic.reactions", locale) + "\" (" + I18nString.getLocaleString("Company", locale) + ": " + company.getShortname() + ")";
-			String bodyHtml = generateLocalizedExportHtmlReport(exportWorker, admin) + "\n" + additionalContent;
-			String bodyText = "Export-ERROR:\n" + generateLocalizedExportTextReport(exportWorker, admin) + "\n" + additionalContent;
+			String subject = "Export-ERROR: " + I18nString.getLocaleString("ResultMsg", locale) + ": " + " \"" + I18nString.getLocaleString(exportWorker instanceof RecipientReactionsAndStatusExportWorker ? "statistic.reactionsAndStatus" : "statistic.reactions", locale) + "\" (" + I18nString.getLocaleString("Company", locale) + ": " + company.getShortname() + ")";
+			String bodyHtml = generateLocalizedExportHtmlReport(exportWorker) + "\n" + additionalContent;
+			String bodyText = "Export-ERROR:\n" + generateLocalizedExportTextReport(exportWorker) + "\n" + additionalContent;
 						
 			javaMailService.sendEmail(company.getId(), StringUtils.join(emailRecipients, ", "), subject, bodyText, bodyHtml);
 		}
 	}
 
-	public void createAndSaveExportReport(RecipientReactionsExportWorker exportWorker, ComAdmin admin, boolean isError) throws Exception {
+	public void createAndSaveExportReport(RecipientReactionsExportWorker exportWorker, int adminID, boolean isError) throws Exception {
 		String fileToShow;
 		if (exportWorker.getRemoteFile() != null && StringUtils.isNotBlank(exportWorker.getRemoteFile().getRemoteFilePath())) {
 			// Remote file on ftp or sftp server
@@ -349,6 +372,6 @@ public class RecipientReactionsExportReporter {
 			//Local exported File
 			fileToShow = exportWorker.getExportFile();
 		}
-		recipientsReportService.createAndSaveExportReport(admin, fileToShow, exportWorker.getEndTime(), generateLocalizedExportHtmlReport(exportWorker, admin), isError);
+		recipientsReportService.createAndSaveExportReport(exportWorker.getAutoExport().getCompanyId(), adminID, fileToShow, exportWorker.getEndTime(), generateLocalizedExportHtmlReport(exportWorker), isError);
 	}
 }

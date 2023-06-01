@@ -28,7 +28,7 @@ import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.PermissionInfo;
 
 /**
- * DAO handler for ComAdmin-Objects
+ * DAO handler for Admin-Objects
  * This class is compatible with oracle and mysql datasources and databases
  */
 public class PermissionDaoImpl extends BaseDaoImpl implements PermissionDao {

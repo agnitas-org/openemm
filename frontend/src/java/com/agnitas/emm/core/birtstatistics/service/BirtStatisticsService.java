@@ -15,11 +15,12 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import com.agnitas.beans.Mailing;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.logging.log4j.Logger;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.birtreport.bean.ComBirtReport;
 import com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings;
 import com.agnitas.emm.core.birtstatistics.domain.dto.DomainStatisticDto;
@@ -42,7 +43,7 @@ public interface BirtStatisticsService {
 	 * @return
 	 * @throws Exception
 	 */
-	String getDomainStatisticsUrlWithoutFormat(ComAdmin admin, String sessionId, DomainStatisticDto domainStatistic, boolean forInternalUse) throws Exception;
+	String getDomainStatisticsUrlWithoutFormat(Admin admin, String sessionId, DomainStatisticDto domainStatistic, boolean forInternalUse) throws Exception;
 	
 	
 	/**
@@ -54,7 +55,7 @@ public interface BirtStatisticsService {
 	 * @return
 	 * @throws Exception
 	 */
-	String getMonthlyStatisticsUrlWithoutFormat(ComAdmin admin, String sessionId, MonthlyStatisticDto monthlyStatistic, boolean forInternalUse) throws Exception;
+	String getMonthlyStatisticsUrlWithoutFormat(Admin admin, String sessionId, MonthlyStatisticDto monthlyStatistic, boolean forInternalUse) throws Exception;
 	
 	/**
 	 * Generates birt URL for recipient monthly statistic
@@ -65,7 +66,7 @@ public interface BirtStatisticsService {
 	 * @return
 	 * @throws Exception
 	 */
-	String getRecipientMonthlyStatisticsUrlWithoutFormat(ComAdmin admin, String sessionId, RecipientProgressStatisticDto monthlyStatistic) throws Exception;
+	String getRecipientMonthlyStatisticsUrlWithoutFormat(Admin admin, String sessionId, RecipientProgressStatisticDto monthlyStatistic) throws Exception;
 	
 	/**
 	 * Generates birt URL for every active statistic report type
@@ -82,13 +83,13 @@ public interface BirtStatisticsService {
 
 	String generateUrlWithParams(Map<String, Object> parameters, boolean internalAccess, final int companyID);
 
-    String getRecipientStatisticUrlWithoutFormat(ComAdmin admin, String sessionId, RecipientStatisticDto recipientStatistic) throws Exception;
+    String getRecipientStatisticUrlWithoutFormat(Admin admin, String sessionId, RecipientStatisticDto recipientStatistic) throws Exception;
 
-    String getMailingStatisticUrl(ComAdmin admin, String sessionId, MailingStatisticDto mailingStatistic) throws Exception;
+    String getMailingStatisticUrl(Admin admin, String sessionId, MailingStatisticDto mailingStatistic) throws Exception;
 
     String changeFormat(String inputUrl, String newFormat);
     
-    String getMailingComparisonStatisticUrl(ComAdmin admin, String sessionId, MailingComparisonDto mailingComparisonDto) throws Exception;
+    String getMailingComparisonStatisticUrl(Admin admin, String sessionId, MailingComparisonDto mailingComparisonDto) throws Exception;
 	
 	File getBirtMailingComparisonTmpFile(String birtURL, MailingComparisonDto mailingComparisonDto, final int companyId) throws Exception;
 	
@@ -100,9 +101,11 @@ public interface BirtStatisticsService {
 	
 	File getBirtReportTmpFile(final int birtReportId, final String birtUrl, final CloseableHttpClient httpClient, final Logger logger);
 	
-	String getRecipientStatusStatisticUrl(ComAdmin admin, String sessionId, RecipientStatusStatisticDto recipientStatusDto) throws Exception;
+	String getRecipientStatusStatisticUrl(Admin admin, String sessionId, RecipientStatusStatisticDto recipientStatusDto) throws Exception;
 
-	String getOptimizationStatisticUrl(ComAdmin admin, OptimizationStatisticDto optimizationDto) throws Exception;
+	String getOptimizationStatisticUrl(Admin admin, OptimizationStatisticDto optimizationDto) throws Exception;
 
-	String getUserFormTrackableLinkStatisticUrl(ComAdmin admin, String sessionId, int formId) throws Exception;
+	String getUserFormTrackableLinkStatisticUrl(Admin admin, String sessionId, int formId) throws Exception;
+
+    boolean isWorldMailing(Mailing mailing);
 }

@@ -10,6 +10,7 @@
 
 package com.agnitas.emm.core.datasource.web;
 
+import com.agnitas.web.mvc.XssCheckAware;
 import org.agnitas.service.UserActivityLogService;
 import org.agnitas.service.WebStorage;
 import org.agnitas.web.forms.FormUtils;
@@ -19,7 +20,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.datasource.form.DatasourceForm;
 import com.agnitas.service.ComWebStorage;
 import com.agnitas.service.DataSourceService;
@@ -29,14 +30,13 @@ import com.agnitas.web.perm.annotations.PermissionMapping;
 @Controller
 @RequestMapping("/importexport/datasource")
 @PermissionMapping("datasource")
-public class DatasourceController {
+public class DatasourceController implements XssCheckAware {
 	
-	/** The logger. */
     private static final Logger logger = LogManager.getLogger(DatasourceController.class);
 
-    private UserActivityLogService userActivityLogService;
-    private DataSourceService dataSourceService;
-    private WebStorage webStorage;
+    private final UserActivityLogService userActivityLogService;
+    private final DataSourceService dataSourceService;
+    private final WebStorage webStorage;
 
     public DatasourceController(UserActivityLogService userActivityLogService,
                                 DataSourceService dataSourceService,
@@ -47,13 +47,13 @@ public class DatasourceController {
     }
 
     @RequestMapping("/list.action")
-    public String list(ComAdmin admin, DatasourceForm form, Model model, Popups popups) {
+    public String list(Admin admin, DatasourceForm form, Model model, Popups popups) {
         try {
             FormUtils.syncNumberOfRows(webStorage, ComWebStorage.DATASOURCE_OVERVIEW, form);
             model.addAttribute("datasources", dataSourceService.getDataSourcesJson(admin.getCompanyID()));
             userActivityLogService.writeUserActivityLog(admin, "datasource list", "show datasource IDs");
         } catch (Exception e) {
-            logger.error("Error occurred: " + e.getMessage(), e);
+            logger.error("Error occurred: {}", e.getMessage(), e);
             popups.alert("error.default.message");
         }
         return "datasource_list";

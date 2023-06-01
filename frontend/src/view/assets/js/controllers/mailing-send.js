@@ -35,19 +35,6 @@ AGN.Lib.Controller.new('mailing-send', function() {
   });
 
   this.addAction({
-    'click': 'resume-sending'
-  }, function() {
-    var $e = this.el;
-    var link = $e.data("link");
-
-    var jqxhr = $.post(link);
-    jqxhr.done(function (resp) {
-      Page.render(resp);
-      $e.closest('.form-group').remove();
-    });
-  });
-
-  this.addAction({
     'click': 'configure-delivery-mailing-size-warning'
   }, function() {
     var $e = this.el;
@@ -70,6 +57,19 @@ AGN.Lib.Controller.new('mailing-send', function() {
     this.el.prop('disabled', true);
     Page.reload(this.el.data('url'), true);
     this.el.prop('disabled', false);
+  });
+
+  this.addAction({
+    'click': 'resume-sending'
+  }, function() {
+    var $e = this.el;
+    var link = $e.data("link");
+
+    var jqxhr = $.post(link);
+    jqxhr.done(function (resp) {
+      Page.render(resp);
+      $e.closest('.form-group').remove();
+    });
   });
 
   this.addAction({

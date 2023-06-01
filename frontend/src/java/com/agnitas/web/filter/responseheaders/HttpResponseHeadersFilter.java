@@ -140,9 +140,9 @@ public final class HttpResponseHeadersFilter implements Filter {
 				.filter(headerConfig -> headerConfig.isOverwrite() || !response.containsHeader(headerConfig.getHeaderName()))
 				.collect(Collectors.toList());
 
-		// Add selected headers to response
+		// Add selected headers to response or replaces existing header
 		for(final HttpHeaderConfig headerConfig : headersToAdd) {
-			response.addHeader(headerConfig.getHeaderName(), headerConfig.getHeaderValue());
+			response.setHeader(headerConfig.getHeaderName(), headerConfig.getHeaderValue());
 		}
 	}
 

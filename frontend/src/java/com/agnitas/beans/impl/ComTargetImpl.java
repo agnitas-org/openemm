@@ -46,7 +46,7 @@ public class ComTargetImpl extends TargetLightImpl implements ComTarget {
     	
     	// TODO: The following code block ("if") is for debugging (see AGNEMM-787)
     	if (targetSQL != null) {
-    		// Check only, when new SQL statement is longer than the old one 
+    		// Check only, when new SQL statement is longer than the old one
     		if (sql.length() > targetSQL.length()) {
     			String tmp = targetSQL;
     			int parCount = 0;
@@ -86,7 +86,7 @@ public class ComTargetImpl extends TargetLightImpl implements ComTarget {
     	 * 
     	 * See JIRA-787 for more informations.
     	 */
-        return targetSQL; 
+        return targetSQL;
     }
 
 	@Override

@@ -97,8 +97,12 @@
                 <display:table name="affectedMailings" id="affectedMailing" class="errorTable" length="${affectedMailingsCount}">
                     <display:column>
                         <c:set var="mailingName" value="${affectedMailing.shortname}"/>
-                        <c:set var="mailingLink"><html:rewrite page="/mailingbase.do?action=2&mailingID=${affectedMailing.id}"/></c:set>
-
+                            <emm:ShowByPermission token="mailing.settings.migration">
+                                <c:set var="mailingLink"><html:rewrite page="/mailing/${affectedMailing.id}/settings.action"/></c:set>
+                            </emm:ShowByPermission>
+                            <emm:HideByPermission token="mailing.settings.migration">
+                                <c:set var="mailingLink"><html:rewrite page="/mailingbase.do?action=2&mailingID=${affectedMailing.id}"/></c:set>
+                            </emm:HideByPermission>
                         <c:choose>
                             <c:when test="${fn:length(mailingName) > AFFECTED_ENTITY_NAME_MAX_LENGTH}">
                                 <a href="${mailingLink}" title="<c:out value="${mailingName}" escapeXml="true"/>" style="color: red;">
@@ -122,7 +126,12 @@
                 <display:table name="affectedMailingsLightweight" id="affectedMailing" class="errorTable" length="${affectedMailingsLightweightCount}">
                     <display:column>
                         <c:set var="mailingName" value="${affectedMailing.shortname}"/>
-                        <c:set var="mailingLink"><html:rewrite page="/mailingbase.do?action=2&mailingID=${affectedMailing.mailingID}"/></c:set>
+                        <emm:ShowByPermission token="mailing.settings.migration">
+                            <c:set var="mailingLink"><html:rewrite page="/mailing/${affectedMailing.mailingID}/settings.action"/></c:set>
+                        </emm:ShowByPermission>
+                        <emm:HideByPermission token="mailing.settings.migration">
+                            <c:set var="mailingLink"><html:rewrite page="/mailingbase.do?action=2&mailingID=${affectedMailing.mailingID}"/></c:set>
+                        </emm:HideByPermission>
 
                         <c:choose>
                             <c:when test="${fn:length(mailingName) > AFFECTED_ENTITY_NAME_MAX_LENGTH}">

@@ -13,6 +13,7 @@ package com.agnitas.emm.core.trackablelinks.web;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.agnitas.web.mvc.Popups;
 import org.agnitas.util.GuiConstants;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
@@ -47,6 +48,17 @@ public final class LinkScanResultToActionMessages {
 		// Add more warnings here in the order to be displayed
 	}
 	
+    /**
+  	 * Converts the link warnings.
+  	 * 
+  	 * @param result LinkScanResult
+  	 * @param warnings container for messages
+  	 */
+  	public static void linkWarningsToPopups(final LinkScanResult result, Popups popups) {
+  		insecureLinksToPopups(result, popups);
+  		// Add more warnings here in the order to be displayed
+  	}
+	
 	/**
 	 * Processes the warning of type {@link LinkWarning#WarningType#INSECURE}.
 	 * 
@@ -67,6 +79,7 @@ public final class LinkScanResultToActionMessages {
 
 			if(numMoreLinks == 0) {
 				warnings.add(
+                        
 						GuiConstants.ACTIONMESSAGE_CONTAINER_WARNING_PERMANENT,
 						new ActionMessage(MESSAGE_KEY_INSECURE_LINKS, links));
 			} else {
@@ -76,6 +89,32 @@ public final class LinkScanResultToActionMessages {
 			}
 		}
 	}
+	
+    /**
+  	 * Processes the warning of type {@link LinkWarning#WarningType#INSECURE}.
+  	 * 
+  	 * @param result link scan result
+  	 * @param popups container for warnings
+  	 */
+  	private static void insecureLinksToPopups(final LinkScanResult result, Popups popups) {
+  		final List<LinkWarning> list = filterWarningsByType(result, WarningType.INSECURE);
+  		
+  		if(!list.isEmpty()) {
+  			final int numMoreLinks = Math.max(0, list.size() - MAX_LINKS_PER_WARNING);
+  			final List<LinkWarning> listToView = list.subList(0, Math.min(list.size(), MAX_LINKS_PER_WARNING));
+  			
+  			final String links = listToView
+  					.stream()
+  					.map(LinkWarning::getLink)
+  					.collect(Collectors.joining("</li><li>", "<ul><li>", "</li></ul>"));
+  
+  			if(numMoreLinks == 0) {
+  				popups.permanentWarning(MESSAGE_KEY_INSECURE_LINKS, links);
+  			} else {
+  				popups.permanentWarning(MESSAGE_KEY_INSECURE_LINKS_WITH_MORE, links, numMoreLinks);
+  			}
+  		}
+  	}
 	
 	/**
 	 * Filters warnings by warning type.

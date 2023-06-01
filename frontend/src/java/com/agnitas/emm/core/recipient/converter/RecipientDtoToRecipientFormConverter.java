@@ -27,7 +27,7 @@ import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.ProfileField;
 import com.agnitas.emm.core.recipient.dto.FrequencyCounter;
 import com.agnitas.emm.core.recipient.dto.RecipientDto;
@@ -36,7 +36,7 @@ import com.agnitas.emm.core.recipient.forms.RecipientForm;
 public class RecipientDtoToRecipientFormConverter {
     private static final Logger logger = LogManager.getLogger(RecipientDtoToRecipientFormConverter.class);
     
-    public static RecipientForm convert(RecipientDto recipientDto, ComAdmin admin) {
+    public static RecipientForm convert(RecipientDto recipientDto, Admin admin) {
         RecipientForm form = new RecipientForm();
 
         form.setId(recipientDto.getId());
@@ -49,6 +49,7 @@ public class RecipientDtoToRecipientFormConverter {
         form.setFirstname(recipientDto.getFirstname());
         form.setLastname(recipientDto.getLastname());
         form.setEmail(recipientDto.getEmail());
+        form.setEncryptedSend(recipientDto.isEncryptedSend());
         try {
             form.setMailtype(MailType.getFromInt(recipientDto.getMailtype()));
         } catch (Exception e) {

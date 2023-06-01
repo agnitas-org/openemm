@@ -14,7 +14,7 @@ import java.util.Map;
 
 import org.agnitas.emm.core.useractivitylog.UserAction;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.recipient.dto.RecipientDto;
 import com.agnitas.emm.core.recipient.dto.SaveRecipientDto;
 
@@ -22,5 +22,5 @@ public interface RecipientLogService {
     
     UserAction getRecipientFieldsBulkChangeLog(int targetId, int mailinglistId, Map<String, Object> affectedFields);
 
-    UserAction getRecipientChangesLog(ComAdmin admin, RecipientDto existedRecipient, SaveRecipientDto recipient);
+    UserAction getRecipientChangesLog(Admin admin, RecipientDto existedRecipient, SaveRecipientDto recipient);
 }

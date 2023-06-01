@@ -17,7 +17,7 @@
 
 <c:set var="SESSION_CONTEXT_KEYNAME_ADMIN" value="<%= AgnUtils.SESSION_CONTEXT_KEYNAME_ADMIN%>" />
 
-<%--@elvariable id="admin" type="com.agnitas.beans.ComAdmin"--%>
+<%--@elvariable id="admin" type="com.agnitas.beans.Admin"--%>
 <%--@elvariable id="helplanguage" type="java.lang.String"--%>
 <%--@elvariable id="mailingSendForm" type="com.agnitas.web.ComMailingSendForm"--%>
 <%--@elvariable id="autoImports" type="java.util.List<org.agnitas.emm.core.autoimport.bean.AutoImportLight>"--%>
@@ -346,8 +346,6 @@
 							</div>
 						</div>
 						
-				<%@include file="mailing-send2-recipients.jspf"%>
-						
 						<div class="tile">
 							<div class="tile-header" style="padding-bottom: 15px; height: auto;">
 								<a href="#" class="headline" data-toggle-tile="#mailing-option-settings">
@@ -384,12 +382,12 @@
 									</div>
 								</div>
 
-								<emm:ShowByPermission token="recipient.import.auto.mailing">
+								<c:if test="${autoImports ne null}">
 									<div class="form-group">
 										<div class="col-sm-12 control-label-left">
 											<label class="control-label">
 												<label for="required-auto-import" style="margin-bottom: 0;">
-													<bean:message key="autoImport.autoImport" />
+													<bean:message key="mailing.autoimport.required" />
 												</label>
 											</label>
 										</div>
@@ -402,7 +400,7 @@
 											</html:select>
 										</div>
 									</div>
-								</emm:ShowByPermission>
+								</c:if>
 
 								<emm:ShowByPermission token="mailing.setmaxrecipients">
 									<div class="form-group">

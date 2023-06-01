@@ -3,7 +3,6 @@ package com.agnitas.emm.core.recipient.web;
 import org.agnitas.emm.core.blacklist.service.BlacklistService;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.recipient.service.RecipientService;
-import org.agnitas.service.ColumnInfoService;
 import org.agnitas.service.UserActivityLogService;
 import org.agnitas.service.WebStorage;
 import org.springframework.core.convert.ConversionService;
@@ -22,6 +21,7 @@ import com.agnitas.emm.core.target.eql.emm.querybuilder.EqlToQueryBuilderConvert
 import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderFilterListBuilder;
 import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderToEqlConverter;
 import com.agnitas.emm.core.target.service.ComTargetService;
+import com.agnitas.service.ColumnInfoService;
 import com.agnitas.web.perm.annotations.PermissionMapping;
 
 @Controller

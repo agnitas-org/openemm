@@ -22,7 +22,6 @@ public class Const {
 			NAME_HTML = "agnHtml",
 			NAME_FAX = "agnFAX",
 			NAME_PRINT = "agnPRINT",
-			NAME_MMS = "agnMMS",
 			NAME_SMS = "agnSMS";
 	}
 	
@@ -47,4 +46,16 @@ public class Const {
 			ID_DAY = "day",
 			ID_24H = "24h";
 	}
+
+    public static final class Mvc {
+
+        public static final String MESSAGES_VIEW = "messages";
+        public static final String ERROR_MSG = "Error";
+        public static final String CHANGES_SAVED_MSG = "default.changes_saved";
+        public static final String NOTHING_SELECTED_MSG = "error.default.nothing_selected";
+        public static final String SELECTION_DELETED_MSG = "default.selection.deleted";
+
+        private Mvc() {
+        }
+    }
 }

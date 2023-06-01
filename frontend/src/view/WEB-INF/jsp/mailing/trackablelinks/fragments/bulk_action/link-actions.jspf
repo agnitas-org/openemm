@@ -1,21 +1,23 @@
 
+<%--@elvariable id="notFormActions" type="java.util.List<org.agnitas.actions.EmmAction>"--%>
+
 <div class="form-group">
     <div class="col-sm-4">
         <label for="linkAction" class="control-label">
-            <bean:message key="mailing.DefaultAction" />
+            <mvc:message code="mailing.DefaultAction" />
         </label>
     </div>
     <div class="col-sm-8">
-        <html:select property="linkAction" styleClass="form-control js-select" styleId="linkAction" value="${KEEP_UNCHANGED}">
-            <html:option value="${KEEP_UNCHANGED}">
-                <bean:message key="KeepUnchanged" />
-            </html:option>
-            <html:option value="0">
-                <bean:message key="settings.No_Action" />
-            </html:option>
-            <logic:iterate id="action" name="notFormActions" scope="request">
-                <html:option value="${action.id}">${action.shortname}</html:option>
-            </logic:iterate>
-        </html:select>
+        <select name="bulkAction" class="form-control js-select" id="linkAction">
+            <option value="${KEEP_UNCHANGED}">
+                <mvc:message code="KeepUnchanged" />
+            </option>
+            <option value="0">
+                <mvc:message code="settings.No_Action" />
+            </option>
+            <c:forEach var="action" items="${notFormActions}">
+                <option value="${action.id}">${action.shortname}</option>
+            </c:forEach>
+        </select>
     </div>
 </div>

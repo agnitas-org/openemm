@@ -1,4 +1,4 @@
-<%@ page language="java" contentType="text/html; charset=utf-8"  errorPage="/error.do" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 <%@ page import="org.agnitas.util.importvalues.MailType" %>
 <%@ page import="com.agnitas.beans.ProfileField" %>
 <%@ page import="org.agnitas.util.DbColumnType" %>
@@ -33,10 +33,6 @@
 <c:set var="MAILTYPE_TEXT" value="<%= MailType.TEXT %>" scope="page"/>
 <c:set var="MAILTYPE_HTML" value="<%= MailType.HTML %>" scope="page"/>
 <c:set var="MAILTYPE_HTML_OFFLINE" value="<%= MailType.HTML_OFFLINE %>" scope="page"/>
-
-<c:set var="MODE_EDIT_EDITABLE" value="<%= ProfileField.MODE_EDIT_EDITABLE %>"/>
-<c:set var="MODE_EDIT_READONLY" value="<%= ProfileField.MODE_EDIT_READONLY %>"/>
-<c:set var="MODE_EDIT_NOT_VISIBLE" value="<%= ProfileField.MODE_EDIT_NOT_VISIBLE %>"/>
 
 <c:set var="USER_STATUS_ACTIVE" value="<%= UserStatus.Active %>"/>
 <c:set var="USER_STATUS_ADMIN_OUT" value="<%= UserStatus.AdminOut %>"/>
@@ -149,7 +145,17 @@
                         <div class="form-group" ${not allowedEmptyEmail ? 'data-field="required"' : ''}>
                             <div class="col-sm-4">
                               <label for="recipient-email" class="control-label">
-                                  <mvc:message code="mailing.MediaType.0"/> * 
+                                  <emm:ShowByPermission token="mailing.encrypted.send">
+                                      <c:choose>
+                                          <c:when test="${form.encryptedSend}">
+                                              <img data-tooltip="<mvc:message code="recipient.encrypted.possible"/>" class="icon lock-icon" src="<c:url value="/assets/core/images/lock_icon.svg"/>" alt="">
+                                          </c:when>
+                                          <c:otherwise>
+                                              <img data-tooltip="<mvc:message code="recipient.encrypted.notpossible"/>" class="icon unlock-icon" src="<c:url value="/assets/core/images/unlock_icon.svg"/>" alt="">
+                                          </c:otherwise>
+                                      </c:choose>
+                                  </emm:ShowByPermission>
+                                  <mvc:message code="mailing.MediaType.0"/> *
                               </label>
                             </div>
                             <div class="col-sm-8">
@@ -366,10 +372,24 @@
                     <c:forEach items="${mailinglists}" var="mlist">
                         <%--@elvariable id="mailinglistBindings" type="com.agnitas.emm.core.recipient.forms.RecipientBindingForm"--%>
                         <c:set var="mailinglistBindings" value="${bindingsListForm.getListBinding(mlist.id)}"/>
+                        <c:set var="mailinglistTileState" value="close"/>
+
+                        <c:forEach items="${MediaTypes.values()}" var="mediaType">
+                            <emm:ShowByPermission token="${mediaType.requiredPermission.tokenString}">
+                                <%--@elvariable id="binding" type="com.agnitas.emm.core.recipient.dto.RecipientBindingDto"--%>
+                                <c:set var="binding" value="${mailinglistBindings.getBinding(mediaType)}"/>
+
+                                <c:if test="${not empty binding.status and binding.status eq USER_STATUS_ACTIVE}">
+                                    <c:set var="mailinglistTileState" value="open"/>
+                                </c:if>
+                            </emm:ShowByPermission>
+                        </c:forEach>
 
                         <div class="tile">
-                            <div class="tile-header" style="padding-bottom: 15px; height: auto;">
-                                <a href="#" class="headline js-show-tile-if-checked" data-toggle-tile="#tile-recipient-mailinglist-${mlist.id}">
+                        	<div class="tile-header" style="padding-bottom: 15px; height: auto;">
+                                <a href="#" class="headline js-show-tile-if-checked"
+                                   data-toggle-tile="#tile-recipient-mailinglist-${mlist.id}"
+                                   data-toggle-tile-default-state="${mailinglistTileState}">
                                     <i class="tile-toggle icon icon-angle-down" style="padding-right: 5px;"></i>
                                     ${mlist.shortname}
                                 </a>
@@ -413,7 +433,12 @@
                                                         </label>
                                                     </div>
                                                     <div class="col-sm-7">
-                                                        <p class="form-control-static"><mvc:message code="recipient.MailingState${binding.status.statusCode}"/></p>
+                                                        <c:set var="openingCandidateClass" value="" />
+                                                        <c:if test="${binding.status eq USER_STATUS_ACTIVE}">
+                                                            <c:set var="openingCandidateClass" value="opening-candidate"/>
+                                                        </c:if>
+
+                                                        <p class="form-control-static ${openingCandidateClass}"><mvc:message code="recipient.MailingState${binding.status.statusCode}"/></p>
                                                     </div>
                                                 </div>
                                             </c:if>

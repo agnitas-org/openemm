@@ -14,7 +14,7 @@
 
 <c:set var="SESSION_CONTEXT_KEYNAME_ADMIN" value="<%= AgnUtils.SESSION_CONTEXT_KEYNAME_ADMIN%>" />
 
-<%--@elvariable id="admin" type="com.agnitas.beans.ComAdmin"--%>
+<%--@elvariable id="admin" type="com.agnitas.beans.Admin"--%>
 <%--@elvariable id="localeDatePattern" type="java.lang.String"--%>
 
 <c:set var="admin" value="${sessionScope[SESSION_CONTEXT_KEYNAME_ADMIN]}" />

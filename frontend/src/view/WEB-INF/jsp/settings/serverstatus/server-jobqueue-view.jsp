@@ -54,7 +54,7 @@
 						<span class="mailing-badge mailing.status.ready"></span>
 					</c:if>
 					<c:if test="${job.lastResult ne 'OK'}">
-						<span class="mailing-badge mailing.status.canceled"></span>
+						<i class="icon-fa5 icon-fa5-exclamation icon-jobqueue-failure"></i>
 					</c:if>
 				</display:column>
 

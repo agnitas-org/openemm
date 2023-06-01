@@ -14,7 +14,10 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.agnitas.emm.core.mailing.beans.LightweightMailingWithMailingList;
+import org.agnitas.emm.core.mailing.service.MailingNotExistException;
 import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.Mailing;
@@ -24,6 +27,9 @@ import com.agnitas.emm.core.maildrop.service.MaildropService;
 import com.agnitas.service.ComMailingLightService;
 
 public class ComMailingLightServiceImpl implements ComMailingLightService {
+    
+    private static final Logger logger = LogManager.getLogger(ComMailingLightServiceImpl.class);
+    
     private ComMailingDao mailingDao;
     private ComCompanyDao companyDao;
     private MaildropService maildropService;
@@ -45,10 +51,22 @@ public class ComMailingLightServiceImpl implements ComMailingLightService {
                 .noneMatch(id -> id == parentMailingId);
 
         if (parentMailingId > 0 && parentMailingId != mailingId && isParentIdNotInResultsList) {
-            Mailing parentMailing = mailingDao.getMailing(parentMailingId, companyID);
-            results.add(new LightweightMailingWithMailingList(parentMailing, parentMailing.getMailinglistID()));
+            Mailing parentMailing = tryGetParentMailing(parentMailingId, companyID);
+            if (parentMailing != null) {
+                results.add(new LightweightMailingWithMailingList(parentMailing, parentMailing.getMailinglistID()));
+            } else {
+                logger.error("Parent mailing (id = {}) of mailing (id = {}) not exists.", parentMailingId, mailingId);
+            }
         }
         return results;
+    }
+
+    private Mailing tryGetParentMailing(int parentMailingId, int companyId) {
+        try {
+            return mailingDao.getMailing(parentMailingId, companyId);
+        } catch (MailingNotExistException e) {
+            return null;
+        }
     }
 
     @Override

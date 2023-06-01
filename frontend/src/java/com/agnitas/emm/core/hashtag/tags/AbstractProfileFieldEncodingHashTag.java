@@ -34,7 +34,6 @@ import com.agnitas.emm.core.hashtag.exception.HashTagException;
 /**
  * MD5-Encoding of profile field values is legacy code and may still use MD5-Encoder
  */
-@SuppressWarnings("deprecation")
 public abstract class AbstractProfileFieldEncodingHashTag extends AbstractColonHashTag {
 	
 	/** The logger. */

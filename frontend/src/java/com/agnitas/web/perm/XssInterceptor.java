@@ -19,15 +19,16 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.agnitas.util.AgnUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.web.method.HandlerMethod;
-import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
+import org.springframework.web.servlet.HandlerInterceptor;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.util.html.xssprevention.HtmlCheckError;
 import com.agnitas.emm.util.html.xssprevention.XSSHtmlException;
 import com.agnitas.emm.util.html.xssprevention.http.RequestParameterXssPreventerHelper;
 import com.agnitas.web.mvc.XssCheckAware;
 
-public class XssInterceptor extends HandlerInterceptorAdapter {
+public class XssInterceptor implements HandlerInterceptor {
+
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         if (handler instanceof HandlerMethod) {
@@ -52,7 +53,7 @@ public class XssInterceptor extends HandlerInterceptorAdapter {
         return helper.validateRequestParameters(request);
     }
 
-    private RequestParameterXssPreventerHelper getXssPreventHelper(final ComAdmin admin, final HandlerMethod handlerMethod) {
+    private RequestParameterXssPreventerHelper getXssPreventHelper(final Admin admin, final HandlerMethod handlerMethod) {
         Object bean = handlerMethod.getBean();
 
         if (bean instanceof XssCheckAware) {

@@ -10,15 +10,18 @@
 
 package org.agnitas.emm.springws.endpoint.component;
 
+import java.util.Objects;
+
 import org.agnitas.beans.MailingComponentType;
 import org.agnitas.emm.core.component.service.ComponentModel;
 import org.agnitas.emm.core.component.service.ComponentService;
 import org.agnitas.emm.springws.endpoint.BaseEndpoint;
 import org.agnitas.emm.springws.endpoint.MailingEditableCheck;
-import org.agnitas.emm.springws.endpoint.Utils;
+import org.agnitas.emm.springws.endpoint.Namespaces;
 import org.agnitas.emm.springws.exception.MailingNotEditableException;
 import org.agnitas.emm.springws.jaxb.DeleteAttachmentRequest;
 import org.agnitas.emm.springws.jaxb.DeleteAttachmentResponse;
+import org.agnitas.emm.springws.util.SecurityContextAccess;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.ws.server.endpoint.annotation.Endpoint;
 import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
@@ -28,23 +31,25 @@ import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 @Endpoint
 public class DeleteAttachmentEndpoint extends BaseEndpoint {
 
-	private ComponentService componentService;
+	private final ComponentService componentService;
 	private final MailingEditableCheck mailingEditableCheck;
+	private final SecurityContextAccess securityContextAccess;
 
-	public DeleteAttachmentEndpoint(@Qualifier("componentService") ComponentService componentService, final MailingEditableCheck mailingEditableCheck) {
-		this.componentService = componentService;
-		this.mailingEditableCheck = mailingEditableCheck;
+	public DeleteAttachmentEndpoint(@Qualifier("componentService") ComponentService componentService, final MailingEditableCheck mailingEditableCheck, final SecurityContextAccess securityContextAccess) {
+		this.componentService = Objects.requireNonNull(componentService, "componentService");
+		this.mailingEditableCheck = Objects.requireNonNull(mailingEditableCheck, "mailingEditableCheck");
+		this.securityContextAccess = Objects.requireNonNull(securityContextAccess, "securityContextAccess");
 	}
 
-	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "DeleteAttachmentRequest")
+	@PayloadRoot(namespace = Namespaces.AGNITAS_ORG, localPart = "DeleteAttachmentRequest")
 	public @ResponsePayload DeleteAttachmentResponse deleteAttachment(@RequestPayload DeleteAttachmentRequest request) throws MailingNotEditableException {
-		final int companyID = Utils.getUserCompany();
+		final int companyID = this.securityContextAccess.getWebserviceUserCompanyId();
 		
 		this.mailingEditableCheck.requireMailingForComponentEditable(request.getComponentID(), companyID);
 		
 		DeleteAttachmentResponse response = new DeleteAttachmentResponse();
 		ComponentModel model = new ComponentModel();
-		model.setCompanyId(Utils.getUserCompany());
+		model.setCompanyId(companyID);
 		model.setComponentId(request.getComponentID());
 		model.setComponentType(MailingComponentType.Attachment);
 

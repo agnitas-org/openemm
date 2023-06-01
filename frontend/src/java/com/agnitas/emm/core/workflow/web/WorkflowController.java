@@ -14,6 +14,8 @@ import static com.agnitas.emm.core.workflow.web.forms.WorkflowForm.WorkflowStatu
 import static com.agnitas.emm.core.workflow.web.forms.WorkflowForm.WorkflowStatus.STATUS_INACTIVE;
 import static com.agnitas.emm.core.workflow.web.forms.WorkflowForm.WorkflowStatus.STATUS_NONE;
 import static com.agnitas.emm.core.workflow.web.forms.WorkflowForm.WorkflowStatus.STATUS_OPEN;
+import static org.agnitas.util.Const.Mvc.ERROR_MSG;
+import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
 
 import java.io.File;
 import java.io.IOException;
@@ -32,6 +34,9 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
 
+import com.agnitas.emm.core.Permission;
+import com.agnitas.util.StringUtil;
+import com.agnitas.web.mvc.XssCheckAware;
 import org.agnitas.beans.MailingComponentType;
 import org.agnitas.emm.core.autoexport.bean.AutoExport;
 import org.agnitas.emm.core.autoexport.service.AutoExportService;
@@ -77,7 +82,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.DeliveryStat;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.TargetLight;
@@ -125,7 +130,8 @@ import jakarta.servlet.http.HttpSession;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
-public class WorkflowController {
+public class WorkflowController implements XssCheckAware {
+
     private static final Logger logger = LogManager.getLogger(WorkflowController.class);
 
     public static final String INCOMPLETE_WORKFLOW_NAME = "incompleteWorkflowName";
@@ -151,37 +157,35 @@ public class WorkflowController {
 
     public static final String WORKFLOW_CUSTOM_CSS_STYLE = ".body{background-color: #fff;} #viewPort { display: inline-block !important; width: 100% !important;}";
 
-    private ComWorkflowService workflowService;
-    private ComWorkflowValidationService validationService;
-    private ComWorkflowActivationService workflowActivationService;
-    private ComWorkflowStatisticsService workflowStatisticsService;
-    private AutoImportService autoImportService;
-    private AutoExportService autoExportService;
-    private ComWorkflowDataParser workflowDataParser;
-    private CampaignDao campaignDao;
-    private ComMailingDeliveryStatService deliveryStatService;
-    private ComMailingComponentDao componentDao;
-    private GenerationPDFService generationPDFService;
-    private ComCompanyDao companyDao;
-    private ConfigService configService;
-    private WebStorage webStorage;
-    private MailinglistApprovalService mailinglistApprovalService;
-    private UserActivityLogService userActivityLogService;
-    private ConversionService conversionService;
-    private MailingService mailingService;
-    private ComOptimizationService optimizationService;
-    protected AdminService adminService;
+    protected final AdminService adminService;
+    protected final ConfigService configService;
     protected final ComTargetService targetService;
-
+    private final ComWorkflowService workflowService;
+    private final ComWorkflowValidationService validationService;
+    private final ComWorkflowActivationService workflowActivationService;
+    private final ComWorkflowStatisticsService workflowStatisticsService;
+    private final AutoImportService autoImportService;
+    private final AutoExportService autoExportService;
+    private final ComWorkflowDataParser workflowDataParser;
+    private final CampaignDao campaignDao;
+    private final ComMailingDeliveryStatService deliveryStatService;
+    private final ComMailingComponentDao componentDao;
+    private final GenerationPDFService generationPDFService;
+    private final ComCompanyDao companyDao;
+    private final WebStorage webStorage;
+    private final MailinglistApprovalService mailinglistApprovalService;
+    private final UserActivityLogService userActivityLogService;
+    private final ConversionService conversionService;
+    private final MailingService mailingService;
+    private final ComOptimizationService optimizationService;
 
     public WorkflowController(ComWorkflowService workflowService, ComWorkflowValidationService validationService,
                               ComWorkflowActivationService workflowActivationService, ComWorkflowStatisticsService workflowStatisticsService,
-                              @Autowired(required = false) AutoImportService autoImportService, @Autowired(required = false) AutoExportService autoExportService, ComWorkflowDataParser workflowDataParser,
-                              CampaignDao campaignDao, ComMailingDeliveryStatService deliveryStatService, ComMailingComponentDao componentDao,
-                              GenerationPDFService generationPDFService, ComCompanyDao companyDao, ConfigService configService,
-                              WebStorage webStorage, MailinglistApprovalService mailinglistApprovalService, UserActivityLogService userActivityLogService,
-                              ConversionService conversionService, MailingService mailingService, ComOptimizationService optimizationService, AdminService adminService,
-                              ComTargetService targetService) {
+                              @Autowired(required = false) AutoImportService autoImportService, @Autowired(required = false) AutoExportService autoExportService,
+                              ComWorkflowDataParser workflowDataParser, CampaignDao campaignDao, ComMailingDeliveryStatService deliveryStatService, ComMailingComponentDao componentDao,
+                              GenerationPDFService generationPDFService, ComCompanyDao companyDao, ConfigService configService, WebStorage webStorage,
+                              MailinglistApprovalService mailinglistApprovalService, UserActivityLogService userActivityLogService, ConversionService conversionService,
+                              MailingService mailingService, ComOptimizationService optimizationService, AdminService adminService, ComTargetService targetService) {
         this.workflowService = workflowService;
         this.validationService = validationService;
         this.workflowActivationService = workflowActivationService;
@@ -211,7 +215,7 @@ public class WorkflowController {
     }
 
     @GetMapping("/create.action")
-    public String create(ComAdmin admin, Model model) throws Exception {
+    public String create(Admin admin, Model model) throws Exception {
         WorkflowForm workflowForm = new WorkflowForm();
         workflowForm.setStatus(STATUS_OPEN);
         workflowForm.setStatusMaybeChangedTo(STATUS_ACTIVE);
@@ -224,7 +228,7 @@ public class WorkflowController {
     }
 
     @RequestMapping("/{id:\\d+}/view.action")
-    public String view(ComAdmin admin, @PathVariable int id, Model model,
+    public String view(Admin admin, @PathVariable int id, Model model,
                        @RequestParam(name = "forwardParams", required = false) String forwardParams, Popups popups) throws Exception {
         if (id == 0) {
             return "redirect:/workflow/create.action";
@@ -236,7 +240,7 @@ public class WorkflowController {
 
             if (workflow == null) {
                 // Given identifier is invalid.
-                popups.alert("Error");
+                popups.alert(ERROR_MSG);
             } else {
                 form = conversionService.convert(workflow, WorkflowForm.class);
                 writeUserActivityLog(admin, "workflow view", getWorkflowDescription(form));
@@ -253,7 +257,7 @@ public class WorkflowController {
     }
 
     @GetMapping("/list.action")
-    public String list(ComAdmin admin, @ModelAttribute("workflowForm") PaginationForm form, Model model) {
+    public String list(Admin admin, @ModelAttribute("workflowForm") PaginationForm form, Model model) {
         FormUtils.syncNumberOfRows(webStorage, ComWebStorage.WORKFLOW_OVERVIEW, form);
 
         JSONArray workflows = workflowService.getWorkflowListJson(admin);
@@ -273,12 +277,12 @@ public class WorkflowController {
     }
 
     @GetMapping("/{id:\\d+}/confirmDelete.action")
-    public String confirmDelete(ComAdmin admin, @PathVariable("id") int workflowId, WorkflowForm workflowForm, Popups popups) {
+    public String confirmDelete(Admin admin, @PathVariable("id") int workflowId, WorkflowForm workflowForm, Popups popups) {
         Workflow workflow = workflowService.getWorkflow(workflowId, admin.getCompanyID());
 
         if (workflow == null) {
-            popups.alert("Error");
-            return "messages";
+            popups.alert(ERROR_MSG);
+            return MESSAGES_VIEW;
         }
 
         workflowForm.setWorkflowId(workflow.getWorkflowId());
@@ -287,7 +291,7 @@ public class WorkflowController {
     }
 
     @RequestMapping("/{id:\\d+}/delete.action")
-    public String delete(ComAdmin admin, @PathVariable("id") int workflowId, Popups popups) {
+    public String delete(Admin admin, @PathVariable("id") int workflowId, Popups popups) {
         Workflow workflow = workflowService.getWorkflow(workflowId, admin.getCompanyID());
         try {
             if (workflow.getStatus() != Workflow.WorkflowStatus.STATUS_ACTIVE && workflow.getStatus() != Workflow.WorkflowStatus.STATUS_TESTING) {
@@ -301,24 +305,24 @@ public class WorkflowController {
             }
         } catch (Exception e) {
             logger.error("Workflow deletion error", e);
-            popups.alert("Error");
+            popups.alert(ERROR_MSG);
         }
 
-        return "messages";
+        return MESSAGES_VIEW;
     }
 
     @PostMapping("/confirmBulkDelete.action")
     public String confirmBulkDelete(@ModelAttribute("bulkForm") BulkActionForm form, Popups popups) {
-        if (form.getBulkIds().size() == 0) {
+        if (form.getBulkIds().isEmpty()) {
             popups.alert("bulkAction.nothing.workflow");
-            return "messages";
+            return MESSAGES_VIEW;
         }
 
         return "workflow_bulkDeleteConfirm_ajax";
     }
 
     @PostMapping("/bulkDelete.action")
-    public String bulkDelete(ComAdmin admin, BulkActionForm form, Popups popups) {
+    public String bulkDelete(Admin admin, BulkActionForm form, Popups popups) {
         try {
             Set<Integer> workflowIdsToDelete = new HashSet<>();
             List<Workflow> workflows = workflowService.getWorkflowsByIds(new HashSet<>(form.getBulkIds()), admin.getCompanyID());
@@ -345,7 +349,7 @@ public class WorkflowController {
             }
         } catch (Exception e) {
             logger.error("Workflow Bulk deletion error", e);
-            popups.alert("Error");
+            popups.alert(ERROR_MSG);
         }
 
         return "message";
@@ -353,7 +357,7 @@ public class WorkflowController {
 
     @PostMapping("/confirmBulkDeactivate.action")
     public String confirmBulkDeactivate(@ModelAttribute("bulkForm") BulkActionForm form, Popups popups) {
-        if (form.getBulkIds().size() == 0) {
+        if (form.getBulkIds().isEmpty()) {
             popups.alert("bulkAction.nothing.workflow");
         }
 
@@ -361,7 +365,7 @@ public class WorkflowController {
     }
 
     @PostMapping("/bulkDeactivate.action")
-    public String bulkDeactivate(ComAdmin admin, BulkActionForm form, Popups popups) throws Exception {
+    public String bulkDeactivate(Admin admin, BulkActionForm form, Popups popups) throws Exception {
         Set<Integer> workflowIdsToDeactivate = new HashSet<>();
         List<Workflow> workflows = workflowService.getWorkflowsByIds(new HashSet<>(form.getBulkIds()), admin.getCompanyID());
 
@@ -406,7 +410,7 @@ public class WorkflowController {
     }
 
     @PostMapping("/save.action")
-    public String save(ComAdmin admin, @ModelAttribute("workflowForm") WorkflowForm workflowForm,
+    public String save(Admin admin, @ModelAttribute("workflowForm") WorkflowForm workflowForm,
                        @RequestParam(value = "forwardName", required = false) String forwardName,
                        @RequestParam(value = "forwardParams", required = false) String forwardParams,
                        @RequestParam(value = "forwardTargetItemId", required = false) String forwardTargetItemId,
@@ -489,7 +493,7 @@ public class WorkflowController {
     }
 
     @PostMapping("/validateDependency.action")
-    public ResponseEntity<?> validateDependency(ComAdmin admin, WorkflowDependencyValidationForm form) {
+    public ResponseEntity<?> validateDependency(Admin admin, WorkflowDependencyValidationForm form) {
         WorkflowDependencyType type = form.getType();
         int workflowId = form.getWorkflowId();
 
@@ -518,17 +522,17 @@ public class WorkflowController {
     }
 
     @GetMapping("/getCurrentAdminTime.action")
-    public ResponseEntity<JSONObject> getCurrentAdminTime(ComAdmin admin) {
+    public ResponseEntity<JSONObject> getCurrentAdminTime(Admin admin) {
         GregorianCalendar calendar = new GregorianCalendar(AgnUtils.getTimeZone(admin));
 
         final JSONObject resultJson = new JSONObject();
-        resultJson.element("hour", calendar.get(GregorianCalendar.HOUR_OF_DAY));
-        resultJson.element("minute",  calendar.get(GregorianCalendar.MINUTE));
+        resultJson.element("hour", calendar.get(Calendar.HOUR_OF_DAY));
+        resultJson.element("minute",  calendar.get(Calendar.MINUTE));
         return ResponseEntity.ok(resultJson);
     }
 
     @PostMapping("/getMailingLinks.action")
-    public ResponseEntity<?> getMailingLinks(ComAdmin admin, @RequestParam int mailingId) {
+    public ResponseEntity<?> getMailingLinks(Admin admin, @RequestParam int mailingId) {
         Map<Integer, String> links = workflowService.getMailingLinks(mailingId, admin.getCompanyID());
 
         JSONObject orderedLinks = new JSONObject();
@@ -547,9 +551,10 @@ public class WorkflowController {
     }
 
     @PostMapping(value = "/getMailingsByWorkStatus.action", produces = HttpUtils.APPLICATION_JSON_UTF8)
-    public @ResponseBody ResponseEntity<?> getMailingsByWorkStatus(ComAdmin admin,
+    public @ResponseBody ResponseEntity<?> getMailingsByWorkStatus(Admin admin,
                             @RequestParam(value = "mailingId", required = false, defaultValue = "0") int mailingId,
                             @RequestParam("mailingTypes") String mailingTypes,
+                            @RequestParam(value = "mediatypes", required = false) String mediatypes,
                             @RequestParam("status") String status,
                             @RequestParam(value = "mailingStatus", required = false) String mailingStatus,
                             @RequestParam(value = "takeMailsForPeriod", required = false) String takeMailsForPeriodParam,
@@ -562,52 +567,50 @@ public class WorkflowController {
 
         if (StringUtils.isEmpty(mailingTypes)) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        } else {
-            List<MailingType> mailingTypeList = new ArrayList<>();
-            for (int value : com.agnitas.reporting.birt.external.utils.StringUtils.buildListFormCommaSeparatedValueString(mailingTypes)) {
-            	mailingTypeList.add(MailingType.fromCode(value));
-            }
-            boolean takeMailsForPeriod = Boolean.parseBoolean(takeMailsForPeriodParam);
-
-            List<Map<String, Object>> mailings = workflowService.getAllMailings(admin, mailingTypeList,
-                    status, mailingStatus, takeMailsForPeriod, sort, order);
-
-
-            if (StringUtils.isNotBlank(mailingsInCampaign)) {
-                mailings.addAll(workflowService.getMailings(companyId, mailingsInCampaign));
-            }
-
-            boolean parentNotInList = true;
-            for (Map<String, Object> mailing : mailings) {
-                if (((Number) mailing.get("MAILING_ID")).intValue() == parentMailingId) {
-                    parentNotInList = false;
-                    break;
-                }
-            }
-
-            if (parentNotInList && (parentMailingId != 0) && (parentMailingId != mailingId)) {
-                Map<String, Object> mailingData = workflowService.getMailingWithWorkStatus(parentMailingId, companyId);
-                mailings.add(mailingData);
-            }
-
-            ObjectMapper objectMapper = new ObjectMapper();
-            objectMapper.registerModule(new SimpleModule("", Version.unknownVersion()) {
-                private static final long serialVersionUID = -4563093834218254808L;
-
-                @Override
-                public void setupModule(SetupContext context) {
-                    SimpleSerializers serializers = new SimpleSerializers();
-                    serializers.addSerializer(String.class, new UpperCaseKeySerializer());
-                    context.addKeySerializers(serializers);
-                }
-            });
-
-            return new ResponseEntity<>(objectMapper.writeValueAsString(mailings), HttpStatus.OK);
         }
+
+        List<MailingType> mailingTypeList = new ArrayList<>();
+        for (int value : StringUtil.buildListFormCommaSeparatedValueString(mailingTypes)) {
+            mailingTypeList.add(MailingType.fromCode(value));
+        }
+        boolean takeMailsForPeriod = Boolean.parseBoolean(takeMailsForPeriodParam);
+
+        List<Map<String, Object>> mailings = workflowService.getAllMailings(admin, mailingTypeList,
+                status, mailingStatus, takeMailsForPeriod, sort, order);
+
+        if (StringUtils.isNotBlank(mailingsInCampaign)) {
+            mailings.addAll(workflowService.getMailings(companyId, mailingsInCampaign));
+        }
+
+        boolean parentNotInList = !workflowService.isParentMailingIdExistsInList(parentMailingId, mailings);
+
+        if (parentNotInList && (parentMailingId != 0) && (parentMailingId != mailingId)) {
+            Map<String, Object> mailingData = workflowService.getMailingWithWorkStatus(parentMailingId, companyId);
+            mailings.add(mailingData);
+        }
+
+        if (StringUtils.isNotBlank(mediatypes)) {
+            List<Integer> requiredMediaTypes = StringUtil.buildListFormCommaSeparatedValueString(mediatypes);
+            mailings = workflowService.filterWithRequiredMediaTypes(mailings, requiredMediaTypes);
+        }
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new SimpleModule("", Version.unknownVersion()) {
+            private static final long serialVersionUID = -4563093834218254808L;
+
+            @Override
+            public void setupModule(SetupContext context) {
+                SimpleSerializers serializers = new SimpleSerializers();
+                serializers.addSerializer(String.class, new UpperCaseKeySerializer());
+                context.addKeySerializers(serializers);
+            }
+        });
+
+        return new ResponseEntity<>(objectMapper.writeValueAsString(mailings), HttpStatus.OK);
     }
 
     @GetMapping("/copy.action")
-    public String copy(ComAdmin admin, Model model, @RequestParam int workflowId, @RequestParam boolean isWithContent) throws Exception {
+    public String copy(Admin admin, Model model, @RequestParam int workflowId, @RequestParam boolean isWithContent) throws Exception {
         Workflow existedWorkflow = workflowService.getWorkflow(workflowId, admin.getCompanyID());
         Workflow workflow = workflowService.copyWorkflow(admin, workflowId, isWithContent);
 
@@ -620,7 +623,7 @@ public class WorkflowController {
     }
 
     @PostMapping("/getAllMailingSorted.action")
-    public ResponseEntity<List<LightweightMailing>> getAllMailingSorted(ComAdmin admin, @RequestParam("sortField") String sortField,
+    public ResponseEntity<List<LightweightMailing>> getAllMailingSorted(Admin admin, @RequestParam("sortField") String sortField,
                                                                         @RequestParam("sortDirection") String sortDirection) {
         List<LightweightMailing> mailings = workflowService.getAllMailingsSorted(admin, sortField, sortDirection);
 
@@ -628,7 +631,7 @@ public class WorkflowController {
     }
 
     @PostMapping("/getWorkflowContent.action")
-    public ResponseEntity<List<WorkflowIcon>> getWorkflowContent(ComAdmin admin, @RequestParam int workflowId, @RequestParam boolean isWithContent) {
+    public ResponseEntity<List<WorkflowIcon>> getWorkflowContent(Admin admin, @RequestParam int workflowId, @RequestParam boolean isWithContent) {
         // We either reset all the icon content/settings or have to clone used mailings (if any).
         List<WorkflowIcon> icons = workflowService.getIconsForClone(admin, workflowId, isWithContent);
 
@@ -651,7 +654,7 @@ public class WorkflowController {
     }
 
     @PostMapping("/loadStatistics.action")
-    public ResponseEntity<Map<Integer, List<String>>> loadStatistics(ComAdmin admin, @RequestParam int workflowId) {
+    public ResponseEntity<Map<Integer, List<String>>> loadStatistics(Admin admin, @RequestParam int workflowId) {
         try {
             Map<Integer, List<String>> stats = workflowStatisticsService.getWorkflowStats(workflowId, admin.getCompanyID(), admin.getLocale());
             return ResponseEntity.ok(stats);
@@ -663,7 +666,7 @@ public class WorkflowController {
     }
 
     @PostMapping("/getMailingContent.action")
-    public @ResponseBody Map<String, Object> getMailingContent(ComAdmin admin, @RequestParam int mailingId) {
+    public @ResponseBody Map<String, Object> getMailingContent(Admin admin, @RequestParam int mailingId) {
         int companyId = admin.getCompanyID();
         Mailing mailing = workflowService.getMailing(mailingId, companyId);
 
@@ -717,12 +720,12 @@ public class WorkflowController {
         return mailingData;
     }
 
-    protected void putTargetsToMailingData(ComAdmin admin, Collection<Integer> targetGroups, Map<String, Object> mailingData) {
+    protected void putTargetsToMailingData(Admin admin, Collection<Integer> targetGroups, Map<String, Object> mailingData) {
         mailingData.put("targetGroupIds", targetGroups);
     }
 
     @GetMapping("/viewOnlyElements.action")
-    public String viewOnlyElements(@ModelAttribute("workflowForm") WorkflowForm form, ComAdmin admin, Model model,
+    public String viewOnlyElements(@ModelAttribute("workflowForm") WorkflowForm form, Admin admin, Model model,
                                    @RequestParam("showStatistics") String showStatistics,
                                    @RequestParam(value = "isWkhtmltopdfUsage", required = false) boolean isWkhtmltopdfUsage, Popups popups) throws Exception {
 
@@ -738,7 +741,7 @@ public class WorkflowController {
 
 
     @GetMapping("/{workflowId:\\d+}/generatePDF.action")
-    public ResponseEntity<byte[]> generatePDF(ComAdmin admin, @PathVariable int workflowId,
+    public ResponseEntity<byte[]> generatePDF(Admin admin, @PathVariable int workflowId,
                                               @RequestParam("showStatistics") String showStatistics) throws Exception {
         String jsessionid = RequestContextHolder.getRequestAttributes().getSessionId();
         String hostUrl = configService.getValue(ConfigValue.SystemUrl);
@@ -769,7 +772,7 @@ public class WorkflowController {
     }
 
     @PostMapping("/getMailingThumbnail.action")
-    public ResponseEntity<Integer> getMailingThumbnail(ComAdmin admin, @RequestParam int mailingId) {
+    public ResponseEntity<Integer> getMailingThumbnail(Admin admin, @RequestParam int mailingId) {
         int companyId = admin.getCompanyID();
         int componentId = componentDao.getImageComponent(companyId, mailingId, MailingComponentType.ThumbnailImage);
 
@@ -777,18 +780,18 @@ public class WorkflowController {
     }
     
     @GetMapping("/{workflowId:\\d+}/getTotalStatistics.action")
-    public String getTotalStatistics(ComAdmin admin, @PathVariable int workflowId, Popups popups) {
+    public String getTotalStatistics(Admin admin, @PathVariable int workflowId, Popups popups) {
         int finalMailingId = workflowStatisticsService.getFinalMailingID(workflowId, admin.getCompanyID());
         if (finalMailingId == 0) {
             popups.alert("error.workflow.noStatistics.title");
-            return "messages";
+            return MESSAGES_VIEW;
         }
         
         return "redirect:/statistics/mailing/" + finalMailingId + "/view.action";
     }
 
     private String getForward(String forwardName, String forwardParams, String forwardTargetItemId, int workflowId,
-                                    List<WorkflowIcon> icons, Model model, ComAdmin admin) {
+                                    List<WorkflowIcon> icons, Model model, Admin admin) {
         
         String redirectUrl = getRedirectUrl(forwardName, forwardTargetItemId, admin);
         
@@ -823,7 +826,7 @@ public class WorkflowController {
         AgnUtils.saveWorkflowForwardParamsToSession(session, workflowParameters, true);
     }
 
-    private void loadWorkflow(WorkflowForm workflowForm, ComAdmin admin, Popups popups) {
+    private void loadWorkflow(WorkflowForm workflowForm, Admin admin, Popups popups) {
         workflowForm.setUsingActivatedWorkflow("");
         workflowForm.setUsingActivatedWorkflowName("");
         workflowForm.setPartOfActivatedWorkflow("");
@@ -864,7 +867,7 @@ public class WorkflowController {
         workflowForm.setWorkflowSchema(workflowDataParser.serializeWorkflowIcons(icons));
     }
 
-    private String getRedirectUrl(String forwardName, String forwardTargetItemId, ComAdmin admin) {
+    private String getRedirectUrl(String forwardName, String forwardTargetItemId, Admin admin) {
         switch (StringUtils.defaultString(forwardName)) {
             case FORWARD_USERFORM_CREATE:
                 return "/webform/new.action";
@@ -885,15 +888,18 @@ public class WorkflowController {
                 return "/target/" + forwardTargetItemId + "/view.action";
                 
             case FORWARD_ARCHIVE_CREATE:
-                return "/campaign.do?action=4";
+                return "/mailing/archive/create.action";
             
             case FORWARD_MAILING_CREATE:
                 return "/mwStart.do?action=init";
             case FORWARD_MAILING_EDIT:
-                return "/mailingbase.do?action=2&isTemplate=false";
+                return admin.permissionAllowed(Permission.MAILING_SETTINGS_MIGRATION)
+                        ? "/mailing/" + forwardTargetItemId + "/settings.action"
+                        : "/mailingbase.do?action=2&isTemplate=false";
             case FORWARD_MAILING_COPY:
-                return "/mailingbase.do?action=10";
-            
+                return admin.permissionAllowed(Permission.MAILING_SETTINGS_MIGRATION)
+                        ? "/mailing/" + forwardTargetItemId + "/copy.action"
+                        : "/mailingbase.do?action=10";
             case FORWARD_AUTOIMPORT_CREATE:
                 return "/autoimport.do?method=create";
             case FORWARD_AUTOIMPORT_EDIT:
@@ -907,14 +913,14 @@ public class WorkflowController {
         }
     }
 
-    private Workflow getWorkflow(WorkflowForm form, ComAdmin admin) {
+    private Workflow getWorkflow(WorkflowForm form, Admin admin) {
         Workflow workflow = conversionService.convert(form, Workflow.class);
         workflow.setWorkflowId(form.getWorkflowId());
         workflow.setCompanyId(admin.getCompanyID());
         return workflow;
     }
 
-    private void prepareViewPage(ComAdmin admin, Model model) throws Exception {
+    private void prepareViewPage(Admin admin, Model model) throws Exception {
         // @todo we need to think whether we need to set all that to request or is it better to get that by ajax requests when it is needed
         int companyId = admin.getCompanyID();
         List<TargetLight> allTargets = workflowService.getAllTargets(companyId);
@@ -938,7 +944,7 @@ public class WorkflowController {
         addExtendedModelAttrs(admin, model, allTargets);
     }
 
-    protected void addExtendedModelAttrs(ComAdmin admin, Model model, List<TargetLight> allTargets) {
+    protected void addExtendedModelAttrs(Admin admin, Model model, List<TargetLight> allTargets) {
         model.addAttribute("accessLimitTargetId", 0);
         model.addAttribute("isExtendedAltgEnabled", false);
     }
@@ -971,11 +977,11 @@ public class WorkflowController {
         }
     }
     
-    protected void writeUserActivityLog(ComAdmin admin, String action, String description)  {
+    protected void writeUserActivityLog(Admin admin, String action, String description)  {
         writeUserActivityLog(admin, new UserAction(action, description));
     }
 
-    protected void writeUserActivityLog(ComAdmin admin, UserAction userAction)  {
+    protected void writeUserActivityLog(Admin admin, UserAction userAction)  {
         if (Objects.nonNull(userActivityLogService)) {
             userActivityLogService.writeUserActivityLog(admin, userAction, logger);
         } else {
@@ -1009,7 +1015,7 @@ public class WorkflowController {
      * @param oldWorkflow a workflow entity before the changes.
      * @param newWorkflow a workflow entity after the changes.
      */
-    private void writeWorkflowChangeLog(ComAdmin admin, Workflow oldWorkflow, Workflow newWorkflow) {
+    private void writeWorkflowChangeLog(Admin admin, Workflow oldWorkflow, Workflow newWorkflow) {
         final String description = getWorkflowDescription(oldWorkflow);
 
         boolean anyLogEntry = false;
@@ -1046,7 +1052,7 @@ public class WorkflowController {
         }
     }
 
-    private boolean writeWorkflowIconsChangeLog(Workflow newWorkflow, Workflow oldWorkflow, ComAdmin admin) {
+    private boolean writeWorkflowIconsChangeLog(Workflow newWorkflow, Workflow oldWorkflow, Admin admin) {
         List<WorkflowIcon> newIcons = newWorkflow.getWorkflowIcons();
         List<WorkflowIcon> oldIcons = oldWorkflow.getWorkflowIcons();
 
@@ -1078,18 +1084,18 @@ public class WorkflowController {
         return isChanged;
     }
 
-    private boolean writeWorkflowIconChangeLog(WorkflowIcon newIcon, WorkflowIcon oldIcon, Workflow workflow, ComAdmin comAdmin) {
+    private boolean writeWorkflowIconChangeLog(WorkflowIcon newIcon, WorkflowIcon oldIcon, Workflow workflow, Admin admin) {
         boolean isChanged = false;
 
         if(newIcon.getType() == WorkflowIconType.Constants.RECIPIENT_ID) {
             WorkflowRecipientImpl newRecipientIcon = (WorkflowRecipientImpl) newIcon;
             WorkflowRecipientImpl oldRecipientIcon = (WorkflowRecipientImpl) oldIcon;
 
-            if(writeWorkflowRecipientTargetChangeLog(newRecipientIcon, oldRecipientIcon, comAdmin, workflow)) {
+            if(writeWorkflowRecipientTargetChangeLog(newRecipientIcon, oldRecipientIcon, admin, workflow)) {
                 isChanged = true;
             }
 
-            if(writeWorkflowRecipientMailingListLog(newRecipientIcon, oldRecipientIcon, comAdmin, workflow)) {
+            if(writeWorkflowRecipientMailingListLog(newRecipientIcon, oldRecipientIcon, admin, workflow)) {
                 isChanged = true;
             }
 
@@ -1097,7 +1103,7 @@ public class WorkflowController {
 
         if(!isChanged && !newIcon.equals(oldIcon)) {
             String iconName = getIconNameByTypeId(newIcon);
-            writeUserActivityLog(comAdmin, "edit campaign " + iconName, getWorkflowDescription(workflow));
+            writeUserActivityLog(admin, "edit campaign " + iconName, getWorkflowDescription(workflow));
             isChanged = true;
         }
 
@@ -1117,6 +1123,8 @@ public class WorkflowController {
             case WorkflowIconType.Constants.FORM_ID: return WorkflowIconType.Constants.FORM_VALUE;
             case WorkflowIconType.Constants.MAILING_ID: return WorkflowIconType.Constants.MAILING_VALUE;
             case WorkflowIconType.Constants.ACTION_BASED_MAILING_ID: return WorkflowIconType.Constants.ACTION_BASED_MAILING_VALUE;
+            case WorkflowIconType.Constants.MAILING_MEDIATYPE_SMS_ID: return WorkflowIconType.Constants.MAILING_MEDIATYPE_SMS_VALUE;
+            case WorkflowIconType.Constants.MAILING_MEDIATYPE_POST_ID: return WorkflowIconType.Constants.MAILING_MEDIATYPE_POST_VALUE;
             case WorkflowIconType.Constants.DATE_BASED_MAILING_ID: return WorkflowIconType.Constants.DATE_BASED_MAILING_VALUE;
             case WorkflowIconType.Constants.FOLLOWUP_MAILING_ID: return WorkflowIconType.Constants.FOLLOWUP_MAILING_VALUE;
             case WorkflowIconType.Constants.IMPORT_ID: return WorkflowIconType.Constants.IMPORT_VALUE;
@@ -1125,7 +1133,7 @@ public class WorkflowController {
         }
     }
 
-    private boolean writeWorkflowRecipientMailingListLog(WorkflowRecipientImpl newIcon, WorkflowRecipientImpl oldIcon, ComAdmin admin, Workflow workflow) {
+    private boolean writeWorkflowRecipientMailingListLog(WorkflowRecipientImpl newIcon, WorkflowRecipientImpl oldIcon, Admin admin, Workflow workflow) {
         boolean isChanged = newIcon.getMailinglistId() != oldIcon.getMailinglistId();
 
         if(isChanged) {
@@ -1136,7 +1144,7 @@ public class WorkflowController {
         return isChanged;
     }
 
-    private boolean writeWorkflowRecipientTargetChangeLog(WorkflowRecipientImpl newIcon, WorkflowRecipientImpl oldIcon, ComAdmin admin, Workflow workflow) {
+    private boolean writeWorkflowRecipientTargetChangeLog(WorkflowRecipientImpl newIcon, WorkflowRecipientImpl oldIcon, Admin admin, Workflow workflow) {
         List<Integer> oldTargets = ListUtils.emptyIfNull(oldIcon.getTargets());
         List<Integer> newTargets = ListUtils.emptyIfNull(newIcon.getTargets());
 
@@ -1149,7 +1157,7 @@ public class WorkflowController {
         return false;
     }
 
-    private boolean writeWorkflowStartChangeLog(Workflow newWorkflow, Workflow oldWorkflow, ComAdmin admin) {
+    private boolean writeWorkflowStartChangeLog(Workflow newWorkflow, Workflow oldWorkflow, Admin admin) {
         boolean isDateChanged = newWorkflow.getGeneralStartDate() != null && oldWorkflow.getGeneralStartDate() != null &&
                 !newWorkflow.getGeneralStartDate().equals(oldWorkflow.getGeneralStartDate());
 
@@ -1168,7 +1176,7 @@ public class WorkflowController {
         return isChanged;
     }
 
-    private boolean writeWorkflowEndChangeLog(Workflow newWorkflow, Workflow oldWorkflow, ComAdmin admin) {
+    private boolean writeWorkflowEndChangeLog(Workflow newWorkflow, Workflow oldWorkflow, Admin admin) {
         boolean isDateChanged = newWorkflow.getGeneralEndDate() != null && oldWorkflow.getGeneralEndDate() != null &&
                 !newWorkflow.getGeneralEndDate().equals(oldWorkflow.getGeneralEndDate());
 
@@ -1184,7 +1192,7 @@ public class WorkflowController {
         return isChanged;
     }
 
-    private boolean writeWorkflowFieldChangeLog(ComAdmin admin, String descriptionPrefix, String oldValue, String newValue) {
+    private boolean writeWorkflowFieldChangeLog(Admin admin, String descriptionPrefix, String oldValue, String newValue) {
         oldValue = StringUtils.trimToNull(oldValue);
         newValue = StringUtils.trimToNull(newValue);
 
@@ -1206,7 +1214,7 @@ public class WorkflowController {
         }
     }
 
-    private boolean writeWorkflowStatusChangeLog(Workflow workflow, Workflow existedWorkflow, ComAdmin admin) {
+    private boolean writeWorkflowStatusChangeLog(Workflow workflow, Workflow existedWorkflow, Admin admin) {
         if (workflow.getWorkflowId() == 0) {
             writeUserActivityLog(admin, "create campaign", getWorkflowDescription(workflow));
             return false;
@@ -1242,7 +1250,7 @@ public class WorkflowController {
         return isUpdated;
     }
 
-    private List<Message> validateWorkflow(ComAdmin admin, List<WorkflowIcon> icons, int workflowId, Workflow.WorkflowStatus status) throws Exception {
+    private List<Message> validateWorkflow(Admin admin, List<WorkflowIcon> icons, int workflowId, Workflow.WorkflowStatus status) throws Exception {
         assert (admin != null);
         List<Message> messages = new ArrayList<>();
 
@@ -1333,13 +1341,11 @@ public class WorkflowController {
         if (validationService.containsSentMailings(icons, companyId)) {
             messages.add(Message.of("error.workflow.containsSentMailings"));
         }
-        if (!isTesting) {
-            if (validationService.isInvalidDelayForDateBase(icons)) {
-                messages.add(Message.of("error.workflow.dateBased.invalid.delay"));
-            }
+        if (!isTesting && validationService.isInvalidDelayForDateBase(icons)) {
+            messages.add(Message.of("error.workflow.dateBased.invalid.delay"));
         }
-        
-        if (!validationService.isAnyTargetForDateBased(icons)) {
+
+        if (!validationService.isDateBaseCampaign(icons) && !validationService.isAnyTargetForDateBased(icons)) {
             messages.add(Message.of("error.mailing.rulebased_without_target"));
         }
 
@@ -1390,6 +1396,9 @@ public class WorkflowController {
                 int criteriaId = decision.getDecisionCriteria().getId();
                 if (criteriaId == WorkflowDecision.WorkflowDecisionCriteria.DECISION_PROFILE_FIELD.getId()) {
                     messages.addAll(validationService.validateDecisionRules(decision, companyId));
+                }  
+                if (criteriaId == WorkflowDecision.WorkflowDecisionCriteria.DECISION_REACTION.getId()) {
+                    messages.addAll(validationService.validateDecisionReaction(decision, companyId));
                 }
             }
         }
@@ -1397,7 +1406,7 @@ public class WorkflowController {
         return messages;
     }
 
-    private void checkAndSetDuplicateMailing(ComAdmin admin, Model model, List<WorkflowIcon> icons, boolean isActiveOrTesting) {
+    private void checkAndSetDuplicateMailing(Admin admin, Model model, List<WorkflowIcon> icons, boolean isActiveOrTesting) {
         List<Mailing> duplicatedMailings = mailingService.getDuplicateMailing(icons, admin.getCompanyID());
         if (!duplicatedMailings.isEmpty()) {
             if (model instanceof RedirectAttributes) {
@@ -1446,12 +1455,12 @@ public class WorkflowController {
         List<Message> messages = new ArrayList<>();
 
         columns = validationService.checkTrackableProfileFields(workflowIcons, companyId);
-        if (columns.size() > 0) {
+        if (!columns.isEmpty()) {
             messages.add(Message.of("error.workflow.profiledb.missingTrackableColumns", "<br>" + StringUtils.join(columns, "<br>")));
         }
 
         columns = validationService.checkProfileFieldsUsedInConditions(workflowIcons, companyId);
-        if (columns.size() > 0) {
+        if (!columns.isEmpty()) {
             messages.add(Message.of("error.workflow.profiledb.missingColumnsForConditions", "<br>" + StringUtils.join(columns, "<br>")));
         }
 
@@ -1482,11 +1491,11 @@ public class WorkflowController {
                 return Message.of("error.workflow.trackingtime", trackingDays);
                 
 			default:
-				return Message.of("Error");
+				return Message.of(ERROR_MSG);
         }
     }
 
-    private void setStatus(ComAdmin admin, Workflow workflow, Workflow existingWorkflow, List<Message> errors, List<Message> warnings, boolean isValid) throws Exception {
+    private void setStatus(Admin admin, Workflow workflow, Workflow existingWorkflow, List<Message> errors, List<Message> warnings, boolean isValid) throws Exception {
         Workflow.WorkflowStatus currentStatus = existingWorkflow != null ? existingWorkflow.getStatus() : Workflow.WorkflowStatus.STATUS_NONE;
         Workflow.WorkflowStatus newStatus = workflow.getStatus();
 
@@ -1522,7 +1531,7 @@ public class WorkflowController {
         }
     }
     
-    private void setAutoOptData(ComAdmin admin, WorkflowForm form, Model model) {
+    private void setAutoOptData(Admin admin, WorkflowForm form, Model model) {
         model.addAttribute("isTotalStatisticAvailable", workflowStatisticsService.isTotalStatisticAvailable(Workflow.WorkflowStatus.valueOf(form.getStatus().name()), form.getWorkflowIcons()));
         model.addAttribute("autoOptData", optimizationService.getOptimizationLight(admin.getCompanyID(), form.getWorkflowId()));
     }

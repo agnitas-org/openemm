@@ -26,6 +26,12 @@ Changed to prevent making widget of head('meta' and 'script') and comment elemen
 Implemented replace defaultHtmlFilterRulesForAll to prevent remove class attribute from <html> tag if fullPage is true. GWUA-4607
 Introduced allowExternalScript parameter that allows external script tags
 
+9) ckeditor.js
+Fixed emoji displaying after save of data or switching to ace editor when using entities_processNumerical=true.
+GWUA-4138
+Before implement it please check maybe it's already fixed under the hood.
+Issue link - https://github.com/ckeditor/ckeditor4/issues/4941
+
 ******* CUSTOM IMPLEMENTATION *******
 EMM implementations which should also be saved after migration of ckeditor:
 1) /plugins/emm/*

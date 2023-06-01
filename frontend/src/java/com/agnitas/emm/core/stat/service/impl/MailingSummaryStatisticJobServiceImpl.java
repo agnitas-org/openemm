@@ -13,7 +13,6 @@ package com.agnitas.emm.core.stat.service.impl;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -92,39 +91,35 @@ public class MailingSummaryStatisticJobServiceImpl implements MailingSummaryStat
 	@Override
 	@Transactional
 	public int startSummaryStatisticJob(final int mailingId, List<Integer> targetList, final Integer recipientsType) {
-		synchronized(dataSet) {
-		
-		validateArguments(mailingId, targetList, recipientsType);
-		
-		Collections.sort(targetList);
-		final String targetGroups = StringUtils.join(targetList, ',');
-		
-		final MailingStatJobDescriptor job = new MailingStatJobDescriptor(mailingId,
-				(recipientsType == null) ? MailingStatJobDescriptor.RECIPIENT_TYPE_ALL : recipientsType,
-				(targetGroups == null) ? "" : targetGroups);
-		
-		int expiredTime = configService.getIntegerValue(ConfigValue.ExpireStatisticSummary);
-		
-		List<MailingStatJobDescriptor> jobs = mailingStatJobDao.findMailingStatJobs(mailingId, job.getRecipientsType(), job.getTargetGroups(), expiredTime);
-		if (!jobs.isEmpty() && jobs.get(0).getStatus() != MailingStatJobDescriptor.STATUS_FAILED) {
-			return jobs.get(0).getId();
-		}
-		
-		final int id = mailingStatJobDao.createMailingStatJob(job);
-		final int companyId = Utils.getUserCompany();
-		workerExecutorService.execute(new Runnable() {
-			@Override
-			public void run() {
+		synchronized (dataSet) {
+			validateArguments(mailingId, targetList, recipientsType);
+
+			Collections.sort(targetList);
+			final String targetGroups = StringUtils.join(targetList, ',');
+
+			final MailingStatJobDescriptor job = new MailingStatJobDescriptor(mailingId,
+					(recipientsType == null) ? MailingStatJobDescriptor.RECIPIENT_TYPE_ALL : recipientsType,
+					(targetGroups == null) ? "" : targetGroups);
+
+			int expiredTime = configService.getIntegerValue(ConfigValue.ExpireStatisticSummary);
+
+			List<MailingStatJobDescriptor> jobs = mailingStatJobDao.findMailingStatJobs(mailingId, job.getRecipientsType(), job.getTargetGroups(), expiredTime);
+			if (!jobs.isEmpty() && jobs.get(0).getStatus() != MailingStatJobDescriptor.STATUS_FAILED) {
+				return jobs.get(0).getId();
+			}
+
+			final int id = mailingStatJobDao.createMailingStatJob(job);
+			final int companyId = Utils.getUserCompany();
+			workerExecutorService.execute(() -> {
 				try {
 					statJob(id, companyId, mailingId, targetGroups, job.getRecipientsType());
 				} catch (Throwable e) {
 					updateJobStatus(id, MailingStatJobDescriptor.STATUS_FAILED, e.getMessage());
 					logger.error("Error while collecting statistic: ", e);
 				}
-			}
-		});
-		
-		return id;
+			});
+
+			return id;
 		}
 	}
 	
@@ -133,7 +128,7 @@ public class MailingSummaryStatisticJobServiceImpl implements MailingSummaryStat
 		if (StringUtils.isBlank(targetGroups)) {
 			return null;
 		}
-		List<String> tGroupsStr = Arrays.asList(targetGroups.split(","));
+		String[] tGroupsStr = targetGroups.split(",");
 		List<Integer> tGroups = new ArrayList<>();
 		
 		for (String groupStr : tGroupsStr) {
@@ -222,7 +217,7 @@ public class MailingSummaryStatisticJobServiceImpl implements MailingSummaryStat
 			if (sendStatRow.getTargetgroupindex() != targetGroupIndex) {
 				continue;
 			}
-			if(sendStatRow.getCategoryindex() == CommonKeys.REVENUE_INDEX) {
+			if (sendStatRow.getCategoryindex() == CommonKeys.REVENUE_INDEX) {
 				tgtGrp.setRevenue(sendStatRow.getRate());
 				continue;
 			}

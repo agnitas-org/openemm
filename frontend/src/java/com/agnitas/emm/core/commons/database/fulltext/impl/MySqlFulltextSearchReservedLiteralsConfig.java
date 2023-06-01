@@ -12,7 +12,10 @@ package com.agnitas.emm.core.commons.database.fulltext.impl;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
+import com.agnitas.messages.Message;
+import org.agnitas.util.FulltextSearchInvalidQueryException;
 import org.apache.commons.lang.StringUtils;
 
 import com.agnitas.emm.core.commons.database.fulltext.FulltextSearchReservedLiteralsConfig;
@@ -24,6 +27,7 @@ public class MySqlFulltextSearchReservedLiteralsConfig implements FulltextSearch
 
     private List<Character> specialChars = new ArrayList<>();
     private List<String> specialWords = new ArrayList<>();
+    private String[] specialOperators = {"+", "-", ">", "<", "~", "*", "\""};
 
     public MySqlFulltextSearchReservedLiteralsConfig() {}
 
@@ -49,5 +53,22 @@ public class MySqlFulltextSearchReservedLiteralsConfig implements FulltextSearch
     @Override
     public boolean isContainsDateBaseDependentControlCharacters(String searchQuery) {
         return StringUtils.contains(searchQuery, AT_SIGN);
+    }
+
+    @Override
+    public void validateTokens(String[] tokens) throws FulltextSearchInvalidQueryException {
+        if (tokens.length > 0) {
+            String lastToken = tokens[tokens.length - 1];
+
+            boolean endsWithIncorrectSymbol = Stream.of(specialOperators)
+                    .anyMatch(lastToken::endsWith);
+
+            if (endsWithIncorrectSymbol) {
+                throw new FulltextSearchInvalidQueryException(
+                        "Invalid search phrase! Ends with invalid symbol!",
+                        Message.of("error.search.operator.forbidden", String.join(", ", specialOperators))
+                );
+            }
+        }
     }
 }

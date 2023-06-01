@@ -164,25 +164,43 @@ public class InformationReportJobWorker extends JobWorker {
 
 	private RemoteFileHelper openRemoteFileHelper(String sftpServerCredentials, String ftpServerCredentials) throws Exception {
 		if (StringUtils.isNotBlank(sftpServerCredentials)) {
-			DataEncryptor dataEncryptor = getApplicationContextForJobWorker().getBean("DataEncryptor", DataEncryptor.class);
-			String sftpCredentialsString = dataEncryptor.decrypt(sftpServerCredentials);
-			
-			SFtpHelper sftpHelper = new SFtpHelper(sftpCredentialsString);
-			String privateSshKeyData = job.getParameters().get("privateSshKeyData");
-			if (StringUtils.isNotBlank(privateSshKeyData)) {
-				sftpHelper.setPrivateSshKeyData(privateSshKeyData);
-			}
-			
-			sftpHelper.setAllowUnknownHostKeys(true);
-			sftpHelper.connect();
-			return sftpHelper;
+			SFtpHelper sftpHelper = null;
+			try{
+				DataEncryptor dataEncryptor = getApplicationContextForJobWorker().getBean("DataEncryptor", DataEncryptor.class);
+				String sftpCredentialsString = dataEncryptor.decrypt(sftpServerCredentials);
+				
+				sftpHelper = new SFtpHelper(sftpCredentialsString);
+				String privateSshKeyData = job.getParameters().get("privateSshKeyData");
+				if (StringUtils.isNotBlank(privateSshKeyData)) {
+					sftpHelper.setPrivateSshKeyData(privateSshKeyData);
+				}
+				
+				sftpHelper.setAllowUnknownHostKeys(true);
+				sftpHelper.connect();
+				return sftpHelper;
+			} catch (Exception e) {
+	        	if (sftpHelper != null) {
+	        		sftpHelper.close();
+	        		sftpHelper = null;
+	        	}
+	            throw e;
+	        }
 		} else if (StringUtils.isNotBlank(ftpServerCredentials)) {
-			DataEncryptor dataEncryptor = getApplicationContextForJobWorker().getBean("DataEncryptor", DataEncryptor.class);
-			String ftpCredentialsString = dataEncryptor.decrypt(ftpServerCredentials);
-			
-			FtpHelper ftpHelper = new FtpHelper(ftpCredentialsString);
-			ftpHelper.connect();
-			return ftpHelper;
+			FtpHelper ftpHelper = null;
+			try{
+				DataEncryptor dataEncryptor = getApplicationContextForJobWorker().getBean("DataEncryptor", DataEncryptor.class);
+				String ftpCredentialsString = dataEncryptor.decrypt(ftpServerCredentials);
+				
+				ftpHelper = new FtpHelper(ftpCredentialsString);
+				ftpHelper.connect();
+				return ftpHelper;
+			} catch (Exception e) {
+	        	if (ftpHelper != null) {
+	        		ftpHelper.close();
+	        		ftpHelper = null;
+	        	}
+	            throw e;
+			}
 		} else {
 			throw new Exception("Missing definition of SFTP or FTP destination host");
 		}

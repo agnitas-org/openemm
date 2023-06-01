@@ -26,8 +26,6 @@ import com.agnitas.web.CdnImage;
 public interface ComMailingComponentDao extends MailingComponentDao {
 	Date getComponentTime(@VelocityCheck int companyID, int mailingID, String name);
 
-	Map<Integer, Integer> getImageComponentsSizes(@VelocityCheck int companyID, int mailingID);
-
 	Map<Integer, Date> getImageComponentsTimestamps(@VelocityCheck int companyID, int mailingID);
 
 	List<MailingComponent> getMailingComponentsByType(MailingComponentType type, @VelocityCheck int companyID);

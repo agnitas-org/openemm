@@ -20,22 +20,28 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.TimeZone;
 
+import com.agnitas.emm.util.html.xssprevention.ForbiddenTagError;
+import com.agnitas.emm.util.html.xssprevention.HtmlCheckError;
+import com.agnitas.emm.util.html.xssprevention.XSSHtmlException;
+import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.XssCheckAware;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.calendar.beans.ComCalendarComment;
 import com.agnitas.emm.core.calendar.beans.impl.ComCalendarCommentImpl;
@@ -63,10 +69,10 @@ public class CalendarController implements XssCheckAware {
     private static final String DATE_TIME_FORMAT = "dd-MM-yyyy HH:mm";
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern(DATE_FORMAT);
 
-    private AdminService adminService;
-    private CalendarService calendarService;
-    private ComOptimizationService optimizationService;
-    private CalendarCommentService calendarCommentService;
+    private final AdminService adminService;
+    private final CalendarService calendarService;
+    private final ComOptimizationService optimizationService;
+    private final CalendarCommentService calendarCommentService;
 
     public CalendarController(AdminService adminService, CalendarService calendarService,
                               ComOptimizationService optimizationService, CalendarCommentService calendarCommentService) {
@@ -76,8 +82,21 @@ public class CalendarController implements XssCheckAware {
         this.calendarCommentService = calendarCommentService;
     }
 
+    @ExceptionHandler(XSSHtmlException.class)
+    public String onXSSHtmlException(XSSHtmlException e, Popups popups) {
+        for (HtmlCheckError error : e.getErrors()) {
+            if (error instanceof ForbiddenTagError) {
+                popups.alert("error.html.forbiddenTag.extended");
+            } else {
+                popups.alert(error.toMessage());
+            }
+        }
+
+        return "messages";
+    }
+
     @RequestMapping("/calendar.action")
-    public String view(ComAdmin admin, Model model) {
+    public String view(Admin admin, Model model) {
         model.addAttribute("localeDatePattern", admin.getDateFormat().toPattern());
         loadAdminData(model, admin);
 
@@ -85,23 +104,23 @@ public class CalendarController implements XssCheckAware {
     }
 
     @RequestMapping("/calendar/getUnsentMailings.action")
-    public String getUnsentMailings(ComAdmin admin, Model model) {
+    public String getUnsentMailings(Admin admin, Model model) {
         setUnsentMails(model, admin);
 
         return "calendar_unsent_mailings_list_ajax";
     }
 
     @RequestMapping("/calendar/getPlannedMailings.action")
-    public String getPlannedMailings(ComAdmin admin, Model model) {
+    public String getPlannedMailings(Admin admin, Model model) {
         model.addAttribute("localeDatePattern", admin.getDateFormat().toPattern());
         setPlannedMails(model, admin);
 
         return "calendar_planned_mailings_list_ajax";
     }
 
-    @RequestMapping(value = "/calendar/autoOptimization.action", method = RequestMethod.POST)
+    @GetMapping(value = "/calendar/autoOptimization.action", produces = MediaType.APPLICATION_JSON_VALUE)
     public @ResponseBody
-    JSONArray getAutoOptimization(ComAdmin admin, @RequestParam("startDate") String start, @RequestParam("endDate") String end) {
+    JSONArray getAutoOptimization(Admin admin, @RequestParam("startDate") String start, @RequestParam("endDate") String end) {
         LocalDate startDate = DateUtilities.parseDate(start, DATE_FORMATTER);
         LocalDate endDate = DateUtilities.parseDate(end, DATE_FORMATTER);
 
@@ -109,7 +128,7 @@ public class CalendarController implements XssCheckAware {
     }
 
     @GetMapping("/calendar/comments.action")
-    public @ResponseBody ResponseEntity<?> getComments(ComAdmin admin, @RequestParam("startDate") String start, @RequestParam("endDate") String end) {
+    public @ResponseBody ResponseEntity<?> getComments(Admin admin, @RequestParam("startDate") String start, @RequestParam("endDate") String end) {
         LocalDate startDate = DateUtilities.parseDate(start, DATE_FORMATTER);
         LocalDate endDate = DateUtilities.parseDate(end, DATE_FORMATTER);
 
@@ -121,7 +140,7 @@ public class CalendarController implements XssCheckAware {
     }
 
     @RequestMapping(value = "/calendar/saveComment.action", method = RequestMethod.POST)
-    public @ResponseBody ResponseEntity<?> saveComment(ComAdmin admin, CommentForm form) {
+    public @ResponseBody ResponseEntity<?> saveComment(Admin admin, CommentForm form) {
         JSONObject result = new JSONObject();
         TimeZone timezone = AgnUtils.getTimeZone(admin);
         DateFormat dateFormat = DateUtilities.getFormat(DATE_FORMAT, timezone);
@@ -154,7 +173,7 @@ public class CalendarController implements XssCheckAware {
     }
 
     @RequestMapping(value = "/calendar/removeComment.action", method = RequestMethod.POST)
-    public @ResponseBody ResponseEntity<?> removeComment(ComAdmin admin, @RequestParam("commentId") int commentId) {
+    public @ResponseBody ResponseEntity<?> removeComment(Admin admin, @RequestParam("commentId") int commentId) {
         JSONObject result = new JSONObject();
         boolean isSuccess;
 
@@ -171,7 +190,7 @@ public class CalendarController implements XssCheckAware {
 
     @GetMapping("/calendar/mailings.action")
     public @ResponseBody
-    ResponseEntity<?> getMailings(ComAdmin admin, @RequestParam("startDate") String start, @RequestParam("endDate") String end) {
+    ResponseEntity<?> getMailings(Admin admin, @RequestParam("startDate") String start, @RequestParam("endDate") String end) {
         LocalDate startDate = DateUtilities.parseDate(start, DATE_FORMATTER);
         LocalDate endDate = DateUtilities.parseDate(end, DATE_FORMATTER);
 
@@ -189,7 +208,7 @@ public class CalendarController implements XssCheckAware {
 
     @RequestMapping(value = "/calendar/moveMailing.action", method = RequestMethod.POST)
     public @ResponseBody
-    ResponseEntity<?> moveMailing(ComAdmin admin, @RequestParam("mailingId") int mailingId, @RequestParam("date") String newDate) {
+    ResponseEntity<?> moveMailing(Admin admin, @RequestParam("mailingId") int mailingId, @RequestParam("date") String newDate) {
         JSONObject result = new JSONObject();
         LocalDate date = DateUtilities.parseDate(newDate, DATE_FORMATTER);
 
@@ -204,21 +223,21 @@ public class CalendarController implements XssCheckAware {
         return ResponseEntity.ok().body(result);
     }
 
-    private void setUnsentMails(Model model, ComAdmin admin) {
+    private void setUnsentMails(Model model, Admin admin) {
         PaginatedListImpl<Map<String, Object>> unsentList = calendarService.getUnsentMailings(admin, UNSENT_MAILS_LIST_SIZE);
 
         model.addAttribute("unsentMails", unsentList.getList());
         model.addAttribute("unsentMailsListSize", UNSENT_MAILS_LIST_SIZE);
     }
 
-    private void setPlannedMails(Model model, ComAdmin admin) {
+    private void setPlannedMails(Model model, Admin admin) {
         PaginatedListImpl<Map<String, Object>> plannedList = calendarService.getPlannedMailings(admin, PLANNED_MAILS_LIST_SIZE);
 
         model.addAttribute("plannedMails", plannedList.getList());
         model.addAttribute("plannedMailsListSize", PLANNED_MAILS_LIST_SIZE);
     }
 
-    private void loadAdminData(Model model, ComAdmin admin) {
+    private void loadAdminData(Model model, Admin admin) {
         Locale locale = admin.getLocale();
         int companyId = admin.getCompanyID();
         Map<String, String> adminsMap = adminService.mapIdToUsernameByCompanyAndEmail(companyId);

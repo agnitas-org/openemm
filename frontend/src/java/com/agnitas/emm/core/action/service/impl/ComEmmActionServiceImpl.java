@@ -25,12 +25,13 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.ProfileField;
+import com.agnitas.beans.ProfileFieldMode;
 import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
 import com.agnitas.emm.core.action.operations.ActionOperationUpdateCustomerParameters;
 import com.agnitas.emm.core.action.service.ComEmmActionService;
-import com.agnitas.service.ComColumnInfoService;
+import com.agnitas.service.ColumnInfoService;
 
 
 public class ComEmmActionServiceImpl extends EmmActionServiceImpl implements ComEmmActionService {
@@ -38,9 +39,9 @@ public class ComEmmActionServiceImpl extends EmmActionServiceImpl implements Com
 	/** The logger. */
 	private static final transient Logger LOGGER = LogManager.getLogger(ComEmmActionServiceImpl.class);
 	
-	private final ComColumnInfoService columnInfoService;
+	private final ColumnInfoService columnInfoService;
 	
-	public ComEmmActionServiceImpl(final ComColumnInfoService columnInfoService) {
+	public ComEmmActionServiceImpl(final ColumnInfoService columnInfoService) {
 		this.columnInfoService = Objects.requireNonNull(columnInfoService);
 	}
 
@@ -120,7 +121,7 @@ public class ComEmmActionServiceImpl extends EmmActionServiceImpl implements Com
     }
 
 	@Override
-	public boolean canUserSaveAction(ComAdmin admin, int actionId) {
+	public boolean canUserSaveAction(Admin admin, int actionId) {
 		if(actionId == 0) {	// New actions can always be saved
 			return true;
 		}
@@ -131,7 +132,7 @@ public class ComEmmActionServiceImpl extends EmmActionServiceImpl implements Com
 	}
 
 	@Override
-	public boolean canUserSaveAction(ComAdmin admin, EmmAction action) {
+	public boolean canUserSaveAction(Admin admin, EmmAction action) {
 		if(action == null) {
 			return true;
 		}
@@ -143,7 +144,7 @@ public class ComEmmActionServiceImpl extends EmmActionServiceImpl implements Com
 				try {
 					final ProfileField field = this.columnInfoService.getColumnInfo(admin.getCompanyID(), actionParameters.getColumnName(), admin.getAdminID());
 					
-					if(field == null || field.getModeEdit() == ProfileField.MODE_EDIT_READONLY || field.getModeEdit() == ProfileField.MODE_EDIT_NOT_VISIBLE) {
+					if(field == null || field.getModeEdit() == ProfileFieldMode.ReadOnly || field.getModeEdit() == ProfileFieldMode.NotVisible) {
 						return false;
 					}
 				} catch(final Exception e) {

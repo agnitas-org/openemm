@@ -19,8 +19,16 @@
         </div>
         <div class="upselling-desc">
             <p><mvc:message code="referenceTables.teaser.text"/></p>
-
-            <a href="${upsellingInfoUrl}" target="_blank" class="more-info-btn">
+			
+			
+			<c:choose>
+				<c:when test="${aLocale eq 'de_DE'}">
+					<a href="https://www.agnitas.de/e-marketing-manager/premium-features/smart-data/" class="more-info-btn" target="_blank">
+				</c:when>
+				<c:otherwise>
+					<a href="https://www.agnitas.de/en/e-marketing_manager/premium-features/smart-data/" class="more-info-btn" target="_blank">
+				</c:otherwise>
+			</c:choose>
                 <mvc:message code="general.upselling.information"/>
             </a>
         </div>

@@ -17,9 +17,6 @@ import com.agnitas.reporting.birt.external.beans.LightMailing;
 public interface LightMailingDao {
 	/**
 	 * Get the specified mailing as pojo.
-	 * @param mailingId
-	 * @param companyId
-	 * @return
 	 */
-	public LightMailing getMailing(int mailingId, @VelocityCheck int companyId);
+	LightMailing getMailing(int mailingId, @VelocityCheck int companyId);
 }

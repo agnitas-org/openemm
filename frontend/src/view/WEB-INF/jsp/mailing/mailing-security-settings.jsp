@@ -76,23 +76,21 @@
 
                             <input type="hidden" id="required-import-id" name="autoImportId" value="${autoImportId}"/>
 
-                            <emm:ShowByPermission token="recipient.import.auto.mailing">
-                                <div class="form-group">
-                                    <div class="col-sm-4">
-                                        <label class="control-label" for="required-auto-import"><mvc:message code="autoImport.autoImport" /></label>
-                                    </div>
-                                    <div class="col-sm-6">
-                                        <select id="required-auto-import" class="form-control js-select" data-sync-from="#required-auto-import" data-sync-to="#required-import-id">
-                                            <option value="0">---</option>
-                                            <c:forEach var="autoImport" items="${autoImports}">
-                                                <option value="${autoImport.autoImportId}" ${autoImport.autoImportId eq autoImportId ? "selected" : ""} >
-                                                        ${autoImport.shortname}
-                                                </option>
-                                            </c:forEach>
-                                        </select>
-                                    </div>
+                            <div class="form-group">
+                                <div class="col-sm-4">
+                                    <label class="control-label" for="required-auto-import"><mvc:message code="mailing.autoimport.required" /></label>
                                 </div>
-                            </emm:ShowByPermission>
+                                <div class="col-sm-6">
+                                    <select id="required-auto-import" class="form-control js-select" data-sync-from="#required-auto-import" data-sync-to="#required-import-id">
+                                        <option value="0">---</option>
+                                        <c:forEach var="autoImport" items="${autoImports}">
+                                            <option value="${autoImport.autoImportId}" ${autoImport.autoImportId eq autoImportId ? "selected" : ""} >
+                                                    ${autoImport.shortname}
+                                            </option>
+                                        </c:forEach>
+                                    </select>
+                                </div>
+                            </div>
 
                             <div class="tile-separator"></div>
 

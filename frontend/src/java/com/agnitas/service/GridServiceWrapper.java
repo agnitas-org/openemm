@@ -14,7 +14,7 @@ package com.agnitas.service;
 import java.util.Collection;
 import java.util.Map;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.Mailing;
 import com.agnitas.emm.grid.grid.beans.ComGridTemplate;
 import com.agnitas.emm.grid.grid.beans.ComTemplateSettings;
@@ -37,9 +37,9 @@ public interface GridServiceWrapper {
     
     void saveMailingGridInfo(int mailingId, @VelocityCheck int companyId, Map<String, Object> data);
     
-    ComTemplateSettings getGridTemplateSettings(int templateId, ComAdmin admin);
+    ComTemplateSettings getGridTemplateSettings(int templateId, Admin admin);
     
-    Mailing createGridMailing(ComAdmin admin, int templateId, MailingCreationOptions creationOptions) throws Exception;
+    Mailing createGridMailing(Admin admin, int templateId, MailingCreationOptions creationOptions) throws Exception;
     
     void saveUndoGridMailing(int mailingId, int gridTemplateId, int adminId);
     

@@ -11,6 +11,7 @@
 package com.agnitas.web;
 
 import com.agnitas.beans.Mailing;
+import com.agnitas.web.mvc.Popups;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.util.GuiConstants;
 import org.apache.commons.lang.StringUtils;
@@ -29,6 +30,21 @@ public class ComMailingContentChecker {
     	for (MailingComponent component : aMailing.getComponents().values()) {
     		if (StringUtils.equalsIgnoreCase("text/html", component.getMimeType())) {
     			checkHtmlWarningConditions(component.getEmmBlock(), messages);
+    		}
+    	}
+    }
+    
+    public static void checkHtmlWarningConditions(String htmlContentString, Popups popups) {
+		if (StringUtils.containsIgnoreCase(htmlContentString, "background=\"#")) {
+			// the attribute background causes ActionForms to load twice or multiple, because background.value should be an image and not a color-code
+            popups.warning("warning.problematical_htmlcontent", "background=\"# ...");
+		}
+    }
+    
+    public static void checkHtmlWarningConditions(Mailing aMailing, Popups popups) {
+    	for (MailingComponent component : aMailing.getComponents().values()) {
+    		if (StringUtils.equalsIgnoreCase("text/html", component.getMimeType())) {
+    			checkHtmlWarningConditions(component.getEmmBlock(), popups);
     		}
     	}
     }

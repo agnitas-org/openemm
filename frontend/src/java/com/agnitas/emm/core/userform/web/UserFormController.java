@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+import com.agnitas.web.mvc.XssCheckAware;
 import org.agnitas.actions.EmmAction;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
@@ -55,7 +56,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.action.service.ComEmmActionService;
 import com.agnitas.emm.core.company.service.CompanyTokenService;
 import com.agnitas.emm.core.linkcheck.service.LinkService;
@@ -72,24 +73,26 @@ import com.agnitas.web.dto.BooleanResponseDto;
 import com.agnitas.web.mvc.DeleteFileAfterSuccessReadResource;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.perm.annotations.PermissionMapping;
+import static org.agnitas.util.Const.Mvc.ERROR_MSG;
+import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
 
 @Controller
 @RequestMapping("/webform")
 @PermissionMapping("userform")
-public class UserFormController {
+public class UserFormController implements XssCheckAware {
 
 	private static final Logger logger = LogManager.getLogger(UserFormController.class);
 
-	private WebStorage webStorage;
-	private ComUserformService userformService;
-	private ComEmmActionService emmActionService;
-	private ConfigService configService;
-	private UserActivityLogService userActivityLogService;
-	private ExtendedConversionService conversionService;
-    private LinkService linkService;
-	private VelocityDirectiveScriptValidator velocityValidator;
-	private UserFormImporter userFormImporter;
-	private CompanyTokenService companyTokenService;
+	private final WebStorage webStorage;
+	private final ComUserformService userformService;
+	private final ComEmmActionService emmActionService;
+	private final ConfigService configService;
+	private final UserActivityLogService userActivityLogService;
+	private final ExtendedConversionService conversionService;
+    private final LinkService linkService;
+	private final VelocityDirectiveScriptValidator velocityValidator;
+	private final UserFormImporter userFormImporter;
+	private final CompanyTokenService companyTokenService;
 
 	public UserFormController(WebStorage webStorage, ComUserformService userformService, ComEmmActionService emmActionService,
 							  ConfigService configService, UserActivityLogService userActivityLogService,
@@ -108,7 +111,7 @@ public class UserFormController {
 	}
 
 	@RequestMapping("/list.action")
-	public String list(ComAdmin admin, @ModelAttribute("form") UserFormsForm form, Model model, Popups popups) {
+	public String list(Admin admin, @ModelAttribute("form") UserFormsForm form, Model model, Popups popups) {
 		try {
 			AgnUtils.setAdminDateTimeFormatPatterns(admin, model);
 			FormUtils.syncNumberOfRows(webStorage, WebStorage.USERFORM_OVERVIEW, form);
@@ -123,19 +126,19 @@ public class UserFormController {
 		return "userform_list";
 	}
 
-	private void loadUserFormUrlPatterns(ComAdmin admin, final String formName, Model model, final Optional<String> companyToken) {
+	private void loadUserFormUrlPatterns(Admin admin, final String formName, Model model, final Optional<String> companyToken) {
 		model.addAttribute("userFormURLPattern", userformService.getUserFormUrlPattern(admin, formName, false, companyToken));
 		model.addAttribute("userFormFullURLPattern", userformService.getUserFormUrlPattern(admin, formName, true, companyToken));
 	}
 
-	private void loadUserformUrlPatternsAllTestRecipients(ComAdmin admin, final String formName, Model model, final Optional<String> companyToken) {
+	private void loadUserformUrlPatternsAllTestRecipients(Admin admin, final String formName, Model model, final Optional<String> companyToken) {
 		model.addAttribute("userFormURLPattern", userformService.getUserFormUrlPattern(admin, formName, false, companyToken));
 		model.addAttribute("userFormFullURLPatterns", userformService.getUserFormUrlForAllAdminAndTestRecipients(admin, formName, companyToken));
 		model.addAttribute("userFormFullURLPatternNoUid", userformService.getUserFormUrlWithoutUID(admin, formName, companyToken));
 	}
 
 	@PostMapping("/saveActiveness.action")
-	public @ResponseBody BooleanResponseDto saveActiveness(ComAdmin admin, @ModelAttribute("form") UserFormsForm form, Popups popups) {
+	public @ResponseBody BooleanResponseDto saveActiveness(Admin admin, @ModelAttribute("form") UserFormsForm form, Popups popups) {
 		UserAction userAction = userformService.setActiveness(admin.getCompanyID(), form.getActiveness());
 		boolean result = false;
 		if (Objects.nonNull(userAction)) {
@@ -143,14 +146,14 @@ public class UserFormController {
 			popups.success("default.changes_saved");
 			result = true;
 		} else {
-			popups.alert("Error");
+			popups.alert(ERROR_MSG);
 		}
 
 		return new BooleanResponseDto(popups, result);
 	}
 
 	@GetMapping(value = {"/new.action", "/0/view.action"})
-	public String create(ComAdmin admin, @ModelAttribute("form") UserFormForm form, Model model, WorkflowParameters workflowParams) {
+	public String create(Admin admin, @ModelAttribute("form") UserFormForm form, Model model, WorkflowParameters workflowParams) {
 		int forwardedId = workflowParams.getTargetItemId();
         if(forwardedId > 0) {
             return "redirect:/webform/" + forwardedId + "/view.action";
@@ -168,7 +171,7 @@ public class UserFormController {
 	}
 
 	@GetMapping("/{id:\\d+}/view.action")
-	public String view(ComAdmin admin, @PathVariable int id,
+	public String view(Admin admin, @PathVariable int id,
 			@ModelAttribute("form") UserFormForm form, Model model, Popups popups, WorkflowParameters workflowParams) {
 		try {
 			if (id == 0 && workflowParams.getTargetItemId() > 0) {
@@ -194,7 +197,7 @@ public class UserFormController {
 	}
 
 	@PostMapping("/save.action")
-	public String save(ComAdmin admin, @ModelAttribute("form") UserFormForm form, Model model, Popups popups, WorkflowParameters workflowParams) {
+	public String save(Admin admin, @ModelAttribute("form") UserFormForm form, Model model, Popups popups, WorkflowParameters workflowParams) {
 		try {
 			if (validate(admin, form, popups)) {
 				boolean update = form.getFormId() > 0;
@@ -207,7 +210,7 @@ public class UserFormController {
 					popups.success("default.changes_saved");
 				}
 
-				if (CollectionUtils.isNotEmpty(result.getErrorMessages())) {
+				if (result.hasErrorMessages()) {
 					result.getErrorMessages().forEach(popups::alert);
 				}
 				if(CollectionUtils.isNotEmpty(result.getWarningMessages())) {
@@ -222,9 +225,9 @@ public class UserFormController {
 				}
 			}
 		} catch (Exception e) {
-			popups.alert("Error");
+			popups.alert(ERROR_MSG);
 		}
-		return "messages";
+		return MESSAGES_VIEW;
 	}
 
 	private List<Message> validateSettings(ResultSettings settings) throws ScriptValidationException {
@@ -245,7 +248,7 @@ public class UserFormController {
         return errors;
     }
 
-	private boolean validate(ComAdmin admin, UserFormForm form, Popups popups) throws Exception {
+	private boolean validate(Admin admin, UserFormForm form, Popups popups) throws Exception {
 		if (!userformService.isValidFormName(form.getFormName())) {
 			popups.alert("error.form.invalid_name");
 		} else if (!userformService.isFormNameUnique(form.getFormName(), form.getFormId(), admin.getCompanyID())) {
@@ -260,18 +263,18 @@ public class UserFormController {
 
 	@GetMapping("/import.action")
 	@PermissionMapping("import")
-	public String importFormView(ComAdmin admin, @RequestParam(value = "importTemplate", required = false) boolean templateOverview) {
+	public String importFormView(Admin admin, @RequestParam(value = "importTemplate", required = false) boolean templateOverview) {
 		return templateOverview ? "import_view" : "userform_import";
 	}
 
 
 	@PostMapping("/importUserForm.action")
 	@PermissionMapping("import")
-	public String importForm(ComAdmin admin, @RequestParam(value = "importTemplate") boolean templateOverview,
+	public String importForm(Admin admin, @RequestParam(value = "importTemplate") boolean templateOverview,
 							 @RequestParam(value = "uploadFile") MultipartFile uploadFile, Popups popups) {
 		if (uploadFile.isEmpty()) {
         	popups.alert("error.file.missingOrEmpty");
-			return "messages";
+			return MESSAGES_VIEW;
 		}
 
         FormImportResult result;
@@ -297,12 +300,12 @@ public class UserFormController {
             popups.alert("error.userform.import");
         }
 
-		return "messages";
+		return MESSAGES_VIEW;
 	}
 
 	@GetMapping(value = "/{id:\\d+}/export.action")
 	@PermissionMapping("export")
-	public Object exportForm(ComAdmin admin, @PathVariable int id, Popups popups) {
+	public Object exportForm(Admin admin, @PathVariable int id, Popups popups) {
 		int companyId = admin.getCompanyID();
 
 		String userFormName = userformService.getUserFormName(id, companyId);
@@ -325,10 +328,10 @@ public class UserFormController {
 	}
 
 	@GetMapping("/{id:\\d+}/clone.action")
-	public String clone(ComAdmin admin, @PathVariable int id, Popups popups) {
+	public String clone(Admin admin, @PathVariable int id, Popups popups) {
 		try {
 			ServiceResult<Integer> result = userformService.cloneUserForm(admin, id);
-			if (CollectionUtils.isNotEmpty(result.getErrorMessages())) {
+			if (result.hasErrorMessages()) {
 				result.getErrorMessages().forEach(popups::alert);
 			}
 			if(CollectionUtils.isNotEmpty(result.getWarningMessages())) {
@@ -345,27 +348,27 @@ public class UserFormController {
 				logger.error("Result clone ID is wrong");
 			}
 		} catch (Exception e) {
-			logger.error("Could not clone web form ID:" + id, e);
+			logger.error("Could not clone web form ID:{}", + id, e);
 		}
 
-		popups.alert("Error");
-		return "messages";
+		popups.alert(ERROR_MSG);
+		return MESSAGES_VIEW;
 	}
 
 	@PostMapping("/confirmBulkDelete.action")
 	public String confirmBulkDelete(@ModelAttribute("bulkDeleteForm") BulkActionForm form, Popups popups) {
 		if (CollectionUtils.isEmpty(form.getBulkIds())) {
 			popups.alert("bulkAction.nothing.userform");
-			return "messages";
+			return MESSAGES_VIEW;
 		}
 		return "userform_bulk_delete_ajax";
 	}
 
 	@RequestMapping(value = "/bulkDelete.action", method = {RequestMethod.POST, RequestMethod.DELETE})
-    public String bulkDelete(ComAdmin admin, @ModelAttribute("bulkDeleteForm") BulkActionForm form, Popups popups) {
+    public String bulkDelete(Admin admin, @ModelAttribute("bulkDeleteForm") BulkActionForm form, Popups popups) {
         if(form.getBulkIds().isEmpty()) {
             popups.alert("bulkAction.nothing.userform");
-            return "messages";
+            return MESSAGES_VIEW;
         }
 
         List<UserFormDto> deletedUserForms = userformService.bulkDeleteUserForm(form.getBulkIds(), admin.getCompanyID());
@@ -380,12 +383,12 @@ public class UserFormController {
 			return "redirect:/webform/list.action";
 		}
 
-        popups.alert("Error");
-        return "messages";
+        popups.alert(ERROR_MSG);
+        return MESSAGES_VIEW;
     }
 
 	@GetMapping("/{id:\\d+}/confirmDelete.action")
-	public String confirmDelete(ComAdmin admin, @PathVariable int id, @ModelAttribute("simpleActionForm") SimpleActionForm form, Popups popups) {
+	public String confirmDelete(Admin admin, @PathVariable int id, @ModelAttribute("simpleActionForm") SimpleActionForm form, Popups popups) {
 		UserFormDto userForm = userformService.getUserForm(admin.getCompanyID(), id);
 		if (userForm != null) {
 			form.setId(userForm.getId());
@@ -394,23 +397,23 @@ public class UserFormController {
 			return "userform_delete_ajax_new";
 		}
 
-		popups.alert("Error");
-		return "messages";
+		popups.alert(ERROR_MSG);
+		return MESSAGES_VIEW;
 	}
 
     @RequestMapping(value = "/delete.action", method = {RequestMethod.POST, RequestMethod.DELETE})
-    public String delete(ComAdmin admin, SimpleActionForm form, Popups popups) {
+    public String delete(Admin admin, SimpleActionForm form, Popups popups) {
         if (userformService.deleteUserForm(form.getId(), admin.getCompanyID())) {
 			writeUserActivityLog(admin, "delete user form", String.format("ID: %d", form.getId()));
 			popups.success("default.selection.deleted");
 			return "redirect:/webform/list.action";
 		}
 
-        popups.alert("Error");
-        return "messages";
+        popups.alert(ERROR_MSG);
+        return MESSAGES_VIEW;
     }
 
-    private Optional<String> companyTokenForAdmin(final ComAdmin admin) {
+    private Optional<String> companyTokenForAdmin(final Admin admin) {
     	try {
     		return this.companyTokenService.getCompanyToken(admin.getCompanyID());
     	} catch(final UnknownCompanyIdException e) {
@@ -418,11 +421,11 @@ public class UserFormController {
     	}
     }
 
-	private void writeUserActivityLog(ComAdmin admin, String action, String description) {
+	private void writeUserActivityLog(Admin admin, String action, String description) {
 		writeUserActivityLog(admin, new UserAction(action, description));
 	}
 
-	private void writeUserActivityLog(ComAdmin admin, UserAction userAction) {
+	private void writeUserActivityLog(Admin admin, UserAction userAction) {
 		if (userActivityLogService != null) {
 			userActivityLogService.writeUserActivityLog(admin, userAction, logger);
 		} else {
@@ -431,7 +434,7 @@ public class UserFormController {
 		}
 	}
 
-	private void loadFormBuilderData(final  ComAdmin admin, final Model model) {
+	private void loadFormBuilderData(final  Admin admin, final Model model) {
 		model.addAttribute("companyId", admin.getCompanyID());
 		model.addAttribute("names", userformService.getUserFormNames(admin.getCompanyID()));
 		model.addAttribute("mediapoolImages", userformService.getMediapoolImages(admin));
@@ -441,4 +444,9 @@ public class UserFormController {
 		model.addAttribute("formCssLocation", configService.getValue(ConfigValue.UserFormCssLocation));
 	}
 
+    @Override
+    public boolean isParameterExcludedForUnsafeHtmlTagCheck(Admin admin, String param, String controllerMethodName) {
+        return ("successSettings.template".equals(param) || "errorSettings.template".equals(param))
+                && "save".equals(controllerMethodName);
+    }
 }

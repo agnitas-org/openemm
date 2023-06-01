@@ -43,8 +43,7 @@ import com.agnitas.emm.core.reminder.dao.impl.ComReminderBaseDaoImpl;
 
 public class ComCalendarCommentDaoImpl extends ComReminderBaseDaoImpl implements ComCalendarCommentDao {
 	
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(ComCalendarCommentDaoImpl.class);
+	private static final Logger logger = LogManager.getLogger(ComCalendarCommentDaoImpl.class);
 
     @Override
 	public ComCalendarCommentRecipient createCalendarCommentRecipient() {

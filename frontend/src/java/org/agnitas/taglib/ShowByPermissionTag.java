@@ -13,7 +13,7 @@ package org.agnitas.taglib;
 import jakarta.servlet.jsp.JspException;
 import jakarta.servlet.jsp.tagext.TagSupport;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.Permission;
 import org.agnitas.util.AgnUtils;
 
@@ -45,7 +45,7 @@ public class ShowByPermissionTag extends PermissionExceptionTagSupport {
      */
     @Override
 	public int doStartTag() throws JspException {
-    	ComAdmin aAdmin = AgnUtils.getAdmin(pageContext);
+    	Admin aAdmin = AgnUtils.getAdmin(pageContext);
 		if (aAdmin != null) {
             try {
                 if (aAdmin.permissionAllowed(Permission.getPermissionsByToken(token))) {

@@ -10,8 +10,11 @@
 
 package com.agnitas.emm.springws.endpoint;
 
+import java.util.Objects;
+
 import org.agnitas.emm.springws.endpoint.BaseEndpoint;
-import org.agnitas.emm.springws.endpoint.Utils;
+import org.agnitas.emm.springws.endpoint.Namespaces;
+import org.agnitas.emm.springws.util.SecurityContextAccess;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.ws.server.endpoint.annotation.Endpoint;
@@ -29,14 +32,16 @@ import com.agnitas.emm.springws.jaxb.AddTargetGroupResponse;
 @Endpoint
 public class AddTargetGroupEndpoint extends BaseEndpoint {
 
-    private ComTargetService targetService;
+    private final ComTargetService targetService;
+    private final SecurityContextAccess securityContextAccess;
 
     @Autowired
-    public AddTargetGroupEndpoint(ComTargetService targetService) {
-        this.targetService = targetService;
+    public AddTargetGroupEndpoint(ComTargetService targetService, final SecurityContextAccess securityContextAccess) {
+        this.targetService = Objects.requireNonNull(targetService, "targetService");
+        this.securityContextAccess = Objects.requireNonNull(securityContextAccess, "securityContextAccess");
     }
 
-    @PayloadRoot(namespace = Utils.NAMESPACE_COM, localPart = "AddTargetGroupRequest")
+    @PayloadRoot(namespace = Namespaces.AGNITAS_COM, localPart = "AddTargetGroupRequest")
     public @ResponsePayload AddTargetGroupResponse addTargetGroup(@RequestPayload AddTargetGroupRequest request) throws Exception {
         validateRequest(request);
         ComTarget target = createTargetFromRequest(request);
@@ -51,7 +56,7 @@ public class AddTargetGroupEndpoint extends BaseEndpoint {
         target.setTargetName(request.getName());
         target.setTargetDescription(request.getDescription());
         target.setEQL(request.getEql());
-        target.setCompanyID(Utils.getUserCompany());
+        target.setCompanyID(this.securityContextAccess.getWebserviceUserCompanyId());
         return target;
     }
 

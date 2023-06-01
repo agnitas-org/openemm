@@ -38,12 +38,19 @@
     <c:param name="page" value="1"/>
 </c:url>
 
-<c:url var="mailingViewLink" value="/mailingbase.do">
-    <c:param name="action" value="${ACTION_VIEW}"/>
-    <c:param name="mailingID" value="${mailingSendForm.mailingID}"/>
-    <c:param name="keepForward" value="true"/>
-    <c:param name="init" value="true"/>
-</c:url>
+<emm:ShowByPermission token="mailing.settings.migration">
+    <c:url var="mailingViewLink" value="/mailing/${mailingSendForm.mailingID}/settings.action">
+        <c:param name="keepForward" value="true"/>
+    </c:url>
+</emm:ShowByPermission>
+<emm:HideByPermission token="mailing.settings.migration">
+    <c:url var="mailingViewLink" value="/mailingbase.do">
+        <c:param name="action" value="${ACTION_VIEW}"/>
+        <c:param name="mailingID" value="${mailingSendForm.mailingID}"/>
+        <c:param name="keepForward" value="true"/>
+        <c:param name="init" value="true"/>
+    </c:url>
+</emm:HideByPermission>
 
 <c:url var="mailingSendViewLink" value="/mailingsend.do">
     <c:param name="action" value="${ACTION_VIEW_SEND}"/>

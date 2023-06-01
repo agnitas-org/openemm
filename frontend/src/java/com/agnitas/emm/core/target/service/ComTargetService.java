@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import org.agnitas.beans.TrackableLink;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.exception.target.TargetGroupPersistenceException;
 import org.agnitas.emm.core.target.exception.TargetGroupException;
@@ -25,7 +26,7 @@ import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.struts.action.ActionMessages;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.ComTarget;
 import com.agnitas.beans.ListSplit;
 import com.agnitas.beans.Mailing;
@@ -56,13 +57,13 @@ public interface ComTargetService {
 	
 	void deleteTargetGroup(int targetGroupID, @VelocityCheck int companyID) throws TargetGroupException, TargetGroupPersistenceException;
 
-    int saveTarget(ComAdmin admin, ComTarget newTarget, ComTarget target, ActionMessages errors, UserActivityLog userActivityLog) throws Exception;
+    int saveTarget(Admin admin, ComTarget newTarget, ComTarget target, ActionMessages errors, UserActivityLog userActivityLog) throws Exception;
 
-	int saveTarget(ComAdmin admin, ComTarget newTarget, ComTarget target, List<Message> errors, List<UserAction> userActions) throws Exception;
+	int saveTarget(Admin admin, ComTarget newTarget, ComTarget target, List<Message> errors, List<UserAction> userActions) throws Exception;
 
-	TargetSavingAndAnalysisResult saveTargetWithAnalysis(ComAdmin admin, ComTarget newTarget, ComTarget target, ActionMessages errors, UserActivityLog userActivityLog) throws Exception;
+	TargetSavingAndAnalysisResult saveTargetWithAnalysis(Admin admin, ComTarget newTarget, ComTarget target, ActionMessages errors, UserActivityLog userActivityLog) throws Exception;
 
-	int saveTarget(ComAdmin admin, ComTarget newTarget, ComTarget target, List<Message> errors, UserActivityLog userActivityLog) throws Exception;
+	int saveTarget(Admin admin, ComTarget newTarget, ComTarget target, List<Message> errors, UserActivityLog userActivityLog) throws Exception;
 
 	int saveTarget(ComTarget target) throws TargetGroupPersistenceException;
 
@@ -152,18 +153,18 @@ public interface ComTargetService {
 	List<TargetLight> getWsTargetLights(@VelocityCheck int companyID);
 
 	/**
-	 * Use {@link #getTargetLights(com.agnitas.beans.ComAdmin, boolean, boolean, boolean)} instead
+	 * Use {@link #getTargetLights(com.agnitas.beans.Admin, boolean, boolean, boolean)} instead
 	 * @Deprecated
 	 *
-	 * @see #getTargetLights(com.agnitas.beans.ComAdmin, boolean, boolean, boolean)
+	 * @see #getTargetLights(com.agnitas.beans.Admin, boolean, boolean, boolean)
 	 */
-	List<TargetLight> getTargetLights(ComAdmin admin);
+	List<TargetLight> getTargetLights(Admin admin);
 	List<TargetLight> getTargetLights(int companyID, boolean includeDeleted, boolean worldDelivery, boolean adminTestDelivery, boolean content);
 
-	List<TargetLight> getTargetLights(ComAdmin admin, boolean worldDelivery, boolean adminTestDelivery,
+	List<TargetLight> getTargetLights(Admin admin, boolean worldDelivery, boolean adminTestDelivery,
 			boolean content);
 
-	List<TargetLight> getTargetLights(ComAdmin admin, boolean includeDeleted, boolean worldDelivery, boolean adminTestDelivery, boolean content);
+	List<TargetLight> getTargetLights(Admin admin, boolean includeDeleted, boolean worldDelivery, boolean adminTestDelivery, boolean content);
 
 	List<TargetLight> getTargetLights(TargetLightsOptions options);
 
@@ -224,15 +225,15 @@ public interface ComTargetService {
 
     List<TargetLight> getNoAccessLimitationTargetLights(int companyId);
 
-    List<TargetLight> extractAdminAltgsFromTargetLights(List<TargetLight> targets, ComAdmin admin);
+    List<TargetLight> extractAdminAltgsFromTargetLights(List<TargetLight> targets, Admin admin);
 
     List<TargetLight> filterTargetLightsByAltgMode(List<TargetLight> targets, AltgMode mode);
 
 	boolean isBasicFullTextSearchSupported();
 
-	boolean isRecipientMatchTarget(ComAdmin admin, int targetGroupId, int customerId);
+	boolean isRecipientMatchTarget(Admin admin, int targetGroupId, int customerId);
 
-	void checkRecipientTargetGroupAccess(ComAdmin admin, int customerId) throws RejectAccessByTargetGroupLimit;
+	void checkRecipientTargetGroupAccess(Admin admin, int customerId) throws RejectAccessByTargetGroupLimit;
 	
 	boolean isAltg(int targetId);
 
@@ -244,7 +245,7 @@ public interface ComTargetService {
 
 	boolean isLocked(int companyId, int targetId);
 
-	int saveTargetFromRecipientSearch(ComAdmin admin, RecipientSaveTargetDto targetDto, List<Message> errors, List<UserAction> userActions);
+	int saveTargetFromRecipientSearch(Admin admin, RecipientSaveTargetDto targetDto, List<Message> errors, List<UserAction> userActions);
 
     void addToFavorites(int targetId, int companyId);
 
@@ -255,4 +256,6 @@ public interface ComTargetService {
 	List<TargetLight> getTargetLights(int fromCompanyID, boolean b);
 
 	int getAccessLimitingTargetgroupsAmount(int companyId);
+
+    boolean isLinkUsedInTarget(TrackableLink link);
 }

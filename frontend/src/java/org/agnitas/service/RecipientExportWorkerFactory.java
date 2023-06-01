@@ -12,10 +12,10 @@ package org.agnitas.service;
 
 import org.agnitas.beans.ExportPredef;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 
 public interface RecipientExportWorkerFactory {
 
-	public RecipientExportWorker newWorker(final ExportPredef exportProfile, final ComAdmin admin) throws Exception;
+	public RecipientExportWorker newWorker(final ExportPredef exportProfile, final Admin admin) throws Exception;
 	
 }

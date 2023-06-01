@@ -18,6 +18,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import com.agnitas.beans.Mailing;
+import com.agnitas.messages.Message;
+import com.agnitas.service.SimpleServiceResult;
 import org.agnitas.beans.TrackableLink;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
@@ -68,7 +71,7 @@ public class LinkcheckService {
 		List<String> checkList = new Vector<>();
 
 		// Convert list of TrackableLinks to list of URLs
-		linkList.stream().forEach(link -> checkList.add(link.getFullUrl()));
+		linkList.forEach(link -> checkList.add(link.getFullUrl()));
 
 		return checkRechability(checkList);
 	}
@@ -108,8 +111,37 @@ public class LinkcheckService {
 		}
 		
 		return resultList;
-	}	
-	
+	}
+
+	public SimpleServiceResult checkForUnreachableLinks(Mailing mailing) {
+		List<Message> errors = new ArrayList<>();
+
+		try {
+			Collection<ComTrackableLink> links = mailing.getTrackableLinks().values();
+			List<LinkReachability> resultList = checkLinkReachability(links);
+
+			for (LinkReachability availability : resultList) {
+				String argument = availability.getUrl() + " <br>";
+
+				switch (availability.getReachability()) {
+					case TIMED_OUT:
+						errors.add(Message.of("error.invalid.link.timeout", argument));
+						break;
+
+					case NOT_FOUND:
+						errors.add(Message.of("error.invalid.link.notReachable", argument));
+						break;
+
+					default:
+						errors.add(Message.of("error.invalid.link", argument));
+				}
+			}
+		} catch (Exception e) {
+			logger.error("checkForInvalidLinks: " + e, e);
+		}
+
+		return new SimpleServiceResult(errors.isEmpty(), errors);
+	}
 
 	/**
 	 * Sets ConfigService for link checker.

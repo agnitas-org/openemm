@@ -219,9 +219,15 @@ public class WorkflowDecisionImpl extends BaseWorkflowIcon implements WorkflowDe
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
+        if (this == o) {
+			return true;
+		}
+        if (o == null || getClass() != o.getClass()) {
+			return false;
+		}
+        if (!super.equals(o)) {
+			return false;
+		}
         WorkflowDecisionImpl that = (WorkflowDecisionImpl) o;
         return mailingId == that.mailingId &&
                 linkId == that.linkId &&

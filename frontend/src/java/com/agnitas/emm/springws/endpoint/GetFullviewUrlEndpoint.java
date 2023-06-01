@@ -10,8 +10,11 @@
 
 package com.agnitas.emm.springws.endpoint;
 
+import java.util.Objects;
+
 import org.agnitas.emm.springws.endpoint.BaseEndpoint;
-import org.agnitas.emm.springws.endpoint.Utils;
+import org.agnitas.emm.springws.endpoint.Namespaces;
+import org.agnitas.emm.springws.util.SecurityContextAccess;
 import org.springframework.ws.server.endpoint.annotation.Endpoint;
 import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
 import org.springframework.ws.server.endpoint.annotation.RequestPayload;
@@ -25,14 +28,16 @@ import com.agnitas.emm.springws.jaxb.GetFullviewUrlResponse;
 public class GetFullviewUrlEndpoint extends BaseEndpoint {
     
 	private FullviewService fullviewService;
+	private SecurityContextAccess securityContextAccess;
 
-	public GetFullviewUrlEndpoint(FullviewService fullviewService) {
+	public GetFullviewUrlEndpoint(FullviewService fullviewService, final SecurityContextAccess securityContextAccess) {
 		this.fullviewService = fullviewService;
+		this.securityContextAccess = Objects.requireNonNull(securityContextAccess, "securityContextAccess");
 	}
 
-	@PayloadRoot(namespace = Utils.NAMESPACE_COM, localPart = "GetFullviewUrlRequest")
+	@PayloadRoot(namespace = Namespaces.AGNITAS_COM, localPart = "GetFullviewUrlRequest")
 	public @ResponsePayload GetFullviewUrlResponse getFullviewUrl(@RequestPayload GetFullviewUrlRequest request) throws Exception {
-    	final int companyID = Utils.getUserCompany();
+    	final int companyID = this.securityContextAccess.getWebserviceUserCompanyId();
     	final int mailingID = request.getMailingID();
     	final int customerID = request.getCustomerID();
     	final String formNameOrNull = request.getFormName();

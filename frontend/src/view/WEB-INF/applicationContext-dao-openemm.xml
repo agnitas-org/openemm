@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-	Application context definition for Agnitas DAO layer.
+	Application context definition for AGNITAS OpenEMM DAO layer.
 
 	Only DAO classes here!!!
 -->
@@ -49,7 +49,7 @@
 		<property name="undoMailingComponentDao" ref="UndoMailingComponentDao" />
 		<property name="undoDynContentDao" ref="UndoDynContentDao" />
 		<property name="targetDao" ref="TargetDao" />
-		<property name="comTrackableLinkDao" ref="TrackableLinkDao" />
+		<property name="trackableLinkDao" ref="TrackableLinkDao" />
 		<property name="mailingComponentDao" ref="MailingComponentDao" />
 		<property name="mediatypesDao" ref="MediatypesDao" />
 		<property name="databaseInformation" ref="DatabaseInformation" />
@@ -67,7 +67,7 @@
 	<bean id="GrantedSupervisorLoginDao" class="com.agnitas.emm.core.supervisor.dao.impl.DefaultGrantedSupervisorLoginDaoImpl"/>
 		
 <!-- ============================================================================================================================== Admin -->
-	<bean id="AdminDao" class="com.agnitas.dao.impl.ComAdminDaoImpl">
+	<bean id="AdminDao" class="com.agnitas.dao.impl.AdminDaoImpl">
 		<property name="dataSource" ref="dataSource" />
 		<property name="javaMailService" ref="JavaMailService" />
 		<property name="adminGroupDao" ref="AdminGroupDao" />
@@ -125,4 +125,9 @@
 		<property name="profileFieldDao" ref="ProfileFieldDao" />
 	</bean>
 
+	<bean id="BindingEntryDao" class="com.agnitas.dao.impl.ComBindingEntryDaoImpl">
+		<property name="dataSource" ref="dataSource" />
+		<property name="javaMailService" ref="JavaMailService" />
+		<property name="recipientDao" ref="RecipientDao" />
+	</bean>
 </beans>

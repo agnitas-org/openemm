@@ -12,7 +12,7 @@ package com.agnitas.util.preview;
 
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 
 public interface PreviewImageService {
     int VIEWPORT_WIDTH = 800;
@@ -27,7 +27,7 @@ public interface PreviewImageService {
      * @param mailingId an identifier of the mailing to generate a thumbnail for.
      * @param async whether ({@code true}) or not ({@code false}) run in separate thread.
      */
-    void generateMailingPreview(ComAdmin admin, String sessionId, int mailingId, boolean async);
+    void generateMailingPreview(Admin admin, String sessionId, int mailingId, boolean async);
        
     /**
      * Generate and store a thumbnail for the div child.
@@ -45,7 +45,7 @@ public interface PreviewImageService {
         //default implementation
     }
         
-    default void generateDivContainerThumbnails(ComAdmin admin, String sessionId, int containerId, boolean updateExisting, boolean async) {
+    default void generateDivContainerThumbnails(Admin admin, String sessionId, int containerId, boolean updateExisting, boolean async) {
         //default implementation
     }
     

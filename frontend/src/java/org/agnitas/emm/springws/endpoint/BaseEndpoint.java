@@ -25,6 +25,7 @@ public abstract class BaseEndpoint {
     @Lazy
 	protected org.agnitas.emm.springws.jaxb.ObjectFactory comObjectFactory;
 	
+    @Deprecated // Inject UserActivityLogAccess instead in endpoint classes
     @Resource
     @Lazy
 	protected UserActivityLogService userActivityLogService;

@@ -167,8 +167,8 @@ public class TopDomainsDataSet extends BIRTDataSet {
 			SendPerDomainStatRow row = new SendPerDomainStatRow();
 			row.setCategory(resultSet.getString("category_name"));
 			row.setCategoryindex(resultSet.getInt("category_index"));
-			row.setDomainname(resultSet.getString("domainname"));
-			row.setDomainnameindex(resultSet.getInt("domainname_index"));
+			row.setDomainName(resultSet.getString("domainname"));
+			row.setDomainNameIndex(resultSet.getInt("domainname_index"));
 			row.setTargetgroup(resultSet.getString("targetgroup"));
 			row.setTargetgroupindex(resultSet.getInt("targetgroup_index"));
 			row.setCount(resultSet.getInt("value"));

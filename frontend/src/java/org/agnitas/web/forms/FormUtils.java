@@ -10,9 +10,11 @@
 
 package org.agnitas.web.forms;
 
+import org.agnitas.beans.RowsCountAndSortingWebStorageEntry;
 import org.agnitas.beans.RowsCountWebStorageEntry;
 import org.agnitas.service.WebStorage;
 import org.agnitas.service.WebStorageBundle;
+import org.apache.commons.lang3.StringUtils;
 import org.displaytag.pagination.PaginatedList;
 
 public class FormUtils {
@@ -32,6 +34,18 @@ public class FormUtils {
                 entry.setRowsCount(form.getNumberOfRows());
             } else {
                 form.setNumberOfRows(entry.getRowsCount());
+            }
+        });
+    }
+
+    public static <T extends RowsCountAndSortingWebStorageEntry> void syncSortingParams(WebStorage webStorage, WebStorageBundle<T> bundle, PaginationForm form) {
+        webStorage.access(bundle, entry -> {
+            if (!StringUtils.isBlank(form.getSort())) {
+                entry.setColumnName(form.getSort());
+                entry.setAscendingOrder("asc".equalsIgnoreCase(form.getDir()) || "ascending".equalsIgnoreCase(form.getDir()));
+            } else {
+                form.setSort(entry.getColumnName());
+                form.setDir(entry.isAscendingOrder() ? "asc" : "desc");
             }
         });
     }

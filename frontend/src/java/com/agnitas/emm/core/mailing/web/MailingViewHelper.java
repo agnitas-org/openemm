@@ -16,6 +16,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 /**
  * Presentation layer related utility methods.
  */
+// TODO delete after GWUA-4798 has been successfully tested
 public final class MailingViewHelper {
 	
 	/**

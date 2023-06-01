@@ -33,8 +33,7 @@ import com.agnitas.emm.core.mailing.dao.ComMailingParameterDao;
 
 public class ComMailingParameterDaoImpl extends BaseDaoImpl implements ComMailingParameterDao {
 	
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(ComMailingParameterDaoImpl.class);
+	private static final Logger logger = LogManager.getLogger(ComMailingParameterDaoImpl.class);
 
 	private static final String INSERT_ORACLE = "INSERT INTO mailing_info_tbl (mailing_info_id, mailing_id, company_id, name, value, description, creation_date, change_date, creation_admin_id, change_admin_id) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?)";
 	private static final String INSERT_MYSQL = "INSERT INTO mailing_info_tbl (mailing_id, company_id, name, value, description, creation_date, change_date, creation_admin_id, change_admin_id) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?)";
@@ -73,9 +72,7 @@ public class ComMailingParameterDaoImpl extends BaseDaoImpl implements ComMailin
 		selectBySearchQuery.append(" AND (info.mailing_id IS NOT NULL AND CAST(info.mailing_id AS CHAR(15)) LIKE ?)");
 		selectBySearchQuery.append(" ORDER BY creation_date DESC");
 
-		if (logger.isDebugEnabled()) {
-			logger.debug("stmt:" + selectBySearchQuery.toString());
-		}
+		logDebugStmt(selectBySearchQuery.toString());
 
 		List<Object> parameters = new ArrayList<>();
 		parameters.add(companyID);
@@ -94,14 +91,12 @@ public class ComMailingParameterDaoImpl extends BaseDaoImpl implements ComMailin
 	@Override
 	@DaoUpdateReturnValueCheck
 	public boolean insertParameter(ComMailingParameter parameter) {
-		if (logger.isDebugEnabled()) {
-			logger.debug("stmt:" + INSERT_ORACLE);
-		}
+		logDebugStmt(INSERT_ORACLE);
 		int touchedLines;
 		int newId;
 		if (isOracleDB()) {
 			newId = selectInt(logger, "SELECT mailing_info_tbl_seq.NEXTVAL FROM DUAL");
-			touchedLines = update(logger, 
+			touchedLines = update(logger,
 				INSERT_ORACLE,
 				newId,
 				parameter.getMailingID(),
@@ -136,10 +131,8 @@ public class ComMailingParameterDaoImpl extends BaseDaoImpl implements ComMailin
 	@Override
 	@DaoUpdateReturnValueCheck
 	public boolean updateParameter(ComMailingParameter parameter) {
-		if (logger.isDebugEnabled()) {
-			logger.debug("stmt:" + UPDATE);
-		}
-		int touchedLines = update(logger, 
+		logDebugStmt(UPDATE);
+		int touchedLines = update(logger,
 				UPDATE,
 				parameter.getMailingID(),
 				parameter.getCompanyID(),
@@ -189,7 +182,7 @@ public class ComMailingParameterDaoImpl extends BaseDaoImpl implements ComMailin
 			}
 		}
 
-		if (parametersBeforeUpdate.size() > 0) {
+		if (!parametersBeforeUpdate.isEmpty()) {
 			List<ComMailingParameter> parametersAfterUpdate = getMailingParameters(companyID, mailingID);
 
 			if (parametersAfterUpdate.isEmpty()) {
@@ -207,9 +200,7 @@ public class ComMailingParameterDaoImpl extends BaseDaoImpl implements ComMailin
 	@Override
 	@DaoUpdateReturnValueCheck
 	public boolean deleteParameter(int mailingInfoID) {
-		if (logger.isDebugEnabled()) {
-			logger.debug("stmt:" + DELETE_BY_MAILINGINFOID);
-		}
+		logDebugStmt(DELETE_BY_MAILINGINFOID);
 		int touchedLines = update(logger, DELETE_BY_MAILINGINFOID, mailingInfoID);
 		return touchedLines == 1;
 	}
@@ -217,9 +208,7 @@ public class ComMailingParameterDaoImpl extends BaseDaoImpl implements ComMailin
 	@Override
 	@DaoUpdateReturnValueCheck
 	public int deleteParameterByCompanyID(int companyID) {
-		if (logger.isDebugEnabled()) {
-			logger.debug("stmt:" + DELETE_BY_COMPANYID);
-		}
+		logDebugStmt(DELETE_BY_COMPANYID);
 
 		// Return a number of affected rows.
 		return update(logger, DELETE_BY_COMPANYID, companyID);
@@ -259,11 +248,11 @@ public class ComMailingParameterDaoImpl extends BaseDaoImpl implements ComMailin
 	private ComMailingParameter getParameterByNameDefaultNull(String parameterName, int mailingId, @VelocityCheck int companyId){
 		List<ComMailingParameter> list = select(logger, SELECT_BY_NAME, new ComMailingParameter_RowMapper(), companyId, mailingId, parameterName);
 
-		if (list.size() == 0) {
+		if (list.isEmpty()) {
 			list = select(logger, SELECT_BY_NAME, new ComMailingParameter_RowMapper(), companyId, 0, parameterName);
 		}
 
-		if (list.size() == 0) {
+		if (list.isEmpty()) {
 			return null;
 		}
 
@@ -272,33 +261,41 @@ public class ComMailingParameterDaoImpl extends BaseDaoImpl implements ComMailin
 	
 	@Override
 	public String getIntervalParameter(int mailingID) {
-		List<Map<String, Object>> resultInterval = select(logger, "SELECT value FROM mailing_info_tbl WHERE mailing_id = ? AND name = ?", mailingID, PARAMETERNAME_INTERVAL);
-		if (resultInterval.size() > 0) {
+		List<Map<String, Object>> resultInterval = select(logger, "SELECT value FROM mailing_info_tbl WHERE mailing_id = ? AND name = ?", mailingID, ReservedMailingParam.INTERVAL.getName());
+		if (!resultInterval.isEmpty()) {
 			return (String) resultInterval.get(0).get("value");
-		} else {
-			return null;
 		}
+
+		return null;
 	}
 	
 	@Override
 	@DaoUpdateReturnValueCheck
 	public void updateNextStartParameter(int mailingID, Date nextStart) {
 		if (nextStart == null) {
-			update(logger, "UPDATE mailing_info_tbl SET value = null WHERE mailing_id = ? AND name = ?", mailingID, PARAMETERNAME_NEXT_START);
+			update(logger, "UPDATE mailing_info_tbl SET value = null WHERE mailing_id = ? AND name = ?",
+					mailingID, ReservedMailingParam.NEXT_START.getName());
 		} else {
-			update(logger, "UPDATE mailing_info_tbl SET value = ? WHERE mailing_id = ? AND name = ?", new SimpleDateFormat(DateUtilities.YYYY_MM_DD_HH_MM).format(nextStart), mailingID, PARAMETERNAME_NEXT_START);
+			update(logger, "UPDATE mailing_info_tbl SET value = ? WHERE mailing_id = ? AND name = ?",
+					new SimpleDateFormat(DateUtilities.YYYY_MM_DD_HH_MM).format(nextStart), mailingID, ReservedMailingParam.NEXT_START.getName());
 		}
 	}
 
 	@Override
 	public void insertMailingError(@VelocityCheck int companyId, int mailingID, String errorText) {
-		ComMailingParameter parameter = getParameterByNameDefaultNull(PARAMETERNAME_ERROR, mailingID, companyId);
+		ComMailingParameter parameter = getParameterByNameDefaultNull(ReservedMailingParam.ERROR.getName(), mailingID, companyId);
 
 		if (parameter != null) {
 			parameter.setMailingInfoID(0);
-			parameter.setName(PARAMETERNAME_ERROR);
+			parameter.setName(ReservedMailingParam.ERROR.getName());
 			parameter.setValue(errorText);
 			insertParameter(parameter);
 		}
 	}
+	
+    private void logDebugStmt(String stmt) {
+        if (logger.isDebugEnabled()) {
+            logger.debug("stmt:{}", stmt);
+        }
+    }
 }

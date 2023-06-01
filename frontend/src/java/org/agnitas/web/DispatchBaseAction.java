@@ -22,7 +22,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.struts.actions.DispatchAction;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 
 public class DispatchBaseAction extends DispatchAction {
     private static final Logger logger = LogManager.getLogger(DispatchBaseAction.class);
@@ -63,7 +63,7 @@ public class DispatchBaseAction extends DispatchAction {
         return sort;
 	}
 
-    protected void writeUserActivityLog(ComAdmin admin, String action, String description, Logger callerLog)  {
+    protected void writeUserActivityLog(Admin admin, String action, String description, Logger callerLog)  {
         try {
             if (userActivityLogService != null) {
                 userActivityLogService.writeUserActivityLog(admin, action, description);
@@ -77,15 +77,15 @@ public class DispatchBaseAction extends DispatchAction {
         }
     }
 
-    protected void writeUserActivityLog(ComAdmin admin, String action, String description)  {
+    protected void writeUserActivityLog(Admin admin, String action, String description)  {
         writeUserActivityLog(admin, action, description, logger);
     }
 
-    protected void writeUserActivityLog(ComAdmin admin, UserAction action)  {
+    protected void writeUserActivityLog(Admin admin, UserAction action)  {
         writeUserActivityLog(admin, action.getAction(), action.getDescription());
     }
 
-    protected void writeUserActivityLog(ComAdmin admin, String action, int description)  {
+    protected void writeUserActivityLog(Admin admin, String action, int description)  {
         writeUserActivityLog(admin, action, Integer.toString(description));
     }
 

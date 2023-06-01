@@ -1052,7 +1052,7 @@
     function getAutoOptimizations(startDate, endDate) {
       startProgress();
       $.ajax({
-        type: "POST",
+        type: "GET",
         url: urlCalendarAutoOptimization,
         data: {
           startDate: dateToServiceFormat(startDate),
@@ -1076,7 +1076,7 @@
 
     function getOptimizationLinkUrl(data) {
       if (data.workflowId == 0) {
-        return "optimize.do?method=view&optimizationID=" + data.id
+        return "optimization/" + data.id + "/view.action";
       } else {
         return "workflow/" + data.workflowId + "/view.action";
       }

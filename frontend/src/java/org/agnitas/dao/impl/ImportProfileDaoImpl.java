@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -83,8 +84,9 @@ public class ImportProfileDaoImpl extends BaseDaoImpl implements ImportProfileDa
 			update(logger,
 				"INSERT INTO import_profile_tbl (id, company_id, admin_id, shortname, column_separator, text_delimiter"
 					+ ", file_charset, date_format, import_mode, null_values_action, key_column, report_email, error_email, check_for_duplicates"
-					+ ", mail_type, update_all_duplicates, pre_import_action, decimal_separator, action_for_new_recipients, noheaders, zip_password_encr, automapping, datatype, mailinglists_all, creation_date, change_date)"
-					+ " VALUES (" + AgnUtils.repeatString("?", 24, ", ") + ", CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+					+ ", mail_type, update_all_duplicates, pre_import_action, decimal_separator, action_for_new_recipients, noheaders, zip_password_encr, automapping, datatype, mailinglists_all"
+					+ ", report_locale_lang, report_locale_country, report_timezone, creation_date, change_date)"
+					+ " VALUES (" + AgnUtils.repeatString("?", 27, ", ") + ", CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
 				profileId,
 				importProfile.getCompanyId(),
 				importProfile.getAdminId(),
@@ -108,14 +110,18 @@ public class ImportProfileDaoImpl extends BaseDaoImpl implements ImportProfileDa
 				StringUtils.isEmpty(importProfile.getZipPassword()) ? null : dataEncryptor.encrypt(importProfile.getZipPassword()),
 				importProfile.isAutoMapping() ? 1 : 0,
 				importProfile.getDatatype(),
-				importProfile.isMailinglistsAll() ? 1 : 0
+				importProfile.isMailinglistsAll() ? 1 : 0,
+				importProfile.getReportLocale().getLanguage(),
+				importProfile.getReportLocale().getCountry(),
+				importProfile.getReportTimezone()
 			);
 		} else {
 			profileId = insertIntoAutoincrementMysqlTable(logger, "id",
 				"INSERT INTO import_profile_tbl (company_id, admin_id, shortname, column_separator, text_delimiter"
 					+ ", file_charset, date_format, import_mode, null_values_action, key_column, report_email, error_email, check_for_duplicates"
-					+ ", mail_type, update_all_duplicates, pre_import_action, decimal_separator, action_for_new_recipients, noheaders, zip_password_encr, automapping, datatype, mailinglists_all, creation_date, change_date)"
-					+ " VALUES (" + AgnUtils.repeatString("?", 23, ", ") + ", CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+					+ ", mail_type, update_all_duplicates, pre_import_action, decimal_separator, action_for_new_recipients, noheaders, zip_password_encr, automapping, datatype, mailinglists_all"
+					+ ", report_locale_lang, report_locale_country, report_timezone, creation_date, change_date)"
+					+ " VALUES (" + AgnUtils.repeatString("?", 26, ", ") + ", CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
         		importProfile.getCompanyId(),
 				importProfile.getAdminId(),
 				importProfile.getName(),
@@ -138,7 +144,10 @@ public class ImportProfileDaoImpl extends BaseDaoImpl implements ImportProfileDa
 				StringUtils.isEmpty(importProfile.getZipPassword()) ? null : dataEncryptor.encrypt(importProfile.getZipPassword()),
 				importProfile.isAutoMapping() ? 1 : 0,
 				importProfile.getDatatype(),
-				importProfile.isMailinglistsAll() ? 1 : 0
+				importProfile.isMailinglistsAll() ? 1 : 0,
+				importProfile.getReportLocale().getLanguage(),
+				importProfile.getReportLocale().getCountry(),
+				importProfile.getReportTimezone()
 			);
 		}
 
@@ -156,7 +165,8 @@ public class ImportProfileDaoImpl extends BaseDaoImpl implements ImportProfileDa
 		update(logger,
 			"UPDATE import_profile_tbl SET company_id = ?, admin_id = ?, shortname = ?, column_separator = ?, text_delimiter = ?, file_charset = ?, date_format = ?, import_mode = ?"
 					+ ", null_values_action = ?, key_column = ?, report_email = ?, error_email = ?, check_for_duplicates = ?, mail_type = ?, update_all_duplicates = ?, pre_import_action = ?"
-					+ ", decimal_separator = ?, action_for_new_recipients = ?, noheaders = ?, zip_password_encr = ?, automapping = ?, datatype = ?, mailinglists_all = ?, change_date = CURRENT_TIMESTAMP WHERE id = ?",
+					+ ", decimal_separator = ?, action_for_new_recipients = ?, noheaders = ?, zip_password_encr = ?, automapping = ?, datatype = ?, mailinglists_all = ?"
+					+ ", report_locale_lang = ?, report_locale_country = ?, report_timezone = ?, change_date = CURRENT_TIMESTAMP WHERE id = ?",
 			importProfile.getCompanyId(),
 			importProfile.getAdminId(),
 			importProfile.getName(),
@@ -180,6 +190,9 @@ public class ImportProfileDaoImpl extends BaseDaoImpl implements ImportProfileDa
 			importProfile.isAutoMapping() ? 1 : 0,
 			importProfile.getDatatype(),
 			importProfile.isMailinglistsAll() ? 1 : 0,
+			importProfile.getReportLocale().getLanguage(),
+			importProfile.getReportLocale().getCountry(),
+			importProfile.getReportTimezone(),
 			importProfile.getId()
 		);
 
@@ -433,6 +446,11 @@ public class ImportProfileDaoImpl extends BaseDaoImpl implements ImportProfileDa
 	            profile.setDatatype(resultSet.getString("datatype"));
 	            
 	            profile.setMailinglistsAll(resultSet.getInt("mailinglists_all") > 0);
+	            
+	            if (StringUtils.isNotBlank(resultSet.getString("report_locale_lang"))) {
+	            	profile.setReportLocale(new Locale(resultSet.getString("report_locale_lang"), resultSet.getString("report_locale_country")));
+	            }
+	            profile.setReportTimezone(resultSet.getString("report_timezone"));
 	            
 	            return profile;
 			} catch (Exception e) {

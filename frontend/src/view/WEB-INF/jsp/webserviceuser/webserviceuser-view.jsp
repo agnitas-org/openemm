@@ -157,7 +157,7 @@
 	        </div>
 	    	
 	    	<div class="tile-content tile-content-forms">
-	    		<c:forEach items="${PERMISSIONS.categories}" var="category">
+	    		<c:forEach items="${PERMISSIONS.categories}" var="category" varStatus="index">
 	    		
 	    			<c:if test="${not empty category}">
 		 				<div class="tile">
@@ -166,9 +166,34 @@
 		                            <i class="icon tile-toggle icon-angle-up"></i>
 									<bean:message key="webservice.permissionCategory.${category}"/>
 								</a>
-							</div>
+
+                                <ul class="tile-header-actions">
+                                    <!-- dropdown for toggle all on/off -->
+                                    <li class="dropdown">
+                                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                                            <i class="icon icon-pencil"></i>
+                                            <span class="text"><mvc:message code ="ToggleOnOff"/></span>
+                                            <i class="icon icon-caret-down"></i>
+                                        </a>
+                                        <ul class="dropdown-menu">
+                                            <li>
+                                                <a href="#" data-toggle-checkboxes="on">
+                                                    <i class="icon icon-check-square-o"></i>
+                                                    <span class="text"><mvc:message code ="toggle.allOn"/></span>
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a href="#" data-toggle-checkboxes="off">
+                                                    <i class="icon icon-square-o"></i>
+                                                    <span class="text"><mvc:message code ="toggle.allOff"/></span>
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </li>
+                                </ul>
+                            </div>
 							
-							<div class="tile-content tile-content-forms checkboxes-content">
+							<div id="userrights_category_${index.index}" class="tile-content tile-content-forms checkboxes-content">
 								<ul class="list-group">
 									<c:forEach items="${PERMISSIONS.getPermissionsForCategory(category)}" var="permission">
 										<li class="list-group-item">

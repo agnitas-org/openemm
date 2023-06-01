@@ -1,7 +1,7 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
-<%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
 <%--@elvariable id="profileForm" type="com.agnitas.emm.core.profilefields.form.ProfileFieldForm"--%>
 
@@ -64,7 +64,7 @@
                 <c:set target="${element0}" property="url" value="${confirmDeleteUrl}"/>
                 <c:set target="${element0}" property="iconBefore" value="icon-trash-o"/>
                 <c:set target="${element0}" property="name">
-                    <bean:message key="button.Delete"/>
+                    <mvc:message code="button.Delete"/>
                 </c:set>
             </jsp:useBean>
         </emm:ShowByPermission>
@@ -76,7 +76,7 @@
             <c:set target="${element1}" property="extraAttributes" value="data-form-target='#profileFieldForm' data-form-submit"/>
             <c:set target="${element1}" property="iconBefore" value="icon-save"/>
             <c:set target="${element1}" property="name">
-                <bean:message key="button.Save"/>
+                <mvc:message code="button.Save"/>
             </c:set>
         </jsp:useBean>
     </emm:ShowByPermission>

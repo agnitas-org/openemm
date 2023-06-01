@@ -1,4 +1,4 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 <%@ page import="com.agnitas.web.MailingBaseAction"%>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
@@ -12,7 +12,7 @@
 	<c:set var="importAction" value="${ACTION_IMPORT_TEMPLATES}"/>
 </c:if>
 
-<agn:agnForm action="/mailingbase" id="mailingImport" enctype="multipart/form-data" data-form="static">
+<agn:agnForm action="/mailingbase.do" id="mailingImport" enctype="multipart/form-data" data-form="resource">
 	<html:hidden property="action"/>
 	<html:hidden property="isGrid"/>
 	<html:hidden property="isTemplate" value="true"/>

@@ -90,29 +90,29 @@ public class ComDkimDaoImpl extends BaseDaoImpl implements ComDkimDao {
 		} else if (!DbUtilities.checkIfTableExists(getDataSource(), "dkim_key_tbl")) {
 			return null;
 		} else {
-			List<DkimKeyEntry> resultExactDomain = select(logger, "SELECT * FROM dkim_key_tbl WHERE company_id = ? AND LOWER(domain) = LOWER(?) AND (valid_start IS NULL OR valid_start <= CURRENT_TIMESTAMP) AND (valid_end IS NULL OR valid_end >= CURRENT_TIMESTAMP) ORDER BY TIMESTAMP ASC", new DkimKeyEntry_RowMapper(), companyID, domainname);
+			List<DkimKeyEntry> resultExactDomain = select(logger, "SELECT dkim_id, company_id, domain, selector, creation_date, timestamp, valid_start, valid_end, domain_key, domain_key_encrypted FROM dkim_key_tbl WHERE company_id = ? AND LOWER(domain) = LOWER(?) AND (valid_start IS NULL OR valid_start <= CURRENT_TIMESTAMP) AND (valid_end IS NULL OR valid_end >= CURRENT_TIMESTAMP) ORDER BY TIMESTAMP ASC", new DkimKeyEntry_RowMapper(), companyID, domainname);
 			if (resultExactDomain.size() > 0) {
 				return resultExactDomain.get(0);
 			} else {
 				String mainDomainName = getDomainOfSubDomain(domainname);
-				List<DkimKeyEntry> resultMainDomain = select(logger, "SELECT * FROM dkim_key_tbl WHERE company_id = ? AND LOWER(domain) = LOWER(?) AND (valid_start IS NULL OR valid_start <= CURRENT_TIMESTAMP) AND (valid_end IS NULL OR valid_end >= CURRENT_TIMESTAMP) ORDER BY TIMESTAMP ASC", new DkimKeyEntry_RowMapper(), companyID, mainDomainName);
+				List<DkimKeyEntry> resultMainDomain = select(logger, "SELECT dkim_id, company_id, domain, selector, creation_date, timestamp, valid_start, valid_end, domain_key, domain_key_encrypted FROM dkim_key_tbl WHERE company_id = ? AND LOWER(domain) = LOWER(?) AND (valid_start IS NULL OR valid_start <= CURRENT_TIMESTAMP) AND (valid_end IS NULL OR valid_end >= CURRENT_TIMESTAMP) ORDER BY TIMESTAMP ASC", new DkimKeyEntry_RowMapper(), companyID, mainDomainName);
 				if (resultMainDomain.size() > 0) {
 					return resultMainDomain.get(0);
 				} else {
-					List<DkimKeyEntry> resultMasterDomain = select(logger, "SELECT * FROM dkim_key_tbl WHERE company_id = 1 AND LOWER(domain) = LOWER(?) AND (valid_start IS NULL OR valid_start <= CURRENT_TIMESTAMP) AND (valid_end IS NULL OR valid_end >= CURRENT_TIMESTAMP) ORDER BY TIMESTAMP ASC", new DkimKeyEntry_RowMapper(), mainDomainName);
+					List<DkimKeyEntry> resultMasterDomain = select(logger, "SELECT dkim_id, company_id, domain, selector, creation_date, timestamp, valid_start, valid_end, domain_key, domain_key_encrypted FROM dkim_key_tbl WHERE company_id = 1 AND LOWER(domain) = LOWER(?) AND (valid_start IS NULL OR valid_start <= CURRENT_TIMESTAMP) AND (valid_end IS NULL OR valid_end >= CURRENT_TIMESTAMP) ORDER BY TIMESTAMP ASC", new DkimKeyEntry_RowMapper(), mainDomainName);
 					if (resultMasterDomain.size() > 0) {
 						return resultMasterDomain.get(0);
 					}
 					
 					if (allowNonMatchingFallback && configService.getBooleanValue(ConfigValue.DkimLocalActivation, companyID)) {
-						List<DkimKeyEntry> resultLocal = select(logger, "SELECT * FROM dkim_key_tbl WHERE company_id = ? AND (valid_start IS NULL OR valid_start <= CURRENT_TIMESTAMP) AND (valid_end IS NULL OR valid_end >= CURRENT_TIMESTAMP) ORDER BY TIMESTAMP ASC", new DkimKeyEntry_RowMapper(), companyID);
+						List<DkimKeyEntry> resultLocal = select(logger, "SELECT dkim_id, company_id, domain, selector, creation_date, timestamp, valid_start, valid_end, domain_key, domain_key_encrypted FROM dkim_key_tbl WHERE company_id = ? AND (valid_start IS NULL OR valid_start <= CURRENT_TIMESTAMP) AND (valid_end IS NULL OR valid_end >= CURRENT_TIMESTAMP) ORDER BY TIMESTAMP ASC", new DkimKeyEntry_RowMapper(), companyID);
 						if (resultLocal.size() > 0) {
 							return resultLocal.get(0);
 						}
 					}
 					
 					if (allowNonMatchingFallback && configService.getBooleanValue(ConfigValue.DkimGlobalActivation, companyID)) {
-						List<DkimKeyEntry> resultGlobal = select(logger, "SELECT * FROM dkim_key_tbl WHERE company_id = 0 AND (valid_start IS NULL OR valid_start <= CURRENT_TIMESTAMP) AND (valid_end IS NULL OR valid_end >= CURRENT_TIMESTAMP) ORDER BY TIMESTAMP ASC", new DkimKeyEntry_RowMapper());
+						List<DkimKeyEntry> resultGlobal = select(logger, "SELECT dkim_id, company_id, domain, selector, creation_date, timestamp, valid_start, valid_end, domain_key, domain_key_encrypted FROM dkim_key_tbl WHERE company_id = 0 AND (valid_start IS NULL OR valid_start <= CURRENT_TIMESTAMP) AND (valid_end IS NULL OR valid_end >= CURRENT_TIMESTAMP) ORDER BY TIMESTAMP ASC", new DkimKeyEntry_RowMapper());
 						if (resultGlobal.size() > 0) {
 							return resultGlobal.get(0);
 						}

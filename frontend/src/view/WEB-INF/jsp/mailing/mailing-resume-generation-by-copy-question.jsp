@@ -3,6 +3,7 @@
 <%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="agn" uri="https://emm.agnitas.de/jsp/jstl/tags" %>
 
 <emm:CheckLogon/>
 
@@ -12,7 +13,7 @@
     <div class="modal-dialog">
         <div class="modal-content">
 
-            <html:form action="/mailingsend">
+            <agn:agnForm action="/mailingsend">
                 <html:hidden property="mailingID"/>
                 <html:hidden property="action"/>
                 <input type="hidden" id="kill" name="kill" value="true"/>
@@ -40,7 +41,7 @@
                     </div>
                 </div>
 
-            </html:form>
+            </agn:agnForm>
         </div>
     </div>
 </div>

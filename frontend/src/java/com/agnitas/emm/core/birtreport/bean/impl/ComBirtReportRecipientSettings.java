@@ -24,8 +24,8 @@ public class ComBirtReportRecipientSettings extends ComBirtReportDateRangedSetti
     public String getReportName(String reportFormat) {
         if (ComBirtReport.FORMAT_CSV.equals(reportFormat)) {
             return "recipients_statistic_csv.rptdesign";
-        } else {
-            return "recipients_statistic.rptdesign";
         }
+
+        return "recipients_statistic.rptdesign";
     }
 }

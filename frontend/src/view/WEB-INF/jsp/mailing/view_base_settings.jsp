@@ -205,7 +205,9 @@
                 <div class="col-sm-8">
                     <div class="input-group">
                         <div class="input-group-controls">
-                            <agn:agnSelect property="mailingType" id="settingsGeneralMailType" class="form-control" data-action="change-general-mailing-type"
+                            <agn:agnSelect property="mailingType" id="settingsGeneralMailType" class="form-control"
+                                           data-action="change-general-mailing-type"
+                                           data-result-template="mailing-type-option"
                                            disabled="${not IS_MAILING_EDITABLE or isWorkflowDriven or not isEmailSettingsEditable}">
                                 <html:option value="${MAILING_TYPE_NORMAL}">
                                     <bean:message key="Normal_Mailing"/>
@@ -219,6 +221,16 @@
 								<%@include file="view_base_settings-follow.jspf" %>
 								<%@include file="view_base_settings-interval.jspf" %>
                             </agn:agnSelect>
+                            
+                            <script id="mailing-type-option" type="text/x-mustache-template">
+                                {{ if(element.dataset.tooltip && element.dataset.tooltip.length) { }}
+                                    <span data-tooltip="{{- element.dataset.tooltip }}" style="display: block">
+                                        {{- text }}
+                                    </span>
+                                {{ } else { }}
+                                    {{- text }}
+                                {{ } }}
+                            </script>
                         </div>
                         <c:if test="${isWorkflowDriven}">
                             <div class="input-group-btn">

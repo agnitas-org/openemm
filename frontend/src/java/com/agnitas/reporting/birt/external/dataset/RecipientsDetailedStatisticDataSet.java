@@ -21,7 +21,6 @@ import java.util.TreeSet;
 
 import org.agnitas.dao.UserStatus;
 import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.DbUtilities;
 import org.apache.commons.lang.time.DateUtils;
@@ -32,9 +31,11 @@ import org.apache.logging.log4j.Logger;
 
 import com.agnitas.reporting.birt.external.beans.LightMailingList;
 import com.agnitas.reporting.birt.external.beans.LightTarget;
+import static org.agnitas.util.DateUtilities.YYYY_MM_DD;
 
 public class RecipientsDetailedStatisticDataSet extends RecipientsBasedDataSet {
-    private static final transient Logger logger = LogManager.getLogger(RecipientsDetailedStatisticDataSet.class);
+
+    private static final Logger logger = LogManager.getLogger(RecipientsDetailedStatisticDataSet.class);
 
     private final List<RecipientsDetailedStatisticsRow> statList = new ArrayList<>();
     private final List<RecipientsDetailedStatisticsRow> dynamicStatList = new ArrayList<>();
@@ -45,7 +46,7 @@ public class RecipientsDetailedStatisticDataSet extends RecipientsBasedDataSet {
      * en: "Recipient development detailed (Opt-ins, Opt-outs, Bounces)"
      * de: "Empfängerentwicklung detailliert (Anmeldungen, Abmeldungen, Bounces)"
      */
-    public void initRecipientsStatistic(@VelocityCheck int companyId, String selectedMailingLists,
+    public void initRecipientsStatistic(int companyId, String selectedMailingLists,
                                         String selectedTargetsAsString, String startDate, String stopDate, final String hiddenFilterTargetIdStr)
             throws Exception {
 
@@ -54,8 +55,8 @@ public class RecipientsDetailedStatisticDataSet extends RecipientsBasedDataSet {
             mailingListIds.add(NumberUtils.toInt(mailingListIdString));
         }
 
-        Date dateStart = new SimpleDateFormat("yyyy-MM-dd").parse(startDate);
-        Date dateStop = new SimpleDateFormat("yyyy-MM-dd").parse(stopDate);
+        Date dateStart = new SimpleDateFormat(YYYY_MM_DD).parse(startDate);
+        Date dateStop = new SimpleDateFormat(YYYY_MM_DD).parse(stopDate);
 
         int mailinglistIndex = 0;
         for (LightMailingList mailinglist : getMailingLists(mailingListIds, companyId)) {
@@ -80,15 +81,15 @@ public class RecipientsDetailedStatisticDataSet extends RecipientsBasedDataSet {
      * en: "Net recipient development (progress of active recipients)"
      * de: "Empfängerentwicklung netto (Verlauf der aktiven Empfänger)"
      */
-    public void initRecipientsDynamicStatistic(@VelocityCheck int companyId, String selectedMailingLists,
+    public void initRecipientsDynamicStatistic(int companyId, String selectedMailingLists,
                                                String selectedTargetsAsString, String startDate, String stopDate, final String hiddenFilterTargetIdStr) throws Exception {
         List<Integer> mailingListIds = new ArrayList<>();
         for (String mailingListIdString : selectedMailingLists.split(",")) {
             mailingListIds.add(NumberUtils.toInt(mailingListIdString));
         }
 
-        Date dateStart = new SimpleDateFormat("yyyy-MM-dd").parse(startDate);
-        Date dateStop = new SimpleDateFormat("yyyy-MM-dd").parse(stopDate);
+        Date dateStart = new SimpleDateFormat(YYYY_MM_DD).parse(startDate);
+        Date dateStop = new SimpleDateFormat(YYYY_MM_DD).parse(stopDate);
 
         int mailinglistIndex = 0;
         for (LightMailingList mailinglist : getMailingLists(mailingListIds, companyId)) {
@@ -132,7 +133,7 @@ public class RecipientsDetailedStatisticDataSet extends RecipientsBasedDataSet {
         return dynamicStatList;
     }
 
-    private List<RecipientsDetailedStatisticsRow> getRecipientDetailedStat(@VelocityCheck int companyId, int mailinglistId,
+    private List<RecipientsDetailedStatisticsRow> getRecipientDetailedStat(int companyId, int mailinglistId,
                                                                            String mailinglistName, int mailinglistIndex, LightTarget target, int targetGroupIndex, Date startDate, Date endDate,
                                                                            String hiddenFilterTargetIdStr) {
         try {
@@ -148,7 +149,7 @@ public class RecipientsDetailedStatisticDataSet extends RecipientsBasedDataSet {
                         new RecipientsDetailedStatisticsRow(datePoint,
                                 mailinglistId, mailinglistName, mailinglistIndex,
                                 target.getId(), target.getName(), targetGroupIndex);
-                String datePointFormatted = new SimpleDateFormat("yyyy-MM-dd").format(datePoint);
+                String datePointFormatted = new SimpleDateFormat(YYYY_MM_DD).format(datePoint);
                 dataMap.put(datePointFormatted, datePointDetailedStatisticsRow);
 
                 datePoint = DateUtilities.addDaysToDate(datePoint, 1);
@@ -200,12 +201,12 @@ public class RecipientsDetailedStatisticDataSet extends RecipientsBasedDataSet {
 
             return returnList;
         } catch (Exception e) {
-            logger.error("Error in getRecipientDetailedStat: " + e.getMessage(), e);
+            logger.error("Error in getRecipientDetailedStat: {}", e.getMessage(), e);
             throw e;
         }
     }
 
-    private List<RecipientsDetailedStatisticsRow> getRecipientDetailedOverallStatAmountForEachDay(@VelocityCheck int companyId, int mailinglistId,
+    private List<RecipientsDetailedStatisticsRow> getRecipientDetailedOverallStatAmountForEachDay(int companyId, int mailinglistId,
                                                                                                   String mailinglistName, int mailinglistIndex, LightTarget target, int targetGroupIndex, Date startDate, Date endDate,
                                                                                                   String hiddenFilterTargetIdStr) {
         try {
@@ -272,7 +273,7 @@ public class RecipientsDetailedStatisticDataSet extends RecipientsBasedDataSet {
 
             return returnList;
         } catch (Exception e) {
-            logger.error("Error in getRecipientDetailedOverallStatAmountForEachDay: " + e.getMessage(), e);
+            logger.error("Error in getRecipientDetailedOverallStatAmountForEachDay: {}", e.getMessage(), e);
             throw e;
         }
     }
@@ -285,5 +286,4 @@ public class RecipientsDetailedStatisticDataSet extends RecipientsBasedDataSet {
         final UserStatus status = getUserStatus(userStatusCode);
         calculateAmount(status, amount, row);
     }
-
 }

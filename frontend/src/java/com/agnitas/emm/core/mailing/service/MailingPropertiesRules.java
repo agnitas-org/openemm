@@ -10,7 +10,7 @@
 
 package com.agnitas.emm.core.mailing.service;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.Mailing;
 
 public interface MailingPropertiesRules {
@@ -24,7 +24,7 @@ public interface MailingPropertiesRules {
 	 * 
 	 * @return <code>true</code> if mailing content is editable
 	 */
-	boolean isMailingContentEditable(final int mailingID, final ComAdmin admin);
+	boolean isMailingContentEditable(final int mailingID, final Admin admin);
 
 	/**
 	 * Returns <code>true</code> if the mailing content (frame content, content blocks, target groups, ...)
@@ -35,7 +35,7 @@ public interface MailingPropertiesRules {
 	 * 
 	 * @return <code>true</code> if mailing content is editable
 	 */
-	boolean isMailingContentEditable(final Mailing mailing, final ComAdmin admin);
+	boolean isMailingContentEditable(final Mailing mailing, final Admin admin);
 
 	/**
 	 * Returns <code>true</code> if mailing has been world-sent or mailing is active.

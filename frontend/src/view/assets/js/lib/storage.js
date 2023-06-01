@@ -5,6 +5,7 @@
       deleteByKey,
       saveChosenFields,
       restoreChosenFields,
+      readCookie,
       currentStorage,
       Storage;
 
@@ -20,24 +21,6 @@
         expires = "";
       }
       document.cookie = name+"="+value+expires+"; path=/";
-    }
-
-    function readCookie(name) {
-      var nameEQ = name + "=",
-          ca = document.cookie.split(';'),
-          i, c;
-
-      for (i=0; i < ca.length; i++) {
-        c = ca[i];
-        while (c.charAt(0)==' ') {
-          c = c.substring(1,c.length);
-        }
-
-        if (c.indexOf(nameEQ) == 0) {
-          return c.substring(nameEQ.length,c.length);
-        }
-      }
-      return null;
     }
 
     function setData(data) {
@@ -145,6 +128,24 @@
     } catch (e) {
       console.warn("Could not remove Storage key:" + key + " cause: " + e);
     }
+  };
+
+  readCookie = function (name) {
+    var nameEQ = name + "=",
+        ca = document.cookie.split(';'),
+        i, c;
+
+    for (i=0; i < ca.length; i++) {
+      c = ca[i];
+      while (c.charAt(0)==' ') {
+        c = c.substring(1,c.length);
+      }
+
+      if (c.indexOf(nameEQ) == 0) {
+        return c.substring(nameEQ.length,c.length);
+      }
+    }
+    return null;
   };
 
   /**
@@ -324,6 +325,7 @@
     get: get,
     set: set,
     delete: deleteByKey,
+    readCookie: readCookie,
     saveChosenFields: saveChosenFields,
     restoreChosenFields: restoreChosenFields
   }

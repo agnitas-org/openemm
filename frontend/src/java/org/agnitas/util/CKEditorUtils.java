@@ -11,15 +11,16 @@
 
 package org.agnitas.util;
 
-import jakarta.servlet.http.HttpServletRequest;
-
 import com.agnitas.emm.core.Permission;
+import jakarta.servlet.http.HttpServletRequest;
 
 public final class CKEditorUtils {
 
     public static boolean isCKEditorTrimmed(HttpServletRequest request) throws Exception {
-        final boolean isTrimmed = AgnUtils.allowed(request, Permission.CKEDITOR_TRIMMED);
-        return isTrimmed;
+        return AgnUtils.allowed(request, Permission.CKEDITOR_TRIMMED);
     }
 
+    public static boolean fullPackAllowed(HttpServletRequest request) throws Exception {
+        return AgnUtils.allowed(request, Permission.CKEDITOR_EXTENDED);
+    }
 }

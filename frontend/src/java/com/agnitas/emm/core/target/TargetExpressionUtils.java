@@ -80,7 +80,10 @@ public class TargetExpressionUtils {
     }
 
     public static String makeTargetExpressionWithAltgs(Collection<Integer> altgIds, Collection<Integer> targetIds, boolean conjunctionForTargets) {
-        String targetExpression = makeTargetExpression(targetIds, conjunctionForTargets);
+    	if (altgIds != null && altgIds.size() > 0) {
+    		targetIds.removeAll(altgIds);
+    	}
+    	String targetExpression = makeTargetExpression(targetIds, conjunctionForTargets);
         return getTargetExpressionWithPrependedAltgs(altgIds, targetExpression);
     }
     
@@ -112,6 +115,10 @@ public class TargetExpressionUtils {
 	    return targetExpression.matches("^\\(.+\\)&\\(.+\\)$")
                 ? targetExpression.substring(targetExpression.indexOf(")&(") + 3, targetExpression.lastIndexOf(")"))
                 : "";
+    }
+
+    public static Set<Integer> getNotAltgTargetIds(String expression, ComTargetService targetService) {
+	    return getTargetIds(extractNotAltgTargetExpressionPart(expression, targetService));
     }
     
     public static Set<Integer> getAltgIds(String expression, ComTargetService targetService) {

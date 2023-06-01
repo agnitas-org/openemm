@@ -169,12 +169,12 @@
                 </div>
             </li>
             <li class="logout-area">
-                <form action="${LOGOUT}" method="POST" class="logout-form">
+                <mvc:form action="${LOGOUT}" method="POST" cssClass="logout-form">
                     <button type="submit" data-tooltip="<bean:message key='default.Logout'/>">
                         <i class="logout-logo icon-fa5 icon-power-off"></i>
                         <span class="logout-text"><bean:message key='default.Logout'/></span>
                     </button>
-                </form>
+                </mvc:form>
                 <c:if test="${SLOW_CONNECTION_THRESHOLD_KBPS > 0}">
                     <span id="internet-indicator" class="icon-stack icon-lg" data-tooltip="<bean:message key='OK'/>">
                       <i class="fas icon-wifi icon-stack-1x icon-inverse"></i>
@@ -182,14 +182,7 @@
                 </c:if>
             </li>
             <li id="account-data" data-initializer="account-data">
-                <emm:ShowByPermission token="selfservice.migration">
-                    <c:set var="selfserviceUrl" value="/selfservice/view.action"/>
-                </emm:ShowByPermission>
-                <emm:HideByPermission token="selfservice.migration">
-                    <c:set var="selfserviceUrl" value="/selfservice.do?action=showChangeForm"/>
-                </emm:HideByPermission>
-
-                <html:link page="${selfserviceUrl}">
+                <html:link page="/user/self/view.action">
                     <div class="account-initials">
                         <span><c:if test="${not empty firstName}">${fn:substring(firstName, 0, 1)}</c:if>${fn:substring(fullName, 0, 1)}</span>
                     </div>

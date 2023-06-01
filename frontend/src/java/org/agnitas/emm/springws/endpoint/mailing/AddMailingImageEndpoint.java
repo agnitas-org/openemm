@@ -17,16 +17,17 @@ import java.util.Objects;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.MailingComponentType;
 import org.agnitas.beans.impl.MailingComponentImpl;
+import org.agnitas.dao.MailingComponentDao;
 import org.agnitas.dao.MailingDao;
-import org.agnitas.dao.TrackableLinkDao;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.component.service.ComponentMaximumSizeExceededException;
 import org.agnitas.emm.core.mailing.service.MailingNotExistException;
 import org.agnitas.emm.springws.endpoint.BaseEndpoint;
-import org.agnitas.emm.springws.endpoint.Utils;
+import org.agnitas.emm.springws.endpoint.Namespaces;
 import org.agnitas.emm.springws.jaxb.AddMailingImageRequest;
 import org.agnitas.emm.springws.jaxb.AddMailingImageResponse;
+import org.agnitas.emm.springws.util.SecurityContextAccess;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -40,37 +41,40 @@ import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 import com.agnitas.beans.ComTrackableLink;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.impl.ComTrackableLinkImpl;
+import com.agnitas.dao.TrackableLinkDao;
 import com.agnitas.emm.core.components.service.ComComponentService;
 import com.agnitas.emm.core.thumbnails.service.ThumbnailService;
 import com.agnitas.service.MimeTypeService;
 
 @Endpoint
 public class AddMailingImageEndpoint extends BaseEndpoint {
+	
+	/** The logger. */
 	private static final transient Logger LOGGER = LogManager.getLogger(AddMailingFromTemplateEndpoint.class);
 
 	private final ThumbnailService thumbnailService;
     private ComComponentService componentService;
-
     private TrackableLinkDao trackableLinkDao;
-
     private MailingDao mailingDao;
-
     private  MimeTypeService mimeTypeService;
-
     private ConfigService configService;
+    private SecurityContextAccess securityContextAccess;
+    private MailingComponentDao mailingComponentDao;
 
-    public AddMailingImageEndpoint(@Qualifier("componentService") ComComponentService componentService, TrackableLinkDao trackableLinkDao, MailingDao mailingDao, MimeTypeService mimeTypeService, ConfigService configService, final ThumbnailService thumbnailService) {
-        this.componentService = componentService;
-        this.trackableLinkDao = trackableLinkDao;
-        this.mailingDao = mailingDao;
-        this.mimeTypeService = mimeTypeService;
-        this.configService = configService;
-		this.thumbnailService = Objects.requireNonNull(thumbnailService);
+    public AddMailingImageEndpoint(@Qualifier("componentService") ComComponentService componentService, TrackableLinkDao trackableLinkDao, MailingDao mailingDao, MimeTypeService mimeTypeService, ConfigService configService, final ThumbnailService thumbnailService, final SecurityContextAccess securityContextAccess, final MailingComponentDao mailingComponentDao) {
+        this.componentService = Objects.requireNonNull(componentService, "componentService");
+        this.trackableLinkDao = Objects.requireNonNull(trackableLinkDao, "trackableLinkDao");
+        this.mailingDao = Objects.requireNonNull(mailingDao, "mailingDao");
+        this.mimeTypeService = Objects.requireNonNull(mimeTypeService, "mimeTypeService, \"\");");
+        this.configService = Objects.requireNonNull(configService, "configService");
+		this.thumbnailService = Objects.requireNonNull(thumbnailService, "thumbnailService");
+		this.securityContextAccess = Objects.requireNonNull(securityContextAccess, "securityContextAccess");
+		this.mailingComponentDao = Objects.requireNonNull(mailingComponentDao, "mailingComponentDao");
     }
 
-    @PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "AddMailingImageRequest")
+    @PayloadRoot(namespace = Namespaces.AGNITAS_ORG, localPart = "AddMailingImageRequest")
     public @ResponsePayload AddMailingImageResponse addMailingImage(@RequestPayload AddMailingImageRequest request) throws Exception {
-    	final int companyID = Utils.getUserCompany();
+    	final int companyID = this.securityContextAccess.getWebserviceUserCompanyId();
     	
 
         validateParameters(request);
@@ -92,8 +96,12 @@ public class AddMailingImageEndpoint extends BaseEndpoint {
         final int urlId = saveTrackableLink(request);
         component.setUrlID(urlId);
 
-        final int imageComponentId = componentService.addMailingComponent(component);
-
+        final boolean replaceExisting = request.isReplaceExisting() == null ? false : request.isReplaceExisting();
+        	
+        final int imageComponentId = replaceExisting
+        		? addOrReplaceComponent(component)
+        		: componentService.addMailingComponent(component);
+        
 		try {
 			this.thumbnailService.updateMailingThumbnailByWebservice(companyID, request.getMailingID());
 		} catch(final Exception e) {
@@ -105,15 +113,29 @@ public class AddMailingImageEndpoint extends BaseEndpoint {
         
         return res;
     }
+    
+    private final int addOrReplaceComponent(final MailingComponent component) throws Exception {
+    	final MailingComponent existingComponent = this.mailingComponentDao.getMailingComponentByName(component.getMailingID(), component.getCompanyID(), component.getComponentName());
+    	
+		if (existingComponent == null || existingComponent.getType() != component.getType()) {
+			return componentService.addMailingComponent(component);
+		} else {
+			component.setId(existingComponent.getId());
+			mailingComponentDao.saveMailingComponent(component);
+			
+			return component.getId();
+		}
+    }
 
     private int saveTrackableLink(AddMailingImageRequest req) {
-    	final int defaultLinkTrackingMode = this.configService.getIntegerValue(ConfigValue.TrackableLinkDefaultTracking, Utils.getUserCompany());
+    	final int companyId = this.securityContextAccess.getWebserviceUserCompanyId();
+    	final int defaultLinkTrackingMode = this.configService.getIntegerValue(ConfigValue.TrackableLinkDefaultTracking, companyId);
     	
         String imageUrl = req.getURL();
         int urlId = 0;
         if (StringUtils.isNotBlank(imageUrl)) {
             ComTrackableLink trackableLink = new ComTrackableLinkImpl();
-            trackableLink.setCompanyID(Utils.getUserCompany());
+            trackableLink.setCompanyID(companyId);
             trackableLink.setMailingID(req.getMailingID());
             trackableLink.setFullUrl(imageUrl);
             trackableLink.setUsage(defaultLinkTrackingMode);
@@ -124,7 +146,7 @@ public class AddMailingImageEndpoint extends BaseEndpoint {
     }
 
     private void validateParameters(AddMailingImageRequest req) {
-        int companyId = Utils.getUserCompany();
+    	final int companyId = this.securityContextAccess.getWebserviceUserCompanyId();
 
         if(!isValidMailingId(req.getMailingID(), companyId)) {
             throw new MailingNotExistException(companyId, req.getMailingID());
@@ -140,7 +162,7 @@ public class AddMailingImageEndpoint extends BaseEndpoint {
     }
 
     private boolean isValidMailingId(int mailingID, int companyID) {
-        Mailing mailing = mailingDao.getMailing(mailingID, companyID);
+    	final Mailing mailing = mailingDao.getMailing(mailingID, companyID);
         return mailing != null && mailing.getId() != 0;
     }
 

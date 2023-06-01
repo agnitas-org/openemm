@@ -19,7 +19,7 @@ import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.commons.password.policy.PasswordPolicies;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.Company;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.company.dto.CompanyInfoDto;
@@ -51,9 +51,9 @@ public interface ComCompanyService {
 
 	List<AdminEntry> getAdmins(int companyId);
 
-	int save(ComAdmin comAdmin, CompanyCreateForm form, Popups popups, String sessionId) throws Exception;
+	int create(Admin admin, CompanyCreateForm form, Popups popups, String sessionId) throws Exception;
 
-	int update(ComAdmin comAdmin, CompanyViewForm form) throws Exception;
+	int update(Admin admin, CompanyViewForm form) throws Exception;
 
     boolean deleteCompany(int companyIdForRemove);
     

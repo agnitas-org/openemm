@@ -15,6 +15,7 @@ import java.sql.SQLException;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -29,8 +30,8 @@ import org.agnitas.beans.Mailinglist;
 import org.agnitas.beans.impl.BindingEntryImpl;
 import org.agnitas.dao.UserStatus;
 import org.agnitas.dao.impl.BaseDaoImpl;
+import org.agnitas.dao.impl.mapper.IntegerRowMapper;
 import org.agnitas.dao.impl.mapper.MailinglistRowMapper;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.DbUtilities;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -52,7 +53,7 @@ import com.agnitas.emm.core.report.bean.impl.PlainBindingEntryImpl;
 public class ComBindingEntryDaoImpl extends BaseDaoImpl implements ComBindingEntryDao {
 	
 	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(ComBindingEntryDaoImpl.class);
+	private static final Logger logger = LogManager.getLogger(ComBindingEntryDaoImpl.class);
 	
 	private ComRecipientDao recipientDao;
 	
@@ -62,14 +63,14 @@ public class ComBindingEntryDaoImpl extends BaseDaoImpl implements ComBindingEnt
 	}
 
 	@Override
-	public boolean getExistingRecipientIDByMailinglistID(Set<Integer> mailinglistIds, @VelocityCheck int companyId) {
+	public boolean getExistingRecipientIDByMailinglistID(Set<Integer> mailinglistIds, int companyId) {
 		String sql = "SELECT COUNT(customer_id) FROM customer_" + companyId + "_binding_tbl WHERE mailinglist_id IN (" + StringUtils.join(mailinglistIds, ", ") + ")";
 		return selectInt(logger, sql) > 0;
 	}
 
 	@Override
 	@DaoUpdateReturnValueCheck
-	public void deleteRecipientBindingsByMailinglistID(Set<Integer> mailinglistIds, @VelocityCheck int companyId) {
+	public void deleteRecipientBindingsByMailinglistID(Set<Integer> mailinglistIds, int companyId) {
         if (mailinglistIds == null || mailinglistIds.isEmpty()) {
             return;
         }
@@ -79,25 +80,26 @@ public class ComBindingEntryDaoImpl extends BaseDaoImpl implements ComBindingEnt
 	}
 	
 	@Override
-	public BindingEntry get(int recipientID, @VelocityCheck int companyID, int mailinglistID, int mediaType) {
+	public BindingEntry get(int recipientID, int companyID, int mailinglistID, int mediaType) {
 		try {
 			// Using "SELECT * ...", because entry_mailing_id and referrer may be missing in sub-client tables
 			String sql = "SELECT * FROM customer_" + companyID + "_binding_tbl WHERE customer_id = ? AND mailinglist_id = ? AND mediatype = ?";
 			List<BindingEntry> list = select(logger, sql, new BindingEntry_RowMapper(this), recipientID, mailinglistID, mediaType);
-			if (list.size() > 0) {
+			if (!list.isEmpty()) {
 				return list.get(0);
-			} else {
-				return null;
 			}
+
+			return null;
 		} catch (Exception e) {
 			return null;
 		}
 	}
 
 	@Override
-	public List<PlainBindingEntry> get(@VelocityCheck int companyId, int recipientId, int mailingId) {
+	public List<PlainBindingEntry> get(int companyId, int recipientId, int mailingId) {
 		try {
 			String selectMailingListId = "SELECT mailinglist_id FROM mailing_tbl WHERE mailing_id = ?";
+			// Using "SELECT * ...", because entry_mailing_id and referrer may be missing in sub-client tables
 			String query = String.format("SELECT * FROM %s", getBindingTableName(companyId)) +
 					" WHERE customer_id = ?" +
 					String.format(" AND mailinglist_id = (%s)", selectMailingListId);
@@ -109,16 +111,15 @@ public class ComBindingEntryDaoImpl extends BaseDaoImpl implements ComBindingEnt
 
 
 	@Override
-	public void save(@VelocityCheck int companyID, BindingEntry entry) {
-		if (companyID <= 0) {
-			return;
-		} else if (entry.getMailinglistID() <= 0) {
+	public void save(int companyID, BindingEntry entry) {
+		if (companyID <= 0 || entry.getMailinglistID() <= 0) {
 			return;
 		}
-		
+
+		// Using "SELECT * ...", because entry_mailing_id and referrer may be missing in sub-client tables
 		String existsSql = "SELECT * FROM customer_" + companyID + "_binding_tbl WHERE customer_id = ? AND mailinglist_id = ? AND mediatype = ?";
 		List<BindingEntry> list = select(logger, existsSql, new BindingEntry_RowMapper(this), entry.getCustomerID(), entry.getMailinglistID(), entry.getMediaType());
-		if (list.size() > 0) {
+		if (!list.isEmpty()) {
 			updateBinding(entry, companyID);
 		} else {
 			insertNewBinding(entry, companyID);
@@ -134,11 +135,9 @@ public class ComBindingEntryDaoImpl extends BaseDaoImpl implements ComBindingEnt
 	 */
 	@Override
 	@DaoUpdateReturnValueCheck
-	public boolean updateBinding(BindingEntry entry, @VelocityCheck int companyID) {
+	public boolean updateBinding(BindingEntry entry, int companyID) {
 		try {
-			if (companyID <= 0) {
-				return false;
-			} else if (entry.getMailinglistID() <= 0) {
+			if (companyID <= 0 || entry.getMailinglistID() <= 0) {
 				return false;
 			}
 			
@@ -181,7 +180,7 @@ public class ComBindingEntryDaoImpl extends BaseDaoImpl implements ComBindingEnt
 
 	@Override
 	@DaoUpdateReturnValueCheck
-    public void updateBindings(@VelocityCheck int companyId, List<BindingEntry> bindings) throws Exception {
+    public void updateBindings(int companyId, List<BindingEntry> bindings) throws Exception {
 		List<String> bindingColumns = DbUtilities.getColumnNames(getDataSource(), "customer_" + companyId + "_binding_tbl");
 
 		boolean containsReferrerColumn = bindingColumns.contains("referrer");
@@ -219,7 +218,7 @@ public class ComBindingEntryDaoImpl extends BaseDaoImpl implements ComBindingEnt
 
     @Override
 	@DaoUpdateReturnValueCheck
-    public void insertBindings(@VelocityCheck int companyId, List<BindingEntry> bindings) throws Exception {
+    public void insertBindings(int companyId, List<BindingEntry> bindings) throws Exception {
 		if (companyId > 0) {
 			List<String> bindingColumns = DbUtilities.getColumnNames(getDataSource(), "customer_" + companyId + "_binding_tbl");
 
@@ -273,87 +272,82 @@ public class ComBindingEntryDaoImpl extends BaseDaoImpl implements ComBindingEnt
 
 	@Override
 	@DaoUpdateReturnValueCheck
-	public boolean insertNewBinding(BindingEntry entry, @VelocityCheck int companyID) {
+	public boolean insertNewBinding(BindingEntry entry, int companyID) {
 		try {
-			if (companyID <= 0) {
+			if (companyID <= 0 || entry.getCustomerID() <= 0 || entry.getMailinglistID() <= 0 || !mailinglistExists(companyID, entry.getMailinglistID())) {
 				return false;
-			} else if (entry.getCustomerID() <= 0) {
-				return false;
-			} else if (entry.getMailinglistID() <= 0) {
-				return false;
-			} else if (!mailinglistExists(companyID, entry.getMailinglistID())) {
-				return false;
-			} else {
-				if (checkAssignedProfileFieldIsSet(entry, companyID)) {
-					// Check for valid UserStatus code
-					UserStatus.getUserStatusByID(entry.getUserStatus());
-					
-					List<String> bindingColumns = DbUtilities.getColumnNames(getDataSource(), "customer_" + companyID + "_binding_tbl");
-					
-					entry.setCreationDate(new Date());
-					entry.setChangeDate(entry.getCreationDate());
-					
-					String sqlInsertPart = "mailinglist_id, customer_id, user_type, user_status, timestamp, user_remark, creation_date, exit_mailing_id, mediatype";
-					String sqlValuePart = "?, ?, ?, ?, ?, ?, ?, ?, ?";
-					List<Object> sqlParameters = new ArrayList<>();
-					sqlParameters.add(entry.getMailinglistID());
-					sqlParameters.add(entry.getCustomerID());
-					sqlParameters.add(entry.getUserType());
-					sqlParameters.add(entry.getUserStatus());
-					sqlParameters.add(entry.getChangeDate());
-					sqlParameters.add(entry.getUserRemark());
-					sqlParameters.add(entry.getCreationDate());
-					sqlParameters.add(entry.getExitMailingID());
-					sqlParameters.add(entry.getMediaType());
-					
-					if (bindingColumns.contains("referrer")) {
-						sqlInsertPart += ", referrer";
-						sqlValuePart += ", ?";
-						sqlParameters.add(entry.getReferrer());
-					}
-					if (bindingColumns.contains("entry_mailing_id")) {
-						sqlInsertPart += ", entry_mailing_id";
-						sqlValuePart += ", ?";
-						sqlParameters.add(entry.getEntryMailingID());
-					}
-					String sql = "INSERT INTO customer_" + companyID + "_binding_tbl (" + sqlInsertPart + ") VALUES (" + sqlValuePart + ")";
-					
-					update(logger, sql, sqlParameters.toArray());
-					return true;
-				} else {
-					return false;
-				}
 			}
+
+			if (!checkAssignedProfileFieldIsSet(entry, companyID)) {
+				return false;
+			}
+
+			// Check for valid UserStatus code
+			UserStatus.getUserStatusByID(entry.getUserStatus());
+
+			List<String> bindingColumns = DbUtilities.getColumnNames(getDataSource(), "customer_" + companyID + "_binding_tbl");
+
+			entry.setCreationDate(new Date());
+			entry.setChangeDate(entry.getCreationDate());
+
+			String sqlInsertPart = "mailinglist_id, customer_id, user_type, user_status, timestamp, user_remark, creation_date, exit_mailing_id, mediatype";
+			String sqlValuePart = "?, ?, ?, ?, ?, ?, ?, ?, ?";
+			List<Object> sqlParameters = new ArrayList<>();
+			sqlParameters.add(entry.getMailinglistID());
+			sqlParameters.add(entry.getCustomerID());
+			sqlParameters.add(entry.getUserType());
+			sqlParameters.add(entry.getUserStatus());
+			sqlParameters.add(entry.getChangeDate());
+			sqlParameters.add(entry.getUserRemark());
+			sqlParameters.add(entry.getCreationDate());
+			sqlParameters.add(entry.getExitMailingID());
+			sqlParameters.add(entry.getMediaType());
+
+			if (bindingColumns.contains("referrer")) {
+				sqlInsertPart += ", referrer";
+				sqlValuePart += ", ?";
+				sqlParameters.add(entry.getReferrer());
+			}
+			if (bindingColumns.contains("entry_mailing_id")) {
+				sqlInsertPart += ", entry_mailing_id";
+				sqlValuePart += ", ?";
+				sqlParameters.add(entry.getEntryMailingID());
+			}
+			String sql = "INSERT INTO customer_" + companyID + "_binding_tbl (" + sqlInsertPart + ") VALUES (" + sqlValuePart + ")";
+
+			update(logger, sql, sqlParameters.toArray());
+			return true;
 		} catch (Exception e) {
 			return false;
 		}
 	}
 
-	private boolean mailinglistExists(@VelocityCheck int companyID, int mailinglistID) {
+	private boolean mailinglistExists(int companyID, int mailinglistID) {
 		return selectInt(logger, "SELECT COUNT(*) FROM mailinglist_tbl WHERE company_id = ? AND mailinglist_id = ?", companyID, mailinglistID) > 0;
 	}
 
-	private final boolean checkAssignedProfileFieldIsSet(final BindingEntry entry, final int companyID) {
+	private boolean checkAssignedProfileFieldIsSet(final BindingEntry entry, final int companyID) {
 		final MediaTypes mediaType = MediaTypes.getMediaTypeForCode(entry.getMediaType());
 		
-		if(mediaType == null) {
+		if (mediaType == null || mediaType.getAssignedProfileField() == null) {
 			return true;
-		} else {
-			if(mediaType.getAssignedProfileField() == null) {
-				return true;
-			} else {
-				final Map<String, Object> map = this.recipientDao.getCustomerDataFromDb(companyID, entry.getCustomerID());
-				
-				final Object value = map.get(mediaType.getAssignedProfileField());
-				
-				return value != null && StringUtils.isNotEmpty(value.toString());
-			}
 		}
+
+		final Map<String, Object> map = this.recipientDao.getCustomerDataFromDb(companyID, entry.getCustomerID());
+		final Object value = map.get(mediaType.getAssignedProfileField());
+
+		validateAssignedProfileField(mediaType, map, value);
+
+		return value != null && StringUtils.isNotEmpty(value.toString());
 	}
-	
+
+	protected void validateAssignedProfileField(MediaTypes mediaType, Map<String, Object> customerData, Object fieldValue) {
+		// Override in extended version of this class
+	}
+
 	@Override
 	@DaoUpdateReturnValueCheck
-	public boolean updateStatus(BindingEntry entry, @VelocityCheck int companyID) {
+	public boolean updateStatus(BindingEntry entry, int companyID) {
 		try {
 			if (companyID <= 0) {
 				return false;
@@ -392,7 +386,7 @@ public class ComBindingEntryDaoImpl extends BaseDaoImpl implements ComBindingEnt
 
 	@Override
 	@DaoUpdateReturnValueCheck
-	public boolean optOutEmailAdr(String email, @VelocityCheck int companyID) {
+	public boolean optOutEmailAdr(String email, int companyID) {
 		String operator;
 		if (companyID <= 0) {
 			return false;
@@ -414,13 +408,13 @@ public class ComBindingEntryDaoImpl extends BaseDaoImpl implements ComBindingEnt
 
 	@Override
 	@DaoUpdateReturnValueCheck
-	public boolean addTargetsToMailinglist(@VelocityCheck int companyID, int mailinglistID, ComTarget target, Set<MediaTypes> mediaTypes) {
+	public boolean addTargetsToMailinglist(int companyID, int mailinglistID, ComTarget target, Set<MediaTypes> mediaTypes) {
 		try {
 			if (companyID <= 0) {
 				return false;
 			}
-			if (mediaTypes == null || mediaTypes.size() == 0) {
-				mediaTypes = new HashSet<>(Arrays.asList(MediaTypes.EMAIL));
+			if (mediaTypes == null || mediaTypes.isEmpty()) {
+				mediaTypes = new HashSet<>(Collections.singletonList(MediaTypes.EMAIL));
 			}
 			for (MediaTypes mediaType : mediaTypes) {
 				String sql = "INSERT INTO customer_" + companyID + "_binding_tbl (customer_id, mailinglist_id, user_type, user_status, user_remark, timestamp, exit_mailing_id, creation_date, mediatype)"
@@ -434,10 +428,11 @@ public class ComBindingEntryDaoImpl extends BaseDaoImpl implements ComBindingEnt
 	}
 
 	@Override
-	public boolean getUserBindingFromDB(BindingEntry entry, @VelocityCheck int companyID) {
+	public boolean getUserBindingFromDB(BindingEntry entry, int companyID) {
+		// Using "SELECT * ...", because entry_mailing_id and referrer may be missing in sub-client tables
 		String sqlGetBinding = "SELECT * FROM customer_" + companyID + "_binding_tbl WHERE mailinglist_id = ? AND customer_id = ? AND mediatype = ?";
 		List<BindingEntry> list = select(logger, sqlGetBinding, new BindingEntry_RowMapper(this), entry.getMailinglistID(), entry.getCustomerID(), entry.getMediaType());
-		if (list.size() > 0) {
+		if (!list.isEmpty()) {
 			BindingEntry foundEntry = list.get(0);
 			entry.setUserType(foundEntry.getUserType());
             entry.setUserStatus(foundEntry.getUserStatus());
@@ -447,32 +442,32 @@ public class ComBindingEntryDaoImpl extends BaseDaoImpl implements ComBindingEnt
             entry.setExitMailingID(foundEntry.getExitMailingID());
             entry.setCreationDate(foundEntry.getCreationDate());
 			return true;
-		} else {
-			return false;
 		}
+
+		return false;
 	}
 
 	@Override
-	public boolean exist(int customerId, @VelocityCheck int companyId, int mailinglistId, int mediatype) {
+	public boolean exist(int customerId, int companyId, int mailinglistId, int mediatype) {
 		String sql = "SELECT COUNT(*) FROM customer_" + companyId + "_binding_tbl WHERE customer_id = ? AND mailinglist_id = ? AND mediatype = ?";
 		return selectInt(logger, sql, customerId, mailinglistId, mediatype) > 0;
 	}
 
 	@Override
-	public boolean exist(@VelocityCheck int companyId, int mailinglistId) {
+	public boolean exist(int companyId, int mailinglistId) {
 		String sql = "SELECT COUNT(*) FROM customer_" + companyId + "_binding_tbl WHERE mailinglist_id = ?";
 		return selectInt(logger, sql, mailinglistId) > 0;
 	}
 
 	@Override
 	@DaoUpdateReturnValueCheck
-	public void delete(int customerId, @VelocityCheck int companyId, int mailinglistId, int mediatype) {
+	public void delete(int customerId, int companyId, int mailinglistId, int mediatype) {
 		String sql = "DELETE FROM customer_" + companyId + "_binding_tbl WHERE customer_id = ? AND mailinglist_id = ? AND mediatype = ?";
 		update(logger, sql, customerId, mailinglistId, mediatype);
 	}
 
 	@Override
-	public List<BindingEntry> getBindings(@VelocityCheck int companyID, int recipientID) {
+	public List<BindingEntry> getBindings(int companyID, int recipientID) {
 
 		// Using "SELECT * ...", because entry_mailing_id and referrer may be missing in sub-client tables
 		String sql = "SELECT * FROM customer_" + companyID + "_binding_tbl WHERE customer_id = ?";
@@ -480,7 +475,7 @@ public class ComBindingEntryDaoImpl extends BaseDaoImpl implements ComBindingEnt
 	}
 
 	@Override
-	public List<CompositeBindingEntry> getCompositeBindings(@VelocityCheck int companyID, int recipientID) {
+	public List<CompositeBindingEntry> getCompositeBindings(int companyID, int recipientID) {
 		String bindingTable = "customer_" + companyID + "_binding_tbl";
 		String recipientTable = "customer_" + companyID + "_tbl";
 		String mailinglistTable = "mailinglist_tbl";
@@ -505,7 +500,7 @@ public class ComBindingEntryDaoImpl extends BaseDaoImpl implements ComBindingEnt
 
 	@Override
 	@DaoUpdateReturnValueCheck
-	public void updateBindingStatusByEmailPattern(@VelocityCheck int companyId, String emailPattern, int userStatus, String remark) throws Exception {
+	public void updateBindingStatusByEmailPattern(int companyId, String emailPattern, int userStatus, String remark) throws Exception {
 		// Check for valid UserStatus code
 		UserStatus.getUserStatusByID(userStatus);
 		
@@ -529,7 +524,7 @@ public class ComBindingEntryDaoImpl extends BaseDaoImpl implements ComBindingEnt
 			String customerAndMailinglistInClause = cmPairs.stream()
 					.map(pair -> "("  + pair.getKey() + "," + pair.getValue() + ")")
 					.collect(Collectors.joining(","));
-
+			// Using "SELECT * ...", because entry_mailing_id and referrer may be missing in sub-client tables
 			String query = "SELECT * FROM customer_" + companyId + "_binding_tbl WHERE (customer_id, mailinglist_id) " +
 					"IN (" + customerAndMailinglistInClause + ") FOR UPDATE";
 
@@ -652,6 +647,54 @@ public class ComBindingEntryDaoImpl extends BaseDaoImpl implements ComBindingEnt
 			compositeBindingEntry.setCreationDate(resultSet.getTimestamp(columnPrefix + "creation_date"));
 
 			return compositeBindingEntry;
+		}
+	}
+
+	@Override
+	public int bulkUpdateStatus(int companyID, List<Integer> mailinglistIds, MediaTypes mediatype, UserStatus userStatus, String userRemark, List<Integer> customerIDs) {
+		String query = "UPDATE customer_" + companyID + "_binding_tbl"
+			+ " SET user_status = ?, user_remark = ?, timestamp = CURRENT_TIMESTAMP"
+			+ " WHERE " + makeBulkInClauseForInteger("mailinglist_id", mailinglistIds) + " AND " + makeBulkInClauseForInteger("customer_id", customerIDs);
+		if (mediatype != null) {
+			return update(logger, query + " AND mediatype = ?", userStatus.getStatusCode(), userRemark, mediatype.getKey());
+		} else {
+			return update(logger, query, userStatus.getStatusCode(), userRemark);
+		}
+	}
+
+	@Override
+	public int bulkDelete(int companyID, List<Integer> mailinglistIds, MediaTypes mediatype, List<Integer> customerIDs) {
+		String query = "DELETE FROM customer_" + companyID + "_binding_tbl"
+			+ " WHERE " + makeBulkInClauseForInteger("mailinglist_id", mailinglistIds) + " AND " + makeBulkInClauseForInteger("customer_id", customerIDs);
+		if (mediatype != null) {
+			return update(logger, query + " AND mediatype = ?", mediatype.getKey());
+		} else {
+			return update(logger, query);
+		}
+	}
+
+	@Override
+	public int bulkCreate(int companyID, List<Integer> mailinglistIds, MediaTypes mediatype, UserStatus userStatus, String userRemark, List<Integer> customerIDs) {
+		Date now = new Date();
+		String query = "INSERT INTO customer_" + companyID + "_binding_tbl (customer_id, mailinglist_id, mediatype, user_type, user_status, user_remark, creation_date, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+		List<Object[]> parameterList = new ArrayList<>();
+		for (int mailinglistId : mailinglistIds) {
+			List<Integer> existingCustomerIDs = select(logger, "SELECT customer_id FROM customer_" + companyID + "_binding_tbl WHERE mailinglist_id = ? AND mediatype = ? AND " + makeBulkInClauseForInteger("customer_id", customerIDs), IntegerRowMapper.INSTANCE, mailinglistId, mediatype.getMediaCode());
+			for (int customerID : customerIDs) {
+				if (!existingCustomerIDs.contains(customerID)) {
+					parameterList.add(new Object[] { customerID, mailinglistId, mediatype.getMediaCode(), UserType.World.getTypeCode(), userStatus.getStatusCode(), userRemark, now, now });
+				}
+			}
+		}
+		if (parameterList.size() > 0) {
+	        int[] touchedLinesResults = batchupdate(logger, query, parameterList);
+	        int touchedLinesSum = 0;
+	        for (int touchedLines : touchedLinesResults) {
+	        	touchedLinesSum += touchedLines;
+	        }
+	        return touchedLinesSum;
+		} else {
+			return 0;
 		}
 	}
 }

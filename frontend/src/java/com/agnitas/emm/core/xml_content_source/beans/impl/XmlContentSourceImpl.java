@@ -10,8 +10,9 @@
 
 package com.agnitas.emm.core.xml_content_source.beans.impl;
 
-import com.agnitas.emm.core.xml_content_source.beans.XmlContentSource;
 import org.agnitas.emm.core.velocity.VelocityCheck;
+
+import com.agnitas.emm.core.xml_content_source.beans.XmlContentSource;
 
 public class XmlContentSourceImpl implements XmlContentSource {
 

@@ -20,12 +20,19 @@
     <c:param name="isTemplate" value="false"/>
 </c:url>
 
-<c:url var="mailingViewLink" value="/mailingbase.do">
-    <c:param name="action" value="${BASE_ACTION_VIEW}"/>
-    <c:param name="mailingID" value="${mailing.id}"/>
-    <c:param name="keepForward" value="true"/>
-    <c:param name="init" value="true"/>
-</c:url>
+<emm:ShowByPermission token="mailing.settings.migration">
+    <c:url var="mailingViewLink" value="/mailing/${mailing.id}/settings.action">
+        <c:param name="keepForward" value="true"/>
+    </c:url>
+</emm:ShowByPermission>
+<emm:HideByPermission token="mailing.settings.migration">
+    <c:url var="mailingViewLink" value="/mailingbase.do">
+        <c:param name="action" value="${BASE_ACTION_VIEW}"/>
+        <c:param name="mailingID" value="${mailing.id}"/>
+        <c:param name="keepForward" value="true"/>
+        <c:param name="init" value="true"/>
+    </c:url>
+</emm:HideByPermission>
 
 <c:set var="agnTitleKey" 			value="Mailing" 				scope="request"/>
 <c:set var="agnSubtitleKey" 		value="Mailing" 				scope="request"/>

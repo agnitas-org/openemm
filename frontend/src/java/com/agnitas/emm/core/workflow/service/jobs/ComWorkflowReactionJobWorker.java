@@ -21,14 +21,13 @@ import java.util.Set;
 
 import org.agnitas.beans.CompaniesConstraints;
 import org.agnitas.dao.UserStatus;
-
-import com.agnitas.beans.Mailing;
 import org.agnitas.service.JobWorker;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.agnitas.beans.MaildropEntry;
+import com.agnitas.beans.Mailing;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.emm.core.maildrop.MaildropStatus;

@@ -590,7 +590,6 @@ return false;]]></method>
                         <expression name="valueExpr">if (params["mediaType"] == 0)  m="Email";
 if (params["mediaType"] == 1)  m="Fax";
 if (params["mediaType"] == 2)  m="Print";
-if (params["mediaType"] == 3)  m="MMS";
 if (params["mediaType"] == 4)  m="SMS";
 m;</expression>
                         <property name="contentType">html</property>

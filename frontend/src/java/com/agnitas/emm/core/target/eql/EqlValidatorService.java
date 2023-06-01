@@ -10,12 +10,12 @@
 
 package com.agnitas.emm.core.target.eql;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.messages.Message;
 
 import java.util.Collection;
 
 public interface EqlValidatorService {
 
-    Collection<Message> validateEql(ComAdmin admin, String eql);
+    Collection<Message> validateEql(Admin admin, String eql);
 }

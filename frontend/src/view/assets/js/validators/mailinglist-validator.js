@@ -6,7 +6,7 @@ AGN.Lib.Validator.new('mailinglist-exist', {
     var content = $e.val();
     var errors = AGN.Lib.Validator.get('required-id').errors($e, options);
 
-    if (errors && errors.length <= 0 && options && options.removedMailinglistId == content.trim()) {
+    if (errors && errors.length <= 0 && options && content && options.removedMailinglistId == content.trim()) {
       errors.push({field: $e, msg: 'Mailing list removed'});
     }
     return errors;

@@ -65,7 +65,7 @@
                                     </li>
                                 </c:if>
                                 <c:if test="${itemOption['url'] ne null}">
-                                    <li>
+                                    <li ${itemOption['disabled'] ? "class='disabled'" : ""} ${not empty itemOption['tooltip'] ? "data-tooltip='".concat(itemOption['tooltip']).concat("'") : ""}>
                                         <a tabindex="-1" href="${itemOption['url']}" ${itemOption['extraAttributes']}>
                                             <i class="icon ${itemOption['icon']}"></i>
                                             ${itemOption['name']}

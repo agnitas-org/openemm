@@ -23,7 +23,6 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
@@ -36,7 +35,7 @@ import java.util.Vector;
 
 import javax.sql.DataSource;
 
-import com.agnitas.emm.core.mailing.service.MailingDeliveryLockService;
+import com.agnitas.emm.core.mailing.service.MailingDeliveryBlockingService;
 import com.agnitas.emm.core.mailing.service.MailingSizeCalculationService;
 import org.agnitas.beans.DynamicTagContent;
 import org.agnitas.beans.MailingComponent;
@@ -86,7 +85,7 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.ComTarget;
 import com.agnitas.beans.ComTrackableLink;
 import com.agnitas.beans.DeliveryStat;
@@ -101,6 +100,7 @@ import com.agnitas.dao.ComTargetDao;
 import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.bounce.service.BounceFilterService;
 import com.agnitas.emm.core.commons.TranslatableMessageException;
+import com.agnitas.emm.core.components.service.MailingSendService;
 import com.agnitas.emm.core.maildrop.MaildropGenerationStatus;
 import com.agnitas.emm.core.maildrop.MaildropStatus;
 import com.agnitas.emm.core.maildrop.service.MaildropService;
@@ -182,6 +182,7 @@ public class MailingSendAction extends StrutsActionBase implements ApplicationCo
     protected ComTargetService targetService;
     protected MaildropService maildropService;
     protected ComCompanyDao companyDao;
+    protected MailingSendService mailingSendService;
 
     protected MaildropStatusDao maildropStatusDao;
     protected BounceFilterService bounceFilterService;
@@ -199,7 +200,7 @@ public class MailingSendAction extends StrutsActionBase implements ApplicationCo
     protected MailingPreviewService mailingPreviewService;
 
     protected ApplicationContext applicationContext;
-    protected MailingDeliveryLockService mailingDeliveryLockService;
+    protected MailingDeliveryBlockingService mailingDeliveryBlockingService;
 
     // --------------------------------------------------------- Public Methods
 
@@ -352,10 +353,12 @@ public class MailingSendAction extends StrutsActionBase implements ApplicationCo
         try {
             switch (aForm.getAction()) {
                 case ACTION_VIEW_SEND:
-                    loadMailing(aForm, req);
+                    Mailing mailingToView = loadMailing(aForm, req);
                     // TODO Remove this quick-hack and replace it with some more sophisticated code
 
                     loadDeliveryStats(aForm, req);
+                    
+                    req.setAttribute("canSendOrActivateMailing", mailingSendService.canSendOrActivateMailing(AgnUtils.getAdmin(req), mailingToView));
 
                     destination = mapping.findForward("send");
                     break;
@@ -396,8 +399,8 @@ public class MailingSendAction extends StrutsActionBase implements ApplicationCo
                     loadMailing(aForm, req);
                     loadDeliveryStats(aForm, req);
 
-                    mailingDeliveryLockService.resumeExistingLocksIfNeeded(aForm.getMailingID(), AgnUtils.getCompanyID(req));
-                    aForm.setAutoImportId(mailingDeliveryLockService.getMailingImportLock(aForm.getMailingID()).getAutoImportId());
+                    mailingDeliveryBlockingService.resumeBlockingIfNeeded(aForm.getMailingID(), AgnUtils.getCompanyID(req));
+                    aForm.setAutoImportId(mailingDeliveryBlockingService.findBlockingAutoImportId(aForm.getMailingID()));
 
                     destination = mapping.findForward("send");
                     break;
@@ -443,7 +446,7 @@ public class MailingSendAction extends StrutsActionBase implements ApplicationCo
                 case MailingSendAction.ACTION_SEND_ADMIN:
                 case MailingSendAction.ACTION_SEND_TEST:
                     loadMailing(aForm, req);
-                    sendMailing(aForm, req, messages);
+                    sendMailing(aForm, req, messages, errors);
                     loadDeliveryStats(aForm, req);
 
                     extendedChecks(form, req, messages);
@@ -479,7 +482,7 @@ public class MailingSendAction extends StrutsActionBase implements ApplicationCo
                                 sendDate.set(Integer.parseInt(aForm.getSendDate().substring(0, 4)), Integer.parseInt(aForm.getSendDate().substring(4, 6)) - 1, Integer.parseInt(aForm.getSendDate().substring(6, 8)), aForm.getSendHour(), aForm.getSendMinute());
                                 createPostTrigger(AgnUtils.getAdmin(req), mailingToSend, sendDate.getTime());
                             } else {
-                                sendMailing(aForm, req, messages);
+                                sendMailing(aForm, req, messages, errors);
                             }
                         } finally {
                             loadMailing(aForm, req);
@@ -487,8 +490,7 @@ public class MailingSendAction extends StrutsActionBase implements ApplicationCo
                     }
 
                     if (aForm.getAction() == ACTION_SEND_WORLD) {
-                        mailingDeliveryLockService.blockIfNecessary(aForm.getAutoImportId(), mailingToSend.getId(), AgnUtils.getCompanyID(req));
-                        aForm.setAutoImportId(mailingDeliveryLockService.getMailingImportLock(aForm.getMailingID()).getAutoImportId());
+                        aForm.setAutoImportId(mailingDeliveryBlockingService.findBlockingAutoImportId(aForm.getMailingID()));
                     }
 
                     loadDeliveryStats(aForm, req);
@@ -591,7 +593,7 @@ public class MailingSendAction extends StrutsActionBase implements ApplicationCo
 
         boolean isPrioritizationDisallowed = form.isPrioritizationDisallowed();
         int mailingId = form.getMailingID();
-        ComAdmin admin = AgnUtils.getAdmin(request);
+        Admin admin = AgnUtils.getAdmin(request);
 
         try {
             if (mailingPriorityService.setPrioritizationAllowed(admin, mailingId, !isPrioritizationDisallowed)) {
@@ -689,7 +691,7 @@ public class MailingSendAction extends StrutsActionBase implements ApplicationCo
      * @return true==success
      * false==the mailing list has no admin or test recipient bindings
      */
-    protected boolean hasPreviewRecipient(int mailingId, ComAdmin admin) {
+    protected boolean hasPreviewRecipient(int mailingId, Admin admin) {
         return mailingDao.hasPreviewRecipients(mailingId, admin.getCompanyID());
     }
 
@@ -963,7 +965,7 @@ public class MailingSendAction extends StrutsActionBase implements ApplicationCo
      * @param req   HTTP request
      * @throws Exception
      */
-    protected void sendMailing(MailingSendForm aForm, HttpServletRequest req, ActionMessages messages) throws Exception {
+    protected void sendMailing(MailingSendForm aForm, HttpServletRequest req, ActionMessages messages, ActionMessages errors) throws Exception {
         int stepping, blocksize;
         boolean admin = false;
         boolean test = false;
@@ -1037,7 +1039,8 @@ public class MailingSendAction extends StrutsActionBase implements ApplicationCo
         String preview = null;
 
         if (mailinglistDao.getNumberOfActiveSubscribers(admin, test, world, aMailing.getTargetID(), aList.getCompanyID(), aList.getId()) == 0) {
-            throw new TranslatableMessageException("error.mailing.no_subscribers");
+            errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.mailing.no_subscribers"));
+            return;
         }
 
         // check syntax of mailing by generating dummy preview
@@ -1046,7 +1049,8 @@ public class MailingSendAction extends StrutsActionBase implements ApplicationCo
         preview = previewPage.getText();
         if (StringUtils.isBlank(preview)) {
             if (mailingService.isTextVersionRequired(AgnUtils.getCompanyID(req), aForm.getMailingID())) {
-                throw new TranslatableMessageException("error.mailing.no_text_version");
+                errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.mailing.no_text_version"));
+                return;
             } else {
                 messages.add(GuiConstants.ACTIONMESSAGE_CONTAINER_WARNING, new ActionMessage("error.mailing.no_text_version"));
             }
@@ -1054,17 +1058,20 @@ public class MailingSendAction extends StrutsActionBase implements ApplicationCo
 
         preview = previewPage.getHTML();
         if (aForm.getEmailFormat() > 0 && preview.trim().length() == 0) {
-            throw new TranslatableMessageException("error.mailing.no_html_version");
+            errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.mailing.no_html_version"));
+            return;
         }
 
         preview = this.mailingPreviewService.renderPreviewFor(aMailing.getId(), previewForm.getCustomerID(), aMailing.getEmailParam().getSubject());
         if (StringUtils.isBlank(aMailing.getEmailParam().getSubject())) {
-            throw new TranslatableMessageException("error.mailing.subject.too_short");
+            errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.mailing.subject.too_short"));
+            return;
         }
 
         preview = this.mailingPreviewService.renderPreviewFor(aMailing.getId(), previewForm.getCustomerID(), aMailing.getEmailParam().getFromAdr());
         if (preview.trim().length() == 0) {
-            throw new TranslatableMessageException("error.mailing.sender_adress");
+            errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.mailing.sender_adress"));
+            return;
         }
 
         maildropEntry.setSendDate(sendDate);
@@ -1124,7 +1131,7 @@ public class MailingSendAction extends StrutsActionBase implements ApplicationCo
                     maildropEntry.getStatus() != MaildropStatus.ACTION_BASED.getCode() &&
                     maildropEntry.getStatus() != MaildropStatus.DATE_BASED.getCode()) {
                 ClassicTemplateGenerator.generateClassicTemplate(aForm.getMailingID(), req, applicationContext);
-                aMailing.triggerMailing(maildropEntry.getId(), new Hashtable<>(), this.applicationContext);
+                aMailing.triggerMailing(maildropEntry.getId());
             }
             if (logger.isInfoEnabled()) {
                 logger.info("send mailing id: " + aMailing.getId() + " type: " + maildropEntry.getStatus());
@@ -1141,7 +1148,7 @@ public class MailingSendAction extends StrutsActionBase implements ApplicationCo
      * @param sendDate — scheduled send date
      * @param aMailing — mailing to send
      */
-    protected void logSendAction(ComAdmin admin, Date sendDate, Mailing aMailing, int sendActionType) {
+    protected void logSendAction(Admin admin, Date sendDate, Mailing aMailing, int sendActionType) {
         final Locale backendLocale = Locale.UK;
 
         if (aMailing.getMailingType() == null) {
@@ -1285,7 +1292,7 @@ public class MailingSendAction extends StrutsActionBase implements ApplicationCo
             return mapping.findForward("preview." + previewFormat);
         }
 
-        ComAdmin admin = AgnUtils.getAdmin(request);
+        Admin admin = AgnUtils.getAdmin(request);
 
         MediaTypes mediaType = MailingPreviewHelper.castPreviewFormatToMediaType(previewFormat, mediatypeFactory);
         if (mediaType == null) {
@@ -1301,7 +1308,7 @@ public class MailingSendAction extends StrutsActionBase implements ApplicationCo
         return mapping.findForward("preview." + previewFormat);
     }
     
-    protected void renderMailingTypeDependentPreview(final MediaTypes mediaType, final int previewFormat, final Mailing aMailing, final ComAdmin admin, final PreviewForm previewForm) throws Exception {
+    protected void renderMailingTypeDependentPreview(final MediaTypes mediaType, final int previewFormat, final Mailing aMailing, final Admin admin, final PreviewForm previewForm) throws Exception {
         if (MediaTypes.EMAIL == mediaType) {
             Page previewPage = generateBackEndPreview(aMailing.getId(), previewForm);
 
@@ -1343,7 +1350,7 @@ public class MailingSendAction extends StrutsActionBase implements ApplicationCo
    	
     }
 
-    private void analyzeErrors(ComAdmin admin, String template, int mailingId, Mailing aMailing) throws Exception {
+    private void analyzeErrors(Admin admin, String template, int mailingId, Mailing aMailing) throws Exception {
         Map<String, DynamicTag> dynTagsMap = aMailing.getDynTags();
         analyzePreviewError(admin, template, dynTagsMap, mailingId);
     }
@@ -1598,7 +1605,7 @@ public class MailingSendAction extends StrutsActionBase implements ApplicationCo
      * @param mailingID  id of mailing
      * @throws Exception
      */
-    protected void analyzePreviewError(ComAdmin admin, String template, Map<String, DynamicTag> dynTagsMap, int mailingID) throws Exception {
+    protected void analyzePreviewError(Admin admin, String template, Map<String, DynamicTag> dynTagsMap, int mailingID) throws Exception {
         List<String[]> errorReports = new ArrayList<>();
         Vector<String> outFailures = new Vector<>();
         TAGCheck tagCheck = tagCheckFactory.createTAGCheck(mailingID, admin.getLocale());
@@ -1811,7 +1818,7 @@ public class MailingSendAction extends StrutsActionBase implements ApplicationCo
         this.mediatypeFactory = mediatypeFactory;
     }
 
-	protected boolean createPostTrigger(ComAdmin admin, Mailing mailing, Date sendDate) throws Exception {
+	protected boolean createPostTrigger(Admin admin, Mailing mailing, Date sendDate) throws Exception {
         return false;
     }
 
@@ -1821,7 +1828,12 @@ public class MailingSendAction extends StrutsActionBase implements ApplicationCo
     }
 
     @Required
-    public void setMailingDeliveryLockService(MailingDeliveryLockService mailingDeliveryLockService) {
-        this.mailingDeliveryLockService = mailingDeliveryLockService;
+    public void setMailingDeliveryBlockingService(MailingDeliveryBlockingService mailingDeliveryBlockingService) {
+        this.mailingDeliveryBlockingService = mailingDeliveryBlockingService;
+    }
+
+    @Required
+    public void setMailingSendService(MailingSendService mailingSendService) {
+        this.mailingSendService = mailingSendService;
     }
 }

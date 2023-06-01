@@ -18,6 +18,7 @@
         this.formNameJId = 'form[name="' + data.form + '"]';
         this.containerId = data.container;
         this.mailingType = data.mailingType;
+        this.mediatypes = data.mediatypes;
         this.mailingTypesForLoading = data.mailingTypesForLoading;
         this.statusName = data.mailingStatus;
         this.selectName = data.selectName;
@@ -33,6 +34,7 @@
         this.followUpContainer = data.followUpContainer;
         this.advertisingAdditionalOptions = data.advertisingAdditionalOptions;
         this.advertisingUrl = data.advertisingUrl;
+        this.isMailingSettingsMigration = data.isMailingSettingsMigration;
 
 
         //chain of nodes which should be filled with mailing data
@@ -94,20 +96,35 @@
                 var followUpSelect = $(scope.find(this.followUpContainer));
                 var additionalOptions = this.advertisingAdditionalOptions;
                 var advertisingUrl = this.advertisingUrl;
-                $.ajax({
-                    action: 'POST',
-                    url: advertisingUrl,
-                    data: {
-                        mailingId: selectedMailingId
-                    },
-                    success: function(result) {
-                        $(followUpSelect.find('.advertisingOption')).remove();
-                        if (result.isAdvertisingContentType) {
-                            var options = AGN.Lib.Template.text('followupAdvertisingOptions', {items: additionalOptions});
-                            followUpSelect.append(options);
-                        }
+                if (this.isMailingSettingsMigration) {
+                    $(followUpSelect.find('.advertisingOption')).remove();
+                    if (selectedMailingId) {
+                        $.ajax({
+                            type: 'POST',
+                            url: AGN.url("/mailing/ajax/" + selectedMailingId + "/isAdvertisingContentType.action")
+                        }).done(function(resp) {
+                            if (resp && resp.success) {
+                              var options = AGN.Lib.Template.text('followupAdvertisingOptions', {items: additionalOptions});
+                              followUpSelect.append(options);
+                            }
+                        });
                     }
-                });
+                } else {
+                    $.ajax({
+                        action: 'POST',
+                        url: advertisingUrl,
+                        data: {
+                            mailingId: selectedMailingId
+                        },
+                        success: function(result) {
+                            $(followUpSelect.find('.advertisingOption')).remove();
+                            if (result.isAdvertisingContentType) {
+                                var options = AGN.Lib.Template.text('followupAdvertisingOptions', {items: additionalOptions});
+                                followUpSelect.append(options);
+                            }
+                        }
+                    });
+                }
             }
         };
 
@@ -222,6 +239,7 @@
                 url: AGN.url('/workflow/getMailingsByWorkStatus.action'),
                 data: {
                     mailingTypes: this.mailingTypesForLoading.join(','),
+                    mediatypes: this.mediatypes ? this.mediatypes.join(',') : '',
                     status: status,
                     sort: sort,
                     order: order
@@ -290,18 +308,17 @@
 
         this.setIsUsedInCMAttr = function() {
             var selectedMailingOption = this.getSelectedMailingOption();
-            var dependentCampaigns = selectedMailingOption.data('dependent-campaigns');
+            var dependentCampaign = selectedMailingOption.data('dependent-campaigns');
             var mailingId = selectedMailingOption.val();
 
             this.mailingIsUsedInCM = false;
 
-            if (parseInt(this.mailingId, 10) > 0 && mailingId == this.mailingId && dependentCampaigns) {
+            if (parseInt(this.mailingId, 10) > 0 && mailingId == this.mailingId && dependentCampaign) {
                 var workflowId = Def.workflowId || 0;
-                var campaignIds = dependentCampaigns.split(',');
 
-                if (campaignIds.length > 0) {
+                if (dependentCampaign > 0) {
                     if (workflowId > 0) {
-                        this.mailingIsUsedInCM = campaignIds.indexOf(workflowId.toString()) < 0;
+                        this.mailingIsUsedInCM = workflowId !== dependentCampaign;
                     } else {
                         this.mailingIsUsedInCM = true;
                     }

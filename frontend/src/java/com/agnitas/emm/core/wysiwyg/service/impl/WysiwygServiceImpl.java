@@ -14,7 +14,7 @@ import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.components.service.ComMailingComponentsService;
 import com.agnitas.emm.core.wysiwyg.service.WysiwygService;
 
@@ -25,7 +25,7 @@ public class WysiwygServiceImpl implements WysiwygService {
     private ComMailingComponentsService mailingComponentsService;
 
     @Override
-    public JSONObject getImagesLinksWithDescriptionJson(ComAdmin admin, int mailingId) {
+    public JSONObject getImagesLinksWithDescriptionJson(Admin admin, int mailingId) {
         final JSONObject imagesJson = new JSONObject();
 
         if(mailingId <= 0) {

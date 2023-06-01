@@ -25,7 +25,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.commons.encoder.ByteArrayEncoder;
 import com.agnitas.emm.core.commons.encoder.Sha1Encoder;
 import com.agnitas.emm.core.commons.encoder.Sha512Encoder;
@@ -207,11 +207,11 @@ public class PasswordEncryptor {
 		return buffer.toString();
 	}
 	
-	public final boolean isAdminPassword(final String password, final ComAdmin admin) throws Exception {
+	public final boolean isAdminPassword(final String password, final Admin admin) throws Exception {
 		return isAdminPassword(password, admin, this.sha512Encoder);
 	}
 	
-	public final boolean isAdminPassword(final String password, final ComAdmin admin, final ByteArrayEncoder encoder) throws Exception {
+	public final boolean isAdminPassword(final String password, final Admin admin, final ByteArrayEncoder encoder) throws Exception {
 		// TODO: remove this default system encoding and iso encoding in future where all passwords are UTF-8 encoded
 		final String encryptedPasswordToCheck_SystemEncoding = encrypt(password, admin.getAdminID(), null, encoder);
 		final String encryptedPasswordToCheck_UtfEncoding = encrypt(password, admin.getAdminID(), "UTF-8", encoder);

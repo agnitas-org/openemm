@@ -10,7 +10,7 @@
 
 package com.agnitas.emm.core.mailing.service;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.Mailing;
 import org.agnitas.util.Tuple;
 
@@ -25,5 +25,5 @@ public interface MailingSizeCalculationService {
      * @param mailing the mailing entity to evaluate.
      * @return the tuple of maximum possible mail sizes in bytes (first - without external images, second - with external images).
      */
-    Tuple<Long, Long> calculateSize(Mailing mailing, ComAdmin admin);
+    Tuple<Long, Long> calculateSize(Mailing mailing, Admin admin);
 }

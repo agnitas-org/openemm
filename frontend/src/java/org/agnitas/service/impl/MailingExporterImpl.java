@@ -75,9 +75,15 @@ public class MailingExporterImpl extends ActionExporter implements MailingExport
 	@Resource(name="CampaignDao")
 	protected CampaignDao campaignDao;
 	
+    // FIXME: Throw an exception, if an unknown source mailing id is given. Otherwise a copy of an empty mailing will be created. (see EMM-9273)
 	@Override
 	public void exportMailingToJson(int companyID, int mailingID, OutputStream output, boolean exportUnusedImages) throws Exception {
 		Mailing mailing = mailingDao.getMailing(mailingID, companyID);
+
+        // mailingDao.getMailing returns an empty mailing object if the mailingid does not exist yet
+		if (mailing == null || mailing.getId() == 0) {
+			throw new Exception("Mailing for export cannot be found. CompanyID: " + companyID + ", MailingID: " + mailingID);
+		}
 		
 		Set<Integer> targetIDs = new HashSet<>();
 		Set<Integer> actionIDs = new HashSet<>();
@@ -110,6 +116,10 @@ public class MailingExporterImpl extends ActionExporter implements MailingExport
 		}
 		
 		Mailinglist mailinglist = mailinglistDao.getMailinglist(mailing.getMailinglistID(), mailing.getCompanyID());
+		
+		if (mailinglist == null) {
+			throw new Exception("Mailinglist for mailing export cannot be found. CompanyID: " + mailing.getCompanyID() + ", MailingID: " + mailing.getId() + ", MailinglistID: " + mailing.getMailinglistID());
+		}
 
 		writeJsonObjectAttribute(writer, "mailinglist_id", mailinglist.getId());
 		writeJsonObjectAttributeWhenNotNullOrBlank(writer, "mailinglist_shortname", mailinglist.getShortname());

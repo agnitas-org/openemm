@@ -14,12 +14,8 @@
        http://www.springframework.org/schema/web-services http://www.springframework.org/schema/web-services/web-services-2.0.xsd">
 
 	<context:annotation-config/>
-
-	<bean id="LegacyThrottlingService" class="com.agnitas.emm.springws.throttling.impl.SimpleSlidingAverageThrottlingServiceImpl" >
-        <property name="webserviceUserService" ref="WebserviceUserService"/>
-    </bean>
  
- 	<bean id="SoapQuotaService" class="com.agnitas.emm.util.quota.tokenbucket.Bucket4jQuotaService">
+ 	<bean id="throttlingService" class="com.agnitas.emm.util.quota.tokenbucket.Bucket4jQuotaService">
  		<property name="bucketManager">
  			<bean class="com.agnitas.emm.springws.throttling.tokenbucket.service.LocalBucketManager">
  				<property name="configService" ref="ConfigService" />
@@ -34,15 +30,10 @@
  		    </bean>
  		</property>
  	</bean>
- 	
-    <bean id="throttlingService" class="com.agnitas.emm.springws.throttling.migration.ThrottlingServiceImplementationSwitch">
-    	<property name="legacyThrottlingService" ref="LegacyThrottlingService" />
-    	<property name="newThrottlingService" ref="SoapQuotaService" />
-    	<property name="configService" ref="ConfigService" />
-    </bean>
 
 	<bean id="throttlingInterceptor" class="com.agnitas.emm.springws.throttling.ThrottlingInterceptor" >
         <property name="throttlingService" ref="throttlingService"/>
+        <property name="securityContextAccess" ref="securityContextAccess" />
     </bean>
 
 	<!--  Security interceptor without login tracking. -->

@@ -31,7 +31,7 @@ public class RecipientDAO {
 
 				for (long targetID : targetIDs) {
 					if (targetID > 0) {
-						String	sql = dbase.queryString (with.jdbc (),
+						String	sql = dbase.queryString (with.cursor (),
 										 "SELECT target_sql " +
 										 "FROM dyn_target_tbl " +
 										 "WHERE target_id = :targetID",
@@ -44,7 +44,7 @@ public class RecipientDAO {
 				if (targets.size() > 0) {
 					String targetExpression = targets.stream().reduce((s, e) -> s + " AND (" + e + ")").orElse("");
 
-					rc = dbase.queryLong (with.jdbc (),
+					rc = dbase.queryLong (with.cursor (),
 							      "SELECT cust.customer_id " +
 							      "FROM customer_" + companyID + "_tbl cust INNER JOIN customer_" + companyID + "_binding_tbl bind ON cust.customer_id = bind.customer_id " +
 							      "WHERE bind.mailinglist_id = :mailinglistID AND bind.user_type IN ('A', 'T') AND (" + targetExpression + ")" + limit,
@@ -54,7 +54,7 @@ public class RecipientDAO {
 						dbase.logging(Log.DEBUG, "recipient", "Found test recipient " + rc + " on mailinglist " + mailinglistID + " using " + targetExpression);
 						return rc;
 					}
-					rc = dbase.queryLong (with.jdbc (),
+					rc = dbase.queryLong (with.cursor (),
 							      "SELECT cust.customer_id " +
 							      "FROM customer_" + companyID + "_tbl cust INNER JOIN customer_" + companyID + "_binding_tbl bind ON cust.customer_id = bind.customer_id " +
 							      "WHERE bind.user_type IN ('A', 'T') AND (" + targetExpression + ")" + limit);
@@ -62,7 +62,7 @@ public class RecipientDAO {
 						dbase.logging(Log.DEBUG, "recipient", "Found test recipient " + rc + " using " + targetExpression);
 						return rc;
 					}
-					rc = dbase.queryLong (with.jdbc (),
+					rc = dbase.queryLong (with.cursor (),
 							      "SELECT cust.customer_id " +
 							      "FROM customer_" + companyID + "_tbl cust INNER JOIN customer_" + companyID + "_binding_tbl bind ON cust.customer_id = bind.customer_id " +
 							      "WHERE bind.mailinglist_id = :mailinglistID AND (" + targetExpression + ")" + limit,
@@ -71,7 +71,7 @@ public class RecipientDAO {
 						dbase.logging(Log.DEBUG, "recipient", "Found recipient " + rc + " on mailinglist " + mailinglistID + " using " + targetExpression);
 						return rc;
 					}
-					rc = dbase.queryLong (with.jdbc (),
+					rc = dbase.queryLong (with.cursor (),
 							      "SELECT cust.customer_id " +
 							      "FROM customer_" + companyID + "_tbl cust INNER JOIN customer_" + companyID + "_binding_tbl bind ON cust.customer_id = bind.customer_id " +
 							      "WHERE " + targetExpression + limit);
@@ -81,7 +81,7 @@ public class RecipientDAO {
 					}
 				}
 			}
-			rc = dbase.queryLong (with.jdbc (),
+			rc = dbase.queryLong (with.cursor (),
 					      "SELECT cust.customer_id " +
 					      "FROM customer_" + companyID + "_tbl cust INNER JOIN customer_" + companyID + "_binding_tbl bind ON cust.customer_id = bind.customer_id " +
 					      "WHERE bind.mailinglist_id = :mailinglistID AND bind.user_type IN ('A', 'T')" + limit,
@@ -90,7 +90,7 @@ public class RecipientDAO {
 				dbase.logging(Log.DEBUG, "recipient", "Found test recipient " + rc + " on mailinglist " + mailinglistID);
 				return rc;
 			}
-			rc = dbase.queryLong (with.jdbc (),
+			rc = dbase.queryLong (with.cursor (),
 					      "SELECT cust.customer_id " +
 					      "FROM customer_" + companyID + "_tbl cust INNER JOIN customer_" + companyID + "_binding_tbl bind ON cust.customer_id = bind.customer_id " +
 					      "WHERE bind.user_type IN ('A', 'T')" + limit);
@@ -98,7 +98,7 @@ public class RecipientDAO {
 				dbase.logging(Log.DEBUG, "recipient", "Found test recipient " + rc);
 				return rc;
 			}
-			rc = dbase.queryLong (with.jdbc (),
+			rc = dbase.queryLong (with.cursor (),
 					      "SELECT cust.customer_id " +
 					      "FROM customer_" + companyID + "_tbl cust INNER JOIN customer_" + companyID + "_binding_tbl bind ON cust.customer_id = bind.customer_id " +
 					      "WHERE bind.mailinglist_id = :mailinglistID" + limit,
@@ -107,14 +107,14 @@ public class RecipientDAO {
 				dbase.logging(Log.DEBUG, "recipient", "Found recipient " + rc + " on mailinglist " + mailinglistID);
 				return rc;
 			}
-			rc = dbase.queryLong (with.jdbc (),
+			rc = dbase.queryLong (with.cursor (),
 					      "SELECT cust.customer_id " +
 					      "FROM customer_" + companyID + "_tbl cust INNER JOIN customer_" + companyID + "_binding_tbl bind ON cust.customer_id = bind.customer_id" + limit);
 			if ((rc != null) && (rc > 0L)) {
 				dbase.logging(Log.DEBUG, "recipient", "Found recipient " + rc);
 				return rc;
 			}
-			rc = dbase.queryLong (with.jdbc (),
+			rc = dbase.queryLong (with.cursor (),
 					      "SELECT cust.customer_id " +
 					      "FROM customer_" + companyID + "_tbl cust LEFT OUTER JOIN customer_" + companyID + "_binding_tbl bind ON cust.customer_id = bind.customer_id" + limit);
 			if ((rc != null) && (rc > 0L)) {

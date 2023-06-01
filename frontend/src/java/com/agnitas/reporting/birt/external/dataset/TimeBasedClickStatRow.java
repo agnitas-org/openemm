@@ -49,10 +49,8 @@ public class TimeBasedClickStatRow extends ClickStatRow {
     @Override
     public String toString() {
     	return 
-			"ClicksGross: " + getClicks_gross()
-			+ " ClicksNet: " + getClicks_net()
-			+ " TotalClicksGross: " + getTotal_clicks_gros()
-	    	+ " TotalClicksNet: " + getTotal_clicks_net()
+			"ClicksGross: " + getClicksGross()
+			+ " ClicksNet: " + getClicksNet()
 	    	+ " DeviceClass: " + getDeviceClass()
 	    	+ " Time: " + new SimpleDateFormat(DateUtilities.DD_MM_YYYY_HH_MM_SS).format(clickTime);
     }

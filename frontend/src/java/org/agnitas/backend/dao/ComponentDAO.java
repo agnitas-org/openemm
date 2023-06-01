@@ -13,8 +13,10 @@ package org.agnitas.backend.dao;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.agnitas.backend.BlockData;
 import org.agnitas.backend.DBase;
@@ -49,10 +51,11 @@ public class ComponentDAO {
 			}
 		}
 		
-		List <Map <String, Object>>	rq;
-		
 		try (DBase.With with = dbase.with ()) {
-			rq = dbase.query (with.jdbc (),
+			Set <String>			seen = new HashSet <> ();
+			List <Map <String, Object>>	rq;
+		
+			rq = dbase.query (with.cursor (),
 					  "SELECT component_id, comptype, url_id, compname, mtype, target_id, emmblock, binblock " +
 					  "FROM component_tbl " +
 					  "WHERE company_id = :companyID AND (mailing_id = :mailingID OR (mailing_id = 0 AND mailtemplate_id = 0 AND comppresent != 0)) " + (reduceClause  != null ? reduceClause + " " : "") +
@@ -68,6 +71,12 @@ public class ComponentDAO {
 				tmp.urlID = dbase.asInt (row.get ("url_id"));
 				tmp.mime = dbase.asString (row.get ("mtype"));
 				tmp.targetID = dbase.asInt (row.get ("target_id"));
+				
+				String	blockKey = "[" + tmp.cid + "/" + tmp.comptype + "/" + tmp.targetID + "/" + tmp.mime + "]";
+				if (seen.contains (blockKey)) {
+					continue;
+				}
+				seen.add (blockKey);
 				switch (tmp.comptype) {
 					case 0:
 						tmp.isParseable = true;
@@ -89,9 +98,6 @@ public class ComponentDAO {
 							tmp.type = BlockData.PDF;
 							tmp.media = Media.TYPE_PRINT;
 							tmp.isPDF = true;
-						} else if (tmp.cid.equals(Const.Component.NAME_MMS)) {
-							tmp.type = BlockData.MMS;
-							tmp.media = Media.TYPE_MMS;
 						} else if (tmp.cid.equals(Const.Component.NAME_SMS)) {
 							tmp.type = BlockData.SMS;
 							tmp.media = Media.TYPE_SMS;
@@ -169,12 +175,12 @@ public class ComponentDAO {
 				long cid;
 
 				query = "SELECT component_tbl_seq.nextval FROM dual";
-				cid = dbase.queryLong(with.jdbc(), query);
+				cid = dbase.queryLong(with.cursor(), query);
 				query = "INSERT INTO component_tbl (component_id, mailing_id, company_id, mtype, comptype, compname, emmblock, binblock, target_id, url_id, timestamp) " + "VALUES (:componentID, :mailingID, :companyID, :mtype, 5, :compname, null, :binblock, 0, 0, CURRENT_TIMESTAMP)";
-				dbase.update(with.jdbc(), query, "componentID", cid, "mailingID", mailingID, "companyID", companyID, "mtype", bd.mime, "compname", bd.cid, "binblock", bd.binary);
+				dbase.update(with.cursor(), query, "componentID", cid, "mailingID", mailingID, "companyID", companyID, "mtype", bd.mime, "compname", bd.cid, "binblock", bd.binary);
 			} else {
 				query = "INSERT INTO component_tbl (mailing_id, company_id, mtype, comptype, compname, emmblock, binblock, target_id, url_id, timestamp) " + "VALUES (:mailingID, :companyID, :mtype, 5, :compname, null, :binblock, 0, 0, CURRENT_TIMESTAMP)";
-				dbase.update(with.jdbc(), query, "mailingID", mailingID, "companyID", companyID, "mtype", bd.mime, "compname", bd.cid, "binblock", bd.binary);
+				dbase.update(with.cursor(), query, "mailingID", mailingID, "companyID", companyID, "mtype", bd.mime, "compname", bd.cid, "binblock", bd.binary);
 			}
 			dbase.logging(Log.DEBUG, "add", "Added new component " + bd.cid);
 		} catch (SQLException e) {

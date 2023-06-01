@@ -23,7 +23,7 @@ public final class EndpointClassUtil {
 	 * 
 	 * @return true endpoint class
 	 */
-	public static final Class<?> trueEndpointClass(final Object endpoint) {
+	public static Class<?> trueEndpointClass(final Object endpoint) {
 		if (endpoint instanceof MethodEndpoint) {
 			final MethodEndpoint methodEndpoint = (MethodEndpoint) endpoint;
 			
@@ -42,7 +42,7 @@ public final class EndpointClassUtil {
 
 	 * @throws IllegalArugmentException if name of true endpoint class of given instance does not end with {@value #ENDPOINT_SUFFIX}
 	 */
-	public static final String endpointNameFromInstance(final Object endpoint) {
+	public static String endpointNameFromInstance(final Object endpoint) {
 		final Class<?> clazz = trueEndpointClass(endpoint);
 
 		return endpointNameFromClass(clazz);
@@ -57,7 +57,7 @@ public final class EndpointClassUtil {
 	 * 
 	 * @throws IllegalArugmentException if name of given class does not end with <i>{@value #ENDPOINT_SUFFIX}</i>.
 	 */
-	public static final String endpointNameFromClass(final Class<?> clazz) {
+	public static String endpointNameFromClass(final Class<?> clazz) {
 		final String className = clazz.getSimpleName();
 		
 		if(!className.endsWith(ENDPOINT_SUFFIX))

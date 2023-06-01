@@ -10,31 +10,27 @@
 
 package com.agnitas.emm.core.birtstatistics.mailing.web;
 
-import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.BOUNCES;
-import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.CLICK_STATISTICS_PER_LINK;
-import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.PROGRESS_OF_CLICKS;
-import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.PROGRESS_OF_DELIVERY;
-import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.PROGRESS_OF_OPENINGS;
-import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.SUMMARY;
-import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.SUMMARY_AUTO_OPT;
-import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.TOP_DOMAINS;
-import static java.time.temporal.TemporalAdjusters.firstDayOfMonth;
-import static java.time.temporal.TemporalAdjusters.firstDayOfNextMonth;
-import static java.time.temporal.TemporalAdjusters.lastDayOfMonth;
-
-import java.text.SimpleDateFormat;
-import java.time.LocalDateTime;
-import java.time.Year;
-import java.time.YearMonth;
-import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
-
+import com.agnitas.beans.AdminPreferences;
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.Mailing;
+import com.agnitas.beans.MailingsListProperties;
+import com.agnitas.emm.common.MailingType;
+import com.agnitas.emm.core.admin.service.AdminService;
+import com.agnitas.emm.core.birtreport.service.ComBirtReportService;
+import com.agnitas.emm.core.birtstatistics.DateMode;
+import com.agnitas.emm.core.birtstatistics.enums.StatisticType;
+import com.agnitas.emm.core.birtstatistics.mailing.dto.MailingStatisticDto;
+import com.agnitas.emm.core.birtstatistics.mailing.forms.MailingStatatisticListForm;
+import com.agnitas.emm.core.birtstatistics.mailing.forms.MailingStatisticForm;
+import com.agnitas.emm.core.birtstatistics.service.BirtStatisticsService;
+import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
+import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
+import com.agnitas.emm.core.target.service.ComTargetService;
+import com.agnitas.mailing.autooptimization.service.ComOptimizationService;
+import com.agnitas.service.ComWebStorage;
+import com.agnitas.service.GridServiceWrapper;
+import com.agnitas.web.mvc.Popups;
+import com.agnitas.web.mvc.XssCheckAware;
 import org.agnitas.beans.MailingSendStatus;
 import org.agnitas.dao.MailingStatus;
 import org.agnitas.emm.company.service.CompanyService;
@@ -56,31 +52,34 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.context.request.RequestContextHolder;
 
-import com.agnitas.beans.AdminPreferences;
-import com.agnitas.beans.ComAdmin;
-import com.agnitas.beans.Mailing;
-import com.agnitas.beans.MailingsListProperties;
-import com.agnitas.emm.common.MailingType;
-import com.agnitas.emm.core.admin.service.AdminService;
-import com.agnitas.emm.core.birtreport.service.ComBirtReportService;
-import com.agnitas.emm.core.birtstatistics.DateMode;
-import com.agnitas.emm.core.birtstatistics.enums.StatisticType;
-import com.agnitas.emm.core.birtstatistics.mailing.dto.MailingStatisticDto;
-import com.agnitas.emm.core.birtstatistics.mailing.forms.MailingStatatisticListForm;
-import com.agnitas.emm.core.birtstatistics.mailing.forms.MailingStatisticForm;
-import com.agnitas.emm.core.birtstatistics.service.BirtStatisticsService;
-import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
-import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
-import com.agnitas.emm.core.target.service.ComTargetService;
-import com.agnitas.mailing.autooptimization.service.ComOptimizationService;
-import com.agnitas.service.ComWebStorage;
-import com.agnitas.service.GridServiceWrapper;
-import com.agnitas.web.mvc.Popups;
+import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.Year;
+import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
-public class MailingBirtStatController {
+import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.BOUNCES;
+import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.CLICK_STATISTICS_PER_LINK;
+import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.PROGRESS_OF_CLICKS;
+import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.PROGRESS_OF_DELIVERY;
+import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.PROGRESS_OF_OPENINGS;
+import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.SUMMARY;
+import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.SUMMARY_AUTO_OPT;
+import static com.agnitas.emm.core.birtstatistics.enums.StatisticType.TOP_DOMAINS;
+import static java.time.temporal.TemporalAdjusters.firstDayOfMonth;
+import static java.time.temporal.TemporalAdjusters.firstDayOfNextMonth;
+import static java.time.temporal.TemporalAdjusters.lastDayOfMonth;
+
+public class MailingBirtStatController implements XssCheckAware {
 	
-	/** The logger. */
-    private static final transient Logger logger = LogManager.getLogger(MailingBirtStatController.class);
+    private static final Logger logger = LogManager.getLogger(MailingBirtStatController.class);
 
     private static final List<StatisticType> ALLOWED_STATISTIC = Arrays.asList(
             SUMMARY,
@@ -134,7 +133,7 @@ public class MailingBirtStatController {
     }
 
     @RequestMapping("/list.action")
-    public String list(ComAdmin admin, MailingStatatisticListForm form, Model model, Popups popups) {
+    public String list(Admin admin, MailingStatatisticListForm form, Model model, Popups popups) {
         if(!validate(form, popups)){
             return "messages";
         }
@@ -154,7 +153,7 @@ public class MailingBirtStatController {
     }
 
     @RequestMapping("/{mailingId:\\d+}/view.action")
-    public String view(ComAdmin admin, Model model, @PathVariable int mailingId, MailingStatisticForm form, Popups popups) throws Exception {
+    public String view(Admin admin, Model model, @PathVariable int mailingId, MailingStatisticForm form, Popups popups) throws Exception {
         if(!validateDates(admin, form, popups)){
             return "messages";
         }
@@ -164,15 +163,22 @@ public class MailingBirtStatController {
         if (mailing == null) {
             return "/statistics/mailing/list.action";
         }
-    
+
+        boolean show10HoursTab = mailing.getMailingType().equals(MailingType.NORMAL) && birtStatisticsService.isWorldMailing(mailing);
+
         form.setMailingID(mailingId);
         form.setShortname(mailing.getShortname());
         form.setDescription(mailing.getDescription());
         form.setTemplateId(gridServiceWrapper.getGridTemplateIdByMailingId(mailing.getId()));
+        form.setShow10HoursTab(show10HoursTab);
 
         AdminPreferences adminPreferences = adminService.getAdminPreferences(admin.getAdminID());
         form.setStatisticType(getReportType(form.getStatisticType(), adminPreferences));
         form.setDateMode(getDateMode(form.getStatisticType(), mailingId, form.getDateMode()));
+
+        if (form.getDateMode().equals(DateMode.LAST_TENHOURS) && !form.isShow10HoursTab()) {
+            form.setDateMode(DateMode.SELECT_DAY);
+        }
 
         checkAbsentDateFields(form);
 
@@ -195,7 +201,7 @@ public class MailingBirtStatController {
         return "stats_mailing_view";
     }
 
-    protected MailingStatisticDto convertFormToDto(final MailingStatisticForm form, final ComAdmin admin, Mailing mailing) {
+    protected MailingStatisticDto convertFormToDto(final MailingStatisticForm form, final Admin admin, Mailing mailing) {
         int mailingId = mailing.getId();
 
         List<Date> sendDates = Arrays.stream(new Date[]{mailing.getSenddate(), mailingBaseService.getMailingLastSendDate(mailingId)})
@@ -203,7 +209,7 @@ public class MailingBirtStatController {
                 .collect(Collectors.toList());
 
         Date mailingStartDate = null;
-        if (sendDates.size() > 0) {
+        if (!sendDates.isEmpty()) {
             mailingStartDate = Collections.min(sendDates);
         }
 
@@ -222,7 +228,7 @@ public class MailingBirtStatController {
         return mailingStatisticDto;
     }
 
-    protected MailingsListProperties getMailingsListProperties(final ComAdmin admin, final MailingStatatisticListForm statForm) {
+    protected MailingsListProperties getMailingsListProperties(final Admin admin, final MailingStatatisticListForm statForm) {
         boolean hasTargetGroups = statForm.getAdditionalFieldsSet()
                 .contains(MailingAdditionalColumn.TARGET_GROUPS.getSortColumn());
 
@@ -244,7 +250,7 @@ public class MailingBirtStatController {
         return props;
     }
 
-    protected void processStatisticView(ComAdmin admin, Model model, MailingStatisticDto mailingStatisticDto, MailingStatisticForm form, Mailing mailing) throws Exception {
+    protected void processStatisticView(Admin admin, Model model, MailingStatisticDto mailingStatisticDto, MailingStatisticForm form, Mailing mailing) throws Exception {
         String sessionId = RequestContextHolder.getRequestAttributes().getSessionId();
         String birtUrl = getBirtUrl(admin, sessionId, mailingStatisticDto);
         String birtDownloadUrl = "";
@@ -263,7 +269,7 @@ public class MailingBirtStatController {
         model.addAttribute("downloadBirtUrl", StringUtils.defaultString(birtDownloadUrl));
     }
 
-    protected String getBirtUrl(ComAdmin admin,  String sessionId, MailingStatisticDto mailingStatisticDto) throws Exception {
+    protected String getBirtUrl(Admin admin,  String sessionId, MailingStatisticDto mailingStatisticDto) throws Exception {
         if(mailingStatisticDto.getType() == null) {
             return null;
         }
@@ -274,7 +280,6 @@ public class MailingBirtStatController {
     private StatisticType getReportType(StatisticType statisticType, AdminPreferences adminPreferences) {
         if (statisticType != null && isAllowedStatistic(statisticType)) {
             return statisticType;
-        
         }
 
         if (adminPreferences.getStatisticLoadType() == AdminPreferences.STATISTIC_LOADTYPE_ON_CLICK) {
@@ -324,11 +329,11 @@ public class MailingBirtStatController {
         return !popups.hasFieldPopups();
     }
 
-    protected boolean validateDates(ComAdmin admin, MailingStatisticForm form, Popups popups) {
+    protected boolean validateDates(Admin admin, MailingStatisticForm form, Popups popups) {
         return validateDates(admin, form.getStartDate(), form.getEndDate(), popups);
     }
 
-    private boolean validateDates(ComAdmin admin, FormDateTime startDate, FormDateTime endDate, Popups popups) {
+    private boolean validateDates(Admin admin, FormDateTime startDate, FormDateTime endDate, Popups popups) {
         String pattern = admin.getDateFormat().toPattern();
 
         String startDateValue = startDate == null ? null : startDate.getDate();
@@ -344,7 +349,7 @@ public class MailingBirtStatController {
         }
 
         if (StringUtils.isNotBlank(startDateValue) && StringUtils.isNotBlank(endDateValue) &&
-                !AgnUtils.isDatePeriodValid(startDateValue, endDateValue, pattern)) {
+                !isPeriodDateValid(startDateValue, endDateValue, pattern)) {
             popups.alert("error.period.format");
             return false;
         }
@@ -352,7 +357,11 @@ public class MailingBirtStatController {
         return true;
     }
 
-    protected void processMailingInfo(ComAdmin admin, int mailingId, MailingStatisticDto mailingStatisticDto,
+    private boolean isPeriodDateValid(String startDateValue, String endDateValue, String pattern) {
+        return AgnUtils.isDatePeriodValid(startDateValue, endDateValue, pattern) || startDateValue.equals(endDateValue);
+    }
+
+    protected void processMailingInfo(Admin admin, int mailingId, MailingStatisticDto mailingStatisticDto,
                                     Model model){
         MailingSendStatus status = mailingBaseService.getMailingSendStatus(mailingId, admin.getCompanyID());
         boolean isEverSent = status.getHasMailtracks();

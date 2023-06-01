@@ -10,10 +10,13 @@
 
 package org.agnitas.beans;
 
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
+import org.agnitas.util.AgnUtils;
 import org.agnitas.util.importvalues.DateFormat;
 
 public class ExportPredef {
@@ -69,6 +72,8 @@ public class ExportPredef {
 	private int dateTimeFormat = DateFormat.ddMMyyyyHHmmss.getIntValue();
 	private String timezone = "Europe/Berlin";
 	private String decimalSeparator = ",";
+
+	private Locale locale = new Locale("en", "US");
 
 	public void setId(int id) {
 		this.id = id;
@@ -326,5 +331,17 @@ public class ExportPredef {
 
 	public void setTimeLimitsLinkedByAnd(boolean timeLimitsLinkedByAnd) {
 		this.timeLimitsLinkedByAnd = timeLimitsLinkedByAnd;
+	}
+
+	public void setLocale(Locale locale) {
+		this.locale = locale;
+	}
+
+	public Locale getLocale() {
+		return locale;
+	}
+
+	public DateTimeFormatter getDateTimeFormatter() {
+		return AgnUtils.getDateTimeFormatter(getTimezone(), getLocale());
 	}
 }

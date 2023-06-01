@@ -416,8 +416,8 @@ var currentRowData = dataTopDomainsSentEmails.get(currentRow);
 row['category_name'] = Packages.com.agnitas.messages.I18nString.getLocaleString(currentRowData.getCategory(), reportContext.getLocale());
 row['category_index'] = currentRowData.getCategoryindex();
 
-row['domainname'] = currentRowData.getDomainname();
-row['domainname_index'] = currentRowData.getDomainnameindex();
+row['domainname'] = currentRowData.getDomainName();
+row['domainname_index'] = currentRowData.getDomainNameIndex();
 
 if (currentRowData.getTargetgroupindex() == CommonKeys.ALL_SUBSCRIBERS_INDEX) {
 	row['targetgroup'] = allSubscribersTargetGroupName;

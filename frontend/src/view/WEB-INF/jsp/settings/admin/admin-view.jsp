@@ -142,7 +142,7 @@
                         <label class="control-label" for="groupIDs"><mvc:message code="settings.Usergroup"/></label>
                     </div>
                     <div class="col-sm-8">
-                    	<mvc:select path="groupIDs" id="groupIDs" cssClass="form-control js-select" multiple="true">
+                    	<mvc:select path="groupIDs" id="groupIDs" cssClass="form-control js-select-tags" multiple="true">
 	                        <c:forEach var="adminGroup" items="${adminGroups}">
 	                            <mvc:option value="${adminGroup.groupID}">${fn:escapeXml(adminGroup.shortname)}</mvc:option>
 	                        </c:forEach>

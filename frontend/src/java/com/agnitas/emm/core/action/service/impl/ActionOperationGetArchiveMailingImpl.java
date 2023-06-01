@@ -27,6 +27,7 @@ import com.agnitas.emm.core.action.operations.ActionOperationGetArchiveMailingPa
 import com.agnitas.emm.core.action.operations.ActionOperationType;
 import com.agnitas.emm.core.action.service.EmmActionOperation;
 import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
+import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
 import com.agnitas.emm.core.userform.service.UserFormExecutionService;
 import com.agnitas.messages.I18nString;
 
@@ -68,9 +69,11 @@ public class ActionOperationGetArchiveMailingImpl implements EmmActionOperation 
 			actionOperationErrors.addErrorCode(EmmActionOperationErrors.ErrorCode.MISSING_MAILING_ID);
 			return false;
 		}
-		
+
 		int customerID = ((Number) params.get("customerID")).intValue();
 		int mailingID = ((Number) params.get("mailingID")).intValue();
+		ComExtensibleUID uid = (ComExtensibleUID) params.get ("_uid");
+		long sendDate = uid != null ? uid.getSendDate () : 0L;
 
 		// check for mobile device
 		boolean mobile = false;
@@ -91,13 +94,13 @@ public class ActionOperationGetArchiveMailingImpl implements EmmActionOperation 
 		}
 
 		try {
-			Page previewResult = generateBackEndPreview(mailingID, customerID);
+			Page previewResult = generateBackEndPreview(mailingID, customerID, sendDate);
 			
 			String archiveHtml;
 			// Check if mailing deleted - if it deleted change preview to error
 			// message on success form
 			if (mailingDao.exist(mailingID, companyID)) {
-				archiveHtml = generateHTMLPreview(mailingID, customerID, mobile);
+				archiveHtml = generateHTMLPreview(mailingID, customerID, sendDate, mobile);
 			} else {
 				Locale locale = (Locale) params.get("locale");
 				archiveHtml = I18nString.getLocaleString("mailing.content.not.avaliable", locale != null ? locale : Locale.getDefault());
@@ -126,17 +129,17 @@ public class ActionOperationGetArchiveMailingImpl implements EmmActionOperation 
         return ActionOperationType.GET_ARCHIVE_MAILING;
 	}
 
-	private Page generateBackEndPreview(int mailingID, int customerID) {
+	private Page generateBackEndPreview(int mailingID, int customerID, long sendDate) {
 		Preview preview = previewFactory.createPreview();
-		Page output = preview.makePreview(mailingID, customerID, false);
+		Page output = preview.makePreview(mailingID, customerID, false, sendDate);
 		preview.done();
 		return output;
 	}
 
-	protected String generateHTMLPreview(int mailingID, int customerID, boolean mobile) throws Exception {
+	protected String generateHTMLPreview(int mailingID, int customerID, long sendDate, boolean mobile) throws Exception {
 		logger.debug("entering generateHTMLPreview in ActionOperationGetArchiveMailing.");
 		Preview preview = previewFactory.createPreview();
-		Page page = preview.makePreview(mailingID, customerID, null, false, false);
+		Page page = preview.makePreview(mailingID, customerID, null, false, false, sendDate);
 		if (page.getError() != null) {
 			throw new Exception("ScriptHelperService::generateBackEndHTMLPreview: Error generating preview. mailingID: " + mailingID + " customerID: " + customerID
 					+ "\n previewError: " + page.getError());

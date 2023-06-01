@@ -111,7 +111,16 @@ AGN.Lib.Controller.new('mailing-content-editor-controller', function () {
     };
 
     AutoSave.initialize('mailing-components/' + currentDynTag.mailingId + '/' + currentDynTag.id, saveToStorage, checkIsStorageAdded, readFromStorage, 0);
+    displayCharCounter();
   });
+  
+  function displayCharCounter() {
+    if (getActiveEditor() === 'html') {
+      showCharCounter();
+    } else {
+      hideCharCounter();
+    }
+  }
 
   this.addAction({
     click: 'selectContentEntry'
@@ -516,4 +525,36 @@ AGN.Lib.Controller.new('mailing-content-editor-controller', function () {
       $editableArea.show();
     }
   };
+  
+  const updateCharCounter = function($el) {
+    const count = $el.val().length;
+
+    $('[data-char-counter-for="' + $el.attr('id') + '"]')
+        .find('span:first')
+        .text(t('fields.content.charactersEntered', count));
+  }
+  
+  this.addAction({
+    'editor:create': 'count-textarea-chars',
+    'editor:change': 'count-textarea-chars',
+    input: 'count-textarea-chars'
+  }, function() {
+    updateCharCounter(this.el);
+  });
+  
+  this.addAction({click: 'hide-char-counter'}, function() {
+    hideCharCounter();
+  });
+
+  this.addAction({click: 'show-char-counter'}, function() {
+    showCharCounter();
+  });
+  
+  function showCharCounter() {
+    $('[data-char-counter-for]').first().show();
+  }
+  
+  function hideCharCounter() {
+    $('[data-char-counter-for]').first().hide();
+  }
 });

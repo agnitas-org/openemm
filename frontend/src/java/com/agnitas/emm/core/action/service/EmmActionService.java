@@ -18,7 +18,7 @@ import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.action.dto.EmmActionDto;
 
 import net.sf.json.JSONArray;
@@ -55,7 +55,7 @@ public interface EmmActionService {
 	 */
 	List<EmmAction> getActionListBySendMailingId(int companyId, int mailingId);
 
-	EmmActionDto getCopyOfAction(ComAdmin admin, int originId);
+	EmmActionDto getCopyOfAction(Admin admin, int originId);
 
-    JSONArray getEmmActionsJson(ComAdmin admin);
+    JSONArray getEmmActionsJson(Admin admin);
 }

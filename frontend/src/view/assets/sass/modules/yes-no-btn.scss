@@ -1,0 +1,62 @@
+
+.yes-no-btn {
+  input {
+    clip: rect(0 0 0 0);
+    position: absolute;
+  }
+
+  input + label {
+    display: inline-block;
+    padding: 1px 5px;
+    font-size: 12px;
+    line-height: 1.5;
+    font-weight: 400;
+    z-index: 2;
+    color: #fff;
+    border: 1px solid transparent;
+    float: left;
+    background-color: $c-gray-44;
+  }
+
+  input:hover:not([disabled]) + label {
+    background-color: $c-blue-56;
+  }
+
+  input:checked + label {
+    background-color: $c-blue-56;
+  }
+  
+  input:disabled + label {
+    color: #7f8181;
+    border-color: #c3c5c5;
+  }
+}
+
+.yes-no-btn-left {
+  border-radius: 3px 0 0 3px;
+  margin-right: -1px;
+}
+
+.yes-no-btn-right {
+  border-radius: 0 3px 3px 0;
+  margin-left: -1px;
+}
+
+body.dark-theme .yes-no-btn {
+  input + label {
+    background-color: $c-gray-72;
+  }
+
+  input:hover:not([disabled]) + label {
+    background-color: $c-blue-27;
+  }
+
+  input:checked + label {
+    background-color: $c-blue-27;
+  }
+  
+  input:disabled + label {
+    color: #7f8181;
+    border-color: #c3c5c5;
+  } 
+}

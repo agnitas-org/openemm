@@ -21,7 +21,6 @@ import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.net.HttpURLConnection;
-import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.Proxy;
 import java.net.URI;
@@ -70,7 +69,7 @@ public class HttpUtils {
 		DELETE
 	}
 	
-	private static final transient Logger logger = LogManager.getLogger(HttpUtils.class);
+	private static final Logger logger = LogManager.getLogger(HttpUtils.class);
 
 	public static final String CONTENT_TYPE_JAVASCRIPT = "application/javascript";
 	public static final String SECURE_HTTP_PROTOCOL_SIGN = "https://";
@@ -86,6 +85,7 @@ public class HttpUtils {
 	public static final String APPLICATION_JSON_UTF8 = CONTENT_TYPE_JSON + ";charset=" + CONTENT_ENCODING;
 
 	public static final String CONTENT_TYPE_CSV = "text/csv";
+    private static final String ERROR_OCCURRED = "Error occurred: {}";
 
 	private static TrustManager TRUSTALLCERTS_TRUSTMANAGER = new X509TrustManager() {
 		@Override
@@ -155,7 +155,7 @@ public class HttpUtils {
 					}
 				}
 			} catch (UnsupportedEncodingException e) {
-				logger.error("Error occured: " + e.getMessage(), e);
+				logger.error(ERROR_OCCURRED, e.getMessage(), e);
 			}
 			
 			return returnValue.toString();
@@ -241,7 +241,7 @@ public class HttpUtils {
 			HttpURLConnection urlConnection;
 			if (proxy == null) {
 				// Use systems default proxy, if set on JVM start. To override default proxy usage use "Proxy.NO_PROXY"
-				urlConnection = (HttpURLConnection) new URL(urlString).openConnection(getProxyFromSystem(urlString));
+				urlConnection = (HttpURLConnection) new URL(urlString).openConnection(NetworkUtil.getProxyFromSystem(urlString));
 			} else {
 				urlConnection = (HttpURLConnection) new URL(urlString).openConnection(proxy);
 			}
@@ -333,7 +333,7 @@ public class HttpUtils {
 				}
 			}
 		} catch (Exception e) {
-			logger.error("Error occured: " + e.getMessage(), e);
+			logger.error(ERROR_OCCURRED, e.getMessage(), e);
 			throw e;
 		}
 	}
@@ -403,9 +403,11 @@ public class HttpUtils {
 			if (components != null) {
 				return components.toString();
 			}
-		} catch (URISyntaxException e) {
-			logger.error("Error occurred: " + e.getMessage(), e);
-		}
+        } catch (URISyntaxException e) {
+            if (!"Illegal character in query".equals(e.getReason()) || !AgnTagUtils.containsAnyAgnTag(e.getInput())) {
+                logger.error(ERROR_OCCURRED, e.getMessage(), e);
+            }
+        }
 		return value;
 	}
 
@@ -423,7 +425,7 @@ public class HttpUtils {
 			stream.write(imageData);
 			stream.flush();
 		} catch (Exception e) {
-			logger.error("Error occurred: " + e.getMessage(), e);
+			logger.error(ERROR_OCCURRED, e.getMessage(), e);
 		}
 	}
 
@@ -433,42 +435,6 @@ public class HttpUtils {
 		} else {
 			sendImage(imageData, response);
 		}
-	}
-
-
-	/**
-	 * Checks FTP/SFTP connection
-	 * @param path starts with ftp:// or sftp://, can be null
-	 * @param privateKey only for sftp:// if need
-	 * @param allowUnknownHostKeys only for sftp:// if need
-	 * @return true if path is correct and connection is successful
-	 */
-	public static boolean checkFTPConnection(String path, String privateKey, boolean allowUnknownHostKeys){
-		if(StringUtils.isNotBlank(path)) {
-			if (path.toLowerCase().startsWith("ftp://")) {
-				try (FtpHelper ftpHelper = new FtpHelper(path)) {
-					ftpHelper.connect();
-					return true;
-				} catch (Exception e) {
-					logger.error("Error while connecting to ftp", e);
-				}
-			} else {
-				// default: send via SFTP
-				try (SFtpHelper sftpHelper = new SFtpHelper(path)) {
-					if (StringUtils.isNotBlank(privateKey)) {
-						sftpHelper.setPrivateSshKeyData(privateKey);
-					}
-					if (allowUnknownHostKeys) {
-						sftpHelper.setAllowUnknownHostKeys(true);
-					}
-					sftpHelper.connect();
-					return true;
-				} catch (Exception e) {
-					logger.error("Error while connecting to sftp", e);
-				}
-			}
-		}
-		return false;
 	}
 
 	public static String encodeUriComponent(String component) {
@@ -485,7 +451,7 @@ public class HttpUtils {
 		try {
 			return mapper.writeValueAsString(data);
 		} catch (IOException e) {
-			logger.error("Error occurred: " + e.getMessage(), e);
+			logger.error(ERROR_OCCURRED, e.getMessage(), e);
 			return null;
 		}
 	}
@@ -511,7 +477,7 @@ public class HttpUtils {
 			writer.close();
 			return true;
 		} catch (IOException e) {
-			logger.error("Error occurred: " + e.getMessage());
+			logger.error(ERROR_OCCURRED, e.getMessage());
 		}
 
 		return false;
@@ -530,52 +496,6 @@ public class HttpUtils {
 
 	public interface ResponseWriter {
 		void write(Writer writer) throws IOException;
-	}
-	
-	/**
-	 * This proxy will be used as default proxy.
-	 * To override default proxy usage use "Proxy.NO_PROXY"
-	 * 
-	 * It is set via JVM properties on startup:
-	 * java ... -Dhttp.proxyHost=proxy.url.local -Dhttp.proxyPort=8080 -Dhttp.nonProxyHosts='127.0.0.1|localhost'
-	 */
-	public static Proxy getProxyFromSystem(String url) {
-		String proxyHost = System.getProperty("http.proxyHost");
-		if (StringUtils.isNotBlank(proxyHost)) {
-			String proxyPort = System.getProperty("http.proxyPort");
-			String nonProxyHosts = System.getProperty("http.nonProxyHosts");
-			
-			if (StringUtils.isBlank(nonProxyHosts)) {
-				if (StringUtils.isNotBlank(proxyHost)) {
-					if (StringUtils.isNotBlank(proxyPort) && AgnUtils.isNumber(proxyPort)) {
-						return new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHost, Integer.parseInt(proxyPort)));
-					} else {
-						return new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHost, 8080));
-					}
-				}
-			} else {
-				boolean ignoreProxy = false;
-				String urlDomain = getDomainFromUrl(url);
-				for (String nonProxyHost : nonProxyHosts.split("\\|")) {
-					nonProxyHost = nonProxyHost.trim();
-					if (urlDomain == null || urlDomain.equalsIgnoreCase(url)) {
-						ignoreProxy = true;
-						break;
-					}
-				}
-				if (!ignoreProxy) {
-					if (StringUtils.isNotBlank(proxyHost)) {
-						if (StringUtils.isNotBlank(proxyPort) && AgnUtils.isNumber(proxyPort)) {
-							return new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHost, Integer.parseInt(proxyPort)));
-						} else {
-							return new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHost, 8080));
-						}
-					}
-				}
-			}
-		}
-		
-		return Proxy.NO_PROXY;
 	}
 	
 	public static String getDomainFromUrl(String url) {
@@ -626,7 +546,7 @@ public class HttpUtils {
 			try {
 				encodedFileName = encodeFilename(filename.replaceAll("[\\s]", "_"), charset);
 			} catch (Exception e) {
-				logger.error("Cannot encode file name: " + filename, e);
+				logger.error("Cannot encode file name: {}", filename, e);
 			}
 			header += "filename*=" + encodedFileName;
 		}
@@ -650,7 +570,7 @@ public class HttpUtils {
 		}
 
 		if (!"UTF-8".equalsIgnoreCase(charset) && !"ISO-8859-1".equalsIgnoreCase(charset)) {
-			logger.error("Unsupported charset " + charset);
+			logger.error("Unsupported charset {}", charset);
 			throw new UnsupportedEncodingException("Unsupported charset " + charset);
 		}
 

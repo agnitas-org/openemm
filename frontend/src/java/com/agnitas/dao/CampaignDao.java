@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import com.agnitas.beans.Admin;
 import org.agnitas.beans.MailingBase;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
@@ -49,7 +50,7 @@ public interface CampaignDao {
      *                The id of the campaign company
      * @return  List of MailingBase bean objects or empty list
      */
-    List<MailingBase> getCampaignMailings(int campaignID, @VelocityCheck int companyID);
+    List<MailingBase> getCampaignMailings(int campaignID, Admin admin);
 
     /**
      * Loads list of campaigns for certain company; sort and order criteria are used for getting sorted selection from database
@@ -64,5 +65,9 @@ public interface CampaignDao {
      * @return List of Campaign bean objects or empty list
      */
     List<Campaign> getCampaignList( @VelocityCheck int companyID, String sort, int order);
+
+	boolean isContainMailings(int campaignId, Admin admin);
+
+	boolean isDefinedForAutoOptimization(int campaignId, Admin admin);
 
 }

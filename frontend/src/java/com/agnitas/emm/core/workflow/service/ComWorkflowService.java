@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.agnitas.beans.ComTrackableLink;
 import org.agnitas.beans.AdminEntry;
 import org.agnitas.beans.CompaniesConstraints;
 import org.agnitas.dao.UserStatus;
@@ -22,7 +23,7 @@ import org.agnitas.emm.core.mailing.beans.LightweightMailing;
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.beans.Campaign;
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.ComTarget;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.ProfileField;
@@ -43,7 +44,7 @@ import net.sf.json.JSONArray;
 
 public interface ComWorkflowService {
 
-    void saveWorkflow(ComAdmin admin, Workflow workflow, List<WorkflowIcon> icons);
+    void saveWorkflow(Admin admin, Workflow workflow, List<WorkflowIcon> icons);
 
 	void saveWorkflow(Workflow workflow);
 
@@ -69,7 +70,7 @@ public interface ComWorkflowService {
      * @param isWithContent whether ({@code true}) or not ({@code false}) to preserve options/settings within icons.
      * @return cloned icons list or {@code null} if a referenced workflow doesn't exist.
      */
-	List<WorkflowIcon> getIconsForClone(ComAdmin admin, int workflowId, boolean isWithContent);
+	List<WorkflowIcon> getIconsForClone(Admin admin, int workflowId, boolean isWithContent);
 
     /**
      * A shortcut for {@link com.agnitas.emm.core.workflow.dao.ComWorkflowDao#validateDependency(int, int, WorkflowDependency, boolean)} where
@@ -84,13 +85,15 @@ public interface ComWorkflowService {
 
 	void deleteWorkflow(int workflowId, int companyId);
 
-    List<Workflow> getWorkflowsOverview(ComAdmin admin);
+    List<Workflow> getWorkflowsOverview(Admin admin);
 
-	List<LightweightMailing> getAllMailings(ComAdmin admin);
+	List<LightweightMailing> getAllMailings(Admin admin);
 
-    List<LightweightMailing> getAllMailingsSorted(ComAdmin admin, String sortFiled, String sortDirection);
+    List<LightweightMailing> getAllMailingsSorted(Admin admin, String sortFiled, String sortDirection);
 
-    List<Map<String, Object>> getAllMailings(ComAdmin admin, List<MailingType> mailingTypes, String status,
+    List<Map<String, Object>> filterWithRequiredMediaTypes(List<Map<String, Object>> mailings, List<Integer> mediaTypes);
+
+    List<Map<String, Object>> getAllMailings(Admin admin, List<MailingType> mailingTypes, String status,
                                              String mailingStatus, boolean takeMailsForPeriod, String sort,
                                              String order);
 
@@ -114,9 +117,11 @@ public interface ComWorkflowService {
 
     Map<String, Object> getMailingWithWorkStatus(int mailingId, int companyId);
 
+    boolean isParentMailingIdExistsInList(int parentMailingId, List<Map<String, Object>> mailings);
+
     String getTargetSplitName(int splitId);
 
-    Workflow copyWorkflow(ComAdmin admin, int workflowId, boolean isWithContent);
+    Workflow copyWorkflow(Admin admin, int workflowId, boolean isWithContent);
 
     boolean hasCompanyDeepTrackingTables(int companyId);
 
@@ -148,7 +153,7 @@ public interface ComWorkflowService {
      * @return {@code true} if data was collected or {@code false} if some arguments were invalid
      *  or workflow has invalid structure so settings can't be collected.
      */
-    boolean assignWorkflowDrivenSettings(ComAdmin admin, Mailing mailing, int workflowId, int iconId);
+    boolean assignWorkflowDrivenSettings(Admin admin, Mailing mailing, int workflowId, int iconId);
 
     List<List<WorkflowNode>> getChains(WorkflowIcon icon, List<WorkflowIcon> icons, boolean isForwardDirection);
 
@@ -243,7 +248,7 @@ public interface ComWorkflowService {
      * @param reportId an identifier of a report to add to report icon.
      * @return {@code true} if succeeded or {@code false} if something went wrong (e.g. workflow or referenced icon doesn't exist).
      */
-    boolean addReportToIcon(ComAdmin admin, int workflowId, int iconId, int reportId);
+    boolean addReportToIcon(Admin admin, int workflowId, int iconId, int reportId);
 
     List<Campaign> getCampaignList(@VelocityCheck int companyId, String sort, int order);
     
@@ -266,5 +271,7 @@ public interface ComWorkflowService {
     
     List<Workflow> getDependentWorkflowOnMailing(@VelocityCheck int companyId, int mailingId);
 
-    JSONArray getWorkflowListJson(ComAdmin admin);
+    JSONArray getWorkflowListJson(Admin admin);
+
+    boolean isLinkUsedInActiveWorkflow(ComTrackableLink linkId);
 }

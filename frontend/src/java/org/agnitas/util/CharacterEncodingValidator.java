@@ -12,6 +12,7 @@ package org.agnitas.util;
 
 
 import com.agnitas.beans.Mailing;
+import com.agnitas.emm.core.mailing.forms.MailingSettingsForm;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.exceptions.CharacterEncodingValidationException;
 import org.agnitas.exceptions.CharacterEncodingValidationExceptionMod;
@@ -77,6 +78,8 @@ public interface CharacterEncodingValidator {
 	boolean validate(DynamicTag dynTag, String charsetName);
 
     void validateMod( MailingBaseForm form, Mailing mailing) throws CharacterEncodingValidationExceptionMod;
+    
+    void validateMod(MailingSettingsForm form, Mailing mailing) throws CharacterEncodingValidationExceptionMod;
 
 	Set<EncodingError> validateMod(String string, CharsetEncoder charsetEncoder);
 

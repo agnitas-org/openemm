@@ -16,7 +16,7 @@ import org.agnitas.dao.MailingStatus;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.Mailing;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.emm.common.MailingType;
@@ -30,14 +30,14 @@ public final class MailingPropertiesRulesImpl implements MailingPropertiesRules 
 	private ComMailingDao mailingDao;
 	
 	@Override
-	public final boolean isMailingContentEditable(final int mailingID, final ComAdmin admin) {
+	public final boolean isMailingContentEditable(final int mailingID, final Admin admin) {
 		final Mailing mailing = mailingDao.getMailing(mailingID, admin.getCompanyID());
 		
 		return isMailingContentEditable(mailing, admin);
 	}
 
 	@Override
-	public final boolean isMailingContentEditable(final Mailing mailing, final ComAdmin admin) {
+	public final boolean isMailingContentEditable(final Mailing mailing, final Admin admin) {
 		return !mailingIsWorldSentOrActive(mailing)
 				|| (mailing.getMailingType() == MailingType.NORMAL && admin.permissionAllowed(Permission.MAILING_CONTENT_CHANGE_ALWAYS));
 	}
@@ -48,9 +48,9 @@ public final class MailingPropertiesRulesImpl implements MailingPropertiesRules 
 			final String workStatus = mailingDao.getWorkStatus(mailing.getCompanyID(), mailing.getId());
 			
 			return StringUtils.equals(workStatus, MailingStatus.ACTIVE.getDbKey());
-		} else {
-			return this.maildropService.isActiveMailing(mailing.getId(), mailing.getCompanyID());
 		}
+
+		return this.maildropService.isActiveMailing(mailing.getId(), mailing.getCompanyID());
 	}
 	
 	@Override

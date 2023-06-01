@@ -392,48 +392,57 @@ public class ZipUtilities {
 		File originalFileTemp = new File(zipFile.getParentFile().getAbsolutePath() + "/" + String.valueOf(System.currentTimeMillis()));
 		zipFile.renameTo(originalFileTemp);
 		
-		ZipOutputStream zipOutputStream = new ZipOutputStream(new BufferedOutputStream(new FileOutputStream(zipFile)));
+		ZipOutputStream zipOutputStream = null;
+		try {
+			zipOutputStream = new ZipOutputStream(new BufferedOutputStream(new FileOutputStream(zipFile)));
 		
-		try (ZipFile sourceZipFile = new ZipFile(originalFileTemp)) {
-			// copy entries
-			Enumeration<? extends ZipEntry> srcEntries = sourceZipFile.entries();
-			while (srcEntries.hasMoreElements()) {
-				ZipEntry sourceZipFileEntry = srcEntries.nextElement();
-				zipOutputStream.putNextEntry(sourceZipFileEntry);
-			
-				try (BufferedInputStream bufferedInputStream = new BufferedInputStream(sourceZipFile.getInputStream(sourceZipFileEntry))) {
-					byte[] bufferArray = new byte[1024];
-					int byteBufferFillLength = bufferedInputStream.read(bufferArray);
-					while (byteBufferFillLength > -1) {
-						zipOutputStream.write(bufferArray, 0, byteBufferFillLength);
-						byteBufferFillLength = bufferedInputStream.read(bufferArray);
+			try (ZipFile sourceZipFile = new ZipFile(originalFileTemp)) {
+				// copy entries
+				Enumeration<? extends ZipEntry> srcEntries = sourceZipFile.entries();
+				while (srcEntries.hasMoreElements()) {
+					ZipEntry sourceZipFileEntry = srcEntries.nextElement();
+					zipOutputStream.putNextEntry(sourceZipFileEntry);
+				
+					try (BufferedInputStream bufferedInputStream = new BufferedInputStream(sourceZipFile.getInputStream(sourceZipFileEntry))) {
+						byte[] bufferArray = new byte[1024];
+						int byteBufferFillLength = bufferedInputStream.read(bufferArray);
+						while (byteBufferFillLength > -1) {
+							zipOutputStream.write(bufferArray, 0, byteBufferFillLength);
+							byteBufferFillLength = bufferedInputStream.read(bufferArray);
+						}
+						
+						zipOutputStream.closeEntry();
 					}
-					
-					zipOutputStream.closeEntry();
 				}
-			}
-			
-			zipOutputStream.flush();
-			sourceZipFile.close();
-			originalFileTemp.delete();
-			
-			return zipOutputStream;
-		} catch (IOException e) {
-			// delete existing Zip file
-			if (zipFile.exists()) {
-				if (zipOutputStream != null) {
-					try {
-						zipOutputStream.close();
-					} catch (Exception ex) {
-						// nothing to do
+				
+				zipOutputStream.flush();
+				sourceZipFile.close();
+				originalFileTemp.delete();
+				
+				return zipOutputStream;
+			} catch (IOException e) {
+				// delete existing Zip file
+				if (zipFile.exists()) {
+					if (zipOutputStream != null) {
+						try {
+							zipOutputStream.close();
+						} catch (Exception ex) {
+							// nothing to do
+						}
+						zipOutputStream = null;
 					}
-					zipOutputStream = null;
+					zipFile.delete();
 				}
-				zipFile.delete();
+				
+				// revert renaming of source Zip file
+				originalFileTemp.renameTo(zipFile);
+				throw e;
 			}
-			
-			// revert renaming of source Zip file
-			originalFileTemp.renameTo(zipFile);
+		} catch (Exception e) {
+			if (zipOutputStream != null) {
+				zipOutputStream.close();
+				zipOutputStream = null;
+			}
 			throw e;
 		}
 	}
@@ -505,22 +514,22 @@ public class ZipUtilities {
 	}
 	
 	public static void compressToEncryptedZipFile(File destinationZipFile, File fileToZip, String fileNameInZip, String zipPassword) throws Exception {
-		net.lingala.zip4j.ZipFile zipFile = new net.lingala.zip4j.ZipFile(destinationZipFile);
-		ZipParameters parameters = new ZipParameters();
-		parameters.setCompressionMethod(CompressionMethod.DEFLATE);
-		parameters.setCompressionLevel(CompressionLevel.NORMAL);
-		parameters.setEncryptFiles(true);
-		parameters.setEncryptionMethod(EncryptionMethod.ZIP_STANDARD);
-		if (StringUtils.isNotBlank(fileNameInZip)) {
-			parameters.setFileNameInZip(fileNameInZip);
+		try (net.lingala.zip4j.ZipFile zipFile = new net.lingala.zip4j.ZipFile(destinationZipFile)) {
+			ZipParameters parameters = new ZipParameters();
+			parameters.setCompressionMethod(CompressionMethod.DEFLATE);
+			parameters.setCompressionLevel(CompressionLevel.NORMAL);
+			parameters.setEncryptFiles(true);
+			parameters.setEncryptionMethod(EncryptionMethod.ZIP_STANDARD);
+			if (StringUtils.isNotBlank(fileNameInZip)) {
+				parameters.setFileNameInZip(fileNameInZip);
+			}
+			zipFile.setPassword(zipPassword.toCharArray());
+			zipFile.addFile(fileToZip, parameters);
 		}
-		zipFile.setPassword(zipPassword.toCharArray());
-		zipFile.addFile(fileToZip, parameters);
 	}
 	
 	public static void decompressFromEncryptedZipFile(File encryptedZipFile, File decompressToPath, String zipPassword) throws Exception {
-		try {
-			net.lingala.zip4j.ZipFile zipFile = new net.lingala.zip4j.ZipFile(encryptedZipFile);
+		try (net.lingala.zip4j.ZipFile zipFile = new net.lingala.zip4j.ZipFile(encryptedZipFile)) {
 			zipFile.setPassword(zipPassword.toCharArray());
 			zipFile.extractAll(decompressToPath.getAbsolutePath());
 		} catch (Exception e) {
@@ -529,8 +538,7 @@ public class ZipUtilities {
 	}
 	
 	public static void decompress(File zipFileToDecompress, File decompressToPath) throws Exception {
-		try {
-			net.lingala.zip4j.ZipFile zipFile = new net.lingala.zip4j.ZipFile(zipFileToDecompress);
+		try (net.lingala.zip4j.ZipFile zipFile = new net.lingala.zip4j.ZipFile(zipFileToDecompress)) {
 			zipFile.extractAll(decompressToPath.getAbsolutePath());
 		} catch (Exception e) {
 			throw new ZipDataException("Cannot unzip data: " + e.getMessage(), e);

@@ -43,8 +43,9 @@ public class Base64urlProfileFieldEncodingHashTag extends AbstractProfileFieldEn
 	}
 	
 	private static final String stripRight(String string) {
-		while(string.endsWith("="))
+		while(string.endsWith("=")) {
 			string = string.substring(0, string.length () - 1);
+		}
 		
 		return string;
 	}

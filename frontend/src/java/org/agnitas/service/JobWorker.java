@@ -102,6 +102,14 @@ public abstract class JobWorker implements Runnable {
 	public void setJob(JobDto job) {
 		this.job = job;
 	}
+
+	public String getJobDescription() {
+		if (job != null && StringUtils.isNotEmpty(job.getDescription())) {
+			return job.getDescription();
+		} else {
+			return "Undefined job description";
+		}
+	}
 	
 	@Deprecated
 	public void setApplicationContext(ApplicationContext applicationContext) {
@@ -143,68 +151,70 @@ public abstract class JobWorker implements Runnable {
 	 */
 	@Override
 	public void run() {
-		previousJobStart = job.getLastStart();
-		
-		final Date runStart = new Date();
-		job.setRunning(true);
-		job.setLastStart(runStart);
-		jobQueueDao.updateJob(job);
-
-		if(logger.isInfoEnabled()) {
-			logger.info(String.format("Starting JobWorker: %s (%d)", job.getDescription(), job.getId()));
-		}
-		
-		String resultText;
 		try {
-			resultText = runJob();
+			previousJobStart = job.getLastStart();
 			
-			if (StringUtils.isBlank(resultText)) {
+			final Date runStart = new Date();
+			job.setRunning(true);
+			job.setLastStart(runStart);
+			jobQueueDao.updateJob(job);
+	
+			if (logger.isInfoEnabled()) {
+				logger.info(String.format("Starting JobWorker: %s (%d)", job.getDescription(), job.getId()));
+			}
+			
+			String resultText;
+			try {
+				resultText = runJob();
+				
+				if (StringUtils.isBlank(resultText)) {
+					resultText = "OK";
+				}
+				
+				job.setLastResult("OK");
+			} catch (final JobStopException e) {
+				if(logger.isInfoEnabled()) {
+					logger.info(String.format(
+							"Job worker %s (%d) received STOP signal", 
+							this.getClass().getName(),
+							job.getId()
+							));
+				}
+				
 				resultText = "OK";
+				job.setLastResult("OK");
+			} catch (final Throwable t) {
+				logger.error(String.format(
+						"Error in %s: %s", 
+						this.getClass().getName(), 
+						t.getMessage()), 
+						t);
+	
+				// Watchout: NullpointerExceptions have Message "null", which would result in another jobrun, so enter some additional text (classname)
+				job.setLastResult(String.format(
+						"%s: %s%n%s", 
+						t.getClass().getSimpleName(), 
+						t.getMessage(), 
+						AgnUtils.getStackTraceString(t)));
+				
+				sendErrorMail(job, t);
+				resultText = job.getLastResult();
+			}
+	
+			if (logger.isInfoEnabled()) {
+				logger.info(String.format("JobWorker done: %s (%d)", job.getDescription(), job.getId()));
 			}
 			
-			job.setLastResult("OK");
-		} catch (final JobStopException e) {
-			if(logger.isInfoEnabled()) {
-				logger.info(String.format(
-						"Job worker %s (%d) received STOP signal", 
-						this.getClass().getName(),
-						job.getId()
-						));
-			}
+			job.setRunning(false);
+			job.setLastDuration((int) (new Date().getTime() - runStart.getTime()) / 1000);
+			jobQueueDao.updateJobStatus(job);
 			
-			resultText = "OK";
-			job.setLastResult("OK");
-		} catch (final Throwable t) {
-			logger.error(String.format(
-					"Error in %s: %s", 
-					this.getClass().getName(), 
-					t.getMessage()), 
-					t);
-
-			// Watchout: NullpointerExceptions have Message "null", which would result in another jobrun, so enter some additional text (classname)
-			job.setLastResult(String.format(
-					"%s: %s%n%s", 
-					t.getClass().getSimpleName(), 
-					t.getMessage(), 
-					AgnUtils.getStackTraceString(t)));
-			
-			sendErrorMail(job, t);
-			resultText = job.getLastResult();
+			// Write JobResult after job has ended
+			jobQueueDao.writeJobResult(job.getId(), new Date(), resultText, job.getLastDuration(), AgnUtils.getHostName());
+		} finally {
+			// Show job ended
+			jobQueueService.showJobEnd(this);
 		}
-
-		if(logger.isInfoEnabled()) {
-			logger.info(String.format("JobWorker done: %s (%d)", job.getDescription(), job.getId()));
-		}
-		
-		job.setRunning(false);
-		job.setLastDuration((int) (new Date().getTime() - runStart.getTime()) / 1000);
-		jobQueueDao.updateJobStatus(job);
-		
-		// Write JobResult after job has ended
-		jobQueueDao.writeJobResult(job.getId(), new Date(), resultText, job.getLastDuration(), AgnUtils.getHostName());
-
-		// show report ended
-		jobQueueService.showJobEnd(this);
 	}
 	
 	private final void sendErrorMail(final JobDto jobDto, final Throwable t) {

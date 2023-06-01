@@ -168,8 +168,9 @@ public class CampaignStatsImpl implements CampaignStats {
     }
 	@Override
 	public Map<Integer, Double> getRevenues() {
-		if (revenueMap == null)
+		if (revenueMap == null) {
 			revenueMap = new Hashtable<>();
+		}
 		return revenueMap;
 	}
 
@@ -180,7 +181,7 @@ public class CampaignStatsImpl implements CampaignStats {
 	@Override
 	public void setRevenues(Map<Integer, Double> revenues) {
 		this.revenueMap = revenues;
-	}		
+	}
 	
 	/**
 	 * returns the biggest Revenue for this Mailing.
@@ -214,7 +215,7 @@ public class CampaignStatsImpl implements CampaignStats {
 	 */
 	@Override
 	public void setTotalRevenue(double in_Revenue) {
-		this.totalRevenues = in_Revenue;	
+		this.totalRevenues = in_Revenue;
 	}
 	
 	

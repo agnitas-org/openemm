@@ -33,8 +33,6 @@ import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 
-import jakarta.servlet.http.HttpServletRequest;
-
 import org.agnitas.dao.FollowUpType;
 import org.agnitas.target.ConditionalOperator;
 import org.agnitas.util.AgnUtils;
@@ -55,6 +53,8 @@ import com.agnitas.emm.core.workflow.beans.WorkflowStart;
 import com.agnitas.emm.core.workflow.beans.WorkflowStart.WorkflowStartEventType;
 import com.agnitas.emm.core.workflow.beans.WorkflowStart.WorkflowStartType;
 import com.agnitas.emm.core.workflow.beans.WorkflowStartStop;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 public class WorkflowUtils {
 	public static final int GCD_ACCURACY = 10;

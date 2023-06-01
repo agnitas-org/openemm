@@ -25,25 +25,37 @@
     <c:param name="page" value="1"/>
 </c:url>
 
-<c:url var="templateViewLink" value="/mailingbase.do">
-    <c:param name="action" value="${ACTION_VIEW}"/>
-    <c:param name="mailingID" value="${mailingId}"/>
-</c:url>
+<emm:ShowByPermission token="mailing.settings.migration">
+    <c:url var="templateViewLink" value="/mailing/${mailingId}/settings.action"/>
+</emm:ShowByPermission>
+<emm:HideByPermission token="mailing.settings.migration">
+    <c:url var="templateViewLink" value="/mailingbase.do">
+        <c:param name="action" value="${ACTION_VIEW}"/>
+        <c:param name="mailingID" value="${mailingId}"/>
+    </c:url>
+</emm:HideByPermission>
 
 <c:url var="mailingsOverviewLink" value="/mailingbase.do">
     <c:param name="action" value="${ACTION_LIST}"/>
     <c:param name="isTemplate" value="false"/>
 </c:url>
 
-<c:url var="mailingViewLink" value="/mailingbase.do">
-    <c:param name="action" value="${ACTION_VIEW}"/>
-    <c:param name="mailingID" value="${mailingId}"/>
-    <c:param name="keepForward" value="true"/>
-    <c:param name="init" value="true"/>
-    <c:if test="${isMailingGrid}">
-        <c:param name="templateId" value="${gridTemplateId}"/>
-    </c:if>
-</c:url>
+<emm:ShowByPermission token="mailing.settings.migration">
+    <c:url var="mailingViewLink" value="/mailing/${mailingId}/settings.action">
+        <c:param name="keepForward" value="true"/>
+    </c:url>
+</emm:ShowByPermission>
+<emm:HideByPermission token="mailing.settings.migration">
+    <c:url var="mailingViewLink" value="/mailingbase.do">
+        <c:param name="action" value="${ACTION_VIEW}"/>
+        <c:param name="mailingID" value="${mailingId}"/>
+        <c:param name="keepForward" value="true"/>
+        <c:param name="init" value="true"/>
+        <c:if test="${isMailingGrid}">
+            <c:param name="templateId" value="${gridTemplateId}"/>
+        </c:if>
+    </c:url>
+</emm:HideByPermission>
 
 <c:set var="agnHighlightKey" 		value="mailing.Trackable_Links" scope="request" />
 <c:set var="isBreadcrumbsShown" 	value="true" 					scope="request" />

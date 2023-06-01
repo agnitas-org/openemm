@@ -5,7 +5,8 @@ AGN.Lib.Controller.new('recipient-view', function() {
 
   var Form = AGN.Lib.Form,
     Confirm = AGN.Lib.Confirm,
-    Template = AGN.Lib.Template;
+    Template = AGN.Lib.Template,
+    Tile = AGN.Lib.Tile;
 
   var checker;
   var isActiveSaveSubmenu = false;

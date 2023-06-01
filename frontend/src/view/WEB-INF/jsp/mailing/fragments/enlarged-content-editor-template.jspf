@@ -7,18 +7,20 @@
          data-controller="enlarged-content-editor-controller"
          data-initializer="enlarged-content-editor-initializer">
         <div class="modal-dialog" style="width: 100vw; height: 100vh; margin: 0">
-            <form class="modal-fixed-content" style="display: block; height: 100%">
+            <mvc:form cssClass="modal-fixed-content" cssStyle="display: block; height: 100%">
                 {{if (showHTMLEditor) { }}
                 <div class="modal-fixed-header standard-header">
                     <ul class="modal-header-nav">
-                        <li>
-                            <a href="#" data-toggle-tab="#tab-enlargedContent-html">
-                                <bean:message key="HTML"/>
-                            </a>
-                        </li>
+                        <emm:HideByPermission token="mailing.editor.hide.html">
+                            <li>
+                                <a href="#" data-toggle-tab="#tab-enlargedContent-html" data-action="show-enlarged-char-counter">
+                                    <bean:message key="HTML"/>
+                                </a>
+                            </li>
+                        </emm:HideByPermission>
                         <emm:HideByPermission token="mailing.editor.hide">
                             <li class="active">
-                                <a href="#" data-toggle-tab="#tab-enlargedContent-wysiwyg">
+                                <a href="#" data-toggle-tab="#tab-enlargedContent-wysiwyg" data-action="hide-enlarged-char-counter">
                                     <bean:message key="mailingContentHTMLEditor"/>
                                 </a>
                             </li>
@@ -28,10 +30,12 @@
                 {{ } }}
                 <div class="modal-fixed-body">
                     <emm:ShowByPermission token="mailing.editor.hide">
-                        <div id="tab-enlargedContent-html" class="{{- showHTMLEditor ? 'hidden' : ''}} full-height" data-tab-show="true">
-                            <div id="enlargedContentEditor" class="form-control" {{- readonly }}></div>
-                            <textarea id="enlargedContent" class="form-control js-editor" {{- readonly }}>{{-content}}</textarea>
-                         </div>
+                        <emm:HideByPermission token="mailing.editor.hide.html">
+                            <div id="tab-enlargedContent-html" class="{{- showHTMLEditor ? 'hidden' : ''}} full-height" data-tab-show="true">
+                                <div id="enlargedContentEditor" class="form-control" {{- readonly }}></div>
+                                <textarea id="enlargedContent" data-action="count-textarea-chars" class="form-control js-editor" {{- readonly }}>{{-content}}</textarea>
+                            </div>
+                        </emm:HideByPermission>
                     </emm:ShowByPermission>                    
                     <emm:HideByPermission token="mailing.editor.hide">
                         <div id="tab-enlargedContent-html" class="{{- showHTMLEditor ? 'hidden' : ''}} full-height">
@@ -41,10 +45,14 @@
                             <textarea id="enlargedContent"
                                       name="enlargedContent"
                                       class="form-control js-editor js-wysiwyg full-height"
+                                      data-action="count-enlarged-textarea-chars"
                                       data-editor-options="isFullHtml: {{- isFullHtmlTags }}, browseMailingId: ${mailingId}"
                                       {{- readonly }}>{{-content}}</textarea>
                         </div>
                     </emm:HideByPermission>
+                    <div class="modal-char-counter" data-enlarged-char-counter-for="enlargedContent">
+                        <span class="small status">&nbsp;</span>
+                    </div>
                 </div>
                 <div class="modal-fixed-footer standard-footer">
                     <div class="btn-group">
@@ -62,7 +70,7 @@
                         {{ } }}
                     </div>
                 </div>
-            </form>
+            </mvc:form>
         </div>
     </div>
 </script>

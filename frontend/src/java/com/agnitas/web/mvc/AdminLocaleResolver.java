@@ -20,12 +20,12 @@ import org.springframework.context.i18n.LocaleContext;
 import org.springframework.context.i18n.TimeZoneAwareLocaleContext;
 import org.springframework.web.servlet.i18n.SessionLocaleResolver;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.logon.LogonUtils;
 
 public class AdminLocaleResolver extends SessionLocaleResolver {
     private static Locale getLocale(HttpServletRequest request) {
-        ComAdmin admin = AgnUtils.getAdmin(request);
+        Admin admin = AgnUtils.getAdmin(request);
 
         if (admin == null) {
             admin = LogonUtils.getAdmin(request);

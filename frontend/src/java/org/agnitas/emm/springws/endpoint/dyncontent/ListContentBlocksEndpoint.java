@@ -11,15 +11,17 @@
 package org.agnitas.emm.springws.endpoint.dyncontent;
 
 import java.util.List;
+import java.util.Objects;
 
 import org.agnitas.beans.DynamicTagContent;
 import org.agnitas.emm.core.dyncontent.service.ContentModel;
 import org.agnitas.emm.core.dyncontent.service.DynamicTagContentService;
 import org.agnitas.emm.springws.endpoint.BaseEndpoint;
-import org.agnitas.emm.springws.endpoint.Utils;
+import org.agnitas.emm.springws.endpoint.Namespaces;
 import org.agnitas.emm.springws.jaxb.ListContentBlocksRequest;
 import org.agnitas.emm.springws.jaxb.ListContentBlocksResponse;
 import org.agnitas.emm.springws.jaxb.ListContentBlocksResponse.ContentBlock;
+import org.agnitas.emm.springws.util.SecurityContextAccess;
 import org.springframework.ws.server.endpoint.annotation.Endpoint;
 import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
 import org.springframework.ws.server.endpoint.annotation.RequestPayload;
@@ -28,22 +30,23 @@ import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 @Endpoint
 public class ListContentBlocksEndpoint extends BaseEndpoint {
 
-	private DynamicTagContentService dynamicTagContentService;
+	private final DynamicTagContentService dynamicTagContentService;
+	private final SecurityContextAccess securityContextAccess;
 
-	public ListContentBlocksEndpoint(DynamicTagContentService dynamicTagContentService) {
-		this.dynamicTagContentService = dynamicTagContentService;
+	public ListContentBlocksEndpoint(DynamicTagContentService dynamicTagContentService, final SecurityContextAccess securityContextAccess) {
+		this.dynamicTagContentService = Objects.requireNonNull(dynamicTagContentService, "dynamicTagContentService");
+		this.securityContextAccess = Objects.requireNonNull(securityContextAccess, "securityContextAccess");
 	}
 
-	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "ListContentBlocksRequest")
+	@PayloadRoot(namespace = Namespaces.AGNITAS_ORG, localPart = "ListContentBlocksRequest")
 	public @ResponsePayload ListContentBlocksResponse listContentBlocks(@RequestPayload ListContentBlocksRequest request) {
-		ListContentBlocksResponse response = new ListContentBlocksResponse();
-		
-		ContentModel model = new ContentModel();
-		model.setCompanyId(Utils.getUserCompany());
+		final ContentModel model = new ContentModel();
+		model.setCompanyId(this.securityContextAccess.getWebserviceUserCompanyId());
 		model.setMailingId(request.getMailingID());
 		
-		List<DynamicTagContent> list = dynamicTagContentService.getContentList(model);
-		List<ContentBlock> responseList = response.getContentBlock();
+		final ListContentBlocksResponse response = new ListContentBlocksResponse();
+		final List<DynamicTagContent> list = dynamicTagContentService.getContentList(model);
+		final List<ContentBlock> responseList = response.getContentBlock();
 		for (DynamicTagContent content : list) {
 			ContentBlock responseContentBlock = new ListContentBlocksResponse.ContentBlock();
 			responseContentBlock.setContentID(content.getId());

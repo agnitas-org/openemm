@@ -19,7 +19,7 @@ import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 
 import org.agnitas.emm.springws.endpoint.BaseEndpoint;
-import org.agnitas.emm.springws.endpoint.Utils;
+import org.agnitas.emm.springws.endpoint.Namespaces;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -51,7 +51,7 @@ public class MailingSummaryStatisticResultEndpoint extends BaseEndpoint {
 		this.mailingSummaryStatisticJobService = mailingSummaryStatisticJobService;
 	}
 
-	@PayloadRoot(namespace = Utils.NAMESPACE_COM, localPart = "MailingSummaryStatisticResultRequest")
+	@PayloadRoot(namespace = Namespaces.AGNITAS_COM, localPart = "MailingSummaryStatisticResultRequest")
 	public @ResponsePayload MailingSummaryStatisticResultResponse mailingSummaryStatisticResult(@RequestPayload MailingSummaryStatisticResultRequest request) throws Exception {
 		if (classLogger.isInfoEnabled()) {
 			classLogger.info( "Entered MailingSummaryStatisticResultEndpoint.mailingSummaryStatisticResult()");

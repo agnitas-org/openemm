@@ -1,4 +1,0 @@
-<HelpBalloon>
-	<title>Timezone</title>
-	<content><![CDATA[Select the time zone on which the data to be exported is to be based, as the data is recorded with the time zone Europe/Berlin by default. If you select a time zone that differs from this, the data will be converted and output according to the selected time zone (+/- X hours).]]></content>
-</HelpBalloon>

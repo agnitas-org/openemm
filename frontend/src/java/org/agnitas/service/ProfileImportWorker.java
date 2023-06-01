@@ -12,7 +12,9 @@ package org.agnitas.service;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.sql.BatchUpdateException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -22,7 +24,9 @@ import java.sql.Types;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -59,6 +63,7 @@ import org.agnitas.util.DbUtilities;
 import org.agnitas.util.FileUtils;
 import org.agnitas.util.ImportUtils;
 import org.agnitas.util.ImportUtils.ImportErrorType;
+import org.agnitas.util.TempFileInputStream;
 import org.agnitas.util.ZipUtilities;
 import org.agnitas.util.importvalues.Charset;
 import org.agnitas.util.importvalues.CheckForDuplicates;
@@ -72,13 +77,15 @@ import org.agnitas.util.importvalues.TextRecognitionChar;
 import org.agnitas.web.ProfileImportReporter;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
+import org.apache.commons.compress.utils.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.dao.DataAccessException;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.ProfileField;
+import com.agnitas.beans.ProfileFieldMode;
 import com.agnitas.dao.ImportProcessActionDao;
 import com.agnitas.emm.core.action.service.EmmActionService;
 import com.agnitas.emm.core.commons.encrypt.ProfileFieldEncryptor;
@@ -86,10 +93,12 @@ import com.agnitas.emm.core.commons.validation.AgnitasEmailValidator;
 import com.agnitas.emm.core.commons.validation.AgnitasEmailValidatorWithWhitespace;
 import com.agnitas.emm.core.commons.validation.EmailValidator;
 import com.agnitas.emm.core.imports.beans.ImportItemizedProgress;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.json.Json5Reader;
 import com.agnitas.json.JsonObject;
 import com.agnitas.json.JsonReader;
 import com.agnitas.json.JsonReader.JsonToken;
+import com.agnitas.service.ColumnInfoService;
 
 import net.lingala.zip4j.ZipFile;
 import net.lingala.zip4j.model.FileHeader;
@@ -125,8 +134,9 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 	private ImportProfile importProfile;
 	private SimpleDateFormat importDateFormat = new SimpleDateFormat(DateUtilities.DD_MM_YYYY);
 	private TimeZone importTimeZone = TimeZone.getDefault();
-	private ComAdmin admin;
+	private Admin admin;
 	private int datasourceId;
+	private boolean normalizeEmails = true;
 	private ImportStatus status;
 	private List<Integer> mailingListIdsToAssign;
 	private String sessionId;
@@ -146,7 +156,7 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 	private int duplicatesInCsvData = 0;
 	private int duplicatesInDatabase = 0;
 	private int blacklistedEmails = 0;
-	private Map<Integer, Integer> mailinglistAssignStatistics;
+	private Map<MediaTypes, Map<Integer, Integer>> mailinglistAssignStatistics;
 	private EmailValidator emailValidator = null;
 
 	/** All available CSV columnnames included in the CSV import file **/
@@ -230,18 +240,23 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 		this.importProfile = importProfile;
 		if (importProfile != null) {
 			importDateFormat = new SimpleDateFormat(DateFormat.getDateFormatById(importProfile.getDateFormat()).getValue());
+			importDateFormat.setLenient(false);
+			
+			normalizeEmails = !configService.getBooleanValue(ConfigValue.AllowUnnormalizedEmails, importProfile.getCompanyId());
 		}
 		
 		if (importTimeZone != null) {
 			importDateFormat.setTimeZone(importTimeZone);
+			importDateFormat.setLenient(false);
 		}
 	}
 
-	public void setAdmin(ComAdmin admin) {
+	public void setAdmin(Admin admin) {
 		this.admin = admin;
 		if (admin != null) {
 			importTimeZone = TimeZone.getTimeZone(admin.getAdminTimezone());
 			importDateFormat.setTimeZone(importTimeZone);
+			importDateFormat.setLenient(false);
 		}
 	}
 
@@ -301,7 +316,7 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 		return mailingListIdsToAssign;
 	}
 
-	public Map<Integer, Integer> getMailinglistAssignStatistics() {
+	public Map<MediaTypes, Map<Integer, Integer>> getMailinglistAssignStatistics() {
 		return mailinglistAssignStatistics;
 	}
 
@@ -388,9 +403,9 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 				endTime = new Date();
 				try {
 					// Write logs and reports
-					resultFile = profileImportReporter.writeProfileImportResultFile(this, admin);
-					profileImportReporter.sendProfileImportErrorMail(this, admin);
-					reportID = profileImportReporter.writeProfileImportReport(this, admin, true);
+					resultFile = profileImportReporter.writeProfileImportResultFile(this, importProfile.getCompanyId(), admin == null ? 0 : admin.getAdminID());
+					profileImportReporter.sendProfileImportErrorMail(this, importProfile.getCompanyId(), importProfile.getReportLocale(), importProfile.getReportTimezone(), importProfile.getReportDateTimeFormatter());
+					reportID = profileImportReporter.writeProfileImportReport(this, importProfile.getCompanyId(), admin == null ? 0 : admin.getAdminID(), importProfile.getReportLocale(), importProfile.getReportTimezone(), importProfile.getReportDateTimeFormatter(), true);
 				} catch (Exception e) {
 					logger.error("Error during profile importData: " + e.getMessage(), e);
 					throw e;
@@ -418,7 +433,7 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 
 					// Write logs and reports
 					currentProgressStatus = ImportItemizedProgress.REPORTING_TO_RESULT_FILE;
-					resultFile = profileImportReporter.writeProfileImportResultFile(this, admin);
+					resultFile = profileImportReporter.writeProfileImportResultFile(this, importProfile.getCompanyId(), admin == null ? 0 : admin.getAdminID());
 
 
 					// Create downloadable report files
@@ -432,8 +447,8 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 					status.setDuplicateInCsvOrDbRecipientsCsv(createDuplicateInCsvOrDbRecipients(getImportFile().getLocalFile().getName() + "_duplicate_recipients", "CSV".equalsIgnoreCase(importProfile.getDatatype())));
 
 					currentProgressStatus = ImportItemizedProgress.SENDING_REPORT_MAIL;
-					profileImportReporter.sendProfileImportReportMail(this, admin);
-					reportID = profileImportReporter.writeProfileImportReport(this, admin, false);
+					profileImportReporter.sendProfileImportReportMail(this, importProfile.getCompanyId(), importProfile.getReportLocale(), importProfile.getReportTimezone(), importProfile.getReportDateTimeFormatter());
+					reportID = profileImportReporter.writeProfileImportReport(this, importProfile.getCompanyId(), admin == null ? 0 : admin.getAdminID(), importProfile.getReportLocale(), importProfile.getReportTimezone(), importProfile.getReportDateTimeFormatter(), false);
 				} finally {
 					cleanUp();
 				}
@@ -449,9 +464,9 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 				endTime = new Date();
 	        }
 			importFile.setStatus(ImportFileStatus.FAILED);
-	        resultFile = profileImportReporter.writeProfileImportResultFile(this, admin);
-	        profileImportReporter.sendProfileImportErrorMail(this, admin);
-	        reportID = profileImportReporter.writeProfileImportReport(this, admin, true);
+	        resultFile = profileImportReporter.writeProfileImportResultFile(this, importProfile.getCompanyId(), admin == null ? 0 : admin.getAdminID());
+	        profileImportReporter.sendProfileImportErrorMail(this, importProfile.getCompanyId(), importProfile.getReportLocale(), importProfile.getReportTimezone(), importProfile.getReportDateTimeFormatter());
+	        reportID = profileImportReporter.writeProfileImportReport(this, importProfile.getCompanyId(), admin == null ? 0 : admin.getAdminID(), importProfile.getReportLocale(), importProfile.getReportTimezone(), importProfile.getReportDateTimeFormatter(), true);
 			waitingForInteraction = false;
 		} catch (CsvDataInvalidItemCountException e) {
 			logger.error("Error during profile importData: " + e.getMessage(), e);
@@ -462,9 +477,9 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 				endTime = new Date();
 	        }
 			importFile.setStatus(ImportFileStatus.FAILED);
-	        resultFile = profileImportReporter.writeProfileImportResultFile(this, admin);
-	        profileImportReporter.sendProfileImportErrorMail(this, admin);
-	        reportID = profileImportReporter.writeProfileImportReport(this, admin, true);
+	        resultFile = profileImportReporter.writeProfileImportResultFile(this, importProfile.getCompanyId(), admin == null ? 0 : admin.getAdminID());
+	        profileImportReporter.sendProfileImportErrorMail(this, importProfile.getCompanyId(), importProfile.getReportLocale(), importProfile.getReportTimezone(), importProfile.getReportDateTimeFormatter());
+	        reportID = profileImportReporter.writeProfileImportReport(this, importProfile.getCompanyId(), admin == null ? 0 : admin.getAdminID(), importProfile.getReportLocale(), importProfile.getReportTimezone(), importProfile.getReportDateTimeFormatter(), true);
 			waitingForInteraction = false;
 		} catch (CsvDataInvalidTextAfterQuoteException e) {
 			logger.error("Error during profile importData: " + e.getMessage(), e);
@@ -475,9 +490,9 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 				endTime = new Date();
 	        }
 			importFile.setStatus(ImportFileStatus.FAILED);
-	        resultFile = profileImportReporter.writeProfileImportResultFile(this, admin);
-	        profileImportReporter.sendProfileImportErrorMail(this, admin);
-	        reportID = profileImportReporter.writeProfileImportReport(this, admin, true);
+	        resultFile = profileImportReporter.writeProfileImportResultFile(this, importProfile.getCompanyId(), admin == null ? 0 : admin.getAdminID());
+	        profileImportReporter.sendProfileImportErrorMail(this, importProfile.getCompanyId(), importProfile.getReportLocale(), importProfile.getReportTimezone(), importProfile.getReportDateTimeFormatter());
+	        reportID = profileImportReporter.writeProfileImportReport(this, importProfile.getCompanyId(), admin == null ? 0 : admin.getAdminID(), importProfile.getReportLocale(), importProfile.getReportTimezone(), importProfile.getReportDateTimeFormatter(), true);
 			waitingForInteraction = false;
 		} catch (CsvDataException e) {
 			logger.error("Error during profile importData: " + e.getMessage(), e);
@@ -488,9 +503,9 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 				endTime = new Date();
 	        }
 			importFile.setStatus(ImportFileStatus.FAILED);
-	        resultFile = profileImportReporter.writeProfileImportResultFile(this, admin);
-	        profileImportReporter.sendProfileImportErrorMail(this, admin);
-	        reportID = profileImportReporter.writeProfileImportReport(this, admin, true);
+	        resultFile = profileImportReporter.writeProfileImportResultFile(this, importProfile.getCompanyId(), admin == null ? 0 : admin.getAdminID());
+	        profileImportReporter.sendProfileImportErrorMail(this, importProfile.getCompanyId(), importProfile.getReportLocale(), importProfile.getReportTimezone(), importProfile.getReportDateTimeFormatter());
+	        reportID = profileImportReporter.writeProfileImportReport(this, importProfile.getCompanyId(), admin == null ? 0 : admin.getAdminID(), importProfile.getReportLocale(), importProfile.getReportTimezone(), importProfile.getReportDateTimeFormatter(), true);
 			waitingForInteraction = false;
 		} catch (Exception e) {
 			logger.error("Error during profile importData: " + e.getMessage(), e);
@@ -501,9 +516,9 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 				endTime = new Date();
 	        }
 			importFile.setStatus(ImportFileStatus.FAILED);
-	        resultFile = profileImportReporter.writeProfileImportResultFile(this, admin);
-	        profileImportReporter.sendProfileImportErrorMail(this, admin);
-	        reportID = profileImportReporter.writeProfileImportReport(this, admin, true);
+	        resultFile = profileImportReporter.writeProfileImportResultFile(this, importProfile.getCompanyId(), admin == null ? 0 : admin.getAdminID());
+	        profileImportReporter.sendProfileImportErrorMail(this, importProfile.getCompanyId(), importProfile.getReportLocale(), importProfile.getReportTimezone(), importProfile.getReportDateTimeFormatter());
+	        reportID = profileImportReporter.writeProfileImportReport(this, importProfile.getCompanyId(), admin == null ? 0 : admin.getAdminID(), importProfile.getReportLocale(), importProfile.getReportTimezone(), importProfile.getReportDateTimeFormatter(), true);
 			waitingForInteraction = false;
 		} finally {
 	        done = true;
@@ -586,18 +601,26 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 							return dataInputStream;
 						}
 					} catch (Exception e) {
-						dataInputStream.close();
+						if (dataInputStream != null) {
+							dataInputStream.close();
+							dataInputStream = null;
+						}
 						throw e;
 					}
 				} else {
-					ZipFile zipFile = new ZipFile(importFile.getLocalFile());
-					zipFile.setPassword(importProfile.getZipPassword().toCharArray());
-					List<FileHeader> fileHeaders = zipFile.getFileHeaders();
-					// Check if there is only one file within the zip file
-					if (fileHeaders == null || fileHeaders.size() != 1) {
-						throw new Exception("Invalid number of files included in zip file");
-					} else {
-						return zipFile.getInputStream(fileHeaders.get(0));
+					File tempImportFile = new File(importFile.getLocalFile().getAbsolutePath() + ".tmp");
+					try (ZipFile zipFile = new ZipFile(importFile.getLocalFile())) {
+						zipFile.setPassword(importProfile.getZipPassword().toCharArray());
+						List<FileHeader> fileHeaders = zipFile.getFileHeaders();
+						// Check if there is only one file within the zip file
+						if (fileHeaders == null || fileHeaders.size() != 1) {
+							throw new Exception("Invalid number of files included in zip file");
+						} else {
+							try (FileOutputStream tempImportFileOutputStream = new FileOutputStream(tempImportFile)) {
+								IOUtils.copy(zipFile.getInputStream(fileHeaders.get(0)), tempImportFileOutputStream);
+							}
+							return new TempFileInputStream(tempImportFile);
+						}
 					}
 				}
 			} catch (ImportException e) {
@@ -612,18 +635,19 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 
 	private void importValidationCheck() throws Exception {
 		CaseInsensitiveMap<String, ProfileField> profilefields = columnInfoService.getColumnInfoMap(importProfile.getCompanyId(), admin.getAdminID());
+		
 		Set<String> mappedDbColumns = new HashSet<>();
 		for (ColumnMapping mapping : importProfile.getColumnMapping()) {
 			if (!ColumnMapping.DO_NOT_IMPORT.equals(mapping.getDatabaseColumn())) {
 				if (!profilefields.containsKey(mapping.getDatabaseColumn())) {
- 					throw new ImportException(false, "error.import.dbColumnUnknown", mapping.getDatabaseColumn());
-				} else if (profilefields.get(mapping.getDatabaseColumn()).getModeEdit() == ProfileField.MODE_EDIT_NOT_VISIBLE) {
+					throw new ImportException(false, "error.import.dbColumnUnknown", mapping.getDatabaseColumn());
+				} else if (profilefields.get(mapping.getDatabaseColumn()).getModeEdit() == ProfileFieldMode.NotVisible) {
 					throw new ImportException(false, "error.import.dbColumnNotVisible", mapping.getDatabaseColumn());
-				} else if (profilefields.get(mapping.getDatabaseColumn()).getModeEdit() == ProfileField.MODE_EDIT_READONLY && !importProfile.getKeyColumns().contains(mapping.getDatabaseColumn())) {
+				} else if (profilefields.get(mapping.getDatabaseColumn()).getModeEdit() == ProfileFieldMode.ReadOnly && !importProfile.getKeyColumns().contains(mapping.getDatabaseColumn())) {
 					throw new ImportException(false, "error.import.dbColumnNotEditable", mapping.getDatabaseColumn());
- 				} else if (!mappedDbColumns.add(mapping.getDatabaseColumn())) {
- 					throw new ImportException(false, "error.import.dbColumnMappedMultiple", mapping.getDatabaseColumn());
- 				}
+				} else if (!mappedDbColumns.add(mapping.getDatabaseColumn())) {
+					throw new ImportException(false, "error.import.dbColumnMappedMultiple", mapping.getDatabaseColumn());
+				}
 			}
 		}
 
@@ -1086,6 +1110,7 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 				+ ")";
 		
 		try(final PreparedStatement preparedStatement = connection.prepareStatement(insertIntoTemporaryImportTableSqlString)) {
+			List<List<Object>> batchValues = new ArrayList<>();
 			final int batchBlockSize = 1000;
 			boolean hasUnexecutedData = false;
 
@@ -1098,6 +1123,9 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 			// This csvDataLine contains all the csv data values, also the not imported ones
 			List<String> csvDataLine;
 			while ((csvDataLine = csvReader.readNextCsvLine()) != null) {
+				List<Object> batchValueEntry = new ArrayList<>();
+				batchValues.add(batchValueEntry);
+				
 				if (importProfile.isNoHeaders()) {
 					int csvColumnsExpected = 0;
 					for (ColumnMapping columnMapping : importProfile.getColumnMapping()) {
@@ -1115,7 +1143,7 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 						String importedDB = importedDBColumns.get(columnIndex);
 						if (StringUtils.isNotBlank(importedDB) && !ColumnMapping.DO_NOT_IMPORT.equalsIgnoreCase(importedDB)) {
 							String csvValue = csvDataLine.get(importedCsvFileColumnIndexes.get(columnIndex));
-				        	validateAndSetInsertParameter(importModeHandler, preparedStatement, columnIndex, columnMappingsByCsvIndex.get(columnIndex), csvValue, columnDataTypes);
+				        	validateAndSetInsertParameter(importModeHandler, preparedStatement, columnIndex, columnMappingsByCsvIndex.get(columnIndex), csvValue, columnDataTypes, batchValueEntry);
 						}
 					}
 
@@ -1142,14 +1170,23 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 				}
 				
 				if (csvReader.getReadCsvLines() % batchBlockSize == 0) {
-					int[] results = preparedStatement.executeBatch();
-					connection.commit();
-					for (int i = 0; i < results.length; i++) {
-						if (results[i] != 1 && results[i] != Statement.SUCCESS_NO_INFO) {
-							int lineIndex = (csvReader.getReadCsvLines() - batchBlockSize) + i;
-							throw new Exception("Line could not be imported: " + lineIndex);
+					try {
+						int[] results = preparedStatement.executeBatch();
+						connection.commit();
+						for (int i = 0; i < results.length; i++) {
+							if (results[i] != 1 && results[i] != Statement.SUCCESS_NO_INFO) {
+								int lineIndex = (csvReader.getReadCsvLines() - batchBlockSize) + i;
+								throw new Exception("Line could not be imported: " + lineIndex);
+							}
 						}
+					} catch (BatchUpdateException e) {
+						connection.rollback();
+						executeSingleStepUpdates(preparedStatement, batchValues, (csvReader.getReadCsvLines() - (csvReader.getReadCsvLines() % batchBlockSize)));
+						connection.commit();
 					}
+					
+					batchValues.clear();
+					
 					hasUnexecutedData = false;
 					setCompletedPercent(Math.round(csvReader.getReadCsvLines() * 100f / linesInFile));
 				} else {
@@ -1159,20 +1196,75 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 			
 			if (hasUnexecutedData) {
 				// Execute the last open sql batch block
-				int[] results = preparedStatement.executeBatch();
-				connection.commit();
-				for (int i = 0; i < results.length; i++) {
-					if (results[i] != 1 && results[i] != Statement.SUCCESS_NO_INFO) {
-						int lineIndex = (csvReader.getReadCsvLines() - (csvReader.getReadCsvLines() % batchBlockSize)) + i;
-						throw new Exception("Line could not be imported: " + lineIndex);
+				try {
+					int[] results = preparedStatement.executeBatch();
+					connection.commit();
+					for (int i = 0; i < results.length; i++) {
+						if (results[i] != 1 && results[i] != Statement.SUCCESS_NO_INFO) {
+							int lineIndex = (csvReader.getReadCsvLines() - (csvReader.getReadCsvLines() % batchBlockSize)) + i;
+							throw new Exception("Line could not be imported: " + lineIndex);
+						}
 					}
+				} catch (BatchUpdateException e) {
+					connection.rollback();
+					executeSingleStepUpdates(preparedStatement, batchValues, (csvReader.getReadCsvLines() - (csvReader.getReadCsvLines() % batchBlockSize)));
+					connection.commit();
 				}
+				
+				batchValues.clear();
 			}
 
 			return csvReader.getReadCsvLines() - 1;
 		}
 	}
 	
+	private void executeSingleStepUpdates(PreparedStatement preparedStatement, List<List<Object>> batchValues, int startingDataEntryIndex) throws Exception {
+		preparedStatement.clearBatch();
+		for (int entryIndex = 0; entryIndex < batchValues.size(); entryIndex++) {
+			List<Object> batchValueEntry = batchValues.get(entryIndex);
+			List<String> stringRepresentations = new ArrayList<>();
+			try {
+				for (int i = 0; i < batchValueEntry.size(); i++) {
+					preparedStatement.setObject(i + 1, batchValueEntry.get(i));
+					if (batchValueEntry.get(i) == null) {
+						stringRepresentations.add("");
+					} else if (batchValueEntry.get(i) instanceof Date) {
+						stringRepresentations.add(importDateFormat.format(batchValueEntry.get(i)));
+					} else if (batchValueEntry.get(i) instanceof Integer || batchValueEntry.get(i) instanceof Long) {
+						stringRepresentations.add(batchValueEntry.get(i).toString());
+					} else if (batchValueEntry.get(i) instanceof Double || batchValueEntry.get(i) instanceof Float) {
+						if (importProfile.getDecimalSeparator() != '.') {
+							stringRepresentations.add((batchValueEntry.get(i).toString()).replace(".", "").replace(Character.toString(importProfile.getDecimalSeparator()), "."));
+						} else {
+							stringRepresentations.add((String) batchValueEntry.get(i));
+						}
+					} else if (batchValueEntry.get(i) instanceof String) {
+						stringRepresentations.add((String) batchValueEntry.get(i));
+					} else {
+						throw new Exception("Unexpected datatype: " + batchValueEntry.get(i).getClass().getSimpleName());
+					}
+				}
+				preparedStatement.setObject(batchValueEntry.size() + 1, Integer.valueOf(startingDataEntryIndex + entryIndex));
+				preparedStatement.execute();
+			} catch (SQLException e) {
+				if (temporaryErrorTableName == null) {
+					createTemporaryErrorTable(importedDataFileColumns.size());
+				}
+				
+				// Bring error data back into datafiles order
+				List<String> stringRepresentationsInDatafileOrder = new ArrayList<>();
+				for (int i = 0; i < stringRepresentations.size(); i++) {
+					stringRepresentationsInDatafileOrder.add(null);
+				}
+				for (int i = 0; i < importedCsvFileColumnIndexes.size(); i++) {
+					stringRepresentationsInDatafileOrder.set(importedCsvFileColumnIndexes.get(i), stringRepresentations.get(i));
+				}
+	        	
+				importRecipientsDao.addErroneousCsvEntry(importProfile.getCompanyId(), temporaryErrorTableName, importedCsvFileColumnIndexes, stringRepresentationsInDatafileOrder, startingDataEntryIndex + entryIndex, ReasonCode.Unknown, null);
+			}
+		}
+	}
+
 	private final int importJsonDataInTemporaryTable() throws Exception {
 		setCompletedPercent(0);
 		currentProgressStatus = ImportItemizedProgress.IMPORTING_DATA_TO_TMP_TABLE;
@@ -1210,11 +1302,14 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 			
 			final List<String> additionalDbColumns = new ArrayList<>();
 			final List<String> additionalDbValues = new ArrayList<>();
-	
+
 			importedDataFileColumns = new ArrayList<>();
+			importedCsvFileColumnIndexes = new ArrayList<>();
 			importedDBColumns = new ArrayList<>();
+			csvFileHeaders = new ArrayList<>();
+			columnMappingsByCsvIndex = new ArrayList<>();
 			
-			processJsonColumnData(jsonReader, additionalDbColumns, additionalDbValues);
+			processJsonColumnData(additionalDbColumns, additionalDbValues);
 			checkJsonDataForRestrictedColumns(additionalDbColumns);
 			
 			// Check if keycolumns are part of the imported data
@@ -1230,11 +1325,12 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 		}
 	}
 	
-	private final void processJsonColumnData(final JsonReader jsonreader, final List<String> additionalDbColumns, final List<String> additionalDbValues) throws Exception {
+	private final void processJsonColumnData(final List<String> additionalDbColumns, final List<String> additionalDbValues) throws Exception {
 		for (final ColumnMapping columnMapping : importProfile.getColumnMapping()) {
 			if (StringUtils.isNotBlank(columnMapping.getDatabaseColumn()) && !ColumnMapping.DO_NOT_IMPORT.equalsIgnoreCase(columnMapping.getDatabaseColumn())) {
 				if (StringUtils.isNotBlank(columnMapping.getFileColumn())) {
 					importedDataFileColumns.add(columnMapping.getFileColumn());
+					importedCsvFileColumnIndexes.add(importedDataFileColumns.size() - 1);
 					importedDBColumns.add(columnMapping.getDatabaseColumn().toLowerCase());
 				} else {
 					// Import into db column without data in json file
@@ -1291,6 +1387,7 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 				+ ")";
 		
 		try(final PreparedStatement preparedStatement = connection.prepareStatement(insertIntoTemporaryImportTableSqlString)) {
+			List<List<Object>> batchValues = new ArrayList<>();
 			final int batchBlockSize = 1000;
 
 			final CaseInsensitiveMap<String, DbColumnType> columnDataTypes = DbUtilities.getColumnDataTypes(importRecipientsDao.getDataSource(), temporaryImportTableName);
@@ -1308,12 +1405,22 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 			boolean hasUnexecutedData = false;
 
 			while (jsonReader.readNextJsonNode()) {
+				List<Object> batchValueEntry = new ArrayList<>();
+				batchValues.add(batchValueEntry);
+				
 				jsonObjectCount++;
 				final Object currentObject = jsonReader.getCurrentObject();
 				if (currentObject == null || !(currentObject instanceof JsonObject)) {
 					throw new Exception("Json data does not contain expected JsonArray of JsonObjects");
 				}
 				final JsonObject jsonDataObject = (JsonObject) currentObject;
+				for (String jsonAttributeName : jsonDataObject.keySet()) {
+					if (!csvFileHeaders.contains(jsonAttributeName)) {
+						csvFileHeaders.add(jsonAttributeName);
+						columnMappingsByCsvIndex.add(importProfile.getMappingByDbColumn(jsonAttributeName));
+					}
+				}
+				
 				try {
 					int columnIndex = -1;
 					for (String importedDBColumn : importedDBColumns) {
@@ -1321,7 +1428,7 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 						if (StringUtils.isNotBlank(importedDBColumn) && !ColumnMapping.DO_NOT_IMPORT.equalsIgnoreCase(importedDBColumn)) {
 							final Object jsonValue = jsonDataObject.get(columnMappingByDbColumn.get(importedDBColumn).getFileColumn());
 							final String jsonValueString = jsonValue == null ? null : jsonValue.toString();
-				        	validateAndSetInsertParameter(importModeHandler, preparedStatement, columnIndex, columnMappingByDbColumn.get(importedDBColumn), jsonValueString, columnDataTypes);
+				        	validateAndSetInsertParameter(importModeHandler, preparedStatement, columnIndex, columnMappingByDbColumn.get(importedDBColumn), jsonValueString, columnDataTypes, batchValueEntry);
 						}
 					}
 
@@ -1348,13 +1455,20 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 				}
 				
 				if (jsonObjectCount % batchBlockSize == 0) {
-					int[] results = preparedStatement.executeBatch();
-					connection.commit();
-					for (int i = 0; i < results.length; i++) {
-						if (results[i] != 1 && results[i] != Statement.SUCCESS_NO_INFO) {
-							int lineIndex = (jsonObjectCount - batchBlockSize) + i;
-							throw new Exception("Line could not be imported: " + lineIndex);
+					try {
+						int[] results = preparedStatement.executeBatch();
+						connection.commit();
+						for (int i = 0; i < results.length; i++) {
+							if (results[i] != 1 && results[i] != Statement.SUCCESS_NO_INFO) {
+								int lineIndex = (jsonObjectCount - batchBlockSize) + i;
+								throw new Exception("Line could not be imported: " + lineIndex);
+							}
 						}
+					} catch (BatchUpdateException e) {
+						connection.rollback();
+						executeSingleStepUpdates(preparedStatement, batchValues, (jsonObjectCount - (jsonObjectCount % batchBlockSize)));
+						batchValues.clear();
+						connection.commit();
 					}
 					hasUnexecutedData = false;
 					setCompletedPercent(Math.round(jsonObjectCount * 100f / linesInFile));
@@ -1365,13 +1479,20 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 			
 			if (hasUnexecutedData) {
 				// Execute the last open sql batch block
-				final int[] results = preparedStatement.executeBatch();
-				connection.commit();
-				for (int i = 0; i < results.length; i++) {
-					if (results[i] != 1 && results[i] != Statement.SUCCESS_NO_INFO) {
-						final int lineIndex = (jsonObjectCount - (jsonObjectCount % batchBlockSize)) + i;
-						throw new Exception("Line could not be imported: " + lineIndex);
+				try {
+					final int[] results = preparedStatement.executeBatch();
+					connection.commit();
+					for (int i = 0; i < results.length; i++) {
+						if (results[i] != 1 && results[i] != Statement.SUCCESS_NO_INFO) {
+							final int lineIndex = (jsonObjectCount - (jsonObjectCount % batchBlockSize)) + i;
+							throw new Exception("Line could not be imported: " + lineIndex);
+						}
 					}
+				} catch (BatchUpdateException e) {
+					connection.rollback();
+					executeSingleStepUpdates(preparedStatement, batchValues, (jsonObjectCount - (jsonObjectCount % batchBlockSize)));
+					batchValues.clear();
+					connection.commit();
 				}
 			}
 
@@ -1422,7 +1543,7 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 						String importedDB = importedDBColumns.get(columnIndex);
 						if (StringUtils.isNotBlank(importedDB) && !ColumnMapping.DO_NOT_IMPORT.equalsIgnoreCase(importedDB)) {
 							String csvValue = (String) csvDataLine.get("data_" + (columnIndex + 1));
-				        	validateAndSetInsertParameter(importModeHandler, preparedStatement, columnIndex, columnMappingsByCsvIndex.get(columnIndex), csvValue, columnDataTypes);
+				        	validateAndSetInsertParameter(importModeHandler, preparedStatement, columnIndex, columnMappingsByCsvIndex.get(columnIndex), csvValue, columnDataTypes, null);
 						}
 					}
 
@@ -1455,7 +1576,7 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 		}
 	}
 
-	private void validateAndSetInsertParameter(ImportModeHandler importModeHandler, PreparedStatement preparedStatement, int columnIndex, ColumnMapping columnMapping, String dataValue, CaseInsensitiveMap<String, DbColumnType> columnDataTypes) throws Exception {
+	private void validateAndSetInsertParameter(ImportModeHandler importModeHandler, PreparedStatement preparedStatement, int columnIndex, ColumnMapping columnMapping, String dataValue, CaseInsensitiveMap<String, DbColumnType> columnDataTypes, List<Object> batchValueEntry) throws Exception {
 		// Check mandatory import columns
 		if (columnMapping.isMandatory() && StringUtils.isBlank(dataValue)) {
 			status.addErrorColumn(columnMapping.getFileColumn());
@@ -1479,7 +1600,9 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 		
 		// Validate and normalize emails
 		if ("email".equalsIgnoreCase(columnMapping.getDatabaseColumn())) {
-			dataValue = AgnUtils.normalizeEmail(dataValue);
+			if (normalizeEmails) {
+				dataValue = AgnUtils.normalizeEmail(dataValue);
+			}
 			if (StringUtils.isNotBlank(dataValue) && !isEmailValid(dataValue)) {
 				status.addErrorColumn(columnMapping.getFileColumn());
 				throw new ProfileImportCsvException(ReasonCode.InvalidEmail, columnMapping.getFileColumn(), "Invalid email: " + dataValue);
@@ -1533,11 +1656,31 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 		if (simpleColumnDataType == SimpleDataType.Date) {
 			if (StringUtils.isBlank(dataValue)) {
 				preparedStatement.setNull(columnIndex + 1, Types.TIMESTAMP);
+				if (batchValueEntry != null) {
+					batchValueEntry.add(null);
+				}
 			} else if (DbUtilities.isNowKeyword(dataValue)) {
 				preparedStatement.setTimestamp(columnIndex + 1, new Timestamp(new Date().getTime()));
+				if (batchValueEntry != null) {
+					batchValueEntry.add(new Timestamp(new Date().getTime()));
+				}
 			} else {
 				try {
-					preparedStatement.setTimestamp(columnIndex + 1, new Timestamp(importDateFormat.parse(dataValue).getTime()));
+					Date parsedDate;
+					if ("CSV".equalsIgnoreCase(importProfile.getDatatype())) {
+						parsedDate = importDateFormat.parse(dataValue);
+					} else {
+						parsedDate = DateUtilities.parseIso8601DateTimeString(dataValue);
+					}
+					GregorianCalendar calendar = new GregorianCalendar();
+					calendar.setTime(parsedDate);
+					if (calendar.get(Calendar.YEAR) < 100) {
+						throw new ProfileImportCsvException(ReasonCode.InvalidDate, columnMapping.getFileColumn(), "Invalid date: " + dataValue);
+					}
+					preparedStatement.setTimestamp(columnIndex + 1, new Timestamp(parsedDate.getTime()));
+					if (batchValueEntry != null) {
+						batchValueEntry.add(new Timestamp(parsedDate.getTime()));
+					}
 				} catch (ParseException e) {
 					status.addErrorColumn(columnMapping.getFileColumn());
 					throw new ProfileImportCsvException(ReasonCode.InvalidDate, columnMapping.getFileColumn(), "Invalid date: " + dataValue);
@@ -1546,11 +1689,31 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 		} else if (simpleColumnDataType == SimpleDataType.DateTime) {
 			if (StringUtils.isBlank(dataValue)) {
 				preparedStatement.setNull(columnIndex + 1, Types.TIMESTAMP);
+				if (batchValueEntry != null) {
+					batchValueEntry.add(null);
+				}
 			} else if (DbUtilities.isNowKeyword(dataValue)) {
 				preparedStatement.setTimestamp(columnIndex + 1, new Timestamp(new Date().getTime()));
+				if (batchValueEntry != null) {
+					batchValueEntry.add(new Timestamp(new Date().getTime()));
+				}
 			} else {
 				try {
-					preparedStatement.setTimestamp(columnIndex + 1, new Timestamp(importDateFormat.parse(dataValue).getTime()));
+					Date parsedDate;
+					if ("CSV".equalsIgnoreCase(importProfile.getDatatype())) {
+						parsedDate = importDateFormat.parse(dataValue);
+					} else {
+						parsedDate = DateUtilities.parseIso8601DateTimeString(dataValue);
+					}
+					GregorianCalendar calendar = new GregorianCalendar();
+					calendar.setTime(parsedDate);
+					if (calendar.get(Calendar.YEAR) < 100) {
+						throw new ProfileImportCsvException(ReasonCode.InvalidDate, columnMapping.getFileColumn(), "Invalid date: " + dataValue);
+					}
+					preparedStatement.setTimestamp(columnIndex + 1, new Timestamp(parsedDate.getTime()));
+					if (batchValueEntry != null) {
+						batchValueEntry.add(new Timestamp(parsedDate.getTime()));
+					}
 				} catch (ParseException e) {
 					status.addErrorColumn(columnMapping.getFileColumn());
 					throw new ProfileImportCsvException(ReasonCode.InvalidDate, columnMapping.getFileColumn(), "Invalid date: " + dataValue);
@@ -1559,6 +1722,9 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 		} else if (simpleColumnDataType == SimpleDataType.Numeric || simpleColumnDataType == SimpleDataType.Float) {
 			if (StringUtils.isBlank(dataValue)) {
 				preparedStatement.setNull(columnIndex + 1, Types.INTEGER);
+				if (batchValueEntry != null) {
+					batchValueEntry.add(null);
+				}
 			} else {
 				if (importProfile.getDecimalSeparator() != '.') {
 					dataValue = dataValue.replace(".", "").replace(Character.toString(importProfile.getDecimalSeparator()), ".");
@@ -1609,6 +1775,9 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 					}
 					
 					preparedStatement.setDouble(columnIndex + 1, value);
+					if (batchValueEntry != null) {
+						batchValueEntry.add(value);
+					}
 				} else {
 					long value;
 					try {
@@ -1646,22 +1815,37 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 					}
 					
 					preparedStatement.setLong(columnIndex + 1, value);
+					if (batchValueEntry != null) {
+						batchValueEntry.add(value);
+					}
 				}
 			}
 		} else if (simpleColumnDataType == SimpleDataType.Characters) {
 			if (StringUtils.isBlank(dataValue)) {
 				preparedStatement.setNull(columnIndex + 1, Types.VARCHAR);
+				if (batchValueEntry != null) {
+					batchValueEntry.add(null);
+				}
 			} else if (dataValue.getBytes("UTF-8").length > columnDataTypes.get(columnMapping.getDatabaseColumn()).getCharacterLength()) {
 				status.addErrorColumn(columnMapping.getFileColumn());
 				throw new ProfileImportCsvException(ReasonCode.ValueTooLarge, columnMapping.getFileColumn(), "Value too large: " + dataValue);
 			} else {
 				preparedStatement.setString(columnIndex + 1, dataValue);
+				if (batchValueEntry != null) {
+					batchValueEntry.add(dataValue);
+				}
 			}
 		} else {
 			if (StringUtils.isBlank(dataValue)) {
 				preparedStatement.setNull(columnIndex + 1, Types.VARCHAR);
+				if (batchValueEntry != null) {
+					batchValueEntry.add(null);
+				}
 			} else {
 				preparedStatement.setString(columnIndex + 1, dataValue);
+				if (batchValueEntry != null) {
+					batchValueEntry.add(dataValue);
+				}
 			}
 		}
 	}
@@ -1785,7 +1969,7 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 		endTime = new Date();
 
 		// Write logs and reports
-		resultFile = profileImportReporter.writeProfileImportResultFile(this, admin);
+		resultFile = profileImportReporter.writeProfileImportResultFile(this, importProfile.getCompanyId(), admin == null ? 0 : admin.getAdminID());
 
 		// Create downloadable report files
 		status.setImportedRecipientsCsv(null);
@@ -1793,8 +1977,8 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 		status.setFixedByUserRecipientsCsv(null);
 		status.setDuplicateInCsvOrDbRecipientsCsv(null);
 
-		profileImportReporter.sendProfileImportReportMail(this, admin);
-		reportID = profileImportReporter.writeProfileImportReport(this, admin, false);
+		profileImportReporter.sendProfileImportReportMail(this, importProfile.getCompanyId(), importProfile.getReportLocale(), importProfile.getReportTimezone(), importProfile.getReportDateTimeFormatter());
+		reportID = profileImportReporter.writeProfileImportReport(this, importProfile.getCompanyId(), admin == null ? 0 : admin.getAdminID(), importProfile.getReportLocale(), importProfile.getReportTimezone(), importProfile.getReportDateTimeFormatter(), false);
 	}
 
 	private void assertEmptyFileIsAllowed() {

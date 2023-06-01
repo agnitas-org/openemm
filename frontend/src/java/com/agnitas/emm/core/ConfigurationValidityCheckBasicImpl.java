@@ -13,6 +13,7 @@ package com.agnitas.emm.core;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.text.MessageFormat;
 import java.util.Map;
 
 import javax.sql.DataSource;
@@ -39,8 +40,8 @@ import com.agnitas.reporting.birt.util.RSACryptUtil;
  * Try if it is possible to make a soft rollout and activate the changes for single companyIDs first. If not, you HAVE TO talk to AGNITAS developer first.
  */
 public class ConfigurationValidityCheckBasicImpl implements ConfigurationValidityCheck {
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(ConfigurationValidityCheckBasicImpl.class);
+
+	private static final Logger logger = LogManager.getLogger(ConfigurationValidityCheckBasicImpl.class);
 
 	protected DataSource dataSource;
 	protected JdbcTemplate jdbcTemplate;
@@ -97,7 +98,7 @@ public class ConfigurationValidityCheckBasicImpl implements ConfigurationValidit
     		initiallyConfigureBirtKeys();
     		migrateLogosAndImages(webApplicationContext);
 		} catch (Exception e) {
-			logger.error("Cannot check installation validity: " + e.getMessage(), e);
+			logger.error(MessageFormat.format("Cannot check installation validity: {0}", e.getMessage()), e);
 		}
     }
 
@@ -204,6 +205,19 @@ public class ConfigurationValidityCheckBasicImpl implements ConfigurationValidit
 				}
 			} else {
 				logger.error("Cannot find editionLogoFile: " + editionLogoFile.getAbsolutePath());
+			}
+		}
+
+		if (!layoutDao.getLayoutData().containsKey("report_logo.png")) {
+			File reportLogoFile = new File(webApplicationContext.getServletContext().getRealPath("/assets/core/images/facelift/report_logo.png"));
+			if (reportLogoFile.exists()) {
+				try (InputStream reportLogoInputStream = new FileInputStream(reportLogoFile)) {
+					layoutDao.saveLayoutData(0, "report_logo.png", IOUtils.toByteArray(reportLogoInputStream));
+				} catch (Exception e) {
+					logger.error("Cannot find reportLogoFile: " + reportLogoFile.getAbsolutePath(), e);
+				}
+			} else {
+				logger.error("Cannot find reportLogoFile: " + reportLogoFile.getAbsolutePath());
 			}
 		}
     }

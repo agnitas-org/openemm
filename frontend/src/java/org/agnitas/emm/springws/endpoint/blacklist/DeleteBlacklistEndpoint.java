@@ -10,12 +10,15 @@
 
 package org.agnitas.emm.springws.endpoint.blacklist;
 
+import java.util.Objects;
+
 import org.agnitas.emm.core.blacklist.service.BlacklistModel;
 import org.agnitas.emm.core.blacklist.service.BlacklistService;
 import org.agnitas.emm.springws.endpoint.BaseEndpoint;
-import org.agnitas.emm.springws.endpoint.Utils;
+import org.agnitas.emm.springws.endpoint.Namespaces;
 import org.agnitas.emm.springws.jaxb.DeleteBlacklistRequest;
 import org.agnitas.emm.springws.jaxb.DeleteBlacklistResponse;
+import org.agnitas.emm.springws.util.SecurityContextAccess;
 import org.springframework.ws.server.endpoint.annotation.Endpoint;
 import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
 import org.springframework.ws.server.endpoint.annotation.RequestPayload;
@@ -24,20 +27,23 @@ import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 @Endpoint
 public class DeleteBlacklistEndpoint extends BaseEndpoint {
 
-	private BlacklistService blacklistService;
+	private final BlacklistService blacklistService;
+	private final SecurityContextAccess securityContextAccess;
 
-	public DeleteBlacklistEndpoint(BlacklistService blacklistService) {
-		this.blacklistService = blacklistService;
+	public DeleteBlacklistEndpoint(BlacklistService blacklistService, final SecurityContextAccess securityContextAccess) {
+		this.blacklistService = Objects.requireNonNull(blacklistService);
+		this.securityContextAccess = Objects.requireNonNull(securityContextAccess, "securityContextAccess");
 	}
 
-	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "DeleteBlacklistRequest")
+	@PayloadRoot(namespace = Namespaces.AGNITAS_ORG, localPart = "DeleteBlacklistRequest")
 	public @ResponsePayload DeleteBlacklistResponse deleteBlacklist(@RequestPayload DeleteBlacklistRequest request) {
-		DeleteBlacklistResponse response = new DeleteBlacklistResponse();
-		
-		BlacklistModel model = new BlacklistModel();
-		model.setCompanyId(Utils.getUserCompany());
+		final BlacklistModel model = new BlacklistModel();
+		model.setCompanyId(this.securityContextAccess.getWebserviceUserCompanyId());
 		model.setEmail(request.getEmail());
+		
+		final DeleteBlacklistResponse response = new DeleteBlacklistResponse();
 		response.setValue(blacklistService.deleteBlacklist(model));
+		
 		return response;
 	}
 }

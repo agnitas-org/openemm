@@ -10,7 +10,10 @@
 
 package org.agnitas.service;
 
+import com.agnitas.service.SimpleServiceResult;
+import com.agnitas.web.ComImportWizardForm;
 import org.agnitas.service.impl.ImportWizardContentParseException;
+import org.apache.struts.upload.FormFile;
 
 public interface ImportWizardService {
 
@@ -20,7 +23,7 @@ public interface ImportWizardService {
      * Tries to read csv file Reads database column structure reads first line
      * splits line into tokens
      */
-    void parseFirstLine(ImportWizardHelper helper)  throws ImportWizardContentParseException;
+    void parseFirstLine(ImportWizardHelper helper) throws ImportWizardContentParseException;
 
     /**
      * check in the columnMapping for the key column, and eventually for gender
@@ -31,4 +34,8 @@ public interface ImportWizardService {
     void parseContent(ImportWizardHelper helper) throws ImportWizardContentParseException;
 
     void doParse(ImportWizardHelper helper) throws ImportWizardContentParseException;
+
+    FormFile getFormFileByUploadId(int uploadID, String mime) throws Exception;
+
+    SimpleServiceResult checkAndReadCsvFile(int companyId, ComImportWizardForm form);
 }

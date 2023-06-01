@@ -17,14 +17,14 @@ import org.springframework.stereotype.Component;
 
 import com.agnitas.beans.AgnTagAttributeDto;
 import com.agnitas.beans.AgnTagSelectAttributeDto;
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.messages.I18nString;
 import com.agnitas.service.AgnTagAttributeResolver;
 
 @Component
 public class AgnTagDateBaseAttributeResolver implements AgnTagAttributeResolver {
     @Override
-	public AgnTagAttributeDto resolve(ComAdmin admin, String tag, String attribute) {
+	public AgnTagAttributeDto resolve(Admin admin, String tag, String attribute) {
         if (tag.startsWith("agnDATE") && attribute.equals("base")) {
             Map<String, String> options = new LinkedHashMap<>();
             options.put("now", I18nString.getLocaleString("default.sysdate", admin.getLocale()));

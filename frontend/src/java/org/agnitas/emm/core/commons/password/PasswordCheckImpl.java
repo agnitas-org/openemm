@@ -19,7 +19,7 @@ import org.agnitas.emm.core.commons.password.util.PasswordPolicyUtil;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.messages.Message;
 import com.agnitas.service.SimpleServiceResult;
@@ -33,7 +33,7 @@ public class PasswordCheckImpl implements PasswordCheck {
 	private ConfigService configService;
 
 	@Override
-	public boolean checkAdminPassword(String password, ComAdmin admin, PasswordCheckHandler handler) {
+	public boolean checkAdminPassword(String password, Admin admin, PasswordCheckHandler handler) {
 		try {
 			// Check basic constraints
 			final PasswordPolicies policies = PasswordPolicyUtil.loadCompanyPasswordPolicy(admin.getCompanyID(), configService);
@@ -45,13 +45,11 @@ public class PasswordCheckImpl implements PasswordCheck {
 			// Check password policy
 			policy.checkPassword(password);
 
-			if (admin != null) {
-				// Check that given password differs from current Admin password
-				if (adminService.isAdminPassword(admin, password)) {
-					handler.handleMatchesCurrentPassword();
-					
-					return false;
-				}
+			// Check that given password differs from current Admin password
+			if (adminService.isAdminPassword(admin, password)) {
+				handler.handleMatchesCurrentPassword();
+
+				return false;
 			}
 
 			return true;
@@ -81,7 +79,7 @@ public class PasswordCheckImpl implements PasswordCheck {
 	}
 
 	@Override
-	public SimpleServiceResult checkAdminPassword(String password, ComAdmin admin) {
+	public SimpleServiceResult checkAdminPassword(String password, Admin admin) {
 		try {
 			// Check basic constraints
 			final PasswordPolicies policies = PasswordPolicyUtil.loadCompanyPasswordPolicy(admin.getCompanyID(), configService);
@@ -90,11 +88,9 @@ public class PasswordCheckImpl implements PasswordCheck {
 			assert policy != null; // by definition of PasswordPolicies
 			policy.checkPassword(password);
 
-			if (admin != null) {
-				// Check that given password differs from current admin's password.
-				if (adminService.isAdminPassword(admin, password)) {
-					return new SimpleServiceResult(false, Message.of("error.password_must_differ"));
-				}
+			// Check that given password differs from current admin's password.
+			if (adminService.isAdminPassword(admin, password)) {
+				return new SimpleServiceResult(false, Message.of("error.password_must_differ"));
 			}
 
 			return new SimpleServiceResult(true);

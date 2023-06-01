@@ -3140,6 +3140,11 @@ the specific language governing permissions and limitations under the Apache Lic
             if (formatted != undefined) {
                 choice.find("div").replaceWith($("<div></div>").html(formatted));
             }
+
+            if (this.opts.inlineTags) {
+                choice.addClass('select2-search-choice-inlined');
+            }
+
             cssClass=this.opts.formatSelectionCssClass(data, choice.find("div"));
             if (cssClass != undefined) {
                 choice.addClass(cssClass);

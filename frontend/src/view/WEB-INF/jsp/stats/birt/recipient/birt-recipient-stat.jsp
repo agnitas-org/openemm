@@ -18,7 +18,7 @@
 <%--@elvariable id="birtStatisticUrlWithoutFormat" type="java.lang.String"--%>
 <%--@elvariable id="localeDatePattern" type="java.lang.String"--%>
 
-<mvc:form servletRelativeAction="/statistics/recipient/view.action" method="post" modelAttribute="form">
+<mvc:form servletRelativeAction="/statistics/recipient/view.action" method="post" data-form="" modelAttribute="form">
     <mvc:hidden path="dateSelectMode"/>
     <div class="tile">
         <div class="tile-header">

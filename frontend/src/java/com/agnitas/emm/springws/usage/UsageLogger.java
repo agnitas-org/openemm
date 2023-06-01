@@ -14,6 +14,6 @@ import java.time.ZonedDateTime;
 
 public interface UsageLogger {
 
-	public void logWebserviceUsage(final ZonedDateTime timestamp, final String endpoint, final int companyID, final String user);
+	void logWebserviceUsage(final ZonedDateTime timestamp, final String endpoint, final int companyID, final String user, final String clientIp);
 	
 }

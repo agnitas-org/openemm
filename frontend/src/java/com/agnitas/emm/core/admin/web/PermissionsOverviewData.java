@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 import org.agnitas.beans.AdminGroup;
 import org.apache.commons.lang3.StringUtils;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.PermissionInfo;
 import com.agnitas.emm.core.PermissionType;
@@ -48,8 +48,8 @@ public class PermissionsOverviewData {
     }
     
     public static class Builder {
-        private ComAdmin admin;
-        private ComAdmin adminToEdit;
+        private Admin admin;
+        private Admin adminToEdit;
         private AdminGroup groupToEdit;
     
         private Set<Permission> visiblePermissions;
@@ -59,11 +59,11 @@ public class PermissionsOverviewData {
         private boolean groupPermissions;
         private boolean allowedForGroup;
         
-        public void setAdmin(ComAdmin admin) {
+        public void setAdmin(Admin admin) {
             this.admin = admin;
         }
     
-        public void setAdminToEdit(ComAdmin adminToEdit) {
+        public void setAdminToEdit(Admin adminToEdit) {
             this.adminToEdit = adminToEdit;
         }
     
@@ -121,7 +121,7 @@ public class PermissionsOverviewData {
             }
         }
     
-        private Map<String, PermissionCategoryEntry> collectPermissionsByCategory(ComAdmin adminToCollectPermissionsFor, Set<Permission> filteredVisiblePermissions) {
+        private Map<String, PermissionCategoryEntry> collectPermissionsByCategory(Admin adminToCollectPermissionsFor, Set<Permission> filteredVisiblePermissions) {
 			Map<String, PermissionCategoryEntry> permissionsCategories = new TreeMap<>();
 			for (String orderedCategory : Permission.CATEGORY_DISPLAY_ORDER) {
 				permissionsCategories.put(orderedCategory, new PermissionCategoryEntry(orderedCategory));

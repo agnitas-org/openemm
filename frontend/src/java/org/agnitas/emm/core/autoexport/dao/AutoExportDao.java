@@ -17,32 +17,31 @@ import javax.sql.DataSource;
 
 import org.agnitas.emm.core.autoexport.bean.AutoExport;
 import org.agnitas.emm.core.autoexport.bean.AutoExportWsJobState;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.emm.core.autoexport.beans.AutoExportJobStatus;
 
 public interface AutoExportDao {
     List<AutoExport> getAutoExportsToRun(int maximumParallelAutoExports, List<Integer> includedCompanyIds, List<Integer> excludedCompanyIds);
 
-    void changeActiveStatus(int autoExportId, @VelocityCheck int companyId, boolean active);
+    void changeActiveStatus(int autoExportId, int companyId, boolean active);
 
-    AutoExport getAutoExport(int autoExportId, @VelocityCheck int companyId);
+    AutoExport getAutoExport(int autoExportId, int companyId);
 
     void createAutoExport(AutoExport autoExport) throws Exception;
 
     void updateAutoExport(AutoExport autoExport) throws Exception;
 
-    List<AutoExport> getAutoExportsOverview(@VelocityCheck int companyId);
+    List<AutoExport> getAutoExportsOverview(int companyId);
 
-    void deleteAutoExport(int autoExportId, @VelocityCheck int companyId);
+    void deleteAutoExport(int autoExportId, int companyId);
 
-	boolean announceStart(int autoExportId, Date nextStart);
+	boolean announceStart(int autoExportId, Date currentStart, Date nextStart);
 
 	void announceEnd(AutoExport autoExport, int durationInSeconds, String result, int fieldCount, int exportCount, long fileSize) throws Exception;
 
-	List<AutoExport> getAutoExports(@VelocityCheck int companyId, boolean active);
+	List<AutoExport> getAutoExports(int companyId, boolean active);
 
-	void scheduleMailingReport(@VelocityCheck int companyId, int autoExportId, int mailing_id,  Date activationDate);
+	void scheduleMailingReport(int companyId, int autoExportId, int mailing_id, List<Integer> hoursAfterDelivery, Date activationDate);
 
 	int resetAutoExportsForCurrentHost();
 
@@ -52,13 +51,13 @@ public interface AutoExportDao {
 
 	int getRunningAutoExportsByHost(String hostName);
 	
-	List<AutoExport> getMailingAutoExports(@VelocityCheck int companyId, boolean active);
+	List<AutoExport> getMailingAutoExports(int companyId, boolean active);
 
 	boolean isExportStalling();
 
 	int saveWsJobState(int companyId, int autoExportId, AutoExportJobStatus status, int expirationTimeout);
 
-	void saveWsJobState(int autoImportJobId, int companyId, AutoExportWsJobState state, int expirationTimeout);
+	void saveWsJobState(int jobId, int companyId, AutoExportWsJobState state, int expirationTimeout);
 
 	AutoExportJobStatus getWsJobState(int jobId, int companyId);
 	

@@ -12,7 +12,7 @@ import com.agnitas.emm.core.Permission;
 public enum MediaTypes {
 
 	/** Email. */
-	EMAIL(0, null, Permission.MEDIATYPE_EMAIL, 0, "agnText", "agnHtml");
+	EMAIL(0, null, Permission.MEDIATYPE_EMAIL, 0, "Text", "agnText", "agnHtml");
 
 	/** Code for media type. Used by DB. */
 	private final int code;
@@ -29,6 +29,8 @@ public enum MediaTypes {
 	/** Required permission for this media type. */
 	private final Permission requiredPermission;
 	
+	private final String key;
+	
 	/**
 	 * Creates enum item.
 	 * 
@@ -39,11 +41,12 @@ public enum MediaTypes {
 	 * @param code code of media type
 	 * @param componentNames names of components of media type
 	 */
-	MediaTypes(final int code, final String profileField, final Permission requiredPermission, final int defaultTypePriority, final String... componentNames) {
+	MediaTypes(final int code, final String profileField, final Permission requiredPermission, final int defaultTypePriority, final String key, final String... componentNames) {
 		this.code = code;
 		this.assignedProfileField = profileField;
 		this.defaultTypePriority = defaultTypePriority;
 		this.requiredPermission = Objects.requireNonNull(requiredPermission, "Required permission is null");
+		this.key = key;
 		this.componentNames = Arrays.copyOf(componentNames, componentNames.length);
 	}
 	
@@ -137,5 +140,8 @@ public enum MediaTypes {
 	public final String getAssignedProfileField() {
 		return this.assignedProfileField;
 	}
-}
 
+	public final String getKey() {
+		return key;
+	}
+}

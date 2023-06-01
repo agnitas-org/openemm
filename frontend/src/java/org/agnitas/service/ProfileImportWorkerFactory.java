@@ -22,8 +22,9 @@ import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.web.ProfileImportReporter;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.Permission;
+import com.agnitas.service.ColumnInfoService;
 
 public class ProfileImportWorkerFactory {
 	private ConfigService configService;
@@ -36,11 +37,6 @@ public class ProfileImportWorkerFactory {
 	@Required
 	public void setConfigService(ConfigService configService) {
 		this.configService = configService;
-	}
-	
-	@Required
-	public void setColumnInfoService(ColumnInfoService columnInfoService) {
-		this.columnInfoService = columnInfoService;
 	}
 	
 	@Required
@@ -62,8 +58,13 @@ public class ProfileImportWorkerFactory {
 	public void setImportRecipientsDao(ImportRecipientsDao importRecipientsDao) {
 		this.importRecipientsDao = importRecipientsDao;
 	}
+
+	@Required
+	public void setColumnInfoService(ColumnInfoService columnInfoService) {
+		this.columnInfoService = columnInfoService;
+	}
 	
-	public ProfileImportWorker getProfileImportWorker(boolean interactiveMode, List<Integer> mailingListIdsToAssign, String sessionId, ComAdmin admin, int datasourceId, ImportProfile importProfile, RemoteFile importFile, ImportStatus importStatus) throws Exception {
+	public ProfileImportWorker getProfileImportWorker(boolean interactiveMode, List<Integer> mailingListIdsToAssign, String sessionId, Admin admin, int datasourceId, ImportProfile importProfile, RemoteFile importFile, ImportStatus importStatus) throws Exception {
 		ProfileImportWorker profileImportWorker = new ProfileImportWorker();
 
 		profileImportWorker.setConfigService(configService);

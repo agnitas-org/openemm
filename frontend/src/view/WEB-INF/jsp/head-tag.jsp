@@ -3,6 +3,7 @@
 <%@ taglib prefix="tiles" uri="http://struts.apache.org/tags-tiles" %>
 <%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
 
 <%--@elvariable id="agnRefresh" type="java.lang.String"--%>
 <%--@elvariable id="agnTitleKey" type="java.lang.String"--%>
@@ -12,6 +13,7 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <sec:csrfMetaTags />
 
     <c:if test="${not empty agnRefresh}">
         <meta http-equiv="refresh" content="${agnRefresh}">

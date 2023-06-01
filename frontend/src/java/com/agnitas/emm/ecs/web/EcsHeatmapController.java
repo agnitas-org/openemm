@@ -21,6 +21,7 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.agnitas.web.mvc.XssCheckAware;
 import org.agnitas.ecs.EcsPreviewSize;
 import org.agnitas.ecs.backend.service.EmbeddedClickStatService;
 import org.agnitas.emm.core.commons.util.ConfigService;
@@ -46,7 +47,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.w3c.dom.Document;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.ecs.service.EcsService;
 import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
 import com.agnitas.emm.core.mobile.bean.DeviceClass;
@@ -62,7 +63,7 @@ import cz.vutbr.web.domassign.DeclarationMap;
 
 @Controller
 @PermissionMapping("heatmap")
-public class EcsHeatmapController {
+public class EcsHeatmapController implements XssCheckAware {
 
     private static final Logger logger = LogManager.getLogger(EcsHeatmapController.class);
 
@@ -79,7 +80,7 @@ public class EcsHeatmapController {
     private final ComMailingBaseService mailingBaseService;
     private final GridServiceWrapper gridService;
     private final EmbeddedClickStatService embeddedClickStatService;
-    private ConfigService configService;
+    private final ConfigService configService;
     private final UserActivityLogService userActivityLogService;
 
     public EcsHeatmapController(EcsService ecsService,
@@ -97,7 +98,7 @@ public class EcsHeatmapController {
     }
 
     @RequestMapping(value = "/mailing/{mailingId:\\d+}/heatmap/view.action", method = {RequestMethod.GET, RequestMethod.POST})
-    public String view(ComAdmin admin, @PathVariable int mailingId, Model model, @ModelAttribute("form") EcsHeatmapForm form, Popups popups) {
+    public String view(Admin admin, @PathVariable int mailingId, Model model, @ModelAttribute("form") EcsHeatmapForm form, Popups popups) {
         int companyId = admin.getCompanyID();
         Map<Integer, String> testAndAdminRecipients = ecsService.getTestAndAdminRecipients(mailingId, companyId);
 
@@ -122,7 +123,7 @@ public class EcsHeatmapController {
     }
 
     @RequestMapping("/mailing/{mailingId:\\d+}/heatmap/preview.action")
-    public String preview(ComAdmin admin, Model model, @PathVariable int mailingId, @ModelAttribute("form") EcsHeatmapForm form, Popups popups) {
+    public String preview(Admin admin, Model model, @PathVariable int mailingId, @ModelAttribute("form") EcsHeatmapForm form, Popups popups) {
         try {
             int recipientId = form.getRecipientId();
             int viewMode = form.getViewMode();
@@ -149,7 +150,7 @@ public class EcsHeatmapController {
     }
 
     @PostMapping("/mailing/{mailingId:\\d+}/heatmap/export.action")
-    public Object export(ComAdmin admin, @PathVariable int mailingId, @ModelAttribute("form") EcsHeatmapForm form) {
+    public Object export(Admin admin, @PathVariable int mailingId, @ModelAttribute("form") EcsHeatmapForm form) {
         String mailingName = mailingBaseService.getMailingName(mailingId, admin.getCompanyID());
         String previewHeatmapUrl = getHeatmapPreviewUrl(mailingId, form);
         File file = ecsService.generatePDF(admin, previewHeatmapUrl, mailingName);
@@ -214,7 +215,7 @@ public class EcsHeatmapController {
                 try {
                     base = new URL(configService.getValue(ConfigValue.SystemUrl));
                 } catch (MalformedURLException e) {
-                    logger.error("Error occurred: " + e.getMessage(), e);
+                    logger.error("Error occurred: {}", e.getMessage(), e);
                 }
 
                 DeclarationMap declarationMap = HtmlUtils.getDeclarationMap(document, StandardCharsets.UTF_8.name(), base);
@@ -228,7 +229,7 @@ public class EcsHeatmapController {
 
                 mailingContent = HtmlUtils.embedStyles(document, declarationMap, options);
             } catch (Exception e) {
-                logger.error("Error occurred: " + e.getMessage(), e);
+                logger.error("Error occurred: {}", e.getMessage(), e);
             }
         }
 
@@ -243,7 +244,7 @@ public class EcsHeatmapController {
         return "<style>\n" + String.format(CSS_STYLES, previewSize.getWidth()) + "</style>\n";
     }
 
-    protected void writeUserActivityLog(ComAdmin admin, UserAction userAction) {
+    protected void writeUserActivityLog(Admin admin, UserAction userAction) {
         if (Objects.nonNull(userActivityLogService)) {
             userActivityLogService.writeUserActivityLog(admin, userAction, logger);
         } else {

@@ -35,6 +35,8 @@ public interface CommonKeys {
 	int OPENINGS_ANONYMOUS_INDEX = 39;
 	String OPENERS_MEASURED = "statistic.opener.measure";
 	int OPENERS_MEASURED_INDEX = 3;
+	String OPENERS_PROXY = "statistic.opener.proxy";
+	int OPENERS_PROXY_INDEX = 77;
 	String OPENERS_INVISIBLE = "statistic.opener.invisible";
 	int OPENERS_INVISIBLE_INDEX = 4;
 	String OPENERS_TOTAL = "statistic.opener.total";
@@ -139,6 +141,8 @@ public interface CommonKeys {
     String TARGET_CATEGORY = "Target";
 	int SCHEDULED_SEND_TIME_INDEX = 1002;
 	String SCHEDULED_SEND_TIME = "statistic.ScheduledSendTime";
+
+	String ALL_MAILINGLISTS = "statistic.All_Mailinglists";
 
     List<DeviceClass> AVAILABLE_DEVICECLASSES = Arrays.asList(DeviceClass.DESKTOP, DeviceClass.MOBILE, DeviceClass.TABLET, DeviceClass.SMARTTV);
     

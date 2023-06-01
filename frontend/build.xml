@@ -6,7 +6,7 @@
 	<taskdef resource="net/sf/antcontrib/antcontrib.properties" classpath="lib_ant/ant-contrib-1.0b3.jar" />
 	<taskdef name="mergexml" classname="com.agnitas.ant.MergeXml" classpath="lib_ant/mergexml.jar" />
 
-	<target name="all" depends="parseApplicationVersion, createPropertiesFiles, copyEhcacheConfig, replaceEmmPropertiesPlaceholders, copyDbChanges_Oracle, createMandatoryDbChanges_Oracle, copyDbChanges_MySQL, createMandatoryDbChanges_MySQL, deploy, copyAdditionalPiwikFile, compile, create_web.xml, applicationContext" description="Build everything.">
+	<target name="all" depends="parseApplicationVersion, createPropertiesFiles, replaceEmmPropertiesPlaceholders, copyDbChanges_Oracle, createMandatoryDbChanges_Oracle, copyDbChanges_MariaDB, createMandatoryDbChanges_MariaDB, deploy, copyAdditionalPiwikFile, compile, create_web.xml, applicationContext" description="Build everything.">
 		<echo message="Application built." />
 	</target>
 
@@ -201,10 +201,6 @@
 		<copy file="${basecss}/build/templates/startup-jobs.whitelist" tofile="${deploydir}${appname}/WEB-INF/startup-jobs.whitelist" overwrite="true" />
 	</target>
 
-	<target name="copyEhcacheConfig" depends="checkForPropertiesFile">
-		<copy todir="${deploydir}${appname}/WEB-INF/classes/" file="${emmSourcePath}/view/WEB-INF/conf/ehcache.xml" />
-	</target>
-
 	<target name="replaceEmmPropertiesPlaceholders" depends="createPropertiesFiles, parseApplicationVersion">
 		<!-- Replace version placeholders in emm.properties -->
 		<replace dir="${deploydir}${appname}/WEB-INF/classes" value="${ApplicationVersion}">
@@ -234,14 +230,14 @@
 	<target name="copyDbChanges_Oracle" depends="checkForPropertiesFile">
 	</target>
 
-	<target name="copyDbChanges_MySQL" depends="checkForPropertiesFile">
+	<target name="copyDbChanges_MariaDB" depends="checkForPropertiesFile">
 		<copy todir="${deploydir}${appname}/WEB-INF/sql">
 			<fileset dir="${basecss}/sql">
-				<include name="**/mysql/**" />
+				<include name="**/mariadb/**" />
 				<include name="**/emm_messages*.sql" />
 				<include name="**/emm_deleted_messages*.sql" />
 				<include name="**/userrights*.sql" />
-				<include name="**/emm-mysql-execute-updates.sh" />
+				<include name="**/emm-mariadb-execute-updates.sh" />
 				<exclude name="**/old/**" />
 				<exclude name="**/*test*" />
 				<exclude name="**/*fulldb*" />
@@ -266,17 +262,17 @@
 	<target name="createMandatoryDbChanges_Oracle" depends="copyDbChanges_Oracle">
 	</target>
 
-	<target name="createMandatoryDbChanges_MySQL" depends="copyDbChanges_MySQL">
-		<delete file="${deploydir}${appname}/WEB-INF/classes/mandatoryDbChanges_mysql.csv" />
-		<fileset id="mandatoryDbChanges_mysql" dir="${deploydir}${appname}/WEB-INF/sql/mysql">
-			<include name="emm-mysql-update-*.sql" />
+	<target name="createMandatoryDbChanges_MariaDB" depends="copyDbChanges_MariaDB">
+		<delete file="${deploydir}${appname}/WEB-INF/classes/mandatoryDbChanges_mariadb.csv" />
+		<fileset id="mandatoryDbChanges_mariadb" dir="${deploydir}${appname}/WEB-INF/sql/mariadb">
+			<include name="emm-mariadb-update-*.sql" />
 		</fileset>
-		<pathconvert property="mandatoryDbChangesFileList_mysql" refid="mandatoryDbChanges_mysql" pathsep="${line.separator}">
-			<map from="${deploydir}${appname}/WEB-INF/sql/mysql/" to="" />
+		<pathconvert property="mandatoryDbChangesFileList_mariadb" refid="mandatoryDbChanges_mariadb" pathsep="${line.separator}">
+			<map from="${deploydir}${appname}/WEB-INF/sql/mariadb/" to="" />
 		</pathconvert>
-		<propertyregex property="mandatoryDbChangesList_mysql" input="${mandatoryDbChangesFileList_mysql}" regexp=".*-((\d+\.\d+\.\d+\.\d+)|(\d+\.\d+\.\d+)).*" replace="\1" global="true" />
-		<echo file="${deploydir}${appname}/WEB-INF/classes/mandatoryDbChanges_mysql.csv" message="${mandatoryDbChangesList_mysql}" />
-		<echo message="Created mandatoryDbChanges_mysql.csv" />
+		<propertyregex property="mandatoryDbChangesList_mariadb" input="${mandatoryDbChangesFileList_mariadb}" regexp=".*-((\d+\.\d+\.\d+\.\d+)|(\d+\.\d+\.\d+)).*" replace="\1" global="true" />
+		<echo file="${deploydir}${appname}/WEB-INF/classes/mandatoryDbChanges_mariadb.csv" message="${mandatoryDbChangesList_mariadb}" />
+		<echo message="Created mandatoryDbChanges_mariadb.csv" />
 	</target>
 
 	<target name="compile" depends="setupBuildPaths, createPropertiesFiles" description="Build EMM">
@@ -387,6 +383,10 @@
 		</replace>
 		<replace file="${deploydir}${appname}/WEB-INF/web.xml" value="${jpEncodingDomains}">
 			<replacetoken>${jpEncodingDomains}</replacetoken>
+		</replace>
+		
+		<replace file="${deploydir}${appname}/WEB-INF/web.xml" value="com.agnitas.web.ShowImageServlet">
+			<replacetoken>com.agnitas.web.ShowImageServletExtended</replacetoken>
 		</replace>
 
 		<!-- Extended session timeout in web.xml -->
@@ -528,7 +528,7 @@
 		<delete file="${deploydir}${appname}/WEB-INF/struts-config-basic.xml" />
 		<delete file="${deploydir}${appname}/WEB-INF/struts-config-openemm.xml" />
 
-		<chmod file="${deploydir}${appname}/WEB-INF/sql/mysql/*.sh" perm="ugo+x"/>
+		<chmod file="${deploydir}${appname}/WEB-INF/sql/mariadb/*.sh" perm="ugo+x"/>
 
 		<delete file="${deploydir}${appname}/assets/core/images/logo.png" />
 		<copy file="src/view/assets/core/images/openemm_logo.png" tofile="${deploydir}${appname}/assets/core/images/logo.png" overwrite="true" />
@@ -539,9 +539,9 @@
 	</target>
 
 	<target name="war" depends="all" description="Build Webapp-WAR">
-		<delete file="${deploydir}/emm.war" />
+		<delete file="${deploydir}/openemm.war" />
 
-		<war destfile="${deploydir}/emm.war" webxml="${deploydir}${appname}/WEB-INF/web.xml">
+		<war destfile="${deploydir}/openemm.war" webxml="${deploydir}${appname}/WEB-INF/web.xml">
 			<fileset dir="${deploydir}${appname}">
 				<exclude name="${deploydir}${appname}/WEB-INF/lib"/>
 				<exclude name="${deploydir}${appname}/WEB-INF/classes"/>

@@ -33,6 +33,9 @@ import javax.imageio.ImageIO;
 
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.dao.MailingStatus;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.emm.core.component.service.ComponentAlreadyExistException;
 import org.agnitas.emm.core.component.service.ComponentModel;
 import org.agnitas.emm.core.component.service.ComponentNotExistException;
 import org.agnitas.emm.core.component.service.impl.ComponentServiceImpl;
@@ -52,7 +55,7 @@ import org.springframework.beans.factory.annotation.Required;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.FormComponent;
 import com.agnitas.beans.FormComponent.FormComponentType;
 import com.agnitas.dao.ComMailingDao;
@@ -70,6 +73,7 @@ public class ComComponentServiceImpl extends ComponentServiceImpl implements Com
 	private static final transient Logger logger = LogManager.getLogger(ComComponentServiceImpl.class);
 
 	private ExtendedConversionService conversionService;
+	private ConfigService configService;
 
 	@Override
 	@Transactional
@@ -111,6 +115,13 @@ public class ComComponentServiceImpl extends ComponentServiceImpl implements Com
 
 	@Override
 	public int addMailingComponent(MailingComponent mailingComponent) throws Exception {
+		if (!mailingDao.exist(mailingComponent.getMailingID(), mailingComponent.getCompanyID())) {
+			throw new MailingNotExistException(mailingComponent.getCompanyID(), mailingComponent.getMailingID());
+		}
+		if (null != mailingComponentDao.getMailingComponentByName(mailingComponent.getMailingID(), mailingComponent.getCompanyID(), mailingComponent.getComponentName())) {
+			throw new ComponentAlreadyExistException();
+		}
+
 		mailingComponentDao.saveMailingComponent(mailingComponent);
 		return mailingComponent.getId();
 	}
@@ -152,12 +163,12 @@ public class ComComponentServiceImpl extends ComponentServiceImpl implements Com
 	}
 
 	@Override
-	public SimpleServiceResult saveFormComponents(ComAdmin admin, int formId, List<FormComponent> components, List<UserAction> userActions) {
+	public SimpleServiceResult saveFormComponents(Admin admin, int formId, List<FormComponent> components, List<UserAction> userActions) {
 		return saveFormComponents(admin, formId, components, userActions, true);
 	}
 
 	@Override
-	public SimpleServiceResult saveFormComponents(ComAdmin admin, int formId, List<FormComponent> components, List<UserAction> userActions, boolean overwriteExisting) {
+	public SimpleServiceResult saveFormComponents(Admin admin, int formId, List<FormComponent> components, List<UserAction> userActions, boolean overwriteExisting) {
 		if (formId == 0) {
 			logger.error("Cannot save or change globally used images (formID = 0)");
 			return new SimpleServiceResult(false, Message.of("Error"));
@@ -230,6 +241,8 @@ public class ComComponentServiceImpl extends ComponentServiceImpl implements Com
 
 			if (!ImageUtils.isValidImageFileExtension(AgnUtils.getFileExtension(name))) {
 				invalidFormat.add(name);
+			} else if (!ImageUtils.isValidImage(component.getData(), configService.getBooleanValue(ConfigValue.UseAdvancedFileContentTypeDetection))) {
+				invalidFormat.add(name);
 			}
 		}
 
@@ -240,7 +253,7 @@ public class ComComponentServiceImpl extends ComponentServiceImpl implements Com
 		}
 
 		if (CollectionUtils.isNotEmpty(invalidFormat)) {
-			errors.add(Message.of("FilenameNotValid", StringUtils.join(invalidFormat, ", ")));
+			errors.add(Message.of("FileformatNotValidWithAllowedTypes", StringUtils.join(invalidFormat, ", "), StringUtils.join(ImageUtils.availableImageExtensions, ", ")));
 		}
 
 		if (CollectionUtils.isNotEmpty(duplicateNames)) {
@@ -251,7 +264,7 @@ public class ComComponentServiceImpl extends ComponentServiceImpl implements Com
 	}
 
 	@Override
-	public SimpleServiceResult saveComponentsFromZipFile(ComAdmin admin, int formId, MultipartFile zipFile, List<UserAction> userActions, boolean overwriteExisting) {
+	public SimpleServiceResult saveComponentsFromZipFile(Admin admin, int formId, MultipartFile zipFile, List<UserAction> userActions, boolean overwriteExisting) {
 
 		try {
 			List<FormUploadComponentDto> components = new ArrayList<>();
@@ -349,5 +362,10 @@ public class ComComponentServiceImpl extends ComponentServiceImpl implements Com
 	@Required
 	public void setConversionService(ExtendedConversionService conversionService) {
 		this.conversionService = conversionService;
+	}
+
+	@Required
+	public void setConfigService(ConfigService configService) {
+		this.configService = configService;
 	}
 }

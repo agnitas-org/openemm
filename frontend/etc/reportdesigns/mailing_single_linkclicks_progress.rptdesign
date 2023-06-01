@@ -303,18 +303,18 @@ if (reportContext.getOutputFormat() == "csv" || params["viewChart"].value == fal
 	var data = clicksData.get(currentrow);
 
 	row["DATETIME"] =  data.getClickTime();
-	row["CLICKS_GROS"] = data.getClicks_gross();
-	row["CLICKS_NET"] = data.getClicks_net();
+	row["CLICKS_GROS"] = data.getClicksGross();
+	row["CLICKS_NET"] = data.getClicksNet();
 
 	// do some i18n stuff
-	if (data.getColumn_index() == 1) {
+	if (data.getColumnIndex() == 1) {
 		row["TARGETGROUP"] = Packages.com.agnitas.messages.I18nString.getLocaleString("statistic.all_subscribers", reportContext.getLocale());
 	} else {
 		row["TARGETGROUP"] = data.getTargetgroup();
 	}
 
 	row["DEVICECLASSID"] = data.getDeviceClassID();
-	row["COLUMN_INDEX"] = data.getColumn_index();
+	row["COLUMN_INDEX"] = data.getColumnIndex();
 	currentrow++;
 	return  true;
 }

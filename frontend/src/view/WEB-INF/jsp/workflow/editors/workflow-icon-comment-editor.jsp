@@ -1,8 +1,9 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 <%@ taglib prefix="bean" uri="http://struts.apache.org/tags-bean" %>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
 <div id="icon-comment-editor" data-initializer="icon-comment-editor-initializer">
-    <form action="" id="iconCommentForm" name="iconCommentForm">
+    <mvc:form action="" id="iconCommentForm" name="iconCommentForm">
         <div class="form-group">
             <div class="col-sm-12">
                 <textarea id="iconComment" name="iconComment" class="form-control non-resizable" draggable="false" rows="5"></textarea>
@@ -20,5 +21,5 @@
                 </div>
             </div>
         </div>
-    </form>
+    </mvc:form>
 </div>

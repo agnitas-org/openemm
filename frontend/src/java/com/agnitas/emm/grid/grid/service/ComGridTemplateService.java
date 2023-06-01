@@ -2,7 +2,7 @@ package com.agnitas.emm.grid.grid.service;
 
 import org.agnitas.emm.core.velocity.VelocityCheck;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.Mailing;
 import com.agnitas.emm.grid.grid.beans.ComGridTemplate;
 import com.agnitas.emm.grid.grid.beans.ComTemplateSettings;
@@ -11,9 +11,9 @@ public interface ComGridTemplateService {
 
     ComGridTemplate getGridTemplate(int templateId, @VelocityCheck int companyId);
 
-    ComTemplateSettings getGridTemplateSettings(int templateId, ComAdmin admin);
+    ComTemplateSettings getGridTemplateSettings(int templateId, Admin admin);
     
-	Mailing createMailing(ComAdmin admin, int templateId, MailingCreationOptions options) throws Exception;
+	Mailing createMailing(Admin admin, int templateId, MailingCreationOptions options) throws Exception;
 	
 	void deleteRecycledChildren(@VelocityCheck int companyId);
 

@@ -10,67 +10,118 @@
 
 package com.agnitas.emm.core.mailingcontent.web;
 
-import java.util.List;
-
-import jakarta.servlet.http.HttpSession;
-
-import com.agnitas.emm.core.mailing.service.MailingService;
-import com.agnitas.beans.Mailing;
-import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.service.UserActivityLogService;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
-
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.DynamicTag;
+import com.agnitas.beans.Mailing;
+import com.agnitas.beans.ProfileField;
+import com.agnitas.beans.TargetLight;
+import com.agnitas.dao.ProfileFieldDao;
+import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.maildrop.service.MaildropService;
+import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
+import com.agnitas.emm.core.mailing.service.MailingPropertiesRules;
+import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.emm.core.mailingcontent.dto.DynTagDto;
+import com.agnitas.emm.core.mailingcontent.form.MailingContentForm;
 import com.agnitas.emm.core.mailingcontent.service.MailingContentService;
 import com.agnitas.emm.core.mailingcontent.validator.DynTagChainValidator;
+import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
+import com.agnitas.emm.core.target.service.ComTargetService;
+import com.agnitas.service.AgnDynTagGroupResolverFactory;
+import com.agnitas.service.AgnTagService;
+import com.agnitas.service.ComMailingContentService;
 import com.agnitas.service.ExtendedConversionService;
+import com.agnitas.service.GridServiceWrapper;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.util.preview.PreviewImageService;
 import com.agnitas.web.dto.DataResponseDto;
 import com.agnitas.web.mvc.Popups;
-import com.agnitas.web.perm.annotations.PermissionMapping;
+import com.agnitas.web.mvc.XssCheckAware;
+import jakarta.servlet.http.HttpSession;
+import org.agnitas.beans.MailingComponent;
+import org.agnitas.emm.core.mailing.service.MailingNotExistException;
+import org.agnitas.emm.core.useractivitylog.UserAction;
+import org.agnitas.service.UserActivityLogService;
+import org.agnitas.util.AgnUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.http.ResponseEntity;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.ResponseBody;
 
-@Controller
-@PermissionMapping("mailing.content")
-@RequestMapping("/mailingcontent")
-public class MailingContentController {
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+public class MailingContentController implements XssCheckAware {
 
     private static final Logger logger = LogManager.getLogger(MailingContentController.class);
 
-    private ExtendedConversionService extendedConversionService;
-    private UserActivityLogService userActivityLogService;
-    private MailingContentService mailingContentService;
-    private DynTagChainValidator dynTagChainValidator;
-    private PreviewImageService previewImageService;
-    private final MailingService mailingService;
+    protected final MailingService mailingService;
+    private final MailinglistApprovalService mailinglistApprovalService;
+    private final MaildropService maildropService;
+    private final ComMailingContentService comMailingContentService;
+    private final MailingContentService mailingContentService;
+    private final ComTargetService targetService;
+    private final UserActivityLogService userActivityLogService;
+    private final ProfileFieldDao profileFieldDao;
+    private final MailingPropertiesRules mailingPropertiesRules;
+    private final ComMailingBaseService mailingBaseService;
+    private final GridServiceWrapper gridServiceWrapper;
+    private final AgnDynTagGroupResolverFactory agnDynTagGroupResolverFactory;
+    private final AgnTagService agnTagService;
+    private final PreviewImageService previewImageService;
+    private final DynTagChainValidator dynTagChainValidator;
+    private final ExtendedConversionService extendedConversionService;
 
-    public MailingContentController(ExtendedConversionService extendedConversionService,
-                                    UserActivityLogService userActivityLogService,
-                                    MailingContentService mailingContentService,
-                                    DynTagChainValidator dynTagChainValidator,
-                                    PreviewImageService previewImageService,
-                                    final MailingService mailingService) {
-        this.extendedConversionService = extendedConversionService;
-        this.userActivityLogService = userActivityLogService;
-        this.mailingContentService = mailingContentService;
-        this.dynTagChainValidator = dynTagChainValidator;
-        this.previewImageService = previewImageService;
+    public MailingContentController(MailinglistApprovalService mailinglistApprovalService, MailingService mailingService, MaildropService maildropService,
+                                    ComMailingContentService comMailingContentService, MailingContentService mailingContentService, ComTargetService targetService,
+                                    UserActivityLogService userActivityLogService, ProfileFieldDao profileFieldDao, MailingPropertiesRules mailingPropertiesRules,
+                                    ComMailingBaseService mailingBaseService, GridServiceWrapper gridServiceWrapper, AgnDynTagGroupResolverFactory agnDynTagGroupResolverFactory,
+                                    AgnTagService agnTagService, PreviewImageService previewImageService, DynTagChainValidator dynTagChainValidator,
+                                    ExtendedConversionService extendedConversionService) {
+        this.mailinglistApprovalService = mailinglistApprovalService;
         this.mailingService = mailingService;
+        this.maildropService = maildropService;
+        this.comMailingContentService = comMailingContentService;
+        this.mailingContentService = mailingContentService;
+        this.targetService = targetService;
+        this.userActivityLogService = userActivityLogService;
+        this.profileFieldDao = profileFieldDao;
+        this.mailingPropertiesRules = mailingPropertiesRules;
+        this.mailingBaseService = mailingBaseService;
+        this.gridServiceWrapper = gridServiceWrapper;
+        this.agnDynTagGroupResolverFactory = agnDynTagGroupResolverFactory;
+        this.agnTagService = agnTagService;
+        this.previewImageService = previewImageService;
+        this.dynTagChainValidator = dynTagChainValidator;
+        this.extendedConversionService = extendedConversionService;
+    }
+
+    @GetMapping("/{mailingId:\\d+}/view.action")
+    public String viewContent(@PathVariable("mailingId") int mailingId, @ModelAttribute("form") MailingContentForm form, Admin admin, Model model) {
+        form.setShowHTMLEditor(true);
+
+        Mailing mailing = mailingService.getMailing(admin.getCompanyID(), mailingId);
+        prepareListPage(mailing, form, admin, model);
+
+        writeUserActivityLog(admin, String.format("view %s", form.isIsTemplate() ? "template" : "mailing"),
+                String.format("%s (%d)", form.getShortname(), form.getMailingID()));
+        writeUserActivityLog(admin, "view content", "active tab - content");
+
+        return "mailing_content_list_new";
     }
 
     @GetMapping("/name/{id:\\d+}/view.action")
-    public ResponseEntity<DynTagDto> view(ComAdmin admin, @PathVariable("id") int dynNameId) {
+    public ResponseEntity<DynTagDto> view(Admin admin, @PathVariable("id") int dynNameId) {
         DynTagDto dto = mailingContentService.getDynTag(admin.getCompanyID(), dynNameId);
 
         if (dto == null) {
@@ -82,7 +133,7 @@ public class MailingContentController {
 
     @PostMapping("/save.action")
     public @ResponseBody
-    DataResponseDto<DynTagDto> save(ComAdmin admin, HttpSession session, @RequestBody DynTagDto dynTagDto, Popups popups) {
+    DataResponseDto<DynTagDto> save(Admin admin, HttpSession session, @RequestBody DynTagDto dynTagDto, Popups popups) {
         if (!dynTagChainValidator.validate(dynTagDto, popups, admin)) {
             return new DataResponseDto<>(popups, false);
         }
@@ -91,17 +142,16 @@ public class MailingContentController {
 
         try {
             // editing or creating
-            ServiceResult<List<UserAction>> serviceResult =
-                    mailingContentService.updateDynContent(mailing, dynTagDto, admin);
-            if(!serviceResult.isSuccess()) {
+            ServiceResult<List<UserAction>> serviceResult = mailingContentService.updateDynContent(mailing, dynTagDto, admin);
+            if (!serviceResult.isSuccess()) {
                 popups.addPopups(serviceResult);
                 return new DataResponseDto<>(popups, false);
-            } else {
-                final List<UserAction> userActions = serviceResult.getResult();
-                userActions.forEach(action -> userActivityLogService.writeUserActivityLog(admin, action));
-                logger.info(String.format("Content of mailing was changed. mailing-name : %s, mailing-id: %d",
-                        mailing.getDescription(), mailing.getId()));
             }
+
+            List<UserAction> userActions = serviceResult.getResult();
+            userActions.forEach(action -> userActivityLogService.writeUserActivityLog(admin, action));
+            logger.info(String.format("Content of mailing was changed. mailing-name : %s, mailing-id: %d",
+                    mailing.getDescription(), mailing.getId()));
         } catch (Exception e) {
             logger.error(String.format("Error during building dependencies. mailing-name : %s, mailing-id: %d",
                     mailing.getDescription(), mailing.getId()), e);
@@ -112,7 +162,170 @@ public class MailingContentController {
         previewImageService.generateMailingPreview(admin, session.getId(), mailing.getId(), true);
         DynamicTag dynamicTag = mailing.getDynTags().get(dynTagDto.getName());
         DynTagDto dynTagDtoResponse = extendedConversionService.convert(dynamicTag, DynTagDto.class);
+
         popups.success("default.changes_saved");
         return new DataResponseDto<>(dynTagDtoResponse, popups, true);
+    }
+
+    @GetMapping("/{mailingId:\\d+}/text-from-html/confirm.action")
+    public String confirmGenerateTextFromHtml(@PathVariable("mailingId") int mailingId, Admin admin, Popups popups, Model model) {
+        if (!isMailingEditable(admin, mailingId)) {
+            popups.alert("status_changed");
+            return "messages";
+        }
+
+        model.addAttribute("mailingId", mailingId);
+        model.addAttribute("mailingShortname", mailingService.getMailingName(mailingId, admin.getCompanyID()));
+
+        return "generate_text_question_ajax_new";
+    }
+
+    @PostMapping("/{mailingId:\\d+}/text-from-html/generate.action")
+    public String generateTextFromHtml(@PathVariable("mailingId") int mailingId, Admin admin, Popups popups) {
+        if (!isMailingEditable(admin, mailingId)) {
+            popups.alert("status_changed");
+        } else {
+            if (generateTextContent(admin, mailingId)) {
+                popups.success("default.changes_saved");
+            } else {
+                popups.alert("Error");
+            }
+        }
+
+        return String.format("redirect:/mailing/content/%d/view.action", mailingId);
+    }
+
+    private boolean generateTextContent(Admin admin, int mailingId) {
+        try {
+            return mailingService.generateMailingTextContentFromHtml(admin, mailingId);
+        } catch (Exception e) {
+            logger.error(String.format("Error occurred: %s", e.getMessage()), e);
+        }
+
+        return false;
+    }
+
+    private void prepareListPage(Mailing mailing, MailingContentForm form, Admin admin, Model model) {
+        prepareForm(mailing, form, admin);
+        loadAdditionalData(mailing, form, admin, model);
+
+        prepareModelAttributes(mailing, admin, model, form);
+    }
+
+    protected void prepareModelAttributes(Mailing mailing, Admin admin, Model model, MailingContentForm form) {
+        int mailingId = mailing.getId();
+
+        boolean isMailingExclusiveLockingAcquired = tryToLock(mailingId, admin, model);
+        boolean isTextGenerationEnabled = !mailing.isIsTemplate() && comMailingContentService.isGenerationAvailable(mailing);
+        boolean isWorldMailingSend = maildropService.isActiveMailing(mailingId, admin.getCompanyID());
+        boolean isLimitedRecipientOverview = isWorldMailingSend &&
+                !mailinglistApprovalService.isAdminHaveAccess(admin, mailing.getMailinglistID());
+
+        model.addAttribute("limitedRecipientOverview", isLimitedRecipientOverview);
+        model.addAttribute("isWorldMailingSend", isWorldMailingSend);
+        model.addAttribute("isTextGenerationEnabled", isTextGenerationEnabled);
+        model.addAttribute("isMailingEditable", isMailingEditable(admin, mailingId));
+        model.addAttribute("isMailingExclusiveLockingAcquired", isMailingExclusiveLockingAcquired);
+    }
+
+    private void prepareForm(Mailing mailing, MailingContentForm form, Admin admin) {
+        int mailingId = mailing.getId();
+
+        form.setMailingID(mailingId);
+        form.setShortname(mailing.getShortname());
+        form.setIsTemplate(mailing.isIsTemplate());
+
+        form.setDynTagNames(mailingBaseService.getDynamicTagNames(mailing));
+        form.setIsMailingUndoAvailable(mailingBaseService.checkUndoAvailable(mailingId));
+        form.setGridTemplateId(gridServiceWrapper.getGridTemplateIdByMailingId(mailingId));
+        form.setWorkflowId(mailingBaseService.getWorkflowId(mailingId, admin.getCompanyID()));
+    }
+
+    protected void loadAdditionalData(Mailing mailing, MailingContentForm form, Admin admin, Model model) {
+        loadDynTags(mailing, form);
+        loadTargetGroups(form, admin);
+        loadAvailableInterestGroups(form, admin);
+    }
+
+    private void loadDynTags(Mailing mailing, MailingContentForm form) {
+        Map<String, DynamicTag> tags = mailing.getDynTags();
+
+        // Grid mailing should not expose its internals (dynamic tags representing building blocks) for editing.
+        if (form.getGridTemplateId() > 0) {
+            clearBuildingBlocksFromTags(mailing, tags);
+        }
+
+        Map<String, DynTagDto> dynTags = new HashMap<>();
+
+        for (Map.Entry<String, DynamicTag> tagEntry : tags.entrySet()) {
+            DynamicTag dynTag = tagEntry.getValue();
+            DynTagDto dynTagDto = extendedConversionService.convert(dynTag, DynTagDto.class);
+
+            dynTags.put(tagEntry.getKey(), dynTagDto);
+        }
+
+        form.setTags(dynTags, true);
+    }
+
+    private void clearBuildingBlocksFromTags(Mailing mailing, Map<String, DynamicTag> dynTags) {
+        MailingComponent htmlComponent = mailing.getComponents().get("agnHtml");
+        if (htmlComponent != null) {
+            for (String name : getAgnTags(htmlComponent.getEmmBlock(), mailing.getCompanyID())) {
+                dynTags.remove(name);
+                findTocItemDynNames(name, dynTags.keySet()).forEach(dynTags::remove);
+            }
+        }
+    }
+
+    private List<String> findTocItemDynNames(String dynName, Collection<String> dynNames) {
+        return dynNames.stream()
+                .filter(n -> n.startsWith(dynName + AgnUtils.TOC_ITEM_SUFFIX))
+                .collect(Collectors.toList());
+    }
+
+    protected boolean isMailingEditable(Admin admin, int mailingId) {
+        return mailingPropertiesRules.isMailingContentEditable(mailingId, admin);
+    }
+
+    private void loadTargetGroups(MailingContentForm form, Admin admin) {
+        boolean showContentBlockTargetGroupsOnly = !admin.permissionAllowed(Permission.MAILING_CONTENT_SHOW_EXCLUDED_TARGETGROUPS);
+        List<TargetLight> list = targetService.getTargetLights(admin, false, true, false, showContentBlockTargetGroupsOnly);
+
+        form.setAvailableTargetGroups(list);
+    }
+
+    private void loadAvailableInterestGroups(MailingContentForm form, Admin admin) {
+        List<ProfileField> availableInterestFields = Collections.emptyList();
+        try {
+            availableInterestFields = profileFieldDao.getProfileFieldsWithInterest(admin.getCompanyID(), admin.getAdminID());
+        } catch (Exception e) {
+            logger.error(String.format("Error occurred: %s", e.getMessage()), e);
+        }
+        form.setAvailableInterestGroups(availableInterestFields);
+    }
+
+    private boolean tryToLock(int mailingId, Admin admin, Model model) {
+        try {
+            boolean lockedByCurrentUser = mailingService.tryToLock(admin, mailingId);
+            if (!lockedByCurrentUser) {
+                Admin lockingUser = mailingService.getMailingLockingAdmin(mailingId, admin.getCompanyID());
+                if (lockingUser != null) {
+                    model.addAttribute("anotherLockingUserName", String.join(" ", lockingUser.getFirstName(), lockingUser.getFullname()));
+                }
+            }
+
+            return lockedByCurrentUser;
+        } catch (MailingNotExistException e) {
+            // New mailing is always edited exclusively.
+            return true;
+        }
+    }
+
+    private List<String> getAgnTags(String content, int companyId) {
+        return agnTagService.getDynTagsNames(content, agnDynTagGroupResolverFactory.create(companyId, 0));
+    }
+
+    protected void writeUserActivityLog(Admin admin, String action, String description) {
+        userActivityLogService.writeUserActivityLog(admin, action, description, logger);
     }
 }

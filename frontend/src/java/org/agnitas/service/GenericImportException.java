@@ -20,7 +20,8 @@ public class GenericImportException extends Exception {
 		InvalidEncryption("error.encryption.invalid"),
 		ValueTooLarge("error.value.toolarge"),
 		NumberTooLarge("error.value.numbertoolarge"),
-		InvalidFormat("error.format.invalid");
+		InvalidFormat("error.format.invalid"),
+		Unknown("error.value.unknownReason");
 		
 		private String messageKey;
 		

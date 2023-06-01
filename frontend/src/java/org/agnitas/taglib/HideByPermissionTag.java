@@ -15,7 +15,7 @@ import jakarta.servlet.jsp.tagext.TagSupport;
 
 import org.agnitas.util.AgnUtils;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.Permission;
 
 public class HideByPermissionTag extends PermissionExceptionTagSupport {
@@ -40,7 +40,7 @@ public class HideByPermissionTag extends PermissionExceptionTagSupport {
      */
     @Override
 	public int doStartTag() throws JspException {
-    	ComAdmin aAdmin = AgnUtils.getAdmin(pageContext);
+    	Admin aAdmin = AgnUtils.getAdmin(pageContext);
 		try {
 			if (aAdmin != null && aAdmin.permissionAllowed(Permission.getPermissionsByToken(token))) {
 				return TagSupport.SKIP_BODY;

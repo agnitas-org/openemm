@@ -19,18 +19,20 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.bouncycastle.util.Arrays;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.logon.service.UnexpectedLogonStateException;
 
 public class LogonStateBundle {
 	
 	/** The logger. */
-	private static final transient Logger LOGGER = LogManager.getLogger(LogonStateBundle.class);
+	private static final Logger LOGGER = LogManager.getLogger(LogonStateBundle.class);
 	
     private LogonState state;
-    private ComAdmin admin;
+    private Admin admin;
     private String hostId;
+    private byte[] totpSharedSecret;
 
     public LogonStateBundle(LogonState state) {
         this.state = Objects.requireNonNull(state);
@@ -45,11 +47,22 @@ public class LogonStateBundle {
     	setHostId(null);
     }
     
-    public final void toAuthenticationState(final ComAdmin newAdmin) {
+    public final void toTotpState(final Admin newAdmin) {
     	setAdmin(Objects.requireNonNull(newAdmin, "Admin is null"));
-    	setState(LogonState.HOST_AUTHENTICATION);
+    	setState(LogonState.TOTP);
     }
     
+    public final void toNewTotpSecretState(final byte[] newTotpSharedSecret) {
+    	this.totpSharedSecret = Arrays.copyOf(newTotpSharedSecret, newTotpSharedSecret.length);
+    	
+    	setState(LogonState.NEW_TOTP_SECRET);
+    }
+
+    public final void toAuthenticationState() {
+    	this.totpSharedSecret = null;
+    	setState(LogonState.HOST_AUTHENTICATION);
+    }
+   
     public final void toMaintainPasswordState() {
     	requireLogonState(LogonState.HOST_AUTHENTICATION, LogonState.HOST_AUTHENTICATION_SECURITY_CODE);
     
@@ -73,15 +86,15 @@ public class LogonStateBundle {
     }
     
     public final void toCompleteState() {
-    	if(admin == null) {
+    	if (admin == null) {
             throw new UnexpectedLogonStateException("admin == null");
     	}
     	
     	setState(LogonState.COMPLETE);
     }
     
-    public final void toCompleteState(final ComAdmin newAdmin) {
-    	if(newAdmin == null) {
+    public final void toCompleteState(final Admin newAdmin) {
+    	if (newAdmin == null) {
             throw new UnexpectedLogonStateException("admin == null");
     	}
     	
@@ -89,7 +102,7 @@ public class LogonStateBundle {
     	setState(LogonState.COMPLETE);
     }
     
-    public final ComAdmin toCompleteState(final HttpServletRequest request) {
+    public final Admin toCompleteState(final HttpServletRequest request) {
         requireLogonState(LogonState.COMPLETE);
 
         // Create new session, drop all the temporary data.
@@ -104,6 +117,12 @@ public class LogonStateBundle {
         return admin;
     	
     }
+    
+    public final byte[] getNewTotpSharedSecret() {
+    	return this.totpSharedSecret == null
+    			? null
+    			: Arrays.copyOf(this.totpSharedSecret, this.totpSharedSecret.length);
+    }
    
     public LogonState getState() {
         return state;
@@ -113,11 +132,11 @@ public class LogonStateBundle {
         this.state = Objects.requireNonNull(state);
     }
 
-    public ComAdmin getAdmin() {
+    public Admin getAdmin() {
         return admin;
     }
 
-    private void setAdmin(ComAdmin admin) {
+    private void setAdmin(Admin admin) {
         this.admin = admin;
     }
 
@@ -144,23 +163,29 @@ public class LogonStateBundle {
             }
         }
         
+        // Encountered unexpected login state.
         final String msg = String.format(
-				"Unexpected logon state: %s. Expected: %s. (hostId: `%s`, admin: `%s`)",
-				this.getState(), 
-				StringUtils.join(states, " or "), 
-				this.getHostId(),
-				getAdminUsername());
-
-        LOGGER.error(msg);
+        		"Unexpected logon state: %s. Expected: %s. (hostId: `%s`, admin: `%s`)",
+        		this.getState(), 
+        		StringUtils.join(states, " or "), 
+        		this.getHostId(),
+        		getAdminUsername());
         
-        throw new UnexpectedLogonStateException(msg);
+        // try-catch to get the stack trace
+        try {
+        	throw new UnexpectedLogonStateException(msg);
+        } catch(final UnexpectedLogonStateException e) {
+	        LOGGER.error(msg, e);
+	        
+	        // Re-throw exception
+	        throw e;
+        }
+        
     }
 
     private String getAdminUsername() {
-        if (admin == null) {
-            return "?";
-        }
-
-        return StringUtils.defaultString(admin.getUsername(), "?");
+    	return admin == null
+    			? "?"
+    			: StringUtils.defaultString(admin.getUsername(), "?");
     }
 }

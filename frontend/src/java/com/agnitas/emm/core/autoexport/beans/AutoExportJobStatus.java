@@ -25,7 +25,7 @@ public enum AutoExportJobStatus {
         this.code = code;
     }
     
-    public static final AutoExportJobStatus fromCode(final int code) {
+    public static AutoExportJobStatus fromCode(final int code) {
     	for(final AutoExportJobStatus st : values()) {
     		if(st.code == code) {
     			return st;

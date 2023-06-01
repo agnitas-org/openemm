@@ -16,17 +16,21 @@ package com.agnitas.reporting.birt.external.beans;
 public class URLClickStatRow extends ClickStatRow {
 	
 	private String url;
-	private int url_id;
+	private int urlId;
+
 	public String getUrl() {
 		return url;
 	}
+
 	public void setUrl(String url) {
 		this.url = url;
 	}
-	public int getUrl_id() {
-		return url_id;
+
+	public int getUrlId() {
+		return urlId;
 	}
-	public void setUrl_id(int url_id) {
-		this.url_id = url_id;
+
+	public void setUrlId(int urlId) {
+		this.urlId = urlId;
 	}	
 }

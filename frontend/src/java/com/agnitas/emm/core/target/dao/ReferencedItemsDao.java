@@ -25,7 +25,7 @@ public interface ReferencedItemsDao {
 	 * @param companyID company ID of target group
 	 * @param targetID ID of target group
 	 */
-	public void removeAllReferencedObjects(final int companyID, final int targetID);
+    void removeAllReferencedObjects(final int companyID, final int targetID);
 	
 	/**
 	 * Saves the list of referenced mailing for given target group.
@@ -34,7 +34,7 @@ public interface ReferencedItemsDao {
 	 * @param targetID ID of target group
 	 * @param ids list of IDs of referenced mailings
 	 */
-	public void saveReferencedMailings(final int companyID, final int targetID, final List<Integer> ids);
+    void saveReferencedMailings(final int companyID, final int targetID, final List<Integer> ids);
 
 	/**
 	 * Saves the list of referenced links for given target group.
@@ -43,7 +43,7 @@ public interface ReferencedItemsDao {
 	 * @param targetID ID of target group
 	 * @param ids list of IDs of referenced links
 	 */
-	public void saveReferencedLinks(final int companyID, final int targetID, final List<Integer> ids);
+    void saveReferencedLinks(final int companyID, final int targetID, final List<Integer> ids);
 	
 	/**
 	 * Saves the list of referenced auto-imports for given target group.
@@ -52,7 +52,7 @@ public interface ReferencedItemsDao {
 	 * @param targetID ID of target group
 	 * @param ids list of IDs of referenced auto-imports
 	 */
-	public void saveReferencedAutoImports(final int companyID, final int targetID, final List<Integer> ids);
+    void saveReferencedAutoImports(final int companyID, final int targetID, final List<Integer> ids);
 	
 	/**
 	 * Saves the list of referenced profile fields for given target group.
@@ -61,7 +61,7 @@ public interface ReferencedItemsDao {
 	 * @param targetID ID of target group
 	 * @param profileFieldNames list of names of referenced profile fields
 	 */
-	public void saveReferencedProfileFields(final int companyID, final int targetID, final List<String> profileFieldNames);
+    void saveReferencedProfileFields(final int companyID, final int targetID, final List<String> profileFieldNames);
 
 	/**
 	 * Lists all target groups of company referencing profile field of given name.
@@ -71,7 +71,7 @@ public interface ReferencedItemsDao {
 	 * 
 	 * @return (empty) list of target groups referencing given profile field
 	 */
-	public List<TargetLight> listTargetGroupsReferencingProfileField(final int companyID, final String visibleShortname);
+	List<TargetLight> listTargetGroupsReferencingProfileField(final int companyID, final String visibleShortname);
 
 	/**
 	 * Lists all target groups of company referencing given mailing.
@@ -81,7 +81,7 @@ public interface ReferencedItemsDao {
 	 * 
 	 * @return (empty) list of target groups referencing given mailing
 	 */
-	public List<TargetLight> listTargetGroupsReferencingMailing(final int companyID, final int mailingID);
+	List<TargetLight> listTargetGroupsReferencingMailing(final int companyID, final int mailingID);
 
 	/**
 	 * Lists all target groups of company referencing given link.
@@ -91,7 +91,7 @@ public interface ReferencedItemsDao {
 	 * 
 	 * @return (empty) list of target groups referencing given link
 	 */
-	public List<TargetLight> listTargetGroupsReferencingLink(final int companyID, final int linkID);
+	List<TargetLight> listTargetGroupsReferencingLink(final int companyID, final int linkID);
 
 	/**
 	 * Lists all target groups of company referencing given auto import.
@@ -101,6 +101,5 @@ public interface ReferencedItemsDao {
 	 * 
 	 * @return (empty) list of target groups referencing given auto import
 	 */
-	public List<TargetLight> listTargetGroupsReferencingAutoImport(final int companyID, final int autoImportID);
-
+    List<TargetLight> listTargetGroupsReferencingAutoImport(final int companyID, final int autoImportID);
 }

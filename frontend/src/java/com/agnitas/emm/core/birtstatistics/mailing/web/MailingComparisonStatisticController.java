@@ -14,6 +14,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.agnitas.web.mvc.XssCheckAware;
 import org.agnitas.beans.MailingBase;
 import org.agnitas.util.AgnUtils;
 import org.apache.logging.log4j.LogManager;
@@ -32,7 +33,7 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import com.agnitas.beans.ComAdmin;
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.TargetLight;
 import com.agnitas.emm.core.birtstatistics.mailing.dto.MailingComparisonDto;
 import com.agnitas.emm.core.birtstatistics.mailing.forms.BulkMailingComparisonForm;
@@ -47,18 +48,17 @@ import com.agnitas.web.perm.annotations.PermissionMapping;
 @Controller
 @RequestMapping("/statistics/mailing/comparison")
 @PermissionMapping("mailing.comparison.statistics")
-public class MailingComparisonStatisticController {
+public class MailingComparisonStatisticController implements XssCheckAware {
     
-	/** The logger. */
     private static final Logger logger = LogManager.getLogger(MailingComparisonStatisticController.class);
     
     public static final int MAX_MAILINGS_SELECTED = 10;
     private static final int MIN_MAILINGS_SELECTED = 2;
     
-    private ComTargetService targetService;
-    private ComMailingBaseService mailingBaseService;
-    private BirtStatisticsService birtStatisticsService;
-    private ConversionService conversionService;
+    private final ComTargetService targetService;
+    private final ComMailingBaseService mailingBaseService;
+    private final BirtStatisticsService birtStatisticsService;
+    private final ConversionService conversionService;
     
     public MailingComparisonStatisticController(ComTargetService targetService, ComMailingBaseService mailingBaseService, BirtStatisticsService birtStatisticsService, ConversionService conversionService) {
         this.targetService = targetService;
@@ -68,7 +68,7 @@ public class MailingComparisonStatisticController {
     }
     
     @RequestMapping("/list.action")
-    public String list(ComAdmin admin, Model model, @ModelAttribute("form") BulkMailingComparisonForm form, Popups popups) {
+    public String list(Admin admin, Model model, @ModelAttribute("form") BulkMailingComparisonForm form, Popups popups) {
         try {
             List<TargetLight> targetGroupList = targetService.getTargetLights(admin);
             List<MailingBase> mailings = mailingBaseService.getMailingsForComparison(admin);
@@ -90,7 +90,7 @@ public class MailingComparisonStatisticController {
     }
     
     @PostMapping("/compare.action")
-    public String compare(ComAdmin admin, @ModelAttribute("form") MailingComparisonForm form, Model model, Popups popups) {
+    public String compare(Admin admin, @ModelAttribute("form") MailingComparisonForm form, Model model, Popups popups) {
         if (!validate(form, popups)) {
             return "messages";
         }
@@ -120,7 +120,7 @@ public class MailingComparisonStatisticController {
     
     
     @PostMapping("/export.action")
-    public Object export(ComAdmin admin, @ModelAttribute("form") MailingComparisonForm form, Popups popups, RedirectAttributes model) throws Exception {
+    public Object export(Admin admin, @ModelAttribute("form") MailingComparisonForm form, Popups popups, RedirectAttributes model) throws Exception {
         if (!validate(form, popups)) {
             model.addFlashAttribute("form", form);
             return new ModelAndView("redirect:/statistics/mailing/comparison/list.action");

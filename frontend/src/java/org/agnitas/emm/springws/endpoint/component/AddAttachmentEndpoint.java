@@ -17,9 +17,10 @@ import org.agnitas.emm.core.component.service.ComponentModel;
 import org.agnitas.emm.core.component.service.ComponentService;
 import org.agnitas.emm.springws.endpoint.BaseEndpoint;
 import org.agnitas.emm.springws.endpoint.MailingEditableCheck;
-import org.agnitas.emm.springws.endpoint.Utils;
+import org.agnitas.emm.springws.endpoint.Namespaces;
 import org.agnitas.emm.springws.jaxb.AddAttachmentRequest;
 import org.agnitas.emm.springws.jaxb.AddAttachmentResponse;
+import org.agnitas.emm.springws.util.SecurityContextAccess;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.ws.server.endpoint.annotation.Endpoint;
 import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
@@ -29,30 +30,31 @@ import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 @Endpoint
 public class AddAttachmentEndpoint extends BaseEndpoint {
 
-	private ComponentService componentService;
+	private final ComponentService componentService;
 	private final MailingEditableCheck mailingEditableCheck;
+	private final SecurityContextAccess securityContextAccess;
 
-
-	public AddAttachmentEndpoint(@Qualifier("componentService") ComponentService componentService, @Qualifier("MailingEditableCheck") final MailingEditableCheck mailingEditableCheck) {
-		this.componentService = componentService;
-		this.mailingEditableCheck = Objects.requireNonNull(mailingEditableCheck);
+	public AddAttachmentEndpoint(@Qualifier("componentService") ComponentService componentService, @Qualifier("MailingEditableCheck") final MailingEditableCheck mailingEditableCheck, final SecurityContextAccess securityContextAccess) {
+		this.componentService =  Objects.requireNonNull(componentService, "componentService");
+		this.mailingEditableCheck = Objects.requireNonNull(mailingEditableCheck, "mailingEditableCheck");
+		this.securityContextAccess = Objects.requireNonNull(securityContextAccess, "securityContextAccess");
 	}
 
-	@PayloadRoot(namespace = Utils.NAMESPACE_ORG, localPart = "AddAttachmentRequest")
+	@PayloadRoot(namespace = Namespaces.AGNITAS_ORG, localPart = "AddAttachmentRequest")
 	public @ResponsePayload AddAttachmentResponse addAttachment(@RequestPayload AddAttachmentRequest request) throws Exception {
-		final int companyID = Utils.getUserCompany();
+		final int companyID = this.securityContextAccess.getWebserviceUserCompanyId();
 		
 		this.mailingEditableCheck.requireMailingEditable(request.getMailingID(), companyID);
 
-		AddAttachmentResponse response = new AddAttachmentResponse();
-		ComponentModel model = new ComponentModel();
-		model.setCompanyId(Utils.getUserCompany());
+		final ComponentModel model = new ComponentModel();
+		model.setCompanyId(companyID);
 		model.setMailingId(request.getMailingID());
 		model.setMimeType(request.getMimeType());
 		model.setComponentType(MailingComponentType.Attachment);
 		model.setComponentName(request.getComponentName());
 		model.setData(request.getData());
 
+		final AddAttachmentResponse response = new AddAttachmentResponse();
 		response.setComponentID(componentService.addComponent(model));
 		return response;
 	}
