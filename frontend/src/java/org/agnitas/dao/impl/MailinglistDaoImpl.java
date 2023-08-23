@@ -10,26 +10,6 @@
 
 package org.agnitas.dao.impl;
 
-import com.agnitas.beans.ComTarget;
-import com.agnitas.dao.ComTargetDao;
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.emm.core.mailinglist.bean.MailinglistEntry;
-import org.agnitas.beans.BindingEntry.UserType;
-import org.agnitas.beans.Mailinglist;
-import org.agnitas.beans.impl.MailinglistImpl;
-import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.dao.MailingStatus;
-import org.agnitas.dao.MailinglistDao;
-import org.agnitas.dao.UserStatus;
-import org.agnitas.dao.impl.mapper.IntegerRowMapper;
-import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.agnitas.util.AgnUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-import org.springframework.jdbc.core.RowMapper;
-
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Arrays;
@@ -40,6 +20,25 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import org.agnitas.beans.BindingEntry.UserType;
+import org.agnitas.beans.Mailinglist;
+import org.agnitas.beans.impl.MailinglistImpl;
+import org.agnitas.beans.impl.PaginatedListImpl;
+import org.agnitas.dao.MailinglistDao;
+import org.agnitas.dao.UserStatus;
+import org.agnitas.dao.impl.mapper.IntegerRowMapper;
+import org.agnitas.util.AgnUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Required;
+import org.springframework.jdbc.core.RowMapper;
+
+import com.agnitas.beans.ComTarget;
+import com.agnitas.dao.ComTargetDao;
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.emm.core.mailinglist.bean.MailinglistEntry;
 
 public class MailinglistDaoImpl extends PaginatedBaseDaoImpl implements MailinglistDao {
 
@@ -65,7 +64,7 @@ public class MailinglistDaoImpl extends PaginatedBaseDaoImpl implements Mailingl
 	}
 
 	@Override
-	public boolean checkMailinglistInUse(int mailinglistId, @VelocityCheck int companyId) {
+	public boolean checkMailinglistInUse(int mailinglistId, int companyId) {
 		if (mailinglistId > 0 && companyId > 0) {
 			return selectInt(logger, "SELECT COUNT(*) FROM mailing_tbl WHERE mailinglist_id = ? AND company_id = ? AND deleted = 0", mailinglistId, companyId) > 0;
 		}
@@ -73,18 +72,8 @@ public class MailinglistDaoImpl extends PaginatedBaseDaoImpl implements Mailingl
 		return false;
 	}
 
-    @Override
-    public boolean canBeMarkedAsDeleted(int mailinglistId, int companyId) {
-        if (mailinglistId <= 0 || companyId <= 0) {
-            return false;
-        }
-        return selectInt(logger, "SELECT COUNT(*) FROM mailing_tbl WHERE mailinglist_id = ? " +
-                        "AND company_id = ? AND is_template = 0 AND deleted = 0 AND work_status NOT IN (?)", 
-                mailinglistId, companyId, MailingStatus.SENT.getDbKey()) <= 0;
-    }
-
 	@Override
-	public Mailinglist getMailinglist(int listID, @VelocityCheck int companyId) {
+	public Mailinglist getMailinglist(int listID, int companyId) {
 		if (listID == 0 || companyId == 0) {
 			if (logger.isInfoEnabled()) {
 				logger.info(String.format("Unable to load mailinglist (mailinglist ID %d, company ID %d)", listID, companyId));
@@ -100,7 +89,7 @@ public class MailinglistDaoImpl extends PaginatedBaseDaoImpl implements Mailingl
 	}
 
 	@Override
-	public String getMailinglistName(int mailinglistId, @VelocityCheck int companyId) {
+	public String getMailinglistName(int mailinglistId, int companyId) {
 		if (mailinglistId > 0 && companyId > 0) {
 			String sql = "SELECT shortname FROM mailinglist_tbl WHERE mailinglist_id = ? AND company_id = ?";
 			return selectObjectDefaultNull(logger, sql, (rs, index) -> rs.getString("shortname"), mailinglistId, companyId);
@@ -134,7 +123,7 @@ public class MailinglistDaoImpl extends PaginatedBaseDaoImpl implements Mailingl
 
 	@Override
 	@DaoUpdateReturnValueCheck
-	public int createMailinglist(@VelocityCheck int companyId, Mailinglist list) {
+	public int createMailinglist(int companyId, Mailinglist list) {
 		if(list == null || companyId == 0) {
 			return 0;
 		}
@@ -152,7 +141,7 @@ public class MailinglistDaoImpl extends PaginatedBaseDaoImpl implements Mailingl
 
 	@Override
 	@DaoUpdateReturnValueCheck
-	public int updateMailinglist(@VelocityCheck int companyId, Mailinglist list) {
+	public int updateMailinglist(int companyId, Mailinglist list) {
 		if (list == null || companyId == 0) {
 			return 0;
 		}
@@ -165,23 +154,21 @@ public class MailinglistDaoImpl extends PaginatedBaseDaoImpl implements Mailingl
 
 	@Override
 	@DaoUpdateReturnValueCheck
-	public boolean deleteMailinglist(int listID, @VelocityCheck int companyId) {
-		// Always keep the mailinglist with the lowest mailinglist_id. Should be the "Default, please do not delete!" mailinglist
-		// This must be done in two steps because mysql doesn't allow to update same table as used in a subquery
-		Integer alwaysKeepMailinglistID = select(logger, "SELECT MIN(mailinglist_id) FROM mailinglist_tbl WHERE company_id = ? AND deleted = 0", Integer.class, companyId);
-		if (alwaysKeepMailinglistID != null && alwaysKeepMailinglistID != listID) {
-			return update(logger, "UPDATE mailinglist_tbl SET deleted = 1, binding_clean = 1, change_date = CURRENT_TIMESTAMP WHERE mailinglist_id = ? AND company_id = ? AND deleted = 0", listID, companyId) > 0;
+	public boolean deleteMailinglist(int listID, int companyId) {
+		// should be impossible to delete last available mailinglist
+		if (getCountOfMailinglists(companyId) <= 1) {
+			return false;
 		}
-
-		return false;
+		update(logger, "DELETE FROM disabled_mailinglist_tbl WHERE mailinglist_id = ? AND company_id = ?", listID, companyId);
+		return update(logger, "UPDATE mailinglist_tbl SET deleted = 1, binding_clean = 1, change_date = CURRENT_TIMESTAMP WHERE mailinglist_id = ? AND company_id = ? AND deleted = 0", listID, companyId) > 0;
 	}
 	
 	/**
-	 * Even deletes the last mailinglist wich would not be deleted by deleteMailinglist(int listID, @VelocityCheck int companyId)
+	 * Even deletes the last mailinglist wich would not be deleted by deleteMailinglist(int listID, int companyId)
 	 */
 	@Override
 	@DaoUpdateReturnValueCheck
-	public boolean deleteAllMailinglist(@VelocityCheck int companyId) {
+	public boolean deleteAllMailinglist(int companyId) {
 		int result = update(logger, "UPDATE mailinglist_tbl SET deleted = 1, binding_clean = 1, change_date = CURRENT_TIMESTAMP WHERE company_id = ? AND deleted = 0", companyId);
 		if (result > 0) {
 			return true;
@@ -191,13 +178,13 @@ public class MailinglistDaoImpl extends PaginatedBaseDaoImpl implements Mailingl
 	}
 
 	@Override
-	public List<Mailinglist> getMailingListsNames(@VelocityCheck int companyId) {
+	public List<Mailinglist> getMailingListsNames(int companyId) {
 		String query = "SELECT mailinglist_id, shortname FROM mailinglist_tbl WHERE deleted = 0 AND company_id = ? ORDER BY LOWER(shortname)";
 		return select(logger, query, new MailingListNames_RowMapper(), companyId);
 	}
 
 	@Override
-	public List<Mailinglist> getMailinglists(@VelocityCheck int companyId) {
+	public List<Mailinglist> getMailinglists(int companyId) {
 		return select(logger,
 				"SELECT " + getMailinglistSqlFieldsForSelect() + " FROM mailinglist_tbl " +
 						"WHERE deleted = 0 AND company_id = ? ORDER BY LOWER(shortname) ASC",
@@ -205,19 +192,19 @@ public class MailinglistDaoImpl extends PaginatedBaseDaoImpl implements Mailingl
 	}
 
 	@Override
-	public List<Mailinglist> getMailinglists(@VelocityCheck int companyId, int adminID) {
+	public List<Mailinglist> getMailinglists(int companyId, int adminID) {
 		return getMailinglists(companyId);
 	}
 
 	@Override
-	public List<Integer> getMailinglistIds(@VelocityCheck int companyId) {
+	public List<Integer> getMailinglistIds(int companyId) {
 		return select(logger,
 				"SELECT mailinglist_id FROM mailinglist_tbl WHERE deleted = 0 AND company_id = ?",
 				IntegerRowMapper.INSTANCE, companyId);
 	}
 
 	@Override
-	public PaginatedListImpl<MailinglistEntry> getMailinglists(@VelocityCheck int companyId, int adminId, String sort, String direction, int page, int rownums) {
+	public PaginatedListImpl<MailinglistEntry> getMailinglists(int companyId, int adminId, String sort, String direction, int page, int rownums) {
 		if (!SORTABLE_FIELDS.contains(sort)) {
 			sort = "shortname";
 		}
@@ -289,7 +276,7 @@ public class MailinglistDaoImpl extends PaginatedBaseDaoImpl implements Mailingl
 	}
 
 	@Override
-	public int getNumberOfActiveSubscribers(boolean admin, boolean test, boolean world, int targetId, @VelocityCheck int companyId, int id) {
+	public int getNumberOfActiveSubscribers(boolean admin, boolean test, boolean world, int targetId, int companyId, int id) {
 		Set<String> userTypes = new HashSet<>();
 
 		if (!world) {
@@ -332,7 +319,7 @@ public class MailinglistDaoImpl extends PaginatedBaseDaoImpl implements Mailingl
 	}
 
 	@Override
-	public Map<Integer, Integer> getMailinglistWorldSubscribersStatistics(@VelocityCheck int companyId, int mailinglistID) {
+	public Map<Integer, Integer> getMailinglistWorldSubscribersStatistics(int companyId, int mailinglistID) {
 		Map<Integer, Integer> returnMap = new HashMap<>();
 		List<Map<String,Object>> result = select(logger, "SELECT bind.user_status AS status, COUNT(*) AS amount FROM customer_" + companyId + "_tbl cust, customer_" + companyId + "_binding_tbl bind WHERE bind.mailinglist_id = ? AND cust.customer_id = bind.customer_id GROUP BY bind.user_status", mailinglistID);
 		for (Map<String,Object> row : result) {
@@ -371,16 +358,21 @@ public class MailinglistDaoImpl extends PaginatedBaseDaoImpl implements Mailingl
     }
 
 	@Override
-	public boolean mailinglistExists(String mailinglistName, @VelocityCheck int companyId) {
+	public boolean mailinglistExists(String mailinglistName, int companyId) {
 		return selectInt(logger, "SELECT COUNT(*) FROM mailinglist_tbl WHERE deleted = 0 AND company_id = ? AND shortname = ?", companyId, mailinglistName) > 0;
 	}
 
 	@Override
-	public boolean exist(int mailinglistId, @VelocityCheck int companyId) {
+	public boolean exist(int mailinglistId, int companyId) {
 		return selectInt(logger, "SELECT COUNT(*) FROM mailinglist_tbl WHERE deleted = 0 AND company_id = ? AND mailinglist_id = ?", companyId, mailinglistId) > 0;
 	}
 
-    protected String getMailinglistSqlFieldsForSelect() {
+	@Override
+	public int getCountOfMailinglists(int companyId) {
+		return selectInt(logger, "SELECT COUNT(*) FROM mailinglist_tbl WHERE deleted = 0 AND company_id = ?", companyId);
+	}
+
+	protected String getMailinglistSqlFieldsForSelect() {
         final String[] fields = new String[] {"mailinglist_id", "company_id", "shortname", "description", "creation_date", "change_date"};
         return StringUtils.join(fields, ", ");
     }

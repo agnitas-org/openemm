@@ -193,7 +193,6 @@
 			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@name='/mailingbase']" />
 			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@name='/mailingcontent']" />
 			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@name='/mailingcontent']" />
-			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@name='/mailingsend_ajax']" />
 			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@name='/mcomponents']" />
 			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@name='/formcomponents']" />
 			<remove path="/*[local-name()='beans']/*[local-name()='bean'][@name='/month_stats']" />

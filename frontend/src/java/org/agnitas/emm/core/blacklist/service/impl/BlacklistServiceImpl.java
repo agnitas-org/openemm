@@ -25,7 +25,7 @@ import org.agnitas.emm.core.blacklist.service.BlacklistAlreadyExistException;
 import org.agnitas.emm.core.blacklist.service.BlacklistModel;
 import org.agnitas.emm.core.blacklist.service.BlacklistService;
 import org.agnitas.emm.core.blacklist.service.validation.BlacklistModelValidator;
-import org.agnitas.emm.core.velocity.VelocityCheck;
+
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -104,7 +104,7 @@ public class BlacklistServiceImpl implements BlacklistService {
 	}
 
 	@Override
-	public List<String> getEmailList(@VelocityCheck int companyID) throws Exception {
+	public List<String> getEmailList(int companyID) throws Exception {
 		final List<String> result = blacklistDao.getBlacklist(companyID);
 		
 		if(result == null) {
@@ -118,7 +118,7 @@ public class BlacklistServiceImpl implements BlacklistService {
 	}
 
     @Override
-    public List<BlackListEntry> getRecipientList(@VelocityCheck int companyID) throws Exception {
+    public List<BlackListEntry> getRecipientList(int companyID) throws Exception {
         return blacklistDao.getBlacklistedRecipients(companyID);
     }
 
@@ -141,12 +141,12 @@ public class BlacklistServiceImpl implements BlacklistService {
 	}
 
 	@Override
-	public boolean isAlreadyExist(@VelocityCheck int companyId, String email) {
+	public boolean isAlreadyExist(int companyId, String email) {
 		return blacklistDao.exist(companyId, email);
 	}
 
 	@Override
-	public boolean add(@VelocityCheck int companyId, int adminId, String email, String reason) throws Exception {
+	public boolean add(int companyId, int adminId, String email, String reason) throws Exception {
 		boolean isSuccessfullyInserted = blacklistDao.insert(companyId, email, reason);
 		if (isSuccessfullyInserted) {
 			String remark = "Added to blocklist by " + adminId;
@@ -162,12 +162,12 @@ public class BlacklistServiceImpl implements BlacklistService {
 	}
 
 	@Override
-	public boolean update(@VelocityCheck int companyId, String email, String reason) {
+	public boolean update(int companyId, String email, String reason) {
 		return blacklistDao.update(companyId, email, reason);
 	}
 
 	@Override
-	public PaginatedListImpl<BlacklistDto> getAll(@VelocityCheck int companyId, String sort, String direction, int page,
+	public PaginatedListImpl<BlacklistDto> getAll(int companyId, String sort, String direction, int page,
 												  int rowNumber, String likePattern) {
 
 		PaginatedListImpl<BlackListEntry> blacklistedRecipients = blacklistDao.getBlacklistedRecipients(companyId, sort,
@@ -177,13 +177,13 @@ public class BlacklistServiceImpl implements BlacklistService {
 	}
 
 	@Override
-	public List<BlacklistDto> getAll(@VelocityCheck int companyId) throws Exception {
+	public List<BlacklistDto> getAll(int companyId) throws Exception {
 		List<BlackListEntry> recipientList = getRecipientList(companyId);
 		return conversionService.convert(recipientList, BlackListEntry.class, BlacklistDto.class);
 	}
 
 	@Override
-	public List<Mailinglist> getBindedMailingLists(@VelocityCheck int companyId, String email) {
+	public List<Mailinglist> getBindedMailingLists(int companyId, String email) {
 		BlacklistModel blacklistModel = new BlacklistModel();
 		blacklistModel.setCompanyId(companyId);
 		blacklistModel.setEmail(email);
@@ -192,7 +192,7 @@ public class BlacklistServiceImpl implements BlacklistService {
 	}
 
 	@Override
-	public boolean delete(@VelocityCheck int companyId, String email, Set<Integer> mailinglistIds) {
+	public boolean delete(int companyId, String email, Set<Integer> mailinglistIds) {
 		boolean isDeleted = blacklistDao.delete(companyId, email);
 
 		if (isDeleted) {
@@ -217,17 +217,17 @@ public class BlacklistServiceImpl implements BlacklistService {
 	}
 	
 	@Override
-	public boolean blacklistCheck(String email, @VelocityCheck int companyId) {
+	public boolean blacklistCheck(String email, int companyId) {
 		return blacklistDao.blacklistCheck(StringUtils.trimToEmpty(email), companyId);
 	}
 	
 	@Override
-	public boolean blacklistCheckCompanyOnly(String email, @VelocityCheck int companyId) {
+	public boolean blacklistCheckCompanyOnly(String email, int companyId) {
 		return blacklistDao.blacklistCheckCompanyOnly(email, companyId);
 	}
 	
 	@Override
-	public Set<String> loadBlackList(@VelocityCheck int companyId) throws Exception {
+	public Set<String> loadBlackList(int companyId) throws Exception {
 		return blacklistDao.loadBlackList(companyId);
 	}
 	

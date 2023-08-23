@@ -121,6 +121,13 @@ public class SqlPreparedStatementManager {
 		}
 	}
 
+	public void addAndClauseSimple(String whereClause, Object... parameter) {
+		statement.append(whereClause.trim());
+		if (parameter != null) {
+			Collections.addAll(statementParameters, parameter);
+		}
+	}
+
 	public void appendOpeningParenthesis(){
 		if(hasAppendedClauses){
 			statement.append(" ( ");

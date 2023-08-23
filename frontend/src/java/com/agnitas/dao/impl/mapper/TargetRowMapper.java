@@ -30,7 +30,6 @@ public class TargetRowMapper implements RowMapper<ComTarget> {
         this.targetFactory = targetFactory;
     }
 
-
     @Override
     public ComTarget mapRow(final ResultSet resultSet, final int row) throws SQLException {
         try {

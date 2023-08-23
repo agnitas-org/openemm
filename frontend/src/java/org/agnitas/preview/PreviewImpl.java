@@ -404,27 +404,8 @@ public class PreviewImpl implements Preview {
 		return rc;
 	}
 
-	/**
-	 * makePreview
-	 * The main entrance for this class, a preview for all
-	 * parts of the mail is generated into a hashtable for
-	 * the given mailing and customer. If cachable is set
-	 * to true, the result is cached for speed up future
-	 * access.
-	 *
-	 * @param mailingID       the mailing-id to create the preview for
-	 * @param customerID      the customer-id to create the preview for
-	 * @param selector        optional selector for selecting different version of cached page
-	 * @param anon            if we should anonymize the result
-	 * @param convertEntities replace non ascii characters by ther HTML entity representation
-	 * @param ecsUIDs         if set we should use ecs (extended click statistics) style UIDs
-	 * @param createAll       if set create all displayable parts of the mailing
-	 * @param cachable        if the result should be cached
-	 * @param targetIDs            targetID is considered as true during text block creation for previewing
-	 * @return the preview
-	 */
 	@Override
-	public Page makePreview(long mailingID, long customerID, String selector, String text, boolean anon, boolean convertEntities, boolean ecsUIDs, boolean createAll, boolean cachable, long[] targetIDs, boolean isMobile, long sendDate) {
+	public Page makePreview(long mailingID, long customerID, String selector, String text, boolean anon, boolean convertEntities, boolean ecsUIDs, boolean createAll, boolean cachable, long[] targetIDs, boolean isMobile, long sendDate, boolean onAnonPreserveLinks) {
 		long now;
 		String lid;
 		String error;
@@ -439,6 +420,9 @@ public class PreviewImpl implements Preview {
 				(createAll ? "*" : "") +
 				(selector == null ? "" : ":" + selector) +
 				(targetIDs == null || targetIDs.length == 0 ? "" : ">" + targetIDs) +
+				(isMobile ? "." : "") +
+				(sendDate > 0 ? sendDate : "") +
+				(onAnonPreserveLinks ? "$" : "") +
 			  "]" + (text == null ? "" : ", " + makeTextID (text));
 		error = null;
 		pc = anon ? acache : pcache;
@@ -484,7 +468,7 @@ public class PreviewImpl implements Preview {
 						}
 						if (c != null) {
 							try {
-								rc = c.makePreview(customerID, sendDate, selector, anon, convertEntities, ecsUIDs, cachable, targetIDs);
+								rc = c.makePreview(customerID, sendDate, selector, anon, onAnonPreserveLinks, convertEntities, ecsUIDs, cachable, targetIDs);
 								log.out(Log.DEBUG, "create", "Created new page for " + lid);
 							} catch (Exception e) {
 								error = getErrorMessage(e);
@@ -495,7 +479,7 @@ public class PreviewImpl implements Preview {
 						c = null;
 						try {
 							c = new Cache(mailingID, now, text, createAll, cachable, isMobile);
-							rc = c.makePreview(customerID, sendDate, selector, anon, convertEntities, ecsUIDs, cachable, targetIDs);
+							rc = c.makePreview(customerID, sendDate, selector, anon, onAnonPreserveLinks, convertEntities, ecsUIDs, cachable, targetIDs);
 							c.release();
 						} catch (Exception e) {
 							error = getErrorMessage(e);
@@ -513,7 +497,7 @@ public class PreviewImpl implements Preview {
 			rc = null;
 			try {
 				c = new Cache(mailingID, now, text, createAll, cachable, isMobile);
-				rc = c.makePreview(customerID, sendDate, selector, anon, convertEntities, ecsUIDs, cachable, targetIDs);
+				rc = c.makePreview(customerID, sendDate, selector, anon, onAnonPreserveLinks, convertEntities, ecsUIDs, cachable, targetIDs);
 				c.release();
 				log.out(Log.DEBUG, "create", "Created uncached preview for " + lid);
 			} catch (Exception e) {
@@ -537,59 +521,61 @@ public class PreviewImpl implements Preview {
 
 	@Override
 	public Page makePreview(long mailingID, long customerID, String selector, String text, boolean anon, boolean convertEntities, boolean ecsUIDs, boolean createAll, boolean cachable) {
-		return makePreview(mailingID, customerID, selector, text, anon, convertEntities, ecsUIDs, createAll, cachable, null, false, 0L);
+		return makePreview(mailingID, customerID, selector, text, anon, convertEntities, ecsUIDs, createAll, cachable, null, false, 0L, false);
 	}
 
 	@Override
 	public Page makePreview(long mailingID, long customerID, String selector, String text, boolean anon, boolean convertEntities, boolean ecsUIDs, boolean cachable) {
-		return makePreview(mailingID, customerID, selector, text, anon, convertEntities, ecsUIDs, shallCreateAll(), cachable, null, false, 0L);
+		return makePreview(mailingID, customerID, selector, text, anon, convertEntities, ecsUIDs, shallCreateAll(), cachable, null, false, 0L, false);
 	}
 
 	@Override
 	public Page makePreview(long mailingID, long customerID, String selector, String text, boolean anon, boolean cachable) {
-		return makePreview(mailingID, customerID, selector, text, anon, false, false, false, cachable, null, false, 0L);
+		return makePreview(mailingID, customerID, selector, text, anon, false, false, false, cachable, null, false, 0L, false);
 	}
 
 	@Override
 	public Page makePreview(long mailingID, long customerID, String selector, boolean anon, boolean cachable) {
-		return makePreview(mailingID, customerID, selector, null, anon, false, false, false, cachable, null, false, 0L);
+		return makePreview(mailingID, customerID, selector, null, anon, false, false, false, cachable, null, false, 0L, false);
 	}
 	@Override
 	public Page makePreview(long mailingID, long customerID, String selector, boolean anon, boolean cachable, long sendDate) {
-		return makePreview(mailingID, customerID, selector, null, anon, false, false, false, cachable, null, false, sendDate);
+		return makePreview(mailingID, customerID, selector, null, anon, false, false, false, cachable, null, false, sendDate, false);
 	}
 
 	@Override
 	public Page makePreview(long mailingID, long customerID, boolean cachable) {
-		return makePreview(mailingID, customerID, null, null, false, false, false, false, cachable, null, false, 0L);
+		return makePreview(mailingID, customerID, null, null, false, false, false, false, cachable, null, false, 0L, false);
 	}
+
+	@Override
+	public Page makeAnonPreview(long mailingId, boolean mobile) {
+		return makePreview(mailingId, 0, null, null, true, false, false, false, false, null, mobile, 0L, true);
+	}
+
 	@Override
 	public Page makePreview(long mailingID, long customerID, boolean cachable, long sendDate) {
-		return makePreview(mailingID, customerID, null, null, false, false, false, false, cachable, null, false, sendDate);
+		return makePreview(mailingID, customerID, null, null, false, false, false, false, cachable, null, false, sendDate, false);
 	}
 	@Override
 	public Page makePreview(long mailingID, long customerID, boolean cachable, boolean isMobile) {
-		return makePreview(mailingID, customerID, null, null, false, false, false, false, cachable, null, isMobile, 0L);
+		return makePreview(mailingID, customerID, null, null, false, false, false, false, cachable, null, isMobile, 0L, false);
 	}
 
 	@Override
 	public Page makePreview(long mailingID, long customerID, long targetID) {
 		long[] targetIDs = { targetID };
-		return makePreview(mailingID, customerID, null, null, false, false, false, false, false, targetIDs, false, 0L);
+		return makePreview(mailingID, customerID, null, null, false, false, false, false, false, targetIDs, false, 0L, false);
 	}
 
 	@Override
 	public Page makePreview(long mailingID, long customerID, long targetID, boolean isMobile) {
 		long[] targetIDs = { targetID };
-		return makePreview(mailingID, customerID, null, null, false, false, false, false, false, targetIDs, isMobile, 0L);
+		return makePreview(mailingID, customerID, null, null, false, false, false, false, false, targetIDs, isMobile, 0L, false);
 	}
 
 	@Override
 	public String makePreview(long mailingID, long customerID, String text, boolean cachable) {
-		if (text.indexOf("[agn") == -1) {
-			return text;
-		}
-
 		Page temp = makePreview(mailingID, customerID, null, text, false, false, false, false, cachable);
 
 		return temp != null ? temp.getText() : null;
@@ -620,7 +606,7 @@ public class PreviewImpl implements Preview {
 
 	@Override
 	public String makePreviewForHeatmap(long mailingID, long customerID) {
-		Page page = makePreview(mailingID, customerID, null, null, false, false, true, false, false, null, false, 0L);
+		Page page = makePreview(mailingID, customerID, null, null, false, false, true, false, false, null, false, 0L, false);
 
 		return page != null ? page.getHTML() : null;
 	}

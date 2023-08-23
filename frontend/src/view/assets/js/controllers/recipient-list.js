@@ -11,6 +11,10 @@ AGN.Lib.Controller.new('recipient-list', function () {
 
   var initialRules = {};
   var searchFieldsUpdatingRequired = false;
+  var mailinglistId;
+
+  var $basicSearch;
+  var $advancedSearch;
 
   Action.new({'qb:invalidrules': '#targetgroup-querybuilder'}, function() {
       Messages(t('defaults.error'), t('querybuilder.errors.invalid_definition'), 'alert');
@@ -30,29 +34,25 @@ AGN.Lib.Controller.new('recipient-list', function () {
   });
 
   function initializeList(config, isDuplicate) {
-    var $basicSearch = $('#basicSearch');
-    var $advancedSearch = $('#advancedSearch');
+    $basicSearch = $('#basicSearch');
+    $advancedSearch = $('#advancedSearch');
 
     $basicSearch.on('click', function () {
       onBasicSearch();
-      enableIndependentFields(false);
-      disableIndependentFields(false);
     });
 
     $advancedSearch.on('click', function () {
       onAdvancedSearch();
-      enableIndependentFields(true);
-      disableIndependentFields(true);
     });
 
-    if ($basicSearch.hasClass('tab active')) {
+    if (!isAdvancedSearch()) {
+      mailinglistId = $('#tab-basicSearch').find('[data-action="change-mailinglist-id"]').val();
       onBasicSearch();
-      disableIndependentFields(false);
     }
 
-    if ($advancedSearch.hasClass('tab active')) {
+    if (isAdvancedSearch()) {
+      mailinglistId = $('#tab-advancedSearch').find('[data-action="change-mailinglist-id"]').val();
       onAdvancedSearch();
-      disableIndependentFields(true);
     }
 
     if (isDuplicate) {
@@ -61,8 +61,7 @@ AGN.Lib.Controller.new('recipient-list', function () {
       onGeneralList(config);
     }
 
-    const mlId = $('[data-action="change-mailinglist-id"]').val();
-    disabledMlDependentFields(mlId === NO_MAILINGLIST_VALUE);
+    updateMlDependentFieldsStates();
   }
 
   function onDuplicateList() {
@@ -98,10 +97,18 @@ AGN.Lib.Controller.new('recipient-list', function () {
   function onBasicSearch() {
     $('input[name=advancedSearch]').val(false);
     resetNotAppliedRules();
+    disableDuplicatedSearchFields(true, true);
+    disableDuplicatedSearchFields(false, false);
   }
 
   function onAdvancedSearch() {
     $('input[name=advancedSearch]').val(true);
+    disableDuplicatedSearchFields(false, true);
+    disableDuplicatedSearchFields(true, false);
+  }
+
+  function isAdvancedSearch() {
+    return !$basicSearch.hasClass('tab active') && $advancedSearch.hasClass('tab active');
   }
 
   this.addAction({validation: 'search-recipient'}, function() {
@@ -148,12 +155,17 @@ AGN.Lib.Controller.new('recipient-list', function () {
     }
   });
 
-  function disabledMlDependentFields(disabled) {
-    $('#search_recipient_type').prop('disabled', disabled);
-    $('#search_recipient_state').prop('disabled', disabled);
+  function updateMlDependentFieldsStates() {
+    const disable = mailinglistId === NO_MAILINGLIST_VALUE;
+    if (disable || !isAdvancedSearch()) {
+      $('#search_recipient_type').prop('disabled', disable);
+      $('#search_recipient_state').prop('disabled', disable);
+    }
 
-    $('#search_recipient_type_advanced').prop('disabled', disabled);
-    $('#search_recipient_state_advanced').prop('disabled', disabled);
+    if (disable || isAdvancedSearch()) {
+      $('#search_recipient_type_advanced').prop('disabled', disable);
+      $('#search_recipient_state_advanced').prop('disabled', disable);
+    }
   }
 
   this.addAction({change: 'change-target-group'}, function () {
@@ -246,42 +258,31 @@ AGN.Lib.Controller.new('recipient-list', function () {
   });
 
   this.addAction({change: 'change-mailinglist-id'}, function() {
-    const mlId = $(this.el).select2('val');
-    disabledMlDependentFields(mlId === NO_MAILINGLIST_VALUE);
+    mailinglistId = $(this.el).select2('val');
+    updateMlDependentFieldsStates();
   });
 
   this.addAction({click: 'refresh-basic-search'}, function () {
     updateQbRulesBasedOnBasicFields();
-    disableIndependentFields(false);
     submitForm($(this.el), {ignore_qb_validation: false});
   });
 
   this.addAction({click: 'refresh-advanced-search'}, function() {
     updateBasicFieldsBasedOnQbRules();
-    disableIndependentFields(true);
     submitForm($(this.el), {ignore_qb_validation: false});
   });
 
-  function disableIndependentFields(isAdvanced) {
-    const suffix = isAdvanced ? '' : ADVANCED_SUFFIX;
-    const fieldsToDisable = ['#search_mailinglist', '#search_altg', '#search_targetgroup', '#search_recipient_type', '#search_recipient_state'];
-    fieldsToDisable.forEach(function(selector) {
-      $(selector + suffix).prop('disabled', true);
-    })
-  }
+  function disableDuplicatedSearchFields(onAdvancedTab, disable) {
+    const suffix = onAdvancedTab ? ADVANCED_SUFFIX : '';
+    const fieldsSelectors = ['#search_mailinglist', '#search_altg', '#search_targetgroup'];
 
-  function enableIndependentFields(isAdvanced) {
-    const fieldsToEnable = ['#search_mailinglist', '#search_altg', '#search_targetgroup'];
-
-    // if 'no mailinglist' option selected on previous search tab
-    // so dropdowns for type and status should not be enabled
-    if ($('#search_mailinglist' + (isAdvanced ? '' : ADVANCED_SUFFIX)).val() !== NO_MAILINGLIST_VALUE) {
-      fieldsToEnable.push('#search_recipient_type', '#search_recipient_state');
+    // we should prevent this fields enable when 'No mailinglist' options selected
+    if (mailinglistId !== NO_MAILINGLIST_VALUE || disable) {
+      fieldsSelectors.push('#search_recipient_type', '#search_recipient_state');
     }
 
-    const suffix = isAdvanced ? ADVANCED_SUFFIX : '';
-    fieldsToEnable.forEach(function(selector) {
-      $(selector + suffix).prop('disabled', false);
+    fieldsSelectors.forEach(function(selector) {
+      $(selector + suffix).prop('disabled', disable);
     })
   }
 

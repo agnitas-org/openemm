@@ -10,47 +10,24 @@
 
 package com.agnitas.emm.core.components.web;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.beans.MaildropEntry;
-import com.agnitas.beans.Mailing;
-import com.agnitas.beans.Mediatype;
-import com.agnitas.beans.MediatypeEmail;
-import com.agnitas.beans.PollingUid;
-import com.agnitas.dao.ComDkimDao;
-import com.agnitas.dao.ComMailingDao;
-import com.agnitas.dao.ComTargetDao;
-import com.agnitas.dao.MailingStatisticsDao;
-import com.agnitas.emm.common.MailingType;
-import com.agnitas.emm.core.Permission;
-import com.agnitas.emm.core.bounce.dto.BounceFilterDto;
-import com.agnitas.emm.core.bounce.service.BounceFilterService;
-import com.agnitas.emm.core.components.entity.RecipientEmailStatus;
-import com.agnitas.emm.core.components.form.MailingSendForm;
-import com.agnitas.emm.core.components.form.MailingTestSendForm;
-import com.agnitas.emm.core.components.service.MailingBlockSizeService;
-import com.agnitas.emm.core.components.service.MailingDependencyService;
-import com.agnitas.emm.core.components.service.MailingRecipientsService;
-import com.agnitas.emm.core.components.service.MailingSendService;
-import com.agnitas.emm.core.maildrop.MaildropStatus;
-import com.agnitas.emm.core.maildrop.service.MaildropService;
-import com.agnitas.emm.core.mailing.bean.MailingDependentType;
-import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
-import com.agnitas.emm.core.mailing.service.ComMailingDeliveryStatService;
-import com.agnitas.emm.core.mailing.service.MailingDeliveryBlockingService;
-import com.agnitas.emm.core.mailing.service.MailingService;
-import com.agnitas.emm.core.mailing.service.MailingSizeCalculationService;
-import com.agnitas.emm.core.mailing.service.MailingStopService;
-import com.agnitas.emm.core.mailing.service.MailingStopServiceException;
-import com.agnitas.emm.core.target.service.ComTargetService;
-import com.agnitas.service.ComMailingLightService;
-import com.agnitas.service.GridServiceWrapper;
-import com.agnitas.service.SimpleServiceResult;
-import com.agnitas.util.NumericUtil;
-import com.agnitas.web.mvc.Pollable;
-import com.agnitas.web.mvc.Popups;
-import com.agnitas.web.mvc.XssCheckAware;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
+import java.text.DateFormat;
+import java.text.NumberFormat;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
+
 import org.agnitas.dao.MailingStatus;
 import org.agnitas.dao.MailinglistDao;
 import org.agnitas.emm.core.autoimport.service.AutoImportService;
@@ -63,33 +40,80 @@ import org.agnitas.service.WebStorage;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.Tuple;
-import org.agnitas.web.StrutsActionBase;
 import org.agnitas.web.forms.WorkflowParametersHelper;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.convert.ConversionService;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.text.DateFormat;
-import java.text.NumberFormat;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.Callable;
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.ComTarget;
+import com.agnitas.beans.MaildropEntry;
+import com.agnitas.beans.Mailing;
+import com.agnitas.beans.MailingSendOptions;
+import com.agnitas.beans.Mediatype;
+import com.agnitas.beans.MediatypeEmail;
+import com.agnitas.beans.PollingUid;
+import com.agnitas.beans.impl.ComTargetImpl;
+import com.agnitas.dao.ComDkimDao;
+import com.agnitas.dao.ComMailingDao;
+import com.agnitas.dao.ComTargetDao;
+import com.agnitas.dao.MailingStatisticsDao;
+import com.agnitas.emm.common.MailingType;
+import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.bounce.dto.BounceFilterDto;
+import com.agnitas.emm.core.bounce.service.BounceFilterService;
+import com.agnitas.emm.core.components.entity.RecipientEmailStatus;
+import com.agnitas.emm.core.components.entity.TestRunOption;
+import com.agnitas.emm.core.components.form.MailingSendForm;
+import com.agnitas.emm.core.components.form.MailingTestSendForm;
+import com.agnitas.emm.core.components.service.MailingBlockSizeService;
+import com.agnitas.emm.core.components.service.MailingDependencyService;
+import com.agnitas.emm.core.components.service.MailingRecipientsService;
+import com.agnitas.emm.core.components.service.MailingSendService;
+import com.agnitas.emm.core.maildrop.MaildropGenerationStatus;
+import com.agnitas.emm.core.maildrop.MaildropStatus;
+import com.agnitas.emm.core.maildrop.service.MaildropService;
+import com.agnitas.emm.core.mailing.bean.MailingDependentType;
+import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
+import com.agnitas.emm.core.mailing.service.ComMailingDeliveryStatService;
+import com.agnitas.emm.core.mailing.service.MailingDeliveryBlockingService;
+import com.agnitas.emm.core.mailing.service.MailingService;
+import com.agnitas.emm.core.mailing.service.MailingSizeCalculationService;
+import com.agnitas.emm.core.mailing.service.MailingStopService;
+import com.agnitas.emm.core.mailing.service.MailingStopServiceException;
+import com.agnitas.emm.core.serverprio.server.ServerPrioService;
+import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderToEqlConversionException;
+import com.agnitas.emm.core.target.service.ComTargetService;
+import com.agnitas.emm.core.target.service.TargetCopyService;
+import com.agnitas.emm.premium.service.PremiumFeaturesService;
+import com.agnitas.emm.premium.web.SpecialPremiumFeature;
+import com.agnitas.messages.I18nString;
+import com.agnitas.messages.Message;
+import com.agnitas.service.ComMailingLightService;
+import com.agnitas.service.GridServiceWrapper;
+import com.agnitas.service.ServiceResult;
+import com.agnitas.service.SimpleServiceResult;
+import com.agnitas.util.NumericUtil;
+import com.agnitas.web.dto.BooleanResponseDto;
+import com.agnitas.web.mvc.Pollable;
+import com.agnitas.web.mvc.Popups;
+import com.agnitas.web.mvc.XssCheckAware;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 
 public class MailingSendController implements XssCheckAware {
 
@@ -98,9 +122,9 @@ public class MailingSendController implements XssCheckAware {
     private static final String MESSAGES_VIEW = "messages";
     private static final String MAILING_SUBJECT_ATTR = "mailingSubject";
 
-    protected final MailingSendService mailingSendService;
     protected final ConfigService configService;
     protected final MailingService mailingService;
+    protected final MailingSendService mailingSendService;
     private final MailingDeliveryBlockingService mailingDeliveryBlockingService;
     private final MailingSizeCalculationService mailingSizeCalculationService;
     private final MailingRecipientsService mailingRecipientsService;
@@ -113,6 +137,8 @@ public class MailingSendController implements XssCheckAware {
     private final BounceFilterService bounceFilterService;
     private final MailingStopService mailingStopService;
     private final AutoImportService autoImportService;
+    private final ConversionService conversionService;
+    private final TargetCopyService targetCopyService;
     private final MaildropService maildropService;
     private final ComTargetService targetService;
     private final GridServiceWrapper gridService;
@@ -121,15 +147,19 @@ public class MailingSendController implements XssCheckAware {
     private final ComTargetDao targetDao;
     private final WebStorage webStorage;
     private final ComDkimDao dkimDao;
+    private final PremiumFeaturesService premiumFeatureService;
+    private final ServerPrioService serverPrioService;
 
     public MailingSendController(MailingRecipientsService mailingRecipientsService, ComMailingDao mailingDao, ComMailingBaseService mailingBaseService, GridServiceWrapper gridService,
                                  ComTargetService targetService, ConfigService configService, MaildropService maildropService, ComMailingDeliveryStatService deliveryStatService,
-                                 ComTargetDao targetDao, MailingService mailingService, MailingSendService mailingSendService, MailingSizeCalculationService mailingSizeCalculationService,
+                                 ComTargetDao targetDao, MailingService mailingService, MailingSizeCalculationService mailingSizeCalculationService,
                                  MailingDependencyService mailingDependencyService, WebStorage webStorage, UserActivityLogService userActivityLogService, MailingBlockSizeService blockSizeService,
-                                 MailingStopService mailingStopService, MailinglistDao mailinglistDao, AutoImportService autoImportService, ComDkimDao dkimDao,
-                                 MailingDeliveryBlockingService mailingDeliveryBlockingService, MailingStatisticsDao mailingStatisticsDao, BounceFilterService bounceFilterService) {
-        this.mailingRecipientsService = mailingRecipientsService;
+                                 MailingStopService mailingStopService, MailinglistDao mailinglistDao, @Autowired(required = false) AutoImportService autoImportService, ComDkimDao dkimDao,
+                                 MailingDeliveryBlockingService mailingDeliveryBlockingService, MailingStatisticsDao mailingStatisticsDao, BounceFilterService bounceFilterService,
+                                 MailingSendService mailingSendService, ConversionService conversionService, TargetCopyService targetCopyService,
+                                 final PremiumFeaturesService premiumFeaturesService, final ServerPrioService serverPrioService) {
 
+        this.mailingRecipientsService = mailingRecipientsService;
         this.mailingDao = mailingDao;
         this.mailingBaseService = mailingBaseService;
         this.gridService = gridService;
@@ -139,7 +169,6 @@ public class MailingSendController implements XssCheckAware {
         this.deliveryStatService = deliveryStatService;
         this.targetDao = targetDao;
         this.mailingService = mailingService;
-        this.mailingSendService = mailingSendService;
         this.mailingSizeCalculationService = mailingSizeCalculationService;
         this.mailingDependencyService = mailingDependencyService;
         this.webStorage = webStorage;
@@ -152,6 +181,11 @@ public class MailingSendController implements XssCheckAware {
         this.dkimDao = dkimDao;
         this.mailingStatisticsDao = mailingStatisticsDao;
         this.bounceFilterService = bounceFilterService;
+        this.mailingSendService = mailingSendService;
+        this.conversionService = conversionService;
+        this.targetCopyService = targetCopyService;
+        this.premiumFeatureService = Objects.requireNonNull(premiumFeaturesService, "premium feature service");
+        this.serverPrioService = Objects.requireNonNull(serverPrioService, "server prio service");
     }
 
     @RequestMapping("/{mailingId:\\d+}/view.action")
@@ -173,25 +207,25 @@ public class MailingSendController implements XssCheckAware {
         form.setSendMinute(currentDate.get(Calendar.MINUTE));
 
         AgnUtils.setAdminDateTimeFormatPatterns(admin, model);
-        model.addAttribute("adminTargetGroupList", targetDao.getTestAndAdminTargetLights(companyID));
+        model.addAttribute("adminTargetGroupList", targetDao.getTestAndAdminTargetLights(admin.getAdminID(), companyID));
 
         if (mailing.getMailingType() == MailingType.INTERVAL) {
             addIntervalSettingsToForm(form, companyID);
         }
 
-        return "mailing_send_new";
+        testForm.setTestRunOption(TestRunOption.fromId(configService.getIntegerValue(ConfigValue.DefaultTestRunOption, companyID)));
+
+        return "mailing_send";
     }
 
     private void setSendButtonsControlAttributes(Admin admin, Mailing mailing, Model model) throws Exception {
-        boolean canEnableSendWorldMailing = admin.permissionAllowed(Permission.MAILING_CAN_ALLOW) && mailingService.isMailingLocked(mailing);
+        boolean isApprovePossible = admin.permissionAllowed(Permission.MAILING_CAN_ALLOW) && mailingService.isMailingLocked(mailing)
+                && !mailingSendService.isMailingActiveOrSent(mailing);
         boolean isThresholdClearanceExceeded = mailing.getMailingType() == MailingType.DATE_BASED
                 && mailingService.isThresholdClearanceExceeded(admin.getCompanyID(), mailing.getId());
 
-        
-        model.addAttribute("canSendWorldMailing", mailingSendService.canSendOrActivateMailing(admin, mailing));		// TODO Replace usage of attribute "canSendWorldMailing" by "canSendOrActivateMailing" in JSPs
-        
         model.addAttribute("canSendOrActivateMailing", mailingSendService.canSendOrActivateMailing(admin, mailing));
-        model.addAttribute("canEnableSendWorldMailing", canEnableSendWorldMailing);
+        model.addAttribute("approvePossible", isApprovePossible);
         model.addAttribute("isThresholdClearanceExceeded", isThresholdClearanceExceeded);
     }
 
@@ -203,12 +237,13 @@ public class MailingSendController implements XssCheckAware {
         if (!validateNeedTarget(mailing, popups)) {
             return MESSAGES_VIEW;
         }
-        initFormValuesBeforeConfirmActivation(mailing, admin, form);
+        form.setShortname(mailing.getShortname());
         String targetGroupsAsString = String.join(", ",
                 targetService.getTargetNamesByIds(companyID, new HashSet<>(mailing.getTargetGroups())));
 
         model.addAttribute(MAILING_SUBJECT_ATTR, getMailingSubject(mailing));
         model.addAttribute("targetGroups", targetGroupsAsString);
+        addMailingSizeAttributes(mailing, admin, model);
 
         return "date_based_activation_confirm";
     }
@@ -220,13 +255,113 @@ public class MailingSendController implements XssCheckAware {
 
         Mailing mailing = mailingDao.getMailing(mailingId, companyID);
         Runnable activationCallback = () -> {
-            Date sendDate = parseFormSendDate(admin, form);
-            mailingSendService.activateDateBasedMailing(admin, mailing, popups, sendDate, form.getAutoImportId());
+            form.setDate(parseFormSendDate(admin, form));
+            MailingSendOptions options = conversionService.convert(form, MailingSendOptions.class);
+            ServiceResult<UserAction> result = mailingSendService.activateDateBasedMailing(mailing, options);
+            popups.addPopups(result);
+
+            if (result.isSuccess()) {
+                UserAction userAction = result.getResult();
+                writeUserActivityLog(admin, userAction.getAction(), userAction.getDescription());
+            }
         };
 
         activateMailing(mailing, admin, form, WorkflowParametersHelper.isWorkflowDriven(req), popups, activationCallback);
 
         return redirectToSendView(mailingId);
+    }
+
+    @PostMapping("/test/saveTarget.action")
+    public @ResponseBody BooleanResponseDto saveTestRunTarget(Admin admin, MailingTestSendForm form, Popups popups) {
+        return new BooleanResponseDto(popups, saveTestRunTarget(form, admin, popups));
+    }
+
+    private boolean saveTestRunTarget(MailingTestSendForm form, Admin admin, Popups popups) {
+        if (isInvalidTestSendTargetValues(form, admin, popups)) {
+            return false;
+        }
+        List<Message> errors = new ArrayList<>();
+        List<UserAction> userActions = new ArrayList<>();
+
+        int id = saveTestRunTarget(form, admin, errors, userActions);
+
+        userActions.forEach(ua -> writeUserActivityLog(admin, ua));
+        errors.forEach(popups::alert);
+        return id > 0;
+    }
+
+    private int saveTestRunTarget(MailingTestSendForm form, Admin admin, List<Message> errors, List<UserAction> userActions) {
+        ComTarget oldTarget = targetDao.getTargetByName(form.getTargetName(), admin.getCompanyID());
+        if (oldTarget != null && !oldTarget.isAdminTestDelivery()) {
+            errors.add(Message.of("error.target.namealreadyexists"));
+            return 0;
+        }
+        return trySaveTestRunTarget(form, admin, errors, userActions, oldTarget);
+    }
+
+    private int trySaveTestRunTarget(MailingTestSendForm form, Admin admin, List<Message> errors, List<UserAction> userActions, ComTarget oldTarget) {
+        try {
+            ComTarget newTarget = getTestRunTargetToSave(oldTarget, form, admin);
+            return targetService.saveTarget(admin, newTarget, oldTarget, errors, userActions);
+        } catch (QueryBuilderToEqlConversionException e) {
+            LOGGER.error("Could not convert query builder rule.", e);
+        } catch (Exception e) {
+            LOGGER.error("Could not save target group.");
+        }
+        return 0;
+    }
+
+    private ComTarget getTestRunTargetToSave(ComTarget oldTarget, MailingTestSendForm form, Admin admin) {
+        ComTarget newTarget;
+        if (oldTarget == null) {
+            newTarget = new ComTargetImpl();
+            newTarget.setCompanyID(admin.getCompanyID());
+            newTarget.setAdminTestDelivery(true);
+            newTarget.setTargetName(form.getTargetName());
+        } else {
+            newTarget = targetCopyService.copyTargetGroup(oldTarget, new ComTargetImpl());
+        }
+        newTarget.setEQL(generateTargetEqlFromRecipientEmails(form.getMailingTestRecipients()));
+        return newTarget;
+    }
+
+    private String generateTargetEqlFromRecipientEmails(String[] testRecipients) {
+        return Arrays.stream(testRecipients)
+                .map(email -> "`email` = '" + email + "'")
+                .collect(Collectors.joining(" OR "));
+    }
+
+    private boolean isInvalidTestSendTargetValues(MailingTestSendForm form, Admin admin, Popups popups) {
+        validateTestSendTargetName(form, popups);
+        validateTestSendTargetEmails(form, admin, popups);
+        return popups.hasAlertPopups();
+    }
+
+    private void validateTestSendTargetEmails(MailingTestSendForm form, Admin admin, Popups popups) {
+        if (ArrayUtils.isEmpty(form.getMailingTestRecipients())) {
+            popups.alert("error.email.empty");
+            return;
+        }
+        getInvalidTestRunEmails(form.getMailingTestRecipients())
+                .forEach(email -> popups.exactAlert(getInvalidEmailExactMsg(admin, email)));
+    }
+
+    private void validateTestSendTargetName(MailingTestSendForm form, Popups popups) {
+        if (StringUtils.length(form.getTargetName()) < 3) {
+            popups.alert("error.name.too.short");
+        } else if (!targetService.checkIfTargetNameIsValid(form.getTargetName())) {
+            popups.alert("error.target.namenotallowed");
+        }
+    }
+
+    private String getInvalidEmailExactMsg(Admin admin, String email) {
+        return I18nString.getLocaleString("error.email.invalid", admin.getLocale()) + ": " + email;
+    }
+
+    private List<String> getInvalidTestRunEmails(String[] mailingTestRecipients) {
+        return Arrays.stream(mailingTestRecipients)
+                .filter(email -> !AgnUtils.isEmailValid(email))
+                .collect(Collectors.toList());
     }
 
     private String redirectToSendView(int mailingId) {
@@ -238,7 +373,19 @@ public class MailingSendController implements XssCheckAware {
         int companyID = admin.getCompanyID();
         Mailing mailing = mailingDao.getMailing(mailingId, companyID);
 
-        mailingSendService.sendAdminMailing(mailing, admin, form, popups);
+        MailingSendOptions sendOptions = MailingSendOptions.builder()
+                .setAdminTargetGroupId(form.getAdminTargetGroupID())
+                .build();
+
+        ServiceResult<UserAction> result = mailingSendService.sendAdminMailing(mailing, sendOptions);
+        popups.addPopups(result);
+
+        if (!result.isSuccess()) {
+            return MESSAGES_VIEW;
+        }
+
+        UserAction userAction = result.getResult();
+        writeUserActivityLog(admin, userAction.getAction(), userAction.getDescription());
         checkLimitationForSend(companyID, popups);
 
         return redirectToSendView(mailingId);
@@ -249,7 +396,15 @@ public class MailingSendController implements XssCheckAware {
         int companyID = admin.getCompanyID();
         Mailing mailing = mailingDao.getMailing(mailingId, companyID);
 
-        mailingSendService.sendTestMailing(mailing, form, admin, popups);
+        ServiceResult<UserAction> result = mailingSendService.sendTestMailing(mailing, form, admin);
+        popups.addPopups(result);
+
+        if (!result.isSuccess()) {
+            return MESSAGES_VIEW;
+        }
+
+        UserAction userAction = result.getResult();
+        writeUserActivityLog(admin, userAction.getAction(), userAction.getDescription());
         checkLimitationForSend(companyID, popups);
 
         ra.addFlashAttribute("testForm", form);
@@ -296,10 +451,18 @@ public class MailingSendController implements XssCheckAware {
                 targetGroups = new HashSet<>();
             }
 
-            model.addAttribute("autoImports", autoImportService.listAutoImports(companyID));
+            if (autoImportService != null) {
+                model.addAttribute("autoImports", autoImportService.listAutoImports(companyID));
+            }
 
             model.addAttribute("targetGroupNames", targetDao.getTargetNamesByIds(companyID, targetGroups));
             model.addAttribute("isMailtrackExtended", configService.getBooleanValue(ConfigValue.MailtrackExtended, companyID));
+
+            boolean isForceSteppingBlocksizeEnabled = configService.getBooleanValue(ConfigValue.ForceSteppingBlocksize, companyID);
+            if (isForceSteppingBlocksizeEnabled) {
+                form.setBlocksize(configService.getIntegerValue(ConfigValue.DefaultBlocksizeValue, companyID));
+                model.addAttribute("isForceSteppingBlocksizeEnabled", true);
+            }
 
             return new ModelAndView("mailing_delivery_settings", model.asMap());
         };
@@ -362,7 +525,6 @@ public class MailingSendController implements XssCheckAware {
         }
 
         int companyID = admin.getCompanyID();
-
         if (!checkLimitationForSend(companyID, popups)) {
             return redirectToSendView(mailingId);
         }
@@ -371,35 +533,42 @@ public class MailingSendController implements XssCheckAware {
         Mailing mailing = mailingDao.getMailing(mailingId, companyID);
 
         mailingSendService.checkIfMailingCanBeSend(mailing, sendDate, AgnUtils.getTimeZone(admin));
-
         fillFormWithMailingData(admin, mailing, form);
 
+        int recipientsCount = calculateRecipientsCount(form, mailing, companyID);
+        addModelAttributesForConfirmSending(mailing, admin, recipientsCount, sendDate, model);
+
+        loadSteppingBlocksize(form, mailing.getMaildropStatus());
+
+        return "mailing_send_confirm_ajax";
+    }
+
+    private void addModelAttributesForConfirmSending(Mailing mailing, Admin admin, int recipientsCount, Date sendDate, Model model) {
         model.addAttribute("potentialSendDate", admin.getDateFormat().format(sendDate));
         model.addAttribute("potentialSendTime", admin.getTimeFormat().format(sendDate));
         model.addAttribute("adminDateFormat", admin.getDateFormat().toPattern());
         model.addAttribute(MAILING_SUBJECT_ATTR, getMailingSubject(mailing));
-
-        int recipientsCount = calculateRecipientsCount(form, mailing, companyID);
+        addMailingSizeAttributes(mailing, admin, model);
 
         NumberFormat formatter = NumberFormat.getNumberInstance(admin.getLocale());
         model.addAttribute("recipientsCount", formatter.format(recipientsCount));
 
-        model.addAttribute("mailinglistShortname", mailinglistDao.getMailinglistName(mailing.getMailinglistID(), companyID));
-        loadSteppingBlocksize(form, mailing.getMaildropStatus());
-
-        return "mailing_send_confirm_ajax_new";
+        model.addAttribute("mailinglistShortname", mailinglistDao.getMailinglistName(mailing.getMailinglistID(), admin.getCompanyID()));
     }
 
     private Date parseFormSendDate(Admin admin, MailingSendForm form) {
-        GregorianCalendar sendDate = new GregorianCalendar(AgnUtils.getTimeZone(admin));
+        GregorianCalendar calendar = new GregorianCalendar(AgnUtils.getTimeZone(admin));
 
         int year = Integer.parseInt(form.getSendDate().substring(0, 4));
         int month = Integer.parseInt(form.getSendDate().substring(4, 6)) - 1;
         int day = Integer.parseInt(form.getSendDate().substring(6, 8));
 
-        sendDate.set(year, month, day, form.getSendHour(), form.getSendMinute());
+        calendar.set(year, month, day, form.getSendHour(), form.getSendMinute());
 
-        return sendDate.getTime();
+        Date sendDate = calendar.getTime();
+        form.setDate(sendDate);
+
+        return sendDate;
     }
 
     private void loadSteppingBlocksize(MailingSendForm form, Set<MaildropEntry> maildrops) {
@@ -447,7 +616,16 @@ public class MailingSendController implements XssCheckAware {
             if (isPostMailing(mailingToSend)) {
                 createPostTrigger(mailingToSend, sendDate);
             } else {
-                mailingSendService.sendWorldMailing(admin, form, popups, mailingToSend, sendDate);
+                MailingSendOptions sendOptions = conversionService.convert(form, MailingSendOptions.class);
+                ServiceResult<UserAction> result = mailingSendService.sendWorldMailing(mailingToSend, sendOptions, admin);
+                popups.addPopups(result);
+
+                if (!result.isSuccess()) {
+                    return MESSAGES_VIEW;
+                }
+
+                UserAction userAction = result.getResult();
+                writeUserActivityLog(admin, userAction.getAction(), userAction.getDescription());
             }
         }
 
@@ -482,7 +660,9 @@ public class MailingSendController implements XssCheckAware {
         int mailingId = form.getMailingID();
         Mailing mailing = mailingDao.getMailing(mailingId, admin.getCompanyID());
 
-        if (mailingSendService.deactivateMailing(mailing, admin.getCompanyID(), WorkflowParametersHelper.isWorkflowDriven(req))) {
+        boolean deactivated = mailingSendService.deactivateMailing(mailing, admin.getCompanyID(), WorkflowParametersHelper.isWorkflowDriven(req));
+
+        if (deactivated) {
             mailingDeliveryBlockingService.unblock(mailingId);
             writeUserActivityLog(admin, "do cancel mailing",
                     String.format("Mailing type: %s. %s", mailing.getMailingType().name(), getTriggerMailingDescription(mailing)));
@@ -492,7 +672,7 @@ public class MailingSendController implements XssCheckAware {
     }
 
     @GetMapping("/{mailingId:\\d+}/delivery-status-box/load.action")
-    public String loadDeliveryStatusBox(@PathVariable("mailingId") int mailingId, Admin admin, @ModelAttribute("form") MailingSendForm form, Model model) throws Exception {
+    public String loadDeliveryStatusBox(@PathVariable("mailingId") int mailingId, Admin admin, @ModelAttribute("form") MailingSendForm form, Model model) {
         int companyID = admin.getCompanyID();
         Mailing mailing = mailingDao.getMailing(mailingId, companyID);
 
@@ -501,12 +681,44 @@ public class MailingSendController implements XssCheckAware {
         loadDeliveryStatistics(admin, mailing, form, model);
 
         model.addAttribute("isPostMailing", isPostMailing(mailing));
-        model.addAttribute("mailtrackingEnabled", admin.getCompany().getMailtracking() != 0);
+        model.addAttribute("copyCancelledMailingEnabled", isCopyCancelledMailingEnabled(admin, mailing));
         model.addAttribute("isTransmissionRunning", mailingDao.isTransmissionRunning(mailingId));
 
         AgnUtils.setAdminDateTimeFormatPatterns(admin, model);
 
         return "mailing_delivery_status_box";
+    }
+    final boolean isCopyCancelledMailingEnabled(final Admin admin, final int mailingId) {
+    	final Mailing mailing = this.mailingService.getMailing(admin.getCompanyID(), mailingId);
+    	
+    	return isCopyCancelledMailingEnabled(admin, mailing);
+    }
+
+    final boolean isCopyCancelledMailingEnabled(final Admin admin, final Mailing mailing) {
+    	if(this.premiumFeatureService.isFeatureRightsAvailable(SpecialPremiumFeature.AUTOMATION, admin.getCompanyID())) {
+    		return admin.getCompany().getMailtracking() != 0;
+    	} else {
+    		final List<MaildropEntry> worldEntries = mailing.getMaildropStatus().stream()
+    				.filter(entry -> entry.getStatus() == 'W')
+    				.collect(Collectors.toList());	
+
+    		final Date pauseDate = this.serverPrioService.getDeliveryPauseDate(0, mailing.getId()); 
+
+    		if(pauseDate != null) {
+	    		final ZonedDateTime pauseDateTime = ZonedDateTime.ofInstant(pauseDate.toInstant(), ZoneId.systemDefault());
+	    		
+	    		for(final MaildropEntry entry : worldEntries) {
+	    			if(entry.getGenStatus() == MaildropGenerationStatus.FINISHED.getCode() || entry.getGenStatus() == MaildropGenerationStatus.WORKING.getCode()) {
+	    				final ZonedDateTime sendDateLimit = ZonedDateTime.ofInstant(entry.getSendDate().toInstant(), ZoneId.systemDefault()).minusMinutes(5);    				
+	    				
+	    				return pauseDateTime.isBefore(sendDateLimit);
+	    			}
+	    		}
+    		}
+
+    		
+    		return true;
+    	}
     }
 
     @GetMapping("/{mailingId:\\d+}/unlock.action")
@@ -594,18 +806,11 @@ public class MailingSendController implements XssCheckAware {
         int companyID = admin.getCompanyID();
         Mailing mailing = mailingDao.getMailing(form.getMailingID(), companyID);
 
-        initFormValuesBeforeConfirmActivation(mailing, admin, form);
+        form.setShortname(mailing.getShortname());
         model.addAttribute(MAILING_SUBJECT_ATTR, getMailingSubject(mailing));
+        addMailingSizeAttributes(mailing, admin, model);
 
         return "action_based_activation_confirm";
-    }
-
-    private void initFormValuesBeforeConfirmActivation(Mailing mailing, Admin admin, MailingSendForm form) {
-        Tuple<Long, Long> mailingSizes = mailingSizeCalculationService.calculateSize(mailing, admin);
-
-        form.setShortname(mailing.getShortname());
-        form.setApproximateMaxSizeWithoutExternalImages(mailingSizes.getFirst());
-        form.setApproximateMaxSize(mailingSizes.getSecond());
     }
 
     @PostMapping("/activate-action-based.action")
@@ -616,7 +821,14 @@ public class MailingSendController implements XssCheckAware {
         Mailing mailing = mailingDao.getMailing(mailingId, companyID);
 
         Runnable activationCallback = () -> {
-            mailingSendService.activateActionBasedMailing(admin, mailing, popups);
+            MailingSendOptions sendOptions = MailingSendOptions.builder().build();
+            ServiceResult<UserAction> result = mailingSendService.activateActionBasedMailing(mailing, sendOptions);
+            popups.addPopups(result);
+
+            if (result.isSuccess()) {
+                UserAction userAction = result.getResult();
+                writeUserActivityLog(admin, userAction.getAction(), userAction.getDescription());
+            }
         };
 
         activateMailing(mailing, admin, form, WorkflowParametersHelper.isWorkflowDriven(req), popups, activationCallback);
@@ -674,7 +886,7 @@ public class MailingSendController implements XssCheckAware {
         model.addAttribute("mailingId", mailingId);
         model.addAttribute("mailingShortname", mailingDao.getMailingName(mailingId, admin.getCompanyID()));
 
-        return "mailing_cancel_generation_question_ajax_new";
+        return "mailing_cancel_generation_question_ajax";
     }
 
     @PostMapping("/{mailingId:\\d+}/cancel.action")
@@ -703,7 +915,7 @@ public class MailingSendController implements XssCheckAware {
         model.addAttribute("mailingId", mailingId);
         model.addAttribute("mailingShortname", mailingDao.getMailingName(mailingId, admin.getCompanyID()));
 
-        return "mailing_resume_generation_question_ajax_new";
+        return "mailing_resume_generation_question_ajax";
     }
 
     @PostMapping("/{mailingId:\\d+}/resume.action")
@@ -725,25 +937,34 @@ public class MailingSendController implements XssCheckAware {
     }
 
     @RequestMapping("/{mailingId:\\d+}/confirm-resume-by-copy.action")
-    public String confirmResumeByCopy(@PathVariable("mailingId") int mailingId, Admin admin, Model model) {
-        model.addAttribute("mailingId", mailingId);
-        model.addAttribute("mailingShortname", mailingDao.getMailingName(mailingId, admin.getCompanyID()));
-
-        return "mailing_resume_generation_by_copy_question_ajax_new";
+    public String confirmResumeByCopy(@PathVariable("mailingId") int mailingId, Admin admin, Model model, Popups popups) {
+    	if(isCopyCancelledMailingEnabled(admin, mailingId)) {
+	        model.addAttribute("mailingId", mailingId);
+	        model.addAttribute("mailingShortname", mailingDao.getMailingName(mailingId, admin.getCompanyID()));
+	
+	        return "mailing_resume_generation_by_copy_question_ajax";
+    	} else {
+    		popups.alert("error.mailgeneration.resumeByCopy.generic");
+    		
+    		return String.format("forward:/mailing/send/%d/view.action", mailingId);
+    	}
     }
 
     @PostMapping("/{mailingId:\\d+}/resume-by-copy.action")
-    public String resumeByCopy(@PathVariable("mailingId") int mailingId, Admin admin) throws MailingStopServiceException {
-        int newMailingID = mailingStopService.copyMailingForResume(admin, mailingId);
-        return admin.permissionAllowed(Permission.MAILING_SETTINGS_MIGRATION)
-                ? String.format("redirect:/mailing/%d/settings.action?keepForward=true", newMailingID)
-                : String.format("redirect:/mailingbase.do?action=%s&keepForward=true&mailingID=%s", StrutsActionBase.ACTION_VIEW, newMailingID);
+    public String resumeByCopy(@PathVariable("mailingId") int mailingId, Admin admin, Popups popups) throws MailingStopServiceException {
+    	if(isCopyCancelledMailingEnabled(admin, mailingId)) {
+    		int newMailingID = mailingStopService.copyMailingForResume(admin, mailingId);
+    		return String.format("redirect:/mailing/%d/settings.action?keepForward=true", newMailingID);
+    	} else {
+    		popups.alert("error.mailgeneration.resumeByCopy.generic");
+    		
+    		return String.format("forward:/mailing/send/%d/view.action", mailingId);
+    	}
     }
 
     private void fillFormWithMailingData(Admin admin, Mailing mailing, MailingSendForm form) {
         int workflowId = mailingBaseService.getWorkflowId(mailing.getId(), mailing.getCompanyID());
         int gridTemplateId = gridService.getGridTemplateIdByMailingId(mailing.getId());
-        Tuple<Long, Long> mailingSizes = mailingSizeCalculationService.calculateSize(mailing, admin);
 
         form.setShortname(mailing.getShortname());
         form.setWorkflowId(workflowId);
@@ -754,14 +975,10 @@ public class MailingSendController implements XssCheckAware {
         form.setIsMailingUndoAvailable(mailingBaseService.checkUndoAvailable(mailing.getId()));
         form.setMailingtype(mailing.getMailingType().getCode());
         form.setWorldMailingSend(maildropService.isActiveMailing(mailing.getId(), mailing.getCompanyID()));
-        form.setApproximateMaxSizeWithoutExternalImages(mailingSizes.getFirst());
-        form.setApproximateMaxSize(mailingSizes.getSecond());
-        form.setSizeWarningThreshold(configService.getLongValue(ConfigValue.MailingSizeWarningThresholdBytes, admin.getCompanyID()));
         form.setPrioritizationDisallowed(!mailing.isPrioritizationAllowed());
         form.setEncryptedSend(mailing.isEncryptedSend());
         form.setStatusmailOnErrorOnly(mailing.isStatusmailOnErrorOnly());
         form.setStatusmailRecipients(mailing.getStatusmailRecipients());
-        form.setSizeErrorThreshold(configService.getLongValue(ConfigValue.MailingSizeErrorThresholdBytes, admin.getCompanyID()));
         form.setTemplateId(gridTemplateId);
 
         String workStatus = mailingDao.getWorkStatus(admin.getCompanyID(), form.getMailingID());
@@ -790,6 +1007,16 @@ public class MailingSendController implements XssCheckAware {
         model.addAttribute("templateId", gridTemplateId);
         model.addAttribute("limitedRecipientOverview", mailingBaseService.isLimitedRecipientOverview(admin, mailing.getId()));
         model.addAttribute("isMailingGrid", gridTemplateId > 0);
+        addMailingSizeAttributes(mailing, admin, model);
+    }
+
+    private void addMailingSizeAttributes(Mailing mailing, Admin admin, Model model) {
+        Tuple<Long, Long> mailingSize = mailingSizeCalculationService.calculateSize(mailing, admin);
+
+        model.addAttribute("approximateMaxDeliverySize", mailingSize.getFirst());
+        model.addAttribute("approximateMaxSizeIncludingImages", mailingSize.getSecond());
+        model.addAttribute("errorSizeThreshold", configService.getLongValue(ConfigValue.MailingSizeErrorThresholdBytes, admin.getCompanyID()));
+        model.addAttribute("warningSizeThreshold", configService.getLongValue(ConfigValue.MailingSizeWarningThresholdBytes, admin.getCompanyID()));
     }
 
     protected void addIntervalSettingsToForm(MailingSendForm mailingForm, int companyId) {
@@ -838,20 +1065,17 @@ public class MailingSendController implements XssCheckAware {
     }
 
     private boolean validateMailingSize(Mailing mailing, Popups popups, Admin admin) {
-        Tuple<Long, Long> mailingSizes = mailingSizeCalculationService.calculateSize(mailing, admin);
+        Tuple<Long, Long> mailingSize = mailingSizeCalculationService.calculateSize(mailing, admin);
+        long deliverySize = mailingSize.getFirst();
 
-        Long approximateMaxSizeWithoutImages = mailingSizes.getFirst();
         long maximumMailingSizeAllowed = configService.getLongValue(ConfigValue.MailingSizeErrorThresholdBytes, admin.getCompanyID());
-
-        if (approximateMaxSizeWithoutImages > maximumMailingSizeAllowed) {
+        if (deliverySize > maximumMailingSizeAllowed) {
             popups.alert("error.mailing.size.large", maximumMailingSizeAllowed);
             return false;
         }
 
-        long approximateMaxSize = mailingSizes.getSecond();
         long warningMailingSize = configService.getLongValue(ConfigValue.MailingSizeWarningThresholdBytes, admin.getCompanyID());
-
-        if (approximateMaxSize > warningMailingSize) {
+        if (deliverySize > warningMailingSize) {
             popups.warning("warning.mailing.size.large", warningMailingSize);
         }
 
@@ -906,5 +1130,9 @@ public class MailingSendController implements XssCheckAware {
 
     protected void writeUserActivityLog(Admin admin, String action, String description) {
         userActivityLogService.writeUserActivityLog(admin, new UserAction(action, description), LOGGER);
+    }
+
+    protected void writeUserActivityLog(Admin admin, UserAction userAction) {
+        userActivityLogService.writeUserActivityLog(admin, userAction, LOGGER);
     }
 }

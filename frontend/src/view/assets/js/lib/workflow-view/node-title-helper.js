@@ -408,14 +408,6 @@
 
   var TITLE_CONFIG = {
     '*': {
-      statistic: function(node) {
-        var statTitle = '';
-        if (node.isStatisticEnabled()) {
-          statTitle = node.getStatistic().join('\n');
-        }
-
-        return statTitle;
-      },
       overlayImage: {},
       overlayTitle: '',
       title: ''
@@ -443,36 +435,15 @@
       title: '',
       overlayTitle: function(data) {
         return data.value;
-      },
-      statistic: function (node) {
-        if (node.isStatisticEnabled()) {
-          return '' + node.getStatistic()[0];
-        } else {
-          return '';
-        }
       }
     },
     decision: {
       title: getDecisionNodeTitle,
-      statistic: '', //always empty, because statistic is added to connection branches by getDecisionBranchesLabels method
       branches: {
-        title: function (node) {
-          var positiveLabel = t('workflow.defaults.yes');
-          var negativeLabel = t('workflow.defaults.no');
-          if (node.isStatisticEnabled()) {
-            var stat = node.getStatistic();
-            if (stat[0]) {
-              positiveLabel += ': <span class="node-stats">' + stat[0] + '</span>';
-            }
-
-            if (stat[1]) {
-              negativeLabel += ': <span class="node-stats">' + stat[1] + '</span>';
-            }
-          }
-
+        title: function () {
           return {
-            positive: positiveLabel,
-            negative: negativeLabel
+            positive: t('workflow.defaults.yes'),
+            negative: t('workflow.defaults.no')
           };
         }
       }
@@ -527,8 +498,8 @@
     return false;
   }
 
-  NodeTitleHelper.getDecisionBranchesLabels = function(node) {
-    return TITLE_CONFIG.decision.branches.title(node);
+  NodeTitleHelper.getDecisionBranchesLabels = function() {
+    return TITLE_CONFIG.decision.branches.title();
   }
 
   NodeTitleHelper.updateTitle = function(node, isNormalWorkflow, forceUpdate) {
@@ -544,7 +515,7 @@
       return;
     }
 
-    node.setTitle(generateNodeTitle(node, isNormalWorkflow), generateNodeStatisticTitle(node));
+    node.setTitle(generateNodeTitle(node, isNormalWorkflow));
     node.setOverlayImage(generateOverlayImage(node));
     node.setOverlayTitle(generateOverlayTitle(node));
 
@@ -560,10 +531,6 @@
 
   function generateNodeTitle(node, isNormalWorkflow) {
     return getConfiguration(node.getType(), 'title', node.getData(), node, isNormalWorkflow);
-  }
-
-  function generateNodeStatisticTitle(node) {
-    return getConfiguration(node.getType(), 'statistic', node);
   }
 
   function getConfiguration(type, configName) {

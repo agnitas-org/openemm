@@ -22,8 +22,10 @@
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
 <%--@elvariable id="workflowForm" type="com.agnitas.emm.core.workflow.web.forms.WorkflowForm"--%>
-<%--delete after GWUA-4957 has been successfully tested--%>
+<%--@elvariable id="isMailtrackingActive" type="java.lang.Boolean"--%>
 <%--@elvariable id="accessLimitTargetId" type="java.lang.Integer"--%>
+<%--@elvariable id="statisticUrl" type="java.lang.String"--%>
+<%--@elvariable id="showStatisticsImmediately" type="java.lang.Boolean"--%>
 
 <c:set var="operators" value="<%= WorkflowDecision.DECISION_OPERATORS %>"/>
 <c:set var="operatorsTypeSupportMap" value="<%= WorkflowDecision.OPERATOR_TYPE_SUPPORT_MAP %>"/>
@@ -44,6 +46,10 @@
 
 <c:set var="FORWARD_TARGETGROUP_CREATE" value="<%= WorkflowController.FORWARD_TARGETGROUP_CREATE_QB%>"/>
 <c:set var="FORWARD_TARGETGROUP_EDIT" value="<%= WorkflowController.FORWARD_TARGETGROUP_EDIT_QB%>"/>
+
+<c:set var="isActive" value="${workflowForm.status == STATUS_ACTIVE.name()}"/>
+<c:set var="showStatisticsTile" value="${workflowForm.status != STATUS_OPEN.name()}"/>
+<c:set var="isComplete" value="${workflowForm.status == STATUS_COMPLETE.name()}"/>
 
 <emm:instantiate var="mailingLists" type="java.util.LinkedHashMap">
     <c:forEach var="mailingList" items="${allMailinglists}">
@@ -209,7 +215,8 @@
                 "localeDateTimePattern": "${localeDateTimePattern}",
                 "isAltgExtended" : ${isExtendedAltgEnabled}
 	        },
-            "accessLimitTargetId": ${accessLimitTargetId}
+            "accessLimitTargetId": ${accessLimitTargetId},
+            "statisticUrl": "${statisticUrl}"
         }
     </script>
 
@@ -238,7 +245,6 @@
         <div class="icon-title" style="display: none;">
             <span class="icon-title-span" style="white-space: pre-line;"></span>
             <br>
-            <span class="icon-statistic-span" style="white-space: pre-line;"></span>
         </div>
     </script>
 
@@ -380,11 +386,6 @@
             <jsp:param name="titleKey" value="error.workflow.notAllowedEditing.title"/>
             <jsp:param name="dialogName" value="NotAllowedEditing"/>
         </jsp:include>
-        <jsp:include page="workflow-simple-dialog.jsp">
-            <jsp:param name="messageKey" value="error.workflow.noStatistics.description"/>
-            <jsp:param name="titleKey" value="error.workflow.noStatistics.title"/>
-            <jsp:param name="dialogName" value="NoStatistics"/>
-        </jsp:include>
 
         <c:if test="${workflowToggleTestingButtonEnabled}">
             <jsp:include page="workflow-testing-dialog-new.jsp"/>
@@ -461,7 +462,7 @@
                                     </b>
                                 </label>
                                 <label class="toggle">
-                                    <input id="workflow_active" data-action="workflow-view-change-status" ${workflowForm.status == STATUS_ACTIVE.name() ? 'checked="checked"':''}  type="checkbox"/>
+                                    <input id="workflow_active" data-action="workflow-view-change-status" ${isActive ? 'checked="checked"':''}  type="checkbox"/>
                                     <div class="toggle-control"></div>
                                 </label>
                             </c:if>
@@ -490,9 +491,8 @@
     </div>
     <!-- Tile END -->
 
-
-    <div class="tile">
-        <div class="tile-header">
+    <div class="tile" data-sizing="container">
+        <div class="tile-header" data-sizing="top">
             <h2 class="headline">
                 <bean:message key="workflow.editor"/>
             </h2>
@@ -521,14 +521,13 @@
             </ul>
         </div>
 
-        <div class="tile-content" id="pageCampaignEditorContainer">
+        <div class="tile-content" id="pageCampaignEditorContainer" data-sizing="scroll"
+             <c:if test="${showStatisticsTile}">
+                 data-sizing-offset="50"
+             </c:if>
+        >
             <div class="editor-content-body" id="campaignEditorBody">
                 <div class="editor-content-body-top unselectable" id="toolbarTop">
-                    <div id="toolbarCross">
-                        <div id="toolbarTopName"><bean:message key="workflow.panel.icons"/>:</div>
-                        <div id="toolbarBottomName"><bean:message key="Templates"/>:</div>
-                    </div>
-
                     <div class="iconPanel">
                         <div class="iconPanelTitle">
                             <bean:message key="workflow.process"/>
@@ -571,16 +570,29 @@
 
                         <div class="iconPanelRow">
                             <div class="toolbarButton js-draggable-button" data-type="mailing" title="<bean:message key="workflow.icon.mailing"/>"></div>
-                            <div class="toolbarButton js-draggable-button" data-type="actionbased_mailing" title="<bean:message key="mailing.action.based.mailing"/>"></div>
                             <div class="toolbarButton js-draggable-button" data-type="archive" title="<bean:message key="mailing.archive"/>"></div>
                         </div>
 
                         <div class="iconPanelRow">
-                            <div class="toolbarButton js-draggable-button" data-type="datebased_mailing" title="<bean:message key="mailing.Rulebased_Mailing"/>"></div>
-
                             <%@include file="fragments/workflow-view-followup-button.jspf" %>
                             <%@include file="fragments/workflow-view-sms-mailing-icon.jspf" %>
                             <%@include file="fragments/workflow-view-post-mailing-icon.jspf" %>
+                        </div>
+                    </div>
+
+                    <div class="iconPanel">
+                        <div class="iconPanelTitle">
+                            <bean:message key="Templates"/>
+                        </div>
+                        <div class="iconPanelRow">
+                            <emm:ShowByPermission token="campaign.change" ignoreException="true">
+                                <div class="toolbarButton js-draggable-button" data-type="scABTest" title="<bean:message key='mailing.autooptimization'/>"></div>
+                            </emm:ShowByPermission>
+                            <div class="toolbarButton js-draggable-button" data-type="scDOI" title="<bean:message key='workflow.icon.DOI'/>"></div>
+                            <div class="toolbarButton js-draggable-button" data-type="scBirthday" title="<bean:message key='workflow.icon.birthday'/>"></div>
+                        </div>
+                        <div class="iconPanelRow">
+                            <div class="toolbarButton js-draggable-button" data-type="ownWorkflow" title="<bean:message key='workflow.ownCampaign'/>"></div>
                         </div>
                     </div>
 
@@ -617,6 +629,14 @@
                                 <div id="deleteButton" class="toolbarButton disabled" data-action="delete-selected"></div>
                             </div>
                         </emm:ShowByPermission>
+
+                        <div class="actionPanelTool">
+                            <div class="actionPanelTitle"><mvc:message code="campaign.grid.show"/></div>
+                            <label class="toggle">
+                                <input type="checkbox" data-action="show-grid">
+                                <div class="toggle-control"></div>
+                            </label>
+                        </div>
                     </div>
 
                     <div class="actionPanel actionPanel-sm">
@@ -627,7 +647,7 @@
 
                             <ul class="dropdown-menu">
                                 <li>
-                                    <button type="button" id="autoLayoutItem">
+                                    <button type="button" id="autoLayoutItem" data-action="align-all">
                                         <i class="icon icon-th"></i>
                                         <bean:message key="workflow.autoLayout"/>
                                     </button>
@@ -640,13 +660,13 @@
 
                                 <li>
                                     <p>
-                                        <button type="button" class="btn btn-regular js-zoom-scale-down" id="zoomMinItem">
+                                        <button type="button" class="btn btn-regular js-zoom-scale-down" id="zoomMinItem" data-action="zoom-out">
                                             <i class="icon icon-search-minus"></i>
                                         </button>
-                                        <button type="button" class="btn btn-regular js-zoom-reset-level" id="zoomMiddleItem">
+                                        <button type="button" class="btn btn-regular js-zoom-reset-level" id="zoomMiddleItem" data-action="reset-zoom">
                                             <strong>0</strong>
                                         </button>
-                                        <button type="button" class="btn btn-regular js-zoom-scale-up" id="zoomMaxItem">
+                                        <button type="button" class="btn btn-regular js-zoom-scale-up" id="zoomMaxItem" data-action="zoom-in">
                                             <i class="icon icon-search-plus"></i>
                                         </button>
                                     </p>
@@ -654,7 +674,7 @@
 
                                 <li>
                                     <%-- Disabled by default — initially no change is made --%>
-                                    <button type="button" id="undoItem" disabled="disabled">
+                                    <button type="button" id="undoItem" disabled="disabled" data-action="undo">
                                         <i class="icon icon-reply"></i>
                                         <bean:message key="workflow.panel.undo"/>
                                     </button>
@@ -663,40 +683,29 @@
                                 <emm:ShowByPermission token="workflow.change">
                                     <li>
                                         <%-- Disabled by default — initially no icon is selected --%>
-                                        <button type="button" id="deleteItem" disabled="disabled">
+                                        <button type="button" id="deleteItem" disabled="disabled" data-action="delete-selected">
                                             <i class="icon icon-trash-o"></i>
                                             <bean:message key="button.Delete"/>
                                         </button>
                                     </li>
                                 </emm:ShowByPermission>
+
+                                <li>
+                                    <label for="show-grid" style="padding-left: 7px">
+                                        <mvc:message code="campaign.grid.show"/>
+                                    </label>
+                                    <label class="toggle" style="padding-left: 5px">
+                                        <input type="checkbox" data-action="show-grid" id="show-grid">
+                                        <div class="toggle-control"></div>
+                                    </label>
+                                </li>
                             </ul>
                         </div>
                     </div>
                 </div>
                 <div class="editor-content-body-bottom">
-                    <div class="editor-content-body-left-toolbar unselectable" id="toolbarLeft">
-                        <div class="toolbarLeftTitle">
-                            <bean:message key="workflow.sampleCampaign"/>:
-                        </div>
-                        <emm:ShowByPermission token="campaign.change" ignoreException="true">
-                            <div class="toolbarButtonLeft js-draggable-button" data-type="scABTest" title="<bean:message key='mailing.autooptimization'/>"></div>
-                            <div class="leftMenuLabel"><bean:message key="workflow.sampleCampaign.ABTest"/></div>
-                        </emm:ShowByPermission>
-
-                        <div class="toolbarButtonLeft js-draggable-button" data-type="scDOI" title="<bean:message key='workflow.icon.DOI'/>"></div>
-                        <div id="scDOIButtonLabel" class="leftMenuLabel"><bean:message key="recipient.DOI"/></div>
-
-                        <div class="toolbarButtonLeft js-draggable-button" data-type="scBirthday" title="<bean:message key='workflow.icon.birthday'/>"></div>
-                        <div class="leftMenuLabel"><bean:message key="workflow.sampleCampaign.birthday"/></div>
-
-                        <div class="leftMenuSeparator"></div>
-
-                        <div class="toolbarLeftTitle">
-                            <bean:message key="workflow.ownCampaign"/>:
-                        </div>
-                        <div class="toolbarButtonLeft js-draggable-button" data-type="ownWorkflow" title="<bean:message key='workflow.ownCampaign'/>"></div>
-                    </div>
                     <div id="viewPort">
+                        <div id="grid-background" class="hidden"></div>
                         <div id="canvas">
                             <div id="icon-titles-container"></div>
                         </div>
@@ -712,6 +721,12 @@
         </div>
         <!-- Tile Content END -->
 
+        <c:if test="${not isMailtrackingActive}">
+            <div class="tile-notification tile-notification-info" data-sizing="bottom">
+                <span><bean:message key="workflow.info.noMailtracking"/></span>
+            </div>
+        </c:if>
+        
         <div id="selection-backdrop">
             <!-- Required to disable all the hover-related effects while selection lasso is visible -->
         </div>
@@ -725,12 +740,49 @@
     </div>
     <!-- Tile END -->
 
-    <c:if test="${not isMailtrackingActive}">
-    <div class="tile">
-        <div class="tile-notification tile-notification-info">
-            <span><bean:message key="workflow.info.noMailtracking"/></span>
+    <c:if test="${showStatisticsTile}">
+        <div class="tile">
+            <div class="tile-header">
+                <a class="headline" href="#" data-toggle-tile="#tile-statistic">
+                    <i class="icon tile-toggle icon-angle-up"></i>
+                    <mvc:message code="statistic.workflow" />
+                </a>
+                <ul class="tile-header-actions">
+                    <li>
+                        <c:choose>
+                            <c:when test="${isActive or isComplete}">
+                                <button type="button" class="btn btn-regular btn-primary" data-action="evaluate-statistic">
+                                    <i class="icon icon-refresh"></i>
+                                    <span class="text"><mvc:message code="Evaluate" /></span>
+                                </button>
+                            </c:when>
+                            <c:otherwise>
+                                <button type="button" class="btn btn-regular btn-primary" data-form-target="#workflowForm" data-action="workflow-save" data-form-set="showStatistic: true">
+                                    <i class="icon icon-refresh"></i>
+                                    <span class="text"><mvc:message code="button.save.evaluate" /></span>
+                                </button>
+                            </c:otherwise>
+                        </c:choose>
+                    </li>
+                </ul>
+            </div>
+            <div id="tile-statistic" class="tile-content">
+                <c:choose>
+                    <c:when test="${isActive or isComplete}">
+                        <iframe id="statistic-iframe" class="hidden" border="0" scrolling="auto" width="100%" height="600px" frameborder="0">
+                            Your Browser does not support IFRAMEs, please update!
+                        </iframe>
+                    </c:when>
+                    <c:otherwise>
+                        <c:if test="${showStatisticsImmediately}">
+                            <iframe src="${statisticUrl}" border="0" scrolling="auto" width="100%" height="600px" frameborder="0">
+                                Your Browser does not support IFRAMEs, please update!
+                            </iframe>
+                        </c:if>
+                    </c:otherwise>
+                </c:choose>
+            </div>
         </div>
-    </div>
     </c:if>
 
     <script type="text/javascript">

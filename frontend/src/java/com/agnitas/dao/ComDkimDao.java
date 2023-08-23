@@ -18,4 +18,6 @@ public interface ComDkimDao {
 	boolean deleteDkimKeyByCompany(int companyID);
 
 	DkimKeyEntry getDkimKeyForDomain(int companyID, String domainname, boolean allowNonMatchingFallback);
+
+	void saveDkimEntry(DkimKeyEntry dkimKeyEntry);
 }

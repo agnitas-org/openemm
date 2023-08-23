@@ -89,19 +89,19 @@ font-weight:bold;
 padding-right: 10px;
 }
 th.sortable a {
-background-image:url(../assets/core/images/table_sort_icon.png);
+background-image:url(assets/core/images/table_sort_icon.png);
 background-position: right;
 background-repeat: no-repeat;
 font-weight:bold;
 }
 th.order1 a {
-background-image:url(../assets/core/images/sort_down.png);
+background-image:url(assets/core/images/sort_down.png);
 background-position: right;
 background-repeat: no-repeat;
 font-weight:bold;
 }
 th.order2 a {
-background-image:url(../assets/core/images/sort_up.png);
+background-image:url(assets/core/images/sort_up.png);
 background-position: right;
 background-repeat: no-repeat;
 font-weight:bold;

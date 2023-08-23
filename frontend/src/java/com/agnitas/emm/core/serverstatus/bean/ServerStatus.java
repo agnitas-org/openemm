@@ -44,6 +44,7 @@ public class ServerStatus {
     private boolean exportStatus;
     private boolean dbStatus;
     private boolean reportStatus;
+    private boolean licenseStatusOK;
     private String dbType;
     private String dbUrl;
     private String dbVersion;
@@ -122,6 +123,10 @@ public class ServerStatus {
         return reportStatus;
     }
     
+    public boolean isLicenseStatusOK() {
+        return licenseStatusOK;
+    }
+    
     public String getDbType() {
         return dbType;
     }
@@ -161,6 +166,7 @@ public class ServerStatus {
         private boolean exportStatus;
         private boolean dbStatus;
         private boolean reportStatus;
+        private boolean licenseStatusOK;
         private List<VersionStatus> dbVersionStatuses = new ArrayList<>();
         private String dbType;
         private String dbUrl;
@@ -182,13 +188,14 @@ public class ServerStatus {
             return this;
         }
         
-        public ServerStatus.StatusBuilder statuses(boolean overallStatusToUse, boolean jobQueueStatusToUse, boolean importStatusToUse, boolean exportStatusToUse, boolean dbStatusToUse, boolean reportStatusToUse) {
+        public ServerStatus.StatusBuilder statuses(boolean overallStatusToUse, boolean jobQueueStatusToUse, boolean importStatusToUse, boolean exportStatusToUse, boolean dbStatusToUse, boolean reportStatusToUse, boolean licenseStatusOK) {
             this.overallStatus = overallStatusToUse;
             this.jobQueueStatus = jobQueueStatusToUse;
             this.importStatus = importStatusToUse;
             this.exportStatus = exportStatusToUse;
             this.dbStatus = dbStatusToUse;
             this.reportStatus = reportStatusToUse;
+            this.licenseStatusOK = licenseStatusOK;
             return this;
         }
 
@@ -241,6 +248,7 @@ public class ServerStatus {
             serverStatus.exportStatus = exportStatus;
             serverStatus.dbStatus = dbStatus;
             serverStatus.reportStatus = reportStatus;
+            serverStatus.licenseStatusOK = licenseStatusOK;
             
             serverStatus.dbType = dbType;
             serverStatus.dbUrl = dbUrl;

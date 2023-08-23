@@ -282,7 +282,7 @@ public interface CodeGeneratorCallback {
 	 * 
 	 * @throws CodeGeneratorException on errors during processing
 	 */
-	void terminalStringConstantWithEscapeCharsAtomEqlNode(StringConstantWithEscapeCharsAtomEqlNode node) throws CodeGeneratorException;
+	void terminalStringConstantWithoutEscapeCharsAtomEqlNode(StringConstantWithEscapeCharsAtomEqlNode node) throws CodeGeneratorException;
 	
 	/**
 	 * Called after code generation for TODAY date atom nodes.

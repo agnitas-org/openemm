@@ -11,6 +11,10 @@
 package com.agnitas.emm.core.birtreport.service.impl;
 
 import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportMailingSettings.MAILINGS_TO_SEND_KEY;
+import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportMailingSettings.MAILING_ACTION_BASED;
+import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportMailingSettings.MAILING_DATE_BASED;
+import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportMailingSettings.MAILING_FOLLOW_UP;
+import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportMailingSettings.MAILING_INTERVAL_BASED;
 import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportMailingSettings.MAILING_NORMAL;
 import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings.MAILINGS_KEY;
 import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings.MAILING_FILTER_KEY;
@@ -36,7 +40,6 @@ import java.util.stream.Collectors;
 import javax.sql.DataSource;
 
 import org.agnitas.beans.MailingBase;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.DbUtilities;
@@ -101,11 +104,11 @@ public class ComBirtReportServiceImpl implements ComBirtReportService {
         }
     }
 
-    protected List<MailingBase> getPredefinedMailingsForReports(@VelocityCheck int companyId, int number, int filterType, int filterValue, MailingType mailingType, String orderKey, int targetId, Set<Integer> adminAltgIds) {
+    protected List<MailingBase> getPredefinedMailingsForReports(int companyId, int number, int filterType, int filterValue, MailingType mailingType, String orderKey, int targetId, Set<Integer> adminAltgIds) {
         return mailingDao.getPredefinedMailingsForReports(companyId, number, filterType, filterValue, mailingType, orderKey, targetId, adminAltgIds);
     }
 
-    protected List<MailingBase> getPredefinedMailingsForReports(@VelocityCheck int companyId, int number, int filterType, int filterValue, MailingType mailingType, String orderKey, Map<String, LocalDate> datesRestriction, int targetId, Set<Integer> adminAltgIds) {
+    protected List<MailingBase> getPredefinedMailingsForReports(int companyId, int number, int filterType, int filterValue, MailingType mailingType, String orderKey, Map<String, LocalDate> datesRestriction, int targetId, Set<Integer> adminAltgIds) {
         if (number == 0) {
             Date from = DateUtilities.toDate(datesRestriction.get(KEY_START_DATE), AgnUtils.getSystemTimeZoneId());
             // Include the defined day completely, so use limit of next day 00:00
@@ -203,7 +206,8 @@ public class ComBirtReportServiceImpl implements ComBirtReportService {
                         .collect(Collectors.toList());
                 reportMailingSettings.setMailingsToSend(mailingIds);
             }
-        } else if (mailingGeneralType == ComBirtReportMailingSettings.MAILING_ACTION_BASED || mailingGeneralType == ComBirtReportMailingSettings.MAILING_DATE_BASED) {
+        } else if (mailingGeneralType == MAILING_ACTION_BASED || mailingGeneralType == MAILING_DATE_BASED
+                || mailingGeneralType == MAILING_INTERVAL_BASED || mailingGeneralType == MAILING_FOLLOW_UP) {
             Object reportSetting = reportMailingSettings.getReportSetting(MAILINGS_KEY);
             reportMailingSettings.setReportSetting(MAILINGS_TO_SEND_KEY, reportSetting);
         }
@@ -242,8 +246,8 @@ public class ComBirtReportServiceImpl implements ComBirtReportService {
             return new HashMap<>();
         }
 
-        LocalDate to = LocalDate.now();
-        LocalDate from = LocalDate.now();
+        LocalDate from;
+        LocalDate to;
 
         switch (periodType) {
             case DATE_RANGE_CUSTOM:
@@ -276,19 +280,31 @@ public class ComBirtReportServiceImpl implements ComBirtReportService {
                             }
                         }
                     }
+                } else {
+                	from = LocalDate.now();
+                    to = LocalDate.now();
                 }
                 break;
-            case DATE_RANGE_MONTH:
-                from = to.minusMonths(1);
+            case DATE_RANGE_30DAYS:
+                from = LocalDate.now().minusDays(30);
+                to = LocalDate.now();
+                break;
+            case DATE_RANGE_LAST_MONTH:
+                from = LocalDate.now().minusMonths(1);
+                from = from.withDayOfMonth(1);
+                to = from.plusMonths(1);
                 break;
             case DATE_RANGE_WEEK:
-                from = to.minusWeeks(1);
+                from = LocalDate.now().minusWeeks(1);
+                to = LocalDate.now();
                 break;
             case DATE_RANGE_DAY:
-                from = to.minusDays(1);
+                from = LocalDate.now().minusDays(1);
+                to = LocalDate.now();
                 break;
             case DATE_RANGE_THREE_MONTH:
-                from = to.minusDays(1);
+                from = LocalDate.now().minusDays(1);
+                to = LocalDate.now();
                 break;
             default:
                 from = null;

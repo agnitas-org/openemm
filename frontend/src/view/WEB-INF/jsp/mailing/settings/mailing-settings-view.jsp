@@ -37,6 +37,9 @@
 <c:set var="mailingFollowUpAllowed" value="${false}"/>
 <%@include file="fragments/mailing-followup-allowed-flag.jspf" %>
 
+<c:set var="ACE_EDITOR_PATH" value="${emm:aceEditorPath(pageContext.request)}" scope="page"/>
+<script type="text/javascript" src="${pageContext.request.contextPath}/${ACE_EDITOR_PATH}/emm/ace.min.js"></script>
+
 <tiles:insert page="../template.jsp">
     <tiles:put name="header" type="string">
         <ul class="tile-header-nav">
@@ -85,7 +88,7 @@
                     }
                 </script>
                 <mvc:form servletRelativeAction="/mailing/${mailingId}/settings.action?isGrid=${isMailingGrid}&isTemplate=${isTemplate}" id="mailingSettingsForm" modelAttribute="mailingSettingsForm" data-form="resource" data-disable-controls="save"
-                             data-form-focus="${not isPostMailing and not isMailingGrid and mailingId ne 0 ? '' : 'shortname'}">
+                             data-form-focus="${not isPostMailing and not isMailingGrid and mailingId ne 0 ? '' : 'shortname'}" data-action="save">
                     <mvc:hidden path="parentId"/>
                     <emm:workflowParameters/>
 
@@ -143,7 +146,7 @@
         </tiles:add>
         <emm:ShowByPermission token="mailing.change">
             <tiles:add>
-                <button type="button" class="btn btn-large btn-primary pull-right" data-form-target='#mailingBaseForm' data-form-set='save:save' data-action="save" data-controls-group="save">
+                <button type="button" class="btn btn-large btn-primary pull-right" data-form-target='#mailingSettingsForm' data-form-submit-event data-controls-group="save">
                     <span class="text"><mvc:message code="button.Save"/></span>
                 </button>
             </tiles:add>

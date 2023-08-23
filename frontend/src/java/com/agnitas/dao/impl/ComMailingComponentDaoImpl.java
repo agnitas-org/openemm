@@ -29,7 +29,9 @@ import java.util.stream.Collectors;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.MailingComponentType;
 import org.agnitas.beans.factory.MailingComponentFactory;
+import org.agnitas.dao.MailingStatus;
 import org.agnitas.dao.impl.BaseDaoImpl;
+import org.agnitas.dao.impl.mapper.IntegerRowMapper;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.util.AgnUtils;
@@ -141,18 +143,18 @@ public class ComMailingComponentDaoImpl extends BaseDaoImpl implements ComMailin
 				"FROM component_tbl " +
 				"WHERE company_id = ? AND mailing_id = ? AND " + makeBulkInClauseForInteger("component_id", componentIds) +
 				"ORDER BY compname ASC";
-		
+
 		return select(logger, sqlGetComponents, new MailingComponentRowMapper(true), companyID, mailingID);
     }
-    
+
     @Override
 	public MailingComponent getMailingComponent(int compID, int companyID) {
 		if (companyID == 0) {
 			return null;
 		}
-		
+
 		String componentSelect = "SELECT company_id, mailing_id, component_id, compname, comptype, comppresent, emmblock, binblock, mtype, target_id, url_id, description, timestamp FROM component_tbl WHERE component_id = ? AND company_id = ? ORDER BY compname ASC";
-		
+
 		try {
 			return selectObjectDefaultNull(logger, componentSelect, new MailingComponentRowMapper(), compID, companyID);
 		} catch (Exception e) {
@@ -175,9 +177,9 @@ public class ComMailingComponentDaoImpl extends BaseDaoImpl implements ComMailin
 		if (companyID == 0) {
 			return null;
 		}
-		
+
 		String componentSelect = "SELECT company_id, mailing_id, component_id, compname, comptype, comppresent, emmblock, binblock, mtype, target_id, url_id, description, timestamp FROM component_tbl WHERE (mailing_id = ? OR mailing_id = 0) AND company_id = ? AND compname = ? ORDER BY component_id DESC";
-		
+
 		try {
 			List<MailingComponent> components = select(logger, componentSelect, new MailingComponentRowMapper(), mailingID, companyID, name);
 			if (!components.isEmpty()) {
@@ -195,7 +197,7 @@ public class ComMailingComponentDaoImpl extends BaseDaoImpl implements ComMailin
 	@Override
 	@DaoUpdateReturnValueCheck
 	public void saveMailingComponent(MailingComponent mailingComponent) throws Exception {
-		
+
 		// TODO: What are these defaultvalues for? They are only written to DB on the first insert and will not be read again
 		int mailtemplateID = 0;
 		int comppresent = 1;
@@ -219,12 +221,12 @@ public class ComMailingComponentDaoImpl extends BaseDaoImpl implements ComMailin
 					mailingComponent.setUrlID(existingTrackableLink.getId());
 				}
 			}
-			
+
 			validateDescription(mailingComponent.getDescription());
-			
+
 			if (mailingComponent.getId() == 0 || !exists(mailingComponent.getMailingID(), mailingComponent.getCompanyID(), mailingComponent.getId())) {
                 mailingComponent.setTimestamp(new Date());
-                
+
                 if (isOracleDB()) {
                 	int newID = selectInt(logger, "SELECT component_tbl_seq.NEXTVAL FROM DUAL");
                 	String sql = "INSERT INTO component_tbl (component_id, mailing_id, company_id, compname, comptype, mtype, target_id, url_id, mailtemplate_id, comppresent, timestamp, description) VALUES (" + AgnUtils.repeatString("?", 12, ", ") + ")";
@@ -237,7 +239,7 @@ public class ComMailingComponentDaoImpl extends BaseDaoImpl implements ComMailin
 							updateClob(logger, "UPDATE component_tbl SET emmblock = ? WHERE component_id = ?", mailingComponent.getEmmBlock(), newID);
 						} catch (Exception e) {
 							logger.error(String.format("Error saving mailing component %d (mailing ID %d, company ID %d)", mailingComponent.getId(), mailingComponent.getMailingID(), mailingComponent.getCompanyID()), e);
-							
+
 							update(logger, "DELETE FROM component_tbl WHERE component_id = ?", newID);
 							throw e;
 						}
@@ -259,7 +261,7 @@ public class ComMailingComponentDaoImpl extends BaseDaoImpl implements ComMailin
 
 			} else {
                 mailingComponent.setTimestamp(new Date());
-				
+
 				String sql = "UPDATE component_tbl SET mailing_id = ?, company_id = ?, compname = ?, comptype = ?, mtype = ?, target_id = ?, url_id = ?, comppresent = ?, timestamp = ?, description = ? WHERE component_id = ?";
 				int touchedLines = update(logger, sql, mailingComponent.getMailingID(), mailingComponent.getCompanyID(), mailingComponent.getComponentName(), mailingComponent.getType().getCode(), mailingComponent.getMimeType(), mailingComponent.getTargetID(), mailingComponent.getUrlID(), comppresent, mailingComponent.getTimestamp(), mailingComponent.getDescription(), mailingComponent.getId());
 				if (touchedLines != 1) {
@@ -285,14 +287,17 @@ public class ComMailingComponentDaoImpl extends BaseDaoImpl implements ComMailin
 			logger.error("Error deleting component " + comp.getId(), e);
 		}
 	}
-	
+
 	@Override
 	@DaoUpdateReturnValueCheck
 	public void deleteMailingComponents(List<MailingComponent> components) {
 		if (!components.isEmpty()) {
 			String sql = "DELETE FROM component_tbl WHERE component_id IN (" + AgnUtils.repeatString("?", components.size(), ", ") + ")";
-			List<Integer> componentsIds = components.stream().map(MailingComponent::getId).collect(Collectors.toList());
-			update(logger, sql, componentsIds.toArray());
+			Object[] componentsIds = components.stream()
+					.map(MailingComponent::getId)
+					.toArray();
+
+			update(logger, sql, componentsIds);
 		}
 	}
 
@@ -392,7 +397,43 @@ public class ComMailingComponentDaoImpl extends BaseDaoImpl implements ComMailin
 			return remainingComponents == 0;
 		}
 	}
-	
+
+	@Override
+	public MailingComponent findComponent(int id, int companyId) {
+		String query = "SELECT company_id, mailing_id, component_id, compname, comppresent, comptype, mtype, target_id, url_id, description, timestamp " +
+				"FROM component_tbl " +
+				"WHERE component_id = ? AND company_id = ?";
+
+		return selectObjectDefaultNull(logger, query, new MailingComponentRowMapper(false), id, companyId);
+	}
+
+	@Override
+	public List<Integer> filterComponentsOfNotSentMailings(List<Integer> components) {
+		if (components.isEmpty()) {
+			return Collections.emptyList();
+		}
+
+		String componentsIdsInClause = makeBulkInClauseForInteger("c.component_id", components);
+
+		String query = "SELECT c.component_id " +
+				"FROM mailing_tbl m " +
+				"         INNER JOIN component_tbl c ON c.mailing_id = m.mailing_id " +
+				"WHERE m.work_status != ? " +
+				"  AND " + componentsIdsInClause;
+
+		return select(logger, query, IntegerRowMapper.INSTANCE, MailingStatus.SENT.getDbKey());
+	}
+
+	@Override
+	public List<Integer> findTargetDependentMailingsComponents(int targetGroupId, int companyId) {
+		String sql = "SELECT c.component_id " +
+				"FROM mailing_tbl m INNER JOIN component_tbl c " +
+				"    ON c.mailing_id = m.mailing_id " +
+				"WHERE m.company_id = ? AND m.deleted = 0 AND c.target_id = ?";
+
+		return select(logger, sql, IntegerRowMapper.INSTANCE, companyId, targetGroupId);
+	}
+
 	@Override
 	public void deleteMailingComponentsByMailing(int mailingID) {
 		String deleteSQL = "DELETE FROM component_tbl WHERE mailing_id = ?";

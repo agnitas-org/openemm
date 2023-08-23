@@ -23,7 +23,9 @@ import java.util.stream.Collectors;
 import org.agnitas.beans.DynamicTagContent;
 import org.agnitas.beans.impl.DynamicTagContentImpl;
 import org.agnitas.dao.DynamicTagContentDao;
-import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.agnitas.dao.MailingStatus;
+import org.agnitas.dao.impl.mapper.IntegerRowMapper;
+
 import org.agnitas.util.AgnUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -35,7 +37,7 @@ import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.util.SpecialCharactersWorker;
 
 public class DynamicTagContentDaoImpl extends BaseDaoImpl implements DynamicTagContentDao {
-	private static final transient Logger logger = LogManager.getLogger(DynamicTagContentDaoImpl.class);
+	private static final Logger logger = LogManager.getLogger(DynamicTagContentDaoImpl.class);
 
 	private final RowMapper<DynamicTagContent> dynContentRowMapper = (resultSet, rowNum) -> {
 		DynamicTagContent content = new DynamicTagContentImpl();
@@ -78,13 +80,13 @@ public class DynamicTagContentDaoImpl extends BaseDaoImpl implements DynamicTagC
 
 	@Override
 	@DaoUpdateReturnValueCheck
-	public boolean deleteContent(@VelocityCheck int companyID, int contentID) {
+	public boolean deleteContent(int companyID, int contentID) {
     	String deleteContentSQL = "DELETE from dyn_content_tbl WHERE dyn_content_id = ? AND company_id = ?";
     	return update(logger, deleteContentSQL, contentID, companyID) > 0;
 	}
 
 	@Override
-	public DynamicTagContent getContent(@VelocityCheck int companyId, int contentId) {
+	public DynamicTagContent getContent(int companyId, int contentId) {
 		String sql = "SELECT dyn_content_tbl.dyn_content_id, dyn_content_tbl.target_id, dyn_content_tbl.dyn_order, dyn_content_tbl.dyn_content, dyn_name_tbl.dyn_name, dyn_name_tbl.mailing_id, dyn_content_tbl.company_id, dyn_content_tbl.dyn_name_id " +
 				"FROM dyn_content_tbl, dyn_name_tbl " +
 				"WHERE dyn_content_tbl.dyn_content_id = ? " +
@@ -95,7 +97,7 @@ public class DynamicTagContentDaoImpl extends BaseDaoImpl implements DynamicTagC
 	}
 
 	@Override
-	public List<DynamicTagContent> getContentList(@VelocityCheck int companyId, int mailingId) {
+	public List<DynamicTagContent> getContentList(int companyId, int mailingId) {
 		String sql = "SELECT dyn_content_tbl.dyn_content_id, dyn_content_tbl.target_id, dyn_content_tbl.dyn_order, dyn_content_tbl.dyn_content, dyn_name_tbl.dyn_name, dyn_name_tbl.mailing_id, dyn_content_tbl.company_id, dyn_content_tbl.dyn_name_id " +
 				"FROM dyn_content_tbl, dyn_name_tbl " +
 				"WHERE dyn_content_tbl.dyn_name_id IN (SELECT dyn_name_id FROM dyn_name_tbl WHERE mailing_id = ? AND company_id = ?) " +
@@ -106,14 +108,14 @@ public class DynamicTagContentDaoImpl extends BaseDaoImpl implements DynamicTagC
 	}
 
 	@Override
-	public boolean isExisting(@VelocityCheck int companyId, int mailingId, int dynNameId, int dynContentId) {
+	public boolean isExisting(int companyId, int mailingId, int dynNameId, int dynContentId) {
 		String selectSql = "SELECT COUNT(dyn_content_id) FROM dyn_content_tbl WHERE company_id = ? AND mailing_id = ? " +
 				"AND dyn_name_id = ? AND dyn_content_id = ?";
 		return selectInt(logger, selectSql, companyId, mailingId, dynNameId, dynContentId) > 0;
 	}
 
 	@Override
-	public boolean isContentValueNotEmpty(@VelocityCheck int companyId, int mailingId, int dynNameId) {
+	public boolean isContentValueNotEmpty(int companyId, int mailingId, int dynNameId) {
 		String selectSql = "SELECT COUNT(dyn_content_id) FROM dyn_content_tbl WHERE company_id = ? AND mailing_id = ?" +
 				" AND dyn_name_id = ? AND dyn_content IS NOT NULL";
 		return selectInt(logger, selectSql, companyId, mailingId, dynNameId) > 0;
@@ -257,8 +259,31 @@ public class DynamicTagContentDaoImpl extends BaseDaoImpl implements DynamicTagC
 
 	@Override
     @DaoUpdateReturnValueCheck
-    public boolean deleteContentFromMailing(@VelocityCheck final int companyId, final int mailingId, final int contentId) {
+    public boolean deleteContentFromMailing(final int companyId, final int mailingId, final int contentId) {
         final int affectedRows = update(logger, "DELETE FROM dyn_content_tbl WHERE dyn_content_id = ? AND mailing_id = ? AND company_id = ?", contentId, mailingId, companyId);
         return affectedRows > 0;
     }
+
+	@Override
+	public List<Integer> findTargetDependentMailingsContents(int targetGroupId, int companyId) {
+		String query = "SELECT c.dyn_content_id " +
+				"FROM mailing_tbl m INNER JOIN dyn_content_tbl c " +
+				"    ON c.mailing_id = m.mailing_id " +
+				"WHERE m.company_id = ? AND m.deleted = 0 AND c.target_id = ?";
+
+		return select(logger, query, IntegerRowMapper.INSTANCE, companyId, targetGroupId);
+	}
+
+	@Override
+	public List<Integer> filterContentsOfNotSentMailings(List<Integer> contentsIds) {
+		String contentsIdsInClause = makeBulkInClauseForInteger("c.dyn_content_id", contentsIds);
+
+		String query = "SELECT c.dyn_content_id " +
+				"FROM dyn_content_tbl c " +
+				"         INNER JOIN mailing_tbl m ON c.mailing_id = m.mailing_id " +
+				"WHERE m.work_status != ? " +
+				"  AND " + contentsIdsInClause;
+
+		return select(logger, query, IntegerRowMapper.INSTANCE, MailingStatus.SENT.getDbKey());
+	}
 }

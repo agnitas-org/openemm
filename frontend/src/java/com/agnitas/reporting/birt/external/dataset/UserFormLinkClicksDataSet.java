@@ -14,7 +14,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -27,7 +26,7 @@ public class UserFormLinkClicksDataSet extends BIRTDataSet {
 
 	private static final Logger logger = LogManager.getLogger(UserFormLinkClicksDataSet.class);
 	
-	public List<UserFormLinkClicksStatisticRow> getClicksPerUrl(@VelocityCheck int formID, int companyID) {
+	public List<UserFormLinkClicksStatisticRow> getClicksPerUrl(int formID, int companyID) {
 		List<UserFormLinkClicksStatisticRow> urlClickList = new ArrayList<>();
 		
 		String queryMeasured =

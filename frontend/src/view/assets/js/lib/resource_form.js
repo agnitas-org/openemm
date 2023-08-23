@@ -51,9 +51,11 @@
         AGN.runAll($target);
       } else {
         Page.render(resp);
+        this.handleMessages(resp, true);
       }
     } else {
       Page.render(resp);
+      this.handleMessages(resp, true);
     }
   };
 

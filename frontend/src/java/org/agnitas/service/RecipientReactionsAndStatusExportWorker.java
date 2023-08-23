@@ -53,7 +53,7 @@ public class RecipientReactionsAndStatusExportWorker extends RecipientReactionsE
 	public static int EVENTCODE_REVENUE = 10;
 
 	public RecipientReactionsAndStatusExportWorker(ComRecipientDao recipientDao, TrackableLinkDao trackableLinkDao, AutoExport autoExport, Date exportDataStartDate, Date exportDataEndDate, List<String> additionalCustomerFields) {
-		super(recipientDao, trackableLinkDao, autoExport, exportDataStartDate, exportDataEndDate, additionalCustomerFields);
+		super(recipientDao, trackableLinkDao, false, autoExport, exportDataStartDate, exportDataEndDate, additionalCustomerFields);
 	}
 	
 	@Override

@@ -18,7 +18,6 @@ import org.agnitas.ecs.backend.beans.ClickStatColor;
 import org.agnitas.ecs.backend.dao.EmbeddedClickStatDao;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Required;
 
@@ -38,12 +37,12 @@ public class EcsServiceImpl implements EcsService {
     protected ConfigService configService;
 
     @Override
-    public List<ClickStatColor> getClickStatColors(@VelocityCheck int companyId) {
+    public List<ClickStatColor> getClickStatColors(int companyId) {
         return embeddedClickStatDao.getClickStatColors(companyId);
     }
 
     @Override
-    public Map<Integer, String> getTestAndAdminRecipients(int mailingId, @VelocityCheck int companyId) {
+    public Map<Integer, String> getTestAndAdminRecipients(int mailingId, int companyId) {
         return recipientDao.getAdminAndTestRecipientsDescription(companyId, mailingId);
     }
 

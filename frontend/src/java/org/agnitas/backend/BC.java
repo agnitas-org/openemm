@@ -321,16 +321,17 @@ public class BC {
 	 * @param destination the name of the mailtrack table to use
 	 * @return the final statement to write the recipients to the mailtrack table
 	 */
-	public String mailtrackStatement(String destination) {
+	public String mailtrackStatement(String destination, int mediaType) {
 		if (!data.maildropStatus.isVerificationMailing()) {
-			String prefix = "INSERT INTO " + destination + " (maildrop_status_id, mailing_id, customer_id, timestamp) ";
+			String prefix = "INSERT INTO " + destination + " (maildrop_status_id, mailing_id, customer_id, mediatype, timestamp) ";
+			String	mediaTypeValue = mediaType == Media.TYPE_UNRELATED ? "NULL" : Integer.toString (mediaType);
 
 			if (data.maildropStatus.isCampaignMailing() || data.maildropStatus.isVerificationMailing()) {
 				if (receiverCount > 0) {
-					return prefix + "VALUES (" + data.maildropStatus.id() + ", " + data.mailing.id() + ", " + data.campaignCustomerID + ", CURRENT_TIMESTAMP)";
+					return prefix + "VALUES (" + data.maildropStatus.id() + ", " + data.mailing.id() + ", " + data.campaignCustomerID + ", " + mediaTypeValue + ", CURRENT_TIMESTAMP)";
 				}
 			} else {
-				return prefix + "SELECT " + data.maildropStatus.id() + ", " + data.mailing.id() + ", customer_id, CURRENT_TIMESTAMP FROM " + table;
+				return prefix + "SELECT " + data.maildropStatus.id() + ", " + data.mailing.id() + ", customer_id, " + mediaTypeValue + ", CURRENT_TIMESTAMP FROM " + table;
 			}
 		}
 		return null;
@@ -395,14 +396,6 @@ public class BC {
 	private boolean createTable(String tname, String stmt, List<String> adds) {
 		boolean rc = false;
 
-		try {
-			if (data.dbase.tableExists(tname)) {
-				data.logging(Log.INFO, "bc", "Try to remove stale table " + tname);
-				removeTable(tname);
-			}
-		} catch (Exception e) {
-			data.logging(Log.WARNING, "bc", "Failed to remove stale table " + tname + ": " + e.toString());
-		}
 		for (int n = 0; (!rc) && (n < 2); ++n) {
 			try {
 				data.dbase.execute(stmt);

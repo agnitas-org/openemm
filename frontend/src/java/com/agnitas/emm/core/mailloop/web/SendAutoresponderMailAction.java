@@ -27,6 +27,7 @@ import jakarta.servlet.http.HttpServletResponse;
 /**
  * Action called when auto-responder mail is to be sent.
  */
+@Deprecated(forRemoval = true) // Replaced by SendAutoresponderController
 public class SendAutoresponderMailAction extends Action {
 
 	/** The logger. */

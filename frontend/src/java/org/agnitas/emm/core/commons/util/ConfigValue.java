@@ -13,6 +13,7 @@ package org.agnitas.emm.core.commons.util;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.agnitas.emm.core.components.entity.TestRunOption;
 import org.agnitas.emm.core.commons.password.policy.PasswordPolicies;
 import org.agnitas.util.AgnUtils;
 
@@ -106,7 +107,7 @@ public class ConfigValue {
 	public static final ConfigValue System_License_Type = new ConfigValue("licenseType");
 	public static final ConfigValue System_License_Holder = new ConfigValue("licenseHolder");
 	public static final ConfigValue System_License_ExpirationDate = new ConfigValue("expirationDate");
-	public static final ConfigValue System_License_MaximumNumberOfCompanies = new ConfigValue("maximumNumberOfCompanies");
+	public static final ConfigValue System_License_MaximumNumberOfCompanies = new ConfigValue("maximumNumberOfCompanies", 1, 0);
 	
 	/**
      * @deprecated
@@ -119,22 +120,34 @@ public class ConfigValue {
 	public static final ConfigValue System_License_MaximumNumberOfWebserviceUsers = new ConfigValue("maximumNumberOfWebserviceUsers");
 	public static final ConfigValue System_License_MaximumNumberOfRestfulUsers = new ConfigValue("maximumNumberOfRestfulUsers");
 	public static final ConfigValue System_License_MaximumNumberOfSupervisors = new ConfigValue("maximumNumberOfSupervisors");
-	public static final ConfigValue System_License_MaximumNumberOfCustomers = new ConfigValue("maximumNumberOfCustomers");
+	public static final ConfigValue System_License_MaximumNumberOfCustomers = new ConfigValue("maximumNumberOfCustomers", -1, 5000);
 	/**
 	 * Maximum limit of company specific profile fields. Standard profile fields (see ComCompanyDaoImpl.STANDARD_CUSTOMER_FIELDS) do not count to this limit.
 	 */
-	public static final ConfigValue System_License_MaximumNumberOfProfileFields = new ConfigValue("maximumNumberOfProfileFields");
+	public static final ConfigValue System_License_MaximumNumberOfProfileFields = new ConfigValue("maximumNumberOfProfileFields", 200, 10);
 	public static final ConfigValue System_License_AllowedPremiumFeatures = new ConfigValue("allowedPremiumFeatures");
-	public static final ConfigValue System_License_MaximumNumberOfReferenceTables = new ConfigValue("maximumNumberOfReferenceTables");
+	public static final ConfigValue System_License_MaximumNumberOfReferenceTables = new ConfigValue("maximumNumberOfReferenceTables", 50, 5);
 	public static final ConfigValue System_License_AllowMailingSendForMasterCompany = new ConfigValue("allowMailingSendForMasterCompany");
+	
 	/**
 	 * Access Limiting Mailinglists (ALML)
 	 */
-	public static final ConfigValue System_License_MaximumNumberOfAccessLimitingMailinglistsPerCompany = new ConfigValue("maximumNumberOfAccessLimitingMailinglistsPerCompany", "3");
+	public static final ConfigValue System_License_MaximumNumberOfAccessLimitingMailinglistsPerCompany = new ConfigValue("maximumNumberOfAccessLimitingMailinglistsPerCompany", 0, 3);
+	
+	/**
+	 * Access Limiting Mailinglists (ALML)
+	 */
+	public static final ConfigValue MaximumAccessLimitingMailinglists = new ConfigValue("mailinglist.maximumAccessLimitingMailinglists", "3");
+	
 	/**
 	 * Access Limiting Targetgroups (ALTG)
 	 */
-	public static final ConfigValue System_License_MaximumNumberOfAccessLimitingTargetgroupsPerCompany = new ConfigValue("maximumNumberOfAccessLimitingTargetgroupsPerCompany", "3");
+	public static final ConfigValue System_License_MaximumNumberOfAccessLimitingTargetgroupsPerCompany = new ConfigValue("maximumNumberOfAccessLimitingTargetgroupsPerCompany", 0, 0);
+
+	/**
+	 * Access Limiting Targetgroups (ALTG)
+	 */
+	public static final ConfigValue MaximumAccessLimitingTargetgroups = new ConfigValue("altg.maximumAccessLimitingTargetgroups", "3");
 	
 	public static final ConfigValue System_License_OpenEMMMasterCompany = new ConfigValue("openEMMMasterCompany");
 	public static final ConfigValue System_License_OpenEMMLoginUrl = new ConfigValue("openEMMLoginURL");
@@ -146,7 +159,7 @@ public class ConfigValue {
 
 	public static final ConfigValue Linkchecker_Linktimeout = new ConfigValue("linkchecker.linktimeout", "30000");
 	public static final ConfigValue Linkchecker_Threadcount = new ConfigValue("linkchecker.threadcount", "25");
-	public static final ConfigValue LinkChecker_UserAgent = new ConfigValue("linkchecker.userAgent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:103.0) Gecko/20100101 Firefox/103.0");
+	public static final ConfigValue LinkChecker_UserAgent = new ConfigValue("linkchecker.userAgent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:106.0) Gecko/20100101 Firefox/106.0");
 
 	public static final ConfigValue Predelivery_Litmusapikey = new ConfigValue("predelivery.litmusapikey");
 	public static final ConfigValue Predelivery_Litmusapiurl = new ConfigValue("predelivery.litmusapiurl", "https://soap.litmusapp.com/soap/api");
@@ -254,9 +267,6 @@ public class ConfigValue {
 	/** Maximum allowed number of user-selected profile fields for history. */
 	public static final ConfigValue MaximumNumberOfUserSelectedProfileFieldsInHistory = new ConfigValue("recipient.profile_history.max_userdefined_fields");
 
-	/** Use unsharp recipient query to increase performance. */
-	public static final ConfigValue UseUnsharpRecipientQuery = new ConfigValue("performance.recipient_unsharp_query"); // TODO: Quick hack for CONRAD-371 */
-
 	public static final ConfigValue HeatmapProxy = new ConfigValue("system.heatmap.proxy");
 
 	/** Maximum number of rows included in an import file for classic import **/
@@ -293,6 +303,9 @@ public class ConfigValue {
 
 	/** Use login permission granted by user. */
 	public static final ConfigValue SupervisorRequiresLoginPermission = new ConfigValue("supervisor.requiresLoginPermission", "false");
+
+	/** Setting of List-Help-URL  */
+	public static final ConfigValue ListHelpUrl = new ConfigValue("list-help-url");
 
 	/** Password policy to use. */
 	public static final ConfigValue PasswordPolicy = new ConfigValue("password.policy", PasswordPolicies.DEFAULT_POLICY.getPolicyName());
@@ -406,9 +419,6 @@ public class ConfigValue {
 	/** Fairness period for mailing send time */
 	public static final ConfigValue SendFairnessMinutes = new ConfigValue("send.fairness.minutes", "5");
 
-	/** Default setting how long cookie is living (in seconds, needed for rdir) */
-	public static final ConfigValue CookieExpire = new ConfigValue("cookie.expire", "-1");
-
 	/** Maximum cachesize of miscellaneous keys in the rdir application */
 	public static final ConfigValue RedirectKeysMaxCache = new ConfigValue("rdir.keys.maxCache", "500");
 
@@ -510,6 +520,8 @@ public class ConfigValue {
 	/** Expiration in days for executed AutoExports without intervalpattern **/
 	public static final ConfigValue AutoExport_Expire = new ConfigValue("export.AutoExport.Expire", "30");
 
+	public static final ConfigValue MailingUndo_Expire = new ConfigValue("mailing.undo.expire", "60");
+
 	/** Delete import files after successful (auto-)import **/
 	public static final ConfigValue DeleteSuccessfullyImportedFiles = new ConfigValue("import.importfiles.delete");
 
@@ -596,7 +608,9 @@ public class ConfigValue {
 	/**
 	 * Switch for new layoutBuilder
 	 */
-	public static final ConfigValue LayoutBuilderBasic = new ConfigValue("layoutbuilder.basic", "false");
+	public static final ConfigValue LayoutBuilderBasic = new ConfigValue("layoutbuilder.basic", "true");
+
+	public static final ConfigValue TargetAccessLimitExtended = new ConfigValue("targets.access.limit.extended", "false");
 
 	public static final ConfigValue CdnImageRedirectLinkBase = new ConfigValue("CdnImageRedirectLinkBase");
 	
@@ -639,6 +653,8 @@ public class ConfigValue {
 	public static final ConfigValue FindLastNewsletterEntryRetentionDays = new ConfigValue("cleanup.findLastNewsletter.entriesRetentionDays", "30");
 	
 	public static final ConfigValue AllowUnnormalizedEmails = new ConfigValue("AllowUnnormalizedEmails", "false");
+
+	public static final ConfigValue DefaultTestRunOption = new ConfigValue("default.test.run.option", String.valueOf(TestRunOption.NO_LIMITATION.getId()));
 	
 	/** All config values related to Facebook. */
 	public static final class Facebook {
@@ -890,22 +906,15 @@ public class ConfigValue {
 	public static final ConfigValue SendPasswordChangedNotification = new ConfigValue("notifications.sendPasswordChanged", "true");
 	public static final ConfigValue SendEncryptedMailings = new ConfigValue("company.mailingEncryptedSendingDefault", "false");
 
-	/**
-	 * Access Limiting Mailinglists (ALML)
-	 */
-	public static final ConfigValue MaximumAccessLimitingMailinglists = new ConfigValue("mailinglist.maximumAccessLimitingMailinglists", "3");
-	
-	/**
-	 * Access Limiting Targetgroups (ALTG)
-	 */
-	public static final ConfigValue MaximumAccessLimitingTargetgroups = new ConfigValue("altg.maximumAccessLimitingTargetgroups", "3");
-	
 	public static final ConfigValue MailtrackExtended = new ConfigValue("mailtrack-extended", "false");
 
 	/** Length of token to identify companies. */
 	public static final ConfigValue CompanyTokenLength = new ConfigValue("company.tokenLength", "32");
 	
 	public static final ConfigValue DeepTrackingCookieSameSitePolicy = new ConfigValue("deeptracking.cookie.sameSitePolicy", null);
+
+	/** Default setting how long the deep tracking cookie is living (in seconds, needed for rdir) */
+	public static final ConfigValue DeepTrackingCookieExpire = new ConfigValue("deeptracking.cookie.expire", "-1");
 
 	public static final ConfigValue RefreshBounceloadAddresses = new ConfigValue("RefreshBounceloadAddresses", "true");
 
@@ -921,14 +930,27 @@ public class ConfigValue {
 	public static final ConfigValue MaximumRecipientDetailPeriodDays = new ConfigValue("statistics.maximumRecipientDetailPeriodDays", "180");
 
 	public static final ConfigValue LogonTotpEnabled = new ConfigValue("logon.totp.enabled", "false");
+	public static final ConfigValue LogonTotpIssuer = new ConfigValue("logon.totp.issuer", "AGNITAS EMM");
 
 	/**
 	 * Check profilefields values of well known data types like german plz, when entered via webforms
 	 */
 	public static final ConfigValue CheckWellKnownProfileFields = new ConfigValue("CheckWellKnownProfileFields", "false");
+
+	public static final ConfigValue RecipientFieldsMaxCache = new ConfigValue("recipientFields.maxCache", "100");
+	public static final ConfigValue RecipientFieldsMaxCacheTimeMillis = new ConfigValue("recipientFields.maxCacheTimeMillis", "300000");
+
+	public static final ConfigValue WorkflowPauseTest = new ConfigValue("workflow.pause.test", "false");
+
+	public static final ConfigValue UserBasedFavoriteTargets = new ConfigValue("target.favorite.userBased", "false");
+
+	public static ConfigValue IntervalMailingStatisticsExpirationDays = new ConfigValue("mailing.interval.statistics.expiration", "30");
 	
+	public static final ConfigValue ExecutableTempDirPath = new ConfigValue("system.ExecutableTempDirPath", "/tmp");
+
 	private final String name;
 	private final String defaultValue;
+	private Integer gracefulExtension = null;
 
 	ConfigValue(String name) throws RuntimeException {
 		this.name = name;
@@ -955,6 +977,20 @@ public class ConfigValue {
 
 		LIST_OF_ALL_CONFIGVALUES.add(this);
 	}
+
+	ConfigValue(String name, int defaultValue, int gracefulExtension) {
+		this.name = name;
+		this.defaultValue = Integer.toString(defaultValue);
+		this.gracefulExtension = gracefulExtension;
+
+		for (ConfigValue existingValue : LIST_OF_ALL_CONFIGVALUES) {
+			if (existingValue.name.equals(name)) {
+				throw new RuntimeException("Duplicate creation of configuration value: " + name);
+			}
+		}
+
+		LIST_OF_ALL_CONFIGVALUES.add(this);
+	}
 	
 	public final String getName() {
 		return this.name;
@@ -967,6 +1003,10 @@ public class ConfigValue {
 
 	public String getDefaultValue() {
 		return defaultValue;
+	}
+
+	public Integer getGracefulExtension() {
+		return gracefulExtension;
 	}
 
 	public static ConfigValue getConfigValueByName(String name) {

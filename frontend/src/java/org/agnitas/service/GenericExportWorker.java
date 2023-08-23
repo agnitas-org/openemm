@@ -551,9 +551,8 @@ public class GenericExportWorker implements Callable<GenericExportWorker> {
 
 	private OutputStream getExportOutputStream() throws IOException, FileNotFoundException {
 		if (zipped && StringUtils.isEmpty(zipPassword)) {
-			OutputStream outputStream = null;
+			OutputStream outputStream = ZipUtilities.openNewZipOutputStream(new FileOutputStream(new File(exportFile)));
 			try {
-				outputStream = ZipUtilities.openNewZipOutputStream(new FileOutputStream(new File(exportFile)));
 				if (StringUtils.isBlank(zippedFileName) ) {
 					zippedFileName = exportFile;
 				}

@@ -34,13 +34,11 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.agnitas.beans.Admin;
-import com.agnitas.beans.TargetLight;
 import com.agnitas.emm.core.birtstatistics.mailing.dto.MailingComparisonDto;
 import com.agnitas.emm.core.birtstatistics.mailing.forms.BulkMailingComparisonForm;
 import com.agnitas.emm.core.birtstatistics.mailing.forms.MailingComparisonForm;
 import com.agnitas.emm.core.birtstatistics.service.BirtStatisticsService;
 import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
-import com.agnitas.emm.core.target.service.ComTargetService;
 import com.agnitas.web.mvc.DeleteFileAfterSuccessReadResource;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.perm.annotations.PermissionMapping;
@@ -55,25 +53,22 @@ public class MailingComparisonStatisticController implements XssCheckAware {
     public static final int MAX_MAILINGS_SELECTED = 10;
     private static final int MIN_MAILINGS_SELECTED = 2;
     
-    private final ComTargetService targetService;
     private final ComMailingBaseService mailingBaseService;
     private final BirtStatisticsService birtStatisticsService;
     private final ConversionService conversionService;
     
-    public MailingComparisonStatisticController(ComTargetService targetService, ComMailingBaseService mailingBaseService, BirtStatisticsService birtStatisticsService, ConversionService conversionService) {
-        this.targetService = targetService;
+    public MailingComparisonStatisticController(ComMailingBaseService mailingBaseService, BirtStatisticsService birtStatisticsService, ConversionService conversionService) {
         this.mailingBaseService = mailingBaseService;
         this.birtStatisticsService = birtStatisticsService;
         this.conversionService = conversionService;
     }
     
+    // In case of adding target select on ui, see history to rollback model attrs
     @RequestMapping("/list.action")
     public String list(Admin admin, Model model, @ModelAttribute("form") BulkMailingComparisonForm form, Popups popups) {
         try {
-            List<TargetLight> targetGroupList = targetService.getTargetLights(admin);
             List<MailingBase> mailings = mailingBaseService.getMailingsForComparison(admin);
     
-            model.addAttribute("targetGroupList", targetGroupList);
             model.addAttribute("mailings", mailings);
             model.addAttribute("selectionMax", MAX_MAILINGS_SELECTED);
         } catch (Exception e) {
@@ -102,10 +97,8 @@ public class MailingComparisonStatisticController implements XssCheckAware {
             String birtReportUrl = birtStatisticsService.getMailingComparisonStatisticUrl(admin, sessionId, comparisonDto);
             
             int companyId = admin.getCompanyID();
-            List<TargetLight> targetGroupList = targetService.getTargetLights(admin);
             List<String> mailingNames = new ArrayList<>(mailingBaseService.getMailingNames(form.getBulkIds(), companyId).values());
     
-            model.addAttribute("targetGroupList", targetGroupList);
             model.addAttribute("mailingNames", mailingNames);
             model.addAttribute("birtReportUrl", birtReportUrl);
             model.addAttribute("birtExportReportUrl", birtStatisticsService.changeFormat(birtReportUrl, "csv"));
@@ -117,7 +110,6 @@ public class MailingComparisonStatisticController implements XssCheckAware {
     
         return "stats_mailing_comp_view";
     }
-    
     
     @PostMapping("/export.action")
     public Object export(Admin admin, @ModelAttribute("form") MailingComparisonForm form, Popups popups, RedirectAttributes model) throws Exception {

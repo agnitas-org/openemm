@@ -10,7 +10,7 @@
 
 package org.agnitas.emm.core.mailinglist.service;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
+
 
 public class MailinglistModel {
     public interface AddGroup {
@@ -37,7 +37,7 @@ public class MailinglistModel {
     public int getCompanyId() {
         return companyId;
     }
-    public void setCompanyId(@VelocityCheck int companyId) {
+    public void setCompanyId(int companyId) {
         this.companyId = companyId;
     }
 

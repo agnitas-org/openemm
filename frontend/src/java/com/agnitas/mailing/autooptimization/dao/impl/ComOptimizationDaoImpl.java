@@ -16,6 +16,24 @@
 
 package com.agnitas.mailing.autooptimization.dao.impl;
 
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.emm.core.workflow.beans.WorkflowDecision;
+import com.agnitas.emm.core.workflow.beans.WorkflowDecision.WorkflowAutoOptimizationCriteria;
+import com.agnitas.mailing.autooptimization.beans.ComOptimization;
+import com.agnitas.mailing.autooptimization.beans.impl.AutoOptimizationLight;
+import com.agnitas.mailing.autooptimization.beans.impl.AutoOptimizationStatus;
+import com.agnitas.mailing.autooptimization.beans.impl.ComOptimizationImpl;
+import com.agnitas.mailing.autooptimization.dao.ComOptimizationDao;
+import org.agnitas.dao.impl.BaseDaoImpl;
+import org.agnitas.dao.impl.mapper.IntegerRowMapper;
+import org.agnitas.util.AgnUtils;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.jdbc.core.RowMapper;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -25,32 +43,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import org.agnitas.dao.impl.BaseDaoImpl;
-import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.agnitas.util.AgnUtils;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.jdbc.core.RowMapper;
-
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.emm.core.workflow.beans.WorkflowDecision;
-import com.agnitas.emm.core.workflow.beans.WorkflowDecision.WorkflowAutoOptimizationCriteria;
-import com.agnitas.mailing.autooptimization.beans.ComOptimization;
-import com.agnitas.mailing.autooptimization.beans.impl.AutoOptimizationLight;
-import com.agnitas.mailing.autooptimization.beans.impl.AutoOptimizationStatus;
-import com.agnitas.mailing.autooptimization.beans.impl.ComOptimizationImpl;
-import com.agnitas.mailing.autooptimization.dao.ComOptimizationDao;
-
 /**
  * Implementation of {@link ComOptimization}.
  *
  */
 public class ComOptimizationDaoImpl extends BaseDaoImpl implements ComOptimizationDao {
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(ComOptimizationDaoImpl.class);
+
+	private static final Logger logger = LogManager.getLogger(ComOptimizationDaoImpl.class);
 
 	private static final String [] tableColumns = new String[] {
 			"optimization_id",
@@ -116,14 +115,14 @@ public class ComOptimizationDaoImpl extends BaseDaoImpl implements ComOptimizati
 	}
 
 	@Override
-	public ComOptimization get(int optimizationID, @VelocityCheck int companyID) {
+	public ComOptimization get(int optimizationID, int companyID) {
 	   String query = "SELECT " + StringUtils.join(tableColumns, ", ") + " FROM auto_optimization_tbl" +
 			   " WHERE optimization_id = ? AND company_id = ? AND (deleted = 0 OR deleted IS NULL)";
 		return selectObject(logger, query, new ComOptimizationRowMapper(), optimizationID, companyID);
 	}
 
 	@Override
-	public Map<Integer, String>	getGroups(int campaignID, @VelocityCheck int companyID, int optimizationID)	{
+	public Map<Integer, String>	getGroups(int campaignID, int companyID, int optimizationID)	{
 		String sql = "SELECT m.mailing_id, m.shortname" +
 				" FROM mailing_tbl m" +
 				" WHERE m.company_id = ? AND m.campaign_id = ? AND m.deleted = 0 AND m.is_template = 0 AND mailing_type = 0" +
@@ -165,7 +164,7 @@ public class ComOptimizationDaoImpl extends BaseDaoImpl implements ComOptimizati
 		String sql = createDueOnDateOrThresholdSqlQuery(false, includedCompanyIds, excludedCompanyIds);
 
 		try	{
-			List<Map<String, Object>> list = select(logger, sql, ComOptimization.STATUS_TEST_SEND, ComOptimization.STATUS_SCHEDULED);
+			List<Map<String, Object>> list = select(logger, sql, AutoOptimizationStatus.TEST_SEND.getCode(), AutoOptimizationStatus.SCHEDULED.getCode());
 
 			Map<Integer, Integer> result = new HashMap<>();
 			for (Map<String, Object> map : list) {
@@ -185,7 +184,7 @@ public class ComOptimizationDaoImpl extends BaseDaoImpl implements ComOptimizati
 	public List<ComOptimization> getDueOnThresholdOptimizationCandidates(List<Integer> includedCompanyIds, List<Integer> excludedCompanyIds) {
 		// query for optimizations which have a threshold , are scheduled ( not send ) and test mailings have been sent
 		String sql = createDueOnDateOrThresholdSqlQuery(true, includedCompanyIds, excludedCompanyIds);
-		return select(logger, sql, new ComOptimizationRowMapper(), ComOptimization.STATUS_TEST_SEND, ComOptimization.STATUS_SCHEDULED);
+		return select(logger, sql, new ComOptimizationRowMapper(), AutoOptimizationStatus.TEST_SEND.getCode(), AutoOptimizationStatus.SCHEDULED.getCode());
 	}
 
 	private String createDueOnDateOrThresholdSqlQuery(boolean thresholdQuery, List<Integer> includedCompanyIds, List<Integer> excludedCompanyIds) {
@@ -233,22 +232,7 @@ public class ComOptimizationDaoImpl extends BaseDaoImpl implements ComOptimizati
 	}
 
 	@Override
-	public int getFinalMailingID(int companyID, int workflowID, int oneOfTheSplitMailingID){
-		String sql = "" +
-				"SELECT MAX(final_mailing_id) " +
-				"FROM auto_optimization_tbl " +
-				"WHERE company_id = ? " +
-				"      AND workflow_id = ? " +
-				"      AND (group1_id = ?  " +
-				"           OR group2_id = ?  " +
-				"           OR group3_id = ?  " +
-				"           OR group4_id = ?  " +
-				"           OR group5_id = ?)";
-		return selectInt(logger, sql, companyID, workflowID, oneOfTheSplitMailingID, oneOfTheSplitMailingID, oneOfTheSplitMailingID, oneOfTheSplitMailingID, oneOfTheSplitMailingID);
-	}
-
-	@Override
-	public int getFinalMailingId(@VelocityCheck int companyId, int workflowId) {
+	public int getFinalMailingId(int companyId, int workflowId) {
 		String sql = "" +
 				"SELECT MAX(final_mailing_id) " +
 				"FROM auto_optimization_tbl " +
@@ -256,9 +240,22 @@ public class ComOptimizationDaoImpl extends BaseDaoImpl implements ComOptimizati
 				"      AND workflow_id = ? ";
 		return selectInt(logger, sql, companyId, workflowId);
 	}
-	
+
 	@Override
-	public AutoOptimizationLight getAutoOptimizationLight(@VelocityCheck int companyId, int workflowId) {
+	public String findName(int optimizationId, int companyId) {
+		String query = "SELECT shortname FROM auto_optimization_tbl WHERE optimization_id = ? AND company_id = ?";
+		return selectWithDefaultValue(logger, query, String.class, "", optimizationId, companyId);
+	}
+
+	@Override
+	public List<Integer> findTargetDependentAutoOptimizations(int targetGroupId, int companyId) {
+		String query = "SELECT optimization_id FROM auto_optimization_tbl WHERE target_id = ? AND company_id = ? AND status NOT IN (?, ?)";
+		return select(logger, query, IntegerRowMapper.INSTANCE,
+				targetGroupId, companyId, AutoOptimizationStatus.NOT_STARTED.getCode(), AutoOptimizationStatus.FINISHED.getCode());
+	}
+
+	@Override
+	public AutoOptimizationLight getAutoOptimizationLight(int companyId, int workflowId) {
 		String sql = "SELECT optimization_id, final_mailing_id, result_mailing_id, group1_id, group2_id, group3_id, group4_id, group5_id" +
 				" FROM auto_optimization_tbl " +
 				" WHERE company_id = ? " +
@@ -442,22 +439,22 @@ public class ComOptimizationDaoImpl extends BaseDaoImpl implements ComOptimizati
 
 	@Override
 	@DaoUpdateReturnValueCheck
-	public int deleteByCompanyID(@VelocityCheck int companyID) {
+	public int deleteByCompanyID(int companyID) {
 		String deleteQuery = "delete from auto_optimization_tbl where company_id = ?";
 		return update(logger, deleteQuery, companyID);
 	}
 
 	@Override
-	public List<ComOptimization> list(int campaignID, @VelocityCheck int companyID) {
+	public List<ComOptimization> list(int campaignID, int companyID) {
 		return list(companyID, campaignID, 0);
 	}
 
 	@Override
-	public List<ComOptimization> listWorkflowManaged(int workflowId, @VelocityCheck int companyID) {
+	public List<ComOptimization> listWorkflowManaged(int workflowId, int companyID) {
 		return list(companyID, null, workflowId);
 	}
 
-	private List<ComOptimization> list(@VelocityCheck int companyID, Integer campaignId, Integer workflowId) {
+	private List<ComOptimization> list(int companyID, Integer campaignId, Integer workflowId) {
 		StringBuilder sqlQueryBuilder = new StringBuilder();
 		List<Object> sqlParameters = new ArrayList<>();
 
@@ -480,13 +477,13 @@ public class ComOptimizationDaoImpl extends BaseDaoImpl implements ComOptimizati
 	}
 
 	@Override
-	public int countByCompanyID(@VelocityCheck int companyID) {
+	public int countByCompanyID(int companyID) {
 		String query = "select count(*) from auto_optimization_tbl where company_id = ?";
 		return selectInt(logger, query, companyID);
 	}
 
 	@Override
-	public List<ComOptimization> getOptimizationsForCalendar(@VelocityCheck int companyId, Date startDate, Date endDate) {
+	public List<ComOptimization> getOptimizationsForCalendar(int companyId, Date startDate, Date endDate) {
 		StringBuilder querySb = new StringBuilder();
 		querySb.append("SELECT ao.campaign_id,")
 				.append(" CASE WHEN ao.workflow_id = 0 OR ao.workflow_id IS NULL THEN ao.shortname ELSE (SELECT w.shortname FROM workflow_tbl w WHERE w.workflow_id = ao.workflow_id) END AS shortname,")
@@ -507,7 +504,7 @@ public class ComOptimizationDaoImpl extends BaseDaoImpl implements ComOptimizati
 	}
 
 	@Override
-	public List<ComOptimization> getOptimizationsForCalendar_New(@VelocityCheck int companyId, Date startDate, Date endDate) {
+	public List<ComOptimization> getOptimizationsForCalendar_New(int companyId, Date startDate, Date endDate) {
 		String querySb = "SELECT ao.campaign_id," +
 				" CASE WHEN ao.workflow_id = 0 OR ao.workflow_id IS NULL THEN ao.shortname ELSE (SELECT w.shortname FROM workflow_tbl w WHERE w.workflow_id = ao.workflow_id) END AS shortname," +
 				" ao.status, ao.optimization_id, ao.result_mailing_id, ao.result_senddate, ao.workflow_id" +

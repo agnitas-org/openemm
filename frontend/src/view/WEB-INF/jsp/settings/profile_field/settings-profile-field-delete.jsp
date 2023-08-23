@@ -6,7 +6,7 @@
 <div class="modal">
     <div class="modal-dialog">
         <div class="modal-content">
-            <mvc:form servletRelativeAction="/profiledb/${column}/delete.action" data-form="resource" method="DELETE">
+            <mvc:form servletRelativeAction="/profiledbold/${column}/delete.action" data-form="resource" method="DELETE">
                 <div class="modal-header">
                     <button type="button" class="close-icon close js-confirm-negative" data-dismiss="modal">
                         <i aria-hidden="true" class="icon icon-times-circle"></i>

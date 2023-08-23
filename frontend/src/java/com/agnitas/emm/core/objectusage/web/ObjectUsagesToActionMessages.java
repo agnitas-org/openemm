@@ -12,7 +12,7 @@ package com.agnitas.emm.core.objectusage.web;
 
 import java.util.Locale;
 
-import com.agnitas.web.mvc.Popups;
+import com.agnitas.messages.Message;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
 
@@ -65,18 +65,17 @@ public final class ObjectUsagesToActionMessages {
   	 * @param errorMessageKey message key for error message (without placeholder for number of usages not shown)
   	 * @param errorMessageWithMoreKey message key for error message (with placeholder for number of usages not shown) 
   	 * @param usages object usages
-  	 * @param popups popups to add new message
   	 * @param locale locale of current user
   	 */
-  	public static void objectUsagesToActionMessages(final String errorMessageKey, final String errorMessageWithMoreKey, final ObjectUsages usages, final Popups popups, final Locale locale) {
-  		if(!usages.isEmpty()) {
-  			if(usages.size() <= MAX_OBJECTS_PER_MESSAGE) {
-  				popups.alert(errorMessageKey, itemsToHtmlList(usages, locale));
-  			} else {
-  				popups.alert(errorMessageWithMoreKey, itemsToHtmlList(usages, locale), usages.size() - MAX_OBJECTS_PER_MESSAGE);
-  			}
-  		}
-  	}
+  	public static Message objectUsagesToMessage(String errorMessageKey, String errorMessageWithMoreKey, ObjectUsages usages, Locale locale) {
+        if (usages.isEmpty()) {
+            return null;
+        }
+        if (usages.size() <= MAX_OBJECTS_PER_MESSAGE) {
+            return Message.of(errorMessageKey, itemsToHtmlList(usages, locale));
+        }
+        return Message.of(errorMessageWithMoreKey, itemsToHtmlList(usages, locale), usages.size() - MAX_OBJECTS_PER_MESSAGE);
+    }
 
 	/**
 	 * Converts object usages to a HTML list.

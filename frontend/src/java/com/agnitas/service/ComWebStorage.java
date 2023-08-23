@@ -56,4 +56,6 @@ public interface ComWebStorage extends WebStorage {
     WebStorageBundle<RowsCountWebStorageEntry> RECIPIENT_RETARGETING_HISTORY_OVERVIEW = WebStorageBundle.define("recipient-retargeting-history-overview", RowsCountWebStorageEntry.class);
     WebStorageBundle<RowsCountWebStorageEntry> RECIPIENT_DEVICE_HISTORY_OVERVIEW = WebStorageBundle.define("recipient-device-history-overview", RowsCountWebStorageEntry.class);
     WebStorageBundle<SortingWebStorageEntry> TRACKABLE_LINKS = WebStorageBundle.define("trackable-links", SortingWebStorageEntry.class);
+    WebStorageBundle<RowsCountWebStorageEntry> DOMAINLIST_OVERVIEW = WebStorageBundle.define("domainlist-overview", RowsCountWebStorageEntry.class);
+    WebStorageBundle<RowsCountWebStorageEntry> DOMAIN_ADDRESSES_OVERVIEW = WebStorageBundle.define("domain-addresses-overview", RowsCountWebStorageEntry.class);
 }

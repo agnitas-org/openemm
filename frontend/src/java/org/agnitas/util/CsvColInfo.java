@@ -51,6 +51,10 @@ public class CsvColInfo {
     public CsvColInfo() {
     }
 
+    public CsvColInfo(String name) {
+        this.name = name;
+    }
+
     /**
      * Getter for property name.
      *

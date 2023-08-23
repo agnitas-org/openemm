@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
+
 import org.antlr.v4.runtime.misc.Nullable;
 
 import com.agnitas.emm.common.MailingType;
@@ -256,7 +256,7 @@ public class MailingModel {
 		return companyId;
 	}
 
-	public void setCompanyId(@VelocityCheck int companyId) {
+	public void setCompanyId(int companyId) {
 		this.companyId = companyId;
 	}
 

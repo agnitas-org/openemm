@@ -130,6 +130,10 @@ public interface Popups extends Serializable {
      */
     Popups field(String field, String code, Object... arguments);
 
+    Popups fieldError(String field, Message popup);
+
+    Popups fieldError(String field, String code, Object... arguments);
+
     /**
      * Add an exact (non-translatable) form field error popup.
      *

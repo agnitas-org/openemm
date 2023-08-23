@@ -9,7 +9,7 @@ $(document).ready(function()
 									   });
 		*/			
 		$(".stats_targetgroups_add").click(function(event5){
-								var targetgroup = '<div><a href="#" class="removeTargetgroup"><img src="../../../assets/core/images/removetargetgroup2.png" /></a>'+$('#stats_targetgroups_select :selected').text()+'</div>';
+								var targetgroup = '<div><a href="#" class="removeTargetgroup"><img src="assets/core/images/removetargetgroup2.png" /></a>'+$('#stats_targetgroups_select :selected').text()+'</div>';
 								$(targetgroup).appendTo('.stats_targetgroups_added_targetgroups');
 								event5.preventDefault();	 
 									   });

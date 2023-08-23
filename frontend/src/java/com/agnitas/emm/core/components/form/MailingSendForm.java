@@ -15,6 +15,7 @@ import com.agnitas.emm.core.mailing.forms.MailingIntervalSettingsForm;
 import org.agnitas.web.forms.PaginationForm;
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -33,9 +34,6 @@ public class MailingSendForm extends PaginationForm {
     private int sendHour;
     private int sendMinute;
     private String sendTime;
-    private long approximateMaxSizeWithoutExternalImages;
-    private long approximateMaxSize;
-    private long sizeWarningThreshold;
     private boolean isPrioritizationDisallowed;
     private boolean isEncryptedSend;
     private boolean statusmailOnErrorOnly;
@@ -53,7 +51,6 @@ public class MailingSendForm extends PaginationForm {
     private int autoImportId;
     private String statusmailRecipients = "";
     private String workStatus = "";
-    private long sizeErrorThreshold;
     private String[] filterTypes;
     private int offlineHtmlEmailsCount;
     private int totalSentCount;
@@ -62,6 +59,7 @@ public class MailingSendForm extends PaginationForm {
     private Map<Integer, Integer> sentStatistics = new HashMap<>();
     private int templateId;
     private MailingIntervalSettingsForm intervalSettings;
+    private Date date;
 
     public int getWorkflowId() {
         return workflowId;
@@ -157,30 +155,6 @@ public class MailingSendForm extends PaginationForm {
 
     public void setSendMinute(int sendMinute) {
         this.sendMinute = sendMinute;
-    }
-
-    public long getApproximateMaxSizeWithoutExternalImages() {
-        return approximateMaxSizeWithoutExternalImages;
-    }
-
-    public void setApproximateMaxSizeWithoutExternalImages(long approximateMaxSizeWithoutExternalImages) {
-        this.approximateMaxSizeWithoutExternalImages = approximateMaxSizeWithoutExternalImages;
-    }
-
-    public long getApproximateMaxSize() {
-        return approximateMaxSize;
-    }
-
-    public void setApproximateMaxSize(long approximateMaxSize) {
-        this.approximateMaxSize = approximateMaxSize;
-    }
-
-    public long getSizeWarningThreshold() {
-        return sizeWarningThreshold;
-    }
-
-    public void setSizeWarningThreshold(long sizeWarningThreshold) {
-        this.sizeWarningThreshold = sizeWarningThreshold;
     }
 
     public boolean isPrioritizationDisallowed() {
@@ -335,14 +309,6 @@ public class MailingSendForm extends PaginationForm {
         this.workStatus = workStatus;
     }
 
-    public long getSizeErrorThreshold() {
-        return sizeErrorThreshold;
-    }
-
-    public void setSizeErrorThreshold(long sizeErrorThreshold) {
-        this.sizeErrorThreshold = sizeErrorThreshold;
-    }
-
     public void setFilterTypes(String[] filterTypes) {
         this.filterTypes = filterTypes;
     }
@@ -425,5 +391,13 @@ public class MailingSendForm extends PaginationForm {
 
     public void setSendTime(String sendTime) {
         this.sendTime = sendTime;
+    }
+
+    public Date getDate() {
+        return date;
+    }
+
+    public void setDate(Date date) {
+        this.date = date;
     }
 }

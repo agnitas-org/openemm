@@ -26,9 +26,7 @@
 <c:set var="operatorsTypeSupportMap" value="<%= WorkflowDecision.OPERATOR_TYPE_SUPPORT_MAP %>"/>
 
 <%--@elvariable id="workflowForm" type="com.agnitas.emm.core.workflow.web.forms.WorkflowForm"--%>
-<%--delete after GWUA-4957 has been successfully tested--%>
 <%--@elvariable id="accessLimitTargetId" type="java.lang.Integer"--%>
-<%--@elvariable id="showStatistics" type="java.lang.Boolean"--%>
 
 <c:set var="operators" value="<%= WorkflowDecision.DECISION_OPERATORS %>"/>
 <c:set var="operatorsTypeSupportMap" value="<%= WorkflowDecision.OPERATOR_TYPE_SUPPORT_MAP %>"/>
@@ -124,7 +122,6 @@
             "isMinimapEnabled": false,
             "fitPdfPage": true,
             "isFootnotesEnabled": true,
-            "isStatisticEnabled": "${showStatistics}",
             "initializerFinishStatus": "initializerPdfFinished",
             "constants": {
 	            "startTypeOpen": "<%= WorkflowStart.WorkflowStartType.OPEN %>",
@@ -248,7 +245,6 @@
         <div class="icon-title" style="display: none;">
             <span class="icon-title-span" style="white-space: pre-line;"></span>
             </br>
-            <span class="icon-statistic-span hidden" style="white-space: pre-line;"></span>
         </div>
     </script>
 

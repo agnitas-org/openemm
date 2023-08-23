@@ -19,20 +19,20 @@ import java.util.Set;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.MailingComponentType;
 import org.agnitas.dao.MailingComponentDao;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.web.CdnImage;
 
 public interface ComMailingComponentDao extends MailingComponentDao {
-	Date getComponentTime(@VelocityCheck int companyID, int mailingID, String name);
 
-	Map<Integer, Date> getImageComponentsTimestamps(@VelocityCheck int companyID, int mailingID);
+	Date getComponentTime(int companyID, int mailingID, String name);
 
-	List<MailingComponent> getMailingComponentsByType(MailingComponentType type, @VelocityCheck int companyID);
+	Map<Integer, Date> getImageComponentsTimestamps(int companyID, int mailingID);
 
-    Map<Integer, Integer> getImageSizes(@VelocityCheck int companyID, int mailingID);
+	List<MailingComponent> getMailingComponentsByType(MailingComponentType type, int companyID);
 
-	Map<Integer, String> getImageNames(@VelocityCheck int companyId, int mailingId, boolean includeExternalImages);
+    Map<Integer, Integer> getImageSizes(int companyID, int mailingID);
+
+	Map<Integer, String> getImageNames(int companyId, int mailingId, boolean includeExternalImages);
 
 	boolean exists(int mailingID, int companyID, int componentID);
 
@@ -42,11 +42,15 @@ public interface ComMailingComponentDao extends MailingComponentDao {
 	
 	void deleteMailingComponentsByMailing(int mailingID);
 
-	boolean deleteImages(@VelocityCheck int companyId, int mailingId, Set<Integer> bulkIds);
+	List<Integer> findTargetDependentMailingsComponents(int targetGroupId, int companyId);
 
-    int getImageComponent(@VelocityCheck int companyId, int mailingId, MailingComponentType componentType);
+	List<Integer> filterComponentsOfNotSentMailings(List<Integer> components);
 
-    CdnImage getCdnImage(@VelocityCheck int companyID, int mailingID, String imageName, boolean mobile);
+	boolean deleteImages(int companyId, int mailingId, Set<Integer> bulkIds);
+
+    int getImageComponent(int companyId, int mailingId, MailingComponentType componentType);
+
+    CdnImage getCdnImage(int companyID, int mailingID, String imageName, boolean mobile);
 
 	MailingComponent getComponentByCdnID(String cdnID);
 
@@ -60,5 +64,5 @@ public interface ComMailingComponentDao extends MailingComponentDao {
      */
 	int setUnPresentComponentsForMailing(int mailingId, List<MailingComponent> presentComponents);
 
-	boolean updateBinBlockBulk(@VelocityCheck int companyId, Collection<Integer> mailingIds, MailingComponentType componentType, Collection<String> namePatterns, byte[] value) throws Exception;
+	boolean updateBinBlockBulk(int companyId, Collection<Integer> mailingIds, MailingComponentType componentType, Collection<String> namePatterns, byte[] value) throws Exception;
 }

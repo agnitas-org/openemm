@@ -24,9 +24,11 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.agnitas.emm.common.MailingType;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.MailingComponentType;
 import org.agnitas.beans.factory.impl.MailingComponentFactoryImpl;
+import org.agnitas.dao.impl.mapper.DateRowMapper;
 import org.agnitas.util.SafeString;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -68,6 +70,8 @@ public class MailingDataSet extends BIRTDataSet {
 		String archiveName;
         String targets;
 		byte[] thumbnail;
+		String evaluationPeriod;
+		String dispatchTime;
 
 		public String getMailingName() {
 			return mailingName;
@@ -132,6 +136,14 @@ public class MailingDataSet extends BIRTDataSet {
 		public byte[] getThumbnail() {
 			return thumbnail;
 		}
+
+		public String getEvaluationPeriod() {
+			return evaluationPeriod;
+		}
+
+		public String getDispatchTime() {
+			return dispatchTime;
+		}
 	}
 
 	public List<MailingData> getData(Integer mailingId, Integer companyId, String language,
@@ -167,6 +179,20 @@ public class MailingDataSet extends BIRTDataSet {
         }
 
         DateFormats dateFormats = new DateFormats(startDate, stopDate, hourScale);
+
+        if (mailing.getMailingType() == MailingType.DATE_BASED.getCode() || mailing.getMailingType() == MailingType.ACTION_BASED.getCode()
+				|| mailing.getMailingType() == MailingType.INTERVAL.getCode()) {
+
+			data.evaluationPeriod = String.format(
+					"%s - %s",
+					dateTimeFormat.format(dateFormats.getStartDateAsDate()),
+					dateTimeFormat.format(dateFormats.getStopDateAsDate())
+			);
+
+			Date dispatchDate = getFirstDispatchDate(mailingId, companyId);
+			data.dispatchTime = dispatchDate == null ? "-" : dateTimeFormat.format(dispatchDate);
+		}
+
 		Map<String,Object> mailStats = getMailingStats(mailingId, dateFormats.getStartDate(), dateFormats.getStopDate());
 		data.numMails = ((Number) mailStats.get("MAILS")).longValue();
 		data.isMailTrackingAvailable = isTrackingAvailableForMailing(mailingId, companyId);
@@ -268,6 +294,11 @@ public class MailingDataSet extends BIRTDataSet {
 			return component.getBinaryBlock();
 		}
 		return null;
+	}
+
+	private Date getFirstDispatchDate(int mailingId, int companyId) {
+		String query = "SELECT MIN(timestamp) FROM mailing_account_tbl WHERE company_id = ? AND mailing_id = ?";
+		return selectObjectDefaultNull(logger, query, DateRowMapper.INSTANCE, companyId, mailingId);
 	}
 
     public List<MailingDataSet.MailingData> getMailingsInfo(int companyID, String mailings, String language, DateFormats dateFormats) throws Exception {

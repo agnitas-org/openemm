@@ -12,7 +12,6 @@ package com.agnitas.dao;
 
 import java.util.List;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.beans.FormComponent;
 import com.agnitas.beans.FormComponent.FormComponentType;
@@ -30,7 +29,7 @@ public interface FormComponentDao {
 	 * @param imageFileName the image file name
 	 * @return the form component by name
 	 */
-	FormComponent getFormComponent(int formID, @VelocityCheck int companyID, String imageFileName, FormComponentType componentType);
+	FormComponent getFormComponent(int formID, int companyID, String imageFileName, FormComponentType componentType);
 
 	/**
 	 * Exists.
@@ -40,8 +39,8 @@ public interface FormComponentDao {
 	 * @param componentID the component id
 	 * @return true, if successful
 	 */
-	boolean exists(int formID, @VelocityCheck int companyID, int componentID);
-	boolean exists(int formId, @VelocityCheck int companyID, String componentName);
+	boolean exists(int formID, int companyID, int componentID);
+	boolean exists(int formId, int companyID, String componentName);
 
 	/**
 	 * Save.
@@ -58,7 +57,7 @@ public interface FormComponentDao {
 	 * @param componentType the component type
 	 * @return the component descriptions
 	 */
-	List<FormComponent> getFormComponentDescriptions(@VelocityCheck int companyID, int formID, FormComponentType componentType);
+	List<FormComponent> getFormComponentDescriptions(int companyID, int formID, FormComponentType componentType);
 
 	/**
 	 * Delete form component.
@@ -68,9 +67,9 @@ public interface FormComponentDao {
 	 * @param componentName the name
 	 * @param componentType the componentType
 	 */
-	boolean deleteFormComponent(@VelocityCheck int companyID, int formID, String componentName, FormComponentType componentType);
+	boolean deleteFormComponent(int companyID, int formID, String componentName, FormComponentType componentType);
 	
-	boolean deleteFormComponentByCompany(@VelocityCheck int companyID);
+	boolean deleteFormComponentByCompany(int companyID);
 
 	/**
 	 * Gets the form components.
@@ -79,9 +78,9 @@ public interface FormComponentDao {
 	 * @param formID the form id
 	 * @return the form components
 	 */
-	List<FormComponent> getFormComponents(@VelocityCheck int companyID, int formID);
+	List<FormComponent> getFormComponents(int companyID, int formID);
 
-	List<FormComponent> getFormComponents(@VelocityCheck int companyId, int formId, List<FormComponentType> types);
+	List<FormComponent> getFormComponents(int companyId, int formId, List<FormComponentType> types);
 
-	boolean saveFormComponent(@VelocityCheck int companyId, int formId, FormComponent components, FormComponent componentThumbnail) throws Exception;
+	boolean saveFormComponent(int companyId, int formId, FormComponent components, FormComponent componentThumbnail) throws Exception;
 }

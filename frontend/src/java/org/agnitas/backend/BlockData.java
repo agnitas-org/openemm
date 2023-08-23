@@ -10,6 +10,7 @@
 
 package org.agnitas.backend;
 
+import java.util.Set;
 import java.util.Vector;
 
 /**
@@ -237,13 +238,157 @@ public class BlockData implements Comparable<BlockData> {
 	 */
 	@Override
 	public int compareTo(BlockData other) {
-		int myType = norm(comptype);
-		int otherType = norm(other.comptype);
-
-		if (myType != otherType) {
-			return myType - otherType;
+		int	cmp;
+		
+		if ((cmp = norm (comptype) - norm (other.comptype)) == 0)
+			if ((cmp = type - other.type) == 0)
+				cmp = id - other.id;
+		return cmp;
+	}
+	
+	/**
+	 * get colum names from template control content
+	 * 
+	 * #return Set of column names found in template
+	 */
+	private enum State {
+		TextStart,
+		TextContent,
+		TextEscapeStart,
+		TextEscapeContent,
+		TemplateStart,
+		TemplateContent,
+		TemplateEscape,
+		InString,
+		BuildQuote,
+		StringEscape
+	}
+		
+	private Set <Character> lowerAscii = Set.of ('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z');
+	public boolean getTemplateColumns (Set <String> usedColumns) {
+		if (content == null) {
+			return false;
 		}
-		return type - other.type;
+		
+		boolean	rc = false;
+		State	state = State.TextStart;
+		int	tokenLength = 0;
+		int	brackets = 0;
+		String	quote = "";
+		int	matchedQuoteLength = 0;
+		String	column = null;
+		
+		for (char ch : content.toCharArray ()) {
+			switch (state) {
+			default:
+			case TextStart:
+				if (ch == '\\') {
+					state = State.TextEscapeStart;
+				} else if (ch == '#') {
+					state = State.TemplateStart;
+					tokenLength = 0;
+				} else if (! Character.isWhitespace (ch)) {
+					state = State.TextContent;
+				}
+				break;
+			case TextContent:
+				if (ch == '\\') {
+					state = State.TextEscapeContent;
+				} else if (Character.isWhitespace (ch)) {
+					state = State.TextStart;
+				}
+				break;
+			case TextEscapeStart:
+				state = ch == '\\' ? State.TextStart : State.TextContent;
+				break;
+			case TextEscapeContent:
+				if (ch == '#') {
+					state = State.TemplateStart;
+					tokenLength = 0;
+				} else {
+					state = State.TextContent;
+				}
+				break;
+			case TemplateStart:
+				if (ch == '(') {
+					state = State.TemplateContent;
+					brackets = 1;
+					quote = "";
+				} else if (lowerAscii.contains (ch)) {
+					++tokenLength;
+				} else {
+					if (tokenLength > 0) {
+						rc = true;
+					}
+					if (Character.isWhitespace (ch)) {
+						state = State.TextStart;
+					} else {
+						state = State.TextContent;
+					}
+				}
+				break;
+			case TemplateContent:
+				if (column != null) {
+					if ((ch == '.') || (ch == '_') || Character.isLetterOrDigit (ch)) {
+						column += ch;
+					} else {
+						usedColumns.add (column.toLowerCase ());
+						column = null;
+					}
+				}
+				if (ch == '\\') {
+					state = State.TemplateEscape;
+				} else if (ch == '$') {
+					column = "";
+				} else if (ch == '(') {
+					++brackets;
+				} else if (ch == ')') {
+					if (--brackets == 0) {
+						state = State.TextStart;
+						rc = true;
+					}
+				} else if ((ch == '\'') || (ch == '"')) {
+					quote = Character.toString (ch);
+					matchedQuoteLength = 0;
+					state = State.InString;
+				} else if (ch == '[') {
+					quote = "]";
+					state = State.BuildQuote;
+				}
+				break;
+			case TemplateEscape:
+				state = State.TemplateContent;
+				break;
+			case BuildQuote:
+				if (ch == '=') {
+					quote += "=";
+				} else if (ch == '[') {
+					quote += "]";
+					state = State.InString;
+				} else {
+					state = State.TemplateContent;
+				}
+				break;
+			case InString:
+				if (ch == '\\') {
+					state = State.StringEscape;
+				} else if (ch == quote.charAt (matchedQuoteLength)) {
+					if (++matchedQuoteLength == quote.length ()) {
+						state = State.TemplateContent;
+					}
+				} else {
+					matchedQuoteLength = 0;
+				}
+				break;
+			case StringEscape:
+				state = State.InString;
+				break;
+			}
+		}
+		if ((! rc) && (state == State.TemplateStart) && (tokenLength > 0)) {
+			rc = true;
+		}
+		return rc;
 	}
 
 	/**

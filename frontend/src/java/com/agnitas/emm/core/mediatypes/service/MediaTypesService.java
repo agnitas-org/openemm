@@ -16,13 +16,14 @@ import java.util.Map;
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.Mediatype;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public interface MediaTypesService {
     
     List<MediaTypes> getAllowedMediaTypes(Admin admin);
     
-    MediaTypes getActiveMediaType(@VelocityCheck int companyId, int mailingId);
-    
+    MediaTypes getActiveMediaType(int companyId, int mailingId);
+
+    boolean saveEncryptedState(int mailingId, int companyId, boolean isEncryptedSend);
+
     void saveMediatypes(int companyID, int mailingId, Map<Integer, Mediatype> mediatypes) throws Exception;
 }

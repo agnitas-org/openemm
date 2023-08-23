@@ -14,7 +14,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.stream.Stream;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.beans.IntEnum;
 import com.agnitas.emm.core.mailing.bean.ComMailingParameter;
@@ -70,9 +69,9 @@ public interface ComMailingParameterDao {
         }
     }
 
-    List<ComMailingParameter> getAllParameters(@VelocityCheck int companyID);
+    List<ComMailingParameter> getAllParameters(int companyID);
 
-    List<ComMailingParameter> getMailingParameters(@VelocityCheck int companyID, int mailingID);
+    List<ComMailingParameter> getMailingParameters(int companyID, int mailingID);
 
     List<ComMailingParameter> getParametersBySearchQuery(int companyID, String searchQuery, int mailingIdStartsWith);
 
@@ -82,7 +81,7 @@ public interface ComMailingParameterDao {
 
     boolean updateParameter(ComMailingParameter parameter);
 
-    boolean updateParameters(@VelocityCheck int companyID, int mailingID, List<ComMailingParameter> parameterList, int adminId);
+    boolean updateParameters(int companyID, int mailingID, List<ComMailingParameter> parameterList, int adminId);
 
     boolean deleteParameter(int mailingInfoID);
 
@@ -98,11 +97,11 @@ public interface ComMailingParameterDao {
      *
      * @throws MailingParameterNotFoundException if the mailing parameter was not found
      */
-    ComMailingParameter getParameterByName(String parameterName, int mailingId, @VelocityCheck int companyId) throws MailingParameterNotFoundException;
+    ComMailingParameter getParameterByName(String parameterName, int mailingId, int companyId) throws MailingParameterNotFoundException;
 
     String getIntervalParameter(int mailingID);
 
     void updateNextStartParameter(int mailingID, Date nextStart);
 
-    void insertMailingError(@VelocityCheck int companyId, int mailingID, String errorText);
+    void insertMailingError(int companyId, int mailingID, String errorText);
 }

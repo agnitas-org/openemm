@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 import org.agnitas.beans.ExportColumnMapping;
 import org.agnitas.beans.ExportPredef;
 import org.agnitas.dao.ExportPredefDao;
-import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.agnitas.dao.impl.mapper.IntegerRowMapper;
 import org.agnitas.util.AgnUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -34,10 +34,11 @@ import org.springframework.jdbc.core.RowMapper;
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 
 public class ExportPredefDaoImpl extends BaseDaoImpl implements ExportPredefDao {
-	private static final transient Logger logger = LogManager.getLogger(ExportPredefDaoImpl.class);
+
+	private static final Logger logger = LogManager.getLogger(ExportPredefDaoImpl.class);
 	
 	@Override
-	public ExportPredef get(int id, @VelocityCheck int companyID) {
+	public ExportPredef get(int id, int companyID) {
 		if (companyID != 0 && id != 0) {
 			return selectObjectDefaultNull(logger, "SELECT * FROM export_predef_tbl WHERE export_predef_id = ? AND company_id = ?", new ExportPredefRowMapper(isOracleDB()), id, companyID);
 		} else {
@@ -46,16 +47,16 @@ public class ExportPredefDaoImpl extends BaseDaoImpl implements ExportPredefDao 
 	}
 
 	@Override
-	public ExportPredef create(@VelocityCheck int companyID) {
+	public ExportPredef create(int companyID) {
 		if (companyID == 0) {
 			return null;
 		} else {
 			ExportPredef exportPredef = new ExportPredef();
 			exportPredef.setId(0);
 			exportPredef.setCompanyID(companyID);
-			
+
 			save(exportPredef);
-			
+
 			return exportPredef;
 		}
 	}
@@ -71,7 +72,7 @@ public class ExportPredefDaoImpl extends BaseDaoImpl implements ExportPredefDao 
 			if (exportPredef.getId() != 0) {
 				exists = selectInt(logger, "SELECT COUNT(*) FROM export_predef_tbl WHERE export_predef_id = ? AND company_id = ?", exportPredef.getId(), exportPredef.getCompanyID()) > 0;
 			}
-			
+
 			String columnsListString = "";
 			if (exportPredef.getExportColumnMappings() != null) {
 				for (ExportColumnMapping exportPredefMapping : exportPredef.getExportColumnMappings()) {
@@ -195,7 +196,7 @@ public class ExportPredefDaoImpl extends BaseDaoImpl implements ExportPredefDao 
 					exportPredef.setId(newExportPredefID);
 				}
 			}
-			
+
 			update(logger, "DELETE FROM export_column_mapping_tbl WHERE export_predef_id = ?", exportPredef.getId());
 			if (CollectionUtils.isNotEmpty(exportPredef.getExportColumnMappings())){
 				if (isOracleDB()) {
@@ -225,7 +226,7 @@ public class ExportPredefDaoImpl extends BaseDaoImpl implements ExportPredefDao 
 				}
 	        }
 		}
-		
+
 		return exportPredef.getId();
 	}
 
@@ -236,16 +237,16 @@ public class ExportPredefDaoImpl extends BaseDaoImpl implements ExportPredefDao 
 		int touchedLines = update(logger, "DELETE FROM export_predef_tbl WHERE export_predef_id = ? AND company_id = ?", exportPredef.getId(), exportPredef.getCompanyID());
 		return touchedLines > 0;
 	}
-	
+
 	@Override
-	public boolean deleteAllByCompanyID(@VelocityCheck int companyID) {
+	public boolean deleteAllByCompanyID(int companyID) {
 		update(logger, "DELETE FROM export_column_mapping_tbl WHERE export_predef_id IN (SELECT export_predef_id FROM export_predef_tbl WHERE company_id = ?)", companyID);
 		int touchedLines = update(logger, "DELETE FROM export_predef_tbl WHERE company_id = ?", companyID);
 		return touchedLines > 0;
 	}
 
 	@Override
-	public boolean delete(int id, @VelocityCheck int companyID) {
+	public boolean delete(int id, int companyID) {
 		ExportPredef exportPredef = get(id, companyID);
 
 		if (exportPredef != null) {
@@ -256,24 +257,36 @@ public class ExportPredefDaoImpl extends BaseDaoImpl implements ExportPredefDao 
 	}
 
 	@Override
-	public List<ExportPredef> getAllByCompany(@VelocityCheck int companyId) {
+	public String findName(int id, int companyId) {
+		String query = "SELECT shortname FROM export_predef_tbl WHERE export_predef_id = ? AND company_id = ?";
+		return selectWithDefaultValue(logger, query, String.class, "", id, companyId);
+	}
+
+	@Override
+	public List<Integer> findTargetDependentExportProfiles(int targetGroupId, int companyId) {
+		String query = "SELECT export_predef_id FROM export_predef_tbl WHERE company_id = ? AND target_id = ? AND deleted = 0";
+		return select(logger, query, IntegerRowMapper.INSTANCE, companyId, targetGroupId);
+	}
+
+	@Override
+	public List<ExportPredef> getAllByCompany(int companyId) {
 		return getAllByCompany(companyId, null, 0);
 	}
 
 	@Override
-	public List<ExportPredef> getAllByCompany(@VelocityCheck int companyId, final Collection<Integer> disabledMailingListIds,
-			final int targetId) {
+	public List<ExportPredef> getAllByCompany(int companyId, final Collection<Integer> disabledMailingListIds, final int targetId) {
 		final List<Object> params = new ArrayList<>();
 		String sql = "SELECT * FROM export_predef_tbl WHERE deleted = 0 AND company_id = ?";
 		params.add(companyId);
-		if(targetId > 0) {
+		
+		if (targetId > 0) {
 			sql += " AND target_id = ? ";
 			params.add(targetId);
 		}
-		if(CollectionUtils.isNotEmpty(disabledMailingListIds)) {
-			sql += " AND mailinglist_id NOT IN (" + StringUtils.join(disabledMailingListIds, ',') + ") ";
+		
+		if (CollectionUtils.isNotEmpty(disabledMailingListIds)) {
+			sql += " AND mailinglist_id > 0 AND mailinglist_id NOT IN (" + StringUtils.join(disabledMailingListIds, ',') + ") ";
 		}
-
 
 		final List<ExportPredef> profiles = new ArrayList<>();
 		final RowMapper<ExportPredef> rowMapper = new ExportPredefRowMapper(isOracleDB());
@@ -295,24 +308,24 @@ public class ExportPredefDaoImpl extends BaseDaoImpl implements ExportPredefDao 
 	}
 
 	@Override
-	public List<Integer> getAllIdsByCompany(@VelocityCheck int companyId) {
+	public List<Integer> getAllIdsByCompany(int companyId) {
 		return getAllIdsByCompany(companyId, null, 0);
 	}
 
 	@Override
-	public List<Integer> getAllIdsByCompany(@VelocityCheck int companyId, Collection<Integer> disabledMailingListIds,
-			final int targetId) {
+	public List<Integer> getAllIdsByCompany(int companyId, Collection<Integer> disabledMailingListIds, final int targetId) {
 		final List<Object> params = new ArrayList<>();
 		String sqlGetIds = "SELECT export_predef_id, mailinglists FROM export_predef_tbl " +
 				"WHERE deleted = 0 AND company_id = ? ";
 		params.add(companyId);
 
-		if(targetId > 0) {
+		if (targetId > 0) {
 			sqlGetIds += " AND target_id = ? ";
 			params.add(targetId);
 		}
-		if(CollectionUtils.isNotEmpty(disabledMailingListIds)) {
-			sqlGetIds += " AND mailinglist_id NOT IN (" + StringUtils.join(disabledMailingListIds, ',') + ") ";
+		
+		if (CollectionUtils.isNotEmpty(disabledMailingListIds)) {
+			sqlGetIds += " AND mailinglist_id > 0 AND mailinglist_id NOT IN (" + StringUtils.join(disabledMailingListIds, ',') + ") ";
 		}
 
 		final List<Integer> ids = new ArrayList<>();

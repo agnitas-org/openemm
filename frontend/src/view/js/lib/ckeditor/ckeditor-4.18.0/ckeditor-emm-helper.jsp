@@ -75,6 +75,10 @@
                     },
                     blur: function (event) {
                         event.editor.updateElement();
+                    },
+                    save: function(e) {
+                        $(document).trigger('ckeditor-save');
+                        e.cancel();
                     }
                 }
             };

@@ -1,10 +1,17 @@
-<%@ page import="com.agnitas.emm.core.components.service.MailingSendService" %>
+<%@ page import="com.agnitas.emm.core.components.entity.TestRunOption" %>
+<%@ page import="org.agnitas.util.AgnUtils" %>
 
 <%--@elvariable id="testForm" type="com.agnitas.emm.core.components.form.MailingTestSendForm"--%>
 <%--@elvariable id="externalEditorLink" type="java.lang.String"--%>
 <%--@elvariable id="adminTargetGroupList" type="java.util.List<com.agnitas.beans.TargetLight>"--%>
 
-<c:set var="ADMIN_TARGET_SINGLE_RECIPIENT" value="<%= MailingSendService.ADMIN_TARGET_SINGLE_RECIPIENT %>"/>
+<c:set var="NO_LIMITATION_TEST_RUN_OPTION" value="<%= TestRunOption.NO_LIMITATION %>"/>
+<c:set var="RECIPIENT_TEST_RUN_OPTION" value="<%= TestRunOption.RECIPIENT %>"/>
+<c:set var="TARGET_TEST_RUN_OPTION" value="<%= TestRunOption.TARGET %>"/>
+<c:set var="SEND_TO_SELF_TEST_RUN_OPTION" value="<%= TestRunOption.SEND_TO_SELF %>"/>
+
+<c:set var="SESSION_CONTEXT_KEYNAME_ADMIN" value="<%= AgnUtils.SESSION_CONTEXT_KEYNAME_ADMIN %>" />
+<c:set var="admin" value="${sessionScope[SESSION_CONTEXT_KEYNAME_ADMIN]}"/>
 
 <mvc:form servletRelativeAction="/mailing/send/${form.mailingID}" data-form="resource" modelAttribute="testForm">
     <div class="tile">
@@ -30,22 +37,33 @@
                     </div>
 
                     <div id="test-send-controls-group" class="vspace-top-10">
+                        <div class="form-group">
+                            <div class="col-sm-4">
+                                <label class="control-label" for="test-run-options">
+                                    <mvc:message code="mailing.send.admin.target.to" />
+                                </label>        
+                            </div>
+                            <div class="col-sm-8">
+                                <mvc:select path="testRunOption" id="test-run-options" cssClass="form-control js-select"
+                                            data-action="admin-target-group" data-initializer="test-run-recipients-select">
+                                    <mvc:option value="${NO_LIMITATION_TEST_RUN_OPTION}"><mvc:message code="${NO_LIMITATION_TEST_RUN_OPTION.messageKey}" /></mvc:option>
+                                    <mvc:option value="${RECIPIENT_TEST_RUN_OPTION}"><mvc:message code="${RECIPIENT_TEST_RUN_OPTION.messageKey}" /></mvc:option>
+                                    <emm:ShowByPermission token="mailing.send.admin.target">
+                                        <mvc:option value="${TARGET_TEST_RUN_OPTION}"><mvc:message code="${TARGET_TEST_RUN_OPTION.messageKey}" /></mvc:option>
+                                    </emm:ShowByPermission>
+                                    <mvc:option value="${SEND_TO_SELF_TEST_RUN_OPTION}"><mvc:message code="${SEND_TO_SELF_TEST_RUN_OPTION.messageKey}" /> (${admin.email})</mvc:option>
+                                </mvc:select>
+                            </div>
+                        </div>
                         <emm:ShowByPermission token="mailing.send.admin.target">
-                            <div class="form-group">
+                            <div class="form-group" data-show-by-select="#test-run-options" data-show-by-select-values="${TARGET_TEST_RUN_OPTION}">
                                 <div class="col-sm-4">
                                     <label class="control-label" for="adminTargetGroupSelect">
-                                        <mvc:message code="mailing.send.admin.target.to" />
+                                        <mvc:message code="report.selectTargets" />
                                     </label>
                                 </div>
                                 <div class="col-sm-8">
-                                    <mvc:select path="adminTargetGroupID" id="adminTargetGroupSelect" cssClass="form-control js-select"
-                                                data-action="admin-target-group" data-initializer="test-run-recipients-select">
-
-                                        <mvc:option value="0"> <mvc:message code="mailing.send.adminOrTest" /></mvc:option>
-                                        <mvc:option value="${ADMIN_TARGET_SINGLE_RECIPIENT}">
-                                            <mvc:message code="mailing.test.recipient.single" />
-                                        </mvc:option>
-
+                                    <mvc:select path="adminTargetGroupID" id="adminTargetGroupSelect" cssClass="form-control js-select">
                                         <mvc:options items="${adminTargetGroupList}" itemValue="id" itemLabel="targetName"/>
                                     </mvc:select>
                                 </div>
@@ -53,7 +71,7 @@
                         </emm:ShowByPermission>
                     </div>
 
-                    <div class="form-group ${testForm.adminTargetGroupID eq ADMIN_TARGET_SINGLE_RECIPIENT ? '' : 'hidden'}" id="test-recipients-table">
+                    <div class="form-group ${testForm.testRunOption eq RECIPIENT_TEST_RUN_OPTION ? '' : 'hidden'}" id="test-recipients-table">
                         <div class="col-sm-push-4 col-sm-8">
                             <div class="table-responsive">
                                 <table class="table table-bordered table-striped">
@@ -113,16 +131,57 @@
                             </div>
                         </div>
                     </div>
+                    
+                    <div class="form-group" data-show-by-select="#test-run-options" data-show-by-select-values="${RECIPIENT_TEST_RUN_OPTION}">
+                        <div class="col-sm-4">
+                            <label class="control-label checkbox-control-label" for="save-target-toggle">
+                                <mvc:message code="button.save.target" />
+                            </label>
+                        </div>
+                        <div class="col-sm-8">
+                            <label class="toggle">
+                                <input id="save-target-toggle" class="form-control" type="checkbox"/>
+                                <div class="toggle-control"></div>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div id="test-run-target-name-input" class="form-group"
+                         data-show-by-checkbox="#save-target-toggle">
+                        <div class="col-sm-4">
+                            <label class="control-label" for="save-target-toggle">
+                                <mvc:message code="targetgroup.name" />*
+                            </label>
+                        </div>
+                        <div class="col-sm-8">
+                            <mvc:text path="targetName" cssClass="form-control"
+                                      data-field-validator="length"
+                                      data-validator-options="required: true, min: 3"
+                                      data-action="edit-test-run-target-name"/>
+                        </div>
+                    </div>
 
                     <div class="form-group">
-                        <div class="col-sm-offset-1 col-sm-11">
-                            <div class="btn-group">
-                                <a href="#" id="adminSendButton" class="btn btn-regular btn-primary" data-action="start-delivery" data-action-value="/send-admin.action">
+                        <div class="col-sm-offset-4 col-sm-8">
+                            <div class="btn-group pull-right">
+                                <a href="#" id="testTargetSaveButton" class="btn btn-regular btn-primary"
+                                   data-show-by-checkbox="#save-target-toggle"
+                                   data-action="save-target-for-test-run">
+                                    <i class="icon icon-save"></i>
+                                    <span class="text"><mvc:message code="button.save.target" /></span>
+                                </a>
+                                <a href="#" id="adminSendButton" class="btn btn-regular btn-primary"
+                                   data-action="start-delivery"
+                                   data-action-value="/send-admin.action"
+                                   data-tooltip="<mvc:message code="mailing.send.admin"/>">
                                     <i class="icon icon-send-o"></i>
                                     <span class="text"><mvc:message code="adminMail" /></span>
                                 </a>
 
-                                <a href="#" class="btn btn-regular btn-primary" data-action="start-delivery" data-action-value="/send-test.action">
+                                <a href="#" class="btn btn-regular btn-primary"
+                                   data-action="start-delivery"
+                                   data-action-value="/send-test.action"
+                                   data-tooltip="<mvc:message code="mailing.send.admin.test"/>">
                                     <i class="icon icon-send-o"></i>
                                     <span class="text"><mvc:message code="testMail" /></span>
                                 </a>

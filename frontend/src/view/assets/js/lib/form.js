@@ -96,6 +96,7 @@ Use `data-disable-controls="*"` to refer all the elements having `data-controls-
 
   var Form,
       Field = AGN.Lib.Field,
+      CSRF = AGN.Lib.CSRF,
       ControlsToDisable;
 
   ControlsToDisable = function(group) {
@@ -149,6 +150,7 @@ Use `data-disable-controls="*"` to refer all the elements having `data-controls-
     this.fields = [];
     this.validatorName = null;
     this.validatorOptions = null;
+    this.dirtyChecking = $form.is('[data-form-dirty-checking]');
 
     this.url = $form.attr('action');
     this.urlNextRequest = null;
@@ -165,7 +167,27 @@ Use `data-disable-controls="*"` to refer all the elements having `data-controls-
 
     this.initFields();
     this.initValidator();
+
+    this.handleMessages($('body'), true);
+
+    if (this.dirtyChecking) {
+      enableDirtyChecking($form);
+    }
   };
+
+  function enableDirtyChecking($form) {
+    $form.dirty({
+      preventLeaving: true,
+      leavingMessage: t('grid.layout.leaveQuestion')
+    });
+
+    window.onbeforeunload = function () {
+      //prevent show loader if form is dirty
+      if (!$form.dirty('isDirty') === true) {
+        AGN.Lib.Loader.show();
+      }
+    };
+  }
 
   // Static Method
   // gets a singleton instance
@@ -477,14 +499,31 @@ Use `data-disable-controls="*"` to refer all the elements having `data-controls-
       self.setLoaderShown(false);
       self.updateHtml(resp);
       self.$form.trigger('submitted', resp);
+
+      if (self.dirtyChecking) {
+        changeDirtyState(self.$form);
+      }
     });
 
     return jqxhr;
   };
 
+  function changeDirtyState($form) {
+    const formRewritten = $('body').has($form).length === 0;
+    if (formRewritten) {
+      $form.dirty('destroy');
+    } else {
+      $form.dirty('setAsClean')
+    }
+  }
+
   Form.prototype._submitStatic = function() {
     var data = this.data(),
         $staticForm;
+
+    if (CSRF.isProtectionEnabled()) {
+      data[CSRF.getParameterName()] = CSRF.readActualToken();
+    }
 
     $staticForm = $('<form method="' + this.method + '" action="' + this.getAction() + '"></form>');
     _.each(data, function(value, param) {
@@ -599,11 +638,28 @@ Use `data-disable-controls="*"` to refer all the elements having `data-controls-
     }
   };
 
-  Form.prototype.handleMessages = function(resp) {
-    var $resp = $(resp),
-        $messages;
+  Form.prototype.handleMessages = function($resp, formFieldsOnly) {
+    const self = this;
 
-    $messages = $resp.
+    if (!($resp instanceof $)) {
+      $resp = $($resp);
+    }
+
+    $resp.all('script[data-message][type="text/html"]').each(function() {
+      const $this = $(this);
+      const message = $this.text();
+      const fieldName = $this.data('message');
+
+      if (message && fieldName) {
+        self.showFieldError(fieldName, message, false)
+      }
+    });
+
+    if (formFieldsOnly === true) {
+      return;
+    }
+
+    const $messages = $resp.
       filter('script[data-message]').
       add($resp.find('script[data-message]'));
 
@@ -735,9 +791,14 @@ Use `data-disable-controls="*"` to refer all the elements having `data-controls-
     }
 
     if (showIcon) {
+      const $existingIcon = anchor.next("span[class*='icon-state-']");
+
+      if ($existingIcon) {
+        $existingIcon.hide();
+      }
       anchor.after('<span class="icon icon-state-alert form-control-feedback js-form-error-ind"></span>');
     }
-    anchor.after('<div class="form-control-feedback-message js-form-error-msg">' + message + '</div>');
+    anchor.parent().append('<div class="form-control-feedback-message js-form-error-msg">' + message + '</div>');
   }
 
   Form.prototype.handleErrors = function() {

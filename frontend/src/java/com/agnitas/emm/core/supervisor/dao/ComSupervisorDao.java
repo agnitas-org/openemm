@@ -12,8 +12,6 @@ package com.agnitas.emm.core.supervisor.dao;
 
 import java.util.List;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
-
 import com.agnitas.emm.core.supervisor.beans.Supervisor;
 import com.agnitas.emm.core.supervisor.common.SupervisorException;
 import com.agnitas.emm.core.supervisor.common.SupervisorSortCriterion;
@@ -99,7 +97,7 @@ public interface ComSupervisorDao {
 
 	Supervisor updateSupervisor(Supervisor supervisor);
 
-	boolean logSupervisorLogin(int supervisorId, @VelocityCheck int companyId);
+	boolean logSupervisorLogin(int supervisorId, int companyId);
 	
 	void cleanupUnusedSupervisorBindings(int daysBeforeInactive);
 	

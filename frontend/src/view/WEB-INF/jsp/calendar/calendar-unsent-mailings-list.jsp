@@ -1,12 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
-<%@ page import="com.agnitas.web.MailingBaseAction"  %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
-
-<c:set var="ACTION_VIEW" value="<%=  MailingBaseAction.ACTION_VIEW %>" scope="page"/>
-<c:set var="ACTION_USED_ACTIONS" value="<%=  MailingBaseAction.ACTION_USED_ACTIONS %>" scope="page"/>
-<c:set var="ACTION_CONFIRM_DELETE" value="<%=  MailingBaseAction.ACTION_CONFIRM_DELETE %>" scope="page"/>
 
 <%--@elvariable id="unsentMails" type="java.util.List"--%>
 
@@ -16,15 +11,7 @@
 <ul class="link-list">
     <c:forEach var="unsentMail" items="${unsentMails}">
         <li>
-            <emm:ShowByPermission token="mailing.settings.migration">
-                <c:url var="mailingUrl" value="/mailing/${unsentMail.mailingid}/settings.action"/>
-            </emm:ShowByPermission>
-            <emm:HideByPermission token="mailing.settings.migration">
-                <c:url var="mailingUrl" value="/mailingbase.do">
-                    <c:param name="action" value="${ACTION_VIEW}"/>
-                    <c:param name="mailingID" value="${unsentMail.mailingid}"/>
-                </c:url>
-            </emm:HideByPermission>
+            <c:url var="mailingUrl" value="/mailing/${unsentMail.mailingid}/settings.action"/>
             <a href="${mailingUrl}" class="link-list-item">
                 <p class="headline">
                     <span class="mailing-badge ${unsentMail.workstatus}"

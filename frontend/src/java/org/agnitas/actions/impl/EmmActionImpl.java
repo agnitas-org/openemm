@@ -61,6 +61,8 @@ public class EmmActionImpl implements EmmAction {
 
     private boolean isActive = true;
 
+    private boolean isAdvertising;
+
     /** Getter for property companyID.
      *
      * @return Value of property companyID.
@@ -222,5 +224,15 @@ public class EmmActionImpl implements EmmAction {
     @Override
     public void setIsActive(boolean isActive) {
         this.isActive = isActive;
+    }
+
+    @Override
+    public void setAdvertising(boolean advertising) {
+        this.isAdvertising = advertising;
+    }
+
+    @Override
+    public boolean isAdvertising() {
+        return isAdvertising;
     }
 }

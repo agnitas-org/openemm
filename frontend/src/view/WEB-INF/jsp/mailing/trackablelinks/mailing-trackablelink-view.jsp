@@ -34,7 +34,7 @@
             <div class="row">
         </c:if>
 
-        <div class="${isMailingGrid ? '' : 'col-xs-12 row-1-1'}" data-controller="trackable-link-new">
+        <div class="${isMailingGrid ? '' : 'col-xs-12 row-1-1'}" data-controller="trackable-link">
             <mvc:form servletRelativeAction="/mailing/${mailingId}/trackablelink/${linkId}/save.action" 
                       id="trackableLinkForm" 
                       modelAttribute="trackableLinkForm"

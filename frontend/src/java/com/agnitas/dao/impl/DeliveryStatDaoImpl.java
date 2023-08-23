@@ -13,8 +13,11 @@ package com.agnitas.dao.impl;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Date;
+import java.util.List;
 
+import com.agnitas.emm.core.maildrop.MaildropGenerationStatus;
 import org.agnitas.dao.impl.BaseDaoImpl;
+import org.agnitas.dao.impl.mapper.IntegerRowMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.jdbc.core.RowMapper;
@@ -26,8 +29,7 @@ import com.agnitas.dao.DeliveryStatDao;
 
 public class DeliveryStatDaoImpl extends BaseDaoImpl implements DeliveryStatDao {
 
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(DeliveryStatDaoImpl.class);
+	private static final Logger logger = LogManager.getLogger(DeliveryStatDaoImpl.class);
 
 	@Override
 	public int getSentMails(int maildropId) {
@@ -101,11 +103,22 @@ public class DeliveryStatDaoImpl extends BaseDaoImpl implements DeliveryStatDao 
 	
 	@Override
 	public boolean deleteMaildropStatusByCompany(int companyID) {
+		update(logger, "DELETE FROM mailing_account_tbl WHERE maildrop_id IN (SELECT status_id FROM maildrop_status_tbl WHERE company_id = ?)", companyID);
+		update(logger, "DELETE FROM mailing_backend_log_tbl WHERE status_id IN (SELECT status_id FROM maildrop_status_tbl WHERE company_id = ?)", companyID);
+		update(logger, "DELETE FROM mailtrack_" + companyID + "_tbl WHERE maildrop_status_id IN (SELECT status_id FROM maildrop_status_tbl WHERE company_id = ?)", companyID);
+		update(logger, "DELETE FROM test_recipients_tbl WHERE maildrop_status_id IN (SELECT status_id FROM maildrop_status_tbl WHERE company_id = ?)", companyID);
+		update(logger, "DELETE FROM mailing_import_lock_tbl WHERE maildrop_status_id IN (SELECT status_id FROM maildrop_status_tbl WHERE company_id = ?)", companyID);
 		update(logger, "DELETE FROM maildrop_status_tbl WHERE company_id = ?", companyID);
 		return selectInt(logger, "SELECT COUNT(*) FROM maildrop_status_tbl WHERE company_id = ?", companyID) == 0;
 	}
 
-	private class MailingBackendLogRowMapper implements RowMapper<MailingBackendLog> {
+	@Override
+	public List<Integer> findTargetDependentMaildropEntries(int targetGroupId, int companyId) {
+		String query = "SELECT status_id FROM maildrop_status_tbl WHERE company_id = ? AND genstatus <> ? AND admin_test_target_id = ?";
+		return select(logger, query, IntegerRowMapper.INSTANCE, companyId, MaildropGenerationStatus.FINISHED.getCode(), targetGroupId);
+	}
+
+	private static class MailingBackendLogRowMapper implements RowMapper<MailingBackendLog> {
 
 		@Override
 		public MailingBackendLog mapRow(ResultSet rs, int i) throws SQLException {
@@ -118,7 +131,7 @@ public class DeliveryStatDaoImpl extends BaseDaoImpl implements DeliveryStatDao 
 		}
 	}
 
-	private class MaildropGenerationRowMapper implements RowMapper<MaildropEntry> {
+	private static class MaildropGenerationRowMapper implements RowMapper<MaildropEntry> {
 
 		@Override
 		public MaildropEntry mapRow(ResultSet rs, int i) throws SQLException {
@@ -132,7 +145,7 @@ public class DeliveryStatDaoImpl extends BaseDaoImpl implements DeliveryStatDao 
 		}
 	}
 
-	private class MailingDropMapper implements RowMapper<MaildropEntry> {
+	private static class MailingDropMapper implements RowMapper<MaildropEntry> {
 
 		@Override
 		public MaildropEntry mapRow(ResultSet rs, int i) throws SQLException {

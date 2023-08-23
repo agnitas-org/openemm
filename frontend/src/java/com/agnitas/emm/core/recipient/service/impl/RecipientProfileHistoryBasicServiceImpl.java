@@ -16,7 +16,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
@@ -49,8 +48,10 @@ public class RecipientProfileHistoryBasicServiceImpl implements RecipientProfile
 	protected ProfileFieldDao profileFieldDao;
 
 	@Override
-	public void afterProfileFieldStructureModification(@VelocityCheck int companyId) throws RecipientProfileHistoryException {
+	public void afterProfileFieldStructureModification(int companyId) throws RecipientProfileHistoryException {
 		try {
+			profileFieldDao.clearProfileStructureCache(companyId);
+			
 			List<ProfileField> profileFields = listProfileFieldsForHistory(companyId);
 	
 			profileHistoryDao.afterProfileFieldStructureModification(companyId, profileFields);
@@ -70,7 +71,7 @@ public class RecipientProfileHistoryBasicServiceImpl implements RecipientProfile
 	 * 
 	 * @throws Exception on errors during processing
 	 */
-	protected List<ProfileField> listProfileFieldsForHistory(@VelocityCheck int companyId) throws Exception {
+	protected List<ProfileField> listProfileFieldsForHistory(int companyId) throws Exception {
 		List<ProfileField> allFields = profileFieldDao.getComProfileFields(companyId);
 
 		return Optional.ofNullable(allFields).orElse(Collections.emptyList()).stream()
@@ -83,12 +84,12 @@ public class RecipientProfileHistoryBasicServiceImpl implements RecipientProfile
 	}
 
 	@Override
-	public boolean isProfileFieldHistoryEnabled(@VelocityCheck int companyId) {
+	public boolean isProfileFieldHistoryEnabled(int companyId) {
 		return configService.isRecipientProfileHistoryEnabled(companyId);
 	}
 	
 	@Override
-	public List<ComRecipientHistory> listProfileFieldHistory(int recipientID, @VelocityCheck int companyId) throws RecipientProfileHistoryException {
+	public List<ComRecipientHistory> listProfileFieldHistory(int recipientID, int companyId) throws RecipientProfileHistoryException {
 		if (!isProfileFieldHistoryEnabled(companyId)) {
 			logger.error(String.format("Profile field history not enabled for company %d", companyId));
 			

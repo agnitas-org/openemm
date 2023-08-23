@@ -44,7 +44,5 @@ public interface FulltextSearchReservedLiteralsConfig {
         return false;
     }
 
-    default void validateTokens(String[] tokens) throws FulltextSearchInvalidQueryException {
-        // nothing to do
-    }
+    void validateTokens(String[] tokens) throws FulltextSearchInvalidQueryException;
 }

@@ -28,6 +28,8 @@ import	org.agnitas.util.Str;
  * from the tables company_tbl and company_info_tbl
  */
 public class CompanyDAO {
+	private static Map <Long, Long>
+				baseCompanyCache = new HashMap <> ();
 	private long		companyID;
 	private String		shortName;
 	private boolean		mailTracking;
@@ -114,52 +116,60 @@ public class CompanyDAO {
 				//
 				// find base company ID
 				companyBaseID = companyID;
-
-				String	table = "customer_" + companyID + "_tbl";
-				String	typ = null;
+				synchronized (baseCompanyCache) {
+					Long	cachedBaseCompanyID = baseCompanyCache.get (companyID);
+					
+					if (cachedBaseCompanyID == null) {
+						String	table = "customer_" + companyID + "_tbl";
+						String	typ = null;
 				
-				if (dbase.isOracle ()) {
-					rq = dbase.query (with.cursor (),
-							  "SELECT object_type FROM user_objects WHERE object_name = :tableName",
-							  "tableName", table);
-					for (int n = 0; n < rq.size (); ++n) {
-						row = rq.get (n);
-						typ = dbase.asString (row.get ("object_type"));
-					}
-				} else {
-					if (dbase.queryInt (with.cursor (),
-							    "SELECT count(*) cnt FROM information_schema.views WHERE TABLE_SCHEMA = (select SCHEMA()) and table_name = :tableName",
-							    "tableName", table) > 0) {
-						typ = "VIEW";
-					}
-				}
-				if ((typ != null) && typ.equals ("VIEW")) {
-					String	query, text;
-
-					if (dbase.isOracle ()) {
-						query = "SELECT text FROM user_views WHERE view_name = :tableName";
-					} else {
-						query = "SELECT VIEW_DEFINITION FROM information_schema.VIEWS WHERE TABLE_SCHEMA = (select SCHEMA()) AND table_name = :tableName";
-					}
-					text = dbase.queryString (with.cursor (),
-								  query,
-								  "tableName", table);
-					if (text != null) {
-						Matcher	m = searchBase.matcher (text.replaceAll ("[ \t\n\r\f]+", " "));
-						
-						if (m.find ()) {
-							companyBaseID = Str.atol (m.group (2), companyBaseID);
+						if (dbase.isOracle ()) {
+							rq = dbase.query (with.cursor (),
+									  "SELECT object_type FROM user_objects WHERE object_name = :tableName",
+									  "tableName", table);
+							for (int n = 0; n < rq.size (); ++n) {
+								row = rq.get (n);
+								typ = dbase.asString (row.get ("object_type"));
+							}
+						} else {
+							if (dbase.queryInt (with.cursor (),
+									    "SELECT count(*) cnt FROM information_schema.views WHERE TABLE_SCHEMA = (select SCHEMA()) and table_name = :tableName",
+									    "tableName", table) > 0) {
+								typ = "VIEW";
+							}
 						}
-					}
-				}
-				if (companyBaseID != companyID) {
-					row = dbase.querys (with.cursor (),
-							    "SELECT status " +
-							    "FROM company_tbl " +
-							    "WHERE company_id = :companyID",
-							    "companyID", companyBaseID);
-					if ((row == null) || (! "active".equals (dbase.asString (row.get ("status"))))) {
-						companyBaseID = companyID;
+						if ((typ != null) && typ.equals ("VIEW")) {
+							String	query, text;
+
+							if (dbase.isOracle ()) {
+								query = "SELECT text FROM user_views WHERE view_name = :tableName";
+							} else {
+								query = "SELECT VIEW_DEFINITION FROM information_schema.VIEWS WHERE TABLE_SCHEMA = (select SCHEMA()) AND table_name = :tableName";
+							}
+							text = dbase.queryString (with.cursor (),
+										  query,
+										  "tableName", table);
+							if (text != null) {
+								Matcher	m = searchBase.matcher (text.replaceAll ("[ \t\n\r\f]+", " "));
+						
+								if (m.find ()) {
+									companyBaseID = Str.atol (m.group (2), companyBaseID);
+								}
+							}
+						}
+						if (companyBaseID != companyID) {
+							row = dbase.querys (with.cursor (),
+									    "SELECT status " +
+									    "FROM company_tbl " +
+									    "WHERE company_id = :companyID",
+									    "companyID", companyBaseID);
+							if ((row == null) || (! "active".equals (dbase.asString (row.get ("status"))))) {
+								companyBaseID = companyID;
+							}
+						}
+						baseCompanyCache.put (companyID, companyBaseID);
+					} else {
+						companyBaseID = cachedBaseCompanyID;
 					}
 				}
 			} else {

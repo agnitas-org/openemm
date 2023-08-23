@@ -31,6 +31,7 @@ import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
 import org.springframework.ws.server.endpoint.annotation.RequestPayload;
 import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
+import com.agnitas.emm.core.recipient.RecipientException;
 import com.agnitas.emm.wsmanager.bean.WebserviceUserSettings;
 import com.agnitas.emm.wsmanager.service.WebserviceUserService;
 
@@ -48,7 +49,7 @@ public class ListSubscribersEndpoint extends BaseEndpoint {
 	}
 
 	@PayloadRoot(namespace = Namespaces.AGNITAS_ORG, localPart = "ListSubscribersRequest")
-	public @ResponsePayload ListSubscribersResponse listSubscribers(@RequestPayload ListSubscribersRequest request) {
+	public @ResponsePayload ListSubscribersResponse listSubscribers(@RequestPayload ListSubscribersRequest request) throws RecipientException {
 		ListSubscribersResponse response = new ListSubscribersResponse();
 
 		RecipientsModel model = parseModel(request);
@@ -62,20 +63,37 @@ public class ListSubscribersEndpoint extends BaseEndpoint {
 		return response;
 	}
 	
-	RecipientsModel parseModel(ListSubscribersRequest request) {
-	    Criteria criteria = request.getCriteria();
-	    if (criteria == null) {
-            throw new RecipientWrongRequestException("Criteria are empty.");
-        }
+	RecipientsModel parseModel(final ListSubscribersRequest request) {
+		if(request.getCriteria() != null) {
+			return parseCriteraModel(request);
+		} else if(request.getEql() != null) {
+			return parseEqlModel(request);
+		} else {
+			throw new RecipientWrongRequestException("No criterion or EQL expression given");
+		}
+	}
+	
+	RecipientsModel parseEqlModel(final ListSubscribersRequest request) {
+		assert request.getEql() != null; // Ensured by caller
+		
+        final RecipientsModel model = parseRecipientModelData(request);
+        model.setEql(request.getEql());
+        
+        return model;
+	}
+	
+	RecipientsModel parseCriteraModel(ListSubscribersRequest request) {
+	    final Criteria criteria = request.getCriteria();
+	    assert criteria != null; // Ensured by caller
 	    
-        RecipientsModel model = new RecipientsModel();
-        model.setCompanyId(securityContextAccess.getWebserviceUserCompanyId());
-        List<RecipientsModel.CriteriaEquals> criteriaEqualsList = new ArrayList<>();
+        final RecipientsModel model = parseRecipientModelData(request);
+
+        final List<RecipientsModel.CriteriaEquals> criteriaEqualsList = new ArrayList<>();
         model.setCriteriaEquals(criteriaEqualsList);
         model.setMatchAll(criteria.isMatchAll());
 
-        List<Equals> equalsList = criteria.getEquals();
-        for (Equals equals : equalsList) {
+        final List<Equals> equalsList = criteria.getEquals();
+        for(final Equals equals : equalsList) {
             criteriaEqualsList
                 .add(new RecipientsModel.CriteriaEquals(
                         equals.getProfilefield(),
@@ -83,6 +101,14 @@ public class ListSubscribersEndpoint extends BaseEndpoint {
                         equals.getDateformat())
                 );
         }
+		
+		return model;
+	}
+	
+	RecipientsModel parseRecipientModelData(final ListSubscribersRequest request) {
+		final RecipientsModel model = new RecipientsModel();
+		
+        model.setCompanyId(securityContextAccess.getWebserviceUserCompanyId());
 		
 		return model;
 	}

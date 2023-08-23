@@ -42,13 +42,19 @@ public class Custinfo {
 	 * values for database retrieved target groups
 	 */
 	private boolean[] targetGroupValues = null;
+	/**
+	 * overwritten test recipient columns
+	 */
+	private Map <String, String> overwrittenTestRecipientColumns = null;
 
 	public Custinfo(Data data) {
 		if (data != null) {
 			int targetCount = data.targetExpression.resolveByDatabase().size();
+			
 			if (targetCount > 0) {
 				targetGroupValues = new boolean[targetCount];
 			}
+			overwrittenTestRecipientColumns = data.retrieveOverwrittenTestRecipientColumns ();
 		}
 	}
 
@@ -99,16 +105,25 @@ public class Custinfo {
 	}
 
 	public String getMediaFieldContent(Media m) {
-		if ((m != null) && (m.type == Media.TYPE_EMAIL)) {
-			if (sampleEmail != null) {
-				return sampleEmail;
+		if (m != null) {
+			if (m.type == Media.TYPE_EMAIL) {
+				if (sampleEmail != null) {
+					return sampleEmail;
+				}
+				if (providerEmail != null) {
+					return providerEmail;
+				}
 			}
-			if (providerEmail != null) {
-				return providerEmail;
+			String profileField = m.profileField();
+			
+			if (profileField != null) {
+				if ((overwrittenTestRecipientColumns != null) && overwrittenTestRecipientColumns.containsKey (profileField)) {
+					return overwrittenTestRecipientColumns.get (profileField);
+				}
+				return columns.get(profileField);
 			}
 		}
-		String profileField = m != null ? m.profileField() : null;
-		return profileField != null ? columns.get(profileField) : null;
+		return null;
 	}
 
 	public int getGender() {

@@ -41,6 +41,7 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.ui.Model;
@@ -92,11 +93,11 @@ public class AdminControllerBase implements XssCheckAware {
 
     protected final ConfigService configService;
     protected final AdminService adminService;
+    protected final UserActivityLogService userActivityLogService;
     private final ComLogonService logonService;
     private final CompanyService companyService;
     private final AdminGroupService adminGroupService;
     private final WebStorage webStorage;
-    private final UserActivityLogService userActivityLogService;
     private final AdminChangesLogService adminChangesLogService;
     private final PasswordCheck passwordCheck;
     private final ComCSVService csvService;
@@ -143,7 +144,7 @@ public class AdminControllerBase implements XssCheckAware {
         } else {
             FormUtils.syncSearchParams(adminListSearchParams, form, restoreSearchParams);
         }
-        model.addAttribute(ADMIN_ENTRIES_KEY, new PaginatedListImpl<AdminEntry>());
+        model.addAttribute(ADMIN_ENTRIES_KEY, new PaginatedListImpl<>());
         int companyID = admin.getCompanyID();
 
         PollingUid pollingUid = PollingUid.builder(session.getId(), ADMIN_ENTRIES_KEY)
@@ -186,7 +187,7 @@ public class AdminControllerBase implements XssCheckAware {
         loadDataForViewPage(admin, adminToEdit, model);
         model.addAttribute("PASSWORD_POLICY", PasswordPolicyUtil.loadCompanyPasswordPolicy(admin.getCompanyID(), configService).getPolicyName());
         model.addAttribute("EDIT_ALTG_ENABLED", canEditAltg(admin, form));
-
+        
         return "settings_admin_view";
     }
     
@@ -220,22 +221,25 @@ public class AdminControllerBase implements XssCheckAware {
     }
 
     @PostMapping(value = "/{adminID}/save.action")
-    public String save(final Admin admin, final AdminForm form, final Popups popups) {
+    public ModelAndView save(final Admin admin, final AdminForm form, final Popups popups) {
         if (!AdminFormValidator.validate(form, popups)){
         	popups.alert(SAVE_ERROR_MSG);
-        	return redirectToView(form.getAdminID());
-        } else if (adminUsernameChangedToExisting(form)) {
-            popups.alert(USERNAME_DUPLICATE_MSG);
-            return redirectToView(form.getAdminID());
-        } else {
-            if (StringUtils.isEmpty(form.getPassword()) || checkPassword(form, popups)) {
-                admin.setRestful(false);
-                saveAdminAndGetView(form, admin, popups);
-                logonService.updateSessionsLanguagesAttributes(admin);
-                popups.success(CHANGES_SAVED_MSG);
-            }
-            return redirectToView(form.getAdminID());
+        	return new ModelAndView(MESSAGES_VIEW, HttpStatus.BAD_REQUEST);
         }
+
+        if (adminUsernameChangedToExisting(form)) {
+            popups.alert(USERNAME_DUPLICATE_MSG);
+            return new ModelAndView(MESSAGES_VIEW, HttpStatus.BAD_REQUEST);
+        }
+
+        if (StringUtils.isEmpty(form.getPassword()) || checkPassword(form, popups)) {
+            admin.setRestful(false);
+            saveAdminAndGetView(form, admin, popups);
+            logonService.updateSessionsLanguagesAttributes(admin);
+            popups.success(CHANGES_SAVED_MSG);
+        }
+
+        return new ModelAndView(redirectToView(form.getAdminID()));
     }
 
     private String redirectToView(int adminId) {

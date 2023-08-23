@@ -251,6 +251,20 @@ public class JobQueueDaoImpl extends BaseDaoImpl implements JobQueueDao {
 			throw new RuntimeException("Error while writing JobResult", e);
 		}
 	}
+
+	@Override
+	@DaoUpdateReturnValueCheck
+	public List<Map<String, Object>> getLastJobResults(int job_id) {
+		try {
+			if (isOracleDB()) {
+				return select(logger, "SELECT * FROM (SELECT time, result, duration, hostname FROM job_queue_result_tbl WHERE job_id = ? ORDER BY time DESC) WHERE rownum <= 10", job_id);
+			} else {
+				return select(logger, "SELECT time, result, duration, hostname FROM job_queue_result_tbl WHERE job_id = ? ORDER BY time DESC LIMIT 10", job_id);
+			}
+		} catch (Exception e) {
+			throw new RuntimeException("Error while writing JobResult", e);
+		}
+	}
 	
 	@Override
 	public boolean setStartCompanyForNextCleanupStart(int currentCompanyID) {

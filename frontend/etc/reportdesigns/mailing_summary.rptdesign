@@ -224,6 +224,15 @@ reportContext.setGlobalVariable("getTranslationByCategoryFunction", getTranslati
 reportContext.setGlobalVariable("isCategoryDataExpired", isCategoryDataExpired);
 
 ]]></method>
+    <method name="beforeRender"><![CDATA[var tableStyle = reportContext.getGlobalVariable("isDarkmode") == true ? 'table table-dark-theme table-striped' : 'table table-striped';
+
+reportContext.getDesignHandle().findElement("GeneralTbl").setProperty("style", tableStyle);
+reportContext.getDesignHandle().findElement("SummaryData").setProperty("style", tableStyle);
+reportContext.getDesignHandle().findElement("SummaryDataDelivered").setProperty("style", tableStyle);
+reportContext.getDesignHandle().findElement("DeviceTypeTbl").setProperty("style", tableStyle);
+reportContext.getDesignHandle().findElement("AutoOptTbl").setProperty("style", tableStyle);
+reportContext.getDesignHandle().findElement("ResponseTbl").setProperty("style", tableStyle);
+]]></method>
     <method name="afterRender"><![CDATA[mailingSummaryDataSet.dropTempTable(reportContext.getPersistentGlobalVariable("tempTableID"));
 ]]></method>
     <property name="iconFile">/templates/blank_report.gif</property>
@@ -612,6 +621,16 @@ return false;]]></method>
                     <property name="name">isMailTrackingAvailable</property>
                     <property name="dataType">boolean</property>
                 </structure>
+                <structure>
+                    <property name="position">10</property>
+                    <property name="name">evaluationPeriod</property>
+                    <property name="dataType">string</property>
+                </structure>
+                <structure>
+                    <property name="position">11</property>
+                    <property name="name">dispatchTime</property>
+                    <property name="dataType">string</property>
+                </structure>
             </list-property>
             <list-property name="columnHints">
                 <structure>
@@ -640,6 +659,12 @@ return false;]]></method>
                 </structure>
                 <structure>
                     <property name="columnName">isMailTrackingAvailable</property>
+                </structure>
+                <structure>
+                    <property name="columnName">evaluationPeriod</property>
+                </structure>
+                <structure>
+                    <property name="columnName">dispatchTime</property>
                 </structure>
             </list-property>
             <structure name="cachedMetaData">
@@ -689,6 +714,16 @@ return false;]]></method>
                         <property name="name">isMailTrackingAvailable</property>
                         <property name="dataType">boolean</property>
                     </structure>
+                    <structure>
+                        <property name="position">10</property>
+                        <property name="name">evaluationPeriod</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">11</property>
+                        <property name="name">dispatchTime</property>
+                        <property name="dataType">string</property>
+                    </structure>
                 </list-property>
             </structure>
             <property name="dataSource">DummyDataSource</property>
@@ -705,6 +740,8 @@ done = false;]]></method>
 	row["stopSending"] = statList.get(0).getStopSending();
 	row["mailformat"] = statList.get(0).getMailFormat();
 	row["averageMailsize"] = statList.get(0).getAverageMailsize();
+	row["evaluationPeriod"] = statList.get(0).getEvaluationPeriod();
+	row["dispatchTime"] = statList.get(0).getDispatchTime();
 
 	done = true;
 	return true;
@@ -1319,6 +1356,18 @@ return false;]]></method>
                     <property name="dataType">boolean</property>
                     <property name="allowExport">true</property>
                 </structure>
+                <structure>
+                    <property name="name">evaluationPeriod</property>
+                    <expression name="expression" type="javascript">dataSetRow["evaluationPeriod"]</expression>
+                    <property name="dataType">string</property>
+                    <property name="allowExport">true</property>
+                </structure>
+                <structure>
+                    <property name="name">dispatchTime</property>
+                    <expression name="expression" type="javascript">dataSetRow["dispatchTime"]</expression>
+                    <property name="dataType">string</property>
+                    <property name="allowExport">true</property>
+                </structure>
             </list-property>
             <column id="630"/>
             <column id="631"/>
@@ -1355,7 +1404,7 @@ return false;]]></method>
                     <property name="paddingBottom">0pt</property>
                     <property name="paddingRight">0px</property>
                     <property name="textAlign">center</property>
-                    <grid id="432">
+                    <grid name="GeneralTbl" id="432">
                         <property name="style">table table-striped</property>
                         <list-property name="visibility">
                             <structure>
@@ -1513,9 +1562,49 @@ return false;]]></method>
                                 </data>
                             </cell>
                         </row>
+                        <row id="1144">
+                            <list-property name="visibility">
+                                <structure>
+                                    <property name="format">all</property>
+                                    <expression name="valueExpr" type="javascript">row["evaluationPeriod"] == null</expression>
+                                </structure>
+                            </list-property>
+                            <cell id="1145">
+                                <text-data id="1147">
+                                    <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.period.evaluation", reportContext.getLocale())</expression>
+                                    <property name="contentType">html</property>
+                                </text-data>
+                            </cell>
+                            <cell id="1146">
+                                <text-data id="1157">
+                                    <expression name="valueExpr">row["evaluationPeriod"]</expression>
+                                    <property name="contentType">html</property>
+                                </text-data>
+                            </cell>
+                        </row>
+                        <row id="1151">
+                            <list-property name="visibility">
+                                <structure>
+                                    <property name="format">all</property>
+                                    <expression name="valueExpr" type="javascript">row["dispatchTime"] == null</expression>
+                                </structure>
+                            </list-property>
+                            <cell id="1152">
+                                <text-data id="1154">
+                                    <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("mailing.SendingTime", reportContext.getLocale())</expression>
+                                    <property name="contentType">html</property>
+                                </text-data>
+                            </cell>
+                            <cell id="1153">
+                                <text-data id="1156">
+                                    <expression name="valueExpr">row["dispatchTime"]</expression>
+                                    <property name="contentType">html</property>
+                                </text-data>
+                            </cell>
+                        </row>
                     </grid>
-                    <grid id="860">
-                        <property name="style">table</property>
+                    <grid name="AutoOptTbl" id="860">
+                        <property name="style">table table-striped</property>
                         <property name="width">100%</property>
                         <property name="dataSet">AutoOptimizationDataSet</property>
                         <list-property name="visibility">
@@ -8253,7 +8342,8 @@ function beforeDrawDataPointLabel( dph, label, icsc )
                     <property name="colSpan">2</property>
                     <property name="rowSpan">1</property>
                     <property name="style">full-width</property>
-                    <extended-item extensionName="Crosstab" extensionVersion="3.7.0" id="801">
+                    <extended-item extensionName="Crosstab" extensionVersion="3.7.0" name="DeviceTypeTbl"
+ id="801">
                         <property name="cube">MailingSummaryDataCube</property>
                         <property name="measures">
                             <extended-item extensionName="MeasureView" id="802">
@@ -8516,7 +8606,8 @@ function beforeDrawDataPointLabel( dph, label, icsc )
                     <property name="colSpan">2</property>
                     <property name="rowSpan">1</property>
                     <property name="style">full-width</property>
-                    <extended-item extensionName="Crosstab" extensionVersion="3.7.0" id="1050">
+                    <extended-item extensionName="Crosstab" extensionVersion="3.7.0" name="ResponseTbl"
+ id="1050">
                         <property name="cube">MailingSummaryDataCube</property>
                         <property name="measures">
                             <extended-item extensionName="MeasureView" id="1043">

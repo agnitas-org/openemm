@@ -451,7 +451,7 @@ public class CodeGenerator {
 		} else if (node instanceof ProfileFieldAtomEqlNode) {
 			callback.terminalProfileFieldAtomEqlNode((ProfileFieldAtomEqlNode) node);
 		} else if (node instanceof StringConstantWithEscapeCharsAtomEqlNode) {
-			callback.terminalStringConstantWithEscapeCharsAtomEqlNode((StringConstantWithEscapeCharsAtomEqlNode) node);
+			callback.terminalStringConstantWithoutEscapeCharsAtomEqlNode((StringConstantWithEscapeCharsAtomEqlNode) node);
 		} else if (node instanceof TodayAtomEqlNode) {
 			callback.terminalTodayAtomEqlNode(node);
 		} else {

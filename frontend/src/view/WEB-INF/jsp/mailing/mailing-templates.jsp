@@ -44,7 +44,7 @@
                         <fmt:formatDate value="${creationDateParsed}" var="creationDateFormatted" pattern="${adminDateTimeFormat}" timeZone="${adminTimeZone}" />
                         
                         <li>
-                            <a href="#" data-form-submit  class="link-list-item" data-form-set="templateId: ${template.id}" data-layout-id="${template.id}" data-action="select-layout">
+                            <a href="#" data-form-submit  class="link-list-item" data-form-set="templateId: ${template.id}" data-layout-id="${template.id}">
                                 <p class="headline">${template.shortname}</p>
                                 <p class="description">
                                     <span data-tooltip="<mvc:message code="default.creationDate"/>">
@@ -66,7 +66,7 @@
                         <fmt:formatDate value="${creationDateParsed}" var="creationDateFormatted" pattern="${adminDateTimeFormat}" timeZone="${adminTimeZone}" />
                         
                         <div class="col-xs-6 col-sm-4 col-md-3 card-content">
-                            <a href="#" class="card old-cards" data-form-submit data-action="select-layout" data-form-set="templateId: ${template.id}" data-layout-id="${template.id}" data-action="select-layout">
+                            <a href="#" class="card old-cards" data-form-submit data-form-set="templateId: ${template.id}" data-layout-id="${template.id}">
                                 <c:choose>
                                     <c:when test="${template.onlyPostType}">
                                         <c:url var="previewImageSrc" value="assets/core/images/facelift/post_thumbnail.jpg"/>

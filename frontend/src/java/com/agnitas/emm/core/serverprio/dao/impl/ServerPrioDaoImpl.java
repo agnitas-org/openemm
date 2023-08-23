@@ -89,6 +89,10 @@ public final class ServerPrioDaoImpl extends BaseDaoImpl implements ServerPrioDa
 	public Date getDeliveryPauseDate(final int companyId, final int mailingId) {
 		final String sql = "SELECT start_date FROM serverprio_tbl WHERE (company_id = 0 OR company_id = ?) AND mailing_Id = ? AND priority = 0";
 
-		return selectObject(LOGGER, sql, DateRowMapper.INSTANCE, companyId, mailingId);
+		final List<Date> list = select(LOGGER, sql, DateRowMapper.INSTANCE, companyId, mailingId);
+		
+		return list.isEmpty() 
+				? null 
+				: list.get(0);
 	}
 }

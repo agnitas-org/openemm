@@ -245,3 +245,34 @@ td.cell-as-link a {
 body.dark-theme .info_box {
     border: 1px solid #666;
 }
+
+/*table-dark-theme displays table in dark mode for cases when body.dark-theme can't be set.
+ For example $iframe.contents().find('body').addClass('dark-theme') in 'dark-theme' CoreInitializer not working when iframe uses different domain due to XSS protection
+ From https://api.jquery.com/contents/:
+   The .contents() method can also be used to get the content document of an iframe, if the iframe is on the same domain as the main page.
+ Related: GWUA-5373
+ */
+.table-dark-theme > tbody > tr > th,
+.table-dark-theme > tbody > tr > td {
+    border-color: #666; /*$c-dt-table-border*/
+}
+
+.table-dark-theme tbody th {
+    color: #fff; /*$c-dt-table-header-text*/
+}
+
+.table-dark-theme .table-head > th,
+.table-dark-theme .table-head > td,
+.table-dark-theme th.table-head {
+    background-color: #282828; /*$c-dt-table-background*/
+    border-color: #666; /*$c-dt-table-border*/
+    color: #fff; /*$c-dt-table-header-text*/
+}
+
+.table-dark-theme tbody > tr > td {
+    color: #cccdcd; /*$c-dt-table-text*/
+}
+
+.table-dark-theme.table-striped > tbody > tr:nth-child(even) {
+    background-color: #3d3d3d; /*lighten($c-dt-table-background, 5%);*/
+}

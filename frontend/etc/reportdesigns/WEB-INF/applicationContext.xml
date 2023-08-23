@@ -41,6 +41,8 @@
    		<property name="serverMessageDao" ref="serverMessageDao" />
    		<property name="profileFieldService" ref="profileFieldService" />
    	</bean>
+
+	<bean id="WorkflowDataParser" class="com.agnitas.emm.core.workflow.service.ComWorkflowDataParser" />
     
     <bean id="permissionService" class="com.agnitas.emm.core.permission.service.PermissionServiceImpl">
     	<property name="permissionDao" ref="permissionDao" />

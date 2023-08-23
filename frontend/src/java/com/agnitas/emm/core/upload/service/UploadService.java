@@ -14,6 +14,7 @@ import java.io.File;
 import java.util.List;
 import java.util.Locale;
 
+import com.agnitas.emm.core.upload.bean.UploadFileExtension;
 import org.agnitas.beans.AdminEntry;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.apache.struts.upload.FormFile;
@@ -47,8 +48,11 @@ public interface UploadService {
 
     List<EmailEntry> getDefaultEmails(String email, Locale locale);
 
+    @Deprecated // deprecated use getUploadsByExtension(Admin, UploadFileExtension...) instead
     List<UploadData> getUploadsByExtension(Admin admin, String extension);
 
+    List<UploadData> getUploadsByExtension(Admin admin, UploadFileExtension... extensions);
+    
     @Deprecated
     FormFile getFormFileByUploadId(int uploadID, String mime);
 }

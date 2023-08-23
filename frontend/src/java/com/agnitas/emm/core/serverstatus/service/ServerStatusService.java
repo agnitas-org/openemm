@@ -85,4 +85,6 @@ public interface ServerStatusService {
 	List<AutoImport> getStallingAutoImports();
 
 	int getStallingImportsAmount();
+
+	boolean isLicenseStatusOK();
 }

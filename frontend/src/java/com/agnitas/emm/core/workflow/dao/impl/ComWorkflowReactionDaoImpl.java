@@ -51,6 +51,7 @@ import com.agnitas.emm.core.workflow.beans.impl.WorkflowReactionStepImpl;
 import com.agnitas.emm.core.workflow.beans.impl.WorkflowReactionStepInstanceImpl;
 import com.agnitas.emm.core.workflow.dao.ComWorkflowReactionDao;
 import com.agnitas.emm.core.workflow.service.util.WorkflowUtils.Deadline;
+import org.springframework.transaction.annotation.Transactional;
 
 public class ComWorkflowReactionDaoImpl extends BaseDaoImpl implements ComWorkflowReactionDao {
 
@@ -616,6 +617,7 @@ public class ComWorkflowReactionDaoImpl extends BaseDaoImpl implements ComWorkfl
     }
 
     @Override
+    @Transactional
     public void trigger(ComWorkflowReaction reaction, List<Integer> recipients) {
         if (CollectionUtils.isEmpty(recipients)) {
             return;

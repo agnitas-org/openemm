@@ -28,4 +28,6 @@ public interface LicenseDao {
 	int getNumberOfAccessLimitingMailinglists(int companyID);
 	
 	int getNumberOfAccessLimitingTargetgroups(int companyID);
+
+	int getNumberOfCompanyReferenceTables(int companyID);
 }

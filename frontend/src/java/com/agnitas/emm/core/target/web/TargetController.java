@@ -17,12 +17,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import com.agnitas.service.ServiceResult;
 import com.agnitas.web.mvc.XssCheckAware;
-import jakarta.servlet.http.HttpServletRequest;
 
-import org.agnitas.dao.exception.target.TargetGroupLockedException;
-import org.agnitas.emm.core.mailing.beans.LightweightMailing;
-import org.agnitas.emm.core.target.exception.TargetGroupIsInUseException;
+import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.target.exception.UnknownTargetGroupIdException;
 import org.agnitas.service.UserActivityLogService;
 import org.agnitas.util.AgnUtils;
@@ -54,16 +52,22 @@ import com.agnitas.emm.core.target.service.TargetLightsOptions;
 import com.agnitas.service.ComWebStorage;
 import com.agnitas.service.SimpleServiceResult;
 import com.agnitas.web.mvc.Popups;
-import com.agnitas.web.perm.annotations.PermissionMapping;
+
+import static org.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
+import static org.agnitas.util.Const.Mvc.ERROR_MSG;
+import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
+import static org.agnitas.util.Const.Mvc.SELECTION_DELETED_MSG;
 
 public class TargetController implements XssCheckAware {
 
     private static final Logger logger = LogManager.getLogger(TargetController.class);
+    private static final String TARGETS_LIST_REDIRECT = "redirect:/target/list.action";
+    private static final String TARGET_DELETE_ERROR_MSG = "error.target.delete";
 
+    protected final ComTargetService targetService;
     private final ComWebStorage webStorage;
     private final MailingService mailingService;
     private final ComBirtReportDao birtReportDao;
-    private final ComTargetService targetService;
     private final UserActivityLogService userActivityLogService;
 
     public TargetController(ComTargetService targetService, ComWebStorage webStorage,
@@ -77,55 +81,57 @@ public class TargetController implements XssCheckAware {
     }
 
     @RequestMapping("/list.action")
-    public String list(@ModelAttribute TargetForm targetForm, final Admin admin, final Model model,
-                       final HttpServletRequest request) {
+    public String list(@ModelAttribute TargetForm targetForm, Admin admin, Model model) {
         prepareListParameters(targetForm, admin);
-        AgnUtils.setAdminDateTimeFormatPatterns(request);
+        AgnUtils.setAdminDateTimeFormatPatterns(admin, model);
 
-        model.addAttribute("isSearchEnabled", targetService.isBasicFullTextSearchSupported());
-        model.addAttribute("targetComplexities", targetService.getTargetComplexities(admin.getCompanyID()));
-        model.addAttribute("targets", getTargetGroupsOverview(targetForm, admin));
-
+        addListModelAttrs(targetForm, admin, model);
         return "targets_list";
     }
 
+    protected void addListModelAttrs(TargetForm targetForm, Admin admin, Model model) { // overridden in extended class
+        model.addAttribute("isSearchEnabled", targetService.isBasicFullTextSearchSupported());
+        model.addAttribute("targetComplexities", targetService.getTargetComplexities(admin.getCompanyID()));
+        model.addAttribute("targetEntries", getPaginatedTargetGroupsOverview(targetForm, admin));
+    }
+
     @RequestMapping("/confirm/bulk/delete.action")
-    public String confirmBulkDelete(@ModelAttribute("form") BulkActionForm form, final Popups popups) {
+    public String confirmBulkDelete(@ModelAttribute("form") BulkActionForm form, Popups popups) {
         if (CollectionUtils.isEmpty(form.getBulkIds())) {
             popups.alert("bulkAction.nothing.target");
-            return "messages";
+            return MESSAGES_VIEW;
         }
 
         return "targets_bulk_delete_confirm";
     }
 
     @PostMapping("/bulk/delete.action")
-    public String bulkDelete(@ModelAttribute("form") BulkActionForm form, final Admin admin,
-                             final Popups popups) {
-        final int companyId = admin.getCompanyID();
+    public String bulkDelete(@ModelAttribute("form") BulkActionForm form, Admin admin, Popups popups) {
+        Map<Integer, String> targetNamesMap = getTargetNamesToDelete(new HashSet<>(form.getBulkIds()), admin.getCompanyID());
+        Set<Integer> targetsToDelete = targetNamesMap.keySet();
 
-        final Map<Integer, String> targetsToDelete = getTargetNamesToDelete(new HashSet<>(form.getBulkIds()), companyId);
+        if (!targetsToDelete.isEmpty()) {
+            ServiceResult<List<Integer>> deletionResult = targetService.bulkDelete(targetsToDelete, admin);
 
-        final boolean success = tryDeleteTargets(targetsToDelete.keySet(), companyId, popups);
-        if (!success) {
-            return "messages";
+            if (deletionResult.isSuccess()) {
+                popups.success(SELECTION_DELETED_MSG);
+            } else {
+                popups.addPopups(deletionResult);
+            }
+
+            for (Integer deletedTarget : deletionResult.getResult()) {
+                userActivityLogService.writeUserActivityLog(admin,
+                        "delete target group",
+                        String.format("%s (%d)", targetNamesMap.get(deletedTarget), deletedTarget));
+            }
         }
 
-        for (Map.Entry<Integer, String> entry : targetsToDelete.entrySet()) {
-            userActivityLogService.writeUserActivityLog(admin,
-                    "delete target group",
-                    entry.getValue() + " (" + entry.getKey() + ")");
-        }
-
-        popups.success("default.selection.deleted");
-
-        return "redirect:/target/list.action";
+        return TARGETS_LIST_REDIRECT;
     }
 
     @RequestMapping("{id:\\d+}/confirm/delete.action")
-    public String confirmDelete(@PathVariable final int id, final Admin admin, @ModelAttribute SimpleActionForm simpleActionForm,
-                                @RequestParam(required = false) boolean isWizard,
-                                final Popups popups, final Model model) {
+    public String confirmDelete(@PathVariable int id, Admin admin, @ModelAttribute SimpleActionForm simpleActionForm,
+                                @RequestParam(required = false) boolean isWizard, Popups popups, Model model) {
         final int companyId = admin.getCompanyID();
         try {
             final ComTarget targetGroup = targetService.getTargetGroup(id, companyId);
@@ -134,49 +140,37 @@ public class TargetController implements XssCheckAware {
 
             model.addAttribute("isWizard", isWizard);
 
-            loadDependentEntities(id, model, companyId);
+            loadDependentBirtReports(id, model, companyId);
         } catch (UnknownTargetGroupIdException e) {
-            popups.alert("error.target.delete");
-            return "messages";
+            popups.alert(TARGET_DELETE_ERROR_MSG);
+            return MESSAGES_VIEW;
         }
 
-        final SimpleServiceResult canBeDeletedResult = targetService.canBeDeleted(id, companyId);
+        final SimpleServiceResult canBeDeletedResult = targetService.canBeDeleted(id, admin);
         if (canBeDeletedResult.isSuccess()) {
             return "targets_delete_confirm";
         }
         popups.addPopups(canBeDeletedResult);
-        return "messages";
+        return MESSAGES_VIEW;
     }
 
     @PostMapping("/delete.action")
-    public String delete(final Admin admin, @ModelAttribute SimpleActionForm simpleActionForm, final Popups popups) {
+    public String delete(Admin admin, @ModelAttribute SimpleActionForm simpleActionForm, Popups popups) {
         final boolean success = deleteTarget(simpleActionForm.getId(), admin, popups);
         if (success) {
-            return "redirect:/target/list.action";
+            return TARGETS_LIST_REDIRECT;
         }
 
-        return "messages";
-    }
-
-    @PostMapping("/wizardDelete.action")
-    @PermissionMapping("delete")
-    public String wizardDelete(final Admin admin, @ModelAttribute SimpleActionForm simpleActionForm, final Popups popups) {
-        final boolean success = deleteTarget(simpleActionForm.getId(), admin, popups);
-        if (success) {
-            return "redirect:/mwTarget.do?action=newTarget";
-        }
-
-        return "messages";
+        return MESSAGES_VIEW;
     }
 
     @RequestMapping("/{id:\\d+}/confirm/delete/recipients.action")
-    public String confirmDeleteRecipients(final Model model, @PathVariable final int id,
-                                          final Admin admin, final Popups popups) {
+    public String confirmDeleteRecipients(Model model, @PathVariable int id, Admin admin, Popups popups) {
         final Optional<Integer> numOfRecipientsOpt = targetService.getNumberOfRecipients(id, admin.getCompanyID());
-        if(!numOfRecipientsOpt.isPresent()) {
+        if(numOfRecipientsOpt.isEmpty()) {
             logger.warn("It is not possible to delete recipients for target with id: {}", id);
-            popups.alert("Error");
-            return "messages";
+            popups.alert(ERROR_MSG);
+            return MESSAGES_VIEW;
         }
         model.addAttribute("numberOfRecipients", numOfRecipientsOpt.get());
         model.addAttribute("targetIdToDeleteRecipients", id);
@@ -184,23 +178,23 @@ public class TargetController implements XssCheckAware {
     }
 
     @PostMapping("/{id:\\d+}/delete/recipients.action")
-    public String deleteRecipients(final Admin admin, @PathVariable final int id, final Popups popups) {
+    public String deleteRecipients(Admin admin, @PathVariable int id, Popups popups) {
         final boolean deletedSuccessfully = targetService.deleteRecipients(id, admin.getCompanyID());
 
         if (!deletedSuccessfully) {
             logger.warn("Could not delete recipients for target with id: {}", id);
-            popups.alert("Error");
-            return "messages";
+            popups.alert(ERROR_MSG);
+            return MESSAGES_VIEW;
         }
 
-        popups.success("default.changes_saved");
+        popups.success(CHANGES_SAVED_MSG);
         userActivityLogService.writeUserActivityLog(admin, "edit target group",
                 "All recipients deleted from target group with id=" + id);
-        return "redirect:/target/list.action";
+        return TARGETS_LIST_REDIRECT;
     }
 
     @RequestMapping("/{id:\\d+}/addToFavorites.action")
-    public ResponseEntity<Object> addToFavorites(@PathVariable final int id, Admin admin) {
+    public ResponseEntity<Object> addToFavorites(@PathVariable int id, Admin admin) {
         try {
             targetService.addToFavorites(id, admin.getCompanyID());
             return ResponseEntity.ok().build();
@@ -211,7 +205,7 @@ public class TargetController implements XssCheckAware {
     }
 
     @RequestMapping("/{id:\\d+}/removeFromFavorites.action")
-    public ResponseEntity<Object> removeFromFavorites(@PathVariable final int id, Admin admin) {
+    public ResponseEntity<Object> removeFromFavorites(@PathVariable int id, Admin admin) {
         try {
             targetService.removeFromFavorites(id, admin.getCompanyID());
             return ResponseEntity.ok().build();
@@ -221,21 +215,26 @@ public class TargetController implements XssCheckAware {
         }
     }
 
-    private List<TargetLight> getTargetGroupsOverview(final TargetForm form, final Admin admin) {
-        return targetService.getTargetLights(getOverviewTargetLightsOptionsBuilder(admin, form).build());
+    private PaginatedListImpl<TargetLight> getPaginatedTargetGroupsOverview(TargetForm form, Admin admin) {
+        return targetService.getTargetLightsPaginated(getOverviewTargetLightsOptionsBuilder(admin, form).build());
     }
     
     protected TargetLightsOptions.Builder getOverviewTargetLightsOptionsBuilder(Admin admin, TargetForm form) {
         return TargetLightsOptions.builder()
-                        .setCompanyId(admin.getCompanyID())
-                        .setWorldDelivery(form.isShowWorldDelivery())
-                        .setAdminTestDelivery(form.isShowTestAndAdminDelivery())
-                        .setSearchName(form.isSearchNameChecked())
-                        .setSearchDescription(form.isSearchDescriptionChecked())
-                        .setSearchText(form.getSearchQueryText());
+                .setAdminId(admin.getAdminID())
+                .setCompanyId(admin.getCompanyID())
+                .setWorldDelivery(form.isShowWorldDelivery())
+                .setAdminTestDelivery(form.isShowTestAndAdminDelivery())
+                .setSearchName(form.isSearchNameChecked())
+                .setSearchDescription(form.isSearchDescriptionChecked())
+                .setSearchText(form.getSearchQueryText())
+                .setPageNumber(form.getPage())
+                .setPageSize(form.getNumberOfRows())
+                .setDirection(form.getDir())
+                .setSorting(form.getSort());
     }
 
-    private void prepareListParameters(final TargetForm form, final Admin admin) {
+    private void prepareListParameters(TargetForm form, Admin admin) {
         synchronized (ComWebStorage.TARGET_OVERVIEW) {
             final boolean isBundlePresented = webStorage.isPresented(ComWebStorage.TARGET_OVERVIEW);
             webStorage.access(ComWebStorage.TARGET_OVERVIEW, storage -> {
@@ -255,24 +254,7 @@ public class TargetController implements XssCheckAware {
         }
     }
 
-    private boolean tryDeleteTargets(final Set<Integer> targetsToDelete, final int companyId, final Popups popups) {
-        try {
-            if (!targetsToDelete.isEmpty()) {
-                targetService.bulkDelete(targetsToDelete, companyId);
-                return true; // success
-            }
-        } catch (TargetGroupLockedException e) {
-            popups.alert("target.locked");
-        } catch (TargetGroupIsInUseException e) {
-            popups.alert("error.target.in_use");
-        } catch (Exception e) {
-            popups.alert("error.target.delete");
-        }
-
-        return false; // failed
-    }
-
-    private Map<Integer, String> getTargetNamesToDelete(final Set<Integer> bulkIds, final int companyId) {
+    private Map<Integer, String> getTargetNamesToDelete(Set<Integer> bulkIds, int companyId) {
         final Map<Integer, String> targetsToDelete = new HashMap<>();
         for (int id : bulkIds) {
             String name = targetService.getTargetName(id, companyId);
@@ -283,14 +265,7 @@ public class TargetController implements XssCheckAware {
         return targetsToDelete;
     }
 
-    private void loadDependentEntities(final int targetId, final Model model, final int companyId) {
-        final List<LightweightMailing> affectedMailings = mailingService.getMailingsDependentOnTargetGroup(companyId, targetId);
-        if (CollectionUtils.isNotEmpty(affectedMailings)) {
-            model.addAttribute("affectedMailingsLightweight", affectedMailings);
-            model.addAttribute("affectedMailingsMessageKey", "warning.target.delete.affectedMailings");
-            model.addAttribute("affectedMailingsMessageType", GuiConstants.MESSAGE_TYPE_WARNING_PERMANENT);
-        }
-
+    private void loadDependentBirtReports(int targetId, Model model, int companyId) {
         final List<ComLightweightBirtReport> affectedReports = birtReportDao.getLightweightBirtReportsBySelectedTarget(companyId, targetId);
         if (CollectionUtils.isNotEmpty(affectedReports)) {
             model.addAttribute("affectedReports", affectedReports);
@@ -299,28 +274,25 @@ public class TargetController implements XssCheckAware {
         }
     }
 
-    private boolean deleteTarget(final int targetId, final Admin admin, final Popups popups) {
+    private boolean deleteTarget(int targetId, Admin admin, Popups popups) {
         final int companyId = admin.getCompanyID();
         final String name = targetService.getTargetName(targetId, companyId);
         if (name == null) {
             logger.error("No target exists, ID: {}", targetId);
-            popups.alert("error.target.delete");
-            return false; // failed- not exists
+            popups.alert(TARGET_DELETE_ERROR_MSG);
+            return false;
         }
-        try {
-            targetService.deleteTargetGroup(targetId, companyId);
-            userActivityLogService.writeUserActivityLog(admin, "delete target group", name + " (" + targetId + ")");
 
-            popups.success("default.selection.deleted");
-            return true; // successfully deleted
-        } catch (TargetGroupLockedException e) {
-            popups.alert("target.locked");
-        } catch (TargetGroupIsInUseException e) {
-            popups.alert("error.target.in_use");
-        } catch (Exception e) {
-            logger.error("Target deletion failed!", e);
-            popups.alert("error.target.delete");
+        SimpleServiceResult deletionResult = targetService.deleteTargetGroup(targetId, admin, true);
+
+        if (deletionResult.isSuccess()) {
+            userActivityLogService.writeUserActivityLog(admin, "delete target group", String.format("%s (%d)", name, targetId));
+
+            popups.success(SELECTION_DELETED_MSG);
+            return true;
         }
-        return false;// failed
+
+        popups.addPopups(deletionResult);
+        return false;
     }
 }

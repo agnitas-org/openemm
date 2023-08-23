@@ -10,6 +10,8 @@
 
 package org.agnitas.emm.core.commons.password;
 
+import com.agnitas.emm.core.supervisor.beans.Supervisor;
+import com.agnitas.emm.core.supervisor.common.SupervisorException;
 import org.agnitas.emm.core.commons.password.policy.PasswordPolicy;
 
 import com.agnitas.beans.Admin;
@@ -43,4 +45,48 @@ public interface PasswordCheck {
 	SimpleServiceResult checkAdminPassword(String password, Admin admin);
 	SimpleServiceResult checkNewAdminPassword(final String password, final PasswordPolicy passwordPolicy);
 
+	/**
+	 * Check supervisor password.
+	 *
+	 * @param password password to check
+	 * @param supervisor {@link Supervisor} used for comparison of passwords
+	 * @param handler error handler
+	 *
+	 * @return {@code true} if password is ok, otherwise {@code false}
+	 *
+	 * @throws SupervisorException on errors accessing supervisor data
+	 *
+	 * @see PasswordCheck#checkAdminPassword(String, com.agnitas.beans.Admin, PasswordCheckHandler)
+	 */
+	default boolean checkSupervisorPassword(String password, Supervisor supervisor, PasswordCheckHandler handler) throws SupervisorException {
+		throw new UnsupportedOperationException();
+	}
+
+	/**
+	 * Check supervisor password.
+	 *
+	 * @param password password to check
+	 * @param supervisor {@link Supervisor} used for comparison of passwords
+	 *
+	 * @return a {@link SimpleServiceResult} instance.
+	 *
+	 * @throws SupervisorException on errors accessing supervisor data.
+	 */
+	default SimpleServiceResult checkSupervisorPassword(String password, Supervisor supervisor) throws SupervisorException {
+		throw new UnsupportedOperationException();
+	}
+
+	/**
+	 * Check supervisor password.
+	 *
+	 * @param password password to check
+	 * @param handler error handler
+	 *
+	 * @return {@code true} if password is ok, otherwise {@code false}
+	 *
+	 * @see PasswordCheck#checkAdminPassword(String, com.agnitas.beans.Admin, PasswordCheckHandler)
+	 */
+	default boolean checkSupervisorPassword(String password, PasswordCheckHandler handler) {
+		throw new UnsupportedOperationException();
+	}
 }

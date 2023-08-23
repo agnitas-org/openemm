@@ -10,7 +10,6 @@
 
 package com.agnitas.emm.core.commons.intelliad;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 /**
  * Cache for the IntelliAd mailing settings.
@@ -28,5 +27,5 @@ public interface IntelliAdMailingSettingsCache {
 	 * 
 	 * @return IntelliAd settings for given mailing
 	 */
-	public IntelliAdMailingSettings getIntelliAdSettings( @VelocityCheck int companyId, int mailingId);
+	public IntelliAdMailingSettings getIntelliAdSettings( int companyId, int mailingId);
 }

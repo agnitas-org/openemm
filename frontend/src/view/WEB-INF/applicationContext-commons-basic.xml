@@ -74,7 +74,9 @@
 	<bean id="CompanyFactory" class="com.agnitas.beans.factory.impl.ComCompanyFactoryImpl" />
 	
 	<bean id="CompanyHierarchyCache" class="com.agnitas.emm.core.commons.hierarchy.CompanyHierarchyCacheImpl">
-		<property name="companyDao" ref="CompanyDao" />
+		<constructor-arg index="0" type="int" value="300000" />				<!-- timeout in milliseconds -->
+		<constructor-arg index="1" type="int" value="1000" />				<!-- capacity -->
+		<constructor-arg index="2" ref="CompanyDao" />
 	</bean>
 
 	<bean id="Company" class="com.agnitas.beans.impl.CompanyImpl" scope="prototype" />
@@ -177,9 +179,8 @@
 	<bean id="MediatypeEmail" class="com.agnitas.beans.impl.MediatypeEmailImpl" scope="prototype" />
 
 <!-- ============================================================================================================================== Password handling -->
-	<bean id="PasswordCheck" class="com.agnitas.emm.core.commons.password.ComPasswordCheckImpl">
+	<bean id="PasswordCheck" class="org.agnitas.emm.core.commons.password.PasswordCheckImpl">
 		<property name="adminService" ref="AdminService" />
-		<property name="supervisorService" ref="SupervisorService" />
 		<property name="configService" ref="ConfigService" />
 	</bean>
 	

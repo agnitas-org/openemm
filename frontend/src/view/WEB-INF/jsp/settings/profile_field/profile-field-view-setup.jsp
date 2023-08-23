@@ -34,7 +34,7 @@
         <c:set target="${agnBreadcrumbs}" property="0" value="${agnBreadcrumb}"/>
         <c:set target="${agnBreadcrumb}" property="textKey" value="settings.fields"/>
         <c:set target="${agnBreadcrumb}" property="url">
-            <c:url value="/profiledb.action"/>
+            <c:url value="/profiledb/profiledb.action"/>
         </c:set>
     </emm:instantiate>
 
@@ -73,7 +73,7 @@
         <jsp:useBean id="element1" class="java.util.LinkedHashMap" scope="request">
             <c:set target="${itemActionsSettings}" property="1" value="${element1}"/>
             <c:set target="${element1}" property="btnCls" value="btn btn-regular btn-inverse"/>
-            <c:set target="${element1}" property="extraAttributes" value="data-form-target='#profileFieldForm' data-form-submit"/>
+            <c:set target="${element1}" property="extraAttributes" value="data-form-target='#profileFieldForm' data-form-submit-event"/>
             <c:set target="${element1}" property="iconBefore" value="icon-save"/>
             <c:set target="${element1}" property="name">
                 <mvc:message code="button.Save"/>

@@ -202,4 +202,8 @@ public interface Company {
 	String getContactTech();
 
 	void setContactTech(String contactTech);
+	
+	String getListHelpUrl();
+	
+	void setListHelpUrl(String listHelpUrl);
 }

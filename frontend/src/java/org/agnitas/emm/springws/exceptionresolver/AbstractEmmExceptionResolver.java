@@ -14,6 +14,7 @@ import java.util.Locale;
 
 import org.agnitas.emm.core.binding.service.BindingNotExistException;
 import org.agnitas.emm.core.commons.uid.parser.exception.InvalidUIDException;
+import org.agnitas.emm.core.component.service.ComponentAlreadyExistException;
 import org.agnitas.emm.core.dyncontent.service.DynamicTagContentInvalid;
 import org.agnitas.emm.core.dyncontent.service.DynamicTagContentNotExistException;
 import org.agnitas.emm.core.dyncontent.service.DynamicTagContentWithSameOrderAlreadyExist;
@@ -160,6 +161,8 @@ public abstract class AbstractEmmExceptionResolver extends AbstractSoapFaultDefi
         	definition.setFaultStringOrReason(ex.getMessage());
         } else if(ex instanceof SubscriberLimitExceededException) {
         	definition.setFaultStringOrReason(ex.getMessage());
+        } else if(ex instanceof ComponentAlreadyExistException) {
+        	definition.setFaultStringOrReason("Mailing component of same name already exists");
         } else {
             definition.setFaultStringOrReason("Unknown error");
             

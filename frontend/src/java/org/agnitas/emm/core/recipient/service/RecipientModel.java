@@ -13,7 +13,7 @@ package org.agnitas.emm.core.recipient.service;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
+
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
@@ -43,7 +43,7 @@ public class RecipientModel {
 		return companyId;
 	}
 	
-	public void setCompanyId(@VelocityCheck int companyId) {
+	public void setCompanyId(int companyId) {
 		this.companyId = companyId;
 	}
 	

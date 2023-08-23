@@ -199,11 +199,7 @@ public class RecipientQueryBuilderImpl implements RecipientQueryBuilder {
     }
 
     protected void addBounceLoad(int companyId, SqlPreparedStatementManager mainStatement) throws Exception {
-        // TODO: IGNORE_BOUNCELOAD_COMPANY_ID is a bad hack for CONRAD-371!!!
-        final boolean useUnsharpRecipientQuery = configService.useUnsharpRecipientQuery(companyId);
-        String unsharpRecipientQuery = (!useUnsharpRecipientQuery ? ComCompanyDaoImpl.STANDARD_FIELD_BOUNCELOAD : "0") + " = 0";
-
-        mainStatement.addWhereClause(unsharpRecipientQuery);
+        mainStatement.addWhereClause(ComCompanyDaoImpl.STANDARD_FIELD_BOUNCELOAD + " = 0");
 
         boolean respectHideSign = configService.getBooleanValue(ConfigValue.RespectHideDataSign, companyId);
         if (respectHideSign) {

@@ -119,7 +119,7 @@
 
                 <div class="form-group">
                     <div class="col-sm-4">
-                        <label for="includeVetoed" class="control-label">
+                        <label for="includeVetoed" class="control-label checkbox-control-label">
                             <bean:message key="recipient.trackingVeto"/>
                             <button class="icon icon-help" data-help="help_${helplanguage}/workflow/decision/TrackingVeto.xml" tabindex="-1" type="button"></button>
                         </label>

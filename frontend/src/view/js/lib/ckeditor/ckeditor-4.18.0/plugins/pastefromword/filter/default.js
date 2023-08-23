@@ -6,11 +6,14 @@
 /* globals CKEDITOR */
 
 ( function() {
-	var List,
-		Style,
-		Heuristics,
-		filter,
-		tools = CKEDITOR.tools,
+	'use strict';
+
+	var tools = CKEDITOR.tools,
+		pastetools = CKEDITOR.plugins.pastetools,
+		commonFilter = pastetools.filters.common,
+		Style = commonFilter.styles,
+		createAttributeStack = commonFilter.createAttributeStack,
+		getElementIndentation = commonFilter.lists.getElementIndentation,
 		invalidTags = [
 			'o:p',
 			'xml',
@@ -18,8 +21,30 @@
 			'meta',
 			'link'
 		],
+		shapeTags = [
+			'v:arc',
+			'v:curve',
+			'v:line',
+			'v:oval',
+			'v:polyline',
+			'v:rect',
+			'v:roundrect',
+			'v:group'
+		],
 		links = {},
-		inComment = 0;
+		inComment = 0,
+		plug = {},
+		List,
+		Heuristics;
+
+	/**
+	 * Set of Paste from Word plugin helpers.
+	 *
+	 * @since 4.13.0
+	 * @private
+	 * @member CKEDITOR.plugins.pastetools.filters
+	 */
+	CKEDITOR.plugins.pastetools.filters.word = plug;
 
 	/**
 	 * Set of Paste from Word plugin helpers.
@@ -31,950 +56,438 @@
 	 * @private
 	 * @member CKEDITOR.plugins
 	 */
-	CKEDITOR.plugins.pastefromword = {};
+	CKEDITOR.plugins.pastefromword = plug;
 
-	CKEDITOR.cleanWord = function( mswordHtml, editor ) {
-		var msoListsDetected = Boolean( mswordHtml.match( /mso-list:\s*l\d+\s+level\d+\s+lfo\d+/ ) );
-
-		// Before filtering inline all the styles to allow because some of them are available only in style
-		// sheets. This step is skipped in IEs due to their flaky support for custom types in dataTransfer. (http://dev.ckeditor.com/ticket/16847)
-		if ( CKEDITOR.plugins.clipboard.isCustomDataTypesSupported ) {
-			mswordHtml = CKEDITOR.plugins.pastefromword.styles.inliner.inline( mswordHtml ).getBody().getHtml();
-		}
-
-		// Sometimes Word malforms the comments.
-		mswordHtml = mswordHtml.replace( /<!\[/g, '<!--[' ).replace( /\]>/g, ']-->' );
-
-		var fragment = CKEDITOR.htmlParser.fragment.fromHtml( mswordHtml );
-
-		filter = new CKEDITOR.htmlParser.filter( {
-			root: function( element ) {
-				element.filterChildren( filter );
-
-				CKEDITOR.plugins.pastefromword.lists.cleanup( List.createLists( element ) );
-			},
-			elementNames: [
-				[ ( /^\?xml:namespace$/ ), '' ],
-				[ /^v:shapetype/, '' ],
-				[ new RegExp( invalidTags.join( '|' ) ), '' ] // Remove invalid tags.
-			],
-			elements: {
-				'a': function( element ) {
-					// Redundant anchor created by IE8.
-					if ( element.attributes.name ) {
-						if ( element.attributes.name == '_GoBack' ) {
-							delete element.name;
-							return;
-						}
-
-						// Garbage links that go nowhere.
-						if ( element.attributes.name.match( /^OLE_LINK\d+$/ ) ) {
-							delete element.name;
-							return;
-						}
-					}
-
-					if ( element.attributes.href && element.attributes.href.match( /#.+$/ ) ) {
-						var name = element.attributes.href.match( /#(.+)$/ )[ 1 ];
-						links[ name ] = element;
-					}
-
-					if ( element.attributes.name &&  links[ element.attributes.name ] ) {
-						var link = links[ element.attributes.name ];
-						link.attributes.href = link.attributes.href.replace( /.*#(.*)$/, '#$1' );
-					}
-
-				},
-				'div': function( element ) {
-					Style.createStyleStack( element, filter, editor );
-				},
-				'img': function( element ) {
-					var attributeStyleMap = {
-						width: function( value ) {
-							Style.setStyle( element, 'width', value + 'px' );
-						},
-						height: function( value ) {
-							Style.setStyle( element, 'height', value + 'px' );
-						}
-					};
-
-					// If the parent is DocumentFragment it does not have any attributes. (http://dev.ckeditor.com/ticket/16912)
-					if ( element.parent && element.parent.attributes ) {
-						var attrs = element.parent.attributes,
-							style = attrs.style || attrs.STYLE;
-						if ( style && style.match( /mso\-list:\s?Ignore/ ) ) {
-							element.attributes[ 'cke-ignored' ] = true;
-						}
-					}
-
-					Style.mapStyles( element, attributeStyleMap );
-
-					if ( element.attributes.src && element.attributes.src.match( /^file:\/\// ) &&
-						element.attributes.alt && element.attributes.alt.match( /^https?:\/\// ) ) {
-						element.attributes.src = element.attributes.alt;
-					}
-				},
-				'p': function( element ) {
+	/**
+	 * Rules for the Paste from Word filter.
+	 *
+	 * @since 4.13.0
+	 * @private
+	 * @member CKEDITOR.plugins.pastetools.filters.word
+	 */
+	plug.rules = function( html, editor, filter ) {
+		var msoListsDetected = Boolean( html.match( /mso-list:\s*l\d+\s+level\d+\s+lfo\d+/ ) ),
+			shapesIds = [],
+			rules = {
+				root: function( element ) {
 					element.filterChildren( filter );
 
-					if ( element.attributes.style && element.attributes.style.match( /display:\s*none/i ) ) {
-						return false;
-					}
-
-					if ( List.thisIsAListItem( editor, element ) ) {
-						if ( Heuristics.isEdgeListItem( editor, element ) ) {
-							Heuristics.cleanupEdgeListItem( element );
-						}
-
-						List.convertToFakeListItem( editor, element );
-
-						// IE pastes nested paragraphs in list items, which is different from other browsers. (http://dev.ckeditor.com/ticket/16826)
-						// There's a possibility that list item will contain multiple paragraphs, in that case we want
-						// to split them with BR.
-						tools.array.reduce( element.children, function( paragraphsReplaced, node ) {
-							if ( node.name === 'p' ) {
-								// If there were already paragraphs replaced, put a br before this paragraph, so that
-								// it's inline children are displayed in a next line.
-								if ( paragraphsReplaced > 0 ) {
-									var br = new CKEDITOR.htmlParser.element( 'br' );
-									br.insertBefore( node );
-								}
-
-								node.replaceWithChildren();
-								paragraphsReplaced += 1;
+					CKEDITOR.plugins.pastefromword.lists.cleanup( List.createLists( element ) );
+				},
+				elementNames: [
+					[ ( /^\?xml:namespace$/ ), '' ],
+					[ /^v:shapetype/, '' ],
+					[ new RegExp( invalidTags.join( '|' ) ), '' ] // Remove invalid tags.
+				],
+				elements: {
+					'a': function( element ) {
+						// Redundant anchor created by IE8.
+						if ( element.attributes.name ) {
+							if ( element.attributes.name == '_GoBack' ) {
+								delete element.name;
+								return;
 							}
 
-							return paragraphsReplaced;
-						}, 0 );
-					} else {
-						// In IE list level information is stored in <p> elements inside <li> elements.
-						var container = element.getAscendant( function( element ) {
-								return element.name == 'ul' || element.name == 'ol';
-							} ),
-							style = tools.parseCssText( element.attributes.style );
-						if ( container &&
-							!container.attributes[ 'cke-list-level' ] &&
-							style[ 'mso-list' ] &&
-							style[ 'mso-list' ].match( /level/ ) ) {
-							container.attributes[ 'cke-list-level' ] = style[ 'mso-list' ].match( /level(\d+)/ )[1];
+							// Garbage links that go nowhere.
+							if ( element.attributes.name.match( /^OLE_LINK\d+$/ ) ) {
+								delete element.name;
+								return;
+							}
 						}
 
-						// Adapt paragraph formatting to editor's convention according to enter-mode (#423).
-						if ( editor.config.enterMode == CKEDITOR.ENTER_BR ) {
-							// We suffer from attribute/style lost in this situation.
-							delete element.name;
-							element.add( new CKEDITOR.htmlParser.element( 'br' ) );
+						if ( element.attributes.href && element.attributes.href.match( /#.+$/ ) ) {
+							var name = element.attributes.href.match( /#(.+)$/ )[ 1 ];
+							links[ name ] = element;
 						}
 
-					}
-
-					Style.createStyleStack( element, filter, editor );
-				},
-				'pre': function( element ) {
-					if ( List.thisIsAListItem( editor, element ) ) List.convertToFakeListItem( editor, element );
-
-					Style.createStyleStack( element, filter, editor );
-				},
-				'h1': function( element ) {
-					if ( List.thisIsAListItem( editor, element ) ) List.convertToFakeListItem( editor, element );
-
-					Style.createStyleStack( element, filter, editor );
-				},
-				'h2': function( element ) {
-					if ( List.thisIsAListItem( editor, element ) ) List.convertToFakeListItem( editor, element );
-
-					Style.createStyleStack( element, filter, editor );
-				},
-				'h3': function( element ) {
-					if ( List.thisIsAListItem( editor, element ) ) List.convertToFakeListItem( editor, element );
-
-					Style.createStyleStack( element, filter, editor );
-				},
-				'h4': function( element ) {
-					if ( List.thisIsAListItem( editor, element ) ) List.convertToFakeListItem( editor, element );
-
-					Style.createStyleStack( element, filter, editor );
-				},
-				'h5': function( element ) {
-					if ( List.thisIsAListItem( editor, element ) ) List.convertToFakeListItem( editor, element );
-
-					Style.createStyleStack( element, filter, editor );
-				},
-				'h6': function( element ) {
-					if ( List.thisIsAListItem( editor, element ) ) List.convertToFakeListItem( editor, element );
-
-					Style.createStyleStack( element, filter, editor );
-				},
-				'font': function( element ) {
-					if ( element.getHtml().match( /^\s*$/ ) ) {
-						new CKEDITOR.htmlParser.text( ' ' ).insertAfter( element );
-						return false;
-					}
-
-					if ( editor && editor.config.pasteFromWordRemoveFontStyles === true ) {
-						var children = element.children;
-						var parent = element.parent;
-						var index = element.getIndex();
-
-						for (var i = 0; i < children.length; i++) {
-							parent.add(children[i], index);
+						if ( element.attributes.name &&  links[ element.attributes.name ] ) {
+							var link = links[ element.attributes.name ];
+							link.attributes.href = link.attributes.href.replace( /.*#(.*)$/, '#$1' );
 						}
 
-						return false;
-					}
-
-					// Create style stack for td/th > font if only class
-					// and style attributes are present. Such markup is produced by Excel.
-					if ( CKEDITOR.dtd.tr[ element.parent.name ] &&
-						CKEDITOR.tools.arrayCompare( CKEDITOR.tools.objectKeys( element.attributes ), [ 'class', 'style' ] ) ) {
+					},
+					'div': function( element ) {
+						// Don't allow to delete page break element (#3220).
+						if ( editor.plugins.pagebreak && element.attributes[ 'data-cke-pagebreak' ] ) {
+							return element;
+						}
 
 						Style.createStyleStack( element, filter, editor );
-					} else {
-						createAttributeStack( element, filter );
-					}
-				},
-				'ul': function( element ) {
-					if ( !msoListsDetected ) {
-						// List should only be processed if we're sure we're working with Word. (http://dev.ckeditor.com/ticket/16593)
-						return;
-					}
-
-					// Edge case from 11683 - an unusual way to create a level 2 list.
-					if ( element.parent.name == 'li' && tools.indexOf( element.parent.children, element ) === 0 ) {
-						Style.setStyle( element.parent, 'list-style-type', 'none' );
-					}
-
-					List.dissolveList( element );
-					return false;
-				},
-				'li': function( element ) {
-					Heuristics.correctLevelShift( element );
-
-					if ( !msoListsDetected ) {
-						return;
-					}
-
-					element.attributes.style = Style.normalizedStyles( element, editor );
-
-					Style.pushStylesLower( element );
-				},
-				'ol': function( element ) {
-					if ( !msoListsDetected ) {
-						// List should only be processed if we're sure we're working with Word. (http://dev.ckeditor.com/ticket/16593)
-						return;
-					}
-
-					// Fix edge-case where when a list skips a level in IE11, the <ol> element
-					// is implicitly surrounded by a <li>.
-					if ( element.parent.name == 'li' && tools.indexOf( element.parent.children, element ) === 0 ) {
-						Style.setStyle( element.parent, 'list-style-type', 'none' );
-					}
-
-					List.dissolveList( element );
-					return false;
-				},
-				'span': function( element ) {
-					element.filterChildren( filter );
-
-					element.attributes.style = Style.normalizedStyles( element, editor );
-
-					if ( !element.attributes.style ||
-							// Remove garbage bookmarks that disrupt the content structure.
-						element.attributes.style.match( /^mso\-bookmark:OLE_LINK\d+$/ ) ||
-						element.getHtml().match( /^(\s|&nbsp;)+$/ ) ) {
-
-						// replaceWithChildren doesn't work in filters.
-						for ( var i = element.children.length - 1; i >= 0; i-- ) {
-							element.children[ i ].insertAfter( element );
+					},
+					'img': function( element ) {
+						// If the parent is DocumentFragment it does not have any attributes. (https://dev.ckeditor.com/ticket/16912)
+						if ( element.parent && element.parent.attributes ) {
+							var attrs = element.parent.attributes,
+								style = attrs.style || attrs.STYLE;
+							if ( style && style.match( /mso\-list:\s?Ignore/ ) ) {
+								element.attributes[ 'cke-ignored' ] = true;
+							}
 						}
+
+						Style.mapCommonStyles( element );
+
+						if ( element.attributes.src && element.attributes.src.match( /^file:\/\// ) &&
+							element.attributes.alt && element.attributes.alt.match( /^https?:\/\// ) ) {
+							element.attributes.src = element.attributes.alt;
+						}
+
+						var imgShapesIds = element.attributes[ 'v:shapes' ] ? element.attributes[ 'v:shapes' ].split( ' ' ) : [];
+						// Check whether attribute contains shapes recognised earlier (stored in global list of shapesIds).
+						// If so, add additional data-attribute to img tag.
+						var isShapeFromList = CKEDITOR.tools.array.every( imgShapesIds, function( shapeId ) {
+							return shapesIds.indexOf( shapeId ) > -1;
+						} );
+						if ( imgShapesIds.length && isShapeFromList ) {
+							// As we don't know how to process shapes we can remove them.
+							return false;
+						}
+
+					},
+					'p': function( element ) {
+						element.filterChildren( filter );
+
+						if ( element.attributes.style && element.attributes.style.match( /display:\s*none/i ) ) {
+							return false;
+						}
+
+						if ( List.thisIsAListItem( editor, element ) ) {
+							if ( Heuristics.isEdgeListItem( editor, element ) ) {
+								Heuristics.cleanupEdgeListItem( element );
+							}
+
+							List.convertToFakeListItem( editor, element );
+
+							// IE pastes nested paragraphs in list items, which is different from other browsers. (https://dev.ckeditor.com/ticket/16826)
+							// There's a possibility that list item will contain multiple paragraphs, in that case we want
+							// to split them with BR.
+							tools.array.reduce( element.children, function( paragraphsReplaced, node ) {
+								if ( node.name === 'p' ) {
+									// If there were already paragraphs replaced, put a br before this paragraph, so that
+									// it's inline children are displayed in a next line.
+									if ( paragraphsReplaced > 0 ) {
+										var br = new CKEDITOR.htmlParser.element( 'br' );
+										br.insertBefore( node );
+									}
+
+									node.replaceWithChildren();
+									paragraphsReplaced += 1;
+								}
+
+								return paragraphsReplaced;
+							}, 0 );
+						} else {
+							// In IE list level information is stored in <p> elements inside <li> elements.
+							var container = element.getAscendant( function( element ) {
+									return element.name == 'ul' || element.name == 'ol';
+								} ),
+								style = tools.parseCssText( element.attributes.style );
+							if ( container &&
+								!container.attributes[ 'cke-list-level' ] &&
+								style[ 'mso-list' ] &&
+								style[ 'mso-list' ].match( /level/ ) ) {
+								container.attributes[ 'cke-list-level' ] = style[ 'mso-list' ].match( /level(\d+)/ )[1];
+							}
+
+							// Adapt paragraph formatting to editor's convention according to enter-mode (#423).
+							if ( editor.config.enterMode == CKEDITOR.ENTER_BR ) {
+								// We suffer from attribute/style lost in this situation.
+								delete element.name;
+								element.add( new CKEDITOR.htmlParser.element( 'br' ) );
+							}
+
+						}
+
+						Style.createStyleStack( element, filter, editor );
+					},
+					'pre': function( element ) {
+						if ( List.thisIsAListItem( editor, element ) ) List.convertToFakeListItem( editor, element );
+
+						Style.createStyleStack( element, filter, editor );
+					},
+					'h1': function( element ) {
+						if ( List.thisIsAListItem( editor, element ) ) List.convertToFakeListItem( editor, element );
+
+						Style.createStyleStack( element, filter, editor );
+					},
+					'h2': function( element ) {
+						if ( List.thisIsAListItem( editor, element ) ) List.convertToFakeListItem( editor, element );
+
+						Style.createStyleStack( element, filter, editor );
+					},
+					'h3': function( element ) {
+						if ( List.thisIsAListItem( editor, element ) ) List.convertToFakeListItem( editor, element );
+
+						Style.createStyleStack( element, filter, editor );
+					},
+					'h4': function( element ) {
+						if ( List.thisIsAListItem( editor, element ) ) List.convertToFakeListItem( editor, element );
+
+						Style.createStyleStack( element, filter, editor );
+					},
+					'h5': function( element ) {
+						if ( List.thisIsAListItem( editor, element ) ) List.convertToFakeListItem( editor, element );
+
+						Style.createStyleStack( element, filter, editor );
+					},
+					'h6': function( element ) {
+						if ( List.thisIsAListItem( editor, element ) ) List.convertToFakeListItem( editor, element );
+
+						Style.createStyleStack( element, filter, editor );
+					},
+					'font': function( element ) {
+						if ( element.getHtml().match( /^\s*$/ ) ) {
+							// There might be font tag directly in document fragment, we cannot replace it with a textnode as this generates
+							// superfluous spaces in output. What later might be transformed into empty paragraphs, so just remove such element.
+							if ( element.parent.type === CKEDITOR.NODE_ELEMENT ) {
+								new CKEDITOR.htmlParser.text( ' ' ).insertAfter( element );
+							}
+							return false;
+						}
+
+						// EMM CHANGES START
+						// if ( editor && editor.config.pasteFromWordRemoveFontStyles === true && element.attributes.size ) {
+						// 	// font[size] are still used by old IEs for font size.
+						// 	delete element.attributes.size;
+						// }
+            if ( editor && editor.config.pasteFromWordRemoveFontStyles === true ) {
+              var children = element.children;
+              var parent = element.parent;
+              var index = element.getIndex();
+
+              for (var i = 0; i < children.length; i++) {
+                parent.add(children[i], index);
+              }
+
+              return false;
+            }
+            // EMM CHANGES END
+
+						// Create style stack for td/th > font if only class
+						// and style attributes are present. Such markup is produced by Excel.
+						if ( CKEDITOR.dtd.tr[ element.parent.name ] &&
+							CKEDITOR.tools.arrayCompare( CKEDITOR.tools.object.keys( element.attributes ), [ 'class', 'style' ] ) ) {
+
+							Style.createStyleStack( element, filter, editor );
+						} else {
+							createAttributeStack( element, filter );
+						}
+					},
+					'ul': function( element ) {
+						if ( !msoListsDetected ) {
+							// List should only be processed if we're sure we're working with Word. (https://dev.ckeditor.com/ticket/16593)
+							return;
+						}
+
+						// Edge case from 11683 - an unusual way to create a level 2 list.
+						if ( element.parent.name == 'li' && tools.indexOf( element.parent.children, element ) === 0 ) {
+							Style.setStyle( element.parent, 'list-style-type', 'none' );
+						}
+
+						List.dissolveList( element );
 						return false;
-					}
+					},
+					'li': function( element ) {
+						Heuristics.correctLevelShift( element );
 
-					if ( element.attributes.style.match( /FONT-FAMILY:\s*Symbol/i ) ) {
-						element.forEach( function( node ) {
-							node.value = node.value.replace( /&nbsp;/g, '' );
-						}, CKEDITOR.NODE_TEXT, true );
-					}
+						if ( !msoListsDetected ) {
+							return;
+						}
 
-					Style.createStyleStack( element, filter, editor );
+						element.attributes.style = Style.normalizedStyles( element, editor );
+
+						Style.pushStylesLower( element );
+					},
+					'ol': function( element ) {
+						if ( !msoListsDetected ) {
+							// List should only be processed if we're sure we're working with Word. (https://dev.ckeditor.com/ticket/16593)
+							return;
+						}
+
+						// Fix edge-case where when a list skips a level in IE11, the <ol> element
+						// is implicitly surrounded by a <li>.
+						if ( element.parent.name == 'li' && tools.indexOf( element.parent.children, element ) === 0 ) {
+							Style.setStyle( element.parent, 'list-style-type', 'none' );
+						}
+
+						List.dissolveList( element );
+						return false;
+					},
+					'span': function( element ) {
+						element.filterChildren( filter );
+
+						element.attributes.style = Style.normalizedStyles( element, editor );
+
+						if ( !element.attributes.style ||
+								// Remove garbage bookmarks that disrupt the content structure.
+							element.attributes.style.match( /^mso\-bookmark:OLE_LINK\d+$/ ) ||
+							element.getHtml().match( /^(\s|&nbsp;)+$/ ) ) {
+
+							commonFilter.elements.replaceWithChildren( element );
+							return false;
+						}
+
+						if ( element.attributes.style.match( /FONT-FAMILY:\s*Symbol/i ) ) {
+							element.forEach( function( node ) {
+								node.value = node.value.replace( /&nbsp;/g, '' );
+							}, CKEDITOR.NODE_TEXT, true );
+						}
+
+						Style.createStyleStack( element, filter, editor );
+					},
+
+					'v:imagedata': remove,
+					// This is how IE8 presents images.
+					'v:shape': function( element ) {
+						// There are 3 paths:
+						// 1. There is regular `v:shape` (no `v:imagedata` inside).
+						// 2. There is a simple situation with `v:shape` with `v:imagedata` inside. We can remove such element and rely on `img` tag found later on.
+						// 3. There is a complicated situation where we cannot find proper `img` tag after `v:shape` or there is some canvas element.
+						// 		a) If shape is a child of v:group, then most probably it belongs to canvas, so we need to treat it as in path 1.
+						// 		b) In other cases, most probably there is no related `img` tag. We need to transform `v:shape` into `img` tag (IE8 integration).
+
+						var duplicate = false,
+							child = element.getFirst( 'v:imagedata' );
+
+						// Path 1:
+						if ( child === null ) {
+							shapeTagging( element );
+							return;
+						}
+
+						// Path 2:
+						// Sometimes a child with proper ID might be nested in other tag.
+						element.parent.find( function( child ) {
+							if ( child.name == 'img' && child.attributes &&
+								child.attributes[ 'v:shapes' ] == element.attributes.id ) {
+
+								duplicate = true;
+							}
+						}, true );
+
+						if ( duplicate ) {
+							return false;
+						} else {
+
+							// Path 3:
+							var src = '';
+
+							// 3.a) Filter out situation when canvas is used. In such scenario there is v:group containing v:shape containing v:imagedata.
+							// We streat such v:shapes as in Path 1.
+							if ( element.parent.name === 'v:group' ) {
+								shapeTagging( element );
+								return;
+							}
+
+							// 3.b) Most probably there is no img tag later on, so we need to transform this v:shape into img. This should only happen on IE8.
+							element.forEach( function( child ) {
+								if ( child.attributes && child.attributes.src ) {
+									src = child.attributes.src;
+								}
+							}, CKEDITOR.NODE_ELEMENT, true );
+
+							element.filterChildren( filter );
+
+							element.name = 'img';
+							element.attributes.src = element.attributes.src || src;
+
+							delete element.attributes.type;
+						}
+
+						return;
+					},
+
+					'style': function() {
+						// We don't want to let any styles in. Firefox tends to add some.
+						return false;
+					},
+
+					'object': function( element ) {
+						// The specs about object `data` attribute:
+						// 		Address of the resource as a valid URL. At least one of data and type must be defined.
+						// If there is not `data`, skip the object element. (https://dev.ckeditor.com/ticket/17001)
+						return !!( element.attributes && element.attributes.data );
+					},
+
+					// Integrate page breaks with `pagebreak` plugin (#2598).
+					'br': function( element ) {
+						if ( !editor.plugins.pagebreak ) {
+							return;
+						}
+
+						var styles = tools.parseCssText( element.attributes.style, true );
+
+						// Safari uses `break-before` instead of `page-break-before` to recognize page breaks.
+						if ( styles[ 'page-break-before' ] === 'always' || styles[ 'break-before' ] === 'page' ) {
+							var pagebreakEl = CKEDITOR.plugins.pagebreak.createElement( editor );
+							return CKEDITOR.htmlParser.fragment.fromHtml( pagebreakEl.getOuterHtml() ).children[ 0 ];
+						}
+					}
 				},
-				'table': function( element ) {
-					element._tdBorders = {};
-					element.filterChildren( filter );
-
-					var borderStyle, occurences = 0;
-					for ( var border in element._tdBorders ) {
-						if ( element._tdBorders[ border ] > occurences ) {
-							occurences = element._tdBorders[ border ];
-							borderStyle = border;
-						}
-					}
-
-					Style.setStyle( element, 'border', borderStyle );
-
-					var parent = element.parent,
-						root = parent && parent.parent,
-						parentChildren,
-						i;
-
-					// In case parent div has only align attr, move it to the table element (http://dev.ckeditor.com/ticket/16811).
-					if ( parent.name && parent.name === 'div' && parent.attributes.align &&
-						tools.objectKeys( parent.attributes ).length === 1 && parent.children.length === 1 ) {
-						// If align is the only attribute of parent.
-						element.attributes.align = parent.attributes.align;
-
-						parentChildren = parent.children.splice( 0 );
-
-						element.remove();
-						for ( i = parentChildren.length - 1; i >= 0; i-- ) {
-							root.add( parentChildren[ i ], parent.getIndex() );
-						}
-						parent.remove();
-					}
-
+				attributes: {
+					'style': function( styles, element ) {
+						// Returning false deletes the attribute.
+            // EMM CHANGES START
+						// return Style.normalizedStyles( element, editor ) || false;
+            //we need to remove all styles from content - EMMGUI-676
+            return false;
+            // EMM CHANGES END
+					},
+					'class': function( classes ) {
+						// The (el\d+)|(font\d+) are default Excel classes for table cells and text.
+						return falseIfEmpty( classes.replace( /(el\d+)|(font\d+)|msonormal|msolistparagraph\w*/ig, '' ) );
+					},
+					'cellspacing': remove,
+					'cellpadding': remove,
+					'border': remove,
+					'v:shapes': remove,
+					'o:spid': remove
 				},
-				'td': function( element ) {
-
-					var ascendant = element.getAscendant( 'table' ),
-						tdBorders =  ascendant._tdBorders,
-						borderStyles = [ 'border', 'border-top', 'border-right', 'border-bottom', 'border-left' ],
-						ascendantStyle = tools.parseCssText( ascendant.attributes.style );
-
-					// Sometimes the background is set for the whole table - move it to individual cells.
-					var background = ascendantStyle.background || ascendantStyle.BACKGROUND;
-					if ( background ) {
-						Style.setStyle( element, 'background', background, true );
+				comment: function( element ) {
+					if ( element.match( /\[if.* supportFields.*\]/ ) ) {
+						inComment++;
 					}
-
-					var backgroundColor = ascendantStyle[ 'background-color' ] || ascendantStyle[ 'BACKGROUND-COLOR' ];
-					if ( backgroundColor ) {
-						Style.setStyle( element, 'background-color', backgroundColor, true );
+					if ( element == '[endif]' ) {
+						inComment = inComment > 0 ? inComment - 1 : 0;
 					}
-
-					var styles = tools.parseCssText( element.attributes.style );
-
-					for ( var style in styles ) {
-						var temp = styles[ style ];
-						delete styles[ style ];
-						styles[ style.toLowerCase() ] = temp;
-					}
-
-					// Count all border styles that occur in the table.
-					for ( var i = 0; i < borderStyles.length; i++ ) {
-						if ( styles[ borderStyles[ i ] ] ) {
-							var key = styles[ borderStyles[ i ] ];
-							tdBorders[ key ] = tdBorders[ key ] ? tdBorders[ key ] + 1 : 1;
-						}
-					}
-
-					Style.createStyleStack( element, filter, editor,
-						/margin|text\-align|padding|list\-style\-type|width|height|border|white\-space|vertical\-align|background/i );
-				},
-				'v:imagedata': remove,
-				// This is how IE8 presents images.
-				'v:shape': function( element ) {
-					// In chrome a <v:shape> element may be followed by an <img> element with the same content.
-					var duplicate = false;
-					element.parent.getFirst( function( child ) {
-						if ( child.name == 'img' &&
-							child.attributes &&
-							child.attributes[ 'v:shapes' ] == element.attributes.id ) {
-							duplicate = true;
-						}
-					} );
-
-					if ( duplicate ) return false;
-
-					var src = '';
-					element.forEach( function( child ) {
-						if ( child.attributes && child.attributes.src ) {
-							src = child.attributes.src;
-						}
-					}, CKEDITOR.NODE_ELEMENT, true );
-
-					element.filterChildren( filter );
-
-					element.name = 'img';
-					element.attributes.src = element.attributes.src || src;
-
-					delete element.attributes.type;
-				},
-
-				'style': function() {
-					// We don't want to let any styles in. Firefox tends to add some.
 					return false;
 				},
-
-				'object': function( element ) {
-					// The specs about object `data` attribute:
-					// 		Address of the resource as a valid URL. At least one of data and type must be defined.
-					// If there is not `data`, skip the object element. (http://dev.ckeditor.com/ticket/17001)
-					return !!( element.attributes && element.attributes.data );
-				}
-			},
-			attributes: {
-				'style': function( styles, element ) {
-					// Returning false deletes the attribute.
-					//return Style.normalizedStyles( element, editor ) || false;
-					//we need to remove all styles from content - EMMGUI-676
-					return false;
-
-				},
-				'class': function( classes ) {
-					// The (el\d+)|(font\d+) are default Excel classes for table cells and text.
-					return falseIfEmpty( classes.replace( /(el\d+)|(font\d+)|msonormal|msolistparagraph\w*/ig, '' ) );
-				},
-				'cellspacing': remove,
-				'cellpadding': remove,
-				'border': remove,
-				'v:shapes': remove,
-				'o:spid': remove
-			},
-			comment: function( element ) {
-				if ( element.match( /\[if.* supportFields.*\]/ ) ) {
-					inComment++;
-				}
-				if ( element == '[endif]' ) {
-					inComment = inComment > 0 ? inComment - 1 : 0;
-				}
-				return false;
-			},
-			text: function( content, node ) {
-				if ( inComment ) {
-					return '';
-				}
-
-				var grandparent = node.parent && node.parent.parent;
-
-				if ( grandparent && grandparent.attributes && grandparent.attributes.style && grandparent.attributes.style.match( /mso-list:\s*ignore/i ) ) {
-					return content.replace( /&nbsp;/g, ' ' );
-				}
-
-				return content;
-			}
-		} );
-
-		var writer = new CKEDITOR.htmlParser.basicWriter();
-
-		filter.applyTo( fragment );
-
-		fragment.writeHtml( writer );
-
-		return writer.getHtml();
-	};
-
-	/**
-	 * Namespace containing all the helper functions to work with styles.
-	 *
-	 * @private
-	 * @since 4.6.0
-	 * @member CKEDITOR.plugins.pastefromword
-	 */
-	CKEDITOR.plugins.pastefromword.styles = {
-		setStyle: function( element, key, value, dontOverwrite ) {
-			var styles = tools.parseCssText( element.attributes.style );
-
-			if ( dontOverwrite && styles[ key ] ) {
-				return;
-			}
-
-			if ( value === '' ) {
-				delete styles[ key ];
-			} else {
-				styles[ key ] = value;
-			}
-
-			element.attributes.style = CKEDITOR.tools.writeCssText( styles );
-		},
-
-		// Map attributes to styles.
-		mapStyles: function( element, attributeStyleMap ) {
-			for ( var attribute in attributeStyleMap ) {
-				if ( element.attributes[ attribute ] ) {
-					if ( typeof attributeStyleMap[ attribute ] === 'function' ) {
-						attributeStyleMap[ attribute ]( element.attributes[ attribute ] );
-					} else {
-						Style.setStyle( element, attributeStyleMap[ attribute ], element.attributes[ attribute ] );
-					}
-					delete element.attributes[ attribute ];
-				}
-			}
-		},
-
-		/**
-		 * Filters Word-specific styles for a given element. Also might filter additional styles
-		 * based on the `editor` configuration.
-		 *
-		 * @private
-		 * @param {CKEDITOR.htmlParser.element} element
-		 * @param {CKEDITOR.editor} editor
-		 * @member CKEDITOR.plugins.pastefromword.styles
-		 */
-		normalizedStyles: function( element, editor ) {
-
-			// Some styles and style values are redundant, so delete them.
-			var resetStyles = [
-					'background-color:transparent',
-					'border-image:none',
-					'color:windowtext',
-					'direction:ltr',
-					'mso-',
-					'text-indent',
-					'visibility:visible',
-					'div:border:none' // This one stays because http://dev.ckeditor.com/ticket/6241
-				],
-				textStyles = [
-					'font-family',
-					'font',
-					'font-size',
-					'color',
-					'background-color',
-					'line-height',
-					'text-decoration'
-				],
-				matchStyle = function() {
-					var keys = [];
-					for ( var i = 0; i < arguments.length; i++ ) {
-						if ( arguments[ i ] ) {
-							keys.push( arguments[ i ] );
-						}
+				text: function( content, node ) {
+					if ( inComment ) {
+						return '';
 					}
 
-					return tools.indexOf( resetStyles, keys.join( ':' ) ) !== -1;
-				},
-				removeFontStyles = editor && editor.config.pasteFromWordRemoveFontStyles === true;
+					var grandparent = node.parent && node.parent.parent;
 
-			var styles = tools.parseCssText( element.attributes.style );
+					if ( grandparent && grandparent.attributes && grandparent.attributes.style && grandparent.attributes.style.match( /mso-list:\s*ignore/i ) ) {
+						return content.replace( /&nbsp;/g, ' ' );
+					}
 
-			if ( element.name == 'cke:li' ) {
-				// IE8 tries to emulate list indentation with a combination of
-				// text-indent and left margin. Normalize this. Note that IE8 styles are uppercase.
-				if ( styles[ 'TEXT-INDENT' ] && styles.MARGIN ) {
-					element.attributes[ 'cke-indentation' ] = List.getElementIndentation( element );
-					styles.MARGIN = styles.MARGIN.replace( /(([\w\.]+ ){3,3})[\d\.]+(\w+$)/, '$10$3' );
+					return content;
 				}
-
-			}
-
-			var keys = tools.objectKeys( styles );
-
-			for ( var i = 0; i < keys.length; i++ ) {
-				var styleName = keys[ i ].toLowerCase(),
-					styleValue = styles[ keys[ i ] ],
-					indexOf = CKEDITOR.tools.indexOf,
-					toBeRemoved = removeFontStyles && indexOf( textStyles, styleName.toLowerCase() ) !== -1;
-
-				if ( toBeRemoved || matchStyle( null, styleName, styleValue ) ||
-					matchStyle( null, styleName.replace( /\-.*$/, '-' ) ) ||
-					matchStyle( null, styleName ) ||
-					matchStyle( element.name, styleName, styleValue ) ||
-					matchStyle( element.name, styleName.replace( /\-.*$/, '-' ) ) ||
-					matchStyle( element.name, styleName ) ||
-					matchStyle( styleValue )
-				) {
-					delete styles[ keys[ i ] ];
-				}
-			}
-			return CKEDITOR.tools.writeCssText( styles );
-		},
-
-		/**
-		 * Surrounds the element's children with a stack of spans, each one having one style
-		 * originally belonging to the element.
-		 *
-		 * @private
-		 * @param {CKEDITOR.htmlParser.element} element
-		 * @param {CKEDITOR.htmlParser.filter} filter
-		 * @param {CKEDITOR.editor} editor
-		 * @param {RegExp} [skipStyles] All matching style names will not be extracted to a style stack. Defaults
-		 * to `/margin|text\-align|width|border|padding/i`.
-		 * @member CKEDITOR.plugins.pastefromword.styles
-		 */
-		createStyleStack: function( element, filter, editor, skipStyles ) {
-			var children = [],
-				i;
-
-			element.filterChildren( filter );
-
-			// Store element's children somewhere else.
-			for ( i = element.children.length - 1; i >= 0; i-- ) {
-				children.unshift( element.children[ i ] );
-				element.children[ i ].remove();
-			}
-
-			Style.sortStyles( element );
-
-			// Create a stack of spans with each containing one style.
-			var styles = tools.parseCssText( Style.normalizedStyles( element, editor ) ),
-				innermostElement = element,
-				styleTopmost = element.name === 'span'; // Ensure that the root element retains at least one style.
-
-			for ( var style in styles ) {
-				if ( style.match( skipStyles || /margin|text\-align|width|border|padding/i ) ) {
-					continue;
-				}
-
-				if ( styleTopmost ) {
-					styleTopmost = false;
-					continue;
-				}
-
-				var newElement = new CKEDITOR.htmlParser.element( 'span' );
-
-				newElement.attributes.style = style + ':' + styles[ style ];
-
-				innermostElement.add( newElement );
-				innermostElement = newElement;
-
-				delete styles[ style ];
-			}
-
-			if ( !CKEDITOR.tools.isEmpty( styles ) ) {
-				element.attributes.style = CKEDITOR.tools.writeCssText( styles );
-			} else {
-				delete element.attributes.style;
-			}
-
-			// Add the stored children to the innermost span.
-			for ( i = 0; i < children.length; i++ ) {
-				innermostElement.add( children[ i ] );
-			}
-		},
-
-		// Some styles need to be stacked in a particular order to work properly.
-		sortStyles: function( element ) {
-			var orderedStyles = [
-					'border',
-					'border-bottom',
-					'font-size',
-					'background'
-				],
-				style = tools.parseCssText( element.attributes.style ),
-				keys = tools.objectKeys( style ),
-				sortedKeys = [],
-				nonSortedKeys = [];
-
-			// Divide styles into sorted and non-sorted, because Array.prototype.sort()
-			// requires a transitive relation.
-			for ( var i = 0; i < keys.length; i++ ) {
-				if ( tools.indexOf( orderedStyles, keys[ i ].toLowerCase() ) !== -1 ) {
-					sortedKeys.push( keys[ i ] );
-				} else {
-					nonSortedKeys.push( keys[ i ] );
-				}
-			}
-
-			// For styles in orderedStyles[] enforce the same order as in orderedStyles[].
-			sortedKeys.sort( function( a, b ) {
-				var aIndex = tools.indexOf( orderedStyles, a.toLowerCase() );
-				var bIndex = tools.indexOf( orderedStyles, b.toLowerCase() );
-
-				return aIndex - bIndex;
-			} );
-
-			keys = [].concat( sortedKeys, nonSortedKeys );
-
-			var sortedStyles = {};
-
-			for ( i = 0; i < keys.length; i++ ) {
-				sortedStyles[ keys[ i ] ] = style[ keys[ i ] ];
-			}
-
-			element.attributes.style = CKEDITOR.tools.writeCssText( sortedStyles );
-		},
-
-		/**
-		 * Moves the element's styles lower in the DOM hierarchy. If `wrapText==true` and the direct child of an element
-		 * is a text node it will be wrapped in a `span` element.
-		 *
-		 * @param {CKEDITOR.htmlParser.element} element
-		 * @param {Object} exceptions An object containing style names which should not be moved, e.g. `{ background: true }`.
-		 * @param {Boolean} [wrapText=false] Whether a direct text child of an element should be wrapped into a `span` tag
-		 * so that the styles can be moved to it.
-		 * @returns {Boolean} Returns `true` if styles were successfully moved lower.
-		 * @member CKEDITOR.plugins.pastefromword.styles
-		 */
-		pushStylesLower: function( element, exceptions, wrapText ) {
-
-			if ( !element.attributes.style ||
-				element.children.length === 0 ) {
-				return false;
-			}
-
-			exceptions = exceptions || {};
-
-			// Entries ending with a dash match styles that start with
-			// the entry name, e.g. 'border-' matches 'border-style', 'border-color' etc.
-			var retainedStyles = {
-				'list-style-type': true,
-				'width': true,
-				'height': true,
-				'border': true,
-				'border-': true
 			};
 
-			var styles = tools.parseCssText( element.attributes.style );
+		tools.array.forEach( shapeTags, function( shapeTag ) {
+			rules.elements[ shapeTag ] = shapeTagging;
+		} );
 
-			for ( var style in styles ) {
-				if ( style.toLowerCase() in retainedStyles ||
-					retainedStyles [ style.toLowerCase().replace( /\-.*$/, '-' ) ] ||
-					style.toLowerCase() in exceptions ) {
-					continue;
-				}
+		return rules;
 
-				var pushed = false;
-
-				for ( var i = 0; i < element.children.length; i++ ) {
-					var child = element.children[ i ];
-
-					if ( child.type === CKEDITOR.NODE_TEXT && wrapText ) {
-						var wrapper = new CKEDITOR.htmlParser.element( 'span' );
-						wrapper.setHtml( child.value );
-						child.replaceWith( wrapper );
-						child = wrapper;
-					}
-
-					if ( child.type !== CKEDITOR.NODE_ELEMENT ) {
-						continue;
-					}
-
-					pushed = true;
-
-					Style.setStyle( child, style, styles[ style ] );
-				}
-
-				if ( pushed ) {
-					delete styles[ style ];
-				}
-			}
-
-			element.attributes.style = CKEDITOR.tools.writeCssText( styles );
-
-			return true;
-		},
-
-		/**
-		 * Namespace containing the styles inliner.
-		 *
-		 * @since 4.7.0
-		 * @private
-		 * @member CKEDITOR.plugins.pastefromword.styles
-		 */
-		inliner: {
-			/**
-			 *
-			 * Styles skipped by the styles inliner.
-			 *
-			 * @property {String[]}
-			 * @private
-			 * @member CKEDITOR.plugins.pastefromword.styles.inliner
-			 */
-			filtered: [
-				'break-before',
-				'break-after',
-				'break-inside',
-				'page-break',
-				'page-break-before',
-				'page-break-after',
-				'page-break-inside'
-			],
-
-			/**
-			 * Parses the content of the provided `style` element.
-			 *
-			 * @param {CKEDITOR.dom.element/String} styles The `style` element or CSS text.
-			 * @returns {Array} An array containing parsed styles. Each item (style) is an object containing two properties:
-			 * 		selector &ndash; A string representing a CSS selector.
-			 * 		styles &ndash; An object containing a list of styles (e.g. `{ margin: 0, text-align: 'left' }`).
-			 * @since 4.7.0
-			 * @private
-			 * @member CKEDITOR.plugins.pastefromword.styles.inliner
-			 */
-			parse: function( styles ) {
-				var parseCssText = CKEDITOR.tools.parseCssText,
-					filterStyles = CKEDITOR.plugins.pastefromword.styles.inliner.filter,
-					sheet = styles.is ? styles.$.sheet : createIsolatedStylesheet( styles );
-
-				function createIsolatedStylesheet( styles ) {
-					var style = new CKEDITOR.dom.element( 'style' ),
-						iframe = new CKEDITOR.dom.element( 'iframe' );
-
-					iframe.hide();
-					CKEDITOR.document.getBody().append( iframe );
-					iframe.$.contentDocument.documentElement.appendChild( style.$ );
-
-					style.$.textContent = styles;
-					iframe.remove();
-					return style.$.sheet;
-				}
-
-				function getStyles( cssText ) {
-					var startIndex = cssText.indexOf( '{' ),
-						endIndex = cssText.indexOf( '}' );
-
-					return parseCssText( cssText.substring( startIndex + 1, endIndex ), true );
-				}
-
-				var parsedStyles = [],
-					rules,
-					i;
-
-				if ( sheet ) {
-					rules = sheet.cssRules;
-
-					for ( i = 0; i < rules.length; i++ ) {
-						// To detect if the rule contains styles and is not an at-rule, it's enough to check rule's type.
-						if ( rules[ i ].type === window.CSSRule.STYLE_RULE ) {
-							parsedStyles.push( {
-								selector: rules[ i ].selectorText,
-								styles: filterStyles( getStyles( rules[ i ].cssText ) )
-							} );
-						}
-					}
-				}
-				return parsedStyles;
-			},
-
-			/**
-			 * Filters out all unnecessary styles.
-			 *
-			 * @param {Object} stylesObj An object containing parsed CSS declarations
-			 * as property/value pairs (see {@link CKEDITOR.plugins.pastefromword.styles.inliner#parse}).
-			 * @returns {Object} The `stylesObj` copy with specific styles filtered out.
-			 * @since 4.7.0
-			 * @private
-			 * @member CKEDITOR.plugins.pastefromword.styles.inliner
-			 */
-			filter: function( stylesObj ) {
-				var toRemove = CKEDITOR.plugins.pastefromword.styles.inliner.filtered,
-					indexOf = tools.array.indexOf,
-					newObj = {},
-					style;
-
-				for ( style in stylesObj ) {
-					if ( indexOf( toRemove, style ) === -1 ) {
-						newObj[ style ] = stylesObj[ style ];
-					}
-				}
-
-				return newObj;
-			},
-
-			/**
-			 * Sorts the given styles array. All rules containing class selectors will have lower indexes than the rest
-			 * of the rules. Selectors with the same priority will be sorted in a reverse order than in the input array.
-			 *
-			 * @param {Array} stylesArray An array of styles as returned from
-			 * {@link CKEDITOR.plugins.pastefromword.styles.inliner#parse}.
-			 * @returns {Array} Sorted stylesArray.
-			 * @since 4.7.0
-			 * @private
-			 * @member CKEDITOR.plugins.pastefromword.styles.inliner
-			 */
-			sort: function( stylesArray ) {
-
-				// Returns comparison function which sorts all selectors in a way that class selectors are ordered
-				// before the rest of the selectors. The order of the selectors with the same specificity
-				// is reversed so that the most important will be applied first.
-				function getCompareFunction( styles ) {
-					var order = CKEDITOR.tools.array.map( styles, function( item ) {
-						return item.selector;
-					} );
-
-					return function( style1, style2 ) {
-						var value1 = isClassSelector( style1.selector ) ? 1 : 0,
-							value2 = isClassSelector( style2.selector ) ? 1 : 0,
-							result = value2 - value1;
-
-						// If the selectors have same specificity, the latter one should
-						// have higher priority (goes first).
-						return result !== 0 ? result :
-							order.indexOf( style2.selector ) - order.indexOf( style1.selector );
-					};
-				}
-
-				// True if given CSS selector contains a class selector.
-				function isClassSelector( selector ) {
-					return ( '' + selector ).indexOf( '.' ) !== -1;
-				}
-
-				return stylesArray.sort( getCompareFunction( stylesArray ) );
-			},
-
-			/**
-			 * Finds and inlines all the `style` elements in a given `html` string and returns a document where
-			 * all the styles are inlined into appropriate elements.
-			 *
-			 * This is needed because sometimes Microsoft Word does not put the style directly into the element, but
-			 * into a generic style sheet.
-			 *
-			 * @param {String} html An HTML string to be parsed.
-			 * @returns {CKEDITOR.dom.document}
-			 * @since 4.7.0
-			 * @private
-			 * @member CKEDITOR.plugins.pastefromword.styles.inliner
-			 */
-			inline: function( html ) {
-				var parseStyles = CKEDITOR.plugins.pastefromword.styles.inliner.parse,
-					sortStyles = CKEDITOR.plugins.pastefromword.styles.inliner.sort,
-					document = createTempDocument( html ),
-					stylesTags = document.find( 'style' ),
-					stylesArray = sortStyles( parseStyleTags( stylesTags ) );
-
-				function createTempDocument( html ) {
-					var parser = new DOMParser(),
-						document = parser.parseFromString( html, 'text/html' );
-
-					return new CKEDITOR.dom.document( document );
-				}
-
-				function parseStyleTags( stylesTags ) {
-					var styles = [],
-						i;
-
-					for ( i = 0; i < stylesTags.count(); i++ ) {
-						styles = styles.concat( parseStyles( stylesTags.getItem( i ) ) );
-					}
-
-					return styles;
-				}
-
-				function applyStyle( document, selector, style ) {
-					var elements = document.find( selector ),
-						element,
-						oldStyle,
-						newStyle,
-						i;
-
-					for ( i = 0; i < elements.count(); i++ ) {
-						element = elements.getItem( i );
-
-						oldStyle = CKEDITOR.tools.parseCssText( element.getAttribute( 'style' ) );
-						// The styles are applied with decreasing priority so we do not want
-						// to overwrite the existing properties.
-						newStyle = CKEDITOR.tools.extend( {}, oldStyle, style );
-						element.setAttribute( 'style', CKEDITOR.tools.writeCssText( newStyle ) );
-					}
-				}
-
-				CKEDITOR.tools.array.forEach( stylesArray, function( style ) {
-					applyStyle( document, style.selector, style.styles );
-				} );
-
-				return document;
+		function shapeTagging( element ) {
+			// Check if regular or canvas shape (#1088).
+			if ( element.attributes[ 'o:gfxdata' ] || element.parent.name === 'v:group' ) {
+				shapesIds.push( element.attributes.id );
 			}
 		}
 	};
-	Style = CKEDITOR.plugins.pastefromword.styles;
 
 	/**
-	 * Namespace containing any list-oriented helper methods.
+	 * Namespace containing list-oriented helper methods.
 	 *
 	 * @private
-	 * @since 4.6.0
-	 * @member CKEDITOR.plugins.pastefromword
+	 * @since 4.13.0
+	 * @member CKEDITOR.plugins.pastetools.filters.word
 	 */
-	CKEDITOR.plugins.pastefromword.lists = {
+	plug.lists = {
 		/**
 		 * Checks if a given element is a list item-alike.
 		 *
@@ -1055,16 +568,25 @@
 				List.removeSymbolText( element );
 			}
 
-			if ( element.attributes.style ) {
-				// Hacky way to get rid of margin left.
-				// @todo: we should gather all css cleanup here, and consider bidi. Eventually we might put a config variable to
-				// to enable it.
-				var styles = tools.parseCssText( element.attributes.style );
+			var styles = element.attributes && tools.parseCssText( element.attributes.style );
 
-				if ( styles[ 'margin-left' ] ) {
+			// Default list has 40px padding. To correct indentation we need to reduce margin-left by 40px for each list level.
+			// Additionally margin has to be reduced by sum of margins of each parent, however it can't be done until list are structured in a tree (#2870).
+			// Note margin left is absent in IE pasted content.
+			if ( styles[ 'margin-left' ] ) {
+				var margin = styles[ 'margin-left' ],
+					level = element.attributes[ 'cke-list-level' ];
+
+				// Ignore negative margins (#2870).
+				margin = Math.max( CKEDITOR.tools.convertToPx( margin ) - 40 * level, 0 );
+
+				if ( margin ) {
+					styles[ 'margin-left' ] = margin + 'px';
+				} else {
 					delete styles[ 'margin-left' ];
-					element.attributes.style =  CKEDITOR.tools.writeCssText( styles );
 				}
+
+				element.attributes.style =  CKEDITOR.tools.writeCssText( styles );
 			}
 
 			// Converting to a normal list item would implicitly wrap the element around an <ul>.
@@ -1095,21 +617,24 @@
 		},
 
 		removeSymbolText: function( element ) { // ...from a list element.
-			var removed,
-				symbol = element.attributes[ 'cke-symbol' ];
+			var symbol = element.attributes[ 'cke-symbol' ],
+				// Find the first element which contains symbol to be replaced (#2690).
+				node = element.findOne( function( node ) {
+						// Since symbol may contains special characters we use `indexOf` (instead of RegExp) which is sufficient (#877).
+						return node.value && node.value.indexOf( symbol ) > -1;
+					}, true ),
+				parent;
 
-			element.forEach( function( node ) {
-				if ( !removed && node.value.match( symbol.replace( ')', '\\)' ).replace( '(', '' ) ) ) {
+			if ( node ) {
+				node.value = node.value.replace( symbol, '' );
+				parent = node.parent;
 
-					node.value = node.value.replace( symbol, '' );
-
-					if ( node.parent.getHtml().match( /^(\s|&nbsp;)*$/ ) ) {
-						removed = node.parent !== element ? node.parent : null;
-					}
+				if ( parent.getHtml().match( /^(\s|&nbsp;)*$/ ) && parent !== element ) {
+					parent.remove();
+				} else if ( !node.value ) {
+					node.remove();
 				}
-			}, CKEDITOR.NODE_TEXT );
-
-			removed && removed.remove();
+			}
 		},
 
 		setListSymbol: function( list, symbol, level ) {
@@ -1452,7 +977,56 @@
 				}
 			}
 
+			// Adjust left margin based on parents sum of parents left margin (#2870).
+			CKEDITOR.tools.array.forEach( listElements, function( element ) {
+				var listParents = getParentListItems( element ),
+					leftOffset = getTotalMarginLeft( listParents ),
+					styles, marginLeft;
+
+				if ( !leftOffset ) {
+					return;
+				}
+
+				element.attributes = element.attributes || {};
+
+				styles = CKEDITOR.tools.parseCssText( element.attributes.style );
+
+				marginLeft = styles[ 'margin-left' ] || 0;
+				marginLeft = Math.max( parseInt( marginLeft, 10 ) - leftOffset, 0 );
+
+				if ( marginLeft ) {
+					styles[ 'margin-left' ] = marginLeft + 'px';
+				} else {
+					delete styles[ 'margin-left' ];
+				}
+
+				element.attributes.style = CKEDITOR.tools.writeCssText( styles );
+			} );
+
 			return listElements;
+
+			function getParentListItems( element ) {
+				var parents = [],
+					parent = element.parent;
+
+				while ( parent ) {
+					if ( parent.name === 'li' ) {
+						parents.push( parent );
+					}
+					parent = parent.parent;
+				}
+
+				return parents;
+			}
+
+			function getTotalMarginLeft( elements ) {
+				return CKEDITOR.tools.array.reduce( elements, function( total, element ) {
+					if ( element.attributes && element.attributes.style ) {
+						var marginLeft = CKEDITOR.tools.parseCssText( element.attributes.style )[ 'margin-left' ];
+					}
+					return marginLeft ? total + parseInt( marginLeft, 10 ) : total;
+				}, 0 );
+			}
 		},
 
 		/**
@@ -1716,13 +1290,13 @@
 				lastList = lists[ 0 ];
 
 			element = listElements[ 0 ];
-			element.attributes[ 'cke-indentation' ] = element.attributes[ 'cke-indentation' ] || List.getElementIndentation( element );
+			element.attributes[ 'cke-indentation' ] = element.attributes[ 'cke-indentation' ] || getElementIndentation( element );
 
 			for ( i = 1; i < listElements.length; i++ ) {
 				element = listElements[ i ];
 				var previous = listElements[ i - 1 ];
 
-				element.attributes[ 'cke-indentation' ] = element.attributes[ 'cke-indentation' ] || List.getElementIndentation( element );
+				element.attributes[ 'cke-indentation' ] = element.attributes[ 'cke-indentation' ] || getElementIndentation( element );
 
 				if ( element.previous !== previous ) {
 					List.chopDiscontinuousLists( lastList, lists );
@@ -1845,23 +1419,6 @@
 			return false;
 		},
 
-		getElementIndentation: function( element ) {
-			var style = tools.parseCssText( element.attributes.style );
-
-			if ( style.margin || style.MARGIN ) {
-				style.margin = style.margin || style.MARGIN;
-				var fakeElement = {
-					styles: {
-						margin: style.margin
-					}
-				};
-				CKEDITOR.filter.transformationsTools.splitMarginShorthand( fakeElement );
-				style[ 'margin-left' ] = fakeElement.styles[ 'margin-left' ];
-			}
-
-			return parseInt( tools.convertToPx( style[ 'margin-left' ] || '0px' ), 10 );
-		},
-
 		// Source: http://stackoverflow.com/a/17534350/3698944
 		toArabic: function( symbol ) {
 			if ( !symbol.match( /[ivxl]/i ) ) return 0;
@@ -1978,7 +1535,7 @@
 			return ret;
 		}
 	};
-	List = CKEDITOR.plugins.pastefromword.lists;
+	List = plug.lists;
 
 	/**
 	 * Namespace containing methods used to process the pasted content using heuristics.
@@ -1987,7 +1544,7 @@
 	 * @since 4.13.0
 	 * @member CKEDITOR.plugins.pastetools.filters.word
 	*/
-	CKEDITOR.plugins.pastefromword.heuristics = {
+	plug.heuristics = {
 		/**
 		 * Decides if an `item` looks like a list item in Microsoft Edge.
 		 *
@@ -2098,7 +1655,7 @@
 				return;
 			}
 
-			var indents = [ List.getElementIndentation( item ) ],
+			var indents = [ getElementIndentation( item ) ],
 				items = [ item ],
 				levels = [],
 				array = CKEDITOR.tools.array,
@@ -2106,7 +1663,7 @@
 
 			while ( item.next && item.next.attributes && !item.next.attributes[ 'cke-list-level' ] && Heuristics.isDegenerateListItem( editor, item.next ) ) {
 				item = item.next;
-				indents.push( List.getElementIndentation( item ) );
+				indents.push( getElementIndentation( item ) );
 				items.push( item );
 			}
 
@@ -2193,7 +1750,8 @@
 				} );
 
 				CKEDITOR.tools.array.forEach( listChildren, function( child ) {
-					element.add( child, 0 );
+					// `Add` method without index always append child at the end (#796).
+					element.add( child );
 				} );
 
 				delete element.name;
@@ -2229,7 +1787,7 @@
 		}
 	};
 
-	Heuristics = CKEDITOR.plugins.pastefromword.heuristics;
+	Heuristics = plug.heuristics;
 
 	// Expose this function since it's useful in other places.
 	List.setListSymbol.removeRedundancies = function( style, level ) {
@@ -2251,70 +1809,103 @@
 		return false;
 	}
 
-	// Same as createStyleStack, but instead of styles - stack attributes.
-	function createAttributeStack( element, filter ) {
-		var i,
-			children = [];
-
-		element.filterChildren( filter );
-
-		// Store element's children somewhere else.
-		for ( i = element.children.length - 1; i >= 0; i-- ) {
-			children.unshift( element.children[ i ] );
-			element.children[ i ].remove();
-		}
-
-		// Create a stack of spans with each containing one style.
-		var attributes = element.attributes,
-			innermostElement = element,
-			topmost = true;
-
-		for ( var attribute in attributes ) {
-
-			if ( topmost ) {
-				topmost = false;
-				continue;
+	CKEDITOR.cleanWord = CKEDITOR.pasteFilters.word = pastetools.createFilter( {
+		rules: [
+			commonFilter.rules,
+			plug.rules
+		],
+		additionalTransforms: function( html ) {
+			// Before filtering inline all the styles to allow because some of them are available only in style
+			// sheets. This step is skipped in IEs due to their flaky support for custom types in dataTransfer. (https://dev.ckeditor.com/ticket/16847)
+			if ( CKEDITOR.plugins.clipboard.isCustomDataTypesSupported ) {
+				html = commonFilter.styles.inliner.inline( html ).getBody().getHtml();
 			}
 
-			var newElement = new CKEDITOR.htmlParser.element( element.name );
-
-			newElement.attributes[ attribute ] = attributes[ attribute ];
-
-			innermostElement.add( newElement );
-			innermostElement = newElement;
-
-			delete attributes[ attribute ];
+			// Sometimes Word malforms the comments.
+			return html.replace( /<!\[/g, '<!--[' ).replace( /\]>/g, ']-->' );
 		}
-
-		// Add the stored children to the innermost span.
-		for ( i = 0; i < children.length; i++ ) {
-			innermostElement.add( children[ i ] );
-		}
-	}
-
-	CKEDITOR.plugins.pastefromword.createAttributeStack = createAttributeStack;
+	} );
 
 	/**
-	 * Numbering helper.
+	 * See {@link CKEDITOR.plugins.pastetools.filters.word.lists}.
 	 *
-	 * @property {CKEDITOR.plugins.pastefromword.lists.numbering} numbering
-	 * @member CKEDITOR.plugins.pastefromword.lists
+	 * @property {Object} lists
+	 * @private
+	 * @deprecated 4.13.0
+	 * @since 4.6.0
+	 * @member CKEDITOR.plugins.pastefromword
 	 */
 
 	/**
-	 * Whether to ignore all font-related formatting styles, including:
+	 * See {@link CKEDITOR.plugins.pastetools.filters.word.images}.
 	 *
-	 * * font size;
-	 * * font family;
-	 * * font foreground and background color.
+	 * @property {Object} images
+	 * @private
+	 * @deprecated 4.13.0
+	 * @removed 4.16.0
+	 * @since 4.8.0
+	 * @member CKEDITOR.plugins.pastefromword
+	 */
+
+	/**
+	 * See {@link CKEDITOR.plugins.pastetools.filters.image}.
 	 *
-	 *		config.pasteFromWordRemoveFontStyles = true;
+	 * @property {Object} images
+	 * @private
+	 * @removed 4.16.0
+	 * @since 4.13.0
+	 * @member CKEDITOR.plugins.pastetools.filters.word
+	 */
+
+	/**
+	 * See {@link CKEDITOR.plugins.pastetools.filters.image#extractFromRtf}.
+	 *
+	 * @property {Function} extractFromRtf
+	 * @private
+	 * @removed 4.16.0
+	 * @since 4.13.0
+	 * @member CKEDITOR.plugins.pastetools.filters.word.images
+	 */
+
+	/**
+	 * See {@link CKEDITOR.plugins.pastetools.filters.image#extractTagsFromHtml}.
+	 *
+	 * @property {Function} extractTagsFromHtml
+	 * @private
+	 * @removed 4.16.0
+	 * @since 4.13.0
+	 * @member CKEDITOR.plugins.pastetools.filters.word.images
+	 */
+
+	/**
+	 * See {@link CKEDITOR.plugins.pastetools.filters.word.heuristics}.
+	 *
+	 * @property {Object} heuristics
+	 * @private
+	 * @deprecated 4.13.0
+	 * @since 4.6.2
+	 * @member CKEDITOR.plugins.pastefromword
+	*/
+
+	/**
+	 * See {@link CKEDITOR.plugins.pastetools.filters.common.styles}.
+	 *
+	 * @property {Object} styles
+	 * @private
+	 * @deprecated 4.13.0
+	 * @since 4.6.0
+	 * @member CKEDITOR.plugins.pastefromword
+	 */
+
+
+
+	/**
+	 * See {@link #pasteTools_removeFontStyles}.
 	 *
 	 * **Important note:** Prior to version 4.6.0 this configuration option defaulted to `true`.
 	 *
-	 * @deprecated 4.6.0 Either configure proper [Advanced Content Filter](#!/guide/dev_advanced_content_filter) for the editor
-	 * or use the {@link CKEDITOR.editor#afterPasteFromWord} event.
-	 * @since 3.1
+	 * @deprecated 4.13.0
+	 * @since 3.1.0
 	 * @cfg {Boolean} [pasteFromWordRemoveFontStyles=false]
 	 * @member CKEDITOR.config
 	 */

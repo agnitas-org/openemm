@@ -13,7 +13,6 @@ package com.agnitas.emm.core.trackablelinks.dao;
 import java.util.List;
 import java.util.Map;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.emm.core.mobile.bean.DeviceClass;
@@ -21,7 +20,7 @@ import com.agnitas.userform.trackablelinks.bean.ComTrackableUserFormLink;
 
 public interface FormTrackableLinkDao {
 
-	boolean existsDummyFormLink(@VelocityCheck int companyId, int userFormId);
+	boolean existsDummyFormLink(int companyId, int userFormId);
 
 	@DaoUpdateReturnValueCheck
 	void saveUserFormTrackableLinks(int userFormId, int companyId, List<ComTrackableUserFormLink> trackableLinks);
@@ -34,16 +33,16 @@ public interface FormTrackableLinkDao {
 
 	ComTrackableUserFormLink getUserFormTrackableLink(int linkID) throws Exception;
 
-	ComTrackableUserFormLink getUserFormTrackableLink(@VelocityCheck int companyId, int formId, int linkId);
+	ComTrackableUserFormLink getUserFormTrackableLink(int companyId, int formId, int linkId);
 
-	ComTrackableUserFormLink getDummyUserFormTrackableLinkForStatisticCount(@VelocityCheck int companyID, int formID) throws Exception;
+	ComTrackableUserFormLink getDummyUserFormTrackableLinkForStatisticCount(int companyID, int formID) throws Exception;
 
-	Map<String, ComTrackableUserFormLink> getUserFormTrackableLinks(int formID, @VelocityCheck int companyID);
+	Map<String, ComTrackableUserFormLink> getUserFormTrackableLinks(int formID, int companyID);
 
-	List<ComTrackableUserFormLink> getUserFormTrackableLinkList(int formID, @VelocityCheck int companyID);
+	List<ComTrackableUserFormLink> getUserFormTrackableLinkList(int formID, int companyID);
 
 	@DaoUpdateReturnValueCheck
-	boolean deleteUserFormTrackableLink(int linkID, @VelocityCheck int companyID);
+	boolean deleteUserFormTrackableLink(int linkID, int companyID);
 
 	/**
 	 * Logs a click for trackable link in rdir_log_userform_tbl
@@ -55,5 +54,5 @@ public interface FormTrackableLinkDao {
 	 */
 	boolean logUserFormTrackableLinkClickInDB(ComTrackableUserFormLink link, Integer customerID, Integer mailingID, String remoteAddr, DeviceClass deviceClass, int deviceID, int clientID);
 
-	boolean logUserFormCallInDB(@VelocityCheck int companyID, int formID, int linkID, Integer mailingID, Integer customerID, String remoteAddr, DeviceClass deviceClass, int deviceID, int clientID);
+	boolean logUserFormCallInDB(int companyID, int formID, int linkID, Integer mailingID, Integer customerID, String remoteAddr, DeviceClass deviceClass, int deviceID, int clientID);
 }

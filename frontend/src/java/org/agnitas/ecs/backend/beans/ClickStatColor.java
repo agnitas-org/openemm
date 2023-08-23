@@ -10,7 +10,7 @@
 
 package org.agnitas.ecs.backend.beans;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
+
 
 /**
  * Bean that stores color value for percent range (used for ECS)
@@ -43,7 +43,7 @@ public interface ClickStatColor {
 	 *
 	 * @param companyId new id of company
 	 */
-	void setCompanyId(@VelocityCheck int companyId);
+	void setCompanyId(int companyId);
 
 	/**
 	 * Getter for color property (should be in HEX i.e. "FF00FF")

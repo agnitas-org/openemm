@@ -10,38 +10,22 @@
 
 package com.agnitas.emm.core.useractivitylog.web;
 
-import java.io.File;
-import java.text.SimpleDateFormat;
-import java.time.LocalDate;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TimeZone;
-import java.util.UUID;
-import java.util.concurrent.Callable;
-
+import com.agnitas.beans.Admin;
+import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.admin.service.AdminService;
+import com.agnitas.emm.core.useractivitylog.forms.UserActivityLogForm;
+import com.agnitas.web.mvc.Pollable;
 import com.agnitas.web.mvc.XssCheckAware;
+import com.agnitas.web.perm.annotations.PermissionMapping;
+import jakarta.servlet.http.HttpSession;
 import org.agnitas.beans.AdminEntry;
-import org.agnitas.beans.FileResponseBody;
 import org.agnitas.beans.factory.UserActivityLogExportWorkerFactory;
 import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.emm.core.useractivitylog.LoggedUserAction;
-import org.agnitas.service.UserActivityLogExportWorker;
 import org.agnitas.service.UserActivityLogService;
 import org.agnitas.service.WebStorage;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.HttpUtils;
 import org.agnitas.util.UserActivityLogActions;
 import org.agnitas.web.forms.FormUtils;
-import org.apache.commons.lang3.ArrayUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
+import org.agnitas.web.forms.PaginationForm;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -52,134 +36,77 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.beans.PollingUid;
-import com.agnitas.emm.core.Permission;
-import com.agnitas.emm.core.admin.service.AdminService;
-import com.agnitas.emm.core.useractivitylog.forms.UserActivityLogForm;
-import com.agnitas.service.ComWebStorage;
-import com.agnitas.web.mvc.Pollable;
-import com.agnitas.web.perm.annotations.PermissionMapping;
-
-import jakarta.servlet.http.HttpSession;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
+import java.util.List;
 
 @Controller
 @RequestMapping("/administration/useractivitylog")
 @PermissionMapping("user.activity.log")
-public class UserActivityLogController implements XssCheckAware {
+public class UserActivityLogController extends UserActivityLogControllerBase implements XssCheckAware {
 
-    private static final String USER_ACTIVITY_LOG_KEY = "userActivityLogKey";
-
-    private final WebStorage webStorage;
-    private final AdminService adminService;
-    private final UserActivityLogService userActivityLogService;
-    private final UserActivityLogExportWorkerFactory exportWorkerFactory;
-
-    @Autowired
-    public UserActivityLogController(WebStorage webStorage,
-                                     AdminService adminService,
-                                     UserActivityLogService userActivityLogService,
-                                     UserActivityLogExportWorkerFactory exportWorkerFactory) {
-        this.webStorage = webStorage;
-        this.adminService = adminService;
-        this.userActivityLogService = userActivityLogService;
-        this.exportWorkerFactory = exportWorkerFactory;
+    protected UserActivityLogController(WebStorage webStorage, AdminService adminService, UserActivityLogService userActivityLogService,
+                                        UserActivityLogExportWorkerFactory exportWorkerFactory) {
+        super(webStorage, adminService, userActivityLogService, exportWorkerFactory);
     }
 
     @RequestMapping(value = "/list.action", method = {RequestMethod.GET, RequestMethod.POST})
     public Pollable<ModelAndView> list(Admin admin, @ModelAttribute("form") UserActivityLogForm listForm, Model model, HttpSession session) {
-        DateTimeFormatter datePickerFormatter = admin.getDateFormatter();
-        SimpleDateFormat localTableFormat = admin.getDateTimeFormat();
+        return getList(admin, listForm, model, session);
+    }
 
-        FormUtils.syncNumberOfRows(webStorage, ComWebStorage.USERLOG_OVERVIEW, listForm);
+    @Override
+    protected String getUserActivityLogKey() {
+        return "userActivityLogKey";
+    }
 
-        List<AdminEntry> admins = adminService.getAdminEntriesForUserActivityLog(admin);
-        List<AdminEntry> adminsFilter = admin.permissionAllowed(Permission.MASTERLOG_SHOW) ? null : admins;
+    @Override
+    protected void syncNumberOfRows(PaginationForm form) {
+        FormUtils.syncNumberOfRows(webStorage, WebStorage.USERLOG_OVERVIEW, form);
+    }
 
+    @Override
+    protected String redirectToListPage() {
+        return "redirect:/administration/useractivitylog/list.action";
+    }
+
+    @Override
+    protected String getListViewName() {
+        return "useractivitylog_list";
+    }
+
+    @Override
+    protected void prepareModelAttributesForListPage(Model model, Admin admin) {
+        super.prepareModelAttributesForListPage(model, admin);
         model.addAttribute("userActions", Arrays.asList(UserActivityLogActions.values()));
-        model.addAttribute("admins", admins);
-        model.addAttribute("localeTableFormat", localTableFormat);
-        AgnUtils.setAdminDateTimeFormatPatterns(admin, model);
-        model.addAttribute("defaultDate", LocalDate.now().format(datePickerFormatter));
+    }
 
-        LocalDate dateFrom = listForm.getDateFrom().get(LocalDate.now(), datePickerFormatter);
-        LocalDate dateTo = listForm.getDateTo().get(LocalDate.now(), datePickerFormatter);
+    @Override
+    protected PaginatedListImpl<?> preparePaginatedList(UserActivityLogForm form, List<AdminEntry> admins, Admin admin) throws Exception {
+        List<AdminEntry> adminsFilter = admin.permissionAllowed(Permission.MASTERLOG_SHOW) ? null : admins;
+        DateTimeFormatter dateFormatter = admin.getDateFormatter();
 
-        Map<String, Object> argumentsMap = new HashMap<>();
-        argumentsMap.put("sort", listForm.getSort());
-        argumentsMap.put("order", listForm.getDir());
-        argumentsMap.put("page", listForm.getPage());
-        argumentsMap.put("numberOfRows", listForm.getNumberOfRows());
-        argumentsMap.put("username", listForm.getUsername());
-        argumentsMap.put("dateFrom.date", listForm.getDateFrom().getDate());
-        argumentsMap.put("dateTo.date", listForm.getDateTo().getDate());
-        argumentsMap.put("description", listForm.getDescription());
+        LocalDate dateFrom = form.getDateFrom().get(LocalDate.now(), dateFormatter);
+        LocalDate dateTo = form.getDateTo().get(LocalDate.now(), dateFormatter);
 
-        PollingUid pollingUid = PollingUid.builder(session.getId(), USER_ACTIVITY_LOG_KEY)
-                .arguments(argumentsMap.values().toArray(ArrayUtils.EMPTY_OBJECT_ARRAY))
-                .build();
-
-        Callable<ModelAndView> worker = () -> {
-            PaginatedListImpl<LoggedUserAction> loggedUserActions =
-                    userActivityLogService.getUserActivityLogByFilter(
-                            admin,
-                            listForm.getUsername(),
-                            listForm.getUserAction(),
-                            dateFrom,
-                            dateTo,
-                            listForm.getDescription(),
-                            listForm.getPage(),
-                            listForm.getNumberOfRows(),
-                            listForm.getSort(),
-                            listForm.getDir(),
-                            adminsFilter);
-
-            FormUtils.setPaginationParameters(listForm, loggedUserActions);
-            model.addAttribute("actions", loggedUserActions);
-
-            return new ModelAndView("useractivitylog_list", model.asMap());
-        };
-
-        ModelAndView modelAndView = new ModelAndView("redirect:/administration/useractivitylog/list.action",
-                argumentsMap);
-
-        return new Pollable<>(pollingUid, Pollable.DEFAULT_TIMEOUT, modelAndView, worker);
+        return userActivityLogService.getUserActivityLogByFilter(
+                admin,
+                form.getUsername(),
+                form.getUserAction(),
+                dateFrom,
+                dateTo,
+                form.getDescription(),
+                form.getPage(),
+                form.getNumberOfRows(),
+                form.getSort(),
+                form.getDir(),
+                adminsFilter
+        );
     }
 
     @PostMapping(value = "/download.action")
     public ResponseEntity<StreamingResponseBody> download(Admin admin, UserActivityLogForm form) throws Exception {
-        DateTimeFormatter datePickerFormatter = admin.getDateFormatter();
-
-        LocalDate localDateFrom = form.getDateFrom().get(LocalDate.now(), datePickerFormatter);
-        LocalDate localDateTo = form.getDateTo().get(LocalDate.now(), datePickerFormatter);
-
-        ZoneId zoneId = AgnUtils.getZoneId(admin);
-        List<AdminEntry> admins = adminService.getAdminEntriesForUserActivityLog(admin);
-
-        String tempFileName = String.format("user-activity-log-%s.csv", UUID.randomUUID());
-        File mailingRecipientsExportTempDirectory = AgnUtils.createDirectory(AgnUtils.getTempDir() + File.separator + "UserActivityLogExport");
-        File exportTempFile = new File(mailingRecipientsExportTempDirectory, tempFileName);
-
-        UserActivityLogExportWorker exportWorker = exportWorkerFactory.getBuilderInstance()
-                .setFromDate(DateUtilities.toDate(localDateFrom, zoneId))
-                .setToDate(DateUtilities.toDate(localDateTo.plusDays(1), zoneId))
-                .setFilterDescription(form.getDescription())
-                .setFilterAction(form.getUserAction())
-                .setFilterAdminUserName(form.getUsername())
-                .setFilterAdmins(admins)
-                .setExportFile(exportTempFile.getAbsolutePath())
-                .setDateFormat(admin.getDateFormat())
-                .setDateTimeFormat(admin.getDateTimeFormatWithSeconds())
-                .setExportTimezone(TimeZone.getTimeZone(admin.getAdminTimezone()).toZoneId())
-                .build();
-        exportWorker.call();
-
-        String dateString = new SimpleDateFormat(DateUtilities.YYYY_MM_DD_HH_MM_SS_FORFILENAMES).format(new Date());
-        String fileName = String.format("user-activity-log-%s.csv", dateString);
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, String.format("attachment;filename=\"%s\"", fileName))
-                .contentLength(exportTempFile.length())
-                .contentType(MediaType.parseMediaType(HttpUtils.CONTENT_TYPE_CSV))
-                .body(new FileResponseBody(exportTempFile, true));
+        return downloadLogs(admin, form, UserActivityLogService.UserType.GUI);
     }
 }

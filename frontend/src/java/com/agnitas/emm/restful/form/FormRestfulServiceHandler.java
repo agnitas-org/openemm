@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.agnitas.emm.core.useractivitylog.dao.UserActivityLogDao;
+import com.agnitas.emm.core.useractivitylog.dao.RestfulUserActivityLogDao;
 import org.agnitas.service.UserFormExporter;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.HttpUtils.RequestMethod;
@@ -61,12 +61,12 @@ public class FormRestfulServiceHandler implements RestfulServiceHandler {
 
 	public static final Object EXPORTED_TO_STREAM = new Object();
 
-	private UserActivityLogDao userActivityLogDao;
+	private RestfulUserActivityLogDao userActivityLogDao;
 	private UserFormDao userFormDao;
 	private UserFormExporter userFormExporter;
 
 	@Required
-	public void setUserActivityLogDao(UserActivityLogDao userActivityLogDao) {
+	public void setUserActivityLogDao(RestfulUserActivityLogDao userActivityLogDao) {
 		this.userActivityLogDao = userActivityLogDao;
 	}
 	
@@ -109,10 +109,6 @@ public class FormRestfulServiceHandler implements RestfulServiceHandler {
 	/**
 	 * Return a single or multiple userform data sets
 	 * 
-	 * @param request
-	 * @param admin
-	 * @return
-	 * @throws Exception
 	 */
 	private Object getUserForm(HttpServletRequest request, HttpServletResponse response, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.FORMS_SHOW)) {
@@ -124,8 +120,8 @@ public class FormRestfulServiceHandler implements RestfulServiceHandler {
 		if (restfulContext.length == 0) {
 			// Show all userforms
 			userActivityLogDao.addAdminUseOfFeature(admin, "restful/form", new Date());
-			userActivityLogDao.writeUserActivityLog(admin, "restful/form GET", "ALL");
-			
+			writeActivityLog("ALL", request, admin);
+
 			JsonArray userFormJsonArray = new JsonArray();
 			
 			for (UserForm userForm : userFormDao.getUserForms(admin.getCompanyID())) {
@@ -150,8 +146,8 @@ public class FormRestfulServiceHandler implements RestfulServiceHandler {
 			}
 
 			userActivityLogDao.addAdminUseOfFeature(admin, "restful/form", new Date());
-			userActivityLogDao.writeUserActivityLog(admin, "restful/form GET", requestedUserFormKeyValue);
-			
+			writeActivityLog(requestedUserFormKeyValue, request, admin);
+
 			int userFormID = Integer.parseInt(requestedUserFormKeyValue);
 			
 			if (userFormDao.existsUserForm(admin.getCompanyID(), userFormID)) {
@@ -168,10 +164,6 @@ public class FormRestfulServiceHandler implements RestfulServiceHandler {
 	/**
 	 * Delete a userform
 	 * 
-	 * @param request
-	 * @param admin
-	 * @return
-	 * @throws Exception
 	 */
 	private Object deleteUserForm(HttpServletRequest request, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.FORMS_DELETE)) {
@@ -185,8 +177,8 @@ public class FormRestfulServiceHandler implements RestfulServiceHandler {
 		}
 
 		userActivityLogDao.addAdminUseOfFeature(admin, "restful/form", new Date());
-		userActivityLogDao.writeUserActivityLog(admin, "restful/form DELETE", restfulContext[0]);
-		
+		writeActivityLog(restfulContext[0], request, admin);
+
 		int userFormID = Integer.parseInt(restfulContext[0]);
 		
 		if (userFormDao.existsUserForm(admin.getCompanyID(), userFormID)) {
@@ -204,11 +196,6 @@ public class FormRestfulServiceHandler implements RestfulServiceHandler {
 	/**
 	 * Create a new userform
 	 * 
-	 * @param request
-	 * @param requestDataFile
-	 * @param admin
-	 * @return
-	 * @throws Exception
 	 */
 	private Object createNewUserForm(HttpServletRequest request, byte[] requestData, File requestDataFile, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.FORMS_IMPORT)) {
@@ -251,11 +238,6 @@ public class FormRestfulServiceHandler implements RestfulServiceHandler {
 	/**
 	 * Update an existing userform
 	 * 
-	 * @param request
-	 * @param requestDataFile
-	 * @param admin
-	 * @return
-	 * @throws Exception
 	 */
 	private Object updateUserForm(HttpServletRequest request, byte[] requestData, File requestDataFile, Admin admin) throws Exception {
 		if ((requestData == null || requestData.length == 0) && (requestDataFile == null || requestDataFile.length() <= 0)) {
@@ -282,7 +264,7 @@ public class FormRestfulServiceHandler implements RestfulServiceHandler {
 		if (userFormID != null) {
 			userForm = userFormDao.getUserForm(userFormID, admin.getCompanyID());
 			userActivityLogDao.addAdminUseOfFeature(admin, "restful/form", new Date());
-			userActivityLogDao.writeUserActivityLog(admin, "restful/form PUT", restfulContext[0]);
+			writeActivityLog(restfulContext[0], request, admin);
 			if (userForm == null) {
 				throw new RestfulNoDataFoundException("No data found");
 			} else {
@@ -462,5 +444,9 @@ public class FormRestfulServiceHandler implements RestfulServiceHandler {
 	@Override
 	public ResponseType getResponseType() {
 		return ResponseType.JSON;
+	}
+
+	private void writeActivityLog(String description, HttpServletRequest request, Admin admin) {
+		writeActivityLog(userActivityLogDao, description, request, admin);
 	}
 }

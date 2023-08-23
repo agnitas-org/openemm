@@ -15,7 +15,6 @@ import java.util.Date;
 import java.util.List;
 
 import org.agnitas.dao.MaildropStatusDao;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.importvalues.MailType;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.logging.log4j.LogManager;
@@ -151,7 +150,7 @@ public class MaildropServiceImpl implements MaildropService {
 
 	@Override
 	@Transactional
-	public void selectTestRecipients(@VelocityCheck int companyId, int maildropStatusId, List<Integer> customerIds) {
+	public void selectTestRecipients(int companyId, int maildropStatusId, List<Integer> customerIds) {
 		if (companyId > 0 && maildropStatusId > 0 && CollectionUtils.isNotEmpty(customerIds)) {
 			if (maildropStatusDao.setSelectedTestRecipients(companyId, maildropStatusId, true)) {
 				maildropStatusDao.setTestRecipients(maildropStatusId, customerIds);

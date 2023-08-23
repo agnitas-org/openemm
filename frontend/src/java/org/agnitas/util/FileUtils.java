@@ -40,7 +40,7 @@ import org.springframework.http.MediaType;
 public class FileUtils {
 	
 	/** Logger used by this class. */
-	private static final transient Logger logger = LogManager.getLogger( FileUtils.class);
+	private static final Logger logger = LogManager.getLogger( FileUtils.class);
 	
 	private static final String INVALID_FILENAME_PATTERN = "^.*[\\,%\\&/\\?\\*#:].*$";
 	
@@ -64,7 +64,7 @@ public class FileUtils {
 			String contentType = Files.probeContentType(file.toPath());
 			return MediaType.parseMediaType(contentType);
 		} catch (IOException e) {
-			logger.error("Could not detect file media type of file: " + file.getName());
+			logger.error("Could not detect file media type of file: {}", file.getName());
 		}
 		
 		return null;
@@ -139,13 +139,13 @@ public class FileUtils {
 	public static void extractZipEntryToFile( ZipFile zipFile, String entryName, File destinationFile) throws ZipEntryNotFoundException, IOException {
 		
 		if( logger.isDebugEnabled()) {
-			logger.debug( "Transferring ZIP entry " + entryName + " from ZIP file " + zipFile.getName() + " to " + destinationFile.getAbsolutePath());
+			logger.debug( "Transferring ZIP entry {} from ZIP file {} to {}", entryName, zipFile.getName(), destinationFile.getAbsolutePath());
 		}
 		
 		ZipEntry zipEntry = zipFile.getEntry( entryName);
 		
 		if( zipEntry == null) {
-			logger.info( "ZIP entry not found: " + entryName);
+			logger.info( "ZIP entry not found: {}", entryName);
 			
 			throw new ZipEntryNotFoundException( entryName);
 		}
@@ -158,13 +158,13 @@ public class FileUtils {
 	public static void extractZipEntryToStream(  ZipFile zipFile, String entryName, OutputStream outputStream) throws ZipEntryNotFoundException, IOException {
 		
 		if( logger.isDebugEnabled()) {
-			logger.debug( "Transferring ZIP entry " + entryName + " from ZIP file " + zipFile.getName() + " to stream");
+			logger.debug( "Transferring ZIP entry {} from ZIP file {} to stream", entryName, zipFile.getName());
 		}
 		
 		ZipEntry zipEntry = zipFile.getEntry( entryName);
 		
 		if( zipEntry == null) {
-			logger.info( "ZIP entry not found: " + entryName);
+			logger.info( "ZIP entry not found: {}", entryName);
 			
 			throw new ZipEntryNotFoundException( entryName);
 		}
@@ -222,7 +222,7 @@ public class FileUtils {
 	public static void streamToFile( InputStream inputStream, long lengthOfData, File file) throws IOException {
 		
 		if( logger.isDebugEnabled()) {
-			logger.debug( "Transferring " + lengthOfData + " bytes from stream to file " + file.getAbsolutePath());
+			logger.debug( "Transferring {} bytes from stream to file {}", lengthOfData, file.getAbsolutePath());
 		}
 		
 		try (FileOutputStream outputStream = new FileOutputStream(file)) {
@@ -259,7 +259,7 @@ public class FileUtils {
 		File parent = file.getParentFile();
 		
 		if( logger.isDebugEnabled()) {
-			logger.debug( "Creating directory structure " + parent.getAbsolutePath() + " for file " + file.getAbsolutePath());
+			logger.debug( "Creating directory structure {} for file {}", parent.getAbsolutePath(), file.getAbsolutePath());
 		}
 		
 		parent.mkdirs();
@@ -269,7 +269,7 @@ public class FileUtils {
 		File file = new File( path);
 		
 		if( logger.isDebugEnabled()) {
-			logger.debug( "Creating directory structure for " + file.getAbsolutePath());
+			logger.debug( "Creating directory structure for {}", file.getAbsolutePath());
 		}
 		
 		file.mkdirs();
@@ -282,7 +282,7 @@ public class FileUtils {
 			correctedPath = correctedPath.substring( 0, correctedPath.lastIndexOf( File.separator));
 		
 		if( logger.isDebugEnabled()) {
-			logger.debug( "Corrected path " + path + " to " + correctedPath);
+			logger.debug( "Corrected path {} to {}", path, correctedPath);
 		}
 		
 		return correctedPath;
@@ -388,7 +388,7 @@ public class FileUtils {
 
 				return file;
 			} else {
-            	loggerParameter.error("downloadAsTemporaryFile received http-code " + responseCode + " for url:\n" + birtUrl);
+            	loggerParameter.error("downloadAsTemporaryFile received http-code {} for url:\n{}", responseCode, birtUrl);
             	return null;
             }
         } catch (HttpException e) {

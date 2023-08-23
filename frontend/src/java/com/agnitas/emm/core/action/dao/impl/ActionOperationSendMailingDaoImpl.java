@@ -10,52 +10,51 @@
 
 package com.agnitas.emm.core.action.dao.impl;
 
-import java.util.Map;
-
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.emm.core.action.operations.ActionOperationSendMailingParameters;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.emm.core.action.operations.ActionOperationSendMailingParameters;
+import java.util.Map;
 
 public class ActionOperationSendMailingDaoImpl extends AbstractActionOperationDaoImpl<ActionOperationSendMailingParameters> {
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(ActionOperationSendMailingDaoImpl.class);
-	
-	@Override
-	protected void processGetOperation(ActionOperationSendMailingParameters operation) {
-		Map<String, Object> row = selectSingleRow(logger, "select mailing_id, delay_minutes, bcc, for_active_recipients from actop_send_mailing_tbl where action_operation_id=?", operation.getId());
-		operation.setMailingID(((Number) row.get("mailing_id")).intValue());
-		operation.setDelayMinutes(((Number) row.get("delay_minutes")).intValue());
-		operation.setBcc((String) row.get("bcc"));
-		operation.setForActiveRecipients(((Number) row.get("for_active_recipients")).intValue() != 0);
-	}
 
-	@Override
-	@DaoUpdateReturnValueCheck
-	protected void processSaveOperation(ActionOperationSendMailingParameters operation) {
-		update(logger, "insert into actop_send_mailing_tbl (action_operation_id, mailing_id, delay_minutes, bcc, for_active_recipients) values (?,?,?,?,?)",
-				operation.getId(),
-				operation.getMailingID(),
-				operation.getDelayMinutes(),
+    private static final Logger logger = LogManager.getLogger(ActionOperationSendMailingDaoImpl.class);
+
+    @Override
+    protected void processGetOperation(ActionOperationSendMailingParameters operation) {
+        Map<String, Object> row = selectSingleRow(logger, "SELECT mailing_id, delay_minutes, bcc, for_active_recipients FROM actop_send_mailing_tbl WHERE action_operation_id = ?", operation.getId());
+        operation.setMailingID(((Number) row.get("mailing_id")).intValue());
+        operation.setDelayMinutes(((Number) row.get("delay_minutes")).intValue());
+        operation.setBcc((String) row.get("bcc"));
+        operation.setUserStatusesOption(((Number) row.get("for_active_recipients")).intValue());
+    }
+
+    @Override
+    @DaoUpdateReturnValueCheck
+    protected void processSaveOperation(ActionOperationSendMailingParameters operation) {
+        update(logger, "INSERT INTO actop_send_mailing_tbl (action_operation_id, mailing_id, delay_minutes, bcc, for_active_recipients) VALUES (?,?,?,?,?)",
+                operation.getId(),
+                operation.getMailingID(),
+                operation.getDelayMinutes(),
                 operation.getBcc(),
-				operation.isForActiveRecipients() ? 1 : 0);
-	}
+                operation.getUserStatusesOption());
+    }
 
-	@Override
-	@DaoUpdateReturnValueCheck
-	protected void processUpdateOperation(ActionOperationSendMailingParameters operation) {
-		update(logger, "update actop_send_mailing_tbl set mailing_id=?, delay_minutes=?, bcc=?, for_active_recipients=? where action_operation_id=?",
-				operation.getMailingID(),
-				operation.getDelayMinutes(),
-				operation.getBcc(),
-				operation.isForActiveRecipients() ? 1 : 0,
-				operation.getId());
-	}
+    @Override
+    @DaoUpdateReturnValueCheck
+    protected void processUpdateOperation(ActionOperationSendMailingParameters operation) {
+        update(logger, "UPDATE actop_send_mailing_tbl SET mailing_id=?, delay_minutes=?, bcc=?, for_active_recipients=? WHERE action_operation_id = ?",
+                operation.getMailingID(),
+                operation.getDelayMinutes(),
+                operation.getBcc(),
+                operation.getUserStatusesOption(),
+                operation.getId());
+    }
 
-	@Override
-	@DaoUpdateReturnValueCheck
-	protected void processDeleteOperation(ActionOperationSendMailingParameters operation) {
-		update(logger, "delete from actop_send_mailing_tbl where action_operation_id=?", operation.getId());
-	}
+    @Override
+    @DaoUpdateReturnValueCheck
+    protected void processDeleteOperation(ActionOperationSendMailingParameters operation) {
+        update(logger, "DELETE FROM actop_send_mailing_tbl WHERE action_operation_id = ?", operation.getId());
+    }
 }

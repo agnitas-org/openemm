@@ -22,11 +22,8 @@ public class ComMailingOverviewWebStorageEntry extends MailingOverviewWebStorage
     @JsonProperty("fields")
     private List<String> selectedFields = Collections.emptyList();
 
-    @JsonProperty("mailing-type-followup")
-    private boolean mailingTypeFollowup = false;
-
-    @JsonProperty("mailing-type-interval")
-    private boolean mailingTypeInterval = false;
+    @JsonProperty("page")
+    private int page = 1;
 
     private String searchQueryText;
 
@@ -42,20 +39,12 @@ public class ComMailingOverviewWebStorageEntry extends MailingOverviewWebStorage
         }
     }
 
-    public boolean isMailingTypeFollowup() {
-        return mailingTypeFollowup;
+    public int getPage() {
+        return page;
     }
 
-    public void setMailingTypeFollowup(boolean mailingTypeFollowup) {
-        this.mailingTypeFollowup = mailingTypeFollowup;
-    }
-
-    public boolean isMailingTypeInterval() {
-        return mailingTypeInterval;
-    }
-
-    public void setMailingTypeInterval(boolean mailingTypeInterval) {
-        this.mailingTypeInterval = mailingTypeInterval;
+    public void setPage(int page) {
+        this.page = page;
     }
 
     public String getSearchQueryText() {
@@ -70,9 +59,8 @@ public class ComMailingOverviewWebStorageEntry extends MailingOverviewWebStorage
     public ComMailingOverviewWebStorageEntry clone() throws CloneNotSupportedException {
         ComMailingOverviewWebStorageEntry entry = (ComMailingOverviewWebStorageEntry) super.clone();
         entry.setSelectedFields(selectedFields.isEmpty() ? Collections.emptyList() : new ArrayList<>(selectedFields));
-        entry.setMailingTypeFollowup(mailingTypeFollowup);
-        entry.setMailingTypeInterval(mailingTypeInterval);
         entry.setSearchQueryText(searchQueryText);
+        entry.setPage(page);
         return entry;
     }
 }

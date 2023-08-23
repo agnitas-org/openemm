@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -123,7 +122,7 @@ public class ComOptimizationImpl implements ComOptimization {
     }
 
     @Override
-    public void setCompanyID(@VelocityCheck int companyID) {
+    public void setCompanyID(int companyID) {
         this.companyID = companyID;
     }
 

@@ -412,7 +412,7 @@ public class DefaultBeanShellCodeGeneratorCallback implements BeanShellCodeGener
 	}
 
 	@Override
-	public final void terminalStringConstantWithEscapeCharsAtomEqlNode(final StringConstantWithEscapeCharsAtomEqlNode node) throws CodeGeneratorException {
+	public final void terminalStringConstantWithoutEscapeCharsAtomEqlNode(final StringConstantWithEscapeCharsAtomEqlNode node) throws CodeGeneratorException {
 		codeStack.push(new CodeFragment(
 				String.format("\"%s\"", quote(node)),
 				DataType.TEXT,

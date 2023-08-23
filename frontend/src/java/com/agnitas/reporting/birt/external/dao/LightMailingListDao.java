@@ -12,7 +12,6 @@ package com.agnitas.reporting.birt.external.dao;
 
 import java.util.List;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.reporting.birt.external.beans.LightMailingList;
 
@@ -20,7 +19,7 @@ import com.agnitas.reporting.birt.external.beans.LightMailingList;
  * A light version of the MailingListDao, without application-context stuff, and persisting. Just reading mailingList(s);
  */
 public interface LightMailingListDao {
-	LightMailingList getMailingList(int mailingListID, @VelocityCheck int companyID);
+	LightMailingList getMailingList(int mailingListID, int companyID);
 
 	List<LightMailingList> getMailingLists(List<Integer> mailingListIDs, int companyID);
 }

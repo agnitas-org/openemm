@@ -10,8 +10,10 @@
 
 package org.agnitas.emm.core.navigation;
 
+import jakarta.servlet.http.HttpServletRequest;
+
 public interface NavItemCondition {
     String getId();
 
-    boolean isSatisfied(int companyId);
+    boolean isSatisfied(HttpServletRequest req);
 }

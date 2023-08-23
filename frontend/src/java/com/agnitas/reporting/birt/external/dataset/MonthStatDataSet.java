@@ -36,13 +36,6 @@ public class MonthStatDataSet extends BIRTDataSet {
 	/**
 	 * Get mailing statistics for a time period
 	 * This must include numbers of already deleted mailings and numbers of test mailings, because it will be compared to billing statistics by some users
-	 * 
-	 * @param companyID
-	 * @param adminId
-	 * @param startDateString
-	 * @param endDateString
-	 * @return
-	 * @throws ParseException
 	 */
 	public List<MonthCounterStatRow> getMailingCounts(int companyID, int adminId, String startDateString, String endDateString) throws ParseException {
 		SimpleDateFormat dateFormat = new SimpleDateFormat(DATE_FORMAT_PATTERN);
@@ -80,14 +73,6 @@ public class MonthStatDataSet extends BIRTDataSet {
 	/**
 	 * Get very detailed mailing statistics for a time period
 	 * This must include numbers of already deleted mailings and numbers of test mailings, because it will be compared to billing statistics by some users
-	 * 
-	 * @param companyID
-	 * @param adminId
-	 * @param startDateString
-	 * @param endDateString
-	 * @param top10Metric
-	 * @return
-	 * @throws Exception
 	 */
 	public List<MonthDetailStatRow> getMonthDetails(int companyID, int adminId, String startDateString, String endDateString, int top10Metric) throws Exception {
 		MonthlyStatType metric = MonthlyStatType.get(top10Metric);
@@ -188,14 +173,6 @@ public class MonthStatDataSet extends BIRTDataSet {
 	/**
 	 * Get detailed mailing statistics for a time period
 	 * This must include numbers of already deleted mailings and numbers of test mailings, because it will be compared to billing statistics by some users
-	 * 
-	 * @param companyID
-	 * @param adminId
-	 * @param startDateString
-	 * @param endDateString
-	 * @param top10Metric
-	 * @return
-	 * @throws Exception
 	 */
 	public List<MonthTotalStatRow> getMonthTotals(int companyID, int adminId, String startDateString, String endDateString, int top10Metric) throws Exception {
 		MonthlyStatType metric = MonthlyStatType.get(top10Metric);

@@ -16,7 +16,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -144,7 +143,7 @@ public class TopDomainsDataSet extends BIRTDataSet {
 	 * @return identifier of temporary table (just created)
 	 * @throws Exception
 	 */
-	public int prepareReport(int mailingID, @VelocityCheck int companyID, String selectedTargetsAsString, int domainsMax, String language, boolean topLevelDomains) throws Exception {
+	public int prepareReport(int mailingID, int companyID, String selectedTargetsAsString, int domainsMax, String language, boolean topLevelDomains) throws Exception {
 		int tempTableID = createTempTable();
 		List<LightTarget> targets = getTargets(selectedTargetsAsString, companyID);
 
@@ -178,7 +177,7 @@ public class TopDomainsDataSet extends BIRTDataSet {
 	}
 
 	@DaoUpdateReturnValueCheck
-	private void insertSentStatIntoTempTable(int tempTableID, int mailingID, @VelocityCheck int companyID, List<LightTarget> targets, String language, int domainsMax, boolean topLevelDomains, boolean mailingTrackingDataAvailable) throws Exception {
+	private void insertSentStatIntoTempTable(int tempTableID, int mailingID, int companyID, List<LightTarget> targets, String language, int domainsMax, boolean topLevelDomains, boolean mailingTrackingDataAvailable) throws Exception {
 		Map<Integer, TempRow> otherDomainsMap = new HashMap<>();
 
 		int overallSentMailings;
@@ -306,18 +305,18 @@ public class TopDomainsDataSet extends BIRTDataSet {
 		}
 	}
 
-	private void insertBouncesIntoTempTable(int tempTableID, int mailingID, @VelocityCheck int companyID, List<LightTarget> targets, String language, int domainsMax, boolean topLevelDomains) throws Exception {
+	private void insertBouncesIntoTempTable(int tempTableID, int mailingID, int companyID, List<LightTarget> targets, String language, int domainsMax, boolean topLevelDomains) throws Exception {
 		insertHardBouncesIntoTempTable(tempTableID, mailingID, companyID, targets, language, domainsMax, topLevelDomains);
 		insertSoftBouncesIntoTempTable(tempTableID, mailingID, companyID, targets, language, domainsMax, topLevelDomains);
 	}
 	
-	private void insertHardBouncesIntoTempTable(int tempTableID, int mailingID, @VelocityCheck int companyID, List<LightTarget> targets, String language, int domainsMax, boolean topLevelDomains) throws Exception {
+	private void insertHardBouncesIntoTempTable(int tempTableID, int mailingID, int companyID, List<LightTarget> targets, String language, int domainsMax, boolean topLevelDomains) throws Exception {
 		insertBouncesIntoTempTable(tempTableID, mailingID, companyID, targets, language, domainsMax, topLevelDomains,
 				new Rule("bounce.detail >= 510", CATEGORY_NAME_HARDBOUNCES, CATEGORY_HARDBOUNCES));
 
 	}
 	
-	private void insertSoftBouncesIntoTempTable(int tempTableID, int mailingID, @VelocityCheck int companyID, List<LightTarget> targets, String language, int domainsMax, boolean topLevelDomains) throws Exception {
+	private void insertSoftBouncesIntoTempTable(int tempTableID, int mailingID, int companyID, List<LightTarget> targets, String language, int domainsMax, boolean topLevelDomains) throws Exception {
 		insertBouncesIntoTempTable(tempTableID, mailingID, companyID, targets, language, domainsMax, topLevelDomains,
 				new Rule("bounce.detail < 510", CATEGORY_NAME_SOFTBOUNCES, CATEGORY_SOFTBOUNCES));
 	}
@@ -346,7 +345,7 @@ public class TopDomainsDataSet extends BIRTDataSet {
 		}
 	}
 
-	private void insertBouncesIntoTempTable(int tempTableID, int mailingID, @VelocityCheck int companyID, List<LightTarget> targets, String language, int domainsMax, boolean topLevelDomains, Rule rule) throws Exception {
+	private void insertBouncesIntoTempTable(int tempTableID, int mailingID, int companyID, List<LightTarget> targets, String language, int domainsMax, boolean topLevelDomains, Rule rule) throws Exception {
 		Map<Integer, TempRow> otherDomainsMap = new HashMap<>();
 
 		int overallBouncedMailings = selectInt(logger, "SELECT COUNT(*) FROM customer_" + companyID + "_tbl cust, bounce_tbl bounce WHERE cust.customer_id = bounce.customer_id AND bounce.company_id = ? AND bounce.mailing_id = ? AND " + rule.condition, companyID, mailingID);
@@ -464,7 +463,7 @@ public class TopDomainsDataSet extends BIRTDataSet {
 		}
 	}
 
-	private void insertOpenersIntoTempTable(int tempTableID, int mailingID, @VelocityCheck int companyID, List<LightTarget> targets, String language, int domainsMax, boolean topLevelDomains) throws Exception {
+	private void insertOpenersIntoTempTable(int tempTableID, int mailingID, int companyID, List<LightTarget> targets, String language, int domainsMax, boolean topLevelDomains) throws Exception {
 		Map<Integer, TempRow> otherDomainsMap = new HashMap<>();
 
 		int overallOpeners = selectInt(logger, "SELECT COUNT(DISTINCT cust.customer_id) FROM customer_" + companyID + "_tbl cust, onepixellog_device_" + companyID + "_tbl opl WHERE cust.customer_id = opl.customer_id AND opl.mailing_id = ?", mailingID);
@@ -580,7 +579,7 @@ public class TopDomainsDataSet extends BIRTDataSet {
 	}
 
 	@DaoUpdateReturnValueCheck
-	private void insertClickersIntoTempTable(int tempTableID, int mailingID, @VelocityCheck int companyID, List<LightTarget> targets, String language, int domainsMax, boolean topLevelDomains) throws Exception {
+	private void insertClickersIntoTempTable(int tempTableID, int mailingID, int companyID, List<LightTarget> targets, String language, int domainsMax, boolean topLevelDomains) throws Exception {
 		Map<Integer, TempRow> otherDomainsMap = new HashMap<>();
 
 		int overallClickers = selectInt(logger, "SELECT COUNT(DISTINCT cust.customer_id) FROM customer_" + companyID + "_tbl cust, rdirlog_" + companyID + "_tbl rlog WHERE cust.customer_id = rlog.customer_id AND rlog.mailing_id = ?", mailingID);

@@ -15,7 +15,7 @@ import java.util.List;
 import org.agnitas.beans.BindingEntry;
 import org.agnitas.dao.UserStatus;
 import org.agnitas.emm.core.mailinglist.service.impl.MailinglistException;
-import org.agnitas.emm.core.velocity.VelocityCheck;
+
 
 public interface BindingService {
 
@@ -27,5 +27,5 @@ public interface BindingService {
 	
 	List<BindingEntry> getBindings(BindingModel model);
 	
-	void updateBindingStatusByEmailPattern( @VelocityCheck int companyId, String emailPattern, UserStatus userStatus, String remark) throws BindingServiceException;
+	void updateBindingStatusByEmailPattern( int companyId, String emailPattern, UserStatus userStatus, String remark) throws BindingServiceException;
 }

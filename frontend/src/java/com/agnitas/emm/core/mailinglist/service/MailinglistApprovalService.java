@@ -12,11 +12,11 @@ package com.agnitas.emm.core.mailinglist.service;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.beans.Admin;
 
@@ -26,7 +26,7 @@ public interface MailinglistApprovalService {
 
 	List<Mailinglist> getEnabledMailinglistsNamesForAdmin(Admin admin);
 	
-	Set<Integer> getAdminsAllowedToUseMailinglist(@VelocityCheck int companyId, int mailinglistId);
+	Set<Integer> getAdminsAllowedToUseMailinglist(int companyId, int mailinglistId);
 
     /**
      * Disable all mailinglists in collection for admin. <br>
@@ -35,7 +35,9 @@ public interface MailinglistApprovalService {
      * @param mailinglistIds set of mailinglist ids to disable for admin
      * @return were batch updates successful
      */
-	boolean setDisabledMailinglistForAdmin(@VelocityCheck int companyId, int adminId, Collection<Integer> mailinglistIds);
+	boolean setDisabledMailinglistForAdmin(int companyId, int adminId, Collection<Integer> mailinglistIds);
+
+	boolean setDisabledMailinglistForAdmin(int companyId, int adminId, Collection<Integer> mailinglistIds, Optional<List<UserAction>> userActions);
 
     /**
      * Disable mailinglist for all admins in collection. <br>
@@ -44,12 +46,12 @@ public interface MailinglistApprovalService {
      * @param adminIds set of adminIDs ids to disable
      * @return were batch updates successful
      */
-	boolean setAdminsDisallowedToUseMailinglist(@VelocityCheck int companyId, int mailinglistId, Collection<Integer> adminIds);
+	boolean setAdminsDisallowedToUseMailinglist(int companyId, int mailinglistId, Collection<Integer> adminIds);
 
     /**
      * Get all mailinglist which are not available for the admin.
      */
-	List<Integer> getDisabledMailinglistsForAdmin(@VelocityCheck int companyId, int adminId);
+	List<Integer> getDisabledMailinglistsForAdmin(int companyId, int adminId);
 
 	/**
 	 * Check is admin have access to certain mailing list.
@@ -63,7 +65,7 @@ public interface MailinglistApprovalService {
 
 	boolean hasAnyDisabledRecipientBindingsForAdmin(Admin admin, int recipientId);
 
-	boolean hasAnyDisabledMailingListsForAdmin(@VelocityCheck int companyId, int adminId);
+	boolean hasAnyDisabledMailingListsForAdmin(int companyId, int adminId);
 
 	boolean editUsersApprovalPermissions(int companyId, int mailinglistId, Set<Integer> allowedUserIds, List<UserAction> userActions);
 

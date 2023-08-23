@@ -18,7 +18,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.agnitas.dao.impl.BaseDaoImpl;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -168,7 +167,7 @@ public class FormTrackableLinkDaoImpl extends BaseDaoImpl implements FormTrackab
 	}
 
 	@Override
-	public ComTrackableUserFormLink getDummyUserFormTrackableLinkForStatisticCount(@VelocityCheck int companyID, int formID) throws Exception {
+	public ComTrackableUserFormLink getDummyUserFormTrackableLinkForStatisticCount(int companyID, int formID) throws Exception {
 		String usage = isOracleDB() ? "usage" : "`usage`";
 		String sql = "SELECT company_id, form_id, url_id, action_id, " + usage + ", full_url, shortname, deep_tracking FROM rdir_url_userform_tbl WHERE company_id = ? AND form_id = ? AND LOWER(full_url) = 'form'";
 
@@ -184,7 +183,7 @@ public class FormTrackableLinkDaoImpl extends BaseDaoImpl implements FormTrackab
 	}
 
 	@Override
-	public Map<String, ComTrackableUserFormLink> getUserFormTrackableLinks(int formID, @VelocityCheck int companyID) {
+	public Map<String, ComTrackableUserFormLink> getUserFormTrackableLinks(int formID, int companyID) {
 		List<ComTrackableUserFormLink> list = getUserFormTrackableLinkList(formID, companyID);
 
 		HashMap<String, ComTrackableUserFormLink> listTrackableUserFormLink = new HashMap<>();
@@ -195,7 +194,7 @@ public class FormTrackableLinkDaoImpl extends BaseDaoImpl implements FormTrackab
 	}
 
 	@Override
-	public List<ComTrackableUserFormLink> getUserFormTrackableLinkList(int formID, @VelocityCheck int companyID) {
+	public List<ComTrackableUserFormLink> getUserFormTrackableLinkList(int formID, int companyID) {
 		String usage = isOracleDB() ? "usage" : "`usage`";
 		String sql = "SELECT company_id, form_id, url_id, action_id, " + usage + ", full_url, shortname, deep_tracking " +
 				" FROM rdir_url_userform_tbl WHERE form_id = ? AND company_id = ? AND LOWER(full_url) != 'form'";
@@ -205,7 +204,7 @@ public class FormTrackableLinkDaoImpl extends BaseDaoImpl implements FormTrackab
 
 	@Override
 	@DaoUpdateReturnValueCheck
-	public boolean deleteUserFormTrackableLink(int linkID, @VelocityCheck int companyID) {
+	public boolean deleteUserFormTrackableLink(int linkID, int companyID) {
 		if (logger.isDebugEnabled()) {
 			logger.debug("deleteUserFormTrackableLink started - link id: " + linkID + " company id: " + companyID);
 		}

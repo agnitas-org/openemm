@@ -12,7 +12,6 @@ package com.agnitas.dao;
 
 import java.util.List;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.beans.ComUndoMailingComponent;
 
@@ -55,5 +54,7 @@ public interface ComUndoMailingComponentDao {
 	
 	void deleteUndoDataOverLimit(int mailingId, int undoId);
 
-	boolean deleteByCompany(@VelocityCheck int companyId);
+	boolean deleteByCompany(int companyId);
+
+	void deleteUndoData(List<Integer> undoIds);
 }

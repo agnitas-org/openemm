@@ -42,7 +42,9 @@ import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.recipient.RecipientUtils;
 import org.agnitas.emm.core.recipient.dto.RecipientLightDto;
 import org.agnitas.emm.core.recipient.service.RecipientService;
+import org.agnitas.emm.core.recipient.service.SubscriberLimitCheck;
 import org.agnitas.emm.core.recipient.service.SubscriberLimitExceededException;
+import org.agnitas.emm.core.recipient.service.impl.SubscriberLimitCheckResult;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.service.UserActivityLogService;
 import org.agnitas.service.WebStorage;
@@ -141,12 +143,13 @@ public class RecipientController implements XssCheckAware {
 	private final ConversionService conversionService;
 	private QueryBuilderFilterListBuilder filterListBuilder;
     private ColumnInfoService columnInfoService;
-	private ConfigService configService;
+	protected ConfigService configService;
 	private BlacklistService blacklistService;
 	private EqlToQueryBuilderConverter eqlToQueryBuilderConverter;
 	private QueryBuilderToEqlConverter queryBuilderToEqlConverter;
 	private ComCompanyDao companyDao;
 	private EqlValidatorService eqlValidatorService;
+	protected SubscriberLimitCheck subscriberLimitCheck;
 
 	public RecipientController(RecipientService recipientService,
 							   RecipientLogService recipientLogService,
@@ -164,7 +167,8 @@ public class RecipientController implements XssCheckAware {
 							   EqlToQueryBuilderConverter eqlToQueryBuilderConverter,
 							   QueryBuilderToEqlConverter queryBuilderToEqlConverter,
 							   ComCompanyDao companyDao,
-							   EqlValidatorService eqlValidatorService) {
+							   EqlValidatorService eqlValidatorService,
+							   SubscriberLimitCheck subscriberLimitCheck) {
 		this.recipientService = recipientService;
 		this.recipientLogService = recipientLogService;
 		this.mailinglistApprovalService = mailinglistApprovalService;
@@ -182,6 +186,7 @@ public class RecipientController implements XssCheckAware {
 		this.queryBuilderToEqlConverter = queryBuilderToEqlConverter;
 		this.companyDao = companyDao;
 		this.eqlValidatorService = eqlValidatorService;
+		this.subscriberLimitCheck = subscriberLimitCheck;
 	}
 
 	// Please, keep RedirectAttributes to avoid 414 "Request URI too long".
@@ -368,15 +373,23 @@ public class RecipientController implements XssCheckAware {
 
 
     @GetMapping("/create.action")
-    public String create(Admin admin, @ModelAttribute("form") RecipientForm form, Model model, @ModelAttribute RecipientsFormSearchParams recipientsFormSearchParams) {
-
+    public String create(Admin admin, @ModelAttribute("form") RecipientForm form, Model model, @ModelAttribute RecipientsFormSearchParams recipientsFormSearchParams, Popups popups) {
+		int companyID = admin.getCompanyID();
+		
+    	SubscriberLimitCheckResult subscriberLimitCheckResult = subscriberLimitCheck.checkSubscriberLimit(companyID);
+    	if (subscriberLimitCheckResult.isWithinGraceLimitation()) {
+    		popups.warning(Message.of(
+				"error.numberOfCustomersExceeded.graceful",
+				subscriberLimitCheckResult.getMaximumNumberOfCustomers(),
+				subscriberLimitCheckResult.getCurrentNumberOfCustomers(),
+				subscriberLimitCheckResult.getGracefulLimitExtension()));
+    	}
+			
 		// set data from search params
 		RecipientBindingListForm bindingsListForm = form.getBindingsListForm();
 		form.setFirstname(recipientsFormSearchParams.getFirstName());
 		form.setLastname(recipientsFormSearchParams.getLastName());
 		form.setEmail(recipientsFormSearchParams.getEmail());
-
-		int companyID = admin.getCompanyID();
 
 		if (configService.getBooleanValue(ConfigValue.AnonymizeAllRecipients, companyID)) {
 			boolean needToAnonymize = true;
@@ -558,7 +571,9 @@ public class RecipientController implements XssCheckAware {
 					form.setTrackingVeto(true);
 				}
 
-				form.setEncryptedSend(recipientOld.isEncryptedSend());
+				if (recipientOld.getId() > 0) {
+					form.setEncryptedSend(recipientOld.isEncryptedSend());
+				}
 
 				SaveRecipientDto recipient = conversionService.convert(form, SaveRecipientDto.class);
 				int datasourceId = companyDao.getCompanyDatasource(companyId);
@@ -572,6 +587,10 @@ public class RecipientController implements XssCheckAware {
 				if (!saveResult.isSuccess()) {
 					popups.addPopups(saveResult);
 					return false;
+				} else {
+					for (Message warning : saveResult.getWarningMessages()) {
+						popups.warning(warning);
+					}
 				}
 
 				form.setId(recipient.getId());

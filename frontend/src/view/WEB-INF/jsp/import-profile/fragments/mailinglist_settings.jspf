@@ -1,0 +1,77 @@
+<%@ page import="org.agnitas.util.importvalues.ImportMode" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+
+<%--@elvariable id="form" type="com.agnitas.emm.core.import_profile.form.ImportProfileForm"--%>
+<%--@elvariable id="allowedModesForAllMailinglists" type="java.util.List<java.lang.Integer>"--%>
+<%--@elvariable id="availableMailinglists" type="java.util.List<org.agnitas.beans.Mailinglist>"--%>
+<%--@elvariable id="mailinglistsToShow" type="java.util.Set<java.lang.Integer>"--%>
+
+<c:set var="isMailingListSelectionEditable" value="${form.actionForNewRecipients eq 0}"/>
+<mvc:message var="notAllowedMsg" code="default.error.notallowed"/>
+
+<div id="recipient-autoimport-mailinglists-tile" class="tile" data-hide-by-select="#import_mode_select" data-hide-by-select-values="<%= ImportMode.TO_BLACKLIST.getIntValue() %>">
+    <div class="tile-header">
+        <a href="#" class="headline" data-toggle-tile="#tile-recipient-autoimport-mailinglists">
+            <i class="tile-toggle icon icon-angle-up"></i>
+            <mvc:message code="recipient.Mailinglists"/>
+        </a>
+    </div>
+
+    <div class="tile-content tile-content-forms" id="tile-recipient-autoimport-mailinglists">
+        <emm:ShowByPermission token="import.mailinglists.all">
+            <div class="form-group" id="all-mailinglists-wrapper"
+                    data-show-by-select="#import_mode_select" data-show-by-select-values="${allowedModesForAllMailinglists}">
+                <div class="col-sm-4">
+                    <label class="control-label checkbox-control-label" for="allMalinglistsCheckbox"><mvc:message code="import.mailinglists.all"/></label>
+                </div>
+                <div class="col-sm-8">
+                    <label class="toggle" data-tooltip="${mailinglistShowPermissionAllowed ? '' : notAllowedMsg}">
+                        <mvc:checkbox id="allMalinglistsCheckbox" path="mailinglistsAll" data-action="allMailinglists-checkbox" disabled="${!mailinglistShowPermissionAllowed}" />
+                        <div class="toggle-control"></div>
+                    </label>
+                </div>
+            </div>
+        </emm:ShowByPermission>
+
+        <div class="form-group">
+            <div class="col-sm-4">
+                <label class="control-label">
+                    <mvc:message code="recipient.Mailinglists"/>
+                </label>
+            </div>
+
+            <div class="col-sm-8 ${isMailingListSelectionEditable ? '' : 'hidden'}" id="mailinglists">
+                <ul class="list-group" data-tooltip="${mailinglistShowPermissionAllowed ? '' : notAllowedMsg}">
+                    <c:forEach var="mailinglist" items="${availableMailinglists}">
+                        <li class="list-group-item">
+                            <label class="checkbox-inline">
+                                <mvc:checkbox path="mailinglist[${mailinglist.id}]" disabled="${!mailinglistShowPermissionAllowed}" value="true" />
+                                ${fn:escapeXml(mailinglist.shortname)}
+                            </label>
+                        </li>
+                    </c:forEach>
+                </ul>
+            </div>
+
+            <div class="col-sm-8 ${isMailingListSelectionEditable ? 'hidden' : ''}" id="mailinglists-to-show">
+                <ul class="list-group" data-tooltip="${notAllowedMsg}">
+                    <c:forEach var="mailinglist" items="${availableMailinglists}">
+                        <li class="list-group-item">
+                            <label class="checkbox-inline">
+                                <c:choose>
+                                    <c:when test="${mailinglistsToShow.contains(mailinglist.id)}">
+                                        <input type="checkbox" checked="checked" disabled="disabled"/>
+                                    </c:when>
+                                    <c:otherwise>
+                                        <input type="checkbox" disabled="disabled"/>
+                                    </c:otherwise>
+                                </c:choose>
+                                ${fn:escapeXml(mailinglist.shortname)}
+                            </label>
+                        </li>
+                    </c:forEach>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>

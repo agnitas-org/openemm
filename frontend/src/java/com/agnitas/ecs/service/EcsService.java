@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.agnitas.ecs.backend.beans.ClickStatColor;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.beans.Admin;
 
@@ -26,7 +25,7 @@ public interface EcsService {
      * @param companyId id of company
      * @return collection of {@link org.agnitas.ecs.backend.beans.ClickStatColor} beans for companyId
      */
-    List<ClickStatColor> getClickStatColors(@VelocityCheck int companyId);
+    List<ClickStatColor> getClickStatColors(int companyId);
 
     /**
      * Gets all "test" and "admin" recipients for mailing's mailing list.
@@ -36,7 +35,7 @@ public interface EcsService {
      * @param companyId company id
      * @return test and admin recipients for mailing's mailing list.
      */
-    Map<Integer, String> getTestAndAdminRecipients(int mailingId, @VelocityCheck int companyId);
+    Map<Integer, String> getTestAndAdminRecipients(int mailingId, int companyId);
 
     /**
      * Generate a PDF representation of the heat map by url.

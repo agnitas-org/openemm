@@ -1,22 +1,28 @@
 <%@ page contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-<%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
-<%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
-<%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
-<c:set var="agnTitleKey" 			value="mailing.archive" 						scope="request" />
-<c:set var="sidemenu_active"	 	value="Mailings" 								scope="request" />
-<c:set var="sidemenu_sub_active" 	value="mailing.archive" 						scope="request" />
-<c:set var="isBreadcrumbsShown" 	value="true" 									scope="request" />
-<c:set var="agnBreadcrumbsRootKey"	value="Mailings" 								scope="request" />
+<%--@elvariable id="form" type="com.agnitas.emm.core.archive.forms.MailingArchiveForm"--%>
+<%--@elvariable id="originalName" type="java.lang.String"--%>
+<%--@elvariable id="workflowForwardParams" type="java.lang.String"--%>
+
+<c:set var="agnTitleKey" 			value="mailing.archive"   scope="request" />
+<c:set var="sidemenu_active"	 	value="Mailings" 		  scope="request" />
+<c:set var="sidemenu_sub_active" 	value="mailing.archive"   scope="request" />
+<c:set var="isBreadcrumbsShown" 	value="true" 			  scope="request" />
+<c:set var="agnBreadcrumbsRootKey"	value="Mailings" 		  scope="request" />
+
+<c:set var="isNewArhive" value="${form.id eq 0 or form.id lt 0}" />
+<c:if test="${not isNewArhive}">
+    <c:set var="archiveName" value="${originalName eq null ? form.shortname : originalName}" />
+</c:if>
 
 <c:choose>
-    <c:when test="${form.id gt 0}">
+    <c:when test="${not isNewArhive}">
         <emm:instantiate var="agnNavHrefParams" type="java.util.LinkedHashMap" scope="request">
             <c:set target="${agnNavHrefParams}" property="campaignID" value="${form.id}"/>
-            <c:set target="${agnNavHrefParams}" property="campaignName" value="${form.shortname}"/>
+            <c:set target="${agnNavHrefParams}" property="campaignName" value="${archiveName}"/>
         </emm:instantiate>
         <c:set var="agnNavigationKey"	value="Archive" 		scope="request" />
         <c:set var="agnSubtitleKey" 	value="mailing.archive"	scope="request" />
@@ -33,7 +39,7 @@
 
             <emm:instantiate var="agnBreadcrumb" type="java.util.LinkedHashMap">
                 <c:set target="${agnBreadcrumbs}" property="1" value="${agnBreadcrumb}"/>
-                <c:set target="${agnBreadcrumb}" property="text" value="${form.shortname}"/>
+                <c:set target="${agnBreadcrumb}" property="text" value="${archiveName}"/>
             </emm:instantiate>
         </emm:instantiate>
     </c:when>
@@ -76,7 +82,7 @@
         </emm:instantiate>
     </c:if>
 
-    <c:if test="${form.id gt 0}">
+    <c:if test="${not isNewArhive}">
         <emm:ShowByPermission token="campaign.delete">
             <emm:instantiate type="java.util.LinkedHashMap" var="option">
                 <c:set target="${itemActionsSettings}" property="0" value="${option}"/>
@@ -94,11 +100,15 @@
     </c:if>
 
     <emm:ShowByPermission token="campaign.change">
-        <c:url var="saveUrl" value="/mailing/archive/save.action"/>
+        <c:set var="submitType" value="data-form-submit"/>
+        <c:if test="${not empty workflowForwardParams}">
+            <c:set var="submitType" value="data-form-submit-static"/>
+        </c:if>
+
         <emm:instantiate type="java.util.LinkedHashMap" var="option">
             <c:set target="${itemActionsSettings}" property="1" value="${option}"/>
             <c:set target="${option}" property="btnCls" value="btn btn-regular btn-inverse"/>
-            <c:set target="${option}" property="extraAttributes" value="data-form-url='${saveUrl}' data-form-target='#archiveForm' data-form-submit"/>
+            <c:set target="${option}" property="extraAttributes" value="data-form-target='#archiveForm' ${submitType}"/>
             <c:set target="${option}" property="iconBefore" value="icon-save"/>
             <c:set target="${option}" property="name">
                 <mvc:message code="button.Save"/>

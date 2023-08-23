@@ -13,17 +13,23 @@ package com.agnitas.emm.premium.service;
 
 import java.util.List;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.premium.bean.FeaturePackage;
+import com.agnitas.emm.premium.web.SpecialPremiumFeature;
 
 public interface PremiumFeaturesService {
     
     List<FeaturePackage> getPremiumFeaturesPackages(int companyID);
     
-    boolean isFeatureRightsAvailable(String featureName, @VelocityCheck int companyId);
+    boolean isFeatureRightsAvailable(final SpecialPremiumFeature feature, final int companyId);
+    
+    /**
+     * @see #isFeatureRightsAvailable(SpecialPremiumFeature, int)
+     */
+    @Deprecated
+    boolean isFeatureRightsAvailable(String featureName, int companyId);
     
     List<Permission> getPremiumFeaturesPermissions(String featureName);
     

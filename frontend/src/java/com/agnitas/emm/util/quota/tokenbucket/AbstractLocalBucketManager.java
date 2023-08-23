@@ -16,7 +16,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 
 import org.apache.logging.log4j.LogManager;
@@ -44,16 +43,12 @@ public abstract class AbstractLocalBucketManager implements BucketManager {
 	
 	/** Map containing one bucket for each user name. */
 	private final Map<String, Bucket> bucketMap;
-	
-	/** Map containing the bandwidth specification for each user name. */
-	private final Map<String, String> bandwidthMap;
 
 	/**
 	 * Creates a new instance.
 	 */
 	public AbstractLocalBucketManager() {
 		this.bucketMap = new HashMap<>();
-		this.bandwidthMap = new HashMap<>();
 	}
 
 	@Override
@@ -145,17 +140,7 @@ public abstract class AbstractLocalBucketManager implements BucketManager {
 		final String bandwidthSpec = readBandwidthSpec(username, companyId);
 		
 		if(bandwidthSpec != null) {
-			final String cachedBandwidthSpec = this.bandwidthMap.get(username);
-			
-			if(!Objects.equals(bandwidthSpec, cachedBandwidthSpec)) {
-				final List<Bandwidth> list = toBandwidthList(bandwidthSpec);
-				
-				this.bandwidthMap.put(username, bandwidthSpec);
-				
-				return list;
-			} else {
-				return null;
-			}
+			return toBandwidthList(bandwidthSpec);
 		} else {
 			throw BucketManagerException.noApiCallLimit(username, companyId);
 		}

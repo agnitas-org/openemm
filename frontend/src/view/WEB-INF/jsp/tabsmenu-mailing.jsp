@@ -7,6 +7,7 @@
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
 <%--@elvariable id="_navigation_isHighlightKey" type="java.lang.Boolean"--%>
+<%--@elvariable id="_navigation_conditionSatisfied" type="java.lang.Boolean"--%>
 <%--@elvariable id="_navigation_token" type="java.lang.String"--%>
 <%--@elvariable id="_navigation_href" type="java.lang.String"--%>
 <%--@elvariable id="_navigation_navMsg" type="java.lang.String"--%>
@@ -49,6 +50,10 @@
 
         <c:if test="${not showTabsItem and not empty _navigation_upsellingRef}">
             <c:set var="showUpsellingPage" value="true"/>
+        </c:if>
+
+        <c:if test="${not _navigation_conditionSatisfied}">
+            <c:set var="showTabsItem" value="false"/>
         </c:if>
 
         <c:if test="${not empty _navigation_hideForToken}">

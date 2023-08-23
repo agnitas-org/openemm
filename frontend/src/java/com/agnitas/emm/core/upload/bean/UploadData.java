@@ -14,7 +14,6 @@ package com.agnitas.emm.core.upload.bean;
 import java.util.Date;
 import java.util.Locale;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public class UploadData {
 	private int uploadID;
@@ -92,7 +91,7 @@ public class UploadData {
 		return companyID;
 	}
 
-	public void setCompanyID(@VelocityCheck int companyID) {
+	public void setCompanyID(int companyID) {
 		this.companyID = companyID;
 	}
 	

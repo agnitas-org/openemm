@@ -18,6 +18,10 @@
         padding-right: 7px;
       }
 
+      .checkbox-control-label {
+        float: initial;
+      }
+
       .form-group {
         > [class^="col-sm-"], > [class*=" col-sm-"] {
           width: 100%;

@@ -4,15 +4,7 @@
 	<!-- ========== Form Bean Definitions =================================== -->
 	<form-beans type="org.apache.struts.action.ActionFormBean">
 
-		<form-bean name="mailingContentForm" type="com.agnitas.web.ComMailingContentForm" />
-
-		<form-bean name="mailingSendForm" type="com.agnitas.web.ComMailingSendForm" />
-
-		<form-bean name="mailingWizardForm" type="org.agnitas.web.MailingWizardForm" />
-
 		<form-bean name="importWizardForm" type="com.agnitas.web.ComImportWizardForm" />
-
-		<form-bean name="mailingParameterForm" type="com.agnitas.emm.core.mailing.forms.ComMailingParameterForm" />
 
 		<!-- new import form beans -->
 		<form-bean name="importProfileForm" type="org.agnitas.web.forms.ImportProfileForm" />
@@ -25,8 +17,6 @@
 
 		<form-bean name="newsForm" type="com.agnitas.web.ComNewsForm" />
 
-		<form-bean name="supportForm" type="com.agnitas.web.ComSupportForm" />
-		
 		<form-bean name="previewMailingImageGeneratorForm" type="com.agnitas.web.ComPreviewMailingImageGeneratorForm" />
 
 		<form-bean name="calendarForm" type="org.agnitas.web.forms.StrutsFormBase" />
@@ -35,8 +25,6 @@
 
 		<form-bean name="autoExportForm" type="org.agnitas.emm.core.autoexport.forms.AutoExportForm" />
 
-		<form-bean name="mailingGridForm" type="com.agnitas.web.forms.ComMailingGridForm" />
-		
 		<form-bean name="sendMailloopAutoresponderMailForm" type="com.agnitas.emm.core.mailloop.web.SendAutoresponderMailForm" />
 	</form-beans>
 
@@ -65,132 +53,6 @@
 
 	<!-- ========== Action Mapping Definitions ============================== -->
 	<action-mappings type="org.apache.struts.action.ActionMapping">
-		<!-- Process a mailing base information -->
-		<action path="/mailingbase" type="com.agnitas.web.perm.DelegatingActionProxySecured" name="mailingBaseForm" scope="session" input="/mailingbase.do?action=9">
-			<forward name="failure" path="mailing_view_base" />
-			<forward name="view" path="mailing_view_base" />
-			<forward name="mailing_grid_view" path="/mailingbase.do?action=2" />
-			<forward name="list" path="mailing_list" />
-            <forward name="ajax_list" path="mailing_list_ajax" />
-			<forward name="delete" path="mailing_delete_ajax" />
-			<forward name="action" path="mailing_action" />
-			<forward name="followup" path="/mailingsend.do" />
-			<forward name="loading" path="mailing_loading" />
-			<forward name="undo_confirm" path="mailing_undo_confirm_ajax" />
-			<forward name="bulk_delete_confirm" path="mailing_bulk_delete_ajax" />
-			<forward name="workflow_view" path="/workflow/{WORKFLOW_ID}/view.action" />
-			<forward name="mailing_templates" path="mailing_view_templates"/>
-			<forward name="importMailing" path="mailing_import"/>
-			<forward name="importTemplate" path="template_import"/>
-			<forward name="importView" path="import_view"/>
-			<forward name="messages" path="messages"/>
-		</action>
-
-		<!-- Process a mailing content request -->
-		<action path="/mailingcontent" type="com.agnitas.web.perm.DelegatingActionProxySecured" name="mailingContentForm" scope="request" input="mailing_content_list">
-			<forward name="list" path="mailing_content_list" />
-			<forward name="generate_text_confirm" path="generate_text_question_ajax" />
-		</action>
-
-		<action path="/mailingsend_ajax" type="org.springframework.web.struts.DelegatingActionProxy" parameter="method">
-		</action>
-
-		<!-- Mailing-Wizard mappings -->
-		<action path="/mwStart" type="com.agnitas.web.perm.DelegatingActionProxySecured" name="mailingWizardForm" scope="session" parameter="action" input="mailing_wizard_start">
-			<forward name="next" path="mailing_wizard_name" />
-		</action>
-
-		<action path="/mwName" type="org.springframework.web.struts.DelegatingActionProxy" name="mailingWizardForm" scope="session" parameter="action" input="mailing_wizard_name">
-			<forward name="previous" path="mailing_wizard_start" />
-			<forward name="next" path="mailing_wizard_template" />
-		</action>
-
-		<action path="/mwTemplate" type="org.springframework.web.struts.DelegatingActionProxy" name="mailingWizardForm" scope="session" parameter="action" input="mailing_wizard_template">
-			<forward name="previous" path="mailing_wizard_name" />
-			<forward name="next" path="mailing_wizard_type" />
-		</action>
-
-		<action path="/mwType" type="org.springframework.web.struts.DelegatingActionProxy" name="mailingWizardForm" scope="session" parameter="action" input="mailing_wizard_type">
-			<forward name="previous" path="/mwName.do?action=name" />
-			<forward name="next" path="mailing_wizard_sendaddress" />
-		</action>
-
-		<action path="/mwSendaddress" type="org.springframework.web.struts.DelegatingActionProxy" name="mailingWizardForm" scope="session" parameter="action" input="mailing_wizard_sendaddress">
-			<forward name="previous" path="mailing_wizard_type" />
-			<forward name="next" path="mailing_wizard_mailtype" />
-		</action>
-
-		<action path="/mwMailtype" type="org.springframework.web.struts.DelegatingActionProxy" name="mailingWizardForm" scope="session" parameter="action" input="mailing_wizard_mailtype">
-			<forward name="previous" path="mailing_wizard_sendaddress" />
-			<forward name="next" path="mailing_wizard_subject" />
-		</action>
-
-		<action path="/mwSubject" type="org.springframework.web.struts.DelegatingActionProxy" name="mailingWizardForm" scope="session" parameter="action" input="mailing_wizard_subject">
-			<forward name="previous" path="mailing_wizard_mailtype" />
-			<forward name="next" path="mailing_wizard_target" />
-			<forward name="targetView" path="mailing_wizard_target" />
-		</action>
-
-		<action path="/mwTarget" type="org.springframework.web.struts.DelegatingActionProxy" name="mailingWizardForm" scope="session" parameter="action" input="/mwTarget.do?action=targetView">
-			<forward name="next" path="mailing_wizard_textmodules" />
-			<forward name="finish" path="mailing_wizard_finish" />
-			<forward name="newTarget" path="mailing_wizard_new_target" />
-			<forward name="targetView" path="mailing_wizard_target" />
-		</action>
-
-		<action path="/mwTextmodules" type="org.springframework.web.struts.DelegatingActionProxy" name="mailingWizardForm" scope="session" parameter="action" input="mailing_wizard_textmodules">
-			<forward name="previous" path="/mwSubject.do?action=subject" />
-			<forward name="next" path="mailing_wizard_textmodule" />
-			<forward name="skip" path="mailing_wizard_links" />
-			<forward name="finish" path="mailing_wizard_finish" />
-		</action>
-
-		<action path="/mwTextmodule" type="org.springframework.web.struts.DelegatingActionProxy" name="mailingWizardForm" scope="session" parameter="action" input="mailing_wizard_textmodule">
-			<forward name="add" path="mailing_wizard_textmodule" />
-			<forward name="previous" path="mailing_wizard_textmodules" />
-			<forward name="next" path="mailing_wizard_links" />
-			<forward name="skip" path="mailing_wizard_links" />
-			<forward name="finish" path="mailing_wizard_finish" />
-		</action>
-
-		<action path="/mwLinks" type="org.springframework.web.struts.DelegatingActionProxy" name="mailingWizardForm" scope="session" parameter="action" input="mailing_wizard_links">
-			<forward name="previous" path="mailing_wizard_textmodules" />
-			<forward name="next" path="mailing_wizard_link" />
-			<forward name="skip" path="mailing_wizard_attachment" />
-			<forward name="finish" path="mailing_wizard_finish" />
-		</action>
-
-		<action path="/mwLink" type="org.springframework.web.struts.DelegatingActionProxy" name="mailingWizardForm" scope="session" parameter="action" input="mailing_wizard_link">
-			<forward name="previous" path="mailing_wizard_links" />
-			<forward name="next" path="mailing_wizard_link" />
-			<forward name="skip" path="mailing_wizard_attachment" />
-			<forward name="finish" path="mailing_wizard_finish" />
-		</action>
-
-		<action path="/mwAttachment" type="org.springframework.web.struts.DelegatingActionProxy" name="mailingWizardForm" scope="session" parameter="action" input="mailing_wizard_attachment">
-			<forward name="previous" path="mailing_wizard_links" />
-			<forward name="save" path="mailing_wizard_attachment" />
-			<forward name="next" path="mailing_wizard_attachment" />
-			<forward name="finish" path="mailing_wizard_finish" />
-		</action>
-
-		<action path="/mwAttachmentDownload" type="org.springframework.web.struts.DelegatingActionProxy" name="mailingWizardForm" scope="session" parameter="action" input="mailing_wizard_attachment">
-			<forward name="error" path="mailing_wizard_attachment" />
-		</action>
-
-		<action path="/mwFinish" type="org.springframework.web.struts.DelegatingActionProxy" name="mailingWizardForm" scope="session" parameter="action" input="mailing_wizard_finish">
-			<forward name="previous" path="mailing_wizard_attachment" />
-			<forward name="finish" path="mailing_wizard_finish" />
-		</action>
-
-		<action path="/mailingParameter" type="com.agnitas.web.perm.DelegatingActionProxySecured" name="mailingParameterForm" scope="request" input="mailingParameter_view" parameter="action">
-			<forward name="view" path="mailingParameter_view" />
-			<forward name="list" path="mailingParameter_list" />
-            <forward name="delete" path="mailingParameter_delete_ajax" />
-		</action>
-
-
-		<action path="/recipient_chart" type="com.agnitas.web.perm.DelegatingActionProxySecured" parameter="method"/>
 
 		<action path="/newimportwizard" type="com.agnitas.web.perm.DelegatingActionProxySecured" name="newImportWizardForm" scope="session" parameter="action" input="importwizard_start_import">
             <forward name="init" path="import_new" />
@@ -239,10 +101,6 @@
 			<forward name="download" path="/WEB-INF/jsp/exportwizard/exportwizard-download.jsp" />
 			<forward name="delete_question" path="exportwizard_delete_ajax" />
 			<forward name="progress" path="exportwizard_progress" />
-		</action>
-
-		<action path="/support" type="org.springframework.web.struts.DelegatingActionProxy" parameter="method" scope="request" name="supportForm" input="/WEB-INF/jsp/support/form_not_found.jsp">
-			<forward name="form_not_found_sent" path="/WEB-INF/jsp/support/form_not_found_sent.jsp" />
 		</action>
 
         <!-- Do not use com.agnitas.web.perm.DelegatingActionProxySecured here. This action is called by some script from internal that has no EMM user. -->

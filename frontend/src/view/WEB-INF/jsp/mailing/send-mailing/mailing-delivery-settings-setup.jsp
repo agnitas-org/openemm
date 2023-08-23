@@ -1,17 +1,9 @@
 <%@ page contentType="text/html; charset=utf-8" errorPage="/error.do" %>
-<%@ page import="com.agnitas.web.MailingBaseAction" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
 <%--@elvariable id="form" type="com.agnitas.emm.core.components.form.MailingSendForm"--%>
 <%--@elvariable id="limitedRecipientOverview" type="java.lang.Boolean"--%>
-
-<c:set var="ACTION_LIST" 				value="<%= MailingBaseAction.ACTION_LIST %>" />
-<c:set var="ACTION_VIEW" 				value="<%= MailingBaseAction.ACTION_VIEW %>" />
-<c:set var="ACTION_CONFIRM_UNDO" 		value="<%= MailingBaseAction.ACTION_CONFIRM_UNDO %>" scope="page"/>
-<c:set var="ACTION_CONFIRM_DELETE" 		value="<%= MailingBaseAction.ACTION_CONFIRM_DELETE %>" />
-<c:set var="ACTION_CLONE_AS_MAILING" 	value="<%= MailingBaseAction.ACTION_CLONE_AS_MAILING %>" />
-<c:set var="ACTION_CREATE_FOLLOW_UP" 	value="<%= MailingBaseAction.ACTION_CREATE_FOLLOW_UP %>" scope="page" />
 
 <c:set var="isMailingGrid" value="${form.isMailingGrid}" scope="page"/>
 
@@ -19,24 +11,11 @@
 <c:set var="mailingId" value="${form.mailingID}" scope="page"/>
 <c:set var="mailingExists" value="${mailingId ne 0}" scope="page"/>
 
-<c:url var="mailingsOverviewLink" value="/mailingbase.do">
-    <c:param name="action" value="${ACTION_LIST}"/>
-    <c:param name="isTemplate" value="false"/>
-</c:url>
+<c:url var="mailingsOverviewLink" value="/mailing/list.action"/>
 
-<emm:ShowByPermission token="mailing.settings.migration">
-    <c:url var="mailingViewLink" value="/mailing/${form.mailingID}/settings.action">
-        <c:param name="keepForward" value="true"/>
-    </c:url>
-</emm:ShowByPermission>
-<emm:HideByPermission token="mailing.settings.migration">
-    <c:url var="mailingViewLink" value="/mailingbase.do">
-        <c:param name="action" value="${ACTION_VIEW}"/>
-        <c:param name="mailingID" value="${form.mailingID}"/>
-        <c:param name="keepForward" value="true"/>
-        <c:param name="init" value="true"/>
-    </c:url>
-</emm:HideByPermission>
+<c:url var="mailingViewLink" value="/mailing/${form.mailingID}/settings.action">
+    <c:param name="keepForward" value="true"/>
+</c:url>
 
 <c:url var="mailingSendViewLink" value="/mailing/send/${form.mailingID}/view.action" />
 
@@ -100,7 +79,7 @@
     </emm:instantiate>
 </emm:instantiate>
 
-<jsp:include page="/WEB-INF/jsp/mailing/actions-dropdown.jsp">
+<jsp:include page="/WEB-INF/jsp/mailing/mailing-actions-dropdown.jsp">
     <jsp:param name="elementIndex" value="0"/>
     <jsp:param name="mailingId" value="${form.mailingID}"/>
     <jsp:param name="isTemplate" value="${form.isTemplate}"/>

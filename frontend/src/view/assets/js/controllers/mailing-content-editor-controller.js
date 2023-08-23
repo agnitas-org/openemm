@@ -189,10 +189,14 @@ AGN.Lib.Controller.new('mailing-content-editor-controller', function () {
   this.addAction({
     click: 'saveDynTag'
   }, function () {
+    saveDynTag();
+  });
+
+  function saveDynTag() {
     getEditorsContent();
 
     if (validateDynTag()) {
-      var $currentElement = $(this.el);
+      const $saveBtn = $('[data-action="saveDynTag"]');
       $.ajax({
         type: "POST",
         url: saveUrl,
@@ -200,7 +204,7 @@ AGN.Lib.Controller.new('mailing-content-editor-controller', function () {
         contentType: 'application/json',
         data: JSON.stringify(currentDynTag),
         success: function (response) {
-          var deferred = Confirm.get($currentElement);
+          var deferred = Confirm.get($saveBtn);
           AGN.Lib.JsonMessages(response.popups, true);
           if (response.success) {
             deferred.positive(new DynTagObject(response.data));
@@ -209,7 +213,7 @@ AGN.Lib.Controller.new('mailing-content-editor-controller', function () {
         }
       });
     }
-  });
+  }
 
   var validateDynTag = function()  {
     // check for duplications
@@ -557,4 +561,8 @@ AGN.Lib.Controller.new('mailing-content-editor-controller', function () {
   function hideCharCounter() {
     $('[data-char-counter-for]').first().hide();
   }
+
+  $(document).on('ckeditor-save', function () {
+    saveDynTag();
+  });
 });

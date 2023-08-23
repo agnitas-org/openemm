@@ -13,7 +13,6 @@ package org.agnitas.beans.impl;
 import java.util.Objects;
 
 import org.agnitas.beans.DynamicTagContent;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.commons.lang3.StringUtils;
 
 public class DynamicTagContentImpl implements DynamicTagContent {
@@ -55,7 +54,7 @@ public class DynamicTagContentImpl implements DynamicTagContent {
     }
     
     @Override
-    public void setCompanyID( @VelocityCheck int id) {
+    public void setCompanyID( int id) {
         companyID=id;
     }
 

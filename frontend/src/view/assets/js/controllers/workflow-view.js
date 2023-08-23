@@ -28,6 +28,7 @@ AGN.Lib.Controller.new('workflow-view', function() {
         Def.constants = config.constants;
         Def.workflowId = config.workflowId;
         Def.shortname = config.shortname;
+        Def.statisticUrl = config.statisticUrl;
 
         var nodes = config.icons.map(Node.deserialize);
         var connections = Node.deserializeConnections(config.icons, Node.toMap(nodes));
@@ -56,7 +57,6 @@ AGN.Lib.Controller.new('workflow-view', function() {
         });
 
         editor.setMinimapEnabled(config.isMinimapEnabled !== false);
-        editor.setStatisticEnabled(config.isStatisticEnabled === true);
 
         var slider = $('#slider');
         if (slider.exists()) {
@@ -922,7 +922,10 @@ AGN.Lib.Controller.new('workflow-view', function() {
                 var nodeType = node.getType();
 
                 this.isStartEditor = (nodeType == 'start');
-                this.updateEditorType(this.isStartEditor);
+                const showStartEventOption = this.isStartEditor &&
+                  (node.data.startType === Def.constants.startTypeEvent || !editor.isAutoOptimizationWorkflow(node));
+
+                this.updateEditorType(this.isStartEditor, showStartEventOption);
 
                 var editorForm = $('form[name="startForm"]');
 
@@ -990,6 +993,12 @@ AGN.Lib.Controller.new('workflow-view', function() {
 
                 $('#start-editor .editor-error-messages').css('display', 'none');
                 Form.get(editorForm).cleanErrors();
+
+                  if (!this.isStartEditor && editor.isAllLinkedFilledStartsHasDateType(node)) {
+                      this.hideDiv('end-date-radio');
+                  } else {
+                      this.showDiv('end-date-radio');
+                  }
             },
 
             saveEditor: function() {
@@ -1229,13 +1238,13 @@ AGN.Lib.Controller.new('workflow-view', function() {
                 });
             },
 
-            updateEditorType: function(isStartEditor) {
+            updateEditorType: function(isStartEditor, showStartEventOption) {
                 var $type = $('#startStopType');
 
                 $type.empty();
 
                 if (isStartEditor) {
-                    $type.append(Template.text('start-types'));
+                    $type.append(Template.text('start-types', {showStartEventTab: showStartEventOption}));
                     $('#eventReaction').html(t('workflow.start.reaction_based'));
                     $('#eventDate').html(t('workflow.start.date_based'));
                 } else {
@@ -1746,6 +1755,7 @@ AGN.Lib.Controller.new('workflow-view', function() {
                     $(this).remove();
                 });
                 this.curProfileField = data.profileField;
+                this.possibleToUseAutoOptimization = editor.isAutoOptimizationDecisionAllowed(node);
                 if (data.rules != undefined) {
                     for (var i = 0; i < data.rules.length; i++) {
                         var rule = data.rules[i];
@@ -1767,10 +1777,10 @@ AGN.Lib.Controller.new('workflow-view', function() {
                 var decisionTimePicker = $form.find('#decisionTime');
 
                 if (this.checkPresentNodeOfType([Def.NODE_TYPE_ACTION_BASED_MAILING, Def.NODE_TYPE_DATE_BASED_MAILING])) {
-                    decisionDatePicker.parent().parent().hide();
+                    decisionDatePicker.parent().parent().parent().parent().hide();
                     decisionTimePicker.parent().parent().parent().parent().hide();
                 } else {
-                    decisionDatePicker.parent().parent().show();
+                    decisionDatePicker.parent().parent().parent().parent().show();
                     decisionTimePicker.parent().parent().parent().parent().show();
 
                     // init date and time picker
@@ -1873,6 +1883,20 @@ AGN.Lib.Controller.new('workflow-view', function() {
 
             onTypeChanged: function() {
                 var value = $('form[name="decisionForm"] input[name="decisionType"]:checked').val();
+
+                if (!this.possibleToUseAutoOptimization && value === Def.constants.decisionTypeAutoOptimization) {
+                    const $messages = $('#decision-editor .editor-error-messages');
+                    $messages.html(t('error.workflow.autoOptimizationDecisionForbidden'));
+                    $messages.css('display', 'block');
+
+                    // change selected decision type again to 'Decision'
+                    $('form[name="decisionForm"] input[name="decisionType"]')
+                      .filter(':radio[value="' + Def.constants.decisionTypeDecision +'"]')
+                      .prop('checked', true);
+
+                    return;
+                }
+
                 if (value == Def.constants.decisionTypeDecision) {
                     this.hideDecisionFormDiv('autoOptimizationPanel');
                     this.showDecisionFormDiv('decisionPanel');
@@ -2590,6 +2614,10 @@ AGN.Lib.Controller.new('workflow-view', function() {
             followupMailingEditorBase.cancelSecurityDialog();
         });
 
+        controller.addAction({click: 'followup-mailing-editor-base-secure-cancel'}, function() {
+            followupMailingEditorBase.cancelSecurityDialog();
+        });
+
         controller.addAction({click: 'followup-mailing-editor-save'}, function() {
             nodeEditor.validateEditor(nodeEditor.saveWithCheckStatus);
         });
@@ -2950,6 +2978,10 @@ AGN.Lib.Controller.new('workflow-view', function() {
         $('#slider').slider('value', Def.DEFAULT_ZOOM);
     });
 
+    this.addAction({change: 'show-grid'}, function() {
+        editor.toggleGrid();
+    });
+
     this.addAction({click: 'workflow-save'}, function() {
         submitWorkflowForm(true);
     });
@@ -2974,6 +3006,12 @@ AGN.Lib.Controller.new('workflow-view', function() {
         } else {
             $('#workflow-status').val(Def.constants.statusInactive)
         }
+    });
+
+    this.addAction({click: 'evaluate-statistic'}, function() {
+        const $iframe = $('#statistic-iframe');
+        $iframe.removeClass('hidden');
+        $iframe.attr('src', Def.statisticUrl);
     });
 
     this.addAction({click: 'undo'}, function() {
@@ -3001,7 +3039,7 @@ AGN.Lib.Controller.new('workflow-view', function() {
             }, message);
         } else {
             window.location.href =
-              AGN.url('/workflow/' + Def.workflowId + '/generatePDF.action?showStatistics=' + editor.isStatisticEnabled());
+              AGN.url('/workflow/' + Def.workflowId + '/generatePDF.action');
             AGN.Lib.Loader.hide();
         }
     });
@@ -3021,14 +3059,6 @@ AGN.Lib.Controller.new('workflow-view', function() {
             activationCheckbox.prop('disabled', true);
             saveWorkflowFormData(true, {'status': newStatus});
           });
-    });
-
-    this.addAction({click: 'toggle-statistic'}, function () {
-        if (Def.constants.initialWorkflowStatus == Def.constants.statusOpen) {
-            workflowNoStatisticsDialogHandler.showDialog();
-        } else {
-            editor.toggleStatistic();
-        }
     });
 
     $(window).on('resize viewportChanged', function() {
@@ -3121,6 +3151,13 @@ AGN.Lib.Controller.new('workflow-view', function() {
             Object.keys(options).forEach(function(key) {
                 form.setValueOnce(key, options[key]);
             })
+
+            if (editor.isGridDisplayed()) {
+                // since when opening the editor we do not know in which coordinate system the icons were located (default or grid),
+                // then when saving we turn off the grid, which transforms the position values of the icons
+                // and after saving they will not lose their location in the editor
+                editor.toggleGrid();
+            }
 
             form.setValueOnce('workflowSchema', editor.serializeIcons());
             form.setValueOnce('editorPositionLeft', -1); //todo: remove if not needed

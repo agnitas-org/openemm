@@ -14,7 +14,6 @@ import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.HashSet;
 import java.util.Locale;
-import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
 
@@ -27,7 +26,6 @@ import org.agnitas.util.DateUtilities;
 import org.agnitas.util.importvalues.Separator;
 import org.agnitas.util.importvalues.TextRecognitionChar;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.Company;
@@ -39,47 +37,24 @@ import com.agnitas.messages.I18nString;
 
 public class BlacklistExportReporter {
 	
-	private JavaMailService javaMailService;
-	
-	private ComCompanyDao companyDao;
-	
-	private AdminService adminService;
+	private final JavaMailService javaMailService;
+	private final ComCompanyDao companyDao;
+	private final AdminService adminService;
+	private final RecipientsReportService recipientsReportService;
+	private final ConfigService configService;
 
-	private RecipientsReportService recipientsReportService;
-	
-	private ConfigService configService;
+	public BlacklistExportReporter(JavaMailService javaMailService, ComCompanyDao companyDao, AdminService adminService, RecipientsReportService recipientsReportService,
+								   ConfigService configService) {
 
-	@Required
-	public void setJavaMailService(JavaMailService javaMailService) {
 		this.javaMailService = javaMailService;
-	}
-
-	@Required
-	public void setCompanyDao(ComCompanyDao companyDao) {
 		this.companyDao = companyDao;
-	}
-
-	@Required
-	public void setAdminService(final AdminService service) {
-		this.adminService = Objects.requireNonNull(service, "Admin service is null");
-	}
-
-	@Required
-	public void setRecipientsReportService(RecipientsReportService recipientsReportService) {
+		this.adminService = adminService;
 		this.recipientsReportService = recipientsReportService;
-	}
-
-	@Required
-	public void setConfigService(ConfigService configService) {
 		this.configService = configService;
 	}
-	
+
 	/**
 	 * Send a report email about this export to the executing GUI-admin or the creator of the autoexport
-	 * 
-	 * @param exportWorker
-	 * @param admin
-	 * @throws Exception
 	 */
 	public void sendExportReportMail(BlacklistExportWorker exportWorker) throws Exception {
 		Set<String> emailRecipients = new HashSet<>();
@@ -113,8 +88,9 @@ public class BlacklistExportReporter {
 
 		if (!emailRecipients.isEmpty()) {
 			Company company = companyDao.getCompany(exportWorker.getAutoExport().getCompanyId());
-			
-			String subject = I18nString.getLocaleString("ResultMsg", exportWorker.getAutoExport().getLocale()) + " \"" + I18nString.getLocaleString("recipient.Blacklist", exportWorker.getAutoExport().getLocale()) + "\" (" + I18nString.getLocaleString("Company", exportWorker.getAutoExport().getLocale()) + ": " + company.getShortname() + ")";
+			Locale locale = exportWorker.getAutoExport().getLocale();
+
+			String subject = I18nString.getLocaleString("ResultMsg", locale) + " \"" + I18nString.getLocaleString("recipient.Blacklist", locale) + "\" (" + I18nString.getLocaleString("Company", locale) + ": " + company.getShortname() + ")";
 			String bodyHtml = generateLocalizedExportHtmlReport(exportWorker) + "\n" + additionalContent;
 			String bodyText = generateLocalizedExportTextReport(exportWorker) + "\n" + additionalContent;
 			
@@ -188,7 +164,7 @@ public class BlacklistExportReporter {
 		return reportContent;
 	}
 
-	private String generateLocalizedExportHtmlReport(BlacklistExportWorker exportWorker) throws Exception {
+	private String generateLocalizedExportHtmlReport(BlacklistExportWorker exportWorker) {
 		Locale locale = exportWorker.getAutoExport().getLocale();
 		String title;
 		if (exportWorker.getAutoExport() != null) {

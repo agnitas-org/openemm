@@ -13,7 +13,6 @@ package com.agnitas.emm.core.maildrop.service;
 import java.util.Date;
 import java.util.List;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.importvalues.MailType;
 
 import com.agnitas.emm.core.maildrop.MaildropException;
@@ -96,7 +95,7 @@ public interface MaildropService {		// TODO: Complete JavaDoc
 	 * @param maildropStatusId an identifier of a maildrop entry.
 	 * @param customerIds a list of customer ids to associated with referenced maildrop entry.
 	 */
-    void selectTestRecipients(@VelocityCheck int companyId, int maildropStatusId, List<Integer> customerIds);
+    void selectTestRecipients(int companyId, int maildropStatusId, List<Integer> customerIds);
 
 	void writeMailingSendStatisticsEntry(int companyID, int mailingID, MaildropStatus maildropStatus, MediaTypes mediaType, MailType mailType, int amount, int dataSize, Date sendDate, String mailerHostname);
 

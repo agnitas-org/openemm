@@ -12,9 +12,13 @@ package org.agnitas.util;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -26,6 +30,7 @@ import java.util.zip.ZipInputStream;
 
 import org.agnitas.dao.ImportRecipientsDao;
 import org.agnitas.service.ImportException;
+import org.apache.commons.compress.utils.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -36,9 +41,14 @@ import com.agnitas.emm.core.Permission;
 import jakarta.servlet.http.HttpServletRequest;
 import net.lingala.zip4j.ZipFile;
 import net.lingala.zip4j.model.FileHeader;
+import org.springframework.web.multipart.MultipartFile;
 
 public class ImportUtils {
-	private static final transient Logger logger = LogManager.getLogger(ImportUtils.class);
+
+	private static final Logger logger = LogManager.getLogger(ImportUtils.class);
+
+	public static final String RECIPIENT_IMPORT_FILE_ATTRIBUTE_NAME = "recipient-import-file";
+	public static final String IMPORT_FILE_DIRECTORY = AgnUtils.getTempDir() + File.separator + "RecipientImport";
 
 	public static final String MAIL_TYPE_HTML = "html";
 	public static final String MAIL_TYPE_TEXT = "text";
@@ -228,5 +238,22 @@ public class ImportUtils {
 			}
 			return fileHasData;
 		}
+	}
+
+	public static File createTempImportFile(MultipartFile uploadedFile, Admin admin) throws IOException {
+		String fileName = String.format("uploaded_recipient_import_file_%d_%d.csv", admin.getCompanyID(), admin.getAdminID());
+
+		Path path = Files.createTempFile(AgnUtils.createDirectory(IMPORT_FILE_DIRECTORY).toPath(), fileName, null);
+		Path targetPath = path.resolveSibling(fileName);
+
+		Files.deleteIfExists(targetPath);
+		path = Files.move(path, targetPath);
+
+		File importFile = path.toFile();
+		try (OutputStream uploadOutputStream = new FileOutputStream(importFile)) {
+			IOUtils.copy(uploadedFile.getInputStream(), uploadOutputStream);
+		}
+
+		return importFile;
 	}
 }

@@ -22,7 +22,7 @@ import java.util.Set;
 
 import org.agnitas.beans.ColumnMapping;
 import org.agnitas.beans.ImportProfile;
-import org.agnitas.emm.core.velocity.VelocityCheck;
+
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.MapUtils;
 import org.agnitas.util.importvalues.Charset;
@@ -49,8 +49,8 @@ public class ImportProfileImpl implements ImportProfile {
     protected int importMode = 1;
     protected int checkForDuplicates;
     protected int nullValuesAction = 0;
-    protected Map<String, Integer> genderMapping = Collections.synchronizedMap(new HashMap<String, Integer>());
-    protected List<ColumnMapping> columnMapping = Collections.synchronizedList(new ArrayList<ColumnMapping>());
+    protected Map<String, Integer> genderMapping = Collections.synchronizedMap(new HashMap<>());
+    protected List<ColumnMapping> columnMapping = Collections.synchronizedList(new ArrayList<>());
     protected String mailForReport;
     protected String mailForError;
     protected int defaultMailType;
@@ -105,7 +105,7 @@ public class ImportProfileImpl implements ImportProfile {
     }
 
     @Override
-	public void setCompanyId( @VelocityCheck int companyId) {
+	public void setCompanyId( int companyId) {
         this.companyId = companyId;
     }
 

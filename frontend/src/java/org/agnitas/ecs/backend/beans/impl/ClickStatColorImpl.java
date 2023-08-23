@@ -11,7 +11,7 @@
 package org.agnitas.ecs.backend.beans.impl;
 
 import org.agnitas.ecs.backend.beans.ClickStatColor;
-import org.agnitas.emm.core.velocity.VelocityCheck;
+
 
 /**
  * Implementation of {@link ClickStatColor} bean
@@ -44,7 +44,7 @@ public class ClickStatColorImpl implements ClickStatColor {
 	}
 
 	@Override
-	public void setCompanyId(@VelocityCheck int companyId) {
+	public void setCompanyId(int companyId) {
 		this.companyId = companyId;
 	}
 

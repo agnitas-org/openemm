@@ -1,10 +1,12 @@
-<%@ page language="java" contentType="text/html; charset=utf-8"  errorPage="/error.do" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 
+<c:set var="ACE_EDITOR_PATH" value="${emm:aceEditorPath(pageContext.request)}" scope="page"/>
+<script type="text/javascript" src="${pageContext.request.contextPath}/${ACE_EDITOR_PATH}/emm/ace.min.js"></script>
 <jsp:include page="/${emm:ckEditorPath(pageContext.request)}/ckeditor-emm-helper.jsp"/>
 
 <%--@elvariable id="form" type="com.agnitas.emm.core.userform.form.UserFormForm"--%>
@@ -12,7 +14,7 @@
 <%--@elvariable id="userFormFullURLPattern" type="java.lang.String"--%>
 <%--@elvariable id="emmActions" type="java.util.List<org.agnitas.actions.EmmAction>"--%>
 <%--@elvariable id="workflowParameters" type="org.agnitas.web.forms.WorkflowParameters"--%>
-<%--@elvariable id="companyId" type="java.lang.Integer"--%>
+<%--@elvariable id="companyToken" type="java.lang.String"--%>
 
 <c:url var="actionEditUrlPattern" value="/action/{action-ID}/view.action"/>
 <c:set var="labMsq"><mvc:message code="lab.message"/></c:set>
@@ -29,10 +31,11 @@
 
    <script id="config:formbuilderCommon" type="application/json">
    		{
-			"companyId": ${companyId},
+			"companyToken": "${companyToken}",
             "confirmationModal": "warning-html-generation-modal",
             "namesJson": ${emm:toJson(names)},
             "mediapoolImages": ${emm:toJson(mediapoolImages)},
+            "profileFieldsForSelect": ${emm:toJson(profileFieldsForSelect)},
             "textProfileFields": ${emm:toJson(textProfileFields)},
             "dateProfileFields": ${emm:toJson(dateProfileFields)},
             "numberProfileFields": ${emm:toJson(numberProfileFields)},

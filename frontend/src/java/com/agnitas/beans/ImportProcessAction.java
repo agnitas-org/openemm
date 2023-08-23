@@ -11,12 +11,21 @@
 package com.agnitas.beans;
 
 public class ImportProcessAction {
+
 	private int importactionID;
 	private int companyID;
 	private String name;
 	private String type;
 	private String action;
 	
+	public ImportProcessAction(int companyID, int importactionID, String name, String type, String action) {
+		this.companyID = companyID;
+		this.importactionID = importactionID;
+		this.name = name;
+		this.type = type;
+		this.action = action;
+	}
+
 	public int getImportactionID() {
 		return importactionID;
 	}
@@ -36,12 +45,8 @@ public class ImportProcessAction {
 	public String getAction() {
 		return action;
 	}
-	
-	public ImportProcessAction(int companyID, int importactionID, String name, String type, String action) {
-		this.companyID = companyID;
+
+	public void setImportactionID(int importactionID) {
 		this.importactionID = importactionID;
-		this.name = name;
-		this.type = type;
-		this.action = action;
 	}
 }

@@ -15,7 +15,6 @@ import java.io.UnsupportedEncodingException;
 import java.util.Date;
 
 import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.recipientsreport.bean.RecipientsReport;
@@ -28,13 +27,15 @@ public interface RecipientsReportService {
 
     String getImportReportContent(int companyId, int reportId);
 
+    String getImportReportZipFileContent(Admin admin, int reportId);
+
     PaginatedListImpl<RecipientsReport> getReports(int companyId, int pageNumber, int pageSize, String sortProperty, String dir, Date startDate, Date finishDate, RecipientsReport.RecipientReportType...types);
 
     PaginatedListImpl<RecipientsReport> deleteOldReportsAndGetReports(Admin admin, int pageNumber, int pageSize, String sortProperty, String dir, Date startDate, Date finishDate, RecipientsReport.RecipientReportType...types);
 
-    RecipientsReport getReport(@VelocityCheck int companyId, int reportId);
+    RecipientsReport getReport(int companyId, int reportId);
     
-    RecipientsReport.RecipientReportType getReportType(@VelocityCheck int companyId, int reportId);
+    RecipientsReport.RecipientReportType getReportType(int companyId, int reportId);
     
     DownloadRecipientReport getExportDownloadFileData(Admin admin, int reportId) throws UnsupportedEncodingException;
     

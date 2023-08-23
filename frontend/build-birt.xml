@@ -309,7 +309,7 @@
 				<include name="commons-configuration-*" />
 				<include name="commons-dbcp-*" />
 				<include name="commons-httpclient-*" />
-				<include name="commons-lang-*" />
+				<include name="commons-lang*" />
 				<include name="commons-logging-*" />
 				<include name="commons-io-*" />
 				<include name="commons-email-*" />
@@ -327,6 +327,7 @@
 				<include name="jcommon*" />
 				<include name="jackson*" />
 				<include name="http*" />
+				<include name="jakarta.mail-*" />
 			</fileset>
 		</copy>
 

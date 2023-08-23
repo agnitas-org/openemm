@@ -48,6 +48,13 @@
 					${isOkReportStatus ? 'OK' : 'ERROR'}
 				</td>
 			</tr>
+			<tr>
+				<td><mvc:message code="serverStatus.status.license" /></td>
+				<c:set var="isLicenseStatusOK" value="${serverStatus.licenseStatusOK}"/>
+				<td class="serverstatus_status ${isLicenseStatusOK ? 'serverstatus_status-success' : 'serverstatus_status-warning'}">
+					${isLicenseStatusOK ? 'OK' : 'WARNING'}
+				</td>
+			</tr>
 			<tr class="${isOkImportStatus ? 'serverstatus_import_status_ok' : 'serverstatus_import_status_error'}">
 				<td colspan="2">
 					<c:url var="killRunningImportsUrl" value="/serverstatus/killRunningImports.action"/>

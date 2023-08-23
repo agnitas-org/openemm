@@ -22,14 +22,13 @@ import java.io.File;
  */
 public class MailoutClient {
 	/** name of the host to connect to. optional with port number, name:8834 */
+	private Systemconfig	syscfg = Systemconfig.create ();
 	private static String	hostname = "nfsserver";
 	private static int	portnumber = 8089;
 	private Log		log = null;
-	private Systemconfig	syscfg = null;
 	
 	private void setupLogger (int loglevel) {
 		log = new Log ("mailoutclient", loglevel, 0);
-		syscfg = new Systemconfig ();
 	}
 
 	/**

@@ -190,7 +190,7 @@ public class TotalOptimizationDataSet extends MailingSummaryDataSet {
 		}, optimizationId, companyId);
 	}
 
-    private String getSubjectFromMTParam(String mtParam) {
+    protected String getSubjectFromMTParam(String mtParam) {
         if (mtParam == null) {
             return "";
         }

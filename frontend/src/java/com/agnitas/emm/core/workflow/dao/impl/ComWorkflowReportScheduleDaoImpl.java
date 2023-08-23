@@ -19,7 +19,7 @@ import java.util.List;
 import org.agnitas.beans.CompaniesConstraints;
 import org.agnitas.dao.impl.BaseDaoImpl;
 import org.agnitas.dao.impl.mapper.IntegerRowMapper;
-import org.agnitas.emm.core.velocity.VelocityCheck;
+
 import org.agnitas.util.DbUtilities;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -40,7 +40,7 @@ public class ComWorkflowReportScheduleDaoImpl extends BaseDaoImpl implements Com
 
 	@Override
 	@DaoUpdateReturnValueCheck
-	public void scheduleWorkflowReport(int reportId, @VelocityCheck int companyId, int workflowId, Date sendTime) {
+	public void scheduleWorkflowReport(int reportId, int companyId, int workflowId, Date sendTime) {
 		String sql = "INSERT INTO workflow_report_schedule_tbl (report_id, company_id, workflow_id, send_date) VALUES (?, ?, ?, ?)";
 		update(logger, sql, reportId, companyId, workflowId, sendTime);
 	}

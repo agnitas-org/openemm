@@ -69,6 +69,39 @@ body.dark-theme .link-list {
   }
 }
 
+.recently-used-mailing {
+  display: flex;
+  justify-content: space-between;
+
+  .recently-used-mailing-info {
+    padding-right: 10px;
+    white-space: nowrap;
+    overflow: hidden;
+    p {
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  }
+  
+  .recently-used-mailing-btn-group {
+    flex-shrink: 0;
+    align-self: center;
+    visibility: hidden;
+
+    button {
+      width: 30px;
+      padding-left: 7px;
+      padding-right: 7px;
+    }
+  }
+
+  &:hover {
+    .recently-used-mailing-btn-group {
+      visibility: visible;
+    }
+  }
+}
+
 body.dark-theme .link-list-item {
   &:hover,
   &:focus,

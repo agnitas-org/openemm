@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+import org.agnitas.beans.MediaTypeStatus;
 import org.agnitas.dao.impl.BaseDaoImpl;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
@@ -35,12 +36,13 @@ import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.util.SpecialCharactersWorker;
 
+import static java.text.MessageFormat.format;
+
 public class MediatypesDaoImpl extends BaseDaoImpl implements MediatypesDao {
-    /** The logger. */
-    private static final transient Logger logger = LogManager.getLogger(MediatypesDaoImpl.class);
+
+    private static final Logger logger = LogManager.getLogger(MediatypesDaoImpl.class);
 
     protected MediatypeFactory mediatypeFactory;
-    
     private ConfigService configService;
 
     @Override
@@ -93,7 +95,22 @@ public class MediatypesDaoImpl extends BaseDaoImpl implements MediatypesDao {
         try {
             query(logger, sql, new MediatypeMapRowCallbackHandler(mediatypes, companyId), mailingId);
         } catch (Exception e) {
-            logger.error("Error reading media types for mailing " + mailingId + ", company ID " + companyId, e);
+            logger.error(format("Error reading media types for mailing {0}, company ID {1}", mailingId, companyId), e);
+            throw new MediatypesDaoException("Error reading media types for mailing " + mailingId + ", company ID " + companyId, e);
+        }
+
+        return mediatypes;
+    }
+
+    @Override
+    public Map<Integer, Mediatype> loadMediatypesByStatus(MediaTypeStatus status, int mailingId, int companyId) throws MediatypesDaoException {
+        Map<Integer, Mediatype> mediatypes = new HashMap<>();
+
+        String sql = "SELECT mediatype, priority, status, param FROM mailing_mt_tbl WHERE mailing_id = ? AND status = ?";
+        try {
+            query(logger, sql, new MediatypeMapRowCallbackHandler(mediatypes, companyId), mailingId, status.getCode());
+        } catch (Exception e) {
+            logger.error(format("Error reading media types for mailing {0}, company ID {1}", mailingId, companyId), e);
             throw new MediatypesDaoException("Error reading media types for mailing " + mailingId + ", company ID " + companyId, e);
         }
 

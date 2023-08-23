@@ -6,7 +6,7 @@
             <input type="hidden" name="modules[].id" id="module_{{- index}}.id" value="{{- id}}"/>
             <div class="form-group">
                 <div class="col-sm-4">
-                    <label class="control-label"><mvc:message code="action.op.ActivateDOI.mailinglists"/></label>
+                    <label class="control-label checkbox-control-label" for="module_{{- index}}.forAllLists"><mvc:message code="action.op.ActivateDOI.mailinglists"/></label>
                 </div>
                 <div class="col-sm-8">
                     <label class="toggle">

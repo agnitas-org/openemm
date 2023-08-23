@@ -10,12 +10,17 @@
 
 package com.agnitas.emm.core.mailing.service;
 
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
+import com.agnitas.beans.MailingsListProperties;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.service.ServiceResult;
 import org.agnitas.beans.MailingBase;
 import org.agnitas.beans.MailingComponent;
+import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.MailingStatus;
 import org.agnitas.emm.core.mailing.beans.LightweightMailing;
 import org.agnitas.emm.core.mailing.service.MailingModel;
@@ -23,7 +28,7 @@ import org.agnitas.emm.core.mailing.service.MailingNotExistException;
 import org.agnitas.emm.core.mailinglist.service.MailinglistNotExistException;
 import org.agnitas.emm.core.mailinglist.service.impl.MailinglistException;
 import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.emm.core.velocity.VelocityCheck;
+
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.MaildropEntry;
@@ -52,6 +57,9 @@ public interface MailingService {
     void deleteMailing(MailingModel model);
 	
 	List<Mailing> getMailings(MailingModel model);
+
+	boolean isMailingMarkedDeleted(int mailingID, int companyID);
+
 	List<Mailing> listMailings(final int companyId, final ListMailingFilter filter);
 
 	List<Mailing> getMailingsForMLID(MailingModel model) throws MailinglistException;
@@ -73,7 +81,7 @@ public interface MailingService {
 	 * 
 	 * @return number of minutes
 	 */
-	int getMailGenerationMinutes(@VelocityCheck int companyID);
+	int getMailGenerationMinutes(int companyID);
 
 	/**
 	 * Checks, if given mailing is already world-sent or scheduled for world-send.
@@ -85,22 +93,26 @@ public interface MailingService {
 	 * 
 	 * @throws MailingNotExistException if mailing ID is unknown
 	 */
-	boolean isMailingWorldSent(int mailingID, @VelocityCheck int companyID) throws MailingNotExistException;
+	boolean isMailingWorldSent(int mailingID, int companyID) throws MailingNotExistException;
 
 	boolean isActiveIntervalMailing(final int mailingID);
-	
-    List<LightweightMailing> getAllMailingNames(@VelocityCheck Admin admin);
 
-    List<MailingComponent> getMailingComponents(int mailingID, @VelocityCheck int companyID) throws MailingNotExistException;
+	int copyMailing(int mailingId, int companyId, String newMailingNamePrefix) throws Exception;
 
-    List<Mailing> getDuplicateMailing(List<WorkflowIcon> icons, @VelocityCheck int companyId);
+	int copyMailing(int newCompanyId, int mailinglistID, int fromCompanyID, int fromMailingID, boolean isTemplate) throws Exception;
+
+	List<LightweightMailing> getAllMailingNames(Admin admin);
+
+    List<MailingComponent> getMailingComponents(int mailingID, int companyID) throws MailingNotExistException;
+
+    List<Mailing> getDuplicateMailing(List<WorkflowIcon> icons, int companyId);
 
 	/**
 	 * All the new mailings (created since GWUA-3991) require text version so user is prevented from sending such mailing.
 	 * For old mailings a warning message is sufficient.
 	 * See GWUA-3991 for more details.
 	 */
-    boolean isTextVersionRequired(@VelocityCheck int companyId, int mailingId);
+    boolean isTextVersionRequired(int companyId, int mailingId);
 
 	boolean resumeDateBasedSending(int companyId, int mailingId);
 
@@ -116,7 +128,7 @@ public interface MailingService {
 
 	boolean containsInvalidTargetGroups(int companyID, int mailingId);
 
-	String getTargetExpression(@VelocityCheck final int companyId, final int mailingId);
+	String getTargetExpression(final int companyId, final int mailingId);
 
 	boolean tryToLock(Admin admin, int mailingId);
 
@@ -135,15 +147,13 @@ public interface MailingService {
 
 	List<LightweightMailing> getLightweightIntervalMailings(Admin admin);
 
-	List<LightweightMailing> getMailingsDependentOnTargetGroup(int companyID, int id);
-
 	List<Mailing> getTemplates(Admin admin);
 
 	List<MailingBase> getTemplatesWithPreview(Admin admin, String sort, String direction);
 
-    List<MailingBase> getMailingsByStatusE(@VelocityCheck int companyId);
+    List<MailingBase> getMailingsByStatusE(int companyId);
 
-    List<LightweightMailing> getUnsetMailingsForRootTemplate(@VelocityCheck int companyId, int templateId);
+    List<LightweightMailing> getUnsetMailingsForRootTemplate(int companyId, int templateId);
 
 	boolean isThresholdClearanceExceeded(int companyId, int mailingId);
 
@@ -167,11 +177,31 @@ public interface MailingService {
 
 	boolean isMailingTargetsHaveConjunction(Admin admin, Mailing mailing);
 
-	boolean isApproved(int mailingId, int companyId);
+	List<Integer> findTargetDependentMailings(int targetGroupId, int companyId);
 
-	void removeApproval(int mailingId, Admin admin);
+	List<Integer> filterNotSentMailings(List<Integer> mailings);
+
+    boolean isBasicFullTextSearchSupported();
+
+    boolean isContentFullTextSearchSupported();
+
+    ServiceResult<PaginatedListImpl<Map<String, Object>>> getOverview(Admin admin, MailingsListProperties props);
+
+    List<Map<String, String>> listTriggers(int mailingId, int companyId);
+
+    ServiceResult<List<Mailing>> getMailingsForDeletion(Collection<Integer> mailingIds, Admin admin);
+
+    ServiceResult<List<UserAction>> bulkDelete(Collection<Integer> mailingIds, Admin admin);
+    
+    ServiceResult<Mailing> getMailingForDeletion(int mailingId, Admin admin);
+
+    boolean isApproved(int mailingId, int companyId);
+
+    void removeApproval(int mailingId, Admin admin);
 
 	void writeRemoveApprovalLog(int mailingId, Admin admin);
+
+	boolean exists(int mailingID, int companyID);
 
 	MailingStatus getMailingStatus(int companyID, int id);
 

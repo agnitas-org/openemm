@@ -369,10 +369,6 @@ public class ComMailingContentServiceImpl implements ComMailingContentService {
             throw new RuntimeException("Unexpected type value (" + type + ")");
         }
     }
-    
-    public final ComMailingDao getMailingDao() {
-    	return this.mailingDao;
-    }
 
     @Required
     public void setDynamicTagContentFactory(DynamicTagContentFactory dynamicTagContentFactory) {

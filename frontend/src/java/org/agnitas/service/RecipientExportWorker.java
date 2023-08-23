@@ -155,6 +155,13 @@ public class RecipientExportWorker extends GenericExportWorker {
 
     		CaseInsensitiveMap<String, ProfileField> profilefields = columnInfoService.getColumnInfoMap(companyID, admin.getAdminID());
     		
+    		for (ExportColumnMapping exportColumnMapping : profileFieldsToExport) {
+    			if (profilefields.containsKey(exportColumnMapping.getDbColumn())) {
+    				// Allways export customer fields as upper case because clients processes may break otherwise 
+    				exportColumnMapping.setDbColumn(exportColumnMapping.getDbColumn().toUpperCase());
+    			}
+    		}
+    		
             for (String columnName : getSplittedColumnNames(profileFieldsToExport)) {
 				if ("mailing_bounce".equalsIgnoreCase(columnName)) {
 					if (exportProfile.getUserStatus() == UserStatus.Bounce.getStatusCode()) {

@@ -24,7 +24,6 @@ import java.util.Objects;
 
 import org.agnitas.dao.UserStatus;
 import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.DbUtilities;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -45,7 +44,7 @@ public class RecipientStatDataSet extends RecipientsBasedDataSet {
 
 	private static final Logger logger = LogManager.getLogger(RecipientStatDataSet.class);
 
-	public List<RecipientStatusRow> getRecipientStatus(@VelocityCheck int companyID, String targetIdStr, Integer mailinglistID,
+	public List<RecipientStatusRow> getRecipientStatus(int companyID, String targetIdStr, Integer mailinglistID,
 			int mediaType, String language, final String hiddenFilterTargetIdStr) {
 		if (StringUtils.isBlank(language)) {
 			language = "EN";
@@ -127,7 +126,7 @@ public class RecipientStatDataSet extends RecipientsBasedDataSet {
 		}
 	}
 
-	public List<RecipientMailtypeRow> getRecipientMailtype(@VelocityCheck int companyID, String targetIdStr,
+	public List<RecipientMailtypeRow> getRecipientMailtype(int companyID, String targetIdStr,
 			Integer mailinglistID, String hiddenFilterTargetIdStr) {
 
 		final StringBuilder query = new StringBuilder();
@@ -184,7 +183,7 @@ public class RecipientStatDataSet extends RecipientsBasedDataSet {
 	 *
 	 *  The day of stopDateString is included in statistics output
 	 */
-    public List<RecipientDetailRow> getRecipientDetails(@VelocityCheck int companyID, String targetID,
+    public List<RecipientDetailRow> getRecipientDetails(int companyID, String targetID,
 			Integer mailinglistID, Integer mediaType, String startDateString,
 			String stopDateString, Boolean hourScale, String hiddenFilterTargetId) throws Exception {
     	List<Object> parameters = new ArrayList<>();

@@ -2,6 +2,7 @@ AGN.Lib.Controller.new('action-view', function() {
   var activeModules = [];
   var moduleList;
   var operationTypes = {};
+  const Select = AGN.Lib.Select;
 
   function ModuleList() {
     var self = this;
@@ -117,7 +118,7 @@ AGN.Lib.Controller.new('action-view', function() {
         data.mailingID = 0;
         data.delayMinutes = 0;
         data.bcc = '';
-        data.forActiveRecipients = true;
+        data.userStatusesOption = 1;
         break;
       case 'ServiceMail':
         data.toAddress = '';
@@ -161,7 +162,7 @@ AGN.Lib.Controller.new('action-view', function() {
       var value = '';
 
       if ($field.is('select')) {
-        value = AGN.Lib.Select.get($field).getSelectedValue();
+        value = Select.get($field).getSelectedValue();
       } else if ($field.is('input') && $field.prop('type') === 'checkbox') {
         value = $field.prop('checked');
       } else {
@@ -235,7 +236,7 @@ AGN.Lib.Controller.new('action-view', function() {
 
     if (module.type === 'SendMailing') {
       if (getModulesByType('ActivateDoubleOptIn').length > 0) {
-        module.data.forActiveRecipients = false;
+        module.data.userStatusesOption = 0;
       }
     }
 
@@ -245,10 +246,12 @@ AGN.Lib.Controller.new('action-view', function() {
     AGN.Lib.Form.get($elem).initFields();
 
     if (module.type === 'ActivateDoubleOptIn') {
-      var sendMailingModules = getModulesByType('SendMailing');
+      const sendMailingModules = getModulesByType('SendMailing');
 
       sendMailingModules.forEach(function (module) {
-        document.getElementById('module_' + module.index + '.forActiveRecipients').checked = false;
+        const idSelector = '#module-' + module.index + '-userStatusesOption';
+        const $userStatusesSelect = $(idSelector);
+        Select.get($userStatusesSelect).selectFirstValue();
       });
     }
   });

@@ -1,4 +1,3 @@
-
 <script id="enlarged-editor-template" type="text/x-mustache-template">
     <div class="modal modal-editor">
         <div class="modal-dialog">

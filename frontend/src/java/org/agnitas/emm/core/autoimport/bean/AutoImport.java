@@ -16,6 +16,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
+import com.agnitas.emm.core.content_source.bean.ContentSourceType;
 import org.agnitas.util.AgnUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
@@ -100,6 +101,7 @@ public class AutoImport extends AutoImportLight {
 	private String timeZone;
 	private int mailingID;
 	private int contentSourceID;
+	private ContentSourceType contentSourceType = ContentSourceType.HTML;
 
 	private List<Integer> mailinglists = new ArrayList<>();
 	
@@ -455,6 +457,14 @@ public class AutoImport extends AutoImportLight {
 
 	public void setContentSourceID(int contentSourceID) {
 		this.contentSourceID = contentSourceID;
+	}
+
+	public ContentSourceType getContentSourceType() {
+		return contentSourceType;
+	}
+
+	public void setContentSourceType(ContentSourceType contentSourceType) {
+		this.contentSourceType = contentSourceType;
 	}
 
 	public void setReportLocale(Locale reportLocale) {

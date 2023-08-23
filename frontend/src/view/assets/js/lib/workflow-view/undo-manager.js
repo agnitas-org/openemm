@@ -99,6 +99,10 @@
         var coordinates = data.coordinates;
         var node = data.node;
 
+        if (self.editor.getCurrentDragMode() !== data.dragMode) {
+          self.editor.convertCoordinates(coordinates);
+        }
+
         node.setCoordinates(coordinates.x, coordinates.y);
         node.updateCoordinates(scale);
       });

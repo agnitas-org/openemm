@@ -24,6 +24,7 @@ want to show your message / error message!
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
 <logic:messagesPresent property="org.apache.struts.action.GLOBAL_MESSAGE" message="true">
     <script type="text/javascript" data-message>
@@ -74,3 +75,11 @@ want to show your message / error message!
         </html:messages>
     </script>
 </logic:messagesPresent>
+
+<c:if test="${POPUPS_FIELDS_ERRORS ne null}">
+    <c:forEach var="fieldError" items="${POPUPS_FIELDS_ERRORS}">
+        <script type="text/html" data-message="${fieldError.fieldName}">
+                <mvc:message code="${fieldError.message.code}" arguments="${fieldError.argumentsStr}"/>
+        </script>
+    </c:forEach>
+</c:if>

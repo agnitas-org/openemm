@@ -103,6 +103,10 @@ public abstract class JobWorker implements Runnable {
 		this.job = job;
 	}
 
+	public JobDto getJob() {
+		return job;
+	}
+
 	public String getJobDescription() {
 		if (job != null && StringUtils.isNotEmpty(job.getDescription())) {
 			return job.getDescription();
@@ -242,7 +246,7 @@ public abstract class JobWorker implements Runnable {
 	/**
 	 * Method for optional execution state check.
 	 * 
-	 * This may be ignored by deriving classes, but it would be nice if they use it to controll execution
+	 * This may be ignored by deriving classes, but it would be nice if they use it to control execution
 	 * 
 	 * @throws JobStopException
 	 */
@@ -258,6 +262,24 @@ public abstract class JobWorker implements Runnable {
 		if (stop) {
 			throw new JobStopException();
 		}
+	}
+
+	/**
+	 * Method for optional execution state check.
+	 * This one only returns a boolean to let the jobworker manage sub workers
+	 * 
+	 * This may be ignored by deriving classes, but it would be nice if they use it to control execution
+	 */
+	protected boolean continueJobWanted() throws JobStopException {
+		try {
+			while (pause) {
+				Thread.sleep(500);
+			}
+		} catch (InterruptedException e) {
+			// nothing to do
+		}
+		
+		return !stop;
 	}
 	
 	/**

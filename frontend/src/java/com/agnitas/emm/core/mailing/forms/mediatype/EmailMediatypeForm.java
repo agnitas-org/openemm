@@ -17,7 +17,7 @@ public class EmailMediatypeForm extends MediatypeForm {
 
     public static final int TEXTAREA_WIDTH = 75;
     
-    private int linefeed;
+    private int linefeed = 72;
     private int mailFormat = 2;
     private String subject;
     private String fromEmail;

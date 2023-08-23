@@ -14,7 +14,6 @@ import com.agnitas.emm.core.delivery.beans.DeliveryInfo;
 import com.agnitas.emm.core.delivery.beans.SuccessfulDeliveryInfo;
 import com.agnitas.emm.core.delivery.dao.DeliveryDao;
 import org.agnitas.dao.impl.BaseDaoImpl;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DbUtilities;
 import org.apache.logging.log4j.LogManager;
@@ -59,7 +58,7 @@ public class DeliveryDaoImpl extends BaseDaoImpl implements DeliveryDao {
     }
 
     @Override
-    public boolean createDeliveryTbl(int companyID) {
+    public void createDeliveryTbl(int companyID) {
         if (!DbUtilities.checkIfTableExists(getDataSource(), getDeliveryTableName(companyID))) {
             if (isOracleDB()) {
                 execute(LOGGER, "CREATE TABLE " + getDeliveryTableName(companyID) + " ("
@@ -82,9 +81,6 @@ public class DeliveryDaoImpl extends BaseDaoImpl implements DeliveryDao {
                         + ") ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci");
                 execute(LOGGER, "CREATE INDEX del" + companyID + "$tscid$idx ON " + getDeliveryTableName(companyID) + " (customer_id, timestamp)");
             }
-            return true;
-        } else {
-            return true;
         }
     }
 
@@ -104,7 +100,7 @@ public class DeliveryDaoImpl extends BaseDaoImpl implements DeliveryDao {
     }
 
     @Override
-    public List<DeliveryInfo> getDeliveriesInfo(@VelocityCheck final int companyId, final int mailingId, final int customerId) {
+    public List<DeliveryInfo> getDeliveriesInfo(final int companyId, final int mailingId, final int customerId) {
     	List<Map<String, Object>> result = select(LOGGER, "SELECT timestamp, line FROM " + getDeliveryTableName(companyId) +  " WHERE mailing_id = ? AND customer_id = ? AND (line LIKE '%dsn%' OR line LIKE '%relay%' OR line LIKE '%status%' OR line LIKE '%from%')", mailingId, customerId);
     	Map<String, DeliveryInfo> deliveryInfoByMessageID = new HashMap<>();
 

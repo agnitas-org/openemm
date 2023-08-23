@@ -38,6 +38,7 @@ public class EmmActionDtoToEmmActionFormConverter implements Converter<EmmAction
         form.setDescription(dto.getDescription());
         form.setType(dto.getType());
         form.setActive(dto.isActive());
+        form.setAdvertising(dto.isAdvertising());
         form.setModulesSchema(parametersParser.serializeActionModules(dto.getOperations()));
         return form;
     }

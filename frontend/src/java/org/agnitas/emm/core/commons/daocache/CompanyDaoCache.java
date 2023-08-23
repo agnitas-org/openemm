@@ -47,7 +47,7 @@ public class CompanyDaoCache extends AbstractDaoCache<Company> {
 	@Override
 	protected Company getItemFromDao( int id) {
 		if (!isCacheInitialized()) {
-			setCache(new TimeoutLRUMap<Integer, Company>(
+			setCache(new TimeoutLRUMap<>(
 				configService.getIntegerValue(ConfigValue.CompanyMaxCache),
 				configService.getIntegerValue(ConfigValue.CompanyMaxCacheTimeMillis)));
 		}

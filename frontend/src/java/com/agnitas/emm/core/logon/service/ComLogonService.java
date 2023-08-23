@@ -12,7 +12,7 @@ package com.agnitas.emm.core.logon.service;
 
 import java.util.Date;
 
-import org.agnitas.beans.EmmLayoutBase;
+import com.agnitas.beans.EmmLayoutBase;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.AdminPreferences;

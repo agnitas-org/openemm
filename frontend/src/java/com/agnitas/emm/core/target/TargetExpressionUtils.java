@@ -53,14 +53,14 @@ public class TargetExpressionUtils {
      * @return a composed target expression or an empty string.
      */
     public static String makeTargetExpression(Collection<Integer> targetGroupIds, boolean conjunction) {
-        if (CollectionUtils.isEmpty(targetGroupIds)) {
+    	if (CollectionUtils.isEmpty(targetGroupIds)) {
             return "";
+        } else {
+	        return targetGroupIds.stream()
+	            .filter(id -> id != null && id != 0)
+	            .map(Object::toString)
+	            .collect(Collectors.joining(conjunction ? OPERATOR_AND : OPERATOR_OR));
         }
-
-        return targetGroupIds.stream()
-            .filter(id -> id != null && id != 0)
-            .map(Object::toString)
-            .collect(Collectors.joining(conjunction ? OPERATOR_AND : OPERATOR_OR));
     }
 
     public static String getTargetExpressionWithPrependedAltgs(Collection<Integer> altgIds, String targetExpression) {
@@ -80,7 +80,7 @@ public class TargetExpressionUtils {
     }
 
     public static String makeTargetExpressionWithAltgs(Collection<Integer> altgIds, Collection<Integer> targetIds, boolean conjunctionForTargets) {
-    	if (altgIds != null && altgIds.size() > 0) {
+    	if (targetIds != null && altgIds != null && altgIds.size() > 0) {
     		targetIds.removeAll(altgIds);
     	}
     	String targetExpression = makeTargetExpression(targetIds, conjunctionForTargets);

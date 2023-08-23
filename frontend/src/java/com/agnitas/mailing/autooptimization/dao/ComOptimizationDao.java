@@ -21,23 +21,20 @@ import java.util.List;
 import java.util.Map;
 
 import com.agnitas.mailing.autooptimization.beans.impl.AutoOptimizationLight;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.mailing.autooptimization.beans.ComOptimization;
 
 public interface ComOptimizationDao {
 
-	ComOptimization get(int optimizationID, @VelocityCheck int companyID);
+	ComOptimization get(int optimizationID, int companyID);
 
-	/**
-	 * Returns final_mailing_id for the AutoOptimization which contains mailing with ID = oneOfTheSplitMailingID.
-	 * @param oneOfTheSplitMailingID one of the mailing for AutoOptimization, in auto_optimization_tbl this is group1_id or group2_id...
-	 * @return final mailing ID
-	 */
-    int getFinalMailingID(@VelocityCheck int companyID, int workflowID, int oneOfTheSplitMailingID);
-    int getFinalMailingId(@VelocityCheck int companyId, int workflowId);
+    int getFinalMailingId(int companyId, int workflowId);
 	
-	AutoOptimizationLight getAutoOptimizationLight(@VelocityCheck int companyId, int workflowId);
+	AutoOptimizationLight getAutoOptimizationLight(int companyId, int workflowId);
+
+	String findName(int optimizationId, int companyId);
+
+	List<Integer> findTargetDependentAutoOptimizations(int targetGroupId, int companyId);
 	
 	int save(ComOptimization optimization);
 	
@@ -45,33 +42,27 @@ public interface ComOptimizationDao {
 
 	/**
 	 * Retrieve all entities except ones created by workflow manager.
-	 * @param campaignID
-	 * @param companyID
-	 * @return
 	 */
-	List<ComOptimization> list(int campaignID, @VelocityCheck int companyID);
+	List<ComOptimization> list(int campaignID, int companyID);
 
 	/**
 	 * Retrieve only entries created by workflow manager.
-	 * @param workflowId
-	 * @param companyID
-	 * @return
 	 */
-	List<ComOptimization> listWorkflowManaged(int workflowId, @VelocityCheck int companyID);
+	List<ComOptimization> listWorkflowManaged(int workflowId, int companyID);
 
-	Map<Integer, String> getGroups(int campaignID, @VelocityCheck int companyID , int optimizationID);
+	Map<Integer, String> getGroups(int campaignID, int companyID , int optimizationID);
 	
 	Map<Integer, Integer> getDueOnDateOptimizations(List<Integer> includedCompanyIds, List<Integer> excludedCompanyIds);
 	
 	List<ComOptimization> getDueOnThresholdOptimizationCandidates(List<Integer> includedCompanyIds, List<Integer> excludedCompanyIds);
 	
-	int deleteByCompanyID(@VelocityCheck int companyID);
+	int deleteByCompanyID(int companyID);
 	
-	int countByCompanyID(@VelocityCheck int companyID);
+	int countByCompanyID(int companyID);
 
-	List<ComOptimization> getOptimizationsForCalendar(@VelocityCheck int companyId, Date startDate, Date endDate);
+	List<ComOptimization> getOptimizationsForCalendar(int companyId, Date startDate, Date endDate);
 
-	List<ComOptimization> getOptimizationsForCalendar_New(@VelocityCheck int companyId, Date startDate, Date endDate);
+	List<ComOptimization> getOptimizationsForCalendar_New(int companyId, Date startDate, Date endDate);
     
-    int getOptimizationByFinalMailingId(int finalMailingId, @VelocityCheck int companyId);
+    int getOptimizationByFinalMailingId(int finalMailingId, int companyId);
 }

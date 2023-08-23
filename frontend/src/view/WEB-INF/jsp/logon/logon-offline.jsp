@@ -157,10 +157,10 @@
 	}
 	
 	.version--wrapper {
-		background-image: url("/assets/core/images/logonPageOffline/Version.png");
-		background-position: 100% 100%;
-		background-repeat: no-repeat;
-		background-size: contain;
+		background-image: url("/assets/core/images/logonPageOffline/Version.jpg");
+		background-position: 360% 65%;
+		background-repeat: repeat;
+		background-size: 95%;
 		background-color: #000;
 		align-items: start;
 		padding-top: 3em;
@@ -181,7 +181,10 @@
 	}
 	
 	.version__text--content {
-			
+		-webkit-box-shadow: 0px 0px 30px 1px rgba(0,0,0,0.3);
+		-moz-box-shadow: 0px 0px 30px 1px rgba(0,0,0,0.3);
+		box-shadow: 0px 0px 30px 1px rgba(0,0,0,0.3);
+		background: rgba(0,0,0,0.3);
 	}
 /*Version END*/
 

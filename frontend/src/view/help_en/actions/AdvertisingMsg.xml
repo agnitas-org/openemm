@@ -1,0 +1,4 @@
+<HelpBalloon>
+	<title><![CDATA[Advertising]]></title>
+	<content><![CDATA[If a recipient has tracking veto flag set, the action is not executed for this recipient. ]]></content>
+</HelpBalloon>

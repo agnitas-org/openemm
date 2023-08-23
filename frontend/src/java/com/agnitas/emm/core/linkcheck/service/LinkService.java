@@ -17,7 +17,6 @@ import java.util.Objects;
 import java.util.function.BiConsumer;
 
 import com.agnitas.emm.core.trackablelinks.exceptions.DependentTrackableLinkException;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.beans.ComTrackableLink;
 import com.agnitas.beans.LinkProperty;
@@ -68,9 +67,9 @@ public interface LinkService {
 
 	Integer getLineNumberOfFirstInvalidSrcLink(String text);
 
-	String validateLink(@VelocityCheck int companyId, String link, GridCustomPlaceholderType type);
+	String validateLink(int companyId, String link, GridCustomPlaceholderType type);
 
-	List<LinkProperty> getDefaultExtensions(@VelocityCheck int companyId);
+	List<LinkProperty> getDefaultExtensions(int companyId);
 
     void assertChangedOrDeletedLinksNotDepended(
             Collection<ComTrackableLink> oldLinks,

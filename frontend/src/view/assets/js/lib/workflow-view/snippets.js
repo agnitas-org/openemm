@@ -4,14 +4,15 @@
 
     var Snippets = {};
 
-    Snippets.loadSample = function(type, callback) {
+    Snippets.loadSample = function(type, gridEnabled, callback) {
         if ([Def.NODE_TYPE_SC_ABTEST, Def.NODE_TYPE_SC_BIRTHDAY, Def.NODE_TYPE_SC_DOI].includes(type)) {
             $.ajax({
                 url: AGN.url('/workflow/getSampleWorkflowContent.action'),
                 type: 'POST',
                 async: false,
                 data: {
-                    type: type
+                    type: type,
+                    gridEnabled: gridEnabled
                 },
                 success: asDeserializationCallback(callback)
             });

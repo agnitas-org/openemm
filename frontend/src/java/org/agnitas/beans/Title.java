@@ -12,7 +12,6 @@ package org.agnitas.beans;
 
 import java.util.Map;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public interface Title {
     
@@ -36,7 +35,7 @@ public interface Title {
      * 
      * @param company New value of property companyID.
      */
-    void setCompanyID(@VelocityCheck int company);
+    void setCompanyID(int company);
     
     /**
      * Setter for property id.

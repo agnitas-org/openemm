@@ -1,5 +1,4 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" buffer="64kb" errorPage="/error.do" %>
-<%@ page import="com.agnitas.web.MailingBaseAction" %>
 <%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
@@ -14,12 +13,8 @@
 <%--@elvariable id="mailingId" type="java.lang.Integer"--%>
 
 <c:set var="isMailingGrid" value="${gridTemplateId > 0}"/>
-<c:set var="ACTION_LIST" value="<%= MailingBaseAction.ACTION_LIST %>"/>
 
-<c:url var="mailingsOverviewLink" value="/mailingbase.do">
-    <c:param name="action" value="${ACTION_LIST}"/>
-    <c:param name="isTemplate" value="false"/>
-</c:url>
+<c:url var="mailingsOverviewLink" value="/mailing/list.action"/>
 
 <c:set var="mailingExists" value="${mailingId ne 0}"/>
 
@@ -28,10 +23,8 @@
 <c:set var="agnBreadcrumbsRootKey"	value="Mailings" 				scope="request" />
 <c:set var="agnBreadcrumbsRootUrl" 	value="${mailingsOverviewLink}"	scope="request" />
 
-<c:url var="templatesOverviewLink" value="/mailingbase.do">
-    <c:param name="action" value="${ACTION_LIST}"/>
-    <c:param name="isTemplate" value="true"/>
-    <c:param name="page" value="1"/>
+<c:url var="templatesOverviewLink" value="/mailing/list.action">
+    <c:param name="forTemplates" value="true"/>
 </c:url>
 
 <c:choose>
@@ -147,40 +140,25 @@
     <c:set var="agnSubtitleKey" 	value="Mailings"	scope="request" />
     <c:set var="agnHelpKey"         value="mailingBase" scope="request" />
     
-    <c:choose>
-        <c:when test="${mailingExists}">
-            <emm:include page="/WEB-INF/jsp/mailing/fragments/mailing-grid-navigation.jsp"/>
+    <c:if test="${mailingExists}">
+        <emm:include page="/WEB-INF/jsp/mailing/fragments/mailing-grid-navigation.jsp"/>
 
-            <emm:instantiate var="agnNavHrefParams" type="java.util.LinkedHashMap" scope="request">
-                <c:set target="${agnNavHrefParams}" property="templateID" value="${gridTemplateId}"/>
-                <c:set target="${agnNavHrefParams}" property="mailingID" value="${mailingId}"/>
-            </emm:instantiate>
+        <emm:instantiate var="agnNavHrefParams" type="java.util.LinkedHashMap" scope="request">
+            <c:set target="${agnNavHrefParams}" property="templateID" value="${gridTemplateId}"/>
+            <c:set target="${agnNavHrefParams}" property="mailingID" value="${mailingId}"/>
+        </emm:instantiate>
 
-            <c:set var="sidemenu_sub_active"	value="none" 		                scope="request" />
-            <c:set var="agnHighlightKey" 		value="default.settings" 			scope="request" />
-            <c:set var="agnHelpKey" 			value="mailingBase" 				scope="request" />
+        <c:set var="sidemenu_sub_active"	value="none" 		                scope="request" />
+        <c:set var="agnHighlightKey" 		value="default.settings" 			scope="request" />
+        <c:set var="agnHelpKey" 			value="mailingBase" 				scope="request" />
 
-            <emm:instantiate var="agnBreadcrumbs" type="java.util.LinkedHashMap" scope="request">
-                <emm:instantiate var="agnBreadcrumb" type="java.util.LinkedHashMap">
-                    <c:set target="${agnBreadcrumbs}" property="0" value="${agnBreadcrumb}"/>
-                    <c:set target="${agnBreadcrumb}" property="text" value="${mailingSettingsForm.shortname}"/>
-                </emm:instantiate>
+        <emm:instantiate var="agnBreadcrumbs" type="java.util.LinkedHashMap" scope="request">
+            <emm:instantiate var="agnBreadcrumb" type="java.util.LinkedHashMap">
+                <c:set target="${agnBreadcrumbs}" property="0" value="${agnBreadcrumb}"/>
+                <c:set target="${agnBreadcrumb}" property="text" value="${mailingSettingsForm.shortname}"/>
             </emm:instantiate>
-        </c:when>
-        <c:otherwise>
-            <c:set var="agnNavigationKey" 		value="GridMailingNew" 		scope="request" />
-            <c:set var="sidemenu_sub_active"	value="mailing.New_Mailing" scope="request" />
-            <c:set var="agnHighlightKey" 		value="mailing.New_Mailing"	scope="request" />
-            <c:set var="agnHelpKey" 			value="mailingBase"    scope="request" />
-            
-            <emm:instantiate var="agnBreadcrumbs" type="java.util.LinkedHashMap" scope="request">
-                <emm:instantiate var="agnBreadcrumb" type="java.util.LinkedHashMap">
-                    <c:set target="${agnBreadcrumbs}" property="0" value="${agnBreadcrumb}"/>
-                    <c:set target="${agnBreadcrumb}" property="textKey" value="mailing.New_Mailing"/>
-                </emm:instantiate>
-            </emm:instantiate>
-        </c:otherwise>
-    </c:choose>
+        </emm:instantiate>
+    </c:if>
 </c:if>
 
 <emm:instantiate var="itemActionsSettings" type="java.util.LinkedHashMap" scope="request">
@@ -256,7 +234,7 @@
                         <c:set target="${itemActionsSettings}" property="2" value="${element}"/>
 
                         <c:set target="${element}" property="btnCls" value="btn btn-regular btn-inverse"/>
-                        <c:set target="${element}" property="extraAttributes" value="data-form-target='#mailingSettingsForm' data-controls-group='save' data-action='save'"/>
+                        <c:set target="${element}" property="extraAttributes" value="data-form-target='#mailingSettingsForm' data-controls-group='save' data-form-submit-event"/>
                         <c:set target="${element}" property="iconBefore" value="icon-save"/>
                         <c:set target="${element}" property="name">
                             <mvc:message code="button.Save"/>
@@ -272,7 +250,7 @@
                     <c:set target="${itemActionsSettings}" property="1" value="${element}"/>
 
                     <c:set target="${element}" property="btnCls" value="btn btn-regular btn-inverse"/>
-                    <c:set target="${element}" property="extraAttributes" value="data-form-target='#mailingSettingsForm' data-controls-group='save' data-action='save'"/>
+                    <c:set target="${element}" property="extraAttributes" value="data-form-target='#mailingSettingsForm' data-controls-group='save' data-form-submit-event"/>
                     <c:set target="${element}" property="iconBefore" value="icon-save"/>
                     <c:set target="${element}" property="name">
                         <c:if test="${isTemplate}">
@@ -299,7 +277,7 @@
                         <c:set target="${itemActionsSettings}" property="2" value="${element}"/>
 
                         <c:set target="${element}" property="btnCls" value="btn btn-regular btn-inverse"/>
-                        <c:set target="${element}" property="extraAttributes" value="data-form-target='#mailingSettingsForm' data-action='save' data-controls-group='save'"/>
+                        <c:set target="${element}" property="extraAttributes" value="data-form-target='#mailingSettingsForm' data-form-submit-event data-controls-group='save'"/>
                         <c:set target="${element}" property="iconBefore" value="icon-save"/>
                         <c:set target="${element}" property="name">
                             <mvc:message code="button.Save"/>
@@ -314,7 +292,7 @@
                     <c:set target="${itemActionsSettings}" property="1" value="${element}"/>
 
                     <c:set target="${element}" property="btnCls" value="btn btn-regular btn-inverse"/>
-                    <c:set target="${element}" property="extraAttributes" value="data-form-target='#mailingSettingsForm' data-action='save' data-controls-group='save'"/>
+                    <c:set target="${element}" property="extraAttributes" value="data-form-target='#mailingSettingsForm' data-form-submit-event data-controls-group='save'"/>
                     <c:set target="${element}" property="iconBefore" value="icon-save"/>
                     <c:set target="${element}" property="name">
                         <mvc:message code="button.save.mailing.create"/>

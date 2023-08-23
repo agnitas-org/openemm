@@ -10,20 +10,20 @@
 
 package com.agnitas.emm.core.archive.web;
 
-import com.agnitas.beans.Campaign;
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.Campaign;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.impl.CampaignImpl;
 import com.agnitas.emm.core.archive.forms.MailingArchiveForm;
 import com.agnitas.emm.core.archive.forms.MailingArchiveSimpleActionForm;
 import com.agnitas.emm.core.archive.service.CampaignService;
+import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
 import com.agnitas.emm.core.workflow.service.util.WorkflowUtils;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.XssCheckAware;
 import com.agnitas.web.perm.annotations.PermissionMapping;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
-import org.agnitas.dao.MailingDao;
 import org.agnitas.service.WebStorage;
 import org.agnitas.web.forms.FormUtils;
 import org.agnitas.web.forms.PaginationForm;
@@ -40,7 +40,9 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import static org.agnitas.service.WebStorage.ARCHIVE_OVERVIEW;
+import static org.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
 import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
+import static org.agnitas.util.Const.Mvc.SELECTION_DELETED_MSG;
 
 @Controller
 @RequestMapping("/mailing/archive")
@@ -50,13 +52,13 @@ public class MailingArchiveController implements XssCheckAware {
     private static final Logger logger = LogManager.getLogger(MailingArchiveController.class);
 
     private final WebStorage webStorage;
-    private final MailingDao mailingDao;
     private final CampaignService campaignService;
+    private final ComMailingBaseService mailingBaseService;
 
-    public MailingArchiveController(MailingDao mailingDao, WebStorage webStorage, CampaignService campaignService) {
-        this.mailingDao = mailingDao;
+    public MailingArchiveController(WebStorage webStorage, CampaignService campaignService, ComMailingBaseService mailingBaseService) {
         this.webStorage = webStorage;
         this.campaignService = campaignService;
+        this.mailingBaseService = mailingBaseService;
     }
 
     @RequestMapping(value = "/list.action")
@@ -69,7 +71,7 @@ public class MailingArchiveController implements XssCheckAware {
     }
 
     @GetMapping("/{id:\\d+}/view.action")
-    public String view(Admin admin, Model model, @PathVariable(name = "id") int id, @ModelAttribute("form") MailingArchiveForm archiveForm) {
+    public String view(Admin admin, Model model, @PathVariable(name = "id") int id) {
         Campaign campaign = campaignService.getCampaign(id, admin.getCompanyID());
 
         if (campaign == null) {
@@ -77,53 +79,60 @@ public class MailingArchiveController implements XssCheckAware {
             return "redirect:/mailing/archive/create.action";
         }
 
-        archiveForm.setId(id);
-        archiveForm.setShortname(campaign.getShortname());
-        archiveForm.setDescription(campaign.getDescription());
-        model.addAttribute("mailingsList", campaignService.getCampaignMailings(id, admin));
+        if (!model.containsAttribute("form")) {
+            MailingArchiveForm archiveForm = new MailingArchiveForm();
+            archiveForm.setId(id);
+            archiveForm.setShortname(campaign.getShortname());
+            archiveForm.setDescription(campaign.getDescription());
 
+            model.addAttribute("form", archiveForm);
+        } else {
+            model.addAttribute("originalName", campaign.getShortname());
+        }
+
+        model.addAttribute("mailingsList", campaignService.getCampaignMailings(id, admin));
         return "archive_view";
     }
 
-    @GetMapping("/create.action")
+    @GetMapping({"/create.action", "/0/view.action"})
     public String create(@ModelAttribute("form") MailingArchiveForm archiveForm, HttpServletRequest req) {
         WorkflowUtils.updateForwardParameters(req);
         return "archive_view";
     }
 
     @RequestMapping("/save.action")
-    public String save(Admin admin, @ModelAttribute("form") MailingArchiveForm archiveForm, Popups popups, HttpSession session, RedirectAttributes redirectAttributes) {
-        if (validate(archiveForm, popups)) {
-            Campaign campaign = campaignService.getCampaign(archiveForm.getId(), admin.getCompanyID());
-
-            if (campaign == null) {
-                campaign = new CampaignImpl();
-                campaign.setCompanyID(admin.getCompanyID());
-            }
-
-            campaign.setShortname(archiveForm.getShortname());
-            campaign.setDescription(archiveForm.getDescription());
-
-            int campaignId = campaignService.save(campaign);
-
-            popups.success("default.changes_saved");
-
-            int workflowId = WorkflowParametersHelper.getWorkflowIdFromSession(session);
-            if (workflowId != 0) {
-                WorkflowParametersHelper.addEditedElemRedirectAttrs(redirectAttributes, session, campaignId);
-                return String.format("redirect:/workflow/%d/view.action", workflowId);
-            }
-
-            return String.format("redirect:/mailing/archive/%d/view.action", campaignId);
+    public String save(Admin admin, @ModelAttribute("form") MailingArchiveForm archiveForm, Popups popups, HttpSession session, RedirectAttributes ra) {
+        if (!validate(archiveForm, popups)) {
+            ra.addFlashAttribute("form", archiveForm);
+            return redirectToViewPage(archiveForm.getId());
         }
 
-        return "messages";
+        Campaign campaign = campaignService.getCampaign(archiveForm.getId(), admin.getCompanyID());
+
+        if (campaign == null) {
+            campaign = new CampaignImpl();
+            campaign.setCompanyID(admin.getCompanyID());
+        }
+
+        campaign.setShortname(archiveForm.getShortname());
+        campaign.setDescription(archiveForm.getDescription());
+
+        int campaignId = campaignService.save(campaign);
+        int workflowId = WorkflowParametersHelper.getWorkflowIdFromSession(session);
+
+        if (workflowId != 0) {
+            WorkflowParametersHelper.addEditedElemRedirectAttrs(ra, session, campaignId);
+            return String.format("redirect:/workflow/%d/view.action", workflowId);
+        }
+
+        popups.success(CHANGES_SAVED_MSG);
+        return redirectToViewPage(campaignId);
     }
 
     @RequestMapping("/{campaignId:\\d+}/mailing/{mailingId:\\d+}/confirmDelete.action")
     public String confirmMailingDelete(Admin admin, @PathVariable(name = "mailingId") int mailingID, @PathVariable(name = "campaignId") int campaignID,
                                        @ModelAttribute("form") MailingArchiveSimpleActionForm form) {
-        Mailing mailing = mailingDao.getMailing(mailingID, admin.getCompanyID());
+        Mailing mailing = mailingBaseService.getMailing(admin.getCompanyID(), mailingID);
 
         form.setMailingId(mailingID);
         form.setCampaignId(campaignID);
@@ -156,27 +165,30 @@ public class MailingArchiveController implements XssCheckAware {
                 Campaign campaign = campaignService.getCampaign(form.getCampaignId(), admin.getCompanyID());
                 campaignService.delete(campaign);
 
-                popups.success("default.selection.deleted");
+                popups.success(SELECTION_DELETED_MSG);
             }
         } else {
             if (form.getMailingId() > 0) {
-                mailingDao.deleteMailing(form.getMailingId(), admin.getCompanyID());
+                mailingBaseService.deleteMailing(form.getMailingId(), admin.getCompanyID());
 
-                popups.success("default.selection.deleted");
-
-                return String.format("redirect:/mailing/archive/%d/view.action", form.getCampaignId());
+                popups.success(SELECTION_DELETED_MSG);
+                return redirectToViewPage(form.getCampaignId());
             }
         }
 
         return "redirect:/mailing/archive/list.action";
     }
 
+    private String redirectToViewPage(int id) {
+        return String.format("redirect:/mailing/archive/%d/view.action", id);
+    }
+
     private boolean cantBeDeleted(Admin admin, int id, Popups popups) {
         if (campaignService.isContainMailings(id, admin)) {
-            popups.alert("GWUA.campaign.Delete.mailing.assigned");
+            popups.alert("warning.campaign.delete.mailing");
         }
         if (campaignService.isDefinedForAutoOptimization(id, admin)) {
-            popups.alert("GWUA.campaign.Delete.autoopt.defined");
+            popups.alert("warning.campaign.delete.autoopt");
         }
         return popups.hasAlertPopups();
     }

@@ -10,6 +10,8 @@
 
 package com.agnitas.dao.impl;
 
+import static java.text.MessageFormat.format;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -41,7 +43,6 @@ import org.agnitas.util.DbUtilities;
 import org.agnitas.util.SqlPreparedStatementManager;
 import org.agnitas.util.Tuple;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.logging.log4j.LogManager;
@@ -70,8 +71,8 @@ import com.agnitas.emm.core.news.enums.NewsType;
  * This class is compatible with oracle and mysql datasources and databases
  */
 public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(AdminDaoImpl.class);
+
+	private static final Logger logger = LogManager.getLogger(AdminDaoImpl.class);
 
 	private final RowMapper<Admin> adminRowMapper = new Admin_RowMapper();
 	
@@ -187,7 +188,7 @@ public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
 	
 	private Admin getAdminInternal(String username) throws AdminNameNotFoundException, AdminNameNotUniqueException {
 		if (StringUtils.isBlank(username)) {
-			logger.debug("User name if null in getAdminInternal(String username) call." + username);
+			logger.debug("User name if null in getAdminInternal(String username) call.{}", username);
 			throw new AdminNameNotFoundException("");
 		}
 
@@ -198,11 +199,11 @@ public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
 		List<Admin> adminList = select(logger, sql, getAdminRowMapper(), name);
 		if (adminList.size() == 1) {
 			return adminList.get(0);
-		} else if (adminList.size() == 0) {
-			logger.debug("User not found or part of inactive company: " + name);
+		} else if (adminList.isEmpty()) {
+			logger.debug("User not found or part of inactive company: {}", name);
 			throw new AdminNameNotFoundException(name);
 		} else {
-			logger.debug("Username is not unique: " + name);
+			logger.debug("Username is not unique: {}", name);
 			throw new AdminNameNotUniqueException(name);
 		}
 	}
@@ -272,7 +273,6 @@ public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
 				// set the new id to refresh the Admin
 				admin.setAdminID(newAdminId);
 			} else {
-
 				final List<Object> params = new ArrayList<>(Arrays.asList(
 						admin.getUsername(),
 						admin.getFullname(),
@@ -312,7 +312,7 @@ public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
 			}
 
 			if (admin.getSecurePasswordHash() == null) {
-				admin.setSecurePasswordHash(createSecurePasswordHash(admin.getAdminID(), admin.getCompanyID(), admin.getPasswordForStorage()));
+				admin.setSecurePasswordHash(createSecurePasswordHash(admin.getAdminID(), admin.getPasswordForStorage()));
 			}
 			
 			// Remove Password from memory
@@ -327,7 +327,7 @@ public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
 			
 			if (!StringUtils.isEmpty(admin.getPasswordForStorage())) {
 				// Only overwrite when new password is set
-				admin.setSecurePasswordHash(createSecurePasswordHash(admin.getAdminID(), admin.getCompanyID(), admin.getPasswordForStorage()));
+				admin.setSecurePasswordHash(createSecurePasswordHash(admin.getAdminID(), admin.getPasswordForStorage()));
 				admin.setLastPasswordChange(now);
 				
 				// Remove Password from memory
@@ -429,13 +429,16 @@ public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
 			if (isDisabledMailingListsSupported()) {
 				mailinglistApprovalDao.allowAdminToUseAllMailinglists(companyID, adminID);
 			}
-			update(logger, "DELETE FROM admin_permission_tbl WHERE admin_id = ?", adminID);
-			update(logger, "DELETE FROM admin_to_group_tbl WHERE admin_id = ?", adminID);
-			update(logger, "DELETE FROM admin_altg_list_tbl WHERE admin_id = ?", adminID);
+
+			deleteAdminDependentData(adminID);
 			int touchedLines = update(logger, "DELETE FROM admin_tbl WHERE admin_id = ? AND (company_id = ? OR company_id IN (SELECT company_id FROM company_tbl WHERE creator_company_id = ? and status != '" + CompanyStatus.DELETED.getDbValue() + "'))", adminID, companyID, companyID);
 			return touchedLines == 1;
 		}
-		
+	}
+
+	protected void deleteAdminDependentData(int adminID) {
+		update(logger, "DELETE FROM admin_permission_tbl WHERE admin_id = ?", adminID);
+		update(logger, "DELETE FROM admin_to_group_tbl WHERE admin_id = ?", adminID);
 	}
 
 	@Override
@@ -484,7 +487,7 @@ public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
     @Override
 	public List<Map<String, Object>> getAdminsNames(int companyID, List<Integer> adminsIds) {
         // if the admin list is empty - return empty result list
-        if (adminsIds == null || adminsIds.size() <= 0) {
+        if (adminsIds == null || adminsIds.isEmpty()) {
             return new ArrayList<>();
         }
         
@@ -517,76 +520,94 @@ public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
 		} else {
 			sortColumn = sortColumn.replaceAll("^adm.", "");
 		}
-		
+
 		boolean sortDirectionAscending = !"desc".equalsIgnoreCase(sortDirection) && !"descending".equalsIgnoreCase(sortDirection);
 
-        SqlPreparedStatementManager sqlPreparedStatementManager = new SqlPreparedStatementManager(
-        	"SELECT adm.company_id, adm.admin_id, adm.username, adm.last_login_date, adm.fullname, adm.firstname, adm.company_name, adm.email, adm.admin_lang, comp.shortname, adm.creation_date, adm.timestamp, adm.pwdchange_date"
-        		+ " FROM admin_tbl adm "
-        		+ " JOIN company_tbl comp ON (comp.company_ID = adm.company_id)"
-        		+ " WHERE comp.status = '" + CompanyStatus.ACTIVE.getDbValue() + "'"
-        		+ " AND (adm.company_id = ? OR adm.company_id IN ("
-        		+ " SELECT company_id FROM company_tbl WHERE creator_company_id = ?))"
-        		+ " AND restful = ?", companyID, companyID, showRestfulUsers ? 1 : 0);
-        		
-        // WHERE clause already in statement
-        sqlPreparedStatementManager.setHasAppendedClauses(true);
-        
-        try {
-        	if (searchFirstName != null && !searchFirstName.isEmpty()) {
-                if (isOracleDB()) {
-                	sqlPreparedStatementManager.addWhereClause("UPPER(adm.firstname) LIKE ('%' || UPPER(?) || '%')", searchFirstName);
-                } else {
-                	sqlPreparedStatementManager.addWhereClause("adm.firstname LIKE CONCAT('%', ?, '%')", searchFirstName);
-                }
-            }
+		SqlPreparedStatementManager sqlPreparedStatementManager = new SqlPreparedStatementManager(
+				"SELECT adm.admin_id, adm.username, adm.fullname, adm.firstname, adm.last_login_date, adm.company_name, adm.email, adm.admin_lang, comp.shortname, adm.company_id, adm.creation_date, adm.timestamp, adm.pwdchange_date"
+						+ " FROM admin_tbl adm "
+						+ " JOIN company_tbl comp ON (comp.company_ID = adm.company_id)"
+						+ " WHERE comp.status = ?"
+						+ " AND restful = ?", CompanyStatus.ACTIVE.getDbValue(), showRestfulUsers ? 1 : 0);
 
-            if (searchLastName != null && !searchLastName.isEmpty()) {
-                if (isOracleDB()) {
-                	sqlPreparedStatementManager.addWhereClause("UPPER(adm.fullname) LIKE ('%' || UPPER(?) || '%')", searchLastName);
-                } else {
-                	sqlPreparedStatementManager.addWhereClause("adm.fullname LIKE CONCAT('%', ?, '%')", searchLastName);
-                }
-            }
 
-            if (searchEmail != null && !searchEmail.isEmpty()) {
-                if (isOracleDB()) {
-                	sqlPreparedStatementManager.addWhereClause("UPPER(adm.email) LIKE ('%' || UPPER(?) || '%')", searchEmail);
-                } else {
-                	sqlPreparedStatementManager.addWhereClause("adm.email LIKE CONCAT('%', ?, '%')", searchEmail);
-                }
-            }
+		// WHERE clause already in statement
+		sqlPreparedStatementManager.setHasAppendedClauses(true);
 
-            if (searchCompanyName != null && !searchCompanyName.isEmpty()) {
-                if (isOracleDB()) {
-                	sqlPreparedStatementManager.addWhereClause("UPPER(adm.company_name) LIKE ('%' || UPPER(?) || '%')", searchCompanyName);
-                } else {
-                	sqlPreparedStatementManager.addWhereClause("adm.company_name LIKE CONCAT('%', ?, '%')", searchCompanyName);
-                }
-            }
+		try {
+			if (companyID > 1) {
+				sqlPreparedStatementManager.addWhereClause("adm.company_id = ? OR adm.company_id IN (SELECT company_id FROM company_tbl WHERE creator_company_id = ?)", companyID, companyID);
+			}
 
-            if (filterCompanyId != null) {
-            	sqlPreparedStatementManager.addWhereClause("adm.company_id = ?", filterCompanyId);
-            }
+			addAdminListFilters(
+					searchFirstName,
+					searchLastName,
+					searchEmail,
+					searchCompanyName,
+					filterCompanyId,
+					filterAdminGroupId,
+					filterMailinglistId,
+					filterLanguage,
+					sqlPreparedStatementManager
+			);
 
-            if (filterAdminGroupId != null) {
-            	sqlPreparedStatementManager.addWhereClause("EXISTS (SELECT 1 FROM admin_to_group_tbl grp WHERE grp.admin_id = adm.admin_id AND grp.admin_group_id = ?)", filterAdminGroupId);
-            }
+		} catch (Exception e) {
+			logger.error("Invalid filters", e);
+		}
 
-            if (filterLanguage != null && !filterLanguage.isEmpty()) {
-            	sqlPreparedStatementManager.addWhereClause("adm.admin_lang = ?", filterLanguage);
-            }
-        } catch (Exception e) {
-            logger.error("Invalid filters", e);
-        }
-        
 		if ("last_login".equalsIgnoreCase(sortColumn)) {
-			String sortClause = " ORDER BY last_login " + (sortDirectionAscending ? "ASC" : "DESC");
+			String sortClause = " ORDER BY last_login_date " + (sortDirectionAscending ? "ASC" : "DESC");
 			return selectPaginatedListWithSortClause(logger, sqlPreparedStatementManager.getPreparedSqlString(), sortClause, sortColumn, sortDirectionAscending, pageNumber, pageSize, new AdminEntry_RowMapper_Email(), sqlPreparedStatementManager.getPreparedSqlParameters());
 		} else {
 			return selectPaginatedList(logger, sqlPreparedStatementManager.getPreparedSqlString(), "admin_tbl", sortColumn, sortDirectionAscending, pageNumber, pageSize, new AdminEntry_RowMapper_Email(), sqlPreparedStatementManager.getPreparedSqlParameters());
 		}
     }
+
+    protected void addAdminListFilters(String searchFirstName, String searchLastName, String searchEmail, String searchCompanyName, Integer filterCompanyId, Integer filterAdminGroupId, Integer filterMailinglistId, String filterLanguage, SqlPreparedStatementManager statementManager) throws Exception {
+		if (searchFirstName != null && !searchFirstName.isEmpty()) {
+			if (isOracleDB()) {
+				statementManager.addWhereClause("UPPER(adm.firstname) LIKE ('%' || UPPER(?) || '%')", searchFirstName);
+			} else {
+				statementManager.addWhereClause("adm.firstname LIKE CONCAT('%', ?, '%')", searchFirstName);
+			}
+		}
+
+		if (searchLastName != null && !searchLastName.isEmpty()) {
+			if (isOracleDB()) {
+				statementManager.addWhereClause("UPPER(adm.fullname) LIKE ('%' || UPPER(?) || '%')", searchLastName);
+			} else {
+				statementManager.addWhereClause("adm.fullname LIKE CONCAT('%', ?, '%')", searchLastName);
+			}
+		}
+
+		if (searchEmail != null && !searchEmail.isEmpty()) {
+			if (isOracleDB()) {
+				statementManager.addWhereClause("UPPER(adm.email) LIKE ('%' || UPPER(?) || '%')", searchEmail);
+			} else {
+				statementManager.addWhereClause("adm.email LIKE CONCAT('%', ?, '%')", searchEmail);
+			}
+		}
+
+		if (searchCompanyName != null && !searchCompanyName.isEmpty()) {
+			if (isOracleDB()) {
+				statementManager.addWhereClause("UPPER(adm.company_name) LIKE ('%' || UPPER(?) || '%')", searchCompanyName);
+			} else {
+				statementManager.addWhereClause("adm.company_name LIKE CONCAT('%', ?, '%')", searchCompanyName);
+			}
+		}
+
+		if (filterCompanyId != null) {
+			statementManager.addWhereClause("adm.company_id = ?", filterCompanyId);
+		}
+
+		if (filterAdminGroupId != null) {
+			statementManager.addWhereClause("EXISTS (SELECT 1 FROM admin_to_group_tbl grp WHERE grp.admin_id = adm.admin_id AND grp.admin_group_id = ?)", filterAdminGroupId);
+		}
+
+		if (filterLanguage != null && !filterLanguage.isEmpty()) {
+			statementManager.addWhereClause("adm.admin_lang = ?", filterLanguage);
+		}
+	}
 	
     @Override
 	public Admin getAdminForReport(int companyID) {
@@ -788,7 +809,7 @@ public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
 				return this.passwordEncryptor.isAdminPassword(password, admin);
 			}
 		} catch (Exception e) {
-			logger.error("Cannot check admin password: " + e.getMessage(), e);
+			logger.error(format("Cannot check admin password: {0}", e.getMessage()), e);
 			return false;
 		}
 	}
@@ -804,13 +825,8 @@ public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
 	 * 
 	 * If one of these conditions is not met, the password is stored as
 	 * plain text.
-	 *
-	 * @param adminId
-	 * @param password
-	 * @return
-	 * @throws Exception
 	 */
-	private String createSecurePasswordHash(int adminId, int companyID, String password) throws Exception {
+	private String createSecurePasswordHash(int adminId, String password) throws Exception {
 		if (adminId == 0) {
 			// No admin ID? Then we cannot set a secure password hash
 			logger.error("illegal adminid for password storage");
@@ -828,7 +844,7 @@ public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
 		}
 		else {
 			if (logger.isInfoEnabled()) {
-				logger.info("setting secure password hash for admin " + adminId);
+				logger.info("setting secure password hash for admin {}", adminId);
 			}
 			return passwordEncryptor.computeAdminPasswordHash(password, adminId);
 		}
@@ -882,29 +898,6 @@ public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
 			return selectInt(logger, "SELECT COUNT(*) FROM admin_tbl WHERE restful = 0 AND company_id = ?", companyID);
 		} else {
 			return selectInt(logger, "SELECT COUNT(*) FROM admin_tbl WHERE restful = 0");
-		}
-	}
-
-	@Override
-	public void deleteFeaturePermissions(Set<String> unAllowedPremiumFeatures, int companyID) {
-		if (unAllowedPremiumFeatures != null && unAllowedPremiumFeatures.size() > 0) {
-			Object[] parameters = unAllowedPremiumFeatures.toArray(ArrayUtils.EMPTY_STRING_ARRAY);
-			
-			List<String> foundUnAllowedPremiumFeatures_Admin = select(logger, "SELECT permission_name FROM admin_permission_tbl WHERE admin_id IN (SELECT admin_id FROM admin_tbl WHERE company_id = " + companyID + ") AND permission_name IN (" + AgnUtils.repeatString("?", unAllowedPremiumFeatures.size(), ", ") + ")", StringRowMapper.INSTANCE, parameters);
-			
-			int touchedLines1 = update(logger, "DELETE FROM admin_permission_tbl WHERE admin_id IN (SELECT admin_id FROM admin_tbl WHERE company_id = " + companyID + ") AND permission_name IN (" + AgnUtils.repeatString("?", unAllowedPremiumFeatures.size(), ", ") + ")", parameters);
-			if (touchedLines1 > 0) {
-				logger.warn("Deleted unallowed premium features for admins of company " + companyID + ": " + touchedLines1);
-				logger.warn(StringUtils.join(foundUnAllowedPremiumFeatures_Admin, ", "));
-			}
-			
-			List<String> foundUnAllowedPremiumFeatures_Group = select(logger, "SELECT permission_name FROM admin_group_permission_tbl WHERE admin_group_id IN (SELECT admin_group_id FROM admin_group_tbl WHERE company_id = " + companyID + ") AND permission_name IN (" + AgnUtils.repeatString("?", unAllowedPremiumFeatures.size(), ", ") + ")", StringRowMapper.INSTANCE, parameters);
-			
-			int touchedLines2 = update(logger, "DELETE FROM admin_group_permission_tbl WHERE admin_group_id IN (SELECT admin_group_id FROM admin_group_tbl WHERE company_id = " + companyID + ") AND permission_name IN (" + AgnUtils.repeatString("?", unAllowedPremiumFeatures.size(), ", ") + ")", parameters);
-			if (touchedLines2 > 0) {
-				logger.warn("Deleted unallowed premium features for admingroups of company " + companyID + ": " + touchedLines2);
-				logger.warn(StringUtils.join(foundUnAllowedPremiumFeatures_Group, ", "));
-			}
 		}
 	}
 
@@ -968,6 +961,11 @@ public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
 	}
 
 	@Override
+	public int getSecurityCodeMailingId(String language) {
+		return selectIntWithDefaultValue(logger, "SELECT mailing_id FROM mailing_tbl WHERE company_id = 1 AND shortname = ?", -1, "SecurityCodeMail_" + language.toUpperCase());
+	}
+
+	@Override
 	public List<Admin> getAdmins(int companyID, boolean restful) {
 		if (companyID == 0) {
 			return null;
@@ -1007,6 +1005,12 @@ public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
 		} else {
 			return selectInt(logger, "SELECT COUNT(*) FROM admin_tbl WHERE restful = 1");
 		}
+	}
+
+	@Override
+	public void deleteAdminPermissionsForCompany(int companyID) {
+		update(logger, "UPDATE admin_tbl SET limiting_target_id = NULL WHERE limiting_target_id IS NOT NULL AND company_id = ?", companyID);
+		update(logger, "DELETE FROM disabled_mailinglist_tbl WHERE company_id = ?", companyID);
 	}
 
 	@Override

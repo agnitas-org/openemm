@@ -189,7 +189,7 @@ public class Code {
 					
 					Object	rc = interpreter.eval (condition);
 					
-					if ((rc == null) || (rc.getClass () != Boolean.class)) {
+					if ((rc == null) || (! (rc instanceof Boolean))) {
 						data.logging (Log.ERROR, "code", name + ": invalid return type in \"" + condition + "\" in line " + lineno + ", expect boolean, got " + (rc == null ? "NULL" : rc.getClass ()));
 						return false;
 					}

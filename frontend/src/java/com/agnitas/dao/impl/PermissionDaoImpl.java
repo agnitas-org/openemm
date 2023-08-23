@@ -13,9 +13,12 @@ package com.agnitas.dao.impl;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 import org.agnitas.dao.impl.BaseDaoImpl;
 import org.agnitas.dao.impl.mapper.StringRowMapper;
@@ -32,23 +35,22 @@ import com.agnitas.emm.core.PermissionInfo;
  * This class is compatible with oracle and mysql datasources and databases
  */
 public class PermissionDaoImpl extends BaseDaoImpl implements PermissionDao {
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(PermissionDaoImpl.class);
-	
+
+	private static final Logger logger = LogManager.getLogger(PermissionDaoImpl.class);
+
     @Override
 	public List<Permission> getAllPermissions() {
-    	List<Permission> list = select(logger, "SELECT permission_name FROM permission_tbl ORDER BY category, sub_category, sort_order, permission_name", new Permission_RowMapper());
-    	
-		while (list.remove(null)) {
-			// do nothing here, just remove null entries
-		}
-		
+    	List<Permission> list = select(logger, "SELECT permission_name FROM permission_tbl ORDER BY category, sub_category, sort_order, permission_name", new Permission_RowMapper())
+				.stream()
+				.filter(Objects::nonNull)
+				.collect(Collectors.toList());
+
 		// Read display order of categories
 		if (Permission.CATEGORY_DISPLAY_ORDER.length == 0) {
 			List<String> newCategoriesOrder = select(logger, "SELECT category_name FROM permission_category_tbl ORDER BY sort_order, category_name", StringRowMapper.INSTANCE);
 			Permission.CATEGORY_DISPLAY_ORDER = newCategoriesOrder.toArray(new String[0]);
 		}
-		
+
 		// Read display order of subcategories
 		if (Permission.SUBCATEGORY_DISPLAY_ORDER.size() == 0) {
 			for (String category : Permission.CATEGORY_DISPLAY_ORDER) {
@@ -56,7 +58,7 @@ public class PermissionDaoImpl extends BaseDaoImpl implements PermissionDao {
 				Permission.SUBCATEGORY_DISPLAY_ORDER.put(category, newSubCategoriesOrder.toArray(new String[0]));
 			}
 		}
-		
+
 		return list;
     }
 
@@ -68,25 +70,20 @@ public class PermissionDaoImpl extends BaseDaoImpl implements PermissionDao {
 		} else {
 			sortDirectionPart = "ASC";
 		}
-    	List<Map<String, Object>> result = select(logger, "SELECT permission_name, category, sub_category, sort_order, feature_package FROM permission_tbl ORDER BY category " + sortDirectionPart + ", sub_category " + sortDirectionPart + ", sort_order " + sortDirectionPart + ", permission_name");
+    	List<Map<String, Object>> result = select(logger, "SELECT permission_name, category, sub_category, sort_order, feature_package, creation_date FROM permission_tbl ORDER BY category " + sortDirectionPart + ", sub_category " + sortDirectionPart + ", sort_order " + sortDirectionPart + ", permission_name");
     	LinkedHashMap<String, PermissionInfo> returnMap = new LinkedHashMap<>();
     	for (Map<String, Object> row : result) {
     		String permissionName = (String) row.get("permission_name");
-    		PermissionInfo permissionInfo = new PermissionInfo((String) row.get("category"), (String) row.get("sub_category"), ((Number) row.get("sort_order")).intValue(), (String) row.get("feature_package"));
+    		PermissionInfo permissionInfo = new PermissionInfo((String) row.get("category"), (String) row.get("sub_category"), ((Number) row.get("sort_order")).intValue(), (String) row.get("feature_package"), (Date) row.get("creation_date"));
     		returnMap.put(permissionName, permissionInfo);
     	}
 		return returnMap;
     }
 
-    protected class Permission_RowMapper implements RowMapper<Permission> {
+    protected static class Permission_RowMapper implements RowMapper<Permission> {
 		@Override
 		public Permission mapRow(ResultSet resultSet, int row) throws SQLException {
-			Permission readPermission = Permission.getPermissionByToken(resultSet.getString("permission_name"));
-			if (readPermission != null) {
-				return readPermission;
-			} else {
-				return null;
-			}
+			return Permission.getPermissionByToken(resultSet.getString("permission_name"));
 		}
 	}
 
@@ -101,20 +98,20 @@ public class PermissionDaoImpl extends BaseDaoImpl implements PermissionDao {
 				categoriesFromDB.remove(orderedCategory);
 			}
 		}
-		
+
 		boolean addSystemAtEnd = false;
 		if (categoriesFromDB.contains(Permission.CATEGORY_KEY_SYSTEM)) {
 			addSystemAtEnd = true;
 			categoriesFromDB.remove(Permission.CATEGORY_KEY_SYSTEM);
 		}
-		
+
 		// add all remaining categories which do not have a special sort order
 		allCategoriesOrdered.addAll(categoriesFromDB);
-		
+
 		if (addSystemAtEnd) {
 			allCategoriesOrdered.add(Permission.CATEGORY_KEY_SYSTEM);
 		}
-		
+
 		return allCategoriesOrdered;
 	}
 }

@@ -13,7 +13,7 @@
 <c:set var="MODE_EDIT_NOT_VISIBLE" value="<%= ProfileFieldMode.NotVisible %>"/>
 <c:set var="MODE_EDIT_READONLY" value="<%= ProfileFieldMode.ReadOnly %>"/>
 
-<mvc:form servletRelativeAction="/profiledb.action" data-form="resource" modelAttribute="profileForm">
+<mvc:form servletRelativeAction="/profiledb/profiledb.action" data-form="resource" modelAttribute="profileForm">
 
     <input type="hidden" name="page" value="${profileFields.pageNumber}"/>
     <input type="hidden" name="sort" value="${profileFields.sortCriterion}"/>
@@ -74,26 +74,26 @@
                                id="fields"
                                name="profileFields"
                                sort="external"
-                               requestURI="/profiledb.action?syncSorting=true"
+                               requestURI="/profiledb/profiledb.action?syncSorting=true"
                                partialList="true"
                                size="${profileForm.numberOfRows}"
                                excludedParams="*">
 
                     <display:column headerClass="profile_fields_name_head" class="profile_fields_name" titleKey="settings.FieldName" sortable="true" sortProperty="shortname">
-                        <span class="multiline-auto">${fields.shortname}</span>
+                        <span class="multiline-auto">${fields.shortName}</span>
                     </display:column>
 
                     <display:column headerClass="profile_fields_dbname_head" class="profile_fields_dbname" titleKey="settings.FieldNameDB" sortable="true" sortProperty="column">
-                        <span class="multiline-auto">${fields.column}</span>
+                        <span class="multiline-auto">${fields.columnName}</span>
                     </display:column>
 
                     <display:column headerClass="profile_fields_type_head" class="profile_fields_type" titleKey="default.Type" sortable="true" sortProperty="dataType">
-                        <mvc:message code="settings.fieldType.${fields.dataType}"/>
+                        <mvc:message code="${fields.simpleDataType.messageKey}"/>
                     </display:column>
 
                     <display:column headerClass="profile_fields_length_head" class="profile_fields_length" titleKey="settings.Length" sortable="true" sortProperty="dataTypeLength">
-                        <c:if test="${fields.dataTypeLength > 0}">
-                            ${fields.dataTypeLength}
+                        <c:if test="${fields.characterLength > 0}">
+                            ${fields.characterLength}
                         </c:if>
                     </display:column>
 
@@ -103,10 +103,10 @@
 
                     <display:column headerClass="profile_fields_visibility_head" class="profile_fields_visibility" titleKey="visibility" sortable="true" sortProperty="modeEdit">
                         <c:choose>
-                            <c:when test="${fields.modeEdit eq MODE_EDIT_NOT_VISIBLE}">
+                            <c:when test="${fields.defaultPermission eq MODE_EDIT_NOT_VISIBLE}">
                                 <mvc:message code="notVisible"/>
                             </c:when>
-                            <c:when test="${fields.modeEdit eq MODE_EDIT_READONLY}">
+                            <c:when test="${fields.defaultPermission eq MODE_EDIT_READONLY}">
                                 <mvc:message code="ReadOnly"/>
                             </c:when>
                             <c:otherwise>
@@ -117,16 +117,19 @@
 
                     <display:column headerClass="profile_fields_sort_head" class="profile_fields_sort" titleKey="FieldSort" sortable="true" sortProperty="sort">
                         <c:choose>
-                            <c:when test="${fields.sort eq MAX_SORT_INDEX}">
+                            <c:when test="${fields.sortOrder eq 0}">
                                 <mvc:message code="noSort"/>
                             </c:when>
-                            <c:when test="${fields.sort eq 1}">
+                            <c:when test="${fields.sortOrder eq MAX_SORT_INDEX}">
+                                <mvc:message code="noSort"/>
+                            </c:when>
+                            <c:when test="${fields.sortOrder eq 1}">
                                 <mvc:message code="first"/>
                             </c:when>
                             <c:otherwise>
                                 <c:forEach var="field" items="${fieldsWithIndividualSortOrder}">
-                                    <c:if test="${field.sort eq (fields.sort - 1)}">
-                                        <mvc:message code="after"/> ${field.shortname}
+                                    <c:if test="${field.sortOrder eq (fields.sortOrder - 1)}">
+                                        <mvc:message code="after"/> ${field.shortName}
                                     </c:if>
                                 </c:forEach>
                             </c:otherwise>
@@ -134,15 +137,15 @@
                     </display:column>
 
                     <display:column class="table-actions">
-                        <c:if test="${fields.isHiddenField == false}">
-                            <c:url var="viewProfileLink" value="/profiledb/${fields.column}/view.action"/>
+                        <c:if test="${fields.standardField == false}">
+                            <c:url var="viewProfileLink" value="/profiledb/${fields.columnName}/view.action"/>
 
                             <a href="${viewProfileLink}" class="hidden js-row-show" title="<mvc:message code="settings.profile.ProfileEdit"/>"/>
 
                             <c:set var="actionsDelete">
                                 <mvc:message code="settings.profile.ProfileDelete"/>
                             </c:set>
-                            <c:url var="deleteProfileLink" value="/profiledb/${fields.column}/confirmDelete.action">
+                            <c:url var="deleteProfileLink" value="/profiledb/${fields.columnName}/confirmDelete.action">
                             	<c:param name="from_list_page" value="true" />
                             </c:url>
 

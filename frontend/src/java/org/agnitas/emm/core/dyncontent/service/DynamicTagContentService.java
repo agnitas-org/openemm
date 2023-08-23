@@ -14,9 +14,6 @@ import java.util.List;
 
 import org.agnitas.beans.DynamicTagContent;
 import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.springframework.beans.BeansException;
-import org.springframework.context.ApplicationContext;
 
 
 public interface DynamicTagContentService {
@@ -31,7 +28,9 @@ public interface DynamicTagContentService {
 
 	void updateContent(ContentModel model, List<UserAction> userActions);
 
-    DynamicTagContent getContent(@VelocityCheck int companyID, int contentID);
+    DynamicTagContent getContent(int companyID, int contentID);
 
-    void setApplicationContext(ApplicationContext applicationContext) throws BeansException;
+	List<Integer> findTargetDependentMailingsContents(int targetGroupId, int companyId);
+
+	List<Integer> filterContentsOfNotSentMailings(List<Integer> dependencies);
 }

@@ -198,25 +198,7 @@ public class MailgunImpl implements Mailgun {
 	 * @param opts options to control the setup beyond DB information
 	 */
 	private void doPrepare(Map<String, Object> opts) throws Exception {
-		data.resume();
-		data.options(opts, 1);
-
 		data.logging(Log.DEBUG, "prepare", "Starting firing");
-		// create new Block collection and store in member var
-		allBlocks = new BlockCollection();
-		data.setBlocks(allBlocks);
-		allBlocks.setupBlockCollection(data, data.previewInput);
-
-		data.logging(Log.DEBUG, "prepare", "Parse blocks");
-		// read all tag names contained in the blocks into Hashtable
-		// - read selectvalues and store in EMMTag associated with tag name in Hashtable
-		tagNames = allBlocks.parseBlocks();
-		data.setUsedFieldsInLayout(allBlocks.getConditionFields(), tagNames);
-
-		allBlocks.replaceFixedTags(tagNames);
-
-		readBlocklist();
-		data.suspend();
 	}
 
 	/**
@@ -226,9 +208,20 @@ public class MailgunImpl implements Mailgun {
 	 */
 	protected void doExecute(Map<String, Object> opts) throws Exception {
 		data.resume();
+		if (allBlocks == null) {
+			data.logging(Log.DEBUG, "prepare", "Parse blocks");
+			// create new Block collection and store in member var if not already done by subclass
+			data.options(opts, 1);
+			allBlocks = new BlockCollection();
+			data.setBlocks(allBlocks);
+			allBlocks.setupBlockCollection(data, data.previewInput);
+			tagNames = allBlocks.parseBlocks();
+			data.setUsedFieldsInLayout(allBlocks, tagNames);
+		}
+		// blocklist handling
+		readBlocklist();
 		data.options(opts, 2);
 		data.sanityCheck(blist);
-
 		// get constructed selectvalue based on tag names in Hashtable
 		data.startExecution();
 		selectQuery = getSelectvalue(tagNames, false);
@@ -241,7 +234,7 @@ public class MailgunImpl implements Mailgun {
 		boolean hasVirtualData = false;
 
 		for (EMMTag tag : tagNames.values()) {
-			if ((!tag.globalValue) && (!tag.fixedValue)) {
+			if (!tag.globalValue) {
 				if ((tag.tagType == EMMTag.TAG_INTERNAL) && (tag.tagSpec == EMMTag.TI_EMAIL)) {
 					email_tags.add(tag);
 					email_count++;
@@ -326,7 +319,7 @@ public class MailgunImpl implements Mailgun {
 		List<String> blocklistTables = new ArrayList<>();
 		int isLocal;
 
-		if (data.dbase.exists("cust_ban_tbl")) {
+		if (Data.emm) {
 			blocklistTables.add("cust_ban_tbl");
 		}
 		blocklistTables.add("cust" + data.company.id() + "_ban_tbl");
@@ -572,7 +565,7 @@ public class MailgunImpl implements Mailgun {
 			// append all select string values of all tags
 			selectString.append("cust.customer_id, bind.user_type, cust.mailtype");
 			for (EMMTag current_tag : tagNamesParameter.values()) {
-				if ((!current_tag.globalValue) && (!current_tag.fixedValue) && (current_tag.tagType == EMMTag.TAG_DBASE)) {
+				if ((!current_tag.globalValue) && (current_tag.tagType == EMMTag.TAG_DBASE)) {
 					selectString.append(", " + current_tag.mSelectString);
 				}
 			}
@@ -607,11 +600,9 @@ public class MailgunImpl implements Mailgun {
 		}
 
 		String status_id = args[0];
-		Map<String, Object> opts = null;
+		Map<String, Object> opts = new HashMap <> ();
 
 		if (args.length > 1) {
-			opts = new HashMap<>();
-
 			/*
 			Map <String, Object>	stc = new HashMap <> ();
 			stc.put ("_tg", "35421,1234");

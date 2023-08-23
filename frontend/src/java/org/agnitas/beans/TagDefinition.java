@@ -121,8 +121,6 @@ public class TagDefinition {
 
 	/**
 	 * Only COMPLEX and FLOW tags have effective mandatory parameters
-	 * 
-	 * @return
 	 */
 	public List<String> getMandatoryParameters() {
 		if (mandatoryParameters == null) {
@@ -138,8 +136,6 @@ public class TagDefinition {
 
 	/**
 	 * Only COMPLEX and FLOW tags have effective mandatory parameters
-	 * 
-	 * @param mandatoryParameters
 	 */
 	public void setMandatoryParameters(List<String> mandatoryParameters) {
 		this.mandatoryParameters = mandatoryParameters;

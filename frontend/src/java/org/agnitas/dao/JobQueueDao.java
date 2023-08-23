@@ -12,6 +12,7 @@ package org.agnitas.dao;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import org.agnitas.service.JobDto;
 
@@ -54,4 +55,6 @@ public interface JobQueueDao {
 	void acknowledgeErroneousJob(int idToAcknowledge);
 
 	void storeDynamicJobParameter(int jobID, String parameterName, String parameterValue);
+
+	List<Map<String, Object>> getLastJobResults(int job_id);
 }

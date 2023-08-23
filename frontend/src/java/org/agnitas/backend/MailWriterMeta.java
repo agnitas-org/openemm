@@ -10,9 +10,6 @@
 
 package org.agnitas.backend;
 
-import jakarta.mail.internet.MimeUtility;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -29,6 +26,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.zip.GZIPOutputStream;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+
 import org.agnitas.util.Bit;
 import org.agnitas.util.Log;
 import org.agnitas.util.Str;
@@ -39,6 +39,8 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+
+import jakarta.mail.internet.MimeUtility;
 
 /**
  * Implements writing of mailing information to
@@ -207,7 +209,7 @@ public class MailWriterMeta extends MailWriter {
 				ok = (Boolean) XMLRPCClient.invoke(Data.syscfg.get ("direct-path-server", "localhost"), Data.syscfg.get ("direct-path-port", 9400), 2000, "unpack", fname);
 				data.logging(Log.DEBUG, "trigger", "Trigger direct path " + (ok ? "succeeded" : "failed"));
 			} catch (Exception e) {
-				data.logging(Log.ERROR, "trigger", e.toString());
+				data.logging(Log.DEBUG, "trigger", "Trigger direct path not reachable");
 			}
 		}
 	}
@@ -513,7 +515,7 @@ public class MailWriterMeta extends MailWriter {
 
 			switch (tag.tagType) {
 				case EMMTag.TAG_INTERNAL:
-					if (tag.fixedValue || tag.globalValue) {
+					if (tag.globalValue) {
 						if (!found) {
 							writer.opennode("global_tags");
 							found = true;
@@ -549,7 +551,7 @@ public class MailWriterMeta extends MailWriter {
 		urls();
 		writer.empty();
 		writer.cflush();
-
+		
 		writer.opennode("receivers");
 	}
 
@@ -667,14 +669,14 @@ public class MailWriterMeta extends MailWriter {
 
 			switch (tag.tagType) {
 				case EMMTag.TAG_DBASE:
-					if (!(tag.fixedValue || tag.globalValue)) {
+					if (!tag.globalValue) {
 						value = tag.getTagValue();
 					} else {
 						value = null;
 					}
 					break;
 				case EMMTag.TAG_INTERNAL:
-					if (!(tag.fixedValue || tag.globalValue)) {
+					if (!tag.globalValue) {
 						value = tag.makeInternalValue(data, cinfo);
 					} else {
 						value = null;
@@ -909,6 +911,9 @@ public class MailWriterMeta extends MailWriter {
 		options.add("-r");
 		if (data.previewAnon) {
 			options.add("-a");
+			if (data.previewAnonPreserveLinks) {
+				options.add ("-A");
+			}
 		}
 		if (data.previewSelector != null) {
 			options.add("-s" + data.previewSelector);

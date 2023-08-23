@@ -27,6 +27,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TimeZone;
 
+import com.agnitas.emm.core.useractivitylog.dao.RestfulUserActivityLogDao;
 import org.agnitas.beans.BindingEntry;
 import org.agnitas.beans.DatasourceDescription;
 import org.agnitas.beans.ImportProfile;
@@ -48,7 +49,6 @@ import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.recipient.RecipientUtils;
 import org.agnitas.emm.core.recipient.service.SubscriberLimitCheck;
 import org.agnitas.emm.core.recipient.service.SubscriberLimitExceededException;
-import org.agnitas.emm.core.useractivitylog.dao.UserActivityLogDao;
 import org.agnitas.service.ProfileImportWorker;
 import org.agnitas.service.ProfileImportWorkerFactory;
 import org.agnitas.util.AgnUtils;
@@ -108,7 +108,7 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 	
 	private static final String IMPORT_FILE_DIRECTORY = AgnUtils.getTempDir() + File.separator + "RecipientImport";
 
-	private UserActivityLogDao userActivityLogDao;
+	private RestfulUserActivityLogDao userActivityLogDao;
 	private ComRecipientDao recipientDao;
 	private ComBindingEntryDao bindingEntryDao;
 	private ColumnInfoService columnInfoService;
@@ -120,7 +120,7 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 	private SubscriberLimitCheck subscriberLimitCheck;
 
 	@Required
-	public void setUserActivityLogDao(UserActivityLogDao userActivityLogDao) {
+	public void setUserActivityLogDao(RestfulUserActivityLogDao userActivityLogDao) {
 		this.userActivityLogDao = userActivityLogDao;
 	}
 	
@@ -195,10 +195,6 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 	/**
 	 * Return a single or multiple customer data sets
 	 * 
-	 * @param request
-	 * @param admin
-	 * @return
-	 * @throws Exception
 	 */
 	private Object getCustomerData(HttpServletRequest request, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.RECIPIENT_SHOW)) {
@@ -223,7 +219,7 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 			if (!configService.getBooleanValue(ConfigValue.AllowUnnormalizedEmails, admin.getCompanyID())) {
 				requestedRecipientKeyValue = AgnUtils.normalizeEmail(requestedRecipientKeyValue);
 			}
-			customerIDs = recipientDao.getRecipientIDs(admin.getCompanyID(), "email",requestedRecipientKeyValue);
+			customerIDs = recipientDao.getRecipientIDs(admin.getCompanyID(), "email", requestedRecipientKeyValue);
 		} else if (AgnUtils.isNumber(requestedRecipientKeyValue)) {
 			customerIDs = recipientDao.getRecipientIDs(admin.getCompanyID(), "customer_id", requestedRecipientKeyValue);
 		} else {
@@ -231,8 +227,8 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 		}
 		
 		userActivityLogDao.addAdminUseOfFeature(admin, "restful/recipient", new Date());
-		userActivityLogDao.writeUserActivityLog(admin, "restful/recipient GET", requestedRecipientKeyValue);
-		
+		writeActivityLog(requestedRecipientKeyValue, request, admin);
+
 		CaseInsensitiveMap<String, ProfileField> profileFields = columnInfoService.getColumnInfoMap(admin.getCompanyID(), admin.getAdminID());
 		
 		DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(DateUtilities.ISO_8601_DATETIME_FORMAT).withZone(TimeZone.getTimeZone(admin.getAdminTimezone()).toZoneId());
@@ -288,7 +284,7 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 	private void addReceivedMailingsToCustomer(int companyID, JsonObject customerJsonObject) {
 		int customerID = ((Number) customerJsonObject.get("customer_id")).intValue();
 		JsonArray mailingsJsonArray = new JsonArray();
-		for (ComRecipientMailing mailing : recipientDao.getMailingsSentToRecipient(customerID, companyID)) {
+		for (ComRecipientMailing mailing : recipientDao.getMailingsDeliveredToRecipient(customerID, companyID)) {
 			JsonObject mailingJsonObject = new JsonObject();
 
 			mailingJsonObject.add("mailing_id", mailing.getMailingId());
@@ -314,10 +310,6 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 	/**
 	 * Delete a single or multiple customer data sets
 	 * 
-	 * @param request
-	 * @param admin
-	 * @return
-	 * @throws Exception
 	 */
 	private Object deleteCustomer(HttpServletRequest request, byte[] requestData, File requestDataFile, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.RECIPIENT_DELETE)) {
@@ -342,8 +334,8 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 			}
 			
 			userActivityLogDao.addAdminUseOfFeature(admin, "restful/recipient", new Date());
-			userActivityLogDao.writeUserActivityLog(admin, "restful/recipient DELETE", requestedRecipientKeyValue);
-			
+			writeActivityLog(requestedRecipientKeyValue, request, admin);
+
 			if (customerIDs.size() > 0) {
 				recipientDao.deleteRecipients(admin.getCompanyID(), customerIDs);
 				return customerIDs.size() + " customer datasets deleted";
@@ -410,11 +402,6 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 	/**
 	 * Create a new customer entry (also bulk/multiple)
 	 * 
-	 * @param request
-	 * @param requestDataFile
-	 * @param admin
-	 * @return
-	 * @throws Exception
 	 */
 	private Object createNewCustomer(HttpServletRequest request, byte[] requestData, File requestDataFile, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.RECIPIENT_CREATE)) {
@@ -595,8 +582,8 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 					}
 					
 					userActivityLogDao.addAdminUseOfFeature(admin, "restful/recipient", new Date());
-					userActivityLogDao.writeUserActivityLog(admin, "restful/recipient POST", "" + recipient.getCustomerID());
-					
+					writeActivityLog(String.valueOf(recipient.getCustomerID()), request, admin);
+
 					DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(DateUtilities.ISO_8601_DATETIME_FORMAT).withZone(TimeZone.getTimeZone(admin.getAdminTimezone()).toZoneId());
 					
 					CaseInsensitiveMap<String, Object> customerDataMap = recipientDao.getCustomerData(admin.getCompanyID(), recipient.getCustomerID());
@@ -692,8 +679,8 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 					ImportStatus status = importRecipients(admin, importMode, keyColumn, mailinglistsToSubscribe, temporaryImportFile, requestUUID, newMediaTypes);
 					
 					userActivityLogDao.addAdminUseOfFeature(admin, "restful/recipient", new Date());
-					userActivityLogDao.writeUserActivityLog(admin, "restful/recipient POST", "IMPORT");
-					
+					writeActivityLog("IMPORT", request, admin);
+
 					JsonObject result = new JsonObject();
 					if (status.getFatalError() != null) {
 						throw new RestfulClientException(status.getFatalError());
@@ -724,11 +711,6 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 	/**
 	 * Create a new customer entry or update an existing customer entry (also bulk/multiple)
 	 * 
-	 * @param request
-	 * @param requestDataFile
-	 * @param admin
-	 * @return
-	 * @throws Exception
 	 */
 	private Object createOrUpdateCustomer(HttpServletRequest request, byte[] requestData, File requestDataFile, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.RECIPIENT_CHANGE)) {
@@ -1019,8 +1001,8 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 					}
 					
 					userActivityLogDao.addAdminUseOfFeature(admin, "restful/recipient", new Date());
-					userActivityLogDao.writeUserActivityLog(admin, "restful/recipient PUT", "" + recipient.getCustomerID());
-					
+					writeActivityLog(String.valueOf(recipient.getCustomerID()), request, admin);
+
 					DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(DateUtilities.ISO_8601_DATETIME_FORMAT).withZone(TimeZone.getTimeZone(admin.getAdminTimezone()).toZoneId());
 
 					CaseInsensitiveMap<String, Object> customerDataMap = recipientDao.getCustomerData(admin.getCompanyID(), recipient.getCustomerID());
@@ -1116,8 +1098,8 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 					ImportStatus status = importRecipients(admin, importMode, keyColumn, mailinglistsToSubscribe, temporaryImportFile, requestUUID, newMediaTypes);
 					
 					userActivityLogDao.addAdminUseOfFeature(admin, "restful/recipient", new Date());
-					userActivityLogDao.writeUserActivityLog(admin, "restful/recipient PUT", "IMPORT");
-					
+					writeActivityLog("IMPORT", request, admin);
+
 					JsonObject result = new JsonObject();
 					if (status.getFatalError() != null) {
 						throw new RestfulClientException(status.getFatalError());
@@ -1210,5 +1192,9 @@ public class RecipientRestfulServiceHandler implements RestfulServiceHandler {
 	@Override
 	public ResponseType getResponseType() {
 		return ResponseType.JSON;
+	}
+
+	private void writeActivityLog(String description, HttpServletRequest request, Admin admin) {
+		writeActivityLog(userActivityLogDao, description, request, admin);
 	}
 }

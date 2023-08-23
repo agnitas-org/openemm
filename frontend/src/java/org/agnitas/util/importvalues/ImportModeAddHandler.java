@@ -25,6 +25,7 @@ import org.agnitas.dao.UserStatus;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.recipient.RecipientUtils;
+import org.agnitas.emm.core.velocity.Constants;
 import org.agnitas.service.ImportException;
 import org.agnitas.util.DbColumnType;
 import org.agnitas.util.DbUtilities;
@@ -181,7 +182,7 @@ public class ImportModeAddHandler implements ImportModeHandler {
 		                    requestParams.put("agnFN", "ProfileImport");
 		                    
 		                    params.put("requestParameters", requestParams);
-		        			params.put("actionErrors", actionOperationErrors);
+		        			params.put(Constants.ACTION_OPERATION_ERRORS_CONTEXT_NAME, actionOperationErrors);
 		        			
 		                    if (emmActionService != null) {
 		                    	emmActionService.executeActions(importProfile.getActionForNewRecipients(), importProfile.getCompanyId(), params, actionOperationErrors);

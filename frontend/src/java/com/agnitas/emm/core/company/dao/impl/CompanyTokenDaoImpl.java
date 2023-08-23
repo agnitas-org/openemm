@@ -25,15 +25,12 @@ import com.agnitas.emm.core.servicemail.UnknownCompanyIdException;
 
 public final class CompanyTokenDaoImpl extends BaseDaoImpl implements CompanyTokenDao {
 
-	/** The logger. */
-	private static final transient Logger LOGGER = LogManager.getLogger(CompanyTokenDaoImpl.class);
+	private static final Logger LOGGER = LogManager.getLogger(CompanyTokenDaoImpl.class);
 	
 	@Override
 	public final int getCompanyIdByToken(final String token) throws UnknownCompanyTokenException {
 		final List<Integer> list = select(LOGGER, "SELECT company_id FROM company_tbl WHERE company_token=?", IntegerRowMapper.INSTANCE, token);
-		
-		
-		
+
 		// For security reasons we also report a UnknownCompanyTokenException when token is assigned to more than 1 company
 		if(list.size() != 1) {
 			if(LOGGER.isInfoEnabled()) {
@@ -61,5 +58,4 @@ public final class CompanyTokenDaoImpl extends BaseDaoImpl implements CompanyTok
 	public final void assignToken(final int companyID, final String token) {
 		update(LOGGER, "UPDATE company_tbl SET company_token=? WHERE company_id=?", token, companyID);
 	}
-
 }

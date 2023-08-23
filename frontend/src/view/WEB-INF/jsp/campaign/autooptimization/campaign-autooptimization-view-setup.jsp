@@ -1,4 +1,5 @@
 <%@ page contentType="text/html; charset=utf-8" import="com.agnitas.mailing.autooptimization.beans.ComOptimization" buffer="64kb" errorPage="/error.do" %>
+<%@ page import="com.agnitas.mailing.autooptimization.beans.impl.AutoOptimizationStatus" %>
 <%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
@@ -6,11 +7,11 @@
 
 <%--@elvariable id="optimizationForm" type="com.agnitas.mailing.autooptimization.form.OptimizationForm"--%>
 
-<c:set var="STATUS_NOT_STARTED" value="<%=ComOptimization.STATUS_NOT_STARTED%>" scope="request" />
-<c:set var="STATUS_TEST_SEND" value="<%=ComOptimization.STATUS_TEST_SEND%>" scope="request" />
-<c:set var="STATUS_EVAL_IN_PROGRESS" value="<%=ComOptimization.STATUS_EVAL_IN_PROGRESS%>" scope="request" />
-<c:set var="STATUS_FINISHED" value="<%=ComOptimization.STATUS_FINISHED%>" scope="request" />
-<c:set var="STATUS_SCHEDULED" value="<%=ComOptimization.STATUS_SCHEDULED%>" scope="page" />
+<c:set var="STATUS_NOT_STARTED" value="<%=AutoOptimizationStatus.NOT_STARTED.getCode()%>" scope="request" />
+<c:set var="STATUS_TEST_SEND" value="<%=AutoOptimizationStatus.TEST_SEND.getCode()%>" scope="request" />
+<c:set var="STATUS_EVAL_IN_PROGRESS" value="<%=AutoOptimizationStatus.EVAL_IN_PROGRESS.getCode()%>" scope="request" />
+<c:set var="STATUS_FINISHED" value="<%=AutoOptimizationStatus.FINISHED.getCode()%>" scope="request" />
+<c:set var="STATUS_SCHEDULED" value="<%=AutoOptimizationStatus.SCHEDULED.getCode()%>" scope="page" />
 
 <c:set var="admin" value="${emm.admin}" scope="request" />
 

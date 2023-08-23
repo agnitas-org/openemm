@@ -21,6 +21,7 @@ import jakarta.servlet.http.HttpServletResponse;
 
 import org.agnitas.util.HttpUtils;
 
+// Remove after GWUA-5173 has been successfully tested
 public class TextFileDownload extends HttpServlet {
 
     private static final long serialVersionUID = 5844323149267914354L;

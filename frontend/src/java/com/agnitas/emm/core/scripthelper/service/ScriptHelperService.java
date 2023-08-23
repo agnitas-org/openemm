@@ -12,7 +12,6 @@ package com.agnitas.emm.core.scripthelper.service;
 
 import java.util.Map;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.preview.Page;
 import org.agnitas.preview.Preview;
 import org.agnitas.preview.PreviewFactory;
@@ -30,7 +29,7 @@ public class ScriptHelperService {
 	 * @param customerID
 	 * @return
 	 */
-	public int getLastSentMailingID(@VelocityCheck int companyID, int customerID) {
+	public int getLastSentMailingID(int companyID, int customerID) {
 		int returnValue = -1;
 		returnValue = mailingDao.getLastSentMailing(companyID, customerID);
 		return returnValue;
@@ -43,12 +42,12 @@ public class ScriptHelperService {
 	 * @param mailingListID
 	 * @return
 	 */
-	public int getLastSentWorldMailingByCompanyAndMailinglist(@VelocityCheck int companyID, int mailingListID) {
+	public int getLastSentWorldMailingByCompanyAndMailinglist(int companyID, int mailingListID) {
 		return mailingDao.getLastSentWorldMailingByCompanyAndMailinglist(companyID, mailingListID);
 	}
 	
 	
-	public Map <String, Object> getAnonLastSentMailing(@VelocityCheck int companyID, int customerID) throws Exception {
+	public Map <String, Object> getAnonLastSentMailing(int companyID, int customerID) throws Exception {
 		int lastNewsletter = -1;
 		lastNewsletter = getLastSentMailingID(companyID, customerID);
 		if (lastNewsletter == -1) {

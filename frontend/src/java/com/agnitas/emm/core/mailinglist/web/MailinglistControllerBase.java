@@ -211,7 +211,7 @@ public class MailinglistControllerBase implements XssCheckAware {
             popups.success("default.selection.deleted");
             userActivityLogService.writeUserActivityLog(admin, "delete mailing list", getDescription(mailinglistId, companyId));
         } else {
-            popups.alert("error.mailinglist.cannot_delete");
+            popups.alert("GWUA.error.delete.last.mailinglist");
             return MESSAGES_VIEW;
         }
         return "redirect:/mailinglist/list.action";
@@ -305,9 +305,9 @@ public class MailinglistControllerBase implements XssCheckAware {
 	}
 
     private boolean isMailinglistsDependent(Set<Integer> mailinglistIds, int companyId, Model model) {
-        List<Mailing> affectedMailinglists = mailinglistService.getUsedMailings(mailinglistIds, companyId);
-        if (!affectedMailinglists.isEmpty()) {
-            addAffectedMailingsToModel(model, affectedMailinglists);
+        List<Mailing> affectedMailings = mailinglistService.getUsedMailings(mailinglistIds, companyId);
+        if (!affectedMailings.isEmpty()) {
+            addAffectedMailingsToModel(model, affectedMailings);
             return true;
         }
         return false;

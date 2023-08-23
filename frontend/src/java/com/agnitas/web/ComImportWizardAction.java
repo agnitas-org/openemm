@@ -21,7 +21,6 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -600,7 +599,7 @@ public final class ComImportWizardAction extends StrutsActionBase {
                 comImportWizardForm.getErrorMap().remove(ImportErrorType.NUMERIC_ERROR);
                 comImportWizardForm.getErrorMap().remove(ImportErrorType.STRUCTURE_ERROR);
 
-                comImportWizardForm.addDbInsertStatusMessage("import.csv_completed");
+                comImportWizardForm.addDbInsertStatusMessageAndParameters("import.csv_completed");
                 comImportWizardForm.setDbInsertStatus(1000);
 
                 req.setAttribute("importIsDone", true);
@@ -629,16 +628,16 @@ public final class ComImportWizardAction extends StrutsActionBase {
             errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage(e.getErrorMessageKey(), e.getAdditionalErrorData()));
             // do not refresh when an error has occurred
             comImportWizardForm.setError(true);
-            comImportWizardForm.getDbInsertStatusMessages().clear();
-            comImportWizardForm.addDbInsertStatusMessage(e.getErrorMessageKey());
+            comImportWizardForm.clearDbInsertStatusMessagesAndParameters();
+            comImportWizardForm.addDbInsertStatusMessageAndParameters(e.getErrorMessageKey(), e.getAdditionalErrorData());
             req.setAttribute("importError", e.getMessage(AgnUtils.getAdmin(req).getLocale()));
         } catch (Exception e) {
             logger.error("classicimport: " + e, e);
             errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.exception", configService.getValue(ConfigValue.SupportEmergencyUrl)));
             // do not refresh when an error has occurred
             comImportWizardForm.setError(true);
-            comImportWizardForm.getDbInsertStatusMessages().clear();
-            comImportWizardForm.addDbInsertStatusMessage("error.exception");
+            comImportWizardForm.clearDbInsertStatusMessagesAndParameters();
+            comImportWizardForm.addDbInsertStatusMessageAndParameters("error.exception", configService.getValue(ConfigValue.SupportEmergencyUrl));
         }
 
         return mapping.findForward("view_status");
@@ -807,7 +806,7 @@ public final class ComImportWizardAction extends StrutsActionBase {
             profileImportWorker.setMaxGenderValue(ConfigService.MAX_GENDER_VALUE_BASIC);
         }
 
-        aForm.setDbInsertStatusMessages(new LinkedList<>());
+        aForm.clearDbInsertStatusMessagesAndParameters();
 
         return workerExecutorService.submit(profileImportWorker);
     }

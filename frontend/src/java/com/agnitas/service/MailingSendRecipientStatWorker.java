@@ -14,7 +14,6 @@ import java.io.Serializable;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.beans.Mailing;
 import com.agnitas.dao.ComMailingDao;
@@ -28,7 +27,7 @@ public class MailingSendRecipientStatWorker implements Callable<Map<Integer, Int
     private int mailingId;
     private int companyId;
 
-    public MailingSendRecipientStatWorker(ComMailingDao mailingDao, MailingStatisticsDao mailingStatisticsDao, int mailingId, @VelocityCheck int companyId) {
+    public MailingSendRecipientStatWorker(ComMailingDao mailingDao, MailingStatisticsDao mailingStatisticsDao, int mailingId, int companyId) {
         this.mailingDao = mailingDao;
         this.mailingStatisticsDao = mailingStatisticsDao;
         this.mailingId = mailingId;

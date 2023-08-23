@@ -218,7 +218,7 @@
                         <emm:ShowByPermission token="${permToken}">
                             <button type="button" class="btn btn-primary btn-large" data-sync-from="\#{{= id }}"
                                     data-sync-to="\#{{= target }}" data-dismiss="modal"
-                                    data-form-target='#mailingSettingsForm' data-action='save' data-controls-group='save'>
+                                    data-form-target='#mailingSettingsForm' data-form-submit-event data-controls-group='save'>
                                 <i class="icon icon-save"></i>
                                 <span class="text"><mvc:message code="button.Save"/></span>
                             </button>

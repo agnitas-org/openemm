@@ -65,6 +65,7 @@ public class AbstractVelocityWrapper implements VelocityWrapper {
 		
 		ve.setProperty(RuntimeConstants.INPUT_ENCODING, "UTF-8");
 		ve.setProperty(RuntimeConstants.EVENTHANDLER_INCLUDE, "org.agnitas.emm.core.velocity.IncludeParsePreventionHandler");
+		ve.setProperty(RuntimeConstants.EVENTHANDLER_METHODEXCEPTION, "org.agnitas.emm.core.velocity.ThrowingMethodExceptionEventHandler");
 		
         companyAccessCheck.checkCompanyAccess(companyId, getCompanyId());
 		

@@ -96,14 +96,14 @@
                 {
                     "headerName": "<mvc:message code='Mailinglist'/>",
                     "editable": false,
-                    "cellRenderer": "StringCellRenderer",
+                    "cellRenderer": "NotEscapedStringCellRenderer",
                     "field": "shortname",
                     "type": "textCaseInsensitiveColumn"
                 },
                 {
                     "headerName": "<mvc:message code='default.description'/>",
                     "editable": false,
-                    "cellRenderer": "StringCellRenderer",
+                    "cellRenderer": "NotEscapedStringCellRenderer",
                     "field": "description",
                     "type": "textCaseInsensitiveColumn"
                 },

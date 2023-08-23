@@ -10,6 +10,35 @@
 
 package com.agnitas.reporting.birt.external.dataset;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.stream.Collectors;
+import javax.sql.DataSource;
+
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.emm.common.MailingType;
+import com.agnitas.reporting.birt.external.beans.CompareStatCsvRow;
+import com.agnitas.reporting.birt.external.beans.CompareStatRow;
+import com.agnitas.reporting.birt.external.beans.LightTarget;
+import com.agnitas.reporting.birt.external.dao.ComCompanyDao;
+import com.agnitas.reporting.birt.external.dao.impl.ComCompanyDaoImpl;
+import org.agnitas.beans.BindingEntry.UserType;
+import org.agnitas.beans.MailingBase;
+import org.agnitas.beans.impl.MailingBaseImpl;
+import org.agnitas.util.DbUtilities;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.jdbc.core.JdbcTemplate;
 import static com.agnitas.reporting.birt.external.dataset.CommonKeys.ALL_SUBSCRIBERS_INDEX;
 import static com.agnitas.reporting.birt.external.dataset.CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID;
 import static com.agnitas.reporting.birt.external.dataset.CommonKeys.BOUNCES;
@@ -27,40 +56,12 @@ import static com.agnitas.reporting.birt.external.dataset.CommonKeys.OPT_OUTS_IN
 import static com.agnitas.reporting.birt.external.dataset.CommonKeys.REVENUE;
 import static com.agnitas.reporting.birt.external.dataset.CommonKeys.REVENUE_INDEX;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.stream.Collectors;
-
-import javax.sql.DataSource;
-
-import org.agnitas.beans.BindingEntry.UserType;
-import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.agnitas.util.DbUtilities;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.jdbc.core.JdbcTemplate;
-
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.emm.common.MailingType;
-import com.agnitas.reporting.birt.external.beans.CompareStatCsvRow;
-import com.agnitas.reporting.birt.external.beans.CompareStatRow;
-import com.agnitas.reporting.birt.external.beans.LightTarget;
-import com.agnitas.reporting.birt.external.dao.ComCompanyDao;
-import com.agnitas.reporting.birt.external.dao.impl.ComCompanyDaoImpl;
-
 public class MailingCompareDataSet extends ComparisonBirtDataSet  {
 
 	private static final Logger logger = LogManager.getLogger(MailingCompareDataSet.class);
 
     public static final int TARGET_NAME_LENGTH_MAX = 28;
+    private final MailingSummaryDataSet mailingSummaryDataSet = new MailingSummaryDataSet();
     
     protected static class TempRow {
 		private String category;
@@ -146,7 +147,7 @@ public class MailingCompareDataSet extends ComparisonBirtDataSet  {
         }
     }
 
-    public int prepareReport(String mailingIdsStr, @VelocityCheck int companyId, String targetsStr, String recipientType) throws Exception {
+    public int prepareReport(String mailingIdsStr, int companyId, String targetsStr, String recipientType) throws Exception {
 		int tempTableID = createTempTable();
         if (!StringUtils.containsOnly(mailingIdsStr, "1234567890,")) {
             logger.error("Wrong format of mailing-IDs string");
@@ -173,7 +174,7 @@ public class MailingCompareDataSet extends ComparisonBirtDataSet  {
 	}
 
 	@DaoUpdateReturnValueCheck
-    private void updateRates(String mailingIdsStr, int tempTableID, @VelocityCheck int companyId, List<LightTarget> targets) throws Exception {
+    private void updateRates(String mailingIdsStr, int tempTableID, int companyId, List<LightTarget> targets) throws Exception {
         String categoriesNeedRates = BOUNCES_INDEX + ", " + CLICKER_INDEX + ", " + OPENERS_INDEX + ", " + OPT_OUTS_INDEX;
         String[] mailings = mailingIdsStr.split(",");
         for (String mailingIdStr : mailings) {
@@ -216,6 +217,37 @@ public class MailingCompareDataSet extends ComparisonBirtDataSet  {
     public List<CompareStatRow> getSummaryData(int tempTableID, Locale locale) throws Exception {
         return getResultsFromTempTable(tempTableID, locale);
 	}
+    
+    public List<CompareStatRow> getData(String mailingIds, int companyID) throws Exception {
+        List<CompareStatRow> result = new LinkedList<>();
+
+        List<MailingBase> mailings = getMailingsBaseInfo(mailingIds);
+        for (MailingBase mailing : mailings) {
+            int tempTableID = mailingSummaryDataSet.prepareReport(mailing.getId(), companyID, "", CommonKeys.TYPE_ALL_SUBSCRIBERS, true, "", "", false);
+            List<MailingSummaryDataSet.MailingSummaryRow> summaryData = mailingSummaryDataSet.getSummaryData(tempTableID);
+
+            summaryData.forEach(summaryStatRow -> {
+                CompareStatRow compareStatRow = summaryRowToCompareRow(summaryStatRow);
+                compareStatRow.setMailingId(mailing.getId());
+                compareStatRow.setMailingName(mailing.getShortname());
+                compareStatRow.setSendDate(mailing.getSenddate());
+                result.add(compareStatRow);
+            });
+        }
+        return result;
+    }
+    
+    private CompareStatRow summaryRowToCompareRow(MailingSummaryDataSet.MailingSummaryRow summaryStatRow) {
+        CompareStatRow compareStatRow = new CompareStatRow();
+        compareStatRow.setCategory(summaryStatRow.getCategory());
+        compareStatRow.setTargetGroupName(summaryStatRow.getTargetgroup());
+        compareStatRow.setTargetShortName(createTargetNameShort(compareStatRow.getTargetGroupName()));
+        compareStatRow.setCategoryindex(summaryStatRow.getCategoryindex());
+        compareStatRow.setTargetGroupIndex(summaryStatRow.getTargetgroupindex());
+        compareStatRow.setCount(summaryStatRow.getCount());
+        compareStatRow.setRate(summaryStatRow.getRate());
+        return compareStatRow;
+    }
 
     public List<CompareStatCsvRow> getCsvSummaryData(int tempTableID, Locale locale) throws Exception {
         Map<String, CompareStatCsvRow> summaryCsvData = new HashMap<>();
@@ -273,7 +305,7 @@ public class MailingCompareDataSet extends ComparisonBirtDataSet  {
 		return new ArrayList<>(summaryCsvData.values());
 	}
 
-    private void insertSendIntoTempTable(String mailingIds, int tempTableID, @VelocityCheck int companyID, List<LightTarget> targets, String recipientsType) throws Exception {
+    private void insertSendIntoTempTable(String mailingIds, int tempTableID, int companyID, List<LightTarget> targets, String recipientsType) throws Exception {
         if (CollectionUtils.isNotEmpty(targets) && isMailingTrackingActivated(companyID)) {
             StringBuilder queryBuilder = new StringBuilder("SELECT mailing_id, ");
 			
@@ -325,7 +357,7 @@ public class MailingCompareDataSet extends ComparisonBirtDataSet  {
                 DELIVERED_EMAILS, DELIVERED_EMAILS_INDEX, targets, false, true);
 	}
 	
-	private void insertDeliveredIntoTempTable(String mailingIds, int tempTableId, @VelocityCheck int companyId, List<LightTarget> targets, String recipientsType) throws Exception {
+	private void insertDeliveredIntoTempTable(String mailingIds, int tempTableId, int companyId, List<LightTarget> targets, String recipientsType) throws Exception {
         List<Integer> mailingIdsParsed = Arrays.stream(StringUtils.split(mailingIds, ","))
                 .map(NumberUtils::toInt)
                 .filter(v -> v != 0)
@@ -413,12 +445,12 @@ public class MailingCompareDataSet extends ComparisonBirtDataSet  {
         updateEmbedded(logger, insertSql, category, categoryIndex, mailingId, value, targetgroupId, targetgroup, targetgroupIndex);
 	}
 
-    private void insertOpensIntoTempTable(String mailingIds, int tempTableID, @VelocityCheck int companyID, List<LightTarget> lightTargets, String recipientsType) throws Exception {
+    private void insertOpensIntoTempTable(String mailingIds, int tempTableID, int companyID, List<LightTarget> lightTargets, String recipientsType) throws Exception {
         String openQuery = createOpenQuery(lightTargets, recipientsType);
         insertCategoryDataToTempTable(mailingIds, companyID, openQuery, tempTableID, OPENERS, OPENERS_INDEX, lightTargets, true, true);
     }
 
-    private void insertClicksIntoTempTable(String mailingIds, int tempTableID, @VelocityCheck int companyID, List<LightTarget> lightTargets, String recipientsType) throws Exception {
+    private void insertClicksIntoTempTable(String mailingIds, int tempTableID, int companyID, List<LightTarget> lightTargets, String recipientsType) throws Exception {
         if (!lightTargets.isEmpty()) {
             String queryForTargets = createClicksQueryForTargets(recipientsType);
             for (LightTarget target : lightTargets) {
@@ -431,7 +463,7 @@ public class MailingCompareDataSet extends ComparisonBirtDataSet  {
         insertCategoryDataToTempTable(mailingIds, companyID, clicksQuery, tempTableID, CLICKER, CLICKER_INDEX, lightTargets, false, true);
     }
 
-    private void insertOptOutsIntoTempTable(String mailingIds, int tempTableID, @VelocityCheck int companyID, List<LightTarget> targets, String recipientsType) throws Exception {
+    private void insertOptOutsIntoTempTable(String mailingIds, int tempTableID, int companyID, List<LightTarget> targets, String recipientsType) throws Exception {
 		if (!targets.isEmpty()) {
             String bouncesQuery = createOptOutsQueryForTargets(recipientsType, targets);
             insertCategoryDataToTempTable(mailingIds, companyID, bouncesQuery, tempTableID, OPT_OUTS, OPT_OUTS_INDEX, targets, true, false);
@@ -440,7 +472,7 @@ public class MailingCompareDataSet extends ComparisonBirtDataSet  {
         insertCategoryDataToTempTable(mailingIds, companyID, bouncesQuery, tempTableID, OPT_OUTS, OPT_OUTS_INDEX, targets, false, true);
     }
 
-    private void insertBouncesIntoTempTable(String mailingIds, int tempTableID, @VelocityCheck int companyID, List<LightTarget> targets, String recipientsType) throws Exception {
+    private void insertBouncesIntoTempTable(String mailingIds, int tempTableID, int companyID, List<LightTarget> targets, String recipientsType) throws Exception {
         String oldMails = "";
         String newMails = "";
         Map<Integer, Boolean> mailingsSendAge = getMailingBouncesExpire(companyID, mailingIds);
@@ -468,7 +500,7 @@ public class MailingCompareDataSet extends ComparisonBirtDataSet  {
     }
 
 	@DaoUpdateReturnValueCheck
-    private void insertBouncesFromBenchmarkTable(String mailingIds, @VelocityCheck int companyID, int tempTableID, List <LightTarget> targets) throws Exception {
+    private void insertBouncesFromBenchmarkTable(String mailingIds, int companyID, int tempTableID, List <LightTarget> targets) throws Exception {
         String query = "SELECT COALESCE(bounces_hard, 0) bounces, mailing_id FROM benchmark_mailing_stat_tbl " +
                 "WHERE company_id = ? and mailing_id in (" + mailingIds + ") ORDER BY days_between DESC";
         JdbcTemplate template = new JdbcTemplate(getDataSource());
@@ -502,7 +534,7 @@ public class MailingCompareDataSet extends ComparisonBirtDataSet  {
         }
     }
 
-    private void insertRevenueIntoTempTable(String mailingIds, int tempTableID, @VelocityCheck int companyID, List<LightTarget> targets, String recipientsType) throws Exception {
+    private void insertRevenueIntoTempTable(String mailingIds, int tempTableID, int companyID, List<LightTarget> targets, String recipientsType) throws Exception {
 		ComCompanyDao companyDao = new ComCompanyDaoImpl();
 		((ComCompanyDaoImpl) companyDao).setDataSource(getDataSource());
         if (DbUtilities.checkIfTableExists(getDataSource(), "rdirlog_" + companyID + "_val_num_tbl")) {
@@ -519,7 +551,7 @@ public class MailingCompareDataSet extends ComparisonBirtDataSet  {
 	}
 
 	@DaoUpdateReturnValueCheck
-    private void insertCategoryDataToTempTable(String mailingIds, @VelocityCheck int companyID, String query, int tempTableID, String category, int categoryIndex,
+    private void insertCategoryDataToTempTable(String mailingIds, int companyID, String query, int tempTableID, String category, int categoryIndex,
                                                List <LightTarget> targets, boolean insertTargets, boolean insertTotal) throws Exception {
         String insertQuery = getTempInsertQuery(tempTableID);
 		JdbcTemplate template = new JdbcTemplate(getDataSource());
@@ -954,4 +986,23 @@ public class MailingCompareDataSet extends ComparisonBirtDataSet  {
 	private String getTempTableName(int id) {
 		return "tmp_report_aggregation_" + id + "_tbl";
 	}
+
+    public List<MailingBase> getMailingsBaseInfo(String mailingIdsStr) {
+        List<MailingBase> mailings = select(logger,
+                "SELECT a.mailing_id, a.shortname, a.description, MIN(c.mintime) send_date " +
+                        "FROM mailing_tbl a " +
+                        "   LEFT JOIN mailing_account_sum_tbl c ON (a.mailing_id = c.mailing_id) " +
+                        "WHERE a.mailing_id IN (" + mailingIdsStr + ") " +
+                        "GROUP BY a.mailing_id, a.shortname, a.description ORDER BY a.mailing_id",
+                (rs, i) -> {
+                    MailingBase mailing = new MailingBaseImpl();
+                    mailing.setId(rs.getInt("mailing_id"));
+                    mailing.setShortname(rs.getString("shortname"));
+                    mailing.setDescription(rs.getString("description"));
+                    mailing.setSenddate(rs.getDate("send_date"));
+                    return mailing;
+                });
+        mailings.sort(Comparator.comparing(MailingBase::getSenddate).reversed());
+        return mailings;
+    }
 }

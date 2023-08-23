@@ -47,14 +47,12 @@
         setUndoButtonEnabled: function(isEnabled) {
             $('#undoButton').toggleClass('disabled', !isEnabled);
             $('#undoItem').prop('disabled', !isEnabled);
-        },
-        updateStatisticButton: function(isEnabled) {
-            $('#toggle-statistic-btn .text').html(isEnabled ? t('workflow.fade_out_statistics') : t('workflow.fade_in_statistics'));
         }
     };
 
     function Editor(isEditable, isContextMenuEnabled, isFootnotesEnabled) {
         this.$viewport = $('#viewPort');
+        this.$gridBackground = $('#grid-background');
         this.$container = $('#canvas');
         this.$titlesContainer = this.$container.find('#icon-titles-container');
         this.canvas = new Canvas(this.$container);
@@ -66,15 +64,22 @@
         this.drag = null;
         this.chainModeEnabled = false;
         this.multiConnectionEnabled = false;
-        this.statisticEnabled = false;
+        this.scale = 1;
+        this.dragMode = Def.DEFAULT_DRAG_MODE;
 
         var self = this;
+
+        this.updateBackgroundCellSize(this.scale);
 
         this.canvas.setOnZoom(function(scale) {
             self.instance.setZoom(scale);
             if (self.canvasZoomHandler) {
                 self.canvasZoomHandler.call(null, scale);
             }
+        });
+
+        this.canvas.setOnMove(function(position) {
+            self.moveGridBackground(position);
         });
 
         this.draggableButtons = new DraggableButtons({
@@ -129,6 +134,8 @@
         // On connection created.
         this.instance.bind('connection', function(connection) {
             self.undoManager.operation('connectionCreated', connection);
+            self.autofillStopNodesIfPossible();
+            self.autoConvertMailingNodesTypeIfPossible();
             self.updateOverlays();
             self.positionTitles();
             self.processRecipientsChains();
@@ -136,6 +143,8 @@
 
         this.instance.bind('connectionDetached', function(connection) {
             self.undoManager.operation('connectionDeleted', connection);
+            self.autofillStopNodesIfPossible();
+            self.autoConvertMailingNodesTypeIfPossible();
             self.updateOverlays();
             self.positionTitles();
             self.processRecipientsChains();
@@ -201,6 +210,8 @@
             onChange: function() {
                 Ui.setUndoButtonEnabled(this.canUndo());
                 self.processRecipientsChains();
+                self.autofillStopNodesIfPossible();
+                self.autoConvertMailingNodesTypeIfPossible();
             }
         });
 
@@ -409,6 +420,29 @@
             });
         }
     }, 150);
+
+    Editor.prototype.moveGridBackground = function (canvasPosition) {
+        const deltaX = this.calculateBackgroundOffsetDelta(canvasPosition.x);
+        const deltaY = this.calculateBackgroundOffsetDelta(canvasPosition.y);
+
+        this.$gridBackground.css({
+            'left' : '-' + deltaX + 'px',
+            'top' : '-' + deltaY + 'px',
+            'width' : 'calc(100% + ' + deltaX + 'px)',
+            'height' : 'calc(100% + ' + deltaY + 'px)'
+        });
+    }
+
+    Editor.prototype.calculateBackgroundOffsetDelta = function (positionValue) {
+        if (positionValue <= 0) {
+            return positionValue * -1;
+        }
+
+        const cellSize = Def.NODE_SIZE * this.scale;
+        const partCellSize = (positionValue / cellSize) % 1;
+
+        return cellSize - (cellSize * partCellSize);
+    }
 
     Editor.prototype.isActionBasedWorkflow = function () {
         return this.getNodes().some(function(node) {
@@ -657,7 +691,7 @@
     Editor.prototype.newSnippetFromSample = function(type, position) {
         var self = this;
 
-        Snippets.loadSample(type, function(nodes, connections) {
+        Snippets.loadSample(type, this.isGridDisplayed(), function(nodes, connections) {
             self.newSnippet(nodes, connections, position);
         });
     };
@@ -666,6 +700,12 @@
         var self = this;
 
         Snippets.loadOwnWorkflow(workflowId, copyContent, function(nodes, connections) {
+            if (self.isGridDisplayed()) {
+                nodes.forEach(function (node) {
+                    self.convertNodeCoordinates(node);
+                });
+            }
+
             self.newSnippet(nodes, connections, position);
         });
     };
@@ -727,6 +767,18 @@
 
         return newIds;
     };
+
+    Editor.prototype._findMaxNodeId = function () {
+        var maxId = 0;
+
+        this.forEachNode(function(node) {
+            if (node.getId() > maxId) {
+                maxId = node.getId();
+            }
+        });
+
+        return maxId;
+    }
 
     Editor.prototype.pickNewNodePosition = function() {
         var area = this.canvas.getVisibleArea();
@@ -863,6 +915,110 @@
         return {x: centerX, y: centerY};
     };
 
+    // returns an array of the filled start icons connected with provided node
+    Editor.prototype.getLinkedFilledStartNodes = function(node) {
+        return _.compact(this.getNodeIncomingChains(node)
+          .map(function(chain) {
+              return _.find(chain, function(node) {
+                  return node.getType() === Def.NODE_TYPE_START;
+              });
+          })).filter(function(startNode) {
+              return startNode.isFilled();
+          });
+    }
+
+    Editor.prototype.isAutoOptimizationDecisionAllowed = function (node) {
+        const filledStartNodes = this.getLinkedFilledStartNodes(node);
+        if (filledStartNodes.length === 0) {
+            return true;
+        }
+
+        return filledStartNodes.every(function(startNode) {
+            return Def.constants.startTypeEvent !== startNode.data.startType;
+        });
+    }
+
+    // autofill of the stop node is possible when all linked filled start nodes has normal date start
+    Editor.prototype.isAllLinkedFilledStartsHasDateType = function(node) {
+        const filledStartNodes = this.getLinkedFilledStartNodes(node);
+        return !!filledStartNodes.length && filledStartNodes.every(function(startNode) {
+            return Def.constants.startTypeDate === startNode.data.startType;
+        });
+    }
+
+    Editor.prototype.autofillStopNodesIfPossible = function() {
+        const self = this;
+        this.getNodesByTypes([Def.NODE_TYPE_STOP]).forEach(function(stopNode) {
+          self.autofillAutomaticEndIfPossible(stopNode);
+        });
+    }
+
+    Editor.prototype.autofillAutomaticEndIfPossible = function(stopNode) {
+        if (!this.isAllLinkedFilledStartsHasDateType(stopNode)) {
+          return;
+        }
+        stopNode.data.endType = Def.constants.endTypeAutomatic;
+        stopNode.setFilled(true);
+        this.updateNodeTitle(stopNode, true);
+    }
+
+    // Converting of the mailing types to action-based type is possible
+    // when all filled start nodes has event start type and reaction event
+    Editor.prototype._possibleToAutoConvertMailingsTypeToActionBased = function(mailingNode) {
+        const filledStartNodes = this.getLinkedFilledStartNodes(mailingNode);
+        return !!filledStartNodes.length && filledStartNodes.every(function(startNode) {
+          return Def.constants.startTypeEvent === startNode.data.startType
+            && "EVENT_REACTION" === startNode.data.event;
+        });
+    };
+
+    // Converting of the mailing types to action-based type is possible
+    // when all filled start nodes has event start type and date event
+    Editor.prototype._possibleToAutoConvertMailingsTypeToDateBased = function(mailingNode) {
+        const filledStartNodes = this.getLinkedFilledStartNodes(mailingNode);
+        return !!filledStartNodes.length && filledStartNodes.every(function(startNode) {
+          return Def.constants.startTypeEvent === startNode.data.startType
+            && "EVENT_DATE" === startNode.data.event;
+        });
+    };
+
+    Editor.prototype.autoConvertMailingNodesTypeIfPossible = function() {
+        const self = this;
+        const mailingNodes = [
+            Def.NODE_TYPE_MAILING,
+            Def.NODE_TYPE_ACTION_BASED_MAILING,
+            Def.NODE_TYPE_DATE_BASED_MAILING
+        ];
+        this.getNodesByTypes(mailingNodes).forEach(function(mailingNode) {
+            const newType = self._getAutoConvertedMailingTypeIfPossible(mailingNode);
+            if (mailingNode.type === newType) {
+                return; // exit if type change not possible
+            }
+            mailingNode.type = newType;
+            if (mailingNode.isFilled()) {
+                mailingNode.data.mailingId = 0;
+                mailingNode.setFilled(false);
+                self.updateNodeTitle(mailingNode, true);
+            }
+            self._updateNodeImages(mailingNode);
+        });
+    }
+
+    // Automatic converting of the mailing type is possible
+    // when all linked filled start icons has same type [normal, action_based or date_based]
+    Editor.prototype._getAutoConvertedMailingTypeIfPossible = function(mailingNode) {
+        if (this.isAllLinkedFilledStartsHasDateType(mailingNode)) {
+            return Def.NODE_TYPE_MAILING;
+        }
+        if (this._possibleToAutoConvertMailingsTypeToActionBased(mailingNode)) {
+            return Def.NODE_TYPE_ACTION_BASED_MAILING;
+        }
+        if (this._possibleToAutoConvertMailingsTypeToDateBased(mailingNode)) {
+            return Def.NODE_TYPE_DATE_BASED_MAILING;
+        }
+        return mailingNode.type; // auto converting not possible
+    }
+
     Editor.prototype.allocateSpaceForSnippet = function(snippetNodes) {
         var self = this;
 
@@ -920,7 +1076,7 @@
             // First collect all (let's presume all the nodes are to be moved).
             // Then we will check what's affected and what's not.
             var nodesMovedLog = allExistingNodes.map(function(node) {
-                return {node: node, coordinates: node.getCoordinates()};
+                return {node: node, coordinates: node.getCoordinates(), dragMode: self.getCurrentDragMode()};
             });
 
             var snippetCenterPosition = getGroupCenterPosition(snippetNodes);
@@ -1076,108 +1232,9 @@
         this.instance.makeTarget($node, {anchor: node.getAnchors()});
         this.instance.makeSource($node, {anchor: node.getAnchors(), filter: '.node-connect-button img'});
 
-        var wasDragging;
+        this.initDraggableOptions($node);
+
         var wasSelected;
-
-        this.instance.draggable($node, {
-            distance: Def.CANVAS_GRID_SIZE / 2,
-            grid: [Def.CANVAS_GRID_SIZE, Def.CANVAS_GRID_SIZE],
-            rightButtonCanDrag: false,
-            canDrag: function() {
-                return self.editable;
-            },
-            start: function() {
-                wasDragging = true;
-
-                if (self.drag == null) {
-                    var selected = [];
-                    var unselected = [];
-
-                    node.setPopoverEnabled(false);
-
-                    self.forEachNode$(function($n) {
-                        // Selected nodes are draggable so collision boxes have to be recalculated every time.
-                        if (Node.isSelected($n)) {
-                            selected.push($n);
-                            Node.get($n).setTitleEnabled(false);
-                        } else {
-                            unselected.push(Node.getCollisionBox($n));
-                        }
-                    });
-
-                    self.drag = {lead: $node, selected: selected, unselected: unselected};
-                }
-
-            },
-            stop: function() {
-                self.drag.lead.removeClass('js-no-drop');
-                self.drag.selected.forEach(function($n) {
-                    Node.get($n).setTitleEnabled(true);
-                    $n.removeClass('js-collision-detected');
-                });
-
-                node.setPopoverEnabled(true);
-            },
-            drag: function() {
-                if (self.drag && $node == self.drag.lead) {
-                    var hasAnyCollision = false;
-
-                    self.drag.selected.forEach(function($n) {
-                        var thisBox = Node.getCollisionBox($n);
-                        var hasCollision = self.drag.unselected.some(function(box) {
-                            return Node.detectBoxCollision(box, thisBox);
-                        });
-
-                        $n.toggleClass('js-collision-detected', hasCollision);
-
-                        if (hasCollision) {
-                            hasAnyCollision = true;
-                        }
-                    });
-
-                    self.drag.lead.toggleClass('js-no-drop', hasAnyCollision);
-                }
-            },
-            revert: function() {
-                if (self.drag) {
-                    var hasCollision = false;
-                    self.undoManager.transaction(function() {
-                        var scale = self.getZoom();
-                        hasCollision = self.drag.selected.some(function($n) {
-                            var thisBox = Node.getCollisionBox($n);
-                            return self.drag.unselected.some(function(box) {
-                                return Node.detectBoxCollision(box, thisBox);
-                            });
-                        });
-
-                        if (!hasCollision) {
-                            self.undoManager.operation('nodeMoved',
-                              self.drag.selected.map(function($n) {
-                                  var _node = Node.get($n);
-                                  return {
-                                      node: _node,
-                                      coordinates: _node.getCoordinates()
-                                  };
-                              })
-                            );
-
-                            self.drag.selected.forEach(function($n) {
-                                Node.get($n).updateCoordinates(scale);
-                            });
-                        }
-
-                        self.drag = null;
-                        self.updateOverlays();
-                        self.positionTitles();
-                        self.updateMinimap();
-                    });
-
-                    return hasCollision;
-                } else {
-                    return false;
-                }
-            }
-        });
 
         $node.on({
             mousedown: function(event) {
@@ -1188,7 +1245,7 @@
                         });
                     }
                 } else {
-                    wasDragging = false;
+                    node.wasDragging = false;
                     wasSelected = Node.isSelected($node);
 
                     if (!wasSelected) {
@@ -1233,7 +1290,7 @@
                 Ui.blurInputFields();
             },
             mouseup: function(event) {
-                if (wasSelected && !wasDragging) {
+                if (wasSelected && !node.wasDragging) {
                     if (self.isChainMode()) {
                         self.setNodeSelected($node, false);
                         Node.setChainSource($node, false);
@@ -1311,6 +1368,7 @@
                         }
                     });
                 });
+                this.autoConvertMailingNodesTypeIfPossible();
             } else if (Def.NODE_TYPE_RECIPIENT == node.getType()) {
                 this.processRecipientsChains();
             } else if (Def.NODE_TYPE_PARAMETER == node.getType()) {
@@ -1365,6 +1423,9 @@
                         });
                     }
                 });
+            } else if (Def.NODE_TYPE_START == node.getType()) {
+                this.autofillStopNodesIfPossible();
+                this.autoConvertMailingNodesTypeIfPossible();
             }
         } else {
             // Deadline icon is required right after an import icon (import -> deadline).
@@ -1501,6 +1562,16 @@
         return false;
     };
 
+    Editor.prototype._updateNodeImages = function(node) {
+        const nodeIcons = Def.ICONS_CONFIG[node.type].icons;
+        node.get$()
+            .find('.active-node-image')
+            .attr('src', Def.constants.imagePath + nodeIcons.active);
+        node.get$()
+            .find('.inactive-node-image')
+            .attr('src', Def.constants.imagePath + nodeIcons.inactive);
+    }
+
     Editor.prototype.isConnectionAllowed = function(sourceNode, targetNode) {
         var constraints = new ConnectionConstraints(Def.CONNECTION_CONSTRAINTS);
         var self = this;
@@ -1536,11 +1607,15 @@
         // A stop icon becomes start icon when it gets outgoing connections (unless it has incoming connections).
         if (source.type == Def.NODE_TYPE_STOP && !this.hasNodeIncomingConnections(sourceNode)) {
             source.type = Def.NODE_TYPE_START;
+            source.node.type = Def.NODE_TYPE_START;
+            self._updateNodeImages(source.node);
         }
 
         // A start icon becomes stop icon when it gets incoming connections (unless it has outgoing connections).
         if (target.type == Def.NODE_TYPE_START && !this.hasNodeOutgoingConnections(targetNode)) {
             target.type = Def.NODE_TYPE_STOP;
+            target.node.type = Def.NODE_TYPE_STOP;
+            self._updateNodeImages(target.node);
         }
 
         return constraints.check(source, target);
@@ -1606,7 +1681,8 @@
         }).map(function(node) {
             return {
                 node: node,
-                coordinates: oldCoordinatesMap[node.getId()]
+                coordinates: oldCoordinatesMap[node.getId()],
+                dragMode: self.getCurrentDragMode()
             };
         });
 
@@ -1825,7 +1901,13 @@
     };
 
     Editor.prototype.setOnInitialized = function(handler) {
-        this.instance.ready(handler);
+        const selfEditor = this;
+        const _handler = function () {
+            handler.apply(this);
+            selfEditor.lastAllocatedId = selfEditor._findMaxNodeId();
+        }
+
+        this.instance.ready(_handler);
     };
 
     Editor.prototype.setOnZoom = function(handler) {
@@ -1850,9 +1932,253 @@
     };
 
     Editor.prototype.setZoom = function(scale) {
+        this.scale = scale;
+
         this.canvas.setZoom(scale);
         this.instance.setZoom(scale);
+        this.updateBackgroundCellSize(scale);
+        this.moveGridBackground(this.canvas.getPosition());
     };
+
+    Editor.prototype.toggleGrid = function () {
+        this.changeGridBackgroundVisibility();
+        this.dragMode = this.isGridDisplayed() ? Def.GRID_CELL_DRAG_MODE : Def.DEFAULT_DRAG_MODE;
+
+        this.adaptToNewDragMode();
+    }
+
+    Editor.prototype.isAutoOptimizationWorkflow = function (startNode) {
+        const finalParameterNode = this._findFinalParameterNode(startNode);
+        if (!finalParameterNode) {
+            return false;
+        }
+
+        const finalMailingNode = this._findOptimizationFinalMailingNode(finalParameterNode);
+        if (!finalMailingNode) {
+            return false;
+        }
+
+        const decisionNode = this.getFirstIncomingChain(finalParameterNode).find(function (node) {
+            return node.getType() === Def.NODE_TYPE_DECISION;
+        })
+
+        return !!decisionNode && decisionNode.data.decisionType === Def.constants.decisionTypeAutoOptimization;
+    }
+
+    Editor.prototype._findFinalParameterNode = function (node) {
+        const outgoingChains = this.getNodeOutgoingChains(node);
+
+        for (var i = 0; i < outgoingChains.length; i++) {
+            const chain = outgoingChains[i];
+
+            const finalParameterNode = chain.find(function (_node, index) {
+                return index > 0 && Def.NODE_TYPE_PARAMETER === _node.getType() && !_node.isEditable();
+            });
+
+            if (finalParameterNode) {
+                return finalParameterNode;
+            }
+        }
+
+        return null;
+    }
+
+    Editor.prototype._findOptimizationFinalMailingNode = function (finalParameterNode) {
+        const outgoingChain = this.getFirstOutgoingChain(finalParameterNode);
+
+        return outgoingChain.find(function (node) {
+            return node.getType() === Def.NODE_TYPE_MAILING && !node.isEditable();
+        })
+    }
+
+    Editor.prototype.getFirstOutgoingChain = function(node) {
+        const chains = this.getNodeOutgoingChains(node);
+        if (chains.length) {
+            return chains[0];
+        }
+        return [];
+    };
+
+    /**
+     * Hides the grid background if it is already displayed, or displays it if is hidden
+     */
+    Editor.prototype.changeGridBackgroundVisibility = function () {
+        if (this.isGridDisplayed()) {
+            this.$gridBackground.addClass('hidden');
+        } else {
+            this.$gridBackground.removeClass('hidden');
+        }
+    };
+
+    Editor.prototype.convertNodeCoordinates = function (node) {
+        const coordinates = node.getCoordinates();
+        this.convertCoordinates(coordinates);
+        node.setCoordinates(coordinates.x, coordinates.y);
+    }
+
+    /**
+     * Converts coordinates from one system to another according the current drag mode
+     * @param coordinates - object, that looks like {x: 1, y: 1}
+     */
+    Editor.prototype.convertCoordinates = function (coordinates) {
+        const scale = Def.NODE_SIZE / Def.CANVAS_DEFAULT_GRID_SIZE;
+
+        if (this.getCurrentDragMode() === Def.GRID_CELL_DRAG_MODE) {
+            coordinates.x = coordinates.x / scale;
+            coordinates.y = coordinates.y / scale;
+        } else {
+            coordinates.x = coordinates.x * scale;
+            coordinates.y = coordinates.y * scale;
+        }
+    }
+
+    Editor.prototype.adaptToNewDragMode = function () {
+        this.adaptPropertiesToDragMode();
+        const self = this;
+
+        this.getNodes$().each(function () {
+            self.instance.destroyDraggable(this);
+            self.initDraggableOptions($(this));
+        });
+
+        this.forEachNode(function (node) {
+            self.convertNodeCoordinates(node);
+        });
+    }
+
+    /**
+     * Changes the properties needed to move icons in the editor depending on the current drag mode.
+     */
+    Editor.prototype.adaptPropertiesToDragMode = function () {
+        if (this.getCurrentDragMode() === Def.GRID_CELL_DRAG_MODE) {
+            Def.CANVAS_GRID_SIZE = Def.NODE_SIZE;
+            Def.AUTO_ALIGN_STEP_X = Def.GRID_AUTO_ALIGN_STEP_X;
+            Def.AUTO_ALIGN_STEP_Y = Def.GRID_AUTO_ALIGN_STEP_Y;
+        } else {
+            Def.CANVAS_GRID_SIZE = Def.CANVAS_DEFAULT_GRID_SIZE;
+            Def.AUTO_ALIGN_STEP_X = Def.DEFAULT_AUTO_ALIGN_STEP_X;
+            Def.AUTO_ALIGN_STEP_Y = Def.DEFAULT_AUTO_ALIGN_STEP_Y;
+        }
+    }
+
+    Editor.prototype.initDraggableOptions = function ($node) {
+        const self = this;
+        const node = Node.get($($node));
+
+        this.instance.draggable($node, {
+            distance: Def.CANVAS_GRID_SIZE / 2,
+            grid: [Def.CANVAS_GRID_SIZE, Def.CANVAS_GRID_SIZE],
+            rightButtonCanDrag: false,
+            canDrag: function() {
+                return self.editable;
+            },
+            start: function() {
+                node.wasDragging = true;
+
+                if (self.drag == null) {
+                    var selected = [];
+                    var unselected = [];
+
+                    node.setPopoverEnabled(false);
+
+                    self.forEachNode$(function($n) {
+                        // Selected nodes are draggable so collision boxes have to be recalculated every time.
+                        if (Node.isSelected($n)) {
+                            selected.push($n);
+                            Node.get($n).setTitleEnabled(false);
+                        } else {
+                            unselected.push(Node.getCollisionBox($n));
+                        }
+                    });
+
+                    self.drag = {lead: $node, selected: selected, unselected: unselected};
+                }
+
+            },
+            stop: function() {
+                self.drag.lead.removeClass('js-no-drop');
+                self.drag.selected.forEach(function($n) {
+                    Node.get($n).setTitleEnabled(true);
+                    $n.removeClass('js-collision-detected');
+                });
+
+                node.setPopoverEnabled(true);
+            },
+            drag: function() {
+                if (self.drag && $node == self.drag.lead) {
+                    var hasAnyCollision = false;
+
+                    self.drag.selected.forEach(function($n) {
+                        var thisBox = Node.getCollisionBox($n);
+                        var hasCollision = self.drag.unselected.some(function(box) {
+                            return Node.detectBoxCollision(box, thisBox);
+                        });
+
+                        $n.toggleClass('js-collision-detected', hasCollision);
+
+                        if (hasCollision) {
+                            hasAnyCollision = true;
+                        }
+                    });
+
+                    self.drag.lead.toggleClass('js-no-drop', hasAnyCollision);
+                }
+            },
+            revert: function() {
+                if (self.drag) {
+                    var hasCollision = false;
+                    self.undoManager.transaction(function() {
+                        var scale = self.getZoom();
+                        hasCollision = self.drag.selected.some(function($n) {
+                            var thisBox = Node.getCollisionBox($n);
+                            return self.drag.unselected.some(function(box) {
+                                return Node.detectBoxCollision(box, thisBox);
+                            });
+                        });
+
+                        if (!hasCollision) {
+                            self.undoManager.operation('nodeMoved',
+                                self.drag.selected.map(function($n) {
+                                    var _node = Node.get($n);
+                                    return {
+                                        node: _node,
+                                        coordinates: _node.getCoordinates(),
+                                        dragMode: self.getCurrentDragMode()
+                                    };
+                                })
+                            );
+
+                            self.drag.selected.forEach(function($n) {
+                                Node.get($n).updateCoordinates(scale);
+                            });
+                        }
+
+                        self.drag = null;
+                        self.updateOverlays();
+                        self.positionTitles();
+                        self.updateMinimap();
+                    });
+
+                    return hasCollision;
+                } else {
+                    return false;
+                }
+            }
+        });
+    }
+
+    Editor.prototype.getCurrentDragMode = function () {
+        return this.dragMode;
+    }
+
+    Editor.prototype.isGridDisplayed = function () {
+        return !this.$gridBackground.hasClass('hidden');
+    }
+
+    Editor.prototype.updateBackgroundCellSize = function (scale) {
+        const cellSize = Def.NODE_SIZE * scale;
+        this.$gridBackground.css('background-size', cellSize + 'px ' + cellSize + 'px');
+    }
 
     Editor.prototype.setPanningEnabled = function(isEnabled) {
         this.canvas.setPanningEnabled(isEnabled);
@@ -1906,7 +2232,7 @@
             var branches = Node.getDecisionBranches(connections);
 
             if (branches) {
-                var titles = NodeTitleHelper.getDecisionBranchesLabels(node);
+                var titles = NodeTitleHelper.getDecisionBranchesLabels();
                 Ui.setConnectionLabel(branches.positive, titles.positive);
                 Ui.setConnectionLabel(branches.negative, titles.negative);
             } else {
@@ -2000,58 +2326,6 @@
 
     Editor.prototype.hasUnsavedChanges = function() {
         return this.getUndoManager().canUndo();
-    };
-
-    Editor.prototype.isStatisticEnabled = function() {
-        return this.statisticEnabled;
-    };
-
-    Editor.prototype.toggleStatistic = function() {
-        this.setStatisticEnabled(!this.statisticEnabled);
-    };
-
-    Editor.prototype.setStatisticEnabled = function(enable) {
-        var self = this;
-        var deferred = $.Deferred();
-
-        this.updateStatistic(deferred, enable);
-        deferred.done(function () {
-            self.statisticEnabled = enable;
-            Ui.updateStatisticButton(enable);
-        }).always(function() {
-            self.updateNodeTitles(true);
-            self.updateOverlays();
-        });
-    };
-
-    Editor.prototype.updateStatistic = function(deferred, enable) {
-        var self = this;
-
-        if (enable) {
-            $.post(AGN.url("/workflow/loadStatistics.action"), {workflowId: Def.workflowId})
-              .done(function(data){
-                self.forEachNode(function(node) {
-                    var statistic = data[node.id];
-                    if (statistic) {
-                        node.setStatistic(true, statistic);
-                    }
-                })
-
-                deferred.resolve();
-            }).fail(function() {
-                deferred.reject();
-                AGN.Lib.Messages(t("Error"), t("defaults.error"), "alert");
-            });
-
-        } else {
-            self.forEachNode(function(node) {
-               node.setStatistic(false);
-            });
-
-            deferred.resolve();
-        }
-
-        return deferred.promise();
     };
 
     Editor.prototype.fitPdfPage = function() {

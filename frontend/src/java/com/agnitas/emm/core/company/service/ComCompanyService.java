@@ -17,7 +17,7 @@ import org.agnitas.beans.AdminEntry;
 import org.agnitas.beans.impl.CompanyStatus;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.commons.password.policy.PasswordPolicies;
-import org.agnitas.emm.core.velocity.VelocityCheck;
+
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.Company;
@@ -39,13 +39,13 @@ public interface ComCompanyService {
 
 	boolean addExecutiveAdmin(int companyID, int executiveAdminID);
 
-	int getPriorityCount(@VelocityCheck int companyId);
+	int getPriorityCount(int companyId);
 
-	void setPriorityCount(@VelocityCheck int companyId, int value);
+	void setPriorityCount(int companyId, int value);
 
     Set<Permission> getCompanyPermissions(int companyID);
 
-    PaginatedListImpl<CompanyInfoDto> getCompanyList(@VelocityCheck int companyID, String sort, String direction, int page, int rownums);
+    PaginatedListImpl<CompanyInfoDto> getCompanyList(int companyID, String sort, String direction, int page, int rownums);
 
 	CompanyViewForm getCompanyForm(int companyId);
 
@@ -61,9 +61,9 @@ public interface ComCompanyService {
 
 	boolean isCompanyNameUnique(int companyId, String shortname);
 
-	boolean isCreatorId(@VelocityCheck int companyId, int creatorId);
+	boolean isCreatorId(int companyId, int creatorId);
 	
-	boolean createFrequencyFields(@VelocityCheck int companyID);
+	boolean createFrequencyFields(int companyID);
 	
 	CompanyStatus getStatus(int companyID);
 	
@@ -74,11 +74,11 @@ public interface ComCompanyService {
 	 * 
 	 * @return password policy for company ID
 	 */
-	public PasswordPolicies getPasswordPolicy(@VelocityCheck final int companyID);
+	public PasswordPolicies getPasswordPolicy(final int companyID);
 
 	boolean reactivateCompany(int companyIdForDeactivation);
 
-	int getCompanyDatasource(@VelocityCheck int companyId);
+	int getCompanyDatasource(int companyId);
 
 	int getNumberOfCompanies();
 }

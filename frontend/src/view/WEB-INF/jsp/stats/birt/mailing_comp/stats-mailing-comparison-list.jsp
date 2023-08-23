@@ -14,32 +14,6 @@
           data-resource-selector="#available-mailings">
     <div class="tile">
         <div class="tile-header">
-            <a class="headline" href="#" data-toggle-tile="#tile-targetGroup">
-                <i class="icon tile-toggle icon-angle-up"></i>
-                <mvc:message code="Targets"/>
-            </a>
-        </div>
-
-        <div id="tile-targetGroup" class="tile-content tile-content-forms">
-            <div class="form-group">
-                <div class="col-sm-4">
-                    <label class="control-label">
-                        <mvc:message code="Targetgroups"/>
-                    </label>
-                </div>
-                <div class="col-sm-8">
-                    <mvc:message var="placeholderTargetGroupSelect" code="addTargetGroup"/>
-                    <mvc:select path="targetIds" cssClass="form-control js-select" multiple="true"
-                                data-placeholder="${placeholderTargetGroupSelect}">
-                        <mvc:options items="${targetGroupList}" itemValue="id" itemLabel="targetName"/>
-                    </mvc:select>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="tile">
-        <div class="tile-header">
             <h2 class="headline"><mvc:message code="default.Overview"/></h2>
             <ul class="tile-header-actions">
                 <li class="dropdown">
@@ -50,7 +24,7 @@
                     </a>
                     <ul class="dropdown-menu">
                         <li class="dropdown-header">
-                            <mvc:message code="statistics.exportFormats"/>
+                            <mvc:message code="statistics.exportFormat"/>
                         </li>
                         <li>
                             <c:url var="exportUrl" value="/statistics/mailing/comparison/export.action"/>

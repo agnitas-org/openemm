@@ -13,6 +13,10 @@ package com.agnitas.emm.core.recipient.dto;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DbColumnType;
 
+/**
+ * @deprecated Use RecipientFieldDescription instead
+ */
+@Deprecated
 public class RecipientFieldDto {
     private String shortname;
     private DbColumnType.SimpleDataType type;

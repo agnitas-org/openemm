@@ -222,8 +222,8 @@ public class ActionOperationSubscribeCustomerImpl implements EmmActionOperation 
 		}
 
 		try {
-			if(aCust.getCustomerID() == 0) {
-				this.subscriberLimitCheck.checkSubscriberLimit(aCust.getCompanyID());
+			if (aCust.getCustomerID() == 0) {
+				subscriberLimitCheck.checkSubscriberLimit(aCust.getCompanyID());
 			}
 			
 			if (!recipientService.updateRecipientInDB(aCust)) {

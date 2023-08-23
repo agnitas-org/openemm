@@ -17,6 +17,7 @@ import java.util.Set;
 
 public class MailingsListProperties {
     private String types;
+    private String mediaTypes;
     private boolean isTemplate;
     private String searchQuery;
     private boolean searchName;
@@ -25,11 +26,14 @@ public class MailingsListProperties {
     private List<String> statuses;
     private List<String> badge;
     private List<Integer> mailingLists;
+    private List<Integer> archives;
     private List<Integer> targetGroups;
     private Date sendDateBegin;
     private Date sendDateEnd;
     private Date creationDateBegin;
     private Date creationDateEnd;
+    private Date changeDateBegin;
+    private Date changeDateEnd;
     private String sort;
     private String direction;
     private int page;
@@ -44,6 +48,14 @@ public class MailingsListProperties {
 
     public void setTypes(String types) {
         this.types = types;
+    }
+
+    public String getMediaTypes() {
+        return mediaTypes;
+    }
+
+    public void setMediaTypes(String mediaTypes) {
+        this.mediaTypes = mediaTypes;
     }
 
     public boolean isTemplate() {
@@ -110,6 +122,14 @@ public class MailingsListProperties {
         this.mailingLists = mailingLists;
     }
 
+    public List<Integer> getArchives() {
+        return archives;
+    }
+
+    public void setArchives(List<Integer> archives) {
+        this.archives = archives;
+    }
+
     public Date getSendDateBegin() {
         return sendDateBegin;
     }
@@ -140,6 +160,22 @@ public class MailingsListProperties {
 
     public void setCreationDateEnd(Date creationDateEnd) {
         this.creationDateEnd = creationDateEnd;
+    }
+
+    public Date getChangeDateBegin() {
+        return changeDateBegin;
+    }
+
+    public void setChangeDateBegin(Date changeDateBegin) {
+        this.changeDateBegin = changeDateBegin;
+    }
+
+    public Date getChangeDateEnd() {
+        return changeDateEnd;
+    }
+
+    public void setChangeDateEnd(Date changeDateEnd) {
+        this.changeDateEnd = changeDateEnd;
     }
 
     public String getSort() {

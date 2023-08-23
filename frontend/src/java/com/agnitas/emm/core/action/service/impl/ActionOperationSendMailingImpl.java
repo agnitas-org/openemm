@@ -10,11 +10,10 @@
 
 package com.agnitas.emm.core.action.service.impl;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 
+import com.agnitas.beans.IntEnum;
+import com.agnitas.emm.core.action.bean.ActionSendMailingToUserStatus;
 import org.agnitas.dao.UserStatus;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -34,81 +33,78 @@ import com.agnitas.emm.core.mailing.service.SendActionbasedMailingService;
 import com.agnitas.emm.core.mailing.service.impl.UnableToSendActionbasedMailingException;
 
 public class ActionOperationSendMailingImpl implements EmmActionOperation {
-	/** The logger. */
-	private static final Logger logger = LogManager.getLogger(ActionOperationSendMailingImpl.class);
 
-	/**
-	 * DAO for accessing mailing data.
-	 */
-	private ComMailingDao mailingDao;
+    private static final Logger logger = LogManager.getLogger(ActionOperationSendMailingImpl.class);
 
-	/**
-	 * Service for sending event based mailings
-	 */
-	private SendActionbasedMailingService sendActionbasedMailingService;
+    private ComMailingDao mailingDao;
+    private SendActionbasedMailingService sendActionbasedMailingService;
 
-	@Required
-	public void setMailingDao(final ComMailingDao mailingDao) {
-		this.mailingDao = mailingDao;
-	}
+    @Required
+    public void setMailingDao(final ComMailingDao mailingDao) {
+        this.mailingDao = mailingDao;
+    }
 
-	@Required
-	public void setSendActionbasedMailingService(final SendActionbasedMailingService sendActionbasedMailingService) {
-		this.sendActionbasedMailingService = sendActionbasedMailingService;
-	}
+    @Required
+    public void setSendActionbasedMailingService(final SendActionbasedMailingService sendActionbasedMailingService) {
+        this.sendActionbasedMailingService = sendActionbasedMailingService;
+    }
 
-	@Override
-	public boolean execute(final AbstractActionOperationParameters operation, final Map<String, Object> params, final EmmActionOperationErrors errors) {
-		final ActionOperationSendMailingParameters actionOperationSendMailingParameters = (ActionOperationSendMailingParameters) operation;
-		final int companyID = actionOperationSendMailingParameters.getCompanyId();
-		final int mailingID = actionOperationSendMailingParameters.getMailingID();
+    @Override
+    public boolean execute(final AbstractActionOperationParameters operation, final Map<String, Object> params, final EmmActionOperationErrors errors) {
+        final ActionOperationSendMailingParameters operationSendMailingParams = (ActionOperationSendMailingParameters) operation;
+        final int companyID = operationSendMailingParams.getCompanyId();
+        final int mailingID = operationSendMailingParams.getMailingID();
 
-		if (params.get("customerID") == null) {
-			errors.addErrorCode(ErrorCode.MISSING_CUSTOMER_ID);
-			return false;
-		} else {
-			final int customerID = (Integer) params.get("customerID");
-			if (customerID == 0) {
-				errors.addErrorCode(ErrorCode.INVALID_CUSTOMER_ID);
-				return false;
-			} else {
-				if (mailingDao.exist(mailingID, companyID)) {
-					try {
-						final MailgunOptions mailgunOptions = new MailgunOptions();
+        if (params.get("customerID") == null) {
+            errors.addErrorCode(ErrorCode.MISSING_CUSTOMER_ID);
+            return false;
+        }
 
-						List<UserStatus> allowedUserStatuses = new ArrayList<>(Collections.singletonList(UserStatus.WaitForConfirm));
-						if (actionOperationSendMailingParameters.isForActiveRecipients()) {
-							allowedUserStatuses.add(UserStatus.Active);
-						}
-						mailgunOptions.withAllowedUserStatus(allowedUserStatuses);
+        final int customerID = (Integer) params.get("customerID");
+        if (customerID == 0) {
+            errors.addErrorCode(ErrorCode.INVALID_CUSTOMER_ID);
+            return false;
+        }
 
-						try {
-							if (StringUtils.isNotBlank(actionOperationSendMailingParameters.getBcc())) {
-								mailgunOptions.withBccEmails(actionOperationSendMailingParameters.getBcc());
-							}
+        if (!mailingDao.exist(mailingID, companyID)) {
+            errors.addErrorCode(ErrorCode.MAILING_NOT_FOUND);
+            return false;
+        }
 
-							sendActionbasedMailingService.sendActionbasedMailing(companyID, mailingID, customerID, actionOperationSendMailingParameters.getDelayMinutes(),
-									mailgunOptions);
-						} catch (final Exception e) {
-							logger.error("Cannot fire campaign-/event-mail", e);
-							throw new UnableToSendActionbasedMailingException(mailingID, customerID, e);
-						}
+        try {
+            final MailgunOptions mailgunOptions = new MailgunOptions();
 
-						if (logger.isInfoEnabled()) {
-							logger.info("executeOperation: Mailing " + mailingID + " to " + customerID + " sent");
-						}
-						return true;
-					} catch (final SendActionbasedMailingException e) {
-						logger.error("executeOperation: Mailing " + mailingID + " to " + customerID + " failed");
-						return false;
-					}
-				} else {
-					errors.addErrorCode(ErrorCode.MAILING_NOT_FOUND);
-					return false;
-				}
-			}
-		}
-	}
+            UserStatus[] statuses = IntEnum.fromId(ActionSendMailingToUserStatus.class, operationSendMailingParams.getUserStatusesOption())
+                    .getStatuses();
+
+            mailgunOptions.withAllowedUserStatus(statuses);
+
+            try {
+                if (StringUtils.isNotBlank(operationSendMailingParams.getBcc())) {
+                    mailgunOptions.withBccEmails(operationSendMailingParams.getBcc());
+                }
+
+                sendActionbasedMailingService.sendActionbasedMailing(
+                        companyID,
+                        mailingID,
+                        customerID,
+                        operationSendMailingParams.getDelayMinutes(),
+                        mailgunOptions
+                );
+            } catch (final Exception e) {
+                logger.error("Cannot fire campaign-/event-mail", e);
+                throw new UnableToSendActionbasedMailingException(mailingID, customerID, e);
+            }
+
+            if (logger.isInfoEnabled()) {
+                logger.info("executeOperation: Mailing {} to {} sent", mailingID, customerID);
+            }
+            return true;
+        } catch (final SendActionbasedMailingException e) {
+            logger.error("executeOperation: Mailing {} to {} failed", mailingID, customerID);
+            return false;
+        }
+    }
 
     @Override
     public ActionOperationType processedType() {

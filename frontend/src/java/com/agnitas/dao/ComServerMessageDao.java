@@ -24,4 +24,6 @@ public interface ComServerMessageDao {
 
     List<ServerCommand> getCommand(Date since, Date till, ServerCommand.Server server, ServerCommand.Command command);
 
+	void cleanupOldCommands();
+
 }

@@ -1,5 +1,4 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
-<%@ page import="com.agnitas.web.MailingBaseAction" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core"%>
@@ -12,50 +11,22 @@
 <%--@elvariable id="workflowId" type="java.lang.Integer"--%>
 <%--@elvariable id="mailingShortname" type="java.lang.String"--%>
 
-<c:set var="ACTION_LIST"   value="<%= MailingBaseAction.ACTION_LIST %>"/>
-<c:set var="ACTION_VIEW"   value="<%= MailingBaseAction.ACTION_VIEW %>"/>
 <c:set var="isMailingGrid" value="${not empty gridTemplateId and gridTemplateId gt 0}" scope="request"/>
 
 <emm:CheckLogon/>
 <emm:Permission token="mailing.content.show"/>
 
-<c:url var="templatesOverviewLink" value="/mailingbase.do">
-    <c:param name="action" value="${ACTION_LIST}"/>
-    <c:param name="isTemplate" value="true"/>
-    <c:param name="page" value="1"/>
+<c:url var="templatesOverviewLink" value="/mailing/list.action">
+    <c:param name="forTemplates" value="true"/>
 </c:url>
 
-<emm:ShowByPermission token="mailing.settings.migration">
-    <c:url var="templateViewLink" value="/mailing/${mailingId}/settings.action"/>
-</emm:ShowByPermission>
-<emm:HideByPermission token="mailing.settings.migration">
-    <c:url var="templateViewLink" value="/mailingbase.do">
-        <c:param name="action" value="${ACTION_VIEW}"/>
-        <c:param name="mailingID" value="${mailingId}"/>
-    </c:url>
-</emm:HideByPermission>
+<c:url var="templateViewLink" value="/mailing/${mailingId}/settings.action"/>
 
-<c:url var="mailingsOverviewLink" value="/mailingbase.do">
-    <c:param name="action" value="${ACTION_LIST}"/>
-    <c:param name="isTemplate" value="false"/>
+<c:url var="mailingsOverviewLink" value="/mailing/list.action"/>
+
+<c:url var="mailingViewLink" value="/mailing/${mailingId}/settings.action">
+    <c:param name="keepForward" value="true"/>
 </c:url>
-
-<emm:ShowByPermission token="mailing.settings.migration">
-    <c:url var="mailingViewLink" value="/mailing/${mailingId}/settings.action">
-        <c:param name="keepForward" value="true"/>
-    </c:url>
-</emm:ShowByPermission>
-<emm:HideByPermission token="mailing.settings.migration">
-    <c:url var="mailingViewLink" value="/mailingbase.do">
-        <c:param name="action" value="${ACTION_VIEW}"/>
-        <c:param name="mailingID" value="${mailingId}"/>
-        <c:param name="keepForward" value="true"/>
-        <c:param name="init" value="true"/>
-        <c:if test="${isMailingGrid}">
-            <c:param name="templateId" value="${gridTemplateId}"/>
-        </c:if>
-    </c:url>
-</emm:HideByPermission>
 
 <c:set var="agnHighlightKey" 		value="mailing.Trackable_Links" scope="request" />
 <c:set var="isBreadcrumbsShown" 	value="true" 					scope="request" />
@@ -146,7 +117,7 @@
 <emm:instantiate var="itemActionsSettings" type="java.util.LinkedHashMap" scope="request">
     <%-- Actions dropdown --%>
 
-    <jsp:include page="../actions-dropdown.jsp">
+    <jsp:include page="../mailing-actions-dropdown.jsp">
         <jsp:param name="elementIndex" value="0"/>
         <jsp:param name="mailingId" value="${mailingId}"/>
         <jsp:param name="isTemplate" value="${isTemplate}"/>

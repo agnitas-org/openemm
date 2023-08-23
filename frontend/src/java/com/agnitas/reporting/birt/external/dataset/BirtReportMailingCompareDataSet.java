@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.importvalues.MailType;
 import org.apache.commons.collections4.CollectionUtils;
@@ -108,7 +107,7 @@ public class BirtReportMailingCompareDataSet extends BIRTDataSet {
         }
     }
 
-    public int prepareReport(String mailingIdsStr, @VelocityCheck int companyId, String targetsStr, String hiddenTargetIdStr,
+    public int prepareReport(String mailingIdsStr, int companyId, String targetsStr, String hiddenTargetIdStr,
                              String figuresOptions) throws Exception {
 		List<BirtReporUtils.BirtReportFigure> figures = BirtReporUtils.unpackFigures(figuresOptions);
 		List<Integer> mailingIds = parseCommaSeparatedIds(mailingIdsStr);
@@ -237,7 +236,7 @@ public class BirtReportMailingCompareDataSet extends BIRTDataSet {
 	/**
 	 * Count values sentHtml, sentText, sentOfflineHTML if needed
 	 */
-	private void addSentMailsByMailtypeData(List<Integer> mailingIds, @VelocityCheck int companyId, int tempTableID, List<BirtReporUtils.BirtReportFigure> figures) throws Exception {
+	private void addSentMailsByMailtypeData(List<Integer> mailingIds, int companyId, int tempTableID, List<BirtReporUtils.BirtReportFigure> figures) throws Exception {
 		if (!(figures.contains(BirtReporUtils.BirtReportFigure.HTML) || figures.contains(BirtReporUtils.BirtReportFigure.TEXT) ||
 				figures.contains(BirtReporUtils.BirtReportFigure.OFFLINE_HTML))) {
 			return;
@@ -310,7 +309,7 @@ public class BirtReportMailingCompareDataSet extends BIRTDataSet {
 	}
 
 	@DaoUpdateReturnValueCheck
-	private void addMailingNamesAndSendDates(List<Integer> mailingIds, @VelocityCheck int companyId, int tempTableID) throws Exception {
+	private void addMailingNamesAndSendDates(List<Integer> mailingIds, int companyId, int tempTableID) throws Exception {
         if (CollectionUtils.isEmpty(mailingIds)) {
             return;
         }
@@ -552,7 +551,7 @@ public class BirtReportMailingCompareDataSet extends BIRTDataSet {
         return data;
     }
 
-    public String getPredefineMailingName(int mailingFilter, int predefineMailingId, @VelocityCheck int companyId) {
+    public String getPredefineMailingName(int mailingFilter, int predefineMailingId, int companyId) {
         String sql;
         if (FilterType.FILTER_ARCHIVE.getKey() == mailingFilter) {
             sql = "select shortname from campaign_tbl where campaign_id = ? and company_id = ?";

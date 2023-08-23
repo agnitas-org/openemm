@@ -1,5 +1,6 @@
-
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+
+<%--@elvariable id="helplanguage" type="java.lang.String"--%>
 
 <script id="mailing-content-entry-template" type="text/x-mustache-template">
     <div id="{{-id}}" class="l-mailing-content-entry" data-action="selectContentEntry">
@@ -11,8 +12,6 @@
         </div>
     </div>
 </script>
-
-<%--@elvariable id="helplanguage" type="java.lang.String"--%>
 
 <script id="content-editor-template" type="text/x-mustache-template">
     {{var readonly = isEditableMailing ? '' : 'readonly="readonly"';}}
@@ -35,9 +34,9 @@
                             <div class="biggest-flex-item">
                                 <div class="col-sm-4">
                                     <label class="control-label" for="interest_groups">
-                                        <bean:message key="interestgroup"/>
-										<button class="icon icon-help" data-help="help_${helplanguage}/mailing/content/Interest.xml" tabindex="-1" type="button">
-										</button>
+                                        <mvc:message code="interestgroup"/>
+                                        <button class="icon icon-help" data-help="help_${helplanguage}/mailing/content/Interest.xml" tabindex="-1" type="button">
+                                        </button>
                                     </label>
                                 </div>
                                 <div class="col-sm-8">
@@ -50,7 +49,7 @@
                             </div>
                             <button type="button" class="full-size-btn"
                                     data-action="createEnlargedContentEditorModal"
-                                    data-tooltip="<bean:message key='editor.enlargeEditor'/>">
+                                    data-tooltip="<mvc:message code='editor.enlargeEditor'/>">
                                 <i class="icon icon-arrows-alt"></i>
                             </button>
                         </div>
@@ -61,41 +60,41 @@
                         <div class="col-sm-4 fixed-content-40-45 mailing-content no-padding">
                             <div class="fixed-header mailing-content-header">
                                 <label for="content_area" style="font-size: 14px">
-                                    <bean:message key="mailing.content.order"/>
+                                    <mvc:message code="mailing.content.order"/>
                                     <button class="icon icon-help" data-help="help_${helplanguage}/mailing/content/Order.xml" tabindex="-1" type="button">
-									</button>
+                                    </button>
                                 </label>
                             </div>
                             <div id="content_area" class="fixed-body mailing-content-body">
                                 <div id="ordered_area" class="droppable-area">
                                     <div class="l-stub well">
-                                        <bean:message key="default.NoEntries"/>
+                                        <mvc:message code="default.NoEntries"/>
                                     </div>
 
                                     {{ if (isEditableMailing) { }}
-                                        <div class="plus-button-holder">
-                                            <i class="icon icon-plus-circle icon-2x plus-button"
-                                               data-action="addDynContent"></i>
-                                        </div>
+                                    <div class="plus-button-holder">
+                                        <i class="icon icon-plus-circle icon-2x plus-button"
+                                           data-action="addDynContent"></i>
+                                    </div>
                                     {{ } }}
                                 </div>
                             </div>
 
                             {{ if (isEditableMailing) { }}
-                                <div class="fixed-footer mailing-content-footer">
-                                    <div class="col-sm-4">
-                                        <label class="control-label" for="target_groups">
-                                            <bean:message key="Target"/>
-                                        </label>
-                                    </div>
-                                    <div class="col-sm-8">
-                                        <select id="target_groups" class="form-control js-select dropdown-menu">
-                                            {{targetGroups.forEach(function(targetGroup){ }}
-                                                <option value="{{- targetGroup.id}}"> {{- targetGroup.targetName}}</option>
-                                            {{ }); }}
-                                        </select>
-                                    </div>
+                            <div class="fixed-footer mailing-content-footer">
+                                <div class="col-sm-4">
+                                    <label class="control-label" for="target_groups">
+                                        <mvc:message code="Target"/>
+                                    </label>
                                 </div>
+                                <div class="col-sm-8">
+                                    <select id="target_groups" class="form-control js-select dropdown-menu">
+                                        {{targetGroups.forEach(function(targetGroup){ }}
+                                        <option value="{{- targetGroup.id}}"> {{- targetGroup.targetName}}</option>
+                                        {{ }); }}
+                                    </select>
+                                </div>
+                            </div>
                             {{ } }}
                         </div>
                         <div class="col-sm-8 full-height no-padding" id="editable_area">
@@ -108,14 +107,14 @@
                                                 <emm:HideByPermission token="mailing.editor.hide.html">
                                                     <li class="active">
                                                         <a href="#" data-toggle-tab="#tab-content-html" data-action="show-char-counter" style="line-height: 28px;">
-                                                            <bean:message key="HTML"/>
+                                                            <mvc:message code="HTML"/>
                                                         </a>
                                                     </li>
                                                 </emm:HideByPermission>
                                                 <emm:HideByPermission token="mailing.editor.hide">
                                                     <li>
                                                         <a href="#" data-toggle-tab="#tab-content-wysiwyg" data-action="hide-char-counter" style="line-height: 28px;">
-                                                            <bean:message key="mailingContentHTMLEditor"/>
+                                                            <mvc:message code="mailingContentHTMLEditor"/>
                                                         </a>
                                                     </li>
                                                 </emm:HideByPermission>
@@ -160,15 +159,15 @@
                                 class="btn btn-default btn-large js-confirm-negative"
                                 data-dismiss="modal">
                             <i class="icon icon-times"></i>
-                            <span class="text"><bean:message key="button.Cancel"/></span>
+                            <span class="text"><mvc:message code="button.Cancel"/></span>
                         </button>
                         {{ if (isEditableMailing) { }}
-                            <button type="button"
-                                    class="btn btn-primary btn-large"
-                                    data-action="saveDynTag">
-                                <i class="icon icon-save"></i>
-                                <span class="text"><bean:message key="button.Save"/></span>
-                            </button>
+                        <button type="button"
+                                class="btn btn-primary btn-large"
+                                data-action="saveDynTag">
+                            <i class="icon icon-save"></i>
+                            <span class="text"><mvc:message code="button.Save"/></span>
+                        </button>
                         {{ } }}
                     </div>
                 </div>

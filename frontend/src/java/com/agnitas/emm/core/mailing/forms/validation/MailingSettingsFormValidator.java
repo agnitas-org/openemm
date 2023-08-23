@@ -19,6 +19,7 @@ import java.util.Date;
 import java.util.Objects;
 import java.util.TimeZone;
 
+import jakarta.mail.internet.InternetAddress;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.mailing.service.MailingModel;
@@ -26,6 +27,7 @@ import org.agnitas.exceptions.CharacterEncodingValidationExceptionMod;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.CharacterEncodingValidator;
 import org.agnitas.util.DateUtilities;
+import org.agnitas.util.DynTagException;
 import org.agnitas.util.HtmlUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -62,11 +64,11 @@ public class MailingSettingsFormValidator {
     private static final String FROM_EMAIL = "fromEmail";
 
     protected MailingService mailingService;
+    protected ConfigService configService;
     private CharacterEncodingValidator characterEncodingValidator;
     private MailinglistService mailinglistService;
     private ComWorkflowService workflowService;
     private AgnTagService agnTagService;
-    private ConfigService configService;
     private LinkService linkService;
 
     public boolean isValidFormBeforeMailingSave(Mailing mailing, MailingSettingsForm form, MailingSettingsOptions options, Admin admin, Popups popups) {
@@ -154,9 +156,8 @@ public class MailingSettingsFormValidator {
     }
 
     private void validateTags(EmailMediatypeForm form, int companyId, Popups popups) {
+        validateSubjectDynTags(form.getSubject(), popups);
         try {
-            agnTagService.getDynTags(form.getSubject());
-            agnTagService.getDynTags(form.getFromFullname());
             agnTagService.getDynTags(form.getFromFullname());
         } catch (Exception e) {
             popups.field(SUBJECT_FIELD, "error.template.dyntags");
@@ -169,24 +170,52 @@ public class MailingSettingsFormValidator {
         }
     }
 
+    private void validateSubjectDynTags(String subject, Popups popups) {
+        try {
+            agnTagService.getDynTags(subject);
+        } catch (DynTagException e) {
+            popups.field(SUBJECT_FIELD, "error.template.dyntags.subject");
+            e.printStackTrace();
+        }
+    }
+
     private void validateEnvelopeEmail(EmailMediatypeForm form, Popups popups) {
-        String email = form.getEnvelopeEmail();
-        if (StringUtils.isNotEmpty(email) && !AgnUtils.isEmailValid(email)) {
-            popups.field(ENVELOPE_EMAIL, "error.mailing.envelope_adress");
+        try {
+            InternetAddress adr = new InternetAddress(form.getEnvelopeEmail());
+            String email = adr.getAddress();
+            if (!AgnUtils.isEmailValid(email)) {
+                popups.field(ENVELOPE_EMAIL, "error.mailing.envelope_adress");
+            }
+        } catch (Exception e) {
+            // do nothing
         }
     }
 
     private void validateReplyEmail(EmailMediatypeForm form, Popups popups) {
-        String email = form.getReplyEmail();
-        if (!AgnUtils.isEmailValid(email)) {
-            popups.field(REPLY_EMAIL, "error.mailing.reply_adress");
+        try {
+            InternetAddress adr = new InternetAddress(form.getReplyEmail());
+            String email = adr.getAddress();
+            if (!AgnUtils.isEmailValid(email)) {
+                popups.field(REPLY_EMAIL, "error.mailing.reply_adress");
+            }
+        } catch (Exception exc) {
+            if (!StringUtils.contains(form.getReplyEmail(), "[agn")) {
+                popups.field(REPLY_EMAIL, "error.mailing.reply_adress");
+            }
         }
     }
 
     private void validateFromEmail(EmailMediatypeForm form, Popups popups) {
-        String email = form.getFromEmail();
-        if (!AgnUtils.isEmailValid(email)) {
-            popups.field(FROM_EMAIL, "error.mailing.sender_adress");
+        try {
+            InternetAddress adr = new InternetAddress(form.getFromEmail());
+            String email = adr.getAddress();
+            if (!AgnUtils.isEmailValid(email)) {
+                popups.field(FROM_EMAIL, "error.mailing.sender_adress");
+            }
+        } catch (Exception e) {
+            if (!StringUtils.contains(form.getFromEmail(), "[agn")) {
+                popups.field(FROM_EMAIL, "error.mailing.sender_adress");
+            }
         }
     }
     

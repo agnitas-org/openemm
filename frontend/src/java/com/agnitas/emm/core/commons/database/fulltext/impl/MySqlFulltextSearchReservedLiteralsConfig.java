@@ -24,10 +24,10 @@ public class MySqlFulltextSearchReservedLiteralsConfig implements FulltextSearch
 
     private static final String AT_SIGN = "@";
     private static final String QUOTED_AT_SIGN = "\"@\"";
+    private static final String[] SPECIAL_OPERATORS = {"+", "-", ">", "<", "~", "*", "\""};
 
+    private final List<String> specialWords = new ArrayList<>();
     private List<Character> specialChars = new ArrayList<>();
-    private List<String> specialWords = new ArrayList<>();
-    private String[] specialOperators = {"+", "-", ">", "<", "~", "*", "\""};
 
     public MySqlFulltextSearchReservedLiteralsConfig() {}
 
@@ -60,13 +60,13 @@ public class MySqlFulltextSearchReservedLiteralsConfig implements FulltextSearch
         if (tokens.length > 0) {
             String lastToken = tokens[tokens.length - 1];
 
-            boolean endsWithIncorrectSymbol = Stream.of(specialOperators)
+            boolean endsWithIncorrectSymbol = Stream.of(SPECIAL_OPERATORS)
                     .anyMatch(lastToken::endsWith);
 
             if (endsWithIncorrectSymbol) {
                 throw new FulltextSearchInvalidQueryException(
                         "Invalid search phrase! Ends with invalid symbol!",
-                        Message.of("error.search.operator.forbidden", String.join(", ", specialOperators))
+                        Message.of("error.search.operator.forbidden", String.join(", ", SPECIAL_OPERATORS))
                 );
             }
         }

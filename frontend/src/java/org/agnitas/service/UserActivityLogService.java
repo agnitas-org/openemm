@@ -11,18 +11,34 @@
 package org.agnitas.service;
 
 import java.time.LocalDate;
+import java.util.Date;
 import java.util.List;
+
+import com.agnitas.emm.core.useractivitylog.bean.RestfulUserActivityAction;
+import com.agnitas.emm.core.useractivitylog.bean.SoapUserActivityAction;
+import com.agnitas.emm.core.useractivitylog.dao.LoggedUserAction;
 
 import org.agnitas.beans.AdminEntry;
 import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.emm.core.useractivitylog.LoggedUserAction;
 import org.agnitas.emm.core.useractivitylog.UserAction;
+import org.agnitas.util.SqlPreparedStatementManager;
 import org.apache.logging.log4j.Logger;
 
 import com.agnitas.beans.Admin;
 
 public interface UserActivityLogService {
+
+	enum UserType {
+		GUI, SOAP, REST
+	}
+
 	PaginatedListImpl<LoggedUserAction> getUserActivityLogByFilter(Admin admin, String username, int action, LocalDate fromDate, LocalDate toDate, String description, int pageNumber, int rownums, String sort, String direction, List<AdminEntry> admins) throws Exception;
+
+	PaginatedListImpl<RestfulUserActivityAction> getRestfulUserActivityLogByFilter(Admin admin, String username, LocalDate fromDate, LocalDate toDate, String description, int pageNumber, int rownums, String sort, String direction, List<AdminEntry> admins) throws Exception;
+
+	PaginatedListImpl<SoapUserActivityAction> getSoapUserActivityLogByFilter(Admin admin, String username, LocalDate fromDate, LocalDate toDate, int pageNumber, int rownums, String sort, String direction, List<AdminEntry> admins) throws Exception;
+
+	SqlPreparedStatementManager prepareSqlStatementForEntriesRetrieving(List<AdminEntry> visibleAdmins, String selectedAdmin, int selectedAction, Date from, Date to, String description, UserType userType) throws Exception;
 
 	/**
 	 * Write user activity log for given {@link Admin}.

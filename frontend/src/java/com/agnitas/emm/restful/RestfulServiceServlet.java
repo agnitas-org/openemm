@@ -34,6 +34,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
 import com.agnitas.beans.Admin;
+import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.logon.service.ComLogonService;
 import com.agnitas.emm.core.logon.web.LogonFailedException;
 import com.agnitas.emm.util.quota.api.QuotaLimitExceededException;
@@ -119,25 +120,6 @@ public class RestfulServiceServlet extends BaseRequestServlet {
 				}
 				return;
 			} else {
-				RestfulServiceHandler restfulServiceHandler;
-				try {
-					restfulServiceHandler = WebApplicationContextUtils.getWebApplicationContext(getServletContext()).getBean("RestfulServiceHandler_" + restfulInterface1, RestfulServiceHandler.class);
-				} catch (Exception e) {
-					throw new RestfulClientException("No such service: " + restfulInterface1, e);
-				}
-				
-				if (restfulServiceHandler != null) {
-					serviceHandler = restfulServiceHandler.redirectServiceHandlerIfNeeded(getServletContext(), request, restfulInterface2);
-				} else {
-					logger.error("Invalid restful interface: " + request.getRequestURI());
-					throw new RestfulClientException("Invalid restful interface: " + request.getRequestURI());
-				}
-				
-				 // Default response type is json, which the response object was already set before. SO change it here if the servicehandler needs a different response type
-				if (serviceHandler.getResponseType() == ResponseType.XML) {
-					restfulResponse = new XmlRequestResponse();
-				}
-				
 				String basicAuthorizationUsername = HttpUtils.getBasicAuthenticationUsername(request);
 				String basicAuthorizationPassword = HttpUtils.getBasicAuthenticationPassword(request);
 				String username = StringUtils.isNotBlank(basicAuthorizationUsername) ? basicAuthorizationUsername : getRequestParameter(request, "username", true);
@@ -189,6 +171,29 @@ public class RestfulServiceServlet extends BaseRequestServlet {
 					restfulResponse.setError(new Exception("Authorization failed: " + e.getMessage(), e), ErrorCode.USER_AUTHORIZATION_ERROR);
 					writeResponse(response, restfulResponse);
 					return;
+				}
+
+				if ("profilefield".equals(restfulInterface1) && !admin.permissionAllowed(Permission.PROFILEFIELD_MIGRATION)) {
+					restfulInterface1 = "profilefield_old";
+				}
+
+				RestfulServiceHandler restfulServiceHandler;
+				try {
+					restfulServiceHandler = WebApplicationContextUtils.getWebApplicationContext(getServletContext()).getBean("RestfulServiceHandler_" + restfulInterface1, RestfulServiceHandler.class);
+				} catch (Exception e) {
+					throw new RestfulClientException("No such service: " + restfulInterface1, e);
+				}
+				
+				if (restfulServiceHandler != null) {
+					serviceHandler = restfulServiceHandler.redirectServiceHandlerIfNeeded(getServletContext(), request, restfulInterface2);
+				} else {
+					logger.error("Invalid restful interface: " + request.getRequestURI());
+					throw new RestfulClientException("Invalid restful interface: " + request.getRequestURI());
+				}
+				
+				 // Default response type is json, which the response object was already set before. SO change it here if the servicehandler needs a different response type
+				if (serviceHandler.getResponseType() == ResponseType.XML) {
+					restfulResponse = new XmlRequestResponse();
 				}
 
 				// Check quotas
@@ -315,12 +320,12 @@ public class RestfulServiceServlet extends BaseRequestServlet {
 	}
 
 	protected ConfigService getConfigService() {
-		if(this.configService == null) {
-			this.configService = WebApplicationContextUtils.getWebApplicationContext(getServletContext()).getBean("ConfigService", ConfigService.class);
+		if (configService == null) {
+			ApplicationContext applicationContext = WebApplicationContextUtils.getWebApplicationContext(getServletContext());
+			configService = applicationContext.getBean("ConfigService", ConfigService.class);
 		}
 		
-		return this.configService;
-		
+		return configService;
 	}
 	
 	protected ComLogonService getComLogonService() {

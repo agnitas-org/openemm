@@ -1,5 +1,4 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" buffer="32kb" errorPage="/error.do" %>
-<%@ page import="com.agnitas.web.MailingBaseAction" %>
 <%@ page import="org.agnitas.web.forms.WorkflowParametersHelper" %>
 <%@ page import="com.agnitas.emm.core.birtstatistics.enums.StatisticType" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core"      prefix="c" %>
@@ -9,18 +8,10 @@
 <%--@elvariable id="mailingStatisticForm" type="com.agnitas.emm.core.birtstatistics.mailing.forms.MailingStatisticForm"--%>
 <%--@elvariable id="limitedRecipientOverview" type="java.lang.Boolean"--%>
 
-<c:set var="BASE_ACTION_LIST" 					value="<%= MailingBaseAction.ACTION_LIST %>"						scope="request" />
-<c:set var="BASE_ACTION_VIEW" 					value="<%= MailingBaseAction.ACTION_VIEW %>"						scope="request" />
-<c:set var="BASE_ACTION_CONFIRM_DELETE" 		value="<%= MailingBaseAction.ACTION_CONFIRM_DELETE %>" 				scope="request" />
-<c:set var="BASE_ACTION_CLONE_AS_MAILING" 		value="<%= MailingBaseAction.ACTION_CLONE_AS_MAILING %>"			scope="request" />
-
 <emm:CheckLogon/>
 <emm:Permission token="stats.mailing"/>
 
-<c:url var="mailingsOverviewLink" value="/mailingbase.do">
-    <c:param name="action" value="${BASE_ACTION_LIST}"/>
-    <c:param name="isTemplate" value="false"/>
-</c:url>
+<c:url var="mailingsOverviewLink" value="/mailing/list.action"/>
 
 <c:set var="agnTitleKey" 			value="Mailing" 				scope="request" />
 <c:set var="agnSubtitleKey" 		value="Mailing" 				scope="request" />
@@ -98,19 +89,9 @@
     <c:set var="agnHelpKey" value="Statistics" scope="request"/>
 </c:if>
 
-<emm:ShowByPermission token="mailing.settings.migration">
-    <c:url var="mailingViewLink" value="/mailing/${mailingStatisticForm.mailingID}/settings.action">
-        <c:param name="keepForward" value="true"/>
-    </c:url>
-</emm:ShowByPermission>
-<emm:HideByPermission token="mailing.settings.migration">
-    <c:url var="mailingViewLink" value="/mailingbase.do">
-        <c:param name="action" value="${BASE_ACTION_VIEW}"/>
-        <c:param name="mailingID" value="${mailingStatisticForm.mailingID}"/>
-        <c:param name="keepForward" value="true"/>
-        <c:param name="init" value="true"/>
-    </c:url>
-</emm:HideByPermission>
+<c:url var="mailingViewLink" value="/mailing/${mailingStatisticForm.mailingID}/settings.action">
+    <c:param name="keepForward" value="true"/>
+</c:url>
 
 <emm:instantiate var="agnBreadcrumbs" type="java.util.LinkedHashMap" scope="request">
     <emm:instantiate var="agnBreadcrumb" type="java.util.LinkedHashMap">
@@ -153,7 +134,7 @@
     <%@ include file="stats-mailing-separate-view-setup-extended2.jspf" %>
 </emm:instantiate>
 
-<jsp:include page="/WEB-INF/jsp/mailing/actions-dropdown.jsp">
+<jsp:include page="/WEB-INF/jsp/mailing/mailing-actions-dropdown.jsp">
     <jsp:param name="elementIndex" value="0"/>
     <jsp:param name="mailingId" value="${mailingStatisticForm.mailingID}"/>
     <jsp:param name="isTemplate" value="false"/>

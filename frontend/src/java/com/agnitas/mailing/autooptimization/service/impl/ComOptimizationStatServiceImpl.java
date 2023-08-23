@@ -12,7 +12,6 @@ package com.agnitas.mailing.autooptimization.service.impl;
 
 import java.util.Hashtable;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.stat.CampaignStatEntry;
 import org.agnitas.stat.impl.CampaignStatEntryImpl;
 
@@ -31,7 +30,7 @@ public class ComOptimizationStatServiceImpl implements
 	private ComCompanyDao comCompanyDao;
 	
 	@Override
-	public CampaignStatEntry getStat(int mailingID, @VelocityCheck int companyID) {
+	public CampaignStatEntry getStat(int mailingID, int companyID) {
 		CampaignStatEntry statEntry = new CampaignStatEntryImpl();
 
 		statEntry.setShortname(mailingDao.getMailingName(mailingID, companyID));

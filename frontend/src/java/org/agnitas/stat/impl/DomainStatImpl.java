@@ -21,7 +21,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import javax.sql.DataSource;
 
 import org.agnitas.dao.impl.BaseDaoImpl;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.SafeString;
 import org.apache.logging.log4j.LogManager;
@@ -169,7 +168,7 @@ public class DomainStatImpl extends BaseDaoImpl implements org.agnitas.stat.Doma
     // SETTER:
     
     @Override
-	public void setCompanyID(@VelocityCheck int id) {
+	public void setCompanyID(int id) {
         companyID=id;
     }
     

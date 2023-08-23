@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.agnitas.dao.impl.BaseDaoImpl;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.DateUtilities;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -45,17 +44,17 @@ public class ComMailingParameterDaoImpl extends BaseDaoImpl implements ComMailin
 	private static final String SELECT_BY_NAME = "SELECT mailing_info_id, mailing_id, company_id, name, value, description, change_date, change_admin_id, creation_date, creation_admin_id FROM mailing_info_tbl WHERE company_id = ? AND mailing_id = ? and name = ?";
 	
 	@Override
-	public List<ComMailingParameter> getAllParameters(@VelocityCheck int companyID) {
+	public List<ComMailingParameter> getAllParameters(int companyID) {
 		return select(logger, "SELECT mailing_info_id, mailing_id, company_id, name, value, description, change_date, change_admin_id, creation_date, creation_admin_id FROM mailing_info_tbl WHERE company_id = ? ORDER BY creation_date", new ComMailingParameter_RowMapper(), companyID);
 	}
 	
 	@Override
-	public List<ComMailingParameter> getMailingParameters(@VelocityCheck int companyID, int mailingID) {
+	public List<ComMailingParameter> getMailingParameters(int companyID, int mailingID) {
 		return select(logger, "SELECT mailing_info_id, mailing_id, company_id, name, value, description, change_date, change_admin_id, creation_date, creation_admin_id FROM mailing_info_tbl WHERE company_id = ? AND mailing_id = ? ORDER BY creation_date", new ComMailingParameter_RowMapper(), companyID, mailingID);
 	}
 
 	@Override
-	public List<ComMailingParameter> getParametersBySearchQuery(@VelocityCheck int companyID, String searchQuery, int mailingIdStartsWith) {
+	public List<ComMailingParameter> getParametersBySearchQuery(int companyID, String searchQuery, int mailingIdStartsWith) {
 		final String escapedParameterSearchQuery = "%" + getEscapedValue(StringUtils.defaultString(searchQuery)) + "%";
 		final String mailingSearchQuery = "%" + (mailingIdStartsWith > 0 ? mailingIdStartsWith : "") + "%";
 
@@ -147,7 +146,7 @@ public class ComMailingParameterDaoImpl extends BaseDaoImpl implements ComMailin
 
 	@Override
 	@DaoUpdateReturnValueCheck
-	public boolean updateParameters(@VelocityCheck int companyID, int mailingID, List<ComMailingParameter> parameterList, int adminId) {
+	public boolean updateParameters(int companyID, int mailingID, List<ComMailingParameter> parameterList, int adminId) {
 		boolean success = true;
 
 		List<ComMailingParameter> parametersBeforeUpdate = getMailingParameters(companyID, mailingID);
@@ -234,7 +233,7 @@ public class ComMailingParameterDaoImpl extends BaseDaoImpl implements ComMailin
 	}
 
 	@Override
-	public ComMailingParameter getParameterByName(String parameterName, int mailingId, @VelocityCheck int companyId) throws MailingParameterNotFoundException {
+	public ComMailingParameter getParameterByName(String parameterName, int mailingId, int companyId) throws MailingParameterNotFoundException {
 		ComMailingParameter parameter = getParameterByNameDefaultNull(parameterName, mailingId, companyId);
 		if(parameter == null){
 			throw new MailingParameterNotFoundException(parameterName, mailingId);
@@ -245,7 +244,7 @@ public class ComMailingParameterDaoImpl extends BaseDaoImpl implements ComMailin
 	/**
 	 * Doesn't throw exception if there is no {@link ComMailingParameter}
 	 */
-	private ComMailingParameter getParameterByNameDefaultNull(String parameterName, int mailingId, @VelocityCheck int companyId){
+	private ComMailingParameter getParameterByNameDefaultNull(String parameterName, int mailingId, int companyId){
 		List<ComMailingParameter> list = select(logger, SELECT_BY_NAME, new ComMailingParameter_RowMapper(), companyId, mailingId, parameterName);
 
 		if (list.isEmpty()) {
@@ -282,7 +281,7 @@ public class ComMailingParameterDaoImpl extends BaseDaoImpl implements ComMailin
 	}
 
 	@Override
-	public void insertMailingError(@VelocityCheck int companyId, int mailingID, String errorText) {
+	public void insertMailingError(int companyId, int mailingID, String errorText) {
 		ComMailingParameter parameter = getParameterByNameDefaultNull(ReservedMailingParam.ERROR.getName(), mailingID, companyId);
 
 		if (parameter != null) {

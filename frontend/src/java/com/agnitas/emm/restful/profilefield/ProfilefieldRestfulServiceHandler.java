@@ -19,31 +19,30 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
-import org.agnitas.emm.core.useractivitylog.dao.UserActivityLogDao;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DbColumnType.SimpleDataType;
 import org.agnitas.util.HttpUtils.RequestMethod;
 import org.agnitas.util.SafeString;
-import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.Admin;
-import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.ProfileFieldMode;
-import com.agnitas.beans.impl.ProfileFieldImpl;
-import com.agnitas.dao.ProfileFieldDao;
-import com.agnitas.dao.impl.ComCompanyDaoImpl;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.admin.service.AdminService;
-import com.agnitas.emm.core.profilefields.service.ProfileFieldService;
-import com.agnitas.emm.core.profilefields.service.ProfileFieldValidationService;
+import com.agnitas.emm.core.service.RecipientFieldDescription;
+import com.agnitas.emm.core.service.RecipientFieldService;
+import com.agnitas.emm.core.useractivitylog.dao.RestfulUserActivityLogDao;
 import com.agnitas.emm.restful.BaseRequestResponse;
 import com.agnitas.emm.restful.ErrorCode;
 import com.agnitas.emm.restful.JsonRequestResponse;
@@ -55,7 +54,6 @@ import com.agnitas.json.JsonArray;
 import com.agnitas.json.JsonDataType;
 import com.agnitas.json.JsonNode;
 import com.agnitas.json.JsonObject;
-import com.agnitas.service.ColumnInfoService;
 
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.http.HttpServletRequest;
@@ -68,35 +66,16 @@ import jakarta.servlet.http.HttpServletResponse;
 public class ProfilefieldRestfulServiceHandler implements RestfulServiceHandler {
 	public static final String NAMESPACE = "profilefield";
 
-	private UserActivityLogDao userActivityLogDao;
-	private ColumnInfoService columnInfoService;
-    private ProfileFieldService profileFieldService;
+    private ConfigService configService;
     private AdminService adminService;
-    private ProfileFieldValidationService profileFieldValidationService;
+    private RecipientFieldService recipientFieldService;
+	private RestfulUserActivityLogDao userActivityLogDao;
 	
-	@Required
-	public void setUserActivityLogDao(UserActivityLogDao userActivityLogDao) {
-		this.userActivityLogDao = userActivityLogDao;
-	}
-	
-	@Required
-	public void setColumnInfoService(ColumnInfoService columnInfoService) {
-		this.columnInfoService = columnInfoService;
-	}
-
-	@Required
-	public void setProfileFieldService(ProfileFieldService profileFieldService) {
-		this.profileFieldService = profileFieldService;
-	}
-
-	@Required
-	public void setAdminService(AdminService adminService) {
-		this.adminService = adminService;
-	}
-
-	@Required
-	public void setProfileFieldValidationService(ProfileFieldValidationService profileFieldValidationService) {
-		this.profileFieldValidationService = profileFieldValidationService;
+    public ProfilefieldRestfulServiceHandler(ConfigService configService, AdminService adminService, RecipientFieldService recipientFieldService, RestfulUserActivityLogDao userActivityLogDao) {
+		this.configService = Objects.requireNonNull(configService);
+		this.adminService = Objects.requireNonNull(adminService);
+		this.recipientFieldService = Objects.requireNonNull(recipientFieldService);
+		this.userActivityLogDao = Objects.requireNonNull(userActivityLogDao);
 	}
 
 	@Override
@@ -125,10 +104,6 @@ public class ProfilefieldRestfulServiceHandler implements RestfulServiceHandler 
 	/**
 	 * Return a single or multiple profilefield data sets
 	 * 
-	 * @param request
-	 * @param admin
-	 * @return
-	 * @throws Exception
 	 */
 	private Object getProfilefieldData(HttpServletRequest request, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.PROFILEFIELD_SHOW)) {
@@ -146,74 +121,71 @@ public class ProfilefieldRestfulServiceHandler implements RestfulServiceHandler 
 				try {
 					SafeString.getSafeDbColumnName (requestedProfilefieldName);
 				} catch (Exception e) {
-					throw new RestfulClientException("Invalid requested profilefield name: " + requestedProfilefieldName);
+					throw new RestfulClientException("Invalid requested profilefield name: " + requestedProfilefieldName, e);
 				}
 			}
 			
-			ProfileField profileField = columnInfoService.getColumnInfo(admin.getCompanyID(), requestedProfilefieldName);
+			RecipientFieldDescription profileField = recipientFieldService.getRecipientField(admin.getCompanyID(), requestedProfilefieldName);
 			if (profileField == null) {
 				throw new RestfulClientException("Invalid requested profilefield name: " + requestedProfilefieldName);
 			} else {
-				Set<Integer> readOnlyUsers = new HashSet<>();
-				Set<Integer> notVisibleUsers = new HashSet<>();
-				readProfilefieldAdminPermissions(profileField.getCompanyID(), profileField.getColumn(), readOnlyUsers, notVisibleUsers);
-				JsonObject profilefieldJsonObject = getProfileFieldJsonObject(profileField, readOnlyUsers, notVisibleUsers);
+				JsonObject profilefieldJsonObject = getProfileFieldJsonObject(admin.getCompanyID(), profileField);
 				
 				userActivityLogDao.addAdminUseOfFeature(admin, "restful/profilefield", new Date());
-				userActivityLogDao.writeUserActivityLog(admin, "restful/profilefield GET", requestedProfilefieldName);
-				
+				writeActivityLog(requestedProfilefieldName, request, admin);
+
 				return profilefieldJsonObject;
 			}
 		} else {
 			JsonArray result = new JsonArray();
-			CaseInsensitiveMap<String, ProfileField> allProfileFields = columnInfoService.getColumnInfoMap(admin.getCompanyID());
-			for (ProfileField profileField : sortProfileFields(allProfileFields.values(), "customer_id", "email")) {
+			List<RecipientFieldDescription> allProfileFields = recipientFieldService.getRecipientFields(admin.getCompanyID());
+			for (RecipientFieldDescription profileField : sortProfileFields(allProfileFields, "customer_id", "email")) {
 				JsonObject profilefieldJsonObject = new JsonObject();
-				profilefieldJsonObject.add("name", profileField.getColumn().toLowerCase());
-				profilefieldJsonObject.add("shortname", profileField.getShortname());
+				profilefieldJsonObject.add("name", profileField.getColumnName().toLowerCase());
+				profilefieldJsonObject.add("shortname", profileField.getShortName());
 				profilefieldJsonObject.add("type", profileField.getSimpleDataType().toString());
 
 				if (profileField.getSimpleDataType() == SimpleDataType.Characters
 						|| profileField.getSimpleDataType() == SimpleDataType.Blob) {
-					profilefieldJsonObject.add("length", profileField.getDataTypeLength());					
+					profilefieldJsonObject.add("length", profileField.getCharacterLength());					
 				}
 				
-				profilefieldJsonObject.add("nullable", profileField.getNullable());
+				profilefieldJsonObject.add("nullable", profileField.isNullable());
 				
-				profilefieldJsonObject.add("sortIndex", profileField.getSort());
+				profilefieldJsonObject.add("sortIndex", profileField.getSortOrder());
 				
 				result.add(profilefieldJsonObject);
 			}
 
 			userActivityLogDao.addAdminUseOfFeature(admin, "restful/profilefield", new Date());
-			userActivityLogDao.writeUserActivityLog(admin, "restful/profilefield GET", "ALL");
-			
+			writeActivityLog("ALL", request, admin);
+
 			return result;
 		}
 	}
 
-	private JsonObject getProfileFieldJsonObject(ProfileField profileField, Set<Integer> readOnlyUsers, Set<Integer> notVisibleUsers) {
+	private JsonObject getProfileFieldJsonObject(int companyID, RecipientFieldDescription profileField) {
 		JsonObject profilefieldJsonObject = new JsonObject();
-		profilefieldJsonObject.add("name", profileField.getColumn().toLowerCase());
-		profilefieldJsonObject.add("shortname", profileField.getShortname());
+		profilefieldJsonObject.add("name", profileField.getColumnName().toLowerCase());
+		profilefieldJsonObject.add("shortname", profileField.getShortName());
 		profilefieldJsonObject.add("type", profileField.getSimpleDataType().toString());
 
 		if (profileField.getSimpleDataType() == SimpleDataType.Characters
 				|| profileField.getSimpleDataType() == SimpleDataType.Blob) {
-			profilefieldJsonObject.add("length", profileField.getDataTypeLength());					
+			profilefieldJsonObject.add("length", profileField.getCharacterLength());					
 		}
 		
-		profilefieldJsonObject.add("nullable", profileField.getNullable());
+		profilefieldJsonObject.add("nullable", profileField.isNullable());
 		
 		profilefieldJsonObject.add("creation", profileField.getCreationDate());
 		profilefieldJsonObject.add("change", profileField.getChangeDate());
-		profilefieldJsonObject.add("historized", profileField.getHistorize());
-		profilefieldJsonObject.add("modeEdit", profileField.getModeEdit().name());
+		profilefieldJsonObject.add("historized", profileField.isHistorized());
+		profilefieldJsonObject.add("modeEdit", profileField.getDefaultPermission().name());
 
 		profilefieldJsonObject.add("description", profileField.getDescription());
 		profilefieldJsonObject.add("defaultValue", profileField.getDefaultValue());
 		
-		if (profileField.getAllowedValues() != null && profileField.getAllowedValues().length > 0) {
+		if (profileField.getAllowedValues() != null && profileField.getAllowedValues().size() > 0) {
 			JsonArray allowedValues = new JsonArray();
 			for (String value : profileField.getAllowedValues()) {
 				allowedValues.add(value);
@@ -221,22 +193,38 @@ public class ProfilefieldRestfulServiceHandler implements RestfulServiceHandler 
 			profilefieldJsonObject.add("allowedValues", allowedValues);
 		}
 		
-		Map<Integer, String> adminNamesMap = adminService.getAdminsNamesMap(profileField.getCompanyID());
+		Map<Integer, String> adminNamesMap = adminService.getAdminsNamesMap(companyID);
 		
-		if (readOnlyUsers.size() > 0) {
-			JsonArray readOnlyUsersArray = new JsonArray();
-			for (int adminID : readOnlyUsers) {
-				readOnlyUsersArray.add(adminNamesMap.get(adminID));
+		if (profileField.getPermissions() != null) {
+			Set<Integer> readOnlyUsers = new HashSet<>();
+			Set<Integer> notVisibleUsers = new HashSet<>();
+			if (profileField.getPermissions() != null) {
+				for (Entry<Integer, ProfileFieldMode> permission : profileField.getPermissions().entrySet()) {
+					if (permission.getKey() > 0) {
+						if (permission.getValue() == ProfileFieldMode.ReadOnly) {
+							readOnlyUsers.add(permission.getKey());
+						} else if (permission.getValue() == ProfileFieldMode.NotVisible) {
+							notVisibleUsers.add(permission.getKey());
+						}
+					}
+				}
 			}
-			profilefieldJsonObject.add("readOnlyUsers", readOnlyUsersArray);
-		}
-		
-		if (notVisibleUsers.size() > 0) {
-			JsonArray notVisibleUsersArray = new JsonArray();
-			for (int adminID : notVisibleUsers) {
-				notVisibleUsersArray.add(adminNamesMap.get(adminID));
+			
+			if (readOnlyUsers.size() > 0) {
+				JsonArray readOnlyUsersArray = new JsonArray();
+				for (int adminID : readOnlyUsers) {
+					readOnlyUsersArray.add(adminNamesMap.get(adminID));
+				}
+				profilefieldJsonObject.add("readOnlyUsers", readOnlyUsersArray);
 			}
-			profilefieldJsonObject.add("notVisibleUsers", notVisibleUsersArray);
+			
+			if (notVisibleUsers.size() > 0) {
+				JsonArray notVisibleUsersArray = new JsonArray();
+				for (int adminID : notVisibleUsers) {
+					notVisibleUsersArray.add(adminNamesMap.get(adminID));
+				}
+				profilefieldJsonObject.add("notVisibleUsers", notVisibleUsersArray);
+			}
 		}
 
 		return profilefieldJsonObject;
@@ -245,10 +233,6 @@ public class ProfilefieldRestfulServiceHandler implements RestfulServiceHandler 
 	/**
 	 * Delete a single profilefield
 	 * 
-	 * @param request
-	 * @param admin
-	 * @return
-	 * @throws Exception
 	 */
 	private Object deleteProfilefield(HttpServletRequest request, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.PROFILEFIELD_SHOW)) {
@@ -264,24 +248,24 @@ public class ProfilefieldRestfulServiceHandler implements RestfulServiceHandler 
 			try {
 				SafeString.getSafeDbColumnName (requestedProfilefieldName);
 			} catch (Exception e) {
-				throw new RestfulClientException("Invalid requested profilefield name: " + requestedProfilefieldName);
+				throw new RestfulClientException("Invalid requested profilefield name: " + requestedProfilefieldName, e);
 			}
 		}
 		
-		ProfileField profileField = columnInfoService.getColumnInfo(admin.getCompanyID(), requestedProfilefieldName);
+		RecipientFieldDescription profileField = recipientFieldService.getRecipientField(admin.getCompanyID(), requestedProfilefieldName);
 		if (profileField == null) {
 			throw new RestfulClientException("Invalid requested profilefield name: " + requestedProfilefieldName);
 		} else {
-			for (String standardField : ComCompanyDaoImpl.STANDARD_CUSTOMER_FIELDS) {
+			for (String standardField : RecipientFieldService.RecipientStandardField.getAllRecipientStandardFieldColumnNames()) {
 				if (standardField.trim().equalsIgnoreCase(requestedProfilefieldName)) {
 					throw new RestfulClientException("Invalid requested profilefield name: Cannot remove standard columns");
 				}
 			}
 			
 			userActivityLogDao.addAdminUseOfFeature(admin, "restful/profilefield", new Date());
-			userActivityLogDao.writeUserActivityLog(admin, "restful/profilefield DELETE", requestedProfilefieldName);
-			
-			profileFieldService.removeProfileField(admin.getCompanyID(), requestedProfilefieldName);
+			writeActivityLog(requestedProfilefieldName, request, admin);
+
+			recipientFieldService.deleteRecipientField(admin.getCompanyID(), requestedProfilefieldName);
 			
 			return "Profilefield '" + requestedProfilefieldName + "' deleted";
 		}
@@ -290,15 +274,12 @@ public class ProfilefieldRestfulServiceHandler implements RestfulServiceHandler 
 	/**
 	 * Create a new profilefield
 	 * 
-	 * @param request
-	 * @param requestDataFile
-	 * @param admin
-	 * @return
-	 * @throws Exception
 	 */
 	private Object createNewProfilefield(HttpServletRequest request, byte[] requestData, File requestDataFile, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.PROFILEFIELD_SHOW)) {
 			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.PROFILEFIELD_SHOW.toString() + "'");
+		} else if (!mayAddNewColumn(admin.getCompanyID())) {
+			throw new RestfulClientException("Maximum number of profilefields exceeded. Current number of profilefields: " + recipientFieldService.getRecipientFields(admin.getCompanyID()).size());
 		}
 		
 		String requestedProfilefieldName = null;
@@ -327,65 +308,45 @@ public class ProfilefieldRestfulServiceHandler implements RestfulServiceHandler 
 					throw new RestfulClientException("Invalid data for 'name'. Mismatch of request context and JSON data");
 				}
 			} else {
-				throw new RestfulClientException("Invalid data type for 'name'. String expected");
+				throw new RestfulClientException("Invalid data for 'name'. String expected");
 			}
 		}
 		
-		if (profileFieldService.exists(admin.getCompanyID(), requestedProfilefieldName)) {
-			throw new RestfulClientException("Invalid data type for 'name'. Profilefield already exists: " + requestedProfilefieldName);
+		if (recipientFieldService.getRecipientField(admin.getCompanyID(), requestedProfilefieldName) != null) {
+			throw new RestfulClientException("Invalid data for 'name'. Profilefield already exists: " + requestedProfilefieldName);
 		}
 		
-		if (!profileFieldValidationService.mayAddNewColumn(admin.getCompanyID())) {
-			throw new RestfulClientException("Maximum number of profilefields exceeded. Current number of profilefields: " + columnInfoService.getColumnInfos(admin.getCompanyID()).size());
+		RecipientFieldDescription profileField = new RecipientFieldDescription();
+		profileField.setColumnName(requestedProfilefieldName);
+		
+		if (RecipientFieldService.RecipientStandardField.getAllRecipientStandardFieldColumnNames().contains(profileField.getColumnName().toLowerCase())) {
+			throw new RestfulClientException("Standard column, which may not be altered: " + profileField.getColumnName());
 		}
 		
-		ProfileField profileField = new ProfileFieldImpl();
-		profileField.setCompanyID(admin.getCompanyID());
-		profileField.setColumn(requestedProfilefieldName);
-		Set<Integer> readOnlyUsers = new HashSet<>();
-		Set<Integer> notVisibleUsers = new HashSet<>();
+		readJsonData(admin.getCompanyID(), jsonObject, profileField);
 		
-		if (profileFieldValidationService.isStandardColumn(profileField.getColumn().toLowerCase())) {
-			throw new RestfulClientException("Standard column, which may not be altered: " + profileField.getColumn());
-		}
-		
-		readJsonData(jsonObject, profileField, readOnlyUsers, notVisibleUsers);
-		if (!jsonObject.containsPropertyKey("readOnlyUsers")) {
-			readOnlyUsers = null;
-		}
-		if (!jsonObject.containsPropertyKey("visibleUsers") && !jsonObject.containsPropertyKey("notVisibleUsers")) {
-			notVisibleUsers = null;
-		}
-		
-		validateProfileFieldData(profileField);
+		validateProfileFieldData(admin.getCompanyID(), profileField);
 		if (jsonObject.containsPropertyKey("length") && profileField.getSimpleDataType() != SimpleDataType.Characters) {
 			throw new RestfulClientException("Invalid data value for 'length'. Only data type Characters has a length attribute");
 		}
 
 		userActivityLogDao.addAdminUseOfFeature(admin, "restful/profilefield", new Date());
-		userActivityLogDao.writeUserActivityLog(admin, "restful/profilefield POST", requestedProfilefieldName);
+		writeActivityLog(requestedProfilefieldName, request, admin);
 		
-		if (!profileFieldService.updateField(profileField, admin)) {
-			throw new Exception("Storage of profilefield data failed");
+		try {
+			recipientFieldService.saveRecipientField(admin.getCompanyID(), profileField);
+		} catch (Exception e) {
+			throw new Exception("Storage of profilefield data failed", e);
 		}
-		
-		columnInfoService.storeProfileFieldAdminPermissions(admin.getCompanyID(), profileField.getColumn(), readOnlyUsers, notVisibleUsers);
 
-		ProfileField currentProfilefield = columnInfoService.getColumnInfo(admin.getCompanyID(), requestedProfilefieldName);
-		Set<Integer> currentReadOnlyUsers = new HashSet<>();
-		Set<Integer> currentNotVisibleUsers = new HashSet<>();
-		readProfilefieldAdminPermissions(currentProfilefield.getCompanyID(), currentProfilefield.getColumn(), currentReadOnlyUsers, currentNotVisibleUsers);
-		return getProfileFieldJsonObject(currentProfilefield, currentReadOnlyUsers, currentNotVisibleUsers);
+		RecipientFieldDescription currentProfilefield = recipientFieldService.getRecipientField(admin.getCompanyID(), requestedProfilefieldName);
+		
+		return getProfileFieldJsonObject(admin.getCompanyID(), currentProfilefield);
 	}
 
 	/**
 	 * Create a new profilefield or update an existing profilefield
 	 * 
-	 * @param request
-	 * @param requestDataFile
-	 * @param admin
-	 * @return
-	 * @throws Exception
 	 */
 	private Object createOrUpdateProfilefield(HttpServletRequest request, byte[] requestData, File requestDataFile, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.PROFILEFIELD_SHOW)) {
@@ -422,77 +383,53 @@ public class ProfilefieldRestfulServiceHandler implements RestfulServiceHandler 
 			}
 		}
 		
-		ProfileField profileField = columnInfoService.getColumnInfo(admin.getCompanyID(), requestedProfilefieldName);
-		Set<Integer> readOnlyUsers = new HashSet<>();
-		Set<Integer> notVisibleUsers = new HashSet<>();
+		RecipientFieldDescription profileField = recipientFieldService.getRecipientField(admin.getCompanyID(), requestedProfilefieldName);
+
 		if (profileField == null) {
-			if (!profileFieldValidationService.mayAddNewColumn(admin.getCompanyID())) {
-				throw new RestfulClientException("Maximum number of profilefields exceeded. Current number of profilefields: " + columnInfoService.getColumnInfos(admin.getCompanyID()).size());
+			if (!mayAddNewColumn(admin.getCompanyID())) {
+				throw new RestfulClientException("Maximum number of profilefields exceeded. Current number of profilefields: " + recipientFieldService.getRecipientFields(admin.getCompanyID()).size());
 			}
 			
-			profileField = new ProfileFieldImpl();
-			profileField.setCompanyID(admin.getCompanyID());
-		} else {
-			readProfilefieldAdminPermissions(profileField.getCompanyID(), profileField.getColumn(), readOnlyUsers, notVisibleUsers);
-		}
-		
-		if (StringUtils.isBlank(profileField.getColumn())) {
-			profileField.setColumn(requestedProfilefieldName);
-		} else if (!profileField.getColumn().equalsIgnoreCase(requestedProfilefieldName)) {
-			throw new RestfulClientException("Invalid data type for 'name'. Cannot change name of existing profilefield");
+			profileField = new RecipientFieldDescription();
 		}
 
-		if (profileFieldValidationService.isStandardColumn(profileField.getColumn().toLowerCase())) {
-			throw new RestfulClientException("Standard column, which may not be altered: " + profileField.getColumn());
+		readJsonData(admin.getCompanyID(), jsonObject, profileField);
+		
+		if (requestedProfilefieldName != null) {
+			if (StringUtils.isBlank(profileField.getColumnName())) {
+				profileField.setColumnName(requestedProfilefieldName);
+			} else if (!profileField.getColumnName().equalsIgnoreCase(requestedProfilefieldName)) {
+				throw new RestfulClientException("Invalid data for 'name'. Cannot change name of existing profilefield");
+			}
+		}
+
+		if (RecipientFieldService.RecipientStandardField.getAllRecipientStandardFieldColumnNames().contains(profileField.getColumnName().toLowerCase())) {
+			throw new RestfulClientException("Standard column, which may not be altered: " + profileField.getColumnName());
 		}
 		
-		readJsonData(jsonObject, profileField, readOnlyUsers, notVisibleUsers);
-		if (!jsonObject.containsPropertyKey("readOnlyUsers")) {
-			readOnlyUsers = null;
-		}
-		if (!jsonObject.containsPropertyKey("visibleUsers") && !jsonObject.containsPropertyKey("notVisibleUsers")) {
-			notVisibleUsers = null;
-		}
-		
-		validateProfileFieldData(profileField);
+		validateProfileFieldData(admin.getCompanyID(), profileField);
 		if (jsonObject.containsPropertyKey("length") && profileField.getSimpleDataType() != SimpleDataType.Characters) {
 			throw new RestfulClientException("Invalid data value for 'length'. Only data type Characters has a length attribute");
 		}
 
 		userActivityLogDao.addAdminUseOfFeature(admin, "restful/profilefield", new Date());
-		userActivityLogDao.writeUserActivityLog(admin, "restful/profilefield PUT", requestedProfilefieldName);
-		
-		if (!profileFieldService.updateField(profileField, admin)) {
-			throw new Exception("Storage of profilefield data failed");
-		}
-		
-		columnInfoService.storeProfileFieldAdminPermissions(admin.getCompanyID(), profileField.getColumn(), readOnlyUsers, notVisibleUsers);
+		writeActivityLog(requestedProfilefieldName, request, admin);
 
-		ProfileField currentProfilefield = columnInfoService.getColumnInfo(admin.getCompanyID(), requestedProfilefieldName);
-		Set<Integer> currentReadOnlyUsers = new HashSet<>();
-		Set<Integer> currentNotVisibleUsers = new HashSet<>();
-		readProfilefieldAdminPermissions(currentProfilefield.getCompanyID(), currentProfilefield.getColumn(), currentReadOnlyUsers, currentNotVisibleUsers);
-		return getProfileFieldJsonObject(currentProfilefield, currentReadOnlyUsers, currentNotVisibleUsers);
-	}
-
-	private void readProfilefieldAdminPermissions(int companyID, String columnName, Set<Integer> readOnlyUsers, Set<Integer> notVisibleUsers) throws Exception {
-		Map<Integer, ProfileFieldMode> profileFieldAdminPermissions = columnInfoService.getProfileFieldAdminPermissions(companyID, columnName);
-		if (profileFieldAdminPermissions != null && profileFieldAdminPermissions.size() > 0) {
-			for (Entry<Integer, ProfileFieldMode> entry : profileFieldAdminPermissions.entrySet()) {
-				if (ProfileFieldMode.ReadOnly == entry.getValue()) {
-					readOnlyUsers.add(entry.getKey());
-				} else if (ProfileFieldMode.NotVisible == entry.getValue()) {
-					notVisibleUsers.add(entry.getKey());
-				}
-			}
+		try {
+			recipientFieldService.saveRecipientField(admin.getCompanyID(), profileField);
+		} catch (Exception e) {
+			throw new Exception("Storage of profilefield data failed", e);
 		}
+
+		RecipientFieldDescription currentProfilefield = recipientFieldService.getRecipientField(admin.getCompanyID(), requestedProfilefieldName);
+		return getProfileFieldJsonObject(admin.getCompanyID(), currentProfilefield);
 	}
 	
-	private Collection<ProfileField> sortProfileFields(Collection<ProfileField> profileFields, String... keepItemsFirst) {
-		List<ProfileField> list = new ArrayList<>(profileFields);
-		Collections.sort(list, new Comparator<ProfileField>() {
+	private Collection<RecipientFieldDescription> sortProfileFields(Collection<RecipientFieldDescription> profileFields, String... keepItemsFirst) {
+		List<RecipientFieldDescription> list = new ArrayList<>(profileFields);
+		Collections.sort(list, new Comparator<RecipientFieldDescription>() {
 			@Override
-			public int compare(ProfileField o1, ProfileField o2) {
+			public int compare(RecipientFieldDescription o1, RecipientFieldDescription o2) {
 				if (o1 == o2) {
 					return 0;
 				} else if (o1 == null) {
@@ -502,13 +439,13 @@ public class ProfilefieldRestfulServiceHandler implements RestfulServiceHandler 
 				} else if (o1.equals(o2)) {
 					return 0;
 				} else {
-					String profilefieldName1 = o1.getColumn().toLowerCase();
-					String profilefieldName2 = o2.getColumn().toLowerCase();
+					String profilefieldName1 = o1.getColumnName().toLowerCase();
+					String profilefieldName2 = o2.getColumnName().toLowerCase();
 					
-					if (o1.getSort() < ProfileFieldDao.MAX_SORT_INDEX && o2.getSort() < ProfileFieldDao.MAX_SORT_INDEX) {
-						if (o1.getSort() < o2.getSort()) {
+					if (o1.getSortOrder() < 1000 && o2.getSortOrder() < 1000) {
+						if (o1.getSortOrder() < o2.getSortOrder()) {
 							return -1;
-						} else if (o1.getSort() == o2.getSort()) {
+						} else if (o1.getSortOrder() == o2.getSortOrder()) {
 							if (profilefieldName1 != null && profilefieldName2 != null) {
 								return profilefieldName1.compareTo(profilefieldName2);
 							} else if (profilefieldName1 != null) {
@@ -519,9 +456,9 @@ public class ProfilefieldRestfulServiceHandler implements RestfulServiceHandler 
 						} else {
 							return 1;
 						}
-					} else if (o1.getSort() < ProfileFieldDao.MAX_SORT_INDEX) {
+					} else if (o1.getSortOrder() < 1000) {
 						return -1;
-					} else if (o2.getSort() < ProfileFieldDao.MAX_SORT_INDEX) {
+					} else if (o2.getSortOrder() < 1000) {
 						return 1;
 					} else {
 						for (String item : keepItemsFirst) {
@@ -544,41 +481,42 @@ public class ProfilefieldRestfulServiceHandler implements RestfulServiceHandler 
 		return list;
 	}
 
-	private void readJsonData(JsonObject jsonObject, ProfileField profileField, Set<Integer> readOnlyUsers, Set<Integer> notVisibleUsers) throws Exception, RestfulClientException, IOException, FileNotFoundException {
+	private void readJsonData(int companyID, JsonObject jsonObject, RecipientFieldDescription profileField) throws Exception, RestfulClientException, IOException, FileNotFoundException {
 		Map<Integer, String> adminNamesMap = null;
-		
-		readOnlyUsers.clear();
-		notVisibleUsers.clear();
 		
 		if (jsonObject.containsPropertyKey("notVisibleUsers") && jsonObject.containsPropertyKey("visibleUsers")) {
 			throw new RestfulClientException("Invalid data. Only one of 'notVisibleUsers' and 'visibleUsers' expected");
 		}
+		
+		Set<Integer> newReadOnlyUsers = null;
+		Set<Integer> newNotVisibleUsers = null;
 		
 		for (Entry<String, Object> entry : jsonObject.entrySet()) {
 			if ("name".equals(entry.getKey())) {
 				// Attribute "name" is skipped, because it was handled before
 			} else if ("type".equals(entry.getKey())) {
 				if (entry.getValue() instanceof String) {
-					if (profileField.getDataType() == null) {
+					if (profileField.getDatabaseDataType() == null) {
 						SimpleDataType simpleDataType;
 						try {
 							simpleDataType = SimpleDataType.getFromString((String) entry.getValue());
 						} catch (Exception e) {
-							throw new RestfulClientException("Invalid value for property 'type': " + (String) entry.getValue());
+							throw new RestfulClientException("Invalid value for property 'type': " + (String) entry.getValue(), e);
 						}
+						profileField.setSimpleDataType(simpleDataType);
 						if (simpleDataType == SimpleDataType.Characters) {
-							profileField.setDataType("VARCHAR");
-							profileField.setDataTypeLength(100);
+							profileField.setDatabaseDataType("VARCHAR");
+							profileField.setCharacterLength(100);
 						} else if (simpleDataType == SimpleDataType.Date) {
-							profileField.setDataType("DATE");
+							profileField.setDatabaseDataType("DATE");
 						} else if (simpleDataType == SimpleDataType.DateTime) {
-							profileField.setDataType("DATETIME");
+							profileField.setDatabaseDataType("DATETIME");
 						} else if (simpleDataType == SimpleDataType.Float) {
-							profileField.setDataType("FLOAT");
+							profileField.setDatabaseDataType("FLOAT");
 						} else if (simpleDataType == SimpleDataType.Numeric) {
-							profileField.setDataType("INTEGER");
+							profileField.setDatabaseDataType("INTEGER");
 						} else if (simpleDataType == SimpleDataType.Blob) {
-							profileField.setDataType("DATE");
+							profileField.setDatabaseDataType("DATE");
 						} else {
 							throw new RestfulClientException("Invalid value for property 'type': " + (String) entry.getValue());
 						}
@@ -590,7 +528,7 @@ public class ProfilefieldRestfulServiceHandler implements RestfulServiceHandler 
 				}
 			} else if ("shortname".equals(entry.getKey())) {
 				if (entry.getValue() instanceof String) {
-					profileField.setShortname((String) entry.getValue());
+					profileField.setShortName((String) entry.getValue());
 				} else {
 					throw new RestfulClientException("Invalid data type for 'shortname'. String expected");
 				}
@@ -600,6 +538,12 @@ public class ProfilefieldRestfulServiceHandler implements RestfulServiceHandler 
 				} else {
 					throw new RestfulClientException("Invalid data type for 'description'. String expected");
 				}
+			} else if ("sortIndex".equals(entry.getKey())) {
+				if (entry.getValue() instanceof Integer) {
+					profileField.setSortOrder((Integer) entry.getValue());
+				} else {
+					throw new RestfulClientException("Invalid data type for 'sortIndex'. Integer expected");
+				}
 			} else if ("defaultValue".equals(entry.getKey())) {
 				if (entry.getValue() instanceof String) {
 					profileField.setDefaultValue((String) entry.getValue());
@@ -608,7 +552,7 @@ public class ProfilefieldRestfulServiceHandler implements RestfulServiceHandler 
 				}
 			} else if ("length".equals(entry.getKey())) {
 				if (entry.getValue() instanceof Integer) {
-					profileField.setDataTypeLength((Integer) entry.getValue());
+					profileField.setCharacterLength((Integer) entry.getValue());
 				} else {
 					throw new RestfulClientException("Invalid data type for 'length'. Integer expected");
 				}
@@ -620,15 +564,15 @@ public class ProfilefieldRestfulServiceHandler implements RestfulServiceHandler 
 				}
 			} else if ("historized".equals(entry.getKey())) {
 				if (entry.getValue() instanceof Boolean) {
-					profileField.setHistorize((Boolean) entry.getValue());
+					profileField.setHistorized((Boolean) entry.getValue());
 				} else {
 					throw new RestfulClientException("Invalid data type for 'historized'. Boolean expected");
 				}
 			} else if ("modeEdit".equals(entry.getKey())) {
 				if (entry.getValue() instanceof Integer) {
-					profileField.setModeEdit(ProfileFieldMode.getProfileFieldModeForStorageCode((Integer) entry.getValue()));
+					profileField.setDefaultPermission(ProfileFieldMode.getProfileFieldModeForStorageCode((Integer) entry.getValue()));
 				} else if (entry.getValue() instanceof String) {
-					profileField.setModeEdit(ProfileFieldMode.getProfileFieldModeForName((String) entry.getValue()));
+					profileField.setDefaultPermission(ProfileFieldMode.getProfileFieldModeForName((String) entry.getValue()));
 				} else{
 					throw new RestfulClientException("Invalid data type for 'modeEdit'. Integer or String expected");
 				}
@@ -645,23 +589,26 @@ public class ProfilefieldRestfulServiceHandler implements RestfulServiceHandler 
 							throw new RestfulClientException("Invalid data value for 'allowedValues': " + entry.getValue());
 						}
 					}
-					profileField.setAllowedValues(allowedValues.toArray(new String[0]));
+					profileField.setAllowedValues(allowedValues);
 				} else {
 					throw new RestfulClientException("Invalid data type for 'allowedValues'. Array expected");
 				}
 			} else if ("readOnlyUsers".equals(entry.getKey())) {
-				if (entry.getValue() instanceof JsonArray) {
+				if (newReadOnlyUsers != null) {
+					throw new RestfulClientException("Invalid multipe data for 'readOnlyUsers', because it is only allowed once");
+				} else if (entry.getValue() instanceof JsonArray) {
+					newReadOnlyUsers = new HashSet<>();
 					if (adminNamesMap == null) {
-						adminNamesMap = adminService.getAdminsNamesMap(profileField.getCompanyID());
+						adminNamesMap = adminService.getAdminsNamesMap(companyID);
 					}
 					
 					for (Object item : ((JsonArray) entry.getValue())) {
 						if (item instanceof Integer) {
 							if (adminNamesMap.containsKey(item)) {
-								if (notVisibleUsers.contains(item)) {
+								if (newNotVisibleUsers != null && newNotVisibleUsers.contains(item)) {
 									throw new RestfulClientException("Invalid userid item for 'readOnlyUsers', because it is already included in 'notVisibleUsers': " + item.toString() + " (" + adminNamesMap.get(item) + ")");
 								}
-								readOnlyUsers.add((Integer) item);
+								newReadOnlyUsers.add((Integer) item);
 							} else {
 								throw new RestfulClientException("Invalid userid item for 'readOnlyUsers': " + item.toString());
 							}
@@ -673,10 +620,10 @@ public class ProfilefieldRestfulServiceHandler implements RestfulServiceHandler 
 								}
 							}
 							if (adminID != 0) {
-								if (notVisibleUsers.contains(adminID)) {
+								if (newNotVisibleUsers != null && newNotVisibleUsers.contains(adminID)) {
 									throw new RestfulClientException("Invalid user item for 'readOnlyUsers', because it is already included in 'notVisibleUsers': " + item.toString() + " (" + adminID + ")");
 								}
-								readOnlyUsers.add(adminID);
+								newReadOnlyUsers.add(adminID);
 							} else {
 								throw new RestfulClientException("Invalid user item for 'readOnlyUsers': " + item.toString());
 							}
@@ -686,18 +633,21 @@ public class ProfilefieldRestfulServiceHandler implements RestfulServiceHandler 
 					throw new RestfulClientException("Invalid data type for 'readOnlyUsers'. Array expected");
 				}
 			} else if ("notVisibleUsers".equals(entry.getKey())) {
-				if (entry.getValue() instanceof JsonArray) {
+				if (newNotVisibleUsers != null) {
+					throw new RestfulClientException("Invalid multipe data for 'notVisibleUsers' and 'visibleUsers', because only one of them is allowed");
+				} else if (entry.getValue() instanceof JsonArray) {
+					newNotVisibleUsers = new HashSet<>();
 					if (adminNamesMap == null) {
-						adminNamesMap = adminService.getAdminsNamesMap(profileField.getCompanyID());
+						adminNamesMap = adminService.getAdminsNamesMap(companyID);
 					}
 					
 					for (Object item : ((JsonArray) entry.getValue())) {
 						if (item instanceof Integer) {
 							if (adminNamesMap.containsKey(item)) {
-								if (readOnlyUsers.contains(item)) {
+								if (newReadOnlyUsers != null && newReadOnlyUsers.contains(item)) {
 									throw new RestfulClientException("Invalid userid item for 'notVisibleUsers', because it is already included in 'readOnlyUsers': " + item.toString() + " (" + adminNamesMap.get(item) + ")");
 								}
-								notVisibleUsers.add((Integer) item);
+								newNotVisibleUsers.add((Integer) item);
 							} else {
 								throw new RestfulClientException("Invalid userid item for 'notVisibleUsers': " + item.toString());
 							}
@@ -709,10 +659,10 @@ public class ProfilefieldRestfulServiceHandler implements RestfulServiceHandler 
 								}
 							}
 							if (adminID != 0) {
-								if (readOnlyUsers.contains(adminID)) {
+								if (newReadOnlyUsers != null && newReadOnlyUsers.contains(adminID)) {
 									throw new RestfulClientException("Invalid user item for 'notVisibleUsers', because it is already included in 'readOnlyUsers': " + item.toString() + " (" + adminID + ")");
 								}
-								notVisibleUsers.add(adminID);
+								newNotVisibleUsers.add(adminID);
 							} else {
 								throw new RestfulClientException("Invalid user item for 'notVisibleUsers': " + item.toString());
 							}
@@ -722,10 +672,12 @@ public class ProfilefieldRestfulServiceHandler implements RestfulServiceHandler 
 					throw new RestfulClientException("Invalid data type for 'notVisibleUsers'. Array expected");
 				}
 			} else if ("visibleUsers".equals(entry.getKey())) {
-				if (entry.getValue() instanceof JsonArray) {
-					List<Integer> visibleUsers = new ArrayList<>();
+				if (newNotVisibleUsers != null) {
+					throw new RestfulClientException("Invalid multipe data for 'notVisibleUsers' and 'visibleUsers', because only one of them is allowed");
+				} else if (entry.getValue() instanceof JsonArray) {
+					Set<Integer> visibleUsers = new HashSet<>();
 					if (adminNamesMap == null) {
-						adminNamesMap = adminService.getAdminsNamesMap(profileField.getCompanyID());
+						adminNamesMap = adminService.getAdminsNamesMap(companyID);
 					}
 					
 					for (Object item : ((JsonArray) entry.getValue())) {
@@ -749,13 +701,14 @@ public class ProfilefieldRestfulServiceHandler implements RestfulServiceHandler 
 							}
 						}
 					}
-					
+
+					newNotVisibleUsers = new HashSet<>();
 					for (Integer adminID : adminNamesMap.keySet()) {
 						if (!visibleUsers.contains(adminID)) {
-							notVisibleUsers.add(adminID);
+							newNotVisibleUsers.add(adminID);
 						}
 
-						if (readOnlyUsers.contains(adminID)) {
+						if (newReadOnlyUsers != null && newReadOnlyUsers.contains(adminID)) {
 							throw new RestfulClientException("Invalid user item for 'visibleUsers', because it is already included in 'readOnlyUsers': " + adminNamesMap.get(adminID) + " (" + adminID + ")");
 						}
 					}
@@ -766,26 +719,60 @@ public class ProfilefieldRestfulServiceHandler implements RestfulServiceHandler 
 				throw new RestfulClientException("Invalid property '" + entry.getKey() + "' for profilefield");
 			}
 		}
-	}
-
-	private void validateProfileFieldData(ProfileField profileField) throws RestfulClientException, Exception {
-		try {
-			SafeString.getSafeDbColumnName(profileField.getColumn());
-		} catch (Exception e) {
-			throw new RestfulClientException("Invalid value for property 'name' for profilefield: " + profileField.getColumn());
+		
+		Set<Integer> currentReadOnlyUsers = new HashSet<>();
+		Set<Integer> currentNotVisibleUsers = new HashSet<>();
+		if (profileField.getPermissions() != null) {
+			for (Entry<Integer, ProfileFieldMode> permission : profileField.getPermissions().entrySet()) {
+				if (permission.getValue() == ProfileFieldMode.ReadOnly) {
+					currentReadOnlyUsers.add(permission.getKey());
+				} else if (permission.getValue() == ProfileFieldMode.NotVisible) {
+					currentNotVisibleUsers.add(permission.getKey());
+				}
+			}
 		}
 		
-		ProfileField profilefieldByShortname = profileFieldService.getProfileFieldByShortname(profileField.getCompanyID(), profileField.getShortname());
-		if (profilefieldByShortname != null && !profilefieldByShortname.getColumn().equalsIgnoreCase(profileField.getColumn())) {
-			throw new RestfulClientException("Invalid value for property 'shortname' for profilefield, already exists: " + profileField.getShortname());
+		Map<Integer, ProfileFieldMode> permissions = new HashMap<>();
+		permissions.put(0, profileField.getDefaultPermission());
+		if (newReadOnlyUsers != null) {
+			for (int adminID : newReadOnlyUsers) {
+				permissions.put(adminID, ProfileFieldMode.ReadOnly);
+			}
+		} else if (currentReadOnlyUsers != null) {
+			for (int adminID : currentReadOnlyUsers) {
+				permissions.put(adminID, ProfileFieldMode.ReadOnly);
+			}
+		}
+		if (newNotVisibleUsers != null) {
+			for (int adminID : newNotVisibleUsers) {
+				permissions.put(adminID, ProfileFieldMode.NotVisible);
+			}
+		} else if (currentNotVisibleUsers != null) {
+			for (int adminID : currentNotVisibleUsers) {
+				permissions.put(adminID, ProfileFieldMode.NotVisible);
+			}
+		}
+		profileField.setPermissions(permissions);
+	}
+
+	private void validateProfileFieldData(int companyID, RecipientFieldDescription profileField) throws RestfulClientException, Exception {
+		try {
+			SafeString.getSafeDbColumnName(profileField.getColumnName());
+		} catch (Exception e) {
+			throw new RestfulClientException("Invalid value for property 'name' for profilefield: " + profileField.getColumnName(), e);
+		}
+		
+		RecipientFieldDescription profilefieldByShortname = recipientFieldService.getRecipientField(companyID, profileField.getShortName());
+		if (profilefieldByShortname != null && !profilefieldByShortname.getColumnName().equalsIgnoreCase(profileField.getColumnName())) {
+			throw new RestfulClientException("Invalid value for property 'shortname' for profilefield, already exists: " + profileField.getShortName());
 		}
 		
 		if (profileField.getSimpleDataType() == null) {
 			throw new RestfulClientException("Invalid empty value for property 'type' for profilefield");
 		}
 		
-		if (StringUtils.isBlank(profileField.getShortname())) {
-			profileField.setShortname(profileField.getColumn());
+		if (StringUtils.isBlank(profileField.getShortName())) {
+			profileField.setShortName(profileField.getColumnName());
 		}
 		
 		if (profileField.getAllowedValues() != null) {
@@ -808,5 +795,36 @@ public class ProfilefieldRestfulServiceHandler implements RestfulServiceHandler 
 	@Override
 	public ResponseType getResponseType() {
 		return ResponseType.JSON;
+	}
+
+	private void writeActivityLog(String description, HttpServletRequest request, Admin admin) {
+		writeActivityLog(userActivityLogDao, description, request, admin);
+	}
+
+    private boolean mayAddNewColumn(int companyID) throws Exception {
+		if (companyID <= 0) {
+    		return false;
+    	} else {
+    		int maxFields;
+    		int systemMaxFields = configService.getIntegerValue(ConfigValue.System_License_MaximumNumberOfProfileFields, companyID);
+    		int companyMaxFields = configService.getIntegerValue(ConfigValue.MaxFields, companyID);
+    		if (companyMaxFields >= 0 && (companyMaxFields < systemMaxFields || systemMaxFields < 0)) {
+    			maxFields = companyMaxFields;
+    		} else {
+    			maxFields = systemMaxFields;
+    		}
+
+    		List<RecipientFieldDescription> recipientFields = recipientFieldService.getRecipientFields(companyID);
+    		List<RecipientFieldDescription> companySpecificFields = recipientFields.stream().filter(x -> !RecipientFieldService.RecipientStandardField.getAllRecipientStandardFieldColumnNames().contains(x.getColumnName())).collect(Collectors.toList());
+			int currentFieldCount = companySpecificFields.size();
+			
+			if (currentFieldCount < maxFields) {
+				return true;
+			} else if (currentFieldCount < maxFields + ConfigValue.System_License_MaximumNumberOfProfileFields.getGracefulExtension()) {
+				return true;
+			} else {
+				return false;
+			}
+    	}
 	}
 }

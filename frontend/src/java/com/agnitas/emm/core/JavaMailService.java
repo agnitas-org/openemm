@@ -64,4 +64,6 @@ public interface JavaMailService {
 	 * For pure textmails leave bodyHtml empty or null
 	 */
 	boolean sendEmail(int dkimCompanyID, String fromAddress, String fromName, String replyToAddress, String replyToName, String bounceAddress, String toAddressList, String ccAddressList, String bccAddressList, String subject, String bodyText, String bodyHtml, String charset, JavaMailAttachment... attachments);
+
+	boolean sendLicenseErrorMail(String errorText);
 }

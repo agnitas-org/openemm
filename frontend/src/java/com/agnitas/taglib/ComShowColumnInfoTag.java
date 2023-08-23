@@ -165,7 +165,6 @@ public class ComShowColumnInfoTag extends TagSupport implements BodyTag {
 							pageContext.setAttribute("_" + iteratorID + "_data_default", "");
 						}
 						pageContext.setAttribute("_" + iteratorID + "_editable", fieldMap.getModeEdit());
-						pageContext.setAttribute("_" + iteratorID + "_insertable", fieldMap.getModeInsert());
 						pageContext.setAttribute("_" + iteratorID + "_line", fieldMap.getLine());
 						pageContext.setAttribute("_" + iteratorID + "_nullable", fieldMap.getNullable() ? 1 : 0);
 						pageContext.setAttribute("_" + iteratorID + "_sort", fieldMap.getSort());

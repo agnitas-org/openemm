@@ -19,12 +19,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
+import com.agnitas.emm.core.useractivitylog.dao.RestfulUserActivityLogDao;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.dao.MailingStatus;
 import org.agnitas.dao.MailinglistDao;
 import org.agnitas.emm.core.mailing.beans.LightweightMailing;
 import org.agnitas.emm.core.mailing.service.CopyMailingService;
-import org.agnitas.emm.core.useractivitylog.dao.UserActivityLogDao;
 import org.agnitas.service.ImportResult;
 import org.agnitas.service.MailingExporter;
 import org.agnitas.service.MailingImporter;
@@ -71,16 +72,17 @@ public class MailingRestfulServiceHandler implements RestfulServiceHandler {
 
 	public static final Object EXPORTED_TO_STREAM = new Object();
 
-	private UserActivityLogDao userActivityLogDao;
+	private RestfulUserActivityLogDao userActivityLogDao;
 	private ComMailingDao mailingDao;
 	private MailinglistDao mailinglistDao;
 	private MailingImporter mailingImporter;
 	private MailingExporter mailingExporter;
 	private CopyMailingService copyMailingService;
 	private ThumbnailService thumbnailService;
+	private ComMailingBaseService mailingBaseService;
 
 	@Required
-	public void setUserActivityLogDao(UserActivityLogDao userActivityLogDao) {
+	public void setUserActivityLogDao(RestfulUserActivityLogDao userActivityLogDao) {
 		this.userActivityLogDao = userActivityLogDao;
 	}
 	@Required
@@ -113,6 +115,11 @@ public class MailingRestfulServiceHandler implements RestfulServiceHandler {
 		this.thumbnailService = thumbnailService;
 	}
 
+	@Required
+	public void setMailingBaseService(ComMailingBaseService mailingBaseService) {
+		this.mailingBaseService = mailingBaseService;
+	}
+
 	@Override
 	public RestfulServiceHandler redirectServiceHandlerIfNeeded(ServletContext context, HttpServletRequest request, String restfulSubInterfaceName) throws Exception {
 		// No redirect needed
@@ -142,10 +149,6 @@ public class MailingRestfulServiceHandler implements RestfulServiceHandler {
 	/**
 	 * Return a single or multiple mailing data sets
 	 * 
-	 * @param request
-	 * @param admin
-	 * @return
-	 * @throws Exception
 	 */
 	private Object getMailing(HttpServletRequest request, HttpServletResponse response, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.MAILING_SHOW)) {
@@ -157,8 +160,8 @@ public class MailingRestfulServiceHandler implements RestfulServiceHandler {
 		if (restfulContext.length == 0) {
 			// Show all mailings
 			userActivityLogDao.addAdminUseOfFeature(admin, "restful/mailing", new Date());
-			userActivityLogDao.writeUserActivityLog(admin, "restful/mailing GET", "ALL");
-			
+			writeActivityLog("ALL", request, admin);
+
 			JsonArray mailingsJsonArray = new JsonArray();
 			
 			for (MailingType mailingType : MailingType.values()) {
@@ -186,8 +189,8 @@ public class MailingRestfulServiceHandler implements RestfulServiceHandler {
 			}
 
 			userActivityLogDao.addAdminUseOfFeature(admin, "restful/mailing", new Date());
-			userActivityLogDao.writeUserActivityLog(admin, "restful/mailing GET", requestedMailingKeyValue);
-			
+			writeActivityLog(requestedMailingKeyValue, request, admin);
+
 			int mailingID = Integer.parseInt(requestedMailingKeyValue);
 			
 			if (mailingDao.exist(mailingID, admin.getCompanyID())) {
@@ -212,10 +215,6 @@ public class MailingRestfulServiceHandler implements RestfulServiceHandler {
 	/**
 	 * Delete a mailing
 	 * 
-	 * @param request
-	 * @param admin
-	 * @return
-	 * @throws Exception
 	 */
 	private Object deleteMailing(HttpServletRequest request, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.MAILING_DELETE)) {
@@ -229,12 +228,12 @@ public class MailingRestfulServiceHandler implements RestfulServiceHandler {
 		}
 
 		userActivityLogDao.addAdminUseOfFeature(admin, "restful/mailing", new Date());
-		userActivityLogDao.writeUserActivityLog(admin, "restful/mailing DELETE", restfulContext[0]);
-		
+		writeActivityLog(restfulContext[0], request, admin);
+
 		int mailingID = Integer.parseInt(restfulContext[0]);
 		
 		if (mailingDao.exist(mailingID, admin.getCompanyID())) {
-			boolean success = mailingDao.deleteMailing(mailingID, admin.getCompanyID());
+			boolean success = mailingBaseService.deleteMailing(mailingID, admin.getCompanyID());
 			if (success) {
 				return "1 mailing deleted";
 			} else {
@@ -248,11 +247,6 @@ public class MailingRestfulServiceHandler implements RestfulServiceHandler {
 	/**
 	 * Create a new mailing
 	 * 
-	 * @param request
-	 * @param requestDataFile
-	 * @param admin
-	 * @return
-	 * @throws Exception
 	 */
 	private Object createNewMailing(HttpServletRequest request, byte[] requestData, File requestDataFile, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.MAILING_IMPORT)) {
@@ -301,11 +295,6 @@ public class MailingRestfulServiceHandler implements RestfulServiceHandler {
 	/**
 	 * Update an existing mailing
 	 * 
-	 * @param request
-	 * @param requestDataFile
-	 * @param admin
-	 * @return
-	 * @throws Exception
 	 */
 	private Object updateMailing(HttpServletRequest request, byte[] requestData, File requestDataFile, Admin admin) throws Exception {
 		if ((requestData == null || requestData.length == 0) && (requestDataFile == null || requestDataFile.length() <= 0)) {
@@ -323,8 +312,8 @@ public class MailingRestfulServiceHandler implements RestfulServiceHandler {
 		}
 
 		userActivityLogDao.addAdminUseOfFeature(admin, "restful/mailing", new Date());
-		userActivityLogDao.writeUserActivityLog(admin, "restful/mailing PUT", restfulContext[0]);
-		
+		writeActivityLog(restfulContext[0], request, admin);
+
 		int mailingID = Integer.parseInt(restfulContext[0]);
 		
 		Mailing mailing = mailingDao.getMailing(mailingID, admin.getCompanyID());
@@ -553,5 +542,9 @@ public class MailingRestfulServiceHandler implements RestfulServiceHandler {
 	@Override
 	public ResponseType getResponseType() {
 		return ResponseType.JSON;
+	}
+
+	private void writeActivityLog(String description, HttpServletRequest request, Admin admin) {
+		writeActivityLog(userActivityLogDao, description, request, admin);
 	}
 }

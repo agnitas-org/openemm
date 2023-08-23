@@ -18,6 +18,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.agnitas.util.DateUtilities;
 import org.agnitas.util.EmmCalendar;
 
 import com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils;
@@ -31,8 +32,9 @@ public abstract class ComBirtReportDateRangedSettings extends ComBirtReportSetti
     public static final int DATE_RANGE_CUSTOM = 2;
 
     public static final int DATE_RANGE_PREDEFINED_WEEK = 1;
-    public static final int DATE_RANGE_PREDEFINED_MONTH = 2;
+    public static final int DATE_RANGE_PREDEFINED_30_DAYS = 2;
     public static final int DATE_RANGE_PREDEFINED_THREE_MONTHS = 3;
+    public static final int DATE_RANGE_PREDEFINED_LAST_MONTH = 4;
 
     public static final String MAILING_LISTS_KEY = "mailingLists";
     
@@ -84,7 +86,7 @@ public abstract class ComBirtReportDateRangedSettings extends ComBirtReportSetti
                 break;
             case DATE_RANGE_PREDEFINED:
                 final SimpleDateFormat reportDateFormat = new SimpleDateFormat(BirtReportSettingsUtils.REPORT_DATE_FORMAT);
-                final Calendar calendar = new GregorianCalendar();
+                Calendar calendar = new GregorianCalendar();
                 calendar.setTime(new Date());
                 stopDate = reportDateFormat.format(calendar.getTime());
                 switch (getPredefinedDateRange()) {
@@ -92,9 +94,18 @@ public abstract class ComBirtReportDateRangedSettings extends ComBirtReportSetti
                         calendar.add(EmmCalendar.DAY_OF_YEAR, -7);
                         calendar.add(EmmCalendar.SECOND, -1);
                         break;
-                    case DATE_RANGE_PREDEFINED_MONTH:
+                    case DATE_RANGE_PREDEFINED_30_DAYS:
                         calendar.add(EmmCalendar.DAY_OF_YEAR, -30);
                         calendar.add(EmmCalendar.SECOND, -1);
+                        break;
+                    case DATE_RANGE_PREDEFINED_LAST_MONTH:
+                        calendar.add(Calendar.MONTH, -1);
+                        calendar.set(Calendar.DAY_OF_MONTH, 1);
+                        calendar = DateUtilities.removeTime(calendar);
+                        GregorianCalendar stopCalendar = new GregorianCalendar();
+                        stopCalendar.setTime(calendar.getTime());
+                        stopCalendar.add(Calendar.MONTH, 1);
+                        stopDate = reportDateFormat.format(stopCalendar.getTime());
                         break;
                     case DATE_RANGE_PREDEFINED_THREE_MONTHS:
                         calendar.add(EmmCalendar.MONTH, -3);

@@ -55,20 +55,20 @@ public class ComSampleWorkflowFactory {
 		}
 	}
 
-	public static List<WorkflowIcon> createSampleWorkflow(String type) {
+	public static List<WorkflowIcon> createSampleWorkflow(String type, boolean gridEnabled) {
 		if (SampleWorkflowType.BIRTHDAY.getValue().equals(type)) {
-			return createSampleWorkflowBirthday();
+			return createSampleWorkflowBirthday(gridEnabled);
 		}
 		if (SampleWorkflowType.DOI.getValue().equals(type)) {
-			return createSampleWorkflowDOI();
+			return createSampleWorkflowDOI(gridEnabled);
 		}
 		if (SampleWorkflowType.AB_TEST.getValue().equals(type)) {
-			return createSampleWorkflowABTest();
+			return createSampleWorkflowABTest(gridEnabled);
 		}
 		return null;
 	}
 
-	private static List<WorkflowIcon> createSampleWorkflowDOI() {
+	private static List<WorkflowIcon> createSampleWorkflowDOI(boolean gridEnabled) {
 		WorkflowStart start = new WorkflowStartImpl();
 		start.setId(1);
 		start.setX(0);
@@ -79,87 +79,87 @@ public class ComSampleWorkflowFactory {
 
         WorkflowRecipient recipient = new WorkflowRecipientImpl();
         recipient.setId(2);
-        recipient.setX(4);
+        recipient.setX(gridEnabled ? 3 : 4);
         recipient.setY(0);
 
         WorkflowMailingAware actionMailing = new WorkflowActionBasedMailingImpl();
         actionMailing.setId(3);
         actionMailing.setIconTitle("");
-        actionMailing.setX(8);
+        actionMailing.setX(gridEnabled ? 6 : 8);
         actionMailing.setY(0);
 
         WorkflowStopImpl stop = new WorkflowStopImpl();
         stop.setEndType(WorkflowStop.WorkflowEndType.AUTOMATIC);
         stop.setId(4);
-        stop.setX(12);
+        stop.setX(gridEnabled ? 9 : 12);
         stop.setY(0);
 
         return Arrays.asList(connect(start, recipient, actionMailing, stop));
 	}
 
-	private static List<WorkflowIcon> createSampleWorkflowABTest() {
+	private static List<WorkflowIcon> createSampleWorkflowABTest(boolean gridEnabled) {
 		WorkflowStart start = new WorkflowStartImpl();
 		start.setId(1);
 		start.setX(0);
-		start.setY(3);
+		start.setY(gridEnabled ? 2 : 3);
 		start.setStartType(WorkflowStartType.DATE);
 
 		WorkflowRecipient recipient = new WorkflowRecipientImpl();
 		recipient.setId(2);
-		recipient.setX(4);
-		recipient.setY(3);
+		recipient.setX(gridEnabled ? 2 : 4);
+		recipient.setY(gridEnabled ? 2 : 3);
 
 		WorkflowArchive archive = new WorkflowArchiveImpl();
 		archive.setId(3);
-		archive.setX(8);
-		archive.setY(3);
+		archive.setX(gridEnabled ? 4 : 8);
+		archive.setY(gridEnabled ? 2 : 3);
 
 		WorkflowParameter parameter1 = new WorkflowParameterImpl();
 		parameter1.setId(4);
-		parameter1.setX(12);
+		parameter1.setX(gridEnabled ? 7 : 12);
 		parameter1.setY(0);
 
 		WorkflowParameter parameter2 = new WorkflowParameterImpl();
 		parameter2.setId(5);
-		parameter2.setX(12);
-		parameter2.setY(6);
+		parameter2.setX(gridEnabled ? 7 : 12);
+		parameter2.setY(gridEnabled ? 4 : 6);
 
 		WorkflowMailingImpl mailing1 = new WorkflowMailingImpl();
 		mailing1.setId(6);
 		mailing1.setIconTitle("");
-		mailing1.setX(16);
+		mailing1.setX(gridEnabled ? 9 : 16);
 		mailing1.setY(0);
 
 		WorkflowMailingImpl mailing2 = new WorkflowMailingImpl();
 		mailing2.setId(7);
 		mailing2.setIconTitle("");
-		mailing2.setX(16);
-		mailing2.setY(6);
+		mailing2.setX(gridEnabled ? 9 : 16);
+		mailing2.setY(gridEnabled ? 4 : 6);
 
 		WorkflowDecision decision = new WorkflowDecisionImpl();
 		decision.setId(8);
         decision.setDecisionType(WorkflowDecision.WorkflowDecisionType.TYPE_AUTO_OPTIMIZATION);
-		decision.setX(20);
-		decision.setY(3);
+		decision.setX(gridEnabled ? 12 : 20);
+		decision.setY(gridEnabled ? 2 : 3);
 
 		WorkflowParameter parameter3 = new WorkflowParameterImpl();
 		parameter3.setId(9);
-		parameter3.setX(24);
-		parameter3.setY(3);
+		parameter3.setX(gridEnabled ? 14 : 24);
+		parameter3.setY(gridEnabled ? 2 : 3);
         parameter3.setEditable(false);
 
 		WorkflowMailingImpl mailing3 = new WorkflowMailingImpl();
 		mailing3.setId(10);
 		mailing3.setIconTitle("");
-		mailing3.setX(28);
-		mailing3.setY(3);
+		mailing3.setX(gridEnabled ? 16 : 28);
+		mailing3.setY(gridEnabled ? 2 : 3);
 		mailing3.setEditable(false);
 
 		WorkflowStopImpl stop = new WorkflowStopImpl();
 		stop.setId(11);
         stop.setEndType(WorkflowStop.WorkflowEndType.AUTOMATIC);
-		stop.setX(32);
-		stop.setY(3);
+		stop.setX(gridEnabled ? 18 : 32);
+		stop.setY(gridEnabled ? 2 : 3);
 
 		connect(start, recipient, archive);
 		connect(archive, parameter1, mailing1, decision);
@@ -169,7 +169,7 @@ public class ComSampleWorkflowFactory {
 		return Arrays.asList(start, recipient, archive, decision, parameter1, parameter2, parameter3, mailing1, mailing2, mailing3, stop);
 	}
 
-	private static List<WorkflowIcon> createSampleWorkflowBirthday() {
+	private static List<WorkflowIcon> createSampleWorkflowBirthday(boolean gridEnabled) {
 		WorkflowStart start = new WorkflowStartImpl();
 		start.setId(1);
 		start.setX(0);
@@ -180,18 +180,18 @@ public class ComSampleWorkflowFactory {
 
 		WorkflowRecipientImpl recipient = new WorkflowRecipientImpl();
 		recipient.setId(2);
-		recipient.setX(4);
+		recipient.setX(gridEnabled ? 3 : 4);
 		recipient.setY(0);
 
 		WorkflowMailingAware mailing = new WorkflowDateBasedMailingImpl();
 		mailing.setId(3);
 		mailing.setIconTitle("");
-		mailing.setX(8);
+		mailing.setX(gridEnabled ? 6 : 8);
 		mailing.setY(0);
 
 		WorkflowStopImpl stop = new WorkflowStopImpl();
 		stop.setId(4);
-		stop.setX(12);
+		stop.setX(gridEnabled ? 9 : 12);
 		stop.setY(0);
 
 		return Arrays.asList(connect(start, recipient, mailing, stop));

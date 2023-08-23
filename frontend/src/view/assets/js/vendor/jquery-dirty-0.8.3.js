@@ -25,6 +25,14 @@
         return result;
     };
 
+    const destroy = function (d) {
+        singleDs = singleDs.filter(function(e) {
+            return e !== d;
+        });
+
+        d.isDirty = false;
+    }
+
     var setSubmitEvents = function(d) {
         d.form.on("submit", function() {
             d.submitting = true;
@@ -274,7 +282,7 @@
                 return null;
             }
 
-            if (/^(isDirty|isClean|refreshEvents|resetForm|setAsClean|setAsDirty|showDirtyFields)$/i.test(options)) {
+            if (/^(isDirty|isClean|refreshEvents|resetForm|setAsClean|setAsDirty|showDirtyFields|destroy)$/i.test(options)) {
                 var optionsLowerCase = options.toLowerCase();
 
                 switch (optionsLowerCase) {
@@ -292,6 +300,8 @@
                         return d.setAsDirty();
                     case "showdirtyfields":
                         return d.showDirtyFields();
+                    case "destroy":
+                        return destroy(d);
                 }
             } else {
                 return d[options].apply(d, Array.prototype.slice.call(arguments, 1));

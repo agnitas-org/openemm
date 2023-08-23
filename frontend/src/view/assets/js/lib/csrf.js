@@ -8,8 +8,12 @@
         return '';
     }
 
+    function getParameterName() {
+       return window.csrfParameterName;
+    }
+
     function isProtectionEnabled() {
-        return window.csrfHeaderName && window.csrfParameterName && window.csrfCookieName;
+        return window.csrfHeaderName && getParameterName() && window.csrfCookieName;
     }
 
     function setTokenToReqHeader(jqxhr, reqType) {
@@ -46,6 +50,7 @@
         readActualToken: readActualToken,
         isProtectionEnabled: isProtectionEnabled,
         setTokenToReqHeader: setTokenToReqHeader,
+        getParameterName: getParameterName,
         updateTokenInDOM: updateTokenInDOM
     };
 })();

@@ -25,7 +25,7 @@ import org.agnitas.beans.impl.MailinglistImpl;
 import org.agnitas.dao.MailingStatus;
 import org.agnitas.dao.MailinglistApprovalDao;
 import org.agnitas.dao.MailinglistDao;
-import org.agnitas.emm.core.velocity.VelocityCheck;
+
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
 import org.apache.commons.lang3.StringUtils;
@@ -108,7 +108,7 @@ public class MailinglistServiceImpl implements MailinglistService {
     }
     
     @Override
-    public void bulkDelete(Set<Integer> mailinglistIds, @VelocityCheck int companyId) {
+    public void bulkDelete(Set<Integer> mailinglistIds, int companyId) {
         if(mailinglistIds != null) {
             for (int mailinglistId : mailinglistIds) {
                 mailinglistDao.deleteMailinglist(mailinglistId, companyId);
@@ -117,7 +117,7 @@ public class MailinglistServiceImpl implements MailinglistService {
     }
 
     @Override
-    public List<Mailing> getAllDependedMailing(Set<Integer> mailinglistIds, @VelocityCheck int companyId) {
+    public List<Mailing> getAllDependedMailing(Set<Integer> mailinglistIds, int companyId) {
         return mailinglistIds
                 .stream()
                 .flatMap(id->mailingDao.getMailingsForMLID(companyId,id).stream())
@@ -125,22 +125,22 @@ public class MailinglistServiceImpl implements MailinglistService {
     }
 
     @Override
-    public void deleteRecipientBindings(Set<Integer> mailinglistIds, @VelocityCheck int companyId){
+    public void deleteRecipientBindings(Set<Integer> mailinglistIds, int companyId){
         bindingEntryDao.deleteRecipientBindingsByMailinglistID(mailinglistIds, companyId);
     }
 
     @Override
-    public List<Mailinglist> getMailinglists(@VelocityCheck int companyId) {
+    public List<Mailinglist> getMailinglists(int companyId) {
         return mailinglistDao.getMailinglists(companyId);
     }
 
     @Override
-    public Mailinglist getMailinglist(int mailinglistId, @VelocityCheck int companyId){
+    public Mailinglist getMailinglist(int mailinglistId, int companyId){
         return mailinglistDao.getMailinglist(mailinglistId, companyId);
     }
 
     @Override
-    public boolean exist(int mailinglistId, @VelocityCheck int companyId){
+    public boolean exist(int mailinglistId, int companyId){
         return mailinglistDao.exist(mailinglistId, companyId);
     }
 
@@ -170,17 +170,17 @@ public class MailinglistServiceImpl implements MailinglistService {
     }
 
     @Override
-    public String getMailinglistName(int mailinglistId, @VelocityCheck int companyId) {
+    public String getMailinglistName(int mailinglistId, int companyId) {
         return mailinglistDao.getMailinglistName(mailinglistId, companyId);
     }
 
     @Override
-    public List<Mailinglist> getAllMailingListsNames(@VelocityCheck int companyId) {
+    public List<Mailinglist> getAllMailingListsNames(int companyId) {
         return mailinglistDao.getMailingListsNames(companyId);
     }
 
     @Override
-    public List<ComLightweightBirtReport> getConnectedBirtReportList(int mailinglistId, @VelocityCheck int companyId) {
+    public List<ComLightweightBirtReport> getConnectedBirtReportList(int mailinglistId, int companyId) {
         List<Map<String, Object>> reportParams = birtReportDao.getReportParamValues(companyId, "selectedMailinglists");
         List<ComLightweightBirtReport> allReportslist = birtReportDao.getLightweightBirtReportList(companyId);
         // Put reports to Map to avoid several iterations on List of all reports
@@ -207,7 +207,7 @@ public class MailinglistServiceImpl implements MailinglistService {
         return connectedReports;
     }
 
-    private void deleteMailinglistFromReports(int mailinglistIdToDelete, @VelocityCheck int companyId) {
+    private void deleteMailinglistFromReports(int mailinglistIdToDelete, int companyId) {
         List<Map<String, Object>> reportParams = birtReportDao.getReportParamValues(companyId, MAILINGLISTS_KEY);
         for (Map<String, Object> paramRow : reportParams) {
             List<Integer> mailinglistIds = BirtReportSettingsUtils.convertStringToIntList((String) paramRow.get("parameter_value"));
@@ -222,7 +222,7 @@ public class MailinglistServiceImpl implements MailinglistService {
     }
 	
 	@Override
-	public int saveMailinglist(@VelocityCheck int companyId, MailinglistDto mailinglist) {
+	public int saveMailinglist(int companyId, MailinglistDto mailinglist) {
 		MailinglistImpl mailinglistForSave = new MailinglistImpl();
 		mailinglistForSave.setId(mailinglist.getId());
 		mailinglistForSave.setCompanyID(companyId);
@@ -246,7 +246,7 @@ public class MailinglistServiceImpl implements MailinglistService {
 	}
 	
 	@Override
-	public boolean isShortnameUnique(String newShortname, int mailinglistId, @VelocityCheck int companyId) {
+	public boolean isShortnameUnique(String newShortname, int mailinglistId, int companyId) {
 		Mailinglist mailinglist = mailinglistDao.getMailinglist(mailinglistId, companyId);
 		String oldShortname = mailinglist != null ? mailinglist.getShortname() : "";
 		
@@ -257,11 +257,17 @@ public class MailinglistServiceImpl implements MailinglistService {
     @Override
     @Transactional
     public boolean deleteMailinglist(int mailinglistId, int companyId) {
-        if (mailinglistDao.canBeMarkedAsDeleted(mailinglistId, companyId)) {
-            deleteMailinglistFromReports(mailinglistId, companyId);
-            return mailinglistDao.deleteMailinglist(mailinglistId, companyId);
+        if (mailinglistId <= 0 || companyId <= 0) {
+            return false;
         }
-        return false;
+
+        List<Mailing> dependentMailings = getUsedMailings(Set.of(mailinglistId), companyId);
+        if (!dependentMailings.isEmpty()) {
+            return false;
+        }
+
+        deleteMailinglistFromReports(mailinglistId, companyId);
+        return mailinglistDao.deleteMailinglist(mailinglistId, companyId);
     }
     
     @Override

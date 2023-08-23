@@ -38,7 +38,7 @@ public final class MailingContentTypeCacheImpl extends AbstractCompanyBasedDaoCa
 	@Override
 	protected final MailingContentType getItemFromDao(final int mailingId, final int companyId) {
 		if (!isCacheInitialized()) {
-			setCache(new TimeoutLRUMap<IdWithCompanyID, MailingContentType>(
+			setCache(new TimeoutLRUMap<>(
 				configService.getIntegerValue(ConfigValue.CompanyMaxCache),
 				configService.getIntegerValue(ConfigValue.CompanyMaxCacheTimeMillis)));
 		}

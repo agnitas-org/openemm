@@ -67,7 +67,7 @@ public class ImportModeReactivateSuspendedHandler implements ImportModeHandler {
 	    		for (MediaTypes mediatype : mediatypes) {
 	    			int changed = importRecipientsDao.changeStatusInMailingList(temporaryImportTableName, importProfile.getKeyColumns(), importProfile.getCompanyId(), mailingListId, mediatype, UserStatus.Suspend.getStatusCode(), UserStatus.Active.getStatusCode(), "Mass Reactivate-Suspend by Admin");
 	    			if (!mailinglistAssignStatistics.containsKey(mediatype)) {
-		    			mailinglistAssignStatistics.put(mediatype, new HashMap<Integer, Integer>());
+		    			mailinglistAssignStatistics.put(mediatype, new HashMap<>());
 		    		}
 		    		mailinglistAssignStatistics.get(mediatype).put(mailingListId, changed);
 	    		}

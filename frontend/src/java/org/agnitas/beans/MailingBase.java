@@ -12,10 +12,9 @@ package org.agnitas.beans;
 
 import java.util.Date;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public interface MailingBase {
-	void setCompanyID( @VelocityCheck int id);
+	void setCompanyID( int id);
 	int getCompanyID();
 
 	void setCampaignID(int id);

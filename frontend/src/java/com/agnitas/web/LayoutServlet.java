@@ -28,7 +28,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
-import com.agnitas.dao.ComEmmLayoutBaseDao;
+import com.agnitas.dao.EmmLayoutBaseDao;
 import com.agnitas.dao.LayoutDao;
 
 /**
@@ -42,7 +42,7 @@ public class LayoutServlet extends HttpServlet {
 
 	protected LayoutDao layoutDao;
 	
-	protected ComEmmLayoutBaseDao emmLayoutBaseDao;
+	protected EmmLayoutBaseDao emmLayoutBaseDao;
 	
 	private Map<String, Map<Integer, byte[]>> layoutData = null;
 	
@@ -137,9 +137,9 @@ public class LayoutServlet extends HttpServlet {
 		return layoutDao;
 	}
 
-    private ComEmmLayoutBaseDao getEmmLayoutBaseDao() {
+    private EmmLayoutBaseDao getEmmLayoutBaseDao() {
 		if (emmLayoutBaseDao == null) {
-			emmLayoutBaseDao = WebApplicationContextUtils.getWebApplicationContext(getServletContext()).getBean("EmmLayoutBaseDao", ComEmmLayoutBaseDao.class);
+			emmLayoutBaseDao = WebApplicationContextUtils.getWebApplicationContext(getServletContext()).getBean("EmmLayoutBaseDao", EmmLayoutBaseDao.class);
 		}
 		return emmLayoutBaseDao;
 	}

@@ -209,7 +209,7 @@ public class LogonControllerBasic implements XssCheckAware {
 
     @Anonymous
     @PostMapping("/logon/authenticate-host.action")
-    public String hostAuthentication(final LogonStateBundle logonStateBundle, @ModelAttribute("form") LogonHostAuthenticationForm form, RedirectAttributes redirectModel, Popups popups, final HttpServletRequest httpRequest, final HttpServletResponse response) throws HostAuthenticationServiceException {
+    public String hostAuthentication(final LogonStateBundle logonStateBundle, @ModelAttribute("form") LogonHostAuthenticationForm form, RedirectAttributes redirectModel, Popups popups, final HttpServletResponse response) throws HostAuthenticationServiceException {
         final Admin admin = logonStateBundle.getAdmin();
         
     	logonStateBundle.requireLogonState(LogonState.HOST_AUTHENTICATION_SECURITY_CODE);
@@ -232,76 +232,83 @@ public class LogonControllerBasic implements XssCheckAware {
             redirectModel.addFlashAttribute("form", form);
             return "redirect:/logon/authenticate-host.action";
         }
-
     }
 
     @Anonymous
     @GetMapping("/logon/authenticate-host.action")
     public String hostAuthenticationAskSecurityCode(final LogonStateBundle logonStateBundle, @ModelAttribute("form") LogonHostAuthenticationForm form, Model model, HttpServletRequest request, final Popups popups) throws HostAuthenticationServiceException {
     	final Admin admin = logonStateBundle.getAdmin();
-    	
+
         // Simply skip this step if host authentication is not enabled.
-        if (hostAuthenticationService.isHostAuthenticationEnabled(admin.getCompanyID())) {
-            // String hostId = logon.getCookieHostId();
-        	final String hostId = this.clientHostIdService.getClientHostId(request).orElse(this.clientHostIdService.createHostId());
-
-            logger.info("Host authentication is ENABLED for company of user {}", admin.getUsername());
-
-            // Check if a given hostId is marked as authenticated.
-            if (authenticateHost(admin, hostId)) {
-            	logonStateBundle.toMaintainPasswordState();
-                return "redirect:/logon/maintain-password.action";
-            } else {
-                // The hostId is unknown so should be confirmed via email.
-                logonStateBundle.toAuthenticateHostSecurityCodeState(hostId);
-
-                String email = getEmailForHostAuthentication(admin);
-                try {
-                    // Admin/supervisor must have an e-mail address where a security code is going to be sent.
-                    if (StringUtils.isBlank(email)) {
-                        popups.alert("logon.error.hostauth.no_address");
-                        
-                        return "redirect:/logon.action";
-                    }
-
-                    if (hostId == null) {
-                        // If hostId is missing from cookies the cookies are probably disabled.
-                        popups.warning("logon.hostauth.cookies_disabled");
-                    }
-                     
-                    hostAuthenticationService.sendSecurityCode(admin, hostId);
-                } catch (CannotSendSecurityCodeException e) {
-                    logger.error("Cannot send security code to {}", e.getReceiver());
-                    popups.alert("logon.error.hostauth.send_failed", email);
-                    return "redirect:/logon.action";
-                } catch (Exception e) {
-                    logger.error("Error generating or sending security code", e);
-                    popups.alert("logon.error.hostauth.send_failed", email);
-                    return "redirect:/logon.action";
-                }
-                
-                model.addAttribute("adminMailAddress", getEmailForHostAuthentication(logonStateBundle.getAdmin()));
-                model.addAttribute("supportMailAddress", configService.getValue(ConfigValue.Mailaddress_Support));
-                model.addAttribute("layoutdir", logonService.getLayoutDirectory(request.getServerName()));
-                return "logon_host_authentication";
-            }
-        } else {
+        if (!hostAuthenticationService.isHostAuthenticationEnabled(admin.getCompanyID())) {
             // Host authentication is disabled for company of user. Skip this step.
             logger.info("Host authentication is DISABLED for company of user {}", admin.getUsername());
 
             logonStateBundle.toMaintainPasswordState();
             return "redirect:/logon/maintain-password.action";
         }
+
+        logger.info("Host authentication is ENABLED for company of user {}", admin.getUsername());
+        final String hostId = this.clientHostIdService.getClientHostId(request).orElse(this.clientHostIdService.createHostId());
+
+        // Check if a given hostId is marked as authenticated.
+        if (authenticateHost(admin, hostId)) {
+            logonStateBundle.toMaintainPasswordState();
+            return "redirect:/logon/maintain-password.action";
+        }
+
+        PasswordState state = logonService.getPasswordState(admin);
+        if (state.equals(PasswordState.EXPIRED_LOCKED)) {
+            return showPasswordExpiredPage(admin, model);
+        }
+
+        // The hostId is unknown so should be confirmed via email.
+        logonStateBundle.toAuthenticateHostSecurityCodeState(hostId);
+
+        String email = getEmailForHostAuthentication(admin);
+
+        // Admin/supervisor must have an e-mail address where a security code is going to be sent.
+        if (StringUtils.isBlank(email)) {
+            popups.alert("logon.error.hostauth.no_address");
+
+            return "redirect:/logon.action";
+        }
+
+        if (hostId == null) {
+            // If hostId is missing from cookies the cookies are probably disabled.
+            popups.warning("logon.hostauth.cookies_disabled");
+        }
+
+        try {
+            hostAuthenticationService.sendSecurityCode(admin, hostId);
+        } catch (CannotSendSecurityCodeException e) {
+            logger.error("Cannot send security code to {}", e.getReceiver());
+            popups.alert("logon.error.hostauth.send_failed", email);
+            return "redirect:/logon.action";
+        } catch (Exception e) {
+            logger.error("Error generating or sending security code", e);
+            popups.alert("logon.error.hostauth.send_failed", email);
+            return "redirect:/logon.action";
+        }
+
+        model.addAttribute("adminMailAddress", getEmailForHostAuthentication(logonStateBundle.getAdmin()));
+        model.addAttribute("supportMailAddress", configService.getValue(ConfigValue.Mailaddress_Support));
+        model.addAttribute("layoutdir", logonService.getLayoutDirectory(request.getServerName()));
+        return "logon_host_authentication";
     }
 
     @Anonymous
     @GetMapping("/logon/maintain-password.action")
-    public String maintainPassword(final LogonStateBundle logonStateBundle) {
+    public String maintainPassword(final LogonStateBundle logonStateBundle, Model model) {
     	logonStateBundle.requireLogonState(LogonState.MAINTAIN_PASSWORD);
 
         PasswordState state = logonService.getPasswordState(logonStateBundle.getAdmin());
 
         if (state != PasswordState.VALID) {
+            if (state.equals(PasswordState.EXPIRED_LOCKED)) {
+                return showPasswordExpiredPage(logonStateBundle.getAdmin(), model);
+            }
+
         	logonStateBundle.toPasswordChangeState();
         	return "redirect:/logon/change-password.action";
         }
@@ -357,7 +364,7 @@ public class LogonControllerBasic implements XssCheckAware {
             PasswordState state = logonService.getPasswordState(admin);
 
             // Expiration date is only required if password is already expired or a "deadline" is coming.
-            if (state == PasswordState.EXPIRING || state == PasswordState.EXPIRED || state == PasswordState.EXPIRED_LOCKED) {
+            if (state == PasswordState.EXPIRING || state == PasswordState.EXPIRED) {
                 Date expirationDate = logonService.getPasswordExpirationDate(admin);
 
                 if (expirationDate != null) {
@@ -368,16 +375,24 @@ public class LogonControllerBasic implements XssCheckAware {
             model.addAttribute("helplanguage", logonService.getHelpLanguage(admin));
             model.addAttribute("isSupervisor", admin.isSupervisor());
             model.addAttribute("supportMailAddress", configService.getValue(ConfigValue.Mailaddress_Support));
+            model.addAttribute("isExpiring", state == PasswordState.EXPIRING);
+            model.addAttribute("isExpired", state == PasswordState.EXPIRED || state == PasswordState.ONE_TIME);
 
-            if (state == PasswordState.EXPIRED_LOCKED) {
-                return "logon_password_expired_locked";
-            } else {
-                model.addAttribute("isExpiring", state == PasswordState.EXPIRING);
-                model.addAttribute("isExpired", state == PasswordState.EXPIRED || state == PasswordState.ONE_TIME);
-
-                return "logon_password_change";
-            }
+            return "logon_password_change";
         }
+    }
+
+    private String showPasswordExpiredPage(Admin admin, Model model) {
+        Date expirationDate = logonService.getPasswordExpirationDate(admin);
+        if (expirationDate != null) {
+            model.addAttribute("expirationDate", admin.getDateFormat().format(expirationDate));
+        }
+
+        model.addAttribute("helplanguage", logonService.getHelpLanguage(admin));
+        model.addAttribute("isSupervisor", admin.isSupervisor());
+        model.addAttribute("supportMailAddress", configService.getValue(ConfigValue.Mailaddress_Support));
+
+        return "logon_password_expired_locked";
     }
 
     @Anonymous

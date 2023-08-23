@@ -367,16 +367,22 @@ input[type="button"] {
   .open > &.dropdown-toggle {
     color: $c-white;
     background-color: $c-blue-27;
-        border-color: transparent;
+    border-color: transparent;
   }
 
   .filter-active > & {
     color: $c-white;
     background-color: #64a70b;
-        border-color: transparent;
-
+    border-color: transparent;
   }
+}
 
+body.dark-theme {
+  .filter-active {
+    .btn-filter {
+      @include button-variant($c-white, #64a70b, transparent, false);
+    }
+  }
 }
 
 .btn-upload {

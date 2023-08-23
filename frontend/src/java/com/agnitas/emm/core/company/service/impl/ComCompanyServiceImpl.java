@@ -18,6 +18,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TimeZone;
 
+import com.agnitas.emm.core.components.entity.TestRunOption;
 import org.agnitas.beans.AdminEntry;
 import org.agnitas.beans.factory.CompanyFactory;
 import org.agnitas.beans.impl.CompanyStatus;
@@ -166,10 +167,10 @@ public class ComCompanyServiceImpl implements ComCompanyService {
         companyDao.saveCompany(company);
 
         // save config values
-        saveConfigValues(admin, company.getId(), form.getCompanySettingsDto());
+        saveConfigValuesForNewCompany(admin, company.getId(), form.getCompanySettingsDto());
 
         // create new table for new company
-        initTableAndCopyTemplates(company, sessionId);
+        initTableAndCopyTemplates(company, sessionId, admin);
 
         // create new user for new company
         int executiveAdminId = createExecutiveAdmin(admin, form.getCompanyInfoDto(), form.getCompanyAdminDto(), company.getId(), popups);
@@ -235,7 +236,12 @@ public class ComCompanyServiceImpl implements ComCompanyService {
     		if (maximumNumberOfCompanies >= 0) {
     			int numberOfCompanies = getNumberOfCompanies();
     			if (numberOfCompanies >= maximumNumberOfCompanies) {
-    				throw new LicenseError("Invalid Number of accounts", maximumNumberOfCompanies, numberOfCompanies);
+    				if (ConfigValue.System_License_MaximumNumberOfCompanies.getGracefulExtension() != null
+    						&& numberOfCompanies < maximumNumberOfCompanies + ConfigValue.System_License_MaximumNumberOfCompanies.getGracefulExtension()) {
+    					logger.warn("Invalid Number of tenants. Current value is " + numberOfCompanies + ". Limit is " + maximumNumberOfCompanies + ". Gracefully " + ConfigValue.System_License_MaximumNumberOfCompanies.getGracefulExtension() + " more accounts have been permitted");
+	    			} else {
+	    				throw new LicenseError("Invalid Number of accounts", maximumNumberOfCompanies, numberOfCompanies);
+	    			}
     			}
     		}
     		
@@ -291,6 +297,10 @@ public class ComCompanyServiceImpl implements ComCompanyService {
         company.setBusiness(settingsDto.getBusiness());
     }
 
+    protected void saveConfigValuesForNewCompany(Admin admin, int companyId, CompanySettingsDto settings) {
+        saveConfigValues(admin, companyId, settings);
+    }
+    
     protected void saveConfigValues(Admin admin, int companyId, CompanySettingsDto settings) {
         if (admin.permissionAllowed(Permission.COMPANY_AUTHENTICATION)) {
             // Write 2FA settings
@@ -377,7 +387,7 @@ public class ComCompanyServiceImpl implements ComCompanyService {
 	        checkChangeAndLogCompanyInfoBooleanValue(ConfigValue.TrackingVetoAllowTransactionTracking, companyId, admin, settings.isTrackingVetoAllowTransactionTracking());
 	        
 	        checkChangeAndLogCompanyInfoBooleanValue(ConfigValue.DeleteSuccessfullyImportedFiles, companyId, admin, settings.isDeleteSuccessfullyImportedFiles());
-	        
+
 	        checkChangeAndLogCompanyInfoIntegerValue(ConfigValue.CleanTrackingData, companyId, admin, settings.getRecipientCleanupTracking());
 	        
 	        checkChangeAndLogCompanyInfoBooleanValue(ConfigValue.RecipientEmailInUseWarning, companyId, admin, settings.isRecipientEmailInUseWarning());
@@ -401,15 +411,26 @@ public class ComCompanyServiceImpl implements ComCompanyService {
 	        checkChangeAndLogCompanyInfoIntegerValue(ConfigValue.ExpireUpload, companyId, admin, settings.getExpireUpload());
 	        
 	        checkChangeAndLogCompanyInfoBooleanValue(ConfigValue.WriteCustomerOpenOrClickField, companyId, admin, settings.isWriteCustomerOpenOrClickField());
+        }
 
-			if (settings.isRegenerateTargetSqlOnce()) {
-				regenerateTargetSql(companyId);
-				settings.setRegenerateTargetSqlOnce(false);
-			}
+        if (admin.permissionAllowed(Permission.COMPANY_DEFAULT_STEPPING)) {
+            int defaultBlockSize = settings.getDefaultBlockSize();
+
+            checkChangeAndLogCompanyInfoIntegerValue(ConfigValue.DefaultBlocksizeValue, companyId, admin, defaultBlockSize);
+            checkChangeAndLogCompanyInfoBooleanValue(ConfigValue.ForceSteppingBlocksize, companyId, admin,defaultBlockSize > 0);
+        }
+
+        if (admin.permissionAllowed(Permission.MAILING_SEND_ADMIN_TARGET) || configService.getIntegerValue(ConfigValue.DefaultTestRunOption) != TestRunOption.TARGET.getId()) {
+            checkChangeAndLogCompanyInfoIntegerValue(ConfigValue.DefaultTestRunOption, companyId, admin, settings.getDefaultTestRunOption().getId());
+        }
+
+        if (settings.isRegenerateTargetSqlOnce()) {
+        	regenerateTargetSql(companyId);
+        	settings.setRegenerateTargetSqlOnce(false);
         }
     }
-    
-    private void writePasswordSecuritySettings(final CompanySettingsDto settings, final int companyId, final Admin admin) {
+
+	private void writePasswordSecuritySettings(final CompanySettingsDto settings, final int companyId, final Admin admin) {
     	// Password policy
     	checkChangeAndLogCompanyInfoValue(ConfigValue.PasswordPolicy, companyId, admin, PasswordPolicies.findByName(settings.getPasswordPolicyName()).getPolicyName());
      	
@@ -493,7 +514,7 @@ public class ComCompanyServiceImpl implements ComCompanyService {
 		}
 	}
 
-    private void initTableAndCopyTemplates(Company company, String sessionId) throws Exception {
+    private void initTableAndCopyTemplates(Company company, String sessionId, Admin admin) throws Exception {
         int companyId = company.getId();
 
         if (initTables(companyId)) {
@@ -515,13 +536,13 @@ public class ComCompanyServiceImpl implements ComCompanyService {
                 checkRetargeting(company);
             }
 
-            generateMissingTemplateThumbnails(companyId, sessionId);
+            generateMissingTemplateThumbnails(admin, sessionId, companyId);
         }
 
         logger.info("Cannot successfully create new company: " + companyId);
     }
 
-    void generateMissingTemplateThumbnails(int companyId, String sessionId) {
+    void generateMissingTemplateThumbnails(Admin admin, String sessionId, int companyId) {
         // do nothing
     }
 
@@ -686,27 +707,27 @@ public class ComCompanyServiceImpl implements ComCompanyService {
 	public final void setCompanyTokenService(final CompanyTokenService service) {
 		this.companyTokenService = Objects.requireNonNull(service, "CompanyTokenService is null");
 	}
-	
+
 	@Required
-	public void setTargetDao(ComTargetDao targetDao) {
-	    this.targetDao = targetDao;
-	}
+    public void setTargetDao(ComTargetDao targetDao) {
+        this.targetDao = targetDao;
+    }
 
 	@Override
 	public int getNumberOfCompanies() {
 		return companyDao.getNumberOfCompanies();
 	}
 
-	private void regenerateTargetSql(int companyID) {
-		for (TargetLight targetLight : targetDao.getTargetLights(companyID, false)) {
+    private void regenerateTargetSql(int companyID) {
+    	for (TargetLight targetLight : targetDao.getTargetLights(companyID, false)) {
 			if (!targetLight.isLocked()) {
-				try {
+	    		try {
 					ComTarget target = targetDao.getTarget(targetLight.getId(), companyID);
 					targetDao.saveTarget(target);
 				} catch (TargetGroupPersistenceException e) {
 					e.printStackTrace();
 				}
 			}
-		}
+    	}
 	}
 }

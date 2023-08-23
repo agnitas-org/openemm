@@ -1,0 +1,22 @@
+
+<script id="column-mapping-table-row" type="text/x-mustache-template">
+    <tr data-column-mapping-row>
+        <td>
+            <input type="text" class="form-control" data-column-name value="{{- name}}" maxlength="30" data-action="mapping-enterdown"/>
+        </td>
+        <td>
+            <input type="text" class="form-control" data-column-value value="{{- value}}" data-action="mapping-enterdown"/>
+        </td>
+        <td class="table-actions">
+            {{ if (name == '' && value == '') { }}
+            <a href="#" class="btn btn-regular btn-primary" data-action="add-column-mapping">
+                <i class="icon icon-plus"></i>
+            </a>
+            {{ } else { }}
+            <a href="#" class="btn btn-regular btn-alert" data-action="delete-column-mapping">
+                <i class="icon icon-trash-o"></i>
+            </a>
+            {{ } }}
+        </td>
+    </tr>
+</script>

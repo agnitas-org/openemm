@@ -6,7 +6,8 @@ AGN.Lib.Controller.new('birt-reports', function() {
         MAILINGLIST_LIST = [],
         TARGETS_LIST = [],
         AFTER_MAILING_TYPE_ID,
-        MAILING_ID;
+        MAILING_ID,
+        $form;
 
     this.addDomInitializer("birt-reports", function() {
         config = this.config;
@@ -16,6 +17,8 @@ AGN.Lib.Controller.new('birt-reports', function() {
         MAILINGLIST_LIST = config.filtered.FILTER_MAILINGLIST;
         TARGETS_LIST = config.filtered.FILTER_TARGET;
         reportType = config.reportType;
+
+        $form = this.el;
     });
 
     function disableTabs() {
@@ -87,7 +90,11 @@ AGN.Lib.Controller.new('birt-reports', function() {
         var predefineMailing = config.data.predefineMailing;
         var selectedMailings = config.data.selectedMailings;
 
-        this.updateAllComparisonDependentFields(mailingType, mailingFilter, predefineMailing, selectedMailings);
+        const jqXHR = this.updateAllComparisonDependentFields(mailingType, mailingFilter, predefineMailing, selectedMailings);
+
+        jqXHR.done(function () {
+            $form.dirty('setAsClean');
+        });
     };
 
     ReportSettings.prototype.handleMailingTypeChanges = function(el) {
@@ -133,10 +140,11 @@ AGN.Lib.Controller.new('birt-reports', function() {
             predefinedMailing = self.select.getSelectedValue();
         }
 
-        self.updateNormalMailingField(mailingType, mailingFilter, predefinedMailing, selectedMailings);
+        return self.updateNormalMailingField(mailingType, mailingFilter, predefinedMailing, selectedMailings);
     };
 
     ReportSettings.prototype.updateNormalMailingField = function(mailingType, mailingFilter, predefinedMailing, selectedMailings) {
+        const deferred = $.Deferred();
         var self = this;
         self.mailingSelect.resetOptions();
 
@@ -156,8 +164,11 @@ AGN.Lib.Controller.new('birt-reports', function() {
                 });
 
                 self.mailingSelect.selectValue(selectedMailings ? selectedMailings : '');
+                deferred.resolve();
             });
         }
+
+        return deferred.promise();
     };
 
     ReportSettings.prototype.getMailingFilter = function() {

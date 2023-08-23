@@ -29,6 +29,7 @@ import org.agnitas.beans.BindingEntry.UserType;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.beans.impl.BindingEntryImpl;
 import org.agnitas.dao.UserStatus;
+import org.agnitas.dao.exception.UnknownUserStatusException;
 import org.agnitas.dao.impl.BaseDaoImpl;
 import org.agnitas.dao.impl.mapper.IntegerRowMapper;
 import org.agnitas.dao.impl.mapper.MailinglistRowMapper;
@@ -37,13 +38,13 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
 import org.springframework.jdbc.core.RowMapper;
 
 import com.agnitas.beans.ComTarget;
 import com.agnitas.dao.ComBindingEntryDao;
 import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.emm.core.binding.service.event.OnBindingChangedHandler;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.report.bean.CompositeBindingEntry;
 import com.agnitas.emm.core.report.bean.PlainBindingEntry;
@@ -55,11 +56,17 @@ public class ComBindingEntryDaoImpl extends BaseDaoImpl implements ComBindingEnt
 	/** The logger. */
 	private static final Logger logger = LogManager.getLogger(ComBindingEntryDaoImpl.class);
 	
-	private ComRecipientDao recipientDao;
+	private final ComRecipientDao recipientDao;
 	
-	@Required
-	public final void setRecipientDao(final ComRecipientDao dao) {
-		this.recipientDao = Objects.requireNonNull(dao, "Recipient DAO is null");
+	private List<OnBindingChangedHandler> bindingChangedHandlers;
+	
+	public ComBindingEntryDaoImpl(final ComRecipientDao recipientDao) {
+		this.recipientDao = Objects.requireNonNull(recipientDao, "recipientDao");
+		this.bindingChangedHandlers = List.of();
+	}
+	
+	public final void setOnBindingChangedHandlers(final List<OnBindingChangedHandler> handlers) {
+		this.bindingChangedHandlers = handlers != null ? handlers : List.of();
 	}
 
 	@Override
@@ -137,64 +144,38 @@ public class ComBindingEntryDaoImpl extends BaseDaoImpl implements ComBindingEnt
 	@DaoUpdateReturnValueCheck
 	public boolean updateBinding(BindingEntry entry, int companyID) {
 		try {
-			if (companyID <= 0 || entry.getMailinglistID() <= 0) {
-				return false;
-			}
-			
-			// Check for valid UserStatus code
-			UserStatus.getUserStatusByID(entry.getUserStatus());
-			
-			int touchedLines;
-			
-			List<String> bindingColumns = DbUtilities.getColumnNames(getDataSource(), "customer_" + companyID + "_binding_tbl");
-			
-			entry.setChangeDate(new Date());
-			
-			String sql = "UPDATE customer_" + companyID + "_binding_tbl SET user_status = ?, user_remark = ?, exit_mailing_id = ?, user_type = ?, timestamp = ?";
-			List<Object> sqlParameters = new ArrayList<>();
-			sqlParameters.add(entry.getUserStatus());
-			sqlParameters.add(entry.getUserRemark());
-			sqlParameters.add(entry.getExitMailingID());
-			sqlParameters.add(entry.getUserType());
-			sqlParameters.add(entry.getChangeDate());
-			if (bindingColumns.contains("referrer")) {
-				sql += ", referrer = ?";
-				sqlParameters.add(entry.getReferrer());
-			}
-			if (bindingColumns.contains("entry_mailing_id")) {
-				sql += ", entry_mailing_id = ?";
-				sqlParameters.add(entry.getEntryMailingID());
-			}
-			sql += " WHERE customer_id = ? AND mailinglist_id = ? AND mediatype = ?";
-			sqlParameters.add(entry.getCustomerID());
-			sqlParameters.add(entry.getMailinglistID());
-			sqlParameters.add(entry.getMediaType());
-			
-			touchedLines = update(logger, sql, sqlParameters.toArray());
-
-			return touchedLines >= 1;
-		} catch (Exception e) {
+			return updateBindings(companyID, entry) > 0;
+		} catch(final Exception e) {
 			return false;
 		}
 	}
 
 	@Override
+	public int updateBindings(final int companyId, final BindingEntry... bindings) throws Exception {
+		return updateBindings(companyId, Arrays.asList(bindings));
+	}
+
+	@Override
 	@DaoUpdateReturnValueCheck
-    public void updateBindings(int companyId, List<BindingEntry> bindings) throws Exception {
-		List<String> bindingColumns = DbUtilities.getColumnNames(getDataSource(), "customer_" + companyId + "_binding_tbl");
+    public int updateBindings(int companyId, List<BindingEntry> bindings) throws Exception {
+		final List<String> bindingColumns = DbUtilities.getColumnNames(getDataSource(), "customer_" + companyId + "_binding_tbl");
 
-		boolean containsReferrerColumn = bindingColumns.contains("referrer");
-		boolean containsEntryMailingIdColumn = bindingColumns.contains("entry_mailing_id");
+		final boolean containsReferrerColumn = bindingColumns.contains("referrer");
+		final boolean containsEntryMailingIdColumn = bindingColumns.contains("entry_mailing_id");
 
-        String query = "UPDATE customer_" + companyId + "_binding_tbl" +
+        final String query = "UPDATE customer_" + companyId + "_binding_tbl" +
                 " SET user_status = ?, user_remark = ?, exit_mailing_id = ?, user_type = ?, timestamp = CURRENT_TIMESTAMP" +
 				(containsReferrerColumn ? ", referrer = ?" : "") +
 				(containsEntryMailingIdColumn ? ", entry_mailing_id = ?" : "") +
                 " WHERE customer_id = ? AND mailinglist_id = ? AND mediatype = ?";
-
-		List<Object[]> params = new ArrayList<>();
-		for (BindingEntry binding : bindings) {
-			List<Object> objects = new ArrayList<>();
+		
+		int updated = 0;
+		for(int i = 0; i < bindings.size(); i++) {
+			final BindingEntry binding = bindings.get(i);
+			// Check for valid UserStatus code
+			UserStatus.getUserStatusByID(binding.getUserStatus());
+			
+			final List<Object> objects = new ArrayList<>();
 			objects.add(binding.getUserStatus());
 			objects.add(binding.getUserRemark());
 			objects.add(binding.getExitMailingID());
@@ -210,22 +191,29 @@ public class ComBindingEntryDaoImpl extends BaseDaoImpl implements ComBindingEnt
 			objects.add(binding.getCustomerID());
 			objects.add(binding.getMailinglistID());
 			objects.add(binding.getMediaType());
-			params.add(objects.toArray());
-		}
 
-		batchupdate(logger, query, params);
+			final int touched = update(logger, query, objects.toArray());
+			
+			if(touched > 0) {
+				updated++;
+				
+				fireBindingUpdated(companyId, binding);
+			}
+		}
+		
+		return updated;
     }
 
     @Override
 	@DaoUpdateReturnValueCheck
-    public void insertBindings(int companyId, List<BindingEntry> bindings) throws Exception {
+    public int insertBindings(final int companyId, final List<BindingEntry> bindings) throws Exception {
 		if (companyId > 0) {
-			List<String> bindingColumns = DbUtilities.getColumnNames(getDataSource(), "customer_" + companyId + "_binding_tbl");
+			final List<String> bindingColumns = DbUtilities.getColumnNames(getDataSource(), "customer_" + companyId + "_binding_tbl");
 
-			boolean containsReferrerColumn = bindingColumns.contains("referrer");
-			boolean containsEntryMailingIdColumn = bindingColumns.contains("entry_mailing_id");
+			final boolean containsReferrerColumn = bindingColumns.contains("referrer");
+			final boolean containsEntryMailingIdColumn = bindingColumns.contains("entry_mailing_id");
 
-			List<String> columns = new ArrayList<>(Arrays.asList(
+			final List<String> columns = new ArrayList<>(Arrays.asList(
 					"mailinglist_id",
 					"customer_id",
 					"user_type",
@@ -239,14 +227,16 @@ public class ComBindingEntryDaoImpl extends BaseDaoImpl implements ComBindingEnt
 			if (containsEntryMailingIdColumn) {
 				columns.add("entry_mailing_id");
 			}
-			String query = "INSERT INTO customer_" + companyId + "_binding_tbl(" + StringUtils.join(columns, ", ") + ", creation_date, timestamp) " +
-					"VALUES (" + StringUtils.repeat("?, ", columns.size()) + "CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
+			final String query = "INSERT INTO customer_" + companyId + "_binding_tbl(" + StringUtils.join(columns, ", ") + ", creation_date, timestamp) VALUES (" + StringUtils.repeat("?, ", columns.size()) + "CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
 
-			List<Object[]> params = new ArrayList<>();
-			for (BindingEntry binding : bindings) {
-				if (checkAssignedProfileFieldIsSet(binding, companyId)) {
+			final int[] ids = new int[bindings.size()];
+			int updated = 0;
 
-					List<Object> objects = new ArrayList<>();
+			for(int i = 0; i < bindings.size(); i++) {
+				final BindingEntry binding = bindings.get(i);
+
+				if (companyId > 0 && binding.getCustomerID() > 0 && binding.getMailinglistID() > 0 && mailinglistExists(companyId, binding.getMailinglistID()) &&  checkAssignedProfileFieldIsSet(binding, companyId)) {
+					final List<Object> objects = new ArrayList<>();
 					objects.add(binding.getMailinglistID());
 					objects.add(binding.getCustomerID());
 					objects.add(binding.getUserType());
@@ -262,62 +252,32 @@ public class ComBindingEntryDaoImpl extends BaseDaoImpl implements ComBindingEnt
 						objects.add(binding.getEntryMailingID());
 					}
 
-					params.add(objects.toArray());
+					ids[i] = update(logger, query, objects.toArray());
+					
+					updated++;
+					fireBindingCreated(companyId, binding);
 				}
 			}
-
-			batchupdate(logger, query, params);
+			
+			return updated;
+		} else {
+			return 0;
 		}
     }
+
+	@Override
+	public int insertBindings(final int companyId, final BindingEntry... bindings) throws Exception {
+		return insertBindings(companyId, Arrays.asList(bindings));
+	}
 
 	@Override
 	@DaoUpdateReturnValueCheck
 	public boolean insertNewBinding(BindingEntry entry, int companyID) {
 		try {
-			if (companyID <= 0 || entry.getCustomerID() <= 0 || entry.getMailinglistID() <= 0 || !mailinglistExists(companyID, entry.getMailinglistID())) {
-				return false;
-			}
-
-			if (!checkAssignedProfileFieldIsSet(entry, companyID)) {
-				return false;
-			}
-
-			// Check for valid UserStatus code
-			UserStatus.getUserStatusByID(entry.getUserStatus());
-
-			List<String> bindingColumns = DbUtilities.getColumnNames(getDataSource(), "customer_" + companyID + "_binding_tbl");
-
-			entry.setCreationDate(new Date());
-			entry.setChangeDate(entry.getCreationDate());
-
-			String sqlInsertPart = "mailinglist_id, customer_id, user_type, user_status, timestamp, user_remark, creation_date, exit_mailing_id, mediatype";
-			String sqlValuePart = "?, ?, ?, ?, ?, ?, ?, ?, ?";
-			List<Object> sqlParameters = new ArrayList<>();
-			sqlParameters.add(entry.getMailinglistID());
-			sqlParameters.add(entry.getCustomerID());
-			sqlParameters.add(entry.getUserType());
-			sqlParameters.add(entry.getUserStatus());
-			sqlParameters.add(entry.getChangeDate());
-			sqlParameters.add(entry.getUserRemark());
-			sqlParameters.add(entry.getCreationDate());
-			sqlParameters.add(entry.getExitMailingID());
-			sqlParameters.add(entry.getMediaType());
-
-			if (bindingColumns.contains("referrer")) {
-				sqlInsertPart += ", referrer";
-				sqlValuePart += ", ?";
-				sqlParameters.add(entry.getReferrer());
-			}
-			if (bindingColumns.contains("entry_mailing_id")) {
-				sqlInsertPart += ", entry_mailing_id";
-				sqlValuePart += ", ?";
-				sqlParameters.add(entry.getEntryMailingID());
-			}
-			String sql = "INSERT INTO customer_" + companyID + "_binding_tbl (" + sqlInsertPart + ") VALUES (" + sqlValuePart + ")";
-
-			update(logger, sql, sqlParameters.toArray());
-			return true;
-		} catch (Exception e) {
+			return insertBindings(companyID, entry) > 0;
+		} catch (final Exception e) {
+			logger.warn(String.format("Error inserting new binding to company %d", companyID), e);
+			
 			return false;
 		}
 	}
@@ -356,10 +316,10 @@ public class ComBindingEntryDaoImpl extends BaseDaoImpl implements ComBindingEnt
 			// Check for valid UserStatus code
 			UserStatus.getUserStatusByID(entry.getUserStatus());
 			
-			List<String> bindingColumns = DbUtilities.getColumnNames(getDataSource(), "customer_" + companyID + "_binding_tbl");
+			final List<String> bindingColumns = DbUtilities.getColumnNames(getDataSource(), "customer_" + companyID + "_binding_tbl");
 			
 			String sql = "UPDATE customer_" + companyID + "_binding_tbl SET user_status = ?, exit_mailing_id = ?, user_remark = ?, timestamp = CURRENT_TIMESTAMP";
-			List<Object> sqlParameters = new ArrayList<>();
+			final List<Object> sqlParameters = new ArrayList<>();
 			sqlParameters.add(entry.getUserStatus());
 			sqlParameters.add(entry.getExitMailingID());
 			sqlParameters.add(entry.getUserRemark());
@@ -376,7 +336,11 @@ public class ComBindingEntryDaoImpl extends BaseDaoImpl implements ComBindingEnt
 			sqlParameters.add(entry.getMailinglistID());
 			sqlParameters.add(entry.getMediaType());
 			
-			int touchedLines = update(logger, sql, sqlParameters.toArray());
+			final int touchedLines = update(logger, sql, sqlParameters.toArray());
+			
+			if(touchedLines > 0) {
+				fireBindingUpdated(companyID, entry);
+			}
 			
 			return touchedLines >= 1;
 		} catch (Exception e) {
@@ -468,7 +432,6 @@ public class ComBindingEntryDaoImpl extends BaseDaoImpl implements ComBindingEnt
 
 	@Override
 	public List<BindingEntry> getBindings(int companyID, int recipientID) {
-
 		// Using "SELECT * ...", because entry_mailing_id and referrer may be missing in sub-client tables
 		String sql = "SELECT * FROM customer_" + companyID + "_binding_tbl WHERE customer_id = ?";
 		return select(logger, sql, new BindingEntry_RowMapper(this), recipientID);
@@ -536,7 +499,7 @@ public class ComBindingEntryDaoImpl extends BaseDaoImpl implements ComBindingEnt
 		return String.format("customer_%d_binding_tbl", companyId);
 	}
 
-	private class PlainBindingEntryRowMapper implements RowMapper<PlainBindingEntry> {
+	private static class PlainBindingEntryRowMapper implements RowMapper<PlainBindingEntry> {
 		@Override
 		public PlainBindingEntry mapRow(ResultSet resultSet, int i) throws SQLException {
 			PlainBindingEntry plainBindingEntry = new PlainBindingEntryImpl();
@@ -565,7 +528,7 @@ public class ComBindingEntryDaoImpl extends BaseDaoImpl implements ComBindingEnt
 		}
 	}
 
-	protected class BindingEntry_RowMapper implements RowMapper<BindingEntry> {
+	protected static class BindingEntry_RowMapper implements RowMapper<BindingEntry> {
 		private ComBindingEntryDao bindingEntryDao;
 		
 		public BindingEntry_RowMapper(ComBindingEntryDao bindingEntryDao) {
@@ -652,14 +615,32 @@ public class ComBindingEntryDaoImpl extends BaseDaoImpl implements ComBindingEnt
 
 	@Override
 	public int bulkUpdateStatus(int companyID, List<Integer> mailinglistIds, MediaTypes mediatype, UserStatus userStatus, String userRemark, List<Integer> customerIDs) {
-		String query = "UPDATE customer_" + companyID + "_binding_tbl"
-			+ " SET user_status = ?, user_remark = ?, timestamp = CURRENT_TIMESTAMP"
-			+ " WHERE " + makeBulkInClauseForInteger("mailinglist_id", mailinglistIds) + " AND " + makeBulkInClauseForInteger("customer_id", customerIDs);
-		if (mediatype != null) {
-			return update(logger, query + " AND mediatype = ?", userStatus.getStatusCode(), userRemark, mediatype.getKey());
-		} else {
-			return update(logger, query, userStatus.getStatusCode(), userRemark);
+		/*
+		 * Note: batchupdate() cannot be used here.
+		 * 
+		 * Some JDBC drivers (like Mariadb) do not support to return the number of touched lines. 
+		 * This is an information we need here.
+		 */
+		final String batchQuery = String.format("UPDATE customer_%d_binding_tbl SET user_status=?, user_remark=?, timestamp=CURRENT_TIMESTAMP WHERE mailinglist_id=? AND customer_id=?", companyID)
+				+ (mediatype != null ? " AND mediatype=?" : "");
+		
+        int touchedLinesSum = 0;
+
+		for(final int mailinglistId : mailinglistIds) {
+			for(final int customerId : customerIDs) {
+				final int touched = mediatype != null 
+						? update(logger, batchQuery, userStatus.getStatusCode(), userRemark, mailinglistId, customerId, mediatype.getMediaCode())
+						: update(logger, batchQuery, userStatus.getStatusCode(), userRemark, mailinglistId, customerId);
+				
+				if(touched > 0) {
+					touchedLinesSum += touched;
+					
+					fireBindingUpdated(companyID, customerId, mailinglistId, mediatype, userStatus);
+				}
+			}
 		}
+
+        return touchedLinesSum;
 	}
 
 	@Override
@@ -667,7 +648,7 @@ public class ComBindingEntryDaoImpl extends BaseDaoImpl implements ComBindingEnt
 		String query = "DELETE FROM customer_" + companyID + "_binding_tbl"
 			+ " WHERE " + makeBulkInClauseForInteger("mailinglist_id", mailinglistIds) + " AND " + makeBulkInClauseForInteger("customer_id", customerIDs);
 		if (mediatype != null) {
-			return update(logger, query + " AND mediatype = ?", mediatype.getKey());
+			return update(logger, query + " AND mediatype = ?", mediatype.getMediaCode());
 		} else {
 			return update(logger, query);
 		}
@@ -675,26 +656,74 @@ public class ComBindingEntryDaoImpl extends BaseDaoImpl implements ComBindingEnt
 
 	@Override
 	public int bulkCreate(int companyID, List<Integer> mailinglistIds, MediaTypes mediatype, UserStatus userStatus, String userRemark, List<Integer> customerIDs) {
-		Date now = new Date();
-		String query = "INSERT INTO customer_" + companyID + "_binding_tbl (customer_id, mailinglist_id, mediatype, user_type, user_status, user_remark, creation_date, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-		List<Object[]> parameterList = new ArrayList<>();
+		/*
+		 * Note: batchupdate() cannot be used here.
+		 * 
+		 * Some JDBC drivers (like Mariadb) do not support to return the number of touched lines. 
+		 * This is an information we need here.
+		 */
+		final Date now = new Date();
+		final String query = "INSERT INTO customer_" + companyID + "_binding_tbl (customer_id, mailinglist_id, mediatype, user_type, user_status, user_remark, creation_date, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+		
+		int touchedLinesSum = 0;
+		
 		for (int mailinglistId : mailinglistIds) {
 			List<Integer> existingCustomerIDs = select(logger, "SELECT customer_id FROM customer_" + companyID + "_binding_tbl WHERE mailinglist_id = ? AND mediatype = ? AND " + makeBulkInClauseForInteger("customer_id", customerIDs), IntegerRowMapper.INSTANCE, mailinglistId, mediatype.getMediaCode());
 			for (int customerID : customerIDs) {
 				if (!existingCustomerIDs.contains(customerID)) {
-					parameterList.add(new Object[] { customerID, mailinglistId, mediatype.getMediaCode(), UserType.World.getTypeCode(), userStatus.getStatusCode(), userRemark, now, now });
+					final int touched = update(logger, query, customerID, mailinglistId, mediatype.getMediaCode(), UserType.World.getTypeCode(), userStatus.getStatusCode(), userRemark, now, now);
+					
+					if(touched > 0) {
+						touchedLinesSum += touched;
+						
+						fireBindingUpdated(companyID, customerID, mailinglistId, mediatype, userStatus);
+					}
 				}
 			}
 		}
-		if (parameterList.size() > 0) {
-	        int[] touchedLinesResults = batchupdate(logger, query, parameterList);
-	        int touchedLinesSum = 0;
-	        for (int touchedLines : touchedLinesResults) {
-	        	touchedLinesSum += touchedLines;
-	        }
-	        return touchedLinesSum;
-		} else {
-			return 0;
+
+		return touchedLinesSum;
+	}
+	
+	protected void fireBindingCreated(final int companyID, final BindingEntry binding) {
+		try {
+			fireBindingCreated(
+					companyID, 
+					binding.getCustomerID(), 
+					binding.getMailinglistID(), 
+					MediaTypes.getMediaTypeForCode(binding.getMediaType()), 
+					UserStatus.getUserStatusByID(binding.getUserStatus()));
+		} catch(final UnknownUserStatusException e) {
+			logger.error("Unable to notify OnBindingChanged handler", e);
+		}
+	}
+	
+	protected void fireBindingCreated(final int companyID, final int recipientID, final int mailinglistID, final MediaTypes mediatype, final UserStatus userStatus) {
+		final List<OnBindingChangedHandler> list = List.copyOf(this.bindingChangedHandlers);
+		
+		for(final OnBindingChangedHandler handler : list) {
+			handler.bindingCreated(companyID, recipientID, mailinglistID, mediatype, userStatus);
+		}
+	}
+
+	protected void fireBindingUpdated(final int companyID, final BindingEntry binding) {
+		try {
+			fireBindingUpdated(
+					companyID, 
+					binding.getCustomerID(), 
+					binding.getMailinglistID(), 
+					binding.getMediaType() != -1 ? MediaTypes.getMediaTypeForCode(binding.getMediaType()) : null, 
+					UserStatus.getUserStatusByID(binding.getUserStatus()));
+		} catch(final UnknownUserStatusException e) {
+			logger.error("Unable to notify OnBindingChanged handler", e);
+		}
+	}
+	
+	protected void fireBindingUpdated(final int companyID, final int recipientID, final int mailinglistID, final MediaTypes mediatype, final UserStatus userStatus) {
+		final List<OnBindingChangedHandler> list = List.copyOf(this.bindingChangedHandlers);
+		
+		for(final OnBindingChangedHandler handler : list) {
+			handler.bindingChanged(companyID, recipientID, mailinglistID, mediatype, userStatus);
 		}
 	}
 }

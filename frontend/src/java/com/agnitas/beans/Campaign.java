@@ -10,7 +10,6 @@
 
 package com.agnitas.beans;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public interface Campaign {
 	
@@ -54,7 +53,7 @@ public interface Campaign {
      * 
      * @param companyID New value of property companyID.
      */
-    void setCompanyID( @VelocityCheck int companyID);
+    void setCompanyID( int companyID);
     
     /**
      * Setter for property shortname.

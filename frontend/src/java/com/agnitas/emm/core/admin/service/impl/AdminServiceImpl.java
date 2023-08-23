@@ -26,7 +26,6 @@ import java.util.stream.Collectors;
 
 import org.agnitas.beans.AdminEntry;
 import org.agnitas.beans.AdminGroup;
-import org.agnitas.beans.EmmLayoutBase;
 import org.agnitas.beans.impl.AdminEntryImpl;
 import org.agnitas.beans.impl.CompanyStatus;
 import org.agnitas.beans.impl.PaginatedListImpl;
@@ -43,16 +42,17 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.AdminPreferences;
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.AdminPreferences;
 import com.agnitas.beans.Company;
-import com.agnitas.beans.impl.AdminPreferencesImpl;
+import com.agnitas.beans.EmmLayoutBase;
 import com.agnitas.beans.impl.AdminImpl;
-import com.agnitas.dao.AdminPreferencesDao;
+import com.agnitas.beans.impl.AdminPreferencesImpl;
 import com.agnitas.dao.AdminDao;
 import com.agnitas.dao.AdminGroupDao;
+import com.agnitas.dao.AdminPreferencesDao;
 import com.agnitas.dao.ComCompanyDao;
-import com.agnitas.dao.ComEmmLayoutBaseDao;
+import com.agnitas.dao.EmmLayoutBaseDao;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.PermissionType;
 import com.agnitas.emm.core.admin.AdminException;
@@ -67,31 +67,26 @@ import com.agnitas.emm.core.news.enums.NewsType;
 import com.agnitas.emm.core.permission.service.PermissionService;
 import com.agnitas.emm.core.supervisor.beans.Supervisor;
 import com.agnitas.emm.core.supervisor.common.SupervisorException;
-import com.agnitas.emm.core.supervisor.common.SupervisorLoginFailedException;
 import com.agnitas.emm.core.supervisor.dao.ComSupervisorDao;
 import com.agnitas.emm.core.supervisor.dao.GrantedSupervisorLoginDao;
-import com.agnitas.emm.core.supervisor.service.ComSupervisorService;
 import com.agnitas.messages.Message;
 import com.agnitas.service.ServiceResult;
 
 public class AdminServiceImpl implements AdminService {
 	
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(AdminServiceImpl.class);
+	private static final Logger logger = LogManager.getLogger(AdminServiceImpl.class);
 
-	protected AdminDao adminDao;
-	
 	// Use ComSupervisorService instead
 	@Deprecated
 	protected ComSupervisorDao supervisorDao;
+	protected AdminDao adminDao;
 	protected ComCompanyDao companyDao;
 	protected AdminPreferencesDao adminPreferencesDao;
 	protected AdminGroupDao adminGroupDao;
 	protected GrantedSupervisorLoginDao grantedSupervisorLoginDao;
 	protected ConfigService configService;
 	private PermissionFilter permissionFilter;
-	protected ComEmmLayoutBaseDao emmLayoutBaseDao;
-	private ComSupervisorService supervisorService;
+	protected EmmLayoutBaseDao emmLayoutBaseDao;
 	protected PermissionService permissionService;
 	private AdminPasswordChangedNotifier passwordChangedNotifier;
 	
@@ -105,11 +100,6 @@ public class AdminServiceImpl implements AdminService {
 		this.supervisorDao = dao;
 	}
 	
-	@Required
-	public final void setSupervisorService(final ComSupervisorService service) {
-		this.supervisorService = Objects.requireNonNull(service, "Supervisor service is null");
-	}
-
 	@Required
 	public void setCompanyDao(ComCompanyDao companyDao) {
 		this.companyDao = companyDao;
@@ -146,7 +136,7 @@ public class AdminServiceImpl implements AdminService {
 	}
 
 	@Required
-	public void setEmmLayoutBaseDao(ComEmmLayoutBaseDao emmLayoutBaseDao) {
+	public void setEmmLayoutBaseDao(EmmLayoutBaseDao emmLayoutBaseDao) {
 		this.emmLayoutBaseDao = emmLayoutBaseDao;
 	}
 	
@@ -178,111 +168,10 @@ public class AdminServiceImpl implements AdminService {
 	}
 	
 	@Override
-	public Admin getAdminByNameForSupervisor(final String username, final String supervisorName, final String password) throws AdminException, SupervisorException {
-		final Supervisor supervisor = supervisorDao.getSupervisor(supervisorName, password);
-
-		// Check if supervisor exists
-		if (supervisor == null) {
-			if (logger.isInfoEnabled()) {
-				logger.info("Invalid supervisor " + supervisorName + "?");
-			}
-			
-			final String msg = String.format("Unknown supervisor '%s'", supervisorName);
-			if (logger.isInfoEnabled()) {
-				logger.info(msg);
-			}
-			
-			throw new SupervisorLoginFailedException(username, supervisorName);
-		}
-
-		final Admin admin = adminDao.getByNameAndActiveCompany(username);
-		
-		// Check if admin exists
-		if (admin == null) {
-			final String msg = String.format("Unknown supervisor '%s'", username);
-			
-			if (logger.isInfoEnabled()) {
-				logger.info(msg);
-			}
-			
-			throw new AdminException(msg);
-		}
-			
-		// Reject login for supervisors without department
-		if (supervisor.getDepartment() == null) {
-			final String msg = String.format("Access for supervisor '%s' denied. No department set.", supervisorName);
-			
-			if (logger.isInfoEnabled()) {
-				logger.info(msg);
-			}
-			
-			throw new SupervisorException(msg);
-		}
-		
-		// Check, if supervisor is allowed to login to copmany of given admin
-		if (!isSupervisorLoginAllowedForCompany(admin, supervisor)) {
-			final String msg = String.format("Access for supervisor '%s' not granted for company ID %d", supervisorName, admin.getCompanyID());
-			
-			if (logger.isInfoEnabled()) {
-				logger.info(msg);
-			}
-			
-			throw new SupervisorException(msg);
-		}
-		
-		// Check that supervisor has permission to login as EMM user
-		if (this.configService.getBooleanValue(ConfigValue.SupervisorRequiresLoginPermission, admin.getCompanyID()) && !isSupervisorLoginForUserAllowed(supervisor, admin)) {
-			final String msg = String.format("Supervisor '%s' has not permission to login as user '%s'", supervisor.getSupervisorName(), admin.getUsername());
-			
-			if (logger.isInfoEnabled()) {
-				logger.info(msg);
-			}
-				
-			throw new SupervisorException(msg);
-		}
-		
-		// Assign supervisor to EMM user
-		admin.setSupervisor(supervisor);
-		
-		// Log supervisor access
-		supervisorDao.logSupervisorLogin(supervisor.getId(), admin.getCompanyID());
-
-		return admin;
-		
-	}
-	
-	private final boolean isSupervisorLoginForUserAllowed(final Supervisor supervisor, final Admin admin) {
-		// Login Permission feature disabled? -> Login allowed
-		if(!this.configService.getBooleanValue(ConfigValue.SupervisorRequiresLoginPermission, admin.getCompanyID())) {
-			return true;
-		} else {
-			// Login Permission feature is enabled
-			
-			// Check, if department allows login to user without login permission
-			if(supervisor.getDepartment() != null && supervisor.getDepartment().isLoginWithoutUserPermissionAllowed()) {
-				// Login without permission allowed -> check if user belongs to bound company ID
-				final List<Integer> allowedCompanyIds = this.supervisorService.getAllowedCompanyIds(supervisor.getId());
-				
-				if(allowedCompanyIds.contains(admin.getCompanyID()) || (supervisor.getDepartment().isSupervisorBindingToCompany0Allowed() && allowedCompanyIds.contains(0))) {
-					return true;
-				}
-			}
-			
-			if(this.grantedSupervisorLoginDao.isSupervisorLoginGranted(supervisor.getId(), admin)) {
-				return true;
-			}
-			
-			return false;
-		}
+	public Admin getAdminByNameForSupervisor(String username, String supervisorName, String password) throws AdminException, SupervisorException {
+		throw new UnsupportedOperationException();
 	}
 
-	private boolean isSupervisorLoginAllowedForCompany(final Admin admin, final Supervisor supervisor) {
-		final List<Integer> allowedCompanyIDs = supervisorService.getAllowedCompanyIds(supervisor.getId());
-		
-		return (supervisor.getDepartment().isSupervisorBindingToCompany0Allowed() && allowedCompanyIDs.contains(0))
-				|| allowedCompanyIDs.contains(admin.getCompanyID());
-	}
-	
 	@Override
 	public Map<String, String> mapIdToUsernameByCompanyAndEmail(int companyId) {
 		List<AdminEntry> admins = adminDao.getAllAdminsByCompanyIdOnlyHasEmail(companyId);
@@ -464,6 +353,8 @@ public class AdminServiceImpl implements AdminService {
 				isChangeable = companyPermissions.contains(permission);
 			} else if (permission.getPermissionType() == PermissionType.System) {
 				isChangeable = companyPermissions.contains(permission) && (editorAdmin.permissionAllowed(permission) || editorAdmin.permissionAllowed(Permission.MASTER_SHOW) || editorAdmin.getAdminID() == 1);
+			} else if (permission.getPermissionType() == PermissionType.Migration && !editorAdmin.permissionAllowed(Permission.SHOW_MIGRATION_PERMISSIONS)) {
+				isChangeable = false;
 			} else {
 				isChangeable = true;
 			}
@@ -480,6 +371,9 @@ public class AdminServiceImpl implements AdminService {
 			if (!permissionChangeable.getOrDefault(permissionToken, false)) {
 				Permission permission = Permission.getPermissionByToken(permissionToken);
 				if (permission.getPermissionType() == PermissionType.System) {
+					// User is not allowed to change this permission of special category and may also not see it in GUI, so keep it unchanged
+					removedPermissions.remove(permissionToken);
+				} else if (permission.getPermissionType() == PermissionType.Migration) {
 					// User is not allowed to change this permission of special category and may also not see it in GUI, so keep it unchanged
 					removedPermissions.remove(permissionToken);
 				} else if (savingAdmin.permissionAllowedByGroups(permission)) {
@@ -502,6 +396,9 @@ public class AdminServiceImpl implements AdminService {
 			if (!permissionChangeable.getOrDefault(permissionToken, false)) {
 				Permission permission = Permission.getPermissionByToken(permissionToken);
 				if (permission.getPermissionType() == PermissionType.System) {
+					// User is not allowed to change this permission of special category and may also not see it in GUI, so keep it unchanged
+					addedPermissions.remove(permissionToken);
+				} else if (permission.getPermissionType() == PermissionType.Migration) {
 					// User is not allowed to change this permission of special category and may also not see it in GUI, so keep it unchanged
 					addedPermissions.remove(permissionToken);
 				} else {
@@ -798,6 +695,11 @@ public class AdminServiceImpl implements AdminService {
 	public int getPasswordChangedMailingId(String language) {
 		return adminDao.getPasswordChangedMailingId(language);
 	}
+
+	@Override
+	public int getSecurityCodeMailingId(String language) {
+		return adminDao.getSecurityCodeMailingId(language);
+	}
 	
 	@Override
 	public PaginatedListImpl<AdminEntry> getRestfulUserList(
@@ -840,6 +742,11 @@ public class AdminServiceImpl implements AdminService {
 	@Override
 	public int getNumberOfRestfulUsers(int companyID) {
 		return adminDao.getNumberOfRestfulUsers(companyID);
+	}
+
+	@Override
+	public void deleteAdminPermissionsForCompany(int companyID) {
+		adminDao.deleteAdminPermissionsForCompany(companyID);
 	}
 
 	@Override

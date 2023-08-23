@@ -862,7 +862,7 @@ public class MailingSummaryDataSet extends ComparisonBirtDataSet {
 
         int targetDisplayIndex = CommonKeys.ALL_SUBSCRIBERS_TARGETGROUPID;
 
-        if (!isMailingBouncesExpire(companyID, mailingID) || !isOracleDB()) {
+        if (!isMailingBouncesExpire(companyID, mailingID)) {
             for (LightTarget target : allTargets) {
                 final String resultTargetSql = joinWhereClause(target.getTargetSQL(), hiddenTargetSql);
 

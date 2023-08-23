@@ -14,7 +14,7 @@ package com.agnitas.emm.core.calendar.beans;
 import java.util.Date;
 import java.util.List;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
+
 
 public interface ComCalendarComment {
 
@@ -36,7 +36,7 @@ public interface ComCalendarComment {
 
     int getCompanyId();
 
-    void setCompanyId(@VelocityCheck int companyId);
+    void setCompanyId(int companyId);
 
     int getAdminId();
 

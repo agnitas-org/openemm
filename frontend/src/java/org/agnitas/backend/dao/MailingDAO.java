@@ -19,9 +19,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.agnitas.emm.core.workflow.beans.WorkflowDependencyType;
 import org.agnitas.backend.DBase;
 import org.agnitas.backend.Media;
-import org.agnitas.util.Const;
+import org.agnitas.util.Log;
 import org.agnitas.util.ParameterParser;
 
 /**
@@ -90,7 +91,7 @@ public class MailingDAO {
 				}
 				//
 				// workflow related informations
-				int	dependencyTypeMailing = Const.WorkflowDependencyType.MAILING_DELIVERY;
+				int	dependencyTypeMailing = WorkflowDependencyType.MAILING_DELIVERY.getId();
 		
 				row = dbase.querys (with.cursor (),
 						    "SELECT COUNT(*) cnt FROM workflow_dependency_tbl WHERE type = :type AND entity_id = :mailingID",
@@ -136,23 +137,6 @@ public class MailingDAO {
 				//
 				// mailing specific item definitions
 				item = null;
-				if (dbase.exists ("mailing_item_tbl")) {
-					rq = dbase.query (with.cursor (),
-							  "SELECT param FROM mailing_item_tbl WHERE mailing_id = :mailingID",
-							  "mailingID", mailingID);
-					for (int n = 0; n < rq.size (); ++n) {
-						row = rq.get (n);
-						String	param = dbase.asString (row.get ("param"));
-						if (param != null) {
-							ParameterParser parsed = new ParameterParser(param);
-							if (item == null) {
-								item = parsed.parse();
-							} else {
-								item.putAll(parsed.parse());
-							}
-						}
-					}
-				}
 				//
 				// find source template
 				Set <Long>	seen = new HashSet <> ();
@@ -179,6 +163,26 @@ public class MailingDAO {
 				}
 			} else {
 				mailingID = 0;
+			}
+		}
+	}
+	public void retrieveItems (DBase dbase) throws SQLException {
+		try (DBase.With with = dbase.with ()) {
+			List<Map<String, Object>> rq =dbase.query (with.cursor (),
+								   "SELECT param FROM mailing_item_tbl WHERE mailing_id = :mailingID",
+								   "mailingID", mailingID);
+			for (int n = 0; n < rq.size (); ++n) {
+				Map<String, Object> row = rq.get (n);
+			
+				String	param = dbase.asString (row.get ("param"));
+				if (param != null) {
+					ParameterParser parsed = new ParameterParser(param);
+					if (item == null) {
+						item = parsed.parse();
+					} else {
+						item.putAll(parsed.parse());
+					}
+				}
 			}
 		}
 	}
@@ -300,6 +304,22 @@ public class MailingDAO {
 			}
 			if (count > 0) {
 				workStatus = newWorkStatus;
+			} else {
+				Map<String, Object> row = dbase.querys (with.cursor (),
+									"SELECT work_status " + 
+									"FROM mailing_tbl " +
+									"WHERE mailing_id = :mailingID",
+									"mailingID", mailingID);
+				String reason;
+				
+				if (row == null) {
+					reason = "mailing not existing";
+				} else {
+					String work_status = dbase.asString (row.get ("work_status"));
+					
+					reason = "current work status is " + (work_status == null ? "unset" : "\"" + work_status + "\"");
+				}
+				dbase.logging (Log.WARNING, "mailing", "failed to update workstatus for mailing " + mailingID + ": " + reason);
 			}
 		}
 		return count > 0;

@@ -18,7 +18,6 @@ import javax.sql.DataSource;
 import org.agnitas.beans.BindingEntry.UserType;
 import org.agnitas.beans.ColumnMapping;
 import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.service.ProfileImportCsvException.ReasonCode;
 import org.agnitas.util.DbColumnType;
 import org.agnitas.util.ImportUtils.ImportErrorType;
@@ -48,7 +47,7 @@ public interface ImportRecipientsDao {
 	 * @param keyColumn	key column name
 	 * @return is key column indexed
 	 */
-	boolean isKeyColumnIndexed( @VelocityCheck int companyId, List<String> keyColumns);
+	boolean isKeyColumnIndexed( int companyId, List<String> keyColumns);
 		
 	String createTemporaryCustomerImportTable(int companyID, String destinationTableName, int adminID, int datasourceID, List<String> keyColumns, String sessionId, String description) throws Exception;
 

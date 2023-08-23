@@ -10,29 +10,43 @@
 
 package org.agnitas.emm.core.userforms.impl;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.agnitas.emm.core.userforms.UserformService;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.exceptions.FormNotFoundException;
+import org.agnitas.service.UserFormExporter;
+import org.agnitas.service.UserFormImporter;
 import org.agnitas.util.Tuple;
 
 import com.agnitas.dao.UserFormDao;
 import com.agnitas.userform.bean.UserForm;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Required;
 
 /**
  * Implementation of {@link UserformService}.
  */
 public class UserformServiceImpl implements UserformService {
 
-	// ------------------------------------------------------------- Business Code
-
 	/** Regular expression for validation of form name. */
-	private static final transient Pattern FORM_NAME_PATTERN = Pattern.compile( "^[a-zA-Z0-9\\-_]+$");
+	private static final Pattern FORM_NAME_PATTERN = Pattern.compile( "^[a-zA-Z0-9\\-_]+$");
+
+	protected UserFormDao userFormDao;
+	protected UserFormExporter userFormExporter;
+	protected UserFormImporter userFormImporter;
 
 	@Override
 	public final boolean isFormNameInUse(String formName, int formId, int companyId) {
@@ -63,7 +77,7 @@ public class UserformServiceImpl implements UserformService {
 	}
 
     @Override
-    public List<Tuple<Integer, String>> getUserFormNamesByActionID(@VelocityCheck int companyID, int actionID) {
+    public List<Tuple<Integer, String>> getUserFormNamesByActionID(int companyID, int actionID) {
 		if (companyID > 0 && actionID > 0) {
 			return userFormDao.getUserFormNamesByActionID(companyID, actionID);
 		}
@@ -71,7 +85,45 @@ public class UserformServiceImpl implements UserformService {
 		return new ArrayList<>();
     }
 
-    private final UserForm doGetUserForm(final int companyID, final String formName) throws FormNotFoundException {
+	@Override
+	public void copyUserForm(int id, int companyId, int newCompanyId, int mailinglistID, String rdirDomain, Map<Integer, Integer> actionIdReplacements) throws Exception {
+		File userFormTempFile = File.createTempFile("UserFormTempFile_", ".json");
+		try {
+			try (OutputStream userFormOutputStream = new FileOutputStream(userFormTempFile)) {
+				userFormExporter.exportUserFormToJson(companyId, id, userFormOutputStream, true);
+			}
+
+			replacePlaceholdersInFile(userFormTempFile, newCompanyId, mailinglistID, rdirDomain);
+
+			try (InputStream userFormInputStream = new FileInputStream(userFormTempFile)) {
+				userFormImporter.importUserForm(newCompanyId, userFormInputStream, null, actionIdReplacements);
+			}
+		} catch (Exception e) {
+			throw new Exception(String.format("Could not copy user form (%d) for new company (%d): %s", id, newCompanyId, e.getMessage()), e);
+		} finally {
+			if (userFormTempFile.exists()) {
+				userFormTempFile.delete();
+			}
+		}
+	}
+
+	private void replacePlaceholdersInFile(File userFormTempFile, int companyID, int mailinglistID, String rdirDomain) throws IOException {
+		String content = FileUtils.readFileToString(userFormTempFile, StandardCharsets.UTF_8);
+
+		String cid = Integer.toString(companyID);
+		content = StringUtils.replaceEach(content, new String[]{"<CID>", "<cid>", "[COMPANY_ID]", "[company_id]", "[Company_ID]"},
+				new String[]{cid, cid, cid, cid, cid});
+
+		String mlid = Integer.toString(mailinglistID);
+		content = StringUtils.replaceEach(content, new String[]{"<MLID>", "<mlid>", "[MAILINGLIST_ID]", "[mailinglist_id]", "[Mailinglist_ID]"},
+				new String[]{mlid, mlid, mlid, mlid, mlid});
+
+		content = content.replace("<rdir-domain>", StringUtils.defaultIfBlank(rdirDomain, "RDIR-Domain"));
+
+		FileUtils.writeStringToFile(userFormTempFile, content, StandardCharsets.UTF_8);
+	}
+
+	private UserForm doGetUserForm(final int companyID, final String formName) throws FormNotFoundException {
 		try {
 			return this.userFormDao.getUserFormByName(formName, companyID);
 		}catch(final Exception e) {
@@ -80,17 +132,17 @@ public class UserformServiceImpl implements UserformService {
 	}
 
 	// ------------------------------------------------------------- Dependency Injection
-	/**
-	 * DAO for accessing userform data.
-	 */
-	protected UserFormDao userFormDao;
 
-	/**
-	 * Set DAO for accessing userform data.
-	 * 
-	 * @param dao DAO for accessing userform data
-	 */
 	public final void setUserFormDao(final UserFormDao dao) {
 		this.userFormDao = Objects.requireNonNull(dao, "User form DAO cannot be null");
+	}
+
+	public void setUserFormExporter(UserFormExporter userFormExporter) {
+		this.userFormExporter = userFormExporter;
+	}
+
+	@Required
+	public void setUserFormImporter(UserFormImporter userFormImporter) {
+		this.userFormImporter = userFormImporter;
 	}
 }

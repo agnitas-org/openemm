@@ -23,7 +23,6 @@ import com.agnitas.reporting.birt.external.beans.MailingClickStatsPerTargetWithM
 import com.agnitas.reporting.birt.external.beans.SendStatRow;
 import com.agnitas.reporting.birt.external.beans.SendStatWithMailingIdRow;
 import com.agnitas.reporting.birt.external.utils.BirtReporUtils;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -40,7 +39,7 @@ public class MailingStatisticDataSet extends BIRTDataSet {
         return new DateFormats(startDate, stopDate, hourScale);
     }
 
-    private int prepareSummaryReport(int mailingId, @VelocityCheck int companyId, String targetsStr, String hiddenTargetIdStr,
+    private int prepareSummaryReport(int mailingId, int companyId, String targetsStr, String hiddenTargetIdStr,
                                      String recipientType, List<BirtReporUtils.BirtReportFigure> figures, DateFormats dateFormats) throws Exception {
         try {
 			int tempTableId = mailingSummaryDataSet.createTempTable();
@@ -139,15 +138,15 @@ public class MailingStatisticDataSet extends BIRTDataSet {
 		}
     }
 
-    public List<SendStatWithMailingIdRow> getSummaryData(@VelocityCheck int companyID, String mailings, String targetGroupIds, String figuresOptions) throws Exception {
+    public List<SendStatWithMailingIdRow> getSummaryData(int companyID, String mailings, String targetGroupIds, String figuresOptions) throws Exception {
         return getSummaryData(companyID, mailings, targetGroupIds, null, figuresOptions, null);
     }
 
-    public List<SendStatWithMailingIdRow> getSummaryData(@VelocityCheck int companyID, String mailings, String targetGroupIds, String figuresOptions, DateFormats dateFormats) throws Exception {
+    public List<SendStatWithMailingIdRow> getSummaryData(int companyID, String mailings, String targetGroupIds, String figuresOptions, DateFormats dateFormats) throws Exception {
         return getSummaryData(companyID, mailings, targetGroupIds, null, figuresOptions, dateFormats);
     }
 
-    public List<SendStatWithMailingIdRow> getSummaryData(@VelocityCheck int companyID, String mailings, String targetGroupIds, String hiddenTargetGroup, String figuresOptions, DateFormats dateFormats) throws Exception {
+    public List<SendStatWithMailingIdRow> getSummaryData(int companyID, String mailings, String targetGroupIds, String hiddenTargetGroup, String figuresOptions, DateFormats dateFormats) throws Exception {
         List<SendStatWithMailingIdRow> resultList = new LinkedList<>();
         List<Integer> mailingIds = parseCommaSeparatedIds(mailings);
         List<BirtReporUtils.BirtReportFigure> figures = BirtReporUtils.unpackFigures(figuresOptions);
@@ -168,7 +167,7 @@ public class MailingStatisticDataSet extends BIRTDataSet {
         return resultList;
     }
 
-    public List<MailingClickStatsPerTargetWithMailingIdRow>  getLinkClicksData(@VelocityCheck int companyID, String mailings,
+    public List<MailingClickStatsPerTargetWithMailingIdRow>  getLinkClicksData(int companyID, String mailings,
                                                                                String targetGroupIds, String hiddenTargetId,
                                                                                DateFormats dateFormats) throws Exception {
         List<MailingClickStatsPerTargetWithMailingIdRow> resultList = new LinkedList<>();
@@ -273,7 +272,7 @@ public class MailingStatisticDataSet extends BIRTDataSet {
         return resultList;
     }
 
-    public List<LightTarget> getTargets(@VelocityCheck int companyID, String targetGroupIds) {
+    public List<LightTarget> getTargets(int companyID, String targetGroupIds) {
         return getTargets(targetGroupIds, companyID);
     }
 

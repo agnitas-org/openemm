@@ -10,18 +10,28 @@
 
 package com.agnitas.emm.core.userform.web;
 
-import java.io.File;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-
+import com.agnitas.beans.Admin;
+import com.agnitas.emm.core.action.service.ComEmmActionService;
+import com.agnitas.emm.core.company.service.CompanyTokenService;
+import com.agnitas.emm.core.linkcheck.service.LinkService;
+import com.agnitas.emm.core.servicemail.UnknownCompanyIdException;
+import com.agnitas.emm.core.userform.dto.ResultSettings;
+import com.agnitas.emm.core.userform.dto.UserFormDto;
+import com.agnitas.emm.core.userform.form.UserFormForm;
+import com.agnitas.emm.core.userform.form.UserFormsForm;
+import com.agnitas.emm.core.userform.service.ComUserformService;
+import com.agnitas.messages.Message;
+import com.agnitas.service.ExtendedConversionService;
+import com.agnitas.service.ServiceResult;
+import com.agnitas.web.dto.BooleanResponseDto;
+import com.agnitas.web.mvc.DeleteFileAfterSuccessReadResource;
+import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.XssCheckAware;
+import com.agnitas.web.perm.annotations.PermissionMapping;
 import org.agnitas.actions.EmmAction;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.emm.core.recipient.RecipientUtils;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.velocity.scriptvalidator.IllegalVelocityDirectiveException;
 import org.agnitas.emm.core.velocity.scriptvalidator.ScriptValidationException;
@@ -33,6 +43,7 @@ import org.agnitas.service.WebStorage;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DbColumnType;
 import org.agnitas.util.HttpUtils;
+import org.agnitas.util.UserActivityUtil;
 import org.agnitas.web.forms.BulkActionForm;
 import org.agnitas.web.forms.FormUtils;
 import org.agnitas.web.forms.SimpleActionForm;
@@ -56,23 +67,15 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.emm.core.action.service.ComEmmActionService;
-import com.agnitas.emm.core.company.service.CompanyTokenService;
-import com.agnitas.emm.core.linkcheck.service.LinkService;
-import com.agnitas.emm.core.servicemail.UnknownCompanyIdException;
-import com.agnitas.emm.core.userform.dto.ResultSettings;
-import com.agnitas.emm.core.userform.dto.UserFormDto;
-import com.agnitas.emm.core.userform.form.UserFormForm;
-import com.agnitas.emm.core.userform.form.UserFormsForm;
-import com.agnitas.emm.core.userform.service.ComUserformService;
-import com.agnitas.messages.Message;
-import com.agnitas.service.ExtendedConversionService;
-import com.agnitas.service.ServiceResult;
-import com.agnitas.web.dto.BooleanResponseDto;
-import com.agnitas.web.mvc.DeleteFileAfterSuccessReadResource;
-import com.agnitas.web.mvc.Popups;
-import com.agnitas.web.perm.annotations.PermissionMapping;
+import java.io.File;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+
 import static org.agnitas.util.Const.Mvc.ERROR_MSG;
 import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
 
@@ -97,7 +100,8 @@ public class UserFormController implements XssCheckAware {
 	public UserFormController(WebStorage webStorage, ComUserformService userformService, ComEmmActionService emmActionService,
 							  ConfigService configService, UserActivityLogService userActivityLogService,
 							  ExtendedConversionService conversionService, LinkService linkService,
-							  VelocityDirectiveScriptValidator velocityValidator, UserFormImporter userFormImporter, final CompanyTokenService companyTokenService) {
+							  VelocityDirectiveScriptValidator velocityValidator, UserFormImporter userFormImporter,
+							  CompanyTokenService companyTokenService) {
 		this.webStorage = webStorage;
 		this.userformService = userformService;
 		this.emmActionService = emmActionService;
@@ -267,11 +271,9 @@ public class UserFormController implements XssCheckAware {
 		return templateOverview ? "import_view" : "userform_import";
 	}
 
-
 	@PostMapping("/importUserForm.action")
 	@PermissionMapping("import")
-	public String importForm(Admin admin, @RequestParam(value = "importTemplate") boolean templateOverview,
-							 @RequestParam(value = "uploadFile") MultipartFile uploadFile, Popups popups) {
+	public String importForm(Admin admin, @RequestParam(value = "uploadFile") MultipartFile uploadFile, Popups popups) {
 		if (uploadFile.isEmpty()) {
         	popups.alert("error.file.missingOrEmpty");
 			return MESSAGES_VIEW;
@@ -426,22 +428,25 @@ public class UserFormController implements XssCheckAware {
 	}
 
 	private void writeUserActivityLog(Admin admin, UserAction userAction) {
-		if (userActivityLogService != null) {
-			userActivityLogService.writeUserActivityLog(admin, userAction, logger);
-		} else {
-			logger.error("Missing userActivityLogService in " + this.getClass().getSimpleName());
-			logger.info("Userlog: " + admin.getUsername() + " " + userAction.getAction() + " " +  userAction.getDescription());
-		}
+		UserActivityUtil.log(userActivityLogService, admin, userAction, logger);
 	}
 
-	private void loadFormBuilderData(final  Admin admin, final Model model) {
-		model.addAttribute("companyId", admin.getCompanyID());
+	private void loadFormBuilderData(final Admin admin, final Model model) {
+		model.addAttribute("companyToken", companyTokenForAdmin(admin).orElse(""));
 		model.addAttribute("names", userformService.getUserFormNames(admin.getCompanyID()));
 		model.addAttribute("mediapoolImages", userformService.getMediapoolImages(admin));
-		model.addAttribute("textProfileFields", userformService.getProfileFields(admin, DbColumnType.SimpleDataType.Characters));
-		model.addAttribute("dateProfileFields", userformService.getProfileFields(admin, DbColumnType.SimpleDataType.Date, DbColumnType.SimpleDataType.DateTime));
-		model.addAttribute("numberProfileFields", userformService.getProfileFields(admin, DbColumnType.SimpleDataType.Numeric, DbColumnType.SimpleDataType.Float));
 		model.addAttribute("formCssLocation", configService.getValue(ConfigValue.UserFormCssLocation));
+
+		Map<String, String> textProfileFields = userformService.getProfileFields(admin, DbColumnType.SimpleDataType.Characters);
+		Map<String, String> numericProfileFields = userformService.getProfileFields(admin, DbColumnType.SimpleDataType.Numeric, DbColumnType.SimpleDataType.Float);
+
+		Map<String, String> profileFieldsForSelect = new HashMap<>(textProfileFields);
+		profileFieldsForSelect.put(RecipientUtils.COLUMN_GENDER, numericProfileFields.get(RecipientUtils.COLUMN_GENDER));
+
+		model.addAttribute("textProfileFields", textProfileFields);
+		model.addAttribute("profileFieldsForSelect", profileFieldsForSelect);
+		model.addAttribute("numberProfileFields", numericProfileFields);
+		model.addAttribute("dateProfileFields", userformService.getProfileFields(admin, DbColumnType.SimpleDataType.Date, DbColumnType.SimpleDataType.DateTime));
 	}
 
     @Override

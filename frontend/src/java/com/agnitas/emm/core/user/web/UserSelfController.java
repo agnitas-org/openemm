@@ -10,12 +10,12 @@
 
 package com.agnitas.emm.core.user.web;
 
-import com.agnitas.beans.AdminPreferences;
 import com.agnitas.beans.Admin;
-import com.agnitas.dao.AdminPreferencesDao;
+import com.agnitas.beans.AdminPreferences;
 import com.agnitas.dao.AdminGroupDao;
+import com.agnitas.dao.AdminPreferencesDao;
 import com.agnitas.dao.ComCompanyDao;
-import com.agnitas.dao.ComEmmLayoutBaseDao;
+import com.agnitas.dao.EmmLayoutBaseDao;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.logon.service.ComLogonService;
@@ -24,7 +24,6 @@ import com.agnitas.emm.core.user.service.UserSelfService;
 import com.agnitas.service.ComWebStorage;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.XssCheckAware;
-import com.agnitas.web.perm.annotations.PermissionMapping;
 import jakarta.servlet.http.HttpSession;
 import org.agnitas.beans.AdminGroup;
 import org.agnitas.emm.core.commons.password.PasswordCheck;
@@ -33,7 +32,6 @@ import org.agnitas.emm.core.commons.password.SpringPasswordCheckHandler;
 import org.agnitas.emm.core.commons.password.util.PasswordPolicyUtil;
 import org.agnitas.emm.core.commons.password.util.PasswordUtil;
 import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.logintracking.bean.LoginData;
 import org.agnitas.service.UserActivityLogService;
 import org.agnitas.service.WebStorage;
@@ -42,7 +40,6 @@ import org.agnitas.web.forms.FormUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -64,30 +61,27 @@ import static com.agnitas.emm.core.admin.service.AdminChangesLogService.getStati
 import static org.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
 import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
 
-@Controller
-@RequestMapping("/user/self")
-@PermissionMapping("user.self")
 public class UserSelfController implements XssCheckAware {
 
     private static final Logger logger = LogManager.getLogger(UserSelfController.class);
 
     private static final String EDIT_USER_STR = "edit user";
-    
+
+    protected final ConfigService configService;
     private final WebStorage webStorage;
     private final ComCompanyDao companyDao;
     private final AdminPreferencesDao adminPreferencesDao;
     private final AdminGroupDao adminGroupDao;
     private final AdminService adminService;
-    private final ConfigService configService;
     private final UserActivityLogService userActivityLogService;
     private final PasswordCheck passwordCheck;
-    private final ComEmmLayoutBaseDao layoutBaseDao;
+    private final EmmLayoutBaseDao layoutBaseDao;
     private final ComLogonService logonService;
     private final UserSelfService userSelfService;
 
     public UserSelfController(WebStorage webStorage, ComCompanyDao companyDao, AdminPreferencesDao adminPreferencesDao, AdminService adminService,
                               AdminGroupDao adminGroupDao, ConfigService configService, UserActivityLogService userActivityLogService, PasswordCheck passwordCheck,
-                              ComEmmLayoutBaseDao layoutBaseDao, ComLogonService logonService, UserSelfService userSelfService) {
+                              EmmLayoutBaseDao layoutBaseDao, ComLogonService logonService, UserSelfService userSelfService) {
 
         this.webStorage = webStorage;
         this.companyDao = companyDao;
@@ -107,21 +101,21 @@ public class UserSelfController implements XssCheckAware {
         FormUtils.syncNumberOfRows(webStorage, ComWebStorage.ADMIN_LOGIN_LOG_OVERVIEW, form);
 
         fillForm(form, admin);
+        prepareModelAttributesForViewPage(model, admin);
 
+        return "user_selfservice";
+    }
+
+    protected void prepareModelAttributesForViewPage(Model model, Admin admin) {
         int companyID = admin.getCompanyID();
 
         List<LoginData> loginTrackingList = userSelfService.getLoginTrackingList(admin, UserSelfService.DEFAULT_LOGIN_MIN_PERIOD_DAYS, admin.getDateTimeFormatWithSeconds());
-        boolean showSupervisorPermissionManagement = admin.getSupervisor() == null
-                && configService.getBooleanValue(ConfigValue.SupervisorRequiresLoginPermission, companyID);
 
         model.addAttribute("loginTrackingList", loginTrackingList);
         model.addAttribute("availableAdminGroups", adminGroupDao.getAdminGroupsByCompanyIdAndDefault(companyID, admin.getGroupIds()));
         model.addAttribute("availableTimezones", TimeZone.getAvailableIDs());
         model.addAttribute("availableLayouts", adminService.getEmmLayoutsBase(companyID));
         model.addAttribute("passwordPolicy", PasswordPolicyUtil.loadCompanyPasswordPolicy(companyID, configService).getPolicyName());
-        model.addAttribute("showSupervisorPermissionManagement", showSupervisorPermissionManagement);
-
-        return "user_selfservice";
     }
 
     @PostMapping("/save.action")

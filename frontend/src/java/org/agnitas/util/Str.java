@@ -99,6 +99,9 @@ public class Str {
 		}
 		return rc;
 	}
+	public static long atol(String s) {
+		return atol (s, 0);
+	}
 
 	/**
 	 * Converts a string to an double (float)

@@ -10,32 +10,31 @@
 
 package org.agnitas.service;
 
+import org.agnitas.beans.AdminEntry;
+import org.agnitas.util.SqlPreparedStatementManager;
+
+import javax.sql.DataSource;
 import java.text.DateFormat;
 import java.time.ZoneId;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 
-import javax.sql.DataSource;
-
-import org.agnitas.beans.AdminEntry;
-import org.agnitas.util.DbUtilities;
-import org.agnitas.util.SqlPreparedStatementManager;
-import org.agnitas.util.UserActivityLogActions;
-import org.apache.commons.lang3.StringUtils;
-
 public class UserActivityLogExportWorker extends GenericExportWorker {
 
-	private Date fromDate;
-	private Date toDate;
-	private String filterDescription;
-	private int filterAction;
-	private String filterAdminUserName;
-	private List<AdminEntry> filterAdmins;
+	private final Date fromDate;
+	private final Date toDate;
+	private final String filterDescription;
+	private final int filterAction;
+	private final String filterAdminUserName;
+	private final List<AdminEntry> filterAdmins;
+	private final UserActivityLogService.UserType userType;
+	private final UserActivityLogService userActivityLogService;
 
-	public UserActivityLogExportWorker(Date fromDate, Date toDate, String filterDescription, int filterAction, String filterAdminUserName, List<AdminEntry> filterAdmins) {
+	public UserActivityLogExportWorker(Date fromDate, Date toDate, String filterDescription, int filterAction, String filterAdminUserName,
+                                       List<AdminEntry> filterAdmins, UserActivityLogService userActivityLogService,
+                                       UserActivityLogService.UserType userType) {
 		super();
 		this.fromDate = fromDate;
 		this.toDate = toDate;
@@ -43,66 +42,32 @@ public class UserActivityLogExportWorker extends GenericExportWorker {
 		this.filterAction = filterAction;
 		this.filterAdminUserName = filterAdminUserName;
 		this.filterAdmins = filterAdmins;
+		this.userActivityLogService = userActivityLogService;
+		this.userType = userType;
 	}
 
 	@Override
 	public GenericExportWorker call() throws Exception {
-		try {
+        Objects.requireNonNull(userType, "User type is not defined!");
+
+        try {
 			String sortColumn = "logtime";
-			boolean sortDirectionAscending = true;
 
-			SqlPreparedStatementManager sqlPreparedStatementManager = new SqlPreparedStatementManager("SELECT logtime, username, supervisor_name, action, description FROM userlog_tbl");
-			sqlPreparedStatementManager.addWhereClause("logtime >= ?", fromDate);
-			sqlPreparedStatementManager.addWhereClause("logtime < ?", toDate);
+			if (UserActivityLogService.UserType.SOAP.equals(userType) || UserActivityLogService.UserType.REST.equals(userType)) {
+			    sortColumn = "timestamp";
+            }
 
-	        //  If set, any of the visible admins must match
-	        if (filterAdmins != null && filterAdmins.size() > 0) {
-	        	List<String> visibleAdminNameList = new ArrayList<>();
-	        	for (AdminEntry visibleAdmin : filterAdmins) {
-	        		if (visibleAdmin != null) {
-		        		visibleAdminNameList.add(visibleAdmin.getUsername());
-	        		}
-	        	}
-	        	if (visibleAdminNameList.size() > 0) {
-	        		sqlPreparedStatementManager.addWhereClause(DbUtilities.makeBulkInClauseWithDelimiter(isOracleDB(), "username", visibleAdminNameList, "'"));
-	        	}
-	        }
+			SqlPreparedStatementManager sqlPreparedStatementManager = userActivityLogService.prepareSqlStatementForEntriesRetrieving(
+                filterAdmins,
+                filterAdminUserName,
+                filterAction,
+                fromDate,
+                toDate,
+                filterDescription,
+                userType
+            );
 
-	        // If set, the selected admin must match
-	        if (StringUtils.isNotBlank(filterAdminUserName) && !"0".equals(filterAdminUserName)) {
-	        	sqlPreparedStatementManager.addWhereClause("username = ?", filterAdminUserName);
-	        }
-
-			if (StringUtils.isNotBlank(filterDescription)) {
-				if (isOracleDB()) {
-					sqlPreparedStatementManager.addWhereClause("description LIKE ('%' || ? || '%')", filterDescription);
-				} else {
-					sqlPreparedStatementManager.addWhereClause("description LIKE CONCAT('%', ?, '%')", filterDescription);
-				}
-			}
-
-	        // If set, the selected action must match
-	        if (UserActivityLogActions.ANY.getIntValue() != filterAction) {
-	        	if (UserActivityLogActions.LOGIN_LOGOUT.getIntValue() == filterAction) {
-	            	sqlPreparedStatementManager.addWhereClause("action IN ('do login', 'do logout', 'login', 'logout', ?)", UserActivityLogActions.getLocalValue(filterAction));
-	        	} else if (UserActivityLogActions.ANY_WITHOUT_LOGIN.getIntValue() == filterAction) {
-	            	sqlPreparedStatementManager.addWhereClause("action NOT IN ('do login', 'do logout', 'login', 'logout', 'login_logout')");
-	        	} else {
-					sqlPreparedStatementManager.addAndClause();
-					sqlPreparedStatementManager.appendOpeningParenthesis();
-					String[] localValues = UserActivityLogActions.getLocalValues(filterAction);
-					for(int i = 0; i < localValues.length; i++){
-						if(i != 0){
-							sqlPreparedStatementManager.addOrClause();
-						}
-						sqlPreparedStatementManager.addWhereClauseSimple("(LOWER(action) LIKE ? OR LOWER(action) = ?)", localValues[i].toLowerCase() + " %", localValues[i].toLowerCase());
-					}
-					sqlPreparedStatementManager.appendClosingParenthesis();
-	            	sqlPreparedStatementManager.addWhereClause("action NOT IN ('do login', 'do logout', 'login', 'logout', 'login_logout')");
-	        	}
-	        }
-
-	        selectStatement = sqlPreparedStatementManager.getPreparedSqlString() + " ORDER BY " + sortColumn + " " + (sortDirectionAscending ? "ASC" : "DESC");
+	        selectStatement = sqlPreparedStatementManager.getPreparedSqlString() + " ORDER BY " + sortColumn + " ASC";
 	        selectParameters = Arrays.asList(sqlPreparedStatementManager.getPreparedSqlParameters());
 
 			// Execute export
@@ -123,6 +88,7 @@ public class UserActivityLogExportWorker extends GenericExportWorker {
     }
 
     public static class Builder {
+
         private Date fromDate;
         private Date toDate;
         private String filterDescription;
@@ -134,6 +100,8 @@ public class UserActivityLogExportWorker extends GenericExportWorker {
         private DateFormat dateFormat;
         private DateFormat dateTimeFormat;
     	private ZoneId exportTimezone;
+		private UserActivityLogService userActivityLogService;
+        private UserActivityLogService.UserType userType;
 
         public Builder(DataSource dataSource) {
         	this.dataSource = Objects.requireNonNull(dataSource);
@@ -189,13 +157,26 @@ public class UserActivityLogExportWorker extends GenericExportWorker {
             return this;
 		}
 
+		public Builder setUserActivityLogService(UserActivityLogService userActivityLogService) {
+			this.userActivityLogService = userActivityLogService;
+			return this;
+		}
+
+		public Builder setUserActivityType(UserActivityLogService.UserType userType) {
+			this.userType = userType;
+			return this;
+		}
+
         public UserActivityLogExportWorker build() {
             UserActivityLogExportWorker userActivityLogExportWorker = new UserActivityLogExportWorker(fromDate,
                     toDate,
                     filterDescription,
                     filterAction,
                     filterAdminUserName,
-                    filterAdmins);
+                    filterAdmins,
+                    userActivityLogService,
+                    userType
+			);
 
             userActivityLogExportWorker.setExportFile(exportFile);
             userActivityLogExportWorker.setDataSource(dataSource);

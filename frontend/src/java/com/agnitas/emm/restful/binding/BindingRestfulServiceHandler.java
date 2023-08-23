@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import com.agnitas.emm.core.useractivitylog.dao.RestfulUserActivityLogDao;
 import org.agnitas.beans.BindingEntry;
 import org.agnitas.beans.BindingEntry.UserType;
 import org.agnitas.beans.impl.BindingEntryImpl;
@@ -27,7 +28,7 @@ import org.agnitas.dao.UserStatus;
 import org.agnitas.dao.exception.UnknownUserStatusException;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.useractivitylog.dao.UserActivityLogDao;
+import org.agnitas.emm.core.velocity.Constants;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.HttpUtils.RequestMethod;
 import org.apache.commons.lang3.StringUtils;
@@ -67,7 +68,7 @@ public class BindingRestfulServiceHandler implements RestfulServiceHandler {
 	
 	public static final String NAMESPACE = "binding";
 
-	private UserActivityLogDao userActivityLogDao;
+	private RestfulUserActivityLogDao userActivityLogDao;
 	private ComRecipientDao recipientDao;
 	private ComBindingEntryDao bindingEntryDao;
 	private MailinglistDao mailinglistDao;
@@ -75,7 +76,7 @@ public class BindingRestfulServiceHandler implements RestfulServiceHandler {
 	private ConfigService configService;
 
 	@Required
-	public void setUserActivityLogDao(UserActivityLogDao userActivityLogDao) {
+	public void setUserActivityLogDao(RestfulUserActivityLogDao userActivityLogDao) {
 		this.userActivityLogDao = userActivityLogDao;
 	}
 	
@@ -130,10 +131,6 @@ public class BindingRestfulServiceHandler implements RestfulServiceHandler {
 	/**
 	 * Return a single or multiple binding data sets
 	 * 
-	 * @param request
-	 * @param admin
-	 * @return
-	 * @throws Exception
 	 */
 	private Object getBindingEntry(HttpServletRequest request, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.RECIPIENT_SHOW)) {
@@ -163,8 +160,8 @@ public class BindingRestfulServiceHandler implements RestfulServiceHandler {
 		if (restfulContext.length == 1) {
 			// Show binding entries for an email or customerID
 			userActivityLogDao.addAdminUseOfFeature(admin, "restful/binding", new Date());
-			userActivityLogDao.writeUserActivityLog(admin, "restful/binding GET", "" + requestedCustomerID);
-			
+			writeActivityLog(String.valueOf(requestedCustomerID), request, admin);
+
 			JsonArray bindingsJsonArray = new JsonArray();
 			
 			for (BindingEntry bindingEntry : bindingEntryDao.getBindings(admin.getCompanyID(), requestedCustomerID)) {
@@ -205,8 +202,8 @@ public class BindingRestfulServiceHandler implements RestfulServiceHandler {
 			
 			// Show binding entries for an email or customerID for a specific mailinglist
 			userActivityLogDao.addAdminUseOfFeature(admin, "restful/binding", new Date());
-			userActivityLogDao.writeUserActivityLog(admin, "restful/binding GET", requestedCustomerID + " MLID: " + requestedMailinglistID);
-			
+			writeActivityLog(requestedCustomerID + " MLID: " + requestedMailinglistID, request, admin);
+
 			JsonArray bindingsJsonArray = new JsonArray();
 			
 			for (BindingEntry bindingEntry : bindingEntryDao.getBindings(admin.getCompanyID(), requestedCustomerID)) {
@@ -246,10 +243,6 @@ public class BindingRestfulServiceHandler implements RestfulServiceHandler {
 	/**
 	 * Delete a binding
 	 * 
-	 * @param request
-	 * @param admin
-	 * @return
-	 * @throws Exception
 	 */
 	private Object deleteBindingEntry(HttpServletRequest request, byte[] requestData, File requestDataFile, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.RECIPIENT_CHANGE)) {
@@ -406,11 +399,6 @@ public class BindingRestfulServiceHandler implements RestfulServiceHandler {
 	/**
 	 * Create a new binding
 	 * 
-	 * @param request
-	 * @param requestDataFile
-	 * @param admin
-	 * @return
-	 * @throws Exception
 	 */
 	private Object createNewBindingEntry(HttpServletRequest request, byte[] requestData, File requestDataFile, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.RECIPIENT_CHANGE)) {
@@ -694,7 +682,7 @@ public class BindingRestfulServiceHandler implements RestfulServiceHandler {
 					
 					final Map<String, Object> params = new HashMap<>();
 					params.put("customerID", requestedCustomerID);
-					params.put("actionErrors", actionOperationErrors);
+					params.put(Constants.ACTION_OPERATION_ERRORS_CONTEXT_NAME, actionOperationErrors);
 					
 					if (runActionAsynchronous) {
 						final int actionIdFinal = actionID;
@@ -726,11 +714,6 @@ public class BindingRestfulServiceHandler implements RestfulServiceHandler {
 	/**
 	 * Create a new binding or update an exiting binding
 	 * 
-	 * @param request
-	 * @param requestDataFile
-	 * @param admin
-	 * @return
-	 * @throws Exception
 	 */
 	private Object createOrUpdateBindingEntry(HttpServletRequest request, byte[] requestData, File requestDataFile, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.RECIPIENT_CHANGE)) {
@@ -1015,7 +998,7 @@ public class BindingRestfulServiceHandler implements RestfulServiceHandler {
 					
 					final Map<String, Object> params = new HashMap<>();
 					params.put("customerID", requestedCustomerID);
-					params.put("actionErrors", actionOperationErrors);
+					params.put(Constants.ACTION_OPERATION_ERRORS_CONTEXT_NAME, actionOperationErrors);
 					
 					if (runActionAsynchronous) {
 						final int actionIdFinal = actionID;
@@ -1053,7 +1036,7 @@ public class BindingRestfulServiceHandler implements RestfulServiceHandler {
 					
 					final Map<String, Object> params = new HashMap<>();
 					params.put("customerID", requestedCustomerID);
-					params.put("actionErrors", actionOperationErrors);
+					params.put(Constants.ACTION_OPERATION_ERRORS_CONTEXT_NAME, actionOperationErrors);
 					
 					if (runActionAsynchronous) {
 						final int actionIdFinal = actionID;
@@ -1086,5 +1069,9 @@ public class BindingRestfulServiceHandler implements RestfulServiceHandler {
 	@Override
 	public ResponseType getResponseType() {
 		return ResponseType.JSON;
+	}
+
+	private void writeActivityLog(String description, HttpServletRequest request, Admin admin) {
+		writeActivityLog(userActivityLogDao, description, request, admin);
 	}
 }

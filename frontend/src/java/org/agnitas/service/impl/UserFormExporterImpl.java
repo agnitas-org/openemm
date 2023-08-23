@@ -125,10 +125,9 @@ public class UserFormExporterImpl extends ActionExporter implements UserFormExpo
 			
 			exportActions(writer, companyID, actionIDs);
 			
-			
 			writer.closeJsonObject();
 		} catch (Exception e) {
-			logger.error("Error in mailing export: " + e.getMessage(), e);
+			logger.error("Error in userform export: " + e.getMessage(), e);
 			throw e;
 		}
 	}

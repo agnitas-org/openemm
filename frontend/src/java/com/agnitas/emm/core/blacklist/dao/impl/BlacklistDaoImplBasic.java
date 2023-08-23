@@ -29,7 +29,6 @@ import org.agnitas.dao.impl.BaseDaoImpl;
 import org.agnitas.dao.impl.mapper.MailinglistRowMapper;
 import org.agnitas.dao.impl.mapper.StringRowMapper;
 import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DbColumnType.SimpleDataType;
 import org.agnitas.util.DbUtilities;
@@ -74,7 +73,7 @@ public class BlacklistDaoImplBasic extends BaseDaoImpl implements ComBlacklistDa
 	 */
 	@Override
 	@DaoUpdateReturnValueCheck
-	public boolean insert(@VelocityCheck int companyID, String email, String reason) {
+	public boolean insert(int companyID, String email, String reason) {
 		if (StringUtils.isBlank(email)) {
 			return false;
 		} else {
@@ -94,7 +93,7 @@ public class BlacklistDaoImplBasic extends BaseDaoImpl implements ComBlacklistDa
 	 */
 	@Override
 	@DaoUpdateReturnValueCheck
-	public boolean update(@VelocityCheck int companyID, String email, String reason) {
+	public boolean update(int companyID, String email, String reason) {
 		if (StringUtils.isBlank(email)) {
 			return false;
 		} else {
@@ -108,7 +107,7 @@ public class BlacklistDaoImplBasic extends BaseDaoImpl implements ComBlacklistDa
 	 * Get the complete list of blacklisted addresses, including company and global
 	 */
 	@Override
-	public Set<String> loadBlackList(@VelocityCheck int companyID) throws Exception {
+	public Set<String> loadBlackList(int companyID) throws Exception {
 		Set<String> blacklist = new HashSet<>();
 		try {
 			List<String> blacklistCompany = select(logger, "SELECT email FROM cust" + companyID + "_ban_tbl", StringRowMapper.INSTANCE);
@@ -124,7 +123,7 @@ public class BlacklistDaoImplBasic extends BaseDaoImpl implements ComBlacklistDa
 
 	@Override
 	@DaoUpdateReturnValueCheck
-	public boolean delete(@VelocityCheck int companyID, String email) {
+	public boolean delete(int companyID, String email) {
 		if (StringUtils.isBlank(email)) {
 			return false;
 		} else {
@@ -134,12 +133,12 @@ public class BlacklistDaoImplBasic extends BaseDaoImpl implements ComBlacklistDa
 	}
 
 	@Override
-	public PaginatedListImpl<BlackListEntry> getBlacklistedRecipients(@VelocityCheck int companyID, String sort, String direction, int page, int rownums) {
+	public PaginatedListImpl<BlackListEntry> getBlacklistedRecipients(int companyID, String sort, String direction, int page, int rownums) {
 		return getBlacklistedRecipients(companyID, sort, direction, page, rownums, null);
 	}
 
 	@Override
-	public PaginatedListImpl<BlackListEntry> getBlacklistedRecipients(@VelocityCheck int companyID, String sort, String direction, int page, int rownums, String likePattern) {
+	public PaginatedListImpl<BlackListEntry> getBlacklistedRecipients(int companyID, String sort, String direction, int page, int rownums, String likePattern) {
 		String wildcardLikePattern = replaceWildCardCharacters(StringUtils.defaultString(likePattern));
 
 		sort = getSortableColumn(sort);
@@ -241,7 +240,7 @@ public class BlacklistDaoImplBasic extends BaseDaoImpl implements ComBlacklistDa
 	}
 
 	@Override
-	public boolean exist(@VelocityCheck int companyID, String email) {
+	public boolean exist(int companyID, String email) {
 		return exist(email, getCustomerBanTableName(companyID));
 	}
 
@@ -256,7 +255,7 @@ public class BlacklistDaoImplBasic extends BaseDaoImpl implements ComBlacklistDa
     }
 
 	@Override
-	public List<String> getBlacklist(@VelocityCheck int companyID) {
+	public List<String> getBlacklist(int companyID) {
 		try {
 			String blackListQuery = "SELECT email FROM " + getCustomerBanTableName(companyID);
 			List<Map<String, Object>> results = select(logger, blackListQuery);
@@ -273,13 +272,13 @@ public class BlacklistDaoImplBasic extends BaseDaoImpl implements ComBlacklistDa
 	}
 
     @Override
-    public List<BlackListEntry> getBlacklistedRecipients( @VelocityCheck int companyID) {
+    public List<BlackListEntry> getBlacklistedRecipients( int companyID) {
         String blackListQuery = "SELECT email, reason, timestamp AS creation_date FROM " + getCustomerBanTableName(companyID) + " ORDER BY email";
         return select(logger, blackListQuery, new BlackListEntry_RowMapper());
     }
 
 	@Override
-	public List<Mailinglist> getMailinglistsWithBlacklistedBindings( @VelocityCheck int companyId, String email) {
+	public List<Mailinglist> getMailinglistsWithBlacklistedBindings( int companyId, String email) {
 		String query = "SELECT DISTINCT m.mailinglist_id, m.company_id, m.shortname, m.description FROM mailinglist_tbl m, customer_" + companyId + "_tbl c, customer_" + companyId + "_binding_tbl b" +
 			" WHERE c.email = ? AND b.customer_id = c.customer_id AND b.user_status = ? AND b.mailinglist_id = m.mailinglist_id AND m.deleted = 0 AND m.company_id = ?";
 
@@ -291,7 +290,7 @@ public class BlacklistDaoImplBasic extends BaseDaoImpl implements ComBlacklistDa
 
 	@Override
 	@DaoUpdateReturnValueCheck
-	public void updateBlacklistedBindings( @VelocityCheck int companyId, String email, List<Integer> mailinglistIds, UserStatus userStatus) {
+	public void updateBlacklistedBindings( int companyId, String email, List<Integer> mailinglistIds, UserStatus userStatus) {
 		if (mailinglistIds.size() == 0) {
 			if (logger.isInfoEnabled()) {
 				logger.info("List of mailinglist IDs is empty - doing nothing");
@@ -319,7 +318,7 @@ public class BlacklistDaoImplBasic extends BaseDaoImpl implements ComBlacklistDa
 	 * Email address blacklist check, but only for the companies custxxx_ban_tbl
 	 */
 	@Override
-	public boolean blacklistCheckCompanyOnly(String email, @VelocityCheck int companyID) {
+	public boolean blacklistCheckCompanyOnly(String email, int companyID) {
 		try {
 			final String escapeClause = isOracleDB() ? " ESCAPE '\\'" : "";
 			

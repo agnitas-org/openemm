@@ -12,7 +12,7 @@ package org.agnitas.ecs.service;
 
 import java.util.Map;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
+
 
 import com.agnitas.dao.ComRecipientDao;
 
@@ -29,7 +29,7 @@ public interface EcsRecipientsProvider {
 	 * @param companyId company id
 	 * @return test and admin recipients for mailing's mailing list.
 	 */
-	public Map<Integer, String> getTestAndAdminRecipients(int mailingId, @VelocityCheck int companyId);
+	public Map<Integer, String> getTestAndAdminRecipients(int mailingId, int companyId);
 
 	/**
 	 * Setter for recipient Dao

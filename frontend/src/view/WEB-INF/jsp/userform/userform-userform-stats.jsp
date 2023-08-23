@@ -22,7 +22,7 @@
                         </a>
                         <ul class="dropdown-menu">
                             <li class="dropdown-header">
-                                <mvc:message code="statistics.exportFormats"/>
+                                <mvc:message code="statistics.exportFormat"/>
                             </li>
                             <li>
                                 <a tabindex="-1" href="${birtStatisticUrlWithoutFormat}&__format=csv" data-prevent-load="">

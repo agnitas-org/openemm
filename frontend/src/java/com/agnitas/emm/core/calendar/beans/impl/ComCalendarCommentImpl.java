@@ -14,7 +14,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
+
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -80,7 +80,7 @@ public class ComCalendarCommentImpl implements ComCalendarComment {
     }
 
     @Override
-	public void setCompanyId(@VelocityCheck int companyId) {
+	public void setCompanyId(int companyId) {
         this.companyId = companyId;
     }
 

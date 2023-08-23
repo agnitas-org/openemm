@@ -12,14 +12,13 @@ package com.agnitas.mailing.autooptimization.service;
 
 import java.util.Hashtable;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.stat.CampaignStatEntry;
 
 import com.agnitas.mailing.autooptimization.beans.ComOptimization;
 
 public interface ComOptimizationStatService {
 
-	CampaignStatEntry getStat(int mailingID, @VelocityCheck int companyID);
+	CampaignStatEntry getStat(int mailingID, int companyID);
 	
 	Hashtable<Integer, CampaignStatEntry> getStat(ComOptimization optimization);
 	

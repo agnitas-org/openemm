@@ -11,7 +11,6 @@
 package com.agnitas.emm.core.commons.uid;
 
 import org.agnitas.beans.Recipient;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.emm.core.commons.uid.ComExtensibleUID.NamedUidBit;
 
@@ -28,7 +27,7 @@ public final class UIDFactory {
  	 * 
  	 * @return UID
  	 */
- 	public static final ComExtensibleUID from(final int licenseID, @VelocityCheck final int companyID, final int customerID, final NamedUidBit...bits) {
+ 	public static final ComExtensibleUID from(final int licenseID, final int companyID, final int customerID, final NamedUidBit...bits) {
  		return new ComExtensibleUIDImpl(
  				null, 
  				licenseID, 
@@ -51,7 +50,7 @@ public final class UIDFactory {
  	 * 
  	 * @return UID
  	 */
- 	public static final ComExtensibleUID from(final int licenseID, @VelocityCheck final int companyID, final int customerID, final int mailingID, final NamedUidBit...bits) {
+ 	public static final ComExtensibleUID from(final int licenseID, final int companyID, final int customerID, final int mailingID, final NamedUidBit...bits) {
  		return new ComExtensibleUIDImpl(
  				null, 
  				licenseID, 
@@ -75,7 +74,7 @@ public final class UIDFactory {
  	 * 
  	 * @return UID
  	 */
- 	public static final ComExtensibleUID from(final int licenseID, @VelocityCheck final int companyID, final int customerID, final int mailingID, final int urlID, final NamedUidBit...bits) {
+ 	public static final ComExtensibleUID from(final int licenseID, final int companyID, final int customerID, final int mailingID, final int urlID, final NamedUidBit...bits) {
  		return new ComExtensibleUIDImpl(
  				null, 
  				licenseID, 

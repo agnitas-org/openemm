@@ -28,6 +28,7 @@ import com.agnitas.dao.ComTargetDao;
 import com.agnitas.dao.ComUndoDynContentDao;
 import com.agnitas.dao.ComUndoMailingComponentDao;
 import com.agnitas.dao.ComUndoMailingDao;
+import com.agnitas.dao.CssDao;
 import com.agnitas.dao.DatasourceDescriptionDao;
 import com.agnitas.dao.DynamicTagDao;
 import com.agnitas.emm.core.JavaMailService;
@@ -62,4 +63,5 @@ public abstract class DaoLookupFactory {
 	abstract public RdirTrafficAmountDao getBeanRdirTrafficAmountDao();
 	abstract public JavaMailService getBeanJavaMailService();
 	abstract public AnonymizeStatisticsDao getBeanAnonymizeStatisticsDao();
+	abstract public CssDao getBeanCssDao();
 }

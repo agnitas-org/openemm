@@ -17,6 +17,7 @@ public class EmmActionForm {
     private String description;
     private int type;
     private boolean active;
+    private boolean advertising;
 
     private String modulesSchema;
 
@@ -66,5 +67,13 @@ public class EmmActionForm {
 
     public void setModulesSchema(String modulesSchema) {
         this.modulesSchema = modulesSchema;
+    }
+
+    public boolean isAdvertising() {
+        return advertising;
+    }
+
+    public void setAdvertising(boolean advertising) {
+        this.advertising = advertising;
     }
 }

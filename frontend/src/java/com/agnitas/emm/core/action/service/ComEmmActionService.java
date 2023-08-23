@@ -16,20 +16,20 @@ import java.util.Set;
 
 import org.agnitas.actions.EmmAction;
 import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.emm.core.velocity.VelocityCheck;
+
 
 import com.agnitas.beans.Admin;
 
 
 public interface ComEmmActionService extends EmmActionService {
 
-    void bulkDelete(Set<Integer> actionIds, @VelocityCheck int companyId);
+    void bulkDelete(Set<Integer> actionIds, int companyId);
 
-    String getEmmActionName(int actionId, @VelocityCheck int companyId);
+    String getEmmActionName(int actionId, int companyId);
 
-    boolean setActiveness(Map<Integer, Boolean> changeMap, @VelocityCheck int companyId, List<UserAction> userActions);
+    boolean setActiveness(Map<Integer, Boolean> changeMap, int companyId, List<UserAction> userActions);
 	
-	List<EmmAction> getEmmNotLinkActions(@VelocityCheck int companyId, boolean includeInactive);
+	List<EmmAction> getEmmNotLinkActions(int companyId, boolean includeInactive);
 
     List<EmmAction> getEmmNotFormActions(int companyId, boolean includeInactive);
     

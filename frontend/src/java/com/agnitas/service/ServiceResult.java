@@ -40,13 +40,12 @@ public class ServiceResult<T> {
     }
 
     public static <R> ServiceResult<R> error(final Message... errorMessages) {
-        return new ServiceResult<>(null, false, null, null,  Arrays.asList(errorMessages));
+        return new ServiceResult<>(null, false, null, null, Arrays.asList(errorMessages));
     }
 
     public static <R> ServiceResult<R> error(final List<Message> errorMessages) {
         return new ServiceResult<>(null, false, null, null,  errorMessages);
     }
-
 
     public ServiceResult(T result, boolean success, Message... messages) {
         this.result = result;
@@ -77,25 +76,26 @@ public class ServiceResult<T> {
     }
 
     public ServiceResult (final T result, final boolean success, final List<Message> successMessages, final List<Message> warningMessages, final List<Message> errorMessages) {
-
         this.result = result;
         this.success = success;
 
-        if(successMessages == null) {
-            this.successMessages = Collections.emptyList();
-        } else {
-            this.successMessages =  Collections.unmodifiableList(successMessages);
-        }
-        if(warningMessages == null) {
-            this.warningMessages = Collections.emptyList();
-        } else {
-            this.warningMessages =  Collections.unmodifiableList(warningMessages);
-        }
-        if(errorMessages == null) {
-            this.errorMessages = Collections.emptyList();
-        } else {
-            this.errorMessages = Collections.unmodifiableList(errorMessages);
-        }
+		if (successMessages == null) {
+			this.successMessages = Collections.emptyList();
+		} else {
+			this.successMessages = Collections.unmodifiableList(successMessages);
+		}
+		
+		if (warningMessages == null) {
+			this.warningMessages = Collections.emptyList();
+		} else {
+			this.warningMessages = Collections.unmodifiableList(warningMessages);
+		}
+		
+		if (errorMessages == null) {
+			this.errorMessages = Collections.emptyList();
+		} else {
+			this.errorMessages = Collections.unmodifiableList(errorMessages);
+		}
     }
 
     public List<Message> getSuccessMessages() {

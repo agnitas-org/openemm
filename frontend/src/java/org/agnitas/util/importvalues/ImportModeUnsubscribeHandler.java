@@ -127,7 +127,7 @@ public class ImportModeUnsubscribeHandler implements ImportModeHandler {
 	    		for (MediaTypes mediatype : mediatypes) {
 	    			int changed = importRecipientsDao.changeStatusInMailingList(temporaryImportTableName, importProfile.getKeyColumns(), importProfile.getCompanyId(), mailingListId, mediatype, UserStatus.Active.getStatusCode(), UserStatus.AdminOut.getStatusCode(), "Mass Opt-Out by Admin");
 	    			if (!mailinglistAssignStatistics.containsKey(mediatype)) {
-		    			mailinglistAssignStatistics.put(mediatype, new HashMap<Integer, Integer>());
+		    			mailinglistAssignStatistics.put(mediatype, new HashMap<>());
 		    		}
 		    		mailinglistAssignStatistics.get(mediatype).put(mailingListId, changed);
 	    		}

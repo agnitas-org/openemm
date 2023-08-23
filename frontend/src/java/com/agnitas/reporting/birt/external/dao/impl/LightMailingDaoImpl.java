@@ -16,7 +16,7 @@ import java.sql.SQLException;
 import javax.sql.DataSource;
 
 import org.agnitas.dao.impl.BaseDaoImpl;
-import org.agnitas.emm.core.velocity.VelocityCheck;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -34,7 +34,7 @@ public class LightMailingDaoImpl extends BaseDaoImpl implements LightMailingDao 
 	}	
 	
 	@Override
-	public LightMailing getMailing(int mailingId, @VelocityCheck int companyId) {
+	public LightMailing getMailing(int mailingId, int companyId) {
 		String targetSql = "SELECT mailing_id, shortname, description, mailinglist_id, target_expression, campaign_id, mailing_type"
 			+ " FROM mailing_tbl WHERE company_id = ? AND mailing_id = ?";
 				

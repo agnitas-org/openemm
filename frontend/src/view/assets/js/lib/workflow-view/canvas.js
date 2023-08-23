@@ -10,6 +10,7 @@
         this.mouseWheelZoomEnabled = false;
         this.panningEnabled = false;
         this.zoomEventHandler = null;
+        this.moveEventHandler = null;
         this.ignoreNextZoomEvent = false;
         this.minimap = new Minimap(this, {
             containment: {
@@ -58,6 +59,10 @@
 
         this.panzoom.on('pan', function() {
             self.minimap.onPanZoom();
+
+            if (self.moveEventHandler) {
+                self.moveEventHandler.call(null, self.getPosition());
+            }
         });
     };
 
@@ -121,6 +126,10 @@
 
     Canvas.prototype.setOnZoom = function(handler) {
         this.zoomEventHandler = handler;
+    };
+
+    Canvas.prototype.setOnMove = function(handler) {
+        this.moveEventHandler = handler;
     };
 
     Canvas.prototype.getCanvasParent$ = function() {

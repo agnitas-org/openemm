@@ -14,36 +14,39 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 
 import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.ProfileFieldMode;
 
+/**
+ * @deprecated Use RecipientFieldService instead
+ */
+@Deprecated
 public interface ColumnInfoService {
-	ProfileField getColumnInfo(@VelocityCheck int companyID, String column) throws Exception;
+	ProfileField getColumnInfo(int companyID, String column) throws Exception;
 	
-	List<ProfileField> getColumnInfos(@VelocityCheck int companyID) throws Exception;
+	List<ProfileField> getColumnInfos(int companyID) throws Exception;
 	
-	List<ProfileField> getColumnInfos(@VelocityCheck int companyID, int adminID) throws Exception;
+	List<ProfileField> getColumnInfos(int companyID, int adminID) throws Exception;
 
-	CaseInsensitiveMap<String, ProfileField> getColumnInfoMap(@VelocityCheck int companyID) throws Exception;
+	CaseInsensitiveMap<String, ProfileField> getColumnInfoMap(int companyID) throws Exception;
 	
-	CaseInsensitiveMap<String, ProfileField> getColumnInfoMap(@VelocityCheck int companyID, int adminID) throws Exception;
+	CaseInsensitiveMap<String, ProfileField> getColumnInfoMap(int companyID, int adminID) throws Exception;
 	
-	ProfileField getColumnInfo(@VelocityCheck int companyID, String column, int adminID) throws Exception;
+	ProfileField getColumnInfo(int companyID, String column, int adminID) throws Exception;
 	
-	List<ProfileField> getComColumnInfos(@VelocityCheck int companyID) throws Exception;
+	List<ProfileField> getComColumnInfos(int companyID) throws Exception;
 
-    List<ProfileField> getComColumnInfos(@VelocityCheck int companyID, int adminID) throws Exception;
+    List<ProfileField> getComColumnInfos(int companyID, int adminID) throws Exception;
 
-    List<ProfileField> getComColumnInfos(@VelocityCheck int companyID, int adminID, boolean customSorting) throws Exception;
+    List<ProfileField> getComColumnInfos(int companyID, int adminID, boolean customSorting) throws Exception;
 
-	List<ProfileField> getHistorizedComColumnInfos(@VelocityCheck int companyID) throws Exception;
+	List<ProfileField> getHistorizedComColumnInfos(int companyID) throws Exception;
 
-    CaseInsensitiveMap<String, ProfileField> getComColumnInfoMap(@VelocityCheck int companyID) throws Exception;
+    CaseInsensitiveMap<String, ProfileField> getComColumnInfoMap(int companyID) throws Exception;
     
-	CaseInsensitiveMap<String, ProfileField> getComColumnInfoMap(@VelocityCheck int companyID, int adminId) throws Exception;
+	CaseInsensitiveMap<String, ProfileField> getComColumnInfoMap(int companyID, int adminId) throws Exception;
 
 	Map<Integer, ProfileFieldMode> getProfileFieldAdminPermissions(int companyID, String columnName) throws Exception;
 

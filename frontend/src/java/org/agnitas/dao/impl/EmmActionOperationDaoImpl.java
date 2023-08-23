@@ -17,7 +17,6 @@ import java.util.Map;
 
 import org.agnitas.beans.factory.ActionOperationFactory;
 import org.agnitas.dao.EmmActionOperationDao;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.InitializingBean;
@@ -42,7 +41,7 @@ public class EmmActionOperationDaoImpl extends BaseDaoImpl implements EmmActionO
 	}
 
 	@Override
-	public List<AbstractActionOperationParameters> getOperations(int actionId, @VelocityCheck int companyId) {
+	public List<AbstractActionOperationParameters> getOperations(int actionId, int companyId) {
 		List<Map<String, Object>> list = select(logger, "SELECT action_operation_id, action_id, company_id, type FROM actop_tbl WHERE action_id = ? AND company_id = ? ORDER BY action_operation_id", actionId, companyId);
 		List<AbstractActionOperationParameters> resultList = new ArrayList<>(list.size());
 		for (Map<String, Object> row : list) {

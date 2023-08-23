@@ -15,7 +15,6 @@ import java.util.List;
 import org.agnitas.beans.Mailloop;
 import org.agnitas.beans.MailloopEntry;
 import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public interface MailloopDao {
     /**
@@ -27,7 +26,7 @@ public interface MailloopDao {
      *              Id of the company
      * @return true==success, false==error
      */
-    boolean deleteMailloop(int mailloopId, @VelocityCheck int companyId);
+    boolean deleteMailloop(int mailloopId, int companyId);
 
     /**
      * Loads mailloop by mailloop id and company id.
@@ -38,7 +37,7 @@ public interface MailloopDao {
      *              Id of the company
      * @return Mailloop bean object or null
      */
-    Mailloop getMailloop(int mailloopId, @VelocityCheck int companyId);
+    Mailloop getMailloop(int mailloopId, int companyId);
 
     /**
      * Saves mailloop.
@@ -56,9 +55,9 @@ public interface MailloopDao {
      *               Id of the company
      * @return List of mailloops.
      */
-    List<Mailloop> getMailloops(@VelocityCheck int companyId);
+    List<Mailloop> getMailloops(int companyId);
 
-    boolean deleteMailloopByCompany(@VelocityCheck int companyId);
+    boolean deleteMailloopByCompany(int companyId);
 
     /**
      * Selects all bounce filters of certain company and creates paginated list according to given criteria of sorting and pagination
@@ -75,11 +74,11 @@ public interface MailloopDao {
      *              The number of rows to be shown on page
      * @return PaginatedList of MailloopEntry bean objects
      */
-    PaginatedListImpl<MailloopEntry> getPaginatedMailloopList(@VelocityCheck int companyId, String sortColumn, String direction, int pageNumber, int pageSize);
+    PaginatedListImpl<MailloopEntry> getPaginatedMailloopList(int companyId, String sortColumn, String direction, int pageNumber, int pageSize);
 
-    boolean isMailingUsedInBounceFilterWithActiveAutoResponder(@VelocityCheck int companyId, int mailingId);
+    boolean isMailingUsedInBounceFilterWithActiveAutoResponder(int companyId, int mailingId);
     
-    List<MailloopEntry> getDependentBounceFiltersWithActiveAutoResponder(@VelocityCheck int companyId, int mailingId);
+    List<MailloopEntry> getDependentBounceFiltersWithActiveAutoResponder(int companyId, int mailingId);
     
     boolean isAddressInUse(String filterAddress, boolean isNew);
 }

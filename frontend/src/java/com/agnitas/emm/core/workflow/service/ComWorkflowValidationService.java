@@ -48,6 +48,7 @@ import java.util.stream.Collectors;
 import com.agnitas.beans.ComTrackableLink;
 import com.agnitas.emm.core.trackablelinks.service.ComTrackableLinkService;
 import com.agnitas.emm.core.workflow.beans.impl.WorkflowDateBasedMailingImpl;
+import com.agnitas.emm.core.workflow.beans.impl.WorkflowDecisionImpl;
 import com.agnitas.emm.core.workflow.beans.impl.WorkflowRecipientImpl;
 import org.agnitas.dao.MaildropStatusDao;
 import org.agnitas.dao.MailingStatus;
@@ -55,7 +56,6 @@ import org.agnitas.emm.core.autoexport.bean.AutoExport;
 import org.agnitas.emm.core.autoexport.service.AutoExportService;
 import org.agnitas.emm.core.autoimport.bean.AutoImport;
 import org.agnitas.emm.core.autoimport.service.AutoImportService;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.target.ConditionalOperator;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
@@ -112,6 +112,7 @@ public class ComWorkflowValidationService {
 
     private static final String NULL_VALUE = "NULL";
     private static final String NOT_NULL_VALUE = "NOT_NULL";
+    private static final int MIN_HOURS_BETWEEN_START_AND_AUTOOPT = 2;
 
     private static final Map<SimpleDataType, Set<Integer>> ALLOWED_OPERATORS_BY_TYPE = new HashMap<>();
     private static final Set<Integer> ALLOWED_OPERATORS_CODE_FOR_NUMERIC_TYPE = new HashSet<>();
@@ -254,7 +255,43 @@ public class ComWorkflowValidationService {
         return validateIconIds(icons) && noLoops(icons) && hasIconsConnections(icons);
     }
 
-    public boolean validateAutoOptimizationStructure(List<WorkflowIcon> icons) {
+    public List<Message> validateAutoOptimization(List<WorkflowIcon> icons) {
+        List<String> errorCodes  = new ArrayList<>(2);
+        if (!validateAutoOptimizationStructure(icons)) {
+            errorCodes.add("error.workflow.connection.notAllowed");
+        }
+        if (isInvalidAutoOptimizationTime(icons)) {
+            errorCodes.add("GWUA.error.workflow.autoopt.invalidTime");
+        }
+        return errorCodes.stream().map(Message::of).collect(Collectors.toList());
+    }
+
+    private boolean isInvalidAutoOptimizationTime(List<WorkflowIcon> icons) {
+        WorkflowGraph graph = new WorkflowGraph(icons);
+        return icons.stream()
+                .filter(WorkflowIcon::isFilled)
+                .filter(WorkflowUtils::isAutoOptimizationIcon)
+                .map(WorkflowDecisionImpl.class::cast)
+                .anyMatch(icon -> {
+                    WorkflowIcon start = getLinkedStart(icon, graph);
+                    if (!start.isFilled()) {
+                        return false;
+                    }
+                    Date startTime = ((WorkflowStart) start).getDate();
+                    Date optimizationTime = icon.getDecisionDate();
+
+                    if (optimizationTime == null) {
+                        return false;
+                    }
+                    return optimizationTime.before(DateUtils.addHours(startTime, MIN_HOURS_BETWEEN_START_AND_AUTOOPT));
+                });
+    }
+
+    private WorkflowIcon getLinkedStart(WorkflowDecisionImpl icon, WorkflowGraph graph) {
+        return graph.getPreviousIconByType(icon, WorkflowIconType.START.getId(), Collections.emptySet());
+    }
+
+    private boolean validateAutoOptimizationStructure(List<WorkflowIcon> icons) {
         WorkflowGraph graph = new WorkflowGraph(icons);
 
         try {
@@ -271,7 +308,7 @@ public class ComWorkflowValidationService {
 
             return true;
         } catch (WorkflowStructureException e) {
-            logger.debug("Error occurred: " + e.getMessage(), e);
+            logger.debug("Error occurred: {}", e.getMessage(), e);
             return false;
         }
     }
@@ -336,7 +373,7 @@ public class ComWorkflowValidationService {
         return iconIds.containsAll(connectionIds);
     }
 
-    public List<Message> validateStartTrigger(List<WorkflowIcon> icons, @VelocityCheck int companyId) {
+    public List<Message> validateStartTrigger(List<WorkflowIcon> icons, int companyId) {
         List<Message> messages = new ArrayList<>();
 
         for (WorkflowIcon icon : icons) {
@@ -462,7 +499,7 @@ public class ComWorkflowValidationService {
         return false;
     }
 
-    private List<Workflow> getActiveWorkflowsDrivenByProfileChange(@VelocityCheck int companyId, int mailingListId, WorkflowStart start) {
+    private List<Workflow> getActiveWorkflowsDrivenByProfileChange(int companyId, int mailingListId, WorkflowStart start) {
         List<WorkflowRule> rules = null;
 
         if (start.isUseRules()) {
@@ -624,6 +661,7 @@ public class ComWorkflowValidationService {
                 .map(WorkflowDateBasedMailingImpl.class::cast)
                 .map(icon -> graph.getPreviousIconByType(icon, WorkflowIconType.RECIPIENT.getId(), new HashSet<>()))
                 .map(WorkflowRecipientImpl.class::cast)
+                .filter(Objects::nonNull)
                 .allMatch(icon -> CollectionUtils.isNotEmpty(icon.getTargets()) || CollectionUtils.isNotEmpty(icon.getAltgs()));
     }
     
@@ -873,7 +911,7 @@ public class ComWorkflowValidationService {
      * @param trackingDays mailtracking data expiration period (or 0 when a mailtracking is disabled).
      * @throws Exception
      */
-    public List<MailingTrackingUsageError> checkMailingsReferencedInDecisions(List<WorkflowIcon> icons, @VelocityCheck int companyId, int trackingDays) throws Exception {
+    public List<MailingTrackingUsageError> checkMailingsReferencedInDecisions(List<WorkflowIcon> icons, int companyId, int trackingDays) throws Exception {
         List<MailingTrackingUsageError> errors = new ArrayList<>();
         WorkflowGraph workflowGraph = new WorkflowGraph();
         if (!workflowGraph.build(icons)) {
@@ -1006,7 +1044,7 @@ public class ComWorkflowValidationService {
         return errors;
     }
 
-    private MailingTrackingUsageError errorMailingDisordered(WorkflowMailingAware icon, @VelocityCheck int companyId) throws Exception {
+    private MailingTrackingUsageError errorMailingDisordered(WorkflowMailingAware icon, int companyId) throws Exception {
         Map<String, Object> data = mailingDao.getMailingWithWorkStatus(icon.getMailingId(), companyId);
 
         return new MailingTrackingUsageError(
@@ -1182,25 +1220,12 @@ public class ComWorkflowValidationService {
         return date1.getTime() > date2.getTime() ? 1 : -1;
     }
 
-    public boolean noParallelCampaigns(List<WorkflowIcon> icons) {
+    public boolean moreThanOneStartPresented(List<WorkflowIcon> icons) {
         WorkflowGraph graph = new WorkflowGraph();
-
         if (!graph.build(icons)) {
             return false;
         }
-
-        List<WorkflowNode> starts = graph.getAllNodesByType(WorkflowIconType.START.getId());
-        int countStarts = starts.size();
-        if (countStarts <= 1) {
-            return true;
-        }
-
-        List<Integer> seenStartsNodes = new ArrayList<>();
-
-        WorkflowNode startNode = starts.get(0);
-        seenStartsNodes.add(startNode.getNodeIcon().getId());
-        buildSeenStartsNodes(seenStartsNodes, startNode);
-        return seenStartsNodes.size() == countStarts;
+        return graph.getAllNodesByType(WorkflowIconType.START.getId()).size() > 1;
     }
 
     public boolean noLoops(List<WorkflowIcon> icons) {
@@ -1485,7 +1510,7 @@ public class ComWorkflowValidationService {
         return 0;
     }
 
-    public boolean campaignHasOnlyMailingsAssignedToThisWorkflow(List<WorkflowIcon> icons, @VelocityCheck int companyId, int workflowId) {
+    public boolean campaignHasOnlyMailingsAssignedToThisWorkflow(List<WorkflowIcon> icons, int companyId, int workflowId) {
         for (WorkflowIcon icon : icons) {
             int mailingId = WorkflowUtils.getMailingId(icon);
             if (mailingId > 0) {
@@ -1509,7 +1534,7 @@ public class ComWorkflowValidationService {
         return false;
     }
 
-    public boolean isImportIsNotActive(List<WorkflowIcon> icons, @VelocityCheck int companyId) {
+    public boolean isImportIsNotActive(List<WorkflowIcon> icons, int companyId) {
         for (WorkflowIcon icon : icons) {
             if (icon.getType() == WorkflowIconType.IMPORT.getId()) {
                 WorkflowImport importIcon = (WorkflowImport) icon;
@@ -1527,7 +1552,7 @@ public class ComWorkflowValidationService {
         return true;
     }
 
-    public boolean isExportIsNotActive(List<WorkflowIcon> icons, @VelocityCheck int companyId) {
+    public boolean isExportIsNotActive(List<WorkflowIcon> icons, int companyId) {
         for (WorkflowIcon icon : icons) {
             if (icon.getType() == WorkflowIconType.EXPORT.getId()) {
                 WorkflowExport exportIcon = (WorkflowExport) icon;
@@ -1544,7 +1569,7 @@ public class ComWorkflowValidationService {
         return true;
     }
 
-    public List<MailingTrackingUsageError> checkFollowupMailing(List<WorkflowIcon> workflowIcons, @VelocityCheck int companyId, int trackingDays) throws Exception {
+    public List<MailingTrackingUsageError> checkFollowupMailing(List<WorkflowIcon> workflowIcons, int companyId, int trackingDays) throws Exception {
         List<MailingTrackingUsageError> errors = new ArrayList<>();
         List<WorkflowFollowupMailing> followupMailingIcons = workflowService.getFollowupMailingIcon(workflowIcons);
         Map<Integer, WorkflowMailingAware> workflowMailings = new HashMap<>();
@@ -1613,7 +1638,7 @@ public class ComWorkflowValidationService {
         return errors;
     }
 
-    public List<String> checkTrackableProfileFields(List<WorkflowIcon> icons, @VelocityCheck int companyId) {
+    public List<String> checkTrackableProfileFields(List<WorkflowIcon> icons, int companyId) {
         Set<String> columns = new HashSet<>();
 
         for (WorkflowIcon icon : icons) {
@@ -1631,7 +1656,7 @@ public class ComWorkflowValidationService {
                 .collect(Collectors.toList());
     }
 
-    public List<String> checkProfileFieldsUsedInConditions(List<WorkflowIcon> icons, @VelocityCheck int companyId) {
+    public List<String> checkProfileFieldsUsedInConditions(List<WorkflowIcon> icons, int companyId) {
         Set<String> columns = new HashSet<>();
 
         for (WorkflowIcon icon : icons) {
@@ -1716,7 +1741,7 @@ public class ComWorkflowValidationService {
         return messages;
     }
 
-    public Set<Integer> getInvalidTargetGroups(@VelocityCheck final int companyId, final List<WorkflowIcon> icons) {
+    public Set<Integer> getInvalidTargetGroups(final int companyId, final List<WorkflowIcon> icons) {
         final Set<Integer> mailingIds = new HashSet<>();
 
         for (WorkflowIcon icon : icons) {

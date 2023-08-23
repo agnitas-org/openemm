@@ -38,7 +38,7 @@ public class ComRdirMailingDataDaoCache extends AbstractDaoCache<ComRdirMailingD
 	@Override
 	protected ComRdirMailingData getItemFromDao( int mailingId) {
 		if (!isCacheInitialized()) {
-			setCache(new TimeoutLRUMap<Integer, ComRdirMailingData>(
+			setCache(new TimeoutLRUMap<>(
 				configService.getIntegerValue(ConfigValue.RdirMailingIdsMaxCache),
 				configService.getIntegerValue(ConfigValue.RdirMailingIdsMaxCacheTimeMillis)));
 		}

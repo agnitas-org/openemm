@@ -10,24 +10,15 @@
 
 package com.agnitas.emm.core.preview.web;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.beans.Mailing;
-import com.agnitas.dao.ComMailingDao;
-import com.agnitas.dao.ComRecipientDao;
-import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
-import com.agnitas.emm.core.mailing.service.MailingService;
-import com.agnitas.emm.core.mediatypes.common.MediaTypes;
-import com.agnitas.emm.core.preview.form.PreviewForm;
-import com.agnitas.emm.core.preview.service.MailingWebPreviewService;
-import com.agnitas.emm.core.workflow.service.GenerationPDFService;
-import com.agnitas.service.GridServiceWrapper;
-import com.agnitas.web.mvc.DeleteFileAfterSuccessReadResource;
-import com.agnitas.web.mvc.Popups;
-import com.agnitas.web.mvc.XssCheckAware;
-import com.agnitas.web.perm.annotations.PermissionMapping;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
+import java.io.File;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.List;
+import java.util.Vector;
+import java.util.stream.Collectors;
+
+import com.agnitas.beans.impl.ComRecipientLiteImpl;
 import org.agnitas.dao.MailingComponentDao;
 import org.agnitas.dao.MailinglistDao;
 import org.agnitas.emm.core.commons.util.ConfigService;
@@ -46,23 +37,36 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.core.io.FileSystemResource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.stereotype.Controller;
+import org.springframework.http.ResponseEntity;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import java.io.File;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Vector;
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.Mailing;
+import com.agnitas.dao.ComMailingDao;
+import com.agnitas.dao.ComRecipientDao;
+import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
+import com.agnitas.emm.core.mailing.service.MailingService;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.emm.core.preview.form.PreviewForm;
+import com.agnitas.emm.core.preview.service.MailingWebPreviewService;
+import com.agnitas.emm.core.workflow.service.GenerationPDFService;
+import com.agnitas.service.GridServiceWrapper;
+import com.agnitas.web.mvc.DeleteFileAfterSuccessReadResource;
+import com.agnitas.web.mvc.Popups;
+import com.agnitas.web.mvc.XssCheckAware;
 
-@Controller
-@RequestMapping("/mailing/preview")
-@PermissionMapping("mailing.preview")
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
+
 public class MailingPreviewController implements XssCheckAware {
 
     private static final Logger LOGGER = LogManager.getLogger(MailingPreviewController.class);
@@ -109,13 +113,12 @@ public class MailingPreviewController implements XssCheckAware {
 
         if (!mailinglistDao.exist(mailing.getMailinglistID(), companyId)) {
             model.addAttribute("mailingListExist", false);
-            return "mailing_preview_select_new";
+            return "mailing_preview_select";
         }
 
         previewService.updateActiveMailingPreviewFormat(form, mailingId, companyId);
-
-        Map<Integer, String> recipientList = recipientDao.getAdminAndTestRecipientsDescription(companyId, mailingId);
-        model.addAttribute("previewRecipients", recipientList);
+        List<ComRecipientLiteImpl> recipientList = recipientDao.getMailingAdminAndTestRecipients(mailingId, companyId);
+        addPreviewRecipientsModelAttrs(model, recipientList, admin);
 
         if (form.getModeType() == ModeType.RECIPIENT && mailingDao.hasPreviewRecipients(mailingId, companyId)) {
             choosePreviewCustomerId(companyId, mailingId, form, form.isUseCustomerEmail(), popups, recipientList);
@@ -123,18 +126,13 @@ public class MailingPreviewController implements XssCheckAware {
 
         model.addAttribute("availableTargetGroups", mailingService.listTargetGroupsOfMailing(companyId, mailingId));
 
-        return "mailing_preview_select_new";
+        loadPreviewHeaderData(mailing, form, admin, model);
+
+        return "mailing_preview_select";
     }
 
-    @RequestMapping("/header.action")
-    public String header(@ModelAttribute("form") PreviewForm form, Model model, Admin admin) {
-        int companyId = admin.getCompanyID();
-        int mailingId = form.getMailingId();
-
-        loadPreviewHeaderData(form, admin, model);
-        model.addAttribute("components", mailingComponentDao.getPreviewHeaderComponents(mailingId, companyId));
-
-        return "mailing_preview_header";
+    protected void addPreviewRecipientsModelAttrs(Model model, List<ComRecipientLiteImpl> recipientList, Admin admin) {
+        model.addAttribute("previewRecipients", recipientList);
     }
 
     @GetMapping("/view-content.action")
@@ -148,6 +146,27 @@ public class MailingPreviewController implements XssCheckAware {
             popups.alert("Error");
         }
         return "mailing_preview_errors";
+    }
+
+    @GetMapping("/{mailingId:\\d+}/html.action")
+    public Object html(@PathVariable int mailingId, Admin admin, Popups popups,
+                       @RequestParam(defaultValue = "false") boolean mobile,
+                       @RequestParam(defaultValue = "false") boolean noImages) throws UnsupportedEncodingException {
+        String mailingHtml = previewService.getMailingHtml(mailingId, mobile, noImages);
+        if (StringUtils.isBlank(mailingHtml)) {
+            popups.alert("preview.error.empty");
+            return "redirect:/mailing/preview/" + mailingId + "/view.action";
+        }
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType("text/html"))
+                .header(HttpHeaders.CONTENT_DISPOSITION, HttpUtils.getContentDispositionAttachment(
+                        getHtmlDownloadFileName(mailingId, admin.getCompanyID()), StandardCharsets.UTF_8.name()))
+                .body(mailingHtml.getBytes(StandardCharsets.UTF_8.name()));
+    }
+
+    private String getHtmlDownloadFileName(int mailingId, int companyId) {
+        String mailingName = mailingBaseService.getMailingName(mailingId, companyId);
+        return String.format("%s_%s.html", mailingName, mailingId);
     }
 
     @GetMapping(value = "/pdf.action", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
@@ -202,9 +221,7 @@ public class MailingPreviewController implements XssCheckAware {
         return -1;
     }
 
-    private void loadPreviewHeaderData(PreviewForm form, Admin admin, Model model) {
-        Mailing mailing = mailingDao.getMailing(form.getMailingId(), admin.getCompanyID());
-
+    private void loadPreviewHeaderData(Mailing mailing, PreviewForm form, Admin admin, Model model) {
         if (mailing == null) {
             return;
         }
@@ -250,9 +267,10 @@ public class MailingPreviewController implements XssCheckAware {
         if (mailing.getEmailParam().getMailFormat() == MailingModel.Format.TEXT.getCode()) {
             form.setFormat(MailingWebPreviewService.INPUT_TYPE_TEXT);
         }
+        model.addAttribute("components", mailingComponentDao.getPreviewHeaderComponents(form.getMailingId(), admin.getCompanyID()));
     }
 
-    private void choosePreviewCustomerId(int companyId, int mailingId, PreviewForm previewForm, boolean useCustomerEmail, Popups popups, Map<Integer, String> recipientList) {
+    private void choosePreviewCustomerId(int companyId, int mailingId, PreviewForm previewForm, boolean useCustomerEmail, Popups popups, List<ComRecipientLiteImpl> recipientList) {
         String previewCustomerEmail = previewForm.getCustomerEmail();
 
         if (useCustomerEmail && StringUtils.isNotBlank(previewCustomerEmail)) {
@@ -274,12 +292,12 @@ public class MailingPreviewController implements XssCheckAware {
         setMinCustomerId(previewForm, recipientList);
     }
 
-    private void setMinCustomerId(PreviewForm previewForm, Map<Integer, String> recipientList) {
-        if (recipientList != null && !recipientList.isEmpty()) {
-            int minId = Collections.min(recipientList.keySet());
-
-            previewForm.setCustomerID(minId);
-            previewForm.setCustomerATID(minId);
+    private void setMinCustomerId(PreviewForm previewForm, List<ComRecipientLiteImpl> recipients) {
+        if (recipients == null || recipients.isEmpty()) {
+            return;
         }
+        int minId = Collections.min(recipients.stream().map(ComRecipientLiteImpl::getId).collect(Collectors.toList()));
+        previewForm.setCustomerID(minId);
+        previewForm.setCustomerATID(minId);
     }
 }

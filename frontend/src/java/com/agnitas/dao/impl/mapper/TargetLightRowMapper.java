@@ -42,7 +42,9 @@ public class TargetLightRowMapper implements RowMapper<TargetLight> {
             readTarget.setComponentHide(resultSet.getBoolean("component_hide"));
             readTarget.setComplexityIndex(resultSet.getInt("complexity"));
             readTarget.setValid(!resultSet.getBoolean("invalid"));
-            if (DbUtilities.resultsetHasColumn(resultSet, "favorite")) {
+            if (DbUtilities.resultsetHasColumn(resultSet, "admin_favorite")) {
+                readTarget.setFavorite(resultSet.getBoolean("admin_favorite"));
+            } else if (DbUtilities.resultsetHasColumn(resultSet, "favorite")) {
                 readTarget.setFavorite(resultSet.getBoolean("favorite"));
             }
 

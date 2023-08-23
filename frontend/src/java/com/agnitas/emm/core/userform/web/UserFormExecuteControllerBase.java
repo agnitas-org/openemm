@@ -13,10 +13,14 @@ package com.agnitas.emm.core.userform.web;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import com.agnitas.web.UserFormSupportForm;
 import org.agnitas.beans.impl.CompanyStatus;
 import org.agnitas.beans.impl.ViciousFormDataException;
 import org.agnitas.emm.core.commons.util.ConfigService;
@@ -49,7 +53,6 @@ import com.agnitas.messages.I18nString;
 import com.agnitas.service.AgnTagService;
 import com.agnitas.userform.bean.UserForm;
 import com.agnitas.util.ImageUtils;
-import com.agnitas.web.ComSupportForm;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -192,20 +195,17 @@ public class UserFormExecuteControllerBase {
 			response.getOutputStream().write("No service".getBytes(StandardCharsets.UTF_8));
 			return null;
 		} catch (FormNotFoundException formNotFoundEx) {
-			final ComSupportForm supportForm = new ComSupportForm();
-
-			final Enumeration<String> parameterEnumeration = request.getParameterNames();
-			while (parameterEnumeration.hasMoreElements()) {
-				final String paramName = parameterEnumeration.nextElement();
-				final String[] paramValues = request.getParameterValues(paramName);
-
-				for (String paramValue : paramValues) {
-					supportForm.addParameter(paramName, paramValue);
-				}
-			}
-			supportForm.setUrl(request.getRequestURL() + "?" + request.getQueryString());
-
-			request.setAttribute("supportForm", supportForm);
+            HashMap<String, List<String>> reqParams = new HashMap<>();
+            Enumeration<String> parameterEnumeration = request.getParameterNames();
+            while (parameterEnumeration.hasMoreElements()) {
+                String paramName = parameterEnumeration.nextElement();
+                List<String> paramValues = Arrays.asList(request.getParameterValues(paramName));
+                reqParams.put(paramName, paramValues);
+            }
+            UserFormSupportForm supportForm = new UserFormSupportForm();
+            supportForm.setUrl(request.getRequestURL() + "?" + request.getQueryString());
+            supportForm.setParams(reqParams);
+            request.setAttribute("userFormSupportForm", supportForm);
 
 			// Check, that "agnFN" and "agnCI" parameters are both present
 			if (request.getParameter(FORM_NAME_PARAMETER_NAME) != null && !request.getParameter(FORM_NAME_PARAMETER_NAME).equals("") && request.getParameter(COMPANY_ID_PARAMETER_NAME) != null

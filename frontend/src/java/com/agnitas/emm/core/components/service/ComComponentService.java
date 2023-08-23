@@ -18,7 +18,7 @@ import org.agnitas.beans.MailingComponent;
 import org.agnitas.emm.core.component.service.ComponentModel;
 import org.agnitas.emm.core.component.service.ComponentService;
 import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.emm.core.velocity.VelocityCheck;
+
 import org.springframework.web.multipart.MultipartFile;
 
 import com.agnitas.beans.Admin;
@@ -34,7 +34,7 @@ public interface ComComponentService extends ComponentService {
 
     int addMailingComponent(MailingComponent mailingComponent) throws Exception;
 
-	List<FormComponentDto> getFormImageComponents(@VelocityCheck int companyID, int formId);
+	List<FormComponentDto> getFormImageComponents(int companyID, int formId);
 
 	Map<String, byte[]> getImageComponentsData(int companyId, int formId);
 

@@ -24,6 +24,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.TimeZone;
 
+import com.agnitas.emm.core.useractivitylog.dao.RestfulUserActivityLogDao;
 import org.agnitas.beans.BindingEntry;
 import org.agnitas.beans.BindingEntry.UserType;
 import org.agnitas.beans.DatasourceDescription;
@@ -39,7 +40,6 @@ import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.commons.util.DateUtil;
 import org.agnitas.emm.core.mailing.beans.LightweightMailing;
 import org.agnitas.emm.core.recipient.service.RecipientService;
-import org.agnitas.emm.core.useractivitylog.dao.UserActivityLogDao;
 import org.agnitas.preview.Page;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
@@ -91,11 +91,11 @@ import jakarta.servlet.http.HttpServletResponse;
  * https://<system.url>/restful/send
  */
 public class SendRestfulServiceHandler implements RestfulServiceHandler {
-	private static final transient Logger logger = LogManager.getLogger(SendRestfulServiceHandler.class);
+	private static final Logger logger = LogManager.getLogger(SendRestfulServiceHandler.class);
 	
 	public static final String NAMESPACE = "send";
 
-	protected UserActivityLogDao userActivityLogDao;
+	protected RestfulUserActivityLogDao userActivityLogDao;
 	protected MailingService mailingService;
 	protected ComMailingDao mailingDao;
 	protected RecipientService recipientService;
@@ -119,7 +119,7 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler {
 	}
 	
 	@Required
-	public void setUserActivityLogDao(UserActivityLogDao userActivityLogDao) {
+	public void setUserActivityLogDao(RestfulUserActivityLogDao userActivityLogDao) {
 		this.userActivityLogDao = userActivityLogDao;
 	}
 	
@@ -216,7 +216,7 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler {
 		
 		// Send Admin, Test or World Mailing
 		userActivityLogDao.addAdminUseOfFeature(admin, "restful/send", new Date());
-		userActivityLogDao.writeUserActivityLog(admin, "restful/send", "" + mailingID);
+		writeActivityLog(String.valueOf(mailingID), request, admin);
 
 		MaildropStatus maildropStatus = null;
 		Date sendDate = new Date();
@@ -683,5 +683,9 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler {
 	@Override
 	public ResponseType getResponseType() {
 		return ResponseType.JSON;
+	}
+
+	private void writeActivityLog(String description, HttpServletRequest request, Admin admin) {
+		writeActivityLog(userActivityLogDao, description, request, admin);
 	}
 }

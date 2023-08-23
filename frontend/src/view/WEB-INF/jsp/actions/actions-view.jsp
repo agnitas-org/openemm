@@ -1,4 +1,4 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 <%@ page import="com.agnitas.emm.core.mediatypes.common.MediaTypes" %> <%-- necessary for ops/ActivateDoubleOptIn.jsp --%>
 <%@ page import="org.agnitas.util.AgnUtils" %> <%-- necessary for ops/SubscribeCustomer.jsp --%>
 <%@ page import="com.agnitas.emm.core.mediatypes.common.MediaTypes" %> <%-- necessary for ops/ActivateDoubleOptIn.jsp--%>
@@ -25,6 +25,9 @@
 <%--@elvariable id="form" type="com.agnitas.emm.core.action.form.EmmActionForm"--%>
 <%--@elvariable id="eventBasedMailings" type="java.util.List<org.agnitas.beans.Campaign>"--%>
 <%--@elvariable id="helplanguage" type="java.lang.String"--%>
+
+<c:set var="ACE_EDITOR_PATH" value="${emm:aceEditorPath(pageContext.request)}" scope="page"/>
+<script type="text/javascript" src="${pageContext.request.contextPath}/${ACE_EDITOR_PATH}/emm/ace.min.js"></script>
 
 <c:if test="${not empty operationList}">
 
@@ -102,6 +105,21 @@
                     </div>
                     <div class="col-sm-8">
                         <mvc:textarea path="description" id="description" cssClass="form-control" rows="5" cols="12" placeholder="${descriptionMsg}"/>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="col-sm-4">
+                        <label class="control-label checkbox-control-label" for="advertising">
+                            <mvc:message code="mailing.contentType.advertising"/>
+                            <button class="icon icon-help" data-help="help_${helplanguage}/actions/AdvertisingMsg.xml" tabindex="-1" type="button"></button>
+                        </label>
+                    </div>
+                    <div class="col-sm-8">
+                        <label class="toggle">
+                            <mvc:checkbox path="advertising" id="advertising"/>
+                            <div class="toggle-control"></div>
+                        </label>
                     </div>
                 </div>
             </div>

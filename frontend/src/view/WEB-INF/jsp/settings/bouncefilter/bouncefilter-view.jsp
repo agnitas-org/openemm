@@ -1,4 +1,4 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 <%@ taglib prefix="emm"     uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="bean"    uri="http://struts.apache.org/tags-bean" %>
 <%@ taglib prefix="c"       uri="http://java.sun.com/jsp/jstl/core" %>
@@ -12,13 +12,12 @@
 <%--@elvariable id="filterEmailAddressDefault" type="java.lang.String"--%>
 <%--@elvariable id="isAllowedMailloopDomain" type="java.lang.Boolean"--%>
 
-<jsp:include page="/${emm:ckEditorPath(pageContext.request)}/ckeditor-emm-helper.jsp"/>
+<c:set var="isNew" value="${bounceFilterForm.id <= 0}"/>
 
 <mvc:form servletRelativeAction="/administration/bounce/save.action" id="bounceFilterForm" modelAttribute="bounceFilterForm"
           data-form="resource">
 
     <mvc:hidden path="id"/>
-    <c:set var="isNew" value="${bounceFilterForm.id <= 0}"/>
 
     <div class="tile">
         <div class="tile-header">
@@ -87,7 +86,7 @@
             </div>
             <div class="form-group">
                 <div class="col-sm-4">
-                    <label class="control-label" for="doForward"><bean:message key="settings.mailloop.forward"/></label>
+                    <label class="control-label checkbox-control-label" for="doForward"><bean:message key="settings.mailloop.forward"/></label>
                 </div>
                 <div class="col-sm-8">
                     <label class="toggle">
@@ -107,7 +106,7 @@
             </div>
             <div class="form-group">
                 <div class="col-sm-4">
-                    <label class="control-label" for="doAutoRespond"> <bean:message key="mailloop.autoresponder"/></label>
+                    <label class="control-label checkbox-control-label" for="doAutoRespond"> <bean:message key="mailloop.autoresponder"/></label>
                 </div>
                 <div class="col-sm-8">
                     <label class="toggle">
@@ -132,84 +131,4 @@
             </div>
         </div>
     </div>
-
 </mvc:form>
-
-<script id="modal-editor-text" type="text/x-mustache-template">
-    <div class="modal modal-editor">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <button type="button" class="close-icon close" data-dismiss="modal">
-                        <i aria-hidden="true" class="icon icon-times-circle"></i>
-                    </button>
-                    <h4 class="modal-title">{{= title }}</h4>
-                </div>
-                <div class="modal-body">
-                    <textarea id="modalTextArea" data-sync="\#{{= target }}" class="form-control js-editor-text" data-form-target="#bounceFilterForm"></textarea>
-                </div>
-                <div class="modal-footer">
-                    <div class="btn-group">
-                        <button type="button" class="btn btn-default btn-large" data-dismiss="modal">
-                            <i class="icon icon-times"></i>
-                            <span class="text"><bean:message key="button.Cancel"/></span>
-                        </button>
-                        <button type="button" class="btn btn-primary btn-large" data-sync-from="#modalTextArea" data-sync-to="\#{{= target }}" data-dismiss="modal">
-                            <i class="icon icon-check"></i>
-                            <span class="text"><bean:message key="button.Apply"/></span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</script>
-<script id="modal-editor" type="text/x-mustache-template">
-    {{ showHTMLEditor = $('\#tab-bounceFilterContentViewHTML').is(':visible') }}
-    <div class="modal modal-editor">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <button type="button" class="close-icon close" data-dismiss="modal">
-                        <i aria-hidden="true" class="icon icon-times-circle"></i>
-                    </button>
-                    <h4 class="modal-title">{{= title }}</h4>
-                    <ul class="modal-header-nav">
-                        <li>
-                            <a href="#" data-toggle-tab="#tab-bounceFilterContentViewHTMLModal">
-                                <bean:message key="mailingContentHTMLEditor"/>
-                            </a>
-                        </li>
-                        <li class="active">
-                            <a href="#" data-toggle-tab="#tab-bounceFilterContentViewCodeModal">
-                                <bean:message key="mailing.HTML_Version"/>
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-                <div class="modal-body">
-                    <div id="tab-bounceFilterContentViewHTMLModal" {{ (showHTMLEditor) ? print('data-tab-show') : print('data-tab-hide') }}>
-                    <textarea id="modalTextArea" name="modalTextArea" data-sync="\#{{= target }}" class="form-control js-editor js-wysiwyg"
-                              data-form-target="#bounceFilterForm"
-                              data-browse-mailing-id="${bounceFilterForm.arMailingId}"></textarea>
-                </div>
-
-                <div id="tab-bounceFilterContentViewCodeModal" {{ (showHTMLEditor) ? print('data-tab-hide') : print('data-tab-show') }}>
-                <div id="modalTextAreaEditor" class="form-control"></div>
-            </div>
-
-        </div>
-        <div class="modal-footer">
-            <div class="btn-group">
-                <button type="button" class="btn btn-default btn-large" data-dismiss="modal">
-                    <i class="icon icon-times"></i>
-                    <span class="text"><bean:message key="button.Cancel"/></span>
-                </button>
-                <button type="button" class="btn btn-primary btn-large" data-sync-from="#modalTextArea" data-sync-to="\#{{= target }}" data-dismiss="modal">
-                    <i class="icon icon-check"></i>
-                    <span class="text"><bean:message key="button.Apply"/></span>
-                </button>
-            </div>
-        </div>
-    </div>
-</script>

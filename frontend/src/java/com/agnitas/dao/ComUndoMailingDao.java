@@ -58,4 +58,8 @@ public interface ComUndoMailingDao {
 	
 	void deleteUndoDataForMailing(int mailingID);
 
+	List<Integer> findAllUndoIdsForMailings(List<Integer> mailings);
+
+	void deleteUndoData(List<Integer> undoIds);
+
 }

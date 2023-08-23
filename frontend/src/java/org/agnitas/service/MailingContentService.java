@@ -15,12 +15,11 @@ import java.util.Map;
 
 import org.agnitas.beans.AgnDBTagError;
 import org.agnitas.beans.DynamicTagContent;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public interface MailingContentService {
 	public final static String AGNDBTAG_WRONG_FORMAT = "AGNDBTAG_WRONG_FORMAT";
 	public final static String AGNDBTAG_UNKNOWN_COLUMN = "AGNDBTAG_UNKNOWN_COLUMN"; 
-	public List<AgnDBTagError> getInvalidAgnDBTags(String content,@VelocityCheck int companyID) throws Exception;
+	public List<AgnDBTagError> getInvalidAgnDBTags(String content,int companyID) throws Exception;
 	public List<String> scanForAgnDBTags(String content);
-	public Map<String, List<AgnDBTagError>> getAgnDBTagErrors( Map<String, DynamicTagContent> tagMap, @VelocityCheck int companyID ) throws Exception; 
+	public Map<String, List<AgnDBTagError>> getAgnDBTagErrors( Map<String, DynamicTagContent> tagMap, int companyID ) throws Exception; 
 }

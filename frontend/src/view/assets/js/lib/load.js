@@ -27,7 +27,7 @@
     self.el.removeAttr('data-load');
   };
 
-  Load.load = function($element) {
+  Load.load = function($element, isAlwaysLoad) {
     var loadObj;
 
     loadObj = $element.data('_load');
@@ -37,7 +37,7 @@
       return
     }
 
-    if ($element.is(':hidden')) {
+    if ($element.is(':hidden') && isAlwaysLoad !== true) {
       // Postpone loading of hidden elements (keep an attribute)
       return;
     }

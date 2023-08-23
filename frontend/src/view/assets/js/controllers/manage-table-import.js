@@ -1,4 +1,6 @@
 AGN.Lib.Controller.new('manage-table-import', function() {
+    const Form = AGN.Lib.Form;
+
     var NEW_COLUMN_FORMAT = '#new-default-column-format';
     var NEW_COLUMN_VALUE = '#new-default-column-value';
     var NEW_COLUMN_ENCRYPTED = '#new-default-column-encrypted';
@@ -8,8 +10,13 @@ AGN.Lib.Controller.new('manage-table-import', function() {
     var Template = AGN.Lib.Template;
     var config = null;
 
+    var $columnMappingsTable;
+    var columnMappingRowTemplate;
+    var file;
+
     this.addDomInitializer('manage-table-import', function() {
         config = this.config;
+        renderMappings(config.mappings);
     });
 
     this.addAction({
@@ -49,6 +56,98 @@ AGN.Lib.Controller.new('manage-table-import', function() {
         $row.remove();
 
         recalculateMappingIndexes($tbody.find(MAPPING_ROW));
+    });
+
+    this.addAction({change: 'select-file', click: 'create-mapping'}, function() {
+        const form = Form.get(this.el);
+
+        $.ajax(config.urls.CREATE_MAPPINGS, {
+            type: 'POST',
+            dataType: 'json',
+            enctype: 'multipart/form-data',
+            processData: false,
+            contentType: false,
+            data: form.data()
+        }).done(function (resp) {
+            if (resp.success === true) {
+                renderMappings(resp.data);
+                AGN.Lib.JsonMessages(resp.popups);
+            } else {
+                AGN.Lib.JsonMessages(resp.popups);
+            }
+        })
+    });
+
+    function renderMappings(mappings) {
+        $columnMappingsTable = $('#manage-tables-tbody');
+        $columnMappingsTable.html('');
+        columnMappingRowTemplate = Template.prepare('column-mapping-table-row');
+
+        for (var colIndex = 0; colIndex < mappings.length; colIndex++) {
+            const mapping = mappings[colIndex];
+            appendRowToColumnMappingTable(colIndex, mapping.id, mapping.sourceColumn, mapping.targetColumn, mapping.mandatory, mapping.encrypted, mapping.format, mapping.defaultValue);
+        }
+    }
+
+    function collectMappingsDataFromTable() {
+        if (!$columnMappingsTable || !$columnMappingsTable.length) {
+            return [];
+        }
+
+        return _.map($columnMappingsTable.find('[data-mapping-row]'), function (row) {
+            const $row = $(row);
+            return {
+                sourceColumn: getMappingValueInRowByCol($row, 'fileColumn'),
+                targetColumn: getMappingValueInRowByCol($row, 'db-column'),
+                mandatory: getMappingValueInRowByCol($row, 'mandatory'),
+                encrypted: getMappingValueInRowByCol($row, 'encrypted'),
+                defaultValue: getMappingValueInRowByCol($row, 'defaultValue'),
+                format: getMappingValueInRowByCol($row, 'format')
+            };
+        });
+    }
+
+    function getMappingValueInRowByCol($row, col) {
+        const $input = $row.find('[data-mapping-' + col + ']');
+
+        if ($input.is(':checkbox')) {
+            return $input.is(":checked");
+        }
+
+        return $input.val();
+    }
+
+    function appendRowToColumnMappingTable(index, id, sourceColumn, targetColumn, mandatory, encrypted, format, defaultValue) {
+        const $rowTemplate = columnMappingRowTemplate({
+            index: index,
+            id: id,
+            fileColumn: sourceColumn,
+            databaseColumn: targetColumn,
+            mandatory: mandatory,
+            encrypted: encrypted,
+            format: format,
+            defaultValue: defaultValue
+        });
+
+        $columnMappingsTable.append($rowTemplate);
+
+        const $dbColumn = $('[data-mapping-row="' + index + '"]').find('[data-mapping-db-column]');
+        AGN.Lib.CoreInitializer.run("select", $dbColumn);
+    }
+
+    this.addAction({submission: 'save'}, function () {
+        const form = Form.get(this.el);
+
+        _.each(collectMappingsDataFromTable(), function (mapping, index) {
+            form.setValueOnce('mappings[' + index + '].sourceColumn', mapping.sourceColumn);
+            form.setValueOnce('mappings[' + index + '].targetColumn', mapping.targetColumn);
+            form.setValueOnce('mappings[' + index + '].mandatory', mapping.mandatory);
+            form.setValueOnce('mappings[' + index + '].encrypted', mapping.encrypted);
+            form.setValueOnce('mappings[' + index + '].defaultValue', mapping.defaultValue);
+            form.setValueOnce('mappings[' + index + '].format', mapping.format);
+        })
+        file = $('[data-action="select-file"]').prop('files')[0];
+        form.submit();
     });
 
     function recalculateMappingIndexes($rows) {

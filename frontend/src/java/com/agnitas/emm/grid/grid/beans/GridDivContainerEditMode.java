@@ -26,7 +26,7 @@ public enum GridDivContainerEditMode {
         this.storageCode = storageCode;
     }
 
-    public static GridDivContainerEditMode forStorageCode(int storageCode) throws Exception {
+    public static GridDivContainerEditMode getDivContainerEditModeForStorageCode(int storageCode) throws Exception {
         for (GridDivContainerEditMode divContainerEditMode : GridDivContainerEditMode.values()) {
             if (divContainerEditMode.storageCode == storageCode) {
                 return divContainerEditMode;
@@ -35,7 +35,7 @@ public enum GridDivContainerEditMode {
         throw new Exception("Unknown storage code for DivContainerEditMode: " + storageCode);
     }
 
-    public static GridDivContainerEditMode forName(String name) throws Exception {
+    public static GridDivContainerEditMode getDivContainerEditModeForName(String name) throws Exception {
         for (GridDivContainerEditMode divContainerEditMode : GridDivContainerEditMode.values()) {
             if (divContainerEditMode.name().equalsIgnoreCase(name)) {
                 return divContainerEditMode;

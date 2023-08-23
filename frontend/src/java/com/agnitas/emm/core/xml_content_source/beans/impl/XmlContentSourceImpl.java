@@ -10,7 +10,6 @@
 
 package com.agnitas.emm.core.xml_content_source.beans.impl;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.emm.core.xml_content_source.beans.XmlContentSource;
 
@@ -35,7 +34,7 @@ public class XmlContentSourceImpl implements XmlContentSource {
     }
 
     @Override
-    public void setCompanyID(@VelocityCheck int company) {
+    public void setCompanyID(int company) {
         this.companyID = company;
     }
 

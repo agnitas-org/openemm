@@ -21,9 +21,9 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.Date;
 
+import com.agnitas.emm.core.components.entity.MailGenerationOptimizationMode;
 import org.agnitas.backend.dao.MaildropStatusDAO;
 import org.agnitas.backend.exceptions.CancelException;
-import org.agnitas.util.Const;
 import org.agnitas.util.Log;
 
 public class MaildropStatus {
@@ -67,6 +67,10 @@ public class MaildropStatus {
 	 * maildrop status table selected_test_recipients
 	 */
 	private boolean selectedTestRecipients;
+	/**
+	 * maildrop status table overwrite_test_recipient
+	 */
+	private long overwriteTestRecipient;
 	/**
 	 * generic send date handling
 	 */
@@ -126,7 +130,11 @@ public class MaildropStatus {
 	}
 
 	public boolean selectedTestRecipients() {
-		return selectedTestRecipients;
+		return isTestMailing () && selectedTestRecipients;
+	}
+	
+	public long overwriteTestRecipient () {
+		return selectedTestRecipients () ? overwriteTestRecipient : 0L;
 	}
 
 	public Date genericSendDate() {
@@ -150,6 +158,7 @@ public class MaildropStatus {
 		data.logging(Log.DEBUG, "init", "\tmaildropStatus.adminTestTargetSQL = " + (adminTestTargetSQL == null ? "*unset*" : adminTestTargetSQL.getSQL(true)));
 		data.logging(Log.DEBUG, "init", "\tmaildropStatus.optimizeMailGeneration = " + (optimizeMailGeneration == null ? "*unset*" : optimizeMailGeneration));
 		data.logging(Log.DEBUG, "init", "\tmaildropStatus.selectedTestRecipients = " + selectedTestRecipients);
+		data.logging(Log.DEBUG, "init", "\tmaildropStatus.overwriteTestRecipient = " + overwriteTestRecipient);
 		data.logging(Log.DEBUG, "init", "\tmaildropStatus.dependsOnAutoImportID = " + (exists () ? maildrop.dependsOnAutoImportID () : "*unset*"));
 		data.logging(Log.DEBUG, "init", "\tmaildropStatus.autoImportOK = " + (exists () ? maildrop.autoImportOK () : "*unset*"));
 	}
@@ -213,9 +222,10 @@ public class MaildropStatus {
 		adminTestTargetID = maildrop.adminTestTargetID ();
 		optimizeMailGeneration = maildrop.optimizeMailGeneration ();
 		selectedTestRecipients = maildrop.selectedTestRecipients ();
+		overwriteTestRecipient = maildrop.overwriteTestRecipient ();
 		if ((optimizeMailGeneration != null) &&
-		    (! optimizeMailGeneration.equals (Const.OptimizedMailGeneration.ID_DAY)) &&
-		    (! optimizeMailGeneration.equals (Const.OptimizedMailGeneration.ID_24H))) {
+		    (! optimizeMailGeneration.equals (MailGenerationOptimizationMode.DAY.getMaildropCode())) &&
+		    (! optimizeMailGeneration.equals (MailGenerationOptimizationMode.NEXT_24h.getMaildropCode()))) {
 			data.logging (Log.WARNING, "retrieve", "Invalid value for maildrop status table optimize_mail_generation found: " + optimizeMailGeneration);
 			optimizeMailGeneration = null;
 		}
@@ -310,11 +320,11 @@ public class MaildropStatus {
 	}
 
 	public boolean optimizeForDay() {
-		return optimizeMailGeneration != null && optimizeMailGeneration.equals(Const.OptimizedMailGeneration.ID_DAY);
+		return optimizeMailGeneration != null && optimizeMailGeneration.equals(MailGenerationOptimizationMode.DAY.getMaildropCode());
 	}
 
 	public boolean optimizeFor24h() {
-		return optimizeMailGeneration != null && optimizeMailGeneration.equals(Const.OptimizedMailGeneration.ID_24H);
+		return optimizeMailGeneration != null && optimizeMailGeneration.equals(MailGenerationOptimizationMode.NEXT_24h.getMaildropCode());
 	}
 
 	public long findSmallestStatusIDForWorldMailing(long mailingID) throws SQLException {

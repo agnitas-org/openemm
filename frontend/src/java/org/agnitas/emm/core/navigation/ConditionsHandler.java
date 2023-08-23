@@ -15,6 +15,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -32,13 +33,13 @@ public class ConditionsHandler {
         fillConditionsMap(conditions);
     }
 
-    public boolean checkCondition(final String conditionId, int companyId) {
+    public boolean checkCondition(final String conditionId, HttpServletRequest req) {
         final NavItemCondition condition = conditionsMap.get(conditionId);
         if(condition == null){
             LOGGER.warn("Invalid condition id sent: {}.", conditionId);
             return false;
         }
-        return condition.isSatisfied(companyId);
+        return condition.isSatisfied(req);
     }
 
     private void fillConditionsMap(final Collection<NavItemCondition> conditions) {

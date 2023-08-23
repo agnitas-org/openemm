@@ -131,13 +131,13 @@
                 {
                     "headerName": "<mvc:message code='default.Name'/>",
                     "editable": false,
-                    "cellRenderer": "StringCellRenderer",
+                    "cellRenderer": "NotEscapedStringCellRenderer",
                     "field": "shortname"
                 },
                 {
                     "headerName": "<mvc:message code='Description'/>",
                     "editable": false,
-                    "cellRenderer": "StringCellRenderer",
+                    "cellRenderer": "NotEscapedStringCellRenderer",
                     "field": "description"
                 },
                 {

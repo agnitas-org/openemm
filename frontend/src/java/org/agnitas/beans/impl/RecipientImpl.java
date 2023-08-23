@@ -28,7 +28,6 @@ import org.agnitas.beans.factory.RecipientFactory;
 import org.agnitas.dao.UserStatus;
 import org.agnitas.emm.core.blacklist.service.BlacklistService;
 import org.agnitas.emm.core.recipient.RecipientUtils;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.DbColumnType;
@@ -240,7 +239,7 @@ public class RecipientImpl implements Recipient {
 	}
 
 	@Override
-	public void setCompanyID(@VelocityCheck int companyID) {
+	public void setCompanyID(int companyID) {
 		this.companyID = companyID;
 	}
 

@@ -13,6 +13,7 @@ package com.agnitas.dao;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import org.agnitas.beans.impl.CompanyStatus;
@@ -22,6 +23,7 @@ import org.agnitas.util.Tuple;
 import com.agnitas.beans.Company;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.company.bean.CompanyEntry;
+import com.agnitas.emm.core.servicemail.UnknownCompanyIdException;
 
 public interface ComCompanyDao {
 	
@@ -146,4 +148,8 @@ public interface ComCompanyDao {
 	int getNumberOfCustomers(int companyID);
 
 	void cleanupPremiumFeaturePermissions(int companyID);
+
+	boolean existOldLayoutBuilderTemplates(int id);
+
+	Optional<String> getCompanyToken(int companyID) throws UnknownCompanyIdException;
 }

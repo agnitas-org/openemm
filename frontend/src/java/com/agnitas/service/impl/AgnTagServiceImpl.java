@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 import org.agnitas.beans.TagDetails;
 import org.agnitas.beans.factory.DynamicTagFactory;
 import org.agnitas.dao.TagDao;
+import org.agnitas.util.AgnTagUtils;
 import org.agnitas.util.DynTagException;
 import org.agnitas.util.MissingEndTagException;
 import org.agnitas.util.UnclosedTagException;
@@ -198,22 +199,28 @@ public class AgnTagServiceImpl implements AgnTagService {
     }
 
     private List<AgnTagAttributeDto> getSupportedAttributes(Admin admin, String name, String selectValue) {
-        return getAttributesFromSelectValue(selectValue)
+        List<String> extractedAttributes = getAttributesFromSelectValue(selectValue);
+
+        for (String param : AgnTagUtils.getParametersForTag(name)) {
+            if (!extractedAttributes.contains(param)) {
+                extractedAttributes.add(param);
+            }
+        }
+
+        return extractedAttributes
                 .stream()
                 .map(attribute -> agnTagAttributeResolverRegistry.resolve(admin, name, attribute))
                 .collect(Collectors.toList());
     }
 
     private List<String> getAttributesFromSelectValue(String selectValue) {
-        if (StringUtils.isEmpty(selectValue)) {
-            return Collections.emptyList();
-        }
-
         List<String> attributes = new ArrayList<>();
 
-        Matcher matcher = agnTagSelectValueAttributePattern.matcher(selectValue);
-        while (matcher.find()) {
-            attributes.add(matcher.group(1));
+        if (!StringUtils.isEmpty(selectValue)) {
+            Matcher matcher = agnTagSelectValueAttributePattern.matcher(selectValue);
+            while (matcher.find()) {
+                attributes.add(matcher.group(1));
+            }
         }
 
         return attributes;

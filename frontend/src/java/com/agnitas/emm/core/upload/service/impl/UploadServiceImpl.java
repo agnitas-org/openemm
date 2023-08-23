@@ -19,6 +19,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -26,6 +27,7 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import com.agnitas.emm.core.upload.bean.UploadFileExtension;
 import org.agnitas.beans.AdminEntry;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.commons.util.ConfigService;
@@ -58,9 +60,8 @@ import com.agnitas.service.ExtendedConversionService;
 import com.agnitas.web.mvc.Popups;
 
 public class UploadServiceImpl implements UploadService {
-	
-	/** The logger. */
-    private static final transient Logger logger = LogManager.getLogger(UploadServiceImpl.class);
+
+    private static final Logger logger = LogManager.getLogger(UploadServiceImpl.class);
 
     private ComUploadDao uploadDao;
     private ExtendedConversionService conversionService;
@@ -153,9 +154,9 @@ public class UploadServiceImpl implements UploadService {
             DownloadData downloadData = uploadDao.getDownloadData(id);
             String suffix = downloadData.getFileType();
             if (!suffix.startsWith(".")) {
-            	suffix = "." + suffix;
+                suffix = "." + suffix;
             }
-        	File tempFile = Files.createTempFile(null, suffix).toFile();
+            File tempFile = Files.createTempFile(null, suffix).toFile();
             try (FileOutputStream outputStream = new FileOutputStream(tempFile)) {
                 uploadDao.sendDataToStream(id, outputStream);
             }
@@ -241,6 +242,11 @@ public class UploadServiceImpl implements UploadService {
     @Override
     public List<UploadData> getUploadsByExtension(Admin admin, String extension) {
         return uploadDao.getOverviewListByExtention(admin, Collections.singletonList(Objects.requireNonNull(extension)));
+    }
+    
+    @Override
+    public List<UploadData> getUploadsByExtension(Admin admin, UploadFileExtension... extensions) {
+        return uploadDao.getOverviewListByExtention(admin, Arrays.stream(extensions).map(UploadFileExtension::getName).collect(Collectors.toList()));
     }
 
     @Override

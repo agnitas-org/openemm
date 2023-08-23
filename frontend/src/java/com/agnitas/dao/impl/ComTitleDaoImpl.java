@@ -23,7 +23,6 @@ import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.beans.impl.SalutationEntryImpl;
 import org.agnitas.beans.impl.TitleImpl;
 import org.agnitas.dao.impl.PaginatedBaseDaoImpl;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.AgnUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -40,13 +39,13 @@ public class ComTitleDaoImpl extends PaginatedBaseDaoImpl implements ComTitleDao
 	private static final transient Logger logger = LogManager.getLogger(ComTitleDaoImpl.class);
 		
 	@Override
-	public Title getTitle(int titleID, @VelocityCheck int companyID) {
+	public Title getTitle(int titleID, int companyID) {
 		return selectObjectDefaultNull(logger, "SELECT company_id, title_id, description FROM title_tbl WHERE title_id = ? AND (company_id = ? OR company_id = 0)", new Title_RowMapper(), titleID, companyID);
 	}
 
 	@DaoUpdateReturnValueCheck
 	@Override
-	public boolean delete(int titleID, @VelocityCheck int companyID) {
+	public boolean delete(int titleID, int companyID) {
 		if (titleID == 0 || companyID == 0) {
 			return false;
 		} else {
@@ -60,7 +59,7 @@ public class ComTitleDaoImpl extends PaginatedBaseDaoImpl implements ComTitleDao
 	}
 	
 	@Override
-	public PaginatedListImpl<SalutationEntry> getSalutationList(@VelocityCheck int companyID, String sortColumn, String sortDirection, int pageNumber, int pageSize) {
+	public PaginatedListImpl<SalutationEntry> getSalutationList(int companyID, String sortColumn, String sortDirection, int pageNumber, int pageSize) {
 		if (StringUtils.isBlank(sortColumn)) {
 			sortColumn = "title_id";
 		}
@@ -74,12 +73,12 @@ public class ComTitleDaoImpl extends PaginatedBaseDaoImpl implements ComTitleDao
 	 * Get a List of light title entries for dropdown display in a JSP
 	 */
 	@Override
-	public List<Title> getTitles(@VelocityCheck int companyID) {
+	public List<Title> getTitles(int companyID) {
 		return select(logger, "SELECT company_id, title_id, description FROM title_tbl WHERE company_id IN (0, ?) ORDER BY LOWER(description)", new TitleLight_RowMapper(), companyID);
 	}
 
 	@Override
-	public boolean deleteTitlesByCompanyID(@VelocityCheck int companyID) {
+	public boolean deleteTitlesByCompanyID(int companyID) {
 		try {
 			update(logger, "DELETE FROM title_gender_tbl WHERE title_id IN (SELECT title_id FROM title_tbl WHERE company_id = ?)", companyID);
 			update(logger, "DELETE FROM title_tbl WHERE company_id = ?", companyID);

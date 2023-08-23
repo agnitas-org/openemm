@@ -39,7 +39,6 @@ import org.agnitas.beans.impl.MailingBaseImpl;
 import org.agnitas.beans.impl.MailinglistImpl;
 import org.agnitas.dao.UserStatus;
 import org.agnitas.dao.impl.BaseDaoImpl;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.stat.CampaignStatEntry;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -55,7 +54,7 @@ public class CampaignDaoImpl extends BaseDaoImpl implements CampaignDao {
 	private static final List<String> SORTABLE_FIELDS = Arrays.asList("campaign_id", "shortname", "description");
 
 	@Override
-	public Campaign getCampaign(int campaignID, @VelocityCheck int companyID) {
+	public Campaign getCampaign(int campaignID, int companyID) {
 		if (campaignID == 0) {
 			return null;
 		}
@@ -214,7 +213,7 @@ public class CampaignDaoImpl extends BaseDaoImpl implements CampaignDao {
     }
 
 	@Override
-	public List<Campaign> getCampaignList(@VelocityCheck int companyID, String sort, int order) {
+	public List<Campaign> getCampaignList(int companyID, String sort, int order) {
 		if(!SORTABLE_FIELDS.contains(sort)) {
 			sort = "shortname";
 		}
@@ -483,7 +482,7 @@ public class CampaignDaoImpl extends BaseDaoImpl implements CampaignDao {
 		return stats;
 	}
 
-	protected CampaignStats loadRevenues(CampaignStats stats, ComRevenueDao revenueDao, @VelocityCheck int companyId, int targetId) {
+	protected CampaignStats loadRevenues(CampaignStats stats, ComRevenueDao revenueDao, int companyId, int targetId) {
 		Map<Integer, Double> revenueTable = null;
 		LinkedList<Integer> mailingIds = new LinkedList<>();
 
@@ -560,7 +559,7 @@ public class CampaignDaoImpl extends BaseDaoImpl implements CampaignDao {
 	
 	@Override
 	@DaoUpdateReturnValueCheck
-	public int deleteByCompanyID(@VelocityCheck int companyID) {
+	public int deleteByCompanyID(int companyID) {
 		String deleteQuery = "DELETE FROM campaign_tbl WHERE company_id = ?";
 		return update(logger, deleteQuery, companyID);
 	}

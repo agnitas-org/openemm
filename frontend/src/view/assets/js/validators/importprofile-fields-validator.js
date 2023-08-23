@@ -36,7 +36,9 @@ AGN.Lib.CoreInitializer.new('importprofile-fields-validator', function () {
     if (value && getColNameByDefValField($defValField) !== 'do-not-import-column') {
       var columnInfo = getValFieldColumnInfo($defValField);
       var dataType = columnInfo.dataType.toLowerCase();
-      if (dataType === 'date' || dataType === 'datetime') {
+      if (columnInfo.column === 'email' && !AGN.Lib.Helpers.isValidEmail(value)) {
+        errors.push({field: $defValField, msg: t('import.columnMapping.error.invalidEmail')});
+      } else if (dataType === 'date' || dataType === 'datetime') {
         if (isDbDateFunction($defValField.val().trim())) {
           return;
         }

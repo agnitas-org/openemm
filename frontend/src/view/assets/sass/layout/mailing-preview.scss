@@ -1,7 +1,4 @@
 .preview-settings-block {
-    max-width: 800px;
-    width: 100%;
-
     display: flex;
     flex-wrap: wrap;
     align-content: space-around;
@@ -17,7 +14,7 @@
 
     .preview-settings-content {
         width: 100%;
-        max-width: 600px;
+        max-width: 700px;
 
         display: flex;
         flex-direction: column;

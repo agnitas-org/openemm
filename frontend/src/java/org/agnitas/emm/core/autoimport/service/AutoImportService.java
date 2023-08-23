@@ -56,9 +56,9 @@ public interface AutoImportService {
 
     AutoImportResult doImportReferenceTableData(AutoImport autoImport) throws Exception;
 
-    AutoImportResult doImportHtmlContentData(AutoImport autoImport) throws Exception;
+    AutoImportResult doImportContentSource(AutoImport autoImport) throws Exception;
 
-    void setAutoActivationDateAndActivate(int companyId, int autoImportId, Date date, boolean isWmDriven) throws Exception;
+    void setAutoActivationDateAndActivate(Admin admin, int autoImportId, Date date, boolean isWmDriven) throws Exception;
 
     void deactivateAutoImport(int companyId, int autoImportId) throws Exception;
 
@@ -83,6 +83,10 @@ public interface AutoImportService {
     void saveWsJobState(int autoImportJobId, int companyId, AutoImportWsJobState state, int expirationTimeout);
 
     void removeExpiredWsJobs();
-    
+
+    // TODO: check usage and removed after migration. GWUA-5174
     List<AutoImport> getAutoImportsOverview(Admin admin, String[] filters);
+    List<AutoImport> getAutoImportsOverview(Admin admin, List<String> filters);
+
+    String findName(int autoImportId, int companyId);
 }

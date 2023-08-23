@@ -10,21 +10,20 @@
 
 package com.agnitas.emm.core.target.web;
 
+import static com.agnitas.emm.core.Permission.RECIPIENT_PROFILEFIELD_HTML_ALLOWED;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import com.agnitas.web.mvc.XssCheckAware;
-import jakarta.servlet.http.HttpSession;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.exception.target.TargetGroupTooLargeException;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.recipient.service.RecipientService;
 import org.agnitas.emm.core.target.exception.UnknownTargetGroupIdException;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.service.UserActivityLogService;
 import org.agnitas.service.WebStorage;
 import org.agnitas.target.TargetFactory;
@@ -68,10 +67,11 @@ import com.agnitas.messages.I18nString;
 import com.agnitas.messages.Message;
 import com.agnitas.service.GridServiceWrapper;
 import com.agnitas.web.mvc.Popups;
+import com.agnitas.web.mvc.XssCheckAware;
 import com.agnitas.web.perm.annotations.PermissionMapping;
 
 import jakarta.servlet.http.HttpServletRequest;
-import static com.agnitas.emm.core.Permission.RECIPIENT_PROFILEFIELD_HTML_ALLOWED;
+import jakarta.servlet.http.HttpSession;
 
 @Controller
 @RequestMapping("/target")
@@ -124,7 +124,7 @@ public class QueryBuilderTargetController implements XssCheckAware {
         WorkflowUtils.updateForwardParameters(request);
 
         if (targetId > 0 && form.getPreviousViewFormat() == null) {
-            boolean exists = fillFormIfTargetExists(admin.getCompanyID(), form);
+            boolean exists = fillFormIfTargetExists(admin, form);
             if (!exists) {
                 logger.warn("Target group does not exists. Company ID: {} Target ID: {}", admin.getCompanyID(), form.getTargetId());
                 return "redirect:/target/list.action";
@@ -177,9 +177,6 @@ public class QueryBuilderTargetController implements XssCheckAware {
         if (workflowId > 0) {
             WorkflowParametersHelper.addEditedElemRedirectAttrs(redirectAttributes, session, targetId);
             return String.format("redirect:/workflow/%d/view.action", workflowId);
-        }
-        if (isMailingWizard) {
-            return "redirect:/mwTarget.do?action=viewTarget&viewTargetId="+targetId;
         }
         return redirectToView(targetId);
     }
@@ -290,6 +287,7 @@ public class QueryBuilderTargetController implements XssCheckAware {
                 .collect(Collectors.toList());
 
         model.addAttribute("mailingGridTemplateMap", gridService.getGridTemplateIdsByMailingIds(companyId, mailingIds));
+        model.addAttribute("hidden", targetService.isHidden(targetId, admin.getCompanyID()));
 
         return "target_dependents_list";
     }
@@ -325,7 +323,7 @@ public class QueryBuilderTargetController implements XssCheckAware {
         setupCommonViewPageParams(admin, form.getTargetId(), form.getEql(), model);
         model.addAttribute("mailTrackingAvailable", mailTrackingAvailable);
 
-        if(isMailingWizard) {
+        if (isMailingWizard) {
             model.addAttribute("editTargetForm", form);
             return "mailing_wizard_new_target";
         }
@@ -351,7 +349,7 @@ public class QueryBuilderTargetController implements XssCheckAware {
         return "target_view";
     }
 
-    private TargetComplexityGrade getComplexityGrade(String eql, @VelocityCheck int companyId) {
+    private TargetComplexityGrade getComplexityGrade(String eql, int companyId) {
         int complexityIndex = targetService.calculateComplexityIndex(eql, companyId);
         int recipientsCount = recipientService.getNumberOfRecipients(companyId);
 
@@ -380,12 +378,13 @@ public class QueryBuilderTargetController implements XssCheckAware {
         model.addAttribute("mailinglists", mailinglistApprovalService.getEnabledMailinglistsForAdmin(admin));
         model.addAttribute("complexityGrade", getComplexityGrade(eql, admin.getCompanyID()));
         model.addAttribute("isValid", targetService.isValid(admin.getCompanyID(), targetId));
+        model.addAttribute("hidden", targetService.isHidden(targetId, admin.getCompanyID()));
         model.addAttribute("isLocked", isLocked);
     }
 
-    private boolean fillFormIfTargetExists(int companyId, TargetEditForm form) {
+    private boolean fillFormIfTargetExists(Admin admin, TargetEditForm form) {
         try {
-            ComTarget target = targetService.getTargetGroup(form.getTargetId(), companyId);
+            ComTarget target = targetService.getTargetGroup(form.getTargetId(), admin.getCompanyID(), admin.getAdminID());
             form.setTargetId(target.getId());
             form.setShortname(target.getTargetName());
             form.setDescription(target.getTargetDescription());
@@ -455,10 +454,13 @@ public class QueryBuilderTargetController implements XssCheckAware {
         if(form.isAccessLimitation()) {
 	        int accessLimitingTargetgroupsAmount = targetService.getAccessLimitingTargetgroupsAmount(companyId);
 	        int licenseMaximumOfAccessLimitingTargetgroupsPerCompany = configService.getIntegerValue(ConfigValue.System_License_MaximumNumberOfAccessLimitingTargetgroupsPerCompany);
-			if (licenseMaximumOfAccessLimitingTargetgroupsPerCompany >= 0 && licenseMaximumOfAccessLimitingTargetgroupsPerCompany < accessLimitingTargetgroupsAmount + 1) {
+			if (licenseMaximumOfAccessLimitingTargetgroupsPerCompany >= 0 && (licenseMaximumOfAccessLimitingTargetgroupsPerCompany + ConfigValue.System_License_MaximumNumberOfAccessLimitingTargetgroupsPerCompany.getGracefulExtension()) < accessLimitingTargetgroupsAmount + 1) {
 				popups.alert("error.altg.exceeded", licenseMaximumOfAccessLimitingTargetgroupsPerCompany);
 				return 0;
+			} else if (licenseMaximumOfAccessLimitingTargetgroupsPerCompany >= 0 && licenseMaximumOfAccessLimitingTargetgroupsPerCompany < accessLimitingTargetgroupsAmount + 1) {
+	        	popups.warning("error.numberOfAccessLimitingTargetgroupsExceeded.graceful", licenseMaximumOfAccessLimitingTargetgroupsPerCompany, accessLimitingTargetgroupsAmount, ConfigValue.System_License_MaximumNumberOfAccessLimitingTargetgroupsPerCompany.getGracefulExtension());
 			}
+			
 	        int configMaximumOfAccessLimitingTargetgroupsForThisCompany = configService.getIntegerValue(ConfigValue.MaximumAccessLimitingTargetgroups, companyId);
 	        if (configMaximumOfAccessLimitingTargetgroupsForThisCompany >= 0 && configMaximumOfAccessLimitingTargetgroupsForThisCompany < accessLimitingTargetgroupsAmount + 1) {
 	        	popups.alert("error.altg.exceeded", configMaximumOfAccessLimitingTargetgroupsForThisCompany);

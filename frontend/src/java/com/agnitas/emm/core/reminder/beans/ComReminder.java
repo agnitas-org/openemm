@@ -10,13 +10,12 @@
 
 package com.agnitas.emm.core.reminder.beans;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public interface ComReminder {
     int getId();
     void setId(int id);
     int getCompanyId();
-    void setCompanyId(@VelocityCheck int companyId);
+    void setCompanyId(int companyId);
     String getRecipientEmail();
     void setRecipientEmail(String recipientEmails);
     String getMessage();

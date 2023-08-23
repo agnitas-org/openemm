@@ -71,7 +71,7 @@
                     
                     <div class="form-group">
                         <div class="col-sm-4">
-                            <label class="control-label" for="trustedDevice"><mvc:message code="logon.hostauth.trustDevice"/></label>
+                            <label class="control-label checkbox-control-label" for="trustedDevice"><mvc:message code="logon.hostauth.trustDevice"/></label>
                         </div>
                          <div class="col-sm-8">
                          	<label class="toggle">

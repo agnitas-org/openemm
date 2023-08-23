@@ -25,6 +25,8 @@ public interface AutoExportDao {
 
     void changeActiveStatus(int autoExportId, int companyId, boolean active);
 
+    String findName(int autoExportId, int companyId);
+
     AutoExport getAutoExport(int autoExportId, int companyId);
 
     void createAutoExport(AutoExport autoExport) throws Exception;
@@ -62,4 +64,6 @@ public interface AutoExportDao {
 	AutoExportJobStatus getWsJobState(int jobId, int companyId);
 	
 	void removeExpiredWsJobs();
+
+	List<Integer> getOutdatedAutoExports(int companyID, Date autoExportExportExpireDate);
 }

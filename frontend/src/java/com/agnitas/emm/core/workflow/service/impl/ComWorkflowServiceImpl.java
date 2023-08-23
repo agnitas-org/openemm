@@ -10,82 +10,20 @@
 
 package com.agnitas.emm.core.workflow.service.impl;
 
-import static com.agnitas.emm.core.workflow.beans.WorkflowDependencyType.MAILING_DELIVERY;
-import static com.agnitas.emm.core.workflow.beans.WorkflowDependencyType.MAILING_LINK;
-import static com.agnitas.emm.core.workflow.beans.WorkflowDependencyType.MAILING_REFERENCE;
-import static com.agnitas.emm.core.workflow.service.util.WorkflowUtils.TESTING_MODE_DEADLINE;
-import static com.agnitas.emm.core.workflow.service.util.WorkflowUtils.TESTING_MODE_DEADLINE_DURATION;
-import static com.agnitas.emm.core.workflow.service.util.WorkflowUtils.asDeadline;
-import static java.util.stream.Collectors.toList;
-
-import java.lang.reflect.InvocationTargetException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.Deque;
-import java.util.GregorianCalendar;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.TimeZone;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
-
-import com.agnitas.beans.Mediatype;
-import com.agnitas.emm.core.workflow.beans.impl.WorkflowMailingMediaTypePostImpl;
-import com.agnitas.emm.core.workflow.beans.impl.WorkflowMailingMediaTypeSmsImpl;
-import org.agnitas.beans.AdminEntry;
-import org.agnitas.beans.CompaniesConstraints;
-import org.agnitas.beans.TrackableLink;
-import org.agnitas.beans.impl.MaildropDeleteException;
-import org.agnitas.dao.MailingStatus;
-import org.agnitas.dao.UserStatus;
-import org.agnitas.emm.core.autoexport.bean.AutoExport;
-import org.agnitas.emm.core.autoexport.service.AutoExportService;
-import org.agnitas.emm.core.autoimport.bean.AutoImport;
-import org.agnitas.emm.core.autoimport.service.AutoImportService;
-import org.agnitas.emm.core.mailing.beans.LightweightMailing;
-import org.agnitas.emm.core.mediatypes.dao.MediatypesDao;
-import org.agnitas.emm.core.mediatypes.dao.MediatypesDaoException;
-import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.EmmCalendar;
-import org.agnitas.util.SafeString;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.time.DateUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-import org.springframework.transaction.annotation.Transactional;
-
-import com.agnitas.beans.Campaign;
 import com.agnitas.beans.Admin;
+import com.agnitas.beans.Campaign;
 import com.agnitas.beans.ComTarget;
 import com.agnitas.beans.ComTrackableLink;
 import com.agnitas.beans.IntEnum;
 import com.agnitas.beans.MaildropEntry;
 import com.agnitas.beans.Mailing;
+import com.agnitas.beans.Mediatype;
 import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.TargetLight;
 import com.agnitas.dao.CampaignDao;
 import com.agnitas.dao.ComMailingDao;
-import com.agnitas.dao.ProfileFieldDao;
 import com.agnitas.dao.ComTargetDao;
+import com.agnitas.dao.ProfileFieldDao;
 import com.agnitas.dao.TrackableLinkDao;
 import com.agnitas.dao.UserFormDao;
 import com.agnitas.emm.common.MailingType;
@@ -95,6 +33,7 @@ import com.agnitas.emm.core.birtreport.dao.ComBirtReportDao;
 import com.agnitas.emm.core.maildrop.MaildropGenerationStatus;
 import com.agnitas.emm.core.maildrop.MaildropStatus;
 import com.agnitas.emm.core.mailing.service.MailgunOptions;
+import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.emm.core.mailing.service.SendActionbasedMailingException;
 import com.agnitas.emm.core.mailing.service.SendActionbasedMailingService;
 import com.agnitas.emm.core.reminder.service.ComReminderService;
@@ -138,6 +77,8 @@ import com.agnitas.emm.core.workflow.beans.impl.WorkflowFollowupMailingImpl;
 import com.agnitas.emm.core.workflow.beans.impl.WorkflowFormImpl;
 import com.agnitas.emm.core.workflow.beans.impl.WorkflowImportImpl;
 import com.agnitas.emm.core.workflow.beans.impl.WorkflowMailingImpl;
+import com.agnitas.emm.core.workflow.beans.impl.WorkflowMailingMediaTypePostImpl;
+import com.agnitas.emm.core.workflow.beans.impl.WorkflowMailingMediaTypeSmsImpl;
 import com.agnitas.emm.core.workflow.beans.impl.WorkflowParameterImpl;
 import com.agnitas.emm.core.workflow.beans.impl.WorkflowRecipientImpl;
 import com.agnitas.emm.core.workflow.beans.impl.WorkflowReportImpl;
@@ -158,16 +99,77 @@ import com.agnitas.emm.core.workflow.service.util.WorkflowUtils.Deadline;
 import com.agnitas.emm.core.workflow.service.util.WorkflowUtils.StartType;
 import com.agnitas.emm.core.workflow.web.forms.WorkflowForm;
 import com.agnitas.mailing.autooptimization.beans.ComOptimization;
+import com.agnitas.mailing.autooptimization.beans.impl.AutoOptimizationStatus;
 import com.agnitas.mailing.autooptimization.service.ComOptimizationCommonService;
 import com.agnitas.mailing.autooptimization.service.ComOptimizationService;
 import com.agnitas.reporting.birt.external.dao.ComCompanyDao;
 import com.agnitas.service.ColumnInfoService;
-import com.agnitas.service.ComMailingSendService;
 import com.agnitas.userform.bean.UserForm;
-
 import jakarta.mail.internet.InternetAddress;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
+import org.agnitas.beans.AdminEntry;
+import org.agnitas.beans.CompaniesConstraints;
+import org.agnitas.beans.MediaTypeStatus;
+import org.agnitas.beans.TrackableLink;
+import org.agnitas.beans.impl.MaildropDeleteException;
+import org.agnitas.dao.MaildropStatusDao;
+import org.agnitas.dao.MailingStatus;
+import org.agnitas.dao.UserStatus;
+import org.agnitas.emm.core.autoexport.bean.AutoExport;
+import org.agnitas.emm.core.autoexport.service.AutoExportService;
+import org.agnitas.emm.core.autoimport.bean.AutoImport;
+import org.agnitas.emm.core.autoimport.service.AutoImportService;
+import org.agnitas.emm.core.mailing.beans.LightweightMailing;
+import org.agnitas.emm.core.mailing.service.MailingNotExistException;
+import org.agnitas.emm.core.mediatypes.dao.MediatypesDao;
+import org.agnitas.emm.core.mediatypes.dao.MediatypesDaoException;
+import org.agnitas.util.AgnUtils;
+import org.agnitas.util.DateUtilities;
+import org.agnitas.util.EmmCalendar;
+import org.agnitas.util.SafeString;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Required;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.lang.reflect.InvocationTargetException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.Deque;
+import java.util.GregorianCalendar;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.TimeZone;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+
+import static com.agnitas.emm.core.workflow.beans.WorkflowDependencyType.MAILING_DELIVERY;
+import static com.agnitas.emm.core.workflow.beans.WorkflowDependencyType.MAILING_LINK;
+import static com.agnitas.emm.core.workflow.beans.WorkflowDependencyType.MAILING_REFERENCE;
+import static com.agnitas.emm.core.workflow.service.util.WorkflowUtils.TESTING_MODE_DEADLINE;
+import static com.agnitas.emm.core.workflow.service.util.WorkflowUtils.TESTING_MODE_DEADLINE_DURATION;
+import static com.agnitas.emm.core.workflow.service.util.WorkflowUtils.asDeadline;
+import static java.text.MessageFormat.format;
+import static java.util.stream.Collectors.toList;
 
 public class ComWorkflowServiceImpl implements ComWorkflowService {
 
@@ -177,10 +179,10 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
     private static final Logger logger = LogManager.getLogger(ComWorkflowServiceImpl.class);
 
 	private ColumnInfoService columnInfoService;
-	private ComMailingSendService mailingSendService;
     private ComWorkflowValidationService workflowValidationService;
     private AutoImportService autoImportService;
     private AutoExportService autoExportService;
+    private MaildropStatusDao maildropStatusDao;
 
     private ProfileFieldDao profileFieldDao;
 	protected ComWorkflowDao workflowDao;
@@ -201,6 +203,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
     private CampaignDao campaignDao;
     private MediatypesDao mediatypesDao;
     protected AdminService adminService;
+    private MailingService mailingService;
 
     private ComWorkflowService selfReference;
 
@@ -242,7 +245,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
      * @param workflowId an identifier of a workflow to collect dependencies list for.
      * @param icons icons of a workflow to collect dependencies from.
      */
-    private void saveDependencies(@VelocityCheck int companyId, int workflowId, List<WorkflowIcon> icons) {
+    private void saveDependencies(int companyId, int workflowId, List<WorkflowIcon> icons) {
         Set<WorkflowDependency> dependencies = new HashSet<>();
 
         for (WorkflowIcon icon : icons) {
@@ -296,6 +299,11 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
                 }
             }
         }
+    }
+
+    @Override
+    public boolean existsAtLeastOneFilledMailingIcon(List<WorkflowIcon> icons) {
+        return !collectMailingIds(icons).isEmpty();
     }
 
     /**
@@ -514,7 +522,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
     }
 
     @Override
-    public Workflow getWorkflow(int workflowId, @VelocityCheck int companyId) {
+    public Workflow getWorkflow(int workflowId, int companyId) {
         Workflow workflow = workflowDao.getWorkflow(workflowId, companyId);
 
         if (workflow != null) {
@@ -525,7 +533,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
     }
 
     @Override
-    public List<WorkflowIcon> getIcons(int workflowId, @VelocityCheck int companyId) {
+    public List<WorkflowIcon> getIcons(int workflowId, int companyId) {
         return getIcons(workflowDao.getSchema(workflowId, companyId));
     }
 
@@ -549,7 +557,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
     }
 
     @Override
-    public boolean validateDependency(@VelocityCheck int companyId, int workflowId, WorkflowDependency dependency) {
+    public boolean validateDependency(int companyId, int workflowId, WorkflowDependency dependency) {
         boolean strict = false;
 
         switch (dependency.getType()) {
@@ -608,30 +616,32 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
 
     @Override
 	public List<Map<String, Object>> filterWithRequiredMediaTypes(List<Map<String, Object>> mailings, List<Integer> mediaTypes) {
-        Map<Integer, Map<Integer, Mediatype>> mailingsMediaTypes = new HashMap<>();
+        List<Map<String, Object>> mailingsWithMediatypes = new ArrayList<>();
+
         for (Map<String, Object> mailing : mailings) {
             int mailingId = ((Number) mailing.get("MAILING_ID")).intValue();
             int companyId = ((Number) mailing.get("COMPANY_ID")).intValue();
 
             try {
-                mailingsMediaTypes.put(mailingId, mediatypesDao.loadMediatypes(mailingId, companyId));
+                Map<Integer, Mediatype> activeMediatypes = mediatypesDao.loadMediatypesByStatus(MediaTypeStatus.Active, mailingId, companyId);
+
+                boolean atLeastOneMediatypeExists = mediaTypes.stream()
+                        .anyMatch(activeMediatypes::containsKey);
+
+                if (atLeastOneMediatypeExists) {
+                    mailingsWithMediatypes.add(mailing);
+                }
+
             } catch (MediatypesDaoException e) {
-                e.printStackTrace();
+                logger.error(format("Error occurred during load of mailing (ID - {0}) mediatypes!", mailingId), e);
             }
         }
 
-        return mailings.stream()
-                .filter(m -> {
-                    int mailingId = ((Number) m.get("MAILING_ID")).intValue();
-                    Map<Integer, Mediatype> mailingMediaTypes = mailingsMediaTypes.get(mailingId);
-
-                    return mediaTypes.stream().anyMatch(mailingMediaTypes::containsKey);
-                })
-                .collect(toList());
+        return mailingsWithMediatypes;
     }
 
     @Override
-    public List<Map<String, Object>> getMailings(@VelocityCheck int companyId, String commaSeparatedMailingIds) {
+    public List<Map<String, Object>> getMailings(int companyId, String commaSeparatedMailingIds) {
         return mailingDao.getMailings(companyId, commaSeparatedMailingIds);
     }
 
@@ -916,14 +926,13 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
         }
     }
 
-    private Mailing getMailingForUpdate(int mailingId, @VelocityCheck int companyId) {
-        if (mailingId > 0) {
+    private Mailing getMailingForUpdate(int mailingId, int companyId) {
+        try {
             Mailing mailing = getMailing(mailingId, companyId);
-            if (mailing != null && mailing.getId() > 0) {
-                return mailing;
-            }
+            return mailing != null && mailing.getId() > 0 ? mailing : null;
+        } catch (MailingNotExistException e) {
+            return null;
         }
-        return null;
     }
 
     private void populateMailingByDataFromFoundChain(String timeZone, boolean withOwnNodes, List<WorkflowNode> foundNodes, Mailing mailing) {
@@ -1142,7 +1151,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
     private int cloneMailing(Admin admin, int mailingId) {
         String newMailingNamePrefix = SafeString.getLocaleString("mailing.CopyOf", admin.getLocale()) + " ";
         try {
-            return mailingDao.copyMailing(mailingId, admin.getCompanyID(), newMailingNamePrefix);
+            return mailingService.copyMailing(mailingId, admin.getCompanyID(), newMailingNamePrefix);
         } catch (Exception e) {
             logger.error("Error while copying mailing for workflow", e);
             return 0;
@@ -1280,14 +1289,14 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
     }
 
     @Override
-    public void bulkDelete(Set<Integer> workflowIds, @VelocityCheck int companyId) {
+    public void bulkDelete(Set<Integer> workflowIds, int companyId) {
         for (int workflowId : workflowIds) {
             deleteWorkflow(workflowId, companyId);
         }
     }
 
     @Override
-    public Map<Integer, ChangingWorkflowStatusResult> bulkDeactivate(Set<Integer> workflowIds, @VelocityCheck int companyId) throws Exception {
+    public Map<Integer, ChangingWorkflowStatusResult> bulkDeactivate(Set<Integer> workflowIds, int companyId) throws Exception {
         final Map<Integer, ChangingWorkflowStatusResult> results = new HashMap<>();
         for (int workflowId : workflowIds) {
             Workflow workflow = getWorkflow(workflowId, companyId);
@@ -1313,7 +1322,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
     }
 
 	@Override
-	public ChangingWorkflowStatusResult changeWorkflowStatus(int workflowId, @VelocityCheck int companyId, WorkflowStatus newStatus) throws Exception {
+	public ChangingWorkflowStatusResult changeWorkflowStatus(int workflowId, int companyId, WorkflowStatus newStatus) throws Exception {
         Workflow workflow = getWorkflow(workflowId, companyId);
         return changeWorkflowStatus(workflow, newStatus);
 	}
@@ -1332,7 +1341,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
         // Retrieve active (scheduled/working/finished) auto-optimizations
         final List<ComOptimization> optimizations = optimizationService.listWorkflowManaged(workflowId, companyId)
                 .stream()
-                .filter(optimization -> optimization.getStatus() != ComOptimization.STATUS_NOT_STARTED)
+                .filter(optimization -> optimization.getStatus() != AutoOptimizationStatus.NOT_STARTED.getCode())
                 .collect(toList());
 
         switch (newStatus) {
@@ -1353,7 +1362,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
                         List<Integer> mailingsToCheck = new ArrayList<>();
 
                         for (ComOptimization optimization : optimizations) {
-                            if (optimization.getStatus() == ComOptimization.STATUS_FINISHED) {
+                            if (optimization.getStatus() == AutoOptimizationStatus.FINISHED.getCode()) {
                                 mailingsToCheck.add(optimization.getFinalMailingId());
                             } else {
                                 return ChangingWorkflowStatusResult.notChanged();
@@ -1405,7 +1414,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
                 // Build relations map connecting AO-test mailings and AO-final mailings
                 final Map<Integer, Integer> aoTestToFinalMailingMap = new HashMap<>();
                 for (ComOptimization optimization : optimizations) {
-                    if (optimization.getStatus() == ComOptimization.STATUS_FINISHED) {
+                    if (optimization.getStatus() == AutoOptimizationStatus.FINISHED.getCode()) {
                         Integer finalMailingId = optimization.getFinalMailingId();
                         for (Integer testMailingId : optimization.getTestmailingIDs()) {
                         	aoTestToFinalMailingMap.put(testMailingId, finalMailingId);
@@ -1486,7 +1495,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
             for (ComOptimization optimization : optimizations) {
                 // Un-schedule not finished optimizations, delete finished ones
                 try {
-                    if (optimization.getStatus() == ComOptimization.STATUS_FINISHED) {
+                    if (optimization.getStatus() == AutoOptimizationStatus.FINISHED.getCode()) {
                         optimizationService.delete(optimization);
                     } else {
                         optimizationCommonService.unscheduleOptimization(optimization, isTestRun);
@@ -1574,7 +1583,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
      * @param newStatus a workflow status.
      * @param icons icons of a workflow to generate reminders for.
      */
-    private void updateReminders(@VelocityCheck int companyId, int workflowId, WorkflowStatus newStatus, List<WorkflowIcon> icons) {
+    private void updateReminders(int companyId, int workflowId, WorkflowStatus newStatus, List<WorkflowIcon> icons) {
         AdminTimezoneSupplier adminTimezoneSupplier = new AdminTimezoneCachingSupplier(companyId);
         List<WorkflowReminder> reminders;
 
@@ -1874,17 +1883,17 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
 	}
 
     @Override
-    public List<Workflow> getWorkflowsByIds(Set<Integer> workflowIds, @VelocityCheck int companyId) {
+    public List<Workflow> getWorkflowsByIds(Set<Integer> workflowIds, int companyId) {
         return workflowDao.getWorkflows(workflowIds, companyId);
     }
 
     @Override
-    public List<Integer> getWorkflowIdsByAssignedMailingId(@VelocityCheck int companyId, int mailingId) {
+    public List<Integer> getWorkflowIdsByAssignedMailingId(int companyId, int mailingId) {
         return workflowDao.getWorkflowIdsByAssignedMailingId(companyId, mailingId);
     }
 
     @Override
-    public boolean hasDeletedMailings(List<WorkflowIcon> icons, @VelocityCheck int companyId) {
+    public boolean hasDeletedMailings(List<WorkflowIcon> icons, int companyId) {
         boolean hasDeleted = false;
 
         for (WorkflowIcon icon : icons) {
@@ -1917,7 +1926,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
     }
 
     @Override
-    public boolean isAdditionalRuleDefined(@VelocityCheck int companyId, int mailingId, int workflowId) {
+    public boolean isAdditionalRuleDefined(int companyId, int mailingId, int workflowId) {
         boolean result = false;
         Workflow workflow = getWorkflow(workflowId, companyId);
         List<WorkflowIcon> icons = workflow.getWorkflowIcons();
@@ -1967,7 +1976,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
     }
 
     @Override
-    public ComWorkflowReaction getWorkflowReaction(int workflowId, @VelocityCheck int companyId) {
+    public ComWorkflowReaction getWorkflowReaction(int workflowId, int companyId) {
         int reactionId = reactionDao.getReactionId(workflowId, companyId);
         if (reactionId > 0) {
             return reactionDao.getReaction(reactionId, companyId);
@@ -2012,17 +2021,17 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
     }
 
     @Override
-    public List<Workflow> getActiveWorkflowsTrackingProfileField(String column, @VelocityCheck int companyId) {
+    public List<Workflow> getActiveWorkflowsTrackingProfileField(String column, int companyId) {
         return workflowDao.getActiveWorkflowsTrackingProfileField(column, companyId);
     }
 
     @Override
-    public List<Workflow> getActiveWorkflowsDependentOnProfileField(String column, @VelocityCheck int companyId) {
+    public List<Workflow> getActiveWorkflowsDependentOnProfileField(String column, int companyId) {
         return workflowDao.getActiveWorkflowsUsingProfileField(column, companyId);
     }
 
     @Override
-    public List<Workflow> getActiveWorkflowsDrivenByProfileChange(@VelocityCheck int companyId, int mailingListId, String column, List<WorkflowRule> rules) {
+    public List<Workflow> getActiveWorkflowsDrivenByProfileChange(int companyId, int mailingListId, String column, List<WorkflowRule> rules) {
         boolean isUseRules = CollectionUtils.isNotEmpty(rules);
 
         List<Workflow> workflows = workflowDao.getActiveWorkflowsDrivenByProfileChange(companyId, mailingListId, column, isUseRules);
@@ -2102,7 +2111,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
     }
 
     @Override
-    public void setTargetConditionDependency(ComTarget target, @VelocityCheck int companyId, int workflowId) {
+    public void setTargetConditionDependency(ComTarget target, int companyId, int workflowId) {
         int targetId = target.getId();
         if(targetId > 0) {
             workflowDao.addDependency(companyId, workflowId,
@@ -2111,13 +2120,13 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
     }
 
     @Override
-    public void deleteWorkflowTargetConditions(@VelocityCheck int companyId, int workflowId) {
+    public void deleteWorkflowTargetConditions(int companyId, int workflowId) {
 		targetDao.deleteWorkflowTargetConditions(companyId, workflowId);
 		workflowDao.deleteTargetConditionDependencies(companyId, workflowId);
 	}
 
     @Override
-    public List<Workflow> getDependentWorkflowOnMailing(@VelocityCheck int companyId, int mailingId) {
+    public List<Workflow> getDependentWorkflowOnMailing(int companyId, int mailingId) {
         final Collection<WorkflowDependency> dependencies =
                 Arrays.asList(MAILING_DELIVERY.forId(mailingId), MAILING_LINK.forId(mailingId), MAILING_REFERENCE.forId(mailingId));
         return workflowDao.getDependentWorkflows(companyId, dependencies, false);
@@ -2317,7 +2326,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
         }
     }
 
-    private boolean deactivateMailing(WorkflowMailingAware icon, boolean testing, @VelocityCheck int companyId) {
+    private boolean deactivateMailing(WorkflowMailingAware icon, boolean testing, int companyId) {
         int mailingId = WorkflowUtils.getMailingId(icon);
         boolean deactivated = false;
 
@@ -2325,7 +2334,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
             switch (WorkflowIconType.fromId(icon.getType(), false)) {
                 case MAILING:
                 case FOLLOWUP_MAILING:
-                    mailingSendService.deactivateMailing(mailingId, companyId);
+                    deactivateMailing(mailingId, companyId);
 
                     // Leave status "test" for mailing if that was the test run.
                     if (!testing) {
@@ -2335,7 +2344,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
 
                 case ACTION_BASED_MAILING:
                 case DATE_BASED_MAILING:
-                    mailingSendService.deactivateMailing(mailingId, companyId);
+                    deactivateMailing(mailingId, companyId);
 
                     // Leave status "test" for mailing if that was the test run.
                     if (!testing) {
@@ -2384,9 +2393,14 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
         if (autoExportService != null) {
             AutoExport autoExport = autoExportService.getAutoExport(icon.getImportexportId(), companyId);
             if (autoExport.isDeactivateByCampaign()) {
-                autoExportService.deactivateAutoExport(companyId, icon.getImportexportId());
+                autoExportService.changeAutoExportActiveStatus(icon.getImportexportId(), companyId, false);
             }
         }
+    }
+
+    private void deactivateMailing(int mailingId, int companyId) {
+        Mailing mailing = mailingDao.getMailing(mailingId, companyId);
+        maildropStatusDao.cleanup(mailing.getMaildropStatus());
     }
 
     @Required
@@ -2439,11 +2453,6 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
     }
 
     @Required
-	public void setMailingSendService(ComMailingSendService mailingSendService) {
-		this.mailingSendService = mailingSendService;
-	}
-
-    @Required
 	public void setReactionDao(ComWorkflowReactionDao reactionDao) {
 		this.reactionDao = reactionDao;
 	}
@@ -2459,6 +2468,11 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
 
     public void setAutoExportService(AutoExportService autoExportService) {
         this.autoExportService = autoExportService;
+    }
+
+    @Required
+    public void setMaildropStatusDao(MaildropStatusDao maildropStatusDao) {
+        this.maildropStatusDao = maildropStatusDao;
     }
 
     @Required
@@ -2494,6 +2508,11 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
     @Required
     public void setWorkflowDataParser(ComWorkflowDataParser workflowDataParser) {
         this.workflowDataParser = workflowDataParser;
+    }
+
+    @Required
+    public void setMailingService(MailingService mailingService) {
+        this.mailingService = mailingService;
     }
 
     @Required
@@ -2736,7 +2755,7 @@ public class ComWorkflowServiceImpl implements ComWorkflowService {
         private Map<Integer, Mailing> mailingMap = new HashMap<>();
         private Map<Integer, AutoImport> autoImportMap = new HashMap<>();
 
-        public CachingEntitiesSupplier(@VelocityCheck int companyId) {
+        public CachingEntitiesSupplier(int companyId) {
             this.companyId = companyId;
         }
 

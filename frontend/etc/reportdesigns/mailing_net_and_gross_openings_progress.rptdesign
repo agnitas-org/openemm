@@ -8124,7 +8124,7 @@ function beforeDrawAxisLabel(axis, label, icsc) {
 
 function beforeDrawSeries(series, isr, icsc) {
 	var reportContext = icsc.getExternalContext().getObject();
-	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+	if(series != null &amp;&amp; reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
 		series.getLabel().getCaption().getColor().set(255, 255, 255);
 	}
 }
@@ -16808,7 +16808,7 @@ function beforeDrawAxisLabel(axis, label, icsc) {
 
 function beforeDrawSeries(series, isr, icsc) {
 	var reportContext = icsc.getExternalContext().getObject();
-	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+	if(series != null &amp;&amp; reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
 		series.getLabel().getCaption().getColor().set(255, 255, 255);
 	}
 }
@@ -25532,7 +25532,7 @@ function beforeDrawAxisLabel(axis, label, icsc) {
 
 function beforeDrawSeries(series, isr, icsc) {
 	var reportContext = icsc.getExternalContext().getObject();
-	if(reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
+	if(series != null &amp;&amp; reportContext.getGlobalVariable(&quot;isDarkmode&quot;) == true){
 		series.getLabel().getCaption().getColor().set(255, 255, 255);
 	}
 }

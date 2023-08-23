@@ -10,7 +10,15 @@
 
 package com.agnitas.web;
 
-import jakarta.servlet.http.HttpServletRequest;
+import java.util.ArrayList;
+import java.util.Hashtable;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.Vector;
+
 import org.agnitas.beans.ImportStatus;
 import org.agnitas.service.ImportWizardHelper;
 import org.agnitas.util.CsvColInfo;
@@ -19,17 +27,12 @@ import org.agnitas.util.importvalues.ImportMode;
 import org.agnitas.web.forms.StrutsFormBase;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionMapping;
+import org.apache.struts.action.ActionMessage;
 import org.apache.struts.upload.FormFile;
 
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 
-import java.util.ArrayList;
-import java.util.Hashtable;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.Vector;
+import jakarta.servlet.http.HttpServletRequest;
 
 /**
  * Classic Import
@@ -241,26 +244,22 @@ public class ComImportWizardForm extends StrutsFormBase {
         importWizardHelper.setDownloadName(downloadName);
     }
 
-    public LinkedList<String> getDbInsertStatusMessages() {
-        return importWizardHelper.getDbInsertStatusMessages();
-    }
-
     /**
      * Getter for jsp page for displaying status messages (we need to give the copy of list to avoid concurrent
      * modification problem)
      *
-     * @return copy of dbInsertStatusMessages list
+     * @return copy of dbInsertStatusMessagesAndParameters list, to avoid concurrent list changes
      */
-    public LinkedList<String> getDbInsertStatusMessagesCopy() {
-        return new LinkedList<>(importWizardHelper.getDbInsertStatusMessages());
+    public List<ActionMessage> getDbInsertStatusMessagesAndParameters() {
+        return importWizardHelper.getDbInsertStatusMessagesAndParameters();
     }
 
-    public void setDbInsertStatusMessages(LinkedList<String> dbInsertStatusMessages) {
-        importWizardHelper.setDbInsertStatusMessages(dbInsertStatusMessages);
+    public void clearDbInsertStatusMessagesAndParameters() {
+        importWizardHelper.clearDbInsertStatusMessagesAndParameters();
     }
 
-    public void addDbInsertStatusMessage(String message) {
-        importWizardHelper.getDbInsertStatusMessages().add(message);
+    public void addDbInsertStatusMessageAndParameters(String messageKey, Object... additionalParameters) {
+        importWizardHelper.addDbInsertStatusMessageAndParameters(messageKey, additionalParameters);
     }
 
     public Map<MediaTypes, Map<String, String>> getResultMailingListAdded() {

@@ -216,7 +216,7 @@
                                size="${form.numberOfRows}"
                                excludedParams="*">
 
-                    <%--@elvariable id="useractivitylog" type="org.agnitas.emm.core.useractivitylog.LoggedUserAction"--%>
+                    <%--@elvariable id="useractivitylog" type="com.agnitas.emm.core.useractivitylog.dao.LoggedUserAction"--%>
 
                     <display:setProperty name="basic.empty.showtable" value="false"/>
                     <display:setProperty name="basic.msg.empty_list_row" value=" "/>

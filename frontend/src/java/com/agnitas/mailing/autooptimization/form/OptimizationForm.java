@@ -13,7 +13,6 @@ package com.agnitas.mailing.autooptimization.form;
 import com.agnitas.emm.core.workflow.beans.WorkflowDecision;
 import com.agnitas.mailing.autooptimization.beans.ComOptimization;
 import com.agnitas.mailing.autooptimization.beans.impl.ComOptimizationImpl;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.HtmlUtils;
 
 public class OptimizationForm {
@@ -63,7 +62,7 @@ public class OptimizationForm {
         return optimization.getCompanyID();
     }
 
-    public void setCompanyID(@VelocityCheck int companyID) {
+    public void setCompanyID(int companyID) {
         optimization.setCompanyID(companyID);
     }
 

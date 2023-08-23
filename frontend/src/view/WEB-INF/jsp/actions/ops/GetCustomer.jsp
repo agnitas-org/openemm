@@ -6,12 +6,14 @@
         <div class="form-group">
             <div class="col-sm-offset-4 col-sm-8">
                 <div class="checkbox">
-                    <label>
+                    <label class="toggle">
                         {{ if (loadAlways) { }}
                             <input type="checkbox" name="modules[].loadAlways" id="module_{{- index}}.loadAlways" checked="ckecked"/>
                         {{ } else { }}
                             <input type="checkbox" name="modules[].loadAlways" id="module_{{- index}}.loadAlways" />
                         {{ } }}
+
+						<div class="toggle-control"></div><%-- Use separate closing tag. Otherwise the layout will break. (Why? I don't know...) --%>
 
                         <mvc:message code="action.getcustomer.loadalways"/>
                     </label>

@@ -6,13 +6,13 @@
 /* Sample
 @font-face {
     font-family: "MyCustomFont";
-    src: url( ../assets/fonts/MyCustomFont.ttf );
-    src: local("My Custom Font"), url("../assets/fonts/MyCustomFont.ttf") format("truetype");
+    src: url( assets/fonts/MyCustomFont.ttf );
+    src: local("My Custom Font"), url("assets/fonts/MyCustomFont.ttf") format("truetype");
 }
 */
 
 @font-face {
     font-family: "Helvetica";
-    src: url( ../../../../assets/fonts/Helvetica.otf );
-    src: local("Helvetica"), url("../../../../assets/fonts/Helvetica.otf") format("opentype");
+    src: url( assets/fonts/Helvetica.otf );
+    src: local("Helvetica"), url("assets/fonts/Helvetica.otf") format("opentype");
 }

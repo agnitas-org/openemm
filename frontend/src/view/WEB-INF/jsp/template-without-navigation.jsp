@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ page import="org.agnitas.beans.EmmLayoutBase" %>
+<%@ page import="com.agnitas.beans.EmmLayoutBase" %>
 <%@ taglib prefix="tiles" uri="http://struts.apache.org/tags-tiles" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>

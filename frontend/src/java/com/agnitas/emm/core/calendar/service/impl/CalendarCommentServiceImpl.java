@@ -22,7 +22,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
 import org.apache.commons.collections4.CollectionUtils;
@@ -154,7 +153,7 @@ public class CalendarCommentServiceImpl implements CalendarCommentService {
     }
 
     @Override
-    public boolean removeComment(int commentId, @VelocityCheck int companyId) {
+    public boolean removeComment(int commentId, int companyId) {
         return calendarCommentDao.deleteComment(commentId, companyId);
     }
 

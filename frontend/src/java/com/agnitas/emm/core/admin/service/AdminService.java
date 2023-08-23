@@ -18,7 +18,7 @@ import java.util.Optional;
 
 import org.agnitas.beans.AdminEntry;
 import org.agnitas.beans.AdminGroup;
-import org.agnitas.beans.EmmLayoutBase;
+import com.agnitas.beans.EmmLayoutBase;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.util.Tuple;
 
@@ -44,8 +44,6 @@ public interface AdminService {
      * @param password password of supervisor
      *
      * @return {@link Admin} for given user name
-     * @throws SupervisorException
-     * @throws AdminException
      */
 	Admin getAdminByNameForSupervisor(String username, String supervisorName, String password) throws AdminException, SupervisorException;
 	Optional<Admin> findAdminByCredentials(final String username, final String password);
@@ -55,6 +53,8 @@ public interface AdminService {
 	Supervisor getSupervisor(String supervisorName);
 
     List<Tuple<Integer, String>> getAdminsUsernames(int companyID);
+    
+    List<Map<String, Object>> getAdminsLight(int companyID, boolean restful);
 
     Map<Integer, String> getAdminsNamesMap(int companyId);
 
@@ -149,6 +149,8 @@ public interface AdminService {
 	
 	int getPasswordChangedMailingId(String language);
 	
+	int getSecurityCodeMailingId(String language);
+	
 	PaginatedListImpl<AdminEntry> getRestfulUserList(
             int companyID,
             String searchFirstName,
@@ -174,5 +176,5 @@ public interface AdminService {
 	int getNumberOfRestfulUsers(int companyID);
 	
 	int getNumberOfGuiAdmins(int companyID);
-	List<Map<String, Object>> getAdminsLight(int companyID, boolean restful);
+	void deleteAdminPermissionsForCompany(int companyID);
 }

@@ -10,7 +10,6 @@
 
 package com.agnitas.util.preview;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.beans.Admin;
 
@@ -37,11 +36,11 @@ public interface PreviewImageService {
      * @param divChildId an identifier of the div child to generate a thumbnail for.
      * @param async      whether ({@code true}) or not ({@code false}) run in separate thread.
      */
-    default void generateThumbnailForDivChild(@VelocityCheck int companyId, String sessionId, int divChildId, boolean async) {
+    default void generateThumbnailForDivChild(Admin admin, String sessionId, int divChildId, boolean async) {
         //default implementation
     }
     
-    default void generateDivContainerThumbnailsForTemplate(@VelocityCheck int companyId, String sessionId, int templateId, boolean updateExisting, boolean async) {
+    default void generateDivContainerThumbnailsForTemplate(Admin admin, String sessionId, int templateId, boolean updateExisting, boolean async) {
         //default implementation
     }
         
@@ -49,7 +48,7 @@ public interface PreviewImageService {
         //default implementation
     }
     
-    default void generateThumbnailForGridTemplate(@VelocityCheck int companyId, String sessionId, int templateId, boolean async) {
+    default void generateThumbnailForGridTemplate(Admin admin, String sessionId, int templateId, boolean async, int companyId) {
         //default implementation
     }
 }

@@ -12,7 +12,7 @@
 <%--@elvariable id="adminTimeZone" type="java.lang.String"--%>
 <%--@elvariable id="adminDateTimeFormat" type="java.lang.String"--%>
 <%--@elvariable id="adminTimeFormat" type="java.lang.String"--%>
-<%--@elvariable id="mailtrackingEnabled" type="java.lang.Boolean"--%>
+<%--@elvariable id="copyCancelledMailingEnabled" type="java.lang.Boolean"--%>
 <%--@elvariable id="isTransmissionRunning" type="java.lang.Boolean"--%>
 <%--@elvariable id="targetGroupsNames" type="java.util.List<java.lang.String>"--%>
 
@@ -165,73 +165,71 @@
         </a>
     </c:if>
 
-	<emm:ShowWhenFeatureEnabled feature="AUTOMATION">
-	    <emm:ShowByPermission token="mailing.resume.world">
-	        <c:if test="${not empty form.deliveryStat and form.deliveryStat.stopped}">
-	            <c:choose>
-	                <c:when test="${form.deliveryStat.resumable}">
-	                    <c:url var="confirmResumeLink" value="/mailing/send/${form.mailingID}/confirm-resume.action"/>
-	                    <a href="${confirmResumeLink}" class="btn btn-regular btn-primary vspace-top-10" data-confirm="">
-	                        <i class="icon icon-paper-plane"></i>
-	                        <c:choose>
-	                            <c:when test="${deliveryStatus == 3 or deliveryStatus == 4 or deliveryStatus == 8}">
-	                                <span class="text"><mvc:message code="mailing.ResumeDelivery"/></span>
-	                                <c:set var="SHOW_DELIVERY_INFO" value="true" />
-	                            </c:when>
-	                            <c:otherwise>
-	                                <span class="text"><mvc:message code="mailing.ResumeGeneration"/></span>
-	                            </c:otherwise>
-	                        </c:choose>
-	                    </a>
-	                </c:when>
-	                <c:otherwise>
-	                    <span data-tooltip="<mvc:message code="error.mailing.delivery.resuming.impossible" arguments="48"/>">
-	                        <a href="#" class="btn btn-regular btn-primary vspace-top-10 disabled">
-	                        <i class="icon icon-paper-plane"></i>
-	                        <span class="text"><mvc:message code="mailing.ResumeDelivery"/></span>
-	                        </a>
-	                    </span>
-	                </c:otherwise>
-	            </c:choose>
-	
-	            <c:if test="${mailtrackingEnabled}">
-	                <c:url var="resumeByCopyLink" value="/mailing/send/${form.mailingID}/confirm-resume-by-copy.action"/>
-	                <a href="${resumeByCopyLink}" class="btn btn-regular btn-warning vspace-top-10" data-confirm="">
-	                    <i class="icon icon-copy"></i>
-	                    <c:choose>
-	                        <c:when test="${deliveryStatus == 3 or deliveryStatus == 4}">
-	                            <span class="text"><mvc:message code="mailing.ResumeDeliveryByCopy"/></span>
-	                            <c:set var="SHOW_DELIVERY_INFO" value="true" />
-	                        </c:when>
-	                        <c:otherwise>
-	                            <span class="text"><mvc:message code="mailing.ResumeGenerationByCopy"/></span>
-	                        </c:otherwise>
-	                    </c:choose>
-	                </a>
-	            </c:if>
-	
-	            <c:if test="${SHOW_DELIVERY_INFO and mailtrackingEnabled}">
-	                <div class="tile-content-forms form-vertical">
-	                    <div class="form-group">
-	                        <div class="notification notification-info">
-	                            <div class="notification-header">
-	                                <p class="headline">
-	                                    <i class="icon icon-state-info"></i>
-	                                    <span class="text"><mvc:message code="Info" /></span>
-	                                </p>
-	                            </div>
-	                            <div class="notification-content">
-	                                <p>
-	                                    <mvc:message code="mailing.ResumeDelivery.info" />
-	                                </p>
-	                            </div>
-	                        </div>
-	                    </div>
-	                </div>
-	            </c:if>
-	        </c:if>
-	    </emm:ShowByPermission>
-	</emm:ShowWhenFeatureEnabled>
+    <emm:ShowByPermission token="mailing.resume.world">
+        <c:if test="${not empty form.deliveryStat and form.deliveryStat.stopped}">
+            <c:choose>
+                <c:when test="${form.deliveryStat.resumable}">
+                    <c:url var="confirmResumeLink" value="/mailing/send/${form.mailingID}/confirm-resume.action"/>
+                    <a href="${confirmResumeLink}" class="btn btn-regular btn-primary vspace-top-10" data-confirm="">
+                        <i class="icon icon-paper-plane"></i>
+                        <c:choose>
+                            <c:when test="${deliveryStatus == 3 or deliveryStatus == 4 or deliveryStatus == 8}">
+                                <span class="text"><mvc:message code="mailing.ResumeDelivery"/></span>
+                                <c:set var="SHOW_DELIVERY_INFO" value="true" />
+                            </c:when>
+                            <c:otherwise>
+                                <span class="text"><mvc:message code="mailing.ResumeGeneration"/></span>
+                            </c:otherwise>
+                        </c:choose>
+                    </a>
+                </c:when>
+                <c:otherwise>
+                    <span data-tooltip="<mvc:message code="error.mailing.delivery.resuming.impossible" arguments="48"/>">
+                        <a href="#" class="btn btn-regular btn-primary vspace-top-10 disabled">
+                        <i class="icon icon-paper-plane"></i>
+                        <span class="text"><mvc:message code="mailing.ResumeDelivery"/></span>
+                        </a>
+                    </span>
+                </c:otherwise>
+            </c:choose>
+
+            <c:if test="${copyCancelledMailingEnabled}">
+                <c:url var="resumeByCopyLink" value="/mailing/send/${form.mailingID}/confirm-resume-by-copy.action"/>
+                <a href="${resumeByCopyLink}" class="btn btn-regular btn-warning vspace-top-10" data-confirm="">
+                    <i class="icon icon-copy"></i>
+                    <c:choose>
+                        <c:when test="${deliveryStatus == 3 or deliveryStatus == 4}">
+                            <span class="text"><mvc:message code="mailing.ResumeDeliveryByCopy"/></span>
+                            <c:set var="SHOW_DELIVERY_INFO" value="true" />
+                        </c:when>
+                        <c:otherwise>
+                            <span class="text"><mvc:message code="mailing.ResumeGenerationByCopy"/></span>
+                        </c:otherwise>
+                    </c:choose>
+                </a>
+            </c:if>
+
+            <c:if test="${SHOW_DELIVERY_INFO and copyCancelledMailingEnabled}">
+                <div class="tile-content-forms form-vertical">
+                    <div class="form-group">
+                        <div class="notification notification-info">
+                            <div class="notification-header">
+                                <p class="headline">
+                                    <i class="icon icon-state-info"></i>
+                                    <span class="text"><mvc:message code="Info" /></span>
+                                </p>
+                            </div>
+                            <div class="notification-content">
+                                <p>
+                                    <mvc:message code="mailing.ResumeDelivery.info" />
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </c:if>
+        </c:if>
+    </emm:ShowByPermission>
 
     <c:if test="${not empty isPostMailing and isPostMailing eq 'true'}">
         <div class="tile-content-forms form-vertical">

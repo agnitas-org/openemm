@@ -13,7 +13,6 @@ package com.agnitas.emm.core.calendar.service;
 import java.time.LocalDate;
 import java.util.List;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.calendar.beans.ComCalendarComment;
@@ -29,5 +28,5 @@ public interface CalendarCommentService {
 
     int saveComment(ComCalendarComment comment);
 
-    boolean removeComment(int commentId, @VelocityCheck int companyId);
+    boolean removeComment(int commentId, int companyId);
 }

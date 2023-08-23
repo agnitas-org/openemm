@@ -13,7 +13,6 @@ package com.agnitas.beans.impl;
 import java.util.Date;
 import java.util.regex.Matcher;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.commons.lang3.StringUtils;
 
 import com.agnitas.beans.ListSplit;
@@ -26,7 +25,7 @@ public class TargetLightImpl implements TargetLight {
 	
 	/** Company ID of target group. */
 	protected int companyID;
-	
+
 	/** ID of target group. */
 	protected int id;
 	
@@ -60,6 +59,8 @@ public class TargetLightImpl implements TargetLight {
 	private boolean accessLimitation;
 
 	private boolean favorite;
+
+	private int savingAdminId;
 	
 	@Override
 	public int getCompanyID() {
@@ -67,7 +68,7 @@ public class TargetLightImpl implements TargetLight {
 	}
 	
 	@Override
-	public void setCompanyID(@VelocityCheck int companyID) {
+	public void setCompanyID(int companyID) {
 		this.companyID = companyID;
 	}
 	
@@ -287,5 +288,15 @@ public class TargetLightImpl implements TargetLight {
     @Override
     public void setFavorite(boolean favorite) {
         this.favorite = favorite;
+    }
+
+    @Override
+    public int getSavingAdminId() {
+        return savingAdminId;
+    }
+
+    @Override
+    public void setSavingAdminId(int savingAdminId) {
+        this.savingAdminId = savingAdminId;
     }
 }

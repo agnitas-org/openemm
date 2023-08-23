@@ -28,6 +28,7 @@ import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.mailing.beans.LightweightMailing;
 import org.agnitas.emm.core.recipient.service.RecipientService;
+import org.agnitas.emm.core.velocity.Constants;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.PunycodeCodec;
 import org.agnitas.util.TimeoutLRUMap;
@@ -277,7 +278,7 @@ public class RedirectServlet extends HttpServlet {
 					
 					case TrackableLink.DEEPTRACKING_ONLY_COOKIE:
 						if (deepTrackingUID != null) {
-							setDeepTrackingCookie(response, getConfigService().getIntegerValue(ConfigValue.CookieExpire, company.getId()), trackableLink.getCompanyID(), deepTrackingSessionID, deepTrackingUID);
+							setDeepTrackingCookie(response, getConfigService().getIntegerValue(ConfigValue.DeepTrackingCookieExpire, company.getId()), trackableLink.getCompanyID(), deepTrackingSessionID, deepTrackingUID);
 						}
 						break;
 		
@@ -325,38 +326,45 @@ public class RedirectServlet extends HttpServlet {
 		}
 	}
 
-	private final void executeLinkActions(final ComExtensibleUID uid, final int deviceID, final DeviceClass deviceClass, final TrackableLink trackableLink, final HttpServletRequest request) throws Exception {
+	private void executeLinkActions(final ComExtensibleUID uid, final int deviceID, final DeviceClass deviceClass, final TrackableLink trackableLink, final HttpServletRequest request) throws Exception {
 		final int companyID = uid.getCompanyID();
         final int mailingID = uid.getMailingID();
-        final int customerID = uid.getCustomerID();
-        
+
         // Execute the mailing click action
         final int clickActionID = getMailingDao().getMailingClickAction(mailingID, companyID);
-        executeLinkAction(clickActionID, deviceID, uid, companyID, customerID, mailingID, deviceClass, request);
+        executeLinkAction(clickActionID, deviceID, uid, deviceClass, request);
         
         final int linkActionID = trackableLink.getActionID();
-        executeLinkAction(linkActionID, deviceID, uid, companyID, customerID, mailingID, deviceClass, request);
-	
+        executeLinkAction(linkActionID, deviceID, uid, deviceClass, request);
 	}
 	
-	private final void executeLinkAction(final int actionID, final int deviceID, final ComExtensibleUID uid, final int companyID, final int customerID, final int mailingID, final DeviceClass deviceClass, final HttpServletRequest request) throws Exception {
-		if (actionID != 0) {
-			// "_request" is the original unmodified request which might be needed (and used) somewhere else ...
-			final Map<String, String> tmpRequestParams = AgnUtils.getReqParameters(request);
-			tmpRequestParams.put("mobileDevice", String.valueOf(deviceClass == DeviceClass.MOBILE ? deviceID : 0)); // for mobile detection
-			
-			final EmmActionOperationErrors actionOperationErrors = new EmmActionOperationErrors();
-			
-			final CaseInsensitiveMap<String, Object> params = new CaseInsensitiveMap<>();
-			params.put("requestParameters", tmpRequestParams);
-			params.put("_request", request);
-			params.put("_uid", uid);
-			params.put("customerID", customerID);
-			params.put("mailingID", mailingID);
-			params.put("actionErrors", actionOperationErrors);
-			getEmmActionService().executeActions(actionID, companyID, params, actionOperationErrors);
+	private void executeLinkAction(int actionID, int deviceID, ComExtensibleUID uid, DeviceClass deviceClass, HttpServletRequest request) throws Exception {
+		if (actionID == 0) {
+			return;
 		}
-		
+
+		int companyID = uid.getCompanyID();
+		int customerID = uid.getCustomerID();
+
+		if (getEmmActionService().isAdvertising(actionID, companyID)
+				&& !getRecipientService().isRecipientTrackingAllowed(companyID, customerID)) {
+			return;
+		}
+
+		// "_request" is the original unmodified request which might be needed (and used) somewhere else ...
+		final Map<String, String> tmpRequestParams = AgnUtils.getReqParameters(request);
+		tmpRequestParams.put("mobileDevice", String.valueOf(deviceClass == DeviceClass.MOBILE ? deviceID : 0)); // for mobile detection
+
+		final EmmActionOperationErrors actionOperationErrors = new EmmActionOperationErrors();
+
+		final CaseInsensitiveMap<String, Object> params = new CaseInsensitiveMap<>();
+		params.put("requestParameters", tmpRequestParams);
+		params.put("_request", request);
+		params.put("_uid", uid);
+		params.put("customerID", customerID);
+		params.put("mailingID", uid.getMailingID());
+		params.put(Constants.ACTION_OPERATION_ERRORS_CONTEXT_NAME, actionOperationErrors);
+		getEmmActionService().executeActions(actionID, companyID, params, actionOperationErrors);
 	}
 	
 	// TODO Remove setting max-age? According to EMM-8086, the cookie is session-based. (-> max-age < 0)
@@ -367,9 +375,9 @@ public class RedirectServlet extends HttpServlet {
 		if (maximumAge != 0) {
 			// Persist cookie for given period of time
 			DeepTrackingCookieUtil.addTrackingCookie(response, maximumAge, companyID, deepTrackingSession, deepTrackingUID, sameSite);
-		} else if (getConfigService().getIntegerValue(ConfigValue.CookieExpire) != 0) {
+		} else if (getConfigService().getIntegerValue(ConfigValue.DeepTrackingCookieExpire) != 0) {
 			// Persist cookie for configured period of time
-			DeepTrackingCookieUtil.addTrackingCookie(response, getConfigService().getIntegerValue(ConfigValue.CookieExpire), companyID, deepTrackingSession, deepTrackingUID, sameSite);
+			DeepTrackingCookieUtil.addTrackingCookie(response, getConfigService().getIntegerValue(ConfigValue.DeepTrackingCookieExpire), companyID, deepTrackingSession, deepTrackingUID, sameSite);
 		} else {
 			// Do not persist cookie
 			DeepTrackingCookieUtil.addTrackingCookie(response, -1, companyID, deepTrackingSession, deepTrackingUID, sameSite);

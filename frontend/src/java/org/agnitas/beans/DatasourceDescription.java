@@ -13,7 +13,6 @@ package org.agnitas.beans;
 import java.util.Date;
 
 import org.agnitas.dao.SourceGroupType;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public interface DatasourceDescription {
     /**
@@ -28,7 +27,7 @@ public interface DatasourceDescription {
      *
      * @param id New value of property companyID.
      */
-    public void setCompanyID( @VelocityCheck int id);
+    public void setCompanyID( int id);
     
     /**
      * Setter for property sourcegroupID.

@@ -28,7 +28,7 @@ import org.agnitas.beans.CompaniesConstraints;
 import org.agnitas.dao.impl.BaseDaoImpl;
 import org.agnitas.dao.impl.mapper.IntegerRowMapper;
 import org.agnitas.dao.impl.mapper.StringRowMapper;
-import org.agnitas.emm.core.velocity.VelocityCheck;
+
 import org.agnitas.util.DbUtilities;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.PredicateUtils;
@@ -59,37 +59,37 @@ public class ComWorkflowDaoImpl extends BaseDaoImpl implements ComWorkflowDao {
     protected ComTargetService targetService;
 
     @Override
-    public boolean exists(int workflowId, @VelocityCheck int companyId) {
+    public boolean exists(int workflowId, int companyId) {
         String sqlGetCount = "SELECT COUNT(*) FROM workflow_tbl WHERE workflow_id = ? AND company_id = ?";
         return selectInt(logger, sqlGetCount, workflowId, companyId) > 0;
     }
 
 	@Override
-	public Workflow getWorkflow(int workflowId, @VelocityCheck int companyId) {
+	public Workflow getWorkflow(int workflowId, int companyId) {
         return selectObjectDefaultNull(logger, "SELECT * FROM workflow_tbl WHERE workflow_id = ? AND company_id = ?", new WorkflowRowMapper(), workflowId, companyId);
 	}
 
 	@Override
-    public String getSchema(int workflowId, @VelocityCheck int companyId) {
+    public String getSchema(int workflowId, int companyId) {
 	    String sqlGetSchema = "SELECT workflow_schema FROM workflow_tbl WHERE workflow_id = ? AND company_id = ?";
 	    return selectObjectDefaultNull(logger, sqlGetSchema, StringRowMapper.INSTANCE, workflowId, companyId);
     }
 
     @Override
-    public boolean setSchema(String schema, int workflowId, @VelocityCheck int companyId) {
+    public boolean setSchema(String schema, int workflowId, int companyId) {
         String sqlSetSchema = "UPDATE workflow_tbl SET workflow_schema = ? WHERE workflow_id = ? AND company_id = ?";
         return update(logger, sqlSetSchema, Objects.requireNonNull(schema, "schema == null"), workflowId, companyId) > 0;
     }
 
 	@Override
 	@DaoUpdateReturnValueCheck
-	public void deleteWorkflow(int workflowId, @VelocityCheck int companyId) {
+	public void deleteWorkflow(int workflowId, int companyId) {
 	    update(logger, "DELETE FROM workflow_tbl WHERE workflow_id = ? AND company_id = ?", workflowId, companyId);
 	}
 
     @Override
     @DaoUpdateReturnValueCheck
-    public void deleteWorkflow(@VelocityCheck int companyId) {
+    public void deleteWorkflow(int companyId) {
         update(logger, "DELETE FROM workflow_tbl WHERE company_id = ?", companyId);
     }
 
@@ -214,7 +214,7 @@ public class ComWorkflowDaoImpl extends BaseDaoImpl implements ComWorkflowDao {
 	}
 
     @Override
-    public void deleteDependencies(@VelocityCheck int companyId, int workflowId, boolean clearTargetConditions) {
+    public void deleteDependencies(int companyId, int workflowId, boolean clearTargetConditions) {
         if (companyId > 0 && workflowId > 0) {
             removeWorkflowLinkForMailings(companyId, workflowId);
             
@@ -223,15 +223,15 @@ public class ComWorkflowDaoImpl extends BaseDaoImpl implements ComWorkflowDao {
     
                 update(logger, sqlDeleteAll, companyId, workflowId);
             } else {
-                String sqlDeleteAll = "DELETE FROM workflow_dependency_tbl WHERE company_id = ? AND workflow_id = ? and type != ?";
+                String sqlDeleteAllWithoutTargetCondition = "DELETE FROM workflow_dependency_tbl WHERE company_id = ? AND workflow_id = ? and type != ?";
                 
-                update(logger, sqlDeleteAll, companyId, workflowId, WorkflowDependencyType.TARGET_GROUP_CONDITION.getId());
+                update(logger, sqlDeleteAllWithoutTargetCondition, companyId, workflowId, WorkflowDependencyType.TARGET_GROUP_CONDITION.getId());
             }
         }
     }
 
     @Override
-    public void deleteDependencies(@VelocityCheck int companyId) {
+    public void deleteDependencies(int companyId) {
         if (companyId > 0) {
             String sqlDeleteAll = "DELETE FROM workflow_dependency_tbl WHERE company_id = ?";
             update(logger, sqlDeleteAll, companyId);
@@ -245,7 +245,7 @@ public class ComWorkflowDaoImpl extends BaseDaoImpl implements ComWorkflowDao {
     }
 
     @Override
-    public void setDependencies(@VelocityCheck int companyId, int workflowId, Set<WorkflowDependency> dependencies, boolean clearTargetConditions) {
+    public void setDependencies(int companyId, int workflowId, Set<WorkflowDependency> dependencies, boolean clearTargetConditions) {
         String sqlInsertNew = "INSERT INTO workflow_dependency_tbl (company_id, workflow_id, type, entity_id, entity_name) VALUES (?, ?, ?, ?, ?)";
 
         if (companyId > 0 && workflowId > 0) {
@@ -301,7 +301,7 @@ public class ComWorkflowDaoImpl extends BaseDaoImpl implements ComWorkflowDao {
     }
 
     @Override
-    public void addDependency(@VelocityCheck int companyId, int workflowId, WorkflowDependency dependency) {
+    public void addDependency(int companyId, int workflowId, WorkflowDependency dependency) {
         if (companyId > 0 && workflowId > 0) {
             update(logger, "INSERT INTO workflow_dependency_tbl (company_id, workflow_id, type, entity_id, entity_name) VALUES (?, ?, ?, ?, ?)",
             	companyId, workflowId, dependency.getType().getId(), dependency.getEntityId(), dependency.getEntityName());
@@ -339,7 +339,7 @@ public class ComWorkflowDaoImpl extends BaseDaoImpl implements ComWorkflowDao {
 
     @Override
 	@DaoUpdateReturnValueCheck
-    public void changeWorkflowStatus(int workflowId, @VelocityCheck int companyId, WorkflowStatus newStatus) {
+    public void changeWorkflowStatus(int workflowId, int companyId, WorkflowStatus newStatus) {
         update(logger, "UPDATE workflow_tbl SET status = ? WHERE workflow_id = ? AND company_id = ?",
                 newStatus.getId(), workflowId, companyId);
     }
@@ -362,7 +362,7 @@ public class ComWorkflowDaoImpl extends BaseDaoImpl implements ComWorkflowDao {
 	}
 
     @Override
-    public List<Workflow> getWorkflows(Set<Integer> workflowIds, @VelocityCheck int companyId) {
+    public List<Workflow> getWorkflows(Set<Integer> workflowIds, int companyId) {
         if (workflowIds == null || workflowIds.size() <= 0) {
             return new LinkedList<>();
         }
@@ -372,7 +372,7 @@ public class ComWorkflowDaoImpl extends BaseDaoImpl implements ComWorkflowDao {
     }
 
     @Override
-    public List<Integer> getWorkflowIdsByAssignedMailingId(@VelocityCheck int companyId, int mailingId) {
+    public List<Integer> getWorkflowIdsByAssignedMailingId(int companyId, int mailingId) {
         if (companyId <= 0 || mailingId <= 0) {
             return Collections.emptyList();
         }
@@ -385,7 +385,7 @@ public class ComWorkflowDaoImpl extends BaseDaoImpl implements ComWorkflowDao {
     }
 
     @Override
-    public int countCustomers(@VelocityCheck int companyId, int mailinglistId, String targetSQL) {
+    public int countCustomers(int companyId, int mailinglistId, String targetSQL) {
         int result;
         StringBuilder query = new StringBuilder("SELECT COUNT(DISTINCT cust.customer_id) count FROM customer_" + companyId + "_tbl cust ");
         if (StringUtils.isBlank(targetSQL)) {
@@ -399,7 +399,7 @@ public class ComWorkflowDaoImpl extends BaseDaoImpl implements ComWorkflowDao {
     }
 
     @Override
-    public boolean validateDependency(@VelocityCheck int companyId, int workflowId, WorkflowDependency dependency, boolean strict) {
+    public boolean validateDependency(int companyId, int workflowId, WorkflowDependency dependency, boolean strict) {
         if (companyId <= 0 || dependency == null) {
             return false;
         }
@@ -442,12 +442,12 @@ public class ComWorkflowDaoImpl extends BaseDaoImpl implements ComWorkflowDao {
     }
 
     @Override
-    public List<Workflow> getDependentWorkflows(@VelocityCheck int companyId, WorkflowDependency dependency, boolean exceptInactive) {
+    public List<Workflow> getDependentWorkflows(int companyId, WorkflowDependency dependency, boolean exceptInactive) {
         return getDependentWorkflows(companyId, Collections.singletonList(dependency), exceptInactive);
     }
 
     @Override
-    public List<Workflow> getDependentWorkflows(@VelocityCheck int companyId, Collection<WorkflowDependency> dependencies, boolean exceptInactive) {
+    public List<Workflow> getDependentWorkflows(int companyId, Collection<WorkflowDependency> dependencies, boolean exceptInactive) {
         final Set<WorkflowDependency> filteredDependencies = new HashSet<>(CollectionUtils.emptyIfNull(dependencies));
         CollectionUtils.filter(filteredDependencies, PredicateUtils.notNullPredicate());
         if (companyId <= 0 || filteredDependencies.isEmpty()) {
@@ -497,12 +497,12 @@ public class ComWorkflowDaoImpl extends BaseDaoImpl implements ComWorkflowDao {
     }
 
     @Override
-    public List<Workflow> getActiveWorkflowsTrackingProfileField(String column, @VelocityCheck int companyId) {
+    public List<Workflow> getActiveWorkflowsTrackingProfileField(String column, int companyId) {
         return listActiveWorkflowsUsingDependencyName(column, companyId, WorkflowDependencyType.PROFILE_FIELD_HISTORY);
     }
 
     @Override
-    public List<Workflow> getActiveWorkflowsUsingProfileField(String column, @VelocityCheck int companyId) {
+    public List<Workflow> getActiveWorkflowsUsingProfileField(String column, int companyId) {
         return listActiveWorkflowsUsingDependencyName(column, companyId,
                 WorkflowDependencyType.PROFILE_FIELD, WorkflowDependencyType.PROFILE_FIELD_HISTORY);
     }
@@ -527,7 +527,7 @@ public class ComWorkflowDaoImpl extends BaseDaoImpl implements ComWorkflowDao {
     }
 
     @Override
-    public List<Workflow> getActiveWorkflowsDrivenByProfileChange(@VelocityCheck int companyId, int mailingListId, String column, boolean isUseRules) {
+    public List<Workflow> getActiveWorkflowsDrivenByProfileChange(int companyId, int mailingListId, String column, boolean isUseRules) {
         if (StringUtils.isBlank(column) || mailingListId <= 0 || companyId <= 0) {
             return Collections.emptyList();
         }

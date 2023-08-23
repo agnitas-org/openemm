@@ -15,15 +15,17 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.agnitas.dao.MaildropStatusDao;
 import org.agnitas.dao.impl.mapper.IntegerRowMapper;
 import org.agnitas.dao.impl.mapper.MaildropRowMapper;
-import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.agnitas.util.DateUtilities;
 import org.agnitas.util.importvalues.MailType;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.logging.log4j.LogManager;
@@ -42,14 +44,14 @@ public class MaildropStatusDaoImpl extends BaseDaoImpl implements MaildropStatus
 	static {
 		try {
 			origin = InetAddress.getLocalHost ().getCanonicalHostName ();
-		} catch (Exception e) {
+		} catch (@SuppressWarnings("unused") Exception e) {
 			origin = null;
 		}
 	}
 
 	@Override
 	@DaoUpdateReturnValueCheck
-	public boolean delete(@VelocityCheck int companyId, int id) {
+	public boolean delete(int companyId, int id) {
 		String sql = "DELETE FROM maildrop_status_tbl WHERE company_id = ? AND status_id = ?";
 		try {
 			return update(logger, sql, companyId, id) > 0;
@@ -224,44 +226,84 @@ public class MaildropStatusDaoImpl extends BaseDaoImpl implements MaildropStatus
 	}
 	
 	private int insertMaildropEntry(final MaildropEntry entry) {
+		int	overwriteTestRecipient = entry.getOverwriteTestRecipient();
+		
 		if (isOracleDB()) {
 			final int maildropStatusId = selectInt(logger, "SELECT maildrop_status_tbl_seq.NEXTVAL FROM DUAL");
-			
-			update(logger, "INSERT INTO maildrop_status_tbl (status_id, company_id, status_field, mailing_id, senddate, step, blocksize, gendate, genstatus, genchange, max_recipients, admin_test_target_id, optimize_mail_generation, origin) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-					maildropStatusId,
-					entry.getCompanyID(),
-					Character.toString(entry.getStatus()),
-					entry.getMailingID(),
-					entry.getSendDate(),
-					entry.getStepping(),
-					entry.getBlocksize(),
-					entry.getGenDate(),
-					entry.getGenStatus(),
-					entry.getGenChangeDate(),
-					entry.getMaxRecipients(),
-					entry.getAdminTestTargetID(),
-					entry.getMailGenerationOptimization(),
-			      		origin);
+
+			if (overwriteTestRecipient == 0) {
+				update(logger, "INSERT INTO maildrop_status_tbl (status_id, company_id, status_field, mailing_id, senddate, step, blocksize, gendate, genstatus, genchange, max_recipients, admin_test_target_id, optimize_mail_generation, origin) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+						maildropStatusId,
+						entry.getCompanyID(),
+						Character.toString(entry.getStatus()),
+						entry.getMailingID(),
+						entry.getSendDate(),
+						entry.getStepping(),
+						entry.getBlocksize(),
+						entry.getGenDate(),
+						entry.getGenStatus(),
+						entry.getGenChangeDate(),
+						entry.getMaxRecipients(),
+						entry.getAdminTestTargetID(),
+						entry.getMailGenerationOptimization(),
+				      		origin);
+			} else {
+				update(logger, "INSERT INTO maildrop_status_tbl (status_id, company_id, status_field, mailing_id, senddate, step, blocksize, gendate, genstatus, genchange, max_recipients, admin_test_target_id, optimize_mail_generation, overwrite_test_recipient, origin) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+						maildropStatusId,
+						entry.getCompanyID(),
+						Character.toString(entry.getStatus()),
+						entry.getMailingID(),
+						entry.getSendDate(),
+						entry.getStepping(),
+						entry.getBlocksize(),
+						entry.getGenDate(),
+						entry.getGenStatus(),
+						entry.getGenChangeDate(),
+						entry.getMaxRecipients(),
+						entry.getAdminTestTargetID(),
+						entry.getMailGenerationOptimization(),
+						overwriteTestRecipient,
+				      		origin);
+			}
 			
 			entry.setId(maildropStatusId);
 			
 			return maildropStatusId;
 		} else {
-			final int maildropStatusId = insertIntoAutoincrementMysqlTable(logger, "status_id", "INSERT INTO maildrop_status_tbl (company_id, status_field, mailing_id, senddate, step, blocksize, gendate, genstatus, genchange, max_recipients, admin_test_target_id, optimize_mail_generation, origin) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-					entry.getCompanyID(),
-					Character.toString(entry.getStatus()),
-					entry.getMailingID(),
-					entry.getSendDate(),
-					entry.getStepping(),
-					entry.getBlocksize(),
-					entry.getGenDate(),
-					entry.getGenStatus(),
-					entry.getGenChangeDate(),
-					entry.getMaxRecipients(),
-					entry.getAdminTestTargetID(),
-					entry.getMailGenerationOptimization(),
-					origin);
-
+			final int maildropStatusId;
+			
+			if (overwriteTestRecipient == 0) {
+				maildropStatusId = insertIntoAutoincrementMysqlTable(logger, "status_id", "INSERT INTO maildrop_status_tbl (company_id, status_field, mailing_id, senddate, step, blocksize, gendate, genstatus, genchange, max_recipients, admin_test_target_id, optimize_mail_generation, origin) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+										     entry.getCompanyID(),
+										     Character.toString(entry.getStatus()),
+										     entry.getMailingID(),
+										     entry.getSendDate(),
+										     entry.getStepping(),
+										     entry.getBlocksize(),
+										     entry.getGenDate(),
+										     entry.getGenStatus(),
+										     entry.getGenChangeDate(),
+										     entry.getMaxRecipients(),
+										     entry.getAdminTestTargetID(),
+										     entry.getMailGenerationOptimization(),
+										     origin);
+			} else {
+				maildropStatusId = insertIntoAutoincrementMysqlTable(logger, "status_id", "INSERT INTO maildrop_status_tbl (company_id, status_field, mailing_id, senddate, step, blocksize, gendate, genstatus, genchange, max_recipients, admin_test_target_id, optimize_mail_generation, overwrite_test_recipient, origin) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+										     entry.getCompanyID(),
+										     Character.toString(entry.getStatus()),
+										     entry.getMailingID(),
+										     entry.getSendDate(),
+										     entry.getStepping(),
+										     entry.getBlocksize(),
+										     entry.getGenDate(),
+										     entry.getGenStatus(),
+										     entry.getGenChangeDate(),
+										     entry.getMaxRecipients(),
+										     entry.getAdminTestTargetID(),
+										     entry.getMailGenerationOptimization(),
+										     overwriteTestRecipient,
+										     origin);
+			}
 			entry.setId(maildropStatusId);
 
 			return maildropStatusId;
@@ -386,7 +428,7 @@ public class MaildropStatusDaoImpl extends BaseDaoImpl implements MaildropStatus
 	}
 
 	@Override
-	public boolean setSelectedTestRecipients(@VelocityCheck int companyId, int maildropStatusId, boolean isSelected) {
+	public boolean setSelectedTestRecipients(int companyId, int maildropStatusId, boolean isSelected) {
 		String sqlSetSelected = "UPDATE maildrop_status_tbl SET selected_test_recipients = ? WHERE company_id = ? AND status_id = ? AND status_field IN (?, ?)";
 		String statusTest = Character.toString(MaildropStatus.TEST.getCode());
 		String statusAdmin = Character.toString(MaildropStatus.ADMIN.getCode());
@@ -472,5 +514,32 @@ public class MaildropStatusDaoImpl extends BaseDaoImpl implements MaildropStatus
 	public List<Integer> getMailingsSentBetween(int companyID, Date startDateIncluded, Date endDateExcluded) {
 		return select(logger, "SELECT mailing_id FROM maildrop_status_tbl WHERE company_id = ? AND senddate >= ? AND senddate < ? AND status_field NOT IN (?, ?)", IntegerRowMapper.INSTANCE,
 				companyID, startDateIncluded, endDateExcluded, MaildropStatus.ADMIN.getCodeString(), MaildropStatus.TEST.getCodeString());
+	}
+
+	@Override
+	public Map<Integer, List<Integer>> cleanupFailedTestDeliveries() {
+		List<Map<String, Object>> result = select(logger, "SELECT status_id, company_id, mailing_id FROM maildrop_status_tbl WHERE genstatus IN (?, ?) AND status_field IN (?, ?) AND genchange < ?",
+			MaildropGenerationStatus.NOW.getCode(), MaildropGenerationStatus.WORKING.getCode(),
+			MaildropStatus.ADMIN.getCodeString(), MaildropStatus.TEST.getCodeString(),
+			DateUtilities.getDateOfHoursAgo(1));
+		Map<Integer, List<Integer>> returnMap = new HashMap<>();
+		for (Map<String, Object> row : result) {
+			int statusID = ((Number) row.get("status_id")).intValue();
+			int companyID = ((Number) row.get("company_id")).intValue();
+			int mailingID = ((Number) row.get("mailing_id")).intValue();
+			if (!returnMap.containsKey(companyID)) {
+				returnMap.put(companyID, new ArrayList<>());
+			}
+			update(logger, "UPDATE maildrop_status_tbl SET genstatus = ? WHERE status_id = ?", MaildropGenerationStatus.MANUALLY_SOLVED.getCode(), statusID);
+			returnMap.get(companyID).add(mailingID);
+		}
+		return returnMap;
+	}
+
+	@Override
+	public void cleanupOldEntriesByMailingID(int mailingID, int maximumAgeInDays) {
+		final String deleteSql = "DELETE FROM maildrop_status_tbl WHERE mailing_id = ? AND senddate < ?";
+		Date dateLimit = DateUtilities.getDateOfDaysAgo(maximumAgeInDays);
+		update(logger, deleteSql, mailingID, dateLimit);
 	}
 }

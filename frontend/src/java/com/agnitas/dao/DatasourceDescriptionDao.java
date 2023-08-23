@@ -14,7 +14,6 @@ import java.util.List;
 
 import org.agnitas.beans.DatasourceDescription;
 import org.agnitas.dao.SourceGroupType;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.emm.core.datasource.bean.DataSource;
 
@@ -23,11 +22,13 @@ public interface DatasourceDescriptionDao {
 
     int save(DatasourceDescription dsDescription);
     
-    boolean delete(int dataSourceId, @VelocityCheck int companyId);
+    boolean delete(int dataSourceId, int companyId);
     
-    boolean deleteByCompanyID(@VelocityCheck int companyId);
+    boolean deleteByCompanyID(int companyId);
     
-    boolean resetByCompanyID(@VelocityCheck int companyId);
+    boolean resetByCompanyID(int companyId);
 
     List<DataSource> getDataSources(final int companyId);
+
+    DatasourceDescription getDatasourceDescription(int datasourceId, int companyId);
 }

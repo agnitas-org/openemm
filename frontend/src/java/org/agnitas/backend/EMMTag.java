@@ -145,7 +145,7 @@ public class EMMTag {
 	 */
 	public String mSelectType;
 	/**
-	 * Result of this tag, is set for each customer, if not fixed or global
+	 * Result of this tag, is set for each customer, if not global
 	 */
 	protected String mTagValue;
 	/**
@@ -156,10 +156,6 @@ public class EMMTag {
 	 * The tag type specification
 	 */
 	public int tagSpec;
-	/**
-	 * If this tag is fixed, e.g. can be inserted already here
-	 */
-	public boolean fixedValue;
 	/**
 	 * If this tag is global, but will be inserted during final mail creation
 	 */
@@ -327,7 +323,7 @@ public class EMMTag {
 
 				if (isPureData(mSelectString)) {
 					mTagValue = StringOps.unSqlString(mSelectString);
-					fixedValue = true;
+					globalValue = true;
 				}
 			}
 		}
@@ -412,7 +408,7 @@ public class EMMTag {
 		if (data.previewAnon) {
 			anon = mTagParameters.get("anon");
 			if (anon != null) {
-				fixedValue = true;
+				globalValue = true;
 				setTagValue(anon);
 			}
 		}
@@ -441,8 +437,6 @@ public class EMMTag {
 			case TI_IMAGE:
 				if ((imagePatternName != null) && (imagePatternColumn != null) && (! imagePatternColumn.getIsnull ())) {
 					mTagValue = data.defaultImageLink(imagePatternName.replace("*", imagePatternColumn.get()), imageSource, false);
-				} else {
-					mTagValue = null;
 				}
 				break;
 			case TI_EMAIL:
@@ -661,7 +655,7 @@ public class EMMTag {
 			}
 		}
 		mTagValue = ilPrefix + destination + ilPostfix;
-		fixedValue = true;
+		globalValue = true;
 	}
 
 	private static Pattern findColumn = Pattern.compile("\\$(([a-z][a-z0-9_]*\\.)?[a-z][a-z0-9_]*)", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
@@ -967,7 +961,7 @@ public class EMMTag {
 	/**
 	 * Checks a select value if its just a pure
 	 * (string or numeric) data for marking it
-	 * as fixed value to avoid including it in
+	 * as global value to avoid including it in
 	 * the global select call
 	 *
 	 * @param str the string to check
@@ -1053,7 +1047,6 @@ public class EMMTag {
 	 * @param data Reference to configuration
 	 */
 	private int check_tags(Data data) {
-		fixedValue = false;
 		globalValue = false;
 
 		int n;
@@ -1337,7 +1330,7 @@ public class EMMTag {
 						}
 					}
 					mTagValue = data.defaultImageLink(name, imageSource, true);
-					fixedValue = true;
+					globalValue = true;
 				}
 			}
 			break;
@@ -1386,7 +1379,11 @@ public class EMMTag {
 						}
 					} else {
 						dateColumn = null;
-						dateValue = data.currentSendDate;
+						if (data.currentSendDate == null) {
+							dateValue = new Date();
+						} else {
+							dateValue = data.currentSendDate;
+						}
 						if ((temp = mTagParameters.get("base")) != null) {
 							switch (temp) {
 							default:
@@ -1651,12 +1648,12 @@ public class EMMTag {
 					}
 				}
 				mTagValue = swyn.build(Str.atob(pBare, false), (pSize == null ? "default" : pSize), networks, pTitle, pLink, pSelector);
-				fixedValue = true;
+				globalValue = true;
 				break;
 			case TI_SENDDATE:
 				String format = mTagParameters.get("format");
 				mTagValue = (new SimpleDateFormat (format != null ? format : "yyyyMMdd")).format(data.genericSendDate ());
-				fixedValue = true;
+				globalValue = true;
 				break;
 			case TI_GRIDPH:
 				if (strict) {
@@ -1671,7 +1668,6 @@ public class EMMTag {
 					tag.setup(data, this, mTagFullname, mTagName, mTagParameters);
 					tag.initialize();
 					globalValue = tag.isGlobalValue();
-					fixedValue = tag.isFixedValue();
 				}
 				break;
 		}

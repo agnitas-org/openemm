@@ -100,7 +100,7 @@ public class ComponentValidationServiceImpl implements ComponentValidationServic
         if (attachment.getType() == AttachmentType.PERSONALIZED) {
             if (!StringUtils.equals("text/xml", file.getContentType()) &&
                     !StringUtils.equals("text/x-xslfo", file.getContentType())) {
-                errors.add(Message.of("GWUA.mailing.errors.personalized.attachment.invalidMimeType"));
+                errors.add(Message.of("error.mailing.attachment.personalised.format.invalid"));
                 return false;
             }
         } else if (!mimetypeWhitelistService.isMimeTypeWhitelisted(file.getContentType())) {
@@ -163,7 +163,7 @@ public class ComponentValidationServiceImpl implements ComponentValidationServic
         }
 
         if (attachment.getBackgroundFile() == null || attachment.getBackgroundFile().isEmpty()) {
-            errors.add(Message.of("GWUA.mailing.errors.no_bg_attachment_file"));
+            errors.add(Message.of("error.mailing.attachment.personalised.bgtemplate"));
             return false;
         }
 

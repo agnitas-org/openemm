@@ -87,7 +87,13 @@ public class DynCollection {
 					}
 					if (tgt != null) {
 						cont.condition = tgt.getSQL(false);
-						data.logging(Log.DEBUG, "dyn", cont.id + " condition is " + (cont.condition != null ? "'" + cont.condition + "'" : "not accessable"));
+						if (cont.condition != null) {
+							data.logging(Log.DEBUG, "dyn", cont.id + " condition is '" + cont.condition + "'");
+						} else {
+							String	sql = tgt.getSQL (true);
+
+							data.logging(Log.DEBUG, "dyn", cont.id + " condition is marked as hidden from component" + (sql != null ? ": " + sql : ""));
+						}
 					} else {
 						data.logging(Log.ERROR, "dyn", cont.id + " has invalid condition ID, disable block");
 						cont.targetID = DynCont.MATCH_NEVER;

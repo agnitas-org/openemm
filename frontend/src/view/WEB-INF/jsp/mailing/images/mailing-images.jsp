@@ -1,5 +1,6 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 <%@ page import="org.agnitas.beans.MailingComponentType" %>
+<%@ page import="com.agnitas.beans.EmmLayoutBase" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
@@ -14,9 +15,12 @@
 <%--@elvariable id="adminTimeZone" type="java.lang.String"--%>
 <%--@elvariable id="adminDateFormat" type="java.lang.String"--%>
 <%--@elvariable id="adminTimeFormat" type="java.lang.String"--%>
+<%--@elvariable id="emmLayoutBase" type="com.agnitas.beans.EmmLayoutBase"--%>
 
 <c:set var="MAILING_COMPONENT_IMAGE_TYPE" value="<%= MailingComponentType.Image %>" scope="request"/>
 <c:set var="MAILING_COMPONENT_HOSTED_IMAGE_TYPE" value="<%= MailingComponentType.HostedImage %>" scope="request"/>
+<c:set var="DARK_MODE_THEME_TYPE" value="<%= EmmLayoutBase.ThemeType.DARK_MODE %>" scope="page"/>
+<c:set var="isDarkmode" value="${emmLayoutBase.themeType eq DARK_MODE_THEME_TYPE}"/>
 
 <fmt:setLocale value="${sessionScope['emm.admin'].locale}"/>
 
@@ -93,7 +97,7 @@
                     </display:column>
 
                     <c:url var="sourceSrc" value="/sc?compID=${image.id}"/>
-                    <display:column titleKey="mailing.Graphics_Component" sortable="false" class="align-center">
+                    <display:column titleKey="mailing.Graphics_Component" sortable="false" class="align-center" style="${isDarkmode ? '' : 'background-color: #e2e3e3'}">
                         <a href="${sourceSrc}" data-modal="modal-preview-image"
                            data-modal-set="src: '${sourceSrc}', fileName: '${image.name}', title: '${image.description}'"
                            class="inline-block">
@@ -136,7 +140,7 @@
                     
                     <display:column titleKey="default.Size" sortable="false">
                         <c:if test="${not empty image.size}">
-                            ${emm:makeUnitSignNumber(image.size, 'B', false, pageContext.request)}
+                            ${emm:formatBytes(image.size, 1, '', emm:getLocale(pageContext.request))}
                         </c:if>
                     </display:column>
  

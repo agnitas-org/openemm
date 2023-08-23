@@ -4339,40 +4339,12 @@ isShowLink = true;	]]></method>
                     <header>
                         <row id="3731">
                             <cell id="3732"/>
-                            <cell id="3733">
-                                <text-data id="3676">
-                                    <expression name="valueExpr">Packages.com.agnitas.messages.I18nString.getLocaleString("report.total", reportContext.getLocale())</expression>
-                                </text-data>
-                            </cell>
+                            <cell id="3733"/>
                             <cell id="3734"/>
-                            <cell id="3735">
-                                <data id="3727">
-                                    <property name="resultSetColumn">totalClicksGross</property>
-                                </data>
-                            </cell>
-                            <cell id="3736">
-                                <data id="3728">
-                                    <property name="resultSetColumn">totalClicksNet</property>
-                                </data>
-                            </cell>
-                            <cell id="3737">
-                                <data id="3729">
-                                    <structure name="numberFormat">
-                                        <property name="category">Custom</property>
-                                        <property name="pattern">0.00%</property>
-                                    </structure>
-                                    <property name="resultSetColumn">tClPercentGross</property>
-                                </data>
-                            </cell>
-                            <cell id="3738">
-                                <data id="3730">
-                                    <structure name="numberFormat">
-                                        <property name="category">Custom</property>
-                                        <property name="pattern">0.00%</property>
-                                    </structure>
-                                    <property name="resultSetColumn">tClPercentNet</property>
-                                </data>
-                            </cell>
+                            <cell id="3735"/>
+                            <cell id="3736"/>
+                            <cell id="3737"/>
+                            <cell id="3738"/>
                         </row>
                     </header>
                 </table>

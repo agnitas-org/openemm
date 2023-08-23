@@ -36,7 +36,6 @@ import org.agnitas.emm.core.commons.uid.builder.impl.exception.RequiredInformati
 import org.agnitas.emm.core.commons.uid.builder.impl.exception.UIDStringBuilderException;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.PubID;
 import org.agnitas.util.TimeoutLRUMap;
@@ -958,7 +957,7 @@ public class LinkServiceImpl implements LinkService {
 		}
 	}
 
-	static String getTextWithReplacedAgnTags(String text, String replaceTo) {
+	public static String getTextWithReplacedAgnTags(String text, String replaceTo) {
 		String textWithReplacements = text;
 		
 		textWithReplacements = replaceInText(HASHTAG_PATTERN, textWithReplacements, replaceTo);
@@ -994,7 +993,7 @@ public class LinkServiceImpl implements LinkService {
 	}
 
 	@Override
-	public String validateLink(@VelocityCheck int companyId, String link, GridCustomPlaceholderType type) {
+	public String validateLink(int companyId, String link, GridCustomPlaceholderType type) {
 		if (Objects.isNull(type)) {
 			return null;
 		}
@@ -1010,7 +1009,7 @@ public class LinkServiceImpl implements LinkService {
 	}
 
     @Override
-    public List<LinkProperty> getDefaultExtensions(@VelocityCheck int companyId) {
+    public List<LinkProperty> getDefaultExtensions(int companyId) {
         String defaultExtension = configService.getValue(ConfigValue.DefaultLinkExtension, companyId);
         return LinkUtils.parseLinkExtension(defaultExtension);
     }

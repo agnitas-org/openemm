@@ -33,6 +33,7 @@ public class EmmActionToEmmActionDtoConverter implements Converter<EmmAction, Em
         dto.setCreationDate(emmAction.getCreationDate());
         dto.setChangeDate(emmAction.getChangeDate());
         dto.setActive(emmAction.getIsActive());
+        dto.setAdvertising(emmAction.isAdvertising());
 
         List<AbstractActionOperationParameters> operations = emmAction.getActionOperations();
         dto.setOperations(ListUtils.emptyIfNull(operations));

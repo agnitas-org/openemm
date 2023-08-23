@@ -20,7 +20,7 @@ import org.agnitas.beans.AdminEntry;
 import org.agnitas.beans.CompaniesConstraints;
 import org.agnitas.dao.UserStatus;
 import org.agnitas.emm.core.mailing.beans.LightweightMailing;
-import org.agnitas.emm.core.velocity.VelocityCheck;
+
 
 import com.agnitas.beans.Campaign;
 import com.agnitas.beans.Admin;
@@ -46,9 +46,11 @@ public interface ComWorkflowService {
 
     void saveWorkflow(Admin admin, Workflow workflow, List<WorkflowIcon> icons);
 
+    boolean existsAtLeastOneFilledMailingIcon(List<WorkflowIcon> icons);
+
 	void saveWorkflow(Workflow workflow);
 
-	Workflow getWorkflow(int workflowId, @VelocityCheck int companyId);
+	Workflow getWorkflow(int workflowId, int companyId);
 
     /**
      * Get object representation of workflow schema (icons and connections) or {@code null} if referenced workflow doesn't exist.
@@ -57,7 +59,7 @@ public interface ComWorkflowService {
      * @param companyId an identifier of a company that owns a referenced workflow.
      * @return a list of workflow icons representing a workflow schema or {@code null} if workflow doesn't exist.
      */
-	List<WorkflowIcon> getIcons(int workflowId, @VelocityCheck int companyId);
+	List<WorkflowIcon> getIcons(int workflowId, int companyId);
 
     /**
      * Retrieve icons of a workflow referenced by {@code workflowId} and prepare them to be used in another workflow.
@@ -81,7 +83,7 @@ public interface ComWorkflowService {
      * @param dependency an entity (type + id/name) to be checked (if it's allowed to be used by given workflow).
      * @return whether ({@code true}) or not ({@code false}) an entity use is permitted for given workflow.
      */
-    boolean validateDependency(@VelocityCheck int companyId, int workflowId, WorkflowDependency dependency);
+    boolean validateDependency(int companyId, int workflowId, WorkflowDependency dependency);
 
 	void deleteWorkflow(int workflowId, int companyId);
 
@@ -97,7 +99,7 @@ public interface ComWorkflowService {
                                              String mailingStatus, boolean takeMailsForPeriod, String sort,
                                              String order);
 
-    List<Map<String, Object>> getMailings(@VelocityCheck int companyId, String commaSeparatedMailingIds);
+    List<Map<String, Object>> getMailings(int companyId, String commaSeparatedMailingIds);
 
 	Map<Integer, String> getMailingLinks(int mailingId, int companyId);
 
@@ -133,15 +135,15 @@ public interface ComWorkflowService {
 
     Date getMaxPossibleDate(List<List<WorkflowNode>> chains);
 
-    void bulkDelete(Set<Integer> workflowIds, @VelocityCheck int companyId);
+    void bulkDelete(Set<Integer> workflowIds, int companyId);
 
-    Map<Integer, ChangingWorkflowStatusResult> bulkDeactivate(Set<Integer> workflowIds, @VelocityCheck int companyId) throws Exception;
+    Map<Integer, ChangingWorkflowStatusResult> bulkDeactivate(Set<Integer> workflowIds, int companyId) throws Exception;
 
-	ChangingWorkflowStatusResult changeWorkflowStatus(int workflowId, @VelocityCheck int companyId, WorkflowStatus newStatus) throws Exception;
+	ChangingWorkflowStatusResult changeWorkflowStatus(int workflowId, int companyId, WorkflowStatus newStatus) throws Exception;
 
 	List<Workflow> getWorkflowsToDeactivate(CompaniesConstraints constraints);
 
-    List<Workflow> getWorkflowsByIds(Set<Integer> workflowIds, @VelocityCheck int companyId);
+    List<Workflow> getWorkflowsByIds(Set<Integer> workflowIds, int companyId);
 
     /**
      * Collect workflow-driven settings provided by different workflow icons and set to {@code mailing} object.
@@ -157,13 +159,13 @@ public interface ComWorkflowService {
 
     List<List<WorkflowNode>> getChains(WorkflowIcon icon, List<WorkflowIcon> icons, boolean isForwardDirection);
 
-    List<Integer> getWorkflowIdsByAssignedMailingId(@VelocityCheck int companyId, int mailingId);
+    List<Integer> getWorkflowIdsByAssignedMailingId(int companyId, int mailingId);
 
-    boolean hasDeletedMailings(List<WorkflowIcon> workflowIcons, @VelocityCheck int companyId);
+    boolean hasDeletedMailings(List<WorkflowIcon> workflowIcons, int companyId);
 
     List<WorkflowFollowupMailing> getFollowupMailingIcon(List<WorkflowIcon> workflowIcons);
 
-    boolean isAdditionalRuleDefined(@VelocityCheck int companyId, int mailingId, int workflowId);
+    boolean isAdditionalRuleDefined(int companyId, int mailingId, int workflowId);
 
     /**
      * Check whether customers should have a binding status {@link org.agnitas.beans.BindingEntry#USER_STATUS_ACTIVE} to
@@ -189,7 +191,7 @@ public interface ComWorkflowService {
      * @param companyId an identifier of a company that owns the workflow.
      * @return an entity representing a trigger of the action-based workflow.
      */
-    ComWorkflowReaction getWorkflowReaction(int workflowId, @VelocityCheck int companyId);
+    ComWorkflowReaction getWorkflowReaction(int workflowId, int companyId);
 
     /**
      * Get recipients reacted (since the previously logged reaction (if any) or since the reaction start date)
@@ -214,7 +216,7 @@ public interface ComWorkflowService {
      * @param companyId an identifier of the current user's company.
      * @return a list of dependent workflows sorted by {@link Workflow#getWorkflowId()} (descending).
      */
-    List<Workflow> getActiveWorkflowsTrackingProfileField(String column, @VelocityCheck int companyId);
+    List<Workflow> getActiveWorkflowsTrackingProfileField(String column, int companyId);
 
     /**
      * See {@link com.agnitas.emm.core.workflow.dao.ComWorkflowDao#getActiveWorkflowsUsingProfileField(String, int)}.
@@ -223,7 +225,7 @@ public interface ComWorkflowService {
      * @param companyId an identifier of the current user's company.
      * @return a list of dependent workflows sorted by {@link Workflow#getWorkflowId()} (descending).
      */
-    List<Workflow> getActiveWorkflowsDependentOnProfileField(String column, @VelocityCheck int companyId);
+    List<Workflow> getActiveWorkflowsDependentOnProfileField(String column, int companyId);
 
     /**
      * Get active (see {@link WorkflowStatus#STATUS_ACTIVE} and {@link WorkflowStatus#STATUS_TESTING}) workflows being
@@ -236,7 +238,7 @@ public interface ComWorkflowService {
      * @param rules an object representation of a condition that target workflows should use to watch a profile field.
      * @return a list of workflows watching given profile field using given rules and mailing list.
      */
-    List<Workflow> getActiveWorkflowsDrivenByProfileChange(@VelocityCheck int companyId, int mailingListId, String column, List<WorkflowRule> rules);
+    List<Workflow> getActiveWorkflowsDrivenByProfileChange(int companyId, int mailingListId, String column, List<WorkflowRule> rules);
 
     /**
      * Add a report referenced by {@code reportId} to an workflow's report icon referenced by {@code workflowId} and {@code iconId}.
@@ -250,7 +252,7 @@ public interface ComWorkflowService {
      */
     boolean addReportToIcon(Admin admin, int workflowId, int iconId, int reportId);
 
-    List<Campaign> getCampaignList(@VelocityCheck int companyId, String sort, int order);
+    List<Campaign> getCampaignList(int companyId, String sort, int order);
     
     /**
      * Add to workflow dependencies target group that is created by CM and belongs to company
@@ -258,7 +260,7 @@ public interface ComWorkflowService {
      * @param companyId  company identifier
      * @param workflowId a workflow identifier
      */
-    void setTargetConditionDependency(ComTarget target, @VelocityCheck int companyId, int workflowId);
+    void setTargetConditionDependency(ComTarget target, int companyId, int workflowId);
     
     /**
      * Delete target groups with
@@ -267,9 +269,9 @@ public interface ComWorkflowService {
      * @param companyId  company identifier
      * @param workflowId a workflow identifier
      */
-    void deleteWorkflowTargetConditions(@VelocityCheck int companyId, int workflowId);
+    void deleteWorkflowTargetConditions(int companyId, int workflowId);
     
-    List<Workflow> getDependentWorkflowOnMailing(@VelocityCheck int companyId, int mailingId);
+    List<Workflow> getDependentWorkflowOnMailing(int companyId, int mailingId);
 
     JSONArray getWorkflowListJson(Admin admin);
 

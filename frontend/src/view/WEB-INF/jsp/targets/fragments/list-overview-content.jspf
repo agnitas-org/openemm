@@ -7,6 +7,8 @@
 <%--@elvariable id="adminDateFormat" type="java.lang.String"--%>
 <%--@elvariable id="targetForm" type="com.agnitas.emm.core.target.form.TargetForm"--%>
 <%--@elvariable id="targetComplexities" type="java.util.Map<java.lang.Integer, com.agnitas.emm.core.target.beans.TargetComplexityGrade>"--%>
+<%--@elvariable id="target" type="com.agnitas.beans.impl.TargetLightImpl"--%>
+<%--@elvariable id="isUserBasedFavorites" type="java.lang.Boolean"--%>
 
 <script type="application/json" data-initializer="web-storage-persist">
     {
@@ -19,13 +21,13 @@
 </script>
 
 <div class="table-wrapper" data-controller="targets-list">
-    <display:table
-            class="table table-bordered table-striped table-hover js-table"
+    <display:table class="table table-bordered table-striped table-hover js-table"
             id="target"
-            name="targets"
-            pagesize="${targetForm.numberOfRows}"
-            sort="list"
+            name="targetEntries"
+            sort="external"
             requestURI="/target/list.action"
+            partialList="true"
+            size="${targetForm.numberOfRows}"
             excludedParams="*">
         <emm:ShowByPermission token="targets.delete">
             <c:set var="checkboxSelectAll">
@@ -40,13 +42,13 @@
         <display:column headerClass="js-table-sort squeeze-column" property="id" titleKey="MailinglistID"/>
         
         <display:column class="js-checkable align-center" headerClass="js-table-sort squeeze-column"  
-                        sortable="true" titleKey="default.favourite">
+                        sortable="true" titleKey="default.favourite" sortProperty="favorite">
                 <input type="checkbox" class="star-checkbox icon-fa5 far" ${target.favorite ? 'checked' : ''} 
-                       data-action="check-favorites" data-target-id="${target.id}" autocomplete="off" />
+                       data-action="${isUserBasedFavorites ? 'check-admin-favorites' : 'check-favorites'}" data-target-id="${target.id}" autocomplete="off" />
         </display:column>
             
         <display:column headerClass="js-table-sort" titleKey="target.Target" sortable="true"
-                        sortProperty="targetName">
+                        sortProperty="target_shortname">
             <c:choose>
                 <%-- Show icon for the target which is unavailable in dropdowns--%>
                 <c:when test="${target.componentHide}">
@@ -69,7 +71,7 @@
         </display:column>
 
         <display:column headerClass="js-table-sort" titleKey="default.description" sortable="true"
-                        sortProperty="targetDescription">
+                        sortProperty="target_description">
             <span class="multiline-xs-200 multiline-sm-250 multiline-md-max">${target.targetDescription}</span>
         </display:column>
 
@@ -107,10 +109,10 @@
         </display:column>
 
         <display:column headerClass="js-table-sort" titleKey="default.creationDate" sortable="true"
-                        format="{0, date, ${adminDateFormat}}" property="creationDate"/>
+                        format="{0, date, ${adminDateFormat}}" property="creationDate" sortProperty="creation_date"/>
 
         <display:column headerClass="js-table-sort" titleKey="default.changeDate" sortable="true"
-                        format="{0, date, ${adminDateFormat}}" property="changeDate"/>
+                        format="{0, date, ${adminDateFormat}}" property="changeDate" sortProperty="change_date"/>
 
         <display:column class="table-actions">
             <a href="<c:url value='/target/${target.id}/view.action'/>" class="hidden js-row-show"

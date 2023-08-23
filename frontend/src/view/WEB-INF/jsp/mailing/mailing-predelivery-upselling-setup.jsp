@@ -1,5 +1,4 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
-<%@ page import="com.agnitas.web.MailingBaseAction" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 
@@ -9,9 +8,6 @@
 <%--@elvariable id="limitedRecipientOverview" type="java.lang.Boolean"--%>
 
 <%--TODO: GWUA-4803: migrate upselling page after migration code test successfully --%>
-
-<c:set var="BASE_ACTION_LIST" value="<%= MailingBaseAction.ACTION_LIST %>" />
-<c:set var="BASE_ACTION_VIEW" value="<%= MailingBaseAction.ACTION_VIEW %>" />
 
 <c:set var="mailingID" value="${upsellingForm.extraParamsMap.mailingID}"/>
 <c:if test="${empty mailingID}">
@@ -64,25 +60,11 @@
     <c:set target="${agnNavHrefParams}" property="init" value="true"/>
 </emm:instantiate>
 
-<c:url var="mailingsOverviewLink" value="/mailingbase.do">
-    <c:param name="action" value="${BASE_ACTION_LIST}"/>
-    <c:param name="isTemplate" value="false"/>
-    <c:param name="page" value="1"/>
-</c:url>
+<c:url var="mailingsOverviewLink" value="/mailing/list.action"/>
 
-<emm:ShowByPermission token="mailing.settings.migration">
-    <c:url var="mailingViewLink" value="/mailing/${mailingID}/settings.action">
-        <c:param name="keepForward" value="true"/>
-    </c:url>
-</emm:ShowByPermission>
-<emm:HideByPermission token="mailing.settings.migration">
-    <c:url var="mailingViewLink" value="/mailingbase.do">
-        <c:param name="action" value="${BASE_ACTION_VIEW}"/>
-        <c:param name="mailingID" value="${mailingID}"/>
-        <c:param name="keepForward" value="true"/>
-        <c:param name="init" value="true"/>
-    </c:url>
-</emm:HideByPermission>
+<c:url var="mailingViewLink" value="/mailing/${mailingID}/settings.action">
+    <c:param name="keepForward" value="true"/>
+</c:url>
 
 <c:set var="sidemenu_active" 		value="Mailings" 				    scope="request" />
 <c:set var="agnTitleKey" 			value="Mailing" 				    scope="request" />

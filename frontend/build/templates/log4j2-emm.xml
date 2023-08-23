@@ -180,6 +180,12 @@
 		<Logger name="com.agnitas.spring.WebSecurityConfiguration" level="debug">
 			<AppenderRef ref="SPRING_SECURITY_LOG" />
 		</Logger>
+			
+		<Logger name="de.larsgrefer.sass.embedded.SassCompiler" level="error">
+			<AppenderRef ref="ROOT_CONSOLE" />
+			<AppenderRef ref="APPLICATIONLOGFILE" />
+			<AppenderRef ref="APPLICATIONERRORLOGFILE" />
+		</Logger>
 		
 	</Loggers>
 </Configuration>

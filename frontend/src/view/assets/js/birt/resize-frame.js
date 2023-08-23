@@ -1,6 +1,6 @@
 (function() {
 
-  var isFF = !!window.sidebar;
+  var isFF = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
 
   var  addEventListener = function(el, evt, func) {
     if ("addEventListener" in window) {

@@ -7,7 +7,7 @@
 <c:set var="agnSubtitleKey" 		value="Userlogs" 			scope="request" />
 <c:set var="sidemenu_active" 		value="Administration" 		scope="request" />
 <c:set var="sidemenu_sub_active" 	value="Userlogs" 			scope="request" />
-<c:set var="agnHighlightKey" 		value="default.Overview" 	scope="request" />
+<c:set var="agnHighlightKey" 		value="ual.gui" 	        scope="request" />
 <c:set var="isBreadcrumbsShown" 	value="true" 				scope="request" />
 <c:set var="agnBreadcrumbsRootKey" 	value="Administration" 		scope="request" />
 <c:set var="agnHelpKey" 			value="userlog" 			scope="request" />

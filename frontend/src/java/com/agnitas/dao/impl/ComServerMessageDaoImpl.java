@@ -16,6 +16,7 @@ import java.util.Date;
 import java.util.List;
 
 import org.agnitas.dao.impl.BaseDaoImpl;
+import org.agnitas.util.DateUtilities;
 import org.agnitas.util.ServerCommand;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -29,8 +30,7 @@ import com.agnitas.dao.DaoUpdateReturnValueCheck;
  */
 public class ComServerMessageDaoImpl extends BaseDaoImpl implements ComServerMessageDao {
 	
-	/** The logger. */
-    private static final transient Logger logger = LogManager.getLogger(ComServerMessageDaoImpl.class);
+    private static final Logger logger = LogManager.getLogger(ComServerMessageDaoImpl.class);
 
     @Override
 	@DaoUpdateReturnValueCheck
@@ -42,12 +42,16 @@ public class ComServerMessageDaoImpl extends BaseDaoImpl implements ComServerMes
     @Override
     public List<ServerCommand> getCommand(Date since, Date till, ServerCommand.Server server, ServerCommand.Command command) {
     	if (since == null) {
-	        String query = "SELECT command, server_name, execution_date, admin_id, description FROM server_command_tbl WHERE execution_date <= ? AND (server_name = ? OR server_name = 'ALL') AND command = ?";
-	        return select(logger, query, new ServerCommandRowMapper(), till, server.toString(), command.toString());
-    	} else {
-	        String query = "SELECT command, server_name, execution_date, admin_id, description FROM server_command_tbl WHERE (? < execution_date AND execution_date <= ?) AND (server_name = ? OR server_name = 'ALL') AND command = ?";
-            return select(logger, query, new ServerCommandRowMapper(), since, till, server.toString(), command.toString());
+    		since = DateUtilities.getDateOfHoursAgo(1);
     	}
+
+        String query = "SELECT command, server_name, execution_date, admin_id, description FROM server_command_tbl WHERE (? < execution_date AND execution_date <= ?) AND (server_name = ? OR server_name = 'ALL') AND command = ?";
+        return select(logger, query, new ServerCommandRowMapper(), since, till, server.toString(), command.toString());
+    }
+    
+    @Override
+    public void cleanupOldCommands() {
+        update(logger, "DELETE FROM server_command_tbl WHERE execution_date < ?", DateUtilities.getDateOfDaysAgo(1));
     }
 
     private class ServerCommandRowMapper implements RowMapper<ServerCommand> {

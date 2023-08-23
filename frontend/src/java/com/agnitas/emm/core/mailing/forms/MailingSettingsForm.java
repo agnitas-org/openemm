@@ -224,7 +224,7 @@ public class MailingSettingsForm {
     }
 
     public void clearTargetsData() {
-        targetGroupIds.clear();
+        setTargetGroupIds(Collections.emptyList());
         setSplitBase(null);
         setSplitPart(null);
     }

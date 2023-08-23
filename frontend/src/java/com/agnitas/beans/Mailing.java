@@ -185,6 +185,7 @@ public interface Mailing extends MailingBase {
 
     int getLocked();
     void setLocked(int locked);
+
     boolean isLocked();
 
     int getPriority();

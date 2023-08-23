@@ -69,7 +69,7 @@
                             <i class="icon icon-caret-down"></i>
                         </a>
                         <ul class="dropdown-menu">
-                            <li class="dropdown-header"><mvc:message code="statistics.exportFormats"/></li>
+                            <li class="dropdown-header"><mvc:message code="statistics.exportFormat"/></li>
                             <li>
                                 <a href="${birtStatisticUrlWithoutFormat}&__format=csv" tabindex="-1" data-prevent-load="">
                                     <i class="icon icon-file-excel-o"></i>

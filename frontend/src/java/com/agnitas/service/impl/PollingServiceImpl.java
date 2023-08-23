@@ -11,10 +11,15 @@
 package com.agnitas.service.impl;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
+import com.agnitas.emm.core.export.web.ExportController;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.util.concurrent.ListenableFuture;
 import org.springframework.util.concurrent.ListenableFutureCallback;
@@ -26,6 +31,11 @@ import com.agnitas.service.PollingService;
 import com.agnitas.web.mvc.Pollable;
 
 public class PollingServiceImpl implements PollingService {
+    
+    private static final ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1);
+
+    private static final Set<String> LONG_RUNNING_TASKS = Set.of(ExportController.EXPORT_KEY);
+
     private Map<PollingUid, ListenableFuture<?>> pendingTasksMap = new ConcurrentHashMap<>();
     private ExecutorService workerExecutorService;
 
@@ -79,7 +89,18 @@ public class PollingServiceImpl implements PollingService {
             try {
                 return callable.call();
             } finally {
-                pendingTasksMap.remove(uid);
+                // If the task is executed longer than the pollable timeout, it may finished at the same time
+                // when a repeated request is just sent from the client (e.g. when using data-form="loading").
+                // In this case, another task with the equal uid may be generated again. So same task working twice.
+                // To prevent second time execution, the retention delay was added for removing the task,
+                // so that when such a situation occurs, the result of the initial execution is returned.
+                long retentionTimeout = LONG_RUNNING_TASKS.contains(uid.getName())
+                        ? Pollable.LONG_RETENTION_TIMEOUT
+                        : Pollable.SHORT_RETENTION_TIMEOUT;
+                scheduledExecutorService.schedule(
+                        () -> pendingTasksMap.remove(uid),
+                        retentionTimeout,
+                        TimeUnit.MILLISECONDS);
             }
         }
     }

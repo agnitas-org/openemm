@@ -10,18 +10,22 @@
 
 package com.agnitas.emm.core;
 
+import java.util.Date;
+
 public class PermissionInfo {
 	private String category;
 	private String subCategory;
 	private int sortOrder;
 	private String featurePackage;
+	private final Date creationDate;
 	
-	public PermissionInfo(String category, String subCategory, int sortOrder, String featurePackage) {
+	public PermissionInfo(String category, String subCategory, int sortOrder, String featurePackage, Date creationDate) {
 		this.category = category;
 		this.subCategory = subCategory;
 		this.sortOrder = sortOrder;
 		this.featurePackage = featurePackage;
-	}
+        this.creationDate = creationDate;
+    }
 
 	public String getCategory() {
 		return category;
@@ -38,4 +42,8 @@ public class PermissionInfo {
 	public String getFeaturePackage() {
 		return featurePackage;
 	}
+
+    public Date getCreationDate() {
+        return creationDate;
+    }
 }

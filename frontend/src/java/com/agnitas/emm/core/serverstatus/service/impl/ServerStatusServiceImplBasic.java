@@ -261,7 +261,7 @@ public class ServerStatusServiceImplBasic implements ServerStatusService {
 		return ServerStatus.builder(version, installPath, admin.getLocale(), configService)
 				.database(serverStatusDao.getDbVendor(), getDbUrl(), getDbVersion(), checkDatabaseConnection())
 				.dateTimeSettings(dateTimeFormat, configService.getStartupTime(), configService.getConfigurationExpirationTime())
-				.statuses(isOverallStatusOK(), isJobQueueStatusOK(), importStatusOK, !isExportStalling(), isDBStatusOK(), isReportStatusOK())
+				.statuses(isOverallStatusOK(), isJobQueueStatusOK(), importStatusOK, !isExportStalling(), isDBStatusOK(), isReportStatusOK(), isLicenseStatusOK())
 				.dbVersionStatuses(getLatestDBVersionsAndErrors())
 				.build();
 	}
@@ -380,6 +380,11 @@ public class ServerStatusServiceImplBasic implements ServerStatusService {
 	public boolean isReportStatusOK() {
 		// Only retrieve the status once per request for performance
 		return jobQueueService.isReportOK();
+	}
+
+	@Override
+	public boolean isLicenseStatusOK() {
+		return configService.isLicenseStatusOK();
 	}
 
 	@Override

@@ -46,6 +46,8 @@ public interface ComMailingBaseService {
 
     void bulkDelete(Set<Integer> mailingsIds, int companyId);
 
+    boolean deleteMailing(int mailingId, int companyId);
+
     int getWorkflowId(int mailingId, int companyId);
 
     int saveMailingWithUndo(Mailing mailing, int adminId, boolean preserveTrackableLinks);

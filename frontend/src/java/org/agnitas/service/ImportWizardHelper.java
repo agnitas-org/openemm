@@ -19,10 +19,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
 
+import com.agnitas.emm.core.commons.dto.FileDto;
 import org.agnitas.beans.ImportStatus;
 import org.agnitas.util.Blacklist;
 import org.agnitas.util.CsvColInfo;
 import org.agnitas.util.ImportUtils.ImportErrorType;
+import org.apache.struts.action.ActionMessage;
 
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 
@@ -93,7 +95,11 @@ public interface ImportWizardHelper {
 	 */
 	public abstract void setMailingLists(Vector<String> mailingLists);
 
-	/**
+    List<Integer> getMailinglists();
+
+    void setMailinglists(List<Integer> mailinglists);
+
+    /**
 	 * Getter for property usedColumns.
 	 * 
 	 * @return Value of property usedColumns.
@@ -254,21 +260,13 @@ public interface ImportWizardHelper {
 	public abstract void setDownloadName(String downloadName);
 
 	/**
-	 * Getter for property dbInsertStatusMessages.
+	 * Getter for property dbInsertStatusMessagesAndParameters.
 	 * 
-	 * @return Value of property dbInsertStatusMessages.
+	 * @return Value of property dbInsertStatusMessagesAndParameters.
 	 */
-	public abstract LinkedList<String> getDbInsertStatusMessages();
+	public abstract List<ActionMessage> getDbInsertStatusMessagesAndParameters();
 
-	/**
-	 * Setter for property dbInsertStatusMessages.
-	 * 
-	 * @param dbInsertStatusMessages
-	 *            New value of property dbInsertStatusMessages.
-	 */
-	public abstract void setDbInsertStatusMessages(LinkedList<String> dbInsertStatusMessages);
-
-	public abstract void addDbInsertStatusMessage(String message);
+	public abstract void addDbInsertStatusMessageAndParameters(String messageKey, Object... additionalParameters);
 
 	/**
 	 * Getter for property resultMailingListAdded.
@@ -392,4 +390,10 @@ public interface ImportWizardHelper {
     public void clearDummyColumnsMappings();
 
     public abstract String getKeyColumn();
+    
+    FileDto getFile();
+
+    void setFile(FileDto file);
+
+	void clearDbInsertStatusMessagesAndParameters();
 }

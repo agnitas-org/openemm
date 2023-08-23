@@ -33,9 +33,6 @@
         this.isChangeDecisionOptions = data.isFollowUpBaseMailing;
         this.followUpContainer = data.followUpContainer;
         this.advertisingAdditionalOptions = data.advertisingAdditionalOptions;
-        this.advertisingUrl = data.advertisingUrl;
-        this.isMailingSettingsMigration = data.isMailingSettingsMigration;
-
 
         //chain of nodes which should be filled with mailing data
         this.nodesChain = [];
@@ -95,33 +92,15 @@
                 var selectedMailingId = this.mailingId;
                 var followUpSelect = $(scope.find(this.followUpContainer));
                 var additionalOptions = this.advertisingAdditionalOptions;
-                var advertisingUrl = this.advertisingUrl;
-                if (this.isMailingSettingsMigration) {
-                    $(followUpSelect.find('.advertisingOption')).remove();
-                    if (selectedMailingId) {
-                        $.ajax({
-                            type: 'POST',
-                            url: AGN.url("/mailing/ajax/" + selectedMailingId + "/isAdvertisingContentType.action")
-                        }).done(function(resp) {
-                            if (resp && resp.success) {
-                              var options = AGN.Lib.Template.text('followupAdvertisingOptions', {items: additionalOptions});
-                              followUpSelect.append(options);
-                            }
-                        });
-                    }
-                } else {
+                $(followUpSelect.find('.advertisingOption')).remove();
+                if (selectedMailingId) {
                     $.ajax({
-                        action: 'POST',
-                        url: advertisingUrl,
-                        data: {
-                            mailingId: selectedMailingId
-                        },
-                        success: function(result) {
-                            $(followUpSelect.find('.advertisingOption')).remove();
-                            if (result.isAdvertisingContentType) {
-                                var options = AGN.Lib.Template.text('followupAdvertisingOptions', {items: additionalOptions});
-                                followUpSelect.append(options);
-                            }
+                        type: 'POST',
+                        url: AGN.url("/mailing/ajax/" + selectedMailingId + "/isAdvertisingContentType.action")
+                    }).done(function(resp) {
+                        if (resp && resp.success) {
+                          var options = AGN.Lib.Template.text('followupAdvertisingOptions', {items: additionalOptions});
+                          followUpSelect.append(options);
                         }
                     });
                 }

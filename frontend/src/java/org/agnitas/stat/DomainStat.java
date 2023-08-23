@@ -16,7 +16,6 @@ import java.util.List;
 import jakarta.servlet.http.HttpServletRequest;
 import javax.sql.DataSource;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.dao.ComTargetDao;
 
@@ -104,7 +103,7 @@ public interface DomainStat extends Serializable {
      * 
      * @param id New value of property companyID.
      */
-    void setCompanyID(@VelocityCheck int id);
+    void setCompanyID(int id);
 
     /**
      * Setter for property csvfile.

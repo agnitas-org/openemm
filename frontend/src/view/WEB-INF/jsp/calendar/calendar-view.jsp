@@ -2,7 +2,6 @@
 
 <%@ page import="org.agnitas.util.AgnUtils" %>
 <%@ page import="com.agnitas.emm.core.push.bean.PushNotificationStatus" %>
-<%@ page import="com.agnitas.web.MailingBaseAction" %>
 <%@ page import="com.agnitas.emm.core.calendar.web.CalendarController" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
@@ -29,8 +28,6 @@
 
 <c:set var="SECONDS_BEFORE_WAIT_MESSAGE" value="<%= CalendarController.SECONDS_BEFORE_WAIT_MESSAGE %>"/>
 
-<c:set var="ACTION_VIEW" value="<%= MailingBaseAction.ACTION_VIEW %>"/>
-
 <c:set var="MONTH_LIST" value="<%= AgnUtils.getMonthList() %>"/>
 <c:set var="YEAR_LIST" value="<%= AgnUtils.getCalendarYearList(CalendarController.SELECTOR_START_YEAR_NUM) %>"/>
 
@@ -50,17 +47,7 @@
 
 <div class="calendar" data-initializer="calendar-table">
     <div class="tile">
-        <emm:ShowByPermission token="mailing.settings.migration">
-            <c:url var="mailingViewUrl" value="/mailing/{mailingId}/settings.action"/>
-            <c:set var="mailingLink" value="${mailingViewUrl}"/>
-        </emm:ShowByPermission>
-        <emm:HideByPermission token="mailing.settings.migration">
-            <c:url var="mailingViewUrl" value="/mailingbase.do">
-                <c:param name="action" value="${ACTION_VIEW}"/>
-                <c:param name="init" value="true"/>
-            </c:url>
-            <c:set var="mailingLink" value="${mailingViewUrl}&mailingID={mailingId}"/>
-        </emm:HideByPermission>
+        <c:url var="mailingLink" value="/mailing/{mailingId}/settings.action"/>
 
         <c:url var="mailingStatisticsViewUrl" value="/statistics/mailing/{mailingId}/view.action">
             <c:param name="init" value="true"/>

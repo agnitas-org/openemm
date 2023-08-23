@@ -92,6 +92,10 @@ public class RecipientsReportController implements XssCheckAware {
     public String view(Admin admin, @PathVariable int reportId, Model model) {
         String reportContent = recipientsReportService.getImportReportContent(admin.getCompanyID(), reportId);
     
+        if (StringUtils.equals(reportContent, "Downloadable file with invalid recipients data")) {
+            reportContent = recipientsReportService.getImportReportZipFileContent(admin, reportId);
+        }
+
         if (StringUtils.isBlank(reportContent)) {
             reportContent = I18nString.getLocaleString("recipient.reports.notAvailable", admin.getLocale());
         }

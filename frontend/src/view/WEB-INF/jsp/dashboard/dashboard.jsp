@@ -1,8 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" buffer="64kb"  errorPage="/error.do" %>
 <%@ page import="org.agnitas.dao.MailingStatus" %>
 <%@ page import="org.agnitas.web.ExportWizardAction" %>
-<%@ page import="com.agnitas.web.MailingBaseAction" %>
-<%@ page import="com.agnitas.web.MailingWizardAction" %>
 <%@ page import="org.agnitas.web.ProfileImportAction" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
@@ -15,9 +13,6 @@
 <%--@elvariable id="adminDateFormat" type="java.lang.String"--%>
 <%--@elvariable id="helplanguage" type="java.lang.String"--%>
 
-<c:set var="ACTION_VIEW_MAILING" value="<%= MailingBaseAction.ACTION_VIEW %>" scope="request"/>
-<c:set var="ACTION_NEW_MAILING" value="<%= MailingBaseAction.ACTION_NEW %>" scope="request"/>
-<c:set var="ACTION_START_MW" value="<%= MailingWizardAction.ACTION_START %>" scope="request"/>
 <c:set var="ACTION_IMPORT_RECIPIENT" value="<%= ProfileImportAction.ACTION_START %>" scope="request"/>
 <c:set var="ACTION_EXPORT_RECIPIENT" value="<%= ExportWizardAction.ACTION_LIST %>" scope="request"/>
 
@@ -52,9 +47,10 @@
                         </ul>
 
                         <emm:ShowByPermission token="mailing.change">
+                                <c:url var="mailingCreateLink" value="/mailing/create.action"/>
                             <ul class="tile-header-actions">
                                 <li>
-                                    <a href="<c:url value='/mwStart.do?action=init'/>" class="btn btn-primary btn-regular">
+                                    <a href="${mailingCreateLink}" class="btn btn-primary btn-regular">
                                         <i class="icon icon-plus"></i>
                                         <span class="text">
                                             <mvc:message code="New"/>
@@ -70,60 +66,72 @@
                             <ul class="link-list">
                                 <c:forEach var="mailing" items="${mailinglist.list}" begin="0" step="1">
                                     <li>
-                                        <emm:ShowByPermission token="mailing.settings.migration">
-                                            <c:url var="mailingLink" value="/mailing/${mailing.mailingid}/settings.action"/>
-                                        </emm:ShowByPermission>
-                                        <emm:HideByPermission token="mailing.settings.migration">
-                                            <c:url var="mailingLink" value="/mailingbase.do">
-                                                <c:param name="action" value="${ACTION_VIEW_MAILING}"/>
-                                                <c:param name="mailingID" value="${mailing.mailingid}"/>
-                                                <c:param name="isTemplate" value="false"/>
-                                            </c:url>
-                                        </emm:HideByPermission>
+                                        <c:url var="mailingLink" value="/mailing/${mailing.mailingid}/settings.action"/>
                                         <c:if test="${mailing.workstatus == 'mailing.status.sent' or mailing.workstatus == 'mailing.status.norecipients'}">
                                             <emm:ShowByPermission token="stats.mailing">
                                                 <c:url var="mailingLink" value="/statistics/mailing/${mailing.mailingid}/view.action"/>
                                             </emm:ShowByPermission>
                                         </c:if>
-                                        <a href="${mailingLink}" class="link-list-item">
-                                            <p class="headline">
-                                                <c:set var="mailingWorkStatus">
-                                                    <c:if test="${mailing.workstatus ne null}">
-                                                        <mvc:message code="${mailing.workstatus}"/>
-                                                    </c:if>
-                                                </c:set>
-                                                <span class="mailing-badge ${mailing.workstatus}" data-tooltip="${mailingWorkStatus}"></span>
+                                        <a href="${mailingLink}" class="link-list-item recently-used-mailing">
+                                            <div class="recently-used-mailing-info">
+                                                <p class="headline">
+                                                    <c:set var="mailingWorkStatus">
+                                                        <c:if test="${mailing.workstatus ne null}">
+                                                            <mvc:message code="${mailing.workstatus}"/>
+                                                        </c:if>
+                                                    </c:set>
+                                                    <span class="mailing-badge ${mailing.workstatus}" data-tooltip="${mailingWorkStatus}"></span>
                                                     ${mailing.shortname}
-                                            </p>
-                                            <p class="description">
-                                                <span data-tooltip="<mvc:message code='birt.mailinglist'/>">
-                                                    <i class="icon icon-list-ul"></i>
-                                                    <span class="text">${mailing.mailinglist}</span>
-                                                </span>
-
-                                               <span data-tooltip="<mvc:message code='default.changeDate'/>">
-                                                    <i class="icon icon-pencil"></i>
-                                                    <span class="text">
-                                                        <emm:formatDate value="${mailing.changedate}" pattern="${adminDateFormat}"/>
+                                                </p>
+                                                <p class="description">
+                                                    <span data-tooltip="<mvc:message code='birt.mailinglist'/>">
+                                                        <i class="icon icon-list-ul"></i>
+                                                        <span class="text">${mailing.mailinglist}</span>
                                                     </span>
-                                                </span>
 
-                                               <c:if test="${mailing.senddate ne null}">
-                                                    <span data-tooltip="<mvc:message code='mailing.senddate'/>">
-                                                        <i class="icon icon-calendar-o"></i>
-                                                        <strong>
-                                                            <emm:formatDate value="${mailing.senddate}" pattern="${adminDateFormat}"/>
-                                                        </strong>
+                                                    <span data-tooltip="<mvc:message code='default.changeDate'/>">
+                                                        <i class="icon icon-pencil"></i>
+                                                        <span class="text">
+                                                            <emm:formatDate value="${mailing.changedate}" pattern="${adminDateFormat}"/>
+                                                        </span>
                                                     </span>
-                                                </c:if>
 
-                                                <c:if test="${mailing.usedInCM}">
-                                                    <button class="text" data-help="help_${helplanguage}/mailing/overview/WorkflowEditorMailingOverviewMsg.xml" tabindex="-1" type="button">
-                                                        <i class="icon icon-linkage-campaignmanager"></i> <strong><mvc:message code="campaign.manager.icon"/></strong>
+                                                    <c:if test="${mailing.senddate ne null}">
+                                                        <span data-tooltip="<mvc:message code='mailing.senddate'/>">
+                                                            <i class="icon icon-calendar-o"></i>
+                                                            <strong>
+                                                                <emm:formatDate value="${mailing.senddate}" pattern="${adminDateFormat}"/>
+                                                            </strong>
+                                                        </span>
+                                                    </c:if>
+
+                                                    <c:if test="${mailing.usedInCM}">
+                                                        <button class="text" data-help="help_${helplanguage}/mailing/overview/WorkflowEditorMailingOverviewMsg.xml" tabindex="-1" type="button">
+                                                            <i class="icon icon-linkage-campaignmanager"></i>&nbsp;<strong><mvc:message code="campaign.manager.icon"/></strong>
+                                                        </button>
+                                                    </c:if>
+                                                </p>
+                                            </div>
+                                            <div class="btn-group recently-used-mailing-btn-group" data-mailing-id="${mailing.mailingid}">
+                                                <emm:ShowByPermission token="mailing.change">
+                                                    <button class="btn btn-regular" data-action="copy-recent-mailing" data-tooltip="<mvc:message code="button.Copy"/>">
+                                                        <i class="icon icon-copy"></i>
                                                     </button>
-                                                </c:if>
-                                            </p>
-                                            <i class="nav-arrow icon icon-angle-right"></i>
+                                                </emm:ShowByPermission>
+                                                <button class="btn btn-regular" data-action="edit-recent-mailing" data-tooltip="<mvc:message code="mailing.MailingEdit"/>">
+                                                    <i class="icon icon-pencil"></i>
+                                                </button>
+                                                <emm:ShowByPermission token="stats.mailing">
+                                                    <button class="btn btn-regular" data-action="open-recent-mailing-statistic" data-tooltip="<mvc:message code="mailing.statistics"/>">
+                                                        <i class="icon icon-bar-chart-o"></i>
+                                                    </button>
+                                                </emm:ShowByPermission>
+                                                <emm:ShowByPermission token="mailing.delete">
+                                                    <button class="btn btn-regular" data-action="delete-recent-mailing" data-tooltip="<mvc:message code="mailing.MailingDelete"/>">
+                                                        <i class="icon icon-trash-o"></i>
+                                                    </button>
+                                                </emm:ShowByPermission>
+                                            </div>
                                         </a>
                                     </li>
                                 </c:forEach>
@@ -133,16 +141,7 @@
                             <div class="row">
                                 <c:forEach var="mailing" items="${mailinglist.list}" begin="0" step="1">
                                     <div class="col-xs-4" data-view-split="col-xs-4" data-view-block="col-xs-3" data-view-hidden="col-xs-3">
-                                        <emm:ShowByPermission token="mailing.settings.migration">
-                                            <c:url var="mailingLink" value="/mailing/${mailing.mailingid}/settings.action"/>
-                                        </emm:ShowByPermission>
-                                        <emm:HideByPermission token="mailing.settings.migration">
-                                            <c:url var="mailingLink" value="/mailingbase.do">
-                                                <c:param name="action" value="${ACTION_VIEW_MAILING}"/>
-                                                <c:param name="mailingID" value="${mailing.mailingid}"/>
-                                                <c:param name="isTemplate" value="false"/>
-                                            </c:url>
-                                        </emm:HideByPermission>
+                                        <c:url var="mailingLink" value="/mailing/${mailing.mailingid}/settings.action"/>
                                         <c:if test="${mailing.workstatus == 'mailing.status.sent' or mailing.workstatus == 'mailing.status.norecipients'}">
                                             <emm:ShowByPermission token="stats.mailing">
                                                 <c:url var="mailingStatLink" value="/statistics/mailing/${mailing.mailingid}/view.action"/>
@@ -184,7 +183,7 @@
 
                                                     <c:if test="${mailing.usedInCM}">
                                                         <button class="text" data-help="help_${helplanguage}/mailing/overview/WorkflowEditorMailingOverviewMsg.xml" tabindex="-1" type="button">
-                                                            <i class="icon icon-linkage-campaignmanager"></i> <strong><mvc:message code="campaign.manager.icon"/></strong>
+                                                            <i class="icon icon-linkage-campaignmanager"></i>&nbsp;<strong><mvc:message code="campaign.manager.icon"/></strong>
                                                         </button>
                                                     </c:if>
                                                 </p>

@@ -341,4 +341,41 @@ AGN.Lib.Controller.new('dashboard', function() {
       })
     });
   })
+  
+  this.addAction({'click': 'copy-recent-mailing'}, function() {
+    performRecentMailingBtnAction(this, '/mailing/{mailing-id}/copy.action');
+  });
+  
+  this.addAction({'click': 'edit-recent-mailing'}, function() {
+    performRecentMailingBtnAction(this, '/mailing/{mailing-id}/settings.action');
+  });
+  
+  this.addAction({'click': 'open-recent-mailing-statistic'}, function() {
+    performRecentMailingBtnAction(this, '/statistics/mailing/{mailing-id}/view.action');
+  });
+  
+  this.addAction({'click': 'delete-recent-mailing'}, function() {
+    this.event.preventDefault();
+    const $btn = $(this.el)
+    $.ajax({
+      url: AGN.url("/mailing/" + getRecentMailingId(this) + "/confirmDelete.action"),
+      data: {fromPage: 'dashboard'}
+    }).done(function(resp) {
+        AGN.Lib.RenderMessages($(resp)); // TODO remove with mailing.do deletion 
+        AGN.Lib.Confirm.create(resp).done(function(resp) {
+            $btn.closest("li").remove();
+            AGN.Lib.Form.get($btn).updateHtml(resp);
+        });
+    });
+  });
+
+  function getRecentMailingId(btn) {
+    return $(btn.el).parent().data('mailing-id');
+  }
+
+  function performRecentMailingBtnAction(btn, actionUrl) {
+    btn.event.preventDefault();
+    const mailingId = getRecentMailingId(btn);
+    AGN.Lib.Page.reload(AGN.url(actionUrl.replace('{mailing-id}', mailingId)));
+  }
 });

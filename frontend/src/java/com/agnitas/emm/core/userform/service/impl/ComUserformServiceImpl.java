@@ -31,7 +31,6 @@ import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.recipient.service.RecipientService;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.emm.core.userforms.impl.UserformServiceImpl;
-import org.agnitas.service.UserFormExporter;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.DbColumnType;
@@ -78,7 +77,6 @@ public class ComUserformServiceImpl extends UserformServiceImpl implements ComUs
     private EmmActionDao emmActionDao;
     private ExtendedConversionService conversionService;
     private FormTrackableLinkService trackableLinkService;
-    private UserFormExporter userFormExporter;
     private ConfigService configService;
     private ExtensibleUIDService uidService;
     private ComRecipientDao comRecipientDao;				// TODO Replace by RecipientService
@@ -392,7 +390,7 @@ public class ComUserformServiceImpl extends UserformServiceImpl implements ComUs
         return resultMap;
     }
     
-    private final Optional<String> companyTokenForAdmin(final Admin admin) {
+    private Optional<String> companyTokenForAdmin(final Admin admin) {
     	try {
     		return this.companyTokenService.getCompanyToken(admin.getCompanyID());
     	} catch(final UnknownCompanyIdException e) {
@@ -415,11 +413,6 @@ public class ComUserformServiceImpl extends UserformServiceImpl implements ComUs
         this.trackableLinkService = trackableLinkService;
     }
     
-    @Required
-    public void setUserFormExporter(UserFormExporter userFormExporter) {
-        this.userFormExporter = userFormExporter;
-    }
-
     @Required
     public void setConfigService(ConfigService configService) {
         this.configService = configService;

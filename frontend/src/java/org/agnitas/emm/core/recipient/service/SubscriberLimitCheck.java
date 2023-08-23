@@ -10,10 +10,9 @@
 
 package org.agnitas.emm.core.recipient.service;
 
+import org.agnitas.emm.core.recipient.service.impl.SubscriberLimitCheckResult;
+
 public interface SubscriberLimitCheck {
-
-	void checkSubscriberLimit(final int companyId) throws SubscriberLimitExceededException;
-
-	void checkSubscriberLimit(final int companyId, final int numNewSubscribers) throws SubscriberLimitExceededException;
-
+	SubscriberLimitCheckResult checkSubscriberLimit(final int companyId) throws SubscriberLimitExceededException;
+	SubscriberLimitCheckResult checkSubscriberLimit(final int companyId, final int numNewSubscribers) throws SubscriberLimitExceededException;
 }

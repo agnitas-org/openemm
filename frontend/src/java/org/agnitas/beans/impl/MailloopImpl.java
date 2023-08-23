@@ -13,7 +13,6 @@ package org.agnitas.beans.impl;
 import java.util.Date;
 
 import org.agnitas.beans.Mailloop;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public class MailloopImpl implements Mailloop {
 	/**
@@ -118,7 +117,7 @@ public class MailloopImpl implements Mailloop {
 	}
 
 	@Override
-	public void setCompanyID(@VelocityCheck int companyID) {
+	public void setCompanyID(int companyID) {
 		this.companyID = companyID;
 	}
 

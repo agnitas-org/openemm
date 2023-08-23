@@ -229,13 +229,14 @@ public class WorkflowForm {
     public enum WorkflowStatus implements IntEnum {
         STATUS_NONE(0, true, "NONE", "NONE"), // Just a special value, not a valid campaign's status
         STATUS_OPEN(1, true, "workflow.view.status.open", "open"),
-        STATUS_ACTIVE(2, false, "default.status.active", "active"),
+        STATUS_ACTIVE(2, false, "workflow.view.status.active", "active"),
         STATUS_INACTIVE(3, true, "workflow.view.status.inActive", "inactive"),
         STATUS_COMPLETE(4, false, "workflow.view.status.complete", "completed"),
         STATUS_TESTING(5, false, "workflow.view.status.testing", "testing"),
         STATUS_TESTED(6, true, "workflow.view.status.tested", "tested"),
         STATUS_FAILED(7, true, "FAILED", "failed"),
-        STATUS_TESTING_FAILED(8, true, "workflow.view.status.testing.failed", "testing_failed");
+        STATUS_TESTING_FAILED(8, true, "workflow.view.status.testing.failed", "testing_failed"),
+        STATUS_PAUSED(9, true, "GWUA.workflow.view.status.paused", "paused");
 
         private final int id;
         private final boolean changeable;

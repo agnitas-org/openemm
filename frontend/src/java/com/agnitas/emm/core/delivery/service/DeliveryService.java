@@ -10,7 +10,6 @@
 
 package com.agnitas.emm.core.delivery.service;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.beans.Admin;
 
@@ -18,7 +17,7 @@ import net.sf.json.JSONArray;
 
 public interface DeliveryService {
 
-    JSONArray getDeliveriesInfo(@VelocityCheck int companyId, int mailingId, int customerId);
+    JSONArray getDeliveriesInfo(int companyId, int mailingId, int customerId);
 
     JSONArray getSuccessfulDeliveriesInfo(int companyId, int mailingId, int recipientId);
 

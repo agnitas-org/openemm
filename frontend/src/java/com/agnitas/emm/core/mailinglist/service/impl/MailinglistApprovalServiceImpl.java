@@ -14,17 +14,16 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.dao.MailinglistApprovalDao;
 import org.agnitas.dao.MailinglistDao;
 import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.admin.service.AdminService;
@@ -32,23 +31,14 @@ import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
 
 public class MailinglistApprovalServiceImpl implements MailinglistApprovalService {
 
-	private MailinglistApprovalDao mailinglistApprovalDao;
-	private AdminService adminService;
-	private MailinglistDao mailinglistDao;
-	
-	@Required
-	public final void setMailinglistDao(final MailinglistDao dao) {
-		this.mailinglistDao = Objects.requireNonNull(dao, "Mailinglist DAO is null");
-	}
-	
-    @Required
-    public final void setMailinglistApprovalDao(final MailinglistApprovalDao dao) {
-    	this.mailinglistApprovalDao = Objects.requireNonNull(dao, "Mailinglist approval DAO is null");
-    }
-    
-    @Required
-    public final void setAdminService(final AdminService service) {
-    	this.adminService = Objects.requireNonNull(service, "Admin service is null");
+	private final MailinglistApprovalDao mailinglistApprovalDao;
+	private final AdminService adminService;
+	private final MailinglistDao mailinglistDao;
+
+    public MailinglistApprovalServiceImpl(MailinglistApprovalDao mailinglistApprovalDao, AdminService adminService, MailinglistDao mailinglistDao) {
+        this.mailinglistApprovalDao = mailinglistApprovalDao;
+        this.adminService = adminService;
+        this.mailinglistDao = mailinglistDao;
     }
 
     @Override
@@ -70,28 +60,64 @@ public class MailinglistApprovalServiceImpl implements MailinglistApprovalServic
     }
 
     @Override
-    public boolean setDisabledMailinglistForAdmin(@VelocityCheck int companyId, int adminId, Collection<Integer> mailinglistIds){
-        if(CollectionUtils.isEmpty(mailinglistIds)){
-        	mailinglistApprovalDao.allowAdminToUseAllMailinglists(companyId, adminId);
+    public boolean setDisabledMailinglistForAdmin(int companyId, int adminId, Collection<Integer> mailinglistIds){
+        return setDisabledMailinglistForAdmin(companyId, adminId, mailinglistIds, Optional.empty());
+    }
+
+    @Override
+    public boolean setDisabledMailinglistForAdmin(int companyId, int adminId, Collection<Integer> mailinglistIds, Optional<List<UserAction>> userActions) {
+        if (CollectionUtils.isEmpty(mailinglistIds)) {
+            if (userActions.isPresent()) {
+                List<Integer> alreadyDisabled = mailinglistApprovalDao.getDisabledMailinglistsForAdmin(companyId, adminId);
+                addUserActionOfChangeMailinglistAccess(alreadyDisabled, userActions.get(), true, adminId);
+            }
+
+            mailinglistApprovalDao.allowAdminToUseAllMailinglists(companyId, adminId);
             return true;
         }
 
         List<Integer> alreadyDisabledList = mailinglistApprovalDao.getDisabledMailinglistsForAdmin(companyId, adminId);
+        Set<Integer> alreadyDisabled = new HashSet<>(alreadyDisabledList);
 
-        if(CollectionUtils.isEmpty(alreadyDisabledList)){
-            return mailinglistApprovalDao.disallowAdminToUseMailinglists(companyId, adminId, mailinglistIds);
+        Collection<Integer> mailinglistsToEnable = CollectionUtils.removeAll(alreadyDisabled, mailinglistIds);
+        Collection<Integer> mailinglistsToDisable = CollectionUtils.removeAll(mailinglistIds, alreadyDisabled);
+
+        mailinglistApprovalDao.allowAdminToUseMailinglists(companyId, adminId, mailinglistsToEnable);
+        boolean isSuccessful = mailinglistApprovalDao.disallowAdminToUseMailinglists(companyId, adminId, mailinglistsToDisable);
+
+        if (userActions.isPresent()) {
+            addUserActionOfChangeMailinglistAccess(mailinglistsToEnable, userActions.get(), true, adminId);
+
+            if (isSuccessful) {
+                addUserActionOfChangeMailinglistAccess(mailinglistsToDisable, userActions.get(), false, adminId);
+            }
         }
 
-        Set<Integer> alreadyDisabled = new HashSet<>(alreadyDisabledList);
-        Collection<Integer> enableMailinglists = CollectionUtils.removeAll(alreadyDisabled, mailinglistIds);
-        Collection<Integer> disableMailingLists = CollectionUtils.removeAll(mailinglistIds, alreadyDisabled);
+        return isSuccessful;
+    }
 
-        mailinglistApprovalDao.allowAdminToUseMailinglists(companyId, adminId, enableMailinglists);
-        return mailinglistApprovalDao.disallowAdminToUseMailinglists(companyId, adminId, disableMailingLists);
+    private void addUserActionOfChangeMailinglistAccess(Collection<Integer> items, List<UserAction> userActions, boolean isGrantingAccess, int adminId) {
+	    if (items.isEmpty()) {
+	        return;
+        }
+
+        String mailinglistsAsStr = items.stream()
+                .map(String::valueOf)
+                .collect(Collectors.joining(", "));
+
+	    String accessType;
+	    if (isGrantingAccess) {
+            accessType = "Allowed";
+        } else {
+            accessType = "Disallowed";
+        }
+
+        String description = String.format("%s mailing lists (%s) for admin: %d", accessType, mailinglistsAsStr, adminId);
+        userActions.add(new UserAction("edit user", description));
     }
 
     @Override
-    public boolean setAdminsDisallowedToUseMailinglist(@VelocityCheck int companyId, int mailinglistId, Collection<Integer> adminIds){
+    public boolean setAdminsDisallowedToUseMailinglist(int companyId, int mailinglistId, Collection<Integer> adminIds){
         if(CollectionUtils.isEmpty(adminIds)){
         	mailinglistApprovalDao.allowAllAdminsToUseMailinglist(companyId, mailinglistId);
             return true;
@@ -112,7 +138,7 @@ public class MailinglistApprovalServiceImpl implements MailinglistApprovalServic
     }
 
     @Override
-    public List<Integer> getDisabledMailinglistsForAdmin(@VelocityCheck int companyId, int adminId){
+    public List<Integer> getDisabledMailinglistsForAdmin(int companyId, int adminId){
         return mailinglistApprovalDao.getDisabledMailinglistsForAdmin(companyId, adminId);
     }
 
@@ -132,12 +158,12 @@ public class MailinglistApprovalServiceImpl implements MailinglistApprovalServic
     }
 
     @Override
-    public boolean hasAnyDisabledMailingListsForAdmin(@VelocityCheck int companyId, int adminId) {
+    public boolean hasAnyDisabledMailingListsForAdmin(int companyId, int adminId) {
         return companyId > 0 && adminId > 0 && mailinglistApprovalDao.hasAnyDisabledMailingListsForAdmin(companyId, adminId);
     }
 
     @Override
-    public Set<Integer> getAdminsAllowedToUseMailinglist(@VelocityCheck int companyId, int mailinglistId){
+    public Set<Integer> getAdminsAllowedToUseMailinglist(int companyId, int mailinglistId){
         List<Integer> adminsDisallowedToUseMailinglist = mailinglistApprovalDao.getAdminsDisallowedToUseMailinglist(companyId, mailinglistId);
         Set<Integer> adminIds= adminService.getAdminsNamesMap(companyId).keySet();
         Collection<Integer> allowed = adminIds;

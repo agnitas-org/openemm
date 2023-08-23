@@ -50,6 +50,11 @@
             <mvc:exclude-mapping path="/assets/**"/>
             <bean class="com.agnitas.emm.core.workflow.web.WorkflowParamsRedirectionInterceptor"/>
         </mvc:interceptor>
+        <mvc:interceptor>
+            <mvc:mapping path="/recipient/import/wizard/step/*"/>
+            <mvc:exclude-mapping path="/assets/**"/>
+            <bean class="com.agnitas.emm.core.recipient.imports.wizard.web.RecipientImportWizardStepsInterceptor"/>
+        </mvc:interceptor>
     </mvc:interceptors>
 
     <bean id="jsonMessageConverter" class="org.springframework.http.converter.json.MappingJackson2HttpMessageConverter" lazy-init="false"/>

@@ -50,7 +50,7 @@ public class AdminForm {
     private String title;
     private String language;
     private AdminPreferences adminPreferences = new AdminPreferencesImpl();
-    private int altgId; // delete after GWUA-4957 has been successfully tested
+    private int altgId;
     private Set<Integer> altgIds = new HashSet<>();
 
 	public String getUsername() {

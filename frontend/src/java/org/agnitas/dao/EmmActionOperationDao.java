@@ -12,18 +12,17 @@ package org.agnitas.dao;
 
 import java.util.List;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
 
 public interface EmmActionOperationDao {
 	
-	List<AbstractActionOperationParameters> getOperations(int actionId, @VelocityCheck int companyId);
+	List<AbstractActionOperationParameters> getOperations(int actionId, int companyId);
 
 	void saveOperation(AbstractActionOperationParameters operation);
 	
 	void deleteOperation(AbstractActionOperationParameters operation);
 
-	void deleteOperations(int actionID, @VelocityCheck int companyId);
+	void deleteOperations(int actionID, int companyId);
 	
 }

@@ -18,13 +18,13 @@ import java.util.Stack;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.agnitas.backend.AgnTag;
 import org.agnitas.beans.TagDefinition;
 import org.agnitas.dao.TagDao;
 import org.agnitas.preview.AgnTagError.AgnTagErrorKey;
 import org.agnitas.util.AgnUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Required;
 
 /**
  * The Class TagSyntaxChecker.
@@ -38,18 +38,9 @@ public class TagSyntaxChecker {
 	 */
 	private static boolean ALLOW_LEGACY_MISSING_CLOSING_SLASHES = true;
 
-	/**
-	 * The tag dao.
-	 */
-	private TagDao tagDao;
+	private final TagDao tagDao;
 
-	/**
-	 * Sets the tag dao.
-	 *
-	 * @param tagDao the new tag dao
-	 */
-	@Required
-	public void setTagDao(TagDao tagDao) {
+	public TagSyntaxChecker(TagDao tagDao) {
 		this.tagDao = tagDao;
 	}
 
@@ -187,12 +178,12 @@ public class TagSyntaxChecker {
 							// tag is like [/agnTag name="xxx"/]
 							agnTagSyntaxErrors.add(new AgnTagError(tagName, fullTagText, AgnTagErrorKey.invalidAgnTagSlashes, contentText, tagStartIndex));
 							errorsFoundInCurrentTag = true;
-						} else if (!"agnDYN".equals(tagName) && isClosingTag) {
+						} else if (!AgnTag.DYN.getName().equals(tagName) && isClosingTag) {
 							// Only agnDYN-Tag may start with slash as a closing
 							// tag
 							agnTagSyntaxErrors.add(new AgnTagError(tagName, fullTagText, AgnTagErrorKey.invalidClosingAgnTag, contentText, tagStartIndex));
 							errorsFoundInCurrentTag = true;
-						} else if (!"agnDYN".equals(tagName) && !hasTrailingCloserSign && !ALLOW_LEGACY_MISSING_CLOSING_SLASHES) {
+						} else if (!AgnTag.DYN.getName().equals(tagName) && !hasTrailingCloserSign && !ALLOW_LEGACY_MISSING_CLOSING_SLASHES) {
 							// Any agnTag may have a closing slash, this is not
 							// defined by now.
 							// In a future implementation any standalone agnTags
@@ -212,7 +203,7 @@ public class TagSyntaxChecker {
 						}
 					}
 
-					if ("agnDYN".equals(tagName)) {
+					if (AgnTag.DYN.getName().equals(tagName)) {
 						// Check for order of agnDYN-Tags, which can be opened
 						// and closed
 						if (isClosingTag) {
@@ -231,7 +222,7 @@ public class TagSyntaxChecker {
 								openAgnDynTags.push(tagParameterMap.get("name"));
 							}
 						}
-					} else if ("agnDVALUE".equals(tagName)) {
+					} else if (AgnTag.DVALUE.getName().equals(tagName)) {
 						// Check for enclosing of agnDVALUE-Tags, which may only
 						// be used within the matching agnDYN-Tags
 						if (!openAgnDynTags.contains(tagParameterMap.get("name"))) {
@@ -247,7 +238,7 @@ public class TagSyntaxChecker {
 			}
 
 			if (openAgnDynTags.size() > 0) {
-				agnTagSyntaxErrors.add(new AgnTagError("agnDYN", "[agnDYN name=\"" + openAgnDynTags.peek() + "\"]", AgnTagErrorKey.missingClosingAgnDynTag, openAgnDynTags.peek()));
+				agnTagSyntaxErrors.add(new AgnTagError(AgnTag.DYN.getName(), "[agnDYN name=\"" + openAgnDynTags.peek() + "\"]", AgnTagErrorKey.missingClosingAgnDynTag, openAgnDynTags.peek()));
 				errorsFoundGlobal = true;
 			}
 
@@ -260,11 +251,6 @@ public class TagSyntaxChecker {
 	/**
 	 * Scann for name attributes of occurences of a defined list of agnTag
 	 * names.
-	 *
-	 * @param contentText
-	 * @param tagNames
-	 * @return
-	 * @throws Exception
 	 */
 	public static List<String> scanForAgnTags(String contentText, String... tagNames) throws Exception {
 		if (contentText == null) {
@@ -305,11 +291,6 @@ public class TagSyntaxChecker {
 	/**
 	 * Scann for name attributes of occurences of a defined list of agnTag
 	 * names.
-	 *
-	 * @param contentText
-	 * @param tagNames
-	 * @return
-	 * @throws Exception
 	 */
 	public static List<String> scanForAgnTagNameValues(String contentText, String... tagNames) throws Exception {
 		if (contentText == null) {

@@ -14,12 +14,16 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import com.agnitas.messages.Message;
+import org.agnitas.util.FulltextSearchInvalidQueryException;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang.StringUtils;
 
 import com.agnitas.emm.core.commons.database.fulltext.FulltextSearchReservedLiteralsConfig;
 
 public class OracleFulltextSearchReservedLiteralsConfig implements FulltextSearchReservedLiteralsConfig {
+
+    private static final String DOUBLE_QUOTES = "\"";
 
     private static final List<Character> SPECIAL_CHARS = new ArrayList<>(Arrays.asList(';', ',', '&', '=', '{', '}', '[', ']', '-', '~', '|', '$', '!', '>', '_'));
 
@@ -72,5 +76,51 @@ public class OracleFulltextSearchReservedLiteralsConfig implements FulltextSearc
     @Override
     public String escapeWord(String word) {
         return "{" + word + "}";
+    }
+
+    @Override
+    public void validateTokens(String[] tokens) throws FulltextSearchInvalidQueryException {
+        if (isEmptyPairedDoubleQuotesExists(tokens)) {
+            throw new FulltextSearchInvalidQueryException(
+                    "Invalid search phrase! Has paired double quotes without content inside!",
+                    Message.of("error.search.empty")
+            );
+        }
+
+        if (isForbiddenSymbolExistsAtTheEnd(tokens)) {
+            throw new FulltextSearchInvalidQueryException(
+                    "Invalid search phrase! Ends with invalid symbol!",
+                    Message.of("error.search.operator.forbidden", "'+'")
+            );
+        }
+
+        if (tokens.length == 1 && "??".equals(tokens[0])) {
+            throw new FulltextSearchInvalidQueryException(
+                    "Not useful search phrase!",
+                    Message.of("error.search.character.missing")
+            );
+        }
+    }
+
+    private boolean isEmptyPairedDoubleQuotesExists(String[] tokens) {
+        for (int i = 0; i < tokens.length; i++) {
+            String token = tokens[i];
+            int nextIndex = i + 1;
+
+            if (DOUBLE_QUOTES.equals(token) && nextIndex < tokens.length && DOUBLE_QUOTES.equals(tokens[nextIndex])) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private boolean isForbiddenSymbolExistsAtTheEnd(String[] tokens) {
+        if (tokens.length == 0) {
+            return false;
+        }
+
+        String lastToken = tokens[tokens.length - 1];
+        return "+".equals(lastToken);
     }
 }

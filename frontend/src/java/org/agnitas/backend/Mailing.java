@@ -185,6 +185,10 @@ public class Mailing {
 		mailing = new MailingDAO(data.dbase, id);
 		if (mailing.mailingID() == 0L) {
 			mailing = null;
+		} else {
+			if (Data.emm) {
+				mailing.retrieveItems (data.dbase);
+			}
 		}
 	}
 

@@ -28,7 +28,8 @@ window.I18n = {
             emptyRecipientList: '<agn:agnMessage key="calendar.error.emptyRecipientList"/>',
             autoImportInUse: '<agn:agnMessage key="error.workflow.autoImport.used"/>',
             autoExportInUse: '<agn:agnMessage key="error.workflow.autoExport.used"/>',
-            deadlineIsTooShortForImport: '<agn:agnMessage key="error.workflow.autoImport.delay.tooShort" arg0="%s"/>'
+            deadlineIsTooShortForImport: '<agn:agnMessage key="error.workflow.autoImport.delay.tooShort" arg0="%s"/>',
+            autoOptimizationDecisionForbidden: '<agn:agnMessage key="GWUA.workflow.auto_optimization.decision.forbidden" />'
         },
         delay: {
             60:'<agn:agnMessage key="error.delay.60"/>'
@@ -294,7 +295,7 @@ window.I18n = {
             start_event: '<agn:agnMessage key="workflow.start.StartEvent"/>',
             reminder_text: '<agn:agnMessage key="workflow.start.reminderText"/>',
             reaction_based: '<agn:agnMessage key="workflow.start.ReactionBasedStart"/>',
-            date_based: '<agn:agnMessage key="mailing.date"/>',
+            date_based: '<agn:agnMessage key="workflowlist.dateBased"/>',
             action_based: '<agn:agnMessage key="workflowlist.actionBased"/>'
         },
         stop: {
@@ -395,8 +396,6 @@ window.I18n = {
         disconnect: '<agn:agnMessage key="workflow.disconnect"/>',
         opening_rate: '<agn:agnMessage key="workflow.decision.OpeningRate"/>',
         decision: '<agn:agnMessage key="workflow.decision"/>',
-        fade_in_statistics: '<agn:agnMessage key="workflow.fadeInStatistics"/>',
-        fade_out_statistics: '<agn:agnMessage key="workflow.fadeOutStatistics"/>',
         recipient: '<agn:agnMessage key="Recipient"/>',
         parameter: '<agn:agnMessage key="workflow.parameter"/>',
         single: '<agn:agnMessage key="workflow.single"/>',
@@ -404,13 +403,14 @@ window.I18n = {
         status: {
             NONE: 'NONE',
             open: '<agn:agnMessage key="workflow.view.status.open"/>',
-            active: '<agn:agnMessage key="default.status.active"/>',
+            active: '<agn:agnMessage key="workflow.view.status.active"/>',
             inactive: '<agn:agnMessage key="workflow.view.status.inActive"/>',
             completed: '<agn:agnMessage key="workflow.view.status.complete"/>',
             testing: '<agn:agnMessage key="workflow.view.status.testing"/>',
             tested: '<agn:agnMessage key="workflow.view.status.tested"/>',
             failed: 'FAILED',
-            testing_failed: '<agn:agnMessage key="workflow.view.status.testing.failed"/>'
+            testing_failed: '<agn:agnMessage key="workflow.view.status.testing.failed"/>',
+            paused: '<agn:agnMessage key="GWUA.workflow.view.status.paused"/>'
         }
     },
     logon: {
@@ -468,7 +468,7 @@ window.I18n = {
             },
             generateHtml: '<agn:agnMessage key="userform.builder.generateHtml" />',
             tooltips: {
-                agnCI: '<agn:agnMessage key="userform.builder.tooltip.replace.cid" />',
+                agnCTOKEN: '<agn:agnMessage key="userform.builder.tooltip.replace.cid" />',
                 agnUID: '<agn:agnMessage key="userform.builder.tooltip.agnUID" />'
             },
             mediapoolImage: '<agn:agnMessage key="mediapool.image" />',
@@ -543,7 +543,8 @@ window.I18n = {
           type: '<agn:agnMessage key="error.import.dataType" arg0="%s"/>',
           length: '<agn:agnMessage key="error.import.dataLength" arg0="%s"/>',
           dateFormat: '<agn:agnMessage key="error.profiledb.invalidDefaultValue" arg0="%s"/>',
-          func: '<agn:agnMessage key="error.import.functions"/>'
+          func: '<agn:agnMessage key="error.import.functions"/>',
+          invalidEmail: '<agn:agnMessage key="error.email.invalid"/>'
         }
       }
     },

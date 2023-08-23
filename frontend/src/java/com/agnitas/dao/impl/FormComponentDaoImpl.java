@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.agnitas.dao.impl.BaseDaoImpl;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.AgnUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.IOUtils;
@@ -46,14 +45,14 @@ public class FormComponentDaoImpl extends BaseDaoImpl implements FormComponentDa
 	 * @see com.agnitas.dao.FormComponentDao#exists(int, int, int)
 	 */
 	@Override
-	public boolean exists(int formID, @VelocityCheck int companyID, int componentID) {
+	public boolean exists(int formID, int companyID, int componentID) {
 		String sql = "SELECT COUNT(*) FROM form_component_tbl WHERE form_id = ? AND company_id = ? AND id = ?";
 		int total = selectInt(logger, sql, formID, companyID, componentID);
 		return total > 0;
 	}
 
 	@Override
-	public boolean exists(int formId, @VelocityCheck int companyId, String componentName) {
+	public boolean exists(int formId, int companyId, String componentName) {
 		String sql = "SELECT COUNT(*) FROM form_component_tbl WHERE form_id = ? AND company_id = ? AND name = ?";
 		return selectInt(logger, sql, formId, companyId, componentName) > 0;
 	}
@@ -62,7 +61,7 @@ public class FormComponentDaoImpl extends BaseDaoImpl implements FormComponentDa
 	 * @see com.agnitas.dao.FormComponentDao#getFormComponentByName(int, int, java.lang.String)
 	 */
 	@Override
-	public FormComponent getFormComponent(int formID, @VelocityCheck int companyID, String imageFileName, FormComponentType componentType) {
+	public FormComponent getFormComponent(int formID, int companyID, String imageFileName, FormComponentType componentType) {
 		List<FormComponent> list;
 		if (componentType != null) {
 			list = select(logger, "SELECT * FROM form_component_tbl WHERE (form_id = ? OR form_id = 0) AND company_id = ? AND name = ? AND type = ? ORDER BY form_id DESC", new FormComponentRowMapper(), formID, companyID, imageFileName, componentType.getId());
@@ -138,7 +137,7 @@ public class FormComponentDaoImpl extends BaseDaoImpl implements FormComponentDa
 	 * @return the component descriptions
 	 */
 	@Override
-	public List<FormComponent> getFormComponentDescriptions(@VelocityCheck int companyID, int formID, FormComponentType componentType) {
+	public List<FormComponent> getFormComponentDescriptions(int companyID, int formID, FormComponentType componentType) {
 		return select(logger, "SELECT id, company_id, form_id, name, type, mimetype, description, data_size, width, height, creation_date, change_date FROM form_component_tbl WHERE company_id = ? AND (form_id = ? OR form_id = 0) AND type = ?", new FormComponentRowMapperWithoutData(), companyID, formID, componentType.getId());
 	}
 
@@ -197,7 +196,7 @@ public class FormComponentDaoImpl extends BaseDaoImpl implements FormComponentDa
 
 	@Override
 	@DaoUpdateReturnValueCheck
-	public boolean deleteFormComponent(@VelocityCheck int companyID, int formID, String componentName, FormComponentType componentType) {
+	public boolean deleteFormComponent(int companyID, int formID, String componentName, FormComponentType componentType) {
 		int touchedLines;
 		if (componentType != null) {
 			touchedLines = update(logger, "DELETE FROM form_component_tbl WHERE company_id = ? AND form_id = ? AND name = ? AND type = ?", companyID, formID, componentName, componentType.getId());
@@ -208,18 +207,18 @@ public class FormComponentDaoImpl extends BaseDaoImpl implements FormComponentDa
 	}
 
 	@Override
-	public boolean deleteFormComponentByCompany(@VelocityCheck int companyID) {
+	public boolean deleteFormComponentByCompany(int companyID) {
 		update(logger, "DELETE FROM form_component_tbl WHERE company_id = ?", companyID);
 		return selectInt(logger, "SELECT COUNT(*) FROM form_component_tbl WHERE company_id = ?", companyID) == 0;
 	}
 
 	@Override
-	public List<FormComponent> getFormComponents(@VelocityCheck int companyID, int formID) {
+	public List<FormComponent> getFormComponents(int companyID, int formID) {
 		return getFormComponents(companyID, formID, Collections.emptyList());
 	}
 
 	@Override
-	public List<FormComponent> getFormComponents(@VelocityCheck int companyId, int formID, List<FormComponentType> types) {
+	public List<FormComponent> getFormComponents(int companyId, int formID, List<FormComponentType> types) {
 		String sql = "SELECT id, company_id, form_id, name, type, mimetype, description, data_size, " +
 				"width, height, creation_date, change_date, data FROM form_component_tbl " +
 				"WHERE company_id = ? AND (form_id = ? OR form_id = 0)";
@@ -234,7 +233,7 @@ public class FormComponentDaoImpl extends BaseDaoImpl implements FormComponentDa
 
 	@Override
 	@DaoUpdateReturnValueCheck
-	public boolean saveFormComponent(@VelocityCheck int companyId, int formId, FormComponent component, FormComponent thumbnail) {
+	public boolean saveFormComponent(int companyId, int formId, FormComponent component, FormComponent thumbnail) {
 		if (formId == 0) {
 			return false;
 		}

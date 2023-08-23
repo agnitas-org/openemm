@@ -36,8 +36,3 @@ td {
     hyphens: auto;
     border-collapse: collapse !important;
 }
-
-.div-container {
-    display: inline-block;
-    background-color: #626364;
-}

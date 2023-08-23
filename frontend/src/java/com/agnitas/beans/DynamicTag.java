@@ -14,7 +14,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.agnitas.beans.DynamicTagContent;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public interface DynamicTag extends Cloneable {
 	/**
@@ -28,8 +27,6 @@ public interface DynamicTag extends Cloneable {
 	/**
 	 * Changes the content order.
 	 *
-	 * @param aID
-	 * @param direction
 	 */
 	boolean changeContentOrder(int aID, int direction);
 
@@ -38,7 +35,6 @@ public interface DynamicTag extends Cloneable {
 	/**
 	 * Move content down in the list.
 	 *
-	 * @param aID
 	 * @param amount
 	 *            (negative values will move up)
 	 */
@@ -159,7 +155,7 @@ public interface DynamicTag extends Cloneable {
 	 */
 	boolean isStandaloneTag();
 
-	void setCompanyID(@VelocityCheck int id);
+	void setCompanyID(int id);
 
 	/**
 	 * Setter for property standaloneTag.
@@ -212,28 +208,24 @@ public interface DynamicTag extends Cloneable {
 	/**
 	 * Setter for property endPos.
 	 * 
-	 * @param startTagEnd
 	 */
 	void setStartTagEnd(int startTagEnd);
 
 	/**
 	 * Setter for property startPos.
 	 * 
-	 * @param startTagStart
 	 */
 	void setStartTagStart(int startTagStart);
 
 	/**
 	 * Setter for property valueEnd.
 	 * 
-	 * @param valueTagEnd
 	 */
 	void setValueTagEnd(int valueTagEnd);
 
 	/**
 	 * Setter for property valueStart.
 	 * 
-	 * @param valueTagStart
 	 */
 	void setValueTagStart(int valueTagStart);
 
@@ -271,7 +263,6 @@ public interface DynamicTag extends Cloneable {
 	/**
 	 * Setter for property group.
 	 * 
-	 * @param group
 	 */
 	void setGroup(int group);
 

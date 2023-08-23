@@ -17,7 +17,13 @@
                     <li class="">
                         <ul class="pagination">
                             <li>
-                                <a href="#" data-form-action="previous">
+                                <emm:ShowByPermission token="import.init.rollback">
+                                    <c:url var="backUrl" value="/newimportwizard.do?action=10"/>
+                                </emm:ShowByPermission>
+                                <emm:HideByPermission token="import.init.rollback">
+                                    <c:url var="backUrl" value="/recipient/import/chooseMethod.action"/>
+                                </emm:HideByPermission>
+                                <a href="${backUrl}">
                                     <i class="icon icon-angle-left"></i>
                                     <bean:message key="button.Back" />
                                 </a>
@@ -145,7 +151,7 @@
                 </div>
             </div>
             <div class="tile-footer">
-                <a href="#" class="btn btn-large pull-left" data-form-action="previous">
+                <a href="${backUrl}" class="btn btn-large pull-left">
                     <i class="icon icon-angle-left"></i>
                     <span class="text"><bean:message key="button.Back"/></span>
                 </a>

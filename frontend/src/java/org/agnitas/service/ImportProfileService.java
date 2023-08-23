@@ -13,26 +13,37 @@ package org.agnitas.service;
 import java.util.List;
 import java.util.Map;
 
+import com.agnitas.beans.Admin;
+import org.agnitas.beans.ColumnMapping;
 import org.agnitas.beans.ImportProfile;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public interface ImportProfileService {
 
     void saveImportProfile(ImportProfile profile);
 
+    ColumnMapping findColumnMappingByDbColumn(String column, List<ColumnMapping> mappings);
+
+    void saveColumnsMappings(List<ColumnMapping> columnMappings, int profileId, Admin admin);
+
     void saveImportProfileWithoutColumnMappings(ImportProfile profile);
 
     ImportProfile getImportProfileById(int id);
+
+    boolean isDuplicatedName(String name, int id, int companyId);
+
+    boolean isColumnWasImported(String columnName, int id);
 
     void deleteImportProfileById(int id);
 
     List<ImportProfile> getImportProfilesByCompanyId(int companyId);
 
-    List<Integer> getSelectedMailingListIds(int id, @VelocityCheck int companyId);
+    List<Integer> getSelectedMailingListIds(int id, int companyId);
 
 	Map<String, Integer> getImportProfileGenderMapping(int id);
 
 	void saveImportProfileGenderMapping(int id, Map<String, Integer> genderMapping);
 
 	boolean addImportProfileGenderMapping(int profileId, String addedGender, int addedGenderInt);
+
+	boolean isKeyColumnsIndexed(ImportProfile profile);
 }

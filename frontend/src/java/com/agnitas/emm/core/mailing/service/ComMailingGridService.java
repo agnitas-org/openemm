@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.Map;
 
 import com.agnitas.beans.Mailing;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.agnitas.beans.Admin;
@@ -25,7 +24,7 @@ public interface ComMailingGridService {
 
     int getGridTemplateId(int mailingID);
 
-    Map<Integer, Integer> getGridTemplateIds(@VelocityCheck int companyId, Collection<Integer> mailingIds);
+    Map<Integer, Integer> getGridTemplateIds(int companyId, Collection<Integer> mailingIds);
     
     Map<String, Object> getMailingGridInfo(int mailingID, int companyID);
     
@@ -39,4 +38,6 @@ public interface ComMailingGridService {
     void deleteUndoDataOverLimit(int mailingId, int gridTemplateId);
     
     void restoreGridMailingUndo(int undoId, Mailing mailing) throws Exception;
+
+    void clearUndoData(List<Integer> mailingsIds);
 }

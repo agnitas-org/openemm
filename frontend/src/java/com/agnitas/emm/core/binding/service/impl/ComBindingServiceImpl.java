@@ -16,6 +16,7 @@ import java.util.Map;
 import org.agnitas.emm.core.binding.service.BindingModel;
 import org.agnitas.emm.core.binding.service.impl.BindingServiceImpl;
 import org.agnitas.emm.core.mailinglist.service.impl.MailinglistException;
+import org.agnitas.emm.core.velocity.Constants;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.agnitas.emm.core.action.service.ComEmmActionService;
@@ -38,7 +39,7 @@ public class ComBindingServiceImpl extends BindingServiceImpl implements ComBind
 		
 		final Map<String, Object> params = new HashMap<>();
 		params.put("customerID", model.getCustomerId());
-		params.put("actionErrors", actionOperationErrors);
+		params.put(Constants.ACTION_OPERATION_ERRORS_CONTEXT_NAME, actionOperationErrors);
 		
 		final Runnable actionRunner = () -> {
             try {

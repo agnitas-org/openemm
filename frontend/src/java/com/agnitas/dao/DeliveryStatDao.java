@@ -11,6 +11,7 @@
 package com.agnitas.dao;
 
 import java.util.Date;
+import java.util.List;
 
 import com.agnitas.beans.MaildropEntry;
 import com.agnitas.beans.impl.MailingBackendLog;
@@ -33,5 +34,7 @@ public interface DeliveryStatDao {
 
 	int getTotalMails(int mailingID);
 	
-	public boolean deleteMaildropStatusByCompany(int companyID);
+	boolean deleteMaildropStatusByCompany(int companyID);
+
+	List<Integer> findTargetDependentMaildropEntries(int targetGroupId, int companyId);
 }

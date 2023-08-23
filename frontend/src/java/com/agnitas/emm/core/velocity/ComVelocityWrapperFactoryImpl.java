@@ -10,7 +10,6 @@
 
 package com.agnitas.emm.core.velocity;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.emm.core.velocity.VelocityWrapper;
 import org.agnitas.emm.core.velocity.VelocityWrapperFactory;
 import org.agnitas.emm.core.velocity.VelocityWrapperFactoryImpl;
@@ -22,7 +21,7 @@ import org.agnitas.emm.core.velocity.VelocityWrapperFactoryImpl;
 public class ComVelocityWrapperFactoryImpl extends VelocityWrapperFactoryImpl {
 
 	@Override
-	protected VelocityWrapper createVelocityWrapper(@VelocityCheck int companyId) throws Exception {
+	protected VelocityWrapper createVelocityWrapper(int companyId) throws Exception {
 		return new ComVelocityWrapperImpl(companyId, getCompanyAccessCheck());
 	}
 

@@ -20,8 +20,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 
 import org.agnitas.beans.ColumnMapping;
 import org.agnitas.beans.impl.ColumnMappingImpl;
@@ -392,17 +390,11 @@ public class CsvImportExportDescription {
 		if (AgnUtils.isZipArchiveFile(importFile)) {
 			try {
 				if (getZipPassword() == null) {
-					InputStream dataInputStream = ZipUtilities.openZipInputStream(new FileInputStream(importFile));
-					try {
-						ZipEntry zipEntry = ((ZipInputStream) dataInputStream).getNextEntry();
-						if (zipEntry == null) {
-							throw new ImportException(false, "error.unzip.noEntry");
-						} else {
-							return dataInputStream;
-						}
-					} catch (Exception e) {
-						dataInputStream.close();
-						throw e;
+					InputStream dataInputStream = ZipUtilities.openSingleFileZipInputStream(importFile);
+					if (dataInputStream == null) {
+						throw new ImportException(false, "error.unzip.noEntry");
+					} else {
+						return dataInputStream;
 					}
 				} else {
 					File tempImportFile = new File(importFile.getAbsolutePath() + ".tmp");
@@ -414,7 +406,9 @@ public class CsvImportExportDescription {
 							throw new Exception("Invalid number of files included in zip file");
 						} else {
 							try (FileOutputStream tempImportFileOutputStream = new FileOutputStream(tempImportFile)) {
-								IOUtils.copy(zipFile.getInputStream(fileHeaders.get(0)), tempImportFileOutputStream);
+								try(final InputStream zipInput = zipFile.getInputStream(fileHeaders.get(0))) {
+									IOUtils.copy(zipInput, tempImportFileOutputStream);
+								}
 							}
 							return new TempFileInputStream(tempImportFile);
 						}

@@ -14,7 +14,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.DbColumnType;
 import org.agnitas.util.DbColumnType.SimpleDataType;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
@@ -81,7 +80,7 @@ public class EmmProfileFieldResolverImpl implements EmmProfileFieldResolver {
 	 * 
 	 * @throws ProfileFieldResolveException on errors reading profile field data
 	 */
-	public EmmProfileFieldResolverImpl(@VelocityCheck int companyId, ProfileFieldDao profileFieldDao)
+	public EmmProfileFieldResolverImpl(int companyId, ProfileFieldDao profileFieldDao)
 			throws ProfileFieldResolveException {
 		try {
 			this.shortNameToInfoMap = readProfileFields(companyId, profileFieldDao);
@@ -91,7 +90,7 @@ public class EmmProfileFieldResolverImpl implements EmmProfileFieldResolver {
 		}
 	}
 
-	public EmmProfileFieldResolverImpl(@VelocityCheck int companyId, ProfileFieldDao profileFieldDao,
+	public EmmProfileFieldResolverImpl(int companyId, ProfileFieldDao profileFieldDao,
 			QueryBuilderConfiguration configuration) throws ProfileFieldResolveException {
 		try {
 			this.shortNameToInfoMap = readProfileFields(companyId, profileFieldDao);

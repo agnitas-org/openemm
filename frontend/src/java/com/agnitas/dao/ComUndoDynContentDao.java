@@ -51,4 +51,6 @@ public interface ComUndoDynContentDao {
 	void deleteAddedDynContent(int mailingId, int undoId);
 
 	boolean deleteByCompany(int companyId);
+
+	void deleteUndoData(List<Integer> undoIds);
 }

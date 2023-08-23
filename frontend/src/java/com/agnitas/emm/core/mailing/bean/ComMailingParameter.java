@@ -12,7 +12,6 @@ package com.agnitas.emm.core.mailing.bean;
 
 import java.util.Date;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -44,7 +43,7 @@ public class ComMailingParameter {
 	
 	public ComMailingParameter() { }
 	
-	public ComMailingParameter(Integer mailingInfoID, Integer mailingID, @VelocityCheck Integer companyID, String name, String value, String description, Date creationDate, Date changeDate, Integer creationAdminID, Integer changeAdminID) {
+	public ComMailingParameter(Integer mailingInfoID, Integer mailingID, Integer companyID, String name, String value, String description, Date creationDate, Date changeDate, Integer creationAdminID, Integer changeAdminID) {
 		setMailingInfoID(mailingInfoID);
 		setMailingID(mailingID);
 		setCompanyID(companyID);
@@ -77,7 +76,7 @@ public class ComMailingParameter {
 		return companyID;
 	}
 	
-	public void setCompanyID(@VelocityCheck int companyID) {
+	public void setCompanyID(int companyID) {
 		this.companyID = companyID;
 	}
 	

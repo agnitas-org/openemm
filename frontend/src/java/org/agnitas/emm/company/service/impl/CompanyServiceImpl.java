@@ -18,7 +18,6 @@ import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.emm.core.company.bean.CompanyEntry;
 import com.agnitas.emm.core.servicemail.UnknownCompanyIdException;
 import org.agnitas.emm.company.service.CompanyService;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.springframework.beans.factory.annotation.Required;
 
 public final class CompanyServiceImpl implements CompanyService {
@@ -26,12 +25,12 @@ public final class CompanyServiceImpl implements CompanyService {
 	private ComCompanyDao companyDao;
 	
 	@Override
-	public final Company getCompanyOrNull(@VelocityCheck int companyId) {
+	public final Company getCompanyOrNull(int companyId) {
 		return companyDao.getCompany(companyId);
 	}
 	
 	@Override
-	public final Company getCompany(@VelocityCheck int companyId) throws UnknownCompanyIdException {
+	public final Company getCompany(int companyId) throws UnknownCompanyIdException {
 		final Company company = this.companyDao.getCompany(companyId);
 		
 		if(company == null) {
@@ -42,7 +41,7 @@ public final class CompanyServiceImpl implements CompanyService {
 	}
 
 	@Override
-	public boolean isCompanyExisting(@VelocityCheck int companyId) {
+	public boolean isCompanyExisting(int companyId) {
 		return companyId > 0 && companyDao.isCompanyExist(companyId);
 	}
 
@@ -52,12 +51,12 @@ public final class CompanyServiceImpl implements CompanyService {
 	}
 	
 	@Override
-	public List<CompanyEntry> getActiveOwnCompanyEntries(@VelocityCheck int companyId, boolean allowTransitionStatus) {
+	public List<CompanyEntry> getActiveOwnCompanyEntries(int companyId, boolean allowTransitionStatus) {
 		return companyDao.getActiveOwnCompaniesLight(companyId, allowTransitionStatus);
 	}
 
 	@Override
-	public List<Company> getCreatedCompanies(@VelocityCheck int companyId) {
+	public List<Company> getCreatedCompanies(int companyId) {
 		return companyDao.getCreatedCompanies(companyId);
 	}
 

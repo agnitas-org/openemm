@@ -12,16 +12,21 @@ package org.agnitas.util;
 
 import java.net.UnknownHostException;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 import org.xbill.DNS.InvalidTypeException;
 import org.xbill.DNS.Lookup;
 import org.xbill.DNS.Record;
 import org.xbill.DNS.SimpleResolver;
 import org.xbill.DNS.TXTRecord;
+import org.xbill.DNS.MXRecord;
 import org.xbill.DNS.TextParseException;
 import org.xbill.DNS.Type;
-
+import org.xbill.DNS.Name;
 /**
  * This class provieds an easy way to access DNS records
  */
@@ -92,6 +97,22 @@ public class DNS {
 			}
 		}
 		return rc;
+	}
+
+	public Map<Integer,String> queryMxLegacy(String domain) {
+		Map<Integer, String> mapResult = new LinkedHashMap<>();
+
+		List<Name> result = new ArrayList<>();
+		Record [] records =  query(domain, Type.MX);
+
+		if(Objects.nonNull(records)) {
+			for (Record rec : records) {
+				MXRecord mx = (MXRecord) rec;
+				mapResult.put(mx.getPriority(), mx.getTarget().toString());
+				result.add(mx.getTarget());
+			}
+		}
+		return mapResult;
 	}
 
 	private String typeString (int type) {

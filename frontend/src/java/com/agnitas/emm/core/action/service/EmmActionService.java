@@ -15,7 +15,7 @@ import java.util.Map;
 
 import org.agnitas.actions.EmmAction;
 import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.emm.core.velocity.VelocityCheck;
+
 import org.springframework.transaction.annotation.Transactional;
 
 import com.agnitas.beans.Admin;
@@ -32,9 +32,9 @@ public interface EmmActionService {
 	 * 
 	 * @return <code>true</code> if action exists, otherwise false
 	 */
-	boolean actionExists(final int actionID, @VelocityCheck final int companyID);
+	boolean actionExists(final int actionID, final int companyID);
 
-	boolean executeActions(int actionID, @VelocityCheck int companyID, Map<String, Object> params, final EmmActionOperationErrors errors) throws Exception;
+	boolean executeActions(int actionID, int companyID, Map<String, Object> params, final EmmActionOperationErrors errors) throws Exception;
 
 	int copyEmmAction(EmmAction emmAction, int toCompanyId, Map<Integer, Integer> mailingIdReplacements) throws Exception;
 
@@ -58,4 +58,6 @@ public interface EmmActionService {
 	EmmActionDto getCopyOfAction(Admin admin, int originId);
 
     JSONArray getEmmActionsJson(Admin admin);
+
+    boolean isAdvertising(int id, int companyId);
 }

@@ -1,43 +1,37 @@
 AGN.Lib.Controller.new('mailing-followup-options', function() {
-    var $container;
-    var $mailingSelect = '';
-    var additionalOptions = [];
-    var advertisingUrl = '';
+  var $container;
+  var $mailingSelect = '';
+  var additionalOptions = [];
 
-    this.addDomInitializer("mailing-followup-options", function() {
-        var data = this.config;
+  this.addDomInitializer("mailing-followup-options", function() {
+    $container = $("#followUpType");
+    $mailingSelect = $("#lightWeightMailingList");
+    additionalOptions = this.config.additionalOptions;
 
-        $container = $(data.followUpContainer);
-        $mailingSelect = $(data.mailingIdContainer);
-        additionalOptions = data.additionalOptions;
-        advertisingUrl = data.advertisingUrl;
+    changeFollowUpOptionsSet();
 
-        changeFollowUpOptionsSet();
-
-        $mailingSelect.on('change', function() {
-            changeFollowUpOptionsSet();
-        });
+    $mailingSelect.on('change', function() {
+      changeFollowUpOptionsSet();
     });
+  });
 
-    getAdditionalAdvertisingOptions = function() {
-        return AGN.Lib.Template.text("followupAdvertisingOptions", {items: additionalOptions} );
-    };
+  var getAdditionalAdvertisingOptions = function() {
+    return AGN.Lib.Template.text("followupAdvertisingOptions", {items: additionalOptions});
+  };
 
-    changeFollowUpOptionsSet = function() {
-        var mailingId = AGN.Lib.Select.get($mailingSelect).getSelectedValue();
+  var changeFollowUpOptionsSet = function() {
+    var mailingIdToCheck = AGN.Lib.Select.get($mailingSelect).getSelectedValue();
 
-        jQuery.ajax({
-            action: "POST",
-            url: advertisingUrl,
-            data: {
-                mailingId: mailingId
-            },
-            success: function (data) {
-                $container.children('.advertisingOption').remove();
-                if (data.isAdvertisingContentType) {
-                    $container.append(getAdditionalAdvertisingOptions());
-                }
-            }
-        });
-    };
+    $container.children('.advertisingOption').remove();
+    if (mailingIdToCheck) {
+      $.ajax({
+        type: 'POST',
+        url: AGN.url("/mailing/ajax/" + mailingIdToCheck + "/isAdvertisingContentType.action")
+      }).done(function(resp) {
+        if (resp && resp.success) {
+          $container.append(getAdditionalAdvertisingOptions());
+        }
+      });
+    }
+  };
 });

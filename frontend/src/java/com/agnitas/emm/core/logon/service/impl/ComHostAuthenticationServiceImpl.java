@@ -10,9 +10,13 @@
 
 package com.agnitas.emm.core.logon.service.impl;
 
+import java.util.Locale;
+
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.agnitas.preview.Page;
+import org.agnitas.preview.Preview;
+import org.agnitas.preview.PreviewFactory;
 import org.agnitas.util.HtmlUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -20,6 +24,7 @@ import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.JavaMailService;
+import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.logon.dao.ComHostAuthenticationDao;
 import com.agnitas.emm.core.logon.dao.HostAuthenticationDaoException;
 import com.agnitas.emm.core.logon.dao.NoSecurityCodeHostAuthenticationDaoException;
@@ -71,7 +76,7 @@ public class ComHostAuthenticationServiceImpl implements ComHostAuthenticationSe
 	}
 
 	@Override
-	public boolean isHostAuthenticationEnabled(@VelocityCheck int companyID) {
+	public boolean isHostAuthenticationEnabled(int companyID) {
 
 		// Host authentication is enabled by default and will be disabled by special
 		// configuration
@@ -170,22 +175,30 @@ public class ComHostAuthenticationServiceImpl implements ComHostAuthenticationSe
 	 *             on errors sending mail
 	 */
 	private void sendSecurityCodeByEmail(Admin admin, String securityCode) throws CannotSendSecurityCodeException {
-		String subjectTemplate = I18nString.getLocaleString("logon.hostauth.email.security_code.subject", admin.getLocale());
-		String messageTemplate = I18nString.getLocaleString("logon.hostauth.email.security_code.content", admin.getLocale());
-
-		String subject = subjectTemplate.replace(USERNAME_PLACEHOLDER, admin.getUsername()).replace(SECURITY_CODE_PLACEHOLDER, securityCode).replace("\\n", "\n");
-		String message = messageTemplate.replace(USERNAME_PLACEHOLDER, admin.getUsername()).replace(SECURITY_CODE_PLACEHOLDER, securityCode).replace("\\n", "\n");
-
-		try {
-			boolean result = javaMailService.sendEmail(admin.getCompanyID(), admin.getEmail(), subject, message, HtmlUtils.replaceLineFeedsForHTML(message));
-			if (!result) {
-				logger.error("Unable to send email with security code?");
-				throw new CannotSendSecurityCodeException("Error sending mail with security code");
-			}
-		} catch (Exception e) {
-			logger.error("Error sending email with security code", e);
-			throw new CannotSendSecurityCodeException(admin.getEmail(), e);
+		Locale locale = admin.getLocale();
+		
+		final String mailSubject;
+		final String mailContentHtml;
+		final String mailContentText;
+		int securityCodeMailingID = adminService.getSecurityCodeMailingId(admin.getLocale().getLanguage());
+		if (securityCodeMailingID <= 0 && !"en".equalsIgnoreCase(admin.getLocale().getLanguage())) {
+			securityCodeMailingID = adminService.getSecurityCodeMailingId("en");
 		}
+		if (securityCodeMailingID > 0) {
+			final Preview preview = previewFactory.createPreview();
+			final Page output = preview.makePreview(securityCodeMailingID, 0, true);
+			preview.done();
+
+			mailSubject = output.getHeaderField("subject").replace("{0}", admin.getUsername()).replace("{1}", securityCode).replace("{2}", admin.getFirstName()).replace("{3}", admin.getFullname());
+			mailContentText = output.getText().replace("{0}", admin.getUsername()).replace("{1}", securityCode).replace("{2}", admin.getFirstName()).replace("{3}", admin.getFullname());
+			mailContentHtml = output.getHTML().replace("{0}", admin.getUsername()).replace("{1}", securityCode).replace("{2}", admin.getFirstName()).replace("{3}", admin.getFullname());
+		} else {
+			mailSubject = I18nString.getLocaleString("logon.hostauth.email.security_code.subject", admin.getLocale()).replace(USERNAME_PLACEHOLDER, admin.getUsername()).replace(SECURITY_CODE_PLACEHOLDER, securityCode).replace("\\n", "\n");
+			mailContentText = I18nString.getLocaleString("logon.hostauth.email.security_code.content", admin.getLocale()).replace(USERNAME_PLACEHOLDER, admin.getUsername()).replace(SECURITY_CODE_PLACEHOLDER, securityCode).replace("\\n", "\n");
+			mailContentHtml = HtmlUtils.replaceLineFeedsForHTML(mailContentText);
+		}
+		
+		javaMailService.sendEmail(admin.getCompanyID(), admin.getEmail(), mailSubject, mailContentText, mailContentHtml);
 	}
 
 	/**
@@ -301,6 +314,10 @@ public class ComHostAuthenticationServiceImpl implements ComHostAuthenticationSe
 	private ComHostAuthenticationDao hostAuthenticationDao;
 
 	private JavaMailService javaMailService;
+	
+	protected AdminService adminService;
+	
+	private PreviewFactory previewFactory;
 
 	/**
 	 * Set service for accessing database-based configuration.
@@ -327,6 +344,16 @@ public class ComHostAuthenticationServiceImpl implements ComHostAuthenticationSe
 	@Required
 	public void setJavaMailService(JavaMailService javaMailService) {
 		this.javaMailService = javaMailService;
+	}
+
+	@Required
+	public void setAdminService(AdminService adminService) {
+		this.adminService = adminService;
+	}
+
+	@Required
+	public void setPreviewFactory(final PreviewFactory previewFactory) {
+		this.previewFactory = previewFactory;
 	}
 
 	/**

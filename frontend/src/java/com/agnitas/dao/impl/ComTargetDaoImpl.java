@@ -59,7 +59,6 @@ import com.agnitas.dao.impl.mapper.TargetLightRowMapper;
 import com.agnitas.dao.impl.mapper.TargetRowMapper;
 import com.agnitas.emm.core.beans.Dependent;
 import com.agnitas.emm.core.commons.database.fulltext.FulltextSearchQueryGenerator;
-import com.agnitas.emm.core.target.beans.RawTargetGroup;
 import com.agnitas.emm.core.target.beans.TargetGroupDependentType;
 import com.agnitas.emm.core.target.eql.EqlFacade;
 import com.agnitas.emm.core.target.eql.codegen.sql.SqlCode;
@@ -81,8 +80,6 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 
     /** Facade for EQL feature */
 	private EqlFacade eqlFacade;
-
-	private final RawTargetGroupRowMapper rawTargetGroupRowMapper = new RawTargetGroupRowMapper();
 
 	private FulltextSearchQueryGenerator fulltextSearchQueryGenerator;
 
@@ -322,7 +319,6 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
                     BooleanUtils.toInteger(target.isAdminTestDelivery()),
                     BooleanUtils.toInteger(target.getComponentHide()),
                     BooleanUtils.toInteger(hidden),
-                    BooleanUtils.toInteger(target.isFavorite()),
                     target.getEQL(),
                     target.getComplexityIndex(),
                     target.isValid() ? 0 : 1	// Note: Property is "valid", table column is "invalid"!'
@@ -333,15 +329,15 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 				if (isOracleDB()) {
                     target.setId(selectInt(logger, "SELECT dyn_target_tbl_seq.NEXTVAL FROM DUAL"));
                     params.add(0, target.getId());
-					update(logger, "INSERT INTO dyn_target_tbl (target_id, company_id, target_sql, target_shortname, target_description, creation_date, change_date, deleted, admin_test_delivery, component_hide, hidden, favorite, eql, complexity, invalid" + additionalColumns
+					update(logger, "INSERT INTO dyn_target_tbl (target_id, company_id, target_sql, target_shortname, target_description, creation_date, change_date, deleted, admin_test_delivery, component_hide, hidden, eql, complexity, invalid" + additionalColumns
                             + ") VALUES (" + AgnUtils.repeatString("?", params.size(), ", ") + ")", params.toArray());
 				} else {
-                    int targetID = insertIntoAutoincrementMysqlTable(logger, "target_id", "INSERT INTO dyn_target_tbl (company_id, target_sql, target_shortname, target_description, creation_date, change_date, deleted, admin_test_delivery, component_hide, hidden, favorite, eql, complexity, invalid" + additionalColumns
+                    int targetID = insertIntoAutoincrementMysqlTable(logger, "target_id", "INSERT INTO dyn_target_tbl (company_id, target_sql, target_shortname, target_description, creation_date, change_date, deleted, admin_test_delivery, component_hide, hidden, eql, complexity, invalid" + additionalColumns
                             + ") VALUES (" + AgnUtils.repeatString("?", params.size(), ", ") + ")", params.toArray());
 					target.setId(targetID);
 				}
 			} else {
-				update(logger, "UPDATE dyn_target_tbl SET target_sql = ?, target_shortname = ?, target_description = ?, deleted = ?, change_date = ?, admin_test_delivery = ?, eql=?, complexity = ?, invalid=?, component_hide = ?, favorite = ? WHERE target_id = ? AND company_id = ?",
+				update(logger, "UPDATE dyn_target_tbl SET target_sql = ?, target_shortname = ?, target_description = ?, deleted = ?, change_date = ?, admin_test_delivery = ?, eql=?, complexity = ?, invalid=?, component_hide = ? WHERE target_id = ? AND company_id = ?",
 					target.getTargetSQL(),
 					target.getTargetName(),
 					target.getTargetDescription(),
@@ -352,7 +348,6 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 					target.getComplexityIndex(),
 					target.isValid() ? 0 : 1,	// Note: Property is "valid", table column is "invalid"!
 					BooleanUtils.toInteger(target.getComponentHide()),
-					BooleanUtils.toInteger(target.isFavorite()),
 					target.getId(),
 					target.getCompanyID()
 					);
@@ -364,10 +359,10 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 					params.add(target.getCompanyID());
 	                update(logger, "UPDATE dyn_target_tbl SET " + sqlSetPart + " WHERE target_id = ? AND company_id = ?", params.toArray(new Object[0]));
 				}
-
 			}
-		} catch (Exception e) {
-			logger.error("Error saving target group " + target.getId(), e);
+            updateFavoriteMark(target);
+        } catch (Exception e) {
+			logger.error("Error saving target group {}", target.getId(), e);
 			target.setId(0);
 		}
 
@@ -378,6 +373,11 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 
 		return target.getId();
 	}
+
+    protected void updateFavoriteMark(ComTarget target) {
+        update(logger, "UPDATE dyn_target_tbl SET favorite = ? WHERE target_id = ? AND company_id = ?",
+                BooleanUtils.toInteger(target.isFavorite()), target.getId(), target.getCompanyID());
+    }
 
 	@Override
 	public ComTarget getTarget(int targetID, int companyID) {
@@ -464,7 +464,7 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 
 	@Override
 	@DaoUpdateReturnValueCheck
-	public boolean deleteTarget(int targetID, int companyID) throws TargetGroupPersistenceException {
+	public boolean deleteTarget(int targetID, int companyID) throws TargetGroupLockedException {
 		if (isTargetGroupLocked(targetID, companyID)) {
 			throw new TargetGroupLockedException(targetID);
 		}
@@ -473,7 +473,7 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 
 		return touchedLines > 0;
 	}
-
+	
 	@Override
 	public boolean deleteTargetReally(int targetId, int companyId) {
 		return update(logger, "DELETE FROM dyn_target_tbl WHERE company_id = ? AND target_id = ?", companyId, targetId) > 0;
@@ -486,12 +486,17 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 			return false;
 		}
 		try {
+			deleteTargetsDependentData(companyID);
 			update(logger, "DELETE FROM dyn_target_tbl WHERE company_id = ?", companyID);
 		} catch (Exception e) {
-			logger.error("Error occurred: " + e.getMessage(), e);
+			logger.error("Error occurred: {}", e.getMessage(), e);
 			return false;
 		}
 		return true;
+	}
+
+	protected void deleteTargetsDependentData(int companyId) {
+		// empty
 	}
 
     @Override
@@ -593,8 +598,19 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 	}
 
 	@Override
+	public List<TargetLight> getTargetLights(int adminId, int companyID, boolean includeDeleted, boolean worldDelivery, boolean adminTestDelivery) {
+		return getTargetLights(adminId, companyID, includeDeleted, worldDelivery, adminTestDelivery, false);
+	}
+
+	@Override
 	public List<TargetLight> getTargetLights(int companyID, boolean includeDeleted, boolean worldDelivery, boolean adminTestDelivery, boolean content) {
+	    return getTargetLights(0, companyID, includeDeleted, worldDelivery, adminTestDelivery, content);
+    }
+
+	@Override
+	public List<TargetLight> getTargetLights(int adminId, int companyID, boolean includeDeleted, boolean worldDelivery, boolean adminTestDelivery, boolean content) {
 		TargetLightsOptions options = TargetLightsOptions.builder()
+                .setAdminId(adminId)
 				.setCompanyId(companyID)
 				.setIncludeDeleted(includeDeleted)
 				.setWorldDelivery(worldDelivery)
@@ -610,24 +626,60 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 			SqlPreparedStatementManager sqlPreparedStatementManager = prepareSelectStatement(options);
 			return select(logger, sqlPreparedStatementManager.getPreparedSqlString(), getTargetLightRowMapper(), sqlPreparedStatementManager.getPreparedSqlParameters());
 		} catch (Exception e) {
-			logger.error("Getting target lights failed: " + e.getMessage());
+			logger.error("Getting target lights failed: {}", e.getMessage());
 		}
 
 		return new ArrayList<>();
 	}
 
+	@Override
+	public PaginatedListImpl<TargetLight> getPaginatedTargetLightsBySearchParameters(TargetLightsOptions options) {
+		try {
+			boolean sortDirectionAscending = !"desc".equalsIgnoreCase(options.getDirection()) && !"descending".equalsIgnoreCase(options.getDirection());
+			SqlPreparedStatementManager sqlPreparedStatementManager = preparePaginatedSelectStatement(options);
+			if (StringUtils.isBlank(options.getSorting())) {
+				String sortClause = getDefaultSortingClauseForTargetList(options.getAdminId(), options.getCompanyId());
+				return selectPaginatedListWithSortClause(logger, sqlPreparedStatementManager.getPreparedSqlString(), sortClause, options.getSorting(), sortDirectionAscending, options.getPageNumber(), options.getPageSize(), getTargetLightRowMapper(), sqlPreparedStatementManager.getPreparedSqlParameters());
+			}
+			return selectPaginatedList(logger, sqlPreparedStatementManager.getPreparedSqlString(), "dyn_target_tbl", options.getSorting(), sortDirectionAscending, options.getPageNumber(), options.getPageSize(), getTargetLightRowMapper(), sqlPreparedStatementManager.getPreparedSqlParameters());
+		} catch (Exception e) {
+			logger.error("Getting target lights failed: {}", e.getMessage());
+		}
+		return new PaginatedListImpl<>();
+	}
+	
 	protected SqlPreparedStatementManager prepareSelectStatement(TargetLightsOptions options) throws Exception {
-		SqlPreparedStatementManager preparedStatementManager =
-				new SqlPreparedStatementManager(
-						"SELECT target_id, company_id, target_description, target_shortname, " +
-								"creation_date, change_date, deleted, locked, invalid, component_hide, complexity, favorite " + getTargetExtendedColumnsAsString() +
-								"FROM dyn_target_tbl");
+		SqlPreparedStatementManager preparedStatementManager =	new SqlPreparedStatementManager(getSqlQueryForTargetsList(options.getAdminId(), options.getCompanyId()));
 
 		prepareWhereClauseForTargetsList(preparedStatementManager, options);
 
-		preparedStatementManager.finalizeStatement("ORDER BY favorite DESC, LOWER(target_shortname), target_id");
+		preparedStatementManager.finalizeStatement(getDefaultSortingClauseForTargetList(options.getAdminId(), options.getCompanyId()));
 
 		return preparedStatementManager;
+	}
+	
+	protected SqlPreparedStatementManager preparePaginatedSelectStatement(TargetLightsOptions options) throws Exception {
+		SqlPreparedStatementManager preparedStatementManager = new SqlPreparedStatementManager(
+		        getSqlQueryForTargetsList(options.getAdminId(), options.getCompanyId()));
+
+		prepareWhereClauseForTargetsList(preparedStatementManager, options);
+
+		return preparedStatementManager;
+	}
+
+	protected String getSqlQueryForTargetsList(int adminId, int companyId) {
+		return "SELECT target_id, company_id, target_description, target_shortname, " +
+				"creation_date, change_date, deleted, locked, invalid, component_hide, complexity, favorite " + getTargetExtendedColumnsAsString() +
+                isInAdminFavoritesQuery(adminId, companyId) +
+				"FROM dyn_target_tbl t";
+	}
+
+	protected String isInAdminFavoritesQuery(int adminId, int companyId) {
+        return StringUtils.EMPTY;
+    }
+
+	protected String getDefaultSortingClauseForTargetList(int adminId, int companyId) {
+		return "ORDER BY favorite DESC, LOWER(target_shortname), target_id";
 	}
 
 	protected void prepareWhereClauseForTargetsList(final SqlPreparedStatementManager preparedStatementManager,
@@ -757,20 +809,6 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 		update(logger, "UPDATE dyn_target_tbl SET locked = ? WHERE company_id = ? AND target_id = ?", locked ? 1 : 0, companyID, targetID);
 	}
 
-	protected final class RawTargetGroupRowMapper implements RowMapper<RawTargetGroup> {
-
-		@Override
-		public final RawTargetGroup mapRow(final ResultSet rs, final int row) throws SQLException {
-			final int id = rs.getInt("target_id");
-			final String name = rs.getString("target_shortname");
-			final int companyId = rs.getInt("company_id");
-			final String eql = rs.getString("eql");
-
-			return new RawTargetGroup(id, name, companyId, eql);
-		}
-
-	}
-
 	@Override
 	public List<TargetLight> getTargetLights(int companyID, Collection<Integer> targetIds, boolean includeDeleted) {
 		if (targetIds == null || targetIds.size() <= 0) {
@@ -814,6 +852,11 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 	@Override
 	public List<TargetLight> getTestAndAdminTargetLights(int companyId) {
 		return getTargetLights(companyId, false, false, true);
+	}
+
+	@Override
+	public List<TargetLight> getTestAndAdminTargetLights(int adminId, int companyId) {
+		return getTargetLights(adminId, companyId, false, false, true);
 	}
 
 	@Override
@@ -898,9 +941,11 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 	}
 
 	@Override
-	public final List<RawTargetGroup> listRawTargetGroups(int companyId, String ...eqlRawFragments) {
-		String sqlGetAll = "SELECT target_id, target_shortname, company_id, eql FROM dyn_target_tbl "
-				+ "WHERE company_id = ? AND deleted = 0";
+	public final List<ComTarget> listRawTargetGroups(int companyId, String... eqlRawFragments) {
+		final String sqlGetAll = "SELECT target_id, company_id, target_description, target_shortname, target_sql, " +
+				"deleted, creation_date, change_date, admin_test_delivery, locked, eql, COALESCE(complexity, -1) AS complexity, favorite, " +
+				"invalid, component_hide " + getTargetExtendedColumnsAsString()
+				+ " FROM dyn_target_tbl WHERE company_id = ? AND deleted = 0";
 
 		if (eqlRawFragments.length > 0) {
 			List<Object> sqlParameters = new ArrayList<>(eqlRawFragments.length + 1);
@@ -918,11 +963,13 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 			if (validFragmentsCount > 0) {
 				String sql = sqlGetAll + " AND " + AgnUtils.repeatString("LOWER(eql) LIKE ?", validFragmentsCount, " AND ");
 
-				return select(logger, sql, rawTargetGroupRowMapper, sqlParameters.toArray());
+				return select(logger, sql, getTargetRowMapper(), sqlParameters.toArray());
+			} else {
+				return select(logger, sqlGetAll, getTargetRowMapper(), companyId);
 			}
+		} else {
+			return select(logger, sqlGetAll, getTargetRowMapper(), companyId);
 		}
-
-		return select(logger, sqlGetAll, rawTargetGroupRowMapper, companyId);
 	}
 
 	@Override
@@ -1046,9 +1093,20 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
         manageFavorite(targetId, false, companyId);
     }
 
+    // company-based
     private void manageFavorite(final int targetId, final boolean favorite, final int companyId) {
         String query = "UPDATE dyn_target_tbl SET favorite = ? WHERE target_id = ? AND company_id = ?";
         update(logger, query, favorite ? 1 : 0, targetId, companyId);
+    }
+
+    @Override
+    public void markAsFavorite(int targetId, int adminId, int companyId) {
+        // no implementation for OpenEMM
+    }
+
+    @Override
+    public void unmarkAsFavorite(int targetId, int adminId, int companyId) {
+		// no implementation for OpenEMM
     }
 
 	public TargetLightRowMapper getTargetLightRowMapper() {
@@ -1159,6 +1217,12 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
     public boolean isAltg(int targetId) {
         return selectInt(logger, "SELECT is_access_limiting FROM dyn_target_tbl WHERE target_id = ?", targetId) == 1;
 	}
+
+	@Override
+    public boolean isHidden(int targetId, int companyId) {
+        return selectInt(logger,
+                "SELECT hidden FROM dyn_target_tbl WHERE target_id = ? AND company_id = ?", targetId, companyId) == 1;
+	}
 	
     protected Collection<String> getAdditionalExtendedColumns() {
   		return CollectionUtils.emptyCollection();
@@ -1178,5 +1242,10 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
         return selectInt(logger, "SELECT 1 FROM dyn_target_tbl " +
                 "WHERE eql LIKE '%CLICKED LINK " + link.getId() + " IN MAILING " + link.getMailingID() + "%' " +
                 "AND deleted <= 0 AND hidden = 0 " + (isOracle() ? "AND rownum < 2" : "LIMIT 1")) == 1;
+    }
+
+    @Override
+    public boolean isTargetFavoriteForAdmin(ComTarget target, int adminId) {
+        return target.isFavorite(); // overridden in extended class
     }
 }

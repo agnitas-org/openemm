@@ -12,7 +12,6 @@ package org.agnitas.beans;
 
 import java.util.Date;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public interface Mailloop {
     /**
@@ -69,7 +68,7 @@ public interface Mailloop {
      *
      * @param companyID New value of property companyID.
      */
-    void setCompanyID( @VelocityCheck int companyID);
+    void setCompanyID( int companyID);
 
     /**
      * Setter for property description.

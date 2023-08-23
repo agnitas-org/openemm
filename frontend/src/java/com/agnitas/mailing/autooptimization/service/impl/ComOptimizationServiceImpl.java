@@ -10,45 +10,6 @@
 
 package com.agnitas.mailing.autooptimization.service.impl;
 
-import static com.agnitas.emm.core.workflow.beans.WorkflowDecision.WorkflowAutoOptimizationCriteria.AO_CRITERIA_CLICKRATE;
-import static com.agnitas.emm.core.workflow.beans.WorkflowDecision.WorkflowAutoOptimizationCriteria.AO_CRITERIA_OPENRATE;
-import static com.agnitas.emm.core.workflow.beans.WorkflowDecision.WorkflowAutoOptimizationCriteria.AO_CRITERIA_REVENUE;
-import static com.agnitas.mailing.autooptimization.beans.ComOptimization.STATUS_EVAL_IN_PROGRESS;
-import static com.agnitas.mailing.autooptimization.beans.ComOptimization.STATUS_FINISHED;
-import static com.agnitas.mailing.autooptimization.beans.ComOptimization.STATUS_NOT_STARTED;
-import static com.agnitas.mailing.autooptimization.beans.ComOptimization.STATUS_SCHEDULED;
-import static com.agnitas.mailing.autooptimization.beans.ComOptimization.STATUS_TEST_SEND;
-
-import java.time.LocalDate;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Hashtable;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import org.agnitas.beans.impl.MaildropDeleteException;
-import org.agnitas.dao.MailingStatus;
-import org.agnitas.emm.core.mailing.service.CopyMailingService;
-import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.agnitas.stat.CampaignStatEntry;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.beans.impl.SelectOption;
-import org.apache.commons.collections4.MapUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.ComTarget;
 import com.agnitas.beans.DeliveryStat;
@@ -66,40 +27,70 @@ import com.agnitas.emm.core.mailing.service.ComMailingParameterService;
 import com.agnitas.emm.core.workflow.beans.WorkflowDecision;
 import com.agnitas.mailing.autooptimization.beans.ComOptimization;
 import com.agnitas.mailing.autooptimization.beans.impl.AutoOptimizationLight;
+import com.agnitas.mailing.autooptimization.beans.impl.AutoOptimizationStatus;
 import com.agnitas.mailing.autooptimization.dao.ComOptimizationDao;
 import com.agnitas.mailing.autooptimization.service.ComOptimizationCommonService;
 import com.agnitas.mailing.autooptimization.service.ComOptimizationService;
 import com.agnitas.mailing.autooptimization.service.ComOptimizationStatService;
-
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
+import org.agnitas.beans.impl.MaildropDeleteException;
+import org.agnitas.dao.MailingStatus;
+import org.agnitas.emm.core.mailing.service.CopyMailingService;
+import org.agnitas.stat.CampaignStatEntry;
+import org.agnitas.util.AgnUtils;
+import org.agnitas.util.DateUtilities;
+import org.agnitas.util.beans.impl.SelectOption;
+import org.apache.commons.collections4.MapUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Hashtable;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static com.agnitas.emm.core.workflow.beans.WorkflowDecision.WorkflowAutoOptimizationCriteria.AO_CRITERIA_CLICKRATE;
+import static com.agnitas.emm.core.workflow.beans.WorkflowDecision.WorkflowAutoOptimizationCriteria.AO_CRITERIA_OPENRATE;
+import static com.agnitas.emm.core.workflow.beans.WorkflowDecision.WorkflowAutoOptimizationCriteria.AO_CRITERIA_REVENUE;
 
 public class ComOptimizationServiceImpl implements ComOptimizationService { 
 	
-	private static final transient Logger logger = LogManager.getLogger(ComOptimizationServiceImpl.class);
+	private static final Logger logger = LogManager.getLogger(ComOptimizationServiceImpl.class);
 	
 	/** This flag indicates, that finishOptimizationsSingle() is already running. */
 	private volatile boolean optimizationInProgress;
 	
-	private ComOptimizationDao optimizationDao;
-	
-	/** DAO accessing target groups. */
-	private ComTargetDao targetDao;
-	
-	/** DAO accessing mailings. */
-	private ComMailingDao mailingDao;
-	
-	private ComOptimizationCommonService optimizationCommonService;
-	private ComOptimizationStatService optimizationStatService;
-	private ComMailingParameterService mailingParameterService;
-	private CopyMailingService copyMailingService;
+	private final ComOptimizationDao optimizationDao;
+	private final ComTargetDao targetDao;
+	private final ComMailingDao mailingDao;
+	private final ComOptimizationCommonService optimizationCommonService;
+	private final ComOptimizationStatService optimizationStatService;
+	private final ComMailingParameterService mailingParameterService;
+	private final CopyMailingService copyMailingService;
 
-	public ComOptimizationServiceImpl() {
-		if( logger.isDebugEnabled()) {
-			logger.debug("created new instance of " + this.getClass().getCanonicalName() + ", hashCode(this) = " + this.hashCode());
-		}
-		
-		optimizationInProgress = false;
+	public ComOptimizationServiceImpl(ComOptimizationDao optimizationDao, ComTargetDao targetDao, ComMailingDao mailingDao,
+									  ComOptimizationCommonService optimizationCommonService, ComOptimizationStatService optimizationStatService,
+									  ComMailingParameterService mailingParameterService, CopyMailingService copyMailingService) {
+		this.optimizationDao = optimizationDao;
+		this.targetDao = targetDao;
+		this.mailingDao = mailingDao;
+		this.optimizationCommonService = optimizationCommonService;
+		this.optimizationStatService = optimizationStatService;
+		this.mailingParameterService = mailingParameterService;
+		this.copyMailingService = copyMailingService;
 	}
 	
 	/*
@@ -109,11 +100,15 @@ public class ComOptimizationServiceImpl implements ComOptimizationService {
 	 */
 	@Override
 	public boolean delete(ComOptimization optimization) throws MaildropDeleteException {
-		
-		if(optimization.getStatus() ==  STATUS_SCHEDULED) {
+		if (optimization.getStatus() == AutoOptimizationStatus.SCHEDULED.getCode()) {
 			optimizationCommonService.unscheduleOptimization(optimization);
 		}
 		return optimizationDao.delete(optimization);
+	}
+
+	@Override
+	public String findName(int optimizationId, int companyId) {
+		return optimizationDao.findName(optimizationId, companyId);
 	}
 
 	/*
@@ -145,7 +140,7 @@ public class ComOptimizationServiceImpl implements ComOptimizationService {
 	 *      int)
 	 */
 	@Override
-	public ComOptimization get(int optimizationID, @VelocityCheck int companyID) {
+	public ComOptimization get(int optimizationID, int companyID) {
 		ComOptimization comOptimization = null;
 
 		try {
@@ -203,7 +198,7 @@ public class ComOptimizationServiceImpl implements ComOptimizationService {
 	 *      int)
 	 */
 	@Override
-	public List<ComOptimization> list(int campaignID, @VelocityCheck int companyID) {
+	public List<ComOptimization> list(int campaignID, int companyID) {
 		return optimizationDao.list(campaignID, companyID);
 	}
 
@@ -213,7 +208,7 @@ public class ComOptimizationServiceImpl implements ComOptimizationService {
 	 * @see com.agnitas.mailing.autooptimization.service.ComOptimizationService#listWorkflowManaged(int, int)
 	 */
 	@Override
-	public List<ComOptimization> listWorkflowManaged(int workflowId, @VelocityCheck int companyID) {
+	public List<ComOptimization> listWorkflowManaged(int workflowId, int companyID) {
 		return optimizationDao.listWorkflowManaged(workflowId, companyID);
 	}
 
@@ -260,9 +255,9 @@ public class ComOptimizationServiceImpl implements ComOptimizationService {
 		int status = getState(optimization);
 		optimization.setStatus(status);
 		
-		if (optimization.getStatus() == STATUS_TEST_SEND) {
+		if (optimization.getStatus() == AutoOptimizationStatus.TEST_SEND.getCode()) {
 			logger.debug( "finishOptimization(), optimization ID " + optimization.getId() + ", status = STATUS_TEST_SEND, hashCode(this) = " + this.hashCode());
-			optimization.setStatus(STATUS_EVAL_IN_PROGRESS);
+			optimization.setStatus(AutoOptimizationStatus.EVAL_IN_PROGRESS.getCode());
 
 			save(optimization);
 
@@ -345,10 +340,10 @@ public class ComOptimizationServiceImpl implements ComOptimizationService {
 
 			}
 			if (result) {
-				optimization.setStatus(STATUS_FINISHED);
+				optimization.setStatus(AutoOptimizationStatus.FINISHED.getCode());
 				logger.debug( "finishOptimization(), optimization ID " + optimization.getId() + ", state transition to STATUS_FINISHED, hashCode(this) = " + this.hashCode());
 			} else {
-				optimization.setStatus(STATUS_TEST_SEND);
+				optimization.setStatus(AutoOptimizationStatus.TEST_SEND.getCode());
 				logger.debug( "finishOptimization(), optimization ID " + optimization.getId() + ", state transition to TEST_SEND, hashCode(this) = " + this.hashCode());
 			}
 			save(optimization);
@@ -559,7 +554,7 @@ public class ComOptimizationServiceImpl implements ComOptimizationService {
 	}
 
 	@Override
-	public List<String[]> getSplitTypeList(@VelocityCheck int companyID, String splitType, String language) {
+	public List<String[]> getSplitTypeList(int companyID, String splitType, String language) {
 		List<String> splitNames = targetDao.getSplitNames(companyID);
 
 		Map<String, Integer> splitTypes = new HashMap<>();
@@ -664,12 +659,12 @@ public class ComOptimizationServiceImpl implements ComOptimizationService {
 	}
 
 	@Override
-	public List<TargetLight> getTargetGroupList(@VelocityCheck int companyID) {
+	public List<TargetLight> getTargetGroupList(int companyID) {
 		return targetDao.getTargetLights(companyID);
 	}
 
 	@Override
-    public List<TargetLight> getTargets(String targetExpression, @VelocityCheck int companyID){
+    public List<TargetLight> getTargets(String targetExpression, int companyID){
         Collection<Integer> targetIds = new ArrayList<>();
 
         if (StringUtils.isNotBlank(targetExpression)) {
@@ -689,7 +684,7 @@ public class ComOptimizationServiceImpl implements ComOptimizationService {
     }
 
 	@Override
-	public List<ComOptimization> getOptimizationsForCalendar(@VelocityCheck int companyId, Date startDate, Date endDate) {
+	public List<ComOptimization> getOptimizationsForCalendar(int companyId, Date startDate, Date endDate) {
 		if (startDate != null && endDate != null) {
 			return optimizationDao.getOptimizationsForCalendar(companyId, startDate, endDate);
 		} else {
@@ -742,7 +737,7 @@ public class ComOptimizationServiceImpl implements ComOptimizationService {
 
 	// helper methods
 	@Override
-	public int getSplitNumbers(@VelocityCheck int companyID, String splitType) {
+	public int getSplitNumbers(int companyID, String splitType) {
 		return targetDao.getSplits(companyID, splitType);
 	}
 
@@ -752,8 +747,8 @@ public class ComOptimizationServiceImpl implements ComOptimizationService {
 		// The state STATUS_FINISHED is the only state which is directly written to the database
 		ComOptimization optimizationFromDB = optimizationDao.get(optimization.getId(), optimization.getCompanyID());
 				
-		if (optimizationFromDB.getStatus() == ComOptimization.STATUS_FINISHED) {
-			return ComOptimization.STATUS_FINISHED;
+		if (optimizationFromDB.getStatus() == AutoOptimizationStatus.FINISHED.getCode()) {
+			return AutoOptimizationStatus.FINISHED.getCode();
 		}
 		
 		// ... all other optimization states depend on the states of the test mailings
@@ -768,37 +763,32 @@ public class ComOptimizationServiceImpl implements ComOptimizationService {
 
 			//Method for selecting mailings throws no exception, but returns -1 as default, if no entry was found
 			if (testMailingStatus == -1) {
-				return STATUS_NOT_STARTED;
+				return AutoOptimizationStatus.NOT_STARTED.getCode();
 			}
 			
 			if (testMailingStatus == DeliveryStat.STATUS_NOT_SENT) {
-				return STATUS_SCHEDULED;
+				return AutoOptimizationStatus.SCHEDULED.getCode();
 			}
 			
 			if (testMailingStatus == DeliveryStat.STATUS_SENDING ||  testMailingStatus == DeliveryStat.STATUS_GENERATED || testMailingStatus == DeliveryStat.STATUS_GENERATING) {
-				return STATUS_TEST_SEND;
+				return AutoOptimizationStatus.TEST_SEND.getCode();
 			}
 			
 			if (testMailingStatus == DeliveryStat.STATUS_SENT && optimization.getResultMailingID() == 0) {
-				return STATUS_EVAL_IN_PROGRESS;
+				return AutoOptimizationStatus.EVAL_IN_PROGRESS.getCode();
 			}
 			
 			if (testMailingStatus == DeliveryStat.STATUS_SENT && optimization.getResultMailingID() != 0) {
-				return STATUS_FINISHED;
+				return AutoOptimizationStatus.FINISHED.getCode();
 			}
 		}
 		
-		return STATUS_NOT_STARTED;
+		return AutoOptimizationStatus.NOT_STARTED.getCode();
 		
 	}
 
 	@Override
-	public int getFinalMailingID(int companyID, int workflowID, int oneOfTheSplitMailingID){
-		return optimizationDao.getFinalMailingID(companyID, workflowID, oneOfTheSplitMailingID);
-	}
-	
-	@Override
-	public int getFinalMailingId(@VelocityCheck int companyId, int workflowId) {
+	public int getFinalMailingId(int companyId, int workflowId) {
 		return optimizationDao.getFinalMailingId(companyId, workflowId);
 	}
 	
@@ -809,40 +799,5 @@ public class ComOptimizationServiceImpl implements ComOptimizationService {
 			autoOptimizationLight = new AutoOptimizationLight();
 		}
 		return autoOptimizationLight;
-	}
-
-	@Required
-	public void setTargetDao(ComTargetDao targetDao) {
-		this.targetDao = targetDao;
-	}
-
-	@Required
-	public void setMailingDao(ComMailingDao mailingDao) {
-		this.mailingDao = mailingDao;
-	}
-
-	@Required
-	public void setOptimizationDao(ComOptimizationDao optimizationDao) {
-		this.optimizationDao = optimizationDao;
-	}
-
-	@Required
-	public void setOptimizationCommonService(ComOptimizationCommonService optimizationCommonService) {
-		this.optimizationCommonService = optimizationCommonService;
-	}
-
-	@Required
-	public void setOptimizationStatService(ComOptimizationStatService optimizationStatService) {
-		this.optimizationStatService = optimizationStatService;
-	}
-
-	@Required
-	public void setMailingParameterService(ComMailingParameterService mailingParameterService) {
-		this.mailingParameterService = mailingParameterService;
-	}
-
-	@Required
-	public void setCopyMailingService(CopyMailingService copyMailingService) {
-		this.copyMailingService = copyMailingService;
 	}
 }

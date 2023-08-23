@@ -157,19 +157,27 @@ public class Systemconfig {
 		}
 	}
 
+	private static Systemconfig	syscfg = null;
+	public static synchronized Systemconfig create () {
+		if (syscfg == null) {
+			syscfg = new Systemconfig ();
+		}
+		return syscfg;
+	}
+		
 	private Map <String, String>	cfg;
 	private String			path;
 	private long			lastModified;
 	private Selection		selection;
 
-	public Systemconfig (String systemConfigPath) {
+	private Systemconfig () {
 		String	content = System.getenv (SYSTEM_CONFIG_ENV);
 		
 		cfg = new HashMap <> ();
 		if (content != null) {
 			parseSystemconfig (content);
 		} else {
-			path = systemConfigPath != null ? systemConfigPath : System.getenv (SYSTEM_CONFIG_PATH_ENV);
+			path = System.getenv (SYSTEM_CONFIG_PATH_ENV);
 			if (path == null) {
 				path = SYSTEM_CONFIG_PATH;
 				if ((! fileExists (path)) && fileExists (SYSTEM_CONFIG_LEGACY_PATH)) {
@@ -186,16 +194,12 @@ public class Systemconfig {
 		selection = selection ();
 	}
 	
-	public Systemconfig () {
-		this (null);
-	}
-
 	/**
 	 * get whole configuration
 	 */
 	public Map <String, String> get () {
 		check ();
-		return cfg;
+		return new HashMap <> (cfg);
 	}
 	
 	/**
@@ -306,15 +310,15 @@ public class Systemconfig {
 						name = parser.getValueAsString ();
 					} else if (name != null) {
 						if (jsonToken == JsonToken.VALUE_NULL) {
-							cfg.put (name, "");
+							put (name, "");
 						} else if (jsonToken == JsonToken.VALUE_FALSE) {
-							cfg.put (name, "false");
+							put (name, "false");
 						} else if (jsonToken == JsonToken.VALUE_TRUE) {
-							cfg.put (name, "true");
+							put (name, "true");
 						} else if ((jsonToken == JsonToken.VALUE_NUMBER_FLOAT) || (jsonToken == JsonToken.VALUE_NUMBER_INT)) {
-							cfg.put (name, parser.getNumberValue ().toString ());
+							put (name, parser.getNumberValue ().toString ());
 						} else if (jsonToken == JsonToken.VALUE_STRING) {
-							cfg.put (name, parser.getText ());
+							put (name, parser.getText ());
 						}
 						name = null;
 					}
@@ -337,7 +341,7 @@ public class Systemconfig {
 					if (multiLineContent == null) {
 						throw new RuntimeException("Unexpected empty multiLineContent");
 					}
-					cfg.put (multiLineName, multiLineContent.trim ());
+					put (multiLineName, multiLineContent.trim ());
 					multiLineName = null;
 				} else {
 					multiLineContent += "\n" + line.trim ();
@@ -350,8 +354,25 @@ public class Systemconfig {
 						multiLineName = parsed[0];
 						multiLineContent = "";
 					} else {
-						cfg.put (parsed[0], parsed[1]);
+						put (parsed[0], parsed[1]);
 					}
+				}
+			}
+		}
+	}
+	
+	private void put (String name, String value) {
+		cfg.put (name, value);
+
+		int	pos = name.indexOf ('[');
+
+		if ((pos > 0) && (name.charAt (name.length () - 1) == ']')) {
+			String		pureName = name.substring (0, pos);
+			String[]	selections = name.substring (pos + 1, name.length () - 1).split (", *");
+			
+			if (selections.length > 1) {
+				for (String selection : selections) {
+					cfg.put (pureName + "[" + selection + "]", value);
 				}
 			}
 		}

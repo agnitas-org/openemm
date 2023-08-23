@@ -29,7 +29,6 @@ import com.agnitas.service.ColumnInfoService;
 import org.agnitas.beans.LightProfileField;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -46,6 +45,11 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static java.text.MessageFormat.format;
+/**
+ * @deprecated Use RecipientFieldService instead
+ */
+@Deprecated
 public final class ProfileFieldServiceImpl implements ProfileFieldService {
 
     private static final Logger logger = LogManager.getLogger(ProfileFieldServiceImpl.class);
@@ -75,7 +79,7 @@ public final class ProfileFieldServiceImpl implements ProfileFieldService {
     }
 
     @Override
-    public final String translateDatabaseNameToVisibleName(@VelocityCheck final int companyID, final String databaseName) throws ProfileFieldException {
+    public final String translateDatabaseNameToVisibleName(final int companyID, final String databaseName) throws ProfileFieldException {
         try {
             return this.profileFieldDao.getProfileField(companyID, databaseName).getShortname();
         } catch (final Exception e) {
@@ -112,8 +116,13 @@ public final class ProfileFieldServiceImpl implements ProfileFieldService {
     }
 
     @Override
-    public boolean isAddingNearLimit(@VelocityCheck int companyId) {
+    public boolean isAddingNearLimit(int companyId) {
         return profileFieldDao.isNearLimit(companyId);
+    }
+
+    @Override
+    public boolean isWithinGracefulLimit(int companyId) {
+        return profileFieldDao.isWithinGracefulLimit(companyId);
     }
 
     @Override
@@ -169,7 +178,7 @@ public final class ProfileFieldServiceImpl implements ProfileFieldService {
     }
 
     @Override
-    public List<ProfileField> getSortedColumnInfo(@VelocityCheck int companyId) {
+    public List<ProfileField> getSortedColumnInfo(int companyId) {
         try {
             List<ProfileField> columnInfoList = columnInfoService.getComColumnInfos(companyId);
 
@@ -195,7 +204,7 @@ public final class ProfileFieldServiceImpl implements ProfileFieldService {
     }
 
     @Override
-    public List<ProfileField> getFieldWithIndividualSortOrder(@VelocityCheck int companyId, int adminId) {
+    public List<ProfileField> getFieldWithIndividualSortOrder(int companyId, int adminId) {
         try {
             return profileFieldDao.getProfileFieldsWithIndividualSortOrder(companyId, adminId);
         } catch (Exception e) {
@@ -204,7 +213,17 @@ public final class ProfileFieldServiceImpl implements ProfileFieldService {
     }
 
     @Override
-    public int getCurrentSpecificFieldCount(@VelocityCheck int companyId) {
+    public List<LightProfileField> getLightProfileFields(int companyId) {
+        try {
+            return profileFieldDao.getLightProfileFields(companyId);
+        } catch (Exception e) {
+            logger.error(format("Error occurred: {0}", e.getMessage()), e);
+            return Collections.emptyList();
+        }
+    }
+
+    @Override
+    public int getCurrentSpecificFieldCount(int companyId) {
         try {
             return profileFieldDao.getCurrentCompanySpecificFieldCount(companyId);
         } catch (Exception e) {
@@ -213,7 +232,7 @@ public final class ProfileFieldServiceImpl implements ProfileFieldService {
     }
 
     @Override
-    public int getMaximumCompanySpecificFieldCount(@VelocityCheck int companyId) {
+    public int getMaximumCompanySpecificFieldCount(int companyId) {
         try {
             return profileFieldDao.getMaximumCompanySpecificFieldCount(companyId);
         } catch (Exception e) {
@@ -222,12 +241,12 @@ public final class ProfileFieldServiceImpl implements ProfileFieldService {
     }
 
     @Override
-    public boolean exists(@VelocityCheck int companyId, String fieldName) {
+    public boolean exists(int companyId, String fieldName) {
         return profileFieldDao.exists(fieldName, companyId);
     }
 
     @Override
-    public ProfileField getProfileField(@VelocityCheck int companyId, String fieldName) {
+    public ProfileField getProfileField(int companyId, String fieldName) {
         try {
             return columnInfoService.getColumnInfo(companyId, fieldName);
         } catch (Exception e) {
@@ -245,7 +264,7 @@ public final class ProfileFieldServiceImpl implements ProfileFieldService {
     }
 
     @Override
-    public String getTrackingDependentWorkflows(@VelocityCheck int companyId, String fieldName) {
+    public String getTrackingDependentWorkflows(int companyId, String fieldName) {
         String workflowName = null;
 
         List<Workflow> workflows = workflowService.getActiveWorkflowsTrackingProfileField(fieldName, companyId);
@@ -258,7 +277,7 @@ public final class ProfileFieldServiceImpl implements ProfileFieldService {
     }
 
     @Override
-    public Set<String> getSelectedFieldsWithHistoryFlag(@VelocityCheck int companyId) {
+    public Set<String> getSelectedFieldsWithHistoryFlag(int companyId) {
         return profileFieldDao.listUserSelectedProfileFieldColumnsWithHistoryFlag(companyId);
     }
 
@@ -300,7 +319,7 @@ public final class ProfileFieldServiceImpl implements ProfileFieldService {
     }
 
     @Override
-    public void removeProfileField(@VelocityCheck int companyId, String fieldName) {
+    public void removeProfileField(int companyId, String fieldName) {
         try {
             profileFieldDao.removeProfileField(companyId, fieldName);
         } catch (ProfileFieldException e) {
@@ -427,7 +446,7 @@ public final class ProfileFieldServiceImpl implements ProfileFieldService {
 
     // TODO check after ProfileFieldsControllerOld.java has been removed
     @Override
-    public List<Dependent<ProfileFieldDependentType>> getDependents(@VelocityCheck int companyId, String fieldName) {
+    public List<Dependent<ProfileFieldDependentType>> getDependents(int companyId, String fieldName) {
         List<Workflow> dependentWorkflows = workflowService.getActiveWorkflowsDependentOnProfileField(fieldName, companyId);
         List<TargetLight> dependentTargets = targetService.listTargetGroupsUsingProfileFieldByDatabaseName(fieldName, companyId);
 
@@ -506,6 +525,15 @@ public final class ProfileFieldServiceImpl implements ProfileFieldService {
     public ProfileField getProfileFieldByShortname(int companyID, String shortname) {
         try {
             return profileFieldDao.getProfileFieldByShortname(companyID, shortname);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public ProfileField getProfileFieldByShortname(int companyID, String shortname, int adminId) {
+        try {
+            return profileFieldDao.getProfileFieldByShortname(companyID, shortname, adminId);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

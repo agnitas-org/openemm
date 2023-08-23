@@ -18,9 +18,7 @@
     <emm:instantiate var="agnBreadcrumb" type="java.util.LinkedHashMap">
         <c:set target="${agnBreadcrumbs}" property="0" value="${agnBreadcrumb}"/>
         <c:set target="${agnBreadcrumb}" property="textKey" value="mailing.New_Mailing"/>
-        <c:url var="newMailingLink" value="/mwStart.do">
-            <c:param name="action" value="init"/>
-        </c:url>
+            <c:url var="newMailingLink" value="/mailing/create.action"/>
         <c:set target="${agnBreadcrumb}" property="url" value="${newMailingLink}"/>
     </emm:instantiate>
 </emm:instantiate>

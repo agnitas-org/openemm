@@ -13,7 +13,6 @@ package com.agnitas.beans;
 import java.util.Date;
 import java.util.regex.Pattern;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 /**
  * Interface for lightweight target group objects.
@@ -45,8 +44,8 @@ public interface TargetLight {
 	 * 
 	 * @param companyID company ID of target group
 	 */
-	void setCompanyID(@VelocityCheck int companyID);
-	
+	void setCompanyID(int companyID);
+
 	/**
 	 * Returns ID of target group.
 	 * 
@@ -199,4 +198,8 @@ public interface TargetLight {
 	boolean isFavorite();
 	
 	void setFavorite(boolean favorite);
+
+    int getSavingAdminId();
+
+  	void setSavingAdminId(int adminId);
 }

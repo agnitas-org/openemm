@@ -13,7 +13,7 @@ package org.agnitas.ecs.service.impl;
 import java.util.Map;
 
 import org.agnitas.ecs.service.EcsRecipientsProvider;
-import org.agnitas.emm.core.velocity.VelocityCheck;
+
 
 import com.agnitas.dao.ComRecipientDao;
 
@@ -25,7 +25,7 @@ public class EcsRecipientsProviderImpl implements EcsRecipientsProvider {
 	private ComRecipientDao recipientDao;
 
 	@Override
-	public Map<Integer, String> getTestAndAdminRecipients(int mailingId, @VelocityCheck int companyId) {
+	public Map<Integer, String> getTestAndAdminRecipients(int mailingId, int companyId) {
 		return recipientDao.getAdminAndTestRecipientsDescription(companyId, mailingId);
 	}
 

@@ -12,7 +12,7 @@ package org.agnitas.emm.core.recipient.service;
 
 import java.util.List;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
+
 
 public class RecipientsModel {
 
@@ -20,12 +20,14 @@ public class RecipientsModel {
 	protected boolean matchAll;
 
     private List<CriteriaEquals> criteriaEquals;
+    
+    private String eql;
 
     public int getCompanyId() {
 		return companyId;
 	}
 	
-	public void setCompanyId(@VelocityCheck int companyId) {
+	public void setCompanyId(int companyId) {
 		this.companyId = companyId;
 	}
 	
@@ -76,6 +78,13 @@ public class RecipientsModel {
             this.dateformat = dateformat;
         }
 	}
-	
+
+    public void setEql(final String eql) {
+    	this.eql = eql;
+    }
+    
+    public String getEql() {
+    	return this.eql;
+    }
 	
 }

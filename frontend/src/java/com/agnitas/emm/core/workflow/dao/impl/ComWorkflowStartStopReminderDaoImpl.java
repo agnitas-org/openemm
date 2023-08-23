@@ -27,7 +27,6 @@ import java.util.TimeZone;
 import java.util.stream.Collectors;
 
 import org.agnitas.beans.CompaniesConstraints;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.DbUtilities;
@@ -148,27 +147,27 @@ public class ComWorkflowStartStopReminderDaoImpl extends ComReminderBaseDaoImpl 
     }
 
     @Override
-    public void deleteReminders(@VelocityCheck int companyId, int workflowId) {
+    public void deleteReminders(int companyId, int workflowId) {
         // Also removes recipients because of foreign key (ON DELETE CASCADE).
         String sqlDeleteAll = "DELETE FROM workflow_reminder_tbl WHERE company_id = ? AND workflow_id = ?";
         update(logger, sqlDeleteAll, companyId, workflowId);
     }
 
     @Override
-    public void deleteReminders(@VelocityCheck int companyId) {
+    public void deleteReminders(int companyId) {
         // Also removes recipients because of foreign key (ON DELETE CASCADE).
         String sqlDeleteAll = "DELETE FROM workflow_reminder_tbl WHERE company_id = ?";
         update(logger, sqlDeleteAll, companyId);
     }
 
     @Override
-    public void deleteRecipients(@VelocityCheck int companyId) {
+    public void deleteRecipients(int companyId) {
         String sqlDeleteAll = "DELETE FROM workflow_reminder_recp_tbl WHERE company_id = ?";
         update(logger, sqlDeleteAll, companyId);
     }
 
     @Override
-    public void setReminders(@VelocityCheck int companyId, int workflowId, List<WorkflowReminder> reminders) {
+    public void setReminders(int companyId, int workflowId, List<WorkflowReminder> reminders) {
         deleteReminders(companyId, workflowId);
 
         if (CollectionUtils.isNotEmpty(reminders)) {
@@ -178,7 +177,7 @@ public class ComWorkflowStartStopReminderDaoImpl extends ComReminderBaseDaoImpl 
         }
     }
 
-    private void insertReminder(@VelocityCheck int companyId, int workflowId, WorkflowReminder reminder) {
+    private void insertReminder(int companyId, int workflowId, WorkflowReminder reminder) {
         int reminderId;
 
         if (isOracleDB()) {
@@ -198,7 +197,7 @@ public class ComWorkflowStartStopReminderDaoImpl extends ComReminderBaseDaoImpl 
         insertRecipients(companyId, reminderId, reminder.getRecipients());
     }
 
-    private void insertRecipients(@VelocityCheck int companyId, int reminderId, List<WorkflowReminderRecipient> recipients) {
+    private void insertRecipients(int companyId, int reminderId, List<WorkflowReminderRecipient> recipients) {
         String sqlInsert = "INSERT INTO workflow_reminder_recp_tbl (company_id, reminder_id, email, admin_id, notified) " +
                 "VALUES (?, ?, ?, ?, 0)";
 
@@ -210,7 +209,7 @@ public class ComWorkflowStartStopReminderDaoImpl extends ComReminderBaseDaoImpl 
         batchupdate(logger, sqlInsert, sqlParameters);
     }
 
-    private List<WorkflowReminderRecipient> resolveAdmins(@VelocityCheck int companyId, List<WorkflowReminderRecipient> recipients) {
+    private List<WorkflowReminderRecipient> resolveAdmins(int companyId, List<WorkflowReminderRecipient> recipients) {
         List<WorkflowReminderRecipient> admins = new ArrayList<>();
 
         List<Integer> ids = new ArrayList<>();
@@ -259,7 +258,7 @@ public class ComWorkflowStartStopReminderDaoImpl extends ComReminderBaseDaoImpl 
         return admins;
     }
 
-    private Map<Integer, String> resolveAdminAddresses(@VelocityCheck int companyId, List<Integer> ids) {
+    private Map<Integer, String> resolveAdminAddresses(int companyId, List<Integer> ids) {
         Map<Integer, String> map = new HashMap<>();
 
         String sqlResolveAdmins = "SELECT admin_id, email FROM admin_tbl WHERE admin_id IN (" +
@@ -275,7 +274,7 @@ public class ComWorkflowStartStopReminderDaoImpl extends ComReminderBaseDaoImpl 
         return map;
     }
 
-    private Map<String, Integer> resolveAdminIds(@VelocityCheck int companyId, List<String> addresses) {
+    private Map<String, Integer> resolveAdminIds(int companyId, List<String> addresses) {
         Map<String, Integer> map = new HashMap<>();
 
         String sqlResolveAdmins = "SELECT email, MAX(admin_id) AS admin_id FROM admin_tbl WHERE email IN (" +

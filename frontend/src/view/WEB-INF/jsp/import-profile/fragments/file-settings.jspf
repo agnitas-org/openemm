@@ -1,0 +1,106 @@
+
+<%--@elvariable id="charsets" type="org.agnitas.util.importvalues.Charset[]"--%>
+<%--@elvariable id="delimiters" type="org.agnitas.util.importvalues.TextRecognitionChar[]"--%>
+<%--@elvariable id="dateFormats" type="org.agnitas.util.importvalues.DateFormat[]"--%>
+
+<div class="tile">
+    <div class="tile-header">
+        <a href="#" class="headline" data-toggle-tile="#recipient-import-format">
+            <i class="tile-toggle icon icon-angle-up"></i>
+            <mvc:message code="import.profile.file.settings"/>
+        </a>
+    </div>
+    <div id="recipient-import-format" class="tile-content tile-content-forms" data-field="toggle-vis">
+        <%@ include file="datatype_setting.jspf" %>
+        <div class="form-group" id="separator-input-group">
+            <div class="col-sm-4">
+                <label class="control-label">
+                    <label for="recipient-import-format-separator"><mvc:message code="import.Separator"/></label>
+                    <button class="icon icon-help" data-help="help_${helplanguage}/importwizard/step_1/Separator.xml" tabindex="-1" type="button"></button>
+                </label>
+            </div>
+            <div class="col-sm-8">
+                <mvc:select id="recipient-import-format-separator" path="separator" cssClass="form-control">
+                    <mvc:option value="0">;</mvc:option>
+                    <mvc:option value="1">,</mvc:option>
+                    <mvc:option value="2">|</mvc:option>
+                    <mvc:option value="3">Tab</mvc:option>
+                    <mvc:option value="4">^</mvc:option>
+                </mvc:select>
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-sm-4">
+                <label class="control-label">
+                    <label for="recipient-import-format-charset"><mvc:message code="mailing.Charset"/></label>
+                    <button class="icon icon-help" data-help="help_${helplanguage}/importwizard/step_1/Charset.xml" tabindex="-1" type="button"></button>
+                </label>
+            </div>
+            <div class="col-sm-8">
+                <mvc:select id="recipient-import-format-charset" path="charset" cssClass="form-control">
+                    <mvc:options items="${charsets}" itemValue="intValue" itemLabel="charsetName"/>
+                </mvc:select>
+            </div>
+        </div>
+
+        <div class="form-group" id="text-recognition-input-group">
+            <div class="col-sm-4">
+                <label class="control-label">
+                    <label for="recipient-import-format-delimiter"><mvc:message code="import.Delimiter"/></label>
+                    <button class="icon icon-help" data-help="help_${helplanguage}/importwizard/step_1/Delimiter.xml" tabindex="-1" type="button"></button>
+                </label>
+            </div>
+            <div class="col-sm-8">
+                <mvc:select id="recipient-import-format-delimiter" path="textRecognitionChar" cssClass="form-control">
+                    <c:forEach var="delimiter" items="${delimiters}">
+                        <mvc:option value="${delimiter.intValue}">
+                            <mvc:message code="${delimiter.publicValue}"/>
+                        </mvc:option>
+                    </c:forEach>
+                </mvc:select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <div class="col-sm-4">
+                <label class="control-label">
+                    <label for="recipient-import-format-dateformat"><mvc:message code="import.dateFormat"/></label>
+                    <button class="icon icon-help" data-help="help_${helplanguage}/importwizard/step_1/DateFormat.xml" tabindex="-1" type="button"></button>
+                </label>
+            </div>
+            <div class="col-sm-8">
+                <mvc:select id="recipient-import-format-dateformat" path="dateFormat" cssClass="form-control">
+                    <mvc:options items="${dateFormats}" itemValue="intValue" itemLabel="publicValue"/>
+                </mvc:select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <div class="col-sm-4">
+                <label class="control-label">
+                    <label for="import_decimalseparator"><mvc:message code="csv.DecimalSeparator" /></label>
+                    <button class="icon icon-help" data-help="help_${helplanguage}/importwizard/step_1/DecimalSeparator.xml" tabindex="-1" type="button"></button>
+                </label>
+            </div>
+            <div class="col-sm-8">
+                <mvc:select id="import_decimalseparator" path="decimalSeparator" cssClass="form-control">
+                    <mvc:option value=".">.</mvc:option>
+                    <mvc:option value=",">,</mvc:option>
+                </mvc:select>
+            </div>
+        </div>
+
+        <%@include file="file_settings_nocsvheaders.jspf" %>
+
+        <div class="form-group" id="zipPasswordGroup">
+            <div class="col-sm-4">
+                <label for="mailing_name" class="control-label"><mvc:message code="import.zipPassword"/>
+                    <button class="icon icon-help" data-help="help_${helplanguage}/importwizard/step_1/ImportZipped.xml" tabindex="-1" type="button"></button>
+                </label>
+            </div>
+            <div class="col-sm-8">
+                <mvc:text id="mailing_name" path="zipPassword" cssClass="form-control" maxlength="99" />
+            </div>
+        </div>
+    </div>
+</div>

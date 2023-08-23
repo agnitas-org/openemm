@@ -148,6 +148,7 @@
                                     name="additionalFields" data-action="change-columns-to-show" style="padding: 5px"
                                     title="additional fields">
                                 <c:forEach var="availableField" items="${availableAdditionalFields}">
+                                    <c:if test="${availableField != 'CHANGE_DATE' and availableField != 'ARCHIVE'}">
                                     <c:set var="selected" value=""/>
                                     <c:forEach var="additionalField" items="${mailingStatatisticListForm.additionalFields}"
                                                varStatus="rowCounter">
@@ -160,6 +161,7 @@
                                             value="${availableField.sortColumn}" ${selected}>
                                         <mvc:message code="${availableField.messageKey}"/>
                                     </option>
+                                    </c:if>
                                 </c:forEach>
                             </select>
                         </li>

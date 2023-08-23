@@ -18,7 +18,7 @@ import java.util.Set;
 
 import org.agnitas.actions.EmmAction;
 import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.emm.core.velocity.VelocityCheck;
+
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -46,20 +46,20 @@ public class ComEmmActionServiceImpl extends EmmActionServiceImpl implements Com
 	}
 
     @Override
-    public void bulkDelete(Set<Integer> actionIds, @VelocityCheck int companyId) {
+    public void bulkDelete(Set<Integer> actionIds, int companyId) {
         for (int actionId : actionIds) {
             this.emmActionDao.deleteEmmAction(actionId, companyId);
         }
     }
 
     @Override
-    public String getEmmActionName(int actionId, @VelocityCheck int companyId) {
+    public String getEmmActionName(int actionId, int companyId) {
         return emmActionDao.getEmmActionName(actionId, companyId);
     }
 
     @Override
     @Transactional
-    public boolean setActiveness(Map<Integer, Boolean> changeMap, @VelocityCheck int companyId, List<UserAction> userActions) {
+    public boolean setActiveness(Map<Integer, Boolean> changeMap, int companyId, List<UserAction> userActions) {
         if (MapUtils.isEmpty(changeMap) || companyId <= 0) {
             return false;
         }

@@ -61,7 +61,8 @@ public class Cache {
 		mailout = null;
 	}
 
-	protected Page makePreview (long customerID, long sendDate, String selector, boolean anon,
+	protected Page makePreview (long customerID, long sendDate, String selector,
+				    boolean anon, boolean onAnonPreserveLinks,
 				    boolean convertEntities, boolean ecsUIDs,
 				    boolean cachable, long[] targetIDs
 	) throws Exception {
@@ -70,6 +71,7 @@ public class Cache {
 		opts.put("preview-for", customerID);
 		opts.put("preview-output", output);
 		opts.put("preview-anon", Boolean.valueOf(anon));
+		opts.put("preview-anon-preserve-links", Boolean.valueOf (onAnonPreserveLinks));
 		if (sendDate > 0)
 			opts.put ("preview-senddate", sendDate);
 		if (selector != null)

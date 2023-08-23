@@ -12,8 +12,6 @@ package com.agnitas.beans;
 
 import java.util.Date;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
-
 public interface MaildropEntry {
 	int getAdminTestTargetID();
 	
@@ -45,7 +43,7 @@ public interface MaildropEntry {
 
     void setBlocksize(int blocksize);
 
-    void setCompanyID( @VelocityCheck int companyID);
+    void setCompanyID(int companyID);
 
     void setGenChangeDate(Date genChangeDate);
 
@@ -66,4 +64,8 @@ public interface MaildropEntry {
     int getMaxRecipients();
     
 	void setMaxRecipients(int maxRecipients);
+
+    int getOverwriteTestRecipient();
+
+    void setOverwriteTestRecipient(int overwriteTestRecipient);
 }

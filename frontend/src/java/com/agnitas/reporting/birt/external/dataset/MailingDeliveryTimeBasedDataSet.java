@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
 import org.apache.logging.log4j.LogManager;
@@ -44,7 +43,7 @@ public class MailingDeliveryTimeBasedDataSet extends BIRTDataSet {
         return new SimpleDateFormat(DATE_PARAMETER_FORMAT).format(deliveryDate);
     }
     
-    public List<TimeBasedDeliveryStatRow> getData(int mailingID, @VelocityCheck int companyID, String language, String startDateString, String endDateString) throws Exception {
+    public List<TimeBasedDeliveryStatRow> getData(int mailingID, int companyID, String language, String startDateString, String endDateString) throws Exception {
         String query;
         Date startDate = getDeliveryDate(startDateString);
         Date endDate = getDeliveryDate(endDateString);

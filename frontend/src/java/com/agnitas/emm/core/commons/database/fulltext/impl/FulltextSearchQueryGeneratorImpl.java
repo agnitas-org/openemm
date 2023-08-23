@@ -22,6 +22,7 @@ import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import com.agnitas.messages.Message;
 import org.agnitas.util.FulltextSearchInvalidQueryException;
 import org.agnitas.util.FulltextSearchQueryException;
 import org.apache.commons.lang3.StringUtils;
@@ -54,6 +55,8 @@ public class FulltextSearchQueryGeneratorImpl implements FulltextSearchQueryGene
 
     private static final String PAR_ERROR = "Unmatched parenthesis";
 
+    private static final String[] FORBIDDEN_OPERATORS_AT_START = {"+"};
+
     private Map<String, Operator> operators = new HashMap<>();
 
     private Set<WordProcessor> wordProcessors = new HashSet<>();
@@ -71,7 +74,7 @@ public class FulltextSearchQueryGeneratorImpl implements FulltextSearchQueryGene
     private String[] getCorrectedTokens(String searchQuery) throws FulltextSearchInvalidQueryException {
         String[] tokens = searchQuery.split(SPLIT_REGEX);
 
-        reservedLiteralsConfig.validateTokens(tokens);
+        checkTokensValidity(tokens);
 
         if (StringUtils.isBlank(searchQuery) || isContainsAnyControlCharacters(searchQuery)) {
             return tokens;
@@ -82,6 +85,45 @@ public class FulltextSearchQueryGeneratorImpl implements FulltextSearchQueryGene
         }
 
         return tokens;
+    }
+
+    private void checkTokensValidity(String[] tokens) throws FulltextSearchInvalidQueryException {
+        if (haveForbiddenOperatorAtStart(tokens)) {
+            throw new FulltextSearchInvalidQueryException(
+                    "Search phrase starts with invalid symbol!",
+                    Message.of("error.search.character", String.join(", ", FORBIDDEN_OPERATORS_AT_START))
+            );
+        }
+
+        if (haveSeveralOperatorsInRow(tokens)) {
+            throw new FulltextSearchInvalidQueryException(
+                    "Search phrase has several operators in a row!",
+                    Message.of("error.search.operator.row")
+            );
+        }
+
+        reservedLiteralsConfig.validateTokens(tokens);
+    }
+
+    private boolean haveForbiddenOperatorAtStart(String[] tokens) {
+        if (tokens.length <= 0) {
+            return false;
+        }
+
+        return Arrays.stream(FORBIDDEN_OPERATORS_AT_START)
+                .anyMatch(o -> o.equals(tokens[0]));
+    }
+
+    private boolean haveSeveralOperatorsInRow(String[] tokens) {
+        String previousToken = null;
+        for (String token : tokens) {
+            if (operators.containsKey(token) && token.equals(previousToken)) {
+                return true;
+            }
+            previousToken = token;
+        }
+
+        return false;
     }
 
     private boolean isContainsAnyControlCharacters(String searchQuery) {
@@ -97,6 +139,7 @@ public class FulltextSearchQueryGeneratorImpl implements FulltextSearchQueryGene
         LinkedList<String> operandStack = new LinkedList<>();
         LinkedList<Operator> operatorStack = new LinkedList<>();
         int matchingIndex;
+
         for (int i = 0; i < tokens.length; i++) {
             String token = tokens[i];
             if (token.equals(OP_PAR)) {
@@ -108,7 +151,7 @@ public class FulltextSearchQueryGeneratorImpl implements FulltextSearchQueryGene
             } else if (token.equals(DOUBLE_QUOTES)) {
                 matchingIndex = getMatchingIndex(tokens, i, DOUBLE_QUOTES);
                 checkMatchingIndex(i, matchingIndex, QUOTES_ERROR);
-                token = String.join(StringUtils.EMPTY, Arrays.copyOfRange(tokens, i + 1, matchingIndex));
+                token = String.join("", Arrays.copyOfRange(tokens, i + 1, matchingIndex));
                 operandStack.push(DOUBLE_QUOTES + reservedLiteralsConfig.escapeWord(token) + DOUBLE_QUOTES);
                 i = matchingIndex;
             } else if (operators.containsKey(token)) {
@@ -119,18 +162,24 @@ public class FulltextSearchQueryGeneratorImpl implements FulltextSearchQueryGene
                 }
                 operatorStack.push(operators.get(token));
             } else {
-                token = reservedLiteralsConfig.isReservedWord(token) ?
-                        reservedLiteralsConfig.escapeWord(token) : token;
+                token = reservedLiteralsConfig.isReservedWord(token)
+                        ? reservedLiteralsConfig.escapeWord(token)
+                        : token;
+
                 operandStack.push(token);
             }
         }
+
         return applyDatabaseSpecificOperators(operandStack, operatorStack);
     }
 
     private String applyDatabaseSpecificOperators(LinkedList<String> operandStack, LinkedList<Operator> operatorStack) {
+        operandStack = operandStack.stream()
+                .map(this::applyWordProcessors)
+                .collect(Collectors.toCollection(LinkedList::new));
+
         List<String> operands = new ArrayList<>();
-        operandStack = operandStack.stream().map(this::applyWordProcessors).collect(Collectors.toCollection(LinkedList::new));
-        while (operatorStack.size() != 0) {
+        while (!operatorStack.isEmpty()) {
             Operator operator = operatorStack.pop();
             while (operands.size() != operator.getOperandsCount()) {
                 operands.add(operandStack.pop());
@@ -169,7 +218,7 @@ public class FulltextSearchQueryGeneratorImpl implements FulltextSearchQueryGene
         if (StringUtils.isNotBlank(query)) {
             return reservedLiteralsConfig.sanitize(query.replaceAll(SANITIZE_REGEX, WHITESPACE).trim());
         } else {
-            return StringUtils.EMPTY;
+            return "";
         }
     }
 
@@ -181,9 +230,8 @@ public class FulltextSearchQueryGeneratorImpl implements FulltextSearchQueryGene
 
     private String escapeDatabaseSpecificSymbols(String query) {
         StringBuilder escapedQuery = new StringBuilder();
-        char symbol;
         for (int i = 0; i < query.length(); i++) {
-            symbol = query.charAt(i);
+            char symbol = query.charAt(i);
             if (reservedLiteralsConfig.isReservedCharacter(symbol)) {
                 escapedQuery.append(reservedLiteralsConfig.escapeCharacter(symbol));
             } else {

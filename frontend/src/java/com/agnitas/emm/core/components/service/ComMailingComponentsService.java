@@ -76,6 +76,8 @@ public interface ComMailingComponentsService {
 
 	Map<String, String> getUrlsByNamesForEmmImages(Admin admin, int mailingId);
 
+    List<MailingComponent> getMailingComponents(int mailingId, int companyId, MailingComponentType componentType, boolean includeContent);
+
 	void deleteComponent(int companyId, int mailingId, int componentId);
 
 	void deleteComponent(MailingComponent component);
@@ -98,4 +100,6 @@ public interface ComMailingComponentsService {
 	 * @return an instance of {@link ServiceResult}.
 	 */
 	ServiceResult<ImportStatistics> importImagesFromSftp(Admin admin, int mailingId, String sftpServerAndAuthConfigString, String sftpPrivateKeyString, String sftpFilePath, List<UserAction> userActions);
+	
+    void updateMailingMediapoolImagesReferences(int mailingId, int companyId, Set<String> mediapoolImagesNames);
 }

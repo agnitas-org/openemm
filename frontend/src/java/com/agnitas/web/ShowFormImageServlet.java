@@ -21,7 +21,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.component.service.ComponentService;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.TimeoutLRUMap;
 import org.apache.catalina.connector.ClientAbortException;
@@ -187,7 +186,7 @@ public class ShowFormImageServlet extends HttpServlet {
 	 * @return the image
 	 * @throws Exception the exception
 	 */
-	private CachedImageData getImage(HttpServletRequest request, int licenseID, @VelocityCheck int companyID, int formID, String imageFileName, boolean noCache, boolean thumbnail) throws Exception {
+	private CachedImageData getImage(HttpServletRequest request, int licenseID, int companyID, int formID, String imageFileName, boolean noCache, boolean thumbnail) throws Exception {
 		if (thumbnail) {
 			FormComponent thumbnailFormComponent = getComponentService().getFormComponent(formID, companyID, imageFileName, FormComponentType.THUMBNAIL);
 			CachedImageData thumbnailImage = new CachedImageData();
@@ -258,7 +257,7 @@ public class ShowFormImageServlet extends HttpServlet {
 	 * @return the string
 	 * @throws Exception             on missing parameters
 	 */
-	private String generateCachingKey(int licenseID, @VelocityCheck int companyID, int formID, String name) throws Exception {
+	private String generateCachingKey(int licenseID, int companyID, int formID, String name) throws Exception {
 		StringBuilder cacheKeyBuilder = new StringBuilder();
 		cacheKeyBuilder.append(licenseID);
 		cacheKeyBuilder.append("-");

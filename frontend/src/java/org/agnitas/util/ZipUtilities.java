@@ -392,10 +392,8 @@ public class ZipUtilities {
 		File originalFileTemp = new File(zipFile.getParentFile().getAbsolutePath() + "/" + String.valueOf(System.currentTimeMillis()));
 		zipFile.renameTo(originalFileTemp);
 		
-		ZipOutputStream zipOutputStream = null;
+		final ZipOutputStream zipOutputStream = new ZipOutputStream(new BufferedOutputStream(new FileOutputStream(zipFile)));
 		try {
-			zipOutputStream = new ZipOutputStream(new BufferedOutputStream(new FileOutputStream(zipFile)));
-		
 			try (ZipFile sourceZipFile = new ZipFile(originalFileTemp)) {
 				// copy entries
 				Enumeration<? extends ZipEntry> srcEntries = sourceZipFile.entries();
@@ -421,16 +419,14 @@ public class ZipUtilities {
 				
 				return zipOutputStream;
 			} catch (IOException e) {
+				try {
+					zipOutputStream.close();
+				} catch (Exception ex) {
+					// nothing to do
+				}
+
 				// delete existing Zip file
 				if (zipFile.exists()) {
-					if (zipOutputStream != null) {
-						try {
-							zipOutputStream.close();
-						} catch (Exception ex) {
-							// nothing to do
-						}
-						zipOutputStream = null;
-					}
 					zipFile.delete();
 				}
 				
@@ -441,7 +437,6 @@ public class ZipUtilities {
 		} catch (Exception e) {
 			if (zipOutputStream != null) {
 				zipOutputStream.close();
-				zipOutputStream = null;
 			}
 			throw e;
 		}
@@ -571,6 +566,26 @@ public class ZipUtilities {
 				IOUtils.copy(zipInputStream, output);
 			}
 			return output.toByteArray();
+		}
+	}
+
+	public static InputStream openSingleFileZipInputStream(File singleFileZipFile) throws Exception {
+		InputStream dataInputStream = ZipUtilities.openZipInputStream(new FileInputStream(singleFileZipFile));
+		try {
+			ZipEntry zipEntry = ((ZipInputStream) dataInputStream).getNextEntry();
+			if (zipEntry == null) {
+				dataInputStream.close();
+				dataInputStream = null;
+				return null;
+			} else {
+				return dataInputStream;
+			}
+		} catch (Exception e) {
+			if (dataInputStream != null) {
+				dataInputStream.close();
+				dataInputStream = null;
+			}
+			throw e;
 		}
 	}
 }

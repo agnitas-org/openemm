@@ -1,0 +1,4 @@
+<HelpBalloon>
+	<title><![CDATA[Duplicate analysis]]></title>
+	<content><![CDATA[In the duplicate analysis, only normal recipients are evaluated, as duplicates are often intended for admin and test recipients.]]></content>
+</HelpBalloon>

@@ -1,4 +1,4 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do"%>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.do"%>
 <%@page import="org.agnitas.target.ConditionalOperator" %>
 <%@page import="org.agnitas.util.AgnUtils"%>
 <%@ page import="com.agnitas.emm.core.target.beans.TargetComplexityGrade" %>
@@ -10,6 +10,7 @@
 <%--@elvariable id="targetEditForm" type="com.agnitas.emm.core.target.form.TargetEditForm"--%>
 <%--@elvariable id="mailTrackingAvailable" type="java.lang.Boolean"--%>
 <%--@elvariable id="isLocked" type="java.lang.Boolean"--%>
+<%--@elvariable id="hidden" type="java.lang.Boolean"--%>
 <%--@elvariable id="isValid" type="java.lang.Boolean"--%>
 <%--@elvariable id="complexityGrade" type="com.agnitas.emm.core.target.beans.TargetComplexityGrade"--%>
 <%--@elvariable id="mailinglists" type="java.util.List<org.agnitas.beans.Mailinglist>"--%>
@@ -20,6 +21,11 @@
 <c:set var="COMPLEXITY_RED" value="<%= TargetComplexityGrade.RED %>" scope="page"/>
 <c:set var="COMPLEXITY_YELLOW" value="<%= TargetComplexityGrade.YELLOW %>" scope="page"/>
 <c:set var="COMPLEXITY_GREEN" value="<%= TargetComplexityGrade.GREEN %>" scope="page"/>
+
+<c:set var="DISABLED" value="${isLocked or hidden}"/>
+
+<c:set var="ACE_EDITOR_PATH" value="${emm:aceEditorPath(pageContext.request)}" scope="page"/>
+<script type="text/javascript" src="${pageContext.request.contextPath}/${ACE_EDITOR_PATH}/emm/ace.min.js"></script>
 
 <emm:ShowColumnInfo id="colsel" table="<%= AgnUtils.getCompanyID(request) %>" />
 
@@ -66,7 +72,7 @@
             <h2 class="headline">
                 <mvc:message code="target.Edit" />
             </h2>
-            <mvc:checkbox path="favorite" id="favorite" cssClass="pull-right star-checkbox icon-fa5 far" cssStyle="margin-right: 20px; line-height: 22px; margin-top: 14px; font-size: 18px;" disabled="${isLocked}"/>
+            <mvc:checkbox path="favorite" id="favorite" cssClass="pull-right star-checkbox icon-fa5 far" cssStyle="margin-right: 20px; line-height: 22px; margin-top: 14px; font-size: 18px;" disabled="${DISABLED}"/>
         </div>
         <div class="tile-content tile-content-forms">
             <div class="form-group">
@@ -78,7 +84,7 @@
                 </div>
                 <div class="col-sm-8">
                     <mvc:text path="shortname" id="shortname" cssClass="form-control" maxlength="99"
-                              readonly="${isLocked}" placeholder="${nameMsg}" />
+                              readonly="${DISABLED}" placeholder="${nameMsg}" />
                 </div>
             </div>
             <div class="form-group">
@@ -90,16 +96,16 @@
                 </div>
                 <div class="col-sm-8">
                     <mvc:textarea path="description" id="description" cssClass="form-control" rows="5" cols="32"
-                                  readonly="${isLocked}" placeholder="${descriptionMsg}"/>
+                                  readonly="${DISABLED}" placeholder="${descriptionMsg}"/>
                 </div>
             </div>
             <div class="form-group">
                 <div class="col-sm-4">
-                    <label class="control-label" for="admin_and_test_delivery"><mvc:message code="target.adminAndTestDelivery"/></label>
+                    <label class="control-label checkbox-control-label" for="admin_and_test_delivery"><mvc:message code="target.adminAndTestDelivery"/></label>
                 </div>
                 <div class="col-sm-8">
                     <label class="toggle">
-                        <mvc:checkbox path="useForAdminAndTestDelivery" id="admin_and_test_delivery" disabled="${isLocked}"/>
+                        <mvc:checkbox path="useForAdminAndTestDelivery" id="admin_and_test_delivery" disabled="${DISABLED}"/>
                         <div class="toggle-control"></div>
                     </label>
                 </div>
@@ -162,7 +168,7 @@
                     <script id="config:target-group-query-builder" type="application/json">
                         {
                             "mailTrackingAvailable": ${not empty mailTrackingAvailable ? mailTrackingAvailable : false},
-                            "isTargetGroupLocked": ${isLocked},
+                            "isTargetGroupLocked": ${DISABLED},
                             "helpLanguage": "${helplanguage}",
                             "queryBuilderRules": ${emm:toJson(targetEditForm.queryBuilderRules)},
                             "queryBuilderFilters": ${targetEditForm.queryBuilderFilters}
@@ -197,7 +203,7 @@
                                         </div>
                                     </ul>
                                 </c:forEach>
-                                <mvc:textarea path="eql" id="eql" rows="14" cols="${TEXTAREA_WIDTH}" cssClass="form-control js-editor-eql" readonly="${isLocked}" />
+                                <mvc:textarea path="eql" id="eql" rows="14" cols="${TEXTAREA_WIDTH}" cssClass="form-control js-editor-eql" readonly="${DISABLED}" />
                             </div>
                         </div>
                     </div>
@@ -207,7 +213,7 @@
     </div>
 
     <emm:ShowByPermission token="targets.change">
-        <c:if test="${not empty targetEditForm.targetId and targetEditForm.targetId gt 0 and not isLocked}">
+        <c:if test="${not empty targetEditForm.targetId and targetEditForm.targetId gt 0 and not DISABLED}">
             <div class="tile">
                 <div class="tile-header">
                     <div class="headline">
@@ -234,5 +240,4 @@
             </div>
         </c:if>
     </emm:ShowByPermission>
-
 </mvc:form>

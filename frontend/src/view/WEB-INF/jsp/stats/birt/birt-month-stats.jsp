@@ -71,7 +71,7 @@
                         <i class="icon icon-caret-down"></i>
                     </a>
                     <ul class="dropdown-menu">
-                        <li class="dropdown-header"><bean:message key="statistics.exportFormats"/></li>
+                        <li class="dropdown-header"><bean:message key="statistics.exportFormat"/></li>
                         <li>
                             <a href="${birtStatisticUrlCsvReport}&__format=csv" tabindex="-1" data-prevent-load="">
                                 <i class="icon icon-file-excel-o"></i><bean:message key='export.message.csv'/>

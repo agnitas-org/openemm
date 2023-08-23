@@ -10,48 +10,6 @@
 
 package com.agnitas.emm.core.workflow.service;
 
-import static com.agnitas.emm.core.workflow.beans.WorkflowRecipient.WorkflowTargetOption.ALL_TARGETS_REQUIRED;
-import static com.agnitas.emm.core.workflow.service.util.WorkflowUtils.WORKFLOW_TARGET_NAME_PATTERN;
-import static com.agnitas.emm.core.workflow.service.util.WorkflowUtils.resolveDeadline;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Objects;
-import java.util.Set;
-import java.util.TimeZone;
-import java.util.stream.Collectors;
-
-import com.agnitas.emm.core.target.TargetExpressionUtils;
-
-import com.agnitas.emm.core.target.service.ComTargetService;
-
-import org.agnitas.dao.MailingStatus;
-import org.agnitas.dao.exception.target.TargetGroupPersistenceException;
-import org.agnitas.emm.core.autoexport.service.AutoExportService;
-import org.agnitas.emm.core.autoimport.service.AutoImportService;
-import org.agnitas.emm.core.mailing.exception.MailingLockedException;
-import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.agnitas.target.TargetFactory;
-import org.agnitas.util.AgnUtils;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang.math.NumberUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.ComTarget;
 import com.agnitas.beans.CompositeKey;
@@ -64,7 +22,12 @@ import com.agnitas.dao.ComMailingDao;
 import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.dao.ComTargetDao;
 import com.agnitas.emm.common.MailingType;
+import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.admin.service.AdminService;
+import com.agnitas.emm.core.components.service.MailingSendService;
+import com.agnitas.emm.core.components.service.MailingSendService.DeliveryType;
+import com.agnitas.emm.core.target.TargetExpressionUtils;
+import com.agnitas.emm.core.target.service.ComTargetService;
 import com.agnitas.emm.core.workflow.beans.ComWorkflowReaction;
 import com.agnitas.emm.core.workflow.beans.Workflow;
 import com.agnitas.emm.core.workflow.beans.WorkflowArchive;
@@ -94,12 +57,47 @@ import com.agnitas.emm.core.workflow.graph.WorkflowNode;
 import com.agnitas.emm.core.workflow.service.util.WorkflowUtils;
 import com.agnitas.emm.core.workflow.service.util.WorkflowUtils.Deadline;
 import com.agnitas.mailing.autooptimization.beans.ComOptimization;
+import com.agnitas.mailing.autooptimization.beans.impl.AutoOptimizationStatus;
 import com.agnitas.mailing.autooptimization.beans.impl.ComOptimizationImpl;
 import com.agnitas.mailing.autooptimization.service.ComOptimizationScheduleService;
 import com.agnitas.mailing.autooptimization.service.ComOptimizationService;
 import com.agnitas.messages.Message;
-import com.agnitas.service.ComMailingSendService;
-import com.agnitas.service.ComMailingSendService.DeliveryType;
+import com.agnitas.service.ServiceResult;
+import org.agnitas.dao.MailingStatus;
+import org.agnitas.dao.exception.target.TargetGroupPersistenceException;
+import org.agnitas.emm.core.autoexport.service.AutoExportService;
+import org.agnitas.emm.core.autoimport.service.AutoImportService;
+import org.agnitas.emm.core.useractivitylog.UserAction;
+import org.agnitas.target.TargetFactory;
+import org.agnitas.util.AgnUtils;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang.math.NumberUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Required;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.Set;
+import java.util.TimeZone;
+import java.util.stream.Collectors;
+
+import static com.agnitas.emm.core.workflow.beans.WorkflowRecipient.WorkflowTargetOption.ALL_TARGETS_REQUIRED;
+import static com.agnitas.emm.core.workflow.service.util.WorkflowUtils.WORKFLOW_TARGET_NAME_PATTERN;
+import static com.agnitas.emm.core.workflow.service.util.WorkflowUtils.resolveDeadline;
 
 public class ComWorkflowActivationService {
 
@@ -119,7 +117,7 @@ public class ComWorkflowActivationService {
 
 	private ComMailingDao mailingDao;
 	private ComWorkflowService workflowService;
-	private ComMailingSendService mailingSendService;
+	private MailingSendService mailingSendService;
 	private ComOptimizationService optimizationService;
 	private ComOptimizationScheduleService optimizationScheduleService;
 	private TargetFactory targetFactory;
@@ -334,10 +332,10 @@ public class ComWorkflowActivationService {
 			}
 
 			// send/schedule mailings and reports
-			sendMailings(admin, workflowGraph, mailingsSendDates, testing, warnings, errorsList, userActions);
+			sendMailings(workflowGraph, mailingsSendDates, admin, testing, warnings, errorsList, userActions);
 			sendReports(workflowGraph, companyId, workflowId, reportsSendDates);
 
-			updateAutoImportActivationDate(companyId, workflowGraph, importsActivationDates);
+			updateAutoImportActivationDate(admin, workflowGraph, importsActivationDates);
 			updateAutoExportActivationDate(companyId, workflowGraph, exportsActivationDates);
 		}
 
@@ -451,7 +449,7 @@ public class ComWorkflowActivationService {
 		}
 	}
 
-	private void sendMailings(Admin admin, WorkflowGraph workflowGraph, Map<Integer, Date> mailingsSendDates, boolean testing, List<Message> warnings, List<Message> errors, List<UserAction> userActions) throws Exception {
+	private void sendMailings(WorkflowGraph workflowGraph, Map<Integer, Date> mailingsSendDates, Admin admin, boolean testing, List<Message> warnings, List<Message> errors, List<UserAction> userActions) throws Exception {
 		Map<Integer, WorkflowMailingAware> mailingIconsMap = getMailingIconsMap(workflowGraph);
 		List<Integer> lockedMailings = new ArrayList<>();
 
@@ -462,7 +460,7 @@ public class ComWorkflowActivationService {
 			WorkflowMailingAware icon = mailingIconsMap.get(mailingId);
 
 			if (icon == null) {
-				logger.error("Missing required mailing icon for mailing #" + mailingId);
+				logger.error("Missing required mailing icon for mailing #{}", mailingId);
 				continue;
 			}
 
@@ -477,41 +475,66 @@ public class ComWorkflowActivationService {
 				deliveryType = testing ? DeliveryType.TEST : DeliveryType.WORLD;
 			}
 
-			try {
-				if (iconType == WorkflowIconType.MAILING || iconType == WorkflowIconType.FOLLOWUP_MAILING) {
-					WorkflowMailing mailing = (WorkflowMailing) icon;
+			if (iconType == WorkflowIconType.MAILING || iconType == WorkflowIconType.FOLLOWUP_MAILING) {
+				WorkflowMailing workflowMailing = (WorkflowMailing) icon;
 
-					// Send normal or follow-up mailing.
-					MailingSendOptions options = MailingSendOptions.builder()
-							.setDate(sendDate)
-							.setAdminId(admin.getAdminID())
-							.setMaxRecipients(mailing.getMaxRecipients())
-							.setBlockSize(mailing.getBlocksize())
-							.setDefaultStepping(DEFAULT_STEPPING)
-							.setFollowupFor(getBaseMailingId(icon))
-							.setDoubleChecking(mailing.isDoubleCheck())
-							.setSkipEmpty(mailing.isSkipEmptyBlocks())
-							.setReportSendDayOffset(mailing.getAutoReport())
-							.setGenerateAtSendDate(true)
-							.setDeliveryType(deliveryType)
-							.build();
+				// Send normal or follow-up mailing.
+				MailingSendOptions options = MailingSendOptions.builder()
+						.setDate(sendDate)
+						.setAdminId(admin.getAdminID())
+						.setMaxRecipients(workflowMailing.getMaxRecipients())
+						.setBlockSize(workflowMailing.getBlocksize())
+						.setDefaultStepping(DEFAULT_STEPPING)
+						.setFollowupFor(getBaseMailingId(icon))
+						.setCheckForDuplicateRecords(workflowMailing.isDoubleCheck())
+						.setSkipWithEmptyTextContent(workflowMailing.isSkipEmptyBlocks())
+						.setReportSendDayOffset(workflowMailing.getAutoReport())
+						.setFromWorkflow(true)
+						.setDeliveryType(deliveryType)
+						.build();
 
-					mailingSendService.sendMailing(mailingId, admin, options, warnings, errors, userActions);
-				} else {
-					// Send action-based or date-based mailing.
-					MailingSendOptions options = MailingSendOptions.builder()
-							.setDate(sendDate)
-							.setAdminId(admin.getAdminID())
-							.setGenerateAtSendDate(true)
-							.setDeliveryType(deliveryType)
-							.build();
+				Mailing mailing = mailingDao.getMailing(mailingId, admin.getCompanyID());
 
-					mailingSendService.sendMailing(mailingId, admin, options, warnings, errors, userActions);
-					// Use "test" mailing status on workflow test run.
-					mailingDao.updateStatus(mailingId, testing ? MailingStatus.TEST : MailingStatus.ACTIVE);
+				if (mailing.getLocked() == 1 && !admin.permissionAllowed(Permission.MAILING_CAN_SEND_ALWAYS)) {
+					lockedMailings.add(mailingId);
+					continue;
 				}
-			} catch (MailingLockedException mle) {
-				lockedMailings.add(mle.getMailingID());
+
+				ServiceResult<UserAction> result = mailingSendService.sendMailing(mailing, options, admin);
+
+				if (!result.isSuccess()) {
+					errors.addAll(result.getErrorMessages());
+					warnings.addAll(result.getWarningMessages());
+				} else {
+					userActions.add(result.getResult());
+				}
+			} else {
+				// Send action-based or date-based mailing.
+				MailingSendOptions options = MailingSendOptions.builder()
+						.setDate(sendDate)
+						.setAdminId(admin.getAdminID())
+						.setDeliveryType(deliveryType)
+						.setFromWorkflow(true)
+						.build();
+
+				Mailing mailing = mailingDao.getMailing(mailingId, admin.getCompanyID());
+
+				if (mailing.getLocked() == 1 && !admin.permissionAllowed(Permission.MAILING_CAN_SEND_ALWAYS)) {
+					lockedMailings.add(mailingId);
+					continue;
+				}
+
+				ServiceResult<UserAction> result = mailingSendService.sendMailing(mailing, options, admin);
+
+				if (!result.isSuccess()) {
+					errors.addAll(result.getErrorMessages());
+					warnings.addAll(result.getWarningMessages());
+				} else {
+					userActions.add(result.getResult());
+				}
+
+				// Use "test" mailing status on workflow test run.
+				mailingDao.updateStatus(mailingId, testing ? MailingStatus.TEST : MailingStatus.ACTIVE);
 			}
 		}
 
@@ -615,7 +638,7 @@ public class ComWorkflowActivationService {
 		optimization.setWorkflowId(workflow.getWorkflowId());
 		optimization.setShortname("[campaign: " + workflow.getShortname() + "]");
 		optimization.setDescription("");
-		optimization.setStatus(ComOptimization.STATUS_NOT_STARTED);
+		optimization.setStatus(AutoOptimizationStatus.NOT_STARTED.getCode());
 
 		optimization.setEvalType(decisionIcon.getAoDecisionCriteria());
 		optimization.setThreshold(NumberUtils.toInt(decisionIcon.getThreshold()));
@@ -851,12 +874,6 @@ public class ComWorkflowActivationService {
 		}
 
 		return conditions;
-	}
-
-	public String createRecipientIconTargetExpression(WorkflowRecipient recipientIcon) {
-		Condition conditions = createConditionGroupFromRecipientIcon(recipientIcon);
-		String targetExpression = Condition.toReducedTargetExpression(conditions);
-		return targetExpression == null ? "" : targetExpression;
 	}
 
 	private void processParameters(WorkflowGraph workflowGraph, WorkflowStart startIcon, Map<Integer, List<WorkflowParameter>> resultMap,
@@ -1350,14 +1367,14 @@ public class ComWorkflowActivationService {
 		return Deadline.toDate(triggerDate, deadline, adminTimeZone);
 	}
 
-    private void updateAutoImportActivationDate(@VelocityCheck int companyId, WorkflowGraph workflowGraph, Map<Integer, Date> importsActivationDates) throws Exception {
+    private void updateAutoImportActivationDate(Admin admin, WorkflowGraph workflowGraph, Map<Integer, Date> importsActivationDates) throws Exception {
         for (Entry<Integer, Date> entry : importsActivationDates.entrySet()) {
             WorkflowImport importIcon = (WorkflowImport) workflowGraph.getNodeByIconId(entry.getKey()).getNodeIcon();
-            autoImportService.setAutoActivationDateAndActivate(companyId, importIcon.getImportexportId(), entry.getValue(), true);
+            autoImportService.setAutoActivationDateAndActivate(admin, importIcon.getImportexportId(), entry.getValue(), true);
         }
     }
 
-	private void updateAutoExportActivationDate(@VelocityCheck int companyId, WorkflowGraph workflowGraph, Map<Integer, Date> exportsActivationDates) throws Exception {
+	private void updateAutoExportActivationDate(int companyId, WorkflowGraph workflowGraph, Map<Integer, Date> exportsActivationDates) throws Exception {
         for (Entry<Integer, Date> entry : exportsActivationDates.entrySet()) {
             WorkflowExport exportIcon = (WorkflowExport) workflowGraph.getNodeByIconId(entry.getKey()).getNodeIcon();
             autoExportService.setAutoActivationDateAndActivate(companyId, exportIcon.getImportexportId(), entry.getValue(), true);
@@ -1370,10 +1387,6 @@ public class ComWorkflowActivationService {
 
 	public void setMailingDao(ComMailingDao mailingDao) {
 		this.mailingDao = mailingDao;
-	}
-
-	public void setMailingSendService(ComMailingSendService mailingSendService) {
-		this.mailingSendService = mailingSendService;
 	}
 
 	public void setTargetFactory(TargetFactory targetFactory) {
@@ -1412,6 +1425,11 @@ public class ComWorkflowActivationService {
 
 	public void setOptimizationScheduleService(ComOptimizationScheduleService optimizationScheduleService) {
 		this.optimizationScheduleService = optimizationScheduleService;
+	}
+
+	@Required
+	public void setMailingSendService(MailingSendService mailingSendService) {
+		this.mailingSendService = mailingSendService;
 	}
 
 	@Required

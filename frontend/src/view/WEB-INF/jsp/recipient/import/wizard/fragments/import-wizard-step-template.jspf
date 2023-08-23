@@ -1,0 +1,49 @@
+<c:set var="lastStep" value="7"/>
+<div class="col-md-10 col-md-push-1 col-lg-8 col-lg-push-2">
+    <div class="tile">
+        <div class="tile-header">
+            <h2 class="headline"><i class="icon icon-file-o"></i> <mvc:message code="import.Wizard"/></h2>
+            <ul class="tile-header-actions">
+                <li class="">
+                    <ul class="pagination">
+                        <li>
+                            <a href="${backUrl}">
+                                <i class="icon icon-angle-left"></i>
+                                <mvc:message code="button.Back" />
+                            </a>
+                        </li>
+                        <li class="${step == 1 ? 'active' : 'disabled'}"><span>1</span></li>
+                        <li class="${step == 2 ? 'active' : 'disabled'}"><span>2</span></li>
+                        <li class="${step == 3 ? 'active' : 'disabled'}"><span>3</span></li>
+                        <li class="${step == 4 ? 'active' : 'disabled'}"><span>4</span></li>
+                        <li class="${step == 5 ? 'active' : 'disabled'}"><span>5</span></li>
+                        <li class="${step == 6 ? 'active' : 'disabled'}"><span>6</span></li>
+                        <li class="${step == 7 ? 'active' : 'disabled'}"><span>7</span></li>
+                        <c:if test="${step != lastStep}">
+                            <li>
+                                <a href="#" data-form-submit>
+                                    <mvc:message code="button.Proceed" />
+                                    <i class="icon icon-angle-right"></i>
+                                </a>
+                            </li>
+                        </c:if>                         
+                    </ul>
+                </li>
+            </ul>
+        </div>
+            
+        ${tileContent}
+        
+        <div class="tile-footer">
+            <a href="${backUrl}" class="btn btn-large pull-left">
+                <i class="icon icon-angle-left"></i>
+                <span class="text"><mvc:message code="button.Back"/></span>
+            </a>
+            <button type="button" class="btn btn-large btn-primary pull-right" data-form-submit>
+                <span class="text"><mvc:message code="${step != lastStep ? 'button.Proceed' : 'ImportData'}"/></span>
+                <i class="icon icon-angle-right"></i>
+            </button>
+            <span class="clearfix"></span>
+        </div>
+    </div>
+</div>

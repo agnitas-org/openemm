@@ -14,7 +14,6 @@ import java.util.Date;
 
 import org.agnitas.beans.MailingBase;
 import org.agnitas.beans.Mailinglist;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public class MailingBaseImpl implements MailingBase {
 
@@ -44,7 +43,7 @@ public class MailingBaseImpl implements MailingBase {
 	}
 
 	@Override
-	public void setCompanyID( @VelocityCheck int tmpid) {
+	public void setCompanyID( int tmpid) {
 	    companyID=tmpid;
 	}
 

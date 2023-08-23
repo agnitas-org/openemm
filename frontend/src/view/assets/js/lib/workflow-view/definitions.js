@@ -264,7 +264,7 @@
         stop: {
             icons: {
                 inactive: 'icon_start_g.png',
-                active: 'icon_start_l.png',
+                active: 'icon_stop_l.png',
                 dialog: 'icon_start_s.png'
             },
             anchors: [
@@ -524,6 +524,9 @@
         MOUSE_BUTTON_LEFT: 0,
         MOUSE_BUTTON_MIDDLE: 1,
 
+        DEFAULT_DRAG_MODE: 0,
+        GRID_CELL_DRAG_MODE: 1,
+
         BOTTOM: 'BOTTOM',
         LEFT: 'LEFT',
         RIGHT: 'RIGHT',
@@ -553,6 +556,7 @@
         Z_INDEX_NAVIGATOR_ARROWS: 31,
         Z_INDEX_CONTEXT_MENU: 40,  // Highest object on the stage.
 
+        CANVAS_DEFAULT_GRID_SIZE: 20,
         CANVAS_GRID_SIZE: 20,
         NODE_SIZE: 64,
         NODE_MIN_MARGIN: 0.1,
@@ -560,8 +564,12 @@
 
         MINIMAP_PADDING: 2,
 
+        DEFAULT_AUTO_ALIGN_STEP_X: 5,
+        GRID_AUTO_ALIGN_STEP_X: 2,
         AUTO_ALIGN_STEP_X: 5,
         AUTO_ALIGN_EXTRA_STEP_X: 0.5,
+        DEFAULT_AUTO_ALIGN_STEP_Y: 6,
+        GRID_AUTO_ALIGN_STEP_Y: 2,
         AUTO_ALIGN_STEP_Y: 6,
         AUTO_ALIGN_STEP_BETWEEN_GROUPS: 2,
 

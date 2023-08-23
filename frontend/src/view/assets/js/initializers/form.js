@@ -2,7 +2,7 @@
 
   var Form = AGN.Lib.Form;
 
-  AGN.Lib.CoreInitializer.new('form', function($scope) {
+  AGN.Lib.CoreInitializer.new('form', ['select'], function($scope) {
     if (!$scope) {
       $scope = $(document);
     }

@@ -15,14 +15,13 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import org.agnitas.beans.EmmLayoutBase;
+import com.agnitas.beans.EmmLayoutBase;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.impl.CompanyStatus;
 import org.agnitas.dao.RdirTrafficAmountDao;
 import org.agnitas.emm.core.commons.daocache.CompanyDaoCache;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
 import org.apache.catalina.connector.ClientAbortException;
@@ -267,7 +266,7 @@ public class ShowImageServlet extends HttpServlet {
 	 * @param noCache
 	 * @param isMobileDevice
 	 */
-	protected DeliverableImage getMediapoolImage(@VelocityCheck int companyID, int elementID, boolean noCache, boolean isMobileDevice) {
+	protected DeliverableImage getMediapoolImage(int companyID, int elementID, boolean noCache, boolean isMobileDevice) {
 		return null;
 	}
 
@@ -293,7 +292,7 @@ public class ShowImageServlet extends HttpServlet {
 	 * @return
 	 * @throws Exception
 	 */
-	private DeliverableImage getImageForMobileRequest(HttpServletRequest request, @VelocityCheck int companyID, int mailingID, String imageName, boolean noCache) throws Exception {
+	private DeliverableImage getImageForMobileRequest(HttpServletRequest request, int companyID, int mailingID, String imageName, boolean noCache) throws Exception {
 		// Generate cache lookup key for mobile image
 		String mobileCacheKey = generateCachingKey(companyID, mailingID, ImageUtils.MOBILE_IMAGE_PREFIX + imageName);
 
@@ -353,7 +352,7 @@ public class ShowImageServlet extends HttpServlet {
 	 * @return
 	 * @throws Exception
 	 */
-	private DeliverableImage getImageForStandardRequest(HttpServletRequest request, @VelocityCheck int companyID, int mailingID, String imageName, boolean noCache) throws Exception {
+	private DeliverableImage getImageForStandardRequest(HttpServletRequest request, int companyID, int mailingID, String imageName, boolean noCache) throws Exception {
 		// Generate cache lookup key
 		String cacheKey = generateCachingKey(companyID, mailingID, imageName);
 		// Look up image in cache
@@ -494,7 +493,7 @@ public class ShowImageServlet extends HttpServlet {
 	 * @throws Exception
 	 *             on missing parameters
 	 */
-	private String generateCachingKey(@VelocityCheck int companyID, int mailingID, String name) throws Exception {
+	private String generateCachingKey(int companyID, int mailingID, String name) throws Exception {
 		StringBuilder cacheKeyBuilder = new StringBuilder();
 		cacheKeyBuilder.append(companyID);
 		cacheKeyBuilder.append("-");

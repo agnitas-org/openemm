@@ -16,7 +16,6 @@ import java.util.Collections;
 import java.util.List;
 
 import org.agnitas.dao.impl.BaseDaoImpl;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.DbColumnType;
 import org.agnitas.util.DbColumnType.SimpleDataType;
 import org.agnitas.util.DbUtilities;
@@ -111,7 +110,7 @@ public class RecipientProfileHistoryDaoImplBasic extends BaseDaoImpl implements 
 	}
 
 	@Override
-	public List<ComRecipientHistory> listProfileFieldHistory(final int recipientID, @VelocityCheck final int companyID) {
+	public List<ComRecipientHistory> listProfileFieldHistory(final int recipientID, final int companyID) {
 		String recipientHistoryTable = buildHistoryTableName(companyID);
 		boolean isRecipientHistoryTableExist = DbUtilities.checkIfTableOrSynonymExists(getDataSource(), recipientHistoryTable);
 

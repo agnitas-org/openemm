@@ -6,6 +6,7 @@
 	<expirationDate></expirationDate>
 	<maximumNumberOfCompanies>-1</maximumNumberOfCompanies>
 	<maximumNumberOfSupervisors>-1</maximumNumberOfSupervisors>
+	<maximumNumberOfGuiAdmins>-1</maximumNumberOfGuiAdmins>
 	<maximumNumberOfAdmins>-1</maximumNumberOfAdmins>
 	<maximumNumberOfWebserviceUsers>-1</maximumNumberOfWebserviceUsers>
 	<maximumNumberOfRestfulUsers>-1</maximumNumberOfRestfulUsers>

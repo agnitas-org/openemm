@@ -10,10 +10,9 @@
 
 package com.agnitas.reporting.birt.external.dao;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public interface ComCompanyDao {
 
-	boolean hasDeepTrackingTables(@VelocityCheck int companyID);
+	boolean hasDeepTrackingTables(int companyID);
 	
 }

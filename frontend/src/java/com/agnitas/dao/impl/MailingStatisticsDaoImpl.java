@@ -11,19 +11,21 @@
 package com.agnitas.dao.impl;
 
 import java.sql.Connection;
-import java.sql.Statement;
+import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.agnitas.beans.MediaTypeStatus;
 import org.agnitas.dao.FollowUpType;
 import org.agnitas.dao.UserStatus;
 import org.agnitas.dao.impl.BaseDaoImpl;
 import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.importvalues.MailType;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -33,6 +35,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 
 import com.agnitas.beans.Mailing;
+import com.agnitas.beans.Mediatype;
 import com.agnitas.beans.MediatypeEmail;
 import com.agnitas.dao.ComTargetDao;
 import com.agnitas.dao.MailingStatisticsDao;
@@ -47,13 +50,13 @@ public class MailingStatisticsDaoImpl extends BaseDaoImpl implements MailingStat
 	private final ConfigService configService;
     private final ComTargetService targetService;
     
-    @Deprecated(forRemoval = true)	// Use TargetService instead
+    @Deprecated(forRemoval = true)	// Use TargetService istead
     private final ComTargetDao targetDao;
     
     public MailingStatisticsDaoImpl(final ConfigService configService, final ComTargetService targetService, @Deprecated final ComTargetDao targetDao) {
     	this.configService = Objects.requireNonNull(configService);
     	this.targetService = Objects.requireNonNull(targetService);
-    	this.targetDao = Objects.requireNonNull(targetDao);
+    	this.targetDao = targetDao;
     }
 	
     /**
@@ -62,7 +65,7 @@ public class MailingStatisticsDaoImpl extends BaseDaoImpl implements MailingStat
      * @throws Exception
      */
 	@Override
-    public int getFollowUpStat(final int mailingID, final int baseMailing, final String followUpType, @VelocityCheck final int companyID, final boolean useTargetGroups) throws Exception {
+    public int getFollowUpStat(final int mailingID, final int baseMailing, final String followUpType, final int companyID, final boolean useTargetGroups) throws Exception {
         int resultValue = 0;
 
         // What kind of followup do we have, choose the appropriate sql call...
@@ -128,7 +131,7 @@ public class MailingStatisticsDaoImpl extends BaseDaoImpl implements MailingStat
         return selectInt(logger, sql.toString(), followUpFor);
     }
 
-    private int getNonClicker(@VelocityCheck final int companyID, final int followUpFor, final String sqlTargetExpression) throws Exception {
+    private int getNonClicker(final int companyID, final int followUpFor, final String sqlTargetExpression) throws Exception {
         final StringBuilder sql = new StringBuilder();
         sql.append("SELECT COUNT(DISTINCT bind.customer_id) FROM customer_" + companyID + "_binding_tbl bind, customer_" + companyID + "_tbl cust");
         sql.append(" WHERE bind.customer_id = cust.customer_id AND bind.user_status = 1");
@@ -142,7 +145,7 @@ public class MailingStatisticsDaoImpl extends BaseDaoImpl implements MailingStat
         return selectInt(logger, sql.toString(), followUpFor, followUpFor);
     }
 
-    private int getOpener(@VelocityCheck final int companyID, final int followUpFor, final String sqlTargetExpression) throws Exception {
+    private int getOpener(final int companyID, final int followUpFor, final String sqlTargetExpression) throws Exception {
         final StringBuilder sql = new StringBuilder();
         sql.append("SELECT COUNT(DISTINCT bind.customer_id) FROM customer_" + companyID + "_binding_tbl bind, customer_" + companyID + "_tbl cust");
         sql.append(" WHERE bind.customer_id = cust.customer_id AND bind.user_status = 1");
@@ -155,7 +158,7 @@ public class MailingStatisticsDaoImpl extends BaseDaoImpl implements MailingStat
         return selectInt(logger, sql.toString(), followUpFor);
     }
 
-    private int getNonOpener(@VelocityCheck final int companyID, final int followUpFor, final String sqlTargetExpression) throws Exception {
+    private int getNonOpener(final int companyID, final int followUpFor, final String sqlTargetExpression) throws Exception {
         final StringBuilder sql = new StringBuilder();
         sql.append("SELECT COUNT(DISTINCT bind.customer_id) FROM customer_" + companyID + "_binding_tbl bind, customer_" + companyID + "_tbl cust");
         sql.append(" WHERE bind.customer_id = cust.customer_id AND bind.user_status = 1");
@@ -169,7 +172,7 @@ public class MailingStatisticsDaoImpl extends BaseDaoImpl implements MailingStat
         return selectInt(logger, sql.toString(), followUpFor, followUpFor);
     }
 
-    private int getClicker(@VelocityCheck final int companyID, final int baseMailingID, final int followUpMailingID) throws Exception {
+    private int getClicker(final int companyID, final int baseMailingID, final int followUpMailingID) throws Exception {
         final StringBuilder sql = new StringBuilder();
         sql.append("SELECT COUNT(DISTINCT bind.customer_id) FROM customer_" + companyID + "_binding_tbl bind, customer_" + companyID + "_tbl cust");
         sql.append(" WHERE bind.customer_id = cust.customer_id AND bind.user_status = 1");
@@ -205,7 +208,7 @@ public class MailingStatisticsDaoImpl extends BaseDaoImpl implements MailingStat
      * @return
      * @throws Exception
      */
-    private int getNonClicker(@VelocityCheck final int companyID, final int baseMailingID, final int followUpMailingID) throws Exception {
+    private int getNonClicker(final int companyID, final int baseMailingID, final int followUpMailingID) throws Exception {
         final StringBuilder sql = new StringBuilder();
         sql.append("SELECT COUNT(DISTINCT bind.customer_id) FROM customer_" + companyID + "_binding_tbl bind, customer_" + companyID + "_tbl cust");
         sql.append(" WHERE bind.customer_id = cust.customer_id AND bind.user_status = 1");
@@ -239,7 +242,7 @@ public class MailingStatisticsDaoImpl extends BaseDaoImpl implements MailingStat
      * @return
      * @throws Exception
      */
-    private int getOpener(@VelocityCheck final int companyID, final int baseMailingID, final int followUpMailingID) throws Exception {
+    private int getOpener(final int companyID, final int baseMailingID, final int followUpMailingID) throws Exception {
         final StringBuilder sql = new StringBuilder();
         sql.append("SELECT COUNT(DISTINCT bind.customer_id) FROM customer_" + companyID + "_binding_tbl bind, customer_" + companyID + "_tbl cust");
         sql.append(" WHERE bind.customer_id = cust.customer_id AND bind.user_status = 1");
@@ -272,7 +275,7 @@ public class MailingStatisticsDaoImpl extends BaseDaoImpl implements MailingStat
      * @return
      * @throws Exception
      */
-    private int getNonOpener(@VelocityCheck final int companyID, final int baseMailingID, final int followUpMailingID) throws Exception {
+    private int getNonOpener(final int companyID, final int baseMailingID, final int followUpMailingID) throws Exception {
         final StringBuilder sql = new StringBuilder();
         sql.append("SELECT COUNT(DISTINCT bind.customer_id) FROM customer_" + companyID + "_binding_tbl bind, customer_" + companyID + "_tbl cust");
         sql.append(" WHERE bind.customer_id = cust.customer_id AND bind.user_status = 1");
@@ -385,122 +388,129 @@ public class MailingStatisticsDaoImpl extends BaseDaoImpl implements MailingStat
     }
 
 	@Override
-    public Map<Integer, Integer> getSendStats(final Mailing mailing, final int companyId) throws Exception {
-        final Map<Integer, Integer> map = new HashMap<>();
-        int numText = 0;
-        int numHtml = 0;
-        int numOffline = 0;
+	public Map<Integer, Integer> getSendStats(final Mailing mailing, final int companyId) throws Exception {
+		final Map<Integer, Integer> returnMap = new HashMap<>();
+		returnMap.put(SEND_STATS_TEXT, 0);
+		returnMap.put(SEND_STATS_HTML, 0);
+		returnMap.put(SEND_STATS_OFFLINE, 0);
+		
+		final MediatypeEmail mediatype = mailing.getEmailParam();
+		if (mediatype != null && StringUtils.isNotBlank(mediatype.getFollowupFor())) {
+			returnMap.put(SEND_STATS_TEXT, getFollowUpStat(mailing.getId(), Integer.parseInt(mediatype.getFollowupFor()), mediatype.getFollowUpMethod(), companyId, true));
+			return returnMap;
+		} else {
+			List<MediaTypes> activeMediaTypesSortedByPrio = mailing.getMediatypes().values().stream()
+				.filter(x -> x.getStatus() == MediaTypeStatus.Active.getCode())
+				.sorted(Comparator.comparingInt(Mediatype::getPriority))
+				.map(x -> x.getMediaType())
+				.collect(Collectors.toList());
+			
+			Set<MediaTypes> alreadyCountedMediatypes = new HashSet<>();
+			for (MediaTypes mediaType : activeMediaTypesSortedByPrio) {
+				if (mediaType == MediaTypes.EMAIL) {
+					Map<MailType, Integer> emailRecipientNumbers = getMailingRecipientAmountsForEmail(companyId, mailing.getMailinglistID(), MailType.getFromInt(mailing.getEmailParam().getMailFormat()), mailing.getTargetExpression(), mailing.getSplitID(), mailing.isEncryptedSend(), alreadyCountedMediatypes);
+					returnMap.put(SEND_STATS_TEXT, returnMap.get(SEND_STATS_TEXT) + emailRecipientNumbers.get(MailType.TEXT));
+					returnMap.put(SEND_STATS_HTML, returnMap.get(SEND_STATS_HTML) + emailRecipientNumbers.get(MailType.HTML));
+					returnMap.put(SEND_STATS_OFFLINE, returnMap.get(SEND_STATS_OFFLINE) + emailRecipientNumbers.get(MailType.HTML_OFFLINE));
+				} else {
+					returnMap.putIfAbsent(mediaType.getMediaCode(), 0);
+					returnMap.put(mediaType.getMediaCode(), returnMap.get(mediaType.getMediaCode()) + getMailingRecipientAmountForNonEmailMediaType(companyId, mailing.getMailinglistID(), mediaType, mailing.getTargetExpression(), mailing.getSplitID(), mailing.isEncryptedSend(), alreadyCountedMediatypes));
+				}
+				alreadyCountedMediatypes.add(mediaType);
+			}
+			return returnMap;
+		}
+	}
 
-        final MediatypeEmail mediatype = mailing.getEmailParam();
+	private Map<MailType, Integer> getMailingRecipientAmountsForEmail(int companyID, int mailinglistID, MailType mailingMailType, String targetExpression, int splitID, boolean encryptedSend, Set<MediaTypes> excludeRecipientsOfMediatypes) throws Exception {
+		try (Connection connection = getDataSource().getConnection()) {
+			final SingleConnectionDataSource scds = new SingleConnectionDataSource(connection, true);
+			final JdbcTemplate template = new JdbcTemplate(scds);
+			
+			String sqlStatement = "SELECT cust.mailtype, COUNT(DISTINCT cust.customer_id) AS count"
+					+ " FROM customer_" + companyID + "_tbl cust, " + "customer_" + companyID + "_binding_tbl bind"
+					+ " WHERE cust.customer_id = bind.customer_id"
+					+ " AND bind.mailinglist_id = ?"
+					+ " AND bind.user_status = ?"
+					+ " AND bind.mediatype = ?";
+			
+			final String targetAndSplitSql = targetService.getSQLFromTargetExpression(targetExpression, splitID, companyID);
+			if (StringUtils.isNotBlank(targetAndSplitSql)) {
+				sqlStatement += " AND (" + targetAndSplitSql + ")";
+			}
+			
+			if (encryptedSend) {
+				sqlStatement += " AND cust.sys_encrypted_sending = 1";
+			}
+			
+			if (excludeRecipientsOfMediatypes != null && excludeRecipientsOfMediatypes.size() > 0) {
+				sqlStatement += " AND NOT EXISTS (SELECT 1 FROM customer_" + companyID + "_binding_tbl bind2"
+					+ " WHERE cust.customer_id = bind2.customer_id"
+					+ " AND bind2.mediatype IN (" + excludeRecipientsOfMediatypes.stream().map(x -> Integer.toString(x.getMediaCode())).collect(Collectors.joining(", ")) + "))";
+			}
+			
+			sqlStatement += " GROUP BY cust.mailtype ORDER BY cust.mailtype";
+			
+			List<Map<String, Object>> result = template.queryForList(sqlStatement, mailinglistID, UserStatus.Active.getStatusCode(), MediaTypes.EMAIL.getMediaCode());
+			Map<MailType, Integer> returnMap = new HashMap<>();
+			returnMap.put(MailType.TEXT, 0);
+			returnMap.put(MailType.HTML, 0);
+			returnMap.put(MailType.HTML_OFFLINE, 0);
+			for (Map<String, Object> row : result) {
+				MailType recipientMailType = MailType.getFromInt(((Number) row.get("mailtype")).intValue());
+				int count = ((Number) row.get("count")).intValue();
+				returnMap.put(recipientMailType, returnMap.get(recipientMailType) + count);
+			}
+			
+			if (mailingMailType == MailType.TEXT) {
+				returnMap.put(MailType.TEXT, returnMap.get(MailType.TEXT) + returnMap.get(MailType.HTML) + returnMap.get(MailType.HTML_OFFLINE));
+				returnMap.put(MailType.HTML, 0);
+				returnMap.put(MailType.HTML_OFFLINE, 0);
+			} else if (mailingMailType == MailType.HTML) {
+				returnMap.put(MailType.HTML, returnMap.get(MailType.HTML) + returnMap.get(MailType.HTML_OFFLINE));
+				returnMap.put(MailType.HTML_OFFLINE, 0);
+			}
+			
+			return returnMap;
+		} catch (final Exception e) {
+			throw new Exception("Error reading email recipient statistics of mailinglist " + mailinglistID, e);
+		}
+	}
 
-        if (StringUtils.isBlank(mediatype.getFollowupFor())) {
-        	final String targetAndSplitSql = targetService.getSQLFromTargetExpression(mailing.getTargetExpression(), mailing.getSplitID(), companyId);
-
-            String sqlStatement = "SELECT count(*) as count, bind.mediatype, cust.mailtype FROM customer_" + companyId + "_tbl cust, " + "customer_" + companyId
-                    + "_binding_tbl bind WHERE bind.mailinglist_id = ? AND cust.customer_id = bind.customer_id " + (StringUtils.isNotBlank(targetAndSplitSql) ? " AND (" + targetAndSplitSql + ")" : "")
-                    + " AND bind.user_status = ?";
-
-            if (mailing.isEncryptedSend()) {
-                sqlStatement += " AND cust.sys_encrypted_sending = 1 ";
-            }
-
-            sqlStatement += " GROUP BY bind.mediatype, cust.mailtype";
-
-
-            if (logger.isInfoEnabled()) {
-                logger.info("sql: " + sqlStatement);
-            }
-
-            final boolean useUnsharpRecipientQuery = configService.useUnsharpRecipientQuery(companyId);
-
-            try (Connection connection = getDataSource().getConnection()) {
-                try {
-                    // TODO: IGNORE_BOUNCELOAD_COMPANY_ID is a bad hack for CONRAD-371!!!
-                    if (useUnsharpRecipientQuery) {
-                        try (Statement stmt = connection.createStatement()) {
-                            stmt.execute("ALTER SESSION SET OPTIMIZER_MODE=RULE");
-                        }
-                    }
-
-                    final SingleConnectionDataSource scds = new SingleConnectionDataSource(connection, true);
-                    final JdbcTemplate template = new JdbcTemplate(scds);
-
-                    final List<Map<String, Object>> result = template.queryForList(sqlStatement, mailing.getMailinglistID(), UserStatus.Active.getStatusCode());
-                    for (final Map<String, Object> resultRow : result) {
-                        MediaTypes customerMediaType = MediaTypes.getMediaTypeForCode(((Number) resultRow.get("mediatype")).intValue());
-                        if (mailing.getMediatypes().containsKey(customerMediaType.getMediaCode())
-                                && mailing.getMediatypes().get(customerMediaType.getMediaCode()).getStatus() == MediaTypeStatus.Active.getCode()) {
-                            if (customerMediaType == MediaTypes.EMAIL) {
-                                final MailType mailType = MailType.getFromInt(((Number) resultRow.get("mailtype")).intValue());
-                                switch (mailType) {
-                                    case TEXT:
-                                        numText += ((Number) resultRow.get("count")).intValue();
-                                        break;
-
-                                    case HTML:
-                                        if (mailing.getEmailParam().getMailFormat() == 0) {
-                                            // nur Text-Mailing
-                                            numText += ((Number) resultRow.get("count")).intValue();
-                                        } else {
-                                            numHtml += ((Number) resultRow.get("count")).intValue();
-                                        }
-                                        break;
-
-                                    case HTML_OFFLINE:
-                                        if (mailing.getEmailParam().getMailFormat() == 0) {
-                                            // nur Text-Mailing
-                                            numText += ((Number) resultRow.get("count")).intValue();
-                                        }
-                                        if (mailing.getEmailParam().getMailFormat() == 1) {
-                                            // nur Text/Online-HTML-Mailing
-                                            numHtml += ((Number) resultRow.get("count")).intValue();
-                                        }
-                                        if (mailing.getEmailParam().getMailFormat() == 2) {
-                                            // alle Formate
-                                            numOffline += ((Number) resultRow.get("count")).intValue();
-                                        }
-                                        break;
-                                    default:
-                                        throw new Exception("Invalid MailType");
-                                }
-                            } else {
-                                if (map.get(customerMediaType.getMediaCode()) != null) {
-                                    // add (do not overwrite) new value for same mediatype
-                                    int number = map.get(customerMediaType.getMediaCode());
-                                    number += ((Number) resultRow.get("count")).intValue();
-                                    map.put(customerMediaType.getMediaCode(), number);
-                                } else {
-                                    map.put(customerMediaType.getMediaCode(), ((Number) resultRow.get("count")).intValue());
-                                }
-                            }
-                        }
-                    }
-                } finally {
-                    // TODO: IGNORE_BOUNCELOAD_COMPANY_ID is a bad hack for CONRAD-371!!!
-                    if (useUnsharpRecipientQuery) {
-                        try (Statement stmt = connection.createStatement()) {
-                            stmt.execute("ALTER SESSION SET OPTIMIZER_MODE=ALL_ROWS");
-                        }
-                    }
-
-                }
-            } catch (final Exception e) {
-                logger.error("Error reading send status of mailing " + mailing.getId(), e);
-
-                if (logger.isInfoEnabled()) {
-                    logger.error("SQL statement is: " + sqlStatement);
-                }
-
-                return null;
-            }
-        } else {
-            numText = getFollowUpStat(mailing.getId(), Integer.parseInt(mediatype.getFollowupFor()), mediatype.getFollowUpMethod(), companyId, true);
-        }
-
-        map.put(SEND_STATS_TEXT, numText);
-        map.put(SEND_STATS_HTML, numHtml);
-        map.put(SEND_STATS_OFFLINE, numOffline);
-
-        return map;
-    }
+	private Integer getMailingRecipientAmountForNonEmailMediaType(int companyID, int mailinglistID, MediaTypes mediaType, String targetExpression, int splitID, boolean encryptedSend, Collection<MediaTypes> excludeRecipientsOfMediatypes) throws Exception {
+		if (mediaType == MediaTypes.EMAIL) {
+			throw new Exception("Invalid mediatype '" + mediaType.name() + "' for getMailingRecipientAmountForNonEmailMediaType. Use getMailingRecipientAmountsForEmail instead");
+		}
+		
+		try (Connection connection = getDataSource().getConnection()) {
+			final SingleConnectionDataSource scds = new SingleConnectionDataSource(connection, true);
+			final JdbcTemplate template = new JdbcTemplate(scds);
+			
+			String sqlStatement = "SELECT COUNT(DISTINCT cust.customer_id)"
+					+ " FROM customer_" + companyID + "_tbl cust, " + "customer_" + companyID + "_binding_tbl bind"
+					+ " WHERE cust.customer_id = bind.customer_id"
+					+ " AND bind.mailinglist_id = ?"
+					+ " AND bind.user_status = ?"
+					+ " AND bind.mediatype = ?";
+			
+			final String targetAndSplitSql = targetService.getSQLFromTargetExpression(targetExpression, splitID, companyID);
+			if (StringUtils.isNotBlank(targetAndSplitSql)) {
+				sqlStatement += " AND (" + targetAndSplitSql + ")";
+			}
+			
+			if (encryptedSend) {
+				sqlStatement += " AND cust.sys_encrypted_sending = 1";
+			}
+			
+			if (excludeRecipientsOfMediatypes != null && excludeRecipientsOfMediatypes.size() > 0) {
+				sqlStatement += " AND NOT EXISTS (SELECT 1 FROM customer_" + companyID + "_binding_tbl bind2"
+					+ " WHERE cust.customer_id = bind2.customer_id"
+					+ " AND bind2.mediatype IN (" + excludeRecipientsOfMediatypes.stream().map(x -> Integer.toString(x.getMediaCode())).collect(Collectors.joining(", ")) + "))";
+			}
+			
+			return template.queryForObject(sqlStatement, Integer.class, mailinglistID, UserStatus.Active.getStatusCode(), mediaType.getMediaCode());
+		} catch (final Exception e) {
+			throw new Exception("Error reading recipient statistics of mailinglist " + mailinglistID, e);
+		}
+	}
 }

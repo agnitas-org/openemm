@@ -22,6 +22,8 @@ import org.agnitas.util.Tuple;
 public interface AutoImportDao {
 
 	boolean exists(int autoImportId, int companyId);
+
+	String findName(int autoImportId, int companyId);
 	
 	List<AutoImportLight> listAutoImports(final int companyID);
 	
@@ -100,4 +102,6 @@ public interface AutoImportDao {
 	List<AutoImport> getStallingAutoImports();
 
 	int getStallingImportsAmount();
+
+	List<Integer> getOutdatedAutoImports(int companyID, Date autoImportExportExpireDate);
 }

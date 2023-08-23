@@ -10,17 +10,36 @@
 
 package com.agnitas.service;
 
+import java.io.File;
 import java.util.List;
 
 import org.agnitas.beans.ExportPredef;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.beans.Admin;
+import org.agnitas.service.RecipientExportWorker;
 
 public interface ExportPredefService {
-    ExportPredef get(int id, @VelocityCheck int companyId);
-    ExportPredef create(@VelocityCheck int companyId);
+
+    ExportPredef get(int id, int companyId);
+
+    String findName(int id, int companyId);
+
+    ExportPredef create(int companyId);
+
     int save(ExportPredef src);
+
     List<ExportPredef> getExportProfiles(Admin admin);
+
     List<Integer> getExportProfileIds(Admin admin);
+
+    ServiceResult<ExportPredef> getExportForDeletion(int exportId, int companyId);
+
+    ServiceResult<ExportPredef> delete(int exportId, int companyId);
+
+    RecipientExportWorker getRecipientsToZipWorker(ExportPredef export, Admin admin) throws Exception;
+
+    ServiceResult<File> getExportFileToDownload(String exportFileName, Admin admin);
+
+    String getExportDownloadZipName(Admin admin);
+
 }

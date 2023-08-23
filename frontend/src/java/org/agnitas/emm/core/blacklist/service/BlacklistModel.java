@@ -10,7 +10,7 @@
 
 package org.agnitas.emm.core.blacklist.service;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
+
 
 public class BlacklistModel {
 	private int companyId;
@@ -21,7 +21,7 @@ public class BlacklistModel {
 		return companyId;
 	}
 
-	public void setCompanyId(@VelocityCheck int companyId) {
+	public void setCompanyId(int companyId) {
 		this.companyId = companyId;
 	}
 

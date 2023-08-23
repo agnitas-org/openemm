@@ -1,10 +1,6 @@
-<%@ page import="com.agnitas.web.MailingBaseAction" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
-<%@ taglib prefix="html" uri="http://struts.apache.org/tags-html" %>
-
-<c:set var="ACTION_MAILING_IMPORT" value="<%= MailingBaseAction.ACTION_MAILING_IMPORT %>" />
 
 <c:set var="isTabsMenuShown"        value="false"               scope="request"/>
 <c:set var="sidemenu_active"        value="grid.layout.builder" scope="request" />
@@ -15,12 +11,8 @@
 <c:set var="agnHelpKey"             value="grid-up-selling"     scope="request" />
 
 <emm:ShowByPermission token="mailing.import">
-    <c:set var="createNewItemUrl" scope="request">
-        <html:rewrite page="/mailingbase.do?action=${ACTION_MAILING_IMPORT}&isTemplate=true&grid=true"/>
-    </c:set>
-    <c:set var="createNewItemLabel" scope="request">
-        <mvc:message code="template.import"/>
-    </c:set>
+    <c:url var="createNewItemUrl" value="/import/template.action?grid=true" scope="request" />
+    <mvc:message var="createNewItemLabel" code="template.import" scope="request"/>
 </emm:ShowByPermission>
 
 <c:set var="agnHighlightKey" value="default.Overview" scope="request" />

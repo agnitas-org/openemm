@@ -91,6 +91,24 @@
     };
   };
 
+  readCookie = function (name) {
+    var nameEQ = name + "=",
+        ca = document.cookie.split(';'),
+        i, c;
+
+    for (i=0; i < ca.length; i++) {
+      c = ca[i];
+      while (c.charAt(0)==' ') {
+        c = c.substring(1,c.length);
+      }
+
+      if (c.indexOf(nameEQ) == 0) {
+        return c.substring(nameEQ.length,c.length);
+      }
+    }
+    return null;
+  };
+
   try {
     if (!window.localStorage) {
       currentStorage = new Storage('local');
@@ -128,24 +146,6 @@
     } catch (e) {
       console.warn("Could not remove Storage key:" + key + " cause: " + e);
     }
-  };
-
-  readCookie = function (name) {
-    var nameEQ = name + "=",
-        ca = document.cookie.split(';'),
-        i, c;
-
-    for (i=0; i < ca.length; i++) {
-      c = ca[i];
-      while (c.charAt(0)==' ') {
-        c = c.substring(1,c.length);
-      }
-
-      if (c.indexOf(nameEQ) == 0) {
-        return c.substring(nameEQ.length,c.length);
-      }
-    }
-    return null;
   };
 
   /**

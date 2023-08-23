@@ -40,10 +40,9 @@ import bsh.UtilEvalError;
 /**
  * Factory for BeanShell interpreters.
  */
-public final class BeanShellInterpreterFactory {
+public class BeanShellInterpreterFactory {
 	
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(BeanShellInterpreterFactory.class);
+	private static final Logger logger = LogManager.getLogger(BeanShellInterpreterFactory.class);
 	
 	/** JDBC DataSource. */
 	private DataSource dataSource;
@@ -103,7 +102,7 @@ public final class BeanShellInterpreterFactory {
 	 *
 	 * @throws Exception on errors populating profile fields
 	 */
-	private final void populateProfileFields(final NameSpace nameSpace, final int companyID, final int customerID) throws Exception {
+	private void populateProfileFields(final NameSpace nameSpace, final int companyID, final int customerID) throws Exception {
 		final String sqlStatement = String.format("SELECT * FROM customer_%d_tbl cust WHERE cust.customer_id = ?", companyID);
 
 		try (final Connection connection = dataSource.getConnection()) {

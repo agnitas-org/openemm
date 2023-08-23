@@ -10,7 +10,6 @@
 
 package com.agnitas.beans.impl;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.beans.Campaign;
 import com.agnitas.beans.CampaignStats;
@@ -103,7 +102,7 @@ public class CampaignImpl implements Campaign {
 	}
 
 	@Override
-	public void setCompanyID(@VelocityCheck int companyID) {
+	public void setCompanyID(int companyID) {
 		this.companyID = companyID;
 	}
 

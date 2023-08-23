@@ -35,7 +35,7 @@
         <c:set target="${agnBreadcrumbs}" property="0" value="${agnBreadcrumb}"/>
         <c:set target="${agnBreadcrumb}" property="textKey" value="settings.fields"/>
         <c:set target="${agnBreadcrumb}" property="url">
-            <c:url value="/profiledb.action"/>
+            <c:url value="/profiledb/profiledb.action"/>
         </c:set>
     </emm:instantiate>
 

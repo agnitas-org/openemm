@@ -10,7 +10,6 @@
 
 package com.agnitas.emm.core.mailing.service;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public interface SendActionbasedMailingService {
 	/**
@@ -24,5 +23,5 @@ public interface SendActionbasedMailingService {
 	 *
 	 * @throws SendActionbasedMailingException on errors sending action-based mailing.
 	 */
-	void sendActionbasedMailing(final @VelocityCheck int companyId, final int mailingId, final int customerId, final int delayMinutes, final MailgunOptions options) throws SendActionbasedMailingException;
+	void sendActionbasedMailing(final int companyId, final int mailingId, final int customerId, final int delayMinutes, final MailgunOptions options) throws SendActionbasedMailingException;
 }

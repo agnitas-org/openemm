@@ -7,10 +7,10 @@
     border-radius: 4px;
     opacity: 0;
     filter: alpha(opacity = 0);
-    -o-transition: background-color .2s linear, opacity .2s linear;
-    -webkit-transition: background-color .2s linear, opacity .2s linear;
-    -moz-transition: background-color .2s linear, opacity .2s linear;
-    transition: background-color .2s linear, opacity .2s linear;
+    -o-transition: background-color 0.2s linear, opacity 0.2s linear;
+    -webkit-transition: background-color 0.2s linear, opacity 0.2s linear;
+    -moz-transition: background-color 0.2s linear, opacity 0.2s linear;
+    transition: background-color 0.2s linear, opacity 0.2s linear;
 }
 
 .ps-container:hover .ps-scrollbar-x-rail,
@@ -42,10 +42,10 @@
     border-radius: 4px;
     opacity: 0;
     filter: alpha(opacity = 0);
-    -o-transition: background-color .2s linear, opacity .2s linear;
-    -webkit-transition: background-color .2s linear, opacity .2s linear;
-    -moz-transition: background-color .2s linear, opacity .2s linear;
-    transition: background-color .2s linear, opacity .2s linear;
+    -o-transition: background-color 0.2s linear, opacity 0.2s linear;
+    -webkit-transition: background-color 0.2s linear, opacity 0.2s linear;
+    -moz-transition: background-color 0.2s linear, opacity 0.2s linear;
+    transition: background-color 0.2s linear, opacity 0.2s linear;
 }
 
 .ps-container:hover .ps-scrollbar-y-rail,
@@ -75,10 +75,10 @@
     -webkit-border-radius: 4px;
     -moz-border-radius: 4px;
     border-radius: 4px;
-    -o-transition: background-color .2s linear;
-    -webkit-transition: background-color.2s linear;
-    -moz-transition: background-color .2s linear;
-    transition: background-color .2s linear;
+    -o-transition: background-color 0.2s linear;
+    -webkit-transition: background-color 0.2s linear;
+    -moz-transition: background-color 0.2s linear;
+    transition: background-color 0.2s linear;
 }
 
 .ps-container.ie6 .ps-scrollbar-x {
@@ -98,10 +98,10 @@
     -webkit-border-radius: 4px;
     -moz-border-radius: 4px;
     border-radius: 4px;
-    -o-transition: background-color .2s linear;
-    -webkit-transition: background-color.2s linear;
-    -moz-transition: background-color .2s linear;
-    transition: background-color .2s linear;
+    -o-transition: background-color 0.2s linear;
+    -webkit-transition: background-color 0.2s linear;
+    -moz-transition: background-color 0.2s linear;
+    transition: background-color 0.2s linear;
 }
 
 .ps-container.ie6 .ps-scrollbar-y {

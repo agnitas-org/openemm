@@ -19,7 +19,7 @@
 <c:set var="GENERIC_TYPE_DATETIME" value="<%= DbColumnType.GENERIC_TYPE_DATETIME %>"/>
 
 <mvc:form servletRelativeAction="/profiledb/save.action" data-form="resource" id="profileFieldForm" method="POST"
-		  data-controller="profile-field-view" modelAttribute="profileForm">
+		  data-action="submit-profile-field-save" data-controller="profile-field-view" modelAttribute="profileForm">
 	<div class="tile">
 		<div class="tile-header">
 			<h2 class="headline"><mvc:message code="settings.EditProfileDB_Field"/></h2>
@@ -40,7 +40,9 @@
 				<div class="col-sm-8">
 					<mvc:text path="description" id="fieldDescription" cssClass="form-control"/>
 					<span class="icon icon-state-info form-control-feedback"></span>
-					<div class="form-control-feedback-message"><mvc:message code="profiledb.description.hint"/></div>
+					<div class="form-control-feedback-message" style="background-color: #338dc7">
+						<mvc:message code="profiledb.description.hint"/>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -145,7 +147,7 @@
 
 				<div id="nullAllowedDiv" class="form-group">
 					<div class="col-sm-4">
-						<label class="control-label" for="fieldNull"><mvc:message code="settings.NullAllowed"/></label>
+						<label class="control-label checkbox-control-label" for="fieldNull"><mvc:message code="settings.NullAllowed"/></label>
 					</div>
 					<div class="col-sm-8">
 						<c:choose>
@@ -175,7 +177,7 @@
 				<emm:ShowByPermission token="profileField.visible">
 					<div class="form-group">
 						<div class="col-sm-4">
-							<label class="control-label" for="fieldVisible"><mvc:message code="FieldVisible"/></label>
+							<label class="control-label checkbox-control-label" for="fieldVisible"><mvc:message code="FieldVisible"/></label>
 						</div>
 						<div class="col-sm-8">
 							<label class="toggle">
@@ -188,7 +190,7 @@
 
 				<div class="form-group">
 					<div class="col-sm-4">
-						<label class="control-label" for="line"><mvc:message code="line_after"/></label>
+						<label class="control-label checkbox-control-label" for="line"><mvc:message code="line_after"/></label>
 					</div>
 					<div class="col-sm-8">
 						<label class="toggle">
@@ -200,7 +202,7 @@
 				<c:if test="${profileForm.fieldType == GENERIC_TYPE_INTEGER || profileForm.fieldType == GENERIC_TYPE_FLOAT}">
 					<div id="interestDiv" class="form-group">
 						<div class="col-sm-4">
-							<label class="control-label" for="interest"><mvc:message code="FieldIsInterest"/></label>
+							<label class="control-label checkbox-control-label" for="interest"><mvc:message code="FieldIsInterest"/></label>
 						</div>
 						<div class="col-sm-8">
 							<label class="toggle">
@@ -215,7 +217,7 @@
 			<c:if test="${HISTORY_FEATURE_ENABLED}">
 				<div class="form-group">
 					<div class="col-sm-4">
-						<label class="control-label" for="includeInHistory">
+						<label class="control-label checkbox-control-label" for="includeInHistory">
 							<mvc:message code="profileHistory.includeField"/>
 							<button type="button" data-help="help_${helplanguage}/recipient/profileField/HistorisationAdd.xml" class="icon icon-help"></button>
 						</label>
@@ -240,9 +242,9 @@
 						<option value="1"<c:if test="${profileForm.fieldSort == 1}"> selected</c:if>><mvc:message code="first"/></option>
 
 						<c:forEach var="field" items="${fieldsWithIndividualSortOrder}">
-							<option value='${field.sort + 1}' <c:if
-									test="${profileForm.fieldSort == field.sort + 1}"> selected</c:if>>
-								<mvc:message code="after"/> ${field.shortname}</option>
+							<option value='${field.sortOrder + 1}' <c:if
+									test="${profileForm.fieldSort == field.sortOrder + 1}"> selected</c:if>>
+								<mvc:message code="after"/> ${field.shortName}</option>
 						</c:forEach>
 					</select>
 				</div>
@@ -277,7 +279,7 @@
 
 				<div class="form-group">
 					<div class="col-sm-4">
-						<label class="control-label" for="useAllowedValues">
+						<label class="control-label checkbox-control-label" for="useAllowedValues">
 							<mvc:message code="settings.FieldFixedValue"/>
 							<button class="icon icon-help"
 									data-help="help_${helplanguage}/recipient/profileField/FixedValue.xml"

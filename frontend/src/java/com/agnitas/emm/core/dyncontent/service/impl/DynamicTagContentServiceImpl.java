@@ -10,9 +10,11 @@
 
 package com.agnitas.emm.core.dyncontent.service.impl;
 
-import java.util.List;
-import java.util.Map;
-
+import com.agnitas.beans.DynamicTag;
+import com.agnitas.beans.Mailing;
+import com.agnitas.dao.ComMailingDao;
+import com.agnitas.dao.ComTargetDao;
+import com.agnitas.emm.core.dyncontent.service.validation.ContentModelValidator;
 import org.agnitas.beans.DynamicTagContent;
 import org.agnitas.beans.impl.DynamicTagContentImpl;
 import org.agnitas.dao.DynamicTagContentDao;
@@ -30,27 +32,22 @@ import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.agnitas.beans.DynamicTag;
-import com.agnitas.beans.Mailing;
-import com.agnitas.dao.ComMailingDao;
-import com.agnitas.dao.ComTargetDao;
-import com.agnitas.emm.core.dyncontent.service.validation.ContentModelValidator;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
-public class DynamicTagContentServiceImpl implements DynamicTagContentService, ApplicationContextAware {  // TODO: Do we really need to implement ApplicationContextAware? No better ideas here???
+public class DynamicTagContentServiceImpl implements DynamicTagContentService {
 
-	/** The logger. */
-	private static final transient Logger LOGGER = LogManager.getLogger(DynamicTagContentServiceImpl.class);
-
+	private static final Logger LOGGER = LogManager.getLogger(DynamicTagContentServiceImpl.class);
+	
 	private final DynamicTagContentDao dynamicTagContentDao;
 	private final ComMailingDao mailingDao;
 	private final ComTargetDao targetDao;
-	private final ContentModelValidator contentModelValidator;
-	private ApplicationContext applicationContext;
+    private final ContentModelValidator contentModelValidator;
+    private final ApplicationContext applicationContext;
 
 	public DynamicTagContentServiceImpl(DynamicTagContentDao dynamicTagContentDao, ComMailingDao mailingDao, ComTargetDao targetDao,
 										ContentModelValidator contentModelValidator, ApplicationContext applicationContext) {
@@ -293,11 +290,6 @@ public class DynamicTagContentServiceImpl implements DynamicTagContentService, A
         return dynamicTagContentDao.getContent(companyID,contentID);
     }
 
-    @Override
-	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-		this.applicationContext = applicationContext;
-	}
-
 	@Override
 	@Transactional
     public int addContent(ContentModel model, List<UserAction> userActions) {
@@ -322,5 +314,19 @@ public class DynamicTagContentServiceImpl implements DynamicTagContentService, A
 	    contentModelValidator.assertIsValidToUpdate(model);
 		updateContentImpl(model, userActions);
         mailingDao.updateStatus(model.getMailingId(), MailingStatus.EDIT);
+	}
+
+	@Override
+	public List<Integer> findTargetDependentMailingsContents(int targetGroupId, int companyId) {
+		return dynamicTagContentDao.findTargetDependentMailingsContents(targetGroupId, companyId);
+	}
+
+	@Override
+	public List<Integer> filterContentsOfNotSentMailings(List<Integer> dependencies) {
+		if (dependencies.isEmpty()) {
+			return Collections.emptyList();
+		}
+
+		return dynamicTagContentDao.filterContentsOfNotSentMailings(dependencies);
 	}
 }

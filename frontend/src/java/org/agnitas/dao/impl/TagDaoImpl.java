@@ -10,11 +10,18 @@
 
 package org.agnitas.dao.impl;
 
+import org.agnitas.beans.TagDefinition;
+import org.agnitas.dao.TagDao;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -22,29 +29,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.agnitas.beans.TagDefinition;
-import org.agnitas.dao.TagDao;
-import org.agnitas.emm.core.velocity.VelocityCheck;
-import org.agnitas.util.AgnTagUtils;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.jdbc.core.RowMapper;
-import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import static java.text.MessageFormat.format;
 
 public class TagDaoImpl extends BaseDaoImpl implements TagDao {
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(TagDaoImpl.class);
+
+	private static final Logger logger = LogManager.getLogger(TagDaoImpl.class);
 
 	@Override
-    public TagDefinition getTag(@VelocityCheck int companyID, String name) {
+    public TagDefinition getTag(int companyID, String name) {
 		return selectObjectDefaultNull(logger, "SELECT tagname, type, selectvalue FROM tag_tbl WHERE company_id IN (0, ?) AND tagname = ? ORDER BY tagname", new TagRowMapper(), companyID, name);
 	}
 
     @Override
-    public Set<String> extractDeprecatedTags(@VelocityCheck int companyID, Set<String> tagNames) {
+    public Set<String> extractDeprecatedTags(int companyID, Set<String> tagNames) {
 
         if (CollectionUtils.isEmpty(tagNames)) {
             return Collections.emptySet();
@@ -63,12 +60,12 @@ public class TagDaoImpl extends BaseDaoImpl implements TagDao {
     }
 
     @Override
-    public List<TagDefinition> getTagDefinitions(@VelocityCheck int companyID) {
+    public List<TagDefinition> getTagDefinitions(int companyID) {
 		return select(logger, "SELECT tagname, type, selectvalue FROM tag_tbl WHERE company_id IN (0, ?) ORDER BY tagname", new TagRowMapper(), companyID);
 	}
 	
 	@Override
-    public boolean deleteTagsByCompany(@VelocityCheck int companyId) {
+    public boolean deleteTagsByCompany(int companyId) {
 		if (companyId == 0) {
 			return false;
 		} else {
@@ -78,7 +75,7 @@ public class TagDaoImpl extends BaseDaoImpl implements TagDao {
     }
 	
 	@Override
-    public Map<String, TagDefinition> getTagDefinitionsMap(@VelocityCheck int companyID) {
+    public Map<String, TagDefinition> getTagDefinitionsMap(int companyID) {
 		List<TagDefinition> tagDefinitions = getTagDefinitions(companyID);
 		Map<String, TagDefinition> returnMap = new HashMap<>();
 		for (TagDefinition tagDefinition : tagDefinitions) {
@@ -88,7 +85,7 @@ public class TagDaoImpl extends BaseDaoImpl implements TagDao {
 	}
 
 	@Override
-	public Map<String, String> getSelectValues(@VelocityCheck int companyID) {
+	public Map<String, String> getSelectValues(int companyID) {
 		String sql = "SELECT tagname, selectvalue FROM tag_tbl WHERE company_id IN (0, ?) AND deprecated = 0 AND tagname NOT IN ('agnLASTNAME', 'agnFIRSTNAME', 'agnMAILTYPE') ORDER BY tagname";
 
 		// Preserve sorting order.
@@ -96,19 +93,13 @@ public class TagDaoImpl extends BaseDaoImpl implements TagDao {
 
 		try {
 			for (Map<String, Object> map : select(logger, sql, companyID)) {
-
 				String tagName = (String) map.get("tagname");
 				String selectValue = (String) map.get("selectvalue");
-				StringBuilder selectValueBuilder = new StringBuilder(StringUtils.defaultString(selectValue));
 
-				for (String param : AgnTagUtils.getParametersForTag(tagName)) {
-					selectValueBuilder.append('{').append(param).append('}');
-				}
-
-				result.put(tagName, selectValueBuilder.toString());
+				result.put(tagName, selectValue);
 			}
 		} catch (Exception e) {
-			logger.error("getTags: " + e.getMessage(), e);
+			logger.error(format("getTags: {0}", e.getMessage()), e);
 		}
 
 		return result;
@@ -130,25 +121,4 @@ public class TagDaoImpl extends BaseDaoImpl implements TagDao {
 			return readObject;
 		}
 	}
-    
-	@Deprecated /* Used by unit tests only. */
-    @Override
-    public int insertTag(String tagName, String tagSelectValue, String tagType, int companyId, String tagDescription) {
-        List<Object> values = new ArrayList<>();
-        values.add(tagName);
-        values.add(tagSelectValue);
-        values.add(tagType);
-        values.add(companyId);
-        values.add(tagDescription);
-        values.add(new Date());
-
-        if (isOracleDB()) {
-        	int id = selectInt(logger, "SELECT MAX(tag_id) FROM tag_tbl") + 1;
-            values.add(0, id);
-            update(logger, "INSERT INTO tag_tbl (tag_id, tagname, selectvalue, type, company_id, description, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?)", values.toArray());
-            return id;
-        } else {
-        	return insertIntoAutoincrementMysqlTable(logger, "tag_id", "INSERT INTO tag_tbl (tagname, selectvalue, type, company_id, description, change_date) VALUES (?, ?, ?, ?, ?, ?)", values.toArray());
-        }
-    }
 }

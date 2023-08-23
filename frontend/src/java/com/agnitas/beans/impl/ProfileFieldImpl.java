@@ -13,7 +13,6 @@ package com.agnitas.beans.impl;
 import java.util.Date;
 
 import org.agnitas.beans.impl.LightProfileFieldImpl;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.DbColumnType;
 import org.agnitas.util.DbColumnType.SimpleDataType;
 import org.apache.commons.lang3.StringUtils;
@@ -21,6 +20,10 @@ import org.apache.commons.lang3.StringUtils;
 import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.ProfileFieldMode;
 
+/**
+ * @deprecated Use RecipientFieldDescription instead
+ */
+@Deprecated
 public class ProfileFieldImpl extends LightProfileFieldImpl implements ProfileField {
 	protected int companyID = -1;
 	protected int adminID = 0;
@@ -32,7 +35,6 @@ public class ProfileFieldImpl extends LightProfileFieldImpl implements ProfileFi
 	protected String defaultValue = "";
 	protected boolean nullable = true;
 	protected ProfileFieldMode modeEdit = ProfileFieldMode.Editable;
-	protected int modeInsert = 0;
 	protected String label;
 	
 	protected int line = 0;
@@ -55,7 +57,7 @@ public class ProfileFieldImpl extends LightProfileFieldImpl implements ProfileFi
 	}
 	
 	@Override
-	public void setCompanyID( @VelocityCheck int company) {
+	public void setCompanyID( int company) {
 		this.companyID = company;
 	}
 
@@ -103,16 +105,6 @@ public class ProfileFieldImpl extends LightProfileFieldImpl implements ProfileFi
 	@Override
 	public void setModeEdit(ProfileFieldMode modeEdit) {
 		this.modeEdit = modeEdit;
-	}
-
-	@Override
-	public int getModeInsert() {
-		return modeInsert;
-	}
-	
-	@Override
-	public void setModeInsert(int modeInsert) {
-		this.modeInsert = modeInsert;
 	}
 
 	@Override

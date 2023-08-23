@@ -21,6 +21,8 @@ public class Pollable<T> {
     public static final long DEFAULT_TIMEOUT = 1000L;
     public static final long LONG_TIMEOUT = 10000L;
     public static final long SHORT_TIMEOUT = 500L;
+    public static final long SHORT_RETENTION_TIMEOUT = 2000L;
+    public static final long LONG_RETENTION_TIMEOUT = 10000L;
 
     public static PollingUid uid(String sessionId, String name, Object... arguments) {
         return new PollingUid(sessionId, name, arguments);

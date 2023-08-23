@@ -1,3 +1,4 @@
+<%@ page import="com.agnitas.emm.core.action.bean.ActionSendMailingToUserStatus" %>
 
 <emm:instantiate var="delaysMap" type="java.util.LinkedHashMap">
     <c:set target="${delaysMap}" property="0"><mvc:message code="action.No_Delay"/></c:set>
@@ -13,6 +14,8 @@
     <c:set target="${delaysMap}" property="5760">4&nbsp;<mvc:message code="Days"/></c:set>
     <c:set target="${delaysMap}" property="10080">7&nbsp;<mvc:message code="Days"/></c:set>
 </emm:instantiate>
+
+<c:set var="USER_STATUSES_OPTIONS" value="<%=ActionSendMailingToUserStatus.values()%>" scope="page" />
 
 <script id="module-SendMailing" type="text/x-mustache-template">
     <div class="inline-tile-content" data-module-content="{{- index}}">
@@ -63,20 +66,20 @@
 
         <div class="form-group {{- visibilityClass}}">
             <div class="col-sm-4">
-                <label class="control-label" for="module_{{- index}}.forActiveRecipients">
-                    <mvc:message code="action.send.doi.active"/>
+                <label class="control-label" for="module_{{- index}}.sendOption">
+                    <mvc:message code="action.send"/>
                 </label>
             </div>
 
             <div class="col-sm-8">
-                <label class="toggle">
-                    {{ if (forActiveRecipients) { }}
-                        <input type="checkbox" name="modules[].forActiveRecipients" id="module_{{- index}}.forActiveRecipients" checked="checked">
-                    {{ } else { }}
-                        <input type="checkbox" name="modules[].forActiveRecipients" id="module_{{- index}}.forActiveRecipients">
-                    {{ } }}
-                    <div class="toggle-control"></div>
-                </label>
+                <select class="form-control" name="modules[].userStatusesOption" id="module-{{- index}}-userStatusesOption" size="1">
+                    <c:forEach var="USER_STATUS_OPTION" items="${USER_STATUSES_OPTIONS}">
+                        {{ var selectedSign = ${USER_STATUS_OPTION.id} == userStatusesOption ? 'selected="selected"' : ''; }}
+                        <option value="${USER_STATUS_OPTION.id}" {{- selectedSign}}>
+                            <mvc:message code="${USER_STATUS_OPTION.messageKey}"/>
+                        </option>
+                    </c:forEach>
+                </select>
             </div>
         </div>
     </div>

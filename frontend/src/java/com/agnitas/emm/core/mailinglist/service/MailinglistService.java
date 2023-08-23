@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.agnitas.beans.Mailinglist;
-import org.agnitas.emm.core.velocity.VelocityCheck;
+
 import org.springframework.transaction.annotation.Transactional;
 
 import com.agnitas.beans.Admin;
@@ -26,36 +26,36 @@ import net.sf.json.JSONArray;
 
 public interface MailinglistService {
 
-	void bulkDelete(Set<Integer> mailinglistIds, @VelocityCheck int companyId);
+	void bulkDelete(Set<Integer> mailinglistIds, int companyId);
 
-	List<Mailing> getAllDependedMailing(Set<Integer> mailinglistIds, @VelocityCheck int companyId);
+	List<Mailing> getAllDependedMailing(Set<Integer> mailinglistIds, int companyId);
 
-	void deleteRecipientBindings(Set<Integer> mailinglistIds, @VelocityCheck int companyId);
+	void deleteRecipientBindings(Set<Integer> mailinglistIds, int companyId);
 
-	List<ComLightweightBirtReport> getConnectedBirtReportList(int mailinglistId, @VelocityCheck int companyId);
+	List<ComLightweightBirtReport> getConnectedBirtReportList(int mailinglistId, int companyId);
 
-	List<Mailinglist> getMailinglists(@VelocityCheck int companyId);
+	List<Mailinglist> getMailinglists(int companyId);
 
-	Mailinglist getMailinglist(int mailinglistId, @VelocityCheck int companyId);
+	Mailinglist getMailinglist(int mailinglistId, int companyId);
 
-	boolean exist(int mailinglistId, @VelocityCheck int companyId);
+	boolean exist(int mailinglistId, int companyId);
 
 	boolean existAndEnabled(Admin admin, int mailingListId);
 
 	boolean isFrequencyCounterEnabled(Admin admin, int mailingListId);
 
-	String getMailinglistName(int mailinglistId, @VelocityCheck int companyId);
+	String getMailinglistName(int mailinglistId, int companyId);
 
-	List<Mailinglist> getAllMailingListsNames(@VelocityCheck int companyId);
+	List<Mailinglist> getAllMailingListsNames(int companyId);
 	
-	int saveMailinglist(@VelocityCheck int companyId, MailinglistDto mailinglist);
+	int saveMailinglist(int companyId, MailinglistDto mailinglist);
 	
-	boolean isShortnameUnique(String newShortname, int mailinglistId, @VelocityCheck int companyId);
+	boolean isShortnameUnique(String newShortname, int mailinglistId, int companyId);
     
     @Transactional
     boolean deleteMailinglist(int mailinglistId, int companyId);
 
-    void deleteMailinglistBindingRecipients(@VelocityCheck int companyId, int mailinglistId, boolean onlyActiveUsers, boolean withoutAdminAndTestUsers);
+    void deleteMailinglistBindingRecipients(int companyId, int mailinglistId, boolean onlyActiveUsers, boolean withoutAdminAndTestUsers);
 
 	JSONArray getMailingListsJson(Admin admin);
 

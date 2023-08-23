@@ -111,7 +111,7 @@ public interface Supervisor {
 	 * 
 	 * @param department department
 	 */
-	public void setDepartment(final Department department);
+	void setDepartment(final Department department);
 	
 	/**
 	 * Returns the department.
@@ -119,5 +119,5 @@ public interface Supervisor {
 	 * 
 	 * @return department of supervisor or <code>null</code>
 	 */
-	public Department getDepartment();
+	Department getDepartment();
 }

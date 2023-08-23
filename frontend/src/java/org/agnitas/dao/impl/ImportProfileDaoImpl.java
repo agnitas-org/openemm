@@ -29,7 +29,7 @@ import org.agnitas.beans.impl.ImportProfileImpl;
 import org.agnitas.dao.EmmActionOperationDao;
 import org.agnitas.dao.ImportProfileDao;
 import org.agnitas.dao.impl.mapper.IntegerRowMapper;
-import org.agnitas.emm.core.velocity.VelocityCheck;
+
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DataEncryptor;
 import org.apache.commons.lang3.StringUtils;
@@ -51,12 +51,11 @@ import com.agnitas.emm.core.mediatypes.common.MediaTypes;
  * This class is compatible with oracle and mysql datasources and databases
  */
 public class ImportProfileDaoImpl extends BaseDaoImpl implements ImportProfileDao {
-	private static final transient Logger logger = LogManager.getLogger(ImportProfileDaoImpl.class);
+
+	private static final Logger logger = LogManager.getLogger(ImportProfileDaoImpl.class);
 
 	protected DataEncryptor dataEncryptor;
-
 	private EmmActionOperationDao emmActionOperationDao;
-	
     private ComMailingDao mailingDao;
 
 	@Required
@@ -251,12 +250,12 @@ public class ImportProfileDaoImpl extends BaseDaoImpl implements ImportProfileDa
     }
 
 	@Override
-    public List<ImportProfile> getImportProfilesByCompanyId( @VelocityCheck int companyId) {
+    public List<ImportProfile> getImportProfilesByCompanyId( int companyId) {
 		return select(logger, "SELECT * FROM import_profile_tbl WHERE company_id = ? AND deleted != 1 ORDER BY LOWER(shortname) ASC", new ImportProfileRowMapper(), companyId);
     }
 
 	@Override
-    public List<ImportProfile> getAllImportProfilesByCompanyId( @VelocityCheck int companyId) {
+    public List<ImportProfile> getAllImportProfilesByCompanyId( int companyId) {
 		return select(logger, "SELECT * FROM import_profile_tbl WHERE company_id = ?", new ImportProfileRowMapper(), companyId);
     }
 
@@ -330,7 +329,7 @@ public class ImportProfileDaoImpl extends BaseDaoImpl implements ImportProfileDa
 	}
 
 	@Override
-	public List<Integer> getSelectedMailingListIds(int id, @VelocityCheck int companyId) {
+	public List<Integer> getSelectedMailingListIds(int id, int companyId) {
 		String sqlGetMailingListIds = "SELECT mailinglist_id FROM import_profile_mlist_bind_tbl WHERE import_profile_id = ? AND company_id = ?";
 		return select(logger, sqlGetMailingListIds, IntegerRowMapper.INSTANCE, id, companyId);
 	}
@@ -491,5 +490,16 @@ public class ImportProfileDaoImpl extends BaseDaoImpl implements ImportProfileDa
 	public void saveImportProfileGenderMapping(int id, Map<String, Integer> genderMapping) {
 		update(logger, "DELETE FROM import_gender_mapping_tbl WHERE profile_id = ?", id);
 		insertGenderMappings(genderMapping, id);
+	}
+
+	@Override
+	public int findImportProfileIdByName(String name, int companyId) {
+		return selectIntWithDefaultValue(logger, "SELECT id FROM import_profile_tbl WHERE shortname = ? AND company_id = ?", -1, name, companyId);
+	}
+
+	@Override
+	public boolean isColumnWasImported(String columnName, int id) {
+		String query = "SELECT 1 FROM import_column_mapping_tbl WHERE db_column = ? AND profile_id = ? AND deleted != 1";
+		return selectIntWithDefaultValue(logger, query, 0, columnName, id) > 0;
 	}
 }

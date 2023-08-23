@@ -26,8 +26,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 
 import org.agnitas.beans.ColumnMapping;
 import org.agnitas.beans.ImportProfile;
@@ -259,6 +257,7 @@ public class ImportProfileColumnsAction extends ImportBaseFileAction {
 
                 case ACTION_SAVE:
                 case ACTION_SAVE_AND_START:
+                    addNewColumnMappingFromForm(aForm);
                     if (!checkErrorsOnSave(AgnUtils.getAdmin(request), aForm, errors)) {
                         ImportProfile oldProfile = importProfileService.getImportProfileById(aForm.getProfileId());
                         ImportProfile newProfile = aForm.getProfile();
@@ -308,6 +307,14 @@ public class ImportProfileColumnsAction extends ImportBaseFileAction {
         return destination;
     }
 
+    // GWUA-5273: If the last column is filled with data but not actively added by the '+' button,
+    // the setting should be automatically applied when saving.
+    // TODO It should be reworked during Spring migration
+    private void addNewColumnMappingFromForm(ImportProfileColumnsForm form) {
+        if (!ColumnMapping.DO_NOT_IMPORT.equalsIgnoreCase(form.getNewColumnMapping().getDatabaseColumn())) {
+            addColumn(form);
+        }
+    }
 
     @Required
     public void setImportProfileService(ImportProfileService importProfileService) {
@@ -747,24 +754,15 @@ public class ImportProfileColumnsAction extends ImportBaseFileAction {
 		}
     }
     
-    private InputStream getImportInputStream(ImportProfile profile, File importFile) throws Exception {
+	private InputStream getImportInputStream(ImportProfile profile, File importFile) throws Exception {
     	if (AgnUtils.isZipArchiveFile(importFile)) {
 	    	try {
 	            if (profile.getZipPassword() == null) {
-	            	InputStream dataInputStream = ZipUtilities.openZipInputStream(new FileInputStream(importFile));
-	                try {
-						ZipEntry zipEntry = ((ZipInputStream) dataInputStream).getNextEntry();
-						if (zipEntry == null) {
-							throw new ImportException(false, "error.unzip.noEntry");
-						} else {
-							return dataInputStream;
-						}
-					} catch (Exception e) {
-						if (dataInputStream != null) {
-							dataInputStream.close();
-							dataInputStream = null;
-						}
-						throw e;
+					InputStream dataInputStream = ZipUtilities.openSingleFileZipInputStream(importFile);
+					if (dataInputStream == null) {
+						throw new ImportException(false, "error.unzip.noEntry");
+					} else {
+						return dataInputStream;
 					}
 	            } else {
 	            	File tempImportFile = new File(importFile.getAbsolutePath() + ".tmp");
@@ -776,7 +774,9 @@ public class ImportProfileColumnsAction extends ImportBaseFileAction {
 							throw new Exception("Invalid number of files included in zip file");
 						} else {
 							try (FileOutputStream tempImportFileOutputStream = new FileOutputStream(tempImportFile)) {
-								IOUtils.copy(zipFile.getInputStream(fileHeaders.get(0)), tempImportFileOutputStream);
+								try(final InputStream zipInput = zipFile.getInputStream(fileHeaders.get(0))) {
+									IOUtils.copy(zipInput, tempImportFileOutputStream);
+								}
 							}
 							return new TempFileInputStream(tempImportFile);
 						}

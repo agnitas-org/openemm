@@ -13,7 +13,6 @@ package com.agnitas.beans.impl;
 import java.sql.Timestamp;
 import java.util.Date;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.beans.ComRdirMailingData;
 
@@ -22,7 +21,7 @@ public class ComRdirMailingDataImpl implements ComRdirMailingData {
 	private Date creationDate;
 	private int companyID;
 	
-	public ComRdirMailingDataImpl(@VelocityCheck int companyID, Timestamp creationDate) {
+	public ComRdirMailingDataImpl(int companyID, Timestamp creationDate) {
 		this.companyID = companyID;
 		this.creationDate = creationDate;
 	}
@@ -41,7 +40,7 @@ public class ComRdirMailingDataImpl implements ComRdirMailingData {
 		this.creationDate = creationDate;
 	}
 
-	public void setCompanyID(@VelocityCheck int companyID) {
+	public void setCompanyID(int companyID) {
 		this.companyID = companyID;
 	}
 

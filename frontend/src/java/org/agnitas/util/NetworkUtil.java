@@ -35,7 +35,7 @@ import org.apache.http.client.methods.HttpRequestBase;
 
 public class NetworkUtil {
 	
-	/** Proxy default port (value: {@value #PROXY_DEFAULT_PORT}). */
+	/** Proxy default port. */
 	public static final int PROXY_DEFAULT_PORT = 8080;
 	
 	public static final class ProxySettings {
@@ -140,7 +140,7 @@ public class NetworkUtil {
 	 * 
 	 * @return proxy settings or <code>null</code> if not proxy can be used
 	 */
-	public static final ProxySettings determineProxySettingsFromSystem(final String url) {
+	public static ProxySettings determineProxySettingsFromSystem(final String url) {
 		final String proxyHost = System.getProperty("http.proxyHost");
 		
 		if (StringUtils.isNotBlank(proxyHost)) {
@@ -158,7 +158,7 @@ public class NetworkUtil {
 	 * 
 	 * @return proxy port
 	 */
-	private static final int determineProxyPort() {
+	private static int determineProxyPort() {
 		final String proxyPort = System.getProperty("http.proxyPort");
 		
 		return StringUtils.isNotBlank(proxyPort) && AgnUtils.isNumber(proxyPort)
@@ -196,7 +196,7 @@ public class NetworkUtil {
 	 * 
 	 * @return <code>true</code> if proxy can be used
 	 */
-	private static final boolean isProxiedHost(final String url) {
+	private static boolean isProxiedHost(final String url) {
 		final String urlDomain = getDomainFromUrl(url);
 		
 		if (urlDomain == null) {

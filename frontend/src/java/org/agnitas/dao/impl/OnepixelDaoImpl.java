@@ -17,7 +17,6 @@ import org.agnitas.beans.BindingEntry;
 import org.agnitas.dao.OnepixelDao;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
@@ -32,19 +31,19 @@ public class OnepixelDaoImpl extends BaseDaoImpl implements OnepixelDao {
 	private static final String FIELD_OPEN_COUNT = "open_count";
 	private static final String FIELD_MOBILE_COUNT = "mobile_count";
 
-	public static String getOnepixellogDeviceTableName(@VelocityCheck int companyId) {
+	public static String getOnepixellogDeviceTableName(int companyId) {
 		return new StringBuilder("onepixellog_device_").append(companyId).append("_tbl").toString();
 	}
 	
-	public static String getOnepixellogTableName(@VelocityCheck int companyId) {
+	public static String getOnepixellogTableName(int companyId) {
 		return new StringBuilder("onepixellog_").append(companyId).append("_tbl").toString();
 	}
 	
-	private static String getSqlInsertString(@VelocityCheck int companyId) {
+	private static String getSqlInsertString(int companyId) {
 		return "INSERT INTO " + getOnepixellogTableName(companyId) + " (company_id, mailing_id, customer_id, ip_adr, open_count, mobile_count, timestamp, first_open, last_open) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
 	}
 	
-	private static String getSqlUpdateString(@VelocityCheck int companyId) {
+	private static String getSqlUpdateString(int companyId) {
 		return "UPDATE " + getOnepixellogTableName(companyId) + " SET open_count = open_count + 1, mobile_count = COALESCE(mobile_count, 0) + ?, last_open = CURRENT_TIMESTAMP WHERE mailing_id = ? AND customer_id = ?";
 	}
 	
@@ -74,7 +73,7 @@ public class OnepixelDaoImpl extends BaseDaoImpl implements OnepixelDao {
 	
 	@Override
 	@DaoUpdateReturnValueCheck
-    public boolean writePixel(@VelocityCheck int companyID, int recipientID, int mailingID, String remoteAddr, DeviceClass deviceClass, int deviceID, int clientID) {
+    public boolean writePixel(int companyID, int recipientID, int mailingID, String remoteAddr, DeviceClass deviceClass, int deviceID, int clientID) {
         try {
         	int mobileCountDelta = 0;
         	if (deviceClass == DeviceClass.MOBILE) {
@@ -132,7 +131,7 @@ public class OnepixelDaoImpl extends BaseDaoImpl implements OnepixelDao {
 	
 	@Override
 	@DaoUpdateReturnValueCheck
-    public void deleteAdminAndTestOpenings(int mailingId, @VelocityCheck int companyId) {
+    public void deleteAdminAndTestOpenings(int mailingId, int companyId) {
         // remove from onepixellog_X_tbl
         String query = createDeleteAdminAndTestOpeningsQuery(getOnepixellogTableName(companyId), companyId);
         update(logger, query, mailingId, mailingId);
@@ -141,7 +140,7 @@ public class OnepixelDaoImpl extends BaseDaoImpl implements OnepixelDao {
         update(logger, query, mailingId, mailingId);
     }
 
-    private String createDeleteAdminAndTestOpeningsQuery(String tableName, @VelocityCheck int companyId) {
+    private String createDeleteAdminAndTestOpeningsQuery(String tableName, int companyId) {
         String deleteAlias = "";
         if (!isOracleDB()) {
             deleteAlias = "lg";

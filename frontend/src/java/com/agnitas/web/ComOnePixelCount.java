@@ -23,6 +23,7 @@ import org.agnitas.emm.core.commons.uid.ExtensibleUIDConstants;
 import org.agnitas.emm.core.commons.uid.ExtensibleUIDService;
 import org.agnitas.emm.core.commons.uid.parser.exception.UIDParseException;
 import org.agnitas.emm.core.recipient.service.RecipientService;
+import org.agnitas.emm.core.velocity.Constants;
 import org.agnitas.util.AgnUtils;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
@@ -280,7 +281,7 @@ public class ComOnePixelCount extends HttpServlet {
 				params.put("_uid", uid);
 				params.put("customerID", customerID);
 				params.put("mailingID", mailingID);
-				params.put("actionErrors", actionOperationErrors);
+				params.put(Constants.ACTION_OPERATION_ERRORS_CONTEXT_NAME, actionOperationErrors);
 				
 				ApplicationContext applicationContext = WebApplicationContextUtils.getWebApplicationContext(this.getServletContext());
 				EmmActionService emmActionService = (EmmActionService) applicationContext.getBean("EmmActionService");

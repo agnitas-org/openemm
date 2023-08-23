@@ -25,28 +25,6 @@ public class Const {
 			NAME_SMS = "agnSMS";
 	}
 	
-	public static class WorkflowDependencyType {
-		public static final int
-			ARCHIVE = 1,
-			AUTO_EXPORT = 2,
-			AUTO_IMPORT = 3,
-			MAILING_DELIVERY = 4,
-			MAILING_LINK = 5,
-			MAILING_REFERENCE = 6,
-			MAILINGLIST = 7,
-			PROFILE_FIELD = 8,
-			PROFILE_FIELD_HISTORY = 9,
-			REPORT = 10,
-			TARGET_GROUP = 11,
-			USER_FORM = 12;
-	}
-
-	public static class OptimizedMailGeneration {
-		public static final String
-			ID_DAY = "day",
-			ID_24H = "24h";
-	}
-
     public static final class Mvc {
 
         public static final String MESSAGES_VIEW = "messages";

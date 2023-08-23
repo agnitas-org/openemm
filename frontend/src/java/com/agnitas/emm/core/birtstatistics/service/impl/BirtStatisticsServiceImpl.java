@@ -17,7 +17,7 @@ import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.birtreport.bean.ComBirtReport;
 import com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings;
-import com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils;
+import com.agnitas.emm.core.birtreport.service.BirtReportFileService;
 import com.agnitas.emm.core.birtstatistics.DateMode;
 import com.agnitas.emm.core.birtstatistics.domain.dto.DomainStatisticDto;
 import com.agnitas.emm.core.birtstatistics.enums.StatisticType;
@@ -30,6 +30,7 @@ import com.agnitas.emm.core.birtstatistics.recipient.dto.RecipientStatisticDto;
 import com.agnitas.emm.core.birtstatistics.recipient.dto.RecipientStatusStatisticDto;
 import com.agnitas.emm.core.birtstatistics.service.BirtStatisticsService;
 import com.agnitas.emm.core.maildrop.MaildropStatus;
+import com.agnitas.emm.core.workflow.beans.WorkflowStatisticDto;
 import com.agnitas.reporting.birt.external.dataset.BIRTDataSet;
 import com.agnitas.reporting.birt.external.dataset.CommonKeys;
 import com.agnitas.reporting.birt.external.dataset.MailingBouncesDataSet;
@@ -107,6 +108,7 @@ public class BirtStatisticsServiceImpl implements BirtStatisticsService {
     protected static final String MAX_DEVICES_NUMBER = "maxdevices";
 
 	protected static final String MAILING_ID = "mailingID";
+	protected static final String WORKFLOW_ID = "workflowId";
 	protected static final String SECTOR = "sector";
 
 	protected static final String DEVICE_STATISTIC_TYPE = "statisticType";
@@ -143,9 +145,9 @@ public class BirtStatisticsServiceImpl implements BirtStatisticsService {
 	public static final String MAILINGCOMPARE_FILE_DIRECTORY = AgnUtils.getTempDir() + File.separator + "MailingCompare";
     private static final String HIDDEN_TARGET_ID = "hiddenTargetId";
 
-
 	protected ConfigService configService;
 	protected AdminService adminService;
+	private BirtReportFileService birtReportFileService;
 
     @Override
 	public String getDomainStatisticsUrlWithoutFormat(Admin admin, String sessionId, DomainStatisticDto domainStatistic, boolean forInternalUse) throws Exception {
@@ -267,8 +269,7 @@ public class BirtStatisticsServiceImpl implements BirtStatisticsService {
 				map.put(SECURITY_TOKEN, BirtInterceptingFilter.createSecurityToken(configService, companyId));
 				map.putAll(reportSetting.getReportUrlParameters());
 
-				String reportSettingsName = BirtReportSettingsUtils.getLocalizedReportName(
-						reportSetting, locale, reportFormat);
+				String reportSettingsName = birtReportFileService.buildLocalizedFileName(reportSetting, companyId, locale, reportFormat);
 
 				reportUrlMap.put(reportSettingsName, generateUrlWithParams(map, true, companyId));
 			}
@@ -624,6 +625,26 @@ public class BirtStatisticsServiceImpl implements BirtStatisticsService {
     }
 
 	@Override
+	public String getWorkflowStatisticUrl(Admin admin, WorkflowStatisticDto workflowStatisticDto) throws Exception {
+		Map<String, Object> map = new HashMap<>();
+		map.put(REPORT_NAME, workflowStatisticDto.getReportName());
+		map.put(FORMAT, workflowStatisticDto.getFormat());
+		map.put(WORKFLOW_ID, workflowStatisticDto.getWorkflowId());
+		map.put(COMPANY_ID, workflowStatisticDto.getCompanyId());
+
+		map.put(TRACKING_ALLOWED, AgnUtils.isMailTrackingAvailable(admin));
+		map.put(SHOW_SOFT_BOUNCES, admin.permissionAllowed(Permission.STATISTIC_SOFTBOUNCES_SHOW));
+
+		BirtUrlOptions options = BirtUrlOptions.builder(configService, adminService)
+				.setParameters(map)
+				.setAdmin(admin)
+				.setInternalAccess(false)
+				.build();
+
+		return generateUrlWithParams(options, admin.getCompanyID());
+	}
+
+	@Override
 	public String getUserFormTrackableLinkStatisticUrl(Admin admin, String sessionId, int formId) throws Exception {
     	Map<String, Object> map = new HashMap<>();
     	map.put(REPORT_NAME, "form_click_statistics.rptdesign");
@@ -672,6 +693,11 @@ public class BirtStatisticsServiceImpl implements BirtStatisticsService {
 	@Required
 	public void setAdminService(AdminService adminService) {
 		this.adminService = adminService;
+	}
+
+	@Required
+	public void setBirtReportFileService(BirtReportFileService birtReportFileService) {
+		this.birtReportFileService = birtReportFileService;
 	}
 
 	protected static class BirtUrlOptions {
@@ -745,8 +771,8 @@ public class BirtStatisticsServiceImpl implements BirtStatisticsService {
 				if (parameters.get(REPORT_NAME) == null) {
 					throw new IllegalArgumentException("Report name can not be empty!");
 				}
-				
-				
+
+
 				defaultParameters.put(SECURITY_TOKEN, BirtInterceptingFilter.createSecurityToken(configService, admin.getCompanyID()));
 				defaultParameters.put(LANGUAGE, StringUtils.defaultIfEmpty(admin.getAdminLang(), "EN"));
 				defaultParameters.put(IS_SVG, true);

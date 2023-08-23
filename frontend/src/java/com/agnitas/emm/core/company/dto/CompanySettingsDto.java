@@ -10,6 +10,8 @@
 
 package com.agnitas.emm.core.company.dto;
 
+import com.agnitas.emm.core.components.entity.TestRunOption;
+
 import java.util.Arrays;
 import java.util.List;
 
@@ -49,6 +51,7 @@ public class CompanySettingsDto {
     private boolean regenerateTargetSqlOnce = false;
     private String fullviewFormName;
     private boolean deleteSuccessfullyImportedFiles;
+    private boolean enableAltgExtended;
 	private String importAlwaysInformEmail;
 	private String exportAlwaysInformEmail;
 	private String bccEmail;
@@ -57,6 +60,7 @@ public class CompanySettingsDto {
 	private boolean recipientEmailInUseWarning;
 	private boolean allowEmailWithWhitespace;
 	private boolean allowEmptyEmail;
+	private boolean userBasedFavoriteTargets;
 	private int expireStatistics;
 	private int expireSuccess;
 	private int expireRecipient;
@@ -67,6 +71,18 @@ public class CompanySettingsDto {
 	private List<Integer> optionsMaxAdminMails = Arrays.asList(25, 50, 100);
     private boolean normalizeEmails;
     private int defaultCompanyLinkTrackingMode;
+    private int defaultBlockSize;
+    private String listHelpUrl;
+
+	private TestRunOption defaultTestRunOption;
+
+	public String getListHelpUrl() {
+		return listHelpUrl;
+	}
+
+	public void setListHelpUrl(String listHelpUrl) {
+		this.listHelpUrl = listHelpUrl;
+	}
 
 	public boolean isHasMailTracking() {
         return hasMailTracking;
@@ -332,6 +348,14 @@ public class CompanySettingsDto {
 		this.deleteSuccessfullyImportedFiles = deleteSuccessfullyImportedFiles;
 	}
 
+	public boolean isEnableAltgExtended() {
+		return enableAltgExtended;
+	}
+
+	public void setEnableAltgExtended(boolean enableAltgExtended) {
+		this.enableAltgExtended = enableAltgExtended;
+	}
+
 	public String getImportAlwaysInformEmail() {
 		return importAlwaysInformEmail;
 	}
@@ -471,12 +495,36 @@ public class CompanySettingsDto {
 	public void setDefaultCompanyLinkTrackingMode(int defaultCompanyLinkTrackingMode) {
 		this.defaultCompanyLinkTrackingMode = defaultCompanyLinkTrackingMode;
 	}
-	
+
+	public int getDefaultBlockSize() {
+		return defaultBlockSize;
+	}
+
+	public void setDefaultBlockSize(int defaultBlockSize) {
+		this.defaultBlockSize = defaultBlockSize;
+	}
+
+    public boolean isUserBasedFavoriteTargets() {
+        return userBasedFavoriteTargets;
+    }
+
+    public void setUserBasedFavoriteTargets(boolean userBasedFavoriteTargets) {
+        this.userBasedFavoriteTargets = userBasedFavoriteTargets;
+    }
+
 	public boolean isRegenerateTargetSqlOnce() {
 		return regenerateTargetSqlOnce;
 	}
-	
+
 	public void setRegenerateTargetSqlOnce(boolean regenerateTargetSqlOnce) {
 		this.regenerateTargetSqlOnce = regenerateTargetSqlOnce;
+	}
+
+	public TestRunOption getDefaultTestRunOption() {
+		return defaultTestRunOption;
+	}
+
+	public void setDefaultTestRunOption(TestRunOption defaultTestRunOption) {
+		this.defaultTestRunOption = defaultTestRunOption;
 	}
 }

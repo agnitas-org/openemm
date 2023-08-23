@@ -1,7 +1,7 @@
 
 <div class="form-group">
     <div class="col-sm-4">
-        <label for="modifyBulkDescription" class="control-label">
+        <label for="modifyBulkDescription" class="control-label checkbox-control-label">
             <mvc:message code="default.description.edit"/>
         </label>
     </div>

@@ -1,0 +1,214 @@
+<%@ page import="org.agnitas.beans.Recipient" %>
+
+<c:set var="MAILTYPE_TEXT" value="<%= Recipient.MAILTYPE_TEXT %>"/>
+<c:set var="MAILTYPE_HTML" value="<%= Recipient.MAILTYPE_HTML %>"/>
+<c:set var="MAILTYPE_HTML_OFFLINE" value="<%= Recipient.MAILTYPE_HTML_OFFLINE %>"/>
+<c:set var="importModeUpdateOnly" value="<%= ImportMode.UPDATE %>"/>
+
+<%--@elvariable id="form" type="com.agnitas.emm.core.import_profile.form.ImportProfileForm"--%>
+<%--@elvariable id="isUserHasPermissionForSelectedMode" type="java.lang.Boolean"--%>
+<%--@elvariable id="importModes" type="org.agnitas.util.importvalues.ImportMode[]"--%>
+<%--@elvariable id="availableTimeZones" type="java.lang.String[]"--%>
+<%--@elvariable id="availableImportProfileFields" type="java.util.List<com.agnitas.beans.ProfileField>"--%>
+<%--@elvariable id="checkForDuplicatesValues" type="org.agnitas.util.importvalues.CheckForDuplicates[]"--%>
+<%--@elvariable id="importProcessActions" type="java.util.List<com.agnitas.beans.ImportProcessAction>"--%>
+
+<div class="tile" data-field="toggle-vis">
+    <div class="tile-header">
+        <a href="#" class="headline" data-toggle-tile="#recipient-import-process-settings">
+            <i class="tile-toggle icon icon-angle-up"></i>
+            <mvc:message code="import.profile.process.settings"/>
+        </a>
+    </div>
+    <div id="recipient-import-process-settings" class="tile-content tile-content-forms">
+        <div class="form-group">
+            <div class="col-sm-4">
+                <label class="control-label">
+                    <label for="import_mode_select"><mvc:message code="settings.Mode"/></label>
+                    <button class="icon icon-help" data-help="help_${helplanguage}/importwizard/step_2/Mode.xml" tabindex="-1" type="button"></button>
+                </label>
+            </div>
+            <div class="col-sm-8" data-tooltip="${isUserHasPermissionForSelectedMode ? '' : notAllowedMsg}">
+                <mvc:select id="import_mode_select" path="importMode" cssClass="form-control" data-action="mode-select-change"
+                            data-field-vis="" disabled="${!isUserHasPermissionForSelectedMode && !isNewProfile}">
+                    <c:forEach var="importMode" items="${importModes}">
+                        <c:if test="${importMode == importModeUpdateOnly}">
+                            <c:set var="hideAttr" value="#selectMailTypeFormGroup"/>
+                            <c:set var="showAttr" value=""/>
+                        </c:if>
+                        <c:if test="${importMode != importModeUpdateOnly}">
+                            <c:set var="hideAttr" value=""/>
+                            <c:set var="showAttr" value="#selectMailTypeFormGroup"/>
+                        </c:if>
+                        <mvc:option value="${importMode.intValue}" data-field-vis-hide="${hideAttr}" data-field-vis-show="${showAttr}">
+                            <mvc:message code="${importMode.messageKey}"/>
+                        </mvc:option>
+                    </c:forEach>
+                </mvc:select>
+            </div>
+        </div>
+
+        <div class="form-group">
+        	<%@ include file="action_settings-extended_nullvalue.jspf" %>
+        </div>
+
+        <div class="form-group">
+            <div class="col-sm-4">
+                <label class="control-label">
+                    <label for="import_key_column"><mvc:message code="import.keycolumn"/></label>
+                    <button class="icon icon-help" data-help="help_${helplanguage}/importwizard/step_2/KeyColumn.xml" tabindex="-1" type="button"></button>
+                </label>
+            </div>
+            <div class="col-sm-8">
+                <c:set var="isCustomerIdImportAllowed" value="false" />
+                <emm:ShowByPermission token="import.customerid">
+                    <c:set var="isCustomerIdImportAllowed" value="true" />
+                </emm:ShowByPermission>
+				<c:choose>
+					<c:when test="${form.firstKeyColumn eq 'customer_id' and not isCustomerIdImportAllowed}">
+						<div class="list-group-item disabled">${form.firstKeyColumn}</div>
+					</c:when>
+					<c:otherwise>
+                        <mvc:select id="import_key_column" path="firstKeyColumn" cssClass="form-control js-select">
+                            <mvc:options items="${availableImportProfileFields}" itemLabel="shortname" itemValue="column" />
+                        </mvc:select>
+					</c:otherwise>
+	            </c:choose>
+            </div>
+        </div>
+
+		<emm:ShowByPermission token="import.mode.doublechecking">
+	        <div class="form-group">
+	            <div class="col-sm-4">
+	                <label class="control-label">
+	                    <label for="import_doublecheking"><mvc:message code="import.doublechecking"/></label>
+	                    <button class="icon icon-help" data-help="help_${helplanguage}/importwizard/step_2/Doublechecking.xml" tabindex="-1" type="button"></button>
+	                </label>
+	            </div>
+	            <div class="col-sm-8">
+                    <mvc:select id="import_doublecheking" path="checkForDuplicates" cssClass="form-control">
+                        <c:forEach var="checkForDuplicatesValue" items="${checkForDuplicatesValues}">
+                            <mvc:option value="${checkForDuplicatesValue.intValue}">
+                                <mvc:message code="${checkForDuplicatesValue.messageKey}"/>
+                            </mvc:option>
+                        </c:forEach>
+                    </mvc:select>
+	            </div>
+	        </div>
+        </emm:ShowByPermission>
+        
+        <emm:ShowByPermission token="import.mode.duplicates">
+	        <div class="form-group">
+	            <div class="col-sm-4">
+	                <label class="control-label checkbox-control-label">
+	                    <label for="import_duplicates"><mvc:message code="import.profile.updateAllDuplicates" /></label>
+	                    <button class="icon icon-help" data-help="help_${helplanguage}/importwizard/step_2/UpdateAllDuplicates.xml" tabindex="-1" type="button"></button>
+	                </label>
+	            </div>
+	            <div class="col-sm-8">
+	                <label data-form-change class="toggle">
+                        <mvc:checkbox id="import_duplicates" path="updateAllDuplicates" />
+	                    <div class="toggle-control"></div>
+	                </label>
+	            </div>
+	        </div>
+		</emm:ShowByPermission>
+		
+        <div class="form-group" id="selectMailTypeFormGroup">
+            <div class="col-sm-4">
+                <label class="control-label">
+                    <label for="import_mailingtype"><mvc:message code="recipient.mailingtype"/></label>
+                    <button class="icon icon-help" data-help="help_${helplanguage}/importwizard/step_2/MailType.xml" tabindex="-1" type="button"></button>
+                </label>
+            </div>
+            <div class="col-sm-8">
+                <mvc:select id="import_mailingtype" path="defaultMailType" cssClass="form-control">
+                    <mvc:option value="${MAILTYPE_TEXT}"><mvc:message code="recipient.mailingtype.text"/></mvc:option>
+                    <mvc:option value="${MAILTYPE_HTML}"><mvc:message code="HTML"/></mvc:option>
+                    <mvc:option value="${MAILTYPE_HTML_OFFLINE}"><mvc:message code="recipient.mailingtype.htmloffline"/></mvc:option>
+                </mvc:select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <div class="col-sm-4">
+                <label class="control-label">
+                    <label for="import_processaction"><mvc:message code="import.processPreImportAction"/></label>
+                    <button class="icon icon-help" data-help="help_${helplanguage}/importwizard/step_2/ProcessImportAction.xml" tabindex="-1" type="button"></button>
+                </label>
+            </div>
+            <c:set var="isPreprocessingAllowed" value="false"/>
+            <emm:ShowByPermission token="import.preprocessing">
+                <c:set var="isPreprocessingAllowed" value="true"/>
+            </emm:ShowByPermission>
+            <div class="col-sm-8" data-tooltip="${isPreprocessingAllowed ? '' : notAllowedMsg}">
+                <mvc:select id="import_processaction" path="importProcessActionID" cssClass="form-control" disabled="${!isPreprocessingAllowed}">
+                    <mvc:option value="0"><mvc:message code="none"/></mvc:option>
+                    <mvc:options items="${importProcessActions}" itemValue="importactionID" itemLabel="name" />
+                </mvc:select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <div class="col-sm-4">
+                <label class="control-label" for="import_email">
+                    <mvc:message code="import.profile.report.email"/>
+                    <button class="icon icon-help" data-help="help_${helplanguage}/importwizard/step_2/ReportEmail.xml" tabindex="-1" type="button"></button>
+                </label>
+            </div>
+            <div class="col-sm-8">
+                <mvc:text id="import_email" path="mailForReport" cssClass="form-control" />
+            </div>
+        </div>
+
+        <div class="form-group">
+            <div class="col-sm-4">
+                <label class="control-label" for="import_email">
+                    <mvc:message code="error.import.profile.email"/>
+                    <button class="icon icon-help" data-help="help_${helplanguage}/importwizard/step_2/ErrorEmail.xml" tabindex="-1" type="button"></button>
+                </label>
+            </div>
+            <div class="col-sm-8">
+                <mvc:text id="import_email" path="mailForError" cssClass="form-control" />
+            </div>
+        </div>
+
+		<div class="form-group">
+			<div class="col-sm-4">
+				<label class="control-label">
+					<label for="reportLocale"> <mvc:message code="import.report.locale" /></label>
+				</label>
+			</div>
+			<div class="col-sm-8">
+                <mvc:select id="reportLocale" path="reportLocale" cssClass="form-control js-select" data-action="change-import-profile">
+                    <mvc:option value="de_DE"><mvc:message code="settings.German" /></mvc:option>
+                    <mvc:option value="en_US"><mvc:message code="settings.English" /></mvc:option>
+                    <mvc:option value="fr_FR"><mvc:message code="settings.French" /></mvc:option>
+                    <mvc:option value="es_ES"><mvc:message code="settings.Spanish" /></mvc:option>
+                    <mvc:option value="pt_PT"><mvc:message code="settings.Portuguese" /></mvc:option>
+                    <mvc:option value="nl_NL"><mvc:message code="settings.Dutch" /></mvc:option>
+                    <mvc:option value="it_IT"><mvc:message code="settings.Italian" /></mvc:option>
+                </mvc:select>
+			</div>
+		</div>
+
+		<div class="form-group">
+			<div class="col-sm-4">
+				<label class="control-label">
+					<label for="reportTimezone"> <mvc:message code="import.report.timezone" /></label>
+				</label>
+			</div>
+
+			<div class="col-sm-8">
+                <mvc:select id="reportTimezone" path="reportTimezone" cssClass="form-control js-select" data-action="change-import-profile">
+                    <c:forEach var="timeZone" items="${availableTimeZones}">
+                        <mvc:option value="${timeZone}">${timeZone}</mvc:option>
+                    </c:forEach>
+                </mvc:select>
+			</div>
+		</div>
+
+        <%@ include file="action_settings-extended_actions.jspf" %>
+
+    </div>
+</div>

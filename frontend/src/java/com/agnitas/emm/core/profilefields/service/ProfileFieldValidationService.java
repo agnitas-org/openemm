@@ -13,36 +13,38 @@ package com.agnitas.emm.core.profilefields.service;
 import java.text.SimpleDateFormat;
 import java.util.Locale;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.recipient.dto.RecipientFieldDto;
 import com.agnitas.service.ServiceResult;
 
 public interface ProfileFieldValidationService {
+
+    boolean isDbFieldNameContainsSpaces(String fieldName);
+
     boolean isValidDbFieldName(String fieldName);
 
     boolean isInvalidLengthForDbFieldName(String fieldName);
 
-    boolean isValidShortname(@VelocityCheck int companyId, String shortName, String fieldName);
+    boolean isValidShortname(int companyId, String shortName, String fieldName);
 
-    boolean isShortnameInDB(@VelocityCheck int companyId, String shortName);
+    boolean isShortnameInDB(int companyId, String shortName);
 
     boolean isInvalidIntegerField(String fieldType, String fieldDefault);
 
     boolean isAllowedDefaultValue(String fieldType, String defaultValue, SimpleDateFormat dateFormat);
 
-    boolean isDefaultValueAllowedInDb(@VelocityCheck int companyId, String fieldName, String defaultValue);
+    boolean isDefaultValueAllowedInDb(int companyId, String fieldName, String defaultValue);
 
     boolean isInvalidVarcharField(String fieldType, long fieldLength);
 
-    boolean mayAddNewColumn(@VelocityCheck int companyId);
+    boolean mayAddNewColumn(int companyId);
 
-    boolean notContainsInDb(@VelocityCheck int companyId, String fieldName);
+    boolean notContainsInDb(int companyId, String fieldName);
 
-    boolean hasNotAllowedNumberOfEntries(@VelocityCheck int companyId);
+    boolean hasNotAllowedNumberOfEntries(int companyId);
 
-    boolean hasTargetGroups(@VelocityCheck int companyId, String fieldName);
+    boolean hasTargetGroups(int companyId, String fieldName);
 
     boolean isStandardColumn(String fieldName);
     

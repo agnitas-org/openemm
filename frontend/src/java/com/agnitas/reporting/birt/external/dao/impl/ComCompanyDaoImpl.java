@@ -11,7 +11,6 @@
 package com.agnitas.reporting.birt.external.dao.impl;
 
 import org.agnitas.dao.impl.BaseDaoImpl;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.DbUtilities;
 
 import com.agnitas.reporting.birt.external.dao.ComCompanyDao;
@@ -19,7 +18,7 @@ import com.agnitas.reporting.birt.external.dao.ComCompanyDao;
 public class ComCompanyDaoImpl extends BaseDaoImpl implements ComCompanyDao {
 
 	@Override
-	public boolean hasDeepTrackingTables(@VelocityCheck int companyID) {
+	public boolean hasDeepTrackingTables(int companyID) {
 		if (!DbUtilities.checkIfTableExists(getDataSource(), "rdirlog_" + companyID + "_val_num_tbl")) {
 			return false;
 		}

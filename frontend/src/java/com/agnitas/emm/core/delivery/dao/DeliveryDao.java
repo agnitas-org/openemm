@@ -13,20 +13,19 @@ package com.agnitas.emm.core.delivery.dao;
 import java.util.List;
 
 import com.agnitas.emm.core.delivery.beans.SuccessfulDeliveryInfo;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.emm.core.delivery.beans.DeliveryInfo;
 
 public interface DeliveryDao {
-    List<DeliveryInfo> getDeliveriesInfo(@VelocityCheck int companyId, int mailingId, int customerId);
+    List<DeliveryInfo> getDeliveriesInfo(int companyId, int mailingId, int customerId);
 
     List<SuccessfulDeliveryInfo> getSuccessfulDeliveriesInfo(int companyId, int mailingId, int recipientId);
 
-    boolean checkIfDeliveryTableExists(@VelocityCheck int companyId);
+    boolean checkIfDeliveryTableExists(int companyId);
 
 	boolean dropDeliveryTbl(int companyID);
 
-	boolean createDeliveryTbl(int companyID);
+	void createDeliveryTbl(int companyID);
 
 	boolean cleanDeliveryTbl(int companyID);
 }

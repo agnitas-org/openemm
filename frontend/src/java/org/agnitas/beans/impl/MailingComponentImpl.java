@@ -18,7 +18,6 @@ import java.util.Date;
 
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.MailingComponentType;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.NetworkUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpEntity;
@@ -139,7 +138,7 @@ public class MailingComponentImpl implements MailingComponent {
 	}
 
 	@Override
-	public void setCompanyID(@VelocityCheck int companyID) {
+	public void setCompanyID(int companyID) {
 		this.companyID = companyID;
 	}
 

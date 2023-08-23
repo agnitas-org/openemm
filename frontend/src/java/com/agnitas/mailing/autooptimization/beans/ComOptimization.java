@@ -19,25 +19,18 @@ package com.agnitas.mailing.autooptimization.beans;
 import java.util.Date;
 import java.util.List;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.emm.core.workflow.beans.WorkflowDecision;
 import com.agnitas.mailing.autooptimization.beans.impl.AutoOptimizationStatus;
 
 public interface ComOptimization {
 
-    int STATUS_NOT_STARTED = 0;
-    int STATUS_TEST_SEND = 1;
-    int STATUS_EVAL_IN_PROGRESS = 2;
-    int STATUS_FINISHED = 3;
-    int STATUS_SCHEDULED = 4;
-
     int getId();
 
     void setId(int id);
 
     int getCompanyID();
-    void setCompanyID(@VelocityCheck int companyID);
+    void setCompanyID(int companyID);
 
     int getCampaignID();
     void setCampaignID(int campaignID);

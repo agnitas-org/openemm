@@ -2,7 +2,7 @@
     <title><![CDATA[Filter address]]></title>
     <content><![CDATA[The filter address can be filled in two ways: 
     1. You leave the filter address field empty. 
-    	In this case, the EMM automatically generates a filter address when the bounce filter is created. 
+    	In this case, the EMM automatically generates a filter address when the response processing is created. 
     2. You enter a filter address manually. 
     	The manual filling of the filter address is only relevant if you have entered the filter server of the EMM (filter.agnitas.de) as the mail receiving server in your DNS (Domain Name System). For further details please contact the AGNITAS support.]]></content>
 </HelpBalloon>

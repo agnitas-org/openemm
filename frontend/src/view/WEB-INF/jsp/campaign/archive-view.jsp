@@ -1,4 +1,4 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" import="org.agnitas.web.StrutsActionBase" errorPage="/error.do" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib prefix="display" uri="http://displaytag.sf.net" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
@@ -6,18 +6,18 @@
 
 <%--@elvariable id="form" type="com.agnitas.emm.core.archive.forms.MailingArchiveForm"--%>
 
-<c:set var="ACTION_VIEW" value="<%= StrutsActionBase.ACTION_VIEW %>"/>
+<c:set var="isWorkflowDriven" value="${not empty workflowId and workflowId > 0}" />
 
 <c:choose>
     <c:when test="${form.id gt 0}">
-        <mvc:message var="headline" scope="page" code="campaign.Edit"/>
+        <mvc:message var="headline" code="campaign.Edit"/>
     </c:when>
     <c:otherwise>
-        <mvc:message var="headline" scope="page" code="campaign.NewCampaign"/>
+        <mvc:message var="headline" code="campaign.NewCampaign"/>
     </c:otherwise>
 </c:choose>
 
-<mvc:form servletRelativeAction="/mailing/archive/save.action" id="archiveForm" modelAttribute="form" data-form="resource">
+<mvc:form servletRelativeAction="/mailing/archive/save.action" id="archiveForm" modelAttribute="form" data-form="${isWorkflowDriven ? 'static' : 'resource'}">
     <mvc:hidden path="id"/>
 
     <div class="tile">
@@ -29,26 +29,24 @@
             <div class="form-group">
                 <div class="col-sm-4">
                     <label for="archive-name" class="control-label">
-                        <c:set var="nameMsg"><mvc:message code="default.Name"/></c:set>
-                            ${nameMsg}*
+                        <mvc:message var="nameMsg" code="default.Name"/>
+                        ${nameMsg}*
                     </label>
                 </div>
                 <div class="col-sm-8">
-                    <mvc:text path="shortname" cssClass="form-control" id="archive-name" maxlength="99"
-                              placeholder="${nameMsg}"/>
+                    <mvc:text path="shortname" cssClass="form-control" id="archive-name" maxlength="99" placeholder="${nameMsg}"/>
                 </div>
             </div>
 
             <div class="form-group">
                 <div class="col-sm-4">
                     <label for="archive-description" class="control-label">
-                        <c:set var="descriptionMsg"><mvc:message code="default.description"/></c:set>
-                            ${descriptionMsg}
+                        <mvc:message var="descriptionMsg" code="default.description"/>
+                        ${descriptionMsg}
                     </label>
                 </div>
                 <div class="col-sm-8">
-                    <mvc:textarea path="description" id="archive-description" cssClass="form-control" rows="5"
-                                  placeholder="${descriptionMsg}"/>
+                    <mvc:textarea path="description" id="archive-description" cssClass="form-control" rows="5" placeholder="${descriptionMsg}"/>
                 </div>
             </div>
         </div>
@@ -82,20 +80,13 @@
                                     format="{0,date,${localeTablePattern}}" property="senddate"/>
 
                     <display:column class="table-actions">
-                        <emm:ShowByPermission token="mailing.settings.migration">
-                            <c:url var="viewMailingLink" value="/mailing/${archive_mailing.id}/settings.action"/>
-                        </emm:ShowByPermission>
-                        <emm:HideByPermission token="mailing.settings.migration">
-                            <c:url var="viewMailingLink" value="/mailingbase.do?action=${ACTION_VIEW}&mailingID=${archive_mailing.id}&isTemplate=false"/>
-                        </emm:HideByPermission>
-                        <a href="${viewMailingLink}" class="hidden js-row-show"></a>
+                        <a href="<c:url value="/mailing/${archive_mailing.id}/settings.action"/>" class="hidden js-row-show"></a>
 
                         <emm:ShowByPermission token="mailing.delete">
                             <mvc:message var="mailingDeleteMessage" scope="page" code="mailing.MailingDelete"/>
                             <c:url var="deletionLink" value="/mailing/archive/${form.id}/mailing/${archive_mailing.id}/confirmDelete.action"/>
 
-                            <a href="${deletionLink}" class="btn btn-regular btn-alert js-row-delete"
-                               data-tooltip="${mailingDeleteMessage}">
+                            <a href="${deletionLink}" class="btn btn-regular btn-alert js-row-delete" data-tooltip="${mailingDeleteMessage}">
                                 <i class="icon icon-trash-o"></i>
                             </a>
                         </emm:ShowByPermission>

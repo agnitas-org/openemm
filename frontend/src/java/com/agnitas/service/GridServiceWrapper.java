@@ -19,7 +19,6 @@ import com.agnitas.beans.Mailing;
 import com.agnitas.emm.grid.grid.beans.ComGridTemplate;
 import com.agnitas.emm.grid.grid.beans.ComTemplateSettings;
 import com.agnitas.emm.grid.grid.service.MailingCreationOptions;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 /**
  * This class is wrapper for all grid services.
@@ -29,13 +28,13 @@ public interface GridServiceWrapper {
     
     int getGridTemplateIdByMailingId(int mailingId);
 
-    Map<Integer, Integer> getGridTemplateIdsByMailingIds(@VelocityCheck int companyId, Collection<Integer> mailingIds);
+    Map<Integer, Integer> getGridTemplateIdsByMailingIds(int companyId, Collection<Integer> mailingIds);
     
-    ComGridTemplate getGridTemplate(@VelocityCheck int companyId, int templateId);
+    ComGridTemplate getGridTemplate(int companyId, int templateId);
     
-    Map<String, Object> getMailingGridInfo(@VelocityCheck int companyId, int mailingId);
+    Map<String, Object> getMailingGridInfo(int companyId, int mailingId);
     
-    void saveMailingGridInfo(int mailingId, @VelocityCheck int companyId, Map<String, Object> data);
+    void saveMailingGridInfo(int mailingId, int companyId, Map<String, Object> data);
     
     ComTemplateSettings getGridTemplateSettings(int templateId, Admin admin);
     

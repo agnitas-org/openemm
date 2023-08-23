@@ -20,7 +20,6 @@ import com.agnitas.emm.core.target.eql.ast.AbstractBooleanEqlNode;
 import com.agnitas.emm.core.target.eql.parser.EqlParser;
 import com.agnitas.emm.core.target.eql.parser.EqlParserConfiguration;
 import com.agnitas.emm.core.target.eql.parser.EqlParserException;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
@@ -37,7 +36,7 @@ public final class TargetComplexityEvaluatorImpl implements TargetComplexityEval
     }
 
     @Override
-    public int evaluate(String eql, @VelocityCheck int companyId, TargetComplexityEvaluationCache cache) throws EqlParserException {
+    public int evaluate(String eql, int companyId, TargetComplexityEvaluationCache cache) throws EqlParserException {
         return eqlParser.parseEql(eql, parserConfiguration)
             .getChild()
             .map(node -> evaluate(node, companyId, cache))

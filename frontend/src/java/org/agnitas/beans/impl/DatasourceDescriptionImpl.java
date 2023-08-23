@@ -14,7 +14,6 @@ import java.util.Date;
 
 import org.agnitas.beans.DatasourceDescription;
 import org.agnitas.dao.SourceGroupType;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public class DatasourceDescriptionImpl implements DatasourceDescription {
 	protected int id = -1;
@@ -34,7 +33,7 @@ public class DatasourceDescriptionImpl implements DatasourceDescription {
 	}
 
 	@Override
-    public void setCompanyID( @VelocityCheck int company) {
+    public void setCompanyID( int company) {
         this.companyID=company;
     }
 

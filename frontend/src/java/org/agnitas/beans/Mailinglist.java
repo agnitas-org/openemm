@@ -12,11 +12,10 @@ package org.agnitas.beans;
 
 import java.util.Date;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public interface Mailinglist {
 
-	void setCompanyID(@VelocityCheck int id);
+	void setCompanyID(int id);
 
 	void setId(int id);
 

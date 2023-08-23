@@ -15,7 +15,6 @@ import java.sql.SQLException;
 import java.util.List;
 
 import org.agnitas.dao.impl.BaseDaoImpl;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -29,13 +28,13 @@ public class LightTargetDaoImpl extends BaseDaoImpl implements LightTargetDao {
 	private static final Logger logger = LogManager.getLogger(LightTargetDaoImpl.class);
 
 	@Override
-	public LightTarget getTarget(int targetID, @VelocityCheck int companyID) {
+	public LightTarget getTarget(int targetID, int companyID) {
 		String query = "SELECT target_id, target_description, target_shortname, target_sql FROM dyn_target_tbl WHERE target_id = ? AND company_id = ?";
 		return selectObjectDefaultNull(logger, query, new LightTarget_RowMapper(), targetID, companyID);
 	}
 
 	@Override
-	public List<LightTarget> getTargets(List<String> targetIDs, @VelocityCheck int companyID) {
+	public List<LightTarget> getTargets(List<String> targetIDs, int companyID) {
 		if (targetIDs == null || targetIDs.isEmpty()) {
 			return null;
 		}

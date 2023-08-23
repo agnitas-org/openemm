@@ -10,8 +10,7 @@
 
 package com.agnitas.mailing.autooptimization.service.impl;
 
-import static com.agnitas.mailing.autooptimization.beans.ComOptimization.STATUS_NOT_STARTED;
-
+import com.agnitas.mailing.autooptimization.beans.impl.AutoOptimizationStatus;
 import org.agnitas.beans.impl.MaildropDeleteException;
 import org.agnitas.dao.MaildropStatusDao;
 import org.agnitas.dao.MailingStatus;
@@ -48,7 +47,7 @@ public class ComOptimizationCommonServiceImpl implements ComOptimizationCommonSe
 
         // remove the send date of the optimization
         optimization.setSendDate(null);
-        optimization.setStatus(STATUS_NOT_STARTED);
+        optimization.setStatus(AutoOptimizationStatus.NOT_STARTED.getCode());
         save(optimization);
 
         int droppedEntriesCount = 0;
@@ -69,7 +68,7 @@ public class ComOptimizationCommonServiceImpl implements ComOptimizationCommonSe
             }
         }
 
-        if (previousStatus != STATUS_NOT_STARTED && droppedEntriesCount == 0) {
+        if (previousStatus != AutoOptimizationStatus.NOT_STARTED.getCode() && droppedEntriesCount == 0) {
             throw new MaildropDeleteException(
                     "Failure while unscheduling , could not drop entries from maildrop_status_tbl !");
         }

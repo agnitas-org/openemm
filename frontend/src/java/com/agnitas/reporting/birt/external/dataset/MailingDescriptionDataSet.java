@@ -63,7 +63,7 @@ public class MailingDescriptionDataSet extends BIRTDataSet {
                 int mailFormat = Integer.parseInt(EmailParamExtractor.getMailformat(emailParams));
                 String mailFormatStr = (mailFormat == 0 ? I18nString.getLocaleString("only_Text", language) : (mailFormat == 1 ? I18nString.getLocaleString("Text_HTML", language) : I18nString.getLocaleString("Text_HTML_OfflineHTML", language)));
 
-                String[] mailFormatValueStringArray = new String[]{I18nString.getLocaleString("Format", language), mailFormatStr};
+                String[] mailFormatValueStringArray = new String[]{I18nString.getLocaleString("action.Format", language), mailFormatStr};
                 paramsList.add(mailFormatValueStringArray);
 
                 String onepixelEnabled = EmailParamExtractor.getOnepixelParam(emailParams);

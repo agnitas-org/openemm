@@ -18,7 +18,6 @@ import org.agnitas.beans.impl.CompanyStatus;
 import org.agnitas.dao.RdirTrafficAmountDao;
 import org.agnitas.dao.impl.BaseDaoImpl;
 import org.agnitas.dao.impl.mapper.IntegerRowMapper;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.DbUtilities;
 import org.apache.commons.lang3.StringUtils;
@@ -30,7 +29,7 @@ public class RdirTrafficAmountDaoImpl extends BaseDaoImpl implements RdirTraffic
 	private static final transient Logger logger = LogManager.getLogger(RdirTrafficAmountDaoImpl.class);
 
 	@Override
-    public void save(@VelocityCheck int companyID, int mailingID, String contentName, int contentSize) {
+    public void save(int companyID, int mailingID, String contentName, int contentSize) {
 		// Insert new entry
 		update(logger, "INSERT INTO rdir_traffic_amount_" + companyID + "_tbl (mailing_id, content_name, content_size, demand_date) VALUES (?, ?, ?, CURRENT_TIMESTAMP)",
 			mailingID,
@@ -40,7 +39,7 @@ public class RdirTrafficAmountDaoImpl extends BaseDaoImpl implements RdirTraffic
 	}
 
 	@Override
-	public void aggregateExistingTrafficAmountEntries(@VelocityCheck int companyID, Date dateToAggregate) {
+	public void aggregateExistingTrafficAmountEntries(int companyID, Date dateToAggregate) {
 		Date dateToAggregateStart = DateUtilities.removeTime(dateToAggregate, TimeZone.getDefault());
 		Date dateToAggregateEnd = DateUtilities.addDaysToDate(dateToAggregateStart, 1);
 		
@@ -68,7 +67,7 @@ public class RdirTrafficAmountDaoImpl extends BaseDaoImpl implements RdirTraffic
 	 * called for reseting company tables
 	 */
 	@Override
-	public boolean emtpyTrafficTables(@VelocityCheck int companyID) {
+	public boolean emtpyTrafficTables(int companyID) {
 		try {
 			update(logger, "TRUNCATE TABLE rdir_traffic_agr_"+ companyID + "_tbl");
 			update(logger, "TRUNCATE TABLE rdir_traffic_amount_"+ companyID + "_tbl");
@@ -81,7 +80,7 @@ public class RdirTrafficAmountDaoImpl extends BaseDaoImpl implements RdirTraffic
 	 * Called when company table have to be deleted
 	 */
 	@Override
-	public boolean dropTrafficTables(@VelocityCheck int companyID) {
+	public boolean dropTrafficTables(int companyID) {
 		try {
 			String trafficAgrTable = "rdir_traffic_agr_" + companyID + "_tbl";
 			String trafficAmountTable = "rdir_traffic_amount_" + companyID + "_tbl";

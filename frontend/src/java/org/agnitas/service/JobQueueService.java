@@ -264,9 +264,25 @@ public class JobQueueService implements ApplicationContextAware {
 			logger.error("Cannot create names list 'waitingJobWorkerNames': " + e.getMessage(), e);
 		}
 		
-		logger.warn(queuedJobsTodo.size() + " JobWorker are waiting, because already running " + queuedJobWorkers.size() + " JobWorker\n"
-				+ "JobWorker running: " + StringUtils.join(runningJobWorkerNames, ", ") + "\n"
-				+ "JobWorker waiting: " + StringUtils.join(waitingJobWorkerNames, ", "));
+//		logger.warn(queuedJobsTodo.size() + " JobWorker are waiting, because already running " + queuedJobWorkers.size() + " JobWorker\n"
+//				+ "JobWorker running: " + StringUtils.join(runningJobWorkerNames, ", ") + "\n"
+//				+ "JobWorker waiting: " + StringUtils.join(waitingJobWorkerNames, ", "));
+	}
+
+	public List<JobDto> getRunningJobsOnThisServer() {
+		List<JobDto> runningJobs = new ArrayList<>();
+		for (JobWorker queuedJobWorker : queuedJobWorkers) {
+			runningJobs.add(queuedJobWorker.getJob());
+		}
+		return runningJobs;
+	}
+
+	public List<JobDto> getWaitingJobsOnThisServer() {
+		List<JobDto> waitingJobs = new ArrayList<>();
+		for (JobDto waitingJob : queuedJobsTodo) {
+			waitingJobs.add(waitingJob);
+		}
+		return waitingJobs;
 	}
 
 	private JobWorker createJobWorker(JobDto jobToStart) throws InstantiationException, IllegalAccessException, ClassNotFoundException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException {
@@ -290,7 +306,7 @@ public class JobQueueService implements ApplicationContextAware {
 		}
 		
 		if (!queuedJobWorkers.remove(worker)) {
-			logger.error("Cannot remove " + worker.getJobDescription() + " from 'queuedJobWorkers'");
+			logger.error("Cannot remove " + worker.getJobDescription() + " from 'queuedJobWorkers', maybe it was started manually");
 		}
 
 		if (queuedJobWorkers.contains(null)) {
@@ -299,6 +315,16 @@ public class JobQueueService implements ApplicationContextAware {
 		}
 		
 		checkAndStartNewWorkers();
+	}
+
+	public boolean setStopSignForJob(int jobID) {
+		for (JobWorker jobWorker : queuedJobWorkers) {
+			if (jobWorker.getJob().getId() == jobID) {
+				jobWorker.setStopSign();
+				return true;
+			}
+		}
+		return false;
 	}
 	
 	public boolean checkActiveNode() {

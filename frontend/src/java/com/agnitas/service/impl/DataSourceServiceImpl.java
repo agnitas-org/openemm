@@ -87,6 +87,12 @@ public class DataSourceServiceImpl implements DataSourceService {
         }
         return jsonArray;
     }
+    
+    @Override
+    public DatasourceDescription getDatasourceDescription(int datasourceId, int companyId) {
+	    return datasourceDescriptionDao.getDatasourceDescription(datasourceId, companyId);
+    }
+    
 	
 	private int getDataSourceId(int companyId, SourceGroupType sourceGroupType, String dsDescription) {
 		DatasourceDescription dataSource = datasourceDescriptionDao.getByDescription(sourceGroupType, companyId, dsDescription);

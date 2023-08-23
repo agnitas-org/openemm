@@ -11,14 +11,13 @@
 package com.agnitas.mailing.autooptimization.service.impl;
 
 import static com.agnitas.emm.core.workflow.service.ComWorkflowActivationService.DEFAULT_STEPPING;
-import static com.agnitas.mailing.autooptimization.beans.ComOptimization.STATUS_NOT_STARTED;
-import static com.agnitas.mailing.autooptimization.beans.ComOptimization.STATUS_SCHEDULED;
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import com.agnitas.mailing.autooptimization.beans.impl.AutoOptimizationStatus;
 import org.agnitas.beans.impl.MaildropDeleteException;
 import org.agnitas.dao.MailingStatus;
 import org.agnitas.emm.core.mailing.MailingAllReadySentException;
@@ -64,7 +63,7 @@ public class ComOptimizationScheduleServiceImpl implements ComOptimizationSchedu
 			throws MailingAllReadySentException,
 			OptimizationIsFinishedException, MaildropDeleteException {
 
-		if (optimization.getStatus() == STATUS_SCHEDULED) { // re-schedule an
+		if (optimization.getStatus() == AutoOptimizationStatus.SCHEDULED.getCode()) { // re-schedule an
 															// existing
 															// optimization
 			// keep the provided dates, unschedule will overwrite them
@@ -74,13 +73,13 @@ public class ComOptimizationScheduleServiceImpl implements ComOptimizationSchedu
 			unscheduleOptimization(optimization);
 			optimization.setSendDate(sendDate);
 			optimization.setTestMailingsSendDate(testSendDate);
-			optimization.setStatus(STATUS_SCHEDULED);
+			optimization.setStatus(AutoOptimizationStatus.SCHEDULED.getCode());
 		}
 
 		boolean result = true;
 		ComTarget splitPart = null;
 
-		if (!(optimization.getStatus() == STATUS_SCHEDULED || optimization.getStatus() == STATUS_NOT_STARTED)) {
+		if (!(optimization.getStatus() == AutoOptimizationStatus.SCHEDULED.getCode() || optimization.getStatus() == AutoOptimizationStatus.NOT_STARTED.getCode())) {
 			throw new OptimizationIsFinishedException("The optimization has with id: " + optimization.getId()
 							+ " has state " + optimization.getStatus());
 		}
@@ -156,9 +155,9 @@ public class ComOptimizationScheduleServiceImpl implements ComOptimizationSchedu
 				}
 				scheduleMailing(testMailing, optimization.getTestMailingsSendDate(), optimization.isTestRun(), mailingSendingProperties);
 			}
-			optimization.setStatus(STATUS_SCHEDULED);
+			optimization.setStatus(AutoOptimizationStatus.SCHEDULED.getCode());
 		} else {
-			optimization.setStatus(STATUS_NOT_STARTED);
+			optimization.setStatus(AutoOptimizationStatus.NOT_STARTED.getCode());
 		}
 		optimizationCommonService.save(optimization);
 	}

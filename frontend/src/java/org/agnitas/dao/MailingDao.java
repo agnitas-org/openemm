@@ -19,7 +19,6 @@ import org.agnitas.beans.MailingBase;
 import org.agnitas.beans.MailingSendStatus;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.mailing.beans.LightweightMailing;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.FulltextSearchInvalidQueryException;
 
 import com.agnitas.beans.Admin;
@@ -35,7 +34,7 @@ public interface MailingDao {
 	 * @param companyID Id of the company that created a mailing
 	 * @return an instance of {@link org.agnitas.beans.impl.MailingSendStatusImpl}
 	 */
-	MailingSendStatus getMailingSendStatus(int mailingID, @VelocityCheck int companyID);
+	MailingSendStatus getMailingSendStatus(int mailingID, int companyID);
 
 	/**
 	 * Gets mailing with mediatypes
@@ -46,7 +45,7 @@ public interface MailingDao {
      *              Id of the company that created a mailing
      * @return Mailing bean object or null
 	 */
-	Mailing getMailing(int mailingID, @VelocityCheck int companyID);
+	Mailing getMailing(int mailingID, int companyID);
 
 	/**
 	 * Saves mailing, its mediatypes and trackable links
@@ -80,7 +79,7 @@ public interface MailingDao {
      *              Id of the company that created a mailing
      * @return true - success; false - if the mailing does not exist in database
 	 */
-	boolean deleteMailing(int mailingID, @VelocityCheck int companyID);
+	boolean markAsDeleted(int mailingID, int companyID);
 
 	/**
 	 * Loads non-deleted mailings from certain mailing list
@@ -91,7 +90,7 @@ public interface MailingDao {
      *              Id of mailing list
 	 * @return List of Mailing
 	 */
-	List<Mailing> getMailingsForMLID( @VelocityCheck int companyID, int mailinglistID);
+	List<Mailing> getMailingsForMLID( int companyID, int mailinglistID);
 
     /**
      *  Loads mailing action names with their full urls
@@ -102,7 +101,7 @@ public interface MailingDao {
      *              Id of the company that created a mailing
      * @return LinkedList
      */
-	List<Map<String, String>> loadAction(int mailingID, @VelocityCheck int companyID);
+	List<Map<String, String>> loadAction(int mailingID, int companyID);
 
     /**
      * Gets id of the mailing from certain mailing list that have been last sent for the given customer by the given company
@@ -115,20 +114,13 @@ public interface MailingDao {
      *              Id of the mailing list
      * @return positive number or zero
      */
-	int findLastNewsletter(int customerID, @VelocityCheck int companyID, int mailinglist);
-
-    /**
-     *  Could not be used in fact because the column auto_url does not exist in mailing_tbl
-     *
-     */
-	// Deprecated. GWUA-5122 TODO: Remove after 29.10.2022
-//	String getAutoURL(int mailingID);
+	int findLastNewsletter(int customerID, int companyID, int mailinglist);
 
     /**
      *  Could not be used in fact because the column rdir_domain does not exist in mailinglist_tbl
      *
      */
-	String getMailingRdirDomain(int mailingID, @VelocityCheck int companyID);
+	String getMailingRdirDomain(int mailingID, int companyID);
 
 	/**
 	 * Returns all (non-deleted) mailings as a list of lightweight objects.
@@ -137,7 +129,7 @@ public interface MailingDao {
 	 *
 	 * @return list of lightweight mailing objects
 	 */
-	List<LightweightMailing> getLightweightMailings( @VelocityCheck int companyID);
+	List<LightweightMailing> getLightweightMailings( int companyID);
 
 	/**
 	 * Returns all (non-deleted) mailings and templates by given ids as a list of lightweight objects.
@@ -147,7 +139,7 @@ public interface MailingDao {
 	 *
 	 * @return list of lightweight mailing objects
 	 */
-	List<LightweightMailing> getLightweightMailings(@VelocityCheck int companyId, Collection<Integer> mailingIds);
+	List<LightweightMailing> getLightweightMailings(int companyId, Collection<Integer> mailingIds);
 
 	/**
 	 * Selects all non-deleted mailings of certain company and creates paginated list according to given criteria of sorting and pagination
@@ -160,14 +152,6 @@ public interface MailingDao {
 	PaginatedListImpl<Map<String, Object>> getMailingList(Admin admin, MailingsListProperties props) throws FulltextSearchInvalidQueryException;
 
 	List<LightweightMailing> getLightweightMailings(Admin admin, MailingsListProperties props) throws FulltextSearchInvalidQueryException;
-
-	/**
-     * Creates empty paginated list
-
-     * @return PaginatedList of MailingBase
-     */
-	// Deprecated. GWUA-5122 TODO: Remove after 29.10.2022
-//    PaginatedListImpl<Map<String, Object>> getEmptyMailingList();
 
 	/**
 	 * Checks whether full-text indices for name and description of a mailing are available
@@ -196,10 +180,7 @@ public interface MailingDao {
      *              Id of the company that created a mailing
 	 * @return 0 if no worldmailing has been generated
 	 */
-	int getStatusidForWorldMailing(int mailingID, @VelocityCheck int companyID);
-
-	// Deprecated. GWUA-5122 TODO: Remove after 29.10.2022
-//	int getGenstatusForWorldMailing(int mailingID);
+	int getStatusidForWorldMailing(int mailingID, int companyID);
 
 	/**
 	 * Retrieve a genstatus value from the latest maildrop entry or -1 if there's no one.
@@ -220,7 +201,7 @@ public interface MailingDao {
      *              Id of the company that created a mailing
 	 * @return true, if at least one recipient is present, otherwise false
 	 */
-	boolean hasPreviewRecipients(int mailingId, @VelocityCheck int companyID);
+	boolean hasPreviewRecipients(int mailingId, int companyID);
 
 	/**
 	 * Is there any transmission for that mailing running ? - There is no entry
@@ -243,7 +224,7 @@ public interface MailingDao {
      *              Id of the company that created a mailing
      * @return true - has at list one action, otherwise - false
      */
-	boolean hasActions(int mailingId, @VelocityCheck int companyID);
+	boolean hasActions(int mailingId, int companyID);
 
 	/**
 	 * Returns the mailing IDs referencing the given template.
@@ -264,7 +245,7 @@ public interface MailingDao {
      *              Id of the company that created a mailing/template
      * @return  true - it's template, false - it's mailing
      */
-	boolean checkMailingReferencesTemplate(int templateID, @VelocityCheck int companyID) throws Exception;
+	boolean checkMailingReferencesTemplate(int templateID, int companyID) throws Exception;
 
     /**
      * Checks the existence of mailing in the database
@@ -275,86 +256,12 @@ public interface MailingDao {
      *              Id of the company that created a mailing
      * @return true - if the mailing exists, false - if does not
      */
-	boolean exist(int mailingID, @VelocityCheck int companyID);
+	boolean exist(int mailingID, int companyID);
 
     /**
      * Checks the existence of template in the database
      */
-	boolean exist(int mailingID, @VelocityCheck int companyID, boolean isTemplate);
-
-    /**
-     * Gets names and descriptions of mailings listed by ids
-     *
-     * @param mailingIDList
-     *                  String contains mailing ids separated with comma
-     * @param allNames
-     *                  HashTable for mailing names, is changing inside the method
-     * @param allDesc
-     *                  HashTable for mailing descriptions, is changing inside the method
-     * @param companyID
-     *                  Id of the company that created the mailings
-     * @return  String object
-     */
-	// Deprecated. GWUA-5122 TODO: Remove after 29.10.2022
-//	String compareMailingsNameAndDesc(String mailingIDList, Map<Integer, String> allNames, Map<Integer, String> allDesc, @VelocityCheck int companyID);
-
-    /**
-     *  For each mailing from the given list loads number of openers and chose the biggest number
-     *
-     * @param mailingIDList
-     *                  List of mailing ids
-     * @param companyID
-     *                  Id of the company that sent the mailings
-     * @param allOpen
-     *                  Mailing id with number of openers, is updating inside the method
-     * @param biggestOpened
-     *                  Max number of openers, is updating inside the method
-     * @param aTarget
-     *                  Target bean object with recipients target group data
-     * @return max number of openers
-     */
-	// Deprecated. GWUA-5122 TODO: Remove after 29.10.2022
-//	int compareMailingsOpened(String mailingIDList, @VelocityCheck int companyID, Map<Integer, Integer> allOpen, int biggestOpened, ComTarget aTarget);
-
-    /**
-     * For each mailing from the given list loads number of clickers and chose the biggest number
-     *
-     * @param mailingIDList
-     *                  List of mailing ids
-     * @param allClicks
-     *                  Mailing id with number of clickers, is updating inside the method
-     * @param biggestClicks
-     *                  Max number of clickers, is updating inside the method
-     * @param companyID
-     *                  Id of the company that sent the mailings
-     * @param aTarget
-     *                  Target bean object with recipients target group data
-     * @return max number of clickers
-     */
-	// Deprecated. GWUA-5122 TODO: Remove after 29.10.2022
-//	int compareMailingsTotalClicks(String mailingIDList, Map<Integer, Integer> allClicks, int biggestClicks, @VelocityCheck int companyID, ComTarget aTarget);
-
-    /**
-     * For each mailing from the given list loads numbers of customer which did not open (opt-out) or skipped (bounce) the mailing, and chose the biggest numbers
-     *
-     * @param mailingIDList
-     *                  List of mailing ids
-     * @param allOptout
-     *                  Mailing id with number of non-openers, is updating inside the method
-     * @param allBounce
-     *                  Mailing id with number of bounces, is updating inside the method
-     * @param biggestOptout
-     *                  Max number of non-openers, is updating inside the method
-     * @param biggestBounce
-     *                   Max number of bounces, is updating inside the method
-     * @param companyID
-     *                  Id of the company that sent the mailings
-     * @param aTarget
-     *                  Target bean object with recipients target group data
-     * @return Map with biggest bounce and biggest optout values
-     */
-	// Deprecated. GWUA-5122 TODO: Remove after 29.10.2022
-//	Map<String, Integer> compareMailingsOptoutAndBounce(String mailingIDList, Map<Integer, Integer> allOptout, Map<Integer, Integer> allBounce, int biggestOptout, int biggestBounce, @VelocityCheck int companyID, ComTarget aTarget);
+	boolean exist(int mailingID, int companyID, boolean isTemplate);
 
     /**
      * Loads list of non-deleted mailing have been sent by certain company
@@ -379,7 +286,7 @@ public interface MailingDao {
      *               Id of the company
      * @return List of MailingBase bean objects
      */
-	List<MailingBase> getTemplateMailingsByCompanyID( @VelocityCheck int companyID);
+	List<MailingBase> getTemplateMailingsByCompanyID( int companyID);
 
     /**
      * Loads list of action-based mailings have been sent by certain company
@@ -388,7 +295,7 @@ public interface MailingDao {
      *              Id of the company that sent the mailings
      * @return  List of MailingBase bean objects
      */
-	List<MailingBase> getMailingsByStatusE( @VelocityCheck int companyID);
+	List<MailingBase> getMailingsByStatusE( int companyID);
 
     /**
      * Loads list of non-deleted mailings/templates of certain company
@@ -398,7 +305,7 @@ public interface MailingDao {
      *              true - load templates, false - load mailings
      * @return List of Mailing objects
      */
-	List<Mailing> getMailings( @VelocityCheck int companyId, boolean isTemplate);
+	List<Mailing> getMailings( int companyId, boolean isTemplate);
 
     /**
      * Gets id of open action for the mailing
@@ -409,7 +316,7 @@ public interface MailingDao {
      *              Id  of the company
      * @return positive integer or zero
      */
-	int getMailingOpenAction(int mailingID, @VelocityCheck int companyID);
+	int getMailingOpenAction(int mailingID, int companyID);
 
     /**
      * Gets id of click action for the mailing
@@ -420,7 +327,7 @@ public interface MailingDao {
      *              Id  of the company
      * @return positive integer or zero
      */
-	int getMailingClickAction(int mailingID, @VelocityCheck int companyID);
+	int getMailingClickAction(int mailingID, int companyID);
 
     /**
      * Gets parameter string for mailing of email type
@@ -440,7 +347,7 @@ public interface MailingDao {
      */
 	MailingType getMailingType(int mailingID) throws Exception;
 
-	Date getMailingPlanDate(int mailingId, @VelocityCheck int companyId);
+	Date getMailingPlanDate(int mailingId, int companyId);
 
 	List<MailingBase> getMailingTemplatesWithPreview(Admin admin, String sort, String direction);
 }

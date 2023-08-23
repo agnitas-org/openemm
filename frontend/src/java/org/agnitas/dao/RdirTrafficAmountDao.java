@@ -13,7 +13,6 @@ package org.agnitas.dao;
 import java.util.Date;
 import java.util.List;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public interface RdirTrafficAmountDao	{
 	void save(int companyID, int mailingID, String contentName, int contentSize);
@@ -22,7 +21,7 @@ public interface RdirTrafficAmountDao	{
 
 	List<Integer> getCompaniesForAggregation(List<Integer> includedCompanyIds, List<Integer> excludedCompanyIds);
 	
-	boolean emtpyTrafficTables(@VelocityCheck int companyID);
+	boolean emtpyTrafficTables(int companyID);
 	
-	boolean dropTrafficTables(@VelocityCheck int companyID);
+	boolean dropTrafficTables(int companyID);
 }

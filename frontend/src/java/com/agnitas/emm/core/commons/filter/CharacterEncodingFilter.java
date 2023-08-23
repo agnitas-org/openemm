@@ -24,6 +24,7 @@ import org.antlr.v4.runtime.misc.Nullable;
 import org.apache.commons.lang3.StringUtils;
 
 public class CharacterEncodingFilter extends org.springframework.web.filter.CharacterEncodingFilter {
+
 	private Set<String> iso_8859_1RdirDomains = new CaseInsensitiveSet();
 	private Set<String> utf8RdirDomains = new CaseInsensitiveSet();
 	private Set<String> jpRdirDomains = new CaseInsensitiveSet();
@@ -66,8 +67,9 @@ public class CharacterEncodingFilter extends org.springframework.web.filter.Char
 				request.setCharacterEncoding("ISO-2022-JP");
 			}
 		}
-		
+
 		String encoding = getEncoding();
+
 		if (StringUtils.isNotBlank(encoding)) {
 			if (isForceRequestEncoding() || request.getCharacterEncoding() == null) {
 				request.setCharacterEncoding(encoding);

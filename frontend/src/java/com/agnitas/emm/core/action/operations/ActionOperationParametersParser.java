@@ -25,8 +25,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @Component
 public class ActionOperationParametersParser {
 	
-	/** The logger. */
-    private static final transient Logger logger = LogManager.getLogger(ActionOperationParametersParser.class);
+    private static final Logger logger = LogManager.getLogger(ActionOperationParametersParser.class);
 
     private ObjectMapper mapper;
 

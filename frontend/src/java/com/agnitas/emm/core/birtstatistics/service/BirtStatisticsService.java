@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.agnitas.beans.Mailing;
+import com.agnitas.emm.core.workflow.beans.WorkflowStatisticDto;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.logging.log4j.Logger;
@@ -37,11 +38,7 @@ public interface BirtStatisticsService {
 	/**
 	 * Generates birt URL for domain statistic
 	 *
-	 * @param admin
-	 * @param sessionId
 	 * @param domainStatistic Domain statistic data
-	 * @return
-	 * @throws Exception
 	 */
 	String getDomainStatisticsUrlWithoutFormat(Admin admin, String sessionId, DomainStatisticDto domainStatistic, boolean forInternalUse) throws Exception;
 	
@@ -49,35 +46,20 @@ public interface BirtStatisticsService {
 	/**
 	 * Generates birt URL for monthly statistic
 	 *
-	 * @param admin
-	 * @param sessionId
 	 * @param monthlyStatistic Monthly statistic data
-	 * @return
-	 * @throws Exception
 	 */
 	String getMonthlyStatisticsUrlWithoutFormat(Admin admin, String sessionId, MonthlyStatisticDto monthlyStatistic, boolean forInternalUse) throws Exception;
 	
 	/**
 	 * Generates birt URL for recipient monthly statistic
 	 *
-	 * @param admin
-	 * @param sessionId
 	 * @param monthlyStatistic Recipient monthly statistic data
-	 * @return
-	 * @throws Exception
 	 */
 	String getRecipientMonthlyStatisticsUrlWithoutFormat(Admin admin, String sessionId, RecipientProgressStatisticDto monthlyStatistic) throws Exception;
 	
 	/**
 	 * Generates birt URL for every active statistic report type
 	 *
-	 * @param reportSettings
-	 * @param currentDate
-	 * @param report
-	 * @param companyId
-	 * @param accountId
-	 * @return
-	 * @throws Exception
 	 */
 	Map<String, String> getReportStatisticsUrlMap(List<ComBirtReportSettings> reportSettings, Date currentDate, ComBirtReport report, int companyId, Integer accountId) throws Exception;
 
@@ -104,6 +86,8 @@ public interface BirtStatisticsService {
 	String getRecipientStatusStatisticUrl(Admin admin, String sessionId, RecipientStatusStatisticDto recipientStatusDto) throws Exception;
 
 	String getOptimizationStatisticUrl(Admin admin, OptimizationStatisticDto optimizationDto) throws Exception;
+
+	String getWorkflowStatisticUrl(Admin admin, WorkflowStatisticDto workflowStatisticDto) throws Exception;
 
 	String getUserFormTrackableLinkStatisticUrl(Admin admin, String sessionId, int formId) throws Exception;
 

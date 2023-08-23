@@ -1,4 +1,4 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 <%@ page import="com.agnitas.beans.AdminPreferences" %>
 
 <%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags"   prefix="agn" %>
@@ -12,6 +12,7 @@
 <%--@elvariable id="createdCompanies" type="java.util.List"--%>
 <%--@elvariable id="adminGroups" type="java.util.List"--%>
 <%--@elvariable id="helplanguage" type="java.lang.String"--%>
+<%--@elvariable id="PASSWORD_POLICY" type="java.lang.String"--%>
 <%--@elvariable id="availableTimeZones" type="java.util.List"--%>
 <%--@elvariable id="layouts" type="java.util.List"--%>
 
@@ -31,10 +32,8 @@
 <c:set var="STATISTIC_LOADTYPE_ON_CLICK" value="<%=AdminPreferences.STATISTIC_LOADTYPE_ON_CLICK%>"/>
 <c:set var="STATISTIC_LOADTYPE_IMMEDIATELY" value="<%=AdminPreferences.STATISTIC_LOADTYPE_IMMEDIATELY%>"/>
 
-<mvc:form servletRelativeAction="/admin/${adminForm.adminID}/view.action" data-form-focus="username" modelAttribute="adminForm" accept-charset="UTF-8" data-form="resource">
-    <input type="hidden" name="delete" value=""/>
-    <input type="hidden" name="save" value=""/>
-
+<mvc:form id="admin-form" servletRelativeAction="/admin/${adminForm.adminID}/view.action" data-form-focus="username" modelAttribute="adminForm"
+          accept-charset="UTF-8" data-form="resource" data-form-dirty-checking="">
     <div class="tile">
         <div class="tile-header">
             <h2 class="headline"><mvc:message code="settings.admin.edit"/></h2>

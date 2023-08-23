@@ -10,9 +10,7 @@
         this.y = 0;
         this.type = type;
         this.title = '';
-        this.statisticTitle = '';
         this.overlayTitle = '';
-        this.statistic = [];
         this.overlayImage = {image: '', title: '', visible: false};
         this.filled = false;
         this.editable = true;
@@ -28,7 +26,6 @@
         this.$connectionButton = this.$element.find('.node-connect-button');
         this.$titleDiv = Node.createTitleDiv$();
         this.$titleSpan = this.$titleDiv.find('.icon-title-span');
-        this.$statisticSpan = this.$titleDiv.find('.icon-statistic-span');
         this.$overlayTitle = this.$element.find('.icon-overlay-title');
         this.$overlayImage = this.$element.find('.icon-overlay-image img');
         this.nodePopover = new NodePopover(this);
@@ -542,8 +539,8 @@
     Node.prototype.updateCoordinates = function(scale) {
         var position = Node.getPosition(this.$element);
 
-        this.x = Math.round(position.x / scale / Def.CANVAS_GRID_SIZE);
-        this.y = Math.round(position.y / scale / Def.CANVAS_GRID_SIZE);
+        this.x = position.x / scale / Def.CANVAS_GRID_SIZE;
+        this.y = position.y / scale / Def.CANVAS_GRID_SIZE;
     };
 
     Node.prototype.getType = function() {
@@ -554,38 +551,24 @@
         this.type = type;
     };
 
-    Node.prototype.setStatistic = function(enabled, statistic) {
-        this.statistic = statistic || [];
-    }
-
-    Node.prototype.getStatistic = function() {
-        return this.statistic;
-    }
-
-    Node.prototype.isStatisticEnabled = function() {
-        return !_.isEmpty(this.statistic);
-    }
-
     Node.prototype.getTitle = function() {
         return this.title;
     };
 
-    Node.prototype.setTitle = function(title, statisticTitle) {
+    Node.prototype.setTitle = function(title) {
         this.title = title;
-        this.statisticTitle = statisticTitle;
 
-        if (title || statisticTitle) {
+        if (title) {
             this.$titleSpan.text(title);
-            this.$statisticSpan.text(statisticTitle);
             this.positionTitle(this.lastTitleAnchor);
-            this.$titleDiv.toggleClass('expandable', this.$titleSpan.height() + this.$statisticSpan.height() > this.$titleDiv.height());
+            this.$titleDiv.toggleClass('expandable', this.$titleSpan.height() > this.$titleDiv.height());
         }
 
-        this.setTitleEnabled(!!title || !!statisticTitle);
+        this.setTitleEnabled(!!title);
     };
 
     Node.prototype.setTitleEnabled = function(isEnabled) {
-        this.$titleDiv.toggle(!!isEnabled && (!!this.title || !!this.statisticTitle));
+        this.$titleDiv.toggle(!!isEnabled && !!this.title);
     };
 
     Node.prototype.setTitleExpanded = function(isExpanded) {

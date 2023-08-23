@@ -10,10 +10,14 @@
 
 package com.agnitas.emm.core.components.form;
 
+import com.agnitas.emm.core.components.entity.TestRunOption;
+
 public class MailingTestSendForm {
 
     int adminTargetGroupID;
-    private String[] mailingTestRecipients;
+    private String[] mailingTestRecipients = new String[] {};
+    private TestRunOption testRunOption;
+    private String targetName;
 
     public int getAdminTargetGroupID() {
         return adminTargetGroupID;
@@ -29,5 +33,21 @@ public class MailingTestSendForm {
 
     public void setMailingTestRecipients(String[] mailingTestRecipients) {
         this.mailingTestRecipients = mailingTestRecipients;
+    }
+
+    public TestRunOption getTestRunOption() {
+        return testRunOption;
+    }
+
+    public void setTestRunOption(TestRunOption testRunOption) {
+        this.testRunOption = testRunOption;
+    }
+
+    public String getTargetName() {
+        return targetName;
+    }
+
+    public void setTargetName(String targetName) {
+        this.targetName = targetName;
     }
 }

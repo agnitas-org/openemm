@@ -19,7 +19,7 @@ public class RecipientSqlOptions implements RecipientOptions {
     private String dir;
     private int listId;
     private int targetId;
-    private int accessLimitTargetId; // delete after GWUA-4957 has been successfully tested
+    private int accessLimitTargetId;
     private String targetEQL;
     private String queryBuilderRules;
     private String userType;

@@ -23,7 +23,7 @@ import org.agnitas.dao.UserStatus;
 import org.agnitas.emm.core.recipient.dto.RecipientLightDto;
 import org.agnitas.emm.core.recipient.service.impl.ProfileFieldNotExistException;
 import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.emm.core.velocity.VelocityCheck;
+
 import org.springframework.cache.annotation.Cacheable;
 
 import com.agnitas.beans.Admin;
@@ -31,6 +31,7 @@ import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.impl.ComRecipientLiteImpl;
 import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.emm.core.recipient.RecipientException;
 import com.agnitas.emm.core.recipient.dto.BindingAction;
 import com.agnitas.emm.core.recipient.dto.RecipientBindingsDto;
 import com.agnitas.emm.core.recipient.dto.RecipientDto;
@@ -45,7 +46,7 @@ import net.sf.json.JSONArray;
 
 public interface RecipientService {
 
-	int findSubscriber(@VelocityCheck int companyId, String keyColumn, String value);
+	int findSubscriber(int companyId, String keyColumn, String value);
 
 	void checkColumnsAvailable(RecipientModel model) throws ProfileFieldNotExistException;
 
@@ -57,7 +58,7 @@ public interface RecipientService {
 	
     Recipient getRecipient(final int companyID, final int customerID) throws RecipientNotExistException;
 	
-	List<Integer> getSubscribers(RecipientsModel model);
+	List<Integer> getSubscribers(RecipientsModel model) throws RecipientException;
 	
 	void deleteSubscriber(RecipientModel model, List<UserAction> userActions);
 
@@ -71,17 +72,19 @@ public interface RecipientService {
 
     Set<ProfileField> getRecipientColumnInfos(Admin admin);
 
-	RecipientLightDto getRecipientLightDto(@VelocityCheck int companyId, int recipientId);
+	RecipientLightDto getRecipientLightDto(int companyId, int recipientId);
 
 	RecipientDto getRecipientDto(Admin admin, int recipientId);
 
-    List<ComRecipientLiteImpl> getAdminAndTestRecipients(@VelocityCheck int companyId, int mailinglistId);
+    List<ComRecipientLiteImpl> getAdminAndTestRecipients(int companyId, int mailinglistId);
     
     void supplySourceID(Recipient recipient, int defaultId);
 
 	int getSubscribersSize(RecipientsModel model);
 
 	int getNumberOfRecipients(int companyId);
+
+	boolean hasBeenReachedLimitOnNonIndexedImport(int companyId);
 
 	List<Map<String, Object>> getSubscriberMailings(RecipientModel model);
 
@@ -103,11 +106,11 @@ public interface RecipientService {
 	
 	List<Integer> listRecipientIdsByTargetGroup(final int targetId, final int companyId);
 
-	JSONArray getDeviceHistoryJson(@VelocityCheck int companyId, int recipientId);
+	JSONArray getDeviceHistoryJson(int companyId, int recipientId);
 
 	JSONArray getWebtrackingHistoryJson(Admin admin, int recipientId);
 
-	JSONArray getContactHistoryJson(@VelocityCheck int companyId, int recipientId);
+	JSONArray getContactHistoryJson(int companyId, int recipientId);
 
     void updateDataSource(Recipient recipient);
 
@@ -145,7 +148,7 @@ public interface RecipientService {
 
 	List<Integer> getRecipientIds(int companyID, String recipientEmail, String customerEmail);
 
-    void deleteRecipient(@VelocityCheck int companyId, int recipientId);
+    void deleteRecipient(int companyId, int recipientId);
 
     void updateBindings(List<BindingEntry> bindings, int companyId) throws Exception;
 
@@ -171,4 +174,6 @@ public interface RecipientService {
 	boolean isRecipientTrackingAllowed(final int companyID, final int recipientID);
 	
 	int countSubscribers(final int companyID);
+
+	boolean isColumnsIndexed(List<String> columns, int companyId);
 }

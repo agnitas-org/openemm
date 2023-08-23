@@ -62,7 +62,7 @@
                 <script type="text/x-mustache-template" id="agnFORM-extended-attributes">
                     <div class="form-group">
                         <div class="col-sm-4">
-                            <label class="control-label"><mvc:message code="TrackableLink.createLink"/>:</label>
+                            <label class="control-label checkbox-control-label" for="createLinkToggle"><mvc:message code="TrackableLink.createLink"/>:</label>
                         </div>
                         <div class="col-sm-8">
                             <label class="toggle">

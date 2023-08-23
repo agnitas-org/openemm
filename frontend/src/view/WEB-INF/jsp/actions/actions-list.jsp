@@ -101,15 +101,22 @@
                     "hide": ${not isDeletionAllowed}
                 },
                 {
-                    "headerName": "<mvc:message code='userform.usesActions'/>",
+                    "headerName": "<mvc:message code='MailinglistID'/>",
                     "editable": false,
                     "cellRenderer": "StringCellRenderer",
+                    "field": "id",
+                    "type": "numberColumn"
+                },
+                {
+                    "headerName": "<mvc:message code='userform.usesActions'/>",
+                    "editable": false,
+                    "cellRenderer": "NotEscapedStringCellRenderer",
                     "field": "shortname"
                 },
                 {
                     "headerName": "<mvc:message code='Description'/>",
                     "editable": false,
-                    "cellRenderer": "StringCellRenderer",
+                    "cellRenderer": "NotEscapedStringCellRenderer",
                     "field": "description"
                 },
                 {

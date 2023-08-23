@@ -10,23 +10,32 @@
 
 package com.agnitas.beans;
 
-import java.util.Date;
-import java.util.Objects;
+import com.agnitas.emm.core.components.service.MailingSendService.DeliveryType;
 
-import com.agnitas.service.ComMailingSendService.DeliveryType;
+import java.util.Date;
 
 public class MailingSendOptions {
+
     private int adminId;
     private Date date;
     private int maxRecipients;
     private int blockSize;
+    private int stepping;
     private int defaultStepping;
     private int followupFor;
-    private boolean doubleChecking;
-    private boolean skipEmpty;
+    private int overwriteTestRecipientId; // GWUA-5664
+    private boolean checkForDuplicateRecords;
+    private boolean skipWithEmptyTextContent;
     private int reportSendDayOffset;
-    private boolean generateAtSendDate;
+    private boolean fromWorkflow;
+    private int requiredAutoImport;
+    private int generationOptimization;
+    private int adminTargetGroupId;
     private DeliveryType deliveryType;
+    private boolean reportSendAfter24h;
+    private boolean reportSendAfter48h;
+    private boolean reportSendAfter1Week;
+    private String reportSendEmail;
 
     public static Builder builder() {
         return new Builder();
@@ -59,26 +68,62 @@ public class MailingSendOptions {
         return followupFor;
     }
 
-    public boolean isDoubleChecking() {
-        return doubleChecking;
+    public boolean isCheckForDuplicateRecords() {
+        return checkForDuplicateRecords;
     }
 
-    public boolean isSkipEmpty() {
-        return skipEmpty;
+    public boolean isSkipWithEmptyTextContent() {
+        return skipWithEmptyTextContent;
     }
 
     public int getReportSendDayOffset() {
         return reportSendDayOffset;
     }
 
-    public boolean isGenerateAtSendDate() {
-        return generateAtSendDate;
+    public boolean isFromWorkflow() {
+        return fromWorkflow;
+    }
+
+    public int getRequiredAutoImport() {
+        return requiredAutoImport;
+    }
+
+    public int getStepping() {
+        return stepping;
+    }
+
+    public int getGenerationOptimization() {
+        return generationOptimization;
+    }
+
+    public int getAdminTargetGroupId() {
+        return adminTargetGroupId;
+    }
+
+    public boolean isReportSendAfter24h() {
+        return reportSendAfter24h;
+    }
+
+    public boolean isReportSendAfter48h() {
+        return reportSendAfter48h;
+    }
+
+    public boolean isReportSendAfter1Week() {
+        return reportSendAfter1Week;
+    }
+
+    public String getReportSendEmail() {
+        return reportSendEmail;
     }
 
     public DeliveryType getDeliveryType() {
         return deliveryType;
     }
 
+    public int getOverwriteTestRecipientId() {
+        return overwriteTestRecipientId;
+    }
+    
     public static class Builder {
         private int adminId;
         private Date date;
@@ -86,10 +131,19 @@ public class MailingSendOptions {
         private int blockSize;
         private int defaultStepping;
         private int followupFor;
-        private boolean doubleChecking;
-        private boolean skipEmpty;
+        private boolean checkForDuplicateRecords;
+        private boolean skipWithEmptyTextContent;
         private int reportSendDayOffset;
-        private boolean generateAtSendDate;
+        private boolean fromWorkflow;
+        private int requiredAutoImport;
+        private int adminTargetGroupId;
+        private int stepping;
+        private int generationOptimization;
+        private int overwriteTestRecipientId; // GWUA-5664
+        private boolean reportSendAfter24h;
+        private boolean reportSendAfter48h;
+        private boolean reportSendAfter1Week;
+        private String reportSendEmail;
         private DeliveryType deliveryType;
 
         public Builder setAdminId(int adminId) {
@@ -122,13 +176,13 @@ public class MailingSendOptions {
             return this;
         }
 
-        public Builder setDoubleChecking(boolean doubleChecking) {
-            this.doubleChecking = doubleChecking;
+        public Builder setCheckForDuplicateRecords(boolean checkForDuplicateRecords) {
+            this.checkForDuplicateRecords = checkForDuplicateRecords;
             return this;
         }
 
-        public Builder setSkipEmpty(boolean skipEmpty) {
-            this.skipEmpty = skipEmpty;
+        public Builder setSkipWithEmptyTextContent(boolean skipWithEmptyTextContent) {
+            this.skipWithEmptyTextContent = skipWithEmptyTextContent;
             return this;
         }
 
@@ -137,8 +191,48 @@ public class MailingSendOptions {
             return this;
         }
 
-        public Builder setGenerateAtSendDate(boolean generateAtSendDate) {
-            this.generateAtSendDate = generateAtSendDate;
+        public Builder setFromWorkflow(boolean fromWorkflow) {
+            this.fromWorkflow = fromWorkflow;
+            return this;
+        }
+
+        public Builder setRequiredAutoImport(int autoImport) {
+            this.requiredAutoImport = autoImport;
+            return this;
+        }
+
+        public Builder setAdminTargetGroupId(int adminTargetGroupId) {
+            this.adminTargetGroupId = adminTargetGroupId;
+            return this;
+        }
+
+        public Builder setStepping(int stepping) {
+            this.stepping = stepping;
+            return this;
+        }
+
+        public Builder setGenerationOptimization(int generationOptimization) {
+            this.generationOptimization = generationOptimization;
+            return this;
+        }
+
+        public Builder setReportSendAfter24h(boolean reportSendAfter24h) {
+            this.reportSendAfter24h = reportSendAfter24h;
+            return this;
+        }
+
+        public Builder setReportSendAfter48h(boolean reportSendAfter48h) {
+            this.reportSendAfter48h = reportSendAfter48h;
+            return this;
+        }
+
+        public Builder setReportSendAfter1Week(boolean reportSendAfter1Week) {
+            this.reportSendAfter1Week = reportSendAfter1Week;
+            return this;
+        }
+
+        public Builder setReportSendEmail(String reportSendEmail) {
+            this.reportSendEmail = reportSendEmail;
             return this;
         }
 
@@ -147,20 +241,34 @@ public class MailingSendOptions {
             return this;
         }
 
+        public Builder setOverwriteTestRecipientId(int overwriteTestRecipientId) {
+            this.overwriteTestRecipientId = overwriteTestRecipientId;
+            return this;
+        }
+
         public MailingSendOptions build() {
             MailingSendOptions options = new MailingSendOptions();
 
             options.adminId = adminId;
-            options.date = Objects.requireNonNull(date);
+            options.date = date;
             options.maxRecipients = maxRecipients;
             options.blockSize = blockSize;
             options.defaultStepping = defaultStepping;
             options.followupFor = followupFor;
-            options.doubleChecking = doubleChecking;
-            options.skipEmpty = skipEmpty;
+            options.checkForDuplicateRecords = checkForDuplicateRecords;
+            options.skipWithEmptyTextContent = skipWithEmptyTextContent;
             options.reportSendDayOffset = reportSendDayOffset;
-            options.generateAtSendDate = generateAtSendDate;
-            options.deliveryType = Objects.requireNonNull(deliveryType);
+            options.adminTargetGroupId = adminTargetGroupId;
+            options.fromWorkflow = fromWorkflow;
+            options.requiredAutoImport = requiredAutoImport;
+            options.stepping = stepping;
+            options.generationOptimization = generationOptimization;
+            options.reportSendAfter24h = reportSendAfter24h;
+            options.reportSendAfter48h = reportSendAfter48h;
+            options.reportSendAfter1Week = reportSendAfter1Week;
+            options.reportSendEmail = reportSendEmail;
+            options.deliveryType = deliveryType;
+            options.overwriteTestRecipientId = overwriteTestRecipientId;
 
             return options;
         }

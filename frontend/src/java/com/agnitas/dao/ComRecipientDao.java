@@ -20,6 +20,7 @@ import java.util.TimeZone;
 
 import javax.sql.DataSource;
 
+import com.agnitas.beans.Admin;
 import org.agnitas.beans.BindingEntry;
 import org.agnitas.beans.Recipient;
 import org.agnitas.beans.impl.PaginatedListImpl;
@@ -40,6 +41,7 @@ import com.agnitas.beans.impl.ComRecipientLiteImpl;
 import com.agnitas.beans.impl.RecipientDates;
 import com.agnitas.emm.core.mailing.bean.MailingRecipientStatRow;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.emm.core.recipient.RecipientException;
 
 public interface ComRecipientDao {
     String SUPPLEMENTAL_DATECOLUMN_SUFFIX_FORMAT = "_FORMAT";
@@ -69,11 +71,7 @@ public interface ComRecipientDao {
 
 	List<Integer> filterRecipientsByMailinglistAndTarget(List<Integer> recipientIds, int companyId, int mailinglistId, String sqlTargetExpression, boolean allRecipients, boolean shouldBeActive);
 
-	List<Integer> getDateMatchingRecipients(int companyId, List<Date> allDates, String dateProfileField, String dateFieldOperator, String dateFormat);
-
     boolean isMailtrackingEnabled(int companyID);
-
-    List<ComRecipientMailing> getMailingsSentToRecipient(int recipientID, int companyID);
 
     List<ComRecipientHistory> getRecipientBindingHistory(int recipientID, int companyID);
 
@@ -85,24 +83,6 @@ public interface ComRecipientDao {
 
     List<Recipient> getDuplicateRecipients(int companyId, String email, String select, Object[] queryParams) throws Exception;
 
-    /**
-     *  Select only a certain page of recipients with all available fields, used for dynamic paging in list views
-     *
-     * @param companyID an identifier of a company of current user.
-     * @param columns set of columns are to be selected.
-     * @param sqlStatementForData the basic sql statement to be used as a sub-query to retrieve customers.
-     * @param sqlParametersForData sql parameters for the basic sql statement.
-     * @param sortCriterion name of the column which is the sort criterion.
-     * @param sortedAscending whether ({@code true}) or not ({@code false}) a sorting order is ascending (descending otherwise).
-     * @param pageNumber the 1-based page index.
-     * @param rownums number of rows per page.
-     * @return a list of recipients.
-     * @throws Exception
-     * @throws IllegalAccessException
-     * @throws InstantiationException
-     */
-    PaginatedListImpl<Recipient> getRecipients(int companyID, Set<String> columns, String sqlStatementForData, Object[] sqlParametersForData, String sortCriterion, boolean sortedAscending, int pageNumber, int rownums) throws Exception;
-
     PaginatedListImpl<Map<String, Object>> getPaginatedRecipientsData(int companyID, Set<String> columns, String sqlStatementForData, Object[] sqlParametersForData, String sortCriterion, boolean sortedAscending, int pageNumber, int rownums) throws Exception;
 
     PaginatedListImpl<MailingRecipientStatRow> getMailingRecipients(int mailingId, int companyId, int filterType, int pageNumber, int rowsPerPage, String sortCriterion, boolean sortAscending, List<String> columns) throws Exception;
@@ -111,12 +91,16 @@ public interface ComRecipientDao {
 
     int getNumberOfRecipients(int companyId, boolean ignoreBounceLoadValue);
 
+    boolean isColumnsIndexed(List<String> columns, int companyId);
+
 	/**
      *  Select number of recipients with specific attributes
      */
 	int getNumberOfRecipients(int companyID, String sqlStatementForData, Object[] parametersForData);
 
 	int getNumberOfRecipients(int companyId, int mailingListId, String sqlConditions, Object... sqlConditionParameters) throws Exception;
+
+	int getNumberOfRecipients(int companyId, int mailingListId, List<MediaTypes> mediaTypes, String sqlConditions, Object... sqlConditionParameters) throws Exception;
 
 	/**
 	 * For bulk insert of new recipients only.
@@ -135,18 +119,6 @@ public interface ComRecipientDao {
 	List<CaseInsensitiveMap<String, Object>> getCustomers(List<Integer> customerIDs, int companyID);
 
     int getAdminOrTestRecipientId(int companyID, int adminId);
-
-    /**
-     * Check whether it is allowed to add the given number of recipients.
-     * The maximum number of recipients/company is defined in
-     * emm configuration with recipient.maxRows.
-     *
-     * @param companyID The id of the company to check.
-     * @param count the number of recipients that should be added.
-     * @return true if it is allowed to add the given number of recipients.
-     */
-    @Deprecated // Use SubscriberLimitCheck#checkSubscriberLimit() instead
-    boolean mayAdd(int companyID, int count);
 
     /**
      * Inserts new customer record in Database with a fresh customer-id
@@ -334,6 +306,8 @@ public interface ComRecipientDao {
      */
 	Map<Integer, String> getAdminAndTestRecipientsDescription(int companyId, int mailingId);
 
+    List<ComRecipientLiteImpl> getMailingAdminAndTestRecipients(int mailingId, int companyId);
+
     /**
      * Method gets the first available test/admin recipient for a mailing preview generation.
      *
@@ -368,9 +342,21 @@ public interface ComRecipientDao {
     int getDefaultDatasourceID(String username, int companyID);
 	
 	void lockCustomers(int companyId, List<Integer> ids);
-	
+
+	/**
+	 * Use EQL variant instead.
+	 * 
+	 * @see #getCustomerDataFromDb(int, boolean, List)
+	 */
+	@Deprecated
     List<Integer> getCustomerDataFromDb(int companyId, boolean matchAll, List<CriteriaEquals> criteriaEquals);
     
+	/**
+	 * Use EQL variant instead.
+	 * 
+	 * @see #getSizeOfCustomerDataFromDbList(int, boolean, List)
+	 */
+	@Deprecated
     int getSizeOfCustomerDataFromDbList(int companyId, boolean matchAll, List<CriteriaEquals> criteriaEquals);
 
     CaseInsensitiveMap<String, ProfileField> getAvailableProfileFields(int companyID) throws Exception;
@@ -441,7 +427,7 @@ public interface ComRecipientDao {
 
     List<Integer> listRecipientIdsByTargetGroup(final int companyId, final ComTarget target);
 
-    int saveRecipient(int companyId, int recipientId, Map<String, Object> recipientValues);
+    int saveRecipient(int companyId, int recipientId, Map<String, Object> recipientValues) throws Exception;
 
 	List<Recipient> findByData(int companyID, Map<String, Object> searchDataMap) throws Exception;
 
@@ -465,4 +451,10 @@ public interface ComRecipientDao {
 	List<CaseInsensitiveMap<String, Object>> getTargetRecipients(int companyID, String targetSql, List<String> profileFieldsList, TimeZone timeZone) throws Exception;
 
 	List<ComRecipientMailing> getMailingsDeliveredToRecipient(int customerID, int companyID);
+
+	List<Integer> getCustomerDataFromDb(int companyId, String eql) throws RecipientException;
+
+	int getSizeOfCustomerDataFromDbList(int companyId, String eql);
+
+    int getOrCreateRecipientOfAdmin(Admin admin) throws Exception;
 }

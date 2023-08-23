@@ -10,6 +10,29 @@
 
 package com.agnitas.emm.core.mailingcontent.web;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import org.agnitas.beans.MailingComponent;
+import org.agnitas.emm.core.mailing.service.MailingNotExistException;
+import org.agnitas.emm.core.useractivitylog.UserAction;
+import org.agnitas.service.UserActivityLogService;
+import org.agnitas.util.AgnUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.http.ResponseEntity;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.ResponseBody;
+
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.DynamicTag;
 import com.agnitas.beans.Mailing;
@@ -37,29 +60,8 @@ import com.agnitas.util.preview.PreviewImageService;
 import com.agnitas.web.dto.DataResponseDto;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.XssCheckAware;
-import jakarta.servlet.http.HttpSession;
-import org.agnitas.beans.MailingComponent;
-import org.agnitas.emm.core.mailing.service.MailingNotExistException;
-import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.service.UserActivityLogService;
-import org.agnitas.util.AgnUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.http.ResponseEntity;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.ResponseBody;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import jakarta.servlet.http.HttpSession;
 
 public class MailingContentController implements XssCheckAware {
 
@@ -117,7 +119,7 @@ public class MailingContentController implements XssCheckAware {
                 String.format("%s (%d)", form.getShortname(), form.getMailingID()));
         writeUserActivityLog(admin, "view content", "active tab - content");
 
-        return "mailing_content_list_new";
+        return "mailing_content_list";
     }
 
     @GetMapping("/name/{id:\\d+}/view.action")
@@ -177,7 +179,7 @@ public class MailingContentController implements XssCheckAware {
         model.addAttribute("mailingId", mailingId);
         model.addAttribute("mailingShortname", mailingService.getMailingName(mailingId, admin.getCompanyID()));
 
-        return "generate_text_question_ajax_new";
+        return "generate_text_question_ajax";
     }
 
     @PostMapping("/{mailingId:\\d+}/text-from-html/generate.action")

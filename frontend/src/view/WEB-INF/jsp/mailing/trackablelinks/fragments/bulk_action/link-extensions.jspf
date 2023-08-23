@@ -2,8 +2,8 @@
 <emm:ShowByPermission token="mailing.extend_trackable_links">
     <div class="form-group">
         <div class="col-sm-4">
-            <label for="bulkActions_modifyLinkExtensions" class="control-label">
-                <mvc:message code="GWUA.mailing.trackablelinks.extensions.bulk.change"/>
+            <label for="bulkActions_modifyLinkExtensions" class="control-label checkbox-control-label">
+                <mvc:message code="mailing.links.extension.bulk.change"/>
             </label>
         </div>
         <div class="col-sm-8">

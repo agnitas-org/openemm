@@ -41,7 +41,7 @@ import org.agnitas.emm.core.component.service.ComponentNotExistException;
 import org.agnitas.emm.core.component.service.impl.ComponentServiceImpl;
 import org.agnitas.emm.core.mailing.service.MailingNotExistException;
 import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.emm.core.velocity.VelocityCheck;
+
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.FileUtils;
 import org.agnitas.util.ZipUtilities;
@@ -127,7 +127,7 @@ public class ComComponentServiceImpl extends ComponentServiceImpl implements Com
 	}
 
 	@Override
-	public List<FormComponentDto> getFormImageComponents(@VelocityCheck int companyID, int formId) {
+	public List<FormComponentDto> getFormImageComponents(int companyID, int formId) {
 		List<FormComponent> components = getFormComponentDescriptions(companyID, formId, FormComponentType.IMAGE);
 		return conversionService.convert(components, FormComponent.class, FormComponentDto.class);
 	}

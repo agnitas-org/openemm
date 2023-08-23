@@ -11,7 +11,6 @@
 package com.agnitas.emm.core.mailing.service;
 
 import org.agnitas.emm.core.mailing.exception.UnknownMailingIdException;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.exceptions.FormNotFoundException;
 
 import com.agnitas.emm.core.recipient.UnknownRecipientIdException;
@@ -19,6 +18,6 @@ import com.agnitas.emm.core.servicemail.UnknownCompanyIdException;
 
 public interface FullviewService {
 
-	public String getFullviewUrl(final @VelocityCheck int companyID, final int mailingID, final int customerID, final String formNameOrNull) throws UnknownCompanyIdException, UnknownMailingIdException, UnknownRecipientIdException, FormNotFoundException, FullviewException;
+	public String getFullviewUrl(final int companyID, final int mailingID, final int customerID, final String formNameOrNull) throws UnknownCompanyIdException, UnknownMailingIdException, UnknownRecipientIdException, FormNotFoundException, FullviewException;
 	
 }

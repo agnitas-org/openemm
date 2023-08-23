@@ -28,7 +28,7 @@
                     <div class="tile-content tile-content-forms">
                         <div class="form-group">
                             <div class="col-sm-4">
-                                <label class="control-label" for="enable-notification">
+                                <label class="control-label checkbox-control-label" for="enable-notification">
                                     <mvc:message code="mailing.notification.enable"/>
                                 </label>
                             </div>
@@ -46,7 +46,7 @@
                         <div id="notification-related-data">
                             <div class="form-group">
                                 <div class="col-sm-4">
-                                    <label class="control-label" for="enable-status-on-error">
+                                    <label class="control-label checkbox-control-label" for="enable-status-on-error">
                                         <mvc:message code="mailing.SendStatusOnErrorOnly" />
                                         <button type="button" class="icon icon-help" tabindex="-1" data-help="help_${helplanguage}/mailing/SendStatusOnErrorOnly.xml"></button>
                                     </label>
@@ -74,25 +74,7 @@
                                 </div>
                             </div>
 
-                            <input type="hidden" id="required-import-id" name="autoImportId" value="${autoImportId}"/>
-
-                            <div class="form-group">
-                                <div class="col-sm-4">
-                                    <label class="control-label" for="required-auto-import"><mvc:message code="mailing.autoimport.required" /></label>
-                                </div>
-                                <div class="col-sm-6">
-                                    <select id="required-auto-import" class="form-control js-select" data-sync-from="#required-auto-import" data-sync-to="#required-import-id">
-                                        <option value="0">---</option>
-                                        <c:forEach var="autoImport" items="${autoImports}">
-                                            <option value="${autoImport.autoImportId}" ${autoImport.autoImportId eq autoImportId ? "selected" : ""} >
-                                                    ${autoImport.shortname}
-                                            </option>
-                                        </c:forEach>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="tile-separator"></div>
+                         	<div class="tile-separator"></div>
 
                             <input type="hidden" name="clearanceEmail" value="${clearanceEmail}"/>
 
@@ -112,6 +94,30 @@
                                 </div>
                             </div>
                         </div>
+                        
+                        <c:if test="${autoImports ne null}">
+                        	<input type="hidden" id="required-import-id" name="autoImportId" value="${autoImportId}"/>
+
+                            <div class="form-group">
+                            	<div class="col-sm-4">
+                                	<label class="control-label" for="required-auto-import">
+                                    	<mvc:message code="mailing.autoimport.required" />
+                                        <button type="button" class="icon icon-help" tabindex="-1" data-help="help_${helplanguage}/mailing/RequiredAutoImport.xml"></button>
+									</label>
+								</div>
+                                <div class="col-sm-6">
+                                	<select id="required-auto-import" class="form-control js-select" data-sync-from="#required-auto-import" data-sync-to="#required-import-id">
+                                    	<option value="0">---</option>
+                                        <c:forEach var="autoImport" items="${autoImports}">
+                                        	<option value="${autoImport.autoImportId}" ${autoImport.autoImportId eq autoImportId ? "selected" : ""} >
+                                        		${autoImport.shortname}
+											</option>
+                                        </c:forEach>
+									</select>
+								</div>
+							</div>
+						</c:if>
+                        
                     </div>
                     <div class="tile-footer" data-sizing="bottom">
                         <button type="button" class="btn btn-large pull-left" data-dismiss="modal">

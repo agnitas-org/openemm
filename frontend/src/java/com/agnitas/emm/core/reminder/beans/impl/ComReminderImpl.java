@@ -10,7 +10,6 @@
 
 package com.agnitas.emm.core.reminder.beans.impl;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.commons.lang3.StringUtils;
 
 import com.agnitas.emm.core.reminder.beans.ComReminder;
@@ -41,7 +40,7 @@ public class ComReminderImpl implements ComReminder {
     }
 
     @Override
-    public void setCompanyId(@VelocityCheck int companyId) {
+    public void setCompanyId(int companyId) {
         this.companyId = companyId;
     }
 

@@ -15,6 +15,7 @@ import java.sql.SQLException;
 import java.util.List;
 
 import org.agnitas.dao.impl.BaseDaoImpl;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.jdbc.core.RowMapper;
@@ -128,5 +129,15 @@ public class ComUndoDynContentDaoImpl extends BaseDaoImpl implements ComUndoDynC
 	@DaoUpdateReturnValueCheck
 	public boolean deleteByCompany(int companyId) {
 		return deleteByCompany(logger, "undo_dyn_content_tbl", companyId);
+	}
+
+	@Override
+	public void deleteUndoData(List<Integer> undoIds) {
+		if (CollectionUtils.isEmpty(undoIds)) {
+			return;
+		}
+
+		String query = "DELETE FROM undo_dyn_content_tbl WHERE " + makeBulkInClauseForInteger("undo_id", undoIds);
+		update(logger, query);
 	}
 }

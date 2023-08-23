@@ -1216,6 +1216,10 @@ input[type="range"] {
   display: block;
   width: 100%; }
 
+select.js-select-tags,
+select.js-select {
+  display: none !important; }
+
 select[multiple],
 select[size] {
   height: auto; }
@@ -2400,6 +2404,34 @@ input[type="button"].btn-block {
     color: #fff;
     background-color: #64a70b;
     border-color: transparent; }
+
+body.dark-theme .filter-active .btn-filter {
+  color: #fff;
+  background-color: #64a70b;
+  border-color: transparent; }
+  body.dark-theme .filter-active .btn-filter:hover {
+    color: #fff;
+    background-color: #477708;
+    border-color: rgba(0, 0, 0, 0); }
+  body.dark-theme .filter-active .btn-filter:active, body.dark-theme .filter-active .btn-filter.is-active, body.dark-theme .filter-active .btn-filter.active,
+  .open > body.dark-theme .filter-active .btn-filter.dropdown-toggle {
+    color: #fff;
+    background-image: none;
+    background-color: #395f06;
+    border-color: rgba(0, 0, 0, 0); }
+  body.dark-theme .filter-active .btn-filter.disabled, body.dark-theme .filter-active .btn-filter.disabled:hover, body.dark-theme .filter-active .btn-filter.disabled:focus, body.dark-theme .filter-active .btn-filter.disabled:active, body.dark-theme .filter-active .btn-filter.disabled.active, body.dark-theme .filter-active .btn-filter.disabled.is-active, body.dark-theme .filter-active .btn-filter[disabled], body.dark-theme .filter-active .btn-filter[disabled]:hover, body.dark-theme .filter-active .btn-filter[disabled]:focus, body.dark-theme .filter-active .btn-filter[disabled]:active, body.dark-theme .filter-active .btn-filter[disabled].active, body.dark-theme .filter-active .btn-filter[disabled].is-active,
+  fieldset[disabled] body.dark-theme .filter-active .btn-filter,
+  fieldset[disabled] body.dark-theme .filter-active .btn-filter:hover,
+  fieldset[disabled] body.dark-theme .filter-active .btn-filter:focus,
+  fieldset[disabled] body.dark-theme .filter-active .btn-filter:active,
+  fieldset[disabled] body.dark-theme .filter-active .btn-filter.active,
+  fieldset[disabled] body.dark-theme .filter-active .btn-filter.is-active {
+    color: #fff;
+    background-color: #64a70b;
+    border-color: transparent; }
+  body.dark-theme .filter-active .btn-filter .badge {
+    color: #64a70b;
+    background-color: #fff; }
 
 .btn-upload {
   position: relative;

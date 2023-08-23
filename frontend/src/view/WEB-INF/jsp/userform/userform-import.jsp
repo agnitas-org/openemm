@@ -1,16 +1,10 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="bean" uri="http://struts.apache.org/tags-bean" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
-<c:set var="isImportTemplate" value="false"/>
-<c:if test="${not empty param.importFromTemplates and param.importFromTemplates}">
-	<c:set var="isImportTemplate" value="true"/>
-</c:if>
-
-<mvc:form method="post" servletRelativeAction="/webform/importUserForm.action" enctype="multipart/form-data" data-form="resource">
-	<input type="hidden" name="importTemplate" value="${isImportTemplate}"/>
-
+<c:url var="importAction" value="/webform/importUserForm.action" />
+<mvc:form method="post" action="${importAction}" enctype="multipart/form-data" data-form="resource">
 	<div class="tile">
 		<div class="tile-header">
 			<h2 class="headline">

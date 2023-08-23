@@ -6,6 +6,7 @@
 <%--@elvariable id="mailingId" type="java.lang.Integer"--%>
 <%--@elvariable id="isCopying" type="java.lang.Boolean"--%>
 <%--@elvariable id="helplanguage" type="java.lang.String"--%>
+<%--@elvariable id="companyDomainAddresses" type="java.util.List<com.agnitas.emm.core.companydomain.beans.impl.DomainAddressEntryDto>"--%>
 <%--@elvariable id="gridTemplateId" type="java.lang.Integer"--%>
 <%--@elvariable id="MAILING_EDITABLE" type="java.lang.Boolean"--%>
 <%--@elvariable id="emailSettingsEditable" type="java.lang.Boolean"--%>
@@ -64,17 +65,26 @@
                 </div>
             </div>
 
-            <div class="form-group" data-field="validator">
+            <div class="form-group" data-field="required">
                 <div class="col-sm-4">
                     <label class="control-label" for="emailSenderMail">
                         <mvc:message code="mailing.SenderEmail"/>*
                     </label>
                 </div>
-                <div class="col-sm-8">
-                    <mvc:text path="emailMediatype.fromEmail" id="emailSenderMail"
-                              cssClass="form-control" readonly="${emailSettingsDisabled}"
-                              data-field-validator="length" data-validator-options="required: true"/>
-               </div>
+                <%@include file="../fragments/domain-addresses-dropdown.jspf" %>
+
+                <c:choose>
+                    <c:when test="${domainAddressesDropdown eq null}">
+                        <div class="col-sm-8">
+                            <mvc:text path="emailMediatype.fromEmail" id="emailSenderMail"
+                                      cssClass="form-control" readonly="${emailSettingsDisabled}"
+                                      data-field-required=""/>
+                        </div>
+                    </c:when>
+                    <c:otherwise>
+                        ${domainAddressesDropdown}
+                    </c:otherwise>
+                </c:choose>
             </div>
 
             <div class="form-group">
@@ -160,27 +170,7 @@
                     </mvc:select>                    
                 </div>
             </div>
-			<emm:ShowByPermission token="mailing.linefeed">
-            <div class="form-group">
-                <div class="col-sm-4">
-                    <label class="control-label" for="emailLinefeed">
-                        <mvc:message code="Linefeed_After"/>
-                    </label>
-                </div>
-                <div class="col-sm-8">
-                    <mvc:select path="emailMediatype.linefeed" id="emailLinefeed"
-                                 cssClass="form-control" disabled="${emailSettingsDisabled}">
-                        <mvc:option value="0"><mvc:message code="mailing.No_Linefeed"/></mvc:option>
-                        <c:forEach begin="60" end="80" step="1" var="a">
-                            <mvc:option value="${a}">${a} <mvc:message code="Characters"/></mvc:option>
-                        </c:forEach>
-                    </mvc:select>
-                </div>
-            </div>
-			</emm:ShowByPermission>
-            <emm:HideByPermission token="mailing.linefeed">
-                <mvc:hidden path="emailMediatype.linefeed"/>
-            </emm:HideByPermission>
+            <mvc:hidden path="emailMediatype.linefeed"/>
             <%@include file="../fragments/mailing-settings-email-onepixel.jspf" %>
             
         </div>

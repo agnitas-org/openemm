@@ -15,6 +15,8 @@ import com.agnitas.beans.impl.MediatypeEmailImpl;
 import com.agnitas.emm.core.mailing.forms.mediatype.EmailMediatypeForm;
 import com.agnitas.emm.core.mailing.forms.mediatype.MediatypeForm;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import jakarta.mail.internet.AddressException;
+import jakarta.mail.internet.InternetAddress;
 import org.agnitas.beans.MediaTypeStatus;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.stereotype.Component;
@@ -43,15 +45,39 @@ public class MediatypeToMediatypeFormConverter implements Converter<Mediatype, M
         form.setPriority(mediatype.getPriority());
         form.setTextTemplate(mediatype.getTemplate());
         form.setFromEmail(mediatype.getFromEmail());
-        form.setReplyEmail(mediatype.getReplyEmail());
+        form.setReplyEmail(getReplyEmailFromMediatype(mediatype));
         form.setMailFormat(mediatype.getMailFormat());
         form.setHtmlTemplate(mediatype.getHtmlTemplate());
         form.setFromFullname(mediatype.getFromFullname());
-        form.setReplyFullname(mediatype.getReplyFullname());
-        form.setEnvelopeEmail(mediatype.getEnvelopeEmail());
+        form.setReplyFullname(getReplyToFullNameFromMediatype(mediatype));
+        form.setEnvelopeEmail(getEnvelopeEmailFromMediatype(mediatype));
         form.setActive(mediatype.getStatus() == MediaTypeStatus.Active.getCode());
         trySetBccRecipients(mediatype, form);
         return form;
+    }
+
+    private String getEnvelopeEmailFromMediatype(MediatypeEmailImpl mediatype) {
+        try {
+            return new InternetAddress(mediatype.getEnvelopeEmail()).getAddress();
+        } catch (AddressException e) {
+            return mediatype.getEnvelopeEmail();
+        }
+    }
+
+    private String getReplyToFullNameFromMediatype(MediatypeEmailImpl mediatype) {
+        try {
+            return new InternetAddress(mediatype.getReplyAdr()).getPersonal();
+        } catch (Exception e) {
+            return mediatype.getReplyFullname();
+        }
+    }
+
+    private String getReplyEmailFromMediatype(MediatypeEmailImpl mediatype) {
+        try {
+            return new InternetAddress(mediatype.getReplyAdr()).getAddress();
+        } catch (Exception e) {
+            return mediatype.getReplyEmail();
+        }
     }
 
     private void trySetBccRecipients(MediatypeEmailImpl mediatype, EmailMediatypeForm form) {

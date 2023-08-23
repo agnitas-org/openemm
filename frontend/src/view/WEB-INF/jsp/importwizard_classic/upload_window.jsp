@@ -1,3 +1,4 @@
+<%@page import="org.apache.struts.action.ActionMessage"%>
 <%@page import="org.agnitas.util.importvalues.ImportModeUpdateHandler"%>
 <%@page import="org.agnitas.util.importvalues.ImportModeAddAndUpdateHandler"%>
 <%@page import="org.agnitas.util.importvalues.ImportModeAddHandler"%>
@@ -11,6 +12,7 @@
 <%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
 <emm:CheckLogon/>
 
@@ -87,8 +89,10 @@ ComImportWizardForm aForm = (ComImportWizardForm) session.getAttribute("importWi
 	            <div class="col-sm-8">
 	                <ul class="list-group">
 	                    <logic:greaterThan name="importWizardForm" property="dbInsertStatus" value="100" scope="session">
-	                        <logic:iterate name="importWizardForm" property="dbInsertStatusMessagesCopy" scope="session" id="aMsg" type="java.lang.String">
-	                            <li class="list-group-item"><bean:message key='<%= (String)pageContext.getAttribute("aMsg") %>'/></li>
+	                        <logic:iterate name="importWizardForm" property="dbInsertStatusMessagesAndParameters" scope="session" id="messageAndParameter" type="org.apache.struts.action.ActionMessage">
+	                            <li class="list-group-item">
+	                            	<bean:message key='<%= ((ActionMessage) pageContext.getAttribute("messageAndParameter")).getKey() %>' arg0='<%= ((ActionMessage) pageContext.getAttribute("messageAndParameter")).getValues().length > 0 ? ((String) ((ActionMessage) pageContext.getAttribute("messageAndParameter")).getValues()[0]) : "" %>'/>
+	                            </li>
 	                        </logic:iterate>
 	                    </logic:greaterThan>
 	                </ul>

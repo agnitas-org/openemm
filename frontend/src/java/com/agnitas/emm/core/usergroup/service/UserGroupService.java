@@ -17,7 +17,6 @@ import java.util.Set;
 
 import org.agnitas.beans.AdminGroup;
 import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.Permission;
@@ -32,15 +31,15 @@ public interface UserGroupService {
     
     int saveUserGroup(Admin admin, UserGroupDto userGroupDto) throws Exception;
     
-    boolean isShortnameUnique(String shortname, int userGroupId, @VelocityCheck int companyId);
+    boolean isShortnameUnique(String shortname, int userGroupId, int companyId);
     
     boolean isUserGroupPermissionChangeable(Admin admin, Permission permission, Set<Permission> companyPermissions);
     
     List<String> getUserGroupPermissionCategories(int groupId, int groupCompanyId, Admin admin);
     
-    List<String> getAdminNamesOfGroup(int userGroupId, @VelocityCheck int companyId);
+    List<String> getAdminNamesOfGroup(int userGroupId, int companyId);
     
-    List<String> getGroupNamesUsingGroup(int userGroupId, @VelocityCheck int companyId);
+    List<String> getGroupNamesUsingGroup(int userGroupId, int companyId);
     
     boolean deleteUserGroup(int userGroupId, Admin admin);
     

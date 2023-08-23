@@ -31,7 +31,9 @@ public interface WebStorage {
     WebStorageBundle<RowsCountWebStorageEntry> IMPORT_PROFILE_OVERVIEW = WebStorageBundle.define("import-profile-overview", RowsCountWebStorageEntry.class);
     WebStorageBundle<RowsCountWebStorageEntry> USERFORM_OVERVIEW = WebStorageBundle.define("userform-overview", RowsCountWebStorageEntry.class);
     WebStorageBundle<RowsCountWebStorageEntry> ACTION_OVERVIEW = WebStorageBundle.define("action-overview", RowsCountWebStorageEntry.class);
-    WebStorageBundle<RowsCountWebStorageEntry> USERLOG_OVERVIEW = WebStorageBundle.define("userlog-overview", RowsCountWebStorageEntry.class);
+    WebStorageBundle<RowsCountWebStorageEntry> USERLOG_OVERVIEW = WebStorageBundle.define("useractivitylog-overview", RowsCountWebStorageEntry.class);
+    WebStorageBundle<RowsCountWebStorageEntry> RESTFUL_USERLOG_OVERVIEW = WebStorageBundle.define("restful-useractivitylog-overview", RowsCountWebStorageEntry.class);
+    WebStorageBundle<RowsCountWebStorageEntry> SOAP_USERLOG_OVERVIEW = WebStorageBundle.define("soap-useractivitylog-overview", RowsCountWebStorageEntry.class);
     WebStorageBundle<RowsCountWebStorageEntry> ADMIN_OVERVIEW = WebStorageBundle.define("admin-overview", RowsCountWebStorageEntry.class);
     WebStorageBundle<RowsCountWebStorageEntry> USER_GROUP_OVERVIEW = WebStorageBundle.define("user-group-overview", RowsCountWebStorageEntry.class);
     WebStorageBundle<RowsCountWebStorageEntry> IMPORT_WIZARD_ERRORS_OVERVIEW = WebStorageBundle.define("import-wizard-errors-overview", RowsCountWebStorageEntry.class);

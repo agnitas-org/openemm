@@ -157,6 +157,8 @@ public class ActionOperationExecuteScriptImpl implements EmmActionOperation {
             	while (it.hasNext()) {
             		logger.warn("Error in velocity script action " + operation.getCompanyId() + "/" + operation.getActionId()+ ": " + it.next());
             	}
+            	
+            	return false;
             }
 
             if (params.containsKey("scriptResult")) {

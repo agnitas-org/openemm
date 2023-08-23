@@ -12,7 +12,6 @@ package com.agnitas.beans.impl;
 
 import java.util.Date;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.beans.MaildropEntry;
 
@@ -29,6 +28,7 @@ public class MaildropEntryImpl implements MaildropEntry {
 	protected int blocksize;
 	private int maxRecipients;
 	private int adminTestTargetID;
+	private int overwriteTestRecipient; // GWUA-5664
 	private String mailGenerationOptimizationMode;
 
 	@Override
@@ -68,7 +68,7 @@ public class MaildropEntryImpl implements MaildropEntry {
 	 *            New value of property companyID.
 	 */
 	@Override
-	public void setCompanyID(@VelocityCheck int companyID) {
+	public void setCompanyID(int companyID) {
 		this.companyID = companyID;
 	}
 
@@ -270,6 +270,16 @@ public class MaildropEntryImpl implements MaildropEntry {
 		this.maxRecipients = maxRecipients;
 	}
 
+    @Override
+    public int getOverwriteTestRecipient() {
+        return overwriteTestRecipient;
+    }
+
+    @Override
+    public void setOverwriteTestRecipient(int overwriteTestRecipient) {
+        this.overwriteTestRecipient = overwriteTestRecipient;
+    }
+
 	@Override
 	public String toString() {
 		String ret = "{";
@@ -283,6 +293,7 @@ public class MaildropEntryImpl implements MaildropEntry {
 		ret += ";genStatus=" + genStatus;
 		ret += ";stepping=" + stepping;
 		ret += ";blocksize=" + blocksize;
+		ret += ";overwriteTestRecipient=" + overwriteTestRecipient;
 		ret += "}";
 		return ret;
 	}

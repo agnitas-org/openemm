@@ -10,7 +10,6 @@
 
 package org.agnitas.dao;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.emm.core.mailtracking.service.OpenTrackingService;
 import com.agnitas.emm.core.mobile.bean.DeviceClass;
@@ -22,8 +21,8 @@ public interface OnepixelDao	{
 	 *
 	 * @see OpenTrackingService#trackOpening(com.agnitas.emm.core.commons.uid.ComExtensibleUID, String, DeviceClass, int, int)
 	 */
-	boolean writePixel(@VelocityCheck int companyID, int recipientID, int mailingID, String remoteAddr, DeviceClass deviceClass, int deviceID, int clientID);
+	boolean writePixel(int companyID, int recipientID, int mailingID, String remoteAddr, DeviceClass deviceClass, int deviceID, int clientID);
 
-    void deleteAdminAndTestOpenings(int mailingId, @VelocityCheck int companyId);
+    void deleteAdminAndTestOpenings(int mailingId, int companyId);
 
 }

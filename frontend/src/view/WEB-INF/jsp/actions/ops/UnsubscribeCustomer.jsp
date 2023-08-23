@@ -8,7 +8,7 @@
         <c:if test="${isUnsubscribeExtended}">
             <div class="form-group">
                 <div class="col-sm-4">
-                    <label for="additionalMailinglistsToggle" class="control-label">
+                    <label for="additionalMailinglistsToggle" class="control-label checkbox-control-label">
                         <mvc:message code="action.unsubscribe.additionally"/>
                     </label>
                 </div>
@@ -23,7 +23,7 @@
             <div data-show-by-checkbox="#additionalMailinglistsToggle">
                 <div class="form-group">
                     <div class="col-sm-4">
-                        <label for="allMailinglistsToggle" class="control-label">
+                        <label for="allMailinglistsToggle" class="control-label checkbox-control-label">
                             <mvc:message code="recipient.AllMailinglists"/>
                         </label>
                     </div>

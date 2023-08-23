@@ -22,7 +22,6 @@ import java.util.Map;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.impl.PaginatedBaseDaoImpl;
 import org.agnitas.dao.impl.mapper.StringRowMapper;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DbUtilities;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
@@ -55,7 +54,7 @@ public class RecipientsReportDaoImpl extends PaginatedBaseDaoImpl implements Rec
     }
 
     @Override
-    public void createReport(@VelocityCheck int companyId, RecipientsReport report, String fileContent) {
+    public void createReport(int companyId, RecipientsReport report, String fileContent) {
 		if (report.getReportDate() == null) {
 			report.setReportDate(new Date());
         }
@@ -94,7 +93,7 @@ public class RecipientsReportDaoImpl extends PaginatedBaseDaoImpl implements Rec
     }
 
     @Override
-    public void createSupplementalReportData(@VelocityCheck int companyId, RecipientsReport report, File temporaryDataFile, String textContent) throws Exception {
+    public void createSupplementalReportData(int companyId, RecipientsReport report, File temporaryDataFile, String textContent) throws Exception {
         if (isOracleDB()) {
             int reportId = selectInt(logger, "SELECT recipients_report_tbl_seq.NEXTVAL FROM DUAL");
             String sql = "INSERT INTO recipients_report_tbl (recipients_report_id, report_date, filename, datasource_id, admin_id, type, company_id, report, download_id, autoimport_id, error) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
@@ -132,7 +131,7 @@ public class RecipientsReportDaoImpl extends PaginatedBaseDaoImpl implements Rec
     }
 
     @Override
-    public String getReportTextContent(@VelocityCheck int companyId, int reportId) {
+    public String getReportTextContent(int companyId, int reportId) {
         if (companyId > 0 && reportId > 0) {
             String sql = "SELECT report FROM recipients_report_tbl WHERE company_id = ? AND recipients_report_id = ?";
             Map<String, Object> result = selectSingleRow(logger, sql, companyId, reportId);
@@ -146,7 +145,7 @@ public class RecipientsReportDaoImpl extends PaginatedBaseDaoImpl implements Rec
     }
 
     @Override
-    public byte[] getReportFileData(@VelocityCheck int companyId, int reportId) throws Exception {
+    public byte[] getReportFileData(int companyId, int reportId) throws Exception {
         if (companyId > 0 && reportId > 0) {
             String sql = "SELECT content FROM recipients_report_tbl WHERE company_id = ? AND recipients_report_id = ?";
             Map<String, Object> result = selectSingleRow(logger, sql, companyId, reportId);
@@ -170,7 +169,7 @@ public class RecipientsReportDaoImpl extends PaginatedBaseDaoImpl implements Rec
     }
     
     @Override
-    public PaginatedListImpl<RecipientsReport> getReports(@VelocityCheck int companyId, int pageNumber, int pageSize, String sortProperty, String dir, Date startDate, Date finishDate, RecipientsReport.RecipientReportType...types) {
+    public PaginatedListImpl<RecipientsReport> getReports(int companyId, int pageNumber, int pageSize, String sortProperty, String dir, Date startDate, Date finishDate, RecipientsReport.RecipientReportType...types) {
         sortProperty = SORTABLE_COLUMNS.getOrDefault(sortProperty, DEFAULT_SORTABLE_COLUMN);
         boolean direction = "ASC".equalsIgnoreCase(dir);
         String sql;
@@ -194,20 +193,20 @@ public class RecipientsReportDaoImpl extends PaginatedBaseDaoImpl implements Rec
     }
 
     @Override
-    public RecipientsReport getReport(@VelocityCheck int companyId, int reportId) {
+    public RecipientsReport getReport(int companyId, int reportId) {
         return selectObjectDefaultNull(logger, "SELECT ir.recipients_report_id, ir.report_date, ir.filename, ir.datasource_id, ir.admin_id, ir.type, ir.download_id, ir.autoimport_id, ir.error, a.username"
         	+ " FROM recipients_report_tbl ir INNER JOIN admin_tbl a ON a.admin_id = ir.admin_id WHERE ir.company_id = ? AND ir.recipients_report_id = ?",
         	REPORT_ROWS_MAPPER, companyId, reportId);
     }
 
     @Override
-    public int deleteOldReports(@VelocityCheck int companyId, Date oldestReportDate) {
+    public int deleteOldReports(int companyId, Date oldestReportDate) {
         String sql = "DELETE FROM recipients_report_tbl WHERE report_date < ? AND company_id = ?";
         return update(logger, sql, oldestReportDate, companyId);
     }
     
     @Override
-    public boolean deleteReportsByCompany(@VelocityCheck int companyId) {
+    public boolean deleteReportsByCompany(int companyId) {
         update(logger, "DELETE FROM recipients_report_tbl WHERE company_id = ?", companyId);
         return selectInt(logger, "SELECT COUNT(*) FROM recipients_report_tbl WHERE company_id = ?", companyId) == 0;
     }

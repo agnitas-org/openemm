@@ -11,6 +11,8 @@
 
 package com.agnitas.util;
 
+import java.io.File;
+import java.io.FileWriter;
 import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -50,7 +52,6 @@ import org.agnitas.emm.core.commons.uid.parser.exception.UIDParseException;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.recipient.service.RecipientService;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.emm.core.velocity.emmapi.VelocityRecipientWrapper;
 import org.agnitas.preview.Preview;
 import org.agnitas.util.AgnUtils;
@@ -580,7 +581,7 @@ public class ScriptHelper {
 	 * @return
 	 * @throws Exception
 	 */
-	public int getLastSentMailingID(@VelocityCheck final int companyIdToCheck, final int customerID) throws Exception {
+	public int getLastSentMailingID(final int companyIdToCheck, final int customerID) throws Exception {
 
     	/*
     	 * **************************************************
@@ -606,7 +607,7 @@ public class ScriptHelper {
 	 * @return
 	 * @throws Exception
 	 */
-	public int getLastSentWorldMailingIDByCompanyAndMailinglist(@VelocityCheck final int companyIdToCheck, final int mailingListID) throws Exception {
+	public int getLastSentWorldMailingIDByCompanyAndMailinglist(final int companyIdToCheck, final int mailingListID) throws Exception {
 
     	/*
     	 * **************************************************
@@ -651,7 +652,7 @@ public class ScriptHelper {
 		}
 	}
 
-	public Object getAnonymousLastSentMailing(@VelocityCheck final int companyIdToCheck, final int customerID) {
+	public Object getAnonymousLastSentMailing(final int companyIdToCheck, final int customerID) {
 
     	/*
     	 * **************************************************
@@ -1142,7 +1143,7 @@ public class ScriptHelper {
 	 *         this recipient.
 	 * @throws Exception
 	 */
-	public int findLastNewsletter(final int customerID, @VelocityCheck final int companyIdToCheck, final int mailinglist) throws Exception {
+	public int findLastNewsletter(final int customerID, final int companyIdToCheck, final int mailinglist) throws Exception {
 
     	/*
     	 * **************************************************
@@ -1218,7 +1219,7 @@ public class ScriptHelper {
 	 * @param customerKeyColumnValue
 	 * @return
 	 */
-	public String createUidForCustomer(@VelocityCheck final int companyId, final String customerKeyColumnName, final String customerKeyColumnValue) {
+	public String createUidForCustomer(final int companyId, final String customerKeyColumnName, final String customerKeyColumnValue) {
 
     	/*
     	 * **************************************************
@@ -1453,6 +1454,32 @@ public class ScriptHelper {
 	
 	public Mailinglist getMailinglist(int mailinglistID) {
 		return mailinglistService.getMailinglist(mailinglistID, companyID);
+	}
+
+	public void logFile(final int companyIdToLogFor, final String logFileName, final String content) {
+    	/*
+    	 * **************************************************
+    	 *   IMPORTANT  IMPORTANT    IMPORTANT    IMPORTANT
+    	 * **************************************************
+    	 *
+    	 * DO NOT REMOVE METHOD OR CHANGE SIGNATURE!!!
+    	 */
+
+		try {
+			File velocityLogDirPath = new File(new File(AgnUtils.getTempDir(), "Velocity"), Integer.toString(companyIdToLogFor));
+			if (!velocityLogDirPath.exists()) {
+				velocityLogDirPath.mkdirs();
+			}
+			String requestUUID = AgnUtils.generateNewUUID().toString().replace("-", "").toUpperCase();
+			File tmpFile = new File(velocityLogDirPath, "Velocity_" + (StringUtils.isNotEmpty(logFileName) ? logFileName + "_" : "") + requestUUID + ".log");
+			try (FileWriter aWriter = new FileWriter(tmpFile)) {
+				if (content != null) {
+					aWriter.write(content);
+				}
+			}
+		} catch (final Exception e) {
+			logger.error("could not log script: " + e + "\n" + companyIdToLogFor + " " + logFileName + " " + content, e);
+		}
 	}
 
 	public void setMailingDao(final ComMailingDao mailingDao) {

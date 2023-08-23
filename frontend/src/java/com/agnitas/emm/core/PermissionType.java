@@ -11,8 +11,15 @@
 package com.agnitas.emm.core;
 
 public enum PermissionType {
-	Standard, //Permission is visible and usable for everyone
-	Premium, // Permission is visible for everyone, company_permission_tbl entry is necessary for usage
+	/**
+	 * Permission is visible and usable for everyone
+	 */
+	Standard,
+	
+	/**
+	 * Permission is visible for everyone, company_permission_tbl entry is necessary for usage
+	 */
+	Premium,
 	
 	/**
 	 * Permission is only visible for normal users, if it was granted<br />
@@ -20,5 +27,13 @@ public enum PermissionType {
 	 * Inhouse: emm-master and administrative users only see this permission, if it is granted by license and company_permission_tbl<br />
 	 * company_permission_tbl entry is necessary for usage<br />
 	 */
-	System
+	System,
+	
+	/**
+	 * Only for "*.migration" and "*.rollback" permissions. 
+	 * Not visible to users, but may be granted to any user.
+	 * Entry in license is not needed.
+	 * Entry in company_permission_tbl is not needed
+	 */
+	Migration
 }

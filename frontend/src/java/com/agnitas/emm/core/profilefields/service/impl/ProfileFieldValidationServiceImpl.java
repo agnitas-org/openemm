@@ -17,7 +17,6 @@ import java.util.Locale;
 
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DbColumnType;
 import org.agnitas.util.DbUtilities;
@@ -26,7 +25,6 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.ProfileField;
@@ -40,35 +38,30 @@ import com.agnitas.messages.I18nString;
 import com.agnitas.messages.Message;
 import com.agnitas.service.ServiceResult;
 
+import static java.text.MessageFormat.format;
+
 public class ProfileFieldValidationServiceImpl implements ProfileFieldValidationService {
     
     private static final Logger logger = LogManager.getLogger(ProfileFieldValidationServiceImpl.class);
     
     private static final int MAX_VARCHAR_LENGTH = 4000;
 
-    private KeywordList databaseKeywordList;
-    private ProfileFieldDao profileFieldDao;
-    private ComTargetService targetService;
-    private ConfigService configService;
+    private final KeywordList databaseKeywordList;
+    private final ProfileFieldDao profileFieldDao;
+    private final ComTargetService targetService;
+    private final ConfigService configService;
 
-    @Required
-    public void setDatabaseKeywordList(KeywordList databaseKeywordList) {
+    public ProfileFieldValidationServiceImpl(KeywordList databaseKeywordList, ProfileFieldDao profileFieldDao, ComTargetService targetService, ConfigService configService) {
         this.databaseKeywordList = databaseKeywordList;
-    }
-
-    @Required
-    public void setProfileFieldDao(ProfileFieldDao profileFieldDao) {
         this.profileFieldDao = profileFieldDao;
-    }
-
-    @Required
-    public void setTargetService(ComTargetService targetService) {
         this.targetService = targetService;
+        this.configService = configService;
     }
 
-    @Required
-    public void setConfigService(ConfigService configService) {
-        this.configService = configService;
+    @Override
+    public boolean isDbFieldNameContainsSpaces(String fieldName) {
+        fieldName = StringUtils.trimToNull(fieldName);
+        return fieldName != null && !fieldName.matches("\\S+");
     }
 
     @Override
@@ -99,7 +92,7 @@ public class ProfileFieldValidationServiceImpl implements ProfileFieldValidation
     }
 
     @Override
-    public boolean isValidShortname(@VelocityCheck int companyId, String shortName, String fieldName) {
+    public boolean isValidShortname(int companyId, String shortName, String fieldName) {
         boolean isValid;
 
         if (StringUtils.equalsIgnoreCase(shortName, fieldName)) {
@@ -112,7 +105,7 @@ public class ProfileFieldValidationServiceImpl implements ProfileFieldValidation
     }
 
     @Override
-    public boolean isShortnameInDB(@VelocityCheck int companyId, String shortName) {
+    public boolean isShortnameInDB(int companyId, String shortName) {
         try {
             return profileFieldDao.getProfileFieldByShortname(companyId, shortName) != null;
         } catch (Exception e) {
@@ -161,12 +154,12 @@ public class ProfileFieldValidationServiceImpl implements ProfileFieldValidation
     }
 
     @Override
-    public boolean mayAddNewColumn(@VelocityCheck int companyId) {
+    public boolean mayAddNewColumn(int companyId) {
         return profileFieldDao.mayAdd(companyId);
     }
 
     @Override
-    public boolean notContainsInDb(@VelocityCheck int companyId, String fieldName) {
+    public boolean notContainsInDb(int companyId, String fieldName) {
         try {
             return !profileFieldDao.checkProfileFieldExists(companyId, fieldName);
         } catch (Exception e) {
@@ -175,17 +168,17 @@ public class ProfileFieldValidationServiceImpl implements ProfileFieldValidation
     }
 
     @Override
-    public boolean hasNotAllowedNumberOfEntries(@VelocityCheck int companyId) {
+    public boolean hasNotAllowedNumberOfEntries(int companyId) {
         int numberOfEntries = profileFieldDao.countCustomerEntries(companyId);
 
         return numberOfEntries > configService.getIntegerValue(ConfigValue.MaximumNumberOfEntriesForDefaultValueChange, companyId);
     }
 
     @Override
-    public boolean hasTargetGroups(@VelocityCheck int companyId, String fieldName) {
+    public boolean hasTargetGroups(int companyId, String fieldName) {
         List<TargetLight> targetLights = targetService.listTargetGroupsUsingProfileFieldByDatabaseName(fieldName, companyId);
 
-        return targetLights.size() > 0;
+        return !targetLights.isEmpty();
     }
 
     @Override
@@ -203,7 +196,7 @@ public class ProfileFieldValidationServiceImpl implements ProfileFieldValidation
         try {
             profileField = profileFieldDao.getProfileField(admin.getCompanyID(), fieldChange.getShortname());
         } catch (Exception e) {
-            logger.error("Could find field by column name " + fieldChange.getShortname(), e);
+            logger.error(format("Could find field by column name {0}", fieldChange.getShortname()), e);
         }
         
         Message message = null;
@@ -299,11 +292,7 @@ public class ProfileFieldValidationServiceImpl implements ProfileFieldValidation
     private boolean isValidProfileFieldNumberSize(String newValue, int numericPrecision, int numericScale) {
         if (numericPrecision > 0 || numericScale > 0) {
 			BigDecimal decimal = new BigDecimal(newValue);
-			if (decimal.precision() > numericPrecision || decimal.scale() > numericScale) {
-				return false;
-			} else {
-				return true;
-			}
+            return decimal.precision() <= numericPrecision && decimal.scale() <= numericScale;
 		} else {
 			return true;
 		}

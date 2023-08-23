@@ -16,7 +16,6 @@ import java.util.Map;
 
 import com.agnitas.beans.Admin;
 import org.agnitas.beans.MailingBase;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.beans.Campaign;
 import com.agnitas.beans.CampaignStats;
@@ -24,9 +23,9 @@ import com.agnitas.beans.CampaignStats;
 public interface CampaignDao {
 
 	CampaignStats getStats(boolean useMailtracking, Locale aLocale, List<Integer> mailingIDs, Campaign campaign, String mailingSelection, int targetID, ComTargetDao targetDao, ComRevenueDao revenueDao);
-	Campaign getCampaign(int campaignID, @VelocityCheck int companyID);
+	Campaign getCampaign(int campaignID, int companyID);
 	List<Map<String, Object>> getMailingNames(Campaign campaign, String mailingSelection);
-	int deleteByCompanyID(@VelocityCheck int companyID);
+	int deleteByCompanyID(int companyID);
 	 /**
      *  Saves campaign data
      *
@@ -64,7 +63,7 @@ public interface CampaignDao {
      *
      * @return List of Campaign bean objects or empty list
      */
-    List<Campaign> getCampaignList( @VelocityCheck int companyID, String sort, int order);
+    List<Campaign> getCampaignList( int companyID, String sort, int order);
 
 	boolean isContainMailings(int campaignId, Admin admin);
 

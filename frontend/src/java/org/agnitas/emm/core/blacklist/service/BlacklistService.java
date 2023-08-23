@@ -17,7 +17,7 @@ import org.agnitas.beans.BlackListEntry;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.UserStatus;
-import org.agnitas.emm.core.velocity.VelocityCheck;
+
 
 import com.agnitas.emm.core.globalblacklist.beans.BlacklistDto;
 import com.agnitas.emm.core.globalblacklist.beans.GlobalBlacklistDto;
@@ -31,33 +31,33 @@ public interface BlacklistService {
 
     boolean checkBlacklist(BlacklistModel model);
 
-    List<String> getEmailList(@VelocityCheck int companyID) throws Exception;
+    List<String> getEmailList(int companyID) throws Exception;
 
-    List<BlackListEntry> getRecipientList(@VelocityCheck int companyID) throws Exception;
+    List<BlackListEntry> getRecipientList(int companyID) throws Exception;
 
     List<Mailinglist> getMailinglistsWithBlacklistedBindings(BlacklistModel model);
     
     void updateBlacklistedBindings(BlacklistModel bm, List<Integer> mailinglists, UserStatus userStatus);
 
-    boolean isAlreadyExist(@VelocityCheck int companyId, String email);
+    boolean isAlreadyExist(int companyId, String email);
 
-    boolean add(@VelocityCheck int companyId, int adminId, String email, String reason) throws Exception;
+    boolean add(int companyId, int adminId, String email, String reason) throws Exception;
 
     void add(GlobalBlacklistDto globalBlacklistDto);
 
-    boolean update(@VelocityCheck int companyId, String email, String reason);
+    boolean update(int companyId, String email, String reason);
 
-    PaginatedListImpl<BlacklistDto> getAll(@VelocityCheck int companyId, String sort, String direction, int page, int rowNumber, String likePattern);
+    PaginatedListImpl<BlacklistDto> getAll(int companyId, String sort, String direction, int page, int rowNumber, String likePattern);
 
-    List<BlacklistDto> getAll(@VelocityCheck int companyId) throws Exception;
+    List<BlacklistDto> getAll(int companyId) throws Exception;
 
-    List<Mailinglist> getBindedMailingLists(@VelocityCheck int companyId, String email);
+    List<Mailinglist> getBindedMailingLists(int companyId, String email);
 
-    boolean delete(@VelocityCheck int companyId, String email, Set<Integer> mailinglistIds);
+    boolean delete(int companyId, String email, Set<Integer> mailinglistIds);
     
-    boolean blacklistCheck(String email, @VelocityCheck int companyId);
+    boolean blacklistCheck(String email, int companyId);
     
-    boolean blacklistCheckCompanyOnly(String email, @VelocityCheck int companyId);
+    boolean blacklistCheckCompanyOnly(String email, int companyId);
     
-    Set<String> loadBlackList(@VelocityCheck int companyId) throws Exception;
+    Set<String> loadBlackList(int companyId) throws Exception;
 }

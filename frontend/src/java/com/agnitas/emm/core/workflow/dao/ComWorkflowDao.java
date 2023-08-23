@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.agnitas.beans.CompaniesConstraints;
-import org.agnitas.emm.core.velocity.VelocityCheck;
+
 
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.workflow.beans.Workflow;
@@ -30,9 +30,9 @@ public interface ComWorkflowDao {
      * @param companyId an identifier of a company that owns referenced workflow.
      * @return {@code true} if a referenced workflow is there or {@code false} otherwise.
      */
-    boolean exists(int workflowId, @VelocityCheck int companyId);
+    boolean exists(int workflowId, int companyId);
 
-	Workflow getWorkflow(int workflowId, @VelocityCheck int companyId);
+	Workflow getWorkflow(int workflowId, int companyId);
 
     /**
      * Get workflow schema or {@code null}.
@@ -41,7 +41,7 @@ public interface ComWorkflowDao {
      * @param companyId an identifier of a company that owns referenced workflow.
      * @return a JSON string representing workflow's icons and connections or {@code null} if workflow doesn't exist.
      */
-	String getSchema(int workflowId, @VelocityCheck int companyId);
+	String getSchema(int workflowId, int companyId);
 
     /**
      * Store workflow schema string representation (JSON).
@@ -52,9 +52,9 @@ public interface ComWorkflowDao {
      * @return whether ({@code true}) or not ({@code false}) schema has been updated.
      * @throws java.lang.NullPointerException if {@code schema} is {@code null}.
      */
-	boolean setSchema(String schema, int workflowId, @VelocityCheck int companyId);
+	boolean setSchema(String schema, int workflowId, int companyId);
 
-	void deleteWorkflow(int workflowId, @VelocityCheck int companyId);
+	void deleteWorkflow(int workflowId, int companyId);
 
 	boolean updateWorkflow(Workflow workflow);
 
@@ -69,7 +69,7 @@ public interface ComWorkflowDao {
      * @param strict whether ({@code false}) or not ({@code true}) a dependency can be used by multiple non-active workflows.
      * @return whether ({@code true}) or not ({@code false}) an entity use is permitted for given workflow.
      */
-    boolean validateDependency(@VelocityCheck int companyId, int workflowId, WorkflowDependency dependency, boolean strict);
+    boolean validateDependency(int companyId, int workflowId, WorkflowDependency dependency, boolean strict);
 
     /**
      * Delete all the dependencies of a workflow referenced by {@code workflowId}.
@@ -77,14 +77,14 @@ public interface ComWorkflowDao {
      * @param workflowId an identifier of a workflow whose dependencies should be deleted.
      * @param clearTargetConditions the indicator for control delete all dependencies or delete all except target conditions
      */
-	void deleteDependencies(@VelocityCheck int companyId, int workflowId, boolean clearTargetConditions);
+	void deleteDependencies(int companyId, int workflowId, boolean clearTargetConditions);
 
     /**
      * Delete all the dependencies of workflows that belong to a company referenced by {@code companyId}.
      *
      * @param companyId an identifier of a company that owns referenced entities (the workflow and its dependencies).
      */
-	void deleteDependencies(@VelocityCheck int companyId);
+	void deleteDependencies(int companyId);
     
     /**
      * Delete all target condition(see {@link com.agnitas.emm.core.workflow.beans.WorkflowDependencyType}) dependencies
@@ -92,7 +92,7 @@ public interface ComWorkflowDao {
      * @param companyId a company identifier
      * @param workflowId a workflow identifier
      */
-    void deleteTargetConditionDependencies(@VelocityCheck int companyId, int workflowId);
+    void deleteTargetConditionDependencies(int companyId, int workflowId);
 
     /**
      * Save a set of references to entities (see {@link WorkflowDependency}) that a workflow depends on. All unlisted
@@ -103,7 +103,7 @@ public interface ComWorkflowDao {
      * @param dependencies a set of references to entities to be marked as used by a workflow (use empty set or {@code null} to remove all previously saved dependencies).
      * @param clearTargetConditions the indicator for control delete all dependencies or delete all except target conditions before set new dependencies
      */
-	void setDependencies(@VelocityCheck int companyId, int workflowId, Set<WorkflowDependency> dependencies, boolean clearTargetConditions);
+	void setDependencies(int companyId, int workflowId, Set<WorkflowDependency> dependencies, boolean clearTargetConditions);
     
     /**
      * Add new one dependency to workflow
@@ -112,19 +112,19 @@ public interface ComWorkflowDao {
      * @param workflowId a workflow identifier
      * @param dependency the dependency reference (see {@link WorkflowDependency})
      */
-    void addDependency(@VelocityCheck int companyId, int workflowId, WorkflowDependency dependency);
+    void addDependency(int companyId, int workflowId, WorkflowDependency dependency);
 
     List<Workflow> getWorkflowsOverview(Admin admin);
 
 	List<Workflow> getWorkflowsToDeactivate(CompaniesConstraints constraints);
 
-    List<Workflow> getWorkflows(Set<Integer> workflowIds, @VelocityCheck int companyId);
+    List<Workflow> getWorkflows(Set<Integer> workflowIds, int companyId);
 
-    void changeWorkflowStatus(int workflowId, @VelocityCheck int companyId, WorkflowStatus newStatus);
+    void changeWorkflowStatus(int workflowId, int companyId, WorkflowStatus newStatus);
 
-    List<Integer> getWorkflowIdsByAssignedMailingId(@VelocityCheck int companyId, int mailingId);
+    List<Integer> getWorkflowIdsByAssignedMailingId(int companyId, int mailingId);
 
-    int countCustomers(@VelocityCheck int companyId, int mailinglistId, String targetSQL);
+    int countCustomers(int companyId, int mailinglistId, String targetSQL);
 
     void deleteWorkflow(int companyID);
 
@@ -138,9 +138,9 @@ public interface ComWorkflowDao {
      * @param exceptInactive whether ({@code true}) or not ({@code false}) inactive workflows should be ignored.
      * @return a list of dependent workflows sorted by {@link Workflow#getWorkflowId()} (descending).
      */
-    List<Workflow> getDependentWorkflows(@VelocityCheck int companyId, WorkflowDependency dependency, boolean exceptInactive);
+    List<Workflow> getDependentWorkflows(int companyId, WorkflowDependency dependency, boolean exceptInactive);
 
-    List<Workflow> getDependentWorkflows(@VelocityCheck int companyId, Collection<WorkflowDependency> dependencies, boolean exceptInactive);
+    List<Workflow> getDependentWorkflows(int companyId, Collection<WorkflowDependency> dependencies, boolean exceptInactive);
 
     /**
      * Get a list of active workflows depending on customer profile field (referenced by {@code column}) that is required
@@ -150,7 +150,7 @@ public interface ComWorkflowDao {
      * @param companyId an identifier of the current user's company.
      * @return a list of dependent workflows sorted by {@link Workflow#getWorkflowId()} (descending).
      */
-    List<Workflow> getActiveWorkflowsTrackingProfileField(String column, @VelocityCheck int companyId);
+    List<Workflow> getActiveWorkflowsTrackingProfileField(String column, int companyId);
 
     /**
      * Get a list of active workflows depending on customer profile field referenced by {@code column}.
@@ -159,7 +159,7 @@ public interface ComWorkflowDao {
      * @param companyId an identifier of the current user's company.
      * @return a list of dependent workflows sorted by {@link Workflow#getWorkflowId()} (descending).
      */
-    List<Workflow> getActiveWorkflowsUsingProfileField(String column, @VelocityCheck int companyId);
+    List<Workflow> getActiveWorkflowsUsingProfileField(String column, int companyId);
 
     /**
      * Get active (see {@link WorkflowStatus#STATUS_ACTIVE} and {@link WorkflowStatus#STATUS_TESTING}) workflows being
@@ -171,15 +171,15 @@ public interface ComWorkflowDao {
      * @param isUseRules whether or not target workflows should use specific rules to watch profile field changes.
      * @return a list of workflows watching given profile field for customers of a given mailing list.
      */
-    List<Workflow> getActiveWorkflowsDrivenByProfileChange(@VelocityCheck int companyId, int mailingListId, String column, boolean isUseRules);
+    List<Workflow> getActiveWorkflowsDrivenByProfileChange(int companyId, int mailingListId, String column, boolean isUseRules);
     
-    List<Integer> getAllWorkflowUsedTargets(@VelocityCheck int companyId);
+    List<Integer> getAllWorkflowUsedTargets(int companyId);
     
     int bulkDeleteTargetCondition(List<Integer> targetIds, int companyId);
     
     void removeMailingsTargetExpressions(int companyId, Set<Integer> mailingIds);
     
-    void deactivateWorkflowScheduledReports(int workflowId, @VelocityCheck int companyId);
+    void deactivateWorkflowScheduledReports(int workflowId, int companyId);
     
     void deleteWorkflowScheduledReports(int workflowId, int companyId);
 }

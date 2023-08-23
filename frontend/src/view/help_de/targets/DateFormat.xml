@@ -1,7 +1,7 @@
 <HelpBalloon>
 	<title>Datumsformat f&amp;uuml;r Datumsvergleiche</title>
-	<content><![CDATA[Bitte geben Sie bei Datumsvergleichen das Format an, das f&uuml;r den Vergleich auf beide zu vergleichenden Datumswerte angewendet werden soll.
-In der Regel sollten Sie das Datumformat "JJJJMMTT" verwenden, das auf das vollst&auml;ndige Datum vergleicht.
-F&uuml;r Vergleiche auf Geburtstage verwenden Sie bitte das Format "MMTT", so dass in diesem Fall nur auf Monate und Tage verglichen wird.
+	<content><![CDATA[Bitte geben Sie bei Datumsvergleichen das Format an, das f&#xFC;r den Vergleich auf beide zu vergleichenden Datumswerte angewendet werden soll.
+In der Regel sollten Sie das Datumformat "JJJJMMTT" verwenden, das auf das vollst&#xE4;ndige Datum vergleicht.
+F&#xFC;r Vergleiche auf Geburtstage verwenden Sie bitte das Format "MMTT", so dass in diesem Fall nur auf Monate und Tage verglichen wird.
 	]]></content>
 </HelpBalloon>

@@ -15,7 +15,8 @@ import java.io.InputStream;
 import java.util.Date;
 import java.util.Map.Entry;
 
-import org.agnitas.emm.core.useractivitylog.dao.UserActivityLogDao;
+import com.agnitas.emm.core.useractivitylog.dao.RestfulUserActivityLogDao;
+import org.agnitas.emm.core.velocity.Constants;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.HttpUtils.RequestMethod;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
@@ -49,11 +50,11 @@ public class ActionExecuteRestfulServiceHandler implements RestfulServiceHandler
 	
 	public static final String NAMESPACE = "actionExecute";
 
-	private UserActivityLogDao userActivityLogDao;
+	private RestfulUserActivityLogDao userActivityLogDao;
 	private ComEmmActionService emmActionService;
 
 	@Required
-	public void setUserActivityLogDao(UserActivityLogDao userActivityLogDao) {
+	public void setUserActivityLogDao(RestfulUserActivityLogDao userActivityLogDao) {
 		this.userActivityLogDao = userActivityLogDao;
 	}
 	
@@ -88,11 +89,6 @@ public class ActionExecuteRestfulServiceHandler implements RestfulServiceHandler
 	/**
 	 * Execute an existing action
 	 * 
-	 * @param request
-	 * @param requestDataFile
-	 * @param admin
-	 * @return
-	 * @throws Exception
 	 */
 	private Object executeEmmAction(HttpServletRequest request, byte[] requestData, File requestDataFile, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.ACTIONS_SHOW)) {
@@ -112,7 +108,7 @@ public class ActionExecuteRestfulServiceHandler implements RestfulServiceHandler
 		}
 		
 		userActivityLogDao.addAdminUseOfFeature(admin, "restful/actionExecute", new Date());
-		userActivityLogDao.writeUserActivityLog(admin, "restful/actionExecute", "action_id:" + actionID);
+		writeActivityLog(userActivityLogDao, "action_id:" + actionID, request, admin);
 
 		CaseInsensitiveMap<String, Object> params = new CaseInsensitiveMap<>();
 		try (InputStream inputStream = RestfulServiceHandler.getRequestDataStream(requestData, requestDataFile)) {
@@ -145,7 +141,7 @@ public class ActionExecuteRestfulServiceHandler implements RestfulServiceHandler
 		params.put("requestparameters", params);
 		
 		final EmmActionOperationErrors actionOperationErrors = new EmmActionOperationErrors();
-		params.put("actionErrors", actionOperationErrors);
+		params.put(Constants.ACTION_OPERATION_ERRORS_CONTEXT_NAME, actionOperationErrors);
 		
 		boolean result = emmActionService.executeActions(actionID, admin.getCompanyID(), params, actionOperationErrors);
 		

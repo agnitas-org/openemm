@@ -11,13 +11,12 @@
 
 package com.agnitas.emm.grid.grid.beans;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public interface GridContentElement {
     
     int getCompanyId();
 
-    void setCompanyId(@VelocityCheck int companyId);
+    void setCompanyId(int companyId);
 
     int getPlaceholderId();
 

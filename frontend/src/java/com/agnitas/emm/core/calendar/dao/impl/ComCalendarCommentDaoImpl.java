@@ -23,7 +23,7 @@ import java.util.TimeZone;
 import java.util.stream.Collectors;
 
 import org.agnitas.beans.CompaniesConstraints;
-import org.agnitas.emm.core.velocity.VelocityCheck;
+
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.SafeString;
 import org.apache.commons.collections4.CollectionUtils;
@@ -118,7 +118,7 @@ public class ComCalendarCommentDaoImpl extends ComReminderBaseDaoImpl implements
     }
 
     @Override
-    public List<ComCalendarComment> getComments(Date startDate, Date endDate, @VelocityCheck int companyId) {
+    public List<ComCalendarComment> getComments(Date startDate, Date endDate, int companyId) {
         String sqlGetCalendarComment = "SELECT comment_id, company_id, admin_id, comment_content, comment_date, deadline, planned_send_date FROM calendar_comment_tbl"
         	+ " WHERE comment_date >= ? AND comment_date <= ? AND company_id = ?";
 
@@ -158,7 +158,7 @@ public class ComCalendarCommentDaoImpl extends ComReminderBaseDaoImpl implements
 
     @Override
 	@DaoUpdateReturnValueCheck
-    public boolean deleteComment(int commentId, @VelocityCheck int companyId) {
+    public boolean deleteComment(int commentId, int companyId) {
         String sqlDeleteComment = "DELETE FROM calendar_comment_tbl WHERE comment_id = ? AND company_id = ?";
 
         int result = update(logger, sqlDeleteComment, commentId, companyId);
@@ -172,7 +172,7 @@ public class ComCalendarCommentDaoImpl extends ComReminderBaseDaoImpl implements
     }
     
     @Override
-    public boolean deleteCommentsByCompanyID(@VelocityCheck int companyId) {
+    public boolean deleteCommentsByCompanyID(int companyId) {
     	try {
     		int result = update(logger, "DELETE FROM calendar_comment_tbl WHERE company_id= ?", companyId);
     		if (result > 0) {

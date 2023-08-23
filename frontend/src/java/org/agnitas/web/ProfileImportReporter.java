@@ -24,6 +24,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TimeZone;
 
+import com.agnitas.service.DataSourceService;
 import org.agnitas.beans.ColumnMapping;
 import org.agnitas.beans.ImportProfile;
 import org.agnitas.beans.ImportStatus;
@@ -79,6 +80,8 @@ public class ProfileImportReporter {
 	private ConfigService configService;
 	
 	private ImportRecipientsDao importRecipientsDao;
+	
+	private DataSourceService dataSourceService;
 
 	@Required
 	public void setRecipientsReportService(RecipientsReportService recipientsReportService) {
@@ -105,6 +108,11 @@ public class ProfileImportReporter {
 		this.configService = configService;
 	}
 
+	@Required
+	public void setDataSourceService(DataSourceService dataSourceService) {
+		this.dataSourceService= dataSourceService;
+	}
+	
 	@Required
 	public void setImportRecipientsDao(ImportRecipientsDao importRecipientsDao) {
 		this.importRecipientsDao = importRecipientsDao;
@@ -176,9 +184,14 @@ public class ProfileImportReporter {
 		if (profileImportWorker.getStatus().getInvalidRecipientsCsv() != null) {
 			recipientsReportService.createSupplementalReportData(companyID, adminID, RecipientReportUtils.INVALID_RECIPIENTS_FILE_PREFIX + ".csv.zip", profileImportWorker.getDatasourceId(), profileImportWorker.getEndTime(), profileImportWorker.getStatus().getInvalidRecipientsCsv(), "Downloadable file with invalid recipients data", autoImportID, true);
 		}
-		return recipientsReportService.createAndSaveImportReport(companyID, adminID, RecipientReportUtils.IMPORT_RESULT_FILE_PREFIX, profileImportWorker.getDatasourceId(), profileImportWorker.getEndTime(), resultFileContent, autoImportID, isError).getId();
+        String filename = generateProfileImportReportFileName(profileImportWorker.getDatasourceId(), companyID);
+        return recipientsReportService.createAndSaveImportReport(companyID, adminID, filename, profileImportWorker.getDatasourceId(), profileImportWorker.getEndTime(), resultFileContent, autoImportID, isError).getId();
 	}
 	
+    private String generateProfileImportReportFileName(int datasourceId, int companyId) {
+        return dataSourceService.getDatasourceDescription(datasourceId, companyId).getDescription();
+    }
+
 	/**
 	 * Send a report email about this import to the executing GUI-admin or the creator of the autoimport
 	 * 
@@ -586,19 +599,6 @@ public class ProfileImportReporter {
 			htmlContent.append(HtmlReporterHelper.getOutputTableContentEnd());
 			htmlContent.append(HtmlReporterHelper.getOutputTableEnd());
 		}
-		
-		// Show "Customer without binding error"-Error only if ConfigValue for nightly deletey is activated. This ConfigValue is yet to come, so this part is commented
-//		// Customer without binding error
-//		if (importRecipientsDao.checkUnboundCustomersExist(profileImportWorker.getImportProfile().getCompanyId())) {
-//			htmlContent.append("<table border=\"1\" bordercolor=\"" + borderColorCode + "\" cellspacing=\"0\" style=\"border-collapse: collapse; padding: 0px 5px 0px 5px;\">\n");
-//			htmlContent.append("<tr bgcolor=\"" + redColorCode + "\">\n");
-//			htmlContent.append("<font color=\"" + whiteColorCode + "\">\n");
-//			htmlContent.append("<td style=\"padding: 0px 5px 0px 5px;\"><b>").append(StringEscapeUtils.escapeHtml4(I18nString.getLocaleString("error.export.recipient.binding.without.empty", locale))).append("</b></td>\n");
-//			htmlContent.append("</font>\n");
-//			htmlContent.append("</tr>\n");
-//			htmlContent.append("</table>\n");
-//			htmlContent.append("<br />\n");
-//		}
 		
 		// Index Warning
 		if (CollectionUtils.isNotEmpty(importWorker.getImportProfile().getKeyColumns())) {
@@ -1039,7 +1039,7 @@ public class ProfileImportReporter {
 		return result.toString();
 	}
 
-	private List<ImportReportEntry> generateImportStatusEntries(ProfileImportWorker importWorker, boolean noHeaders) {
+	public List<ImportReportEntry> generateImportStatusEntries(ProfileImportWorker importWorker, boolean noHeaders) {
 		Locale locale = importWorker.getImportProfile().getReportLocale();
 		List<ImportReportEntry> reportStatusEntries = new ArrayList<>();
 
@@ -1055,11 +1055,6 @@ public class ProfileImportReporter {
 			reportStatusEntries.add(new ImportReportEntry("import.csv_fatal_error", errorMessage));
 		}
 
-		// Show "Customer without binding error"-Error only if ConfigValue for nightly deletey is activated. This ConfigValue is yet to come, so this part is commented
-//		if (importRecipientsDao.checkUnboundCustomersExist(companyID)) {
-//			reportStatusEntries.add(new ImportReportEntry("error.export.recipient.binding.without.empty", "> 0"));
-//		}
-		
 		reportStatusEntries.add(new ImportReportEntry("import.csv_errors_email", String.valueOf(customerImportStatus.getError(ImportErrorType.EMAIL_ERROR))));
 		reportStatusEntries.add(new ImportReportEntry("import.csv_errors_invalidNullValues", String.valueOf(customerImportStatus.getInvalidNullValues())));
 		reportStatusEntries.add(new ImportReportEntry("import.csv_errors_blacklist", String.valueOf(customerImportStatus.getError(ImportErrorType.BLACKLIST_ERROR))));

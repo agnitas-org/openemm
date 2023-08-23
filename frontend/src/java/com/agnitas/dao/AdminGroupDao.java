@@ -15,7 +15,6 @@ import java.util.Set;
 
 import org.agnitas.beans.AdminGroup;
 import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public interface AdminGroupDao {
 	/**
@@ -32,19 +31,19 @@ public interface AdminGroupDao {
      *          The companyID for the AdminGroups.
      * @return List of AdminGroups or empty list
      */
-	List<AdminGroup> getAdminGroupsByCompanyId( @VelocityCheck int companyId);
+	List<AdminGroup> getAdminGroupsByCompanyId( int companyId);
 
-	List<AdminGroup> getAdminGroupsByCompanyIdAndDefault(@VelocityCheck int companyId, List<Integer> additionalAdminGroupIds);
+	List<AdminGroup> getAdminGroupsByCompanyIdAndDefault(int companyId, List<Integer> additionalAdminGroupIds);
 
-	PaginatedListImpl<AdminGroup> getAdminGroupsByCompanyIdInclCreator(@VelocityCheck int companyId, int adminId, String sort, String direction, int page, int rownums);
+	PaginatedListImpl<AdminGroup> getAdminGroupsByCompanyIdInclCreator(int companyId, int adminId, String sort, String direction, int page, int rownums);
     
     int saveAdminGroup(AdminGroup adminGroup) throws Exception;
     
-    int delete(@VelocityCheck int companyId, int adminGroupId);
+    int delete(int companyId, int adminGroupId);
     
-    boolean adminGroupExists(@VelocityCheck int companyId, String username);
+    boolean adminGroupExists(int companyId, String username);
 
-    List<String> getAdminsOfGroup(@VelocityCheck int companyId, int groupId);
+    List<String> getAdminsOfGroup(int companyId, int groupId);
     
     List<AdminGroup> getAdminGroupsByAdminID(int companyID, int adminId);
     

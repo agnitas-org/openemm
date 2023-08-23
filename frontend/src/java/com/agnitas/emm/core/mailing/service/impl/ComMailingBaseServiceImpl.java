@@ -34,6 +34,7 @@ import com.agnitas.emm.core.mailing.dto.CalculationRecipientsConfig;
 import com.agnitas.emm.core.mailing.service.CalculationRecipients;
 import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.target.TargetExpressionUtils;
 import com.agnitas.emm.core.target.service.ComTargetService;
 import com.agnitas.messages.Message;
@@ -47,16 +48,18 @@ import org.agnitas.beans.DynamicTagContent;
 import org.agnitas.beans.MailingBase;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.MailingSendStatus;
+import org.agnitas.beans.MediaTypeStatus;
 import org.agnitas.beans.TrackableLink;
 import org.agnitas.beans.factory.DynamicTagContentFactory;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.DynamicTagContentDao;
 import org.agnitas.dao.MailingStatus;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.mailing.beans.LightweightMailing;
 import org.agnitas.emm.core.mailing.exception.UnknownMailingIdException;
 import org.agnitas.emm.core.mailing.service.MailingModel;
 import org.agnitas.emm.core.mailing.service.MailingNotExistException;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.DynTagException;
 import org.agnitas.util.FulltextSearchInvalidQueryException;
 import org.agnitas.util.GuiConstants;
@@ -112,14 +115,15 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
     private DynamicTagContentDao dynamicTagContentDao;
     private AgnDynTagGroupResolverFactory agnDynTagGroupResolverFactory;
     private MailinglistApprovalService mailinglistApprovalService;
+    private ConfigService configService;
 
     @Override
-    public boolean isMailingExists(int mailingId, @VelocityCheck int companyId) {
+    public boolean isMailingExists(int mailingId, int companyId) {
         return mailingId > 0 && companyId > 0 && mailingDao.exist(mailingId, companyId);
     }
 
     @Override
-    public boolean isMailingExists(int mailingId, @VelocityCheck int companyId, boolean isTemplate) {
+    public boolean isMailingExists(int mailingId, int companyId, boolean isTemplate) {
         return mailingId > 0 && companyId > 0 && mailingDao.exist(mailingId, companyId, isTemplate);
     }
 
@@ -143,14 +147,27 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
     }
 
     @Override
-    public void bulkDelete(Set<Integer> mailingsIds, @VelocityCheck int companyId) {
+    public void bulkDelete(Set<Integer> mailingsIds, int companyId) {
         for (int mailingId : mailingsIds) {
-            mailingDao.deleteMailing(mailingId, companyId);
+            deleteMailing(mailingId, companyId);
         }
     }
 
     @Override
-    public int getWorkflowId(int mailingId, @VelocityCheck int companyId) {
+    public boolean deleteMailing(int mailingId, int companyId) {
+        if (mailingDao.markAsDeleted(mailingId, companyId)) {
+            undoDynContentDao.deleteUndoDataForMailing(mailingId);
+            undoMailingComponentDao.deleteUndoDataForMailing(mailingId);
+            undoMailingDao.deleteUndoDataForMailing(mailingId);
+
+            return true;
+        }
+
+        return false;
+    }
+
+    @Override
+    public int getWorkflowId(int mailingId, int companyId) {
         return mailingDao.getWorkflowId(mailingId, companyId);
     }
 
@@ -163,10 +180,19 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
                 gridServiceWrapper.saveUndoGridMailing(mailingId, gridTemplateId, adminId);
             } else {
                 mailingDao.saveUndoMailing(mailingId, adminId);
-                mailingDao.deleteUndoDataOverLimit(mailingId);
+                deleteUndoDataOverLimit(mailingId);
             }
         }
         return mailingDao.saveMailing(mailing, preserveTrackableLinks);
+    }
+
+    private void deleteUndoDataOverLimit(int mailingId) {
+        final int undoId = undoMailingDao.getUndoIdOverLimit(mailingId, configService.getIntegerValue(ConfigValue.MailingUndoLimit));
+        if (undoId != 0) {
+            undoMailingComponentDao.deleteUndoDataOverLimit(mailingId, undoId);
+            undoDynContentDao.deleteUndoDataOverLimit(mailingId, undoId);
+            undoMailingDao.deleteUndoDataOverLimit(mailingId, undoId);
+        }
     }
 
     @Override
@@ -243,7 +269,7 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
     }
 
     @Override
-    public boolean setTargetGroups(int mailingId, @VelocityCheck int companyId, Collection<Integer> targetGroupIds, boolean conjunction) throws TooManyTargetGroupsInMailingException {
+    public boolean setTargetGroups(int mailingId, int companyId, Collection<Integer> targetGroupIds, boolean conjunction) throws TooManyTargetGroupsInMailingException {
         if (mailingId <= 0 || companyId <= 0) {
             return false;
         }
@@ -257,7 +283,7 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
     }
 
     @Override
-    public String getMailingName(int mailingId, @VelocityCheck int companyId) {
+    public String getMailingName(int mailingId, int companyId) {
         return StringUtils.defaultString(mailingDao.getMailingName(mailingId, companyId));
     }
 
@@ -277,17 +303,17 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
     }
 
     @Override
-    public PaginatedListImpl<MailingRecipientStatRow> getMailingRecipients(int mailingId, @VelocityCheck int companyId, int filterType, int pageNumber, int rowsPerPage, String sortCriterion, boolean sortAscending, List<String> columns) throws Exception {
+    public PaginatedListImpl<MailingRecipientStatRow> getMailingRecipients(int mailingId, int companyId, int filterType, int pageNumber, int rowsPerPage, String sortCriterion, boolean sortAscending, List<String> columns) throws Exception {
         throw new UnsupportedOperationException("Get mailing recipients is unsupported.");
     }
 
     @Override
-    public List<DynamicTag> getDynamicTags(int mailingId, @VelocityCheck int companyId) {
+    public List<DynamicTag> getDynamicTags(int mailingId, int companyId) {
         return dynamicTagDao.getDynamicTags(mailingId, companyId, false);
     }
 
     @Override
-    public List<DynamicTag> getDynamicTags(int mailingId, @VelocityCheck int companyId, boolean resetIds) {
+    public List<DynamicTag> getDynamicTags(int mailingId, int companyId, boolean resetIds) {
         List<DynamicTag> tags = dynamicTagDao.getDynamicTags(mailingId, companyId, false);
         if (resetIds) {
             for (DynamicTag tag : tags) {
@@ -315,7 +341,7 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
     }
 
     @Override
-    public DynamicTag getDynamicTag(@VelocityCheck int companyId, int dynNameId) {
+    public DynamicTag getDynamicTag(int companyId, int dynNameId) {
         return dynamicTagDao.getDynamicTag(dynNameId, companyId);
     }
 
@@ -351,7 +377,7 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
     }
 
     @Override
-    public boolean isAdvertisingContentType(@VelocityCheck int companyId, int mailingId) {
+    public boolean isAdvertisingContentType(int companyId, int mailingId) {
         return mailingDao.isAdvertisingContentType(companyId, mailingId);
     }
 
@@ -386,7 +412,7 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
     }
 
     @Override
-    public int calculateRecipients(@VelocityCheck int companyId, int mailingListId, int splitId, Collection<Integer> altgIds, Collection<Integer> targetGroupIds, boolean conjunction) throws Exception {
+    public int calculateRecipients(int companyId, int mailingListId, int splitId, Collection<Integer> altgIds, Collection<Integer> targetGroupIds, boolean conjunction) throws Exception {
         String sqlCondition = getSqlConditionToCalculateRecipients(altgIds, targetGroupIds, conjunction, splitId, companyId);
         return recipientDao.getNumberOfRecipients(companyId, mailingListId, sqlCondition);
     }
@@ -396,13 +422,21 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
     }
 
     @Override
-    public int calculateRecipients(@VelocityCheck int companyId, int mailingId, int mailingListId, int splitId) throws Exception {
+    public int calculateRecipients(int companyId, int mailingId, int mailingListId, int splitId) throws Exception {
+        Mailing mailing = mailingDao.getMailing(mailingId, companyId);
+        
         String sqlCondition = targetService.getSQLFromTargetExpression(mailingDao.getTargetExpression(mailingId, companyId), splitId, companyId);
-        return recipientDao.getNumberOfRecipients(companyId, mailingListId, sqlCondition);
+
+		List<MediaTypes> activeMediaTypes = mailing.getMediatypes().values().stream()
+			.filter(x -> x.getStatus() == MediaTypeStatus.Active.getCode())
+			.map(x -> x.getMediaType())
+			.collect(Collectors.toList());
+		
+        return recipientDao.getNumberOfRecipients(companyId, mailingListId, activeMediaTypes, sqlCondition);
     }
 
     @Override
-    public int calculateRecipients(@VelocityCheck int companyId, int mailingId) throws Exception {
+    public int calculateRecipients(int companyId, int mailingId) throws Exception {
         Mailing mailing = mailingDao.getMailing(mailingId, companyId);
 
         if (mailing == null || mailing.getId() <= 0) {
@@ -410,7 +444,13 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
         }
 
         String sqlCondition = targetService.getSQLFromTargetExpression(mailing, true);
-        return recipientDao.getNumberOfRecipients(companyId, mailing.getMailinglistID(), sqlCondition);
+        
+		List<MediaTypes> activeMediaTypes = mailing.getMediatypes().values().stream()
+			.filter(x -> x.getStatus() == MediaTypeStatus.Active.getCode())
+			.map(x -> x.getMediaType())
+			.collect(Collectors.toList());
+        
+        return recipientDao.getNumberOfRecipients(companyId, mailing.getMailinglistID(), activeMediaTypes, sqlCondition);
     }
 
     @Override
@@ -512,7 +552,7 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
     }
 
     @Override
-    public Mailing getMailing(@VelocityCheck int companyId, int mailingId) {
+    public Mailing getMailing(int companyId, int mailingId) {
         if (mailingId > 0 && companyId > 0) {
             return mailingDao.getMailing(mailingId, companyId);
         }
@@ -639,6 +679,11 @@ public class ComMailingBaseServiceImpl implements ComMailingBaseService {
     @Required
     public final void setMailinglistApprovalService(final MailinglistApprovalService service) {
         this.mailinglistApprovalService = Objects.requireNonNull(service, "Mailinglist approval service is null");
+    }
+
+    @Required
+    public void setConfigService(ConfigService configService) {
+        this.configService = configService;
     }
 
     @Required

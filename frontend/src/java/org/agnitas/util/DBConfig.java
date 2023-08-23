@@ -154,7 +154,7 @@ public class DBConfig {
 							HashMap	<String, String>
 								entity = new HashMap<>();
 							
-							for (String token : tokens.split (",[ \t]*")) {
+							for (String token : tokens.split (", [ \t]*")) {
 								String[]	parts = token.split ("[ \t]*=[ \t]*", 2);
 								
 								if (parts.length == 2) {

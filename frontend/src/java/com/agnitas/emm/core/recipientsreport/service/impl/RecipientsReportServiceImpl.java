@@ -12,6 +12,7 @@ package com.agnitas.emm.core.recipientsreport.service.impl;
 
 import java.io.File;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -23,9 +24,12 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.agnitas.util.ZipUtilities;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.http.MediaType;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,9 +42,11 @@ import com.agnitas.emm.core.recipientsreport.dto.DownloadRecipientReport;
 import com.agnitas.emm.core.recipientsreport.service.RecipientsReportService;
 import com.agnitas.messages.I18nString;
 import com.agnitas.service.MimeTypeService;
+import static com.agnitas.emm.core.recipientsreport.service.impl.RecipientReportUtils.IMPORT_RESULT_FILE_PREFIX;
 
 public class RecipientsReportServiceImpl implements RecipientsReportService {
 
+    private static final Logger logger = LogManager.getLogger(RecipientsReportServiceImpl.class);
     private static final Map<RecipientsReport.RecipientReportType, Permission> TYPE_PERMISSIONS;
 
     static {
@@ -101,6 +107,17 @@ public class RecipientsReportServiceImpl implements RecipientsReportService {
     }
 
     @Override
+    public String getImportReportZipFileContent(Admin admin, int reportId) {
+        try {
+            byte[] fileBytes = getImportReportFileData(admin.getCompanyID(), reportId);
+            return IOUtils.toString(ZipUtilities.unzip(fileBytes), StandardCharsets.UTF_8.name());
+        } catch (Exception e) {
+            logger.error("Cant read invalidRecipientsCsv file: {}", e.getMessage(), e);
+            return null;
+        }
+    }
+
+    @Override
     public PaginatedListImpl<RecipientsReport> getReports(int companyId, int pageNumber, int pageSize, String sortProperty, String dir, Date startDate, Date finishDate, RecipientsReport.RecipientReportType...types){
         return recipientsReportDao.getReports(companyId, pageNumber, pageSize, sortProperty, dir, startDate, finishDate, types);
     }
@@ -120,7 +137,7 @@ public class RecipientsReportServiceImpl implements RecipientsReportService {
     }
 
     @Override
-    public RecipientsReport getReport(@VelocityCheck int companyId, int reportId){
+    public RecipientsReport getReport(int companyId, int reportId){
         if (reportId > 0 && companyId > 0) {
             return recipientsReportDao.getReport(companyId, reportId);
         }
@@ -128,7 +145,7 @@ public class RecipientsReportServiceImpl implements RecipientsReportService {
     }
 
     @Override
-    public RecipientsReport.RecipientReportType getReportType(@VelocityCheck int companyId, int reportId) {
+    public RecipientsReport.RecipientReportType getReportType(int companyId, int reportId) {
         if (reportId > 0 && companyId > 0) {
             return recipientsReportDao.getReportType(companyId, reportId);
         }
@@ -186,10 +203,17 @@ public class RecipientsReportServiceImpl implements RecipientsReportService {
             return recipientReport;
         } else {
             String reportContent = getImportReportContent(companyId, reportId);
-            return getDownloadReportData(admin, report.getFilename(), reportContent);
+            String fileName = generateDownloadImportFileName(report);
+            return getDownloadReportData(admin, fileName, reportContent);
         }
     }
-    
+
+    private String generateDownloadImportFileName(RecipientsReport report) {
+        return String.format("%s_%s_%d", IMPORT_RESULT_FILE_PREFIX,
+                FilenameUtils.removeExtension(report.getFilename()),
+                report.getDatasourceId());
+    }
+
     @Override
 	public void createSupplementalReportData(int companyID, int adminID, String filename, int datasourceId, Date reportDate, File temporaryDataFile, String textContent, int autoImportID, boolean isError) throws Exception {
         RecipientsReport report = new RecipientsReport();
@@ -219,4 +243,3 @@ public class RecipientsReportServiceImpl implements RecipientsReportService {
         return result;
     }
 }
-

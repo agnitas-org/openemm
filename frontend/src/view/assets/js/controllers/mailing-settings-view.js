@@ -9,9 +9,7 @@ AGN.Lib.Controller.new('mailing-settings-view', function() {
   var mailingListSelect;
   var lastMailingListId = 0;
 
-  var saveDirtyState = false;
   var mediaTypePriorityChanged = false;
-  var backupFieldsDirtyData = {};
 
   var refreshTargetModeLabel = function() {
     var $targetModeDesc = $('#target-mode-desc')
@@ -20,6 +18,23 @@ AGN.Lib.Controller.new('mailing-settings-view', function() {
     } else {
       $targetModeDesc.text(t('mailing.default.targetmode_and'));
     }
+  }
+  
+  var collectMailingParams = function() {
+    var $table = $('#mailingParamsTable tbody');
+    if ($table && $table.length) {
+      return _.map($table.find('[data-param-row]'), function(row) {
+        var $row = $(row);
+        return {
+          name: getParamValInRowByCol($row, 'name'),
+          value: getParamValInRowByCol($row, 'value'),
+          description: getParamValInRowByCol($row, 'description')
+        };
+      }).filter(function(param) {
+        return param.name || param.value || param.description;
+      })
+    }
+    return [];
   }
 
   const updateCharCounter = function($el) {
@@ -56,7 +71,8 @@ AGN.Lib.Controller.new('mailing-settings-view', function() {
     scrollPage();
     if ($('#email-tile').length) {
       updateCharCounter($('#emailSubject'));
-    } 
+    }
+    AGN.Opt.collectMailinParams = collectMailingParams;
   });
   
   function showRemovedMailinglistError() {
@@ -98,30 +114,24 @@ AGN.Lib.Controller.new('mailing-settings-view', function() {
   }
 
   function configureFormChangesTracking() {
-    var $form = $('#mailingSettingsForm');
-    if ($form.dirty('refreshEvents') === null) {
-      $form.dirty({
-        preventLeaving: true,
-        leavingMessage: t('grid.layout.leaveQuestion'),
-        onDirty: function() {
-          if (isDirtyOnlyNonEditableFields($form) && !mediaTypePriorityChanged) {
-            $form.dirty('setAsClean');
-          }
+    const $form = $('#mailingSettingsForm');
+
+    $form.dirty('destroy');
+    $form.dirty({
+      preventLeaving: true,
+      leavingMessage: t('grid.layout.leaveQuestion'),
+      onDirty: function() {
+        if (isDirtyOnlyNonEditableFields($form) && !mediaTypePriorityChanged) {
+          $form.dirty('setAsClean');
         }
-      });
-    }
+      }
+    });
 
-    if (saveDirtyState) {
-      $form.dirty('restoreData', backupFieldsDirtyData);
-    }
-
-    if (!saveDirtyState || isDirtyOnlyNonEditableFields($form) && !mediaTypePriorityChanged) {
+    if (isDirtyOnlyNonEditableFields($form) && !mediaTypePriorityChanged) {
       $form.dirty('setAsClean');
-      backupFieldsDirtyData = $form.dirty('backupData');
     }
 
     mediaTypePriorityChanged = false;
-    saveDirtyState = false;
   }
     
   window.onbeforeunload = function() {
@@ -301,9 +311,6 @@ AGN.Lib.Controller.new('mailing-settings-view', function() {
 
   this.addAction({change: 'change-mediatype'}, function() {
     var $el = $(this.el);
-    var $form = Form.getWrapper($el);
-    backupFieldsDirtyData = $form.dirty('backupData');
-    saveDirtyState = true;
     var active = isMediatypeListElemActive($el);
     redrawMediatypeCheckboxes($el, active);
     redrawMediatypeTiles();
@@ -337,21 +344,35 @@ AGN.Lib.Controller.new('mailing-settings-view', function() {
     displayArrows($el, active);
   }
 
-  function redrawEmailTile() {
-    $('#frame-tile').remove();
-    $('#email-tile').remove();
-    var $emailCheckboxItem = $('#tile-mediaTypes').find('[data-mediatype="email"]');
-    if (isMediatypeListElemActive($emailCheckboxItem) || config.isMailingGrid) {
-      var $baseInfoTile = $('#base-info-tile');
-      var $emailTile = AGN.Lib.Template.dom('email-tile-template');
-      var $frameTile = AGN.Lib.Template.dom('frame-tile-template');
+  function removeEmailTileIfNecessary() {
+    if (config.isMailingGrid) {
+      return;
+    }
+
+    const $emailCheckboxItem = $('#tile-mediaTypes').find('[data-mediatype="email"]');
+    if (!isMediatypeListElemActive($emailCheckboxItem)) {
+      $('#frame-tile').remove();
+      $('#email-tile').remove();
+    }
+  }
+
+  function renderEmailTileIfNotExists() {
+    const tilesExist = $('#frame-tile').length && $('#email-tile').length;
+
+    if (!tilesExist) {
+      const $emailTile = AGN.Lib.Template.dom('email-tile-template');
+      const $frameTile = AGN.Lib.Template.dom('frame-tile-template');
+
+      const $baseInfoTile = $('#base-info-tile');
+
       $baseInfoTile.after($emailTile);
       $baseInfoTile.after($frameTile);
     }
   }
 
   function redrawMediatypeTiles() {
-    redrawEmailTile();
+    renderEmailTileIfNotExists();
+    removeEmailTileIfNecessary();
     var $mediatypesTile = $('#mediatypes-tile');
     $('#tile-mediaTypes').find('.list-group li').toArray()
       .filter(function(el) {
@@ -421,57 +442,41 @@ AGN.Lib.Controller.new('mailing-settings-view', function() {
 
   function prioritiseMediatypes($el, up) {
     var $form = Form.getWrapper($el);
-    backupFieldsDirtyData = $form.dirty('backupData');
     mediaTypePriorityChanged = true;
-    saveDirtyState = true;
+
     if (isMediatypeCanBeMoved($el, up)) {
       if (up) {
         moveMediatypeUp($el);
       } else {
         moveMediatypeDown($el);
       }
+
+      $form.dirty("setAsDirty")
+
       redrawMediatypeTiles();
     }
   }
-  
-  this.addAction({click: 'save'}, function() {
-    var $form = $('#mailingSettingsForm');
-    var form = Form.get($form);
-    
+
+  this.addAction({submission: 'save'}, function () {
+    const form = Form.get(this.el);
+
     $('#tile-mediaTypes').find('.list-group li').toArray()
-          .forEach(function(el) {
-            var $el = $(el);
-            var mediatype = $el.data('mediatype');
-            form.setValueOnce(mediatype + 'Mediatype.priority', $el.data('priority'))
-          });
-    
+        .forEach(function(el) {
+          const $el = $(el);
+          const mediatype = $el.data('mediatype');
+          form.setValueOnce(mediatype + 'Mediatype.priority', $el.data('priority'))
+        });
+
     setParamsToForm(form);
     form.submit();
   });
-  
+
   function setParamsToForm(form) {
-    _.each(collectParamsFromTable(), function (param, index) {
+    _.each(collectMailingParams(), function (param, index) {
       form.setValueOnce('params[' + index + '].name', param.name);
       form.setValueOnce('params[' + index + '].value', param.value);
       form.setValueOnce('params[' + index + '].description', param.description);
     })
-  }
-  
-  function collectParamsFromTable() {
-    var $table = $('#mailingParamsTable tbody');
-    if ($table && $table.length) {
-      return _.map($table.find('[data-param-row]'), function(row) {
-        var $row = $(row);
-        return {
-          name: getParamValInRowByCol($row, 'name'),
-          value: getParamValInRowByCol($row, 'value'),
-          description: getParamValInRowByCol($row, 'description')
-        };
-      }).filter(function(param) {
-        return param.name || param.value || param.description;
-      })
-    }
-    return [];
   }
   
   function getParamValInRowByCol($row, col) {

@@ -15,14 +15,12 @@ import java.util.List;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.beans.Mailing;
 import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.mailingcontent.dto.DynTagDto;
 
 public interface MailingContentService {
-
     ServiceResult<List<UserAction>> updateDynContent(Mailing mailing, DynTagDto dynTagDto, Admin admin) throws Exception;
-
-    DynTagDto getDynTag(@VelocityCheck int companyId, int dynNameId);
+    DynTagDto getDynTag(int companyId, int dynNameId);
+	void buildDependencies(int mailingID, int companyID) throws Exception;
 }

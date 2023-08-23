@@ -86,6 +86,7 @@ public class Data {
 	public static Systemconfig syscfg;
 	public static Systemconfig.Selection selection;
 	public static DBConfig dbcfg;
+	public static boolean emm;
 	/**
 	 * fqdn, hostname, user, etc.
 	 */
@@ -216,6 +217,10 @@ public class Data {
 	 * for preview mailings if preview should be anon
 	 */
 	public boolean previewAnon = false;
+	/**
+	 * on anon preview, preserver plain links, if this is set
+	 */
+	public boolean previewAnonPreserveLinks = false;
 	/**
 	 * for preview mailings if only partial preview requested
 	 */
@@ -492,11 +497,12 @@ public class Data {
 	private boolean isMobilePreview;
 
 	static {
-		syscfg = new Systemconfig ();
+		syscfg = Systemconfig.create ();
 		selection = syscfg.selection ();
 		dbcfg = new DBConfig ();
+		emm = !"openemm".equalsIgnoreCase (Systemconfig.user);
 		String[]	dbids = dbcfg.ids ();
-		defaultDBID = (dbids != null) && (dbids.length == 1) ? dbids[0] : "emm";
+		defaultDBID = (dbids != null) && (dbids.length == 1) ? dbids[0] : (emm ? "emm" : "openemm");
 	}
 
 	/**
@@ -555,12 +561,7 @@ public class Data {
 		}
 		if (dbase != null) {
 			logging(Log.DEBUG, "deinit", "Shuting down database connection");
-			try {
-				closeDatabase();
-			} catch (Exception e) {
-				++cnt;
-				msg += "\t" + e + "\n";
-			}
+			closeDatabase();
 		}
 		if (toRemove != null) {
 			int fcnt = toRemove.size();
@@ -606,7 +607,7 @@ public class Data {
 	 * Suspend call between setup and main execution
 	 *
 	 */
-	public void suspend() throws Exception {
+	public void suspend() {
 		if (maildropStatus != null) {
 			if (maildropStatus.isCampaignMailing() || maildropStatus.isVerificationMailing() || maildropStatus.isPreviewMailing()) {
 				closeDatabase();
@@ -842,13 +843,9 @@ public class Data {
 	/**
 	 * close a database and free all assigned data
 	 */
-	protected void closeDatabase() throws Exception {
+	protected void closeDatabase() {
 		if (dbase != null) {
-			try {
-				dbase = dbase.done();
-			} catch (Exception e) {
-				throw new Exception("Database close failed: " + e.toString(), e);
-			}
+			dbase = dbase.done();
 		}
 	}
 
@@ -881,7 +878,7 @@ public class Data {
 					}
 				}
 			}
-			if (dbase.exists("reference_tbl")) {
+			if (emm) {
 				retrieveReferenceTableDefinitions(mailing.id());
 			}
 			if (mailing.id() > 0) {
@@ -2219,9 +2216,10 @@ public class Data {
 				logging(Log.DEBUG, "mailtrack", "Mailtrack will be written later");
 			} else {
 				//				long	chunks = limitBlockChunks ();		// not active due to performance issues
-				long chunks = 1;
-				String query = bigClause.mailtrackStatement(company.mailtrackingTable());
-
+				long	chunks = 1;
+				int	mediaType = (media != null) && (media.size () == 1) ? media.get (0).type : Media.TYPE_UNRELATED;
+				String	query = bigClause.mailtrackStatement(company.mailtrackingTable(), mediaType);
+				
 				if (query != null) {
 					for (long chunk = 0; chunk < chunks; ++chunk) {
 						String cquery = chunks == 1 ? query : query + " WHERE mod(customer_id, " + chunks + ") = " + chunk;
@@ -2268,11 +2266,13 @@ public class Data {
 	private int obj2int(Object o, String what) throws Exception {
 		int rc = 0;
 
-		if (o.getClass() == Integer.class) {
+		if (o instanceof Integer) {
 			rc = ((Integer) o).intValue();
-		} else if (o.getClass() == Long.class) {
+		} else if (o instanceof Long) {
 			rc = ((Long) o).intValue();
-		} else if (o.getClass() == String.class) {
+		} else if (o instanceof Double) {
+			rc = (int) ((Double) o).doubleValue();
+		} else if (o instanceof String) {
 			rc = Integer.parseInt((String) o);
 		} else {
 			typeerr(o, what);
@@ -2290,11 +2290,13 @@ public class Data {
 	private long obj2long(Object o, String what) throws Exception {
 		long rc = 0;
 
-		if (o.getClass() == Integer.class) {
+		if (o instanceof Integer) {
 			rc = ((Integer) o).longValue();
-		} else if (o.getClass() == Long.class) {
+		} else if (o instanceof Long) {
 			rc = ((Long) o).longValue();
-		} else if (o.getClass() == String.class) {
+		} else if (o instanceof Double) {
+			rc = (long) ((Double) o).doubleValue();
+		} else if (o instanceof String) {
 			rc = Long.parseLong((String) o);
 		} else {
 			typeerr(o, what);
@@ -2312,9 +2314,15 @@ public class Data {
 	private boolean obj2bool(Object o, String what) throws Exception {
 		boolean rc = false;
 
-		if (o.getClass() == Boolean.class) {
+		if (o instanceof Boolean) {
 			rc = ((Boolean) o).booleanValue();
-		} else if (o.getClass() == String.class) {
+		} else if (o instanceof Integer) {
+			rc = ((Integer) o).intValue() != 0;
+		} else if (o instanceof Long) {
+			rc = ((Long) o).longValue() != 0L;
+		} else if (o instanceof Double) {
+			rc = ((Double) o).doubleValue() != 0.0;
+		} else if (o instanceof String) {
 			rc = Boolean.parseBoolean((String) o);
 		} else {
 			typeerr(o, what);
@@ -2332,7 +2340,7 @@ public class Data {
 	private Date obj2date(Object o, String what) throws Exception {
 		Date rc = null;
 
-		if (o.getClass() == Date.class) {
+		if (o instanceof Date) {
 			rc = (Date) o;
 		} else {
 			typeerr(o, what);
@@ -2456,6 +2464,12 @@ public class Data {
 				logging(Log.DEBUG, "options2", "--> preview-anon = " + previewAnon);
 			} else {
 				previewAnon = false;
+			}
+			if ((tmp = opts.get("preview-anon-preserve-links")) != null) {
+				previewAnonPreserveLinks = obj2bool(tmp, "preview-anon-preserve-links");
+				logging(Log.DEBUG, "options2", "--> preview-anon-preserve-links = " + previewAnonPreserveLinks);
+			} else {
+				previewAnonPreserveLinks = false;
 			}
 			if ((previewSelector = (String) opts.get("preview-selector")) != null) {
 				logging(Log.DEBUG, "options2", "--> preview-selector = " + previewSelector);
@@ -3009,12 +3023,49 @@ public class Data {
 		return enforceTestVIP;
 	}
 
+	protected Map <String, String> retrieveOverwrittenTestRecipientColumns () {
+		Map <String, String>	rc = null;
+		long			sourceCustomerID = maildropStatus.overwriteTestRecipient ();
+
+		if (sourceCustomerID > 0) {
+			rc = new HashMap <> ();
+			List <Media> currentMedia = media ();
+			
+			if ((currentMedia != null) && (currentMedia.size () > 0)) {
+				try (DBase.With with = dbase.with ()) {
+					String	query = 
+						"SELECT " + (currentMedia.stream ()
+							.map (m -> m.profileField ())
+							.filter (f -> f != null)
+							.map (f -> f.toLowerCase ())
+							.reduce ((s, e) -> s + ", " + e)
+							.orElse ("NULL")
+						) + " FROM customer_" + company.id () + "_tbl " +
+						"WHERE customer_id = :customer_id";
+					
+					Map <String, Object> row = dbase.querys (with.cursor (), query, "customer_id", sourceCustomerID);
+				
+					if (row != null) {
+						for (Media m : currentMedia) {
+							if (m.profileField () != null) {
+								rc.put (m.profileField (), dbase.asString (row.get (m.profileField ().toLowerCase ())));
+							}
+						}
+					}
+				} catch (SQLException e) {
+					logging (Log.ERROR, "test", "Failed to retreive media information for customer " + sourceCustomerID + ": " + e.toString ());
+				}
+			}
+		}
+		return rc;
+	}
+
 	/**
 	 * Set standard field to be retrieved from database
 	 *
 	 * @param predef the hashset to store field name to
 	 */
-	public void setStandardFields(Set<String> predef, Map<String, EMMTag> tags) {
+	private void setStandardFields(Set<String> predef, Map<String, EMMTag> tags) {
 		collectMediatypes(predef);
 		predef.add("sys_tracking_veto");
 		targetExpression.requestFields(predef);
@@ -3091,9 +3142,10 @@ public class Data {
 	 *
 	 * @param use already used column names
 	 */
-	public void setUsedFieldsInLayout(Set<String> use, Map<String, EMMTag> tags) {
+	public void setUsedFieldsInLayout(BlockCollection allBlocks, Map<String, EMMTag> tags) {
 		int sanity = 0;
 		Set<String> predef;
+		Set<String> use = allBlocks.getUsedColumns();
 
 		if (use != null) {
 			predef = new HashSet<>(use);

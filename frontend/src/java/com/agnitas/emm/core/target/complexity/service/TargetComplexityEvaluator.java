@@ -12,8 +12,7 @@ package com.agnitas.emm.core.target.complexity.service;
 
 import com.agnitas.emm.core.target.complexity.bean.TargetComplexityEvaluationCache;
 import com.agnitas.emm.core.target.eql.parser.EqlParserException;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public interface TargetComplexityEvaluator {
-    int evaluate(String eql, @VelocityCheck int companyId, TargetComplexityEvaluationCache cache) throws EqlParserException;
+    int evaluate(String eql, int companyId, TargetComplexityEvaluationCache cache) throws EqlParserException;
 }

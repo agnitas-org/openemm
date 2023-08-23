@@ -12,18 +12,19 @@ package org.agnitas.dao;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.agnitas.dao.exception.UnknownUserStatusException;
 
 public enum UserStatus {
-	Active(1),
-	Bounce(2),
-	AdminOut(3),
-	UserOut(4),
-	WaitForConfirm(5),
-	Blacklisted(6),
-	Suspend(7); // Sometimes also referred to as status "supended" or "pending"
+	Active(1, "active"),
+	Bounce(2, "bounce"),
+	AdminOut(3, "opt_out"),	// Same webhook identifier as UserOut. Distinguished in webhook messge by a separate flag
+	UserOut(4, "out_out"),	// Same webhook identifier as AdminOut. Distinguished in webhook messge by a separate flag
+	WaitForConfirm(5, "wait_for_confirm"),
+	Blacklisted(6, "blacklisted"),
+	Suspend(7, "suspended"); // Sometimes also referred to as status "supended" or "pending"
 	
 	/*
 	 *  Status 7 is used for single test delivery, when
@@ -34,8 +35,12 @@ public enum UserStatus {
 	
 	private int statusCode;
 	
-	UserStatus(int statusCode) {
+	/** Identifier used in webhook messages. */
+	private final String webhookIdentifier;
+	
+	UserStatus(int statusCode, final String webhookIdentifier) {
 		this.statusCode = statusCode;
+		this.webhookIdentifier = Objects.requireNonNull(webhookIdentifier);
 	}
 	
 	public int getStatusCode() {
@@ -70,5 +75,14 @@ public enum UserStatus {
 	
 	public static List<UserStatus> getAvailableStatusCodes() {
 		return Arrays.asList(UserStatus.values());
+	}
+
+	/**
+	 * Returns the identifier used in webhook messages.
+	 * 
+	 * @return identifier used in webhook messages
+	 */
+	public final String getWebhookIdentifier() {
+		return this.webhookIdentifier;
 	}
 }

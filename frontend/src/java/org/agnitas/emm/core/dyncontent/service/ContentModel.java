@@ -10,7 +10,7 @@
 
 package org.agnitas.emm.core.dyncontent.service;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
+
 
 public class ContentModel {
 
@@ -27,7 +27,7 @@ public class ContentModel {
 		return companyId;
 	}
 	
-	public void setCompanyId(@VelocityCheck int companyId) {
+	public void setCompanyId(int companyId) {
 		this.companyId = companyId;
 	}
 	

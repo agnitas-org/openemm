@@ -10,6 +10,8 @@
 
 package com.agnitas.emm.core.preview.form;
 
+import java.util.List;
+
 import com.agnitas.emm.core.mailing.web.MailingPreviewHelper;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import org.agnitas.preview.ModeType;
@@ -18,52 +20,30 @@ import org.agnitas.preview.Preview;
 public class PreviewForm {
 
     private int mailingId;
-
     private String mailingShortname;
-
     private int mailingTemplateId;
-
     private boolean isTemplate;
-
     private boolean isMailingUndoAvailable;
-
     private int workflowId;
-
     private int format = MailingPreviewHelper.INPUT_TYPE_HTML;
-
     private String previewContent;
-
     private int size = Preview.Size.DESKTOP.getValue();
-
     private ModeType modeType = ModeType.RECIPIENT;
-
     private String subject;
-
     private String senderEmail;
-
     private int customerID;
-
     private int customerATID;
-
     private String customerEmail;
-
     private boolean useCustomerEmail;
-
     private boolean noImages;
-
     private boolean pure;
-
     private int targetGroupId;
-
     private boolean isMailingGrid;
-
     private int emailFormat;
-
     private boolean reload;
-
     private String mediaQuery;
-
     private int width;
+    private List<String> personalizedTestRunRecipients;
 
     public int getMailingId() {
         return mailingId;
@@ -279,5 +259,14 @@ public class PreviewForm {
 
     public void setWorkflowId(int workflowId) {
         this.workflowId = workflowId;
+    }
+    
+    
+    public List<String> getPersonalizedTestRunRecipients() {
+        return personalizedTestRunRecipients;
+    }
+
+    public void setPersonalizedTestRunRecipients(List<String> personalizedTestRunRecipients) {
+        this.personalizedTestRunRecipients = personalizedTestRunRecipients;
     }
 }

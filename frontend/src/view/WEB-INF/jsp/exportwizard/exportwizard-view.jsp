@@ -441,7 +441,9 @@
                         <th><bean:message key="Start"/></th>
                         <th><bean:message key="report.stopDate"/></th>
                         <th><bean:message key="lastDays"/></th>
+                        <emm:ShowByPermission token="recipient.export.currentdate.option">
                         <th><bean:message key="export.dates.includeCurrentDay"/></th>
+                        </emm:ShowByPermission>
                     </tr>
                 </thead>
 
@@ -479,6 +481,7 @@
                                 </div>
                             </div>
                         </td>
+                        <emm:ShowByPermission token="recipient.export.currentdate.option">
                         <td>
                             <div class="input-group">
                                 <div class="input-group-controls">
@@ -486,6 +489,7 @@
                                 </div>
                             </div>
                         </td>
+                        </emm:ShowByPermission>
                     </tr>
                     <tr>
                         <td><bean:message key="export.dates.creation_date"/></td>
@@ -520,6 +524,7 @@
                                 </div>
                             </div>
                         </td>
+                        <emm:ShowByPermission token="recipient.export.currentdate.option">
                         <td>
                             <div class="input-group">
                                 <div class="input-group-controls">
@@ -527,6 +532,7 @@
                                 </div>
                             </div>
                         </td>
+                        </emm:ShowByPermission>
                     </tr>
                     <tr>
                         <td><bean:message key="export.dates.mailinglists"/>*</td>
@@ -561,6 +567,7 @@
                                 </div>
                             </div>
                         </td>
+                        <emm:ShowByPermission token="recipient.export.currentdate.option">
                         <td>
                             <div class="input-group">
                                 <div class="input-group-controls">
@@ -568,6 +575,7 @@
                                 </div>
                             </div>
                         </td>
+                        </emm:ShowByPermission>
                     </tr>
                     <tr>
                         <td><agn:agnCheckbox property="timeLimitsLinkedByAnd"/> <bean:message key="export.timeLimitsLinkedByAnd"/></td>

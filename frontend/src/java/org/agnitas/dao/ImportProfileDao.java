@@ -15,7 +15,7 @@ import java.util.Map;
 
 import org.agnitas.beans.ColumnMapping;
 import org.agnitas.beans.ImportProfile;
-import org.agnitas.emm.core.velocity.VelocityCheck;
+
 
 public interface ImportProfileDao {
 
@@ -64,7 +64,7 @@ public interface ImportProfileDao {
      *          The company id for import profiles.
      * @return The list of ImportProfiles or empty list.
      */
-	List<ImportProfile> getImportProfilesByCompanyId( @VelocityCheck int companyId);
+	List<ImportProfile> getImportProfilesByCompanyId( int companyId);
 	
 	 /**
      * Loads list of import profiles identified by company id.
@@ -73,7 +73,7 @@ public interface ImportProfileDao {
      *          The company id for import profiles.
      * @return The list of ImportProfiles or empty list.
      */
-	List<ImportProfile> getAllImportProfilesByCompanyId( @VelocityCheck int companyId);
+	List<ImportProfile> getAllImportProfilesByCompanyId( int companyId);
 
     /**
      * Deletes import profile by ID with column and gender mappings.
@@ -89,9 +89,13 @@ public interface ImportProfileDao {
 
 	void deleteColumnMappings(List<Integer> ids);
 
-	List<Integer> getSelectedMailingListIds(int id, @VelocityCheck int companyId);
+	List<Integer> getSelectedMailingListIds(int id, int companyId);
 
 	Map<String, Integer> getImportProfileGenderMapping(int id);
 
 	void saveImportProfileGenderMapping(int id, Map<String, Integer> genderMapping);
+
+	int findImportProfileIdByName(String name, int companyId);
+
+	boolean isColumnWasImported(String columnName, int id);
 }

@@ -16,7 +16,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
+
 
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 
@@ -66,7 +66,7 @@ public interface ImportProfile {
      *
      * @param companyId the new value for the companyId
      */
-	void setCompanyId( @VelocityCheck int companyId);
+	void setCompanyId( int companyId);
 
     /**
      * Getter for property name

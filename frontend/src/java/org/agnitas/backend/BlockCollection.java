@@ -25,6 +25,7 @@ import java.util.stream.Stream;
 import org.agnitas.backend.dao.ComponentDAO;
 import org.agnitas.backend.exceptions.EMMTagException;
 import org.agnitas.beans.MailingComponentType;
+import org.agnitas.dao.UserStatus;
 import org.agnitas.util.Bit;
 import org.agnitas.util.Const;
 import org.agnitas.util.Log;
@@ -71,7 +72,7 @@ public class BlockCollection {
 	/**
 	 * referenced database fields in conditions
 	 */
-	protected HashSet<String> conditionFields = null;
+	protected Set<String> usedColumns = null;
 	/**
 	 * admin/testmark to generate for admin- and testmailings for Subject and/or From
 	 */
@@ -89,6 +90,18 @@ public class BlockCollection {
 	 */
 	protected boolean maskEnvelopeFrom = true;
 	/**
+	 * if enableTemplating is true, textblocks are considered as templates
+	 */
+	private boolean enableTemplating = false;
+	/**
+	 * if enableMultipleHeader is true, more than one text module with header information is supported
+	 */
+	private boolean enableMultipleHeader = false;
+	/**
+	 * omit list-unsubscribe/list-help header in case of DOI mailing
+	 */
+	private boolean omitListInformationOnDOI = false;
+	/**
 	 * a map containing all representation to be accessable for replacement during processing
 	 */
 	private Map<String, String> headerReplace = null;
@@ -104,6 +117,9 @@ public class BlockCollection {
 		data = nData;
 		componentDao = new ComponentDAO(data.company.id(), data.mailing.id());
 		maskEnvelopeFrom = Str.atob(data.company.info("mask-envelope-from", data.mailing.id()), true);
+		enableTemplating = Str.atob(data.company.info("enable-textblock-templating", data.mailing.id ()), false);
+		enableMultipleHeader = Str.atob(data.company.info("enable-multiple-header", data.mailing.id ()), false);
+		omitListInformationOnDOI = Str.atob(data.company.info("omit-list-informations-for-doi", data.mailing.id ()), false);
 
 		setupAdminTestmailingMarks(data.mailing.id());
 		setupAllBlocks(customText);
@@ -131,7 +147,7 @@ public class BlockCollection {
 				String cname = tmp.getInterest();
 
 				if (cname != null) {
-					conditionFields.add(cname);
+					usedColumns.add(cname);
 				}
 				for (int n = 0; n < tmp.clen; ++n) {
 					DynCont cont = tmp.content.elementAt(n);
@@ -148,33 +164,6 @@ public class BlockCollection {
 		setFullURLForImageContentID(tagTable);
 		consolidateUsedImages();
 		return tagTable;
-	}
-
-	/**
-	 * Parse and replace all tags with fixed value
-	 *
-	 * @param tagTable the collection of all tags
-	 */
-	public void replaceFixedTags(Map<String, EMMTag> tagTable) {
-		for (int n = 0; n < totalNumber; ++n) {
-			if (blocks[n].isParseable) {
-				parseFixedBlock(blocks[n], tagTable);
-			}
-		}
-		if (dynContent != null) {
-			for (DynName tmp : dynContent.names()) {
-				for (int n = 0; n < tmp.clen; ++n) {
-					DynCont cont = tmp.content.elementAt(n);
-
-					if (cont.text != null) {
-						parseFixedBlock(cont.text, tagTable);
-					}
-					if (cont.html != null) {
-						parseFixedBlock(cont.html, tagTable);
-					}
-				}
-			}
-		}
 	}
 
 	/**
@@ -293,8 +282,8 @@ public class BlockCollection {
 	 *
 	 * @return a set of all found database fields
 	 */
-	public Set<String> getConditionFields() {
-		return conditionFields;
+	public Set<String> getUsedColumns() {
+		return usedColumns;
 	}
 
 	public int getNumberOfDynamicNames() {
@@ -351,9 +340,9 @@ public class BlockCollection {
 		dynNames = new ArrayList<>();
 		dynCount = 0;
 
-		conditionFields = new HashSet<>();
+		usedColumns = new HashSet<>();
 	}
-
+	
 	private void setupTextblocksFromMailingInfo() {
 		if (Str.atob(data.company.info("extended-mailing-info", data.mailing.id()), false) && (data.mailingInfo != null)) {
 			String prefix = data.company.info("extended-mailing-info-prefix", data.mailing.id());
@@ -558,14 +547,7 @@ public class BlockCollection {
 	}
 
 	private String envelopeFrom() {
-		if (Str.atob(data.company.info("dkim-native-return-path"), false)) {
-			return returnPath();
-		}
-		return envelope("MFROM");
-	}
-
-	private String returnPath() {
-		return envelope("RPATH");
+		return envelope(Str.atob(data.company.info("dkim-native-return-path"), false) ? "RPATH" : "MFROM");
 	}
 
 	private String headFrom() {
@@ -591,64 +573,80 @@ public class BlockCollection {
 		}
 		return "";
 	}
-
-	private String headAdditional() {
-		String env;
-		String method;
-		String rc;
-		Map<String, String> extra = new HashMap<>();
-
-		env = envelopeFrom();
-		extra.put("envelope-from", env);
-		if ((method = data.company.infoSubstituted("list-unsubscribe", data.mailing.id(), extra)) == null) {
-			String link = null;
-			if (data.rdirDomain != null) {
-				String rdirContextLink = data.company.info("rdir.UseRdirContextLinks");
-
-				if ((rdirContextLink != null) && Str.atob(rdirContextLink, false)) {
-					link = "<" + data.rdirDomain + "/uq/[agnUID]/uq.html>";
-				} else {
-					link = "<" + data.rdirDomain + "/uq.html?uid=[agnUID]>";
-				}
+	
+	private boolean addListUnsubscribeHeader () {
+		if (omitListInformationOnDOI) {
+			if (data.defaultUserStatus == UserStatus.WaitForConfirm.getStatusCode()) {
+				return false;
 			}
-			method = link != null ? link + ", " : "";
-			if (data.mailloopDomain != null) {
-				method += data.substituteString ("<mailto:fbl@%(mailloop-domain)?subject=unsubscribe:[agnUID]>", extra);
-			} else if (env != null) {
-				method += "<mailto:" + env + "?subject=unsubscribe:[agnUID]>";
-			}
-		} else {
-			method = method.trim();
-			if (method.equals("-")) {
-				method = null;
-			}
-		}
-		if ((method == null) || (method.length() == 0)) {
-			rc = "";
-		} else {
-			String	listHelpURL = null;
-			
-			if ("transaction".equals (data.mailing.contentType ())) {
-				listHelpURL = data.company.info ("list-help-url");
-				if (listHelpURL != null) {
-					if ((! "-".equals (listHelpURL)) && (! listHelpURL.startsWith ("https://"))) {
-						data.logging (Log.INFO, "list-help", "Invalid list help url \"" + listHelpURL + "\" found, not starting with \"https://\"");
-						listHelpURL = null;
+			if (data.maildropStatus.isCampaignMailing() &&
+			    (data.campaignUserStatus != null) &&
+			    (data.campaignUserStatus.length > 0)) {
+				for (long userStatus : data.campaignUserStatus) {
+					if (userStatus == UserStatus.WaitForConfirm.getStatusCode()) {
+						return false;
 					}
 				}
 			}
-			if (listHelpURL != null) {
-				if ("-".equals (listHelpURL)) {
-					rc = null;
-				} else {
-					rc = "HList-Help: <" + listHelpURL + ">\n";
+		}
+		return true;
+	}
+	
+	private String headAdditional() {
+		String rc = "";
+		Map<String, String> extra = new HashMap<>();
+
+		if (addListUnsubscribeHeader ()) {
+			String env = envelopeFrom();
+			String method;
+			
+			extra.put("envelope-from", env);
+			if ((method = data.company.infoSubstituted("list-unsubscribe", data.mailing.id(), extra)) == null) {
+				String link = null;
+				if (data.rdirDomain != null) {
+					String rdirContextLink = data.company.info("rdir.UseRdirContextLinks");
+
+					if ((rdirContextLink != null) && Str.atob(rdirContextLink, false)) {
+						link = "<" + data.rdirDomain + "/uq/[agnUID]/uq.html>";
+					} else {
+						link = "<" + data.rdirDomain + "/uq.html?uid=[agnUID]>";
+					}
+				}
+				method = link != null ? link + ", " : "";
+				if (data.mailloopDomain != null) {
+					method += data.substituteString ("<mailto:fbl@%(mailloop-domain)?subject=unsubscribe:[agnUID]>", extra);
+				} else if (env != null) {
+					method += "<mailto:" + env + "?subject=unsubscribe:[agnUID]>";
 				}
 			} else {
-				rc = "HList-Unsubscribe: " + method + "\n";
-				String listUnsubscribePost = data.company.infoSubstituted("list-unsubscribe-post", data.mailing.id());
-
-				if (!"-".equals(listUnsubscribePost)) {
-					rc += "HList-Unsubscribe-Post: " + (listUnsubscribePost != null ? listUnsubscribePost : "List-Unsubscribe=One-Click") + "\n";
+				method = method.trim();
+				if (method.equals("-")) {
+					method = null;
+				}
+			}
+			if ((method != null) && (method.length() > 0)) {
+				String	listHelpURL = null;
+			
+				if ("transaction".equals (data.mailing.contentType ())) {
+					listHelpURL = data.company.info ("list-help-url");
+					if (listHelpURL != null) {
+						if ((! "-".equals (listHelpURL)) && (! listHelpURL.startsWith ("https://"))) {
+							data.logging (Log.INFO, "list-help", "Invalid list help url \"" + listHelpURL + "\" found, not starting with \"https://\"");
+							listHelpURL = null;
+						}
+					}
+				}
+				if (listHelpURL != null) {
+					if (! "-".equals (listHelpURL)) {
+						rc = "HList-Help: <" + listHelpURL + ">\n";
+					}
+				} else {
+					rc = "HList-Unsubscribe: " + method + "\n";
+					String listUnsubscribePost = data.company.infoSubstituted("list-unsubscribe-post", data.mailing.id());
+	
+					if (!"-".equals(listUnsubscribePost)) {
+						rc += "HList-Unsubscribe-Post: " + (listUnsubscribePost != null ? listUnsubscribePost : "List-Unsubscribe=One-Click") + "\n";
+					}
 				}
 			}
 		}
@@ -674,23 +672,24 @@ public class BlockCollection {
 	 * @return the newly created block
 	 */
 	protected BlockData createBlockZero() {
-		BlockData b = new BlockData();
-		String head;
-
+		BlockData	rc;
+		String		head;
+		
+		rc = new BlockData ();
+		rc.content = "";
+		rc.cid = Const.Component.NAME_HEADER;
+		rc.isParseable = true;
+		rc.isText = true;
+		rc.type = BlockData.HEADER;
+		rc.media = Media.TYPE_EMAIL;
+		rc.comptype = 0;
+			
 		if (data.mailing.fromEmailIsValid() && (data.mailing.subject() != null)) {
 			String mfrom = envelopeFrom();
-			String rpath = returnPath();
 
-			if (mfrom == null) {
-				mfrom = "";
-			}
-			if (rpath == null) {
-				rpath = mfrom;
-			}
 			head =	"T[agnSYSINFO name=\"EPOCH\"]\n" +
-				"S<" + mfrom + ">\n" +
+				"S<" + (mfrom != null ? mfrom : "") + ">\n" +
 				"R<[agnEMAIL code=\"punycode\"]>\n" +
-				"H?mP?Return-Path: <" + rpath +">\n" +
 				"HReceived: by [agnSYSINFO name=\"FQDN\" default=\"" + data.mailing.domain () + "\"] for <[agnEMAIL]>; [agnSYSINFO name=\"RFCDATE\"]\n" +
 				"HMessage-ID: <[agnMESSAGEID]>\n" +
 				"HDate: [agnSYSINFO name=\"RFCDATE\"]\n";
@@ -704,35 +703,30 @@ public class BlockCollection {
 		} else {
 			head = "- unset -\n";
 		}
-
-		b.content = head;
-		b.cid = Const.Component.NAME_HEADER;
-		b.isParseable = true;
-		b.isText = true;
-		b.type = BlockData.HEADER;
-		b.media = Media.TYPE_EMAIL;
-		b.comptype = 0;
-		return b;
+		rc.content = head;
+		return rc;
 	}
 
 	protected void cleanupBlockCollection(List<BlockData> c) {
-		BlockData header;
+		if (! enableMultipleHeader) {
+			BlockData header;
 
-		header = null;
-		for (int n = 0; n < c.size(); ++n) {
-			BlockData bd = c.get(n);
+			header = null;
+			for (int n = 0; n < c.size(); ++n) {
+				BlockData bd = c.get(n);
 
-			if (bd.type == BlockData.HEADER) {
-				if (header == null) {
-					header = bd;
-				} else {
-					if (header.id < bd.id) {
-						c.remove(header);
+				if (bd.type == BlockData.HEADER) {
+					if (header == null) {
 						header = bd;
 					} else {
-						c.remove(bd);
+						if (header.id < bd.id) {
+							c.remove(header);
+							header = bd;
+						} else {
+							c.remove(bd);
+						}
+						--n;
 					}
-					--n;
 				}
 			}
 		}
@@ -832,16 +826,17 @@ public class BlockCollection {
 
 	protected void parseBlock(BlockData cb, String name, Map<String, EMMTag> tagTable) throws Exception {
 		if (cb.isParseable) {
-			int tag_counter = 0;
-			String current_tag;
-
+			int tagCounter = 0;
+			String currentTag;
+			boolean isTemplate = enableTemplating ? cb.getTemplateColumns (usedColumns) : false;
+			
 			// get all tags inside the block
-			while ((current_tag = cb.getNextTag()) != null) {
+			while ((currentTag = cb.getNextTag()) != null) {
 				try {
 					// add tag and EMMTag data structure to hashtable
-					if (!tagTable.containsKey(current_tag)) {
+					if (!tagTable.containsKey(currentTag)) {
 						String dyName;
-						EMMTag ntag = mkEMMTag(current_tag);
+						EMMTag ntag = mkEMMTag(currentTag);
 
 						if ((ntag.tagType == EMMTag.TAG_INTERNAL) &&
 						    (ntag.tagSpec == EMMTag.TI_DYN) &&
@@ -858,19 +853,19 @@ public class BlockCollection {
 								dynCount++;
 							}
 						}
-						tagTable.put(current_tag, ntag);
-						data.logging(Log.DEBUG, "collect", "Added Tag: " + current_tag);
+						tagTable.put(currentTag, ntag);
+						data.logging(Log.DEBUG, "collect", "Added Tag: " + currentTag);
 					} else {
-						data.logging(Log.DEBUG, "collect", "Skip existing Tag: " + current_tag);
+						data.logging(Log.DEBUG, "collect", "Skip existing Tag: " + currentTag);
 					}
 				} catch (Exception e) {
 					data.logging(Log.ERROR, "collect", "Failed in collecting block " + name, e);
-					throw new Exception("Error while trying to query block " + tag_counter + ": " + e.toString());
+					throw new Exception("Error while trying to query block " + tagCounter + ": " + e.toString());
 				}
-				tag_counter++;
+				tagCounter++;
 			}
 			// check for tagless blocks
-			if (tag_counter == 0) {
+			if ((tagCounter == 0) && (! isTemplate)) {
 				cb.isParseable = false; // block contained no tags!
 			}
 		}
@@ -908,7 +903,7 @@ public class BlockCollection {
 			if (parm != null) {
 				parm = parm.toLowerCase();
 				dflt = "%(" + parm + ")";
-				conditionFields.add(parm);
+				usedColumns.add(parm);
 			}
 		}
 		return dflt;
@@ -951,55 +946,5 @@ public class BlockCollection {
 			res.append(src.substring(cur));
 		}
 		return res == null ? null : res.toString();
-	}
-
-	/**
-	 * Already parse and replace tags with fixed value
-	 *
-	 * @param b        the block to parse
-	 * @param tagTable the tag collection
-	 */
-	private void parseFixedBlock(BlockData b, Map<String, EMMTag> tagTable) {
-		String cont = b.content != null ? b.content : "";
-		int clen = cont.length();
-		StringBuffer buf = new StringBuffer(clen + 128);
-		List<TagPos> pos = b.tagPositions;
-		int count = pos.size();
-		int start = 0;
-		int offset = 0;
-		boolean changed = false;
-
-		for (int m = 0; m < count; ) {
-			TagPos tp = pos.get(m);
-			EMMTag tag = tagTable.get(tp.getTagname());
-			String value = tag.getTagValue();
-
-			if (value == null) {
-				tag.fixedValue = false;
-			}
-			if (value != null && tag.fixedValue) {
-				offset += value.length() - tag.mTagFullname.length();
-				buf.append(cont.substring(start, tp.getStart()) + value);
-				start = tp.getEnd() + 1;
-				pos.remove(m);
-				--count;
-				changed = true;
-			} else {
-				if ((tp.getContent() != null) && tp.getContent().isParseable) {
-					parseFixedBlock(tp.getContent(), tagTable);
-				}
-				tp.relocateBy(offset);
-				++m;
-			}
-		}
-		if (changed) {
-			if (start < clen) {
-				buf.append(cont.substring(start));
-			}
-			b.content = StringOps.convertOld2New(buf.toString());
-			if (count == 0) {
-				b.isParseable = false;
-			}
-		}
 	}
 }

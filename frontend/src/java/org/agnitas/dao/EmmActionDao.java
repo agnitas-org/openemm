@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.agnitas.actions.EmmAction;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.emm.core.action.operations.ActionOperationType;
 
@@ -32,7 +31,7 @@ public interface EmmActionDao {
 	 * 
 	 * @return <code>true</code> if action exists, otherwise false
 	 */
-	boolean actionExists(final int actionID, @VelocityCheck final int companyID);
+	boolean actionExists(final int actionID, final int companyID);
 	
     /**
      * Loads emmAction
@@ -43,7 +42,7 @@ public interface EmmActionDao {
      *              The id of the company that uses the action
      * @return  EMMAction bean object or null
      */
-    EmmAction getEmmAction(int actionID, @VelocityCheck int companyID);
+    EmmAction getEmmAction(int actionID, int companyID);
 
     /**
      * Saves emmAction.
@@ -64,8 +63,8 @@ public interface EmmActionDao {
      * @return true==success
      *false==error
      */
-    boolean deleteEmmAction(int actionID, @VelocityCheck int companyID);
-    boolean deleteEmmActionReally(int actionID, @VelocityCheck int companyID);
+    boolean deleteEmmAction(int actionID, int companyID);
+    boolean deleteEmmActionReally(int actionID, int companyID);
     
     /**
      * Loads all emm actions for certain company
@@ -74,14 +73,14 @@ public interface EmmActionDao {
      *              The id of the company that uses the actions
      * @return List of emm actions or empty list
      */
-    List<EmmAction> getEmmActions(@VelocityCheck int companyID);
-    List<EmmAction> getEmmActions(@VelocityCheck int companyID, boolean includeDeleted);
+    List<EmmAction> getEmmActions(int companyID);
+    List<EmmAction> getEmmActions(int companyID, boolean includeDeleted);
 
-    List<EmmAction> getEmmActionsByName(@VelocityCheck int companyID, String shortName);
+    List<EmmAction> getEmmActionsByName(int companyID, String shortName);
 
-    String getEmmActionName(int actionId, @VelocityCheck int companyId);
+    String getEmmActionName(int actionId, int companyId);
 
-    Map<Integer, String> getEmmActionNames(@VelocityCheck int companyId, List<Integer> actionIds);
+    Map<Integer, String> getEmmActionNames(int companyId, List<Integer> actionIds);
 
     /**
      *  Loads all emm actions for certain company except actions of form type
@@ -90,7 +89,7 @@ public interface EmmActionDao {
      *              The id of the company that uses the actions
      * @return List of emm actions or empty list
      */
-    List<EmmAction> getEmmNotFormActions( @VelocityCheck int companyID);
+    List<EmmAction> getEmmNotFormActions( int companyID);
 
     /**
      *  Loads all emm actions for certain company except actions of form type
@@ -101,7 +100,7 @@ public interface EmmActionDao {
      *              Whether ({@code true}) or not ({@code false}) actions marked as not active should be included.
      * @return List of emm actions or empty list
      */
-    List<EmmAction> getEmmNotFormActions( @VelocityCheck int companyID, boolean includeInactive);
+    List<EmmAction> getEmmNotFormActions( int companyID, boolean includeInactive);
 
      /**
      *  Loads all emm actions for certain company except actions of link type
@@ -110,7 +109,7 @@ public interface EmmActionDao {
      *              The id of the company that uses the actions
      * @return List of emm actions or empty list
      */
-    List<EmmAction> getEmmNotLinkActions( @VelocityCheck int companyID);
+    List<EmmAction> getEmmNotLinkActions( int companyID);
 
      /**
      *  Loads all emm actions for certain company except actions of link type
@@ -121,7 +120,7 @@ public interface EmmActionDao {
                     Whether ({@code true}) or not ({@code false}) actions marked as not active should be included.
      * @return List of emm actions or empty list
      */
-    List<EmmAction> getEmmNotLinkActions( @VelocityCheck int companyID, boolean includeInactive);
+    List<EmmAction> getEmmNotLinkActions( int companyID, boolean includeInactive);
 
     /**
      * Loads numbers of usage in forms for emm actions of certain company
@@ -130,9 +129,9 @@ public interface EmmActionDao {
      *              The id of the company that uses the actions
      * @return HashMap object
      */
-    Map<Integer, Integer> loadUsed( @VelocityCheck int companyID);
+    Map<Integer, Integer> loadUsed( int companyID);
 
-    List<String> getActionUserFormNames(int actionId, @VelocityCheck int companyId);
+    List<String> getActionUserFormNames(int actionId, int companyId);
 
     /**
      *  Loads list of emm actions with sorting
@@ -148,14 +147,15 @@ public interface EmmActionDao {
 
     List<EmmAction> getEmmActionsByOperationType(int companyID, boolean includeInactive, ActionOperationType... actionTypes);
 
-    Map<Integer, Boolean> getActivenessMap(Collection<Integer> actionIds, @VelocityCheck int companyId);
+    Map<Integer, Boolean> getActivenessMap(Collection<Integer> actionIds, int companyId);
 
-    void setActiveness(Collection<Integer> actionIds, boolean active, @VelocityCheck int companyId);
+    void setActiveness(Collection<Integer> actionIds, boolean active, int companyId);
 
     /**
      * Loads list of emm actions that contain send mailing operation for a concrete mailing id.
      * @return List of emm actions
      */
-    List<EmmAction> getActionListBySendMailingId(@VelocityCheck int companyId, int mailingId);
+    List<EmmAction> getActionListBySendMailingId(int companyId, int mailingId);
 
+    boolean isAdvertising(int id, int companyId);
 }

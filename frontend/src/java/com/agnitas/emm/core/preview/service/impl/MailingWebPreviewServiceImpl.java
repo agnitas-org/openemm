@@ -146,6 +146,14 @@ public class MailingWebPreviewServiceImpl implements MailingWebPreviewService {
     }
 
     @Override
+    public String getMailingHtml(int mailingId, boolean mobile, boolean noImages) {
+        Preview preview = previewFactory.createPreview();
+        Page output = preview.makeAnonPreview(mailingId, mobile);
+        preview.done();
+        return noImages ? output.getStrippedHTML() : output.getHTML();
+    }
+
+    @Override
     public Page generateBackEndPreview(PreviewForm previewForm) {
         Preview.Size size = Preview.Size.getSizeById(previewForm.getSize());
         boolean isMobileView = size == Preview.Size.MOBILE_PORTRAIT || size == Preview.Size.MOBILE_LANDSCAPE;

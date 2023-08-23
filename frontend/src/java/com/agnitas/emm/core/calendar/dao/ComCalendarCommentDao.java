@@ -13,7 +13,6 @@ package com.agnitas.emm.core.calendar.dao;
 import java.util.Date;
 import java.util.List;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.emm.core.calendar.beans.ComCalendarComment;
 import com.agnitas.emm.core.calendar.beans.ComCalendarCommentRecipient;
@@ -23,9 +22,9 @@ public interface ComCalendarCommentDao {
 
     int saveComment(ComCalendarComment calendarComment);
 
-    List<ComCalendarComment> getComments(Date startDate, Date endDate, @VelocityCheck int companyId);
+    List<ComCalendarComment> getComments(Date startDate, Date endDate, int companyId);
 
-    boolean deleteComment(int commentId, @VelocityCheck int companyId);
+    boolean deleteComment(int commentId, int companyId);
 
-    boolean deleteCommentsByCompanyID(@VelocityCheck int companyId);
+    boolean deleteCommentsByCompanyID(int companyId);
 }

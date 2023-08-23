@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.emm.core.target.eql.codegen.DataType;
 import com.agnitas.emm.core.target.eql.codegen.resolver.ProfileFieldResolveException;
+import com.agnitas.emm.core.target.eql.codegen.util.StringUtil;
 import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderHelper;
 import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderOperator;
 import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderRuleNode;
@@ -68,8 +69,7 @@ public abstract class GenericRuleConverter implements RuleConverter {
                      throw new QueryBuilderToEqlConversionException(message);
                 }
 		case TEXT:
-		    String value = QueryBuilderUtil.getRuleNodeValueAsString(node);
-            return SINGLE_QUOTES + value + SINGLE_QUOTES;
+			return StringUtil.makeEqlStringConstant(node.getValue().toString());
             
             default:
                 String message = String.format("Data type '%s' not handled'", dataType);

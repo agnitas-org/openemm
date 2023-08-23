@@ -71,6 +71,7 @@ import org.apache.struts.action.ActionForward;
 import org.apache.struts.action.ActionMapping;
 import org.apache.struts.action.ActionMessage;
 import org.apache.struts.action.ActionMessages;
+import org.apache.struts.action.ActionRedirect;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.http.MediaType;
 
@@ -331,9 +332,13 @@ public class ProfileImportAction extends ImportBaseFileAction {
                 if (hasAccessToStandardImport && hasAccessToWizardImport) {
                     destination = mapping.findForward("init");
                 } else if (hasAccessToStandardImport && !hasAccessToWizardImport) {
-                    destination = mapping.findForward("standard");
+                	destination = new ActionRedirect("/recipient/import/view.action");
                 } else if (hasAccessToWizardImport && !hasAccessToStandardImport) {
-                    destination = mapping.findForward("wizard");
+                	if (!admin.permissionAllowed(Permission.IMPORT_WIZARD_ROLLBACK)) {
+						destination = new ActionRedirect("/recipient/import/wizard/step/file.action");
+					} else {
+						destination = mapping.findForward("wizard");
+					}
                 }
 
                 break;

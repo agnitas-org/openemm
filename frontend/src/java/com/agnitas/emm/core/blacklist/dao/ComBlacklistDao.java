@@ -17,7 +17,6 @@ import org.agnitas.beans.BlackListEntry;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.UserStatus;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public interface ComBlacklistDao {
     /**
@@ -28,7 +27,7 @@ public interface ComBlacklistDao {
      * @param reason the description of why address is added to the blacklist.
      * @return true on success.
      */
-	boolean insert(@VelocityCheck int companyID, String email, String reason);
+	boolean insert(int companyID, String email, String reason);
 
 
     /**
@@ -39,7 +38,7 @@ public interface ComBlacklistDao {
      * @param reason the description of why address is added to the blacklist.
      * @return true on success.
      */
-    boolean update(@VelocityCheck int companyID, String email, String reason);
+    boolean update(int companyID, String email, String reason);
 
     /**
      * Remove the given email from the blacklist.
@@ -48,7 +47,7 @@ public interface ComBlacklistDao {
      * @param email the address to remove from to the blacklist.
      * @return true on success.
      */
-	boolean delete(@VelocityCheck int companyID, String email);
+	boolean delete(int companyID, String email);
 
     /**
      * Get full list of blacklisted recipients
@@ -56,7 +55,7 @@ public interface ComBlacklistDao {
      * @param companyID the company to work on.
      * @return list of blacklisted  recipients
      */
-    List<BlackListEntry> getBlacklistedRecipients(@VelocityCheck int companyID);
+    List<BlackListEntry> getBlacklistedRecipients(int companyID);
 
     /**
      * Get a list of blacklisted recipients
@@ -68,9 +67,9 @@ public interface ComBlacklistDao {
      * @param rownums maximum number of items to return
      * @return list of blacklisted  recipients
      */
-    PaginatedListImpl<BlackListEntry> getBlacklistedRecipients(@VelocityCheck int companyID, String sort, String direction, int page, int rownums);
+    PaginatedListImpl<BlackListEntry> getBlacklistedRecipients(int companyID, String sort, String direction, int page, int rownums);
 	
-	PaginatedListImpl<BlackListEntry> getBlacklistedRecipients(@VelocityCheck int companyID, String sort, String direction, int page, int rownums, String likePattern);
+	PaginatedListImpl<BlackListEntry> getBlacklistedRecipients(int companyID, String sort, String direction, int page, int rownums, String likePattern);
 
     /**.
      * Check the presence given company and email in the blacklist.
@@ -79,7 +78,7 @@ public interface ComBlacklistDao {
      * @param email the address to check.
      * @return true if  the company and the email presents in the blacklist.
      */
-    boolean exist(@VelocityCheck int companyID, String email);
+    boolean exist(int companyID, String email);
 
     /**
      * Get a list of email addresses for given company from the  blacklist.
@@ -87,7 +86,7 @@ public interface ComBlacklistDao {
      * @param companyID the company to work on.
      * @return list of email addresses for given company from the  blacklist.
      */
-    List<String> getBlacklist(@VelocityCheck int companyID);
+    List<String> getBlacklist(int companyID);
 
     /**
      * Lists all mailinglists to these a recipient with given email address is bound with <i>blacklisted</i> state.
@@ -97,7 +96,7 @@ public interface ComBlacklistDao {
      * 
      * @return list of all mailinglists with "blacklisted" binding for given address
      */
-	List<Mailinglist> getMailinglistsWithBlacklistedBindings(@VelocityCheck int companyId, String email);
+	List<Mailinglist> getMailinglistsWithBlacklistedBindings(int companyId, String email);
 
 	/**
 	 * Updates all blacklisted bindings for a list of mailinglists for a given email to a given user status.
@@ -107,7 +106,7 @@ public interface ComBlacklistDao {
 	 * @param mailinglistIds list of mailinglist ID to update
 	 * @param userStatus new user status
 	 */
-	void updateBlacklistedBindings(@VelocityCheck int companyId, String email, List<Integer> mailinglistIds, UserStatus userStatus);
+	void updateBlacklistedBindings(int companyId, String email, List<Integer> mailinglistIds, UserStatus userStatus);
 	
 	default boolean insertGlobal(String email, String reason) {
 		return false;
@@ -120,9 +119,9 @@ public interface ComBlacklistDao {
      * @return set of emails of customers from blacklist
      * @throws Exception
      */
-	Set<String> loadBlackList(@VelocityCheck int companyID) throws Exception;
+	Set<String> loadBlackList(int companyID) throws Exception;
 	
-	boolean blacklistCheckCompanyOnly(String email, @VelocityCheck int companyID);
+	boolean blacklistCheckCompanyOnly(String email, int companyID);
 	
 	/**
      * Checks if E-Mail-Adress given in customerData-HashMap is registered in blacklist(s)
@@ -131,7 +130,7 @@ public interface ComBlacklistDao {
      * @param companyID The id of the company
      * @return true if E-Mail-Adress is blacklisted
      */
-	boolean blacklistCheck(String email, @VelocityCheck int companyID);
+	boolean blacklistCheck(String email, int companyID);
 
 
 	List<BlackListEntry> getBlacklistCheckEntries(int companyID, String email);

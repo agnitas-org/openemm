@@ -1,0 +1,115 @@
+
+<%--@elvariable id="canSendOrActivateMailing" type="java.lang.Boolean"--%>
+<%--@elvariable id="approximateMaxDeliverySize" type="java.lang.Long"--%>
+<%--@elvariable id="errorSizeThreshold" type="java.lang.Long"--%>
+<%--@elvariable id="warningSizeThreshold" type="java.lang.Long"--%>
+
+<emm:ShowByPermission token="mailing.send.world">
+    <c:if test="${canSendOrActivateMailing}">
+        <c:choose>
+            <c:when test="${not form.hasDeletedTargetGroups}">
+                <div class="form-group">
+                    <div class="col-sm-4">
+                        <label class="control-label">
+                            <mvc:message code="mailing.Delivery" />
+                        </label>
+                    </div>
+                    <div class="col-sm-8">
+                        <c:url var="configureLink" value="/mailing/send/${form.mailingID}/delivery/settings/view.action"/>
+
+                        <c:choose>
+                            <c:when test="${approximateMaxDeliverySize > errorSizeThreshold}">
+                                <c:set var="configureButtonAction" value="configure-delivery-mailing-size-error" />
+                            </c:when>
+                            <c:when test="${approximateMaxDeliverySize > warningSizeThreshold}">
+                                <c:set var="configureButtonAction" value="configure-delivery-mailing-size-warning" />
+                            </c:when>
+                            <c:otherwise>
+                                <c:set var="configureButtonAction" value="configure-delivery" />
+                            </c:otherwise>
+                        </c:choose>
+
+                        <button type="button" class="btn btn-regular btn-primary" data-action="${configureButtonAction}" data-url="${configureLink}">
+                            <i class="icon icon-paper-plane"></i>
+                            <span class="text"><mvc:message code="button.configure" /></span>
+                        </button>
+                    </div>
+                </div>
+            </c:when>
+            <c:otherwise>
+                <%@ include file="mailing-cannot-activate-message.jspf" %>
+            </c:otherwise>
+        </c:choose>
+    </c:if>
+</emm:ShowByPermission>
+
+<script id="warning-mailing-size-modal" type="text/x-mustache-template">
+    <div class="modal modal-wide">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close-icon close js-confirm-negative" data-dismiss="modal"><i aria-hidden="true" class="icon icon-times-circle"></i></button>
+                    <h4 class="modal-title text-state-warning">
+                        <i class="icon icon-state-warning"></i>
+                        <mvc:message code="warning" />
+                    </h4>
+                </div>
+
+                <div class="modal-body">
+                    <c:set var="mailingSizeWarningThreshold" value="${emm:formatBytes(warningSizeThreshold, 1, 'iec', emm:getLocale(pageContext.request))}" />
+                    <p><mvc:message code="warning.mailing.size.large" arguments="${mailingSizeWarningThreshold}" /></p>
+                </div>
+
+                <div class="modal-footer">
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-default btn-large js-confirm-negative" data-dismiss="modal">
+                            <i class="icon icon-times"></i>
+                            <span class="text">
+								<mvc:message code="button.Cancel" />
+							</span>
+                        </button>
+
+                        <button type="button" class="btn btn-primary btn-large js-confirm-positive" data-dismiss="modal">
+                            <i class="icon icon-check"></i>
+                            <span class="text">
+								<mvc:message code="button.Proceed" />
+							</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</script>
+
+<script id="error-mailing-size-modal" type="text/x-mustache-template">
+    <div class="modal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close-icon close js-confirm-negative" data-dismiss="modal"><i aria-hidden="true" class="icon icon-times-circle"></i></button>
+                    <h4 class="modal-title text-state-alert">
+                        <i class="icon icon-state-alert"></i>
+                        <mvc:message code="Error" />
+                    </h4>
+                </div>
+
+                <div class="modal-body">
+                    <c:set var="mailingSizeErrorThreshold" value="${emm:formatBytes(errorSizeThreshold, 1, 'iec', emm:getLocale(pageContext.request))}" />
+                    <p><mvc:message code="error.mailing.size.large" arguments="${mailingSizeErrorThreshold}" /></p>
+                </div>
+
+                <div class="modal-footer">
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-default btn-large js-confirm-negative" data-dismiss="modal">
+                            <i class="icon icon-times"></i>
+                            <span class="text">
+								<mvc:message code="button.OK" />
+							</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</script>

@@ -33,12 +33,11 @@ import com.agnitas.messages.I18nString;
 import com.agnitas.service.impl.ServiceLookupFactory;
 
 public class BirtReportExecutor implements Runnable {
-	private static final transient Logger logger = LogManager.getLogger(BirtReportExecutor.class);
+
+	private static final Logger logger = LogManager.getLogger(BirtReportExecutor.class);
 
 	private ServiceLookupFactory serviceLookupFactory;
-	
 	private ComBirtReport birtReport;
-	
 	private Map<String, String> urlsMap;
 	
 	public BirtReportExecutor(ServiceLookupFactory serviceLookupFactory, ComBirtReport birtReport, Map<String, String> urlsMap) {
@@ -52,7 +51,7 @@ public class BirtReportExecutor implements Runnable {
 		executeBirtReport();
 	}
 	
-	private final void executeBirtReport() {
+	private void executeBirtReport() {
 		updateNextStart();
 		
 		if(!serviceLookupFactory.getBeanBirtReportService().announceStart(this.birtReport)) {
@@ -79,7 +78,7 @@ public class BirtReportExecutor implements Runnable {
 		}
 	}
 
-	private final void updateNextStart() {
+	private void updateNextStart() {
 		if (StringUtils.isBlank(birtReport.getIntervalpattern())) {
 			birtReport.setNextStart(null);
 		} else {
@@ -87,7 +86,7 @@ public class BirtReportExecutor implements Runnable {
 		}
 	}
 	
-	private final String determineBirtUrl(final int companyID) {
+	private String determineBirtUrl(final int companyID) {
 		String birtUrl = serviceLookupFactory.getBeanConfigService().getValue(ConfigValue.BirtUrlIntern, companyID);
 		
 		if (StringUtils.isBlank(birtUrl)) {
@@ -97,12 +96,12 @@ public class BirtReportExecutor implements Runnable {
 		return birtUrl;
 	}
 	
-	private final List<JavaMailAttachment> downloadReportFiles(final CloseableHttpClient httpClient) {
+	private List<JavaMailAttachment> downloadReportFiles(final CloseableHttpClient httpClient) {
 		final List<JavaMailAttachment> attachments = new ArrayList<>();
 		
         for (final Map.Entry<String, String> entry : urlsMap.entrySet()) {
         	try {
-        		logger.info(String.format("BIRT report %d: Downloading report frm '%s'", birtReport.getId(), entry.getValue()));
+        		logger.info("BIRT report {}: Downloading report frm '{}'", birtReport.getId(), entry.getValue());
         		
 				final File temporaryFile = serviceLookupFactory.getBeanBirtStatisticsService().getBirtReportTmpFile(birtReport.getId(), entry.getValue(), httpClient, logger);
 				
@@ -115,7 +114,7 @@ public class BirtReportExecutor implements Runnable {
         return attachments;
 	}
 	
-	private final void sendReportMail(final List<JavaMailAttachment> attachments) {
+	private void sendReportMail(final List<JavaMailAttachment> attachments) {
         final String emailRecipientStringList = StringUtils.join(birtReport.getEmailRecipientList(), ",");
         final String emailSubject = birtReport.getEmailSubject();
         
@@ -131,7 +130,7 @@ public class BirtReportExecutor implements Runnable {
 		serviceLookupFactory.getBeanBirtReportService().logSentReport(birtReport);
 	}
 	
-	private final void reportError(final Throwable t) {
+	private void reportError(final Throwable t) {
 		logger.error("Error in " + this.getClass().getName() + ": " + t.getMessage(), t);
 		// Watchout: NullpointerExceptions have Message "null", which would result in another jobrun, so enter some additional text (classname)
 		birtReport.setLastresult(t.getClass().getSimpleName() + ": " + t.getMessage() + "\n" + AgnUtils.getStackTraceString(t));

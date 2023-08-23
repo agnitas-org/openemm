@@ -10,28 +10,25 @@
 
 package org.agnitas.emm.core.useractivitylog.dao;
 
-import java.util.Date;
-import java.util.List;
-
+import com.agnitas.beans.Admin;
+import com.agnitas.emm.core.useractivitylog.dao.LoggedUserAction;
+import com.agnitas.emm.core.useractivitylog.dao.UserActivityLogDaoBase;
 import org.agnitas.beans.AdminEntry;
 import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.emm.core.useractivitylog.LoggedUserAction;
+import org.agnitas.util.SqlPreparedStatementManager;
 
-import com.agnitas.beans.Admin;
+import java.util.Date;
+import java.util.List;
 
 /**
  * Interface for accessing user activity log.
  */
-public interface UserActivityLogDao {
+public interface UserActivityLogDao extends UserActivityLogDaoBase {
+
 	void writeUserActivityLog(Admin admin, String action, String description);
 
 	PaginatedListImpl<LoggedUserAction> getUserActivityEntries(List<AdminEntry> visibleAdmins, String selectedAdmin, int selectedAction, Date from, Date to, String description, String sortColumn, String sortDirection, int pageNumber, int pageSize) throws Exception;
 
-	/**
-	 * Increment feature use counter. Update feature last used date.
-	 * @param admin current user
-	 * @param feature name of used feature
-	 * @param date timestamp, when feature was used.
-     */
-	void addAdminUseOfFeature(Admin admin, String feature, Date date);
+	SqlPreparedStatementManager prepareSqlStatementForEntriesRetrieving(List<AdminEntry> visibleAdmins, String selectedAdmin, int selectedAction, Date from, Date to, String description) throws Exception;
+
 }

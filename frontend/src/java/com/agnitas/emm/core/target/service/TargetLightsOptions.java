@@ -25,6 +25,7 @@ public class TargetLightsOptions {
 
     private TargetLightsOptions() {}
 
+    private int adminId;
     private int companyId;
     private boolean includeDeleted;
     private boolean worldDelivery;
@@ -34,6 +35,14 @@ public class TargetLightsOptions {
     private boolean isSearchDescription;
     private String searchText = "";
     private AltgMode altgMode = AltgMode.ALL;
+    private int pageNumber;
+    private int pageSize;
+    private String sorting;
+    private String direction;
+
+    public int getAdminId() {
+        return adminId;
+    }
 
     public int getCompanyId() {
         return companyId;
@@ -71,9 +80,26 @@ public class TargetLightsOptions {
         return altgMode;
     }
 
+    public int getPageNumber() {
+        return pageNumber;
+    }
+
+    public int getPageSize() {
+        return pageSize;
+    }
+
+    public String getSorting() {
+        return sorting;
+    }
+
+    public String getDirection() {
+        return direction;
+    }
+
     @Override
     public String toString() {
         return new ToStringBuilder(this)
+                .append("adminId", adminId)
                 .append("companyId", companyId)
                 .append("includeDeleted", includeDeleted)
                 .append("worldDelivery", worldDelivery)
@@ -91,7 +117,8 @@ public class TargetLightsOptions {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         TargetLightsOptions that = (TargetLightsOptions) o;
-        return companyId == that.companyId &&
+        return adminId == that.adminId &&
+                companyId == that.companyId &&
                 includeDeleted == that.includeDeleted &&
                 worldDelivery == that.worldDelivery &&
                 adminTestDelivery == that.adminTestDelivery &&
@@ -104,11 +131,16 @@ public class TargetLightsOptions {
 
     @Override
     public int hashCode() {
-        return Objects.hash(companyId, includeDeleted, worldDelivery, adminTestDelivery, content, isSearchName, isSearchDescription, searchText, altgMode);
+        return Objects.hash(adminId, companyId, includeDeleted, worldDelivery, adminTestDelivery, content, isSearchName, isSearchDescription, searchText, altgMode);
     }
 
     public static class Builder {
         private TargetLightsOptions options = new TargetLightsOptions();
+
+        public Builder setAdminId(int adminId) {
+            options.adminId = adminId;
+            return this;
+        }
 
         public Builder setCompanyId(int companyId) {
             options.companyId = companyId;
@@ -152,6 +184,26 @@ public class TargetLightsOptions {
 
         public Builder setAltgMode(AltgMode altgMode) {
             options.altgMode = altgMode;
+            return this;
+        }
+
+        public Builder setPageNumber(int pageNumber) {
+            options.pageNumber = pageNumber;
+            return this;
+        }
+
+        public Builder setPageSize(int pageSize) {
+            options.pageSize = pageSize;
+            return this;
+        }
+
+        public Builder setSorting(String sorting) {
+            options.sorting = sorting;
+            return this;
+        }
+
+        public Builder setDirection(String direction) {
+            options.direction = direction;
             return this;
         }
 

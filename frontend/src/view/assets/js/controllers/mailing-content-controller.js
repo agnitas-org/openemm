@@ -1,6 +1,7 @@
 AGN.Lib.Controller.new('mailing-content-controller', function () {
   const Confirm = AGN.Lib.Confirm;
   const Template = AGN.Lib.Template;
+  const Storage = AGN.Lib.Storage;
 
   var mailingContent;
   var preparedTableEntryTemplate;
@@ -23,6 +24,7 @@ AGN.Lib.Controller.new('mailing-content-controller', function () {
 
     mailingContent = new MailingContent(dynTagsMap, targetGroups, interestGroups, dynTagNames);
     initTableContent();
+    selectLastImportedContentSource();
   });
 
   this.addDomInitializer('gridTemplate-textContent-initializer', function () {
@@ -122,6 +124,39 @@ AGN.Lib.Controller.new('mailing-content-controller', function () {
       $tableBody.append(getFilledTemplate(dynTag));
     })
   };
+
+  const selectLastImportedContentSource = function () {
+    const $select = $('#content-source-select');
+
+    if (!$select) {
+      return;
+    }
+
+    const storageKey = 'web-storage#last-content-source';
+    const lastContentSource = Storage.get(storageKey);
+
+    if (lastContentSource) {
+      if (isOptionExists(lastContentSource.id, $select)) {
+        $select.val(lastContentSource.id);
+        $select.change();
+      } else {
+        Storage.delete(storageKey);
+      }
+    }
+  }
+
+  const isOptionExists = function (value, $select) {
+    var exists = false;
+
+    $select.find('option').each(function() {
+      if (this.value === value) {
+        exists = true;
+        return false;
+      }
+    });
+
+    return exists;
+  }
 
   const replaceTableContent = function(dynTag) {
     const html = getFilledTemplate(dynTag);

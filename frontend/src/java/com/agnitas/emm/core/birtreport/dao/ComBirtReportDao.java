@@ -14,7 +14,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.emm.core.birtreport.bean.ComBirtReport;
 import com.agnitas.emm.core.birtreport.bean.ComLightweightBirtReport;
@@ -26,7 +25,7 @@ public interface ComBirtReportDao {
     
     boolean update(ComBirtReport report, List<Integer> justDeactivateSettingTypes) throws Exception;
 
-    List<ComLightweightBirtReport> getLightweightBirtReportList(@VelocityCheck int companyID);
+    List<ComLightweightBirtReport> getLightweightBirtReportList(int companyID);
 
     void deactivateReportSettings(int reportId, Collection<Integer> settingsTypes);
 
@@ -34,9 +33,9 @@ public interface ComBirtReportDao {
 
     void insertSentMailings(Integer reportId, Integer companyID, List<Integer> sentMailings);
 
-    List<Map<String, Object>> getReportParamValues(@VelocityCheck int companyID, String paramName);
+    List<Map<String, Object>> getReportParamValues(int companyID, String paramName);
 
-    List<ComLightweightBirtReport> getLightweightBirtReportsBySelectedTarget(@VelocityCheck int companyID, int targetGroupID);
+    List<ComLightweightBirtReport> getLightweightBirtReportsBySelectedTarget(int companyID, int targetGroupID);
 
 	int resetBirtReportsForCurrentHost();
 

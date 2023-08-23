@@ -7,7 +7,7 @@
 </c:url>
 <script src="${translationLink}"></script>
 
-<c:url var="applicationCssLink" value="/assets/application.min.css">
+<c:url var="applicationCssLink" value="/application.min.css">
     <c:param name="ts" value="<%= AgnUtils.getBrowserCacheMarker() %>"/>
 </c:url>
 <link type="text/css" rel="stylesheet" href="${applicationCssLink}">

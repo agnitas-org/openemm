@@ -34,6 +34,10 @@ public final class PollingUid {
         this.hashValue = Objects.hash(sessionId, name) ^ Objects.hash(arguments);
     }
 
+    public String getName() {
+        return name;
+    }
+
     @Override
     public int hashCode() {
         return hashValue;

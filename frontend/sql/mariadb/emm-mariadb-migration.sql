@@ -8,44 +8,55 @@
 
 */
 
--- Migration of admin configuration values to AutoImport objects: EMM-9197
--- Remove after 22.07.105 is available on all systems.
-UPDATE import_profile_tbl SET
-		report_locale_lang = (SELECT admin_lang FROM admin_tbl WHERE admin_tbl.admin_id = import_profile_tbl.admin_id),
-		report_locale_country = (SELECT admin_country FROM admin_tbl WHERE admin_tbl.admin_id = import_profile_tbl.admin_id),
-		report_timezone = (SELECT admin_timezone FROM admin_tbl WHERE admin_tbl.admin_id = import_profile_tbl.admin_id)
-	WHERE report_locale_lang IS NULL AND report_locale_country IS NULL AND report_timezone IS NULL AND admin_id IS NOT NULL;
+DROP PROCEDURE IF EXISTS bindidx;
 
-UPDATE auto_import_tbl SET
-		report_locale_lang = (SELECT admin_lang FROM admin_tbl WHERE admin_tbl.admin_id = auto_import_tbl.admin_id),
-		report_locale_country = (SELECT admin_country FROM admin_tbl WHERE admin_tbl.admin_id = auto_import_tbl.admin_id),
-		report_timezone = (SELECT admin_timezone FROM admin_tbl WHERE admin_tbl.admin_id = auto_import_tbl.admin_id)
-	WHERE report_locale_lang IS NULL AND report_locale_country IS NULL AND report_timezone IS NULL AND admin_id IS NOT NULL;
+DELIMITER $$
+CREATE PROCEDURE bindidx ()
+BEGIN
+	DECLARE done INT DEFAULT FALSE;
+	DECLARE cid_var int;
+	DECLARE column_exists int;
+	DECLARE index_exists int;
+	DECLARE cid_cursor CURSOR FOR SELECT company_id FROM company_tbl WHERE status IN ('active', 'locked') ORDER BY company_id;
+	DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+	DECLARE CONTINUE HANDLER FOR SQLEXCEPTION
+		BEGIN
+			GET DIAGNOSTICS CONDITION 1 @msg = MESSAGE_TEXT;
+			CALL emm_log_db_errors(@msg, 0, 'mediatype, EMM-9562');
+		END;
+	OPEN cid_cursor;
+	read_loop: LOOP
+		fetch cid_cursor INTO cid_var;
+		IF done THEN LEAVE read_loop; END IF;
+		
+		SELECT COUNT(*) INTO column_exists FROM information_schema.columns WHERE table_schema = schema() AND table_name = CONCAT('mailtrack_', cid_var, '_tbl') AND column_name = 'mediatype';
+		IF column_exists = 0 THEN
+			BEGIN
+				SET @SQLText = CONCAT('ALTER TABLE mailtrack_', cid_var, '_tbl ADD mediatype INT(10) UNSIGNED');
+				PREPARE stmt FROM @SQLText;
+				EXECUTE stmt;
+				DEALLOCATE PREPARE stmt;
+			END;
+		END IF;
+		
+		SELECT COUNT(*) INTO index_exists FROM information_schema.statistics WHERE table_schema = schema() AND table_name = CONCAT('mailtrack_', cid_var, '_tbl') AND column_name = 'timestamp';
+		IF index_exists = 0 THEN
+			BEGIN
+				SET @SQLText = CONCAT('CREATE INDEX mailtr', cid_var, '$ts$idx ON mailtrack_', cid_var, '_tbl (timestamp)');
+				PREPARE stmt FROM @SQLText;
+				EXECUTE stmt;
+				DEALLOCATE PREPARE stmt;
+			END;
+		END IF;
+	END LOOP;
+	CLOSE cid_cursor;
+END$$
+DELIMITER ;
+
+CALL bindidx();
+DROP PROCEDURE bindidx;
 
 INSERT INTO migration_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('22.07.088', USER(), CURRENT_TIMESTAMP);
-
--- Migration of admin configuration values to AutoExport objects: EMM-9197
--- Remove after 22.07.105 is available on all systems.
-UPDATE auto_export_tbl SET
-		locale_lang = (SELECT admin_lang FROM admin_tbl WHERE admin_tbl.admin_id = auto_export_tbl.admin_id),
-		locale_country = (SELECT admin_country FROM admin_tbl WHERE admin_tbl.admin_id = auto_export_tbl.admin_id)
-	WHERE locale_lang IS NULL AND locale_country IS NULL AND timezone IS NULL AND admin_id IS NOT NULL;
-	
-INSERT INTO migration_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('22.07.095', USER(), CURRENT_TIMESTAMP);
-
--- Migration of mailing senddates for display purposes: EMM-8225
--- Remove after Backend version 22.04.155 is available on all systems.
--- worldmailings + followUp
-UPDATE mailing_tbl m SET send_date =
-	(SELECT MIN(timestamp) FROM mailing_account_tbl acc WHERE m.mailing_id = acc.mailing_id AND acc.status_field = 'W')
-	WHERE send_date IS NULL and mailing_type IN (0, 3) AND work_status = 'mailing.status.sent';
--- norecipients
-UPDATE mailing_tbl m SET send_date =
-	(SELECT MAX(senddate) FROM maildrop_status_tbl mds WHERE m.mailing_id = mds.mailing_id AND mds.status_field = 'W')
-	WHERE send_date IS NULL AND mailing_type IN (0, 3) AND work_status = 'mailing.status.norecipients';
-INSERT INTO migration_tbl (version_number, updating_user, update_timestamp)
-	VALUES ('22.07.154', USER(), CURRENT_TIMESTAMP);
+	VALUES ('22.10.034', CURRENT_USER, CURRENT_TIMESTAMP);
 
 COMMIT;

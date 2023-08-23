@@ -13,7 +13,6 @@ package org.agnitas.util;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.commons.collections4.map.LRUMap;
 
 public class TimeoutLRUMap<K, V> implements java.io.Serializable {
@@ -177,7 +176,7 @@ public class TimeoutLRUMap<K, V> implements java.io.Serializable {
 	 * @param imageName - name of requested image
 	 * @return key for new entry
 	 */
-	public static String generateContentImageKey(@VelocityCheck int companyID, String imageName) {
+	public static String generateContentImageKey(int companyID, String imageName) {
 		StringBuilder cacheKeyBuilder = new StringBuilder();
 		cacheKeyBuilder.append("media-");
 		cacheKeyBuilder.append(companyID);

@@ -10,10 +10,6 @@
 
 package org.agnitas.backend;
 
-import java.io.UnsupportedEncodingException;
-import java.sql.Blob;
-import java.sql.Clob;
-import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -233,27 +229,6 @@ public class StringOps {
 		}
 
 		return v;
-	}
-
-	/**
-	 * Converts a DB blob into a string
-	 *
-	 * @param blob     the source
-	 * @param encoding the encoding of the blob
-	 * @return the extracted string
-	 */
-	public static String blob2string(Blob blob, String encoding) throws SQLException, UnsupportedEncodingException {
-		return blob == null ? "" : new String(blob.getBytes(1, (int) blob.length()), encoding);
-	}
-
-	/**
-	 * Converts a DB clob into a string
-	 *
-	 * @param clob the source
-	 * @return the extracted string
-	 */
-	public static String clob2string(Clob clob) throws SQLException {
-		return clob == null ? "" : clob.getSubString(1, (int) clob.length());
 	}
 
 	/**

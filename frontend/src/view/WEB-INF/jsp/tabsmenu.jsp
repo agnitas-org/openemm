@@ -12,6 +12,7 @@
 <%--@elvariable id="_navigation_navMsg" type="java.lang.String"--%>
 <%--@elvariable id="_navigation_hideForToken" type="java.lang.String"--%>
 <%--@elvariable id="_navigation_upsellingRef" type="java.lang.String"--%>
+<%--@elvariable id="_navigation_conditionSatisfied" type="java.lang.Boolean"--%>
 
 <%--@elvariable id="agnNavigationKey" type="java.lang.String"--%>
 <%--@elvariable id="agnHighlightKey" type="java.lang.String"--%>
@@ -48,6 +49,10 @@
                 <emm:ShowByPermission token="${_navigation_token}">
                     <c:set var="showTabsItem" value="true"/>
                 </emm:ShowByPermission>
+
+                <c:if test="${not _navigation_conditionSatisfied}">
+                    <c:set var="showTabsItem" value="false"/>
+                </c:if>
 
                 <c:if test="${not showTabsItem and not empty _navigation_upsellingRef}">
                     <c:set var="showUpsellingPage" value="true"/>

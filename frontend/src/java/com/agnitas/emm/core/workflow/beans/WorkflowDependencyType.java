@@ -15,7 +15,6 @@ import com.agnitas.beans.IntEnum;
 /**
  * Used for workflow dependencies representation in database.
  * So make sure that ids are unique and keep in mind to never change them once assigned.
- * Also make sure to keep in sync {@link org.agnitas.util.Const.WorkflowDependencyType}.
  */
 public enum WorkflowDependencyType implements IntEnum {
     ARCHIVE(1),

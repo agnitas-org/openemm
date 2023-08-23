@@ -14,7 +14,6 @@ import java.util.Map;
 
 import jakarta.servlet.http.HttpServletRequest;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.struts.action.ActionErrors;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionMapping;
@@ -38,7 +37,7 @@ public final class ComNewsForm extends ActionForm {
 		return companyID;
 	}
 
-	public void setCompanyID(@VelocityCheck int companyID) {
+	public void setCompanyID(int companyID) {
 		this.companyID = companyID;
 	}
 

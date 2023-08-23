@@ -14,7 +14,6 @@ import java.util.Collection;
 import java.util.List;
 
 import org.agnitas.beans.ExportPredef;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public interface ExportPredefDao {
 
@@ -30,7 +29,9 @@ public interface ExportPredefDao {
      *  new instance of ExportPredef if id == 0.
      */
 
-    ExportPredef get(int id, @VelocityCheck int companyID);
+    ExportPredef get(int id, int companyID);
+
+    String findName(int id, int companyId);
     
     /**
      * Creates an ExportPredef.
@@ -40,7 +41,7 @@ public interface ExportPredefDao {
      * @return A new ExportPredef for given company id
      *  null if company id == 0
      */
-    ExportPredef create(@VelocityCheck int companyID);
+    ExportPredef create(int companyID);
 
     /**
      * Updates or create export definition.
@@ -70,15 +71,14 @@ public interface ExportPredefDao {
      *          The companyID of the definition.
      * @return true on success.
      */
-    boolean delete(int id, @VelocityCheck int companyID);
+    boolean delete(int id, int companyID);
     
     /**
      * Delete all export definitions for given companyID
      * 
-     * @param companyID
      * @return true on success
      */
-    boolean deleteAllByCompanyID(@VelocityCheck int companyID);
+    boolean deleteAllByCompanyID(int companyID);
 
     /**
      * Loads all export definitions of certain company.
@@ -87,7 +87,9 @@ public interface ExportPredefDao {
      *                The id of the company for export definitions.
      * @return  List of ExportPredef or empty list.
      */
-    List<ExportPredef> getAllByCompany( @VelocityCheck int companyId);
+    List<ExportPredef> getAllByCompany( int companyId);
+
+    List<Integer> findTargetDependentExportProfiles(int targetGroupId, int companyId);
 
     /**
      * Loads all export definitions of certain company (except the entries using disabled mailing lists only).
@@ -100,7 +102,7 @@ public interface ExportPredefDao {
      *                The target id.
      * @return  List of ExportPredef or empty list.
      */
-    List<ExportPredef> getAllByCompany(@VelocityCheck int companyId, Collection<Integer> disabledMailingListIds,
+    List<ExportPredef> getAllByCompany(int companyId, Collection<Integer> disabledMailingListIds,
             int targetId);
 
     /**
@@ -110,7 +112,7 @@ public interface ExportPredefDao {
      *                The id of the company for export definitions.
      * @return  List of ids or empty list.
      */
-    List<Integer> getAllIdsByCompany(@VelocityCheck int companyId);
+    List<Integer> getAllIdsByCompany(int companyId);
 
     /**
      * Loads ids of all export definitions of certain company (except the entries using disabled mailing lists only).
@@ -123,6 +125,6 @@ public interface ExportPredefDao {
      *                The target id.
      * @return  List of ids or empty list.
      */
-	List<Integer> getAllIdsByCompany(@VelocityCheck int companyId, Collection<Integer> disabledMailingListIds,
+	List<Integer> getAllIdsByCompany(int companyId, Collection<Integer> disabledMailingListIds,
 			int targetId);
 }

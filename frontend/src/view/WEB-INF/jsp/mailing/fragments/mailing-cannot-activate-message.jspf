@@ -1,7 +1,0 @@
-<div class="form-group">
-    <div class="col-sm-8 col-sm-4-push">
-        <div class="well">
-            <bean:message key="mailing.activate.deleted_target_groups" />
-        </div>
-    </div>
-</div>

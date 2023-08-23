@@ -22,43 +22,42 @@ import org.apache.logging.log4j.Logger;
 import com.agnitas.dao.ComRecipientDao;
 
 public class SubscriberLimitCheckImpl implements SubscriberLimitCheck {
-	
 	/** The logger. */
 	private static final transient Logger LOGGER = LogManager.getLogger(SubscriberLimitCheckImpl.class);
-	
+
 	private final ConfigService configService;
 	private final ComRecipientDao recipientDao;
-	
+
 	public SubscriberLimitCheckImpl(final ConfigService configService, final ComRecipientDao recipientDao) {
 		this.configService = Objects.requireNonNull(configService, "configService");
 		this.recipientDao = Objects.requireNonNull(recipientDao, "recipientDao");
 	}
 
 	@Override
-	public void checkSubscriberLimit(final int companyId) throws SubscriberLimitExceededException {
-		checkSubscriberLimit(companyId, 1);
+	public SubscriberLimitCheckResult checkSubscriberLimit(final int companyId) throws SubscriberLimitExceededException {
+		return checkSubscriberLimit(companyId, 1);
 	}
-	
+
 	@Override
-	public void checkSubscriberLimit(final int companyId, final int numNewSubscribers) throws SubscriberLimitExceededException {
-		final int maximumSubscribers = this.configService.getIntegerValue(ConfigValue.System_License_MaximumNumberOfCustomers, companyId);
+	public SubscriberLimitCheckResult checkSubscriberLimit(final int companyId, final int numNewSubscribers) throws SubscriberLimitExceededException {
+		final int maximumSubscribers = configService.getIntegerValue(ConfigValue.System_License_MaximumNumberOfCustomers, companyId);
+
+		final int subscriberCount = recipientDao.getNumberOfRecipients(companyId);
 		
-		if(maximumSubscribers > 0) {
-			final int subscriberCount = this.recipientDao.getNumberOfRecipients(companyId);
-			
-			if(subscriberCount + numNewSubscribers > maximumSubscribers) {
-				if(LOGGER.isInfoEnabled()) {
-					LOGGER.info(String.format(
-							"Subscriber limit for company %d exceeded (current: %d, new: %d, allowed: %d)", 
-							companyId, 
-							subscriberCount,
-							numNewSubscribers,
-							maximumSubscribers));
+		if (maximumSubscribers < 0) {
+			return new SubscriberLimitCheckResult(subscriberCount, maximumSubscribers, ConfigValue.System_License_MaximumNumberOfCustomers.getGracefulExtension(), false);
+		} else {
+			if (subscriberCount + numNewSubscribers <= maximumSubscribers) {
+				return new SubscriberLimitCheckResult(subscriberCount, maximumSubscribers, ConfigValue.System_License_MaximumNumberOfCustomers.getGracefulExtension(), false);
+			} else if (subscriberCount + numNewSubscribers <= maximumSubscribers + ConfigValue.System_License_MaximumNumberOfCustomers.getGracefulExtension()) {
+				return new SubscriberLimitCheckResult(subscriberCount, maximumSubscribers, ConfigValue.System_License_MaximumNumberOfCustomers.getGracefulExtension(), true);
+			} else {
+				if (LOGGER.isInfoEnabled()) {
+					LOGGER.info(String.format("Subscriber limit for company %d exceeded (current: %d, new: %d, allowed: %d)", companyId, subscriberCount, numNewSubscribers, maximumSubscribers));
 				}
-				
+
 				throw new SubscriberLimitExceededException(maximumSubscribers, subscriberCount + numNewSubscribers);
 			}
 		}
 	}
-	
 }

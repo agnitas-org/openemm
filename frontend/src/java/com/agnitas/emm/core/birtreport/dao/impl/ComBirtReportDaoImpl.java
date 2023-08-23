@@ -25,7 +25,6 @@ import java.util.stream.Collectors;
 
 import org.agnitas.dao.impl.PaginatedBaseDaoImpl;
 import org.agnitas.dao.impl.mapper.StringRowMapper;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
 import org.apache.commons.collections4.CollectionUtils;
@@ -253,7 +252,7 @@ public class ComBirtReportDaoImpl extends PaginatedBaseDaoImpl implements ComBir
 	}
 
     @Override
-    public List<Map<String, Object>> getReportParamValues(@VelocityCheck int companyID, String paramName) {
+    public List<Map<String, Object>> getReportParamValues(int companyID, String paramName) {
         String query = "SELECT DISTINCT param.report_id, param.parameter_value, param.report_type " +
                 "FROM birtreport_parameter_tbl param " +
                 "INNER JOIN birtreport_tbl rep " +
@@ -266,7 +265,7 @@ public class ComBirtReportDaoImpl extends PaginatedBaseDaoImpl implements ComBir
     }
 
 	@Override
-	public List<ComLightweightBirtReport> getLightweightBirtReportsBySelectedTarget(@VelocityCheck int companyID, int targetGroupID) {
+	public List<ComLightweightBirtReport> getLightweightBirtReportsBySelectedTarget(int companyID, int targetGroupID) {
 		String query = "SELECT DISTINCT param.report_id, rep.shortname, rep.description, rep.hidden FROM birtreport_parameter_tbl param " +
 				"INNER JOIN birtreport_tbl rep " +
 				"ON rep.report_id = param.report_id " +
@@ -284,7 +283,7 @@ public class ComBirtReportDaoImpl extends PaginatedBaseDaoImpl implements ComBir
 	}
 
 	@Override
-	public List<ComLightweightBirtReport> getLightweightBirtReportList(@VelocityCheck int companyID) {
+	public List<ComLightweightBirtReport> getLightweightBirtReportList(int companyID) {
 		String sqlGetReports = "SELECT report_id, shortname, description, hidden FROM birtreport_tbl " +
 				"WHERE company_id = ? ORDER BY LOWER(shortname)";
 		return select(logger, sqlGetReports, new ComLightweightBirtReportRowMapper(), companyID);
@@ -428,6 +427,7 @@ public class ComBirtReportDaoImpl extends PaginatedBaseDaoImpl implements ComBir
 					BirtReportType.TYPE_AFTER_MAILING_24HOURS.getKey() + ", " +
 					BirtReportType.TYPE_AFTER_MAILING_48HOURS.getKey() + ", " +
 					BirtReportType.TYPE_AFTER_MAILING_WEEK.getKey() + ")"
+						+ " AND (nextstart IS NULL OR nextstart < CURRENT_TIMESTAMP)"
 						+ " AND "
 							+ "("
 								+ "NOT EXISTS (SELECT 1 FROM birtreport_sent_mailings_tbl WHERE birtreport_tbl.report_id = birtreport_sent_mailings_tbl.report_id)"
@@ -442,7 +442,8 @@ public class ComBirtReportDaoImpl extends PaginatedBaseDaoImpl implements ComBir
 				+ " AND running = 0"
 				+ (includedCompanyIds != null && !includedCompanyIds.isEmpty() ? " AND company_id IN (" + StringUtils.join(includedCompanyIds, ", ") + ")" : "")
 				+ (excludedCompanyIds != null && !excludedCompanyIds.isEmpty() ? " AND company_id NOT IN (" + StringUtils.join(excludedCompanyIds, ", ") + ")" : "")
-				+ " AND (end_date IS NULL OR end_date > CURRENT_TIMESTAMP)";
+				+ " AND (end_date IS NULL OR end_date > CURRENT_TIMESTAMP)"
+				+ (isOracleDB() ? " ORDER BY nextstart" : " ORDER BY nextstart IS NULL, nextstart ASC");
 
 		List<ComBirtReport> reportList = select(logger, query, new ComBirtReportRowMapper());
 		

@@ -20,12 +20,6 @@
 		<context:exclude-filter type="annotation" expression="org.springframework.web.bind.annotation.ControllerAdvice"/>
 	</context:component-scan>
 	
-	<!-- Begin: Non-action classes used in presentation layer only -->
-	<bean name="MailingBaseRequestAttributesHelper" class="com.agnitas.emm.core.mailing.web.RequestAttributesHelper">
-		<property name="mailingPropertiesRules" ref="MailingPropertiesRules" />
-	</bean>
-	<!-- End: Non-action classes used in presentation layer only -->
-	
 	<bean name="TargetGroupEditorContentSynchronizer" class="com.agnitas.emm.core.target.web.util.EditorContentSynchronizer">
 		<property name="eqlToQueryBuilderConverter" ref="EqlToQueryBuilderConverter" />
 		<property name="queryBuilderToEqlConverter" ref="QueryBuilderToEqlConverter" />
@@ -39,44 +33,6 @@
 	</bean>
 
 	<!-- Action beans -->
-	<bean name="/support" class="com.agnitas.web.ComSupportAction">
-		<property name="formNotFoundEmailTemplate" ref="formNotFoundEmailTemplate" />
-		<property name="urlParameterTemplate" ref="formNotFoundUrlParameterTemplate" />
-		<property name="configService" ref="ConfigService" />
-		<property name="javaMailService" ref="JavaMailService" />
-	</bean>
-
-	<bean name="/mailingParameter" class="com.agnitas.emm.core.mailing.web.ComMailingParameterAction">
-		<property name="mailingParameterService" ref="MailingParameterService" />
-		<property name="mailingService" ref="MailingService" />
-		<property name="webStorage" ref="WebStorage" />
-		<property name="userActivityLogService" ref="UserActivityLogService" />
-		<property name="mailingParameterLogService" ref="mailingParameterLogService"/>
-	</bean>
-
-	<bean name="/mwStart, /mwName, /mwTemplate, /mwType, /mwSendaddress, /mwMailtype, /mwSubject, /mwTarget, /mwTextmodules, /mwTextmodule, /mwLinks, /mwLink, /mwAttachment, /mwAttachmentDownload, /mwFinish" class="com.agnitas.web.MailingWizardAction">
-		<property name="mailinglistService" ref="MailinglistService" />
-		<property name="mailingDao" ref="MailingDao" />
-		<property name="mailingFactory" ref="MailingFactory" />
-		<property name="mailingComponentFactory" ref="MailingComponentFactory" />
-		<property name="dynamicTagContentFactory" ref="DynamicTagContentFactory" />
-		<property name="campaignDao" ref="CampaignDao" />
-		<property name="targetService" ref="targetService" />
-		<property name="emmActionDao" ref="EmmActionDao" />
-		<property name="configService" ref="ConfigService" />
-		<property name="workflowDao" ref="comWorkflowDao" />
-		<property name="workflowService" ref="WorkflowService"/>
-		<property name="agnTagService" ref="AgnTagService"/>
-        <property name="userActivityLogService" ref="UserActivityLogService"/>
-		<property name="mailinglistApprovalService" ref="MailinglistApprovalService" />
-		<property name="mailingService" ref="MailingService" />
-		<property name="previewImageService" ref="PreviewImageService" />
-        <property name="copyMailingService" ref="CopyMailingService"/>
-		<property name="filterListBuilder" ref="TargetGroupQueryBuilderFilterListBuilder"/>
-		<property name="adminService" ref="AdminService"/>
-		<property name="editorContentSynchronizer" ref="TargetGroupEditorContentSynchronizer" />
-	</bean>
-
 	<bean name="/importwizard" class="com.agnitas.web.ComImportWizardAction">
 		<property name="dataSource" ref="dataSource" />
 		<property name="configService" ref="ConfigService" />
@@ -93,10 +49,6 @@
 		<property name="profileImportWorkerFactory" ref="ProfileImportWorkerFactory" />
 		<property name="profileFieldDao" ref="ProfileFieldDao" />
 	</bean>
-
-	<bean name="/mailingsend_ajax" class="org.agnitas.mailing.web.MailingSendAjaxAction">
-		<property name="mailingDao" ref="MailingDao" />
-	</bean>
 	
 	<bean name="/sendMailloopAutoresponder" class="com.agnitas.emm.core.mailloop.web.SendAutoresponderMailAction">
 		<property name="mailloopService" ref="MailloopService" />
@@ -105,69 +57,6 @@
 	<bean name="/permissionDenied" class="com.agnitas.web.PermissionDeniedAction" />
 
 	<bean name="/error" class="com.agnitas.web.ErrorAction" />
-
-	<bean name="/mailingbase" class="com.agnitas.web.MailingBaseAction">
-		<property name="configService" ref="ConfigService" />
-		<property name="futureHolder" ref="futureHolder" />
-		<property name="workerExecutorService" ref="WorkerExecutorService" />
-		<property name="tagCheckFactory" ref="TAGCheckFactory" />
-		<property name="mailingLightService" ref="MailingLightService" />
-		<property name="mailingBaseService" ref="MailingBaseService" />
-		<property name="dynamicTagDao" ref="DynamicTagDao" />
-		<property name="mailingDao" ref="MailingDao" />
-		<property name="campaignDao" ref="CampaignDao" />
-		<property name="mailingFactory" ref="MailingFactory" />
-		<property name="characterEncodingValidator" ref="CharacterEncodingValidator" />
-		<property name="previewImageService" ref="PreviewImageService" />
-		<property name="userActivityLogService" ref="UserActivityLogService" />
-		<property name="mailingParameterService" ref="MailingParameterService" />
-		<property name="workflowService" ref="WorkflowService" />
-		<property name="linkService" ref="LinkService" />
-		<property name="maildropService" ref="MaildropService" />
-		<property name="mailinglistService" ref="MailinglistService" />
-		<property name="javaMailService" ref="JavaMailService" />
-        <property name="conversionService" ref="conversionService"/>
-        <property name="copyMailingService" ref="CopyMailingService"/>
-		<property name="webStorage" ref="WebStorage" />
-        <property name="dynamicTagContentFactory" ref="DynamicTagContentFactory"/>
-        <property name="mailingExporter" ref="MailingExporter"/>
-        <property name="mailingImporter" ref="MailingImporter"/>
-		<property name="mailinglistApprovalService" ref="MailinglistApprovalService" />
-		<property name="gridService" ref="GridServiceWrapper"/>
-        <property name="targetService" ref="targetService"/>
-        <property name="mailingStopService" ref="MailingStopService" />
-        <property name="agnTagService" ref="AgnTagService"/>
-        <property name="agnDynTagGroupResolverFactory" ref="AgnDynTagGroupResolverFactory"/>
-		<property name="mailingService" ref="MailingService"/>
-		<property name="objectUsageService" ref="ObjectUsageService" />
-		<property name="mailingPropertiesRules" ref="MailingPropertiesRules" />
-		<property name="requestAttributesHelper" ref="MailingBaseRequestAttributesHelper" />
-		<property name="adminService" ref="AdminService" />
-    </bean>
-
-	<bean name="/mailingcontent" class="com.agnitas.web.ComMailingContentAction">
-		<property name="actionDao" ref="EmmActionDao" />
-		<property name="mailingService" ref="MailingService"/>
-		<property name="configService" ref="ConfigService" />
-		<property name="mailingFactory" ref="MailingFactory" />
-		<property name="tagCheckFactory" ref="TAGCheckFactory" />
-		<property name="characterEncodingValidator" ref="CharacterEncodingValidator" />
-		<property name="dynamicTagContentFactory" ref="DynamicTagContentFactory" />
-		<property name="targetService" ref="targetService" />
-		<property name="profileFieldDao" ref="ProfileFieldDao" />
-		<property name="mailingContentService" ref="MailingContentService" />
-		<property name="mailingComponentDao" ref="MailingComponentDao" />
-		<property name="dynamicTagDao" ref="DynamicTagDao" />
-		<property name="previewImageService" ref="PreviewImageService" />
-		<property name="userActivityLogService" ref="UserActivityLogService" />
-		<property name="adminPreferencesDao" ref="AdminPreferencesDao" />
-		<property name="tagSyntaxChecker" ref="TagSyntaxChecker" />
-		<property name="mailingBaseService" ref="MailingBaseService" />
-		<property name="maildropService" ref="MaildropService" />
-		<property name="mailinglistApprovalService" ref="MailinglistApprovalService" />
-        <property name="gridServiceWrapper" ref="GridServiceWrapper"/>
-        <property name="mailingPropertiesRules" ref="MailingPropertiesRules" />
-    </bean>
 
     <bean name="/form" class="com.agnitas.web.ComUserFormExecuteAction">
     	<!-- Legacy form.do for redirection to form.action -->

@@ -5,7 +5,7 @@
 
         <div class="form-group">
             <div class="col-sm-4">
-                <label class="control-label" for="module_{{- index}}_doubleCheck"><mvc:message code="import.doublechecking"/></label>
+                <label class="control-label checkbox-control-label" for="module_{{- index}}_doubleCheck"><mvc:message code="import.doublechecking"/></label>
             </div>
             <div class="col-sm-8">
                 <label class="toggle">
@@ -38,7 +38,7 @@
 
         <div class="form-group">
             <div class="col-sm-4">
-                <label class="control-label" for="module_{{- index}}.doubleOptIn"><mvc:message code="action.UseDblOptIn"/></label>
+                <label class="control-label checkbox-control-label" for="module_{{- index}}.doubleOptIn"><mvc:message code="action.UseDblOptIn"/></label>
             </div>
             <div class="col-sm-8">
                 <label class="toggle">

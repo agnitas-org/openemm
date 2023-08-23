@@ -1,0 +1,36 @@
+<%@ page import="com.agnitas.beans.DeliveryStat" %>
+
+<c:set var="STATUS_SENT" value="<%= DeliveryStat.STATUS_SENT %>" scope="page" />
+
+<div class="form-group">
+    <div class="well block">
+        <c:choose>
+            <c:when test="${form.worldMailingSend}">
+                <c:choose>
+                    <c:when test="${form.deliveryStat.deliveryStatus eq STATUS_SENT}">
+                        <mvc:message code="mailing.send.finished" />
+                    </c:when>
+                    <c:otherwise>
+                        <mvc:message code="mailing.send.scheduled" />
+                    </c:otherwise>
+                </c:choose>
+            </c:when>
+
+            <c:otherwise>
+                <mvc:message code="mailing.send.ready" />
+            </c:otherwise>
+        </c:choose>
+    </div>
+</div>
+
+<c:if test="${not form.isTemplate}">
+    <%@ include file="fragments/mailing-send-prioritization.jspf" %>
+    <%@ include file="fragments/mailing-send-encrypted.jspf" %>
+    <%@ include file="fragments/mailing-send-size.jspf" %>
+
+    <%-- Configure button --%>
+    <%@ include file="fragments/mailing-configure-button.jspf" %>
+
+    <%-- Approve button --%>
+    <%@ include file="fragments/mailing-approve-button.jspf" %>
+</c:if>

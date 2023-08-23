@@ -56,6 +56,8 @@ public class RecipientReactionsExportWorker extends GenericExportWorker {
 	protected RemoteFile remoteFile = null;
 	
 	protected List<String> additionalCustomerFields = null;
+	
+	protected boolean exportLinkDescription = false;
 
 	public String getUsername() {
 		return username;
@@ -89,10 +91,10 @@ public class RecipientReactionsExportWorker extends GenericExportWorker {
 		return exportDataEndDate;
 	}
 
-	public RecipientReactionsExportWorker(ComRecipientDao recipientDao, TrackableLinkDao trackableLinkDao, AutoExport autoExport, Date exportDataStartDate, Date exportDataEndDate, List<String> additionalCustomerFields) {
+	public RecipientReactionsExportWorker(ComRecipientDao recipientDao, TrackableLinkDao trackableLinkDao, boolean exportLinkDescription, AutoExport autoExport, Date exportDataStartDate, Date exportDataEndDate, List<String> additionalCustomerFields) {
 		this.recipientDao = recipientDao;
 		this.trackableLinkDao = trackableLinkDao;
-		
+		this.exportLinkDescription = exportLinkDescription;
 		this.autoExport = autoExport;
 		this.exportDataStartDate = exportDataStartDate;
 		this.exportDataEndDate = exportDataEndDate;
@@ -123,6 +125,9 @@ public class RecipientReactionsExportWorker extends GenericExportWorker {
 			csvFileHeaders.add("EVENT");
 			csvFileHeaders.add("TIMESTAMP");
 			csvFileHeaders.add("LINK");
+			if (exportLinkDescription) {
+				csvFileHeaders.add("LINK_DESCRIPTION");
+			}
 			csvFileHeaders.add("REVENUE");
 			
 			StringBuilder sqlSelectStatement = new StringBuilder();
@@ -140,7 +145,7 @@ public class RecipientReactionsExportWorker extends GenericExportWorker {
 	//		sqlStatement.append("\nUNION ALL\n");
 			
 			// Mail-Delivery-Successes
-			sqlSelectStatement.append("SELECT succ.mailing_id, mail.shortname, succ.customer_id, cust.email" + additionalCustomerFieldsSqlPart + ", 4, succ.timestamp, NULL, NULL"
+			sqlSelectStatement.append("SELECT succ.mailing_id, mail.shortname, succ.customer_id, cust.email" + additionalCustomerFieldsSqlPart + ", 4, succ.timestamp, NULL" + (exportLinkDescription ? ", NULL" : "") + ", NULL"
 				+ " FROM success_" + autoExport.getCompanyId() + "_tbl succ, customer_" + autoExport.getCompanyId() + "_tbl cust, mailing_tbl mail"
 				+ " WHERE succ.customer_id = cust.customer_id"
 				+ " AND succ.mailing_id = mail.mailing_id"
@@ -152,7 +157,7 @@ public class RecipientReactionsExportWorker extends GenericExportWorker {
 			sqlSelectStatement.append("\nUNION ALL\n");
 			
 			// Mail-Hard-Bounces
-			sqlSelectStatement.append("SELECT bounce.mailing_id, mail.shortname, bounce.customer_id, cust.email" + additionalCustomerFieldsSqlPart + ", 6, bounce.timestamp, NULL, NULL"
+			sqlSelectStatement.append("SELECT bounce.mailing_id, mail.shortname, bounce.customer_id, cust.email" + additionalCustomerFieldsSqlPart + ", 6, bounce.timestamp, NULL" + (exportLinkDescription ? ", NULL" : "") + ", NULL"
 				+ " FROM bounce_tbl bounce, customer_" + autoExport.getCompanyId() + "_tbl cust, mailing_tbl mail"
 				+ " WHERE bounce.customer_id = cust.customer_id"
 				+ " AND bounce.mailing_id = mail.mailing_id"
@@ -167,7 +172,7 @@ public class RecipientReactionsExportWorker extends GenericExportWorker {
 			sqlSelectStatement.append("\nUNION ALL\n");
 			
 			// Mail-Soft-Bounces
-			sqlSelectStatement.append("SELECT bounce.mailing_id, mail.shortname, bounce.customer_id, cust.email" + additionalCustomerFieldsSqlPart + ", 5, bounce.timestamp, NULL, NULL"
+			sqlSelectStatement.append("SELECT bounce.mailing_id, mail.shortname, bounce.customer_id, cust.email" + additionalCustomerFieldsSqlPart + ", 5, bounce.timestamp, NULL" + (exportLinkDescription ? ", NULL" : "") + ", NULL"
 				+ " FROM bounce_tbl bounce, customer_" + autoExport.getCompanyId() + "_tbl cust, mailing_tbl mail"
 				+ " WHERE bounce.customer_id = cust.customer_id"
 				+ " AND bounce.mailing_id = mail.mailing_id"
@@ -182,7 +187,7 @@ public class RecipientReactionsExportWorker extends GenericExportWorker {
 			sqlSelectStatement.append("\nUNION ALL\n");
 			
 			// Unsubscriptions
-			sqlSelectStatement.append("SELECT bind.exit_mailing_id, mail.shortname, bind.customer_id, cust.email" + additionalCustomerFieldsSqlPart + ", 3, bind.timestamp, NULL, NULL"
+			sqlSelectStatement.append("SELECT bind.exit_mailing_id, mail.shortname, bind.customer_id, cust.email" + additionalCustomerFieldsSqlPart + ", 3, bind.timestamp, NULL" + (exportLinkDescription ?", NULL" : "") + ", NULL"
 				+ " FROM customer_" + autoExport.getCompanyId() + "_binding_tbl bind, customer_" + autoExport.getCompanyId() + "_tbl cust, mailing_tbl mail"
 				+ " WHERE bind.customer_id = cust.customer_id"
 				+ " AND bind.exit_mailing_id = mail.mailing_id"
@@ -196,7 +201,7 @@ public class RecipientReactionsExportWorker extends GenericExportWorker {
 			sqlSelectStatement.append("\nUNION ALL\n");
 			
 			// Openings
-			sqlSelectStatement.append("SELECT opl.mailing_id, mail.shortname, opl.customer_id, cust.email" + additionalCustomerFieldsSqlPart + ", 2, opl.creation, NULL, NULL"
+			sqlSelectStatement.append("SELECT opl.mailing_id, mail.shortname, opl.customer_id, cust.email" + additionalCustomerFieldsSqlPart + ", 2, opl.creation, NULL" + (exportLinkDescription ? ", NULL" : "") + ", NULL"
 				+ " FROM onepixellog_device_" + autoExport.getCompanyId() + "_tbl opl, customer_" + autoExport.getCompanyId() + "_tbl cust, mailing_tbl mail"
 				+ " WHERE opl.customer_id = cust.customer_id"
 				+ " AND opl.mailing_id = mail.mailing_id"
@@ -208,7 +213,7 @@ public class RecipientReactionsExportWorker extends GenericExportWorker {
 			sqlSelectStatement.append("\nUNION ALL\n");
 			
 			// Clicks
-			sqlSelectStatement.append("SELECT rlog.mailing_id, mail.shortname, rlog.customer_id, cust.email" + additionalCustomerFieldsSqlPart + ", 1, rlog.timestamp, url.url_id, NULL"
+			sqlSelectStatement.append("SELECT rlog.mailing_id, mail.shortname, rlog.customer_id, cust.email" + additionalCustomerFieldsSqlPart + ", 1, rlog.timestamp, url.url_id" + (exportLinkDescription ? ", url.shortname" : "") + ", NULL"
 				+ " FROM rdirlog_" + autoExport.getCompanyId() + "_tbl rlog, customer_" + autoExport.getCompanyId() + "_tbl cust, rdir_url_tbl url, mailing_tbl mail"
 				+ " WHERE rlog.customer_id = cust.customer_id"
 				+ " AND rlog.mailing_id = mail.mailing_id"
@@ -221,7 +226,7 @@ public class RecipientReactionsExportWorker extends GenericExportWorker {
 			sqlSelectStatement.append("\nUNION ALL\n");
 			
 			// Blacklisted
-			sqlSelectStatement.append("SELECT NULL, ban.reason, bind.customer_id, cust.email" + additionalCustomerFieldsSqlPart + ", 7, MIN(bind.timestamp), NULL, NULL"
+			sqlSelectStatement.append("SELECT NULL, ban.reason, bind.customer_id, cust.email" + additionalCustomerFieldsSqlPart + ", 7, MIN(bind.timestamp), NULL" + (exportLinkDescription ? ", NULL" : "") + ", NULL"
 				+ " FROM customer_" + autoExport.getCompanyId() + "_binding_tbl bind, customer_" + autoExport.getCompanyId() + "_tbl cust"
 				+ " LEFT OUTER join cust" + autoExport.getCompanyId() + "_ban_tbl ban ON ban.email = cust.email"
 				+ " WHERE bind.customer_id = cust.customer_id"
@@ -236,7 +241,7 @@ public class RecipientReactionsExportWorker extends GenericExportWorker {
 			sqlSelectStatement.append("\nUNION ALL\n");
 			
 			// Revenues
-			sqlSelectStatement.append("SELECT valnum.mailing_id, mail.shortname, valnum.customer_id, cust.email" + additionalCustomerFieldsSqlPart + ", 8, valnum.timestamp, NULL, valnum.num_parameter"
+			sqlSelectStatement.append("SELECT valnum.mailing_id, mail.shortname, valnum.customer_id, cust.email" + additionalCustomerFieldsSqlPart + ", 8, valnum.timestamp, NULL" + (exportLinkDescription ? ", NULL" : "") + ", valnum.num_parameter"
 				+ " FROM rdirlog_" + autoExport.getCompanyId() + "_val_num_tbl valnum, customer_" + autoExport.getCompanyId() + "_tbl cust, mailing_tbl mail"
 				+ " WHERE valnum.customer_id = cust.customer_id"
 				+ " AND valnum.mailing_id = mail.mailing_id"
@@ -265,11 +270,11 @@ public class RecipientReactionsExportWorker extends GenericExportWorker {
 						if (StringUtils.isNotEmpty(nextLine.get(0))) {
 							int mailingID = Integer.parseInt(nextLine.get(0));
 							int customerID = Integer.parseInt(nextLine.get(2));
-							String urlIdString = nextLine.get(nextLine.size() - 2);
+							String urlIdString = nextLine.get(nextLine.size() - (exportLinkDescription ? 3 : 2));
 							if (StringUtils.isNotEmpty(urlIdString)) {
 								int urlId = Integer.parseInt(urlIdString);
 								String fullUrlWithLinkextensions = createDirectLinkWithOptionalExtensions(autoExport.getCompanyId(), mailingID, customerID, urlId);
-								nextLine.set(nextLine.size() - 2, fullUrlWithLinkextensions);
+								nextLine.set(nextLine.size() - (exportLinkDescription ? 3 : 2), fullUrlWithLinkextensions);
 							}
 						}
 						writer.writeValues(nextLine);

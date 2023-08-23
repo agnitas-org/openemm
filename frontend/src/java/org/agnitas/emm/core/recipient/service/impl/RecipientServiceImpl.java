@@ -53,6 +53,7 @@ import org.agnitas.beans.factory.BindingEntryFactory;
 import org.agnitas.beans.factory.RecipientFactory;
 import org.agnitas.beans.impl.BindingEntryImpl;
 import org.agnitas.beans.impl.PaginatedListImpl;
+import org.agnitas.beans.impl.RecipientImpl;
 import org.agnitas.beans.impl.ViciousFormDataException;
 import org.agnitas.dao.MailinglistDao;
 import org.agnitas.dao.UserStatus;
@@ -73,7 +74,7 @@ import org.agnitas.emm.core.recipient.service.SubscriberLimitCheck;
 import org.agnitas.emm.core.recipient.service.validation.RecipientModelValidator;
 import org.agnitas.emm.core.target.exception.UnknownTargetGroupIdException;
 import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.emm.core.velocity.VelocityCheck;
+
 import org.agnitas.service.ImportException;
 import org.agnitas.service.RecipientDuplicateSqlOptions;
 import org.agnitas.service.RecipientQueryBuilder;
@@ -123,6 +124,7 @@ import com.agnitas.emm.core.mailing.service.SendActionbasedMailingService;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.profilefields.ProfileFieldBulkUpdateException;
 import com.agnitas.emm.core.profilefields.service.ProfileFieldValidationService;
+import com.agnitas.emm.core.recipient.RecipientException;
 import com.agnitas.emm.core.recipient.dto.BindingAction;
 import com.agnitas.emm.core.recipient.dto.RecipientBindingDto;
 import com.agnitas.emm.core.recipient.dto.RecipientBindingsDto;
@@ -224,6 +226,11 @@ public class RecipientServiceImpl implements RecipientService {
 	public void setEqlFacade(EqlFacade eqlFacade) {
 		this.eqlFacade = eqlFacade;
 	}
+	
+	@Required
+	public final void setSubscriberLimitCheck(final SubscriberLimitCheck check) {
+		this.subscriberLimitCheck = Objects.requireNonNull(check, "subscriberLimitCheck");
+	}
   	
 	@Override
 	public int countSubscribers(final int companyID) {
@@ -231,8 +238,13 @@ public class RecipientServiceImpl implements RecipientService {
 	}
 
 	@Override
+	public boolean isColumnsIndexed(List<String> columns, int companyId) {
+		return recipientDao.isColumnsIndexed(columns, companyId);
+	}
+
+	@Override
 	@Transactional
-	public int findSubscriber(@VelocityCheck int companyId, String keyColumn, String value) {
+	public int findSubscriber(int companyId, String keyColumn, String value) {
 		try {
 			return recipientDao.findByColumn(companyId, keyColumn, value);
 		} catch (RuntimeException e) {
@@ -298,19 +310,33 @@ public class RecipientServiceImpl implements RecipientService {
 
 	@Override
 	@Transactional
-	public List<Integer> getSubscribers(RecipientsModel model) {
-		return recipientDao.getCustomerDataFromDb(model.getCompanyId(), model.isMatchAll(), model.getCriteriaEquals());
+	public List<Integer> getSubscribers(RecipientsModel model) throws RecipientException {
+		return model.getEql() == null
+				? recipientDao.getCustomerDataFromDb(model.getCompanyId(), model.isMatchAll(), model.getCriteriaEquals())
+				: recipientDao.getCustomerDataFromDb(model.getCompanyId(), model.getEql());
 	}
 
 	@Override
 	@Transactional
 	public int getSubscribersSize(RecipientsModel model) {
-		return recipientDao.getSizeOfCustomerDataFromDbList(model.getCompanyId(), model.isMatchAll(), model.getCriteriaEquals());
+		return model.getEql() == null
+				? recipientDao.getSizeOfCustomerDataFromDbList(model.getCompanyId(), model.isMatchAll(), model.getCriteriaEquals())
+				: recipientDao.getSizeOfCustomerDataFromDbList(model.getCompanyId(), model.getEql());
 	}
 
 	@Override
 	public int getNumberOfRecipients(int companyId) {
 		return recipientDao.getNumberOfRecipients(companyId, true);
+	}
+
+	@Override
+	public boolean hasBeenReachedLimitOnNonIndexedImport(int companyId) {
+		int maxContentLines = configService.getIntegerValue(ConfigValue.MaximumContentLinesForUnindexedImport, companyId);
+		if (maxContentLines < 0) {
+			return false;
+		}
+
+		return getNumberOfRecipients(companyId) > maxContentLines;
 	}
 
 	@Override
@@ -320,7 +346,7 @@ public class RecipientServiceImpl implements RecipientService {
 			throw new RecipientNotExistException();
 		}
 
-		List<ComRecipientMailing> recipientMailings = recipientDao.getMailingsSentToRecipient(model.getCustomerId(), model.getCompanyId());
+		List<ComRecipientMailing> recipientMailings = recipientDao.getMailingsDeliveredToRecipient(model.getCustomerId(), model.getCompanyId());
 		if (CollectionUtils.isNotEmpty(recipientMailings)) {
 			final int licenseID = this.configService.getLicenseID();
 			final ComExtensibleUID uid = UIDFactory.from(licenseID, model.getCompanyId(), model.getCustomerId());
@@ -383,7 +409,7 @@ public class RecipientServiceImpl implements RecipientService {
 	    recipientModelValidator.assertIsValidToAdd(model);
 		recipientDao.checkParameters(model.getParameters(), model.getCompanyId());
 		
-		this.subscriberLimitCheck.checkSubscriberLimit(companyId);
+		subscriberLimitCheck.checkSubscriberLimit(companyId);
 
 		int returnValue;
 		int tmpCustID;
@@ -846,7 +872,7 @@ public class RecipientServiceImpl implements RecipientService {
             if (respectHideSign) {
             	sqlStatementManagerForDataSelect.addWhereClause("hide <= 0 OR hide IS NULL");
             }
-
+            
             addExtendedSearchOptions(admin, sqlStatementManagerForDataSelect, options);
 
             if (options.getTargetId() > 0) {
@@ -969,7 +995,7 @@ public class RecipientServiceImpl implements RecipientService {
 	}
 
 	@Override
-	public RecipientLightDto getRecipientLightDto(@VelocityCheck int companyId, int recipientId) {
+	public RecipientLightDto getRecipientLightDto(int companyId, int recipientId) {
 		CaseInsensitiveMap<String, Object> dataFromDb = recipientDao.getCustomerDataFromDb(companyId, recipientId, DEFAULT_COLUMNS);
 		int customerId = NumberUtils.toInt((String) dataFromDb.get(COLUMN_CUSTOMER_ID), 0);
 		String firstName = (String) dataFromDb.get(COLUMN_FIRSTNAME);
@@ -1090,7 +1116,7 @@ public class RecipientServiceImpl implements RecipientService {
 	}
 
 	@Override
-	public List<ComRecipientLiteImpl> getAdminAndTestRecipients(@VelocityCheck int companyId, int mailinglistId) {
+	public List<ComRecipientLiteImpl> getAdminAndTestRecipients(int companyId, int mailinglistId) {
 		return recipientDao.getAdminAndTestRecipients(companyId, mailinglistId);
 	}
 
@@ -1163,7 +1189,7 @@ public class RecipientServiceImpl implements RecipientService {
     }
 
     @Override
-    public JSONArray getContactHistoryJson(@VelocityCheck int companyId, int recipientId) {
+    public JSONArray getContactHistoryJson(int companyId, int recipientId) {
 		JSONArray data = new JSONArray();
 		List<ComRecipientMailing> historyList = recipientDao.getMailingsDeliveredToRecipient(recipientId, companyId);
 		List<ComRecipientMailing> sorted = historyList.stream().sorted((h1, h2) -> h2.getSendDate().compareTo(h1.getSendDate())).collect(Collectors.toList());
@@ -1599,7 +1625,7 @@ public class RecipientServiceImpl implements RecipientService {
 	}
 
     @Override
-    public void deleteRecipient(@VelocityCheck int companyId, int recipientId) {
+    public void deleteRecipient(int companyId, int recipientId) {
         if (recipientDao.exist(recipientId, companyId)) {
         	recipientDao.deleteCustomerDataFromDb(companyId, recipientId);
 		}
@@ -1611,38 +1637,49 @@ public class RecipientServiceImpl implements RecipientService {
     }
 
 	@Override
-	public ServiceResult<Integer> saveRecipient(Admin admin, SaveRecipientDto recipient, List<UserAction> userActions) {
+	public ServiceResult<Integer> saveRecipient(Admin admin, SaveRecipientDto recipientDto, List<UserAction> userActions) {
 		int companyId = admin.getCompanyID();
-		boolean isNew = recipient.getId() == 0;
+		boolean isNew = recipientDto.getId() == 0;
 		
-		if(isNew) {
-			this.subscriberLimitCheck.checkSubscriberLimit(companyId);
-		}
-		
-		if (isNew && !recipientDao.mayAdd(companyId, 1)) {
-			return new ServiceResult<>(0, false,
-					Message.of("error.maxcustomersexceeded",
-							recipientDao.getNumberOfRecipients(companyId),
-							configService.getIntegerValue(ConfigValue.System_License_MaximumNumberOfCustomers, companyId)));
+		SubscriberLimitCheckResult subscriberLimitCheckResult = null;
+		if (isNew) {
+			subscriberLimitCheckResult = subscriberLimitCheck.checkSubscriberLimit(companyId);
 		}
 
 		CaseInsensitiveMap<String, Object> rowValues = new CaseInsensitiveMap<>();
 		try {
-			rowValues.putAll(collectRecipientData(admin, recipient));
+			rowValues.putAll(collectRecipientData(admin, recipientDto));
 		} catch (UserMessageException e) {
 			return ServiceResult.error(Message.of(e));
 		}
 
 		try {
-			int recipientId = recipientDao.saveRecipient(companyId, recipient.getId(), rowValues);
-			recipient.setId(recipientId);
-			return new ServiceResult<>(recipientId, true);
+			if (isNew) {
+				Recipient recipient = new RecipientImpl();
+				recipient.setCompanyID(admin.getCompanyID());
+				recipient.setCustParameters(rowValues);
+				recipientDao.insertNewCustWithException(recipient);
+				recipientDto.setId(recipient.getCustomerID());
+			} else {
+				int recipientId = recipientDao.saveRecipient(companyId, recipientDto.getId(), rowValues);
+				recipientDto.setId(recipientId);
+			}
+			
+			if (subscriberLimitCheckResult != null && subscriberLimitCheckResult.isWithinGraceLimitation()) {
+				List<Message> warningMessages = new ArrayList<>();
+				warningMessages.add(Message.of(
+						"error.numberOfCustomersExceeded.graceful",
+						subscriberLimitCheckResult.getMaximumNumberOfCustomers(),
+						subscriberLimitCheckResult.getCurrentNumberOfCustomers(),
+						subscriberLimitCheckResult.getGracefulLimitExtension()));
+				return new ServiceResult<>(recipientDto.getId(), true, null, warningMessages, null);
+			} else {
+				return new ServiceResult<>(recipientDto.getId(), true);
+			}
 		} catch (Exception e) {
 			logger.error("Error occurred: " + e.getMessage(), e);
+			return ServiceResult.error(Message.of("error.recipient.create"));
 		}
-
-
-		return ServiceResult.error(Message.of("error.recipient.create"));
 	}
 
 	@Override
@@ -2233,11 +2270,6 @@ public class RecipientServiceImpl implements RecipientService {
 	@Override
 	public int getMinimumCustomerId(int companyID) {
 		return recipientDao.getMinimumCustomerId(companyID);
-	}
-	
-	@Required
-	public final void setSubscriberLimitCheck(final SubscriberLimitCheck check) {
-		this.subscriberLimitCheck = Objects.requireNonNull(check, "subscriberLimitCheck");
 	}
 
 	public void addExtendedSearchOptions(Admin admin, SqlPreparedStatementManager sqlStatement, RecipientSqlOptions options) throws Exception {

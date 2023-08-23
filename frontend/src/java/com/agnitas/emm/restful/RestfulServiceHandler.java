@@ -16,6 +16,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 
+import com.agnitas.emm.core.useractivitylog.dao.RestfulUserActivityLogDao;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.HttpUtils.RequestMethod;
 import org.apache.commons.lang3.StringUtils;
@@ -80,5 +81,13 @@ public interface RestfulServiceHandler {
 		if (!admin.permissionAllowed(Permission.WEBSERVICE_USER_CREATE)) {
 			throw new RestfulClientException("Authorization failed: Access denied '" + Permission.WEBSERVICE_USER_CREATE.toString() + "'");
 		}
+	}
+
+	default void writeActivityLog(RestfulUserActivityLogDao activityLogDao, String description, HttpServletRequest request, Admin admin) {
+		String host = request.getHeader("Host");
+		if (StringUtils.isBlank(host)) {
+			host = AgnUtils.getHostName();
+		}
+		activityLogDao.writeUserActivityLog(request.getRequestURI(), description, request.getMethod(), host, admin);
 	}
 }

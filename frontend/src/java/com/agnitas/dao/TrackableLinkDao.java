@@ -50,8 +50,6 @@ public interface TrackableLinkDao {
 	
 	List<LinkProperty> getLinkProperties(ComTrackableLink link);
 
-	void deleteLinkProperties(int linkID);
-
 	boolean deleteRdirUrlsByMailing(int mailingID);
 
 	void storeLinkProperties(int linkId, List<LinkProperty> properties);
@@ -60,8 +58,6 @@ public interface TrackableLinkDao {
 
     List<ComTrackableLink> getTrackableLinks(int companyID, List<Integer> urlIds);
     
-    String getLinkUrl(int companyID, int mailingID, int linkID);
-
 	void deleteTrackableLinksExceptIds(int companyID, int mailingID, Collection<Integer> ids);
 
 	void activateDeeptracking(int companyID, int mailingID);

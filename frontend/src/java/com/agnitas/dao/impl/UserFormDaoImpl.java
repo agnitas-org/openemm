@@ -19,7 +19,6 @@ import java.util.Date;
 import java.util.List;
 
 import org.agnitas.dao.impl.PaginatedBaseDaoImpl;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.Tuple;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
@@ -45,7 +44,7 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 	private FormTrackableLinkDao trackableLinkDao;
 
 	@Override
-    public List<UserForm> getUserForms(@VelocityCheck int companyID) {
+    public List<UserForm> getUserForms(int companyID) {
     	List<UserForm> comList = select(logger,
 				"SELECT form_id, company_id, formname, description, creation_date, change_date, active, startaction_id, endaction_id  " +
 				"FROM userform_tbl WHERE company_id = ? ORDER BY lower(formname)",
@@ -60,22 +59,15 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 				companyID, actionID, actionID);
 	}
 
-    @Override
-	public List<Tuple<Integer, String>> getImportNamesByActionID(int companyID, int actionID) {
-		return select(logger, "SELECT id, shortname FROM import_profile_tbl WHERE company_id = ? AND action_for_new_recipients = ? ORDER BY LOWER(shortname)",
-				(resultSet, i) -> new Tuple<>(resultSet.getInt("id"), resultSet.getString("shortname")),
-				companyID, actionID);
-	}
-
 	@Override
-	public UserForm getUserForm(int formID, @VelocityCheck int companyID) {
+	public UserForm getUserForm(int formID, int companyID) {
 		String sql = "SELECT form_id, company_id, formName, description, success_template, error_template, success_mimetype, error_mimetype, startaction_id, endaction_id, success_url, error_url, success_use_url, error_use_url, active, success_builder_json, error_builder_json, creation_date, change_date "
 				+ " FROM userform_tbl WHERE form_id = ? AND company_id = ?";
 		return selectObjectDefaultNull(logger, sql, new UserForm_RowMapper(), formID, companyID);
 	}
 
 	@Override
-	public UserForm getUserFormByName(String name, @VelocityCheck int companyID) throws Exception {
+	public UserForm getUserFormByName(String name, int companyID) throws Exception {
 		if (name == null || companyID == 0) {
 			return null;
 		} else {
@@ -95,7 +87,7 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 	}
 
 	@Override
-	public String getUserFormName(int formId, @VelocityCheck int companyId) {
+	public String getUserFormName(int formId, int companyId) {
 		if (formId > 0 && companyId > 0) {
 			String sql = "SELECT formName FROM userform_tbl WHERE form_id = ? AND company_id = ?";
 			return selectObjectDefaultNull(logger, sql, (rs, index) -> rs.getString("formName"), formId, companyId);
@@ -174,7 +166,7 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 	}
 	
 	@Override
-	public int createUserForm(@VelocityCheck int companyId, UserForm userForm) {
+	public int createUserForm(int companyId, UserForm userForm) {
 		userForm.setCreationDate(new Date());
 		userForm.setChangeDate(new Date());
 		
@@ -245,7 +237,7 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 	}
 	
 	@Override
-	public void updateUserForm(@VelocityCheck int companyId, UserForm userForm) {
+	public void updateUserForm(int companyId, UserForm userForm) {
 		userForm.setChangeDate(new Date());
 		
 		String sql = "UPDATE userform_tbl SET formname = ?, description = ?, "
@@ -271,7 +263,7 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 	}
 	
 	@Override
-	public int updateActiveness(@VelocityCheck int companyId, Collection<Integer> formIds, boolean isActive) {
+	public int updateActiveness(int companyId, Collection<Integer> formIds, boolean isActive) {
 		if (CollectionUtils.isEmpty(formIds) || companyId <= 0) {
 			return 0;
 		}
@@ -283,7 +275,7 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 	}
 
 	@Override
-	public List<UserForm> getByIds(@VelocityCheck int companyId, Collection<Integer> formIds) {
+	public List<UserForm> getByIds(int companyId, Collection<Integer> formIds) {
 		if (CollectionUtils.isEmpty(formIds) || companyId <= 0) {
 			return Collections.emptyList();
 		}
@@ -297,7 +289,7 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 
 	@Override
 	@DaoUpdateReturnValueCheck
-	public boolean deleteUserForm(int formID, @VelocityCheck int companyID) {
+	public boolean deleteUserForm(int formID, int companyID) {
 		if (formID == 0 || companyID == 0) {
 			return false;
 		} else {
@@ -313,7 +305,7 @@ public class UserFormDaoImpl extends PaginatedBaseDaoImpl implements UserFormDao
 	}
 
 	@Override
-	public boolean deleteUserFormByCompany(@VelocityCheck int companyID) {
+	public boolean deleteUserFormByCompany(int companyID) {
 		if (companyID == 0) {
 			return false;
 		} else {

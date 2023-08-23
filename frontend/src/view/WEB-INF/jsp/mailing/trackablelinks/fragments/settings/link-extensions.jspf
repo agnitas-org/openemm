@@ -2,7 +2,7 @@
 <emm:ShowByPermission token="mailing.extend_trackable_links">
     <div class="form-group">
         <div class="col-sm-4">
-            <label for="settings_modifyLinkExtensions" class="control-label">
+            <label for="settings_modifyLinkExtensions" class="control-label checkbox-control-label">
                 <mvc:message code="mailing.trackablelinks.extensions.change"/>
             </label>
         </div>

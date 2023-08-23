@@ -92,7 +92,7 @@ public class ServiceMailingValidator implements ActionOperationValidator {
     private void checkEmailValid(String email, List<Message> errors, String blacklistedErrorMsg, int companyId) {
         email = AgnUtils.normalizeEmail(email);
         if (!AgnUtils.isEmailValid(email)) {
-            errors.add(Message.of("GWUA.error.invalidEmail", email));
+            errors.add(Message.of("error.invalid.email", email));
         } else if (blacklistService.blacklistCheckCompanyOnly(email, companyId)) {
             errors.add(Message.of(blacklistedErrorMsg, email));
         }

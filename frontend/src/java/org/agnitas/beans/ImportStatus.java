@@ -16,7 +16,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.service.GenericImportException.ReasonCode;
 import org.agnitas.util.ImportUtils.ImportErrorType;
 
@@ -41,7 +40,7 @@ public interface ImportStatus {
     *
     * @param company New value of property companyID.
     */
-    void setCompanyID( @VelocityCheck int company);
+    void setCompanyID( int company);
 
     /**
     * Setter for property adminID.

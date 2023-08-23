@@ -10,21 +10,25 @@
 
 package com.agnitas.emm.core.logon.service.impl;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.List;
-import java.util.Locale;
-import java.util.Optional;
-
-import javax.sql.DataSource;
-
-import org.agnitas.beans.EmmLayoutBase;
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.AdminPreferences;
+import com.agnitas.dao.AdminPreferencesDao;
+import com.agnitas.dao.EmmLayoutBaseDao;
+import com.agnitas.dao.PasswordResetDao;
+import com.agnitas.emm.core.JavaMailService;
+import com.agnitas.emm.core.admin.service.AdminService;
+import com.agnitas.emm.core.commons.password.PasswordState;
+import com.agnitas.emm.core.logon.service.ComLogonService;
+import com.agnitas.emm.core.logon.service.LogonServiceException;
+import com.agnitas.emm.core.logon.web.LogonFailedException;
+import com.agnitas.emm.core.mailloop.util.SecurityTokenGenerator;
+import com.agnitas.messages.I18nString;
+import com.agnitas.messages.Message;
+import com.agnitas.service.LicenseError;
+import com.agnitas.service.ServiceResult;
+import com.agnitas.service.SimpleServiceResult;
+import com.agnitas.beans.EmmLayoutBase;
+import org.agnitas.emm.core.commons.password.PasswordCheck;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.logintracking.service.LoginTrackService;
@@ -44,71 +48,42 @@ import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.beans.AdminPreferences;
-import com.agnitas.dao.AdminPreferencesDao;
-import com.agnitas.dao.ComEmmLayoutBaseDao;
-import com.agnitas.dao.PasswordResetDao;
-import com.agnitas.emm.core.JavaMailService;
-import com.agnitas.emm.core.admin.AdminException;
-import com.agnitas.emm.core.admin.service.AdminService;
-import com.agnitas.emm.core.commons.password.ComPasswordCheck;
-import com.agnitas.emm.core.commons.password.PasswordState;
-import com.agnitas.emm.core.logon.service.ComLogonService;
-import com.agnitas.emm.core.logon.service.LogonServiceException;
-import com.agnitas.emm.core.logon.web.LogonFailedException;
-import com.agnitas.emm.core.mailloop.util.SecurityTokenGenerator;
-import com.agnitas.emm.core.supervisor.beans.Supervisor;
-import com.agnitas.emm.core.supervisor.common.SupervisorException;
-import com.agnitas.emm.core.supervisor.common.SupervisorLoginFailedException;
-import com.agnitas.emm.core.supervisor.service.ComSupervisorService;
-import com.agnitas.emm.core.supervisor.service.SupervisorUtil;
-import com.agnitas.messages.I18nString;
-import com.agnitas.messages.Message;
-import com.agnitas.service.LicenseError;
-import com.agnitas.service.ServiceResult;
-import com.agnitas.service.SimpleServiceResult;
+import javax.sql.DataSource;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
 
 /**
  * Implementation of {@link com.agnitas.emm.core.logon.service.ComLogonService}.
  */
 public class ComLogonServiceImpl implements ComLogonService {
-	
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(ComLogonServiceImpl.class);
 
+	private static final Logger logger = LogManager.getLogger(ComLogonServiceImpl.class);
+
+	protected AdminService adminService;
+	protected LoginTrackService loginTrackService;
+	protected PasswordCheck passwordCheck;
 	private DataSource dataSource;
-	
 	private ConfigService configService;
-
 	private AdminPreferencesDao adminPreferencesDao;
-
-	private ComEmmLayoutBaseDao emmLayoutBaseDao;
-	
-	private AdminService adminService;
-
-	private ComSupervisorService supervisorService;
-
-	private ComPasswordCheck passwordCheck;
-
+	private EmmLayoutBaseDao emmLayoutBaseDao;
 	private PasswordResetDao passwordResetDao;
-
-	/** Service for login tracking. */
-	private LoginTrackService loginTrackService;
-
 	private JavaMailService javaMailService;
-
-	protected PreviewFactory previewFactory;
+	private PreviewFactory previewFactory;
 
 	// ----------------------------------------------------------- Business code
 	
 	@Override
 	public Admin getAdminByCredentials(String username, String password, String hostIpAddress) throws LogonServiceException {
-		if (!SupervisorUtil.isSupervisorLoginName(username)) {
-			return doRegularLogin(username, password, hostIpAddress);
-		} else {
-			return doSupervisorLogin(username, password, hostIpAddress);
-		}
+		return doRegularLogin(username, password, hostIpAddress);
 	}
 
 	/**
@@ -158,8 +133,8 @@ public class ComLogonServiceImpl implements ComLogonService {
 	 * 
 	 * @throws LogonFailedException if IP is blocked
 	 */
-	private void checkIPBlockState( int companyID, String loginName, String hostIpAddress) throws LogonFailedException {
-		if(loginTrackService.isIpAddressLocked(hostIpAddress, companyID)) {
+	protected void checkIPBlockState( int companyID, String loginName, String hostIpAddress) throws LogonFailedException {
+		if (loginTrackService.isIpAddressLocked(hostIpAddress, companyID)) {
 			if (logger.isInfoEnabled()) {
 				logger.info( "Login for user " + loginName + " failed - IP address blocked");
 			}
@@ -169,51 +144,6 @@ public class ComLogonServiceImpl implements ComLogonService {
 		}
 	}
 	
-	/**
-	 * Do login for supervisor user.
-	 * 
-	 * @param loginName login name (user name + supervisor name)
-	 * @param password supervisor password
-	 * @param hostIpAddress IP of client
-	 * 
-	 * @return {@link Admin} for credentials
-	 * 
-	 * @throws LogonServiceException on errors during login (username/password invalid, ...)
-	 */
-	private Admin doSupervisorLogin(final String loginName, final String password, final String hostIpAddress) throws LogonServiceException {
-		final String username = SupervisorUtil.getUserNameFromLoginName(loginName);
-		final String supervisorName = SupervisorUtil.getSupervisorNameFromLoginName(loginName);
-		
-		// Get admin
-		try {
-			final Admin admin = adminService.getAdminByNameForSupervisor(username, supervisorName, password);
-			
-			// Check, if admin is valid
-			if (admin == null || admin.getAdminID() == 0) {
-				loginTrackService.trackLoginFailed(hostIpAddress, SupervisorUtil.formatCompleteName(username, supervisorName));
-				
-				throw new LogonFailedException(true);
-			}
-			
-			// Check, if IP is blocked
-			checkIPBlockState(admin.getCompanyID(), loginName, hostIpAddress);
-			
-			loginTrackService.trackLoginSuccessful(hostIpAddress, loginName);
-			
-			return admin;
-		} catch (final SupervisorLoginFailedException e) {
-			logger.warn("Supervisor logon failed", e);
-
-			loginTrackService.trackLoginFailed(hostIpAddress, SupervisorUtil.formatCompleteName(username, supervisorName));
-
-			throw new LogonFailedException(true);
-		} catch (final AdminException | SupervisorException e) {
-			logger.warn("Logon failed", e);
-
-			throw new LogonFailedException(true);
-		}
-	}
-
 	@Override
 	public ServiceResult<Admin> authenticate(String username, String password, String clientIp) {
 		try {
@@ -274,20 +204,12 @@ public class ComLogonServiceImpl implements ComLogonService {
 
 	@Override
 	public PasswordState getPasswordState(Admin admin) {
-		if (admin.isSupervisor()) {
-			return supervisorService.getPasswordState(admin.getSupervisor());
-		} else {
-			return adminService.getPasswordState(admin);
-		}
+		return adminService.getPasswordState(admin);
 	}
 
 	@Override
 	public Date getPasswordExpirationDate(Admin admin) {
-		if (admin.isSupervisor()) {
-			return supervisorService.computePasswordExpireDate(admin.getSupervisor());
-		} else {
-			return adminService.computePasswordExpireDate(admin);
-		}
+		return adminService.computePasswordExpireDate(admin);
 	}
 
 	@Override
@@ -296,32 +218,19 @@ public class ComLogonServiceImpl implements ComLogonService {
 			return new SimpleServiceResult(false, Message.of("error.password.required"));
 		}
 
-		if (admin.isSupervisor()) {
-			Supervisor supervisor = admin.getSupervisor();
+		return setPassword(password, admin);
+	}
 
-			try {
-				SimpleServiceResult result = passwordCheck.checkSupervisorPassword(password, supervisor);
+	protected SimpleServiceResult setPassword(String password, Admin admin) {
+		SimpleServiceResult result = passwordCheck.checkAdminPassword(password, admin);
 
-				if (result.isSuccess()) {
-					supervisorService.setSupervisorPassword(supervisor.getId(), password);
-				}
-
-				return result;
-			} catch (SupervisorException e) {
-				logger.error("Error occurred: " + e.getMessage(), e);
+		if (result.isSuccess()) {
+			if (!adminService.setPassword(admin.getAdminID(), admin.getCompanyID(), password)) {
 				return new SimpleServiceResult(false, Message.of("Error"));
 			}
-		} else {
-			SimpleServiceResult result = passwordCheck.checkAdminPassword(password, admin);
-
-			if (result.isSuccess()) {
-				if (!adminService.setPassword(admin.getAdminID(), admin.getCompanyID(), password)) {
-					return new SimpleServiceResult(false, Message.of("Error"));
-				}
-			}
-
-			return result;
 		}
+
+		return result;
 	}
 
 	@Override
@@ -330,7 +239,7 @@ public class ComLogonServiceImpl implements ComLogonService {
 
 		if (admin == null) {
 			loginTrackService.trackLoginFailed(clientIp, username);
-			return new SimpleServiceResult(false, Message.of("GWUA.error.passwordReset"));
+			return new SimpleServiceResult(false, Message.of("info.password.reset.email"));
 		}
 
 		int adminId = admin.getAdminID();
@@ -362,7 +271,7 @@ public class ComLogonServiceImpl implements ComLogonService {
 			
 			loginTrackService.trackLoginFailed(clientIp, username);
 			
-			return new ServiceResult<>(null, false, Message.of("GWUA.error.passwordReset"));
+			return new ServiceResult<>(null, false, Message.of("info.password.reset.email"));
 		}
 		
 		final Admin admin = adminOptional.get();
@@ -534,7 +443,7 @@ public class ComLogonServiceImpl implements ComLogonService {
 	}
 
 	@Required
-	public void setEmmLayoutBaseDao(ComEmmLayoutBaseDao emmLayoutBaseDao) {
+	public void setEmmLayoutBaseDao(EmmLayoutBaseDao emmLayoutBaseDao) {
 		this.emmLayoutBaseDao = emmLayoutBaseDao;
 	}
 
@@ -559,12 +468,7 @@ public class ComLogonServiceImpl implements ComLogonService {
 	}
 
 	@Required
-	public void setSupervisorService(ComSupervisorService supervisorService) {
-		this.supervisorService = supervisorService;
-	}
-
-	@Required
-	public void setPasswordCheck(ComPasswordCheck passwordCheck) {
+	public void setPasswordCheck(PasswordCheck passwordCheck) {
 		this.passwordCheck = passwordCheck;
 	}
 

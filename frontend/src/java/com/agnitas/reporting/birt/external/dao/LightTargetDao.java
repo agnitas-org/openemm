@@ -12,7 +12,6 @@ package com.agnitas.reporting.birt.external.dao;
 
 import java.util.List;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.reporting.birt.external.beans.LightTarget;
 
@@ -20,7 +19,7 @@ import com.agnitas.reporting.birt.external.beans.LightTarget;
  * A light version of the TargetDao, without application-context stuff, and persisting. Just reading target(s).
  */
 public interface LightTargetDao {	
-	LightTarget getTarget(int targetID, @VelocityCheck int companyID);
+	LightTarget getTarget(int targetID, int companyID);
 	
-	List<LightTarget> getTargets(List<String> targetIDs, @VelocityCheck int companyID);
+	List<LightTarget> getTargets(List<String> targetIDs, int companyID);
 }

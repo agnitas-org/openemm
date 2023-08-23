@@ -15,7 +15,6 @@ import java.util.Set;
 import java.util.Stack;
 import java.util.function.Function;
 
-import org.agnitas.util.DbUtilities;
 import org.apache.commons.lang3.StringUtils;
 
 import com.agnitas.emm.common.MailingType;
@@ -976,13 +975,15 @@ public class DefaultCommonSqlCodeGeneratorCallback implements SqlCodeGeneratorCa
 	}
 
 	@Override
-	public void terminalStringConstantWithEscapeCharsAtomEqlNode(StringConstantWithEscapeCharsAtomEqlNode node) throws CodeGeneratorException {
+	public void terminalStringConstantWithoutEscapeCharsAtomEqlNode(StringConstantWithEscapeCharsAtomEqlNode node) throws CodeGeneratorException {
 		/*
 		 * We do not need to check, if the string constant is used as matching pattern
 		 * (-> LIKE operator), because, for the LIKE operator, this method is never
 		 * called.
 		 */
-		codeStack.push(new CodeFragment("'" + DbUtilities.escapeSinglesQuotes(node.getValue()) + "'", DataType.TEXT, null));
+		final String str = node.getValue().replaceAll("\\\\(.)", "$1").replaceAll("'", "''");
+		
+		codeStack.push(new CodeFragment("'" + str + "'", DataType.TEXT, null));
 	}
 	
 	@Override

@@ -187,10 +187,6 @@ public class WorkflowGraph {
         return foundIcons;
 	}
 
-	public List<WorkflowIcon> getAllNextParallelIconsByType(WorkflowIcon currentIcon, int typeToFind, Collection<Integer> terminateTypes, boolean reverse) {
-		return getAllNextParallelIconsByType(currentIcon, Collections.singleton(typeToFind), terminateTypes, reverse);
-	}
-
     /**
      * method provide possibility to find all chains
      */

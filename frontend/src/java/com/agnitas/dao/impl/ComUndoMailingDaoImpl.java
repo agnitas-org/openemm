@@ -12,11 +12,13 @@ package com.agnitas.dao.impl;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
 import org.agnitas.dao.impl.BaseDaoImpl;
 import org.agnitas.dao.impl.mapper.IntegerRowMapper;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.jdbc.core.RowMapper;
@@ -136,13 +138,27 @@ public class ComUndoMailingDaoImpl extends BaseDaoImpl implements ComUndoMailing
 				? "select distinct(undo_id) from (SELECT undo_id FROM undo_mailing_tbl WHERE undo_creation_date <= SYSDATE - ? union all SELECT DISTINCT um.undo_id FROM maildrop_status_tbl mds, mailing_account_tbl ma, undo_mailing_tbl um  WHERE um.mailing_id = mds.mailing_id AND um.mailing_id = ma.mailing_id AND mds.status_field = 'W' AND mds.genstatus = 3) subsel"
 				: "select distinct(undo_id) from (SELECT undo_id FROM undo_mailing_tbl WHERE undo_creation_date <= DATE_SUB(CURRENT_TIMESTAMP, INTERVAL ? DAY) union all SELECT DISTINCT um.undo_id FROM maildrop_status_tbl mds, mailing_account_tbl ma, undo_mailing_tbl um WHERE um.mailing_id = mds.mailing_id AND um.mailing_id = ma.mailing_id AND mds.status_field = 'W' AND mds.genstatus = 3) subsel";
 		
-		return select(logger, sql, IntegerRowMapper.INSTANCE, retentionTime);
+		List<Integer> undoIds = select(logger, sql, IntegerRowMapper.INSTANCE, retentionTime);
+		undoIds.sort(Integer::compare);
+		return undoIds;
 	}
 
 	@Override
 	@DaoUpdateReturnValueCheck
 	public void deleteUndoDataForMailing(int mailingID) {
 		update(logger, DELETE_UNDODATA_FOR_MAILING_STATEMENT, new Object[] { mailingID });
+	}
+
+	@Override
+	public List<Integer> findAllUndoIdsForMailings(List<Integer> mailings) {
+		if (CollectionUtils.isEmpty(mailings)) {
+			return Collections.emptyList();
+		}
+
+		String query = "SELECT undo_id FROM undo_mailing_tbl WHERE "
+				+ makeBulkInClauseForInteger("mailing_id", mailings);
+
+		return select(logger, query, IntegerRowMapper.INSTANCE);
 	}
 
 	@Override
@@ -164,4 +180,13 @@ public class ComUndoMailingDaoImpl extends BaseDaoImpl implements ComUndoMailing
         }
     }
 
+	@Override
+	public void deleteUndoData(List<Integer> undoIds) {
+		if (CollectionUtils.isEmpty(undoIds)) {
+			return;
+		}
+
+		String query = "DELETE FROM undo_mailing_tbl WHERE " + makeBulkInClauseForInteger("undo_id", undoIds);
+		update(logger, query);
+	}
 }

@@ -33,6 +33,7 @@ import com.agnitas.emm.core.action.operations.ActionOperationGetArchiveListParam
 import com.agnitas.emm.core.action.operations.ActionOperationType;
 import com.agnitas.emm.core.action.service.EmmActionOperation;
 import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
+import com.agnitas.emm.core.action.service.EmmActionOperationErrors.ErrorCode;
 import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
 import com.agnitas.emm.core.commons.uid.UIDFactory;
 import com.agnitas.mailing.preview.service.MailingPreviewService;
@@ -68,12 +69,16 @@ public class ActionOperationGetArchiveListImpl implements EmmActionOperation {
             tmpNum=(Integer)params.get("customerID");
             customerID=tmpNum.intValue();
         } else {
+        	actionOperationErrors.addErrorCode(ErrorCode.MISSING_CUSTOMER_ID);
+        	
             return false;
         }
 
         final Company company = companyDao.getCompany(companyID);
         
         if(company == null) {
+        	actionOperationErrors.addErrorCode(ErrorCode.UNKNOWN_COMPANY_ID);
+        	
         	return false;
         }
 

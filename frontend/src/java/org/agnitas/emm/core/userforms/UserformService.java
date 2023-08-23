@@ -11,8 +11,8 @@
 package org.agnitas.emm.core.userforms;
 
 import java.util.List;
+import java.util.Map;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.exceptions.FormNotFoundException;
 import org.agnitas.util.Tuple;
 
@@ -53,6 +53,8 @@ public interface UserformService {
 	 */
 	UserForm getUserForm(final int companyID, final String formName) throws FormNotFoundException;
 
-	List<Tuple<Integer, String>> getUserFormNamesByActionID(@VelocityCheck int companyID, int actionID);
+	List<Tuple<Integer, String>> getUserFormNamesByActionID(int companyID, int actionID);
+
+	void copyUserForm(int id, int companyId, int newCompanyId, int mailinglistId, String rdirDomain, Map<Integer, Integer> actionIdReplacements) throws Exception;
 
 }

@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.agnitas.beans.DynamicTagContent;
-import org.agnitas.emm.core.velocity.VelocityCheck;
+
 
 import com.agnitas.beans.DynamicTag;
 
@@ -28,7 +28,7 @@ public interface DynamicTagContentDao {
      * @param contentID The id of the content to delete.
 	 * @return true - success; false - nothing was deleted
      */
-    boolean deleteContent(@VelocityCheck int companyID, int contentID);
+    boolean deleteContent(int companyID, int contentID);
 
 	/**
 	 * Loads tag content identified by content id company id.
@@ -37,7 +37,7 @@ public interface DynamicTagContentDao {
 	 * @param companyID The companyID for the content.
 	 * @return The DynamicTagContent or null on failure.
 	 */
-    DynamicTagContent getContent(@VelocityCheck int companyID, int contentID);
+    DynamicTagContent getContent(int companyID, int contentID);
 
 	/**
 	 * Loads all tag contents for given mailing and company.
@@ -46,7 +46,7 @@ public interface DynamicTagContentDao {
 	 * @param mailingID The mailingID for the content.
 	 * @return List of DynamicTagContent or empty list.
 	 */
-	List<DynamicTagContent> getContentList(@VelocityCheck int companyID, int mailingID);
+	List<DynamicTagContent> getContentList(int companyID, int mailingID);
 
 	/**
 	 * Checks if content exists.
@@ -57,7 +57,7 @@ public interface DynamicTagContentDao {
 	 * @param dynContentId - the dynamic content id of the content.
 	 * @return {@code true} if at least one record exists otherwise returns {@code false}
 	 */
-	boolean isExisting(@VelocityCheck int companyId, int mailingId, int dynNameId, int dynContentId);
+	boolean isExisting(int companyId, int mailingId, int dynNameId, int dynContentId);
 
 	/**
 	 * Checks if at least one non-empty content exists.
@@ -67,12 +67,16 @@ public interface DynamicTagContentDao {
 	 * @param dynNameId- the dynamic tag name id of the content.
 	 * @return {@code true} if at least one non-empty content exists otherwise returns {@code false}
 	 */
-	boolean isContentValueNotEmpty(@VelocityCheck int companyId, int mailingId, int dynNameId);
+	boolean isContentValueNotEmpty(int companyId, int mailingId, int dynNameId);
 	
-	Map<Integer, List<Integer>> getExistingDynContentForDynName(@VelocityCheck int companyId, int mailingId, List<Integer> dynamicTags);
+	Map<Integer, List<Integer>> getExistingDynContentForDynName(int companyId, int mailingId, List<Integer> dynamicTags);
 
 	void saveDynamicTagContent(int companyID, int mailingID, String encodingCharset, List<DynamicTag> dynamicTags) throws Exception;
 	void saveDynamicTagContent(int companyID, int mailingID, String encodingCharset, List<DynamicTag> dynamicTags, final boolean removeUnusedContent) throws Exception;
 
 	boolean deleteContentFromMailing(int companyId, int mailingId, int contentId);
+
+	List<Integer> findTargetDependentMailingsContents(int targetGroupId, int companyId);
+
+	List<Integer> filterContentsOfNotSentMailings(List<Integer> contentsIds);
 }

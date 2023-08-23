@@ -36,6 +36,7 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -82,84 +83,97 @@ public class DbUtilities {
 			"all_rows", "allocate", "alter", "analyze", "and", "any", "archive", "archivelog", "array", "as", "asc", "at", "audit", "authenticated", "authorization", "autoextend",
 			"automatic", "backup", "become", "before", "begin", "between", "bfile", "bitmap", "blob", "block", "body", "by", "cache", "cache_instances", "cancel", "cascade",
 			"cast", "cfile", "chained", "change", "char", "char_cs", "character", "check", "checkpoint", "choose", "chunk", "clear", "clob", "clone", "close",
-			"close_cached_open_cursors", "cluster", "coalesce", "column", "columns", "comment", "commit", "committed", "compatibility", "compile", "complete", "composite_limit",
-			"compress", "compute", "connect", "connect_time", "constraint", "constraints", "contents", "continue", "controlfile", "convert", "cost", "cpu_per_call",
-			"cpu_per_session", "create", "current", "current_schema", "curren_user", "cursor", "cycle", "dangling", "database", "datafile", "datafiles", "dataobjno", "date", "dba",
-			"dbhigh", "dblow", "dbmac", "deallocate", "debug", "dec", "decimal", "declare", "default", "deferrable", "deferred", "degree", "delete", "deref", "desc", "directory",
-			"disable", "disconnect", "dismount", "distinct", "distributed", "dml", "double", "drop", "dump", "each", "else", "enable", "end", "enforce", "entry", "escape",
-			"except", "exceptions", "exchange", "excluding", "exclusive", "execute", "exists", "expire", "explain", "extent", "extents", "externally", "failed_login_attempts",
-			"false", "fast", "file", "first_rows", "flagger", "float", "flob", "flush", "for", "force", "foreign", "freelist", "freelists", "from", "full", "function", "global",
-			"globally", "global_name", "grant", "group", "groups", "hash", "hashkeys", "having", "header", "heap", "identified", "idgenerators", "idle_time", "if", "immediate",
-			"in", "including", "increment", "index", "indexed", "indexes", "indicator", "ind_partition", "initial", "initially", "initrans", "insert", "instance", "instances",
-			"instead", "int", "integer", "intermediate", "intersect", "into", "is", "isolation", "isolation_level", "keep", "key", "kill", "label", "layer", "less", "level",
-			"library", "like", "limit", "link", "list", "lob", "local", "lock", "locked", "log", "logfile", "logging", "logical_reads_per_call", "logical_reads_per_session",
-			"long", "manage", "master", "max", "maxarchlogs", "maxdatafiles", "maxextents", "maxinstances", "maxlogfiles", "maxloghistory", "maxlogmembers", "maxsize", "maxtrans",
-			"maxvalue", "min", "member", "minimum", "minextents", "minus", "minvalue", "mlslabel", "mls_label_format", "mode", "modify", "mount", "move", "mts_dispatchers",
-			"multiset", "national", "nchar", "nchar_cs", "nclob", "needed", "nested", "network", "new", "next", "noarchivelog", "noaudit", "nocache", "nocompress", "nocycle",
-			"noforce", "nologging", "nomaxvalue", "nominvalue", "none", "noorder", "nooverride", "noparallel", "noreverse", "normal", "nosort", "not", "nothing", "nowait", "null",
-			"number", "numeric", "nvarchar2", "object", "objno", "objno_reuse", "of", "off", "offline", "oid", "oidindex", "old", "on", "online", "only", "opcode", "open",
-			"optimal", "optimizer_goal", "option", "or", "order", "organization", "oslabel", "overflow", "own", "package", "parallel", "partition", "password",
-			"password_grace_time", "password_life_time", "password_lock_time", "password_reuse_max", "password_reuse_time", "password_verify_function", "pctfree", "pctincrease",
-			"pctthreshold", "pctused", "pctversion", "percent", "permanent", "plan", "plsql_debug", "post_transaction", "precision", "preserve", "primary", "prior", "private",
-			"private_sga", "privilege", "privileges", "procedure", "profile", "public", "purge", "queue", "quota", "range", "raw", "rba", "read", "readup", "real", "rebuild",
-			"recover", "recoverable", "recovery", "ref", "references", "referencing", "refresh", "rename", "replace", "reset", "resetlogs", "resize", "resource", "restricted",
-			"return", "returning", "reuse", "reverse", "revoke", "role", "roles", "rollback", "row", "rowid", "rownum", "rows", "rule", "sample", "savepoint", "sb4",
-			"scan_instances", "schema", "scn", "scope", "sd_all", "sd_inhibit", "sd_show", "segment", "seg_block", "seg_file", "select", "sequence", "serializable", "session",
-			"session_cached_cursors", "sessions_per_user", "set", "share", "shared", "shared_pool", "shrink", "size", "skip", "skip_unusable_indexes", "smallint", "snapshot",
-			"some", "sort", "specification", "split", "sql_trace", "standby", "start", "statement_id", "statistics", "stop", "storage", "store", "structure", "successful",
-			"switch", "sys_op_enforce_not_null$", "sys_op_ntcimg$", "synonym", "sysdate", "sysdba", "sysoper", "system", "table", "tables", "tablespace", "tablespace_no", "tabno",
-			"temporary", "than", "the", "then", "thread", "timestamp", "time", "to", "toplevel", "trace", "tracing", "transaction", "transitional", "trigger", "triggers", "true",
-			"truncate", "tx", "type", "ub2", "uba", "uid", "unarchived", "undo", "union", "unique", "unlimited", "unlock", "unrecoverable", "until", "unusable", "unused",
-			"updatable", "update", "usage", "use", "user", "using", "validate", "validation", "value", "values", "varchar", "varchar2", "varying", "view", "when", "whenever",
-			"where", "with", "without", "work", "write", "writedown", "writeup", "xid", "year", "zone" });
+			"close_cached_open_cursors", "cluster", "coalesce", "column", "column_value", "columns", "comment", "commit", "committed", "compatibility", "compile", "complete",
+			"composite_limit", "compress", "compute", "connect", "connect_time", "constraint", "constraints", "contents", "continue", "controlfile", "convert", "cost",
+			"cpu_per_call", "cpu_per_session", "create", "curren_user", "current", "current_schema", "cursor", "cycle", "dangling", "database", "datafile", "datafiles",
+			"dataobjno", "date", "dba", "dbhigh", "dblow", "dbmac", "deallocate", "debug", "dec", "decimal", "declare", "default", "deferrable", "deferred", "degree", "delete",
+			"deref", "desc", "directory", "disable", "disconnect", "dismount", "distinct", "distributed", "dml", "double", "drop", "dump", "each", "else", "enable", "end",
+			"enforce", "entry", "escape", "except", "exceptions", "exchange", "excluding", "exclusive", "execute", "exists", "expire", "explain", "extent", "extents", "externally",
+			"failed_login_attempts", "false", "fast", "file", "first_rows", "flagger", "float", "flob", "flush", "for", "force", "foreign", "freelist", "freelists", "from", "full",
+			"function", "global", "global_name", "globally", "grant", "group", "groups", "hash", "hashkeys", "having", "header", "heap", "identified", "idgenerators", "idle_time",
+			"if", "immediate", "in", "including", "increment", "ind_partition", "index", "indexed", "indexes", "indicator", "initial", "initially", "initrans", "insert",
+			"instance", "instances", "instead", "int", "integer", "intermediate", "intersect", "into", "is", "isolation", "isolation_level", "keep", "key", "kill", "label",
+			"layer", "less", "level", "library", "like", "limit", "link", "list", "lob", "local", "lock", "locked", "log", "logfile", "logging", "logical_reads_per_call",
+			"logical_reads_per_session", "long", "manage", "master", "max", "maxarchlogs", "maxdatafiles", "maxextents", "maxinstances", "maxlogfiles", "maxloghistory",
+			"maxlogmembers", "maxsize", "maxtrans", "maxvalue", "member", "min", "minextents", "minimum", "minus", "minvalue", "mls_label_format", "mlslabel", "mode", "modify",
+			"mount", "move", "mts_dispatchers", "multiset", "national", "nchar", "nchar_cs", "nclob", "needed", "nested", "nested_table_id", "network", "new", "next",
+			"noarchivelog", "noaudit", "nocache", "nocompress", "nocycle", "noforce", "nologging", "nomaxvalue", "nominvalue", "none", "noorder", "nooverride", "noparallel",
+			"noreverse", "normal", "nosort", "not", "nothing", "nowait", "null", "number", "numeric", "nvarchar2", "object", "objno", "objno_reuse", "of", "off", "offline", "oid",
+			"oidindex", "old", "on", "online", "only", "opcode", "open", "optimal", "optimizer_goal", "option", "or", "order", "organization", "oslabel", "overflow", "own",
+			"package", "parallel", "partition", "password", "password_grace_time", "password_life_time", "password_lock_time", "password_reuse_max", "password_reuse_time",
+			"password_verify_function", "pctfree", "pctincrease", "pctthreshold", "pctused", "pctversion", "percent", "permanent", "plan", "plsql_debug", "post_transaction",
+			"precision", "preserve", "primary", "prior", "private", "private_sga", "privilege", "privileges", "procedure", "profile", "public", "purge", "queue", "quota", "range",
+			"raw", "rba", "read", "readup", "real", "rebuild", "recover", "recoverable", "recovery", "ref", "references", "referencing", "refresh", "rename", "replace", "reset",
+			"resetlogs", "resize", "resource", "restricted", "return", "returning", "reuse", "reverse", "revoke", "role", "roles", "rollback", "row", "rowid", "rownum", "rows",
+			"rule", "sample", "savepoint", "sb4", "scan_instances", "schema", "scn", "scope", "sd_all", "sd_inhibit", "sd_show", "seg_block", "seg_file", "segment", "select",
+			"sequence", "serializable", "session", "session_cached_cursors", "sessions_per_user", "set", "share", "shared", "shared_pool", "shrink", "size", "skip",
+			"skip_unusable_indexes", "smallint", "snapshot", "some", "sort", "specification", "split", "sql_trace", "standby", "start", "statement_id", "statistics", "stop",
+			"storage", "store", "structure", "successful", "switch", "synonym", "sys_op_enforce_not_null$", "sys_op_ntcimg$", "sysdate", "sysdba", "sysoper", "system", "table",
+			"tables", "tablespace", "tablespace_no", "tabno", "temporary", "than", "the", "then", "thread", "time", "timestamp", "to", "toplevel", "trace", "tracing",
+			"transaction", "transitional", "trigger", "triggers", "true", "truncate", "tx", "type", "ub2", "uba", "uid", "unarchived", "undo", "union", "unique", "unlimited",
+			"unlock", "unrecoverable", "until", "unusable", "unused", "updatable", "update", "usage", "use", "user", "using", "validate", "validation", "value", "values",
+			"varchar", "varchar2", "varying", "view", "when", "whenever", "where", "with", "without", "work", "write", "writedown", "writeup", "xid", "year", "zone" });
 
-	public static final CaseInsensitiveSet RESERVED_WORDS_MYSQL_MARIADB = new CaseInsensitiveSet(new String[] { "accessible", "account", "action", "add", "after", "against",
-			"aggregate", "algorithm", "all", "alter", "always", "analyse", "analyze", "and", "any", "as", "asc", "ascii", "asensitive", "at", "autoextend_size", "auto_increment",
-			"avg", "avg_row_length", "backup", "before", "begin", "between", "bigint", "binary", "binlog", "bit", "blob", "block", "bool", "boolean", "both", "btree", "by", "byte",
-			"cache", "call", "cascade", "cascaded", "case", "catalog_name", "chain", "change", "changed", "channel", "char", "character", "charset", "check", "checksum", "cipher",
-			"class_origin", "client", "close", "coalesce", "code", "collate", "collation", "column", "columns", "column_format", "column_name", "comment", "commit", "committed",
-			"compact", "completion", "compressed", "compression", "concurrent", "condition", "connection", "consistent", "constraint", "constraint_catalog", "constraint_name",
-			"constraint_schema", "contains", "context", "continue", "convert", "cpu", "create", "cross", "cube", "current", "current_date", "current_time", "current_timestamp",
-			"current_user", "cursor", "cursor_name", "data", "database", "databases", "datafile", "date", "datetime", "day", "day_hour", "day_microsecond", "day_minute",
-			"day_second", "deallocate", "dec", "decimal", "declare", "default", "default_auth", "definer", "delayed", "delay_key_write", "delete", "desc", "describe",
-			"des_key_file", "deterministic", "diagnostics", "directory", "disable", "discard", "disk", "distinct", "distinctrow", "div", "do", "double", "drop", "dual", "dumpfile",
-			"duplicate", "dynamic", "each", "else", "elseif", "enable", "enclosed", "encryption", "end", "ends", "engine", "engines", "enum", "error", "errors", "escape",
-			"escaped", "event", "events", "every", "exchange", "execute", "exists", "exit", "expansion", "expire", "explain", "export", "extended", "extent_size", "false", "fast",
-			"faults", "fetch", "fields", "file", "file_block_size", "filter", "first", "fixed", "float", "float4", "float8", "flush", "follows", "for", "force", "foreign",
-			"format", "found", "from", "full", "fulltext", "function", "general", "generated", "geometry", "geometrycollection", "get", "get_format", "global", "grant", "grants",
-			"group", "group_replication", "handler", "hash", "having", "help", "high_priority", "host", "hosts", "hour", "hour_microsecond", "hour_minute", "hour_second",
-			"identified", "if", "ignore", "ignore_server_ids", "import", "in", "index", "indexes", "infile", "initial_size", "inner", "inout", "insensitive", "insert",
-			"insert_method", "install", "instance", "int", "int1", "int2", "int3", "int4", "int8", "integer", "interval", "into", "invoker", "io", "io_after_gtids",
-			"io_before_gtids", "io_thread", "ipc", "is", "isolation", "issuer", "iterate", "join", "json", "key", "keys", "key_block_size", "kill", "language", "last", "leading",
-			"leave", "leaves", "left", "less", "level", "like", "limit", "linear", "lines", "linestring", "list", "load", "local", "localtime", "localtimestamp", "lock", "locks",
-			"logfile", "logs", "long", "longblob", "longtext", "loop", "low_priority", "master", "master_auto_position", "master_bind", "master_connect_retry", "master_delay",
-			"master_heartbeat_period", "master_host", "master_log_file", "master_log_pos", "master_password", "master_port", "master_retry_count", "master_server_id", "master_ssl",
-			"master_ssl_ca", "master_ssl_capath", "master_ssl_cert", "master_ssl_cipher", "master_ssl_crl", "master_ssl_crlpath", "master_ssl_key", "master_ssl_verify_server_cert",
-			"master_tls_version", "master_user", "match", "maxvalue", "max_connections_per_hour", "max_queries_per_hour", "max_rows", "max_size", "max_statement_time",
-			"max_updates_per_hour", "max_user_connections", "medium", "mediumblob", "mediumint", "mediumtext", "memory", "merge", "message_text", "microsecond", "middleint",
-			"migrate", "minute", "minute_microsecond", "minute_second", "min_rows", "mod", "mode", "modifies", "modify", "month", "multilinestring", "multipoint", "multipolygon",
-			"mutex", "mysql_errno", "name", "names", "national", "natural", "nchar", "ndb", "ndbcluster", "never", "new", "next", "no", "nodegroup", "nonblocking", "none", "not",
-			"no_wait", "no_write_to_binlog", "null", "number", "numeric", "nvarchar", "offset", "old_password", "on", "one", "only", "open", "optimize", "optimizer_costs",
-			"option", "optionally", "options", "or", "order", "out", "outer", "outfile", "owner", "pack_keys", "page", "parser", "parse_gcol_expr", "partial", "partition",
-			"partitioning", "partitions", "password", "phase", "plugin", "plugins", "plugin_dir", "point", "polygon", "port", "precedes", "precision", "prepare", "preserve",
-			"prev", "primary", "privileges", "procedure", "processlist", "profile", "profiles", "proxy", "purge", "quarter", "query", "quick", "range", "read", "reads",
-			"read_only", "read_write", "real", "rebuild", "recover", "redofile", "redo_buffer_size", "redundant", "references", "regexp", "relay", "relaylog", "relay_log_file",
-			"relay_log_pos", "relay_thread", "release", "reload", "remove", "rename", "reorganize", "repair", "repeat", "repeatable", "replace", "replicate_do_db",
-			"replicate_do_table", "replicate_ignore_db", "replicate_ignore_table", "replicate_rewrite_db", "replicate_wild_do_table", "replicate_wild_ignore_table", "replication",
-			"require", "reset", "resignal", "restore", "restrict", "resume", "return", "returned_sqlstate", "returns", "reverse", "revoke", "right", "rlike", "rollback", "rollup",
-			"rotate", "routine", "row", "rows", "row_count", "row_format", "rtree", "savepoint", "schedule", "schema", "schemas", "schema_name", "second", "second_microsecond",
-			"security", "select", "sensitive", "separator", "serial", "serializable", "server", "session", "set", "share", "show", "shutdown", "signal", "signed", "simple",
-			"slave", "slow", "smallint", "snapshot", "socket", "some", "soname", "sounds", "source", "spatial", "specific", "sql", "sqlexception", "sqlstate", "sqlwarning",
-			"sql_after_gtids", "sql_after_mts_gaps", "sql_before_gtids", "sql_big_result", "sql_buffer_result", "sql_cache", "sql_calc_found_rows", "sql_no_cache",
-			"sql_small_result", "sql_thread", "sql_tsi_day", "sql_tsi_hour", "sql_tsi_minute", "sql_tsi_month", "sql_tsi_quarter", "sql_tsi_second", "sql_tsi_week", "sql_tsi_year",
-			"ssl", "stacked", "start", "starting", "starts", "stats_auto_recalc", "stats_persistent", "stats_sample_pages", "status", "stop", "storage", "stored", "straight_join",
-			"string", "subclass_origin", "subject", "subpartition", "subpartitions", "super", "suspend", "swaps", "switches", "table", "tables", "tablespace", "table_checksum",
-			"table_name", "temporary", "temptable", "terminated", "text", "than", "then", "time", "timestamp", "timestampadd", "timestampdiff", "tinyblob", "tinyint", "tinytext",
-			"to", "trailing", "transaction", "trigger", "triggers", "true", "truncate", "type", "types", "uncommitted", "undefined", "undo", "undofile", "undo_buffer_size",
-			"unicode", "uninstall", "union", "unique", "unknown", "unlock", "unsigned", "until", "update", "upgrade", "usage", "use", "user", "user_resources", "use_frm", "using",
-			"utc_date", "utc_time", "utc_timestamp", "validation", "value", "values", "varbinary", "varchar", "varcharacter", "variables", "varying", "view", "virtual", "wait",
-			"warnings", "week", "weight_string", "when", "where", "while", "with", "without", "work", "wrapper", "write", "x509", "xa", "xid", "xml", "xor", "year", "year_month",
-			"zerofill" });
+	public static final CaseInsensitiveSet RESERVED_WORDS_MYSQL_MARIADB = new CaseInsensitiveSet(new String[] { "accessible", "account", "action", "active", "add", "admin",
+			"after", "against", "aggregate", "algorithm", "all", "alter", "always", "analyse", "analyze", "and", "any", "array", "as", "asc", "ascii", "asensitive", "at",
+			"attribute", "authentication", "auto_increment", "autoextend_size", "avg", "avg_row_length", "backup", "before", "begin", "between", "bigint", "binary", "binlog",
+			"bit", "blob", "block", "bool", "boolean", "both", "btree", "buckets", "by", "byte", "cache", "call", "cascade", "cascaded", "case", "catalog_name", "chain",
+			"challenge_response", "change", "changed", "channel", "char", "character", "charset", "check", "checksum", "cipher", "class_origin", "client", "clone", "close",
+			"coalesce", "code", "collate", "collation", "column", "column_format", "column_name", "columns", "comment", "commit", "committed", "compact", "completion", "component",
+			"compressed", "compression", "concurrent", "condition", "connection", "consistent", "constraint", "constraint_catalog", "constraint_name", "constraint_schema",
+			"contains", "context", "continue", "convert", "cpu", "create", "cross", "cube", "cume_dist", "current", "current_date", "current_role", "current_time",
+			"current_timestamp", "current_user", "cursor", "cursor_name", "data", "database", "databases", "datafile", "date", "datetime", "day", "day_hour", "day_microsecond",
+			"day_minute", "day_second", "deallocate", "dec", "decimal", "declare", "default", "default_auth", "definer", "definition", "delay_key_write", "delayed", "delete",
+			"delete_domain_id", "dense_rank", "des_key_file", "desc", "describe", "description", "deterministic", "diagnostics", "directory", "disable", "discard", "disk",
+			"distinct", "distinctrow", "div", "do", "do_domain_ids", "double", "drop", "dual", "dumpfile", "duplicate", "dynamic", "each", "else", "elseif", "empty", "enable",
+			"enclosed", "encryption", "end", "ends", "enforced", "engine", "engine_attribute", "engines", "enum", "error", "errors", "escape", "escaped", "event", "events",
+			"every", "except", "exchange", "exclude", "execute", "exists", "exit", "expansion", "expire", "explain", "export", "extended", "extent_size", "factor",
+			"failed_login_attempts", "false", "fast", "faults", "fetch", "fields", "file", "file_block_size", "filter", "finish", "first", "first_value", "fixed", "float",
+			"float4", "float8", "flush", "following", "follows", "for", "force", "foreign", "format", "found", "from", "full", "fulltext", "function", "general", "generated",
+			"geomcollection", "geometry", "geometrycollection", "get", "get_format", "get_master_public_key", "get_source_public_key", "global", "grant", "grants", "group",
+			"group_replication", "grouping", "groups", "gtid_only", "handler", "hash", "having", "help", "high_priority", "histogram", "history", "host", "hosts", "hour",
+			"hour_microsecond", "hour_minute", "hour_second", "identified", "if", "ignore", "ignore_domain_ids", "ignore_server_ids", "import", "in", "inactive", "index",
+			"indexes", "infile", "initial", "initial_size", "initiate", "inner", "inout", "insensitive", "insert", "insert_method", "install", "instance", "int", "int1", "int2",
+			"int3", "int4", "int8", "integer", "intersect", "interval", "into", "invisible", "invoker", "io", "io_after_gtids", "io_before_gtids", "io_thread", "ipc", "is",
+			"isolation", "issuer", "iterate", "join", "json", "json_table", "json_value", "key", "key_block_size", "keyring", "keys", "kill", "lag", "language", "last",
+			"last_value", "lateral", "lead", "leading", "leave", "leaves", "left", "less", "level", "like", "limit", "linear", "lines", "linestring", "list", "load", "local",
+			"localtime", "localtimestamp", "lock", "locked", "locks", "logfile", "logs", "long", "longblob", "longtext", "loop", "low_priority", "master", "master_auto_position",
+			"master_bind", "master_compression_algorithms", "master_connect_retry", "master_delay", "master_heartbeat_period", "master_host", "master_log_file", "master_log_pos",
+			"master_password", "master_port", "master_public_key_path", "master_retry_count", "master_server_id", "master_ssl", "master_ssl_ca", "master_ssl_capath",
+			"master_ssl_cert", "master_ssl_cipher", "master_ssl_crl", "master_ssl_crlpath", "master_ssl_key", "master_ssl_verify_server_cert", "master_tls_ciphersuites",
+			"master_tls_version", "master_user", "master_zstd_compression_level", "match", "max_connections_per_hour", "max_queries_per_hour", "max_rows", "max_size",
+			"max_updates_per_hour", "max_user_connections", "maxvalue", "medium", "mediumblob", "mediumint", "mediumtext", "member", "memory", "merge", "message_text",
+			"microsecond", "middleint", "migrate", "min_rows", "minute", "minute_microsecond", "minute_second", "mod", "mode", "modifies", "modify", "month", "multilinestring",
+			"multipoint", "multipolygon", "mutex", "mysql_errno", "name", "names", "national", "natural", "nchar", "ndb", "ndbcluster", "nested", "network_namespace", "never",
+			"new", "next", "no", "no_wait", "no_write_to_binlog", "nodegroup", "none", "not", "nowait", "nth_value", "ntile", "null", "nulls", "number", "numeric", "nvarchar",
+			"of", "off", "offset", "oj", "old", "on", "one", "only", "open", "optimize", "optimizer_costs", "option", "optional", "optionally", "options", "or", "order",
+			"ordinality", "organization", "others", "out", "outer", "outfile", "over", "owner", "pack_keys", "page", "page_checksum", "parse_vcol_expr", "parser", "partial",
+			"partition", "partitioning", "partitions", "password", "password_lock_time", "path", "percent_rank", "persist", "persist_only", "phase", "plugin", "plugin_dir",
+			"plugins", "point", "polygon", "port", "position", "precedes", "preceding", "precision", "prepare", "preserve", "prev", "primary", "privilege_checks_user",
+			"privileges", "procedure", "process", "processlist", "profile", "profiles", "proxy", "purge", "quarter", "query", "quick", "random", "range", "rank", "read",
+			"read_only", "read_write", "reads", "real", "rebuild", "recover", "recursive", "redo_buffer_size", "redofile", "redundant", "ref_system_id", "reference", "references",
+			"regexp", "registration", "relay", "relay_log_file", "relay_log_pos", "relay_thread", "relaylog", "release", "reload", "remote", "remove", "rename", "reorganize",
+			"repair", "repeat", "repeatable", "replace", "replica", "replicas", "replicate_do_db", "replicate_do_table", "replicate_ignore_db", "replicate_ignore_table",
+			"replicate_rewrite_db", "replicate_wild_do_table", "replicate_wild_ignore_table", "replication", "require", "require_row_format", "reset", "resignal", "resource",
+			"respect", "restart", "restore", "restrict", "resume", "retain", "return", "returned_sqlstate", "returning", "returns", "reuse", "reverse", "revoke", "right", "rlike",
+			"role", "rollback", "rollup", "rotate", "routine", "row", "row_count", "row_format", "row_number", "rows", "rtree", "savepoint", "schedule", "schema", "schema_name",
+			"schemas", "second", "second_microsecond", "secondary", "secondary_engine", "secondary_engine_attribute", "secondary_load", "secondary_unload", "security", "select",
+			"sensitive", "separator", "serial", "serializable", "server", "session", "set", "share", "show", "shutdown", "signal", "signed", "simple", "skip", "slave", "slow",
+			"smallint", "snapshot", "socket", "some", "soname", "sounds", "source", "source_auto_position", "source_bind", "source_compression_algorithms", "source_connect_retry",
+			"source_delay", "source_heartbeat_period", "source_host", "source_log_file", "source_log_pos", "source_password", "source_port", "source_public_key_path",
+			"source_retry_count", "source_ssl", "source_ssl_ca", "source_ssl_capath", "source_ssl_cert", "source_ssl_cipher", "source_ssl_crl", "source_ssl_crlpath",
+			"source_ssl_key", "source_ssl_verify_server_cert", "source_tls_ciphersuites", "source_tls_version", "source_user", "source_zstd_compression_level", "spatial",
+			"specific", "sql", "sql_after_gtids", "sql_after_mts_gaps", "sql_before_gtids", "sql_big_result", "sql_buffer_result", "sql_cache", "sql_calc_found_rows",
+			"sql_no_cache", "sql_small_result", "sql_thread", "sql_tsi_day", "sql_tsi_hour", "sql_tsi_minute", "sql_tsi_month", "sql_tsi_quarter", "sql_tsi_second", "sql_tsi_week",
+			"sql_tsi_year", "sqlexception", "sqlstate", "sqlwarning", "srid", "ssl", "stacked", "start", "starting", "starts", "stats_auto_recalc", "stats_persistent",
+			"stats_sample_pages", "status", "stop", "storage", "stored", "straight_join", "stream", "string", "subclass_origin", "subject", "subpartition", "subpartitions",
+			"super", "suspend", "swaps", "switches", "system", "table", "table_checksum", "table_name", "tables", "tablespace", "temporary", "temptable", "terminated", "text",
+			"than", "then", "thread_priority", "ties", "time", "timestamp", "timestampadd", "timestampdiff", "tinyblob", "tinyint", "tinytext", "tls", "to", "trailing",
+			"transaction", "trigger", "triggers", "true", "truncate", "type", "types", "unbounded", "uncommitted", "undefined", "undo", "undo_buffer_size", "undofile", "unicode",
+			"uninstall", "union", "unique", "unknown", "unlock", "unregister", "unsigned", "until", "update", "upgrade", "usage", "use", "use_frm", "user", "user_resources",
+			"using", "utc_date", "utc_time", "utc_timestamp", "validation", "value", "values", "varbinary", "varchar", "varcharacter", "variables", "varying", "vcpu", "view",
+			"virtual", "visible", "wait", "warnings", "week", "weight_string", "when", "where", "while", "window", "with", "without", "work", "wrapper", "write", "x509", "xa",
+			"xid", "xml", "xor", "year", "year_month", "zerofill", "zone" });
 
 	public static int readoutInOutputStream(JdbcTemplate jdbcTemplate, String statementString, OutputStream outputStream, String encoding, char separator, Character stringQuote) throws Exception {
 		return readoutInOutputStream(jdbcTemplate.getDataSource(), statementString, outputStream, encoding, separator, stringQuote);
@@ -1132,6 +1146,52 @@ public class DbUtilities {
 		}
 	}
 
+	public static Map<String, String> getColumnDefaultValues(DataSource dataSource, String tableName) throws Exception {
+		if (dataSource == null) {
+			throw new Exception("Invalid empty dataSource for getDefaultValueOf");
+		} else if (StringUtils.isBlank(tableName)) {
+			throw new Exception("Invalid empty tableName for getDefaultValueOf");
+		} else {
+			if (checkDbVendorIsOracle(dataSource)) {
+				Map<String, String> returnMap = new HashMap<>();
+				String sql = "SELECT column_name, data_default FROM user_tab_columns WHERE table_name = ?";
+				List<Map<String, Object>> result = new JdbcTemplate(dataSource).queryForList(sql, tableName.toUpperCase());
+				for (Map<String, Object> row : result) {
+					String columnName = (String) row.get("column_name");
+					String value = (String) row.get("data_default");
+					
+					if (StringUtils.isNotBlank(value)) {
+						// A trailing whitespace appears in Oracle.
+						value = StringUtils.removeEnd(value, " ");
+					}
+	
+					if (!StringUtils.equalsIgnoreCase(value, "null")) {
+						returnMap.put(columnName, extractStringLiteral(value));
+					}
+				}
+				return returnMap;
+			} else {
+				Map<String, String> returnMap = new HashMap<>();
+				final String sql = "SELECT column_name, column_default FROM information_schema.columns WHERE table_schema = SCHEMA() AND table_name = ?";
+				List<Map<String, Object>> result = new JdbcTemplate(dataSource).queryForList(sql, tableName);
+				for (Map<String, Object> row : result) {
+					String columnName = (String) row.get("column_name");
+					String value = (String) row.get("column_default");
+					
+					if (StringUtils.isNotBlank(value)) {
+						// A trailing whitespace appears in Oracle.
+						value = StringUtils.removeEnd(value, " ");
+					}
+	
+					if (!StringUtils.equalsIgnoreCase(value, "null")) {
+						returnMap.put(columnName, extractStringLiteral(value));
+					}
+				}
+				return returnMap;
+			}
+		}
+	}
+
 	private static String extractStringLiteral(String value) {
 		if (StringUtils.isEmpty(value)) {
 			return value;
@@ -1168,8 +1228,7 @@ public class DbUtilities {
 				// depend on language setting of the user
 				/*
 				 * Here raise a problem: The default value is not only used for
-				 * the ALTER TABLE statement. It is also stored in
-				 * customer_field_tbl.default_value as a string. A problem
+				 * the ALTER TABLE statement. A problem
 				 * occurs, when two users with language settings with different
 				 * date formats edit the profile field.
 				 */
@@ -1512,6 +1571,23 @@ public class DbUtilities {
 		stringBuilder.append(TWO_DIGIT_FORMAT.format(second));
 		stringBuilder.append("', '%d-%m-%Y %H:%i:%s')");
 		return stringBuilder.toString();
+	}
+
+	public static String getToDateString(boolean isOracle, Date dateValue) {
+		final String dateString = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(dateValue);
+		if (isOracle) {
+			return "TO_DATE('" + dateString + "', 'YYYY-MM-DD HH24:MI:SS')";
+		} else {
+			return "STR_TO_DATE('" + dateString + "', '%Y-%m-%d %H:%i:%s')";
+		}
+	}
+
+	public static String getToDateString(boolean isOracle, int numberOfDaysAgo) {
+		if (isOracle) {
+			return "CURRENT_TIMESTAMP - " + numberOfDaysAgo;
+		} else {
+			return "CURRENT_TIMESTAMP - INTERVAL " + numberOfDaysAgo + " DAY";
+		}
 	}
 
 	public static String convertSimpleDateFormat(boolean isOracle, String pattern) {

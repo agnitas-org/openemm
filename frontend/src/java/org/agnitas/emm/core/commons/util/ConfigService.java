@@ -23,6 +23,7 @@ import java.nio.file.attribute.FileTime;
 import java.security.PublicKey;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
@@ -42,7 +43,6 @@ import javax.naming.InitialContext;
 import javax.sql.DataSource;
 
 import org.agnitas.emm.core.commons.util.ConfigValue.Webservices;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DataEncryptor;
 import org.agnitas.util.DateUtilities;
@@ -64,16 +64,18 @@ import org.w3c.dom.Node;
 
 import com.agnitas.dao.AdminDao;
 import com.agnitas.dao.ComCompanyDao;
-import com.agnitas.dao.ProfileFieldDao;
 import com.agnitas.dao.ComServerMessageDao;
 import com.agnitas.dao.ConfigTableDao;
 import com.agnitas.dao.LicenseDao;
 import com.agnitas.dao.PermissionDao;
-import com.agnitas.dao.impl.ProfileFieldDaoImpl;
+import com.agnitas.dao.ProfileFieldDao;
 import com.agnitas.dao.impl.ComServerMessageDaoImpl;
 import com.agnitas.dao.impl.ConfigTableDaoImpl;
 import com.agnitas.dao.impl.LicenseDaoImpl;
 import com.agnitas.dao.impl.PermissionDaoImpl;
+import com.agnitas.dao.impl.ProfileFieldDaoImpl;
+import com.agnitas.emm.core.JavaMailService;
+import com.agnitas.emm.core.JavaMailServiceImpl;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.PermissionType;
 import com.agnitas.emm.core.company.bean.CompanyEntry;
@@ -83,6 +85,7 @@ import com.agnitas.emm.core.profilefields.service.ProfileFieldService;
 import com.agnitas.emm.core.profilefields.service.impl.ProfileFieldServiceImpl;
 import com.agnitas.emm.core.supervisor.dao.ComSupervisorDao;
 import com.agnitas.emm.wsmanager.dao.WebserviceUserDao;
+import com.agnitas.messages.Message;
 import com.agnitas.service.LicenseError;
 import com.agnitas.util.CryptographicUtilities;
 import com.agnitas.util.Version;
@@ -149,6 +152,10 @@ public class ConfigService {
 	protected ComServerMessageDao serverMessageDao;
 	
 	protected ProfileFieldService profileFieldService;
+	
+	protected JavaMailService javaMailService;
+	
+	protected boolean licenseOK = true;
 
 	private static Boolean IS_ORACLE_DB = null;
 	private static Map<String, Map<Integer, String>> LICENSE_VALUES = null;
@@ -202,6 +209,10 @@ public class ConfigService {
 			ProfileFieldService profileFieldService = new ProfileFieldServiceImpl();
 			((ProfileFieldServiceImpl) profileFieldService).setProfileFieldDao(profileFieldDao);
 			instance.setProfileFieldService(profileFieldService);
+			
+			JavaMailService javaMailService = new JavaMailServiceImpl();
+			((JavaMailServiceImpl) javaMailService).setConfigService(instance);
+			instance.setJavaMailService(javaMailService);
 		}
 		return instance;
 	}
@@ -338,6 +349,11 @@ public class ConfigService {
 		this.profileFieldService = profileFieldService;
 	}
 	
+	@Required
+	public void setJavaMailService(JavaMailService javaMailService) {
+		this.javaMailService = javaMailService;
+	}
+	
 	// ----------------------------------------------------------------------------------------------------------------
 	// Business Logic
 
@@ -373,6 +389,9 @@ public class ConfigService {
 
 				// On ConfigService startup check licensefile data
 				checkLicenseData();
+				
+				// No need for older license checks, because this server startet right now
+				LASTREFRESHTIME = new Date();
 			}
 			
 			if (CONFIGURATIONVALUES == null || EXPIRATIONTIME == null || GregorianCalendar.getInstance().after(EXPIRATIONTIME)) {
@@ -532,7 +551,11 @@ public class ConfigService {
 											configValueMap = new HashMap<>();
 											licenseData.put(companyValueNode.getNodeName(), configValueMap);
 										}
-										configValueMap.put(companyID, XmlUtilities.getNodeValue(companyValueNode));
+										String value = XmlUtilities.getNodeValue(companyValueNode);
+										if ("unlimited".equalsIgnoreCase(value)) {
+											value = "-1";
+										}
+										configValueMap.put(companyID, value);
 									}
 								}
 							}
@@ -543,7 +566,11 @@ public class ConfigService {
 							configValueMap = new HashMap<>();
 							licenseData.put(licenseValueNode.getNodeName(), configValueMap);
 						}
-						configValueMap.put(0, XmlUtilities.getNodeValue(licenseValueNode));
+						String value = XmlUtilities.getNodeValue(licenseValueNode);
+						if ("unlimited".equalsIgnoreCase(value)) {
+							value = "-1";
+						}
+						configValueMap.put(0, value);
 					}
 				}
 			}
@@ -583,12 +610,18 @@ public class ConfigService {
 		}
 	}
 	
-	private void checkLicenseData() throws Exception {
+	/**
+	 * Check validity of license data to current db data
+	 * 
+	 * @return
+	 * @throws LicenseError
+	 */
+	public Message[] checkLicenseData() throws LicenseError {
 		if (applicationType == Server.STATISTICS) {
 			// Statistics server may start without license check
-			return;
+			return null;
 		} else {
-			// Check validity of license data to current db data
+			List<Message> licenseWarnings = new ArrayList<>();
 			
 			if (LICENSE_VALUES == null) {
 				throw new LicenseError("Missing License data");
@@ -610,7 +643,7 @@ public class ConfigService {
 					}
 				
 					// Check license ID in licence.cfg file, if exists
-					String	licenceCfgLicenseId = (new Systemconfig ()).get ("licence");
+					String licenceCfgLicenseId = Systemconfig.create ().get ("licence");
 					
 					if ((licenceCfgLicenseId != null) && (!licenceCfgLicenseId.equals(LICENSE_VALUES.get(ConfigValue.System_Licence.toString()).get(0)))) {
 						throw new LicenseError("Invalid LicenseID in licence.cfg", LICENSE_VALUES.get(ConfigValue.System_Licence.toString()).get(0), licenceCfgLicenseId);
@@ -637,7 +670,13 @@ public class ConfigService {
 				if (maximumNumberOfCompanies >= 0) {
 					int numberOfCompanies = companyDao.getNumberOfCompanies();
 					if (numberOfCompanies > maximumNumberOfCompanies) {
-						throw new LicenseError("Invalid Number of accounts", maximumNumberOfCompanies, numberOfCompanies);
+						if (ConfigValue.System_License_MaximumNumberOfCompanies.getGracefulExtension() != null
+								&& numberOfCompanies <= maximumNumberOfCompanies + ConfigValue.System_License_MaximumNumberOfCompanies.getGracefulExtension()) {
+							logger.error("Invalid Number of tenants. Current value is " + numberOfCompanies + ". Limit is " + maximumNumberOfCompanies + ". Gracefully " + ConfigValue.System_License_MaximumNumberOfCompanies.getGracefulExtension() + " more accounts have been permitted");
+							licenseWarnings.add(Message.of("error.numberOfCompaniesExceeded.graceful", maximumNumberOfCompanies, numberOfCompanies, ConfigValue.System_License_MaximumNumberOfCompanies.getGracefulExtension()));
+		    			} else {
+		    				throw new LicenseError("Invalid Number of accounts", maximumNumberOfCompanies, numberOfCompanies);
+		    			}
 					}
 				}
 			}
@@ -652,6 +691,8 @@ public class ConfigService {
 					}
 				}
 			}
+			
+			licenseOK = true;
 	
 			if (companyDao != null) {
 				for (CompanyEntry activeCompany : companyDao.getActiveCompaniesLight(false)) {
@@ -661,6 +702,12 @@ public class ConfigService {
 	
 			// Company 0 must be checked after the other existing companies because it may change those, too
 			checkCompany(0);
+			
+			if (licenseWarnings.size() > 0) {
+				return licenseWarnings.toArray(new Message[0]);
+			} else {
+				return null;
+			}
 		}
 	}
 	
@@ -672,6 +719,7 @@ public class ConfigService {
 				if (maximumNumberOfAdmins >= 0) {
 					int numberOfAdmins = adminDao.getNumberOfGuiAdmins(companyID);
 					if (numberOfAdmins > maximumNumberOfAdmins) {
+						licenseOK = false;
 						throw new LicenseError("Invalid Number of admins of company " + companyID + "", maximumNumberOfAdmins, numberOfAdmins);
 					}
 				}
@@ -683,6 +731,7 @@ public class ConfigService {
 				if (maximumNumberOfWebserviceUsers >= 0) {
 					int numberOfWebserviceUsers = webserviceUserDao.getNumberOfWebserviceUsers(companyID);
 					if (numberOfWebserviceUsers > maximumNumberOfWebserviceUsers) {
+						licenseOK = false;
 						throw new LicenseError("Invalid Number of Webservice Users of company " + companyID + "", maximumNumberOfWebserviceUsers, numberOfWebserviceUsers);
 					}
 				}
@@ -690,19 +739,17 @@ public class ConfigService {
 	
 			if (adminDao != null) {
 				// Check maximum number of Restful users
-				int maximumNumberOfRestfulUsers = 0;
-				if (LICENSE_VALUES.containsKey(ConfigValue.System_License_MaximumNumberOfRestfulUsers.toString())) {
-					maximumNumberOfRestfulUsers = getLicenseValue(ConfigValue.System_License_MaximumNumberOfRestfulUsers, companyID);
-				}
+				int maximumNumberOfRestfulUsers = getLicenseValue(ConfigValue.System_License_MaximumNumberOfRestfulUsers, companyID);
 				if (maximumNumberOfRestfulUsers >= 0) {
 					int numberOfRestfulUsers = adminDao.getNumberOfRestfulUsers(companyID);
 					if (numberOfRestfulUsers > maximumNumberOfRestfulUsers) {
+						licenseOK = false;
 						throw new LicenseError("Invalid Number of Restful Users of company " + companyID + "", maximumNumberOfRestfulUsers, numberOfRestfulUsers);
 					}
 				}
 			}
 		}
-	
+
 		if (companyDao != null) {
 			if (companyID > 0) {
 				// Check maximum number of customers
@@ -710,7 +757,19 @@ public class ConfigService {
 				if (maximumNumberOfCustomers >= 0) {
 					int numberOfCustomers = companyDao.getNumberOfCustomers(companyID);
 					if (numberOfCustomers > maximumNumberOfCustomers) {
-						throw new LicenseError("Invalid Number of customers of company " + companyID + "", maximumNumberOfCustomers, numberOfCustomers);
+						if (numberOfCustomers > maximumNumberOfCustomers + ConfigValue.System_License_MaximumNumberOfCustomers.getGracefulExtension()) {
+							throw new LicenseError("Invalid Number of customers of company " + companyID, maximumNumberOfCustomers, numberOfCustomers);
+						} else {
+							String licenseErrorText = "Invalid Number of customers of company " + companyID + "."
+									+ " Current number of customers: " + numberOfCustomers + "."
+									+ " Maximum number of customers: " + maximumNumberOfCustomers + "."
+									+ " Allowed by graceful limit extension: " + ConfigValue.System_License_MaximumNumberOfCustomers.getGracefulExtension();
+							logger.error(licenseErrorText);
+							if (javaMailService != null) {
+								javaMailService.sendLicenseErrorMail(licenseErrorText);
+							}
+							licenseOK = false;
+						}
 					}
 				}
 			
@@ -719,44 +778,89 @@ public class ConfigService {
 				if (maximumNumberOfProfileFields >= 0) {
 					int numberOfCompanySpecificProfileFields;
 					try {
-						numberOfCompanySpecificProfileFields = profileFieldService.getMaximumNumberOfCompanySpecificProfileFields();
+						numberOfCompanySpecificProfileFields = profileFieldService.getCurrentSpecificFieldCount(companyID);
 					} catch (Exception e) {
 						throw new LicenseError("Cannot detect number of profileFields of company " + companyID + ": " + e.getMessage(), e);
 					}
-				 	if (numberOfCompanySpecificProfileFields > maximumNumberOfProfileFields) {
-				 		throw new LicenseError("Invalid Number of profileFields", maximumNumberOfProfileFields, numberOfCompanySpecificProfileFields);
-				 	}
+					if (numberOfCompanySpecificProfileFields > maximumNumberOfProfileFields) {
+					 	if (numberOfCompanySpecificProfileFields > maximumNumberOfProfileFields + ConfigValue.System_License_MaximumNumberOfProfileFields.getGracefulExtension()) {
+							throw new LicenseError("Invalid Number of profileFields of company " + companyID, maximumNumberOfProfileFields, numberOfCompanySpecificProfileFields);
+						} else {
+							String licenseErrorText = "Invalid Number of profileFields of company " + companyID + "."
+									+ " Current number of profileFields: " + numberOfCompanySpecificProfileFields + "."
+									+ " Maximum number of profileFields: " + maximumNumberOfProfileFields + "."
+									+ " Allowed by graceful limit extension: " + ConfigValue.System_License_MaximumNumberOfProfileFields.getGracefulExtension();
+							logger.error(licenseErrorText);
+							if (javaMailService != null) {
+								javaMailService.sendLicenseErrorMail(licenseErrorText);
+							}
+							licenseOK = false;
+						}
+					}
+				}
+			
+				// Check maximum number of reference tables
+				int maximumNumberOfReferenceTables = getLicenseValue(ConfigValue.System_License_MaximumNumberOfReferenceTables, companyID);
+				if (maximumNumberOfReferenceTables >= 0) {
+					int numberOfReferenceTables;
+					try {
+						numberOfReferenceTables = licenseDao.getNumberOfCompanyReferenceTables(companyID);
+					} catch (Exception e) {
+						throw new LicenseError("Cannot detect number of reference tables of company " + companyID + ": " + e.getMessage(), e);
+					}
+					if (numberOfReferenceTables > maximumNumberOfReferenceTables) {
+					 	if (numberOfReferenceTables > maximumNumberOfReferenceTables + ConfigValue.System_License_MaximumNumberOfReferenceTables.getGracefulExtension()) {
+							throw new LicenseError("Invalid Number of reference tables of company " + companyID, maximumNumberOfReferenceTables, numberOfReferenceTables);
+						} else {
+							String licenseErrorText = "Invalid Number of reference tables of company " + companyID + "."
+									+ " Current number of reference tables: " + numberOfReferenceTables + "."
+									+ " Maximum number of reference tables: " + maximumNumberOfReferenceTables + "."
+									+ " Allowed by graceful limit extension: " + ConfigValue.System_License_MaximumNumberOfReferenceTables.getGracefulExtension();
+							logger.error(licenseErrorText);
+							if (javaMailService != null) {
+								javaMailService.sendLicenseErrorMail(licenseErrorText);
+							}
+							licenseOK = false;
+						}
+					}
 				}
 			
 				// Check maximum number of AccessLimitingMailingLists (ALML) per company
 				int numberOfAccessLimitingMailinglistsPerCompany = licenseDao.getNumberOfAccessLimitingMailinglists(companyID);
 				int licenseMaximumOfAccessLimitingMailinglists = getLicenseValue(ConfigValue.System_License_MaximumNumberOfAccessLimitingMailinglistsPerCompany, companyID);
 				if (licenseMaximumOfAccessLimitingMailinglists >= 0 && licenseMaximumOfAccessLimitingMailinglists < numberOfAccessLimitingMailinglistsPerCompany) {
-					throw new LicenseError("Invalid Number of AccessLimitingMailingLists of company " + companyID + "", licenseMaximumOfAccessLimitingMailinglists, numberOfAccessLimitingMailinglistsPerCompany);
+					if (numberOfAccessLimitingMailinglistsPerCompany > licenseMaximumOfAccessLimitingMailinglists + ConfigValue.System_License_MaximumNumberOfAccessLimitingMailinglistsPerCompany.getGracefulExtension()) {
+						throw new LicenseError("Invalid Number of AccessLimitingMailingLists of company " + companyID + "", licenseMaximumOfAccessLimitingMailinglists, numberOfAccessLimitingMailinglistsPerCompany);
+					} else {
+						String licenseErrorText = "Invalid Number of AccessLimitingMailinglists of company " + companyID + "."
+								+ " Current number of AccessLimitingMailinglists: " + numberOfAccessLimitingMailinglistsPerCompany + "."
+								+ " Maximum number of AccessLimitingMailinglists: " + licenseMaximumOfAccessLimitingMailinglists + "."
+								+ " Allowed by graceful limit extension: " + ConfigValue.System_License_MaximumNumberOfAccessLimitingMailinglistsPerCompany.getGracefulExtension();
+						logger.error(licenseErrorText);
+						if (javaMailService != null) {
+							javaMailService.sendLicenseErrorMail(licenseErrorText);
+						}
+						licenseOK = false;
+					}
 				}
 			
 				// Check maximum number of AccessLimitingTargetgroups (ALTG) per company
 				int numberOfAccessLimitingTargetgroupsPerCompany = licenseDao.getHighestAccessLimitingTargetgroupsPerCompany();
 				int licenseMaximumOfAccessLimitingTargetgroups = getLicenseValue(ConfigValue.System_License_MaximumNumberOfAccessLimitingTargetgroupsPerCompany, companyID);
 				if (licenseMaximumOfAccessLimitingTargetgroups >= 0 && licenseMaximumOfAccessLimitingTargetgroups < numberOfAccessLimitingTargetgroupsPerCompany) {
-					throw new LicenseError("Invalid Number of AccessLimitingTargetgroups of company " + companyID + "", licenseMaximumOfAccessLimitingTargetgroups, numberOfAccessLimitingTargetgroupsPerCompany);
-				}
-			}
-		
-			// Check allowed premium features
-			boolean companyHasOwnPremiumFeatures;
-			String allowedPremiumFeaturesData = LICENSE_VALUES.get(ConfigValue.System_License_AllowedPremiumFeatures.toString()).get(companyID);
-			Set<String> allowedPremiumFeatures = new HashSet<>();
-			Set<String> unAllowedPremiumFeatures = new HashSet<>();
-			if (allowedPremiumFeaturesData != null) {
-				companyHasOwnPremiumFeatures = true;
-			} else {
-				companyHasOwnPremiumFeatures = false;
-				allowedPremiumFeaturesData = LICENSE_VALUES.get(ConfigValue.System_License_AllowedPremiumFeatures.toString()).get(0);
-			}
-			for (String allowedPremiumFeature : allowedPremiumFeaturesData.split(" |;|,|\\t|\\n")) {
-				if (StringUtils.isNotBlank(allowedPremiumFeature) && !allowedPremiumFeature.trim().startsWith("<!--")) {
-					allowedPremiumFeatures.add(allowedPremiumFeature.trim());
+					if (numberOfAccessLimitingTargetgroupsPerCompany > licenseMaximumOfAccessLimitingTargetgroups + ConfigValue.System_License_MaximumNumberOfAccessLimitingTargetgroupsPerCompany.getGracefulExtension()) {
+						throw new LicenseError("Invalid Number of AccessLimitingTargetgroups of company " + companyID + "", licenseMaximumOfAccessLimitingTargetgroups, numberOfAccessLimitingTargetgroupsPerCompany);
+					} else {
+						String licenseErrorText = "Invalid Number of AccessLimitingTargetgroups of company " + companyID + "."
+								+ " Current number of AccessLimitingTargetgroups: " + numberOfAccessLimitingTargetgroupsPerCompany + "."
+								+ " Maximum number of AccessLimitingTargetgroups: " + licenseMaximumOfAccessLimitingTargetgroups + "."
+								+ " Allowed by graceful limit extension: " + ConfigValue.System_License_MaximumNumberOfAccessLimitingTargetgroupsPerCompany.getGracefulExtension();
+						logger.error(licenseErrorText);
+						if (javaMailService != null) {
+							javaMailService.sendLicenseErrorMail(licenseErrorText);
+						}
+						licenseOK = false;
+					}
 				}
 			}
 			
@@ -767,23 +871,41 @@ public class ConfigService {
 				// do nothing
 			}
 			
-			if (!allowedPremiumFeatures.contains("all") && !allowedPremiumFeatures.contains("ALL")) {
-				// Check and set or reset premium features
-				for (Permission permission : permissionService.getAllPermissions()) {
-					if (permission.getPermissionType() == PermissionType.Premium && !allowedPremiumFeatures.contains(permission.toString())) {
-						unAllowedPremiumFeatures.add(permission.toString());
+			if (getApplicationType() == Server.EMM) {
+				// Check allowed premium features on Frontend Servers only 
+				boolean companyHasOwnPremiumFeatures;
+				String allowedPremiumFeaturesData = LICENSE_VALUES.get(ConfigValue.System_License_AllowedPremiumFeatures.toString()).get(companyID);
+				Set<String> allowedPremiumFeatures = new HashSet<>();
+				Set<String> unAllowedPremiumFeatures = new HashSet<>();
+				if (allowedPremiumFeaturesData != null) {
+					companyHasOwnPremiumFeatures = true;
+				} else {
+					companyHasOwnPremiumFeatures = false;
+					allowedPremiumFeaturesData = LICENSE_VALUES.get(ConfigValue.System_License_AllowedPremiumFeatures.toString()).get(0);
+				}
+				for (String allowedPremiumFeature : allowedPremiumFeaturesData.split(" |;|,|\\t|\\n")) {
+					if (StringUtils.isNotBlank(allowedPremiumFeature) && !allowedPremiumFeature.trim().startsWith("<!--")) {
+						allowedPremiumFeatures.add(allowedPremiumFeature.trim());
 					}
 				}
-				
-				adminDao.deleteFeaturePermissions(unAllowedPremiumFeatures, companyID);
-				if (!companyHasOwnPremiumFeatures) {
-					companyDao.cleanupPremiumFeaturePermissions(companyID);
+			
+				if (!allowedPremiumFeatures.contains("all") && !allowedPremiumFeatures.contains("ALL")) {
+					// Check and set or reset premium features
+					for (Permission permission : permissionService.getAllPermissions()) {
+						if (permission.getPermissionType() == PermissionType.Premium && !allowedPremiumFeatures.contains(permission.toString())) {
+							unAllowedPremiumFeatures.add(permission.toString());
+						}
+					}
+					
+					if (!companyHasOwnPremiumFeatures) {
+						companyDao.cleanupPremiumFeaturePermissions(companyID);
+					} else {
+						companyDao.setupPremiumFeaturePermissions(allowedPremiumFeatures, unAllowedPremiumFeatures, "Initial license setup", companyID);
+					}
 				} else {
-					companyDao.setupPremiumFeaturePermissions(allowedPremiumFeatures, unAllowedPremiumFeatures, "Initial license setup", companyID);
+					// Init the permission system anyway and assign categories to the rights etc.
+					permissionService.getAllPermissions();
 				}
-			} else {
-				// Init the permission system anyway and assign categories to the rights etc.
-				permissionService.getAllPermissions();
 			}
 		}
 	}
@@ -897,7 +1019,7 @@ public class ConfigService {
 		}
 	}
 	
-	public String getEncryptedValue(ConfigValue configurationValueID, @VelocityCheck int companyID) throws Exception {
+	public String getEncryptedValue(ConfigValue configurationValueID, int companyID) throws Exception {
 		String encryptedDataBase64 = getValue(configurationValueID, companyID);
 		
 		if (StringUtils.isNotEmpty(encryptedDataBase64)) {
@@ -925,7 +1047,7 @@ public class ConfigService {
 
 	 * @return configuration value as String or {@code null}
 	 */
-	public String getValue(ConfigValue configurationValueID, @VelocityCheck int companyID) {
+	public String getValue(ConfigValue configurationValueID, int companyID) {
 		refreshValues();
 		
 		String value = null;
@@ -957,7 +1079,7 @@ public class ConfigService {
 	 * 
 	 * @return configuration value or specified default value
 	 */
-	public String getValue(ConfigValue configurationValueID, @VelocityCheck int companyID, String defaultValue) {
+	public String getValue(ConfigValue configurationValueID, int companyID, String defaultValue) {
 		String value = getValue(configurationValueID, companyID);
 		
 		if (value == null) {
@@ -973,7 +1095,7 @@ public class ConfigService {
 		return AgnUtils.interpretAsBoolean(value);
 	}
 	
-	public boolean getBooleanValue(ConfigValue configurationValueID, @VelocityCheck int companyID) {
+	public boolean getBooleanValue(ConfigValue configurationValueID, int companyID) {
 		String value = getValue(configurationValueID, companyID);
 		
 		return AgnUtils.interpretAsBoolean(value);
@@ -1025,19 +1147,19 @@ public class ConfigService {
 	 * 
 	 * @return integer configuration value of default value
 	 */
-	public int getIntegerValue(ConfigValue configurationValueID, @VelocityCheck int companyID, int defaultValue) {
+	public int getIntegerValue(ConfigValue configurationValueID, int companyID, int defaultValue) {
 		String value = getValue(configurationValueID, companyID, Integer.toString(defaultValue));
 		
 		return Integer.parseInt(value);
 	}
 	
-	public int getIntegerValue(ConfigValue configurationValueID, @VelocityCheck int companyID) {
+	public int getIntegerValue(ConfigValue configurationValueID, int companyID) {
 		String value = getValue(configurationValueID, companyID);
 		
 		return Integer.parseInt(value);
 	}
 	
-	public long getLongValue(ConfigValue configurationValueID, @VelocityCheck int companyID, int defaultValue) {
+	public long getLongValue(ConfigValue configurationValueID, int companyID, int defaultValue) {
 		String value = getValue(configurationValueID, companyID, Integer.toString(defaultValue));
 		
 		return Long.parseLong(value);
@@ -1049,13 +1171,13 @@ public class ConfigService {
 		return Long.parseLong(value);
 	}
 	
-	public long getLongValue(ConfigValue configurationValueID, @VelocityCheck int companyID) {
+	public long getLongValue(ConfigValue configurationValueID, int companyID) {
 		String value = getValue(configurationValueID, companyID);
 		
 		return Long.parseLong(value);
 	}
 
-	public float getFloatValue(ConfigValue configurationValueID, @VelocityCheck int companyID){
+	public float getFloatValue(ConfigValue configurationValueID, int companyID){
 		String value = getValue(configurationValueID, companyID);
 
 		return Float.parseFloat(value);
@@ -1088,7 +1210,7 @@ public class ConfigService {
 		}
 	}
 	
-	public String getDescription(ConfigValue configurationValueID, @VelocityCheck int companyID) {
+	public String getDescription(ConfigValue configurationValueID, int companyID) {
 		String description = companyInfoDao.getDescription(configurationValueID.toString(), companyID);
 		if (description == null) {
 			description = companyInfoDao.getDescription(configurationValueID.toString(), 0);
@@ -1196,10 +1318,6 @@ public class ConfigService {
 	 */
 	public int getMaximumNumberOfUserDefinedHistoryProfileFields(final int companyID) {
 		return getIntegerValue(ConfigValue.MaximumNumberOfUserSelectedProfileFieldsInHistory, companyID, 5);
-	}
-
-	public boolean useUnsharpRecipientQuery(int companyID) {
-		return getBooleanValue(ConfigValue.UseUnsharpRecipientQuery, companyID);
 	}
 
 	/**
@@ -1317,7 +1435,7 @@ public class ConfigService {
 	
 	public final Map<String, String> getHostSystemProperties() {
 		Map<String, String> hostProperties = new HashMap<>();
-		Map<String, String> systemProperties = new Systemconfig().get();
+		Map<String, String> systemProperties = Systemconfig.create ().get();
 		
 		if(MapUtils.isNotEmpty(systemProperties)) {
 			Map<String, String> hostNames = systemProperties.entrySet().stream()
@@ -1377,4 +1495,16 @@ public class ConfigService {
 	public boolean isBasicLB(int companyId) {
         return getBooleanValue(ConfigValue.LayoutBuilderBasic, companyId);
     }
+
+    public boolean isUserBasedFavoriteTargets(int companyId) {
+        return getBooleanValue(ConfigValue.UserBasedFavoriteTargets, companyId);
+    }
+
+    public boolean isExtendedAltgEnabled(int companyId) {
+		return getBooleanValue(ConfigValue.TargetAccessLimitExtended, companyId);
+	}
+
+	public boolean isLicenseStatusOK() {
+		return licenseOK;
+	}
 }

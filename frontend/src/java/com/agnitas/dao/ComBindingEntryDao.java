@@ -64,12 +64,31 @@ public interface ComBindingEntryDao {
      * @param entry Binding to update
 	 * @param companyID The company ID of the Binding
 	 * @return true if success and false if failure
+	 * 
+	 * @see #updateBindings(int, BindingEntry...)
 	 */
+	@Deprecated(forRemoval = true)
 	boolean updateBinding(BindingEntry entry, int companyID);
 
-	void updateBindings(int companyId, List<BindingEntry> bindings) throws Exception;
+	/**
+	 * @return number of updated bindings
+	 */
+	int updateBindings(int companyId, List<BindingEntry> bindings) throws Exception;
+	
+	/**
+	 * @return number of updated bindings
+	 */
+	int updateBindings(int companyId, BindingEntry...bindings) throws Exception;
 
-	void insertBindings(int companyId, List<BindingEntry> bindings) throws Exception;
+	/**
+	 * @return number of inserted bindings
+	 */
+	int insertBindings(int companyId, List<BindingEntry> bindings) throws Exception;
+	
+	/**
+	 * @return number of inserted bindings
+	 */
+	int insertBindings(int companyId, BindingEntry...bindings) throws Exception;
 
 	/**
 	 * Inserts a new binding into the database.
@@ -77,7 +96,10 @@ public interface ComBindingEntryDao {
 	 * @param entry The entry to create.
 	 * @param companyID The company we are working on.
 	 * @return true on success.
+	 * 
+	 * @see #insertBindings(int, BindingEntry...)
 	 */
+	@Deprecated(forRemoval = true)
 	boolean insertNewBinding(BindingEntry entry, int companyID);
 
     /**

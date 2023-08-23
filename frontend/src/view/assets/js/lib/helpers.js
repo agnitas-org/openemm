@@ -18,7 +18,7 @@ parent: js-helpers
 `AGN.Lib.Helpers.paramsFromUrl(url)` extracts parameters from the url and returns an object
 
 ```
-var url = 'http://localhost:8080/css/mailingbase.do?action=1&isTemplate=false&page=1';
+var url = 'http://localhost:8080/css/mailing/list.action?forTemplates=false&page=1';
 AGN.Lib.Helpers.paramsFromUrl(url) 
 -> Object {action: "1", isTemplate: "false", page: "1"}
 ```
@@ -304,6 +304,11 @@ by default using SI
             }
 
             return html;
+        },
+        
+        isValidEmail: function(email) {
+          var re = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+          return re.test(String(email).toLowerCase());
         }
     };
 

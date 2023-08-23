@@ -15,24 +15,21 @@ import java.util.Map;
 import java.util.Set;
 
 import org.agnitas.beans.TagDefinition;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 /**
  * Dao for tag_tbl which contains the agnTAG definitions
  */
 public interface TagDao {
-	TagDefinition getTag(@VelocityCheck int companyID, String name);
+	TagDefinition getTag(int companyID, String name);
 
-	Set<String> extractDeprecatedTags(@VelocityCheck int companyID, Set<String> tagNames);
+	Set<String> extractDeprecatedTags(int companyID, Set<String> tagNames);
 	
-	List<TagDefinition> getTagDefinitions(@VelocityCheck int companyID);
+	List<TagDefinition> getTagDefinitions(int companyID);
 
-	Map<String, TagDefinition> getTagDefinitionsMap(@VelocityCheck int companyID);
+	Map<String, TagDefinition> getTagDefinitionsMap(int companyID);
 
-	Map<String, String> getSelectValues(@VelocityCheck int companyID);
+	Map<String, String> getSelectValues(int companyID);
 
-	boolean deleteTagsByCompany(@VelocityCheck int companyId);
+	boolean deleteTagsByCompany(int companyId);
 
-	@Deprecated /* Used by unit tests only. */
-	int insertTag(String tagName, String tagSelectValue, String tagType, int companyId, String tagDescription);
 }

@@ -61,7 +61,7 @@ public class AdminImpl implements Admin {
 	protected Date lastNewsDate;
 	protected Date lastMessageDate;
 	protected String adminPhone;
-	private int accessLimitingTargetGroupID; // delete after GWUA-4957 has been successfully tested. And 'limiting_target_id' column code usages.
+	private int accessLimitingTargetGroupID;
     private Set<Integer> altgIds = new HashSet<>();
 	private Date lastLoginDate;
 	private boolean restful = false;

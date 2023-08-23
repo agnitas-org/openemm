@@ -10,9 +10,9 @@
 
 package com.agnitas.emm.core.commons.hierarchy;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Objects;
 
+import org.agnitas.util.TimeoutLRUMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -24,10 +24,25 @@ public class CompanyHierarchyCacheImpl implements CompanyHierarchyCache {
 	/** The logger. */
 	private static final Logger logger = LogManager.getLogger( CompanyHierarchyCacheImpl.class);
 
-	private final Map<Integer, Integer> companyToRootCompanyMap;
+	/** Default retention time in milliseconds ({@value #DEFAULT_TIMEOUT_MILLIS} ms). */
+	public static final int DEFAULT_TIMEOUT_MILLIS = 300000; // 5 minutes
 	
-	public CompanyHierarchyCacheImpl() {
-		this.companyToRootCompanyMap = new HashMap<>();
+	/** Default capacity of cache ({@value #DEFAULT_CAPACITY} items). */
+	public static final int DEFAULT_CAPACITY = 1000;
+	
+	/** Caching map. */
+	private final TimeoutLRUMap<Integer, Integer> companyToRootCompanyMap;
+	
+	/** Company DAO to read missing data into cache. */
+	private final ComCompanyDao companyDao;
+
+	public CompanyHierarchyCacheImpl(final ComCompanyDao companyDao) {
+		this(DEFAULT_TIMEOUT_MILLIS, DEFAULT_CAPACITY, companyDao);
+	}
+	
+	public CompanyHierarchyCacheImpl(final int timeoutMillis, final int capacity, final ComCompanyDao companyDao) {
+		this.companyToRootCompanyMap = new TimeoutLRUMap<>(capacity, timeoutMillis);
+		this.companyDao = Objects.requireNonNull(companyDao, "company DAO");
 	}
 	
 	@Override
@@ -79,13 +94,4 @@ public class CompanyHierarchyCacheImpl implements CompanyHierarchyCache {
 		}
 	}
 
-	
-	
-	
-	// ----------------------------------------------------------------------- Dependency Injection
-	private ComCompanyDao companyDao;
-	
-	public void setCompanyDao( ComCompanyDao companyDao) {
-		this.companyDao = companyDao;
-	}
 }

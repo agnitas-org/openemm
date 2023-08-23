@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.service.JobWorker;
 import org.agnitas.util.AgnUtils;
+import org.agnitas.util.DateUtilities;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -88,13 +89,26 @@ public class ComBirtReportJobWorker extends JobWorker {
 						// even if we have several mailing ids - we need to send each report separately as the report is triggered
 						// by mailing sending, so the user will be confused if he gets reports for several mailings in one report-email
 						ComBirtReportMailingSettings mailingSettings = report.getReportMailingSettings();
-						final List<Integer> mailingsIdsToSend = mailingSettings.getMailingsIdsToSend();
-						for (Integer mailingId : mailingsIdsToSend) {
-							mailingSettings.setMailingsToSend(Collections.singletonList(mailingId));
-							urlsMap.putAll(birtStatisticsService.getReportStatisticsUrlMap(Collections.singletonList(mailingSettings), new Date(), report, companyID, accountId));
-							startReportExecution(report, urlsMap);
+						final List<Integer> mailingsIdsToSend = mailingSettings.getMailingsIdsToSend().stream()
+								.filter(mailingId -> !isMailingMarkedDeleted(mailingId, companyID))
+								.collect(Collectors.toList());
+
+						if (mailingsIdsToSend != null && mailingsIdsToSend.size() > 0) {
+							for (Integer mailingId : mailingsIdsToSend) {
+								mailingSettings.setMailingsToSend(Collections.singletonList(mailingId));
+								urlsMap.putAll(birtStatisticsService.getReportStatisticsUrlMap(Collections.singletonList(mailingSettings), new Date(), report, companyID, accountId));
+								startReportExecution(report, urlsMap);
+							}
+						} else {
+							if (StringUtils.isBlank(report.getIntervalpattern())) {
+								report.setNextStart(DateUtilities.calculateNextJobStart("**00"));
+							} else {
+								report.setNextStart(DateUtilities.calculateNextJobStart(report.getIntervalpattern()));
+							}
+							serviceLookupFactory.getBeanBirtReportService().announceStart(report);
+							serviceLookupFactory.getBeanBirtReportService().announceEnd(report);
 						}
-	
+		
 						// Restore previously separated list of mailing IDs
 						mailingSettings.setMailingsToSend(mailingsIdsToSend);
 					}
@@ -109,5 +123,9 @@ public class ComBirtReportJobWorker extends JobWorker {
 		BirtReportExecutor birtReportExecutor = new BirtReportExecutor(serviceLookupFactory, birtReport, urlsMap);
 		Thread executorThread = new Thread(birtReportExecutor);
 		executorThread.start();
+	}
+
+	private boolean isMailingMarkedDeleted(int mailingId, int companyId) {
+		return serviceLookupFactory.getBeanMailingService().isMailingMarkedDeleted(mailingId, companyId);
 	}
 }

@@ -182,7 +182,31 @@
                 <entry key="newimportwizard.mlists" value="wizard.import" />
                 <entry key="newimportwizard.download_csv" value="wizard.import" />
                 <entry key="newimportwizard.unspecified" value="wizard.import" />
-                
+
+                <entry key="recipient.import.choose.method" value="wizard.import|wizard.importclassic" />
+                <entry key="recipient.import.view" value="wizard.import" />
+                <entry key="recipient.import.preview" value="wizard.import" />
+                <entry key="recipient.import.execute" value="wizard.import" />
+                <entry key="recipient.import.editErrors" value="wizard.import" />
+                <entry key="recipient.import.saveErrors" value="wizard.import" />
+                <entry key="recipient.import.cancel" value="wizard.import" />
+                <entry key="recipient.import.ignoreErrors" value="wizard.import" />
+                <entry key="recipient.import.downloadFile" value="wizard.import" />
+                <entry key="recipient.import.finish" value="wizard.import" />
+                <entry key="recipient.import.deleteFile" value="wizard.import" />
+
+                <entry key="import.profile.list" value="wizard.import" />
+                <entry key="import.profile.setDefault" value="wizard.import" />
+                <entry key="import.profile.confirmDelete" value="import.delete" />
+                <entry key="import.profile.delete" value="import.delete" />
+                <entry key="import.profile.create" value="import.change" />
+                <entry key="import.profile.view" value="wizard.import" />
+                <entry key="import.profile.save" value="import.change" />
+
+                <entry key="import.profile.columns.view" value="wizard.import" />
+                <entry key="import.profile.columns.save" value="import.change" />
+                <entry key="import.profile.columns.upload" value="wizard.import" />
+
                 <entry key="importprofile.list" value="wizard.import" />
                 <entry key="importprofile.view" value="wizard.import" />
                 <entry key="importprofile.new_gender" value="import.change" />
@@ -223,6 +247,14 @@
                 <entry key="exportwizard.delete" value="export.delete" />
                 <entry key="exportwizard.unspecified" value="wizard.export" />
 
+                <entry key="export.list" value="wizard.export" />
+                <entry key="export.view" value="wizard.export" />
+                <entry key="export.confirmDelete" value="export.delete" />
+                <entry key="export.delete" value="export.delete" />
+                <entry key="export.save" value="export.change" />
+                <entry key="export.evaluate" value="wizard.export" />
+                <entry key="export.download" value="wizard.export" />
+                
                 <!-- Optimization -->
                 <entry key="optimization.list" value="campaign.change"/>
                 <entry key="optimization.view" value="campaign.change"/>
@@ -285,47 +317,32 @@
                 <entry key="calendar.getNotifications" value="calendar.show" />
                 <entry key="calendar.movePush" value="calendar.show" />
 
+                <entry key="mailing.list" value="mailing.show" />
+                <entry key="mailing.actions" value="mailing.show" />
                 <entry key="mailing.view" value="mailing.show" />
                 <entry key="mailing.confirmDelete" value="mailing.delete" />
                 <entry key="mailing.delete" value="mailing.delete" />
+                <entry key="mailing.confirmBulkDelete" value="mailing.delete" />
+                <entry key="mailing.bulkDelete" value="mailing.delete" />
                 <entry key="mailing.copy" value="mailing.change" />
                 <entry key="mailing.export" value="mailing.export" />
                 <entry key="mailing.confirmUndo" value="mailing.change" />
                 <entry key="mailing.undo" value="mailing.change" />
                 <entry key="mailing.save" value="mailing.change" />
-                <entry key="mailing.templates" value="mailing.show"/>
+                <entry key="mailing.templates" value="template.show"/>
                 <entry key="mailing.newClassic" value="mailing.change"/>
+                <entry key="mailing.create" value="mailing.change"/>
 
-                <entry key="mailingbase.new" value="mailing.change" />
-                <entry key="mailingbase.view" value="mailing.show" />
-                <entry key="mailingbase.view_without_load" value="mailing.show" />
-                <entry key="mailingbase.save" value="mailing.change" />
-                <entry key="mailingbase.confirm_delete" value="mailing.delete" />
-                <entry key="mailingbase.confirm_undo" value="mailing.change" />
-                <entry key="mailingbase.undo" value="mailing.change" />
-                <entry key="mailingbase.bulk_confirm_delete" value="mailing.delete" />
-                <entry key="mailingbase.bulk_delete" value="mailing.delete" />
-                <entry key="mailingbase.move_media_up" value="mailing.change" />
-                <entry key="mailingbase.move_media_down" value="mailing.change" />
-                <entry key="mailingbase.recipients_calculate" value="always.allowed" />
-                <entry key="mailingbase.clone_as_mailing" value="mailing.change" />
-                <entry key="mailingbase.list" value="mailing.show" />
-                <entry key="mailingbase.remove_target" value="mailing.change" />
-                <entry key="mailingbase.select_template" value="template.show" />
-                <entry key="mailingbase.delete" value="mailing.delete" />
-                <entry key="mailingbase.used_actions" value="mailing.show" />
-                <entry key="mailingbase.unspecified" value="mailing.show" />
-                <entry key="mailingbase.mailing_templates" value="mailing.show" />
-                <entry key="mailingbase.is_advertising_content_type" value="mailing.show" />
-                <entry key="mailingbase.mailing_import" value="mailing.import" />
                 <entry key="mailing_ajax.tryToLock" value="mailing.content.show" />
                 <entry key="mailing_ajax.setStatusOnErrorOnly" value="mailing.send.world" />
                 <entry key="mailing_ajax.saveSecuritySettings" value="mailing.send.world" />
                 <entry key="mailing_ajax.isAdvertisingContentType" value="mailing.show" />
                 <entry key="mailing_ajax.calculateRecipients" value="always.allowed" />
 
-                <entry key="mailingbase.import_templates" value="mailing.import|forms.import" />
-                <entry key="mailingbase.mailing_export" value="mailing.export" />
+                <entry key="import.view" value="mailing.import|forms.import" />
+                <entry key="import.execute" value="mailing.import" />
+                <entry key="import.view.mailing" value="mailing.import" />
+                <entry key="import.view.template" value="mailing.import" />
 
                 <entry key="mailingParameter.newParameter" value="mailing.parameter.change" />
                 <entry key="mailingParameter.save" value="mailing.parameter.change" />
@@ -338,35 +355,6 @@
                 <entry key="mailing.parameter.save" value="mailing.parameter.change" />
                 <entry key="mailing.parameter.delete" value="mailing.parameter.change" />
                 <entry key="mailing.parameter.confirmDelete" value="mailing.parameter.change" />
-                
-                <entry key="mwStart.unspecified" value="mailing.change" />
-                <entry key="mwStart.target" value="mailing.change" />
-                <entry key="mwStart.newTarget" value="targets.change" />
-                <entry key="mwStart.newField" value="profileField.show" />
-                <entry key="mwStart.mailtype" value="mailing.change" />
-                <entry key="mwStart.init" value="mailing.change" />
-                <entry key="mwStart.start" value="mailing.change" />
-                <entry key="mwStart.name" value="mailing.change" />
-                <entry key="mwStart.template" value="mailing.change" />
-                <entry key="mwStart.type" value="mailing.change" />
-                <entry key="mwStart.sendaddress" value="mailing.change" />
-                <entry key="mwStart.subject" value="mailing.change" />
-                <entry key="mwStart.targetView" value="targets.show" />
-                <entry key="mwStart.textmodule" value="mailing.content.show" />
-                <entry key="mwStart.textmodule_add" value="mailing.content.show" />
-                <entry key="mwStart.textmodule_save" value="mailing.content.show" />
-                <entry key="mwStart.textmodule_move_up" value="mailing.content.show" />             
-                <entry key="mwStart.textmodule_move_down" value="mailing.content.show" />
-                <entry key="mwStart.links" value="mailing.change" />               
-                <entry key="mwStart.link" value="mailing.change" />
-                <entry key="mwStart.link_save_only" value="mailing.change" />              
-                <entry key="mwStart.to_attachment" value="mailing.attachments.show" />
-                <entry key="mwStart.attachment" value="mailing.attachments.show" />
-                <entry key="mwStart.attachmentDownload" value="mailing.attachments.show" />
-                <entry key="mwStart.finish" value="mailing.change" />
-                <entry key="mwStart.previous" value="mailing.change" />
-                <entry key="mwStart.next" value="mailing.change" />
-                <entry key="mwStart.skip" value="mailing.change" />
 
 				<!-- workflow permissions-->
 				<entry key="workflow.list" value="workflow.show"/>
@@ -416,6 +404,23 @@
                 <entry key="importwizard.get_error_blacklist" value="wizard.importclassic" />
                 <entry key="importwizard.get_data_parsed" value="wizard.importclassic" />
 
+                <entry key="recipient.import.wizard.fileStepView" value="wizard.importclassic" />
+                <entry key="recipient.import.wizard.fileStepSave" value="wizard.importclassic" />
+                <entry key="recipient.import.wizard.modeStepView" value="wizard.importclassic" />
+                <entry key="recipient.import.wizard.modeStepSave" value="wizard.importclassic" />
+                <entry key="recipient.import.wizard.mappingStepView" value="wizard.importclassic" />
+                <entry key="recipient.import.wizard.mappingStepSave" value="wizard.importclassic" />
+                <entry key="recipient.import.wizard.verifyMissingFieldsStepView" value="wizard.importclassic" />
+                <entry key="recipient.import.wizard.verifyMissingFieldsStepSave" value="wizard.importclassic" />
+                <entry key="recipient.import.wizard.verifyStepView" value="wizard.importclassic" />
+                <entry key="recipient.import.wizard.verifyStepSave" value="wizard.importclassic" />
+                <entry key="recipient.import.wizard.preScanStepView" value="wizard.importclassic" />
+                <entry key="recipient.import.wizard.preScanStepSave" value="wizard.importclassic" />
+                <entry key="recipient.import.wizard.mailinglistsStepView" value="wizard.importclassic" />
+                <entry key="recipient.import.wizard.mailinglistsStepSave" value="wizard.importclassic" />
+                <entry key="recipient.import.wizard.run" value="wizard.importclassic" />
+                <entry key="recipient.import.wizard.downloadCsv" value="wizard.importclassic" />
+                
                 <entry key="mailingcontent.unspecified" value="mailing.content.show" />
                 <entry key="mailingcontent.view_content" value="mailing.content.show" />
                 <entry key="mailingcontent.import_content" value="mailing.content.show" />
@@ -451,32 +456,6 @@
                 <entry key="mailing.attachment.confirmDelete" value="mailing.attachments.show" />
                 <entry key="mailing.attachment.delete" value="mailing.attachments.show" />
                 
-                <entry key="mailingsend.view_send" value="mailing.send.show" />
-                <entry key="mailingsend.unlock_send" value="mailing.can_allow" />
-                <entry key="mailingsend.deactivate_mailing" value="mailing.send.world" />
-                <entry key="mailingsend.deactivate_intervalmailing" value="mailing.send.world" />
-                <entry key="mailingsend.activate_rulebased" value="mailing.send.world" />
-                <entry key="mailingsend.activate_campaign" value="mailing.send.world" />
-                <entry key="mailingsend.activate_intervalmailing" value="mailing.send.world" />
-                <entry key="mailingsend.save_statusmail_recipients" value="mailing.send.world" />
-                <entry key="mailingsend.confirm_send_world" value="mailing.send.show" />
-                <entry key="mailingsend.preview_select" value="mailing.show" />
-                <entry key="mailingsend.view_send2" value="mailing.send.show" />
-                <entry key="mailingsend.view_send2_no_recipient_count" value="mailing.send.world" />
-                <entry key="mailingsend.cancel_mailing" value="mailing.send.world" />
-                <entry key="mailingsend.pdf_preview" value="mailing.show" />
-                <entry key="mailingsend.view_delstatbox" value="mailing.send.show" />
-                <entry key="mailingsend.cancel_mailing_request" value="mailing.send.world" />
-                <entry key="mailingsend.send_admin" value="always.allowed" />
-                <entry key="mailingsend.send_test" value="always.allowed" />
-                <entry key="mailingsend.send_world" value="mailing.send.world" />
-                <entry key="mailingsend.resume_sending" value="mailing.send.world" />
-                <entry key="mailingsend.preview_header" value="mailing.show" />
-                <entry key="mailingsend.preview" value="mailing.show" />
-                <entry key="mailingsend.check_links" value="mailing.send.show" />
-                <entry key="mailingsend.unspecified" value="mailing.send.show" />
-                <entry key="mailingsend.prioritization_switching" value="mailing.send.show" />
-
                 <entry key="mailing.send.view" value="mailing.send.show" />
                 <entry key="mailing.send.unlock" value="mailing.can_allow" />
                 <entry key="mailing.send.confirmDeactivation" value="mailing.send.world" />
@@ -494,6 +473,7 @@
                 <entry key="mailing.send.loadDeliveryStatusBox" value="mailing.send.show" />
                 <entry key="mailing.send.sendAdmin" value="always.allowed" />
                 <entry key="mailing.send.sendTest" value="always.allowed" />
+                <entry key="mailing.send.sendPersonalizedTest" value="always.allowed" />
                 <entry key="mailing.send.sendWorldMailing" value="mailing.send.world" />
                 <entry key="mailing.send.resumeSending" value="mailing.send.world" />
                 <entry key="mailing.send.changePrioritization" value="mailing.send.show" />
@@ -504,16 +484,13 @@
                 <entry key="mailing.send.confirmResumeByCopy" value="mailing.resume.world" />
                 <entry key="mailing.send.resume" value="mailing.resume.world" />
                 <entry key="mailing.send.resumeByCopy" value="mailing.resume.world" />
+                <entry key="mailing.send.saveTestRunTarget" value="always.allowed" />
 
                 <entry key="mailing.preview.view" value="mailing.show" />
                 <entry key="mailing.preview.header" value="mailing.show" />
                 <entry key="mailing.preview.viewContent" value="mailing.show" />
                 <entry key="mailing.preview.saveAsPdf" value="mailing.show" />
-
-                <entry key="mailingsend.resume_mailing" value="mailing.resume.world" />
-                <entry key="mailingsend.resume_mailing_request" value="mailing.resume.world" />
-                <entry key="mailingsend.resume_mailing_by_copy" value="mailing.resume.world" />
-                <entry key="mailingsend.resume_mailing_by_copy_request" value="mailing.resume.world" />
+                <entry key="mailing.preview.html" value="mailing.show" />
 
                 <entry key="mailing.trackablelink.list" value="mailing.content.show" />
                 <entry key="mailing.trackablelink.view" value="mailing.content.show" />
@@ -557,13 +534,15 @@
                 <entry key="user.self.view" value="always.allowed" />
                 <entry key="user.self.save" value="always.allowed" />
 
-                <entry key="user.self.supervisor.show" value="always.allowed" />
-                <entry key="user.self.supervisor.grant" value="always.allowed" />
-                <entry key="user.self.supervisor.revoke" value="always.allowed" />
-
                 <!-- new tokens for user activity log -->
                 <entry key="user.activity.log.list" value="always.allowed"/>
                 <entry key="user.activity.log.download" value="always.allowed"/>
+
+                <entry key="restful.user.activity.log.list" value="adminlog.show"/>
+                <entry key="restful.user.activity.log.download" value="adminlog.show"/>
+
+                <entry key="soap.user.activity.log.list" value="user.activity.actions.extended"/>
+                <entry key="soap.user.activity.log.download" value="user.activity.actions.extended"/>
 
                 <entry key="response.messagesJson" value="always.allowed"/>
                     
@@ -579,6 +558,8 @@
                 <entry key="server.status.jobQueueView" value="server.status"/>
                 <entry key="server.status.licenseFileUpload" value="server.status"/>
                 <entry key="server.status.updateCheck" value="server.status"/>
+                
+                <entry key="support.sendFormReport" value="always.allowed"/>
             </map>
 		</property>
 		<!-- Below is a configuration of tokens in case of permission depends on several tokens

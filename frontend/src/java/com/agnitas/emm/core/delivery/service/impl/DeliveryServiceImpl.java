@@ -19,7 +19,6 @@ import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 import net.sf.json.util.JSONUtils;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.DateUtilities;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -35,7 +34,7 @@ public class DeliveryServiceImpl implements DeliveryService {
     private ComMailingBaseService mailingBaseService;
 
     @Override
-    public JSONArray getDeliveriesInfo(@VelocityCheck final int companyId, final int mailingId, final int customerId) {
+    public JSONArray getDeliveriesInfo(final int companyId, final int mailingId, final int customerId) {
         List<DeliveryInfo> deliveriesInfo = deliveryDao.getDeliveriesInfo(companyId, mailingId, customerId);
         if (CollectionUtils.isEmpty(deliveriesInfo)) {
             return new JSONArray();

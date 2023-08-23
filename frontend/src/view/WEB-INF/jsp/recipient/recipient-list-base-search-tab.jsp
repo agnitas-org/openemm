@@ -1,4 +1,4 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" buffer="32kb" errorPage="/error.do" %>
+<%@ page contentType="text/html; charset=utf-8" buffer="32kb" errorPage="/error.do" %>
 <%@ page import="org.agnitas.beans.BindingEntry" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
@@ -7,6 +7,7 @@
 <%--@elvariable id="form" type="com.agnitas.emm.core.recipient.forms.RecipientListForm"--%>
 <%--@elvariable id="adminAltgs" type="java.util.List<com.agnitas.beans.TargetLight>"--%>
 <%--@elvariable id="isSearchExtended" type="java.lang.Boolean"--%>
+<%--@elvariable id="isExtendedAltgEnabled" type="java.lang.Boolean"--%>
 
 <c:set var="isAdvanced" value="${param.advanced}"/>
 <c:set var="advancedSuffix" value="${isAdvanced ? '_advanced' : ''}"/>
@@ -70,10 +71,9 @@
                 </label>
             </div>
             <div class="col-md-12">
-                <!--todo: GWUA-4769 sort out why field is not disabled after refresh-->
                 <mvc:select path="filterUserType" cssClass="form-control js-select"
                             id="search_recipient_type${advancedSuffix}" size="1"
-                            data-form-change="0" disabled="${form.filterMailinglistId eq -1 ? 'disabled' : ''}">
+                            data-form-change="0">
                     <mvc:option value=""><mvc:message code="default.All"/></mvc:option>
                     <mvc:option value="${USER_TYPE_ADMIN}"><mvc:message code="recipient.Administrator"/></mvc:option>
                     <mvc:option value="${USER_TYPE_TEST}"><mvc:message code="TestSubscriber"/></mvc:option>
@@ -94,7 +94,7 @@
             <div class="col-md-12">
                 <mvc:select path="filterUserStatus" cssClass="form-control js-select" size="1"
                             id="search_recipient_state${advancedSuffix}"
-                            data-form-change="0" disabled="${form.filterMailinglistId eq -1 ? 'disabled' : ''}">
+                            data-form-change="0">
                     <mvc:option value="0"><mvc:message code="default.All"/></mvc:option>
                     <mvc:option value="1"><mvc:message code="recipient.MailingState1"/></mvc:option>
                     <mvc:option value="2"><mvc:message code="recipient.MailingState2"/></mvc:option>

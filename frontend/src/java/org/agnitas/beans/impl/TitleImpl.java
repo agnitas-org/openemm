@@ -15,7 +15,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.agnitas.beans.Title;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public class TitleImpl implements Title, Serializable {
     private static final long serialVersionUID = 2291851535887967372L;
@@ -32,7 +31,7 @@ public class TitleImpl implements Title, Serializable {
     //  SETTER:
     // * * * * *
     @Override
-	public void setCompanyID( @VelocityCheck int company) {
+	public void setCompanyID( int company) {
         this.companyID=company;
     }
     

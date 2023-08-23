@@ -1,5 +1,4 @@
-<%@ page language="java" import="com.agnitas.web.MailingBaseAction" contentType="text/html; charset=utf-8" errorPage="/error.do"%>
-<%@ page import="com.agnitas.web.ComMailingContentAction" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.do"%>
 <%@ taglib prefix="emm"     uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc"     uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="c"       uri="http://java.sun.com/jsp/jstl/core" %>
@@ -8,9 +7,6 @@
 <%--@elvariable id="dependentsForm" type="com.agnitas.emm.core.target.form.TargetDependentsListForm"--%>
 <%--@elvariable id="dependents" type="java.util.List<com.agnitas.emm.core.beans.Dependent<com.agnitas.emm.core.target.beans.TargetGroupDependentType>>"--%>
 <%--@elvariable id="mailingGridTemplateMap" type="java.util.Map<java.lang.Integer, java.lang.Integer>"--%>
-
-<c:set var="ACTION_MAILING_VIEW" value="<%= MailingBaseAction.ACTION_VIEW %>" scope="page"/>
-<c:set var="ACTION_MAILING_VIEW_CONTENT" value="<%= ComMailingContentAction.ACTION_VIEW_CONTENT %>" scope="page"/>
 
 <mvc:form servletRelativeAction="/target/${dependentsForm.targetId}/dependents.action" modelAttribute="dependentsForm">
 
@@ -133,13 +129,7 @@
                         <c:choose>
                             <c:when test="${item.type == 'MAILING'}">
                                 <emm:ShowByPermission token="mailing.show">
-                                    <emm:ShowByPermission token="mailing.settings.migration">
-                                        <c:url var="mailingViewUrl" value="/mailing/${item.id}/settings.action"/>
-                                    </emm:ShowByPermission>
-                                    <emm:HideByPermission token="mailing.settings.migration">
-                                        <c:url var="mailingViewUrl" value='/mailingbase.do?action=${ACTION_MAILING_VIEW}&mailingID=${item.id}'/>
-                                    </emm:HideByPermission>
-                                    <a href="${mailingViewUrl}" class="hidden js-row-show" ></a>
+                                    <a href="<c:url value="/mailing/${item.id}/settings.action"/>" class="hidden js-row-show"></a>
                                 </emm:ShowByPermission>
                                 <mvc:message code="Mailings"/>
                             </c:when>
@@ -151,7 +141,12 @@
                             </c:when>
                             <c:when test="${item.type == 'EXPORT_PROFILE'}">
                                 <emm:ShowByPermission token="wizard.export">
-                                    <a href="<c:url value='/exportwizard.do?action=2&exportPredefID=${item.id}'/>" class="hidden js-row-show" ></a>
+                                    <emm:HideByPermission token="export.rollback">
+                                        <a href="<c:url value='/export/${item.id}/view.action'/>" class="hidden js-row-show"></a>
+                                    </emm:HideByPermission>                                     
+                                    <emm:ShowByPermission token="export.rollback">
+                                        <a href="<c:url value='/exportwizard.do?action=2&exportPredefID=${item.id}'/>" class="hidden js-row-show"></a>
+                                    </emm:ShowByPermission>
                                 </emm:ShowByPermission>
                                 <mvc:message code="export.ExportProfile"/>
                             </c:when>
@@ -163,12 +158,7 @@
                                             <a href="<c:url value='/layoutbuilder/template/${templateId}/view.action'/>" class="hidden js-row-show" ></a>
                                         </c:when>
                                         <c:otherwise>
-                                            <emm:ShowByPermission token="mailing.content.migration">
-                                                <c:url var="contentViewLink" value='/mailing/content/${item.id}/view.action'/>
-                                            </emm:ShowByPermission>
-                                            <emm:HideByPermission token="mailing.content.migration">
-                                                <c:url var="contentViewLink" value='/mailingcontent.do?action=${ACTION_MAILING_VIEW_CONTENT}&mailingID=${item.id}'/>
-                                            </emm:HideByPermission>
+                                            <c:url var="contentViewLink" value='/mailing/content/${item.id}/view.action'/>
                                             <a href="${contentViewLink}" class="hidden js-row-show" ></a>
                                         </c:otherwise>
                                     </c:choose>

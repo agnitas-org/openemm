@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.TimeZone;
 
-import org.agnitas.emm.core.useractivitylog.dao.UserActivityLogDao;
+import com.agnitas.emm.core.useractivitylog.dao.RestfulUserActivityLogDao;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.DbColumnType.SimpleDataType;
@@ -62,14 +62,14 @@ import jakarta.servlet.http.HttpServletResponse;
 public class TargetRestfulServiceHandler implements RestfulServiceHandler {
 	public static final String NAMESPACE = "target";
 
-	protected UserActivityLogDao userActivityLogDao;
+	protected RestfulUserActivityLogDao userActivityLogDao;
 	protected ComTargetService targetService;
 	protected ComTargetDao targetDao;
 	protected ComRecipientDao recipientDao;
 	protected ColumnInfoService columnInfoService;
 
 	@Required
-	public void setUserActivityLogDao(UserActivityLogDao userActivityLogDao) {
+	public void setUserActivityLogDao(RestfulUserActivityLogDao userActivityLogDao) {
 		this.userActivityLogDao = userActivityLogDao;
 	}
 	
@@ -119,10 +119,6 @@ public class TargetRestfulServiceHandler implements RestfulServiceHandler {
 	/**
 	 * Return a single or multiple target data sets
 	 * 
-	 * @param request
-	 * @param admin
-	 * @return
-	 * @throws Exception
 	 */
 	protected Object getTarget(HttpServletRequest request, HttpServletResponse response, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.TARGETS_SHOW)) {
@@ -134,8 +130,8 @@ public class TargetRestfulServiceHandler implements RestfulServiceHandler {
 		if (restfulContext.length == 0) {
 			// Show index of all targets
 			userActivityLogDao.addAdminUseOfFeature(admin, "restful/target", new Date());
-			userActivityLogDao.writeUserActivityLog(admin, "restful/target GET", "ALL");
-			
+			writeActivityLog("ALL", request, admin);
+
 			JsonArray targetsJsonArray = new JsonArray();
 			
 			for (TargetLight target : targetDao.getTargetLights(admin.getCompanyID())) {
@@ -152,8 +148,8 @@ public class TargetRestfulServiceHandler implements RestfulServiceHandler {
 		} else {
 			// Show single target
 			userActivityLogDao.addAdminUseOfFeature(admin, "restful/target", new Date());
-			userActivityLogDao.writeUserActivityLog(admin, "restful/target GET", restfulContext[0]);
-			
+			writeActivityLog(restfulContext[0], request, admin);
+
 			ComTarget target;
 			if (AgnUtils.isNumber(restfulContext[0])) {
 				int targetID = Integer.parseInt(restfulContext[0]);
@@ -221,10 +217,6 @@ public class TargetRestfulServiceHandler implements RestfulServiceHandler {
 	/**
 	 * Delete a target
 	 * 
-	 * @param request
-	 * @param admin
-	 * @return
-	 * @throws Exception
 	 */
 	private Object deleteTarget(HttpServletRequest request, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.TARGETS_DELETE)) {
@@ -234,8 +226,8 @@ public class TargetRestfulServiceHandler implements RestfulServiceHandler {
 		String[] restfulContext = RestfulServiceHandler.getRestfulContext(request, NAMESPACE, 1, 1);
 		
 		userActivityLogDao.addAdminUseOfFeature(admin, "restful/target", new Date());
-		userActivityLogDao.writeUserActivityLog(admin, "restful/target DELETE", restfulContext[0]);
-		
+		writeActivityLog(restfulContext[0], request, admin);
+
 		ComTarget target;
 		if (AgnUtils.isNumber(restfulContext[0])) {
 			int targetID = Integer.parseInt(restfulContext[0]);
@@ -261,11 +253,6 @@ public class TargetRestfulServiceHandler implements RestfulServiceHandler {
 	/**
 	 * Create a new target
 	 * 
-	 * @param request
-	 * @param requestDataFile
-	 * @param admin
-	 * @return
-	 * @throws Exception
 	 */
 	protected Object createNewTarget(HttpServletRequest request, byte[] requestData, File requestDataFile, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.TARGETS_CHANGE)) {
@@ -330,8 +317,8 @@ public class TargetRestfulServiceHandler implements RestfulServiceHandler {
 						
 						if (target != null) {
 							userActivityLogDao.addAdminUseOfFeature(admin, "restful/target", new Date());
-							userActivityLogDao.writeUserActivityLog(admin, "restful/target POST", "" + target.getId());
-							
+							writeActivityLog(String.valueOf(target.getId()), request, admin);
+
 							return getTargetJsonObject(admin, target);
 						} else {
 							throw new RestfulNoDataFoundException("No data found");
@@ -347,11 +334,6 @@ public class TargetRestfulServiceHandler implements RestfulServiceHandler {
 	/**
 	 * Update an existing target
 	 * 
-	 * @param request
-	 * @param requestDataFile
-	 * @param admin
-	 * @return
-	 * @throws Exception
 	 */
 	protected Object createOrUpdateTarget(HttpServletRequest request, byte[] requestData, File requestDataFile, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.TARGETS_CHANGE)) {
@@ -433,8 +415,8 @@ public class TargetRestfulServiceHandler implements RestfulServiceHandler {
 						
 						if (target != null) {
 							userActivityLogDao.addAdminUseOfFeature(admin, "restful/target", new Date());
-							userActivityLogDao.writeUserActivityLog(admin, "restful/target PUT", "" + target.getId());
-							
+							writeActivityLog(String.valueOf(target.getId()), request, admin);
+
 							return getTargetJsonObject(admin, target);
 						} else {
 							throw new RestfulNoDataFoundException("No data found");
@@ -470,5 +452,9 @@ public class TargetRestfulServiceHandler implements RestfulServiceHandler {
 	@Override
 	public ResponseType getResponseType() {
 		return ResponseType.JSON;
+	}
+
+	private void writeActivityLog(String description, HttpServletRequest request, Admin admin) {
+		writeActivityLog(userActivityLogDao, description, request, admin);
 	}
 }

@@ -49,7 +49,9 @@
         <c:set var="showMenuItem" value="false"/>
     </c:if>
 
-    <c:if test="${not showMenuItem and not empty _navigation_upsellingRef}">
+    <c:set var="isHiddenLBMenuItem" value="${_navigation_submenu eq 'Grid' and _navigation_conditionSatisfied eq false}"/>
+    
+    <c:if test="${not showMenuItem and not empty _navigation_upsellingRef and not isHiddenLBMenuItem}">
         <c:set var="showUpsellingPage" value="true"/>
     </c:if>
 

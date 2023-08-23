@@ -21,28 +21,29 @@ import com.agnitas.mailing.autooptimization.beans.ComOptimization;
 import com.agnitas.mailing.autooptimization.beans.impl.AutoOptimizationLight;
 import net.sf.json.JSONArray;
 import org.agnitas.beans.impl.MaildropDeleteException;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.beans.impl.SelectOption;
 
 public interface ComOptimizationService {
 
 	boolean delete(ComOptimization optimization) throws MaildropDeleteException;
 
+	String findName(int optimizationId, int companyId);
+
 	int save(ComOptimization optimization);
 
-	ComOptimization get(int optimizationID, @VelocityCheck int companyID);
+	ComOptimization get(int optimizationID, int companyID);
 	
-	int getOptimizationIdByFinalMailing(int finalMailingId, @VelocityCheck int companyId);
+	int getOptimizationIdByFinalMailing(int finalMailingId, int companyId);
 
 	/**
 	 * Retrieve all entities except ones created by workflow manager.
 	 */
-	List<ComOptimization> list(int campaignID, @VelocityCheck int companyID);
+	List<ComOptimization> list(int campaignID, int companyID);
 
 	/**
 	 * Retrieve only entries created by workflow manager.
 	 */
-	List<ComOptimization> listWorkflowManaged(int workflowId, @VelocityCheck int companyID);
+	List<ComOptimization> listWorkflowManaged(int workflowId, int companyID);
 
 	/**
 	 * chooses the mailing with best open- or clickrate , clones it and sends it to the remaining recipients
@@ -59,15 +60,15 @@ public interface ComOptimizationService {
 
 	void finishOptimizations(List<Integer> includedCompanyIds, List<Integer> excludedCompanyIds);
 
-	List<TargetLight> getTargetGroupList(@VelocityCheck int companyID);
+	List<TargetLight> getTargetGroupList(int companyID);
 
 	/**
 	 * get a list of available splittypes ( company specific and application common definitions )
 	 * @return a list of string arrays [0] = split type , [1]  = i18n-key
 	 */
-	List<String[]> getSplitTypeList(@VelocityCheck int companyID, String splitType, String language);
+	List<String[]> getSplitTypeList(int companyID, String splitType, String language);
 
-	int getSplitNumbers(@VelocityCheck int companyID, String splitType);
+	int getSplitNumbers(int companyID, String splitType);
 
 	List<SelectOption> getTestMailingList(ComOptimization optimization);
 
@@ -90,25 +91,18 @@ public interface ComOptimizationService {
 
 	List<ComOptimization> getDueOnThresholdOptimizations(List<Integer> includedCompanyIds, List<Integer> excludedCompanyIds);
 
-    List<TargetLight> getTargets(String targetExpression, @VelocityCheck int companyID);
+    List<TargetLight> getTargets(String targetExpression, int companyID);
 
     List<TargetLight> getChosenTargets(String targetExpression, final int companyID);
 
-	List<ComOptimization> getOptimizationsForCalendar(@VelocityCheck int companyId, Date startDate, Date endDate);
+	List<ComOptimization> getOptimizationsForCalendar(int companyId, Date startDate, Date endDate);
 
 	JSONArray getOptimizationsAsJson(Admin admin, LocalDate startDate, LocalDate endDate, DateTimeFormatter formatter);
 
 	/**
-	 * Returns final_mailing_id for the AutoOptimization which contains mailing with ID = oneOfTheSplitMailingID.
-	 * @param oneOfTheSplitMailingID one of the mailing for AutoOptimization, in auto_optimization_tbl this is group1_id or group2_id...
-	 * @return final mailing ID
-	 */
-    int getFinalMailingID(int companyID, int workflowID, int oneOfTheSplitMailingID);
-	
-	/**
 	 * Return final_mailing_id for the AutoOptimization
 	 */
-	int getFinalMailingId(@VelocityCheck int companyId, int workflowId);
+	int getFinalMailingId(int companyId, int workflowId);
 	
-	AutoOptimizationLight getOptimizationLight(@VelocityCheck int companyId, int workflowId);
+	AutoOptimizationLight getOptimizationLight(int companyId, int workflowId);
 }

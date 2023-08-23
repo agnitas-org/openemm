@@ -37,7 +37,6 @@ import java.util.concurrent.Callable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
 import org.agnitas.beans.ColumnMapping;
@@ -592,20 +591,11 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 		if (AgnUtils.isZipArchiveFile(importFile.getLocalFile())) {
 			try {
 				if (importProfile.getZipPassword() == null) {
-					InputStream dataInputStream = ZipUtilities.openZipInputStream(new FileInputStream(importFile.getLocalFile()));
-					try {
-						ZipEntry zipEntry = ((ZipInputStream) dataInputStream).getNextEntry();
-						if (zipEntry == null) {
-							throw new ImportException(false, "error.unzip.noEntry");
-						} else {
-							return dataInputStream;
-						}
-					} catch (Exception e) {
-						if (dataInputStream != null) {
-							dataInputStream.close();
-							dataInputStream = null;
-						}
-						throw e;
+					InputStream dataInputStream = ZipUtilities.openSingleFileZipInputStream(importFile.getLocalFile());
+					if (dataInputStream == null) {
+						throw new ImportException(false, "error.unzip.noEntry");
+					} else {
+						return dataInputStream;
 					}
 				} else {
 					File tempImportFile = new File(importFile.getLocalFile().getAbsolutePath() + ".tmp");
@@ -617,7 +607,9 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 							throw new Exception("Invalid number of files included in zip file");
 						} else {
 							try (FileOutputStream tempImportFileOutputStream = new FileOutputStream(tempImportFile)) {
-								IOUtils.copy(zipFile.getInputStream(fileHeaders.get(0)), tempImportFileOutputStream);
+								try(final InputStream zipInput = zipFile.getInputStream(fileHeaders.get(0))) {
+									IOUtils.copy(zipInput, tempImportFileOutputStream);
+								}
 							}
 							return new TempFileInputStream(tempImportFile);
 						}
@@ -642,7 +634,7 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 				if (!profilefields.containsKey(mapping.getDatabaseColumn())) {
 					throw new ImportException(false, "error.import.dbColumnUnknown", mapping.getDatabaseColumn());
 				} else if (profilefields.get(mapping.getDatabaseColumn()).getModeEdit() == ProfileFieldMode.NotVisible) {
-					throw new ImportException(false, "error.import.dbColumnNotVisible", mapping.getDatabaseColumn());
+					throw new ImportException(false, "error.import.dbColumn.invisible", mapping.getDatabaseColumn());
 				} else if (profilefields.get(mapping.getDatabaseColumn()).getModeEdit() == ProfileFieldMode.ReadOnly && !importProfile.getKeyColumns().contains(mapping.getDatabaseColumn())) {
 					throw new ImportException(false, "error.import.dbColumnNotEditable", mapping.getDatabaseColumn());
 				} else if (!mappedDbColumns.add(mapping.getDatabaseColumn())) {
@@ -788,7 +780,7 @@ public class ProfileImportWorker implements Callable<ProfileImportWorker> {
 		if (temporaryErrorTableName != null) {
 			status.setErrors(importRecipientsDao.getReasonStatistics(temporaryErrorTableName));
 		} else {
-			status.setErrors(new HashMap<ImportErrorType, Integer>());
+			status.setErrors(new HashMap<>());
 		}
 		status.addError(ImportErrorType.BLACKLIST_ERROR, blacklistedEmails);
 		status.setDoubleCheck(duplicatesInCsvData);

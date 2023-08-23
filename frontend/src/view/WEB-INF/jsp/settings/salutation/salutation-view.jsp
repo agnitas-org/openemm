@@ -60,7 +60,7 @@
             <div class="form-group">
                 <div class="col-sm-4">
                     <label for="salutation-description" class="control-label">
-                        <mvc:message code="Description"/>
+                        <mvc:message code="Name"/>
                     </label>
                 </div>
                 <div class="col-sm-8">

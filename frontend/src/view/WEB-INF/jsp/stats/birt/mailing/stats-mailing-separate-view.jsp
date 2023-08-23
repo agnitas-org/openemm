@@ -42,7 +42,7 @@
     </tiles:put>
 
     <tiles:put name="content" type="string">
-            <div class="${isMailingGrid ? "tile-content-padded" : "row"}">
+            <div class="${isMailingGrid ? "tile-content-padded" : "row"}" id="main-content">
                 <div class="col-xs-12">
                     <mvc:form servletRelativeAction="/statistics/mailing/${mailingStatisticForm.mailingID}/view.action"
                               method="post" data-form="resource"
@@ -84,7 +84,7 @@
                                             <c:set var="addTargetGroupMessage" scope="page">
                                                 <mvc:message code="addTargetGroup" />
                                             </c:set>
-                                            <mvc:select path="selectedTargets" id="targetGroupSelect" cssClass="form-control js-select"  multiple="multiple" data-placeholder="${addTargetGroupMessage}">
+                                            <mvc:select path="selectedTargets" id="targetGroupSelect" cssClass="form-control js-select-tags"  multiple="multiple" data-placeholder="${addTargetGroupMessage}">
                                                 <mvc:options items="${targetlist}" itemValue="id" itemLabel="targetName"/>
                                             </mvc:select >
                                         </div>
@@ -93,7 +93,7 @@
 
                                 <div class="form-group" data-show-by-select="#statisticType" data-show-by-select-values="SUMMARY">
                                     <div class="col-sm-4">
-                                        <label class="control-label" for="showNetto">
+                                        <label class="control-label checkbox-control-label" for="showNetto">
                                             <mvc:message code="mailing.statistics.show.netto"/>
                                         </label>
                                     </div>
@@ -182,7 +182,7 @@
                                                 <i class="icon icon-caret-down"></i>
                                             </a>
                                             <ul class="dropdown-menu">
-                                                <li class="dropdown-header"><mvc:message code="statistics.exportFormats"/></li>
+                                                <li class="dropdown-header"><mvc:message code="statistics.exportFormat"/></li>
                                                 <li>
                                                     <a href="${downloadBirtUrl}" tabindex="-1" data-prevent-load="">
                                                         <i class="icon icon-file-excel-o"></i>
@@ -191,6 +191,7 @@
                                                 </li>
                                             </ul>
                                         </li>
+                                        <%@ include file="fragments/create-single-mailing-stats-report.jspf" %>
                                     </ul>
                                 </c:if>
                             </div>

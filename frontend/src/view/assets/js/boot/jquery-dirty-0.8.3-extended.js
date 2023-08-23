@@ -26,7 +26,9 @@
                 } else if (isFile) {
                     thisIsDirty = d.isFileInputDirty($el);
                 } else {
-                    thisIsDirty = d.isFieldDirty($el);
+                    if (!$el.is('.select2-input[placeholder]')) {
+                        thisIsDirty = d.isFieldDirty($el);
+                    }
                 }
 
                 $el.data(d.statuses.dataIsDirty, thisIsDirty);

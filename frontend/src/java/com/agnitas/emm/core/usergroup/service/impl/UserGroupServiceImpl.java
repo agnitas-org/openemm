@@ -131,7 +131,7 @@ public class UserGroupServiceImpl implements UserGroupService {
         List<String> addedPermissions = ListUtils.removeAll(selectedPermissions, groupPermissions);
         List<String> removedPermissions = ListUtils.removeAll(groupPermissions, selectedPermissions);
 
-        for (String permissionToken: removedPermissions) {
+        for (String permissionToken : removedPermissions) {
             Permission permission = Permission.getPermissionByToken(permissionToken);
             if (!allChangeablePermissions.contains(permissionToken) && permission != null) {
                 if (permission.getPermissionType() == PermissionType.System) {
@@ -142,6 +142,9 @@ public class UserGroupServiceImpl implements UserGroupService {
                     // This happens only for the emm-master user, who makes changes in some foreign company
                     // Just leave it unchanged
                     selectedPermissions.add(permissionToken);
+                } else if (permission.getPermissionType() == PermissionType.Migration && !admin.permissionAllowed(Permission.SHOW_MIGRATION_PERMISSIONS)) {
+                    // Just leave it unchanged
+                    selectedPermissions.add(permissionToken);
                 } else {
                     logger.error("Invalid right removal attempt for adminGroupID " + userGroupId + " by adminID " + admin.getAdminID() + ": " + permissionToken);
                     return -1;
@@ -150,11 +153,10 @@ public class UserGroupServiceImpl implements UserGroupService {
         }
 
         LinkedHashMap<String, PermissionInfo> permissionInfos = permissionService.getPermissionInfos();
-        for (String permissionToken: addedPermissions) {
+        for (String permissionToken : addedPermissions) {
             if (!allChangeablePermissions.contains(permissionToken)) {
                 Permission permission = Permission.getPermissionByToken(permissionToken);
-                String category = permissionInfos.get(permission.getTokenString()).getCategory();
-                if ((StringUtils.equals(Permission.CATEGORY_KEY_SYSTEM, category))) {
+                if (permission.getPermissionType() == PermissionType.System) {
                     // User is not allowed to change this permission of special category and may also not see it in GUI, so keep it unchanged
                     selectedPermissions.remove(permissionToken);
                 } else {
@@ -202,6 +204,8 @@ public class UserGroupServiceImpl implements UserGroupService {
             		&& (admin.permissionAllowed(permission) ||
 	                    admin.permissionAllowed(Permission.MASTER_SHOW) ||
 	                    admin.getAdminID() == ROOT_ADMIN_ID);
+        } else if (permission.getPermissionType() == PermissionType.Migration && !admin.permissionAllowed(Permission.SHOW_MIGRATION_PERMISSIONS)) {
+        	return false;
         } else {
         	return true;
         }

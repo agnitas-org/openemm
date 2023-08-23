@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
 
+import com.agnitas.emm.core.commons.dto.FileDto;
 import org.agnitas.beans.ImportStatus;
 import org.agnitas.beans.Recipient;
 import org.agnitas.service.ImportWizardHelper;
@@ -37,6 +38,7 @@ import org.agnitas.util.importvalues.ImportMode;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.struts.action.ActionMessage;
 
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.web.ComImportWizardForm;
@@ -61,6 +63,8 @@ public class ImportWizardHelperImpl implements ImportWizardHelper {
 	 * Holds value of property mailingLists.
 	 */
 	private Vector<String> mailingLists;
+    // TODO leave List<Integer> after import wizard migration successfully tested
+	private List<Integer> mailinglists = new ArrayList<>();
 
 	/**
 	 * Holds value of property usedColumns.
@@ -100,6 +104,7 @@ public class ImportWizardHelperImpl implements ImportWizardHelper {
 	/**
 	 * number of read lines
 	 */
+    //TODO check usage and remove after GWUA-5173 has been successfully tested
 	private int readlines;
 
 	/**
@@ -123,9 +128,9 @@ public class ImportWizardHelperImpl implements ImportWizardHelper {
 	private String downloadName;
 
 	/**
-	 * Holds value of property dbInsertStatusMessages.
+	 * Holds value of property dbInsertStatusMessagesAndParameters.
 	 */
-	private LinkedList<String> dbInsertStatusMessages;
+	private List<ActionMessage> dbInsertStatusMessagesAndParameters;
 
 	/**
 	 * Holds value of property resultMailingListAdded.
@@ -168,6 +173,18 @@ public class ImportWizardHelperImpl implements ImportWizardHelper {
 
 	private byte[] fileData;
 	
+    private FileDto file;
+
+    @Override
+	public FileDto getFile() {
+        return file;
+    }
+
+    @Override
+	public void setFile(FileDto file) {
+        this.file = file;
+    }
+
 	/* (non-Javadoc)
 	 * @see org.agnitas.service.impl.ImportWizardHelper#getDatasourceID()
 	 */
@@ -263,6 +280,16 @@ public class ImportWizardHelperImpl implements ImportWizardHelper {
 	public void setMailingLists(Vector<String> mailingLists) {
 		this.mailingLists = mailingLists;
 	}
+
+	@Override
+    public List<Integer> getMailinglists() {
+        return mailinglists;
+    }
+
+    @Override
+    public void setMailinglists(List<Integer> mailinglists) {
+        this.mailinglists = mailinglists;
+    }
 
 	/* (non-Javadoc)
 	 * @see org.agnitas.service.impl.ImportWizardHelper#getUsedColumns()
@@ -794,32 +821,33 @@ public class ImportWizardHelperImpl implements ImportWizardHelper {
 	public void setDownloadName(String downloadName) {
 		this.downloadName = downloadName;
 	}
-
-	/* (non-Javadoc)
-	 * @see org.agnitas.service.impl.ImportWizardHelper#getDbInsertStatusMessages()
-	 */
+	
 	@Override
-	public LinkedList<String> getDbInsertStatusMessages() {
-		return dbInsertStatusMessages;
-	}
-
-	/* (non-Javadoc)
-	 * @see org.agnitas.service.impl.ImportWizardHelper#setDbInsertStatusMessages(java.util.LinkedList)
-	 */
-	@Override
-	public void setDbInsertStatusMessages(LinkedList<String> dbInsertStatusMessages) {
-		this.dbInsertStatusMessages = dbInsertStatusMessages;
-	}
-
-	/* (non-Javadoc)
-	 * @see org.agnitas.service.impl.ImportWizardHelper#addDbInsertStatusMessage(java.lang.String)
-	 */
-	@Override
-	public void addDbInsertStatusMessage(String message) {
-		if (dbInsertStatusMessages == null) {
-			dbInsertStatusMessages = new LinkedList<>();
+	public void clearDbInsertStatusMessagesAndParameters() {
+		if (dbInsertStatusMessagesAndParameters == null) {
+			dbInsertStatusMessagesAndParameters = new LinkedList<>();
 		}
-		dbInsertStatusMessages.add(message);
+		dbInsertStatusMessagesAndParameters.clear();
+	}
+
+	/* (non-Javadoc)
+	 * @see org.agnitas.service.impl.ImportWizardHelper#getDbInsertStatusMessagesAndParameters()
+	 */
+	@Override
+	public List<ActionMessage> getDbInsertStatusMessagesAndParameters() {
+		// Avoid concurrent modification problems while import is still running
+		return new LinkedList<>(dbInsertStatusMessagesAndParameters);
+	}
+
+	/* (non-Javadoc)
+	 * @see org.agnitas.service.impl.ImportWizardHelper#addDbInsertStatusMessageAndParameters(java.lang.String)
+	 */
+	@Override
+	public void addDbInsertStatusMessageAndParameters(String messageKey, Object... additionalParameters) {
+		if (dbInsertStatusMessagesAndParameters == null) {
+			dbInsertStatusMessagesAndParameters = new LinkedList<>();
+		}
+		dbInsertStatusMessagesAndParameters.add(new ActionMessage(messageKey, additionalParameters));
 	}
 
 	/* (non-Javadoc)
@@ -979,6 +1007,7 @@ public class ImportWizardHelperImpl implements ImportWizardHelper {
 	 /* (non-Javadoc)
 	 * @see org.agnitas.service.impl.ImportWizardHelper#getLinesOKFromFile()
 	 */
+    //TODO remove after GWUA-5173 has been successfully tested
 	@Override
 	public int getLinesOKFromFile() throws Exception {
 		if (logger.isDebugEnabled()) {

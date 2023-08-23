@@ -13,13 +13,16 @@ package com.agnitas.beans;
 import java.util.Date;
 
 import org.agnitas.beans.LightProfileField;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.DbColumnType.SimpleDataType;
 
+/**
+ * @deprecated Use RecipientFieldDescription instead
+ */
+@Deprecated
 public interface ProfileField extends LightProfileField {
 	int getCompanyID();
 
-	void setCompanyID( @VelocityCheck int company);
+	void setCompanyID( int company);
 
 	int getAdminID();
 
@@ -52,10 +55,6 @@ public interface ProfileField extends LightProfileField {
 	ProfileFieldMode getModeEdit();
 
 	void setModeEdit(ProfileFieldMode edit);
-
-	int getModeInsert();
-
-	void setModeInsert(int insert);
 	
 	SimpleDataType getSimpleDataType();
 

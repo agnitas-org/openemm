@@ -88,4 +88,8 @@ public class CompanyInfoDao extends BaseDaoImpl {
 	public String getDescription(String name, int companyID) {
 		return selectWithDefaultValue(logger, "SELECT description FROM company_info_tbl WHERE company_id = ? AND cname = ?", String.class, null, companyID, name);
 	}
+	
+	public String getValue(String name, int companyID) {
+		return selectWithDefaultValue(logger, "SELECT cvalue FROM company_info_tbl WHERE company_id = ? AND cname = ?", String.class, null, companyID, name);
+	}
 }

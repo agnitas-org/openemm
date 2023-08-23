@@ -10,16 +10,15 @@
 
 package org.agnitas.web;
 
-import java.io.File;
-import java.text.DecimalFormat;
-import java.text.SimpleDateFormat;
-import java.util.HashSet;
-import java.util.Locale;
-import java.util.Objects;
-import java.util.Set;
-import java.util.TimeZone;
-import java.util.stream.Collectors;
-
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.Company;
+import com.agnitas.dao.ComCompanyDao;
+import com.agnitas.dao.ComTargetDao;
+import com.agnitas.emm.core.JavaMailService;
+import com.agnitas.emm.core.admin.service.AdminService;
+import com.agnitas.emm.core.mailinglist.service.MailinglistService;
+import com.agnitas.emm.core.recipientsreport.service.RecipientsReportService;
+import com.agnitas.messages.I18nString;
 import com.agnitas.reporting.birt.external.dataset.CommonKeys;
 import org.agnitas.beans.ExportColumnMapping;
 import org.agnitas.emm.core.autoexport.bean.AutoExport;
@@ -31,74 +30,40 @@ import org.agnitas.util.DateUtilities;
 import org.agnitas.util.importvalues.Separator;
 import org.agnitas.util.importvalues.TextRecognitionChar;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.beans.Company;
-import com.agnitas.dao.ComCompanyDao;
-import com.agnitas.dao.ComTargetDao;
-import com.agnitas.emm.core.JavaMailService;
-import com.agnitas.emm.core.admin.service.AdminService;
-import com.agnitas.emm.core.mailinglist.service.MailinglistService;
-import com.agnitas.emm.core.recipientsreport.service.RecipientsReportService;
-import com.agnitas.messages.I18nString;
+import java.io.File;
+import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
+import java.util.HashSet;
+import java.util.Locale;
+import java.util.Set;
+import java.util.TimeZone;
+import java.util.stream.Collectors;
 
 public class RecipientExportReporter {
 	
-	private RecipientsReportService recipientsReportService;
-	
-	private JavaMailService javaMailService;
-	
-	private ComCompanyDao companyDao;
-	
-	private AdminService adminService;
-	
-	private ConfigService configService;
-	
-	private MailinglistService mailinglistService;
-	
-	private ComTargetDao targetDao;
+	private final RecipientsReportService recipientsReportService;
+	private final JavaMailService javaMailService;
+	private final ComCompanyDao companyDao;
+	private final AdminService adminService;
+	private final ConfigService configService;
+	private final MailinglistService mailinglistService;
+	private final ComTargetDao targetDao;
 
-	@Required
-	public void setRecipientsReportService(RecipientsReportService recipientsReportService) {
+	public RecipientExportReporter(RecipientsReportService recipientsReportService, JavaMailService javaMailService, ComCompanyDao companyDao, AdminService adminService,
+								   ConfigService configService, MailinglistService mailinglistService, ComTargetDao targetDao) {
+
 		this.recipientsReportService = recipientsReportService;
-	}
-
-	@Required
-	public void setJavaMailService(JavaMailService javaMailService) {
 		this.javaMailService = javaMailService;
-	}
-
-	@Required
-	public void setCompanyDao(ComCompanyDao companyDao) {
 		this.companyDao = companyDao;
-	}
-	
-	@Required
-	public void setAdminService(final AdminService service) {
-		this.adminService = Objects.requireNonNull(service, "Admin service is null");
-	}
-
-	@Required
-	public void setConfigService(ConfigService configService) {
+		this.adminService = adminService;
 		this.configService = configService;
-	}
-
-	@Required
-	public void setMailinglistService(MailinglistService mailinglistService) {
 		this.mailinglistService = mailinglistService;
-	}
-
-	@Required
-	public void setTargetDao(ComTargetDao targetDao) {
 		this.targetDao = targetDao;
 	}
-	
+
 	/**
 	 * Send a report email about this export to the executing GUI-admin or the creator of the autoexport
-	 * 
-	 * @param exportWorker
-	 * @throws Exception
 	 */
 	public void sendExportReportMail(RecipientExportWorker exportWorker) throws Exception {
 		Set<String> emailRecipients = new HashSet<>();
@@ -133,6 +98,11 @@ public class RecipientExportReporter {
 
 		if (!emailRecipients.isEmpty()) {
 			Locale locale = exportWorker.getExportProfile().getLocale();
+
+			if (exportWorker.getAutoExport() != null) {
+				locale = exportWorker.getAutoExport().getLocale();
+			}
+
 			Company company = companyDao.getCompany(companyID);
 			
 			String subject;
@@ -256,12 +226,15 @@ public class RecipientExportReporter {
 		return reportContent;
 	}
 
-	private String generateLocalizedExportHtmlReport(RecipientExportWorker exportWorker) throws Exception {
-		Locale locale = exportWorker.getExportProfile().getLocale();
+	private String generateLocalizedExportHtmlReport(RecipientExportWorker exportWorker) {
+		Locale locale;
 		String title;
+
 		if (exportWorker.getAutoExport() != null) {
+			locale = exportWorker.getAutoExport().getLocale();
 			title = "AutoExport: " + exportWorker.getAutoExport().getShortname() + " (ID: " + exportWorker.getAutoExport().getAutoExportId() + ")";
 		} else {
+			locale = exportWorker.getExportProfile().getLocale();
 			title = "Export: " + exportWorker.getExportProfile().getShortname();
 		}
 		
@@ -444,6 +417,11 @@ public class RecipientExportReporter {
 
 		if (!emailRecipients.isEmpty()) {
 			Locale locale = exportWorker.getExportProfile().getLocale();
+
+			if (exportWorker.getAutoExport() != null) {
+				locale = exportWorker.getAutoExport().getLocale();
+			}
+
 			Company company = companyDao.getCompany(companyID);
 			
 			String subject;

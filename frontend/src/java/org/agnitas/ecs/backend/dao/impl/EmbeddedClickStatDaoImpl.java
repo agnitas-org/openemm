@@ -22,7 +22,7 @@ import org.agnitas.ecs.backend.beans.ClickStatInfo;
 import org.agnitas.ecs.backend.beans.impl.ClickStatColorImpl;
 import org.agnitas.ecs.backend.beans.impl.ClickStatInfoImpl;
 import org.agnitas.ecs.backend.dao.EmbeddedClickStatDao;
-import org.agnitas.emm.core.velocity.VelocityCheck;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.jdbc.core.RowMapper;
@@ -39,13 +39,13 @@ public class EmbeddedClickStatDaoImpl extends BaseDaoImpl implements EmbeddedCli
 	private static final transient Logger logger = LogManager.getLogger(EmbeddedClickStatDaoImpl.class);
 	
 	@Override
-	public List<ClickStatColor> getClickStatColors(@VelocityCheck int companyId) {
+	public List<ClickStatColor> getClickStatColors(int companyId) {
 		String sqlStatement = "SELECT * FROM click_stat_colors_tbl WHERE company_id = ? ORDER BY range_end";
         return select(logger, sqlStatement, new ClickStatColor_RowMapper(), companyId);
 	}
 
 	@Override
-	public ClickStatInfo getClickStatInfo(@VelocityCheck int companyId, int mailingId, int mode, int deviceClass) throws Exception {
+	public ClickStatInfo getClickStatInfo(int companyId, int mailingId, int mode, int deviceClass) throws Exception {
         try {
 			String sqlClicksPerMail;
 			String sqlClicksPerLink;

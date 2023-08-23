@@ -17,6 +17,10 @@ import com.agnitas.dao.impl.ComCompanyDaoImpl;
 import com.agnitas.emm.core.report.enums.DatabaseField;
 import com.agnitas.emm.core.report.enums.DatabaseFieldUtils;
 
+/**
+ * @deprecated Use RecipientFieldServiceImpl.RecipientStandardField instead
+ */
+@Deprecated
 public enum RecipientFields implements DatabaseField<String, RecipientFields> {
 
     /**

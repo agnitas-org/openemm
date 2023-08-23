@@ -40,6 +40,7 @@ public class MaildropStatusDAO {
 	private long		adminTestTargetID;
 	private String		optimizeMailGeneration;
 	private boolean		selectedTestRecipients;
+	private long		overwriteTestRecipient;
 	private boolean		dependsOnAutoImportID;
 	private boolean		autoImportOK;
 	private Date		realSendDate;
@@ -50,9 +51,12 @@ public class MaildropStatusDAO {
 	
 		try (DBase.With with = dbase.with ()) {
 			row = dbase.querys (with.cursor (),
+					    /*
 					    "SELECT status_id, company_id, mailing_id, status_field, senddate, " +
 					    "       step, blocksize, genstatus, max_recipients, " +
-					    "       admin_test_target_id, optimize_mail_generation, selected_test_recipients " +
+					    "       admin_test_target_id, optimize_mail_generation, selected_test_recipients, overwrite_test_recipient " +
+					     */
+					    "SELECT * " +
 					    "FROM maildrop_status_tbl " +
 					    "WHERE status_id = :statusID",
 					    "statusID", forStatusID);
@@ -72,6 +76,7 @@ public class MaildropStatusDAO {
 				adminTestTargetID = dbase.asLong (row.get ("admin_test_target_id"));
 				optimizeMailGeneration = dbase.asString (row.get ("optimize_mail_generation"));
 				selectedTestRecipients = dbase.asInt (row.get ("selected_test_recipients")) == 1;
+				overwriteTestRecipient = dbase.asLong (row.get ("overwrite_test_recipient"));
 				rq = dbase.query (with.cursor (),
 						  "SELECT auto_import_id, status_ok " +
 						  "FROM mailing_import_lock_tbl " +
@@ -93,7 +98,9 @@ public class MaildropStatusDAO {
 					mailingID = mailing.mailingID ();
 				}
 			}
-			determinateRealSendDate (dbase);
+			if (mailingID > 0) {
+				determinateRealSendDate (dbase);
+			}
 		}
 	}
 	public MaildropStatusDAO (DBase dbase, long forStatusID) throws SQLException {
@@ -135,6 +142,9 @@ public class MaildropStatusDAO {
 	}
 	public boolean selectedTestRecipients () {
 		return selectedTestRecipients;
+	}
+	public long overwriteTestRecipient () {
+		return overwriteTestRecipient;
 	}
 	public boolean dependsOnAutoImportID () {
 		return dependsOnAutoImportID;

@@ -60,6 +60,11 @@
     this.api('val', this.getFirstValue());
   };
 
+  Select.prototype.hasOption = function (value) {
+    const values = this.values();
+    return values.indexOf(value) !== -1;
+  }
+
   Select.prototype.selectValueOrSelectFirst = function(values) {
     var allValuesFound  = false,
         valuesAvailable = this.values();

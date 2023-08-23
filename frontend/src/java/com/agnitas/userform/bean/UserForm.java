@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.agnitas.actions.EmmAction;
-import org.agnitas.emm.core.velocity.VelocityCheck;
+
 import org.springframework.context.ApplicationContext;
 
 import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
@@ -109,7 +109,7 @@ public interface UserForm {
 	 * @param companyID
 	 *            New value of property companyID.
 	 */
-	void setCompanyID( @VelocityCheck int companyID);
+	void setCompanyID( int companyID);
 
 	/**
 	 * Setter for property description.

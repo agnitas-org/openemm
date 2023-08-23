@@ -134,7 +134,8 @@ public class AutoExport {
 	private int retryCount;
 	private int maximumRetries = 1;
 	private List<Integer> hoursAfterDelivery = null;
-	
+	private boolean exportLinkDescription;
+
 	private Date currentStart = null;
 
 	// For AutoExportType.Reactions only.
@@ -481,4 +482,17 @@ public class AutoExport {
 	public Locale getLocale() {
 		return locale;
 	}
+	
+	public boolean isExportLinkDescription() {
+		return exportLinkDescription;
+	}
+
+	public void setExportLinkDescription(boolean exportLinkDescription) {
+		this.exportLinkDescription = exportLinkDescription;
+	}
+
+    @Override
+    public String toString() {
+        return shortname + " (ID: " + autoExportId + ")";
+    }
 }

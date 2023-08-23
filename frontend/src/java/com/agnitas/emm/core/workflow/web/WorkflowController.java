@@ -252,6 +252,7 @@ public class WorkflowController implements XssCheckAware {
 
         prepareViewPage(admin, model);
         model.addAllAttributes(AgnUtils.getParamsMap(forwardParams));
+        model.addAttribute("statisticUrl", workflowStatisticsService.getReportUrl(id, admin));
 
         return "workflow_view";
     }
@@ -414,6 +415,7 @@ public class WorkflowController implements XssCheckAware {
                        @RequestParam(value = "forwardName", required = false) String forwardName,
                        @RequestParam(value = "forwardParams", required = false) String forwardParams,
                        @RequestParam(value = "forwardTargetItemId", required = false) String forwardTargetItemId,
+                       @RequestParam(value = "showStatistic", required = false) boolean showStatistic,
                        RedirectAttributes redirectModel,
                        HttpSession session,
                        Popups popups) throws Exception {
@@ -450,9 +452,9 @@ public class WorkflowController implements XssCheckAware {
             }
             
             errors.addAll(validateWorkflow(admin, icons, newWorkflow.getWorkflowId(), newStatus));
-            checkAndSetDuplicateMailing(admin, redirectModel, icons, isActiveOrTesting);
+            boolean hasDuplicatedMailings = checkAndSetDuplicateMailing(admin, redirectModel, icons, isActiveOrTesting);
 
-            boolean isValid = errors.isEmpty() && !redirectModel.containsAttribute("affectedMailings");
+            boolean isValid = errors.isEmpty() && !hasDuplicatedMailings;
             setStatus(admin, newWorkflow, existingWorkflow, errors, warnings, isValid);
             
             if (errors.isEmpty()) {
@@ -488,6 +490,14 @@ public class WorkflowController implements XssCheckAware {
 
         warnings.forEach(popups::warning);
         updateForwardParameters(session, forwardTargetItemId, workflowForm.getWorkflowId(), forwardParams);
+
+        if (showStatistic) {
+            if (workflowService.existsAtLeastOneFilledMailingIcon(getIcons(workflowForm))) {
+                redirectModel.addFlashAttribute("showStatisticsImmediately", true);
+            } else {
+                popups.alert("error.workflow.noStatistics.title");
+            }
+        }
 
         return String.format("redirect:/workflow/%d/view.action", workflowForm.getWorkflowId());
     }
@@ -643,26 +653,14 @@ public class WorkflowController implements XssCheckAware {
     }
 
     @PostMapping("/getSampleWorkflowContent.action")
-    public ResponseEntity<List<WorkflowIcon>> getSampleWorkflowContent(@RequestParam String type) {
-        List<WorkflowIcon> icons = ComSampleWorkflowFactory.createSampleWorkflow(type);
+    public ResponseEntity<List<WorkflowIcon>> getSampleWorkflowContent(@RequestParam String type, @RequestParam boolean gridEnabled) {
+        List<WorkflowIcon> icons = ComSampleWorkflowFactory.createSampleWorkflow(type, gridEnabled);
 
         if (icons == null) {
             return ResponseEntity.badRequest().build();
         }
 
         return ResponseEntity.ok(icons);
-    }
-
-    @PostMapping("/loadStatistics.action")
-    public ResponseEntity<Map<Integer, List<String>>> loadStatistics(Admin admin, @RequestParam int workflowId) {
-        try {
-            Map<Integer, List<String>> stats = workflowStatisticsService.getWorkflowStats(workflowId, admin.getCompanyID(), admin.getLocale());
-            return ResponseEntity.ok(stats);
-        } catch (Exception e) {
-            logger.error("Could not load workflow statistic", e);
-        }
-
-        return ResponseEntity.badRequest().build();
     }
 
     @PostMapping("/getMailingContent.action")
@@ -726,11 +724,9 @@ public class WorkflowController implements XssCheckAware {
 
     @GetMapping("/viewOnlyElements.action")
     public String viewOnlyElements(@ModelAttribute("workflowForm") WorkflowForm form, Admin admin, Model model,
-                                   @RequestParam("showStatistics") String showStatistics,
                                    @RequestParam(value = "isWkhtmltopdfUsage", required = false) boolean isWkhtmltopdfUsage, Popups popups) throws Exception {
 
         prepareViewPage(admin, model);
-        model.addAttribute("showStatistics", showStatistics);
         model.addAttribute("isWkhtmltopdfUsage", isWkhtmltopdfUsage);
 
         loadWorkflow(form, admin, popups);
@@ -741,11 +737,10 @@ public class WorkflowController implements XssCheckAware {
 
 
     @GetMapping("/{workflowId:\\d+}/generatePDF.action")
-    public ResponseEntity<byte[]> generatePDF(Admin admin, @PathVariable int workflowId,
-                                              @RequestParam("showStatistics") String showStatistics) throws Exception {
+    public ResponseEntity<byte[]> generatePDF(Admin admin, @PathVariable int workflowId) throws Exception {
         String jsessionid = RequestContextHolder.getRequestAttributes().getSessionId();
         String hostUrl = configService.getValue(ConfigValue.SystemUrl);
-        String url = hostUrl + "/workflow/viewOnlyElements.action;jsessionid=" + jsessionid + "?workflowId=" + workflowId + "&showStatistics=" + showStatistics + "&isWkhtmltopdfUsage=true";
+        String url = hostUrl + "/workflow/viewOnlyElements.action;jsessionid=" + jsessionid + "?workflowId=" + workflowId + "&isWkhtmltopdfUsage=true";
 
         String workflowName = workflowService.getWorkflow(workflowId, admin.getCompanyID()).getShortname();
         File pdfFile = generationPDFService.generatePDF(configService.getValue(ConfigValue.WkhtmlToPdfToolPath), url, HttpUtils.escapeFileName(workflowName), admin, "wmLoadFinished", "Landscape", "workflow.single", WORKFLOW_CUSTOM_CSS_STYLE);
@@ -891,23 +886,28 @@ public class WorkflowController implements XssCheckAware {
                 return "/mailing/archive/create.action";
             
             case FORWARD_MAILING_CREATE:
-                return "/mwStart.do?action=init";
+                return "/mailing/create.action";
+
             case FORWARD_MAILING_EDIT:
-                return admin.permissionAllowed(Permission.MAILING_SETTINGS_MIGRATION)
-                        ? "/mailing/" + forwardTargetItemId + "/settings.action"
-                        : "/mailingbase.do?action=2&isTemplate=false";
+                return "/mailing/" + forwardTargetItemId + "/settings.action";
             case FORWARD_MAILING_COPY:
-                return admin.permissionAllowed(Permission.MAILING_SETTINGS_MIGRATION)
-                        ? "/mailing/" + forwardTargetItemId + "/copy.action"
-                        : "/mailingbase.do?action=10";
+                return "/mailing/" + forwardTargetItemId + "/copy.action";
             case FORWARD_AUTOIMPORT_CREATE:
-                return "/autoimport.do?method=create";
+                return admin.permissionAllowed(Permission.AUTO_IMPORT_ROLLBACK)
+                        ? "/autoimport.do?method=create"
+                        : "/auto-import/create.action";
             case FORWARD_AUTOIMPORT_EDIT:
-                return "/autoimport.do?method=view";
+                return admin.permissionAllowed(Permission.AUTO_IMPORT_ROLLBACK)
+                        ? "/autoimport.do?method=view"
+                        : "/auto-import/" + forwardTargetItemId + "/view.action";
             case FORWARD_AUTOEXPORT_CREATE:
-                return "/autoexport.do?method=create";
+                return admin.permissionAllowed(Permission.AUTO_EXPORT_ROLLBACK)
+                        ? "/autoexport.do?method=create"
+                        : "/auto-export/create.action";
             case FORWARD_AUTOEXPORT_EDIT:
-                return "/autoexport.do?method=view";
+                return admin.permissionAllowed(Permission.AUTO_EXPORT_ROLLBACK)
+                        ? "/autoexport.do?method=view"
+                        : "/auto-export/" + forwardTargetItemId + "/view.action";
                 default:
                     return "";
         }
@@ -1305,8 +1305,8 @@ public class WorkflowController implements XssCheckAware {
         if (!validationService.parametersSumNotHigher100(icons)) {
             messages.add(Message.of("error.workflow.ParametersSumNotHigher100"));
         }
-        if (!validationService.noParallelCampaigns(icons)) {
-            messages.add(Message.of("error.workflow.NoParallelCampaigns"));
+        if (validationService.moreThanOneStartPresented(icons)) {
+            messages.add(Message.of("GWUA.error.workflow.moreThenOneStart"));
         }
         if (!validationService.noMailingsBeforeRecipient(icons)) {
             messages.add(Message.of("error.workflow.NoMailingsBeforeRecipient"));
@@ -1364,12 +1364,9 @@ public class WorkflowController implements XssCheckAware {
             return messages;
         }
 
-        if (!validationService.validateAutoOptimizationStructure(icons)) {
-            messages.add(Message.of("error.workflow.connection.notAllowed"));
-        }
-
         validateInvalidTargetGroups(companyId, icons, messages);
 
+        messages.addAll(validationService.validateAutoOptimization(icons));
         messages.addAll(validationService.validateStartTrigger(icons, companyId));
         messages.addAll(validateMailingTrackingUsage(icons, companyId, mailingTrackingDataExpirationPeriod));
         messages.addAll(validateReferencedProfileFields(icons, companyId));
@@ -1406,20 +1403,25 @@ public class WorkflowController implements XssCheckAware {
         return messages;
     }
 
-    private void checkAndSetDuplicateMailing(Admin admin, Model model, List<WorkflowIcon> icons, boolean isActiveOrTesting) {
+    private boolean checkAndSetDuplicateMailing(Admin admin, Model model, List<WorkflowIcon> icons, boolean isActiveOrTesting) {
         List<Mailing> duplicatedMailings = mailingService.getDuplicateMailing(icons, admin.getCompanyID());
-        if (!duplicatedMailings.isEmpty()) {
-            if (model instanceof RedirectAttributes) {
-                RedirectAttributes attributes = (RedirectAttributes) model;
-                attributes.addFlashAttribute("affectedMailingsMessageType", isActiveOrTesting ? GuiConstants.MESSAGE_TYPE_ALERT : GuiConstants.MESSAGE_TYPE_WARNING_PERMANENT);
-                attributes.addFlashAttribute("affectedMailingsMessageKey", "error.workflow.mailingIsUsingInSeveralIcons");
-                attributes.addFlashAttribute("affectedMailings", duplicatedMailings);
-            } else {
-                model.addAttribute("affectedMailingsMessageType", isActiveOrTesting ? GuiConstants.MESSAGE_TYPE_ALERT : GuiConstants.MESSAGE_TYPE_WARNING_PERMANENT);
-                model.addAttribute("affectedMailingsMessageKey", "error.workflow.mailingIsUsingInSeveralIcons");
-                model.addAttribute("affectedMailings", duplicatedMailings);
-            }
+
+        if (duplicatedMailings.isEmpty()) {
+            return false;
         }
+
+        if (model instanceof RedirectAttributes) {
+            RedirectAttributes attributes = (RedirectAttributes) model;
+            attributes.addFlashAttribute("affectedMailingsMessageType", isActiveOrTesting ? GuiConstants.MESSAGE_TYPE_ALERT : GuiConstants.MESSAGE_TYPE_WARNING_PERMANENT);
+            attributes.addFlashAttribute("affectedMailingsMessageKey", "error.workflow.mailingIsUsingInSeveralIcons");
+            attributes.addFlashAttribute("affectedMailings", duplicatedMailings);
+        } else {
+            model.addAttribute("affectedMailingsMessageType", isActiveOrTesting ? GuiConstants.MESSAGE_TYPE_ALERT : GuiConstants.MESSAGE_TYPE_WARNING_PERMANENT);
+            model.addAttribute("affectedMailingsMessageKey", "error.workflow.mailingIsUsingInSeveralIcons");
+            model.addAttribute("affectedMailings", duplicatedMailings);
+        }
+
+        return true;
     }
 
     private List<Message> validateMailingTrackingUsage(List<WorkflowIcon> icons, int companyId, int trackingDays) throws Exception {

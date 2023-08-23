@@ -10,7 +10,6 @@
 
 package org.agnitas.beans;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public interface DynamicTagContent extends Cloneable {
 /**
@@ -60,7 +59,7 @@ public interface DynamicTagContent extends Cloneable {
      * 
      * @param id New value of property companyID.
      */
-    void setCompanyID( @VelocityCheck int id);
+    void setCompanyID( int id);
 
     /**
      * Setter for property dynContent.

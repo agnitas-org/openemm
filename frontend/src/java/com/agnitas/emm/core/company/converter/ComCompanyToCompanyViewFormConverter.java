@@ -12,6 +12,7 @@ package com.agnitas.emm.core.company.converter;
 
 import java.util.Optional;
 
+import com.agnitas.emm.core.components.entity.TestRunOption;
 import org.agnitas.emm.core.commons.password.policy.PasswordPolicies;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
@@ -53,6 +54,7 @@ public class ComCompanyToCompanyViewFormConverter implements Converter<Company, 
 
     private CompanySettingsDto convertSettings(Company comCompany) {
         CompanySettingsDto settingsDto = new CompanySettingsDto();
+        settingsDto.setListHelpUrl(comCompany.getListHelpUrl());
         settingsDto.setHasMailTracking(BooleanUtils.toBoolean(comCompany.getMailtracking()));
         settingsDto.setStatisticsExpireDays(configService.getIntegerValue(ConfigValue.ExpireStatistics, comCompany.getId()));
         settingsDto.setRecipientExpireDays(configService.getIntegerValue(ConfigValue.ExpireRecipient, comCompany.getId()));
@@ -110,6 +112,7 @@ public class ComCompanyToCompanyViewFormConverter implements Converter<Company, 
 
         settingsDto.setTrackingVetoAllowTransactionTracking(configService.getBooleanValue(ConfigValue.TrackingVetoAllowTransactionTracking, comCompany.getId()));
         settingsDto.setDeleteSuccessfullyImportedFiles(configService.getBooleanValue(ConfigValue.DeleteSuccessfullyImportedFiles, comCompany.getId()));
+        settingsDto.setEnableAltgExtended(configService.isExtendedAltgEnabled(comCompany.getId()));
         settingsDto.setImportAlwaysInformEmail(configService.getValue(ConfigValue.ImportAlwaysInformEmail, comCompany.getId()));
         settingsDto.setNormalizeEmails(!configService.getBooleanValue(ConfigValue.AllowUnnormalizedEmails, comCompany.getId()));
         settingsDto.setExportAlwaysInformEmail(configService.getValue(ConfigValue.ExportAlwaysInformEmail, comCompany.getId()));
@@ -125,7 +128,10 @@ public class ComCompanyToCompanyViewFormConverter implements Converter<Company, 
         settingsDto.setExpireUpload(configService.getIntegerValue(ConfigValue.ExpireUpload, comCompany.getId()));
         settingsDto.setWriteCustomerOpenOrClickField(configService.getBooleanValue(ConfigValue.WriteCustomerOpenOrClickField, comCompany.getId()));
         settingsDto.setDefaultCompanyLinkTrackingMode(configService.getIntegerValue(ConfigValue.TrackableLinkDefaultTracking, comCompany.getId()));
-        
+        settingsDto.setDefaultBlockSize(configService.getIntegerValue(ConfigValue.DefaultBlocksizeValue, comCompany.getId()));
+        settingsDto.setDefaultTestRunOption(TestRunOption.fromId(configService.getIntegerValue(ConfigValue.DefaultTestRunOption, comCompany.getId())));
+        settingsDto.setUserBasedFavoriteTargets(configService.isUserBasedFavoriteTargets(comCompany.getId()));
+
         return settingsDto;
     }
 

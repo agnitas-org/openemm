@@ -42,6 +42,7 @@ public class CompanyImpl implements Company {
 	private int business;
 	private int parentCompanyId;
 	private String contactTech;
+	private String listHelpUrl;
 
 	@Override
 	public int getId() {
@@ -296,5 +297,15 @@ public class CompanyImpl implements Company {
 	@Override
 	public void setContactTech(String contactTech) {
 		this.contactTech = contactTech;
+	}
+	
+	@Override
+	public String getListHelpUrl() {
+		return listHelpUrl;
+	}
+
+	@Override
+	public void setListHelpUrl(String listHelpUrl) {
+		this.listHelpUrl = listHelpUrl;
 	}
 }

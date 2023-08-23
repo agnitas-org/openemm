@@ -79,7 +79,7 @@ public class JavaMailServiceImpl implements JavaMailService {
 			try {
 				return sendEmail(dkimCompanyID, toAddress, subjectText, message, null);
 			} catch (Exception me) {
-				logger.error("Error sending VelocityExceptionMail with exception: " + e.getMessage() + "\nEmailmessage:\n" + subjectText + "\n" + message, e);
+				logger.error("Error sending VelocityExceptionMail with exception: " + e.getMessage() + "\nEmailmessage:\n" + subjectText + "\n" + message, me);
 				return false;
 			}
 		} else {
@@ -122,7 +122,7 @@ public class JavaMailServiceImpl implements JavaMailService {
 					
 					return result;
 				} catch (Exception me) {
-					logger.error("Error sending email with exception: " + e.getMessage() + "\nEmailmessage:\n" + subjectText + "\n" + messageBuilder.toString(), e);
+					logger.error("Error sending email with exception: " + e.getMessage() + "\nEmailmessage:\n" + subjectText + "\n" + messageBuilder.toString(), me);
 					return false;
 				}
 			} else {
@@ -130,6 +130,42 @@ public class JavaMailServiceImpl implements JavaMailService {
 			}
 		} else {
 			logger.error("Error sending email with exception (ConfigService not initialized): " + e.getMessage(), e);
+			return false;
+		}
+	}
+	@Override
+	public boolean sendLicenseErrorMail(String errorText) {
+		String toAddress = configService.getValue(ConfigValue.Mailaddress_Error);
+		if (toAddress != null) {
+			if (StringUtils.isNotBlank(toAddress)) {
+				StringBuilder messageBuilder = new StringBuilder();
+				if (errorText != null) {
+					messageBuilder.append(errorText).append("\n");
+				}
+
+				String subjectText = "EMM License Error (Server: " + AgnUtils.getHostName() + ")";
+		
+				if (logger.isInfoEnabled()) {
+					logger.info("License error message: \n" + messageBuilder.toString());
+				}
+	
+				try {
+					final boolean result = sendEmail(0, toAddress, subjectText, messageBuilder.toString(), null);
+					
+					if (!result) {
+						logger.error("Could not send license error mail - unreported error is: " + errorText);
+					}
+					
+					return result;
+				} catch (Exception me) {
+					logger.error("Error sending email with license error: \nEmailmessage:\n" + subjectText + "\n" + messageBuilder.toString(), me);
+					return false;
+				}
+			} else {
+				return true;
+			}
+		} else {
+			logger.error("Error sending email with license error (ConfigService not initialized): " + errorText);
 			return false;
 		}
 	}
@@ -335,11 +371,13 @@ public class JavaMailServiceImpl implements JavaMailService {
 			}
 			
 			try (final Transport transport = session.getTransport("smtp")) {
-				DkimKeyEntry dkimKeyEntry = dkimDao.getDkimKeyForDomain(dkimCompanyID, AgnUtils.getDomainFromEmail(fromAddress), true);
-				if (dkimKeyEntry != null) {
-					mimeMessage.setDkimKeyData(dkimKeyEntry.getDomain(), dkimKeyEntry.getSelector(), CryptographicUtilities.getPrivateRsaKeyPairFromString(dkimKeyEntry.getDomainKey()), fromAddress);
-					mimeMessage.setCanonicalization(true, false);
-					mimeMessage.setExcludedHeaders("Return-Path", "Received", "Comments", "Keywords", "Bcc", "Resent-Bcc");
+				if (dkimDao != null) {
+					DkimKeyEntry dkimKeyEntry = dkimDao.getDkimKeyForDomain(dkimCompanyID, AgnUtils.getDomainFromEmail(fromAddress), true);
+					if (dkimKeyEntry != null) {
+						mimeMessage.setDkimKeyData(dkimKeyEntry.getDomain(), dkimKeyEntry.getSelector(), CryptographicUtilities.getPrivateRsaKeyPairFromString(dkimKeyEntry.getDomainKey()), fromAddress);
+						mimeMessage.setCanonicalization(true, false);
+						mimeMessage.setExcludedHeaders("Return-Path", "Received", "Comments", "Keywords", "Bcc", "Resent-Bcc");
+					}
 				}
 				
 				transport.connect();

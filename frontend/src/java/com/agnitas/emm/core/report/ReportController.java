@@ -37,7 +37,6 @@ import com.agnitas.emm.core.report.services.RecipientReportService;
 import com.agnitas.messages.I18nString;
 import com.agnitas.web.mvc.XssCheckAware;
 import com.agnitas.web.perm.annotations.PermissionMapping;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -84,7 +83,7 @@ public class ReportController implements XssCheckAware {
 
     @PermissionMapping("recipients")
     @GetMapping(value = "/recipients.action")
-    public ResponseEntity<Resource> getRecipientReport(@RequestParam("id") @VelocityCheck int recipientId, Admin admin) {
+    public ResponseEntity<Resource> getRecipientReport(@RequestParam("id") int recipientId, Admin admin) {
 
         Locale locale = admin.getLocale();
         int companyId = admin.getCompanyID();

@@ -25,6 +25,7 @@ import org.agnitas.emm.core.commons.uid.parser.exception.InvalidUIDException;
 import org.agnitas.emm.core.commons.uid.parser.exception.UIDParseException;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.recipient.service.RecipientService;
+import org.agnitas.emm.core.velocity.Constants;
 import org.agnitas.exceptions.FormNotFoundException;
 import org.agnitas.util.AgnUtils;
 import org.apache.commons.collections4.CollectionUtils;
@@ -113,7 +114,7 @@ public final class UserFormExecutionServiceImpl implements UserFormExecutionServ
 
 	private EmmActionOperationErrors populateEmmActionErrorsAsVelocityParameters(CaseInsensitiveMap<String, Object> params) {
 		final EmmActionOperationErrors actionOperationErrors = new EmmActionOperationErrors();
-		params.put("actionErrors", actionOperationErrors);
+		params.put(Constants.ACTION_OPERATION_ERRORS_CONTEXT_NAME, actionOperationErrors);
 		
 		return actionOperationErrors;
 	}

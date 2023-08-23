@@ -1,7 +1,4 @@
 <%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
-
-<%@ page import="com.agnitas.web.MailingBaseAction" %>
-
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
@@ -11,45 +8,19 @@
 <%--@elvariable id="limitedRecipientOverview" type="java.lang.Boolean"--%>
 <%--@elvariable id="isMailingUndoAvailable" type="java.lang.Boolean"--%>
 
-<c:set var="BASE_ACTION_LIST" value="<%= MailingBaseAction.ACTION_LIST %>"/>
-<c:set var="BASE_ACTION_VIEW" value="<%= MailingBaseAction.ACTION_VIEW %>"/>
-
 <c:set var="isMailingGrid" value="${not empty gridTemplateId and gridTemplateId gt 0}" scope="request"/>
 
-<c:url var="mailingsOverviewLink" value="/mailingbase.do">
-    <c:param name="action" value="${BASE_ACTION_LIST}"/>
-    <c:param name="isTemplate" value="false"/>
+<c:url var="mailingsOverviewLink" value="/mailing/list.action"/>
+
+<c:url var="mailingViewLink" value="/mailing/${mailing.id}/settings.action">
+    <c:param name="keepForward" value="true"/>
 </c:url>
 
-<emm:ShowByPermission token="mailing.settings.migration">
-    <c:url var="mailingViewLink" value="/mailing/${mailing.id}/settings.action">
-        <c:param name="keepForward" value="true"/>
-    </c:url>
-</emm:ShowByPermission>
-<emm:HideByPermission token="mailing.settings.migration">
-    <c:url var="mailingViewLink" value="/mailingbase.do">
-        <c:param name="action" value="${BASE_ACTION_VIEW}"/>
-        <c:param name="mailingID" value="${mailing.id}"/>
-        <c:param name="keepForward" value="true"/>
-        <c:param name="init" value="true"/>
-    </c:url>
-</emm:HideByPermission>
-
-<c:url var="templatesOverviewLink" value="/mailingbase.do">
-    <c:param name="action" value="${BASE_ACTION_LIST}"/>
-    <c:param name="isTemplate" value="true"/>
-    <c:param name="page" value="1"/>
+<c:url var="templatesOverviewLink" value="/mailing/list.action">
+    <c:param name="forTemplates" value="true"/>
 </c:url>
 
-<emm:ShowByPermission token="mailing.settings.migration">
-    <c:url var="templateViewLink" value="/mailing/${mailing.id}/settings.action"/>
-</emm:ShowByPermission>
-<emm:HideByPermission token="mailing.settings.migration">
-    <c:url var="templateViewLink" value="/mailingbase.do">
-        <c:param name="action" value="${BASE_ACTION_VIEW}"/>
-        <c:param name="mailingID" value="${mailing.id}"/>
-    </c:url>
-</emm:HideByPermission>
+<c:url var="templateViewLink" value="/mailing/${mailing.id}/settings.action"/>
 
 <c:set var="isBreadcrumbsShown" value="true" scope="request"/>
 <c:set var="agnBreadcrumbsRootKey" value="Mailings" scope="request"/>
@@ -97,14 +68,8 @@
         <c:set var="agnHelpKey"             value="mailingAttachments" scope="request" />
 
         <emm:instantiate var="agnNavHrefParams" type="java.util.LinkedHashMap" scope="request">
-            <emm:ShowByPermission token="mailing.settings.migration">
-                <c:set target="${agnNavHrefParams}" property="mailingID" value="${mailing.id}"/>
-                <c:set target="${agnNavHrefParams}" property="init" value="true"/>
-            </emm:ShowByPermission>
-            <emm:HideByPermission token="mailing.settings.migration">
-                <c:set target="${agnNavHrefParams}" property="mailingID" value="${mailingBaseForm.mailingID}"/>
-                <c:set target="${agnNavHrefParams}" property="init" value="true"/>
-            </emm:HideByPermission>
+            <c:set target="${agnNavHrefParams}" property="mailingID" value="${mailing.id}"/>
+            <c:set target="${agnNavHrefParams}" property="init" value="true"/>
         </emm:instantiate>
         
         <emm:instantiate var="agnBreadcrumbs" type="java.util.LinkedHashMap" scope="request">
@@ -162,7 +127,7 @@
 
 </c:choose>
 
-<jsp:include page="actions-dropdown.jsp">
+<jsp:include page="mailing-actions-dropdown.jsp">
     <jsp:param name="elementIndex" value="0"/>
     <jsp:param name="mailingId" value="${mailing.id}"/>
     <jsp:param name="isTemplate" value="${mailing.isTemplate}"/>

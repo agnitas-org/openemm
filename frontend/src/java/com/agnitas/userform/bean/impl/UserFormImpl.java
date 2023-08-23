@@ -19,9 +19,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.agnitas.actions.EmmAction;
 import org.agnitas.beans.impl.ViciousFormDataException;
 import org.agnitas.dao.EmmActionDao;
-import org.agnitas.emm.core.velocity.VelocityCheck;
+
 import org.agnitas.emm.core.velocity.VelocitySpringUtils;
 import org.agnitas.emm.core.velocity.VelocityWrapper;
 import org.agnitas.emm.core.velocity.VelocityWrapperFactory;
@@ -88,12 +89,12 @@ public class UserFormImpl implements UserForm {
     /**
      * Holds value of property startAction.
      */
-    protected org.agnitas.actions.EmmAction startAction;
+    protected EmmAction startAction;
     
     /**
      * Holds value of property endAction.
      */
-    protected org.agnitas.actions.EmmAction endAction;
+    protected EmmAction endAction;
 
     protected String successUrl;
     protected String errorUrl;
@@ -130,7 +131,7 @@ public class UserFormImpl implements UserForm {
      * @param companyID New value of property companyID.
      */
     @Override
-	public void setCompanyID( @VelocityCheck int companyID) {
+	public void setCompanyID( int companyID) {
         this.companyID = companyID;
     }
     

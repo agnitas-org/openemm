@@ -12,7 +12,6 @@ package com.agnitas.beans.factory.impl;
 
 import java.util.LinkedHashMap;
 
-import org.agnitas.beans.DynamicTagContent;
 import org.agnitas.beans.factory.DynamicTagFactory;
 
 import com.agnitas.beans.DynamicTag;
@@ -22,7 +21,7 @@ public class DynamicTagFactoryImpl implements DynamicTagFactory {
     @Override
     public DynamicTag newDynamicTag() {
         DynamicTagImpl dynamicTag = new DynamicTagImpl();
-        dynamicTag.setDynContent(new LinkedHashMap<Integer, DynamicTagContent>());
+        dynamicTag.setDynContent(new LinkedHashMap<>());
         return dynamicTag;
     }
 }

@@ -10,9 +10,13 @@
 
 package com.agnitas.web.mvc.impl;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.agnitas.util.GuiConstants;
 import org.apache.struts.action.ActionErrors;
@@ -30,29 +34,58 @@ public class StrutsPopups implements Popups {
 
     public static final String MESSAGES_KEY = "org.apache.struts.action.ACTION_MESSAGE";
     public static final String ERRORS_KEY = "org.apache.struts.action.ERROR";
+    public static final String FIELDS_ERRORS_KEY = "POPUPS_FIELDS_ERRORS";
 
-    private static StrutsPopups from(ActionMessages messages, ActionErrors errors) {
-        if (messages == null && errors == null) {
+    public static class FieldError {
+
+        private final String fieldName;
+        private final Message message;
+
+        public FieldError(String fieldName, Message message) {
+            this.fieldName = fieldName;
+            this.message = message;
+        }
+
+        public String getFieldName() {
+            return fieldName;
+        }
+
+        public Message getMessage() {
+            return message;
+        }
+
+        public String getArgumentsStr() {
+            return Arrays.stream(message.getArguments())
+                    .map(String::valueOf)
+                    .collect(Collectors.joining(","));
+        }
+    }
+
+    private static StrutsPopups from(ActionMessages messages, ActionErrors errors, List<FieldError> fieldsErrors) {
+        if (messages == null && errors == null && fieldsErrors == null) {
             return null;
         }
 
-        return new StrutsPopups(messages, errors);
+        return new StrutsPopups(messages, errors, fieldsErrors);
     }
 
     public static StrutsPopups get(Map<String, Object> map) {
         ActionMessages messages = (ActionMessages) map.get(MESSAGES_KEY);
         ActionErrors errors = (ActionErrors) map.get(ERRORS_KEY);
+        List<FieldError> fieldsErrors = (List<FieldError>) map.get(FIELDS_ERRORS_KEY);
 
-        return from(messages, errors);
+        return from(messages, errors, fieldsErrors);
     }
 
     public static void put(Map<String, Object> map, StrutsPopups popups) {
         if (popups == null) {
             map.remove(MESSAGES_KEY);
             map.remove(ERRORS_KEY);
+            map.remove(FIELDS_ERRORS_KEY);
         } else {
             map.put(MESSAGES_KEY, popups.getMessages());
             map.put(ERRORS_KEY, popups.getErrors());
+            map.put(FIELDS_ERRORS_KEY, popups.getFieldsErrors());
         }
     }
 
@@ -80,13 +113,15 @@ public class StrutsPopups implements Popups {
 
     private final ActionMessages messages;
     private final ActionErrors errors;
+    private final List<FieldError> fieldsErrors;
 
     public StrutsPopups() {
         messages = new ActionMessages();
         errors = new ActionErrors();
+        fieldsErrors = new ArrayList<>();
     }
 
-    private StrutsPopups(ActionMessages messages, ActionErrors errors) {
+    private StrutsPopups(ActionMessages messages, ActionErrors errors, List<FieldError> fieldsErrors) {
         if (messages == null) {
             messages = new ActionMessages();
         }
@@ -95,8 +130,13 @@ public class StrutsPopups implements Popups {
             errors = new ActionErrors();
         }
 
+        if (fieldsErrors == null) {
+            fieldsErrors = new ArrayList<>();
+        }
+
         this.messages = messages;
         this.errors = errors;
+        this.fieldsErrors = fieldsErrors;
     }
 
     @Override
@@ -167,6 +207,17 @@ public class StrutsPopups implements Popups {
     }
 
     @Override
+    public Popups fieldError(String field, Message popup) {
+        fieldsErrors.add(new FieldError(field, popup));
+        return this;
+    }
+
+    @Override
+    public Popups fieldError(String field, String code, Object... arguments) {
+        return fieldError(field, new Message(code, arguments));
+    }
+
+    @Override
     public Popups field(String field, Message popup) {
         errors.add(field, popup.toStrutsMessage());
         return this;
@@ -194,7 +245,7 @@ public class StrutsPopups implements Popups {
 
     @Override
     public boolean hasAlertPopups() {
-        return !errors.isEmpty();
+        return !errors.isEmpty() || !fieldsErrors.isEmpty();
     }
 
     @Override
@@ -221,6 +272,7 @@ public class StrutsPopups implements Popups {
     public void clear() {
         errors.clear();
         messages.clear();
+        fieldsErrors.clear();
     }
 
     public ActionMessages getMessages() {
@@ -229,5 +281,9 @@ public class StrutsPopups implements Popups {
 
     public ActionErrors getErrors() {
         return errors;
+    }
+
+    public List<FieldError> getFieldsErrors() {
+        return fieldsErrors;
     }
 }

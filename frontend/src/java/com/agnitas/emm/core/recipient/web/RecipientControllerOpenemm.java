@@ -3,6 +3,7 @@ package com.agnitas.emm.core.recipient.web;
 import org.agnitas.emm.core.blacklist.service.BlacklistService;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.recipient.service.RecipientService;
+import org.agnitas.emm.core.recipient.service.SubscriberLimitCheck;
 import org.agnitas.service.UserActivityLogService;
 import org.agnitas.service.WebStorage;
 import org.springframework.core.convert.ConversionService;
@@ -46,7 +47,8 @@ public class RecipientControllerOpenemm extends RecipientController {
 									EqlToQueryBuilderConverter eqlToQueryBuilderConverter,
 									QueryBuilderToEqlConverter queryBuilderToEqlConverter,
 									ComCompanyDao companyDao,
-									EqlValidatorService eqlValidatorService) {
+									EqlValidatorService eqlValidatorService,
+									   SubscriberLimitCheck subscriberLimitCheck) {
 		super(recipientService,
 				recipientLogService,
 				mailinglistApprovalService,
@@ -63,6 +65,7 @@ public class RecipientControllerOpenemm extends RecipientController {
 				eqlToQueryBuilderConverter,
 				queryBuilderToEqlConverter,
 				companyDao,
-				eqlValidatorService);
+				eqlValidatorService,
+				subscriberLimitCheck);
 	}
 }

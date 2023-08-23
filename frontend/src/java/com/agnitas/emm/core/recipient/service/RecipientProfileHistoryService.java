@@ -12,7 +12,6 @@ package com.agnitas.emm.core.recipient.service;
 
 import java.util.List;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.beans.ComRecipientHistory;
 import com.agnitas.emm.core.recipient.RecipientProfileHistoryException;
@@ -27,7 +26,7 @@ public interface RecipientProfileHistoryService {
 	 * @param companyId company ID
 	 * @throws RecipientProfileHistoryException on errors enabling profile field history
 	 */
-	default void enableProfileFieldHistory(@VelocityCheck int companyId) throws RecipientProfileHistoryException {
+	default void enableProfileFieldHistory(int companyId) throws RecipientProfileHistoryException {
 		// default implementation
 	}
 	
@@ -45,7 +44,7 @@ public interface RecipientProfileHistoryService {
 	 * @param companyId company ID
 	 * @throws RecipientProfileHistoryException on errors during processing the request
 	 */
-	void afterProfileFieldStructureModification(@VelocityCheck int companyId) throws RecipientProfileHistoryException;
+	void afterProfileFieldStructureModification(int companyId) throws RecipientProfileHistoryException;
 	
 	/**
 	 * Returns <code>true</code>, if history feature is enabled for given company ID.
@@ -54,7 +53,7 @@ public interface RecipientProfileHistoryService {
 	 * 
 	 * @return <code>true</code> if history feature is enabled
 	 */
-	boolean isProfileFieldHistoryEnabled(@VelocityCheck int companyId);
+	boolean isProfileFieldHistoryEnabled(int companyId);
 	
 	/**
 	 * Lists all profile fields modifications for given subscriber.
@@ -67,10 +66,10 @@ public interface RecipientProfileHistoryService {
 	 * 
 	 * @throws RecipientProfileHistoryException on errors reading history data
 	 */
-	List<ComRecipientHistory> listProfileFieldHistory(final int subscriberID, @VelocityCheck int companyId) throws RecipientProfileHistoryException;
+	List<ComRecipientHistory> listProfileFieldHistory(final int subscriberID, int companyId) throws RecipientProfileHistoryException;
 	
 	@SuppressWarnings("unused")
-	default void disableProfileFieldHistory(@VelocityCheck int companyId) throws RecipientProfileHistoryException {
+	default void disableProfileFieldHistory(int companyId) throws RecipientProfileHistoryException {
 		// default implementation
 	}
 }

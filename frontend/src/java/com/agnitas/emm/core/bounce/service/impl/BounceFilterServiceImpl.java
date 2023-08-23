@@ -20,7 +20,6 @@ import org.agnitas.beans.MailloopEntry;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.MailloopDao;
 import org.agnitas.emm.core.blacklist.service.BlacklistService;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
 import org.apache.commons.lang3.StringUtils;
@@ -98,18 +97,18 @@ public class BounceFilterServiceImpl implements BounceFilterService {
     }
 
     @Override
-    public BounceFilterDto getBounceFilter(@VelocityCheck int companyId, int filterId) {
+    public BounceFilterDto getBounceFilter(int companyId, int filterId) {
         Mailloop mailloop = mailloopDao.getMailloop(filterId, companyId);
         return conversionService.convert(mailloop, BounceFilterDto.class);
     }
 
     @Override
-    public boolean deleteBounceFilter(int filterId, @VelocityCheck int companyId) {
+    public boolean deleteBounceFilter(int filterId, int companyId) {
         return mailloopDao.deleteMailloop(filterId, companyId);
     }
     
 	@Override
-	public boolean isMailingUsedInBounceFilterWithActiveAutoResponder(@VelocityCheck int companyId, int mailingId) {
+	public boolean isMailingUsedInBounceFilterWithActiveAutoResponder(int companyId, int mailingId) {
 		if (companyId > 0 && mailingId > 0) {
 			return mailloopDao.isMailingUsedInBounceFilterWithActiveAutoResponder(companyId, mailingId);
 		}
@@ -118,7 +117,7 @@ public class BounceFilterServiceImpl implements BounceFilterService {
 	}
     
     @Override
-    public List<BounceFilterDto> getDependentBounceFiltersWithActiveAutoResponder(@VelocityCheck int companyId, int mailingId) {
+    public List<BounceFilterDto> getDependentBounceFiltersWithActiveAutoResponder(int companyId, int mailingId) {
         if (companyId <= 0 || mailingId <= 0) {
             return Collections.emptyList();
         }

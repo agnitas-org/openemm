@@ -1,4 +1,4 @@
 <HelpBalloon>
-	<title><![CDATA[Empf&auml;nger Suche]]></title>
-	<content><![CDATA[Die Felder Vorname, Nachname und E-Mail k&ouml;nnen mit Hilfe von Wildcards durchsucht werden. Die Platzhalter * und % stehen f&uuml;r beliebig viele Zeichen. Die Platzhalter _ und ? stehen je f&uuml;r ein variables Zeichen. Ohne die Verwendung von Wildcards wird nach der exakten Eingabe gesucht.]]></content>
+	<title><![CDATA[Empf&#xE4;nger Suche]]></title>
+	<content><![CDATA[Die Felder Vorname, Nachname und E-Mail k&#xF6;nnen mit Hilfe von Wildcards durchsucht werden. Die Platzhalter * und % stehen f&#xFC;r beliebig viele Zeichen. Die Platzhalter _ und ? stehen je f&#xFC;r ein variables Zeichen. Ohne die Verwendung von Wildcards wird nach der exakten Eingabe gesucht.]]></content>
 </HelpBalloon>

@@ -44,6 +44,8 @@ public class ComBirtReportMailingSettings extends ComBirtReportSettings {
     public static final int MAILING_NORMAL = 3;
     public static final int MAILING_ACTION_BASED = 4;
     public static final int MAILING_DATE_BASED = 5;
+    public static final int MAILING_INTERVAL_BASED = 6;
+    public static final int MAILING_FOLLOW_UP = 7;
     public static final int DATE_RANGE_WEEK = 6;
     public static final int DATE_RANGE_MONTH = 7;
     public static final int DATE_RANGE_CUSTOM = 8;

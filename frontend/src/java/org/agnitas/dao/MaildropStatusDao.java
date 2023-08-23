@@ -14,9 +14,9 @@ import java.time.ZonedDateTime;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.importvalues.MailType;
 
 import com.agnitas.beans.MaildropEntry;
@@ -34,7 +34,7 @@ public interface MaildropStatusDao {
      *          The ID of maildrop status to delete.
      * @return true on success.
      */
-    boolean delete(@VelocityCheck int companyId, int id);
+    boolean delete(int companyId, int id);
     
     boolean delete(final int companyId, final int mailingId, final MaildropStatus status, final MaildropGenerationStatus generationStatus);
 
@@ -114,7 +114,7 @@ public interface MaildropStatusDao {
 	 * @param isSelected whether a flag should be set ({@code true}) or unset ({@code false}).
 	 * @return whether a referenced maildrop entry exists, has proper type and successfully updated.
 	 */
-	boolean setSelectedTestRecipients(@VelocityCheck int companyId, int maildropStatusId, boolean isSelected);
+	boolean setSelectedTestRecipients(int companyId, int maildropStatusId, boolean isSelected);
 
 	/**
 	 * Save given customer ids into special test recipients table and associate them with maildrop entry referenced
@@ -135,4 +135,8 @@ public interface MaildropStatusDao {
 	void writeMailingSendStatisticsEntry(int companyID, int mailingID, MaildropStatus maildropStatus, MediaTypes mediaType, MailType mailType, int amount, int dataSize, Date sendDate, String mailerHostname);
 
 	List<Integer> getMailingsSentBetween(int companyID, Date startDateIncluded, Date endDateExcluded);
+
+	Map<Integer, List<Integer>> cleanupFailedTestDeliveries();
+
+	void cleanupOldEntriesByMailingID(int mailingID, int maximumAgeInDays);
 }

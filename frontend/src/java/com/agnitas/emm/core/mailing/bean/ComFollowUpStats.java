@@ -12,7 +12,6 @@ package com.agnitas.emm.core.mailing.bean;
 
 import java.sql.Timestamp;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public class ComFollowUpStats {
 	private int resultID;	//
@@ -34,7 +33,7 @@ public class ComFollowUpStats {
 	public int getCompanyID() {
 		return companyID;
 	}
-	public void setCompanyID(@VelocityCheck int companyID) {
+	public void setCompanyID(int companyID) {
 		this.companyID = companyID;
 	}
 	public Timestamp getCreationDate() {

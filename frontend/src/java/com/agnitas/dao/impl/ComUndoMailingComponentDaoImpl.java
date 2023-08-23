@@ -18,7 +18,7 @@ import java.util.List;
 
 import org.agnitas.beans.MailingComponentType;
 import org.agnitas.dao.impl.BaseDaoImpl;
-import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -215,7 +215,17 @@ public class ComUndoMailingComponentDaoImpl extends BaseDaoImpl implements ComUn
 
 	@Override
 	@DaoUpdateReturnValueCheck
-	public boolean deleteByCompany(@VelocityCheck int companyId) {
+	public boolean deleteByCompany(int companyId) {
 		return deleteByCompany(logger, "undo_component_tbl", companyId);
+	}
+
+	@Override
+	public void deleteUndoData(List<Integer> undoIds) {
+		if (CollectionUtils.isEmpty(undoIds)) {
+			return;
+		}
+
+		String query = "DELETE FROM undo_component_tbl WHERE " + makeBulkInClauseForInteger("undo_id", undoIds);
+		update(logger, query);
 	}
 }

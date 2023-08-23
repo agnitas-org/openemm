@@ -21,6 +21,7 @@ import javax.sql.DataSource;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.util.AgnUtils;
+import org.agnitas.util.ServerCommand.Server;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -89,17 +90,19 @@ public class ConfigurationValidityCheckBasicImpl implements ConfigurationValidit
 
 	@Override
 	public void checkValidity(WebApplicationContext webApplicationContext) {
-    	try {
-			/**
-			 * ATTENTION: Before changing something in Database affecting all companies, please rethink.
-			 * Try if it is possible to make a soft rollout and activate the changes for single companyIDs first. If not, you HAVE TO talk to AGNITAS developer first.
-			 */
-
-    		initiallyConfigureBirtKeys();
-    		migrateLogosAndImages(webApplicationContext);
-		} catch (Exception e) {
-			logger.error(MessageFormat.format("Cannot check installation validity: {0}", e.getMessage()), e);
-		}
+    	if (configService.getApplicationType() == Server.EMM) {
+	    	try {
+				/**
+				 * ATTENTION: Before changing something in Database affecting all companies, please rethink.
+				 * Try if it is possible to make a soft rollout and activate the changes for single companyIDs first. If not, you HAVE TO talk to AGNITAS developer first.
+				 */
+	
+	    		initiallyConfigureBirtKeys();
+	    		migrateLogosAndImages(webApplicationContext);
+			} catch (Exception e) {
+				logger.error(MessageFormat.format("Cannot check installation validity: {0}", e.getMessage()), e);
+			}
+    	}
     }
 
 	/**

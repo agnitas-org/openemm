@@ -26,7 +26,7 @@ import org.agnitas.emm.core.mailing.service.MailingNotExistException;
 import org.agnitas.emm.core.mailinglist.service.MailinglistNotExistException;
 import org.agnitas.emm.core.mailinglist.service.impl.MailinglistException;
 import org.agnitas.emm.core.recipient.service.RecipientNotExistException;
-import org.agnitas.emm.core.velocity.VelocityCheck;
+
 import org.agnitas.exceptions.InvalidUserStatusException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -150,7 +150,7 @@ public class BindingServiceImpl implements BindingService {
 	}
 
 	@Override
-	public void updateBindingStatusByEmailPattern(@VelocityCheck int companyId, String emailPattern, UserStatus userStatus, String remark) throws BindingServiceException {
+	public void updateBindingStatusByEmailPattern(int companyId, String emailPattern, UserStatus userStatus, String remark) throws BindingServiceException {
 		try {
 			this.bindingEntryDao.updateBindingStatusByEmailPattern( companyId, emailPattern, userStatus.getStatusCode(), remark);
 		} catch( Exception e) {

@@ -1,4 +1,4 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 <%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowReactionType" %>
 <%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowStart.WorkflowStartEventType" %>
 <%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowStart.WorkflowStartType" %>
@@ -579,11 +579,13 @@
                    checked="checked" value="${TYPE_DATE}">
             <span><bean:message key="workflow.start.StartDate"/></span>
         </label>
-        <label class="radio-inline">
-            <input type="radio" name="startType" id="typeEvent" data-action="start-editor-type-changed"
-                   class="start-type-event-radio" value="${TYPE_EVENT}">
-            <span><bean:message key="workflow.start.StartEvent"/></span>
-        </label>
+        {{ if(showStartEventTab) { }}
+            <label class="radio-inline">
+                <input type="radio" name="startType" id="typeEvent" data-action="start-editor-type-changed"
+                       class="start-type-event-radio" value="${TYPE_EVENT}">
+                <span><bean:message key="workflow.start.StartEvent"/></span>
+            </label>
+        {{ } }}
     </div>
 </script>
 
@@ -592,12 +594,12 @@
         <label class="radio-inline">
             <input type="radio" name="endType" id="typeOpen" data-action="start-editor-type-changed"
                    value="${END_TYPE_AUTOMATIC}">
-            <span id="endTypeActiomaticLabel"><bean:message key="workflow.stop.AutomaticEnd"/></span>
+            <span id="endTypeActiomaticLabel"><mvc:message code="workflow.stop.AutomaticEnd"/></span>
         </label>
-        <label class="radio-inline">
+        <label class="radio-inline" id="end-date-radio">
             <input type="radio" name="endType" id="typeDate"  data-action="start-editor-type-changed" checked="checked"
                    value="${END_TYPE_DATE}" class="start-type-event-radio">
-            <span><bean:message key="workflow.stop.EndDate"/></span>
+            <span><mvc:message code="workflow.stop.EndDate"/></span>
         </label>
     </div>
 </script>

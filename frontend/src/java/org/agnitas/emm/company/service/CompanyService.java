@@ -15,22 +15,21 @@ import java.util.List;
 import com.agnitas.beans.Company;
 import com.agnitas.emm.core.company.bean.CompanyEntry;
 import com.agnitas.emm.core.servicemail.UnknownCompanyIdException;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public interface CompanyService {
 	
-	Company getCompanyOrNull(@VelocityCheck int companyId);
+	Company getCompanyOrNull(int companyId);
 
-	Company getCompany(@VelocityCheck int companyId) throws UnknownCompanyIdException;
+	Company getCompany(int companyId) throws UnknownCompanyIdException;
 
-	boolean isCompanyExisting(@VelocityCheck int companyId);
+	boolean isCompanyExisting(int companyId);
 
 	//get all active companies
 	List<CompanyEntry> getActiveCompanyEntries(boolean allowTransitionStatus);
 	
 	//get only own company and companies created by own company + status = active
-	List<CompanyEntry> getActiveOwnCompanyEntries(@VelocityCheck int companyId, boolean allowTransitionStatus);
+	List<CompanyEntry> getActiveOwnCompanyEntries(int companyId, boolean allowTransitionStatus);
 
-	List<Company> getCreatedCompanies(@VelocityCheck int companyId);
+	List<Company> getCreatedCompanies(int companyId);
 	
 }

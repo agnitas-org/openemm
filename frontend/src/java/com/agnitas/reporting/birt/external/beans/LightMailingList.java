@@ -10,7 +10,7 @@
 
 package com.agnitas.reporting.birt.external.beans;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
+
 
 public class LightMailingList {
 
@@ -38,7 +38,7 @@ public class LightMailingList {
 		return companyId;
 	}
 
-	public void setCompanyId(@VelocityCheck int companyId) {
+	public void setCompanyId(int companyId) {
 		this.companyId = companyId;
 	}
 }

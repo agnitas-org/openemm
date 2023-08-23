@@ -653,6 +653,12 @@ input[type="range"] {
   width: 100%;
 }
 
+// Hide select options before select2 init
+select.js-select-tags,
+select.js-select {
+  display: none !important;
+}
+
 // Make multiple select elements height not fixed
 select[multiple],
 select[size] {
@@ -1129,6 +1135,11 @@ body.dark-theme label {
       text-align: right;
       margin-bottom: 0;
       padding-top: 5px; // Default padding plus a border
+    }
+
+    .checkbox-control-label {
+      width: auto;
+      float: right;
     }
   }
 

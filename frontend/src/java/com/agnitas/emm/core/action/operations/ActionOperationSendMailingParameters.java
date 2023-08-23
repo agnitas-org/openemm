@@ -11,44 +11,45 @@
 package com.agnitas.emm.core.action.operations;
 
 public class ActionOperationSendMailingParameters extends AbstractActionOperationParameters {
-	private int mailingID;
-	private int delayMinutes;
-	private String bcc;
-	private boolean forActiveRecipients;
 
-	public ActionOperationSendMailingParameters() {
-		super(ActionOperationType.SEND_MAILING);
-	}
+    private int mailingID;
+    private int delayMinutes;
+    private String bcc;
+    private int userStatusesOption;
 
-	public int getMailingID() {
-		return mailingID;
-	}
+    public ActionOperationSendMailingParameters() {
+        super(ActionOperationType.SEND_MAILING);
+    }
 
-	public void setMailingID(int mailingID) {
-		this.mailingID = mailingID;
-	}
+    public int getMailingID() {
+        return mailingID;
+    }
 
-	public int getDelayMinutes() {
-		return delayMinutes;
-	}
+    public void setMailingID(int mailingID) {
+        this.mailingID = mailingID;
+    }
 
-	public void setDelayMinutes(int delayMinutes) {
-		this.delayMinutes = delayMinutes;
-	}
+    public int getDelayMinutes() {
+        return delayMinutes;
+    }
 
-	public String getBcc() {
-		return bcc;
-	}
+    public void setDelayMinutes(int delayMinutes) {
+        this.delayMinutes = delayMinutes;
+    }
 
-	public void setBcc(String bcc) {
-		this.bcc = bcc;
-	}
+    public String getBcc() {
+        return bcc;
+    }
 
-	public boolean isForActiveRecipients() {
-		return forActiveRecipients;
-	}
+    public void setBcc(String bcc) {
+        this.bcc = bcc;
+    }
 
-	public void setForActiveRecipients(boolean forActiveRecipients) {
-		this.forActiveRecipients = forActiveRecipients;
-	}
+    public int getUserStatusesOption() {
+        return userStatusesOption;
+    }
+
+    public void setUserStatusesOption(int userStatusesOption) {
+        this.userStatusesOption = userStatusesOption;
+    }
 }

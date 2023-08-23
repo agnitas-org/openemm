@@ -13,7 +13,6 @@ package org.agnitas.beans.impl;
 import java.util.Date;
 
 import org.agnitas.beans.Mailinglist;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public class MailinglistImpl implements Mailinglist {
 	/**
@@ -66,7 +65,7 @@ public class MailinglistImpl implements Mailinglist {
 	}
 	
 	@Override
-	public void setCompanyID(@VelocityCheck int cid) {
+	public void setCompanyID(int cid) {
 		companyID = cid;
 	}
 

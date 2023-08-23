@@ -16,6 +16,7 @@
 <%--@elvariable id="adminDateFormat" type="java.text.SimpleDateFormat"--%>
 <%--@elvariable id="targetGroupNames" type="java.util.List<java.lang.String>"--%>
 <%--@elvariable id="isMailtrackExtended" type="java.lang.Boolean"--%>
+<%--@elvariable id="isForceSteppingBlocksizeEnabled" type="java.lang.Boolean"--%>
 <%--@elvariable id="autoImports" type="java.util.List<org.agnitas.emm.core.autoimport.bean.AutoImportLight>"--%>
 
 <c:set var="SESSION_CONTEXT_KEYNAME_ADMIN" value="<%= AgnUtils.SESSION_CONTEXT_KEYNAME_ADMIN %>" />
@@ -381,21 +382,24 @@
                                         </div>
                                     </div>
 
-                                    <div class="form-group">
-                                        <div class="col-sm-12 control-label-left">
-                                            <label class="control-label">
-                                                <label for="required-auto-import" style="margin-bottom: 0;">
-                                                    <mvc:message code="mailing.autoimport.required" />
+                                    <c:if test="${autoImports ne null}">
+                                        <div class="form-group">
+                                            <div class="col-sm-12 control-label-left">
+                                                <label class="control-label">
+                                                    <label for="required-auto-import" style="margin-bottom: 0;">
+                                                        <mvc:message code="mailing.autoimport.required" />
+                                                    </label>
+                                                    <button type="button" class="icon icon-help" tabindex="-1" data-help="help_${helplanguage}/mailing/RequiredAutoImport.xml"></button>
                                                 </label>
-                                            </label>
+                                            </div>
+                                            <div class="col-sm-12">
+                                                <mvc:select path="autoImportId" id="required-auto-import" cssClass="form-control js-select">
+                                                    <mvc:option value="0">---</mvc:option>
+                                                    <mvc:options items="${autoImports}" itemValue="autoImportId" itemLabel="shortname"/>
+                                                </mvc:select>
+                                            </div>
                                         </div>
-                                        <div class="col-sm-12">
-                                            <mvc:select path="autoImportId" id="required-auto-import" cssClass="form-control js-select">
-                                                <mvc:option value="0">---</mvc:option>
-                                                <mvc:options items="${autoImports}" itemValue="autoImportId" itemLabel="shortname"/>
-                                            </mvc:select>
-                                        </div>
-                                    </div>
+                                    </c:if>
 
                                     <emm:ShowByPermission token="mailing.setmaxrecipients">
                                         <div class="form-group">
@@ -425,7 +429,7 @@
                                                 </label>
                                             </div>
                                             <div class="col-sm-12">
-                                                <mvc:select path="blocksize" cssClass="form-control" id="blocksize">
+                                                <mvc:select path="blocksize" cssClass="form-control" id="blocksize" disabled="${isForceSteppingBlocksizeEnabled}">
                                                     <mvc:option value="0">
                                                         <mvc:message code="mailing.unlimited" />
                                                     </mvc:option>

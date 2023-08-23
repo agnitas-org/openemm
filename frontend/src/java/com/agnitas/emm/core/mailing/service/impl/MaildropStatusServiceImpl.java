@@ -16,6 +16,7 @@ import org.agnitas.dao.MaildropStatusDao;
 import org.springframework.beans.factory.annotation.Required;
 
 import java.util.List;
+import java.util.Map;
 
 public class MaildropStatusServiceImpl implements MaildropStatusService {
 
@@ -41,4 +42,9 @@ public class MaildropStatusServiceImpl implements MaildropStatusService {
     public void setMaildropStatusDao(MaildropStatusDao maildropStatusDao) {
         this.maildropStatusDao = maildropStatusDao;
     }
+
+	@Override
+	public Map<Integer, List<Integer>> cleanupFailedTestDeliveries() {
+        return maildropStatusDao.cleanupFailedTestDeliveries();
+	}
 }

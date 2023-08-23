@@ -27,7 +27,6 @@ import org.agnitas.dao.ImportRecipientsDao;
 import org.agnitas.dao.UserStatus;
 import org.agnitas.dao.impl.mapper.IntegerRowMapper;
 import org.agnitas.dao.impl.mapper.StringRowMapper;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.service.ImportException;
 import org.agnitas.service.ProfileImportCsvException.ReasonCode;
 import org.agnitas.util.AgnUtils;
@@ -71,7 +70,7 @@ public class ImportRecipientsDaoImpl extends RetryUpdateBaseDaoImpl implements I
     }
 
     @Override
-	public boolean isKeyColumnIndexed( @VelocityCheck int companyId, List<String> keyColumns) {
+	public boolean isKeyColumnIndexed( int companyId, List<String> keyColumns) {
     	return DbUtilities.checkForIndex(getDataSource(), "customer_" + companyId + "_tbl", keyColumns);
     }
 
@@ -456,7 +455,7 @@ public class ImportRecipientsDaoImpl extends RetryUpdateBaseDaoImpl implements I
 
     @Override
 	@DaoUpdateReturnValueCheck
-    public int importInBlackList(String temporaryImportTableName, @VelocityCheck final int companyID) {
+    public int importInBlackList(String temporaryImportTableName, final int companyID) {
         String updateBlacklist = "INSERT INTO cust" + companyID + "_ban_tbl (email) (SELECT DISTINCT email FROM " + temporaryImportTableName + " temp WHERE email IS NOT NULL"
         	+ " AND NOT EXISTS (SELECT email FROM cust" + companyID + "_ban_tbl ban WHERE ban.email = temp.email))";
         return retryableUpdate(companyID, logger, updateBlacklist);
@@ -464,7 +463,7 @@ public class ImportRecipientsDaoImpl extends RetryUpdateBaseDaoImpl implements I
 
     @Override
 	@DaoUpdateReturnValueCheck
-    public void removeFromBlackListNotIncludedInTempData(String temporaryImportTableName, @VelocityCheck final int companyID) {
+    public void removeFromBlackListNotIncludedInTempData(String temporaryImportTableName, final int companyID) {
         String updateBlacklist = "DELETE FROM cust" + companyID + "_ban_tbl WHERE email NOT IN (SELECT DISTINCT email FROM " + temporaryImportTableName + " temp WHERE email IS NOT NULL)";
         retryableUpdate(companyID, logger, updateBlacklist);
     }

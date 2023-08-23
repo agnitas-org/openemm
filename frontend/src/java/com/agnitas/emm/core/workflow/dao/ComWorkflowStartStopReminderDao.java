@@ -12,7 +12,6 @@ package com.agnitas.emm.core.workflow.dao;
 
 import java.util.List;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.beans.IntEnum;
 import com.agnitas.emm.core.workflow.beans.WorkflowReminder;
@@ -49,21 +48,21 @@ public interface ComWorkflowStartStopReminderDao {
      * @param companyId an identifier of a company that owns a referenced workflow.
      * @param workflowId an identifier of a workflow to delete reminders for.
      */
-    void deleteReminders(@VelocityCheck int companyId, int workflowId);
+    void deleteReminders(int companyId, int workflowId);
 
     /**
      * Delete all the existing reminders that belong to a company referenced by {@code companyId}.
      *
      * @param companyId an identifier of a company to delete reminders for.
      */
-    void deleteReminders(@VelocityCheck int companyId);
+    void deleteReminders(int companyId);
 
     /**
      * Delete all the existing reminders recipients that belong to a company referenced by {@code companyId}.
      *
      * @param companyId an identifier of a company to delete reminders recipients for.
      */
-    void deleteRecipients(@VelocityCheck int companyId);
+    void deleteRecipients(int companyId);
 
     /**
      * Delete existing reminders associated with {@code workflowId} (if any) and store new ones represented by {@code reminders}.
@@ -72,5 +71,5 @@ public interface ComWorkflowStartStopReminderDao {
      * @param workflowId an identifier of a workflow to set reminders for.
      * @param reminders a list of reminders (or empty list or {@code null}) to store.
      */
-    void setReminders(@VelocityCheck int companyId, int workflowId, List<WorkflowReminder> reminders);
+    void setReminders(int companyId, int workflowId, List<WorkflowReminder> reminders);
 }

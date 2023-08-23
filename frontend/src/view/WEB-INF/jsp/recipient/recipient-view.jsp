@@ -171,7 +171,7 @@
                         <emm:ShowByPermission token="recipient.tracking.veto">
 						<div class="form-group">
                             <div class="col-sm-4">
-                              <label for="trackingVeto" class="control-label">
+                              <label for="trackingVeto" class="control-label checkbox-control-label">
                                   <mvc:message code="recipient.trackingVeto"/>
                               </label>
                             </div>

@@ -5,10 +5,3 @@ img {
     max-width: 100%;
     height: auto;
 }
-
-.div-container {
-    width: 100%;
-    font-size: 12px;
-    line-height: 140%;
-    text-align: left;
-}

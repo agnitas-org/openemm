@@ -378,7 +378,7 @@ public final class RecipientBulkServiceImpl extends AbstractBulkServiceImpl<Reci
 			keyFields.add(model.getKeyColumn());
 		}
 		
-		this.subscriberLimitCheck.checkSubscriberLimit(companyID, toInsert.size());
+		subscriberLimitCheck.checkSubscriberLimit(companyID, toInsert.size());
 		
 		List<Integer> customerIds = toInsert.stream().map(Recipient::getCustomerID).collect(Collectors.toList());
 		recipientDao.lockCustomers(companyID, customerIds);

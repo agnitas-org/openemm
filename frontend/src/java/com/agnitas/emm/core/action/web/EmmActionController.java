@@ -242,6 +242,7 @@ public class EmmActionController implements XssCheckAware {
 				action.setShortname(form.getShortname());
 				action.setDescription(form.getDescription());
 				action.setIsActive(form.isActive());
+				action.setAdvertising(form.isAdvertising());
 
 				if (parameters == null) {
 					parameters = new ArrayList<>();
@@ -256,7 +257,7 @@ public class EmmActionController implements XssCheckAware {
 					writeUserActivityLog(admin, userAction);
 				}
 
-				popups.success("default.changes_saved");
+				popups.success(CHANGES_SAVED_MSG);
 
 				return "redirect:/action/" + actionId + "/view.action";
 			}

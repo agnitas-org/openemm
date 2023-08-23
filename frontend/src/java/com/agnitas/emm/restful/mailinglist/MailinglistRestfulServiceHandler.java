@@ -20,11 +20,11 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.TimeZone;
 
+import com.agnitas.emm.core.useractivitylog.dao.RestfulUserActivityLogDao;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.beans.impl.MailinglistImpl;
 import org.agnitas.dao.MailinglistDao;
 import org.agnitas.dao.UserStatus;
-import org.agnitas.emm.core.useractivitylog.dao.UserActivityLogDao;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.DbColumnType.SimpleDataType;
@@ -64,13 +64,13 @@ public class MailinglistRestfulServiceHandler implements RestfulServiceHandler {
 	
 	public static final String NAMESPACE = "mailinglist";
 
-	private UserActivityLogDao userActivityLogDao;
+	private RestfulUserActivityLogDao userActivityLogDao;
 	private MailinglistDao mailinglistDao;
 	private ComRecipientDao recipientDao;
 	private ColumnInfoService columnInfoService;
 
 	@Required
-	public void setUserActivityLogDao(UserActivityLogDao userActivityLogDao) {
+	public void setUserActivityLogDao(RestfulUserActivityLogDao userActivityLogDao) {
 		this.userActivityLogDao = userActivityLogDao;
 	}
 	
@@ -115,10 +115,6 @@ public class MailinglistRestfulServiceHandler implements RestfulServiceHandler {
 	/**
 	 * Return a single or multiple mailinglist data sets
 	 * 
-	 * @param request
-	 * @param admin
-	 * @return
-	 * @throws Exception
 	 */
 	private Object getMailinglistData(HttpServletRequest request, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.MAILINGLIST_SHOW)) {
@@ -130,8 +126,8 @@ public class MailinglistRestfulServiceHandler implements RestfulServiceHandler {
 		if (restfulContext.length == 0) {
 			// Show index of all mailinglists
 			userActivityLogDao.addAdminUseOfFeature(admin, "restful/mailinglist", new Date());
-			userActivityLogDao.writeUserActivityLog(admin, "restful/mailinglist GET", "ALL");
-			
+			writeActivityLog("ALL", request, admin);
+
 			JsonArray mailinglistsJsonArray = new JsonArray();
 			
 			for (Mailinglist mailinglist : mailinglistDao.getMailinglists(admin.getCompanyID())) {
@@ -167,8 +163,8 @@ public class MailinglistRestfulServiceHandler implements RestfulServiceHandler {
 			}
 			
 			userActivityLogDao.addAdminUseOfFeature(admin, "restful/mailinglist", new Date());
-			userActivityLogDao.writeUserActivityLog(admin, "restful/mailinglist GET", restfulContext[0]);
-			
+			writeActivityLog(restfulContext[0], request, admin);
+
 			if (mailinglist != null) {
 				JsonObject mailinglistJsonObject = new JsonObject();
 				mailinglistJsonObject.add("mailinglist_id", mailinglist.getId());
@@ -229,10 +225,6 @@ public class MailinglistRestfulServiceHandler implements RestfulServiceHandler {
 	/**
 	 * Delete a mailinglist
 	 * 
-	 * @param request
-	 * @param admin
-	 * @return
-	 * @throws Exception
 	 */
 	private Object deleteMailinglist(HttpServletRequest request, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.MAILINGLIST_DELETE)) {
@@ -242,8 +234,8 @@ public class MailinglistRestfulServiceHandler implements RestfulServiceHandler {
 		String[] restfulContext = RestfulServiceHandler.getRestfulContext(request, NAMESPACE, 1, 1);
 		
 		userActivityLogDao.addAdminUseOfFeature(admin, "restful/mailinglist", new Date());
-		userActivityLogDao.writeUserActivityLog(admin, "restful/mailinglist DELETE", restfulContext[0]);
-		
+		writeActivityLog(restfulContext[0], request, admin);
+
 		boolean success = false;
 		if (AgnUtils.isNumber(restfulContext[0])) {
 			success = mailinglistDao.deleteMailinglist(Integer.parseInt(restfulContext[0]), admin.getCompanyID());
@@ -266,11 +258,6 @@ public class MailinglistRestfulServiceHandler implements RestfulServiceHandler {
 	/**
 	 * Create a new mailinglist
 	 * 
-	 * @param request
-	 * @param requestDataFile
-	 * @param admin
-	 * @return
-	 * @throws Exception
 	 */
 	private Object createNewMailinglist(HttpServletRequest request, byte[] requestData, File requestDataFile, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.MAILINGLIST_CHANGE)) {
@@ -317,8 +304,8 @@ public class MailinglistRestfulServiceHandler implements RestfulServiceHandler {
 						
 						if (mailinglist != null) {
 							userActivityLogDao.addAdminUseOfFeature(admin, "restful/mailinglist", new Date());
-							userActivityLogDao.writeUserActivityLog(admin, "restful/mailinglist POST", "" + mailinglist.getId());
-							
+							writeActivityLog(String.valueOf(mailinglist.getId()), request, admin);
+
 							JsonObject mailinglistJsonObject = new JsonObject();
 							mailinglistJsonObject.add("mailinglist_id", mailinglist.getId());
 							mailinglistJsonObject.add("name", mailinglist.getShortname());
@@ -341,11 +328,6 @@ public class MailinglistRestfulServiceHandler implements RestfulServiceHandler {
 	/**
 	 * Create a new mailinglist or update an exiting mailinglist
 	 * 
-	 * @param request
-	 * @param requestDataFile
-	 * @param admin
-	 * @return
-	 * @throws Exception
 	 */
 	private Object createOrUpdateMailinglist(HttpServletRequest request, byte[] requestData, File requestDataFile, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.MAILINGLIST_CHANGE)) {
@@ -413,8 +395,8 @@ public class MailinglistRestfulServiceHandler implements RestfulServiceHandler {
 						
 						if (mailinglist != null) {
 							userActivityLogDao.addAdminUseOfFeature(admin, "restful/mailinglist", new Date());
-							userActivityLogDao.writeUserActivityLog(admin, "restful/mailinglist PUT", "" + mailinglist.getId());
-							
+							writeActivityLog(String.valueOf(mailinglist.getId()), request, admin);
+
 							JsonObject mailinglistJsonObject = new JsonObject();
 							mailinglistJsonObject.add("mailinglist_id", mailinglist.getId());
 							mailinglistJsonObject.add("name", mailinglist.getShortname());
@@ -437,5 +419,9 @@ public class MailinglistRestfulServiceHandler implements RestfulServiceHandler {
 	@Override
 	public ResponseType getResponseType() {
 		return ResponseType.JSON;
+	}
+
+	private void writeActivityLog(String description, HttpServletRequest request, Admin admin) {
+		writeActivityLog(userActivityLogDao, description, request, admin);
 	}
 }

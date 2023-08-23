@@ -14,7 +14,6 @@ import java.io.Serializable;
 import java.sql.Timestamp;
 import java.util.List;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
 
@@ -83,7 +82,7 @@ public interface EmmAction extends Serializable {
      * 
      * @param companyID New value of property companyID.
      */
-    void setCompanyID( @VelocityCheck int companyID);
+    void setCompanyID( int companyID);
 
     /**
      * Setter for property description.
@@ -129,4 +128,8 @@ public interface EmmAction extends Serializable {
 	boolean getIsActive();
 
 	void setIsActive(boolean active);
+
+	void setAdvertising(boolean advertising);
+
+	boolean isAdvertising();
 }

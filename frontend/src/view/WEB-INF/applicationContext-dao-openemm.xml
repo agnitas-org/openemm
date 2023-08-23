@@ -56,10 +56,7 @@
 		<property name="configService" ref="ConfigService" />
 		<property name="maildropStatusDao" ref="MaildropStatusDao" />
 		<property name="fulltextSearchQueryGenerator" ref="fulltextSearchQueryGenerator" />
-        <property name="dynamicTagContentDao" ref="DynamicTagContentDao"/>
         <property name="dynamicTagDao" ref="DynamicTagDao"/>
-		<property name="copyMailingService" ref="CopyMailingService" />
-		<property name="mailingStatisticsDao" ref="MailingStatisticsDao" />
     </bean>
 
     <bean id="SupervisorDao" class="com.agnitas.emm.core.supervisor.dao.impl.DefaultSupervisorDaoImpl"/>
@@ -87,8 +84,7 @@
 		<property name="targetDao" ref="TargetDao" />
 		<property name="copyMailingService" ref="CopyMailingService" />
 		<property name="bindingHistoryDao" ref="BindingHistoryDao" />
-		<property name="userFormExporter" ref="UserFormExporter" />
-		<property name="userFormImporter" ref="UserFormImporter" />
+		<property name="userformService" ref="userformService"/>
 	</bean>
 	
 <!-- ============================================================================================================================== Mailinglists -->
@@ -126,8 +122,9 @@
 	</bean>
 
 	<bean id="BindingEntryDao" class="com.agnitas.dao.impl.ComBindingEntryDaoImpl">
+		<constructor-arg ref="RecipientDao" />
+
 		<property name="dataSource" ref="dataSource" />
 		<property name="javaMailService" ref="JavaMailService" />
-		<property name="recipientDao" ref="RecipientDao" />
 	</bean>
 </beans>

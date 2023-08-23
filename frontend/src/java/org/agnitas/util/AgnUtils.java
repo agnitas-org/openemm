@@ -124,7 +124,6 @@ public class AgnUtils {
 
 	public static final String DEFAULT_MAILING_HTML_DYNNAME = "HTML-Version";
 	public static final String DEFAULT_MAILING_TEXT_DYNNAME = "Text";
-
 	public static final String TOC_ITEM_SUFFIX = " (TOC Item)";
 
 	public static final String SESSION_CONTEXT_KEYNAME_ADMIN = "emm.admin";
@@ -2866,6 +2865,15 @@ public class AgnUtils {
 		return returnList;
 	}
 
+	public static List<Integer> getArrayListOfIntegers(Integer... values) {
+		List<Integer> returnList = new ArrayList<>();
+		if (values != null) {
+			returnList.addAll(Arrays.asList(values));
+		}
+
+		return returnList;
+	}
+
 	/**
 	 * Get the preceding character at a index position within a text.
 	 * Some characters may be are ignored while searching.
@@ -3647,5 +3655,30 @@ public class AgnUtils {
 			return new DateTimeFormatterBuilder().appendPattern(pattern)
 					.toFormatter(locale);
 		}
+	}
+
+	public static String makeFileSystemFriendly(String text) {
+		if (text == null) {
+			return null;
+		} else {
+			return text.replaceAll("[^a-zA-Z0-9-_ ]", "_");
+		}
+	}
+
+	/**
+	 * calculates a virtual moving progress (66% after 3 Minutes, progress becoming slower and slower)
+	 */
+	public static int calculateProgressPercentage(Date startDate) {
+		float timeS = 0;
+
+		if (startDate != null) {
+			timeS = (new Date().getTime() - startDate.getTime()) / 1000F;
+		}
+
+		if (timeS <= 0) {
+			return 0;
+		}
+
+		return (int) ((1 - (1 / ((timeS + 60) / 60))) * 100);
 	}
 }

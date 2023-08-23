@@ -1,6 +1,4 @@
 <%@ page language="java" contentType="text/html; charset=utf-8"  errorPage="/error.do" %>
-<%@ page import="com.agnitas.web.MailingBaseAction" %>
-
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
@@ -10,29 +8,13 @@
 <%--@elvariable id="limitedRecipientOverview" type="java.lang.Boolean"--%>
 <%--@elvariable id="isMailingUndoAvailable" type="java.lang.Boolean"--%>
 
-<c:set var="BASE_ACTION_LIST" value="<%= MailingBaseAction.ACTION_LIST %>"/>
-<c:set var="BASE_ACTION_VIEW" value="<%= MailingBaseAction.ACTION_VIEW %>"/>
-
 <c:set var="isMailingGrid" value="${not empty templateId and templateId gt 0}" scope="request"/>
 
-<c:url var="mailingsOverviewLink" value="/mailingbase.do">
-    <c:param name="action" value="${BASE_ACTION_LIST}"/>
-    <c:param name="isTemplate" value="false"/>
-</c:url>
+<c:url var="mailingsOverviewLink" value="/mailing/list.action"/>
 
-<emm:ShowByPermission token="mailing.settings.migration">
-    <c:url var="mailingViewLink" value="/mailing/${mailing.id}/settings.action">
-        <c:param name="keepForward" value="true"/>
-    </c:url>
-</emm:ShowByPermission>
-<emm:HideByPermission token="mailing.settings.migration">
-    <c:url var="mailingViewLink" value="/mailingbase.do">
-        <c:param name="action" value="${BASE_ACTION_VIEW}"/>
-        <c:param name="mailingID" value="${mailing.id}"/>
-        <c:param name="keepForward" value="true"/>
-        <c:param name="init" value="true"/>
-    </c:url>
-</emm:HideByPermission>
+<c:url var="mailingViewLink" value="/mailing/${mailing.id}/settings.action">
+    <c:param name="keepForward" value="true"/>
+</c:url>
 
 <c:set var="agnTitleKey" 			value="Mailing" 				scope="request"/>
 <c:set var="agnSubtitleKey" 		value="Mailing" 				scope="request"/>
@@ -84,7 +66,7 @@
     </emm:instantiate>
 </emm:instantiate>
 
-<jsp:include page="/WEB-INF/jsp/mailing/actions-dropdown.jsp">
+<jsp:include page="/WEB-INF/jsp/mailing/mailing-actions-dropdown.jsp">
     <jsp:param name="elementIndex" value="0"/>
     <jsp:param name="mailingId" value="${mailing.id}"/>
     <jsp:param name="isTemplate" value="false"/>

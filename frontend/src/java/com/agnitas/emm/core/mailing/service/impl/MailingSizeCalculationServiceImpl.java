@@ -13,14 +13,18 @@ package com.agnitas.emm.core.mailing.service.impl;
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.DynamicTag;
 import com.agnitas.beans.Mailing;
+import com.agnitas.beans.MediatypeEmail;
+import com.agnitas.dao.DynamicTagDao;
 import com.agnitas.emm.core.components.service.ComMailingComponentsService;
 import com.agnitas.emm.core.linkcheck.service.LinkService;
+import com.agnitas.emm.core.linkcheck.service.LinkServiceImpl;
 import com.agnitas.emm.core.mailing.service.MailingSizeCalculationService;
 import com.agnitas.service.AgnTagService;
 import com.agnitas.util.Span;
 import org.agnitas.backend.AgnTag;
 import org.agnitas.beans.DynamicTagContent;
 import org.agnitas.beans.MailingComponent;
+import org.agnitas.emm.core.mailing.service.MailingModel;
 import org.agnitas.util.AgnTagUtils;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DynTagException;
@@ -39,7 +43,9 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static java.text.MessageFormat.format;
@@ -48,25 +54,51 @@ public class MailingSizeCalculationServiceImpl implements MailingSizeCalculation
 
     private static final Logger logger = LogManager.getLogger(MailingSizeCalculationServiceImpl.class);
 
+    private static final Pattern BASE64_URL_PATTERN = Pattern.compile("data:image/([a-zA-Z]*);base64,([^\"]*)", Pattern.CASE_INSENSITIVE);
+
     private static final double QUOTED_PRINTABLE_OVERHEAD_RATIO = 8.f / 7.f;  // Quoted-printable notation uses 7 bit out of 8
     private static final double BASE64_OVERHEAD_RATIO = 8.f / 6.f;  // Base64 uses 6 bit out of 8 (padding is neglectable)
+
+    private static final List<AgnTag> AGN_IMAGE_TAGS = List.of(AgnTag.IMG_LINK, AgnTag.IMAGE);
 
     private final ComMailingComponentsService mailingComponentsService;
     private final AgnTagService agnTagService;
     private final LinkService linkService;
+    private final DynamicTagDao dynamicTagDao;
 
-    public MailingSizeCalculationServiceImpl(ComMailingComponentsService mailingComponentsService, AgnTagService agnTagService, LinkService linkService) {
+    public MailingSizeCalculationServiceImpl(ComMailingComponentsService mailingComponentsService, AgnTagService agnTagService, LinkService linkService, DynamicTagDao dynamicTagDao) {
         this.mailingComponentsService = mailingComponentsService;
         this.agnTagService = agnTagService;
         this.linkService = linkService;
+        this.dynamicTagDao = dynamicTagDao;
     }
 
     @Override
     public Tuple<Long, Long> calculateSize(Mailing mailing, Admin admin) {
-        return new MailingSizeCalculator(mailing).calculate();
+        MailingSizeCalculator.SizeCalculationResult calculationResult = createCalculator(mailing, admin).calculate();
+
+        long deliverySize = calculationResult.getContentSize() + calculationResult.getAttachmentsSize();
+        long imagesSize = calculationResult.getImagesSize();
+
+        if (isOfflineHtmlFormat(mailing)) {
+            deliverySize += Math.round(imagesSize * BASE64_OVERHEAD_RATIO);
+            return new Tuple<>(deliverySize, deliverySize);
+        }
+
+        return new Tuple<>(deliverySize, deliverySize + imagesSize);
+    }
+
+    private boolean isOfflineHtmlFormat(Mailing mailing) {
+        MediatypeEmail emailParam = mailing.getEmailParam();
+        return emailParam != null && emailParam.getMailFormat() == MailingModel.Format.OFFLINE_HTML.getValue();
+    }
+
+    protected MailingSizeCalculator createCalculator(Mailing mailing, Admin admin) {
+        return new MailingSizeCalculator(mailing);
     }
 
     public static class Block {
+
         private String name;
         private String content;
         private Markup markup;
@@ -135,6 +167,7 @@ public class MailingSizeCalculationServiceImpl implements MailingSizeCalculation
     }
 
     private static class Markup {
+
         private long ownSize;
         private Set<String> ownImages;
         private List<String> tags;
@@ -163,6 +196,7 @@ public class MailingSizeCalculationServiceImpl implements MailingSizeCalculation
     }
 
     private static class ImageLinkSpan extends Span {
+
         private final String link;
 
         public ImageLinkSpan(String link, int begin, int end) {
@@ -176,32 +210,50 @@ public class MailingSizeCalculationServiceImpl implements MailingSizeCalculation
     }
 
     protected class MailingSizeCalculator {
+
         private Mailing mailing;
         private Map<String, List<Block>> blockMap;
         private Map<String, Integer> imageSizeMap;
-        private Map<String, Integer> mediapoolImageSizeMap = new HashMap<>();
 
         public MailingSizeCalculator(Mailing mailing) {
             this.mailing = mailing;
             this.blockMap = getBlockMap(mailing.getDynTags().values());
         }
 
-        public MailingSizeCalculator(Mailing mailing, Map<String, Integer> mediapoolImageSizeMap) {
-            this(mailing);
-            this.mediapoolImageSizeMap = mediapoolImageSizeMap;
+        private class SizeCalculationResult {
+
+            private long contentSize;
+            private long imagesSize;
+            private long attachmentsSize;
+
+            public SizeCalculationResult(long contentSize, long imagesSize) {
+                this.contentSize = contentSize;
+                this.imagesSize = imagesSize;
+            }
+
+            public long getContentSize() {
+                return contentSize;
+            }
+
+            public long getImagesSize() {
+                return imagesSize;
+            }
+
+            public long getAttachmentsSize() {
+                return attachmentsSize;
+            }
+
+            public void setAttachmentsSize(long attachmentsSize) {
+                this.attachmentsSize = attachmentsSize;
+            }
+
+            public long getMarkupSize() {
+                return contentSize + imagesSize;
+            }
         }
 
-        public Tuple<Long, Long> calculate() {
-            // Parse markup for each content block.
-            for (List<Block> blocks : blockMap.values()) {
-                for (Block block : blocks) {
-                    if (StringUtils.isEmpty(block.getContent())) {
-                        block.setMarkup(new Markup());
-                    } else {
-                        block.setMarkup(getMarkup(block.getContent()));
-                    }
-                }
-            }
+        public SizeCalculationResult calculate() {
+            parseMarkupForContentBlocks();
 
             Markup textMarkup = getMarkup(getContent(mailing.getTextTemplate()));
             Markup htmlMarkup = getMarkup(getContent(mailing.getHtmlTemplate()));
@@ -211,39 +263,74 @@ public class MailingSizeCalculationServiceImpl implements MailingSizeCalculation
 
             imageSizeMap = sizeMapWithoutExternalImages;
 
-            long attachmentsSize = calculateAttachmentsSize(mailing.getCompanyID(), mailing.getId());
-            long size1 = Math.max(calculate(textMarkup), calculate(htmlMarkup)) + attachmentsSize;
+            SizeCalculationResult maxMarkupSize = calculateMaxMarkupSize(textMarkup, htmlMarkup);
 
-            boolean notExistExternalImages = sizeMapWithExternalImages.size() == sizeMapWithoutExternalImages.size();
-            if (notExistExternalImages) {
-                return new Tuple<>(size1, size1);
+            if (sizeMapWithExternalImages.size() != sizeMapWithoutExternalImages.size()) {
+                imageSizeMap = sizeMapWithExternalImages;
+                maxMarkupSize = calculateMaxMarkupSize(textMarkup, htmlMarkup);
             }
 
-            imageSizeMap = sizeMapWithExternalImages;
-            long size2 = Math.max(calculate(textMarkup), calculate(htmlMarkup)) + attachmentsSize;
+            long attachmentsSize = calculateAttachmentsSize(mailing.getCompanyID(), mailing.getId());
+            maxMarkupSize.setAttachmentsSize(attachmentsSize);
 
-            return new Tuple<>(size1, size2);
+            return maxMarkupSize;
         }
 
-        private long calculate(Markup root) {
-            Deque<String> tagStack = new ArrayDeque<>();
+        private SizeCalculationResult calculateMaxMarkupSize(Markup textMarkup, Markup htmlMarkup) {
+            SizeCalculationResult textMarkupSize = calculate(textMarkup);
+            SizeCalculationResult htmlMarkupSize = calculate(htmlMarkup);
+
+            if (htmlMarkupSize.getMarkupSize() > textMarkupSize.getMarkupSize()) {
+                return htmlMarkupSize;
+            }
+
+            return textMarkupSize;
+        }
+
+        private void parseMarkupForContentBlocks() {
+            for (List<Block> blocks : blockMap.values()) {
+                for (Block block : blocks) {
+                    if (StringUtils.isEmpty(block.getContent())) {
+                        block.setMarkup(new Markup());
+                    } else {
+                        block.setMarkup(getMarkup(block.getContent()));
+                    }
+                }
+            }
+        }
+
+        private SizeCalculationResult calculate(Markup root) {
             Map<String, Block> selection = new HashMap<>();
 
-            long contentSize = evaluate(root, tagStack, selection);
+            long contentSize = evaluate(root, new ArrayDeque<>(), selection);
+            List<String> images = extractImages(root, selection);
+
+            long imagesSize = calculateImagesSize(images);
+            contentSize = Math.round(contentSize * QUOTED_PRINTABLE_OVERHEAD_RATIO);
+
+            return new SizeCalculationResult(contentSize, imagesSize);
+        }
+
+        private List<String> extractImages(Markup root, Map<String, Block> selection) {
+            List<String> images = new ArrayList<>(root.getOwnImages());
+
+            for (Block block : selection.values()) {
+                images.addAll(block.getMarkup().getOwnImages());
+            }
+
+            return images.stream()
+                    .map(String::trim)
+                    .collect(Collectors.toList());
+        }
+
+        protected long calculateImagesSize(Collection<String> images) {
             long imagesSize = 0;
 
-            for (String image : root.getOwnImages()) {
+            for (String image : images) {
                 imagesSize += imageSizeMap.getOrDefault(image, 0);
             }
 
-            for (Block block : selection.values()) {
-                for (String image : block.getMarkup().getOwnImages()) {
-                    imagesSize += imageSizeMap.getOrDefault(image, 0);
-                    imagesSize += mediapoolImageSizeMap.getOrDefault(image, 0);
-                }
-            }
-
-            return Math.round(contentSize * QUOTED_PRINTABLE_OVERHEAD_RATIO) + Math.round(imagesSize * BASE64_OVERHEAD_RATIO);
+            return imagesSize;
         }
 
         private long evaluate(Markup markup, Deque<String> tagStack, Map<String, Block> selection) {
@@ -299,7 +386,7 @@ public class MailingSizeCalculationServiceImpl implements MailingSizeCalculation
 
             // Collect agn-tags representing dyn-tags (agnDYN/agnDVALUE) and image tags (agnIMAGE).
             List<DynamicTag> dynamicTags = getDynamicTags(content);
-            List<ImageLinkSpan> imageLinks = getImageLinks(content);
+            List<ImageLinkSpan> imageLinks = getImageLinks(content, mailing);
 
             // Own content size (to be reduced by number of characters taken by tag lexemes).
             long ownSize = AgnUtils.countBytes(content);
@@ -486,30 +573,105 @@ public class MailingSizeCalculationServiceImpl implements MailingSizeCalculation
         }
     }
 
-    private List<ImageLinkSpan> getImageLinks(String content) {
+    private List<ImageLinkSpan> getImageLinks(String content, Mailing mailing) {
         List<ImageLinkSpan> imageLinks = new ArrayList<>();
 
         try {
-            linkService.findAllLinks(content, (begin, end) -> {
-                String url = content.substring(begin, end);
-
-                if (AgnUtils.checkPreviousTextEquals(content, begin, "src=", ' ', '\'', '"', '\n', '\r', '\t')
-                        || AgnUtils.checkPreviousTextEquals(content, begin, "background=", ' ', '\'', '"', '\n', '\r', '\t')
-                        || AgnUtils.checkPreviousTextEquals(content, begin, "url(", ' ', '\'', '"', '\n', '\r', '\t')) {
-                    imageLinks.add(new ImageLinkSpan(url, begin, end));
-                }
-            });
+            imageLinks.addAll(findAllLinks(content, mailing));
+            removeLinksWithAgnImages(imageLinks);
+            removeBase64Links(imageLinks);
         } catch (Exception e) {
             logger.error(format("Error occurred: {0}", e.getMessage()), e);
         }
 
         try {
-            agnTagService.collectTags(content, tag -> AgnTag.IMAGE.getName().equals(tag.getTagName()) || AgnTag.IMG_LINK.getName().equals(tag.getTagName()))
+            agnTagService.collectTags(content, tag -> isImageTag(tag.getTagName()))
                     .forEach(tag -> imageLinks.add(new ImageLinkSpan(tag.getName(), tag.getStartPos(), tag.getEndPos())));
         } catch (Exception e) {
             logger.error(format("Error occurred: {0}", e.getMessage()), e);
         }
 
         return imageLinks;
+    }
+
+    private List<ImageLinkSpan> findAllLinks(String content, Mailing mailing) {
+        List<ImageLinkSpan> imageLinks = new ArrayList<>();
+        char[] ignoredCharacters = {' ', '\'', '"', '\n', '\r', '\t'};
+        String contentForScan = LinkServiceImpl.getTextWithReplacedAgnTags(content, "x");
+
+        linkService.findAllLinks(contentForScan, (begin, end) -> {
+            if (AgnUtils.checkPreviousTextEquals(content, begin, "src=", ignoredCharacters)
+                    || AgnUtils.checkPreviousTextEquals(content, begin, "background=", ignoredCharacters)
+                    || AgnUtils.checkPreviousTextEquals(content, begin, "url(", ignoredCharacters)) {
+
+                String url = content.substring(begin, end);
+
+                if (url.contains("[agnDVALUE")) {
+                    String dynTagName = AgnTagUtils.getAgnTagName(url);
+                    url = getDynTagContent(dynTagName, mailing);
+
+                    if (url == null) {
+                        return;
+                    }
+                }
+                imageLinks.add(new ImageLinkSpan(url, begin, end));
+            }
+        });
+
+        return imageLinks;
+    }
+
+    private String getDynTagContent(String dynTagName, Mailing mailing) {
+        List<DynamicTag> dynamicTags = dynamicTagDao.getDynamicTags(mailing.getId(), mailing.getCompanyID(), false);
+
+        Optional<DynamicTag> dynTag = dynamicTags.stream().filter(dt -> dynTagName.equals(dt.getDynName())).findFirst();
+
+        if (dynTag.isEmpty()) {
+            return null;
+        }
+
+        String content = null;
+
+        for (DynamicTagContent contentBlock : dynTag.get().getDynContent().values()) {
+            if (contentBlock.getTargetID() == 0) {
+                content = contentBlock.getDynContent().trim();
+            }
+        }
+
+        return content;
+    }
+
+    private void removeLinksWithAgnImages(List<ImageLinkSpan> links) {
+        links.removeIf(il -> isAgnImageLink(il.getLink()));
+    }
+
+    private void removeBase64Links(List<ImageLinkSpan> links) {
+        links.removeIf(l -> isBase64Image(l.getLink()));
+    }
+
+    private boolean isBase64Image(String imageLink) {
+        return imageLink != null && BASE64_URL_PATTERN.matcher(imageLink.trim()).matches();
+    }
+
+    private boolean isAgnImageLink(String link) {
+        Optional<AgnTag> imageTag = findAgnImageTagInsideImageLink(link);
+        return imageTag.isPresent();
+    }
+
+    private Optional<AgnTag> findAgnImageTagInsideImageLink(String link) {
+        final String trimmedLink = StringUtils.trimToNull(link); // can be a case when image tag can be with spaces like here: <img src="  [agnIMAGE name='image.jpg']" />
+
+        if (trimmedLink == null || !trimmedLink.startsWith("[")) {
+            return Optional.empty();
+        }
+
+        return AGN_IMAGE_TAGS.stream()
+                .filter(t -> trimmedLink.startsWith("[" + t.getName()))
+                .findAny();
+    }
+
+    private boolean isImageTag(String tag) {
+        return AGN_IMAGE_TAGS.stream()
+                .anyMatch(t -> t.getName().equals(tag));
     }
 }

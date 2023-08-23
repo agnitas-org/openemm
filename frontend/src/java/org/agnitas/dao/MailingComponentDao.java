@@ -15,7 +15,6 @@ import java.util.Set;
 
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.MailingComponentType;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public interface MailingComponentDao {
 
@@ -28,7 +27,7 @@ public interface MailingComponentDao {
      *            The companyID for mailing component.
      * @return The MailingComponent or null on failure.
      */
-    MailingComponent getMailingComponent(int compID, @VelocityCheck int companyID);
+    MailingComponent getMailingComponent(int compID, int companyID);
 
     /**
      * Loads mailing component identified by mailing id, component id and company id.
@@ -41,7 +40,7 @@ public interface MailingComponentDao {
      *            The companyID for mailing component.
      * @return The MailingComponent or null on failure.
      */
-    MailingComponent getMailingComponent(int mailingId, int componentId, @VelocityCheck int companyId);
+    MailingComponent getMailingComponent(int mailingId, int componentId, int companyId);
 
     /**
      * Loads mailing component identified by mailing id, company id and name.
@@ -54,7 +53,7 @@ public interface MailingComponentDao {
      *            The name of the mailing component.
      * @return The MailingComponent or null on failure.
      */
-    MailingComponent getMailingComponentByName(int mailingID, @VelocityCheck int companyID, String name);
+    MailingComponent getMailingComponentByName(int mailingID, int companyID, String name);
 
     /**
      * Saves or updates mailing component.
@@ -75,6 +74,8 @@ public interface MailingComponentDao {
     
     void deleteMailingComponents(List<MailingComponent> components);
 
+    MailingComponent findComponent(int id, int companyId);
+
     /**
      * Loads all components identified by mailing id, company id and component type.
      *
@@ -86,7 +87,7 @@ public interface MailingComponentDao {
      *          The type for mailing component.
      * @return Vector of MailingComponents.
      */
-    List<MailingComponent> getMailingComponents(int mailingID, @VelocityCheck int companyID, MailingComponentType componentType);
+    List<MailingComponent> getMailingComponents(int mailingID, int companyID, MailingComponentType componentType);
 
     /**
      * Loads all components identified by mailing id, company id and component type.
@@ -101,7 +102,7 @@ public interface MailingComponentDao {
      *          Whether ({@code true}) or not ({@code false}) a content data (see {@link MailingComponent#getEmmBlock()} and {@link MailingComponent#getBinaryBlock()}) should be loaded.
      * @return Vector of MailingComponents.
      */
-    List<MailingComponent> getMailingComponents(int mailingID, @VelocityCheck int companyID, MailingComponentType componentType, boolean includeContent);
+    List<MailingComponent> getMailingComponents(int mailingID, int companyID, MailingComponentType componentType, boolean includeContent);
 
     /**
      * Loads all components identified by mailing id and company id.
@@ -112,7 +113,7 @@ public interface MailingComponentDao {
      *          The companyID for mailing component.
      * @return Vector of MailingComponents.
      */
-    List<MailingComponent> getMailingComponents(int mailingID, @VelocityCheck int companyID);
+    List<MailingComponent> getMailingComponents(int mailingID, int companyID);
 
     /**
      * Loads all components identified by mailing id and company id.
@@ -125,7 +126,7 @@ public interface MailingComponentDao {
      *          Whether ({@code true}) or not ({@code false}) a content data (see {@link MailingComponent#getEmmBlock()} and {@link MailingComponent#getBinaryBlock()}) should be loaded.
      * @return Vector of MailingComponents.
      */
-    List<MailingComponent> getMailingComponents(int mailingID, @VelocityCheck int companyID, boolean includeContent);
+    List<MailingComponent> getMailingComponents(int mailingID, int companyID, boolean includeContent);
 
     /**
      * Loads all components identified by mailing id and company id.
@@ -136,9 +137,9 @@ public interface MailingComponentDao {
      *          The ids of the mailing components.
      * @return Vector of MailingComponents.
      */
-    List<MailingComponent> getMailingComponents(@VelocityCheck int companyID, int mailingID, Set<Integer> componentIds);
+    List<MailingComponent> getMailingComponents(int companyID, int mailingID, Set<Integer> componentIds);
     
-    List<MailingComponent> getMailingComponentsByType(@VelocityCheck int companyID, int mailingID, List<MailingComponentType> types);
+    List<MailingComponent> getMailingComponentsByType(int companyID, int mailingID, List<MailingComponentType> types);
 
     /**
      * Loads all components identified by mailing id, company id.
@@ -150,7 +151,7 @@ public interface MailingComponentDao {
      *          The companyID for mailing component.
      * @return Vector of MailingComponents.
      */
-	List<MailingComponent> getPreviewHeaderComponents(int mailingID, @VelocityCheck int companyID);
+	List<MailingComponent> getPreviewHeaderComponents(int mailingID, int companyID);
 
-    void updateHostImage(int mailingID, @VelocityCheck int companyID, int componentID, byte[] imageBytes);
+    void updateHostImage(int mailingID, int companyID, int componentID, byte[] imageBytes);
 }

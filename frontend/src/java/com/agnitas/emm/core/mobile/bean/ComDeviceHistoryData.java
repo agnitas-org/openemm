@@ -12,7 +12,6 @@ package com.agnitas.emm.core.mobile.bean;
 
 import java.util.Date;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public class ComDeviceHistoryData {
 	private int deviceID;
@@ -24,7 +23,7 @@ public class ComDeviceHistoryData {
 	public long getCompanyID() {
 		return companyID;
 	}
-	public void setCompanyID(@VelocityCheck long companyID) {
+	public void setCompanyID(long companyID) {
 		this.companyID = companyID;
 	}
 	public int getDeviceID() {

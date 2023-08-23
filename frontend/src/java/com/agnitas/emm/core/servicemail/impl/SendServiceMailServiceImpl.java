@@ -10,7 +10,7 @@
 
 package com.agnitas.emm.core.servicemail.impl;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.agnitas.emm.core.velocity.Constants;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -36,7 +36,7 @@ public class SendServiceMailServiceImpl implements SendServiceMailService {
 	private EmmActionService emmActionService;
 	
 	@Override
-	public void sendServiceMailByEmmAction(final int actionID, final int customerID, @VelocityCheck final int companyID) throws Exception {
+	public void sendServiceMailByEmmAction(final int actionID, final int customerID, final int companyID) throws Exception {
 		if(actionID <= 0) {
 			logger.error("Action ID is not positive: " + actionID);
 			
@@ -63,7 +63,7 @@ public class SendServiceMailServiceImpl implements SendServiceMailService {
 		final EmmActionOperationErrors actionOperationErrors = new EmmActionOperationErrors();
 		CaseInsensitiveMap<String, Object> params = new CaseInsensitiveMap<>();
 		params.put("customerID", customerID);
-		params.put("actionErrors", actionOperationErrors);
+		params.put(Constants.ACTION_OPERATION_ERRORS_CONTEXT_NAME, actionOperationErrors);
 		
 		boolean result = emmActionService.executeActions(actionID, companyID, params, actionOperationErrors);
 		

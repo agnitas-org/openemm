@@ -10,50 +10,45 @@
 
 package org.agnitas.emm.core.mailing.dto;
 
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+
+import com.agnitas.emm.common.MailingType;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import org.agnitas.beans.RowsCountWebStorageEntry;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class MailingOverviewWebStorageEntry extends RowsCountWebStorageEntry {
-    @JsonProperty("mailing-type-normal")
-    private boolean mailingTypeNormal = true;
 
-    @JsonProperty("mailing-type-date")
-    private boolean mailingTypeDate = false;
+    @JsonProperty("mailing-types")
+    private Set<MailingType> mailingTypes = new HashSet<>(Collections.singletonList(MailingType.NORMAL));
 
-    @JsonProperty("mailing-type-event")
-    private boolean mailingTypeEvent = false;
+    @JsonProperty("media-types")
+    private Set<MediaTypes> mediaTypes = new HashSet<>(Collections.singletonList(MediaTypes.EMAIL));
 
-    public boolean isMailingTypeNormal() {
-        return mailingTypeNormal;
+    public Set<MailingType> getMailingTypes() {
+        return mailingTypes;
     }
 
-    public void setMailingTypeNormal(boolean mailingTypeNormal) {
-        this.mailingTypeNormal = mailingTypeNormal;
+    public void setMailingTypes(Set<MailingType> mailingTypes) {
+        this.mailingTypes = mailingTypes;
     }
 
-    public boolean isMailingTypeDate() {
-        return mailingTypeDate;
+    public Set<MediaTypes> getMediaTypes() {
+        return mediaTypes;
     }
 
-    public void setMailingTypeDate(boolean mailingTypeDate) {
-        this.mailingTypeDate = mailingTypeDate;
-    }
-
-    public boolean isMailingTypeEvent() {
-        return mailingTypeEvent;
-    }
-
-    public void setMailingTypeEvent(boolean mailingTypeEvent) {
-        this.mailingTypeEvent = mailingTypeEvent;
+    public void setMediaTypes(Set<MediaTypes> mediaTypes) {
+        this.mediaTypes = mediaTypes;
     }
 
     @Override
     public MailingOverviewWebStorageEntry clone() throws CloneNotSupportedException {
         MailingOverviewWebStorageEntry entry = (MailingOverviewWebStorageEntry) super.clone();
-        entry.setMailingTypeNormal(mailingTypeNormal);
-        entry.setMailingTypeDate(mailingTypeDate);
-        entry.setMailingTypeEvent(mailingTypeEvent);
+        entry.setMailingTypes(mailingTypes);
+        entry.setMediaTypes(mediaTypes);
         return entry;
     }
 }

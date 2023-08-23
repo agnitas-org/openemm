@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.agnitas.dao.impl.BaseDaoImpl;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
@@ -53,7 +52,7 @@ public class ComRevenueDaoImpl extends BaseDaoImpl implements ComRevenueDao {
 	 * @param target_Id
 	 */
 	@Override
-	public Double getRevenue(@VelocityCheck int companyId, int mailingId, int targetId) {
+	public Double getRevenue(int companyId, int mailingId, int targetId) {
 		// check if Deeptracking is allowed, if not return just 0.0
 		if (revenueActivated(mailingId)) {
 			// check, if there are any revenues, if not return 0.
@@ -112,7 +111,7 @@ public class ComRevenueDaoImpl extends BaseDaoImpl implements ComRevenueDao {
 	 * @param mailing_Id
 	 */
 	@Override
-	public Double getRevenue(@VelocityCheck int company_Id, int mailing_Id) {
+	public Double getRevenue(int company_Id, int mailing_Id) {
 		return getRevenue(company_Id, mailing_Id, 0); // just set target_Id to
 														// 0.
 	}
@@ -121,7 +120,7 @@ public class ComRevenueDaoImpl extends BaseDaoImpl implements ComRevenueDao {
 	 * returns the revenues as Hashtable for the given Mailing-IDs
 	 */
 	@Override
-	public Map<Integer, Double> getRevenue(@VelocityCheck int company_Id, List<Integer> mailingIds, int target_Id) {
+	public Map<Integer, Double> getRevenue(int company_Id, List<Integer> mailingIds, int target_Id) {
 		Map<Integer, Double> returnTable = new Hashtable<>();
 		for (int mailingId : mailingIds) {
 			returnTable.put(mailingId, getRevenue(company_Id, mailingId, target_Id));
@@ -149,7 +148,7 @@ public class ComRevenueDaoImpl extends BaseDaoImpl implements ComRevenueDao {
 	 * @param mailingId
 	 * @return revenues
 	 */
-	private int getRdirLogCount(@VelocityCheck int companyId, int mailingId) {
+	private int getRdirLogCount(int companyId, int mailingId) {
 		return selectInt(logger, "SELECT COUNT(*) FROM rdirlog_" + companyId + "_val_num_tbl WHERE mailing_id = ? AND page_tag = 'revenue'", mailingId);
 	}
 }

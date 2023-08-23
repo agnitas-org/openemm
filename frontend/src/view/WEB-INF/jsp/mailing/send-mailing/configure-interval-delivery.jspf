@@ -86,24 +86,24 @@
                     </div>
 
                     <div class="col-sm-8">
-                        <label class="checkbox-inline">
-                            <mvc:checkbox id="interval[weekday1]_id" path="intervalSettings.weekdayOrdinal" value="1" disabled="${isEditingDenied}"/>
+                        <label class="radio-inline">
+                            <mvc:radiobutton id="interval[weekday1]_id" path="intervalSettings.weekdayOrdinal" value="1" disabled="${isEditingDenied}"/>
                             <mvc:message code="mailing.interval.weekdayOrdinal.1"/>
                         </label>
-                        <label class="checkbox-inline">
-                            <mvc:checkbox id="interval[weekday2]_id" path="intervalSettings.weekdayOrdinal" value="2" disabled="${isEditingDenied}"/>
+                        <label class="radio-inline">
+                            <mvc:radiobutton id="interval[weekday2]_id" path="intervalSettings.weekdayOrdinal" value="2" disabled="${isEditingDenied}"/>
                             <mvc:message code="mailing.interval.weekdayOrdinal.2"/>
                         </label>
-                        <label class="checkbox-inline">
-                            <mvc:checkbox id="interval[weekday3]_id" path="intervalSettings.weekdayOrdinal" value="3" disabled="${isEditingDenied}"/>
+                        <label class="radio-inline">
+                            <mvc:radiobutton id="interval[weekday3]_id" path="intervalSettings.weekdayOrdinal" value="3" disabled="${isEditingDenied}"/>
                             <mvc:message code="mailing.interval.weekdayOrdinal.3"/>
                         </label>
-                        <label class="checkbox-inline">
-                            <mvc:checkbox id="interval[weekday4]_id" path="intervalSettings.weekdayOrdinal" value="4" disabled="${isEditingDenied}"/>
+                        <label class="radio-inline">
+                            <mvc:radiobutton id="interval[weekday4]_id" path="intervalSettings.weekdayOrdinal" value="4" disabled="${isEditingDenied}"/>
                             <mvc:message code="mailing.interval.weekdayOrdinal.4"/>
                         </label>
-                        <label class="checkbox-inline">
-                            <mvc:checkbox id="interval[weekday5]_id" path="intervalSettings.weekdayOrdinal" value="5" disabled="${isEditingDenied}"/>
+                        <label class="radio-inline">
+                            <mvc:radiobutton id="interval[weekday5]_id" path="intervalSettings.weekdayOrdinal" value="5" disabled="${isEditingDenied}"/>
                             <mvc:message code="mailing.interval.weekdayOrdinal.5"/>
                         </label>
                     </div>

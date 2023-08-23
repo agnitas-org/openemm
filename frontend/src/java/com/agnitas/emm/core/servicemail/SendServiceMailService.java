@@ -10,7 +10,6 @@
 
 package com.agnitas.emm.core.servicemail;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 /**
  * Service interface for sending service mails.
@@ -27,6 +26,6 @@ public interface SendServiceMailService {
 	 * @throws ServiceMailException on errors sending service mail
 	 * @throws Exception 
 	 */
-	public void sendServiceMailByEmmAction(final int actionID, final int customerID, @VelocityCheck final int companyID) throws ServiceMailException, Exception;
+	public void sendServiceMailByEmmAction(final int actionID, final int customerID, final int companyID) throws ServiceMailException, Exception;
 	
 }

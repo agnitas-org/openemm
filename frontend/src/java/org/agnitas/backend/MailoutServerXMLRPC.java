@@ -41,7 +41,7 @@ public class MailoutServerXMLRPC extends XMLRPCServer {
 	 * Startup point
 	 */
 	public static void main(String[] args) throws Exception {
-		Systemconfig		syscfg = new Systemconfig ();
+		Systemconfig		syscfg = Systemconfig.create ();
 		String			hostname = syscfg.get ("mailout-server", HOSTNAME);
 		int			port = syscfg.get ("mailout-port", PORT);
 		MailoutServerXMLRPC	svr;

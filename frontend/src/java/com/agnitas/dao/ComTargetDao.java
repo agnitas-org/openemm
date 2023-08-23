@@ -17,12 +17,12 @@ import java.util.Set;
 
 import org.agnitas.beans.TrackableLink;
 import org.agnitas.beans.impl.PaginatedListImpl;
+import org.agnitas.dao.exception.target.TargetGroupLockedException;
 import org.agnitas.dao.exception.target.TargetGroupPersistenceException;
 
 import com.agnitas.beans.ComTarget;
 import com.agnitas.beans.TargetLight;
 import com.agnitas.emm.core.beans.Dependent;
-import com.agnitas.emm.core.target.beans.RawTargetGroup;
 import com.agnitas.emm.core.target.beans.TargetGroupDependentType;
 import com.agnitas.emm.core.target.service.TargetLightsOptions;
 import com.helger.collection.pair.Pair;
@@ -36,10 +36,10 @@ public interface ComTargetDao {
      * @param companyID
      *          The id of company.
      * @return  true on success.
-     * @throws TargetGroupPersistenceException on errors saving target group
+     * @throws TargetGroupLockedException on errors saving target group
      */
-    boolean deleteTarget(int targetID, int companyID) throws TargetGroupPersistenceException;
-
+    boolean deleteTarget(int targetID, int companyID) throws TargetGroupLockedException;
+    
     /**
      *  Loads target group identified by target id and company id.
      *
@@ -73,8 +73,6 @@ public interface ComTargetDao {
     /**
      *  Loads target group identified by list split parameters and company id.
      *
-     * @param splitType
-     * @param index
      * @param companyID
      *          The companyID for the target group.
      * @return The Target or null on failure.
@@ -84,9 +82,6 @@ public interface ComTargetDao {
     /**
      *  Loads target group identified by list split parameters and company id.
      *
-     * @param prefix
-     * @param splitType
-     * @param index
      * @param companyID
      *          The companyID for the target group.
      * @return The Target or null on failure.
@@ -194,8 +189,12 @@ public interface ComTargetDao {
     List<TargetLight> getTargetLights(int companyID, boolean includeDeleted);
     
     List<TargetLight> getTargetLights(int companyID, boolean includeDeleted, boolean worldDelivery, boolean adminTestDelivery);
+
+    List<TargetLight> getTargetLights(int adminId, int companyID, boolean includeDeleted, boolean worldDelivery, boolean adminTestDelivery);
     
 	List<TargetLight> getTargetLights(int companyID, boolean includeDeleted, boolean worldDelivery, boolean adminTestDelivery, boolean content);
+
+	List<TargetLight> getTargetLights(int adminId, int companyID, boolean includeDeleted, boolean worldDelivery, boolean adminTestDelivery, boolean content);
 
 	List<TargetLight> getTargetLights(int companyID, Collection<Integer> targetIds, boolean includeDeleted);
 
@@ -206,10 +205,14 @@ public interface ComTargetDao {
 	List<TargetLight> getChoosenTargetLights(String targetExpression, final int companyID);
 	
 	List<TargetLight> getTestAndAdminTargetLights(int companyId);
-	
+
+	List<TargetLight> getTestAndAdminTargetLights(int adminId, int companyId);
+
     List<TargetLight> getSplitTargetLights(int companyID, String splitType);
 
-    boolean isBasicFullTextSearchSupported();
+	PaginatedListImpl<TargetLight> getPaginatedTargetLightsBySearchParameters(TargetLightsOptions options);
+
+	boolean isBasicFullTextSearchSupported();
     
 	boolean deleteWorkflowTargetConditions(int companyId, int workflowId);
 	
@@ -228,7 +231,7 @@ public interface ComTargetDao {
 	 * @param companyId company ID
 	 * @return list of target groups
 	 */
-	List<RawTargetGroup> listRawTargetGroups(int companyId, String ...eqlRawFragments);
+	List<ComTarget> listRawTargetGroups(int companyId, String ...eqlRawFragments);
 	
 	List<ComTarget> getTargetByNameAndSQL(int companyId, String targetName, String targetSQL, boolean includeDeleted, boolean worldDelivery, boolean adminTestDelivery);
 
@@ -248,11 +251,19 @@ public interface ComTargetDao {
     
     void removeFromFavorites(int targetId, int companyId);
 
+    void markAsFavorite(int targetId, int adminId, int companyId);
+
+    void unmarkAsFavorite(int targetId, int adminId, int companyId);
+
 	boolean isValidEql(int companyID, String eql);
 
     boolean isAltg(int targetId);
 
+    boolean isHidden(int targetId, int companyId);
+
 	int getAccessLimitingTargetgroupsAmount(int companyId);
 
     boolean isLinkUsedInTarget(TrackableLink link);
+
+    boolean isTargetFavoriteForAdmin(ComTarget target, int adminId);
 }

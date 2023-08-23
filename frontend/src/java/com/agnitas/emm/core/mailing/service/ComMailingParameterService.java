@@ -15,12 +15,11 @@ import java.util.List;
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.mailing.bean.ComMailingParameter;
 import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public interface ComMailingParameterService {
-	List<ComMailingParameter> getAllParameters(@VelocityCheck int companyID, final Admin admin);
+	List<ComMailingParameter> getAllParameters(int companyID, final Admin admin);
 
-	List<ComMailingParameter> getMailingParameters(@VelocityCheck int companyId, int mailingId);
+	List<ComMailingParameter> getMailingParameters(int companyId, int mailingId);
 
 	List<ComMailingParameter> getParametersBySearchQuery(int companyID, String searchQuery, String mailingId);
 
@@ -34,7 +33,7 @@ public interface ComMailingParameterService {
 
 	boolean deleteParameter(int mailingInfoID, final Admin admin);
 
-	boolean updateParameters(@VelocityCheck int companyID, int mailingID, List<ComMailingParameter> parameterList, int adminId);
+	boolean updateParameters(int companyID, int mailingID, List<ComMailingParameter> parameterList, int adminId);
 
-	boolean updateParameters(@VelocityCheck int companyID, int mailingID, List<ComMailingParameter> parameterList, int adminId, List<UserAction> userActions);
+	boolean updateParameters(int companyID, int mailingID, List<ComMailingParameter> parameterList, int adminId, List<UserAction> userActions);
 }

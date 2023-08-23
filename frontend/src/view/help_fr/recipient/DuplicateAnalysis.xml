@@ -1,0 +1,4 @@
+<HelpBalloon>
+	<title><![CDATA[Analyse des doublons]]></title>
+	<content><![CDATA[Lors de l'analyse des doublons, seuls les destinataires normaux sont &#xE9;valu&#xE9;s, car les doublons sont souvent intentionnels chez les destinataires admin et test.]]></content>
+</HelpBalloon>

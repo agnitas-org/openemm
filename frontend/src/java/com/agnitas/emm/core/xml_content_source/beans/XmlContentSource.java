@@ -10,7 +10,6 @@
 
 package com.agnitas.emm.core.xml_content_source.beans;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public interface XmlContentSource {
     /**
@@ -25,7 +24,7 @@ public interface XmlContentSource {
      *
      * @param id New value of property companyID.
      */
-    void setCompanyID(@VelocityCheck int id);
+    void setCompanyID(int id);
 
     /**
      * Setter for property description.

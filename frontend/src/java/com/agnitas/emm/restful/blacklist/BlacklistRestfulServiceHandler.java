@@ -15,9 +15,9 @@ import java.io.InputStream;
 import java.util.Date;
 import java.util.Map.Entry;
 
+import com.agnitas.emm.core.useractivitylog.dao.RestfulUserActivityLogDao;
 import org.agnitas.beans.BlackListEntry;
 import org.agnitas.beans.impl.BlackListEntryImpl;
-import org.agnitas.emm.core.useractivitylog.dao.UserActivityLogDao;
 import org.agnitas.util.HttpUtils.RequestMethod;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Required;
@@ -50,11 +50,11 @@ public class BlacklistRestfulServiceHandler implements RestfulServiceHandler {
 	
 	public static final String NAMESPACE = "blacklist";
 
-	private UserActivityLogDao userActivityLogDao;
+	private RestfulUserActivityLogDao userActivityLogDao;
 	private ComBlacklistDao blacklistDao;
 
 	@Required
-	public void setUserActivityLogDao(UserActivityLogDao userActivityLogDao) {
+	public void setUserActivityLogDao(RestfulUserActivityLogDao userActivityLogDao) {
 		this.userActivityLogDao = userActivityLogDao;
 	}
 	
@@ -89,10 +89,6 @@ public class BlacklistRestfulServiceHandler implements RestfulServiceHandler {
 	/**
 	 * Return a single or multiple blacklist data sets
 	 * 
-	 * @param request
-	 * @param admin
-	 * @return
-	 * @throws Exception
 	 */
 	private Object getBlacklistData(HttpServletRequest request, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.BLACKLIST)) {
@@ -104,8 +100,8 @@ public class BlacklistRestfulServiceHandler implements RestfulServiceHandler {
 		if (restfulContext.length == 0) {
 			// Show blacklist entries
 			userActivityLogDao.addAdminUseOfFeature(admin, "restful/blacklist", new Date());
-			userActivityLogDao.writeUserActivityLog(admin, "restful/blacklist GET", "ALL");
-			
+			writeActivityLog("ALL", request, admin);
+
 			JsonArray blacklistsJsonArray = new JsonArray();
 			
 			for (BlackListEntry blackListEntry : blacklistDao.getBlacklistedRecipients(admin.getCompanyID())) {
@@ -120,8 +116,8 @@ public class BlacklistRestfulServiceHandler implements RestfulServiceHandler {
 		} else {
 			// Show blacklist entries a single email is blacklisted by
 			userActivityLogDao.addAdminUseOfFeature(admin, "restful/blacklist", new Date());
-			userActivityLogDao.writeUserActivityLog(admin, "restful/blacklist GET", restfulContext[0]);
-			
+			writeActivityLog(restfulContext[0], request, admin);
+
 			JsonArray blacklistsJsonArray = new JsonArray();
 			
 			for (BlackListEntry blackListEntry : blacklistDao.getBlacklistCheckEntries(admin.getCompanyID(), restfulContext[0])) {
@@ -139,10 +135,6 @@ public class BlacklistRestfulServiceHandler implements RestfulServiceHandler {
 	/**
 	 * Delete a blacklist
 	 * 
-	 * @param request
-	 * @param admin
-	 * @return
-	 * @throws Exception
 	 */
 	private Object deleteBlacklistEntry(HttpServletRequest request, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.BLACKLIST)) {
@@ -152,8 +144,8 @@ public class BlacklistRestfulServiceHandler implements RestfulServiceHandler {
 		String[] restfulContext = RestfulServiceHandler.getRestfulContext(request, NAMESPACE, 1, 1);
 		
 		userActivityLogDao.addAdminUseOfFeature(admin, "restful/blacklist", new Date());
-		userActivityLogDao.writeUserActivityLog(admin, "restful/blacklist DELETE", restfulContext[0]);
-		
+		writeActivityLog(restfulContext[0], request, admin);
+
 		boolean success = blacklistDao.delete(admin.getCompanyID(), restfulContext[0]);
 		
 		if (success) {
@@ -166,11 +158,6 @@ public class BlacklistRestfulServiceHandler implements RestfulServiceHandler {
 	/**
 	 * Create a new blacklist
 	 * 
-	 * @param request
-	 * @param requestDataFile
-	 * @param admin
-	 * @return
-	 * @throws Exception
 	 */
 	private Object createNewBlacklistEntry(HttpServletRequest request, byte[] requestData, File requestDataFile, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.BLACKLIST)) {
@@ -239,11 +226,6 @@ public class BlacklistRestfulServiceHandler implements RestfulServiceHandler {
 	/**
 	 * Create a new blacklist or update an exiting blacklist
 	 * 
-	 * @param request
-	 * @param requestDataFile
-	 * @param admin
-	 * @return
-	 * @throws Exception
 	 */
 	private Object createOrUpdateBlacklistEntry(HttpServletRequest request, byte[] requestData, File requestDataFile, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.BLACKLIST)) {
@@ -344,5 +326,9 @@ public class BlacklistRestfulServiceHandler implements RestfulServiceHandler {
 	@Override
 	public ResponseType getResponseType() {
 		return ResponseType.JSON;
+	}
+
+	private void writeActivityLog(String description, HttpServletRequest request, Admin admin) {
+		writeActivityLog(userActivityLogDao, description, request, admin);
 	}
 }

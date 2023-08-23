@@ -14,10 +14,11 @@ import org.apache.commons.lang3.math.NumberUtils;
 
 public enum PeriodType {
     DATE_RANGE_WEEK(6),
-    DATE_RANGE_MONTH(7),
+    DATE_RANGE_30DAYS(7),
     DATE_RANGE_CUSTOM(8),
     DATE_RANGE_DAY(9),
-    DATE_RANGE_THREE_MONTH(10);
+    DATE_RANGE_THREE_MONTH(10),
+    DATE_RANGE_LAST_MONTH(11);
     
     
     private final int key;

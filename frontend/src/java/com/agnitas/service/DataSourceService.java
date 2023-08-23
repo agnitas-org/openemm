@@ -10,6 +10,7 @@
 
 package com.agnitas.service;
 
+import org.agnitas.beans.DatasourceDescription;
 import org.agnitas.dao.SourceGroupType;
 
 import net.sf.json.JSONArray;
@@ -20,4 +21,6 @@ public interface DataSourceService {
     boolean rolloutCreationDataSource(int dataSourceId, String username, int companyId);
 
     JSONArray getDataSourcesJson(final int companyId);
+
+    DatasourceDescription getDatasourceDescription(int datasourceId, int companyId);
 }

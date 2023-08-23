@@ -351,6 +351,22 @@ The content can be anything.
   margin-bottom: 10px;
 
   @include shadow-variant(regular);
+
+  &.flex-tile {
+    display: flex;
+    flex-direction: column;
+    height: calc(100% - 10px);
+
+    & > .tile-header, & > .tile-footer {
+      flex-shrink: 0;
+    }
+
+    & > .tile-content {
+      flex-grow: 1;
+      height: 0;
+      overflow: hidden auto;
+    }
+  }
 }
 
 body.dark-theme .tile {
@@ -490,14 +506,6 @@ body.dark-theme .tile {
     }
   }
 
-  .segmented-control {
-    padding: 10px;
-
-    .btn {
-      margin-top: 0;
-    }
-  }
-
   .tab {
 
     a {
@@ -574,6 +582,10 @@ body.dark-theme .tile-header {
     border-right-color: $c-dt-tile-border;
     border-bottom: none;
     background-color: $c-dt-tile-background;
+  }
+  
+  .tile-toggle {
+    color: $c-dt-dropdown-toggle-text;
   }
 }
 
@@ -669,6 +681,7 @@ body.dark-theme .tile-notification {
 
 .tile-header-actions {
   float: right;
+  margin-left: 15px;
 
   > li {
     float: left;

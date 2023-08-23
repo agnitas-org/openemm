@@ -190,7 +190,7 @@ public interface Admin {
         return CollectionUtils.isNotEmpty(getAltgIds());
     }
 	
-	default boolean isAccessLimitedByTargetGroup() {
+	default boolean isAccessLimitedBySimpleALTG() {
 		return getAccessLimitingTargetGroupID() > 0;
 	}
 	

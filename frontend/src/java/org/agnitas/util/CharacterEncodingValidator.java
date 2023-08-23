@@ -14,14 +14,11 @@ package org.agnitas.util;
 import com.agnitas.beans.Mailing;
 import com.agnitas.emm.core.mailing.forms.MailingSettingsForm;
 import org.agnitas.beans.MailingComponent;
-import org.agnitas.exceptions.CharacterEncodingValidationException;
 import org.agnitas.exceptions.CharacterEncodingValidationExceptionMod;
 import org.agnitas.exceptions.EncodingError;
-import org.agnitas.web.forms.MailingBaseForm;
 
 import com.agnitas.beans.DynamicTag;
 import com.agnitas.emm.core.mailingcontent.dto.DynTagDto;
-import com.agnitas.web.ComMailingContentForm;
 
 import java.nio.charset.CharsetEncoder;
 import java.util.Set;
@@ -32,33 +29,6 @@ import java.util.Set;
  */
 public interface CharacterEncodingValidator {
 
-	/**
-	 * Validates text and HTML template of the given form and the content blocks of the given Mailing object. This method is called directly <b>before modifying</b>
-	 * the MailingBaseForm object. 
-	 * 
-	 * @param form form to validate text and HTML template
-	 * @param mailing mailing to validate content blocks
-	 */
-	void validate( MailingBaseForm form, Mailing mailing) throws CharacterEncodingValidationException;
-
-	/**
-	 * Validates the content from given MailingContentForm.
-	 * 
-	 * @param form MailingContentForm to be validated
-	 * @param mailing mailing object to determined character encoding
-	 * @throws CharacterEncodingValidationException
-	 */
-	void validate(ComMailingContentForm form, Mailing mailing) throws CharacterEncodingValidationException;
-
-    /**
-	 * Validates the content from given MailingContentForm.
-	 *
-	 * @param form MailingContentForm to be validated
-	 * @param charset mailing charset
-	 * @throws CharacterEncodingValidationException
-	 */
-	void validate(ComMailingContentForm form, String charset) throws CharacterEncodingValidationException;
-	
 	/**
 	 * Validates a mailing component.
 	 * 
@@ -77,13 +47,15 @@ public interface CharacterEncodingValidator {
 	 */
 	boolean validate(DynamicTag dynTag, String charsetName);
 
-    void validateMod( MailingBaseForm form, Mailing mailing) throws CharacterEncodingValidationExceptionMod;
-    
+    /**
+  	 * Validates text and HTML template of the given form and the content blocks of the given Mailing object. 
+  	 * 
+  	 * @param form form to validate text and HTML template
+  	 * @param mailing mailing to validate content blocks
+  	 */
     void validateMod(MailingSettingsForm form, Mailing mailing) throws CharacterEncodingValidationExceptionMod;
 
 	Set<EncodingError> validateMod(String string, CharsetEncoder charsetEncoder);
-
-    void validateContentMod(ComMailingContentForm form, String charset) throws CharacterEncodingValidationExceptionMod;
 
     void validateContentMod(DynTagDto dynTag, String charset) throws CharacterEncodingValidationExceptionMod;
 }

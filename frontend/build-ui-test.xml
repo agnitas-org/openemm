@@ -1,0 +1,26 @@
+<?xml version="1.0" ?>
+<project basedir="." default="test" name="EMM_TEST_UI">
+    <macrodef name="exec-node">
+      <attribute name="module" description="The name of the NodeJS module to execute" />
+      <attribute name="failonerror" default="true" description="Fail if the exit code is not 0" />
+      <attribute name="dir" description="Directory to execute task" />
+      <element name="args" implicit="yes" description="Argument to pass to the exec task" />
+      <sequential>
+        <exec executable="cmd.exe" dir="@{dir}" failonerror="@{failonerror}" osfamily="winnt">
+          <arg line="/c  @{module}" />
+          <args />
+        </exec>
+        <exec executable="@{module}" dir="@{dir}" failonerror="@{failonerror}" osfamily="unix" logError="true">
+          <args />
+        </exec>
+      </sequential>
+    </macrodef>
+
+    <target name="test">
+        <exec-node dir="./test-ui" module="npm" failonerror="false" >
+          <arg value="test" />
+          <arg value="--" />
+          <arg value="--reporter=list" />
+        </exec-node>
+    </target>
+</project>

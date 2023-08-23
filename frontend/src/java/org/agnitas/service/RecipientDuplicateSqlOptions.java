@@ -21,7 +21,7 @@ public class RecipientDuplicateSqlOptions implements RecipientOptions {
     private String dir;
     private int listId;
     private int targetId;
-    private int limitAccessTargetId; // delete after GWUA-4957 has been successfully tested
+    private int limitAccessTargetId;
     private String userType;
     private int userStatus;
     private boolean userTypeEmpty;

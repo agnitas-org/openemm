@@ -10,7 +10,6 @@
 
 package com.agnitas.reporting.birt.external.beans;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public class LightTarget {
 	
@@ -29,7 +28,7 @@ public class LightTarget {
 	public int getCompanyID() {
 		return companyID;
 	}
-	public void setCompanyID(@VelocityCheck int companyID) {
+	public void setCompanyID(int companyID) {
 		this.companyID = companyID;
 	}
 	public String getName() {

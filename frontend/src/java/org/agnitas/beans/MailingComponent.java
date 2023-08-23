@@ -12,7 +12,6 @@ package org.agnitas.beans;
 
 import java.util.Date;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public interface MailingComponent {
 	boolean loadContentFromURL();
@@ -37,7 +36,7 @@ public interface MailingComponent {
 
 	void setBinaryBlock(byte[] binaryBlock, String mimeType);
 
-	void setCompanyID(@VelocityCheck int companyID);
+	void setCompanyID(int companyID);
 
 	void setId(int id);
 

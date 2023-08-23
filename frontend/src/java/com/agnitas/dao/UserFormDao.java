@@ -13,7 +13,7 @@ package com.agnitas.dao;
 import java.util.Collection;
 import java.util.List;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
+
 import org.agnitas.util.Tuple;
 
 import com.agnitas.userform.bean.UserForm;
@@ -33,13 +33,13 @@ public interface UserFormDao {
      */
     int storeUserForm(UserForm form) throws Exception;
     
-	int createUserForm(@VelocityCheck int companyId, UserForm userForm);
+	int createUserForm(int companyId, UserForm userForm);
 	
-	void updateUserForm(@VelocityCheck int companyId, UserForm form);
+	void updateUserForm(int companyId, UserForm form);
 
-	int updateActiveness(@VelocityCheck int companyId, Collection<Integer> formIds, boolean isActive);
+	int updateActiveness(int companyId, Collection<Integer> formIds, boolean isActive);
 
-	List<UserForm> getByIds(@VelocityCheck int companyId, Collection<Integer> formIds);
+	List<UserForm> getByIds(int companyId, Collection<Integer> formIds);
 
     /**
      * Deletes user form identified by form name and company id.
@@ -50,9 +50,9 @@ public interface UserFormDao {
 	 *            The companyID for the user form that should be deleted.
      * @return true on success.
      */
-    boolean deleteUserForm(int formID, @VelocityCheck int companyID);
+    boolean deleteUserForm(int formID, int companyID);
 
-    boolean deleteUserFormByCompany(@VelocityCheck int companyID);
+    boolean deleteUserFormByCompany(int companyID);
 
     /**
      * Load all user forms for company id.
@@ -61,7 +61,7 @@ public interface UserFormDao {
      *          The id of the company for user forms.
      * @return List of UserForm or empty list.
      */
-    List<UserForm> getUserForms(@VelocityCheck int companyID);
+    List<UserForm> getUserForms(int companyID);
 
 	/**
 	 * Checks, if there is another form with same name.
@@ -78,14 +78,12 @@ public interface UserFormDao {
 	 * Ids and shortnames of all {@link UserForm} which uses action
 	 */
 	List<Tuple<Integer, String>> getUserFormNamesByActionID(int companyID, int actionID);
-	
-	List<Tuple<Integer, String>> getImportNamesByActionID(int companyID, int actionID);
 
-	UserForm getUserForm(int formID, @VelocityCheck int companyID);
+	UserForm getUserForm(int formID, int companyID);
 
-	UserForm getUserFormByName(String name, @VelocityCheck int companyID) throws Exception;
+	UserForm getUserFormByName(String name, int companyID) throws Exception;
 
-	String getUserFormName(int formId, @VelocityCheck int companyId);
+	String getUserFormName(int formId, int companyId);
 
-	boolean existsUserForm(@VelocityCheck int companyId, int userFormId);
+	boolean existsUserForm(int companyId, int userFormId);
 }

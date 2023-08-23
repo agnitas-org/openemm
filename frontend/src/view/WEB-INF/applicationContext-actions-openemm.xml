@@ -18,52 +18,6 @@
 	<context:component-scan base-package="org.agnitas" />
 	<context:component-scan base-package="com.agnitas" />
 
-	<bean name="/mailingsend" class="com.agnitas.web.ComMailingSendActionBasic">
-		<property name="targetDao" ref="TargetDao" />
-		<property name="mailingDao" ref="MailingDao" />
-		<property name="recipientDao" ref="RecipientDao" />
-		<property name="actionService" ref="EmmActionService"/>
-		<property name="webStorage" ref="WebStorage" />
-		<property name="mailingComponentDao" ref="MailingComponentDao" />
-		<property name="linkcheckService" ref="linkcheckService" />
-		<property name="mailinglistDao" ref="MailinglistDao" />
-		<property name="tagCheckFactory" ref="TAGCheckFactory" />
-		<property name="dataSource" ref="dataSource" />
-		<property name="previewFactory" ref="PreviewFactory" />
-		<property name="mailingFactory" ref="MailingFactory" />
-		<property name="workerExecutorService" ref="WorkerExecutorService" />
-		<property name="mailingBaseService" ref="MailingBaseService" />
-		<property name="futureHolder" ref="futureHolder" />
-		<property name="targetService" ref="targetService" />
-		<property name="companyDao" ref="CompanyDao" />
-		<property name="trackableLinkDao" ref="TrackableLinkDao" />
-		<property name="workflowService" ref="WorkflowService" />
-		<property name="userActivityLogService" ref="UserActivityLogService" />
-		<property name="mailingService" ref="MailingService" />
-		<property name="dkimDao" ref="DkimDao" />
-		<property name="mediatypesDao" ref="MediatypesDao" />
-		<property name="onepixelDao" ref="OnepixelDao" />
-		<property name="generationPDFService" ref="GenerationPDFService" />
-		<property name="maildropStatusDao" ref="MaildropStatusDao" />
-		<property name="configService" ref="ConfigService" />
-		<property name="birtReportService" ref="BirtReportService" />
-		<property name="maildropService" ref="MaildropService" />
-		<property name="deliveryStatService" ref="mailingDeliveryStatService"/>
-		<property name="javaMailService" ref="JavaMailService" />
-		<property name="blacklistService" ref="BlacklistService" />
-		<property name="gridService" ref="GridServiceWrapper"/>
-		<property name="birtReportFactory" ref="BirtReportFactory"/>
-		<property name="bounceFilterService" ref="BounceFilterService"/>
-		<property name="mailingStopService" ref="MailingStopService" />
-		<property name="mediatypeFactory" ref="MediatypeFactory"/>
-		<property name="mailingPreviewService" ref="MailingPreviewService" />
-		<property name="mailingStatisticsDao" ref="MailingStatisticsDao" />
-		<property name="mailingParameterDao" ref="MailingParameterDao" />
-        <property name="mailingSizeCalculationService" ref="mailingSizeCalculationService"/>
-		<property name="mailingDeliveryBlockingService" ref="MailingDeliveryBlockingService"/>
-        <property name="mailingSendService" ref="mailingSendService2"/>
-	</bean>
-
 	<bean name="/importprofile" class="org.agnitas.web.ImportProfileAction">
 		<property name="userActivityLogService" ref="UserActivityLogService" />
 		<property name="importProfileService" ref="ImportProfileService"/>

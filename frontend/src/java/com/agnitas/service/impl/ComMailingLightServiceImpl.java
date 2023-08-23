@@ -15,7 +15,6 @@ import java.util.stream.Collectors;
 
 import org.agnitas.emm.core.mailing.beans.LightweightMailingWithMailingList;
 import org.agnitas.emm.core.mailing.service.MailingNotExistException;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
@@ -35,7 +34,7 @@ public class ComMailingLightServiceImpl implements ComMailingLightService {
     private MaildropService maildropService;
 
     @Override
-    public List<LightweightMailingWithMailingList> getLightweightMailings(@VelocityCheck int companyID, int adminId,
+    public List<LightweightMailingWithMailingList> getLightweightMailings(int companyID, int adminId,
                                                                           int parentMailingId, int mailingId) {
 
         List<Mailing> mailings = mailingDao.getMailings(companyID, adminId, TAKE_ALL_MAILINGS, "W", true);
@@ -70,7 +69,7 @@ public class ComMailingLightServiceImpl implements ComMailingLightService {
     }
 
     @Override
-    public boolean isMailtrackingActive(@VelocityCheck int companyID) {
+    public boolean isMailtrackingActive(int companyID) {
         return companyDao.isMailtrackingActive(companyID);
     }
 

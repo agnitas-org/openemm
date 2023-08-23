@@ -112,14 +112,14 @@
             <c:when test="${isTemplate}">
                 <div class="form-group">
                     <div class="col-sm-4">
-                        <label class="control-label">
+                        <label class="control-label checkbox-control-label" for="needsTargetToggle">
                             <mvc:message code="mailing.needsTarget"/>
                         </label>
                     </div>
                     <div class="col-sm-8">
                         <c:set var="isNeedsTargetCheckboxDisabled" value="${not MAILING_EDITABLE or mailingSettingsForm.mailingType eq DATEBASED_MAILING_TYPE or  mailingSettingsForm.mailingType eq INTERVAL_MAILING_TYPE}"/>
                         <label class="toggle">
-                            <mvc:checkbox path="needsTarget" disabled="${isNeedsTargetCheckboxDisabled}"/>
+                            <mvc:checkbox path="needsTarget" id="needsTargetToggle" disabled="${isNeedsTargetCheckboxDisabled}"/>
                             <div class="toggle-control"></div>
                         </label>
                         <c:if test="${isNeedsTargetCheckboxDisabled}">
@@ -201,6 +201,9 @@
                                         <c:if test="${fn:startsWith(aNamePage, LIST_SPLIT_PREFIX)}">
                                             <c:set var="aNameCode" value="${fn:substring(aNamePage, fn:length(LIST_SPLIT_PREFIX) + 1, fn:length(aNamePage))}"/>
                                             <c:set var="aNamePart" value="${fn:substring(aNameCode, fn:indexOf(aNameCode, '_') + 1, fn:length(aNameCode))}"/>
+                                            <c:if test="${splitId eq 0}">
+                                                <c:set var="aNamePart" value=''/>
+                                            </c:if>
                                             <mvc:option value="${aNamePart}">
                                                 <mvc:message code="listsplit.${mailingSettingsForm.splitBase}.${aNamePart}"/>
                                             </mvc:option>

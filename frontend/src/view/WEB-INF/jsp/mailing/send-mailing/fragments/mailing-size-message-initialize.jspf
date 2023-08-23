@@ -1,13 +1,15 @@
-<%--@elvariable id="form" type="com.agnitas.emm.core.components.form.MailingSendForm"--%>
-<c:set var="approximateMaxSizeWithoutExternalImages" value="${emm:formatBytes(form.approximateMaxSizeWithoutExternalImages, 1, 'iec', emm:getLocale(pageContext.request))}"/>
-<c:set var="approximateMaxSize" value="${emm:formatBytes(form.approximateMaxSize, 1, 'iec', emm:getLocale(pageContext.request))}"/>
+
+<%--@elvariable id="approximateMaxDeliverySize" type="java.lang.Long"--%>
+<%--@elvariable id="approximateMaxSizeIncludingImages" type="java.lang.Long"--%>
+<c:set var="approximateMaxDeliverySize" value="${emm:formatBytes(approximateMaxDeliverySize, 1, 'iec', emm:getLocale(pageContext.request))}"/>
+<c:set var="approximateMaxSizeIncludingImages" value="${emm:formatBytes(approximateMaxSizeIncludingImages, 1, 'iec', emm:getLocale(pageContext.request))}"/>
 
 <c:choose>
     <%-- Compare rounded values, not the accurate values in bytes --%>
-    <c:when test="${approximateMaxSize eq approximateMaxSizeWithoutExternalImages}">
-        <c:set var="sizeMessage">${approximateMaxSize}</c:set>
+    <c:when test="${approximateMaxSizeIncludingImages eq approximateMaxDeliverySize}">
+        <c:set var="sizeMessage">${approximateMaxSizeIncludingImages}</c:set>
     </c:when>
     <c:otherwise>
-        <c:set var="sizeMessage">${approximateMaxSizeWithoutExternalImages} (${approximateMaxSize})</c:set>
+        <c:set var="sizeMessage">${approximateMaxDeliverySize} (${approximateMaxSizeIncludingImages})</c:set>
     </c:otherwise>
 </c:choose>

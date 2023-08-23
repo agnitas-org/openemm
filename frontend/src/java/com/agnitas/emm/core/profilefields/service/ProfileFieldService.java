@@ -13,9 +13,9 @@ package com.agnitas.emm.core.profilefields.service;
 import java.util.List;
 import java.util.Set;
 
+import org.agnitas.beans.LightProfileField;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.ProfileField;
@@ -24,37 +24,43 @@ import com.agnitas.emm.core.profilefields.ProfileFieldException;
 import com.agnitas.emm.core.profilefields.bean.ProfileFieldDependentType;
 import com.agnitas.emm.core.profilefields.form.ProfileFieldForm;
 
+/**
+ * @deprecated Use RecipientFieldService instead
+ */
+@Deprecated
 public interface ProfileFieldService {
 
-    String translateDatabaseNameToVisibleName(@VelocityCheck final int companyID, final String databaseName) throws ProfileFieldException;
+    String translateDatabaseNameToVisibleName(final int companyID, final String databaseName) throws ProfileFieldException;
 
     String translateVisibleNameToDatabaseName(final int companyID, final String visibleName) throws ProfileFieldException;
 
     List<ProfileField> getProfileFieldsWithInterest(Admin admin);
 
-    boolean isAddingNearLimit(@VelocityCheck int companyId);
+    boolean isAddingNearLimit(int companyId);
 
     PaginatedListImpl<ProfileField> getPaginatedFieldsList(int companyId, String sortColumn, String order, int page, int rowsCount) throws Exception;
 
-    List<ProfileField> getSortedColumnInfo(@VelocityCheck int companyId);
+    List<ProfileField> getSortedColumnInfo(int companyId);
 
     List<String> getAllExceptSpecifiedNames(List<String> excludedFields, int companyId);
 
-    List<ProfileField> getFieldWithIndividualSortOrder(@VelocityCheck int companyId, int adminId);
+    List<ProfileField> getFieldWithIndividualSortOrder(int companyId, int adminId);
 
-    int getCurrentSpecificFieldCount(@VelocityCheck int companyId);
+    List<LightProfileField> getLightProfileFields(int companyId);
 
-    int getMaximumCompanySpecificFieldCount(@VelocityCheck int companyId);
+    int getCurrentSpecificFieldCount(int companyId);
 
-    boolean exists(@VelocityCheck int companyId, String fieldName);
+    int getMaximumCompanySpecificFieldCount(int companyId);
 
-    ProfileField getProfileField(@VelocityCheck int companyId, String fieldName);
+    boolean exists(int companyId, String fieldName);
+
+    ProfileField getProfileField(int companyId, String fieldName);
 
     ProfileField getProfileField(int companyId, String fieldName, int adminId);
 
     String getTrackingDependentWorkflows(int companyId, String fieldName);
 
-    Set<String> getSelectedFieldsWithHistoryFlag(@VelocityCheck int companyId);
+    Set<String> getSelectedFieldsWithHistoryFlag(int companyId);
 
     void createMandatoryFieldsIfNotExist(Admin admin);
 
@@ -62,7 +68,7 @@ public interface ProfileFieldService {
 
     boolean updateField(ProfileField field, Admin admin);
 
-    void removeProfileField(@VelocityCheck int companyId, String fieldName);
+    void removeProfileField(int companyId, String fieldName);
 
     UserAction getCreateFieldLog(String shortName);
 
@@ -72,11 +78,9 @@ public interface ProfileFieldService {
 
     UserAction getEmmChangeLog(ProfileField field, ProfileFieldForm form);
 
-    List<Dependent<ProfileFieldDependentType>> getDependents(@VelocityCheck int companyId, String fieldName);
+    List<Dependent<ProfileFieldDependentType>> getDependents(int companyId, String fieldName);
 
     List<ProfileField> getProfileFields(int companyId) throws Exception;
-    
-    List<ProfileField> getProfileFields(int companyId, int adminId) throws Exception;
 
     List<ProfileField> getVisibleProfileFields(int companyId);
 
@@ -87,4 +91,10 @@ public interface ProfileFieldService {
 	int getMaximumNumberOfCompanySpecificProfileFields() throws Exception;
 
     ProfileField getProfileFieldByShortname(int companyID, String shortname);
+
+    ProfileField getProfileFieldByShortname(int companyID, String shortname, int adminId);
+
+	List<ProfileField> getProfileFields(int companyId, int adminId) throws Exception;
+
+	boolean isWithinGracefulLimit(int companyId);
 }

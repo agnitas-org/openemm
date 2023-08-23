@@ -17,7 +17,6 @@ import java.util.List;
 import javax.sql.DataSource;
 
 import org.agnitas.dao.impl.BaseDaoImpl;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -35,12 +34,12 @@ public class LightMailingListDaoImpl extends BaseDaoImpl implements LightMailing
 	}
 
 	@Override
-	public LightMailingList getMailingList(int mailingListID, @VelocityCheck int companyID) {
+	public LightMailingList getMailingList(int mailingListID, int companyID) {
 		return selectObjectDefaultNull(logger, "SELECT mailinglist_id, shortname, company_id FROM mailinglist_tbl WHERE mailinglist_id = ? AND company_id = ?", new LightMailingListRowMapper(), mailingListID, companyID);
 	}
 
 	@Override
-	public List<LightMailingList> getMailingLists(List<Integer> mailingListIDs, @VelocityCheck int companyID) {
+	public List<LightMailingList> getMailingLists(List<Integer> mailingListIDs, int companyID) {
 		if (mailingListIDs == null || mailingListIDs.isEmpty()) {
 			return null;
 		}

@@ -19,6 +19,7 @@ import org.agnitas.beans.ImportStatus;
 import org.agnitas.beans.ImportProfile;
 import org.agnitas.dao.ImportRecipientsDao;
 import org.agnitas.dao.UserStatus;
+import org.agnitas.emm.core.velocity.Constants;
 import org.agnitas.util.DbColumnType;
 import org.agnitas.util.ImportUtils.ImportErrorType;
 import org.apache.logging.log4j.LogManager;
@@ -93,7 +94,7 @@ public class ImportModeUpdateHandler implements ImportModeHandler {
 		                    requestParams.put("agnMAILINGLIST", Integer.toString(mailingListId));
 		                    requestParams.put("agnFN", "ProfileImport");
 		                    params.put("requestParameters", requestParams);
-		        			params.put("actionErrors", actionOperationErrors);
+		        			params.put(Constants.ACTION_OPERATION_ERRORS_CONTEXT_NAME, actionOperationErrors);
 		        			
 		        			if (emmActionService != null) {
 		        				emmActionService.executeActions(importProfile.getActionForNewRecipients(), importProfile.getCompanyId(), params, actionOperationErrors);

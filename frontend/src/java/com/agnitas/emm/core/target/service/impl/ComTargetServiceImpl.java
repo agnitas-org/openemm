@@ -27,20 +27,16 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import com.agnitas.beans.ProfileFieldMode;
-import com.agnitas.emm.core.target.eql.emm.querybuilder.EqlReferenceItemsExtractor;
 import org.agnitas.beans.DynamicTagContent;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.MailingComponentType;
 import org.agnitas.beans.TrackableLink;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.MailingComponentDao;
+import org.agnitas.dao.exception.target.TargetGroupLockedException;
 import org.agnitas.dao.exception.target.TargetGroupPersistenceException;
 import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.target.exception.TargetGroupException;
-import org.agnitas.emm.core.target.exception.TargetGroupIsInUseException;
 import org.agnitas.emm.core.target.exception.UnknownTargetGroupIdException;
-import org.agnitas.emm.core.target.service.TargetGroupLocator;
 import org.agnitas.emm.core.target.service.UserActivityLog;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.target.TargetFactory;
@@ -59,6 +55,7 @@ import com.agnitas.beans.ComTarget;
 import com.agnitas.beans.DynamicTag;
 import com.agnitas.beans.ListSplit;
 import com.agnitas.beans.Mailing;
+import com.agnitas.beans.ProfileFieldMode;
 import com.agnitas.beans.TargetLight;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.dao.ComRecipientDao;
@@ -72,8 +69,8 @@ import com.agnitas.emm.core.recipient.web.RejectAccessByTargetGroupLimit;
 import com.agnitas.emm.core.target.AltgMode;
 import com.agnitas.emm.core.target.TargetExpressionUtils;
 import com.agnitas.emm.core.target.TargetUtils;
-import com.agnitas.emm.core.target.beans.RawTargetGroup;
 import com.agnitas.emm.core.target.beans.TargetComplexityGrade;
+import com.agnitas.emm.core.target.beans.TargetGroupDependentEntry;
 import com.agnitas.emm.core.target.beans.TargetGroupDependentType;
 import com.agnitas.emm.core.target.complexity.bean.TargetComplexityEvaluationCache;
 import com.agnitas.emm.core.target.complexity.bean.impl.TargetComplexityEvaluationCacheImpl;
@@ -84,6 +81,7 @@ import com.agnitas.emm.core.target.eql.EqlValidatorService;
 import com.agnitas.emm.core.target.eql.codegen.CodeGeneratorException;
 import com.agnitas.emm.core.target.eql.codegen.resolver.ProfileFieldResolveException;
 import com.agnitas.emm.core.target.eql.codegen.resolver.ReferenceTableResolveException;
+import com.agnitas.emm.core.target.eql.emm.querybuilder.EqlReferenceItemsExtractor;
 import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderToEqlConversionException;
 import com.agnitas.emm.core.target.eql.emm.querybuilder.QueryBuilderToEqlConverter;
 import com.agnitas.emm.core.target.eql.parser.EqlParserException;
@@ -92,10 +90,12 @@ import com.agnitas.emm.core.target.exception.EqlFormatException;
 import com.agnitas.emm.core.target.service.ComTargetService;
 import com.agnitas.emm.core.target.service.RecipientTargetGroupMatcher;
 import com.agnitas.emm.core.target.service.ReferencedItemsService;
+import com.agnitas.emm.core.target.service.TargetGroupDependencyService;
 import com.agnitas.emm.core.target.service.TargetLightsOptions;
 import com.agnitas.emm.core.target.service.TargetSavingAndAnalysisResult;
 import com.agnitas.messages.Message;
 import com.agnitas.service.ColumnInfoService;
+import com.agnitas.service.ServiceResult;
 import com.agnitas.service.SimpleServiceResult;
 import com.helger.collection.pair.Pair;
 
@@ -110,23 +110,14 @@ public class ComTargetServiceImpl implements ComTargetService {
 
 	private static final Pattern GENDER_EQUATION_PATTERN = Pattern.compile("(?:cust\\.gender\\s*(?:=|<>|>|>=|<|<=)\\s*(-?\\d+))|(?:mod\\(cust\\.gender,\\s+(\\d+)\\))");
 
-	/**
-	 * DAO accessing target groups.
-	 */
+	/** DAO accessing target groups. */
     protected ComTargetDao targetDao;
 
-    /**
-     * DAO accessing mailing components.
-     */
+    /** DAO accessing mailing components. */
     private MailingComponentDao mailingComponentDao;
 
     /** DAO for accessing mailing data. */
     private ComMailingDao mailingDao;
-
-    /**
-     * Component to locate target groups.
-     */
-    private TargetGroupLocator targetGroupLocator;
 
 	/** DAO for accessing recipient data. */
 	protected ComRecipientDao recipientDao;
@@ -137,126 +128,130 @@ public class ComTargetServiceImpl implements ComTargetService {
 	/** Service dealing with profile fields. */
 	private ProfileFieldService profileFieldService;
 
+	private TargetGroupDependencyService targetGroupDependencyService;
 	private TargetComplexityEvaluator complexityEvaluator;
-
 	private EqlReferenceItemsExtractor eqlReferenceItemsExtractor;
-
 	private BeanShellInterpreterFactory beanShellInterpreterFactory;
-
 	private ColumnInfoService columnInfoService;
-	
 	private ReferencedItemsService referencedItemsService;
-
 	private TargetFactory targetFactory;
-
 	private QueryBuilderToEqlConverter queryBuilderToEqlConverter;
-
     private EqlValidatorService eqlValidatorService;
 
-	// ---------------------------------------------------------------------------------------- Business Code
-
-	final ReferencedItemsService getReferencedItemsService() {
-		return this.referencedItemsService;
-	}
-	
-	final EqlFacade getEqlFacade() {
-		return this.eqlFacade;
-	}
-	
     @Override
-	public void deleteTargetGroup(int targetGroupID, int companyID) throws TargetGroupException, TargetGroupPersistenceException {
+	public SimpleServiceResult deleteTargetGroup(int targetGroupID, Admin admin, boolean buildErrorMessages) {
+    	int companyID = admin.getCompanyID();
+
 		if (logger.isInfoEnabled()) {
-			logger.info("Deleting target group " + targetGroupID + " of company " + companyID);
+			logger.info("Deleting target group {} of company {}", targetGroupID, companyID);
 		}
 
-		TargetGroupLocator.TargetDeleteStatus status = targetGroupLocator.isTargetGroupCanBeDeleted(companyID, targetGroupID);
+		List<TargetGroupDependentEntry> dependencies = targetGroupDependencyService.findDependencies(targetGroupID, companyID);
+		Optional<TargetGroupDependentEntry> actualDependency = targetGroupDependencyService.findAnyActualDependency(dependencies);
 
-		this.referencedItemsService.removeReferencedItems(companyID, targetGroupID);
-		
-		switch (status) {
-			case CAN_BE_FULLY_DELETED_FROM_DB: {
-				targetDao.deleteTargetReally(targetGroupID, companyID);
-				break;
-			}
-			case CAN_BE_MARKED_AS_DELETED: {
-				targetDao.deleteTarget(targetGroupID, companyID);
-				break;
-			}
-			case CANT_BE_DELETED: {
-				if (logger.isInfoEnabled()) {
-					logger.info("Cannot delete target group " + targetGroupID + " - target group is in use");
-				}
+		if (actualDependency.isPresent()) {
+			if (buildErrorMessages) {
+				String targetName = getTargetName(targetGroupID, companyID);
+				Message errorMessage = targetGroupDependencyService.buildErrorMessage(actualDependency.get(), targetName, admin);
 
-				throw new TargetGroupIsInUseException(targetGroupID);
+				return SimpleServiceResult.simpleError(errorMessage);
 			}
-			default:
-				throw new TargetGroupException("Invalid target group status");
+
+			return SimpleServiceResult.simpleError();
+		}
+
+		referencedItemsService.removeReferencedItems(companyID, targetGroupID);
+
+		if (dependencies.isEmpty()) {
+			if (targetDao.isTargetGroupLocked(targetGroupID, companyID)) {
+				return SimpleServiceResult.simpleError(Message.of("target.locked"));
+			}
+
+			targetDao.deleteTargetReally(targetGroupID, companyID);
+			return SimpleServiceResult.simpleSuccess();
+		}
+
+		try {
+			targetDao.deleteTarget(targetGroupID, companyID);
+			return SimpleServiceResult.simpleSuccess();
+		} catch (TargetGroupLockedException e) {
+			return SimpleServiceResult.simpleError(Message.of("target.locked"));
+		}
+	}
+    
+    @Override
+    public boolean deleteTargetGroupByCompanyID(int companyID) {
+		if (logger.isInfoEnabled()) {
+			logger.info("Deleting target group of company {}", companyID);
+		}
+
+		try {
+			targetDao.deleteTargetsReally(companyID);
+			return true;
+		} catch (Exception e) {
+			return false;
 		}
 	}
 
-    @Override
-    public SimpleServiceResult canBeDeleted(final int targetId, final int companyId) {
-        try {
-            final TargetGroupLocator.TargetDeleteStatus status = targetGroupLocator.isTargetGroupCanBeDeleted(companyId, targetId);
-            if(status == TargetGroupLocator.TargetDeleteStatus.CANT_BE_DELETED) {
-                throw new TargetGroupIsInUseException(targetId);
-            } else if(status == TargetGroupLocator.TargetDeleteStatus.CAN_BE_FULLY_DELETED_FROM_DB
-                    || status == TargetGroupLocator.TargetDeleteStatus.CAN_BE_MARKED_AS_DELETED) {
+	@Override
+	public SimpleServiceResult canBeDeleted(int targetId, Admin admin) {
+		int companyId = admin.getCompanyID();
 
-                if (targetDao.isTargetGroupLocked(targetId, companyId)) {
-                    return SimpleServiceResult.simpleError(Message.of("target.locked"));
-                }
+		List<TargetGroupDependentEntry> dependencies = targetGroupDependencyService.findDependencies(targetId, companyId);
+		Optional<TargetGroupDependentEntry> actualDependency = targetGroupDependencyService.findAnyActualDependency(dependencies);
 
-                return SimpleServiceResult.simpleSuccess();
-            }
-        } catch (TargetGroupIsInUseException e) {
-            return SimpleServiceResult.simpleError(Message.of("error.target.in_use"));
-        } catch (Exception e) {
-            //do nothing
-        }
-        return SimpleServiceResult.simpleError(Message.of("error.target.delete"));
-    }
+		if (actualDependency.isPresent()) {
+			String targetName = getTargetName(targetId, companyId);
+			Message errorMessage = targetGroupDependencyService.buildErrorMessage(actualDependency.get(), targetName, admin);
+
+			return SimpleServiceResult.simpleError(errorMessage);
+		}
+
+		if (isLocked(companyId, targetId)) {
+			return SimpleServiceResult.simpleError(Message.of("target.locked"));
+		}
+
+		return SimpleServiceResult.simpleSuccess();
+	}
 
     @Override
     public boolean hasMailingDeletedTargetGroups(Mailing mailing) {
-
-		if ( logger.isInfoEnabled()) {
-			logger.info( "Checking mailing " + mailing.getId() + " for deleted target groups");
+		if (logger.isInfoEnabled()) {
+			logger.info(String.format("Checking mailing %d for deleted target groups", mailing.getId()));
 		}
 
     	Set<Integer> targetIds = getAllTargetIdsForMailing( mailing);
 
-    	for( int targetId : targetIds) {
+    	for (int targetId : targetIds) {
     		ComTarget target = targetDao.getTarget(targetId, mailing.getCompanyID());
 
-    		if ( target == null) {
-    			if ( logger.isInfoEnabled()) {
-    				logger.info( "Found non-existing target group " + targetId + ". It's assumed to be physically deleted.");
+    		if (target == null) {
+    			if (logger.isInfoEnabled()) {
+    				logger.info(String.format("Found non-existing target group %d. It's assumed to be physically deleted.", targetId));
     			}
 
     			continue;
     		}
 
-    		if ( target.getDeleted() != 0) {
-    			if ( logger.isInfoEnabled()) {
-    				logger.info( "Found deleted target group " + targetId + ".");
+    		if (target.getDeleted() != 0) {
+    			if (logger.isInfoEnabled()) {
+    				logger.info(String.format("Found deleted target group %d.", targetId));
     			}
 
     			return true;
     		}
     	}
 
-    	if ( logger.isInfoEnabled()) {
-			logger.info( "Mailing " + mailing.getId() + " does not contain any deleted target groups");
+    	if (logger.isInfoEnabled()) {
+			logger.info(String.format("Mailing %d does not contain any deleted target groups", mailing.getId()));
 		}
 
     	return false;
     }
 
 	private Set<Integer> getAllTargetIdsForMailing( Mailing mailing) {
-
-		if ( logger.isDebugEnabled()) {
-			logger.debug( "Collecting target groups IDs for mailing " + mailing.getId());
+		if (logger.isDebugEnabled()) {
+			logger.debug(String.format("Collecting target groups IDs for mailing %d", mailing.getId()));
 		}
 
     	Set<Integer> targetIds = new HashSet<>();
@@ -265,8 +260,8 @@ public class ComTargetServiceImpl implements ComTargetService {
     	targetIds.addAll(getTargetIdsFromContent(mailing));
     	targetIds.addAll(getTargetIdsFromAttachments(mailing));
 
-		if ( logger.isDebugEnabled()) {
-			logger.debug( "Collected " + mailing.getId() + " different target group IDs in total for mailing " + mailing.getId());
+		if (logger.isDebugEnabled()) {
+			logger.debug(String.format("Collected %d different target group IDs in total for mailing %d", mailing.getId(), mailing.getId()));
 		}
 
     	return targetIds;
@@ -274,8 +269,8 @@ public class ComTargetServiceImpl implements ComTargetService {
 
 	@Override
     public Set<Integer> getTargetIdsFromExpression(Mailing mailing) {
-		if ( logger.isDebugEnabled()) {
-			logger.debug( "Collecting target groups IDs for mailing " + mailing.getId() + " from mailing target expression.");
+		if (logger.isDebugEnabled()) {
+			logger.debug(String.format("Collecting target groups IDs for mailing %d from mailing target expression.", mailing.getId()));
 		}
 
     	if (mailing == null) {
@@ -285,37 +280,37 @@ public class ComTargetServiceImpl implements ComTargetService {
 		String expression = mailing.getTargetExpression();
 		Set<Integer> targetIds = TargetExpressionUtils.getTargetIds(expression);
 
-		if ( logger.isDebugEnabled()) {
-			logger.debug( "Collected " + mailing.getId() + " different target group IDs from target expression for mailing " + mailing.getId());
+		if (logger.isDebugEnabled()) {
+			logger.debug(String.format("Collected %d different target group IDs from target expression for mailing %d", mailing.getId(), mailing.getId()));
 		}
 
 		return targetIds;
     }
 
     private Set<Integer> getTargetIdsFromContent(Mailing mailing) {
-		if ( logger.isDebugEnabled()) {
-			logger.debug( "Collecting target groups IDs for mailing " + mailing.getId() + " from content blocks.");
+		if (logger.isDebugEnabled()) {
+			logger.debug(String.format("Collecting target groups IDs for mailing %d from content blocks.", mailing.getId()));
 		}
 
     	Set<Integer> targetIds = new HashSet<>();
 
     	for (DynamicTag tag : mailing.getDynTags().values()) {
-    		for( Object contentObject : tag.getDynContent().values()) {
+    		for(Object contentObject : tag.getDynContent().values()) {
     			DynamicTagContent content = (DynamicTagContent) contentObject;
     			targetIds.add( content.getTargetID());
     		}
     	}
 
-		if ( logger.isDebugEnabled()) {
-			logger.debug( "Collected " + mailing.getId() + " different target group IDs from content blocks for mailing " + mailing.getId());
+		if (logger.isDebugEnabled()) {
+			logger.debug(String.format("Collected %d different target group IDs from content blocks for mailing %d", mailing.getId(), mailing.getId()));
 		}
 
     	return targetIds;
     }
 
     private Set<Integer> getTargetIdsFromAttachments(Mailing mailing) {
-		if ( logger.isDebugEnabled()) {
-			logger.debug( "Collecting target groups IDs for mailing " + mailing.getId() + " from attachments.");
+		if (logger.isDebugEnabled()) {
+			logger.debug(String.format("Collecting target groups IDs for mailing %d from attachments.", mailing.getId()));
 		}
 
 		List<MailingComponent> result = mailingComponentDao.getMailingComponents(mailing.getId(), mailing.getCompanyID(), MailingComponentType.Attachment);
@@ -325,8 +320,8 @@ public class ComTargetServiceImpl implements ComTargetService {
     		targetIds.add( component.getTargetID());
     	}
 
-		if ( logger.isDebugEnabled()) {
-			logger.debug( "Collected " + mailing.getId() + " different target group IDs from attachments for mailing " + mailing.getId());
+		if (logger.isDebugEnabled()) {
+			logger.debug(String.format("Collected %d different target group IDs from attachments for mailing %d", mailing.getId(), mailing.getId()));
 		}
 
     	return targetIds;
@@ -380,6 +375,7 @@ public class ComTargetServiceImpl implements ComTargetService {
         }
 
         newTarget.setComplexityIndex(calculateComplexityIndex(newTarget.getEQL(), admin.getCompanyID()));
+        newTarget.setSavingAdminId(admin.getAdminID());
 
         final int newId = saveTarget(newTarget);
 
@@ -408,7 +404,7 @@ public class ComTargetServiceImpl implements ComTargetService {
 			
 			final int targetID = targetDao.saveTarget(target);
 			
-			this.referencedItemsService.saveReferencedItems(referencedItemsCollector, target.getCompanyID(), targetID);
+			referencedItemsService.saveReferencedItems(referencedItemsCollector, target.getCompanyID(), targetID);
 			
 			return targetID;
 		} catch (EqlParserException | CodeGeneratorException | ProfileFieldResolveException | ReferenceTableResolveException e) {
@@ -419,10 +415,21 @@ public class ComTargetServiceImpl implements ComTargetService {
 	}
 
 	@Override
-	public void bulkDelete( Set<Integer> targetIds, int companyId) throws TargetGroupPersistenceException, TargetGroupException {
-		for(int targetId : targetIds) {
-		    this.deleteTargetGroup(targetId, companyId);
+	public ServiceResult<List<Integer>> bulkDelete(Set<Integer> targetIds, Admin admin) {
+		List<Integer> deletedTargets = new ArrayList<>();
+		List<Message> errorMessages = new ArrayList<>();
+
+		for (int targetId : targetIds) {
+			SimpleServiceResult deletionResult = deleteTargetGroup(targetId, admin, true);
+
+			if (deletionResult.isSuccess()) {
+				deletedTargets.add(targetId);
+			} else {
+				errorMessages.addAll(deletionResult.getErrorMessages());
+			}
 		}
+
+		return new ServiceResult<>(deletedTargets, errorMessages.isEmpty(), errorMessages);
 	}
 
 	@Override
@@ -437,11 +444,6 @@ public class ComTargetServiceImpl implements ComTargetService {
 		}
 
 		return getSQLFromTargetExpression(targetExpression, splitId, mailing.getCompanyID());
-	}
-
-	@Override
-	public String getSQLFromTargetExpression(String targetExpression, int companyId) {
-		return getSQLFromTargetExpression(targetExpression, new TargetSqlCachingResolver(companyId));
 	}
 
 	@Override
@@ -540,7 +542,7 @@ public class ComTargetServiceImpl implements ComTargetService {
 		try {
 			return getTargetGroup(targetId, companyId);
 		} catch (UnknownTargetGroupIdException e) {
-			logger.warn("Could not find target group ID: " + targetId + " CID: " + companyId);
+			logger.warn(String.format("Could not find target group ID: %d CID: %d", targetId, companyId));
 		}
 
 		return null;
@@ -548,6 +550,11 @@ public class ComTargetServiceImpl implements ComTargetService {
 
 	@Override
 	public final ComTarget getTargetGroup(final int targetId, final int companyId) throws UnknownTargetGroupIdException {
+        return getTargetGroup(targetId, companyId, 0);
+    }
+
+    @Override
+	public final ComTarget getTargetGroup(final int targetId, final int companyId, final int adminId) throws UnknownTargetGroupIdException {
 		if (logger.isInfoEnabled()) {
 			logger.info(String.format("Retrieving target group ID %d for company ID %d", targetId, companyId));
 		}
@@ -566,9 +573,17 @@ public class ComTargetServiceImpl implements ComTargetService {
 				logger.info(String.format("Found target group ID %d for company ID %d", targetId, companyId));
 			}
 
+			if (adminId > 0) {
+			    result.setFavorite(isTargetFavoriteForAdmin(result, adminId));
+            }
+
 			return result;
 		}
 	}
+
+    protected boolean isTargetFavoriteForAdmin(ComTarget target, int adminId) {
+        return target.isFavorite(); // overridden in extended class
+    }
 
 	@Override
 	public Optional<Integer> getNumberOfRecipients(final int targetId, final int companyId) {
@@ -646,10 +661,11 @@ public class ComTargetServiceImpl implements ComTargetService {
 	public List<TargetLight> getTargetLights(final Admin admin) {
 		return getTargetLights(admin, true, true, false);
 	}
-	
+
 	@Override
-	public List<TargetLight> getTargetLights(final int companyID, boolean includeDeleted, boolean worldDelivery, boolean adminTestDelivery, boolean content) {
+	public List<TargetLight> getTargetLights(int adminId, final int companyID, boolean includeDeleted, boolean worldDelivery, boolean adminTestDelivery, boolean content) {
 		TargetLightsOptions options = TargetLightsOptions.builder()
+                .setAdminId(adminId)
 				.setCompanyId(companyID)
 				.setWorldDelivery(worldDelivery)
 				.setAdminTestDelivery(adminTestDelivery)
@@ -662,12 +678,12 @@ public class ComTargetServiceImpl implements ComTargetService {
 
 	@Override
 	public List<TargetLight> getTargetLights(final Admin admin, boolean worldDelivery, boolean adminTestDelivery, boolean content) {
-		return getTargetLights(admin.getCompanyID(), false, worldDelivery, adminTestDelivery, content);
+		return getTargetLights(admin.getAdminID(), admin.getCompanyID(), false, worldDelivery, adminTestDelivery, content);
 	}
 
 	@Override
 	public List<TargetLight> getTargetLights(final Admin admin,  boolean includeDeleted, boolean worldDelivery, boolean adminTestDelivery, boolean content) {
-		return getTargetLights(admin.getCompanyID(), includeDeleted,worldDelivery, adminTestDelivery, content);
+		return getTargetLights(admin.getAdminID(), admin.getCompanyID(), includeDeleted,worldDelivery, adminTestDelivery, content);
 	}
 
 	@Override
@@ -675,10 +691,20 @@ public class ComTargetServiceImpl implements ComTargetService {
 		try {
 			return targetDao.getTargetLightsBySearchParameters(options);
 		} catch (Exception e) {
-			logger.error("Getting target light error: " + e.getMessage(), e);
+			logger.error(String.format("Getting target light error: %s", e.getMessage()), e);
 		}
 
 		return new ArrayList<>();
+	}
+
+	@Override
+	public PaginatedListImpl<TargetLight> getTargetLightsPaginated(TargetLightsOptions options) {
+		try {
+			return targetDao.getPaginatedTargetLightsBySearchParameters(options);
+		} catch (Exception e) {
+			logger.error(String.format("Getting target light error: %s", e.getMessage()), e);
+		}
+		return new PaginatedListImpl<>();
 	}
 
 	@Override
@@ -760,7 +786,7 @@ public class ComTargetServiceImpl implements ComTargetService {
 			final String visibleShortname = profileFieldService.translateDatabaseNameToVisibleName(companyID, fieldNameOnDatabase);
 	
 			final Set<TargetLight> set = new HashSet<>();
-			set.addAll(this.referencedItemsService.listTargetGroupsReferencingProfileFieldByVisibleName(companyID, visibleShortname));
+			set.addAll(referencedItemsService.listTargetGroupsReferencingProfileFieldByVisibleName(companyID, visibleShortname));
 			set.addAll(listTargetGroupsUsingProfileFieldByDatabaseNameLegacy(visibleShortname, companyID));
 	
 			return new ArrayList<>(set);
@@ -774,29 +800,16 @@ public class ComTargetServiceImpl implements ComTargetService {
 
 	@Deprecated // TODO Remove when reference data is present for all target groups
 	private List<TargetLight> listTargetGroupsUsingProfileFieldByDatabaseNameLegacy(final String visibleShortname, final int companyID) {
-		final List<RawTargetGroup> list = targetDao.listRawTargetGroups(companyID, visibleShortname);
+		final List<ComTarget> list = targetDao.listRawTargetGroups(companyID, visibleShortname);
 
 		return list.stream()
 				.filter(t -> checkTargetGroupReferencesProfileField(t, visibleShortname, companyID))
-				.map(ComTargetServiceImpl::rawToTargetLight)
 				.collect(Collectors.toList());
 	}
 
 	@Override
 	public List<String> getTargetNamesByIds(final int companyId, final Set<Integer> targetIds) {
 		return targetDao.getTargetNamesByIds(companyId, targetIds);
-	}
-
-	/**
-	 * Utility method to create {@link TargetLight} from {@link RawTargetGroup}.
-	 *
-	 * @param raw {@link RawTargetGroup}
-	 *
-	 * @return TargetLight created from raw target group
-	 */
-	@Deprecated // Use RawTargetGroup.toTargetLight() instead
-	private static TargetLight rawToTargetLight(final RawTargetGroup raw) {
-		return raw.toTargetLight();
 	}
 
 	/**
@@ -808,9 +821,9 @@ public class ComTargetServiceImpl implements ComTargetService {
 	 *
 	 * @return <code>true</code> if target group references given profile field
 	 */
-	private boolean checkTargetGroupReferencesProfileField(final RawTargetGroup targetGroup, final String fieldShortname, final int companyID) {
+	private boolean checkTargetGroupReferencesProfileField(final ComTarget targetGroup, final String fieldShortname, final int companyID) {
 		try {
-			final String eql = normalizeToEQL(targetGroup.getEql(), companyID);
+			final String eql = normalizeToEQL(targetGroup.getEQL());
 			final SimpleReferenceCollector collector = new SimpleReferenceCollector();
 
 			this.eqlFacade.convertEqlToSql(eql, companyID, collector);
@@ -836,11 +849,9 @@ public class ComTargetServiceImpl implements ComTargetService {
 	 * </ol>
 	 *
 	 * @param eql EQL expression from target group
-	 * @param companyID company ID of target group
-	 *
 	 * @return EQL expression representing target group settings
 	 */
-	final String normalizeToEQL(final String eql, final int companyID) {
+	final String normalizeToEQL(final String eql) {
 		if (eql != null) {
 			return eql;
 		} else {
@@ -928,7 +939,7 @@ public class ComTargetServiceImpl implements ComTargetService {
 			try {
 				complexities.put(pair.getFirst(), calculateComplexityIndex(pair.getSecond(), companyId, cache));
 			} catch (Exception e) {
-				logger.error("Error occurred: " + e.getMessage(), e);
+				logger.error(String.format("Error occurred: %s", e.getMessage()), e);
 			}
 		}
 
@@ -937,6 +948,11 @@ public class ComTargetServiceImpl implements ComTargetService {
 
 	@Override
 	public List<TargetLight> getAccessLimitationTargetLights(int companyId) {
+		return Collections.emptyList();
+	}
+
+	@Override
+	public List<TargetLight> getAccessLimitationTargetLights(int adminId, int companyId) {
 		return Collections.emptyList();
 	}
 	
@@ -982,7 +998,7 @@ public class ComTargetServiceImpl implements ComTargetService {
 			}
 			return recipientDao.isRecipientMatchTarget(admin.getCompanyID(), targetExpression, customerId);
 		} catch (Exception e) {
-			logger.error("Error occurs while checking if recipient match target group: " + e.getMessage(), e);
+			logger.error(String.format("Error occurs while checking if recipient match target group: %s", e.getMessage()), e);
 		}
 
 		return false;
@@ -996,6 +1012,11 @@ public class ComTargetServiceImpl implements ComTargetService {
     @Override
     public boolean isAltg(int targetId) {
         return targetDao.isAltg(targetId);
+	}
+
+	@Override
+    public boolean isHidden(int targetId, int companyId) {
+        return targetDao.isHidden(targetId, companyId);
 	}
 
     @Override
@@ -1025,6 +1046,16 @@ public class ComTargetServiceImpl implements ComTargetService {
     @Override
     public void removeFromFavorites(final int targetId, final int companyId) {
         targetDao.removeFromFavorites(targetId, companyId);
+    }
+
+    @Override
+    public void markAsFavorite(int targetId, int adminId, int companyId) {
+        targetDao.markAsFavorite(targetId, adminId, companyId);
+    }
+
+    @Override
+    public void unmarkAsFavorite(final int targetId, int adminId, final int companyId) {
+        targetDao.unmarkAsFavorite(targetId, adminId, companyId);
     }
 
 	@Override
@@ -1058,7 +1089,7 @@ public class ComTargetServiceImpl implements ComTargetService {
 					.getReferencedProfileFields();
 
 			return referencedProfileFields.stream()
-					.map(pf -> profileFieldService.getProfileFieldByShortname(companyId, pf))
+					.map(pf -> profileFieldService.getProfileFieldByShortname(companyId, pf, adminId))
 					.filter(Objects::nonNull)
 					.anyMatch(pf -> ProfileFieldMode.NotVisible.equals(pf.getModeEdit()));
 		} catch (EqlParserException e) {
@@ -1066,117 +1097,6 @@ public class ComTargetServiceImpl implements ComTargetService {
 			return false;
 		}
 	}
-
-	// -------------------------------------------------------------- Dependency Injection
-	/**
-	 * Set DAO for accessing target group data.
-	 *
-	 * @param targetDao DAO for accessing target group data
-	 */
-	@Required
-	public void setTargetDao(ComTargetDao targetDao) {
-		this.targetDao = targetDao;
-	}
-
-	/**
-	 * Set DAO for accessing mailing component data.
-	 *
-	 * @param mailingComponentDao DAO for accessing mailing component data
-	 */
-	@Required
-	public void setMailingComponentDao( MailingComponentDao mailingComponentDao) {
-		this.mailingComponentDao = mailingComponentDao;
-	}
-
-	/**
-	 * Sets DAO for accessing mailing data.
-	 *
-	 * @param mailingDao DAO for accessing mailing data
-	 */
-	@Required
-	public void setMailingDao(ComMailingDao mailingDao) {
-		this.mailingDao = mailingDao;
-	}
-
-	/**
-	 * Set locator for target groups.
-	 *
-	 * @param locator locator for target groups
-	 */
-	@Required
-	public void setTargetGroupLocator(TargetGroupLocator locator) {
-		this.targetGroupLocator = locator;
-	}
-
-	/**
-	 * Sets DAO for accessing recipient data.
-	 *
-	 * @param recipientDao DAO for accessing recipient data
-	 */
-	@Required
-	public void setRecipientDao(ComRecipientDao recipientDao) {
-		this.recipientDao = recipientDao;
-	}
-
-	/**
-	 * Sets the EQL logic facade.
-	 *
-	 * @param eqlFacade EQL logic facade
-	 */
-	@Required
-	public void setEqlFacade(EqlFacade eqlFacade) {
-		this.eqlFacade = eqlFacade;
-	}
-
-	/**
-	 * Sets the service handling profile fields.
-	 *
-	 * @param service service handling profile fields
-	 */
-	@Required
-	public final void setProfileFieldService(final ProfileFieldService service) {
-		this.profileFieldService = Objects.requireNonNull(service, "Profile field service cannot be null");
-	}
-
-	@Required
-	public final void setBeanShellInterpreterFactory(final BeanShellInterpreterFactory factory) {
-		this.beanShellInterpreterFactory = Objects.requireNonNull(factory, "BeanShellInterpreterFactory is null");
-	}
-
-	@Required
-	public void setTargetComplexityEvaluator(TargetComplexityEvaluator complexityEvaluator) {
-		this.complexityEvaluator = complexityEvaluator;
-	}
-
-	@Required
-	public void setEqlReferenceItemsExtractor(EqlReferenceItemsExtractor eqlReferenceItemsExtractor) {
-		this.eqlReferenceItemsExtractor = eqlReferenceItemsExtractor;
-	}
-
-	@Required
-	public void setColumnInfoService(ColumnInfoService columnInfoService) {
-		this.columnInfoService = columnInfoService;
-	}
-	
-	@Required
-	public final void setReferencedItemsService(final ReferencedItemsService service) {
-		this.referencedItemsService = Objects.requireNonNull(service, "ReferencedItemsService is null");
-	}
-
-	@Required
-	public void setTargetFactory(TargetFactory targetFactory) {
-		this.targetFactory = targetFactory;
-	}
-
-	@Required
-	public void setQueryBuilderToEqlConverter(QueryBuilderToEqlConverter queryBuilderToEqlConverter) {
-		this.queryBuilderToEqlConverter = queryBuilderToEqlConverter;
-	}
-
-    @Required
-    public void setEqlValidatorService(EqlValidatorService eqlValidatorService) {
-        this.eqlValidatorService = eqlValidatorService;
-    }
 
 	private int getMaxGenderValue(Admin admin) {
 		if (admin.permissionAllowed(Permission.RECIPIENT_GENDER_EXTENDED)) {
@@ -1191,7 +1111,7 @@ public class ComTargetServiceImpl implements ComTargetService {
 			eqlFacade.convertEqlToSql(eql, companyId);
 			return true;
 		} catch (Exception e) {
-			logger.error("Error occurred: " + e.getMessage(), e);
+			logger.error(String.format("Error occurred: %s", e.getMessage()), e);
 			return false;
 		}
 	}
@@ -1206,11 +1126,11 @@ public class ComTargetServiceImpl implements ComTargetService {
 			}
 
 			if (logger.isInfoEnabled()) {
-				logger.info("saveTarget: save target " + newTarget.getId());
+				logger.info(String.format("saveTarget: save target %d", newTarget.getId()));
 			}
 		} catch (Exception e) {
 			if (logger.isInfoEnabled()) {
-				logger.error("Log Target Group changes error: " + e);
+				logger.error(String.format("Log Target Group changes error: %s", e));
 			}
 			userActions = Collections.emptyList();
 		}
@@ -1364,4 +1284,83 @@ public class ComTargetServiceImpl implements ComTargetService {
 	public boolean isLinkUsedInTarget(TrackableLink link) {
 	    return targetDao.isLinkUsedInTarget(link);
     }
+
+    // region Dependency Injection
+
+	@Required
+	public void setTargetDao(ComTargetDao targetDao) {
+		this.targetDao = targetDao;
+	}
+
+	@Required
+	public void setMailingComponentDao( MailingComponentDao mailingComponentDao) {
+		this.mailingComponentDao = mailingComponentDao;
+	}
+
+	@Required
+	public void setMailingDao(ComMailingDao mailingDao) {
+		this.mailingDao = mailingDao;
+	}
+
+	@Required
+	public void setTargetGroupDependencyService(TargetGroupDependencyService targetGroupDependencyService) {
+		this.targetGroupDependencyService = targetGroupDependencyService;
+	}
+
+	@Required
+	public void setRecipientDao(ComRecipientDao recipientDao) {
+		this.recipientDao = recipientDao;
+	}
+
+	@Required
+	public void setEqlFacade(EqlFacade eqlFacade) {
+		this.eqlFacade = eqlFacade;
+	}
+
+	@Required
+	public void setProfileFieldService(ProfileFieldService service) {
+		this.profileFieldService = Objects.requireNonNull(service, "Profile field service cannot be null");
+	}
+
+	@Required
+	public void setBeanShellInterpreterFactory(BeanShellInterpreterFactory factory) {
+		this.beanShellInterpreterFactory = Objects.requireNonNull(factory, "BeanShellInterpreterFactory is null");
+	}
+
+	@Required
+	public void setTargetComplexityEvaluator(TargetComplexityEvaluator complexityEvaluator) {
+		this.complexityEvaluator = complexityEvaluator;
+	}
+
+	@Required
+	public void setEqlReferenceItemsExtractor(EqlReferenceItemsExtractor eqlReferenceItemsExtractor) {
+		this.eqlReferenceItemsExtractor = eqlReferenceItemsExtractor;
+	}
+
+	@Required
+	public void setColumnInfoService(ColumnInfoService columnInfoService) {
+		this.columnInfoService = columnInfoService;
+	}
+
+	@Required
+	public void setReferencedItemsService(ReferencedItemsService service) {
+		this.referencedItemsService = Objects.requireNonNull(service, "ReferencedItemsService is null");
+	}
+
+	@Required
+	public void setTargetFactory(TargetFactory targetFactory) {
+		this.targetFactory = targetFactory;
+	}
+
+	@Required
+	public void setQueryBuilderToEqlConverter(QueryBuilderToEqlConverter queryBuilderToEqlConverter) {
+		this.queryBuilderToEqlConverter = queryBuilderToEqlConverter;
+	}
+
+	@Required
+	public void setEqlValidatorService(EqlValidatorService eqlValidatorService) {
+		this.eqlValidatorService = eqlValidatorService;
+	}
+
+	// endregion
 }

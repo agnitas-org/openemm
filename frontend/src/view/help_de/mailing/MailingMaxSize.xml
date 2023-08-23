@@ -1,8 +1,8 @@
 <HelpBalloon>
-	<title><![CDATA[Versandgr&ouml;&szlig;e der E-Mail]]></title>
-	<content><![CDATA[Der Wert "Versandgr&ouml;&szlig;e" gibt an, wie gro&szlig; das Datenvolumen des Mailings (HTML und ggf. Dateianh&auml;nge) beim Versand ist. Wenn Sie das Mailing im Offline-HTML versenden, werden auch die Bilder mit versendet und hier in diesem Wert ber&uuml;cksichtigt.
+	<title><![CDATA[Versandgr&#xF6;&#xDF;e der E-Mail]]></title>
+	<content><![CDATA[Der Wert "Versandgr&#xF6;&#xDF;e" gibt an, wie gro&#xDF; das Datenvolumen des Mailings (HTML und ggf. Dateianh&#xE4;nge) beim Versand ist. Wenn Sie das Mailing im Offline-HTML versenden, werden auch die Bilder mit versendet und hier in diesem Wert ber&#xFC;cksichtigt.
 
-Da Bilder in der Regel nicht direkt mit ausgeliefert werden, sondern erst bei der &Ouml;ffnung abgerufen werden, zeigt der Wert "inklusive Bilder" entsprechend die Gr&ouml;&szlig;e des Mailings an, nachdem auch die Bilder geladen wurden.
+Da Bilder in der Regel nicht direkt mit ausgeliefert werden, sondern erst bei der &#xD6;ffnung abgerufen werden, zeigt der Wert "inklusive Bilder" entsprechend die Gr&#xF6;&#xDF;e des Mailings an, nachdem auch die Bilder geladen wurden.
 
-Beide Werte werden unter Ber&uuml;cksichtigung aller optionalen und variablen Inhaltsbausteine ermittelt.]]></content>
+Beide Werte werden unter Ber&#xFC;cksichtigung aller optionalen und variablen Inhaltsbausteine ermittelt.]]></content>
 </HelpBalloon>

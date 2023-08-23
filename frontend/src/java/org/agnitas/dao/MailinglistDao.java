@@ -15,7 +15,6 @@ import java.util.Map;
 
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.emm.core.mailinglist.bean.MailinglistEntry;
@@ -28,14 +27,14 @@ public interface MailinglistDao {
 	 * @param companyId The id of a company that owns the mailing list.
 	 * @return {@code true} if the mailing list is in use of {@code false} otherwise.
 	 */
-	boolean checkMailinglistInUse(int mailinglistId, @VelocityCheck int companyId);
+	boolean checkMailinglistInUse(int mailinglistId, int companyId);
 	
 	@DaoUpdateReturnValueCheck
-	int updateMailinglist(@VelocityCheck int companyId, Mailinglist list);
+	int updateMailinglist(int companyId, Mailinglist list);
 	
 	
 	@DaoUpdateReturnValueCheck
-	int createMailinglist(@VelocityCheck int companyId, Mailinglist list);
+	int createMailinglist(int companyId, Mailinglist list);
 	
 	/**
 	 * Deletes mailinglist from database.
@@ -44,7 +43,7 @@ public interface MailinglistDao {
 	 * @param companyId The id of mailing list company.
 	 * @return true on success.
 	 */
-	boolean deleteMailinglist(int listID, @VelocityCheck int companyId);
+	boolean deleteMailinglist(int listID, int companyId);
 
 	/**
 	 * Loads mailing list identified by list id and company id.
@@ -53,7 +52,7 @@ public interface MailinglistDao {
 	 * @param companyId The companyID for the mailing list.
 	 * @return The Mailinglist or null on failure or if companyID is 0.
 	 */
-	Mailinglist getMailinglist(int listID, @VelocityCheck int companyId);
+	Mailinglist getMailinglist(int listID, int companyId);
 
 	/**
 	 * Loads a shortname of a referenced mailinglist.
@@ -62,7 +61,7 @@ public interface MailinglistDao {
 	 * @param companyId The id of mailing list company.
 	 * @return a shortname of a referenced mailing list or null.
 	 */
-	String getMailinglistName(int mailinglistId, @VelocityCheck int companyId);
+	String getMailinglistName(int mailinglistId, int companyId);
 
 	/**
 	 * Loads all mailing lists for company id.
@@ -70,7 +69,7 @@ public interface MailinglistDao {
 	 * @param companyId The companyID for the mailing lists.
 	 * @return List of Mailinglists or empty list.
 	 */
-	List<Mailinglist> getMailinglists(@VelocityCheck int companyId);
+	List<Mailinglist> getMailinglists(int companyId);
 
 	/**
 	 * Saves or updates mailinglist.
@@ -92,7 +91,7 @@ public interface MailinglistDao {
 	 * @return number of active recipients for mailing list.
 	 */
 	int getNumberOfActiveSubscribers(boolean admin, boolean test, boolean world, int targetId,
-									 @VelocityCheck int companyId, int id);
+									 int companyId, int id);
 
 	int getNumberOfActiveTestSubscribers(int targetId, int companyId, int id);
 	int getNumberOfActiveAdminSubscribers(int targetId, int companyId, int id);
@@ -105,7 +104,7 @@ public interface MailinglistDao {
 	 * @param companyId The company id for mailing list.
 	 * @return true if the mailing list exists, and false otherwise
 	 */
-	boolean mailinglistExists(String mailinglistName, @VelocityCheck int companyId);
+	boolean mailinglistExists(String mailinglistName, int companyId);
 
 	/**
 	 * Checks if mailing list with given id exists.
@@ -114,20 +113,20 @@ public interface MailinglistDao {
 	 * @param companyId The company id for mailing list.
 	 * @return true if the mailing list exists, and false otherwise
 	 */
-	boolean exist(int mailinglistId, @VelocityCheck int companyId);
+	boolean exist(int mailinglistId, int companyId);
 
-    List<Integer> getMailinglistIds(@VelocityCheck int companyId);
+	int getCountOfMailinglists(int companyId);
 
-    PaginatedListImpl<MailinglistEntry> getMailinglists(@VelocityCheck int companyId, int adminId, String sort, String direction, int page, int rownums);
+    List<Integer> getMailinglistIds(int companyId);
 
-	boolean deleteAllMailinglist(@VelocityCheck int companyId);
+    PaginatedListImpl<MailinglistEntry> getMailinglists(int companyId, int adminId, String sort, String direction, int page, int rownums);
 
-	List<Mailinglist> getMailingListsNames(@VelocityCheck int companyId);
+	boolean deleteAllMailinglist(int companyId);
+
+	List<Mailinglist> getMailingListsNames(int companyId);
 
 	Map<Integer, Integer> getMailinglistWorldSubscribersStatistics(int companyId, int mailinglistID);
 
-    boolean canBeMarkedAsDeleted(int mailinglistId, @VelocityCheck int companyId);
-	
     boolean mailinglistDeleted(int mailinglistId, int companyId);
 
     Mailinglist getDeletedMailinglist(int mailinglistId, int companyId);

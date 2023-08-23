@@ -11,7 +11,7 @@
 <%--@elvariable id="selfForm" type="com.agnitas.emm.core.user.form.UserSelfForm"--%>
 <%--@elvariable id="passwordPolicy" type="java.lang.String"--%>
 <%--@elvariable id="helplanguage" type="java.lang.String"--%>
-<%--@elvariable id="availableLayouts" type="java.util.List<org.agnitas.beans.EmmLayoutBase>"--%>
+<%--@elvariable id="availableLayouts" type="java.util.List<com.agnitas.beans.EmmLayoutBase>"--%>
 <%--@elvariable id="availableAdminGroups" type="java.util.List<org.agnitas.beans.AdminGroup>"--%>
 <%--@elvariable id="availableTimezones" type="java.lang.String[]"--%>
 

@@ -338,17 +338,27 @@ public class Column {
 					if ((type == Types.CHAR) || (type == Types.VARCHAR)) {
 						sval = rset.getString(index);
 					} else if (type == Types.BLOB) {
-						Blob tmp = rset.getBlob(index);
+						Blob blob = rset.getBlob(index);
 
 						try {
-							sval = tmp == null ? null : StringOps.blob2string(tmp, "UTF-8");
+							sval = blob == null ? null : new String(blob.getBytes(1, (int) blob.length()), "UTF-8");
 						} catch (java.io.UnsupportedEncodingException e) {
 							sval = null;
+						} finally {
+							if (blob != null) {
+								blob.free ();
+							}
 						}
 					} else if (type == Types.CLOB) {
-						Clob tmp = rset.getClob(index);
+						Clob clob = rset.getClob(index);
 
-						sval = tmp == null ? null : StringOps.clob2string(tmp);
+						try {
+							sval = clob == null ? null : clob.getSubString(1, (int) clob.length());
+						} finally {
+							if (clob != null) {
+								clob.free ();
+							}
+						}
 					}
 					value = sval;
 				} catch (SQLException e) {

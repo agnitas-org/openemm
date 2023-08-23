@@ -119,7 +119,7 @@
                 {
                     "headerName": "<mvc:message code='Description'/>",
                     "editable": false,
-                    "cellRenderer": "StringCellRenderer",
+                    "cellRenderer": "NotEscapedStringCellRenderer",
                     "field": "description",
                     "type": "textCaseInsensitiveColumn"
                 },

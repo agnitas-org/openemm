@@ -20,6 +20,7 @@ import org.agnitas.util.AgnUtils;
 import org.agnitas.util.importvalues.DateFormat;
 
 public class ExportPredef {
+
 	protected int id;
 
 	protected int company;
@@ -344,4 +345,9 @@ public class ExportPredef {
 	public DateTimeFormatter getDateTimeFormatter() {
 		return AgnUtils.getDateTimeFormatter(getTimezone(), getLocale());
 	}
+
+    @Override
+    public String toString() {
+        return shortname + " (" + id + ")";
+    }
 }

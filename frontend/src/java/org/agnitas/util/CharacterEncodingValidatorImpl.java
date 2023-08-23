@@ -15,100 +15,25 @@ import java.nio.charset.CharsetEncoder;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import com.agnitas.emm.core.mailing.forms.MailingSettingsForm;
 import org.agnitas.beans.DynamicTagContent;
 import com.agnitas.beans.Mailing;
 import org.agnitas.beans.MailingComponent;
-import org.agnitas.exceptions.CharacterEncodingValidationException;
 import org.agnitas.exceptions.CharacterEncodingValidationExceptionMod;
 import org.agnitas.exceptions.EncodingError;
-import org.agnitas.web.forms.MailingBaseForm;
 
 import com.agnitas.beans.DynamicTag;
-import com.agnitas.beans.MediatypeEmail;
 import com.agnitas.emm.core.mailingcontent.dto.DynContentDto;
 import com.agnitas.emm.core.mailingcontent.dto.DynTagDto;
-import com.agnitas.web.ComMailingContentForm;
 
 /**
  * This class validates the content of a mailing against the character set
  * defined in the mailing.
  */
 public class CharacterEncodingValidatorImpl implements CharacterEncodingValidator {
-
-	/**
-	 * Validates text and HTML template of the given form and the content blocks of the given Mailing object. This method is called directly <b>before modifying</b>
-	 * the MailingBaseForm object.
-	 * 
-	 * @param form form to validate text and HTML template
-	 * @param mailing mailing to validate content blocks
-	 *
-	 */
-	@Override
-	public void validate(MailingBaseForm form, Mailing mailing) throws CharacterEncodingValidationException {
-		Set<String> unencodeableMailingComponents = new HashSet<>();
-		Set<String> unencodeableDynamicTags = new HashSet<>();
-		
-		boolean subjectValid = validate(form, mailing, unencodeableMailingComponents, unencodeableDynamicTags);
-		
-		if (unencodeableMailingComponents.size() > 0 || unencodeableDynamicTags.size() > 0 || !subjectValid) {
-			throw new CharacterEncodingValidationException(subjectValid, unencodeableMailingComponents, unencodeableDynamicTags);
-		}
-	}
 	
-	private boolean validate(MailingBaseForm form, Mailing mailing, Set<String> unencodeableMailingComponents, Set<String> unencodeableDynamicTags) {
-		CharsetEncoder charsetEncoder = getCharsetEncoder(form);
-		
-		validate(form, unencodeableMailingComponents, charsetEncoder);
-		validateDynamicTags(mailing, unencodeableDynamicTags, charsetEncoder);
-		
-		return validate( form.getEmailSubject(), charsetEncoder);
-	}
-	
-	@Override
-	public void validate(ComMailingContentForm form, Mailing mailing) throws CharacterEncodingValidationException {
-		Set<String> unencodeableDynamicTags = new HashSet<>();
-		
-		validate(form, mailing, unencodeableDynamicTags);
-		
-		if (unencodeableDynamicTags.size() > 0) {
-			throw new CharacterEncodingValidationException(new HashSet<>(), unencodeableDynamicTags);
-		}
-	}
-
-	@Override
-    public void validate(ComMailingContentForm form, String charset) throws CharacterEncodingValidationException {
-		Set<String> unencodeableDynamicTags = new HashSet<>();
-
-		validate(form, getCharsetEncoder(charset), unencodeableDynamicTags);
-
-		if (unencodeableDynamicTags.size() > 0) {
-			throw new CharacterEncodingValidationException(new HashSet<>(), unencodeableDynamicTags);
-		}
-	}
-
-    @Override
-    public void validateContentMod(ComMailingContentForm form, String charset) throws CharacterEncodingValidationExceptionMod {
-		Set<EncodingError> unencodeableDynamicTags = new HashSet<>();
-
-        CharsetEncoder charsetEncoder = getCharsetEncoder(charset);
-
-        for (String content : form.getContentForValidation()) {
-            Set<EncodingError> dynTagErrors = validateMod(content, charsetEncoder);
-            if (dynTagErrors.size() > 0) {
-                for (EncodingError error : dynTagErrors) {
-                    unencodeableDynamicTags.add(new EncodingError(form.getDynName(), error.getLine()));
-                }
-            }
-        }
-        if (unencodeableDynamicTags.size() > 0) {
-			throw new CharacterEncodingValidationExceptionMod(new HashSet<>(), new HashSet<>(), unencodeableDynamicTags);
-        }
-	}
-
     @Override
 	public void validateContentMod(DynTagDto dynTag, String charset) throws CharacterEncodingValidationExceptionMod {
 		CharsetEncoder charsetEncoder = getCharsetEncoder(charset);
@@ -126,22 +51,6 @@ public class CharacterEncodingValidatorImpl implements CharacterEncodingValidato
 
 		if (unncodeableDynamicTags.size() > 0) {
 			throw new CharacterEncodingValidationExceptionMod(new HashSet<>(), new HashSet<>(), unncodeableDynamicTags);
-		}
-	}
-	
-	private void validate(ComMailingContentForm form, Mailing mailing, Set<String> unencodeableDynamicTags) {
-		CharsetEncoder charsetEncoder = getCharsetEncoder(mailing);
-		
-		validate(form, charsetEncoder, unencodeableDynamicTags);
-	}
-	
-	private void validate(ComMailingContentForm form, CharsetEncoder charsetEncoder, Set<String> unencodeableDynamicTags) {
-		Map<Integer, DynamicTagContent> dynTags = form.getContent();
-		
-		for (DynamicTagContent dynamicTagContent : dynTags.values()) {
-			if (!validate(dynamicTagContent, charsetEncoder)) {
-				unencodeableDynamicTags.add( form.getDynName());
-			}
 		}
 	}
 	
@@ -169,33 +78,6 @@ public class CharacterEncodingValidatorImpl implements CharacterEncodingValidato
 	public boolean validate(DynamicTag dynTag, String charsetName) {
 		CharsetEncoder charsetEncoder = getCharsetEncoder( charsetName);
 		return validate(dynTag, charsetEncoder);
-	}
-	
-	private void validate(MailingBaseForm form, Set<String> unencodeableMailingComponents, CharsetEncoder encoder) {
-		String textTemplate = form.getTextTemplate();
-		if (textTemplate!= null && !validate(textTemplate, encoder)) {
-			unencodeableMailingComponents.add("agnText");
-		}
-		
-		String htmlTemplate = form.getHtmlTemplate();
-		if (htmlTemplate != null && !validate(htmlTemplate, encoder)) {
-			unencodeableMailingComponents.add("agnHtml");
-		}
-	}
-	
-	private void validateDynamicTags(Mailing mailing, Set<String> unencodeableDynamicTags, CharsetEncoder charsetEncoder) {
-		// No mailing? Nothing to validate!
-		if (mailing == null) {
-			return;
-		}
-		
-		Collection<DynamicTag> dynTags = mailing.getDynTags().values();
-
-		for (DynamicTag dynTag : dynTags) {
-			if (!validate( dynTag, charsetEncoder)) {
-				unencodeableDynamicTags.add( dynTag.getDynName());
-			}
-		}
 	}
 
 	/**
@@ -250,21 +132,6 @@ public class CharacterEncodingValidatorImpl implements CharacterEncodingValidato
 	}
 
 	/**
-	 * Returns a CharsetEncoder matching the character set defined in the given mailing.
-	 * @param mailing Mailing to create CharsetEncoder for
-	 * @return CharsetEncoder for mailing
-	 */
-	private CharsetEncoder getCharsetEncoder(Mailing mailing) {
-		String charsetName = ((MediatypeEmail) mailing.getMediatypes().get(0)).getCharset();
-
-		return getCharsetEncoder(charsetName);
-	}
-	
-	private CharsetEncoder getCharsetEncoder(MailingBaseForm form) {
-		return getCharsetEncoder(form.getEmailCharset());
-	}
-	
-	/**
 	 * Creates a CharsetEncoder for the given charset.
 	 * 
 	 * @param charsetName name of character set
@@ -274,19 +141,6 @@ public class CharacterEncodingValidatorImpl implements CharacterEncodingValidato
 		Charset charset = Charset.forName(charsetName);
 		
 		return charset.newEncoder();
-	}
-
-	@Override
-    public void validateMod(MailingBaseForm form, Mailing mailing) throws CharacterEncodingValidationExceptionMod {
-        Set<EncodingError> subjectErrors = new HashSet<>();
-		Set<EncodingError> unencodeableMailingComponents = new HashSet<>();
-		Set<EncodingError> unencodeableDynamicTags = new HashSet<>();
-
-		validateMod(form, mailing, subjectErrors, unencodeableMailingComponents, unencodeableDynamicTags);
-
-		if (unencodeableMailingComponents.size() > 0 || unencodeableDynamicTags.size() > 0 || subjectErrors.size() > 0) {
-			throw new CharacterEncodingValidationExceptionMod( subjectErrors, unencodeableMailingComponents, unencodeableDynamicTags);
-		}
 	}
 
     @Override
@@ -304,26 +158,15 @@ public class CharacterEncodingValidatorImpl implements CharacterEncodingValidato
 
     private void validateMod(MailingSettingsForm form, Mailing mailing, Set<EncodingError> subjectErrors, Set<EncodingError> unencodeableMailingComponents, Set<EncodingError> unencodeableDynamicTags) {
 		CharsetEncoder charsetEncoder = getCharsetEncoder(form.getEmailMediatype().getCharset());
-        if (form.getEmailMediatype().isActive()) {
+		if (form.getEmailMediatype().isActive()) {
             validateSubject(form, subjectErrors, charsetEncoder);
-    		validateMod(form, unencodeableMailingComponents, charsetEncoder);
+            validateMod(form, unencodeableMailingComponents, charsetEncoder);
         }
-		validateDynamicTagsMod(mailing, unencodeableDynamicTags, charsetEncoder);
-	}
-    
-    private void validateMod(MailingBaseForm form, Mailing mailing, Set<EncodingError> subjectErrors, Set<EncodingError> unencodeableMailingComponents, Set<EncodingError> unencodeableDynamicTags) {
-		CharsetEncoder charsetEncoder = getCharsetEncoder(form);
-        validateSubject(form,subjectErrors, charsetEncoder);
-		validateMod(form, unencodeableMailingComponents, charsetEncoder);
 		validateDynamicTagsMod(mailing, unencodeableDynamicTags, charsetEncoder);
 	}
 
     private void validateSubject(MailingSettingsForm form, Set<EncodingError> subjectErrors, CharsetEncoder encoder) {
         subjectErrors.addAll(validateMod(form.getEmailMediatype().getSubject(), encoder));
-    }
-	
-    private void validateSubject(MailingBaseForm form, Set<EncodingError> subjectErrors, CharsetEncoder encoder) {
-        subjectErrors.addAll(validateMod(form.getEmailSubject(), encoder));
     }
 
     private void validateMod(MailingSettingsForm form, Set<EncodingError> unencodeableMailingComponents, CharsetEncoder encoder) {
@@ -341,28 +184,6 @@ public class CharacterEncodingValidatorImpl implements CharacterEncodingValidato
 		if (htmlTemplate != null) {
 			Set<EncodingError> htmlTemplateErrors = validateMod(htmlTemplate, encoder);
 			if (!htmlTemplateErrors.isEmpty()) {
-	            for (EncodingError error : htmlTemplateErrors) {
-	            	unencodeableMailingComponents.add(new EncodingError("agnHtml", error.getLine()));
-	            }
-	        }
-		}
-	}
-    
-    private void validateMod(MailingBaseForm form, Set<EncodingError> unencodeableMailingComponents, CharsetEncoder encoder) {
-		String textTemplate = form.getTextTemplate();
-    	if (textTemplate != null) {
-	        Set<EncodingError> textTemplateErrors =  validateMod(textTemplate, encoder);
-			if (textTemplateErrors.size() > 0) {
-	            for (EncodingError error : textTemplateErrors) {
-	            	unencodeableMailingComponents.add(new EncodingError("agnText", error.getLine()));
-	            }
-	        }
-    	}
-    	
-    	String htmlTemplate = form.getHtmlTemplate();
-		if (htmlTemplate != null) {
-			Set<EncodingError> htmlTemplateErrors = validateMod(htmlTemplate, encoder);
-			if (htmlTemplateErrors.size() > 0) {
 	            for (EncodingError error : htmlTemplateErrors) {
 	            	unencodeableMailingComponents.add(new EncodingError("agnHtml", error.getLine()));
 	            }

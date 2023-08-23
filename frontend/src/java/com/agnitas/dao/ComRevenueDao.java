@@ -13,7 +13,6 @@ package com.agnitas.dao;
 import java.util.List;
 import java.util.Map;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 /**
  * ComRevenueDao is used to provide an Interface for getting Revenue Data
@@ -24,16 +23,16 @@ public interface ComRevenueDao {
 	/**
 	 *  returns the revenue as Double-Value
 	 */
-	public Double getRevenue(@VelocityCheck int company_Id, int mailing_Id, int target_Id);
+	public Double getRevenue(int company_Id, int mailing_Id, int target_Id);
 	
 	/**
 	 * returns the revenue as Double-Value
 	 */
-	public Double getRevenue(@VelocityCheck int company_Id, int mailing_Id);
+	public Double getRevenue(int company_Id, int mailing_Id);
 	
 	/**
 	 * returns the revenues as Map with key=MailID and value=revenue.
 	 * 
 	 */
-	public Map<Integer, Double> getRevenue(@VelocityCheck int company_Id, List<Integer> mailingIds, int target_Id);
+	public Map<Integer, Double> getRevenue(int company_Id, List<Integer> mailingIds, int target_Id);
 }

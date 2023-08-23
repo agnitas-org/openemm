@@ -18,7 +18,6 @@ import java.util.Map.Entry;
 
 import org.agnitas.beans.DynamicTagContent;
 import org.agnitas.beans.impl.DynamicTagContentImpl;
-import org.agnitas.emm.core.useractivitylog.dao.UserActivityLogDao;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.HttpUtils.RequestMethod;
 import org.apache.commons.lang3.StringUtils;
@@ -31,7 +30,9 @@ import com.agnitas.dao.ComMailingDao;
 import com.agnitas.dao.ComTargetDao;
 import com.agnitas.dao.DynamicTagDao;
 import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.mailingcontent.service.MailingContentService;
 import com.agnitas.emm.core.thumbnails.service.ThumbnailService;
+import com.agnitas.emm.core.useractivitylog.dao.RestfulUserActivityLogDao;
 import com.agnitas.emm.restful.BaseRequestResponse;
 import com.agnitas.emm.restful.ErrorCode;
 import com.agnitas.emm.restful.JsonRequestResponse;
@@ -59,14 +60,15 @@ public class ContentRestfulServiceHandler implements RestfulServiceHandler {
 
 	public static final Object EXPORTED_TO_STREAM = new Object();
 
-	private UserActivityLogDao userActivityLogDao;
+	private RestfulUserActivityLogDao userActivityLogDao;
 	private ComMailingDao mailingDao;
 	private DynamicTagDao dynamicTagDao;
 	private ComTargetDao targetDao;
 	private ThumbnailService thumbnailService;
+	private MailingContentService mailingContentService;
 
 	@Required
-	public void setUserActivityLogDao(UserActivityLogDao userActivityLogDao) {
+	public void setUserActivityLogDao(RestfulUserActivityLogDao userActivityLogDao) {
 		this.userActivityLogDao = userActivityLogDao;
 	}
 	
@@ -88,6 +90,11 @@ public class ContentRestfulServiceHandler implements RestfulServiceHandler {
 	@Required
 	public void setThumbnailService(ThumbnailService thumbnailService) {
 		this.thumbnailService = thumbnailService;
+	}
+
+	@Required
+	public void setMailingContentService(MailingContentService mailingContentService) {
+		this.mailingContentService = mailingContentService;
 	}
 
 	@Override
@@ -116,10 +123,6 @@ public class ContentRestfulServiceHandler implements RestfulServiceHandler {
 	/**
 	 * Return a single or multiple content data sets
 	 * 
-	 * @param request
-	 * @param admin
-	 * @return
-	 * @throws Exception
 	 */
 	private Object getContent(HttpServletRequest request, HttpServletResponse response, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.MAILING_CONTENT_SHOW)) {
@@ -139,8 +142,8 @@ public class ContentRestfulServiceHandler implements RestfulServiceHandler {
 		if (restfulContext.length == 1) {
 			// Show all contents of a mailing
 			userActivityLogDao.addAdminUseOfFeature(admin, "restful/content", new Date());
-			userActivityLogDao.writeUserActivityLog(admin, "restful/content GET", "MID:" + mailingID + " ALL");
-			
+			writeActivityLog("MID:" + mailingID + " ALL", request, admin);
+
 			JsonArray contentsJsonArray = new JsonArray();
 			
 			for (DynamicTag dynamicTag : dynamicTagDao.getDynamicTags(mailingID, admin.getCompanyID(), false)) {
@@ -153,8 +156,8 @@ public class ContentRestfulServiceHandler implements RestfulServiceHandler {
 			String requestedContentKeyValue = restfulContext[1];
 			
 			userActivityLogDao.addAdminUseOfFeature(admin, "restful/content", new Date());
-			userActivityLogDao.writeUserActivityLog(admin, "restful/content GET", "MID: " + mailingID + " " + requestedContentKeyValue);
-			
+			writeActivityLog("MID: " + mailingID + " " + requestedContentKeyValue, request, admin);
+
 			int dynTagNameID;
 			if (AgnUtils.isNumber(requestedContentKeyValue)) {
 				dynTagNameID = Integer.parseInt(requestedContentKeyValue);
@@ -179,10 +182,6 @@ public class ContentRestfulServiceHandler implements RestfulServiceHandler {
 	/**
 	 * Delete a content
 	 * 
-	 * @param request
-	 * @param admin
-	 * @return
-	 * @throws Exception
 	 */
 	private Object deleteContent(HttpServletRequest request, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.MAILING_CHANGE)) {
@@ -202,8 +201,8 @@ public class ContentRestfulServiceHandler implements RestfulServiceHandler {
 		String requestedContentKeyValue = restfulContext[1];
 		
 		userActivityLogDao.addAdminUseOfFeature(admin, "restful/content", new Date());
-		userActivityLogDao.writeUserActivityLog(admin, "restful/content DELETE", "MID: " + mailingID + " " + requestedContentKeyValue);
-		
+		writeActivityLog("MID: " + mailingID + " " + requestedContentKeyValue, request, admin);
+
 		String dynTagName;
 		if (AgnUtils.isNumber(requestedContentKeyValue)) {
 			int dynTagNameID = Integer.parseInt(requestedContentKeyValue);
@@ -226,11 +225,6 @@ public class ContentRestfulServiceHandler implements RestfulServiceHandler {
 	/**
 	 * Create a new content
 	 * 
-	 * @param request
-	 * @param requestDataFile
-	 * @param admin
-	 * @return
-	 * @throws Exception
 	 */
 	private Object createNewContent(HttpServletRequest request, byte[] requestData, File requestDataFile, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.MAILING_CHANGE)) {
@@ -248,8 +242,8 @@ public class ContentRestfulServiceHandler implements RestfulServiceHandler {
 		}
 				
 		userActivityLogDao.addAdminUseOfFeature(admin, "restful/content", new Date());
-		userActivityLogDao.writeUserActivityLog(admin, "restful/content POST", "MID: " + mailingID);
-		
+		writeActivityLog("MID: " + mailingID, request, admin);
+
 		DynamicTag dynamicTag = parseContentJsonObject(requestData, requestDataFile, admin);
 		dynamicTag.setMailingID(mailingID);
 		
@@ -257,6 +251,10 @@ public class ContentRestfulServiceHandler implements RestfulServiceHandler {
 			throw new RestfulClientException("Content already exists: " + dynamicTag.getDynName());
 		} else {
 			dynamicTagDao.createDynamicTags(admin.getCompanyID(), mailingID, "UTF-8", Collections.singletonList(dynamicTag));
+
+			// Load and save the new mailing to let any adjustments happen that may be needed
+			mailingContentService.buildDependencies(mailingID, admin.getCompanyID());
+			
 			thumbnailService.updateMailingThumbnailByWebservice(admin.getCompanyID(), mailingID);
 			return createContentJsonObject(dynamicTagDao.getDynamicTag(dynamicTag.getId(), admin.getCompanyID()));
 		}
@@ -265,11 +263,6 @@ public class ContentRestfulServiceHandler implements RestfulServiceHandler {
 	/**
 	 * Update an existing content
 	 * 
-	 * @param request
-	 * @param requestDataFile
-	 * @param admin
-	 * @return
-	 * @throws Exception
 	 */
 	private Object createOrUpdateContent(HttpServletRequest request, byte[] requestData, File requestDataFile, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.MAILING_CHANGE)) {
@@ -289,8 +282,8 @@ public class ContentRestfulServiceHandler implements RestfulServiceHandler {
 		if (restfulContext.length == 1) {
 			// Insert content to a mailing or update an existing content of a mailing by name
 			userActivityLogDao.addAdminUseOfFeature(admin, "restful/content", new Date());
-			userActivityLogDao.writeUserActivityLog(admin, "restful/content PUT", "MID: " + mailingID);
-			
+			writeActivityLog("MID: " + mailingID, request, admin);
+
 			DynamicTag dynamicTag = parseContentJsonObject(requestData, requestDataFile, admin);
 			dynamicTag.setMailingID(mailingID);
 			
@@ -298,6 +291,10 @@ public class ContentRestfulServiceHandler implements RestfulServiceHandler {
 				throw new RestfulClientException("Content already exists: " + dynamicTag.getDynName());
 			} else {
 				dynamicTagDao.createDynamicTags(admin.getCompanyID(), mailingID, "UTF-8", Collections.singletonList(dynamicTag));
+				
+				// Load and save the new mailing to let any adjustments happen that may be needed
+				mailingContentService.buildDependencies(mailingID, admin.getCompanyID());
+				
 				thumbnailService.updateMailingThumbnailByWebservice(admin.getCompanyID(), mailingID);
 				return createContentJsonObject(dynamicTagDao.getDynamicTag(dynamicTag.getId(), admin.getCompanyID()));
 			}
@@ -306,8 +303,8 @@ public class ContentRestfulServiceHandler implements RestfulServiceHandler {
 			String requestedContentKeyValue = restfulContext[1];
 			
 			userActivityLogDao.addAdminUseOfFeature(admin, "restful/content", new Date());
-			userActivityLogDao.writeUserActivityLog(admin, "restful/content PUT", "MID: " + mailingID + " " + requestedContentKeyValue);
-			
+			writeActivityLog("MID: " + mailingID + " " + requestedContentKeyValue, request, admin);
+
 			DynamicTag dynamicTag = parseContentJsonObject(requestData, requestDataFile, admin);
 			dynamicTag.setMailingID(mailingID);
 			
@@ -343,6 +340,9 @@ public class ContentRestfulServiceHandler implements RestfulServiceHandler {
 			DynamicTag storedDynamicTag = dynamicTagDao.getDynamicTag(dynamicTag.getId(), admin.getCompanyID());
 			
 			if (storedDynamicTag != null) {
+				// Load and save the new mailing to let any adjustments happen that may be needed
+				mailingContentService.buildDependencies(mailingID, admin.getCompanyID());
+				
 				thumbnailService.updateMailingThumbnailByWebservice(admin.getCompanyID(), mailingID);
 				return createContentJsonObject(storedDynamicTag);
 			} else {
@@ -472,5 +472,9 @@ public class ContentRestfulServiceHandler implements RestfulServiceHandler {
 	@Override
 	public ResponseType getResponseType() {
 		return ResponseType.JSON;
+	}
+
+	private void writeActivityLog(String description, HttpServletRequest request, Admin admin) {
+		writeActivityLog(userActivityLogDao, description, request, admin);
 	}
 }

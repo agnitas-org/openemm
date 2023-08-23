@@ -69,7 +69,7 @@
 	            <c:set target="${itemActionsSettings}" property="0" value="${element}"/>
 	            <c:set target="${element}" property="btnCls" value="btn btn-inverse btn-regular"/>
 	            <c:set target="${element}" property="iconBefore" value="icon icon-save"/>
-	            <c:set target="${element}" property="extraAttributes" value="data-form-target='#importProfileColumnsForm' data-form-persist='action:${ACTION_SAVE}'  data-form-submit"/>
+	            <c:set target="${element}" property="extraAttributes" value="data-action='save'"/>
 	            <c:set target="${element}" property="name"><bean:message key="button.Save"/></c:set>
 	        </emm:instantiate>
 	        
@@ -77,7 +77,7 @@
 	            <c:set target="${itemActionsSettings}" property="1" value="${element}"/>
 	            <c:set target="${element}" property="btnCls" value="btn btn-inverse btn-regular"/>
 	            <c:set target="${element}" property="iconBefore" value="icon icon-save"/>
-	            <c:set target="${element}" property="extraAttributes" value="data-form-target='#importProfileColumnsForm' data-form-persist='action:${ACTION_SAVE_AND_START}' data-form-submit" />
+	            <c:set target="${element}" property="extraAttributes" value="data-action='saveAndStart'" />
 	            <c:set target="${element}" property="name"><bean:message key="button.SaveAndStartImport"/></c:set>
 	        </emm:instantiate>
 	    </emm:instantiate>

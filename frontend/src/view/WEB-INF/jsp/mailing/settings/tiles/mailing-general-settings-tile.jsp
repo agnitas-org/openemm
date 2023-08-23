@@ -138,7 +138,7 @@
                         </div>
                         <%@include file="../fragments/edit-with-campaign-btn.jspf" %>
                     </div>
-                    <%@include file="../fragments/mailin-settings-followup-help-block.jspf" %>
+                    <%@include file="../fragments/mailing-settings-followup-help-block.jspf" %>
                 </div>
             </div>
             <%@include file="../fragments/mailing-settings-followup-additional-inputs.jspf" %>

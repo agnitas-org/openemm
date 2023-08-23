@@ -10,7 +10,7 @@
 
 package com.agnitas.reporting.birt.external.dao;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
+
 
 import com.agnitas.reporting.birt.external.beans.LightMailing;
 
@@ -18,5 +18,5 @@ public interface LightMailingDao {
 	/**
 	 * Get the specified mailing as pojo.
 	 */
-	LightMailing getMailing(int mailingId, @VelocityCheck int companyId);
+	LightMailing getMailing(int mailingId, int companyId);
 }

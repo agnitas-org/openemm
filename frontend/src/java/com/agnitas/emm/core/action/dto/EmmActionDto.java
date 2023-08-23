@@ -26,6 +26,7 @@ public class EmmActionDto {
     private Date creationDate;
     private Date changeDate;
     private boolean active;
+    private boolean isAdvertising;
     private int type;
     private List<? extends AbstractActionOperationParameters> operations;
 
@@ -103,5 +104,13 @@ public class EmmActionDto {
 
     public void setType(int type) {
         this.type = type;
+    }
+
+    public boolean isAdvertising() {
+        return isAdvertising;
+    }
+
+    public void setAdvertising(boolean advertising) {
+        isAdvertising = advertising;
     }
 }

@@ -10,7 +10,10 @@
 
 package org.agnitas.beans;
 
+import java.util.Objects;
+
 public class ExportColumnMapping {
+
 	private int id;
 	private String dbColumn;
 	private String fileColumn;
@@ -19,6 +22,10 @@ public class ExportColumnMapping {
 	
 	public ExportColumnMapping() {
 	}
+	
+    public ExportColumnMapping(String dbColumn) {
+        this.dbColumn = dbColumn;
+    }
 	
 	public ExportColumnMapping(String dbColumn, String fileColumn, String defaultValue, boolean encrypted) {
 		this.dbColumn = dbColumn;
@@ -66,4 +73,9 @@ public class ExportColumnMapping {
 	public void setEncrypted(boolean encrypted) {
 		this.encrypted = encrypted;
 	}
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, dbColumn, fileColumn, defaultValue, encrypted);
+    }
 }

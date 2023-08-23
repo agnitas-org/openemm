@@ -3,7 +3,6 @@
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 
-<%--@elvariable id="targetGroupList" type="java.util.List"--%>
 <%--@elvariable id="birtReportUrl" type="java.lang.String"--%>
 <%--@elvariable id="birtExportReportUrl" type="java.lang.String"--%>
 
@@ -12,40 +11,6 @@
           data-resource-selector="#maings-comparison-content">
 
     <mvc:hidden path="bulkIds"/>
-
-    <div class="tile">
-        <div class="tile-header">
-            <a class="headline" href="#" data-toggle-tile="#tile-targetGroup">
-                <i class="icon tile-toggle icon-angle-up"></i>
-                <mvc:message code="Targets"/>
-            </a>
-
-            <ul class="tile-header-actions">
-                <li>
-                    <button class="btn btn-primary btn-regular" type="button" data-form-submit>
-                        <i class="icon icon-refresh"></i><span class="text"><mvc:message code="button.Refresh"/></span>
-                    </button>
-                </li>
-            </ul>
-        </div>
-
-        <div id="tile-targetGroup" class="tile-content tile-content-forms">
-            <div class="form-group">
-                <div class="col-sm-4">
-                    <label class="control-label">
-                        <mvc:message code="Targetgroups"/>
-                    </label>
-                </div>
-                <div class="col-sm-8">
-                    <mvc:message var="placeholderTargetGroupSelect" code="addTargetGroup"/>
-                    <mvc:select path="targetIds" cssClass="form-control js-select" multiple="true"
-                                data-placeholder="${placeholderTargetGroupSelect}">
-                        <mvc:options items="${targetGroupList}" itemValue="id" itemLabel="targetName"/>
-                    </mvc:select>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <div class="tile" id="maings-comparison-content">
         <div class="tile-header">
@@ -59,7 +24,7 @@
                     </a>
                     <ul class="dropdown-menu">
                         <li class="dropdown-header">
-                            <mvc:message code="statistics.exportFormats"/>
+                            <mvc:message code="statistics.exportFormat"/>
                         </li>
                         <li>
                             <a href="${birtExportReportUrl}" tabindex="-1" data-prevent-load="">
@@ -68,6 +33,11 @@
                             </a>
                         </li>
                     </ul>
+                </li>
+                <li>
+                    <button class="btn btn-primary btn-regular" type="button" data-form-submit>
+                        <i class="icon icon-refresh"></i><span class="text"><mvc:message code="button.Refresh"/></span>
+                    </button>
                 </li>
             </ul>
         </div>

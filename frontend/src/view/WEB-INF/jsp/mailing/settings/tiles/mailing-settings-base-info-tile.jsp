@@ -86,7 +86,7 @@
         </c:if>
         <div class="form-group">
             <div class="col-sm-4">
-                <label class="control-label" for="mailingContentTypeAdvertising">
+                <label class="control-label checkbox-control-label" for="mailingContentTypeAdvertising">
                     <mvc:message code="mailing.contentType.advertising"/>
                     <button class="icon icon-help" data-help="help_${helplanguage}/mailing/view_base/AdvertisingMsg.xml" tabindex="-1" type="button"></button>
                 </label>

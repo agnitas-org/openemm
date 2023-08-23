@@ -85,7 +85,7 @@ public abstract class BaseDaoImpl {
 	 * Datasource to be used in this dao. JdbcTemplate uses this, too.
 	 * This member variable should be set by dependency injectors like spring via the setDataSource method
 	 */
-	private DataSource dataSource;
+	protected DataSource dataSource;
 	
 	/**
 	 * Cache variable for the dataSource vendor, so it must not be recalculated everytime.

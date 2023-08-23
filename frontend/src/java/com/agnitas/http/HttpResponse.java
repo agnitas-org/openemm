@@ -15,13 +15,15 @@ import java.util.Map.Entry;
 
 public class HttpResponse {
 	private final int httpCode;
+	private final String message;
 	private final String content;
 	private final String contentType;
 	private final Map<String, String> headers;
 	private final Map<String, String> cookieData;
 
-	public HttpResponse(final int httpCode, final String content, final String contentType, final Map<String, String> headers, final Map<String, String> cookieData) {
+	public HttpResponse(final int httpCode, String message, final String content, final String contentType, final Map<String, String> headers, final Map<String, String> cookieData) {
 		this.httpCode = httpCode;
+		this.message = message;
 		this.content = content;
 		this.contentType = contentType;
 		this.headers = headers;
@@ -30,6 +32,10 @@ public class HttpResponse {
 
 	public int getHttpCode() {
 		return httpCode;
+	}
+
+	public String getMessage() {
+		return message;
 	}
 
 	public String getContent() {
@@ -51,6 +57,9 @@ public class HttpResponse {
 	@Override
 	public String toString() {
 		String returnText = "HttpCode: " + httpCode + "\n";
+		if (message != null) {
+			returnText += "HttpMessage: " + message + "\n";
+		}
 		if (headers != null && headers.size() > 0) {
 			returnText += "HttpHeaders:\n";
 			for (Entry<String, String> entry : headers.entrySet()) {

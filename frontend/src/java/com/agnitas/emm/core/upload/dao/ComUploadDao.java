@@ -16,7 +16,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.upload.bean.DownloadData;
@@ -77,7 +76,7 @@ public interface ComUploadDao {
 	 */
 	void deleteData(int uploadID);
 	
-	boolean deleteByCompany(@VelocityCheck int companyID);
+	boolean deleteByCompany(int companyID);
 	
 	/**
 	 * This method returns true, if the given uploadID belongs to the given adminID
@@ -88,7 +87,7 @@ public interface ComUploadDao {
 	 */
 	boolean isOwnerOrAdmin(Admin admin, int uploadID);
 	
-	List<Map<String, Object>> getUploadIdsToDelete(int daysToHold, @VelocityCheck int companyID);
+	List<Map<String, Object>> getUploadIdsToDelete(int daysToHold, int companyID);
 
     /**
      * If possible, use {@link #getDownloadData(int)} and {@link #sendDataToStream(int, OutputStream)}.
@@ -96,9 +95,9 @@ public interface ComUploadDao {
      * @param companyID ID of company
      * @return UploadData or NULL if nothing found
      */
-    UploadData getDataByFileName(String name, @VelocityCheck int companyID);
+    UploadData getDataByFileName(String name, int companyID);
     
-    List<UploadData> getDataByCompanyID(@VelocityCheck int companyID);
+    List<UploadData> getDataByCompanyID(int companyID);
 
     /**
      * Get the data for the given upload ID. This is a safer way than working

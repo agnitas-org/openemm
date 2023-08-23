@@ -22,7 +22,7 @@ import org.agnitas.actions.EmmAction;
 import org.agnitas.dao.EmmActionDao;
 import org.agnitas.dao.EmmActionOperationDao;
 import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.emm.core.velocity.VelocityCheck;
+
 import org.agnitas.service.impl.ActionExporter;
 import org.agnitas.service.impl.ActionImporter;
 import org.agnitas.util.DateUtilities;
@@ -100,12 +100,12 @@ public class EmmActionServiceImpl implements EmmActionService {
 	}
 
 	@Override
-    public boolean actionExists(final int actionID, @VelocityCheck final int companyID) {
+    public boolean actionExists(final int actionID, final int companyID) {
     	return emmActionDao.actionExists(actionID, companyID);
     }
     
 	@Override
-	public boolean executeActions(int actionID, @VelocityCheck int companyID, Map<String, Object> params, final EmmActionOperationErrors errors) throws Exception {
+	public boolean executeActions(int actionID, int companyID, Map<String, Object> params, final EmmActionOperationErrors errors) throws Exception {
     	if (actionID == 0 || companyID <= 0) {
     		return false;
     	}
@@ -301,7 +301,7 @@ public class EmmActionServiceImpl implements EmmActionService {
 
 
 	@Override
-	public EmmAction getEmmAction(int actionID, @VelocityCheck int companyID) {
+	public EmmAction getEmmAction(int actionID, int companyID) {
 		EmmAction action = emmActionDao.getEmmAction(actionID, companyID);
 		if (action != null) {
 			List<AbstractActionOperationParameters> operations = emmActionOperationDao.getOperations(actionID, companyID);
@@ -313,7 +313,7 @@ public class EmmActionServiceImpl implements EmmActionService {
 	
 	@Override
 	@Transactional
-	public boolean deleteEmmAction(int actionID, @VelocityCheck int companyID) {
+	public boolean deleteEmmAction(int actionID, int companyID) {
 		// Action operations must not be deleted when action itself is marked as deleted.
 		// emmActionOperationDao.deleteOperations(actionID, companyID);
 		
@@ -336,7 +336,7 @@ public class EmmActionServiceImpl implements EmmActionService {
 	}
 
 	@Override
-	public List<EmmAction> getActionListBySendMailingId(@VelocityCheck int companyId, int mailingId) {
+	public List<EmmAction> getActionListBySendMailingId(int companyId, int mailingId) {
 		return emmActionDao.getActionListBySendMailingId(companyId, mailingId);
 	}
 
@@ -380,4 +380,9 @@ public class EmmActionServiceImpl implements EmmActionService {
 		}
 		return actionsJson;
     }
+
+	@Override
+	public boolean isAdvertising(int id, int companyId) {
+		return emmActionDao.isAdvertising(id, companyId);
+	}
 }

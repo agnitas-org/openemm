@@ -10,7 +10,6 @@
 
 package com.agnitas.emm.core.target.eql.emm.resolver;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.dao.ProfileFieldDao;
@@ -33,7 +32,7 @@ public class EmmProfileFieldResolverFactory {
 	 * 
 	 * @throws ProfileFieldResolveException on errors creating new instance
 	 */
-	public EmmProfileFieldResolver newInstance(@VelocityCheck int companyId) throws ProfileFieldResolveException {
+	public EmmProfileFieldResolver newInstance(int companyId) throws ProfileFieldResolveException {
 		return new EmmProfileFieldResolverImpl(companyId, profileFieldDao, queryBuilderConfiguration);
 	}
 		

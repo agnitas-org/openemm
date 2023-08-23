@@ -23,7 +23,6 @@ import org.agnitas.beans.impl.MailloopImpl;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.MailloopDao;
 import org.agnitas.dao.impl.PaginatedBaseDaoImpl;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.AgnUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -51,7 +50,7 @@ public class ComMailloopDaoImpl extends PaginatedBaseDaoImpl implements Mailloop
 	}
 
 	@Override
-	public Mailloop getMailloop(int mailloopId, @VelocityCheck int companyId) {
+	public Mailloop getMailloop(int mailloopId, int companyId) {
 		if (mailloopId == 0 || companyId == 0) {
 			return null;
 		} else {
@@ -62,7 +61,7 @@ public class ComMailloopDaoImpl extends PaginatedBaseDaoImpl implements Mailloop
 	}
 
 	@Override
-	public List<Mailloop> getMailloops(@VelocityCheck int companyId) {
+	public List<Mailloop> getMailloops(int companyId) {
 		return select(logger, "SELECT rid, company_id, description, shortname, forward, filter_address, forward_enable, ar_enable, timestamp, "
 				+ "subscribe_enable, mailinglist_id, form_id, autoresponder_mailing_id, security_token  FROM mailloop_tbl WHERE company_id = ?",
 				new Mailloop_RowMapper(), companyId);
@@ -155,13 +154,13 @@ public class ComMailloopDaoImpl extends PaginatedBaseDaoImpl implements Mailloop
 
 	@Override
 	@DaoUpdateReturnValueCheck
-	public boolean deleteMailloop(int mailloopId, @VelocityCheck int companyId) {
+	public boolean deleteMailloop(int mailloopId, int companyId) {
 		int touchedLines = update(logger, "DELETE FROM mailloop_tbl WHERE rid = ? AND company_id = ?", mailloopId, companyId);
 		return touchedLines > 0;
 	}
 	
 	@Override
-	public boolean deleteMailloopByCompany(@VelocityCheck int companyId) {
+	public boolean deleteMailloopByCompany(int companyId) {
 		update(logger, "DELETE FROM mailloop_tbl WHERE company_id = ?", companyId);
 		return selectInt(logger, "SELECT COUNT(*) FROM mailloop_tbl WHERE company_id = ?", companyId) == 0;
 	}
@@ -205,7 +204,7 @@ public class ComMailloopDaoImpl extends PaginatedBaseDaoImpl implements Mailloop
 	}
 	   
     @Override
-    public boolean isMailingUsedInBounceFilterWithActiveAutoResponder(@VelocityCheck int companyId, int mailingId) {
+    public boolean isMailingUsedInBounceFilterWithActiveAutoResponder(int companyId, int mailingId) {
 		return selectInt(logger,
 				"SELECT COUNT(*) FROM mailloop_tbl WHERE company_id = ? AND ar_enable=1 AND autoresponder_mailing_id = ?",
 				companyId, mailingId)
@@ -213,7 +212,7 @@ public class ComMailloopDaoImpl extends PaginatedBaseDaoImpl implements Mailloop
     }
     
     @Override
-    public List<MailloopEntry> getDependentBounceFiltersWithActiveAutoResponder(@VelocityCheck int companyId, int mailingId) {
+    public List<MailloopEntry> getDependentBounceFiltersWithActiveAutoResponder(int companyId, int mailingId) {
 		String query = "SELECT rid, description, shortname, filter_address FROM mailloop_tbl WHERE company_id = ? AND ar_enable=1 AND autoresponder_mailing_id = ?";
 		return select(logger, query, new MailloopEntry_RowMapper(), companyId, mailingId);
 	}

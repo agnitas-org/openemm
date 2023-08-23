@@ -137,4 +137,9 @@ public class LicenseDaoImpl extends BaseDaoImpl implements LicenseDao {
 			return 0;
 		}
 	}
+
+	@Override
+	public int getNumberOfCompanyReferenceTables(int companyID) {
+		return selectInt(logger, "SELECT count(*) FROM reference_tbl WHERE company_id = ? AND deleted = 0", companyID);
+	}
 }

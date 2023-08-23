@@ -66,13 +66,12 @@ AGN.Lib.Controller.new('wysiwyg-image-browser', function() {
 
     function normalizeName(fname) {
         if (fname.substr(0, 4).toLowerCase() !== 'http') {
-            fname = config.rdirDomain + '/image?ci=' + config.companyId + '&mi=' + mailingId + '&name=' + fname;
+            return config.rdirDomain + '/image?ci=' + config.companyId + '&mi=' + mailingId + '&name=' + encodeURIComponent(fname);
         }
-        return fname;
+        return encodeURI(fname)
     }
 
     function getOtherImgSelectVal() {
         return $('#other-images-tab [data-action="update-image"]').val();
     }
-
 });

@@ -29,7 +29,7 @@
 <mvc:form servletRelativeAction="/mailing/${mailingId}/trackablelink/list.action" id="trackableLinkForm" 
           modelAttribute="trackableLinksForm"
           data-form="search"
-          data-controller="trackable-link-list-new"
+          data-controller="trackable-link-list"
           data-initializer="trackable-link-list">
 
     <script id="config:trackable-link-list" type="application/json">
@@ -264,7 +264,7 @@
         
                     <div class="form-group">
                         <div class="col-sm-4">
-                            <label class="control-label" for="intelliAdIdString">
+                            <label class="control-label checkbox-control-label" for="intelliAdEnabled">
                                 <mvc:message code="mailing.intelliad.enable" />
                             </label>
                         </div>

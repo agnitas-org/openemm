@@ -17,7 +17,6 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,17 +48,17 @@ public class GridServiceWrapperImpl implements GridServiceWrapper {
     }
 
     @Override
-    public Map<Integer, Integer> getGridTemplateIdsByMailingIds(@VelocityCheck int companyId, Collection<Integer> mailingIds) {
+    public Map<Integer, Integer> getGridTemplateIdsByMailingIds(int companyId, Collection<Integer> mailingIds) {
         return checkAndReturn(mailingGridService, () -> mailingGridService.getGridTemplateIds(companyId, mailingIds), Collections.emptyMap());
     }
 
     @Override
-    public ComGridTemplate getGridTemplate(@VelocityCheck int companyId, int templateId) {
+    public ComGridTemplate getGridTemplate(int companyId, int templateId) {
         return checkAndReturn(gridTemplateService, () -> gridTemplateService.getGridTemplate(templateId, companyId));
     }
 
     @Override
-    public Map<String, Object> getMailingGridInfo(@VelocityCheck int companyId, int mailingId) {
+    public Map<String, Object> getMailingGridInfo(int companyId, int mailingId) {
         return checkAndReturn(mailingGridService, () -> mailingGridService.getMailingGridInfo(mailingId, companyId));
     }
 

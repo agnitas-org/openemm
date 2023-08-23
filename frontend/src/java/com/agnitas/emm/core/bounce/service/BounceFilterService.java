@@ -16,7 +16,6 @@ import java.util.TimeZone;
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.bounce.dto.BounceFilterDto;
 import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public interface BounceFilterService {
     int saveBounceFilter(Admin admin, BounceFilterDto bounceFilter, boolean isNew) throws Exception;
@@ -25,13 +24,13 @@ public interface BounceFilterService {
 
 	int saveBounceFilter(int companyId, TimeZone adminTimeZone, BounceFilterDto bounceFilter, boolean isNew) throws Exception;
 
-    BounceFilterDto getBounceFilter(@VelocityCheck int companyId, int filterId);
+    BounceFilterDto getBounceFilter(int companyId, int filterId);
 
-    boolean deleteBounceFilter(int filterId, @VelocityCheck int companyId);
+    boolean deleteBounceFilter(int filterId, int companyId);
 
-    boolean isMailingUsedInBounceFilterWithActiveAutoResponder(@VelocityCheck int companyId, int mailingId);
+    boolean isMailingUsedInBounceFilterWithActiveAutoResponder(int companyId, int mailingId);
     
-    List<BounceFilterDto> getDependentBounceFiltersWithActiveAutoResponder(@VelocityCheck int companyId, int mailingId);
+    List<BounceFilterDto> getDependentBounceFiltersWithActiveAutoResponder(int companyId, int mailingId);
 
     String getBounceFilterNames(List<BounceFilterDto> filters);
 }

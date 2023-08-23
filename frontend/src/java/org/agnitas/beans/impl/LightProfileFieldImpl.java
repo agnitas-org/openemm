@@ -16,6 +16,10 @@ import org.agnitas.beans.LightProfileField;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
+/**
+ * @deprecated Use RecipientFieldDescription instead
+ */
+@Deprecated
 public class LightProfileFieldImpl implements LightProfileField {
 	protected String column;
 	protected String shortname = "";

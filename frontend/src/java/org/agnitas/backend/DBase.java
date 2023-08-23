@@ -11,6 +11,7 @@
 package org.agnitas.backend;
 
 import java.io.Closeable;
+import java.io.IOException;
 import java.sql.Blob;
 import java.sql.Clob;
 import java.sql.Connection;
@@ -53,6 +54,7 @@ import com.agnitas.dao.DaoUpdateReturnValueCheck;
  */
 public class DBase {
 	static interface Cursor extends Closeable {
+		public String name ();
 		public <T> T query (String query, Map <String, Object> packed, ResultSetExtractor <T> extractor) throws SQLException;
 		public <T> T querySingle (String query, Map <String, Object> packed) throws SQLException;
 		public Map <String, Object> queryForMap (String query, Map <String, Object> packed) throws SQLException;
@@ -192,9 +194,7 @@ public class DBase {
 								int	valueType = Types.JAVA_OBJECT;
 						
 								if (value != null) {
-									Object	valueClass = value.getClass ();
-							
-									if (valueClass == java.util.Date.class || valueClass == java.sql.Date.class) {
+									if (value instanceof java.util.Date) {
 										valueType = Types.TIMESTAMP;
 									}
 								}
@@ -228,14 +228,23 @@ public class DBase {
 				}
 			}
 			static private Map <String, ParsedSQL> parsedSQLCache = new HashMap <> ();
+			static private int nr = 0;
+			private int mynr;
 			private DBase dbase;
 			private DataSource dataSource;
 			private Connection connection;
 			
 			public CursorNative (DBase dbase, DataSource dataSource) {
+				synchronized (this) {
+					mynr =++nr;
+				}
 				this.dbase = dbase;
 				this.dataSource = dataSource;
 				this.connection = null;
+			}
+			@Override
+			public String name () {
+				return "cursor[" + mynr + "]: " + connection;
 			}
 			@Override
 			public void close () {
@@ -380,12 +389,21 @@ public class DBase {
 
 	static class DBJDBC implements DB {
 		static class CursorJDBC implements Cursor {
+			static private int nr = 0;
+			private int mynr;
 			private DataSource dataSource;
 			private NamedParameterJdbcTemplate jdbc;
 			
 			public CursorJDBC (DataSource dataSource) {
+				synchronized (this) {
+					mynr = ++nr;
+				}
 				this.dataSource = dataSource;
 				this.jdbc = null;
+			}
+			@Override
+			public String name () {
+				return "cursor[" + mynr + "]: " + jdbc;
 			}
 			@Override
 			public void close () {
@@ -409,7 +427,7 @@ public class DBase {
 			@Override
 			public <T> T querySingle (String query, Map <String, Object> packed) {
 				check ();
-				return jdbc.query (query, packed, new SingleExtract <T> ());
+				return jdbc.query (query, packed, new SingleExtract<>());
 			}
 			@Override
 			public Map <String, Object> queryForMap (String query, Map <String, Object> packed) {
@@ -524,6 +542,7 @@ public class DBase {
 	private int dbType = DB_UNSET;
 	private int dbVersion = 0;
 	private String dbImplementation = "unset";
+	private boolean cursorTrace = false;
 	/**
 	 * Reference to configuration
 	 */
@@ -534,11 +553,14 @@ public class DBase {
 	private DB db = null;
 	private Cursor defaultCursor = null;
 	private List <Cursor> cursorCache = null;
-	private String schema = null;
+	private static String schema = null;
+	private static Object schemaLock = new Object ();
+	private static Map<String, Map<String, Boolean>> existingCache = new HashMap <> ();
 
 	public DBase(Data data) throws ClassNotFoundException {
 		this.data = data;
 		dbImplementation = Data.syscfg.get ("db-implementation", "default");
+		cursorTrace = Data.syscfg.get ("db-cursor-trace", cursorTrace);
 		switch (dbImplementation) {
 		case "native":
 			db = new DBNative ();
@@ -553,6 +575,7 @@ public class DBase {
 		}
 		db.setup (data, this, DATASOURCE);
 		cursorCache = new ArrayList <> ();
+		cursorTrace ("created");
 	}
 
 	/**
@@ -560,12 +583,25 @@ public class DBase {
 	 *
 	 * @trhows Exception
 	 */
-	public DBase done() throws Exception {
-		for (Cursor cursor : cursorCache) {
-			cursor.close ();
+	public DBase done() {
+		cursorTrace ("releasing");
+		while (! cursorCache.isEmpty ()) {
+			@SuppressWarnings("resource")
+			Cursor	cursor = cursorCache.remove (0);
+			
+			try {
+				cursor.close ();
+				cursorTrace ("close " + cursor.name ());
+			} catch (IOException e) {
+				cursorTrace ("close " + cursor.name () + " failed: " + e.toString ());
+			}
 		}
-		cursorCache.clear ();
-		defaultCursor.close ();
+		cursorTrace ("released");
+		try {
+			defaultCursor.close ();
+		} catch (IOException e) {
+			logging (Log.WARNING, "failed to close default cursor: " + e.toString ());
+		}
 		db.done ();
 		return null;
 	}
@@ -608,7 +644,7 @@ public class DBase {
 	 */
 	public void initialize() throws SQLException {
 		defaultCursor = db.cursor ();
-		data.logging (Log.DEBUG, "db", "Using " + dbImplementation  + " database interface implementation");
+		logging (Log.DEBUG, "Using " + dbImplementation  + " database interface implementation");
 		if (isOracle ()) {
 			Pattern	versionPattern = Pattern.compile ("Oracle Database.*Release ([0-9]+)");
 			
@@ -620,7 +656,7 @@ public class DBase {
 
 					if (m.find ()) {
 						dbVersion = Str.atoi (m.group (1));
-						data.logging (Log.DEBUG, "db", "Found Oracle major version " + dbVersion + " in banner " + banner);
+						logging (Log.DEBUG, "Found Oracle major version " + dbVersion + " in banner " + banner);
 						break;
 					}
 				}
@@ -632,11 +668,16 @@ public class DBase {
 	 * wraps logging to be accessed from DAO
 	 */
 	public void logging(int loglvl, String mid, String msg, Throwable th) {
-		data.logging(loglvl, mid + "/db", msg, th);
+		data.logging(loglvl, (mid != null ? mid + "/db" : "db"), msg, th);
 	}
-
 	public void logging(int loglvl, String mid, String msg) {
 		logging(loglvl, mid, msg, null);
+	}
+	public void logging(int loglvl, String msg) {
+		logging(loglvl, null, msg, null);
+	}
+	public Log getLogger () {
+		return data.getLogger ();
 	}
 
 	/**
@@ -649,6 +690,42 @@ public class DBase {
 		return dbType == DB_ORACLE;
 	}
 
+	private boolean existing (String object, String name, String oracleStatement, String mysqlStatement) throws SQLException {
+		synchronized (existingCache) {
+			Map <String, Boolean>	objectCache = existingCache.get (object);
+			
+			if (objectCache == null) {
+				objectCache = new HashMap <> ();
+				existingCache.put (object, objectCache);
+			}
+			name = name.toLowerCase ();
+			Boolean exists = objectCache.get (name);
+			if (exists == null) {
+				String	statement;
+			
+				exists = false;
+				switch (dbType) {
+					case DB_ORACLE:
+						statement = oracleStatement;
+						break;
+					case DB_MYSQL:
+						statement = mysqlStatement;
+						break;
+					default:
+						statement = null;
+						break;
+				}
+				if (statement != null) {
+					try (With with = with()) {
+						exists = queryInt(with.cursor(), statement, object + "Name", name) > 0;
+						objectCache.put (name, exists);
+					}
+				}
+			}
+			return exists;
+		}
+	}
+				
 	/**
 	 * check if a table (case insensitive) exists in the current
 	 * database schema
@@ -657,25 +734,12 @@ public class DBase {
 	 * @return true, if the table exists, false otherwise
 	 */
 	public boolean tableExists(String table) throws SQLException {
-		boolean rc = false;
-		String query = null;
-
-		switch (dbType) {
-			case DB_MYSQL:
-				query = "SELECT count(*) FROM information_schema.tables WHERE lower(table_name) = lower(:tableName) AND table_schema=(SELECT SCHEMA())";
-				break;
-			case DB_ORACLE:
-				query = "SELECT count(*) FROM user_tables WHERE lower(table_name) = lower(:tableName)";
-				break;
-			default:
-				break;
-		}
-		if (query != null) {
-			try (With with = with()) {
-				rc = queryInt(with.cursor(), query, "tableName", table) > 0;
-			}
-		}
-		return rc;
+		return existing (
+				 "table",
+				 table,
+				 "SELECT count(*) FROM user_tables WHERE lower(table_name) = lower(:tableName)",
+				 "SELECT count(*) FROM information_schema.tables WHERE lower(table_name) = lower(:tableName) AND table_schema=(SELECT SCHEMA())"
+		);
 	}
 
 	/**
@@ -686,26 +750,12 @@ public class DBase {
 	 * @return true, if the view exists, false otherwise
 	 */
 	public boolean viewExists(String view) throws SQLException {
-		boolean rc = false;
-		String query = null;
-
-		switch (dbType) {
-			case DB_MYSQL:
-				query = "SELECT count(*) FROM information_schema.views WHERE lower(table_name) = lower(:viewName) AND table_schema=(SELECT SCHEMA())";
-				break;
-			case DB_ORACLE:
-				query = "SELECT count(*) FROM user_views WHERE lower(view_name) = lower(:viewName)";
-				break;
-			default:
-				break;
-		}
-
-		if (query != null) {
-			try (With with = with()) {
-				rc = queryInt(with.cursor(), query, "viewName", view) > 0;
-			}
-		}
-		return rc;
+		return existing (
+				 "view",
+				 view,
+				 "SELECT count(*) FROM user_views WHERE lower(view_name) = lower(:viewName)",
+				 "SELECT count(*) FROM information_schema.views WHERE lower(table_name) = lower(:viewName) AND table_schema=(SELECT SCHEMA())"
+		);
 	}
 
 	/**
@@ -716,22 +766,12 @@ public class DBase {
 	 * @return true, if the synonym exists, false otherwise
 	 */
 	public boolean synonymExists(String synonym) throws SQLException {
-		boolean rc = false;
-		String query = null;
-
-		switch (dbType) {
-			case DB_ORACLE:
-				query = "SELECT count(*) FROM user_synonyms WHERE lower(synonym_name) = lower(:synonymName)";
-				break;
-			default:
-				break;
-		}
-		if (query != null) {
-			try (With with = with()) {
-				rc = queryInt(with.cursor(), query, "synonymName", synonym) > 0;
-			}
-		}
-		return rc;
+		return existing (
+				 "synonym",
+				 synonym,
+				 "SELECT count(*) FROM user_synonyms WHERE lower(synonym_name) = lower(:synonymName)",
+				 null
+		);
 	}
 	
 	/**
@@ -756,8 +796,10 @@ public class DBase {
 		try {
 			if (isOracle () && (dbVersion >= 18)) {
 				try (With with = with ()) {
-					if (schema == null) {
-						schema = queryString (with.cursor (), "SELECT user FROM DUAL");
+					synchronized (schemaLock) {
+						if (schema == null) {
+							schema = queryString (with.cursor (), "SELECT user FROM DUAL");
+						}
 					}
 					if (schema != null) {
 						execute (with.cursor (),
@@ -775,7 +817,7 @@ public class DBase {
 				}
 			}
 		} catch (SQLException e) {
-			data.logging (Log.ERROR, "db", "Failed to setup newly create table \"" + table + "\": " + e);
+			logging (Log.ERROR, "Failed to setup newly create table \"" + table + "\": " + e);
 		}
 	}
 	public void setupTableOptimizer (String table) {
@@ -862,9 +904,14 @@ public class DBase {
 	 */
 	public Cursor request() throws SQLException {
 		if (cursorCache.isEmpty ()) {
-			return db.cursor ();
+			Cursor c = db.cursor ();
+			cursorTrace ("request: create new " + c.name ());
+			return c;
+		} else {
+			Cursor c = cursorCache.remove (cursorCache.size () - 1);
+			cursorTrace ("request: pop from cache " + c.name ());
+			return c;
 		}
-		return cursorCache.remove (cursorCache.size () - 1);
 	}
 
 	/**
@@ -895,8 +942,18 @@ public class DBase {
 	public void release(Cursor cursor) {
 		if (cursor != defaultCursor) {
 			cursorCache.add (cursor);
+			cursorTrace ("release: added cursor " + cursor.name ());
+		} else {
+			cursorTrace ("release: found default cursor " + cursor.name ());
 		}
 	}
+	
+	private void cursorTrace (String message) {
+		if (cursorTrace) {
+			logging(Log.NOTICE, "cursortrace[" + cursorCache.size () + "]", message);
+		}
+	}
+		
 
 	/**
 	 * releases a former requested cursor
@@ -1029,14 +1086,20 @@ public class DBase {
 	public String asString(Object o, int minLength, String ifNull, boolean trim) {
 		String	s;
 		
-		if ((o != null) && (o.getClass () == Clob.class)) {
-			try {
-				Clob	clob = (Clob) o;
+		if (o instanceof Clob) {
+			Clob	clob = (Clob) o;
 			
+			try {
 				s = clob.getSubString (1, (int) clob.length ());
 			} catch (SQLException e) {
 				failure ("clob parse", e);
 				s = null;
+			} finally {
+				try {
+					clob.free ();
+				} catch (SQLException e) {
+					failure("clob free", e);
+				}
 			}
 		} else {
 			s = (String) o;
@@ -1069,35 +1132,49 @@ public class DBase {
 	public String asClob(Object o) {
 		if (o == null) {
 			return null;
-		} else if (o.getClass() == String.class) {
+		} else if (o instanceof String) {
 			return (String) o;
-		} else {
+		} else if (o instanceof Clob) {
 			Clob clob = (Clob) o;
 
 			try {
-				return clob == null ? null : clob.getSubString(1, (int) clob.length());
+				return clob.getSubString(1, (int) clob.length());
 			} catch (SQLException e) {
 				failure("clob parse", e);
+			} finally {
+				try {
+					clob.free ();
+				} catch (SQLException e) {
+					failure("clob free", e);
+				}
 			}
-			return null;
+		} else {
+			return o.toString ();
 		}
+		return null;
 	}
 
 	public byte[] asBlob(Object o) {
 		if (o == null) {
 			return null;
-		} else if (o.getClass().getName().equals("[B")) {
+		} else if (o instanceof byte[]) {
 			return (byte[]) o;
-		} else {
+		} else if (o instanceof Blob) {
 			Blob blob = (Blob) o;
 
 			try {
-				return blob == null ? null : blob.getBytes(1, (int) blob.length());
+				return blob.getBytes(1, (int) blob.length());
 			} catch (SQLException e) {
 				failure("blob parse", e);
+			} finally {
+				try {
+					blob.free ();
+				} catch (SQLException e) {
+					failure("blob free", e);
+				}
 			}
-			return null;
 		}
+		return null;
 	}
 
 	public Date asDate(Object o, Date ifNull) {
@@ -1139,7 +1216,7 @@ public class DBase {
 	 * to allow something like ``throw failure ("...", e);''
 	 */
 	public SQLException failure(String q, SQLException e) {
-		data.logging(Log.ERROR, "dbase", "DB Failed: " + q + ": " + e.toString());
+		logging(Log.ERROR, "DB Failed: " + q + ": " + e.toString());
 		return e;
 	}
 
@@ -1162,13 +1239,11 @@ public class DBase {
 						disp = "null";
 					} else {
 						try {
-							Class<?> cls = val.getClass();
-
-							if ((cls == String.class) || (cls == StringBuffer.class)) {
+							if (val instanceof String || val instanceof StringBuffer) {
 								disp = "\"" + val.toString() + "\"";
-							} else if (cls == Character.class) {
+							} else if (val instanceof Character) {
 								disp = "'" + val.toString() + "'";
-							} else if (cls == Boolean.class) {
+							} else if (val instanceof Boolean) {
 								disp = ((Boolean) val).booleanValue() ? "true" : "false";
 							} else {
 								disp = val.toString();
@@ -1182,7 +1257,7 @@ public class DBase {
 				}
 				m += " }";
 			}
-			data.logging(Log.DEBUG, "dbase", m);
+			logging(Log.DEBUG, m);
 		}
 	}
 
@@ -1204,14 +1279,14 @@ public class DBase {
 	 */
 	public Connection getConnection() throws SQLException {
 		Connection	conn = db.dataSource ().getConnection();
-		
+
 		try {
 			if (conn.getAutoCommit ()) {
 				conn.setAutoCommit (false);
 			}
 			conn.commit ();
 		} catch (SQLException e) {
-			data.logging (Log.WARNING, "db", "new connections: commit fails even auto commit had been turned off: " + e.toString ());
+			logging (Log.WARNING, "new connections: commit fails even auto commit had been turned off: " + e.toString ());
 		} finally {
 			conn.setAutoCommit (true);
 		}
@@ -1236,7 +1311,6 @@ public class DBase {
 		boolean rc = false;
 		boolean rerun = true;
 		boolean first = true;
-		String logid = "db/" + r.name;
 
 		while ((!rc) && rerun) {
 			for (int state = RETRY - 1; (!rc) && (state >= 0); --state) {
@@ -1244,7 +1318,7 @@ public class DBase {
 					r.execute();
 					if (r.error != null) {
 						r.error = null;
-						data.logging(Log.INFO, logid, "Execution now succeeded");
+						logging(Log.INFO, r.name, "Execution now succeeded");
 					}
 					rc = true;
 				} catch (Exception e) {
@@ -1253,7 +1327,7 @@ public class DBase {
 					r.error = e instanceof SQLException ? (SQLException) e : new SQLException(e.toString(), e);
 					r.reset();
 					if (first) {
-						data.logging(recoverable ? Log.WARNING : Log.ERROR, logid, "Initial failure (" + (recoverable ? "" : "NOT ") + "recoverable): " + e.toString(), e);
+						logging(recoverable ? Log.WARNING : Log.ERROR, r.name, "Initial failure (" + (recoverable ? "" : "NOT ") + "recoverable): " + e.toString(), e);
 					}
 					rc = false;
 					if (!recoverable) {
@@ -1263,13 +1337,13 @@ public class DBase {
 					if (first) {
 						first = false;
 					} else {
-						data.logging(state > 0 ? Log.WARNING : Log.ERROR, logid, "Failed to execute, " + (state > 0 ? "retry in " + state + " seconds" : "failed") + ": " + e.toString());
+						logging(state > 0 ? Log.WARNING : Log.ERROR, r.name, "Failed to execute, " + (state > 0 ? "retry in " + state + " seconds" : "failed") + ": " + e.toString());
 					}
 					if (state > 0) {
 						try {
 							Thread.sleep(state * 1000);
 						} catch (InterruptedException e2) {
-							data.logging(Log.WARNING, logid, "Interrupted during delay: " + e2.toString());
+							logging(Log.WARNING, r.name, "Interrupted during delay: " + e2.toString());
 						}
 					}
 				}

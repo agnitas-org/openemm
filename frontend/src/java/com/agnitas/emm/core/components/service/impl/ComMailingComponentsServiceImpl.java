@@ -38,7 +38,6 @@ import org.agnitas.beans.factory.MailingComponentFactory;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.Const;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
@@ -108,7 +107,7 @@ public class ComMailingComponentsServiceImpl implements	ComMailingComponentsServ
 	}
 
 	@Override
-    public List<MailingComponent> getComponents(@VelocityCheck int companyID, int mailingId, Set<Integer> componentIds) {
+    public List<MailingComponent> getComponents(int companyID, int mailingId, Set<Integer> componentIds) {
         if (companyID <= 0 || mailingId <= 0 || CollectionUtils.isEmpty(componentIds)) {
         	return Collections.emptyList();
 		}
@@ -117,7 +116,7 @@ public class ComMailingComponentsServiceImpl implements	ComMailingComponentsServ
     }
 
     @Override
-	public List<MailingComponent> getComponents(@VelocityCheck int companyId, int mailingId, boolean includeContent) {
+	public List<MailingComponent> getComponents(int companyId, int mailingId, boolean includeContent) {
 		if (companyId <= 0 || mailingId <= 0) {
 			return Collections.emptyList();
 		}
@@ -126,12 +125,12 @@ public class ComMailingComponentsServiceImpl implements	ComMailingComponentsServ
 	}
     
     @Override
-    public MailingComponent getComponent(int componentId, @VelocityCheck int companyID) {
+    public MailingComponent getComponent(int componentId, int companyID) {
 		return mailingComponentDao.getMailingComponent(componentId, companyID);
     }
 
     @Override
-	public MailingComponent getComponent(@VelocityCheck int companyId, int mailingId, int componentId) {
+	public MailingComponent getComponent(int companyId, int mailingId, int componentId) {
 		return mailingComponentDao.getMailingComponent(mailingId, componentId, companyId);
     }
 
@@ -248,7 +247,7 @@ public class ComMailingComponentsServiceImpl implements	ComMailingComponentsServ
     }
 
     @Override
-    public List<MailingComponent> getComponentsByType(@VelocityCheck int companyID, int mailingId, List<MailingComponentType> types) {
+    public List<MailingComponent> getComponentsByType(int companyID, int mailingId, List<MailingComponentType> types) {
 		if (CollectionUtils.isEmpty(types)) {
 			return mailingComponentDao.getMailingComponents(mailingId, companyID);
 		}
@@ -268,8 +267,13 @@ public class ComMailingComponentsServiceImpl implements	ComMailingComponentsServ
 				mailingComponentDao.getMailingComponents(mailingId, admin.getCompanyID(), MailingComponentType.HostedImage, false);
 		return imagesComponents.stream().collect(Collectors.toMap(
 				MailingComponent::getComponentName,
-				(e) -> ComponentsUtils.getImageUrl(rdirDomain, admin.getCompanyID(), mailingId, e.getComponentName()),
+				e -> ComponentsUtils.getImageUrl(rdirDomain, admin.getCompanyID(), mailingId, e.getComponentName()),
 				(x, y) -> x, LinkedHashMap::new));
+	}
+
+	@Override
+	public List<MailingComponent> getMailingComponents(int mailingId, int companyId, MailingComponentType componentType, boolean includeContent) {
+		return mailingComponentDao.getMailingComponents(mailingId, companyId, componentType, includeContent);
 	}
 
     @Override
@@ -286,7 +290,7 @@ public class ComMailingComponentsServiceImpl implements	ComMailingComponentsServ
 	}
 
 	@Override
-	public boolean deleteImages(@VelocityCheck int companyId, int mailingId, Set<Integer> bulkIds) {
+	public boolean deleteImages(int companyId, int mailingId, Set<Integer> bulkIds) {
     	return mailingComponentDao.deleteImages(companyId, mailingId, bulkIds);
 	}
 
@@ -458,7 +462,7 @@ public class ComMailingComponentsServiceImpl implements	ComMailingComponentsServ
 		});
 	}
 
-	private Map<String, MailingComponent> getComponentsMap(int mailingId, @VelocityCheck int companyId) {
+	private Map<String, MailingComponent> getComponentsMap(int mailingId, int companyId) {
 		List<MailingComponent> components = mailingComponentDao.getMailingComponents(mailingId, companyId, false);
 		Map<String, MailingComponent> componentMap = new HashMap<>(components.size());
 
@@ -727,4 +731,9 @@ public class ComMailingComponentsServiceImpl implements	ComMailingComponentsServ
   	public void setConversionService(ExtendedConversionService conversionService) {
   		this.conversionService = conversionService;
   	}
+
+    @Override
+    public void updateMailingMediapoolImagesReferences(int mailingId, int companyId, Set<String> mediapoolImages) {
+        // overridden in extended class
+    }
 }

@@ -26,7 +26,7 @@ public class ExportException extends RuntimeException {
 		FileTransferError("error.filetransfer.createFile"),
 		ConnectionError("error.connection.fileserver"),
 		DefinitionError("error.definition"),
-		ColumnNotExportableError("error.export.dbColumnNotVisible");
+		ColumnNotExportableError("error.export.dbColumn.invisible");
 		
 		private String messageKey;
 		

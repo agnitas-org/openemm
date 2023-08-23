@@ -5,6 +5,7 @@
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="mvc" uri="http://www.springframework.org/tags" %>
 
 <%--@elvariable id="affectedMailingsMessageKey" type="java.lang.String"--%>
 <%--@elvariable id="affectedMailingsMessageType" type="java.lang.String"--%>
@@ -97,12 +98,7 @@
                 <display:table name="affectedMailings" id="affectedMailing" class="errorTable" length="${affectedMailingsCount}">
                     <display:column>
                         <c:set var="mailingName" value="${affectedMailing.shortname}"/>
-                            <emm:ShowByPermission token="mailing.settings.migration">
-                                <c:set var="mailingLink"><html:rewrite page="/mailing/${affectedMailing.id}/settings.action"/></c:set>
-                            </emm:ShowByPermission>
-                            <emm:HideByPermission token="mailing.settings.migration">
-                                <c:set var="mailingLink"><html:rewrite page="/mailingbase.do?action=2&mailingID=${affectedMailing.id}"/></c:set>
-                            </emm:HideByPermission>
+                        <c:set var="mailingLink"><html:rewrite page="/mailing/${affectedMailing.id}/settings.action"/></c:set>
                         <c:choose>
                             <c:when test="${fn:length(mailingName) > AFFECTED_ENTITY_NAME_MAX_LENGTH}">
                                 <a href="${mailingLink}" title="<c:out value="${mailingName}" escapeXml="true"/>" style="color: red;">
@@ -126,12 +122,7 @@
                 <display:table name="affectedMailingsLightweight" id="affectedMailing" class="errorTable" length="${affectedMailingsLightweightCount}">
                     <display:column>
                         <c:set var="mailingName" value="${affectedMailing.shortname}"/>
-                        <emm:ShowByPermission token="mailing.settings.migration">
-                            <c:set var="mailingLink"><html:rewrite page="/mailing/${affectedMailing.mailingID}/settings.action"/></c:set>
-                        </emm:ShowByPermission>
-                        <emm:HideByPermission token="mailing.settings.migration">
-                            <c:set var="mailingLink"><html:rewrite page="/mailingbase.do?action=2&mailingID=${affectedMailing.mailingID}"/></c:set>
-                        </emm:HideByPermission>
+                        <c:set var="mailingLink"><html:rewrite page="/mailing/${affectedMailing.mailingID}/settings.action"/></c:set>
 
                         <c:choose>
                             <c:when test="${fn:length(mailingName) > AFFECTED_ENTITY_NAME_MAX_LENGTH}">
@@ -382,7 +373,13 @@
     </script>
 </logic:equal>
 
-
+<c:if test="${POPUPS_FIELDS_ERRORS ne null}">
+    <c:forEach var="fieldError" items="${POPUPS_FIELDS_ERRORS}">
+        <script type="text/html" data-message="${fieldError.fieldName}">
+                <mvc:message code="${fieldError.message.code}" arguments="${fieldError.argumentsStr}"/>
+        </script>
+    </c:forEach>
+</c:if>
 
 <logic:messagesPresent property="de.agnitas.GLOBAL_WARNING_PERMANENT" message="true">
     <script type="text/javascript" data-message>

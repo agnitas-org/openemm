@@ -18,6 +18,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 import org.agnitas.beans.DynamicTagContent;
@@ -38,6 +40,9 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 
 import com.agnitas.beans.Campaign;
 import com.agnitas.beans.ComTarget;
@@ -66,7 +71,7 @@ import com.agnitas.json.JsonReader;
 
 import jakarta.annotation.Resource;
 
-public class MailingImporterImpl extends ActionImporter implements MailingImporter {
+public class MailingImporterImpl extends ActionImporter implements MailingImporter, ApplicationContextAware {
     
 	private static final Logger logger = LogManager.getLogger(MailingImporterImpl.class);
 	
@@ -90,6 +95,8 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 	
 	@Resource(name="MailingImporterMediatypeFactory")
 	protected MailingImporterMediatypeFactory mediatypeFactory;
+	
+	private ApplicationContext applicationContext;
 
     /**
      * Import simple mailing or grid mailing or templates
@@ -171,6 +178,11 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 				logger.error("Cannot save mailing");
 				return ImportResult.builder().addError("error.mailing.import").build();
 			} else {
+				// Load and save the new mailing to let any adjustments happen that may be needed
+				Mailing storedMailing = mailingDao.getMailing(mailing.getId(), mailing.getCompanyID());
+				storedMailing.buildDependencies(true, getApplicationContext());
+				mailingDao.saveMailing(storedMailing, false);
+				
 				return ImportResult.builder().setSuccess(true)
 						.setMailingID(importedMailingID)
 						.setIsTemplate(importAsTemplate)
@@ -188,6 +200,9 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 
     protected int importMailingData(Mailing mailing, int companyID, boolean importAsTemplate, String shortName, String description, Map<String, Object[]> warnings, JsonObject jsonObject, Map<Integer, Integer> actionIdMappings, Map<Integer, Integer> targetIdMappings, Set<Integer> adminAltgIds) throws Exception {
 		String rdirDomain = companyDao.getRedirectDomain(companyID);
+
+		Optional<String> companyTokenOptional = companyDao.getCompanyToken(companyID);
+		String companyToken = companyTokenOptional.isPresent() ? companyTokenOptional.get() : null;
 		
 		mailing.setCompanyID(companyID);
 		
@@ -287,6 +302,11 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 				if (componentJsonObject.containsPropertyKey("emm_block")) {
 					String emmBlock = (String) componentJsonObject.get("emm_block");
 					emmBlock = emmBlock.replace("[COMPANY_ID]", Integer.toString(companyID)).replace("[RDIR_DOMAIN]", rdirDomain);
+					if (StringUtils.isNotBlank(companyToken)) {
+						emmBlock = emmBlock.replace("[CTOKEN]", companyToken);
+					} else {
+						emmBlock = emmBlock.replace("agnCTOKEN=[CTOKEN]", "agnCI=" + companyID);
+					}
 					if (componentJsonObject.containsPropertyKey("mimetype")) {
 						mailingComponent.setEmmBlock(emmBlock, (String) componentJsonObject.get("mimetype"));
 					} else {
@@ -329,6 +349,11 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 						dynamicTagContent.setDynOrder((Integer) dynContentJsonObject.get("order"));
 						String contentText = (String) dynContentJsonObject.get("text");
 						contentText = contentText.replace("[COMPANY_ID]", Integer.toString(companyID)).replace("[RDIR_DOMAIN]", rdirDomain);
+						if (StringUtils.isNotBlank(companyToken)) {
+							contentText = contentText.replace("[CTOKEN]", companyToken);
+						} else {
+							contentText = contentText.replace("agnCTOKEN=[CTOKEN]", "agnCI=" + companyID);
+						}
 						dynamicTagContent.setDynContent(contentText);
 						if (dynContentJsonObject.containsPropertyKey("target_id")) {
 							dynamicTagContent.setTargetID(targetIdMappings.get(dynContentJsonObject.get("target_id")));
@@ -347,8 +372,14 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 				JsonObject linkJsonObject = (JsonObject) linkObject;
 				ComTrackableLink trackableLink = new ComTrackableLinkImpl();
 				trackableLink.setShortname((String) linkJsonObject.get("name"));
+				
 				String fullUrl = (String) linkJsonObject.get("url");
-				fullUrl = fullUrl.replace("[COMPANY_ID]", Integer.toString(companyID)).replace("[RDIR_DOMAIN]", rdirDomain);
+				fullUrl = fullUrl .replace("[COMPANY_ID]", Integer.toString(companyID)) .replace("[RDIR_DOMAIN]", rdirDomain);
+				if (StringUtils.isNotBlank(companyToken)) {
+					fullUrl = fullUrl.replace("[CTOKEN]", companyToken);
+				} else {
+					fullUrl = fullUrl.replace("agnCTOKEN=[CTOKEN]", "agnCI=" + companyID);
+				}
 				trackableLink.setFullUrl(fullUrl);
 
 				if (linkJsonObject.containsPropertyKey("deep_tracking")) {
@@ -426,13 +457,14 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 				String targetName = (String) targetJsonObject.get("name");
 				String targetSQL = (String) targetJsonObject.get("sql");
 				String targetEQL = (String) targetJsonObject.get("eql");
+				boolean isAccessLimitation = targetJsonObject.containsPropertyKey("access_limiting") && (Boolean) targetJsonObject.get("access_limiting");
 				for (ComTarget existingTarget : targetDao.getTargetByNameAndSQL(companyID, targetName, targetSQL, false, true, true)) {
-					if (AgnUtils.equalsIgnoreLineBreaks(existingTarget.getEQL(), targetEQL)) {
+					if (AgnUtils.equalsIgnoreLineBreaks(existingTarget.getEQL(), targetEQL) && existingTarget.isAccessLimitation() == isAccessLimitation) {
 						targetID = existingTarget.getId();
 						break;
 					}
 				}
-
+				
 				if (targetID == 0) {
 					// Do not create new target groups, because in most cases they need special profile fields, which may no exist.
 					warnings.put("warning.mailing.import.targetgroup", null);
@@ -493,5 +525,14 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 			
 		}
 		mailing.setMediatypes(mediatypes);
+	}
+
+	@Override
+	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+		this.applicationContext = Objects.requireNonNull(applicationContext);
+	}
+	
+	public final ApplicationContext getApplicationContext() {
+		return this.applicationContext;
 	}
 }

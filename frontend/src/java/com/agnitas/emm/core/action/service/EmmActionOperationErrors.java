@@ -85,7 +85,13 @@ public final class EmmActionOperationErrors {
 		INVALID_CUSTOMER_ID, 
 		
 		/** Unknown mailing ID. */
-		MAILING_NOT_FOUND
+		MAILING_NOT_FOUND,
+		
+		/** Unknown company ID. */
+		UNKNOWN_COMPANY_ID, 
+		
+		/** Access to different company denied. */
+		ACCESS_TO_COMPANY_DENIED
 	}
 	
 	/** Set of codes representing errors occurred during processing. */

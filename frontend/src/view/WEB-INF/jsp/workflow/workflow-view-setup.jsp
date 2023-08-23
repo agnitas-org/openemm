@@ -23,12 +23,15 @@
 <emm:CheckLogon/>
 <emm:Permission token="workflow.show"/>
 
+<c:url var="workflowsOverviewLink" value="/workflow/list.action"/>
+
 <c:set var="agnNavigationKey" 		value="none" 									scope="request" />
 <c:set var="agnNavHrefAppend" 		value="&workflowId=${workflowForm.workflowId}" 	scope="request" />
 <c:set var="agnTitleKey" 			value="workflow.single" 						scope="request" />
 <c:set var="sidemenu_active" 		value="Workflow" 								scope="request" />
 <c:set var="isBreadcrumbsShown" 	value="true" 									scope="request" />
 <c:set var="agnBreadcrumbsRootKey" 	value="Workflow" 								scope="request" />
+<c:set var="agnBreadcrumbsRootUrl" 	value="${workflowsOverviewLink}"                scope="request" />
 <c:set var="agnHelpKey" 			value="help_workflow_edit" 						scope="request" />
 
 <c:set var="workflowToggleTestingButtonEnabled" value="false" scope="request"/>
@@ -131,17 +134,6 @@
 	                </c:if>
                 
                 </emm:ShowByPermission>
-
-                <%-- Fade in Statistics button --%>
-                <emm:instantiate var="option" type="java.util.LinkedHashMap"  scope="request">
-                    <c:set target="${options}" property="1" value="${option}"/>
-                    <c:set target="${option}" property="url" value="#"/>
-                    <c:set target="${option}" property="extraAttributes" value="id='toggle-statistic-btn' data-action='toggle-statistic'"/>
-                    <c:set target="${option}" property="icon" value="icon-fa5 icon-fa5-chart-bar far"/>
-                    <c:set target="${option}" property="name">
-                        <span class="text"><mvc:message code="workflow.fadeInStatistics"/></span>
-                    </c:set>
-                </emm:instantiate>
 
                 <%-- Auto Opt Total Statistics button --%>
                 <c:if test="${isTotalStatisticAvailable}">

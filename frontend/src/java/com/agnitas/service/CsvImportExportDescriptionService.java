@@ -12,24 +12,23 @@ package com.agnitas.service;
 
 import java.util.List;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.beans.Admin;
 
 public interface CsvImportExportDescriptionService {
-	CsvImportExportDescription getCsvImportExportDescription(@VelocityCheck int companyId, String cvsDescriptionName);
+	CsvImportExportDescription getCsvImportExportDescription(int companyId, String cvsDescriptionName);
 
-	CsvImportExportDescription getCsvImportExportDescription(@VelocityCheck int companyId, int cvsDescriptionID);
+	CsvImportExportDescription getCsvImportExportDescription(int companyId, int cvsDescriptionID);
 
-	List<String> getCsvImportExportDescriptionNames(@VelocityCheck int companyId, String tableName);
+	List<String> getCsvImportExportDescriptionNames(int companyId, String tableName);
 
-	List<CsvImportExportDescription> getCsvImportExportDescriptions(@VelocityCheck int companyId, String tableName, boolean forImport);
+	List<CsvImportExportDescription> getCsvImportExportDescriptions(int companyId, String tableName, boolean forImport);
 
 	boolean deleteCsvImportExportDescription(int id);
 
 	ServiceResult<CsvImportExportDescription> getForDeletion(Admin admin, int id, boolean forImport);
 	
-	boolean deleteCsvImportExportDescription(@VelocityCheck int companyId, String cvsDescriptionName);
+	boolean deleteCsvImportExportDescription(int companyId, String cvsDescriptionName);
 
 	SimpleServiceResult save(Admin admin, CsvImportExportDescription definition);
 

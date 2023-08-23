@@ -22,7 +22,6 @@ import com.agnitas.emm.core.mailing.dao.ComMailingParameterDao;
 import com.agnitas.emm.core.mailing.service.ComMailingParameterService;
 import com.agnitas.emm.core.mailing.service.MailingParameterLogService;
 import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.beans.factory.annotation.Required;
@@ -44,7 +43,7 @@ public class ComMailingParameterServiceImpl implements ComMailingParameterServic
 	}
 
 	@Override
-	public List<ComMailingParameter> getAllParameters(@VelocityCheck int companyID, final Admin admin) {
+	public List<ComMailingParameter> getAllParameters(int companyID, final Admin admin) {
 		if (companyID > 0) {
 			return this.mailingParameterDao.getAllParameters(companyID);
 		}
@@ -52,7 +51,7 @@ public class ComMailingParameterServiceImpl implements ComMailingParameterServic
 	}
 
 	@Override
-	public List<ComMailingParameter> getMailingParameters(@VelocityCheck int companyId, int mailingId) {
+	public List<ComMailingParameter> getMailingParameters(int companyId, int mailingId) {
 		if (companyId > 0 && mailingId > 0) {
 			return mailingParameterDao.getMailingParameters(companyId, mailingId);
 		}
@@ -119,12 +118,12 @@ public class ComMailingParameterServiceImpl implements ComMailingParameterServic
     }
 
 	@Override
-	public boolean updateParameters(@VelocityCheck int companyID, int mailingID, List<ComMailingParameter> parameterList, int adminId) {
+	public boolean updateParameters(int companyID, int mailingID, List<ComMailingParameter> parameterList, int adminId) {
 		return mailingParameterDao.updateParameters(companyID, mailingID, parameterList, adminId);
 	}
 
 	@Override
-	public boolean updateParameters(@VelocityCheck int companyId, int mailingId, List<ComMailingParameter> parameterList, int adminId, List<UserAction> userActions) {
+	public boolean updateParameters(int companyId, int mailingId, List<ComMailingParameter> parameterList, int adminId, List<UserAction> userActions) {
 		Map<Integer, ComMailingParameter> parametersOld = getParametersMap(companyId, mailingId);
 		boolean success = updateParameters(companyId, mailingId, parameterList, adminId);
 		Map<Integer, ComMailingParameter> parametersNew = getParametersMap(companyId, mailingId);

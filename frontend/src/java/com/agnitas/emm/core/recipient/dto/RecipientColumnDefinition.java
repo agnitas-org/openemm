@@ -16,6 +16,10 @@ import org.agnitas.util.DbColumnType;
 
 import com.agnitas.beans.ProfileFieldMode;
 
+/**
+ * @deprecated Use RecipientFieldDescription instead
+ */
+@Deprecated
 public class RecipientColumnDefinition {
     private String columnName;
     private String shortname;

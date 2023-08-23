@@ -125,7 +125,7 @@ public class RecipientReportServiceImpl implements RecipientReportService {
 
     @Override
     public List<ComRecipientMailing> getMailingHistory(int recipientId, int companyId) {
-        return recipientDao.getMailingsSentToRecipient(recipientId, companyId);
+        return recipientDao.getMailingsDeliveredToRecipient(recipientId, companyId);
     }
 
     @Override

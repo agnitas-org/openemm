@@ -571,6 +571,7 @@ readers do not read off random characters that represent icons */
 .#{$fa-css-prefix}-grav:before { content: fa-content($fa-var-grav); }
 .#{$fa-css-prefix}-greater-than:before { content: fa-content($fa-var-greater-than); }
 .#{$fa-css-prefix}-greater-than-equal:before { content: fa-content($fa-var-greater-than-equal); }
+.#{$fa-css-prefix}-th-large:before { content: fa-content($fa-var-th-large); }
 .#{$fa-css-prefix}-grimace:before { content: fa-content($fa-var-grimace); }
 .#{$fa-css-prefix}-grin:before { content: fa-content($fa-var-grin); }
 .#{$fa-css-prefix}-grin-alt:before { content: fa-content($fa-var-grin-alt); }

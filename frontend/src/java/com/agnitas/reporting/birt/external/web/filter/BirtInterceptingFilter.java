@@ -24,7 +24,6 @@ import jakarta.servlet.ServletResponse;
 
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -75,7 +74,7 @@ public class BirtInterceptingFilter implements Filter {
 		dispatcher.forward(request, response);
 	}
 
-	private boolean verifySecurityToken(String securityTokenStringEncoded, @VelocityCheck int companyID) {
+	private boolean verifySecurityToken(String securityTokenStringEncoded, int companyID) {
 		final String securityTokenString = URLDecoder.decode(securityTokenStringEncoded, StandardCharsets.US_ASCII);
 
 		String privateKeyString = getConfigService().getValue(ConfigValue.BirtPrivateKey, companyID);

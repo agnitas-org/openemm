@@ -20,12 +20,9 @@ import org.apache.logging.log4j.Logger;
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.dao.PasswordResetDao;
 
-/**
- * DAO implementation for accessing an Oracle DB.
- */
 public class PasswordResetDaoImpl extends BaseDaoImpl implements PasswordResetDao {
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(PasswordResetDaoImpl.class);
+
+	private static final Logger logger = LogManager.getLogger(PasswordResetDaoImpl.class);
 	
 	private static final int MAXIMUM_TOKEN_CHECKS = 3;
 	

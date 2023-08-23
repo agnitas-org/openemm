@@ -38,6 +38,7 @@ public class EmmActionToEmmActionFormConverter implements Converter<EmmAction, E
         form.setDescription(emmAction.getDescription());
         form.setType(emmAction.getType());
         form.setActive(emmAction.getIsActive());
+        form.setAdvertising(emmAction.isAdvertising());
         form.setModulesSchema(parametersParser.serializeActionModules(emmAction.getActionOperations()));
         return form;
     }

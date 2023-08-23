@@ -22,7 +22,6 @@ import org.agnitas.beans.DatasourceDescription;
 import org.agnitas.beans.factory.DatasourceDescriptionFactory;
 import org.agnitas.dao.SourceGroupType;
 import org.agnitas.dao.impl.PaginatedBaseDaoImpl;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
@@ -82,7 +81,7 @@ public class DatasourceDescriptionDaoImpl extends PaginatedBaseDaoImpl implement
      * Read the latest datasource description matching the exect companyid and descriptiontext or, if there is none for that companyid, matching companyid 0 (fallback) and descriptiontext
      */
     @Override
-    public DatasourceDescription getByDescription(SourceGroupType sourceGroupType, @VelocityCheck int companyID, String description) {
+    public DatasourceDescription getByDescription(SourceGroupType sourceGroupType, int companyID, String description) {
     	int sourceGroupId = getSourceGroupTypeId(sourceGroupType);
     	if (sourceGroupId <= 0) {
     		throw new RuntimeException("Unknown sourcegrouptypename: " + sourceGroupType.name());
@@ -128,7 +127,7 @@ public class DatasourceDescriptionDaoImpl extends PaginatedBaseDaoImpl implement
     }
 	
 	@Override
-	public boolean delete(int dataSourceId, @VelocityCheck int companyId) {
+	public boolean delete(int dataSourceId, int companyId) {
 		if(dataSourceId > 0) {
 			int rowAffected = update(logger, "DELETE FROM datasource_description_tbl WHERE datasource_id = ? AND company_id = ?", dataSourceId, companyId);
 			return rowAffected > 0;
@@ -138,7 +137,7 @@ public class DatasourceDescriptionDaoImpl extends PaginatedBaseDaoImpl implement
 	}
 	
 	@Override
-	public boolean deleteByCompanyID(@VelocityCheck int companyId) {
+	public boolean deleteByCompanyID(int companyId) {
 		if (companyId > 0) {
 			int rowAffected = update(logger, "DELETE FROM datasource_description_tbl WHERE company_id = ?", companyId);
 			if (rowAffected > 0) {
@@ -152,7 +151,7 @@ public class DatasourceDescriptionDaoImpl extends PaginatedBaseDaoImpl implement
 	}
 	
 	@Override
-	public boolean resetByCompanyID(@VelocityCheck int companyId) {
+	public boolean resetByCompanyID(int companyId) {
 		if (companyId > 0) {
 			int rowAffected = update(logger, "DELETE FROM datasource_description_tbl WHERE company_id = ? AND datasource_id NOT IN (SELECT default_datasource_id FROM company_tbl WHERE company_id = ?)", companyId, companyId);
 			if (rowAffected > 0) {
@@ -211,4 +210,13 @@ public class DatasourceDescriptionDaoImpl extends PaginatedBaseDaoImpl implement
 			throw new RuntimeException("Value for datasource_description_tbl.desc2 is to long (Maximum: 500, Current: " + description2.length() + ")");
 		}
 	}
+	
+	@Override
+	public DatasourceDescription getDatasourceDescription(int datasourceId, int companyId) {
+        return selectObjectDefaultNull(logger, 
+                "SELECT datasource_id, company_id, sourcegroup_id, description, url, desc2" +
+                        " FROM datasource_description_tbl" +
+                        " WHERE datasource_id = ? and company_id = ?",
+                new DatasourceDescription_RowMapper(), datasourceId, companyId);
+    }
 }

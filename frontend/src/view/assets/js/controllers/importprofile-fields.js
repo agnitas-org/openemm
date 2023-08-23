@@ -46,11 +46,9 @@ AGN.Lib.Controller.new('importprofile-fields', function () {
     $form.submit();
   });
 
-  this.addAction({click: 'addMapping'}, function () {
+  function submitForm() {
     if (form.valid({})) {
       form.cleanErrors();
-      var $form = $('#importProfileColumnsForm');
-      $form.append('<input type="hidden" name="add" value="add" />');
       if ($('[data-action=changeDateInput]').is(":checked")) {
         var daysCount = parseInt($('#daysCount').val() || 0);
         var additionalDays = daysCount === 0 ? '' : (daysCount > 0 ? '+' + daysCount : daysCount);
@@ -63,6 +61,21 @@ AGN.Lib.Controller.new('importprofile-fields', function () {
     } else {
       form.handleErrors();
     }
+  }
+
+  this.addAction({click: 'save'}, function () {
+    form.setValue('action', config.ACTION_SAVE);
+    submitForm();
+  });
+  
+  this.addAction({click: 'saveAndStart'}, function () {
+    form.setValue('action', config.ACTION_SAVE_AND_START);
+    submitForm();
+  });
+  
+  this.addAction({click: 'addMapping'}, function () {
+    $('#importProfileColumnsForm').append('<input type="hidden" name="add" value="add" />');
+    submitForm();
   });
   
   this.addAction({change: 'changeDateInput'}, function () {

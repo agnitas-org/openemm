@@ -237,7 +237,7 @@
 	</bean>
 	
 <!-- ============================================================================================================================== EMM layout -->
-	<bean id="EmmLayoutBaseDao" class="com.agnitas.dao.impl.ComEmmLayoutBaseDaoImpl">
+	<bean id="EmmLayoutBaseDao" class="com.agnitas.dao.impl.EmmLayoutBaseDaoImpl">
 		<property name="dataSource" ref="dataSource" />
 		<property name="javaMailService" ref="JavaMailService" />
 	</bean>
@@ -435,18 +435,9 @@
 		<property name="dataSource" ref="dataSource" />
 		<property name="javaMailService" ref="JavaMailService" />
 	</bean>
-	
-	<bean id="MaildropTargetGroupLocatorDao" class="org.agnitas.emm.core.target.dao.impl.MaildropTargetGroupLocatorDaoImpl">
-		<property name="dataSource" ref="dataSource" />
-		<property name="javaMailService" ref="JavaMailService" />
-	</bean>
-	
+
 	<bean id="TargetGroupsReferencedItemsDao" class="com.agnitas.emm.core.target.dao.impl.ReferencedItemsDaoImpl" parent="_BaseDao" />
 
-	<bean id="ExportPredefTargetGroupLocatorDao" class="org.agnitas.emm.core.target.dao.impl.ExportPredefTargetGroupLocatorDaoImpl">
-		<property name="dataSource" ref="dataSource" />
-	</bean>
-	
 <!-- ============================================================================================================================== Title -->
 	<bean id="TitleDao" class="com.agnitas.dao.impl.ComTitleDaoImpl">
 		<property name="dataSource" ref="dataSource" />
@@ -485,6 +476,16 @@
 
 <!-- ============================================================================================================================== User activity log -->
 	<bean id="UserActivityLogDao" class="com.agnitas.emm.core.useractivitylog.dao.ComUserActivityLogDaoImpl">
+		<property name="dataSource" ref="dataSource" />
+		<property name="javaMailService" ref="JavaMailService" />
+	</bean>
+
+	<bean id="RestfulUserActivityLogDao" class="com.agnitas.emm.core.useractivitylog.dao.impl.RestfulUserActivityLogDaoImpl">
+		<property name="dataSource" ref="dataSource" />
+		<property name="javaMailService" ref="JavaMailService" />
+	</bean>
+
+	<bean id="SoapUserActivityLogDao" class="com.agnitas.emm.core.useractivitylog.dao.impl.SoapUserActivityLogDaoImpl">
 		<property name="dataSource" ref="dataSource" />
 		<property name="javaMailService" ref="JavaMailService" />
 	</bean>
@@ -584,6 +585,11 @@
 		<property name="dataSource" ref="dataSource" />
 		<property name="javaMailService" ref="JavaMailService" />
 	</bean>
+	
+	<bean id="CssDao" class="com.agnitas.dao.impl.CssDaoImpl">
+		<property name="dataSource" ref="dataSource" />
+		<property name="javaMailService" ref="JavaMailService" />
+	</bean>
 
     <!-- ============================================================================================================================== -->
     <bean id="BindingEntryHistoryDao" class="com.agnitas.emm.core.report.dao.impl.BindingEntryHistoryDaoImpl">
@@ -591,8 +597,6 @@
         <property name="javaMailService" ref="JavaMailService" />
     </bean>
     	
-	<bean id="DepartmentDao" class="com.agnitas.emm.core.departments.dao.DepartmentDaoImpl" parent="_BaseDao" />
-
 	<bean id="ShowTableTagDao" class="com.agnitas.dao.impl.ShowTableTagDaoImpl">
 		<property name="dataSource" ref="dataSource" />
 		<property name="javaMailService" ref="JavaMailService" />
@@ -642,4 +646,9 @@
 		<property name="dataSource" ref="dataSource" />
 		<property name="javaMailService" ref="JavaMailService" />
     </bean>
+
+	<bean id="RecipientFieldDao" class="com.agnitas.emm.core.dao.impl.RecipientFieldDaoImpl">
+		<constructor-arg ref="dataSource" />
+		<constructor-arg ref="JavaMailService" />
+	</bean>
 </beans>

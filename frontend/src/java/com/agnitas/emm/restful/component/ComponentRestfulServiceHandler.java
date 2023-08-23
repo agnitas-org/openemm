@@ -18,10 +18,10 @@ import java.io.InputStream;
 import java.util.Date;
 import java.util.Map.Entry;
 
+import com.agnitas.emm.core.useractivitylog.dao.RestfulUserActivityLogDao;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.MailingComponentType;
 import org.agnitas.beans.impl.MailingComponentImpl;
-import org.agnitas.emm.core.useractivitylog.dao.UserActivityLogDao;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.HttpUtils.RequestMethod;
 import org.apache.commons.lang3.StringUtils;
@@ -61,7 +61,7 @@ public class ComponentRestfulServiceHandler implements RestfulServiceHandler {
 
 	public static final Object EXPORTED_TO_STREAM = new Object();
 
-	private UserActivityLogDao userActivityLogDao;
+	private RestfulUserActivityLogDao userActivityLogDao;
 	private ComMailingDao mailingDao;
 	private ComMailingComponentDao mailingComponentDao;
 	private ComTargetDao targetDao;
@@ -69,7 +69,7 @@ public class ComponentRestfulServiceHandler implements RestfulServiceHandler {
 	private ThumbnailService thumbnailService;
 
 	@Required
-	public void setUserActivityLogDao(UserActivityLogDao userActivityLogDao) {
+	public void setUserActivityLogDao(RestfulUserActivityLogDao userActivityLogDao) {
 		this.userActivityLogDao = userActivityLogDao;
 	}
 	
@@ -124,10 +124,6 @@ public class ComponentRestfulServiceHandler implements RestfulServiceHandler {
 	/**
 	 * Return a single or multiple component data sets
 	 * 
-	 * @param request
-	 * @param admin
-	 * @return
-	 * @throws Exception
 	 */
 	private Object getComponent(HttpServletRequest request, HttpServletResponse response, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.MAILING_COMPONENTS_SHOW)) {
@@ -147,8 +143,8 @@ public class ComponentRestfulServiceHandler implements RestfulServiceHandler {
 		if (restfulContext.length == 1) {
 			// Show all components of a mailing
 			userActivityLogDao.addAdminUseOfFeature(admin, "restful/component", new Date());
-			userActivityLogDao.writeUserActivityLog(admin, "restful/component GET", "MID:" + mailingID + " ALL");
-			
+			writeActivityLog("MID:" + mailingID + " ALL", request, admin);
+
 			JsonArray componentsJsonArray = new JsonArray();
 			
 			for (MailingComponent component : mailingComponentDao.getMailingComponents(mailingID, admin.getCompanyID())) {
@@ -161,8 +157,8 @@ public class ComponentRestfulServiceHandler implements RestfulServiceHandler {
 			String requestedComponentKeyValue = restfulContext[1];
 			
 			userActivityLogDao.addAdminUseOfFeature(admin, "restful/component", new Date());
-			userActivityLogDao.writeUserActivityLog(admin, "restful/component GET", "MID: " + mailingID + " " + requestedComponentKeyValue);
-			
+			writeActivityLog("MID: " + mailingID + " " + requestedComponentKeyValue, request, admin);
+
 			MailingComponent component;
 			
 			if (AgnUtils.isNumber(requestedComponentKeyValue)) {
@@ -183,10 +179,6 @@ public class ComponentRestfulServiceHandler implements RestfulServiceHandler {
 	/**
 	 * Delete a component
 	 * 
-	 * @param request
-	 * @param admin
-	 * @return
-	 * @throws Exception
 	 */
 	private Object deleteComponent(HttpServletRequest request, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.MAILING_COMPONENTS_CHANGE)) {
@@ -206,8 +198,8 @@ public class ComponentRestfulServiceHandler implements RestfulServiceHandler {
 		String requestedComponentKeyValue = restfulContext[1];
 		
 		userActivityLogDao.addAdminUseOfFeature(admin, "restful/component", new Date());
-		userActivityLogDao.writeUserActivityLog(admin, "restful/component DELETE", "MID: " + mailingID + " " + requestedComponentKeyValue);
-		
+		writeActivityLog("MID: " + mailingID + " " + requestedComponentKeyValue, request, admin);
+
 		MailingComponent component;
 		
 		if (AgnUtils.isNumber(requestedComponentKeyValue)) {
@@ -227,11 +219,6 @@ public class ComponentRestfulServiceHandler implements RestfulServiceHandler {
 	/**
 	 * Create a new component
 	 * 
-	 * @param request
-	 * @param requestDataFile
-	 * @param admin
-	 * @return
-	 * @throws Exception
 	 */
 	private Object createNewComponent(HttpServletRequest request, byte[] requestData, File requestDataFile, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.MAILING_COMPONENTS_CHANGE)) {
@@ -249,8 +236,8 @@ public class ComponentRestfulServiceHandler implements RestfulServiceHandler {
 		}
 				
 		userActivityLogDao.addAdminUseOfFeature(admin, "restful/component", new Date());
-		userActivityLogDao.writeUserActivityLog(admin, "restful/component POST", "MID: " + mailingID);
-		
+		writeActivityLog("MID: " + mailingID, request, admin);
+
 		MailingComponent newMailingComponent = parseComponentJsonObject(requestData, requestDataFile, admin);
 		newMailingComponent.setMailingID(mailingID);
 		
@@ -268,11 +255,6 @@ public class ComponentRestfulServiceHandler implements RestfulServiceHandler {
 	/**
 	 * Update an existing component
 	 * 
-	 * @param request
-	 * @param requestDataFile
-	 * @param admin
-	 * @return
-	 * @throws Exception
 	 */
 	private Object createOrUpdateComponent(HttpServletRequest request, byte[] requestData, File requestDataFile, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.MAILING_COMPONENTS_CHANGE)) {
@@ -292,8 +274,8 @@ public class ComponentRestfulServiceHandler implements RestfulServiceHandler {
 		if (restfulContext.length == 1) {
 			// Insert component to a mailing or update an existing component of a mailing by name
 			userActivityLogDao.addAdminUseOfFeature(admin, "restful/component", new Date());
-			userActivityLogDao.writeUserActivityLog(admin, "restful/component PUT", "MID: " + mailingID);
-			
+			writeActivityLog("MID: " + mailingID, request, admin);
+
 			MailingComponent newMailingComponent = parseComponentJsonObject(requestData,  requestDataFile, admin);
 			newMailingComponent.setMailingID(mailingID);
 			
@@ -310,8 +292,8 @@ public class ComponentRestfulServiceHandler implements RestfulServiceHandler {
 			String requestedComponentKeyValue = restfulContext[1];
 			
 			userActivityLogDao.addAdminUseOfFeature(admin, "restful/component", new Date());
-			userActivityLogDao.writeUserActivityLog(admin, "restful/component PUT", "MID: " + mailingID + " " + requestedComponentKeyValue);
-			
+			writeActivityLog("MID: " + mailingID + " " + requestedComponentKeyValue, request, admin);
+
 			MailingComponent newMailingComponent = parseComponentJsonObject(requestData, requestDataFile, admin);
 			newMailingComponent.setMailingID(mailingID);
 			
@@ -499,5 +481,9 @@ public class ComponentRestfulServiceHandler implements RestfulServiceHandler {
 	@Override
 	public ResponseType getResponseType() {
 		return ResponseType.JSON;
+	}
+
+	private void writeActivityLog(String description, HttpServletRequest request, Admin admin) {
+		writeActivityLog(userActivityLogDao, description, request, admin);
 	}
 }

@@ -174,7 +174,8 @@ public class Workflow {
         STATUS_TESTING(5, false, "testing"),
         STATUS_TESTED(6, true, "tested"),
         STATUS_FAILED(7, true, "failed"),
-        STATUS_TESTING_FAILED(8, true, "testing_failed");
+        STATUS_TESTING_FAILED(8, true, "testing_failed"),
+        STATUS_PAUSED(9, true, "paused");
         
         private final int id;
         private final boolean changeable;

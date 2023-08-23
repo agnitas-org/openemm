@@ -10,12 +10,6 @@
 
 package com.agnitas.dao.impl;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -25,6 +19,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import org.agnitas.beans.BindingEntry.UserType;
@@ -40,13 +35,11 @@ import org.agnitas.dao.impl.mapper.StringRowMapper;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.mailing.service.CopyMailingService;
-import org.agnitas.service.UserFormExporter;
-import org.agnitas.service.UserFormImporter;
+import org.agnitas.emm.core.userforms.UserformService;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.DbUtilities;
 import org.agnitas.util.Tuple;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -65,26 +58,18 @@ import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.company.bean.CompanyEntry;
 import com.agnitas.emm.core.company.rowmapper.CompanyEntryRowMapper;
 import com.agnitas.emm.core.recipient.dao.BindingHistoryDao;
+import com.agnitas.emm.core.servicemail.UnknownCompanyIdException;
 
 public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompanyDao {
-	/** The logger. */
+
 	private static final Logger logger = LogManager.getLogger(ComCompanyDaoImpl.class);
 
-	/** Configuration service. */
 	private ConfigService configService;
-	
-	/** Mailing DAO. */
 	private ComMailingDao mailingDao;
-
 	private ComTargetDao targetDao;
-	
 	private CopyMailingService copyMailingService;
-	
 	private BindingHistoryDao bindingHistoryDao;
-	
-	private UserFormExporter userFormExporter;
-	
-	private UserFormImporter userFormImporter;
+	private UserformService userformService;
 	
 	// ----------------------------------------------------------------------------------------------------------------
 	// Dependency Injection
@@ -109,20 +94,15 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 	}
 
 	@Required
-	public void setUserFormExporter(UserFormExporter userFormExporter) {
-		this.userFormExporter = userFormExporter;
-	}
-
-	@Required
-	public void setUserFormImporter(UserFormImporter userFormImporter) {
-		this.userFormImporter = userFormImporter;
-	}
-
-	@Required
 	public void setBindingHistoryDao(BindingHistoryDao bindingHistoryDao) {
 		this.bindingHistoryDao = bindingHistoryDao;
 	}
-	
+
+	@Required
+	public void setUserformService(UserformService userformService) {
+		this.userformService = userformService;
+	}
+
 	// ----------------------------------------------------------------------------------------------------------------
 	// Business Logic
 
@@ -161,7 +141,11 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 	 * DB field for AGNEMM-1817, AGNEMM-1924 and AGNEMM-1925
 	 */
 	public static final String STANDARD_FIELD_BOUNCELOAD = "bounceload";
-	
+
+	/**
+	 * @deprecated Use RecipientFieldServiceImpl.RecipientStandardField instead
+	 */
+	@Deprecated
 	public static final String[] STANDARD_CUSTOMER_FIELDS = new String[]{
 		STANDARD_FIELD_CUSTOMER_ID,
 		STANDARD_FIELD_EMAIL,
@@ -269,7 +253,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 						StringUtils.defaultString(company.getContactTech()),
 						company.getId());
 			} else {
-				int defaultDatasourceID = createNewDefaultdatasourceID();
+				int defaultDatasourceID = createNewDefaultDatasourceID();
 				
 				int newCompanyID;
 				
@@ -339,7 +323,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 
 				company.setId(newCompanyID);
 				
-				updateDefaultdatasourceIDWithNewCompanyid(defaultDatasourceID, newCompanyID);
+				updateDefaultDatasourceIDWithNewCompanyId(defaultDatasourceID, newCompanyID);
 			}
 		} catch (Exception e) {
 			logger.error("Cannot save company data", e);
@@ -351,7 +335,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 	 * Because the companyid is not aquired yet we use 1 (always existing company of emm-master) as interim companyid and update this later
 	 */
 	@DaoUpdateReturnValueCheck
-	private int createNewDefaultdatasourceID() {
+	private int createNewDefaultDatasourceID() {
 		int sourceGroupID = selectInt(logger, "SELECT sourcegroup_id FROM sourcegroup_tbl WHERE sourcegroup_type = ?", "DD");
 		
 		if (isOracleDB()) {
@@ -370,7 +354,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 	 * Because the companyid was not aquired we used -1 as interim companyid and now we update this here with the new companyid
 	 */
 	@DaoUpdateReturnValueCheck
-	private void updateDefaultdatasourceIDWithNewCompanyid(int datasourceID, int companyID) {
+	private void updateDefaultDatasourceIDWithNewCompanyId(int datasourceID, int companyID) {
 		update(logger, "UPDATE datasource_description_tbl SET company_id = ? WHERE datasource_id = ?", companyID, datasourceID);
 	}
 	
@@ -514,6 +498,8 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 				executeWithRetry(logger, 0, 3, 120, sql);
 				sql = "CREATE INDEX mailtr" + newCompanyId + "$mid$idx ON mailtrack_" + newCompanyId + "_tbl (mailing_id)" + tablespaceClauseCustomerBindIndex;
 				executeWithRetry(logger, 0, 3, 120, sql);
+				sql = "CREATE INDEX mailtr" + newCompanyId + "$ts$idx ON mailtrack_" + newCompanyId + "_tbl (timestamp)" + tablespaceClauseCustomerBindIndex;
+				executeWithRetry(logger, 0, 3, 120, sql);
 				
 				sql = "CREATE TABLE " + OnepixelDaoImpl.getOnepixellogTableName(newCompanyId) + " (customer_id NUMBER NOT NULL, mailing_id NUMBER NOT NULL, company_id NUMBER NOT NULL, ip_adr VARCHAR2(50), timestamp DATE DEFAULT SYSDATE, open_count NUMBER, mobile_count NUMBER, first_open TIMESTAMP, last_open TIMESTAMP)" + tablespaceClauseCustomerTable;
 				executeWithRetry(logger, 0, 3, 120, sql);
@@ -579,6 +565,8 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 				sql = "CREATE INDEX mailtr" + newCompanyId + "$cid$idx ON mailtrack_" + newCompanyId + "_tbl (customer_id)";
 				executeWithRetry(logger, 0, 3, 120, sql);
 				sql = "CREATE INDEX mailtr" + newCompanyId + "$mid$idx ON mailtrack_" + newCompanyId + "_tbl (mailing_id)";
+				executeWithRetry(logger, 0, 3, 120, sql);
+				sql = "CREATE INDEX mailtr" + newCompanyId + "$ts$idx ON mailtrack_" + newCompanyId + "_tbl (timestamp)";
 				executeWithRetry(logger, 0, 3, 120, sql);
 				
 				sql = "CREATE TABLE " + OnepixelDaoImpl.getOnepixellogTableName(newCompanyId) + " (customer_id INTEGER UNSIGNED NOT NULL, mailing_id INT(11) NOT NULL, company_id INT(11) NOT NULL, ip_adr VARCHAR(50), timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP, open_count INT(11), mobile_count INT(11), first_open TIMESTAMP NULL, last_open TIMESTAMP NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
@@ -740,27 +728,7 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 			copySampleMailings(newCompanyId, mailinglistID, rdirDomain);
 
 			// Copy sample form templates (some form actions need the sample mailings)
-			for (int sampleFormID : getSampleFormIDs()) {
-				File userFormTempFile = File.createTempFile("UserFormTempFile_", ".json");
-				try {
-					try (OutputStream userFormOutputStream = new FileOutputStream(userFormTempFile)) {
-						userFormExporter.exportUserFormToJson(1, sampleFormID, userFormOutputStream, true);
-					}
-					
-					replaceTextInFile(userFormTempFile, newCompanyId, mailinglistID, rdirDomain);
-					
-					try (InputStream userFormInputStream = new FileInputStream(userFormTempFile)) {
-						userFormImporter.importUserForm(newCompanyId, userFormInputStream, null, null);
-					}
-				} catch (Exception e) {
-					logger.error(String.format("Could not copy user form (%d) for new company (%d): %s", sampleFormID, newCompanyId, e.getMessage()), e);
-				} finally {
-					if (userFormTempFile.exists()) {
-						userFormTempFile.delete();
-					}
-				}
-			}
-
+			copySampleUserForms(newCompanyId, mailinglistID, rdirDomain);
 			return true;
 		} catch (Exception e) {
 			logger.error(String.format("initTables: SQL: %s\n%s", sql, e), e);
@@ -769,28 +737,20 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 		}
 	}
 
-	private void replaceTextInFile(File userFormTempFile, int companyID, int mailinglistID, String rdirDomain) throws IOException {
-		String content = FileUtils.readFileToString(userFormTempFile, "UTF-8");
-		
-		String cid = Integer.toString(companyID);
-		content = StringUtils.replaceEach(content, new String[]{"<CID>", "<cid>", "[COMPANY_ID]", "[company_id]", "[Company_ID]"},
-					new String[]{cid, cid, cid, cid, cid});
-
-		String mlid = Integer.toString(mailinglistID);
-		content = StringUtils.replaceEach(content, new String[]{"<MLID>", "<mlid>", "[MAILINGLIST_ID]", "[mailinglist_id]", "[Mailinglist_ID]"},
-					new String[]{mlid, mlid, mlid, mlid, mlid});
-
-		content = content.replace("<rdir-domain>", StringUtils.defaultIfBlank(rdirDomain, "RDIR-Domain"));
-		
-		FileUtils.writeStringToFile(userFormTempFile, content, "UTF-8");
+	private void copySampleUserForms(int newCompanyId, int mailinglistID, String rdirDomain) {
+		for (int sampleFormID : getSampleFormIDs()) {
+			try {
+				userformService.copyUserForm(sampleFormID, 1, newCompanyId, mailinglistID, rdirDomain, null);
+			} catch (Exception e) {
+				logger.error(e.getMessage(), e);
+			}
+		}
 	}
 
 	@Override
 	@DaoUpdateReturnValueCheck
 	public void copySampleMailings(int newCompanyId, int mailinglistID, String rdirDomain) throws Exception {
-		Map<Integer, Integer> mailingsMapping = new HashMap<>();
-		
-		doCopySampleMailings(newCompanyId, mailinglistID, rdirDomain, mailingsMapping);
+		doCopySampleMailings(newCompanyId, mailinglistID, rdirDomain, new HashMap<>());
 	}
 	
 	protected void doCopySampleMailings(int newCompanyId, int mailinglistID, String rdirDomain, final Map<Integer, Integer> mailingsMapping) throws Exception {
@@ -1416,12 +1376,17 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 				Permission grantedPremiumPermission = Permission.getPermissionByToken(allowedSecurityToken);
 				if (grantedPremiumPermission != null) {
 					try {
-						createCompanyPermission(companyID, grantedPremiumPermission, comment);
+						if (isPremiumPermissionAllowedOnlyForMasterCompany(grantedPremiumPermission)) {
+							deleteCompanyPermission(companyID, grantedPremiumPermission);
+							createCompanyPermission(1, grantedPremiumPermission, comment);
+						} else {
+							createCompanyPermission(companyID, grantedPremiumPermission, comment);
+						}
 					} catch (Exception e) {
-						logger.error(String.format("Cannot activate premium permission: %s", grantedPremiumPermission.getTokenString()));
+						logger.error(String.format("Cannot activate premium permission for company " + companyID + ": %s", grantedPremiumPermission.getTokenString()));
 					}
 				} else {
-					logger.warn(String.format("Found non-existing granted premium permission: %s", allowedSecurityToken));
+					logger.warn(String.format("Found non-existing granted premium permission for company " + companyID + ": %s", allowedSecurityToken));
 				}
 			}
 		}
@@ -1437,6 +1402,10 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 				logger.warn(StringUtils.join(foundUnAllowedPremiumFeatures_Admin, ", "));
 			}
 		}
+	}
+
+	protected boolean isPremiumPermissionAllowedOnlyForMasterCompany(Permission permission) {
+		return false;
 	}
 
 	@Override
@@ -1515,7 +1484,6 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 	@Override
 	public int getParenCompanyId(int companyId) {
 		return selectInt(logger, "SELECT COALESCE(parent_company_id, 0) FROM company_tbl WHERE company_id = ?", companyId);
-
 	}
 	
 	@Override
@@ -1560,5 +1528,21 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 		} catch (Exception e) {
 			throw new RuntimeException("Cannot read company data for name: " + companyName, e);
 		}
+	}
+
+	@Override
+	public boolean existOldLayoutBuilderTemplates(int id) {
+		return false;
+	}
+
+	@Override
+	public final Optional<String> getCompanyToken(final int companyID) throws UnknownCompanyIdException {
+		final List<String> list = select(logger, "SELECT company_token FROM company_tbl WHERE company_id=?", StringRowMapper.INSTANCE, companyID);
+		
+		if(list.isEmpty()) {
+			throw new UnknownCompanyIdException(companyID);
+		}
+		
+		return Optional.ofNullable(list.get(0));
 	}
 }

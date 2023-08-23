@@ -15,9 +15,12 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import org.agnitas.beans.DynamicTagContent;
 import org.agnitas.beans.MailingComponent;
@@ -101,6 +104,9 @@ public class MailingExporterImpl extends ActionExporter implements MailingExport
 	}
 	
 	protected void exportMailingData(int companyID, Mailing mailing, Set<Integer> targetIDs, Set<Integer> actionIDs, JsonWriter writer, boolean exportUnusedImages) throws Exception, MediatypesDaoException, IOException {
+		Optional<String> companyTokenOptional = companyDao.getCompanyToken(companyID);
+		String companyToken = companyTokenOptional.isPresent() ? companyTokenOptional.get() : null;
+		
 		Set<String> usedImageComponentNames = new HashSet<>();
 		
 		writeJsonObjectAttribute(writer, "version", EXPORT_JSON_VERSION);
@@ -153,7 +159,7 @@ public class MailingExporterImpl extends ActionExporter implements MailingExport
 			writeJsonObjectAttribute(writer, "campaign_id", mailing.getCampaignID());
 			Campaign campaign = campaignDao.getCampaign(mailing.getCampaignID(), companyID);
 			if (campaign == null) {
-				throw new Exception("Found non existing campaign_id defined for mailing: " + mailing.getId());
+				throw new Exception(String.format("Found non existing campaign_id %d defined for mailing %d", mailing.getCampaignID(), mailing.getId()));
 			}
 			writeJsonObjectAttribute(writer, "campaign_name", campaign.getShortname());
 			writeJsonObjectAttribute(writer, "campaign_description", campaign.getDescription());
@@ -297,7 +303,15 @@ public class MailingExporterImpl extends ActionExporter implements MailingExport
 							targetIDs.add(dynamicTagContent.getTargetID());
 						}
 						writeJsonObjectAttribute(writer, "order", dynamicTagContent.getDynOrder());
-						writeJsonObjectAttribute(writer, "text", dynamicTagContent.getDynContent());
+						
+						String dynContentText = dynamicTagContent.getDynContent();
+						if (StringUtils.isNotBlank(companyToken) && dynContentText.contains("agnCTOKEN=" + companyToken)) {
+							dynContentText = dynContentText.replace("agnCTOKEN=" + companyToken, "agnCTOKEN=[CTOKEN]");
+						}
+						if (dynContentText.contains("agnCI=" + companyID)) {
+							dynContentText = dynContentText.replace("agnCI=" + companyID, "agnCI=[COMPANY_ID]");
+						}
+						writeJsonObjectAttribute(writer, "text", dynContentText);
 						
 						writer.closeJsonObject();
 					}
@@ -317,7 +331,15 @@ public class MailingExporterImpl extends ActionExporter implements MailingExport
 				
 				writeJsonObjectAttribute(writer, "id", trackableLink.getId());
 				writeJsonObjectAttributeWhenNotNullOrBlank(writer, "name", trackableLink.getShortname());
-				writeJsonObjectAttributeWhenNotNullOrBlank(writer, "url", trackableLink.getFullUrl());
+				
+				String linkUrl = trackableLink.getFullUrl();
+				if (StringUtils.isNotBlank(companyToken) && linkUrl.contains("agnCTOKEN=" + companyToken)) {
+					linkUrl = linkUrl.replace("agnCTOKEN=" + companyToken, "agnCTOKEN=[CTOKEN]");
+				}
+				if (linkUrl.contains("agnCI=" + companyID)) {
+					linkUrl = linkUrl.replace("agnCI=" + companyID, "agnCI=[COMPANY_ID]");
+				}
+				writeJsonObjectAttributeWhenNotNullOrBlank(writer, "url", linkUrl);
 
 				if (trackableLink.getActionID() > 0) {
 					writeJsonObjectAttribute(writer, "action_id", trackableLink.getActionID());
@@ -351,30 +373,40 @@ public class MailingExporterImpl extends ActionExporter implements MailingExport
 			}
 			writer.closeJsonArray();
 		}
-		
-		if (targetIDs.size() > 0) {
-			writer.openJsonObjectProperty("targets");
-			writer.openJsonArray();
-			for (int targetID : targetIDs) {
-				ComTarget target = targetDao.getTarget(targetID, mailing.getCompanyID());
-				if (target != null) {
-					writer.openJsonObject();
-					
-					writeJsonObjectAttribute(writer, "id", targetID);
-					writeJsonObjectAttributeWhenNotNullOrBlank(writer, "name", target.getTargetName());
-					writeJsonObjectAttributeWhenNotNullOrBlank(writer, "description", target.getTargetDescription());
-					writeJsonObjectAttributeWhenNotNullOrBlank(writer, "sql", target.getTargetSQL());
-					writeJsonObjectAttributeWhenNotNullOrBlank(writer, "eql", target.getEQL());
-					
-					writer.closeJsonObject();
-				}
-			}
-			writer.closeJsonArray();
-		}
-
-		exportActions(writer, companyID, actionIDs);
+        exportTargets(writer, companyID, targetIDs);
+        exportActions(writer, companyID, actionIDs);
 	}
-	
+
+    protected void exportTargets(JsonWriter writer, int companyId, Set<Integer> targetIds) throws Exception {
+        if (targetIds.isEmpty()) {
+            return;
+        }
+        writer.openJsonObjectProperty("targets");
+        writer.openJsonArray();
+
+        List<ComTarget> targets = targetIds.stream()
+                .map(targetId -> targetDao.getTarget(targetId, companyId))
+                .filter(Objects::nonNull).collect(Collectors.toList());
+
+        for (ComTarget target : targets) {
+            writeTarget(writer, target);
+        }
+        writer.closeJsonArray();
+    }
+
+    private void writeTarget(JsonWriter writer, ComTarget target) throws Exception {
+        writer.openJsonObject();
+        writeJsonObjectAttribute(writer, "id", target.getId());
+        writeJsonObjectAttributeWhenNotNullOrBlank(writer, "name", target.getTargetName());
+        writeJsonObjectAttributeWhenNotNullOrBlank(writer, "description", target.getTargetDescription());
+        writeJsonObjectAttributeWhenNotNullOrBlank(writer, "sql", target.getTargetSQL());
+        writeJsonObjectAttributeWhenNotNullOrBlank(writer, "eql", target.getEQL());
+        if (target.isAccessLimitation()) {
+            writeJsonObjectAttribute(writer, "access_limiting", target.isAccessLimitation());
+        }
+        writer.closeJsonObject();
+    }
+
 	protected List<Integer> getInvolvedTargetIdsFromTargetExpression(String targetExpression) {
 		List<Integer> returnList = new ArrayList<>();
     	if (StringUtils.isNotBlank(targetExpression)) {

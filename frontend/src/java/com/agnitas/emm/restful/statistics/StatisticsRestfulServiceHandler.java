@@ -16,12 +16,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import com.agnitas.emm.core.useractivitylog.dao.RestfulUserActivityLogDao;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.dao.MailinglistDao;
 import org.agnitas.dao.UserStatus;
 import org.agnitas.dao.exception.UnknownUserStatusException;
 import org.agnitas.emm.core.mailing.beans.LightweightMailing;
-import org.agnitas.emm.core.useractivitylog.dao.UserActivityLogDao;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.HttpUtils.RequestMethod;
 
@@ -61,17 +61,13 @@ public class StatisticsRestfulServiceHandler implements RestfulServiceHandler {
 
 	public static final String NAMESPACE = "statistics";
 
-	private UserActivityLogDao userActivityLogDao;
-	
-	private ComCompanyDao companyDao;
-	
-	private ComMailingDao mailingDao;
-	
-	private MailingSummaryDataSetFactory mailingSummaryDataSetFactory;
+	private final RestfulUserActivityLogDao userActivityLogDao;
+	private final ComCompanyDao companyDao;
+	private final ComMailingDao mailingDao;
+	private final MailingSummaryDataSetFactory mailingSummaryDataSetFactory;
+	private final MailinglistDao mailinglistDao;
 
-	private MailinglistDao mailinglistDao;
-
-	public StatisticsRestfulServiceHandler(UserActivityLogDao userActivityLogDao, ComCompanyDao companyDao, ComMailingDao mailingDao, MailingSummaryDataSetFactory mailingSummaryDataSetFactory, MailinglistDao mailinglistDao) {
+	public StatisticsRestfulServiceHandler(RestfulUserActivityLogDao userActivityLogDao, ComCompanyDao companyDao, ComMailingDao mailingDao, MailingSummaryDataSetFactory mailingSummaryDataSetFactory, MailinglistDao mailinglistDao) {
 		this.userActivityLogDao = userActivityLogDao;
 		this.companyDao = companyDao;
 		this.mailingDao = mailingDao;
@@ -98,10 +94,6 @@ public class StatisticsRestfulServiceHandler implements RestfulServiceHandler {
 	/**
 	 * Return statistics data sets
 	 * 
-	 * @param request
-	 * @param admin
-	 * @return
-	 * @throws Exception
 	 */
 	private Object getStatisticsData(HttpServletRequest request, Admin admin) throws Exception {
 		if (!admin.permissionAllowed(Permission.STATS_SHOW)) {
@@ -115,7 +107,7 @@ public class StatisticsRestfulServiceHandler implements RestfulServiceHandler {
 		if (restfulContext.length == 0) {
 			// Show list of available statistics
 			userActivityLogDao.addAdminUseOfFeature(admin, "restful/statistics", new Date());
-			userActivityLogDao.writeUserActivityLog(admin, "restful/statistics GET", "ALL");
+			writeActivityLog("ALL", request, admin);
 
 			JsonObject resultJsonObject = new JsonObject();
 			
@@ -142,7 +134,7 @@ public class StatisticsRestfulServiceHandler implements RestfulServiceHandler {
 				} else {
 					JsonObject resultJsonObject = getMailingStatistics(mailing);
 					userActivityLogDao.addAdminUseOfFeature(admin, "restful/statistics/" + MAILING, new Date());
-					userActivityLogDao.writeUserActivityLog(admin, "restful/statistics/" + MAILING + " GET", Integer.toString(mailingID));
+					writeActivityLog("restful/statistics/" + MAILING, request, admin);
 					return resultJsonObject;
 				}
 			}
@@ -152,7 +144,7 @@ public class StatisticsRestfulServiceHandler implements RestfulServiceHandler {
 			} else {
 				JsonObject resultJsonObject = getCustomersStatistics(companyID);
 				userActivityLogDao.addAdminUseOfFeature(admin, "restful/statistics/" + CUSTOMERS, new Date());
-				userActivityLogDao.writeUserActivityLog(admin, "restful/statistics/" + CUSTOMERS + " GET", "");
+				writeActivityLog("restful/statistics/" + CUSTOMERS, request, admin);
 				return resultJsonObject;
 			}
 		} else if (MAILINGLIST.equalsIgnoreCase(restfulContext[0])) {
@@ -172,8 +164,8 @@ public class StatisticsRestfulServiceHandler implements RestfulServiceHandler {
 					}
 
 					userActivityLogDao.addAdminUseOfFeature(admin, "restful/statistics/" + MAILINGLIST, new Date());
-					userActivityLogDao.writeUserActivityLog(admin, "restful/statistics/" + MAILINGLIST + " GET", Integer.toString(mailingslistID));
-					
+					writeActivityLog("restful/statistics/" + MAILINGLIST, request, admin);
+
 					return resultJsonObject;
 				}
 			}
@@ -190,7 +182,8 @@ public class StatisticsRestfulServiceHandler implements RestfulServiceHandler {
 				} else {
 					JsonObject resultJsonObject = getBouncesStatistics(mailing);
 					userActivityLogDao.addAdminUseOfFeature(admin, "restful/statistics/" + BOUNCES, new Date());
-					userActivityLogDao.writeUserActivityLog(admin, "restful/statistics/" + BOUNCES + " GET", Integer.toString(mailingID));
+					writeActivityLog("restful/statistics/" + BOUNCES, request, admin);
+
 					return resultJsonObject;
 				}
 			}
@@ -316,5 +309,9 @@ public class StatisticsRestfulServiceHandler implements RestfulServiceHandler {
 	@Override
 	public ResponseType getResponseType() {
 		return ResponseType.JSON;
+	}
+
+	private void writeActivityLog(String description, HttpServletRequest request, Admin admin) {
+		writeActivityLog(userActivityLogDao, description, request, admin);
 	}
 }

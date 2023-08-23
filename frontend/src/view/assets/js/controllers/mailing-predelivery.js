@@ -1,60 +1,63 @@
-AGN.Lib.Controller.new('mailing-predelivery', function() {
-  var self = this;
+AGN.Lib.Controller.new('mailing-predelivery', function () {
 
-  this.addAction({'change': 'adjustSpamProvider'},function() {
-    var spamProvider;
+  var providers = {
+    'aol': 'aolonelinespam',
+    'yahoo': 'yahoospam',
+    'gmailnew': 'gmailnewspam',
+    'ol2003': 'ol2003spam'
+  }
 
-    if ( this.el.attr('name') == "aol" ) {
-      spamProvider = "aolonelinespam";
-    } else {
-      spamProvider = this.el.attr('name') + "spam";
+  this.addAction({change: 'adjustSpamProvider'}, function () {
+    var $el = $(this.el);
+
+    var spamProvider = providers[$el.attr('name')];
+
+    // guard clause - no spamProvider supported
+    if (!spamProvider) {
+      return;
     }
 
-    if ( this.el.prop('checked')) {
-      $('[name="' + spamProvider + '"]').prop('disabled', false);
+    var $spanProvider = $('[name="' + spamProvider + '"]');
+    if ($el.prop('checked')) {
+      $spanProvider.prop('disabled', false);
     } else {
-      $('[name="' + spamProvider + '"]').prop('disabled', true);
-      $('[name="' + spamProvider + '"]').prop('checked', false);
+      $spanProvider.prop('disabled', true);
+      $spanProvider.prop('checked', false);
     }
 
   });
 
-  this.addAction({'click': 'toggleCheckboxesOn'}, function() {
-    this.el.parents('.list-group').find('input[type="checkbox"]').
-      prop('checked', true).
-      trigger('change');
-  });
-
-  this.addAction({'click': 'toggleCheckboxesOff'}, function() {
-    this.el.parents('.list-group').find('input[type="checkbox"]').
-      prop('checked', false).
-      trigger('change');
-  });
-
-  this.addInitializer('readjustSpamProviders', function() {
-    var providers = {
-      'aol': 'aolonelinespam',
-      'yahoo': 'yahoospam',
-      'gmailnew': 'gmailnewspam',
-      'ol2003': 'ol2003spam'
-    };
-
-    _.each(providers, function(spamProvider, provider) {
+  this.addInitializer('readjustSpamProviders', function () {
+    _.each(providers, function (spamProvider, provider) {
       var $provider = $('[name=' + provider + ']')
 
       // guard clause - no provider found
-      if ( $provider.length == 0 ) {
+      if ($provider.length === 0) {
         return;
       }
 
-      if ( $provider.prop('checked')) {
-        $('[name="' + spamProvider + '"]').prop('disabled', false);
+      var $spamProvider = $('[name="' + spamProvider + '"]');
+
+      if ($provider.prop('checked')) {
+        $spamProvider.prop('disabled', false);
       } else {
-        $('[name="' + spamProvider + '"]').prop('disabled', true);
-        $('[name="' + spamProvider + '"]').prop('checked', false);
+        $spamProvider.prop('disabled', true);
+        $spamProvider.prop('checked', false);
       }
     });
   });
 
+  function toggleCheckboxes($el, isChecked) {
+    var checkboxes = $el.closest('.list-group').find('input[type="checkbox"]:enabled')
+    checkboxes.prop('checked', isChecked);
+    checkboxes.trigger('change');
+  }
 
+  this.addAction({click: 'toggle-checkboxes-on'}, function() {
+    toggleCheckboxes($(this.el), true);
+  });
+
+  this.addAction({click: 'toggle-checkboxes-off'}, function() {
+    toggleCheckboxes($(this.el),false);
+  });
 });

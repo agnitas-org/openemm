@@ -1,7 +1,7 @@
 <%@ page contentType="text/html; charset=utf-8" errorPage="/error.do" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
-<%--@elvariable id="emmLayoutBase" type="org.agnitas.beans.EmmLayoutBase"--%>
+<%--@elvariable id="emmLayoutBase" type="com.agnitas.beans.EmmLayoutBase"--%>
 <emm:setAbsolutePath var="absoluteCssPath" path="${emmLayoutBase.cssURL}"/>
 
 <link type="text/css" rel="stylesheet" href="${absoluteCssPath}/style.css">

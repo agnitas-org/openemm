@@ -16,6 +16,7 @@ import org.apache.struts.action.ActionForm;
  * Subclass of {@link ActionForm} to transport request data
  * to {@link SendAutoresponderMailAction}.
  */
+@Deprecated(forRemoval = true) // Replaced by SendAutoresponderForm
 public class SendAutoresponderMailForm extends ActionForm {
 
 	/** Serial version UID. */

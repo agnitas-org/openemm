@@ -12,6 +12,7 @@ package com.agnitas.dao.impl;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Date;
 import java.util.List;
 
 import org.agnitas.dao.impl.BaseDaoImpl;
@@ -123,7 +124,42 @@ public class ComDkimDaoImpl extends BaseDaoImpl implements ComDkimDao {
 			}
 		}
 	}
-	
+
+	@Override
+	public void saveDkimEntry(DkimKeyEntry dkimKeyEntry) {
+		dkimKeyEntry.setChangeDate(new Date());
+		if (isOracleDB()) {
+			dkimKeyEntry.setDkimID(selectInt(logger, "SELECT dkim_key_tbl_seq.NEXTVAL FROM DUAL"));
+			String sql = "INSERT INTO dkim_key_tbl " +
+					"(dkim_id, creation_date, company_id, valid_start, valid_end, domain, selector, domain_key, domain_key_encrypted)" +
+					" VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+			update(logger, sql,
+					dkimKeyEntry.getDkimID(),
+					dkimKeyEntry.getCreationDate(),
+					dkimKeyEntry.getCompanyID(),
+					dkimKeyEntry.getValidStartDate(),
+					dkimKeyEntry.getValidEndDate(),
+					dkimKeyEntry.getDomain(),
+					dkimKeyEntry.getSelector(),
+					dkimKeyEntry.getDomainKey(),
+					dkimKeyEntry.getDomainKeyEncrypted());
+		} else {
+			int newDkimId = insertIntoAutoincrementMysqlTable(logger, "domain_id",
+					"INSERT INTO dkim_key_tbl " +
+							"(creation_date, company_id, valid_start, valid_end, domain, selector, domain_key, domain_key_encrypted)" +
+							" VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+					dkimKeyEntry.getCreationDate(),
+					dkimKeyEntry.getCompanyID(),
+					dkimKeyEntry.getValidStartDate(),
+					dkimKeyEntry.getValidEndDate(),
+					dkimKeyEntry.getDomain(),
+					dkimKeyEntry.getSelector(),
+					dkimKeyEntry.getDomainKey(),
+					dkimKeyEntry.getDomainKeyEncrypted());
+			dkimKeyEntry.setDkimID(newDkimId);
+		}
+	}
+
     protected class DkimKeyEntry_RowMapper implements RowMapper<DkimKeyEntry> {
 		@Override
 		public DkimKeyEntry mapRow(ResultSet resultSet, int row) throws SQLException {

@@ -4,6 +4,7 @@
 - enabled re-triggering of killed events (e.g. mouseup and mousedown) but with ".sortable" suffix (to restore "sortable" widget functionality within select2 results).
 - added hierarchy mode support (when 'js-tree-select' class assigned), provided proper highlighting and selection for sub and super-items.
 - made document.body as Element prototype to prevent wkhtmltopdf errors
+- added the ability to display selected tags in one line. -> GWUA-5250
 
 2) ace/worker-html.js
 - removed error emit for 'almost-standards-doctype'. [EMMGUI-600]
@@ -48,6 +49,7 @@
 - added statuses property to Dirty.prototype
 - added support of adding custom methods
 - added support of extending dirty lib
+- added functionality for destroy of existing Dirty instance
 
 14) bootstrap-dropdown-3.4.1.js
 - e.preventDropdownClose check in clearMenus to be able to keep the dropdown open
@@ -57,3 +59,6 @@
 
 16) ace.js
 - changed adding 'style' element from head of 'head' element to end [GWUA-5036]
+
+17) jquery-dirty-0.8.3.js-extended
+- changed the detection of "dirty" input fields that use the "select2" library [GWUA-5421]

@@ -233,11 +233,11 @@ public class HttpUtilities {
 			if (httpResponseCode < HttpURLConnection.HTTP_BAD_REQUEST) {
 				if (httpRequest.getDownloadStream() != null && 200 <= httpResponseCode && httpResponseCode <= 299) {
 					IOUtils.copy(urlConnection.getInputStream(), httpRequest.getDownloadStream());
-					return new HttpResponse(httpResponseCode, "File downloaded", urlConnection.getContentType(), headers, cookiesMap);
+					return new HttpResponse(httpResponseCode, urlConnection.getResponseMessage(), "File downloaded", urlConnection.getContentType(), headers, cookiesMap);
 				} else if (httpRequest.getDownloadFile() != null && 200 <= httpResponseCode && httpResponseCode <= 299) {
 					try (FileOutputStream downloadFileOutputStream = new FileOutputStream(httpRequest.getDownloadFile())) {
 						IOUtils.copy(urlConnection.getInputStream(), downloadFileOutputStream);
-						return new HttpResponse(httpResponseCode, "File downloaded", urlConnection.getContentType(), headers, cookiesMap);
+						return new HttpResponse(httpResponseCode, urlConnection.getResponseMessage(), "File downloaded", urlConnection.getContentType(), headers, cookiesMap);
 					} catch (final Exception e) {
 						if (httpRequest.getDownloadFile().exists()) {
 							httpRequest.getDownloadFile().delete();
@@ -254,9 +254,9 @@ public class HttpUtilities {
 							}
 							httpResponseContent.append(httpResponseContentLine);
 						}
-						return new HttpResponse(httpResponseCode, httpResponseContent.toString(), urlConnection.getContentType(), headers, cookiesMap);
+						return new HttpResponse(httpResponseCode, urlConnection.getResponseMessage(), httpResponseContent.toString(), urlConnection.getContentType(), headers, cookiesMap);
 					} catch (final Exception e) {
-						return new HttpResponse(httpResponseCode, null, null, headers, cookiesMap);
+						return new HttpResponse(httpResponseCode, urlConnection.getResponseMessage(), null, null, headers, cookiesMap);
 					}
 				}
 			} else if ((httpResponseCode == HttpURLConnection.HTTP_MOVED_TEMP || httpResponseCode == HttpURLConnection.HTTP_MOVED_PERM) && httpRequest.isFollowRedirects()) {
@@ -278,9 +278,9 @@ public class HttpUtilities {
 						}
 						httpResponseContent.append(httpResponseContentLine);
 					}
-					return new HttpResponse(httpResponseCode, httpResponseContent.toString(), urlConnection.getContentType(), headers, cookiesMap);
+					return new HttpResponse(httpResponseCode, urlConnection.getResponseMessage(), httpResponseContent.toString(), urlConnection.getContentType(), headers, cookiesMap);
 				} catch (final Exception e) {
-					return new HttpResponse(httpResponseCode, null, null, headers, cookiesMap);
+					return new HttpResponse(httpResponseCode, urlConnection.getResponseMessage(), null, null, headers, cookiesMap);
 				}
 			}
 		} catch (final Exception e) {

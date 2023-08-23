@@ -20,7 +20,6 @@ import javax.sql.DataSource;
 
 import org.agnitas.beans.BindingEntry.UserType;
 import org.agnitas.dao.UserStatus;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.AgnUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -92,11 +91,11 @@ public class MailingBouncesDataSet extends BIRTDataSet {
 		}
 	}
 
-	public List<BouncesRow> getBouncesWithDetail(@VelocityCheck int companyID, int mailingID, String language, String selectedTargets, BounceType bounceType) throws Exception {
+	public List<BouncesRow> getBouncesWithDetail(int companyID, int mailingID, String language, String selectedTargets, BounceType bounceType) throws Exception {
 		return getBouncesWithDetail(companyID, mailingID, language, selectedTargets, bounceType, null);
 	}
 
-	public List<BouncesRow> getBouncesWithDetail(@VelocityCheck int companyID, int mailingID, String language, String selectedTargets, BounceType bounceType, String hiddenTarget) throws Exception {
+	public List<BouncesRow> getBouncesWithDetail(int companyID, int mailingID, String language, String selectedTargets, BounceType bounceType, String hiddenTarget) throws Exception {
 		language = StringUtils.defaultIfEmpty(language, "EN");
 
 		// In the mailing_statistic.rptdesign "-1" is a default value if target groups are not present
@@ -229,7 +228,7 @@ public class MailingBouncesDataSet extends BIRTDataSet {
         return softUndelivered;
     }
 
-	public List<BouncesEmailStatRow> getBouncesWithDetailAndEmail(@VelocityCheck int companyID, int mailingID, String language, String selectedTargets) {
+	public List<BouncesEmailStatRow> getBouncesWithDetailAndEmail(int companyID, int mailingID, String language, String selectedTargets) {
 		return getBouncesWithDetailAndEmail(companyID, mailingID, language, selectedTargets, true, true);
 	}
 

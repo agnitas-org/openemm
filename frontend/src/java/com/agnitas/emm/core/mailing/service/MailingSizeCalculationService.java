@@ -23,7 +23,11 @@ public interface MailingSizeCalculationService {
      * (if used in multiple placed) because otherwise an inaccuracy could be that high so calculations get completely useless and untrustful.
      *
      * @param mailing the mailing entity to evaluate.
-     * @return the tuple of maximum possible mail sizes in bytes (first - without external images, second - with external images).
+     * @return the tuple of maximum possible mail sizes in bytes depending on mailing format:
+     *
+     * Text - 1) content size + attachments size; 2) the same
+     * Text & HTML - 1) content size + attachments size; 2) content size + attachments size + images size
+     * Text & HTML & Offline-HTML - 1) content size + attachments size + images size; 2) the same
      */
     Tuple<Long, Long> calculateSize(Mailing mailing, Admin admin);
 }

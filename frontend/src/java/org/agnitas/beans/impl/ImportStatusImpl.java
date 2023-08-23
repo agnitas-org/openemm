@@ -20,7 +20,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.agnitas.beans.ImportStatus;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.service.GenericImportException.ReasonCode;
 import org.agnitas.util.ImportUtils.ImportErrorType;
 import org.apache.logging.log4j.LogManager;
@@ -114,7 +113,7 @@ public class ImportStatusImpl implements ImportStatus {
 	}
 
 	@Override
-	public void setCompanyID( @VelocityCheck int company) {
+	public void setCompanyID( int company) {
 		this.company = company;
 	}
 

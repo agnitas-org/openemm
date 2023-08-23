@@ -14,7 +14,7 @@ import java.util.Date;
 import java.util.List;
 
 import org.agnitas.beans.CompaniesConstraints;
-import org.agnitas.emm.core.velocity.VelocityCheck;
+
 
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.emm.core.birtreport.bean.ComBirtReport;
@@ -22,7 +22,7 @@ import com.agnitas.emm.core.birtreport.bean.ComBirtReport;
 public interface ComWorkflowReportScheduleDao {
 
     @DaoUpdateReturnValueCheck
-    void scheduleWorkflowReport(int reportId, @VelocityCheck int companyId, int workflowId, Date sendTime);
+    void scheduleWorkflowReport(int reportId, int companyId, int workflowId, Date sendTime);
 
     List<Integer> getAllWorkflowReportsToSend();
 

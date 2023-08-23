@@ -14,7 +14,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import com.agnitas.emm.core.workflow.service.ComWorkflowService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
@@ -25,6 +24,7 @@ import com.agnitas.emm.core.objectusage.service.ObjectUsageService;
 import com.agnitas.emm.core.profilefields.ProfileFieldException;
 import com.agnitas.emm.core.profilefields.service.ProfileFieldService;
 import com.agnitas.emm.core.target.service.ReferencedItemsService;
+import com.agnitas.emm.core.workflow.service.ComWorkflowService;
 
 /**
  * Implementation of {@link ObjectUsageService} interface.

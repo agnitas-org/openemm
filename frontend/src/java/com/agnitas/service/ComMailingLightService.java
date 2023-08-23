@@ -16,7 +16,6 @@ import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.emm.core.maildrop.service.MaildropService;
 import org.agnitas.emm.core.mailing.beans.LightweightMailingWithMailingList;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 /**
  * This service class has following task:
@@ -33,7 +32,7 @@ public interface ComMailingLightService {
      *
      * @return a list of lightweight mailings.
      */
-    List<LightweightMailingWithMailingList> getLightweightMailings(@VelocityCheck int companyID, int adminId,
+    List<LightweightMailingWithMailingList> getLightweightMailings(int companyID, int adminId,
                                                                    int parentMailingId, int mailingId);
 
     /**
@@ -41,7 +40,7 @@ public interface ComMailingLightService {
     * @return {@code true} if mailtracking is active for this company or {@code false} otherwise.
     */
 
-    boolean isMailtrackingActive(@VelocityCheck int companyID);
+    boolean isMailtrackingActive(int companyID);
 
     void setMailingDao(ComMailingDao mailingDao);
     void setCompanyDao(ComCompanyDao companyDao);

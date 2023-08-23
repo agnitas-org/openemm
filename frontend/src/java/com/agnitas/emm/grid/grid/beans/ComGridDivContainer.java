@@ -10,12 +10,13 @@
 
 package com.agnitas.emm.grid.grid.beans;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
+
 
 public interface ComGridDivContainer {
+
     int getCompanyId();
 
-    void setCompanyId(@VelocityCheck int companyId);
+    void setCompanyId(int companyId);
 
     int getId();
 
@@ -74,4 +75,8 @@ public interface ComGridDivContainer {
     GridDivContainerEditMode getModeEdit();
 
     void setModeEdit(GridDivContainerEditMode modeEdit);
+
+    boolean isBasic();
+
+    void setBasic(boolean isBasic);
 }

@@ -10,40 +10,53 @@
 
 package com.agnitas.emm.core.components.service;
 
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.Mailing;
+import com.agnitas.beans.MailingSendOptions;
+import com.agnitas.emm.core.components.form.MailingTestSendForm;
+import com.agnitas.emm.core.mailing.forms.MailingIntervalSettingsForm;
+import com.agnitas.service.ServiceResult;
+import com.agnitas.service.SimpleServiceResult;
+import org.agnitas.emm.core.useractivitylog.UserAction;
+
 import java.util.Date;
 import java.util.TimeZone;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.beans.Mailing;
-import com.agnitas.emm.core.components.form.MailingSendForm;
-import com.agnitas.emm.core.components.form.MailingTestSendForm;
-import com.agnitas.emm.core.mailing.forms.MailingIntervalSettingsForm;
-import com.agnitas.service.SimpleServiceResult;
-import com.agnitas.web.mvc.Popups;
-
 public interface MailingSendService {
 
+    enum DeliveryType {
+        WORLD,
+        TEST,
+        ADMIN
+    }
+
     int FAIRNESS_PERIOD_IN_MINUTES = 5;
-    int ADMIN_TARGET_SINGLE_RECIPIENT = -1;
+
+    ServiceResult<UserAction> sendTestMailing(Mailing mailing, MailingTestSendForm form, Admin admin) throws Exception;
+
+    ServiceResult<UserAction> sendWorldMailing(Mailing mailing, MailingSendOptions sendOptions, Admin admin) throws Exception;
+
+    ServiceResult<UserAction> sendAdminMailing(Mailing mailing, MailingSendOptions sendOptions) throws Exception;
+
+    ServiceResult<UserAction> activateDateBasedMailing(Mailing mailing, MailingSendOptions sendOptions);
+
+    ServiceResult<UserAction> activateActionBasedMailing(Mailing mailing, MailingSendOptions sendOptions);
+
+    SimpleServiceResult activateIntervalMailing(MailingIntervalSettingsForm intervalSettings, int mailingId, Admin admin);
+
+    boolean isLimitationForSendExists(int companyId);
+
+    ServiceResult<UserAction> sendMailing(Mailing mailing, MailingSendOptions sendOptions, Admin admin) throws Exception;
 
     boolean deactivateMailing(Mailing mailing, int companyId, boolean isWorkflowDriven);
 
     void unlockMailing(Mailing mailing);
 
-    SimpleServiceResult saveIntervalSettings(MailingIntervalSettingsForm intervalSettings, Mailing mailing, Admin admin);
-
     void deactivateIntervalMailing(int mailingId, Admin admin);
-
-    SimpleServiceResult activateIntervalMailing(MailingIntervalSettingsForm intervalSettings, int mailingId, Admin admin);
-
-    void sendTestMailing(Mailing mailing, MailingTestSendForm form, Admin admin, Popups popups) throws Exception;
-
-    @Deprecated // Use #canSendOrActivateMailing instead
-    boolean isWorldMailingCanBeSend(Admin admin, Mailing mailing) throws Exception;
 
     boolean canSendOrActivateMailing(Admin admin, Mailing mailing) throws Exception;
 
-    boolean saveEncryptedState(int mailingId, int companyId, boolean isEncryptedSend);
+    boolean isMailingActiveOrSent(Mailing mailing) throws Exception;
 
     boolean cancelMailingDelivery(int mailingID, int companyId);
 
@@ -51,13 +64,4 @@ public interface MailingSendService {
 
     void checkIfMailingCanBeSend(Mailing mailing, Date sendDate, TimeZone timeZone) throws Exception;
 
-    void sendWorldMailing(Admin admin, MailingSendForm form, Popups popups, Mailing mailing, Date sendDate) throws Exception;
-
-    void sendAdminMailing(Mailing mailing, Admin admin, MailingTestSendForm form, Popups popups) throws Exception;
-
-    void activateDateBasedMailing(Admin admin, Mailing mailing, Popups popups, Date sendDate, int autoImportId);
-
-    void activateActionBasedMailing(Admin admin, Mailing mailing, Popups popups);
-
-    boolean isLimitationForSendExists(int companyId);
 }

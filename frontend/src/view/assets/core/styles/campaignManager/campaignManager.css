@@ -29,7 +29,6 @@
     margin-right: auto;
     width: 100%;
     height: 100%;
-    min-height: 510px;
     background-color:#ffffff;
     z-index: 10; /* be careful modifying this, synchronize with JS: Z_INDEX_VIEW_PORT */
     overflow: hidden;
@@ -37,6 +36,13 @@
 
 #viewPort.js-panning {
     cursor: move;
+}
+
+#grid-background {
+    background-image: linear-gradient( #bbb, transparent 1px), linear-gradient( 90deg, #bbb, transparent 1px);
+    position: absolute;
+    width: 100%;
+    height: 100%
 }
 
 #minimap {
@@ -399,13 +405,10 @@
     display: none;
 }
 
-.icon-title-span:empty, .icon-statistic-span:empty {
+.icon-title-span:empty {
     display: none;
 }
 
-.icon-statistic-span {
-    background-color: rgba(60, 185, 255, 0.3);
-}
 table#comment-footnotes-list {
     page-break-inside:auto !important;
 }
@@ -765,33 +768,32 @@ footer#footnotes-container {
     background-image: url(../../images/campaignManager/icon_export_s.png);
 }
 
-.toolbarButtonLeft[data-type="ownWorkflow"] {
-    background-image: url(../../images/campaignManager/icon_ownWorkflow_l.png);
+.toolbarButton[data-type="ownWorkflow"] {
+    background-image: url(../../images/campaignManager/icon_ownWorkflow_s.png);
 }
 
 .dialog-title-image[data-type="ownWorkflow"] {
     background-image: url(../../images/campaignManager/icon_ownWorkflow_s.png);
 }
 
-.toolbarButtonLeft[data-type="scABTest"] {
-    background-image: url(../../images/campaignManager/icon_scABTest_l.png);
+.toolbarButton[data-type="scABTest"] {
+    background-image: url(../../images/campaignManager/icon_scABTest_s.png);
 }
 
 .dialog-title-image[data-type="scABTest"] {
     background-image: url(../../images/campaignManager/icon_scABTest_s.png);
 }
 
-.toolbarButtonLeft[data-type="scBirthday"] {
-    background-image: url(../../images/campaignManager/icon_scBirthday_l.png);
+.toolbarButton[data-type="scBirthday"] {
+    background-image: url(../../images/campaignManager/icon_scBirthday_s.png);
 }
 
 .dialog-title-image[data-type="scBirthday"] {
     background-image: url(../../images/campaignManager/icon_scBirthday_s.png);
 }
 
-.toolbarButtonLeft[data-type="scDOI"] {
-    background-image: url(../../images/campaignManager/icon_scDOI_l.png);
-    margin-bottom: 5px;
+.toolbarButton[data-type="scDOI"] {
+    background-image: url(../../images/campaignManager/icon_scDOI_s.png);
 }
 
 .dialog-title-image[data-type="scDOI"] {
@@ -1076,6 +1078,10 @@ footer#footnotes-container {
     padding: 0 5px;
     cursor: default;
     z-index: 9; /* be careful modifying this, synchronize with JS: Z_INDEX_CONNECTION_OVERLAY */
+}
+
+body.dark-theme .jtk-overlay.connection-label {
+    color: black;
 }
 
 .jtk-overlay.connection-label.jtk-hover {

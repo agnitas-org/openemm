@@ -226,32 +226,29 @@
     AGN.Lib.RecipientStatsData = recipientStatsData;
 
     AGN.Lib.DomInitializer.new('company-insights', function() {
-        if (this.config && this.config.url) {
-            AGN.Lib.RecipientStatsData.URL = this.config.url;
-            loadStoredStatistics();
+        loadStoredStatistics();
+        loadDynamicStatistic();
+        $('input[type=radio][name=progressOfUsedPeriod]').change(function () {
+            if (this.value == 'dates') {
+                $('#progressOfUsedDates').removeClass('hidden');
+            } else {
+                $('#progressOfUsedDates').addClass('hidden');
+            }
+        });
+        $('#refreshProgressOfUsedDevices').on("click", function () {
             loadDynamicStatistic();
-            $('input[type=radio][name=progressOfUsedPeriod]').change(function () {
-                if (this.value == 'dates') {
-                    $('#progressOfUsedDates').removeClass('hidden');
-                } else {
-                    $('#progressOfUsedDates').addClass('hidden');
+        });
+        isLargePreviousScreen = isLargeScreen();
+        $(window).resize(function () {
+            if (resizeRenderTimer != null) clearTimeout(resizeRenderTimer);
+            resizeRenderTimer = setTimeout(function () {
+                var largeScreen = isLargeScreen();
+                if (isLargePreviousScreen != largeScreen) {
+                    isLargePreviousScreen = largeScreen;
+                    renderCharts();
                 }
-            });
-            $('#refreshProgressOfUsedDevices').on("click", function () {
-                loadDynamicStatistic();
-            });
-            isLargePreviousScreen = isLargeScreen();
-            $(window).resize(function () {
-                if (resizeRenderTimer != null) clearTimeout(resizeRenderTimer);
-                resizeRenderTimer = setTimeout(function () {
-                    var largeScreen = isLargeScreen();
-                    if (isLargePreviousScreen != largeScreen) {
-                        isLargePreviousScreen = largeScreen;
-                        renderCharts();
-                    }
-                }, 200);
-            });
-        }
+            }, 200);
+        });
     });
 
     /**
@@ -260,10 +257,7 @@
     function loadStoredStatistics() {
         $.ajax({
             type: "GET",
-            url: AGN.Lib.RecipientStatsData.URL,
-            data: {
-                method: 'ajaxStatistic'
-            },
+            url: AGN.url("/recipient/chart/ajaxStatistic.action"),
             success: function (data) {
                 if (data) {
                   updateReactorChart(data['reactorType'], data['notAvailable']);
@@ -280,9 +274,7 @@
      * Calculate and load new statistics data
      */
     function loadDynamicStatistic() {
-        var data = {
-            method: 'getProgressOfUsedDevices'
-        };
+        var data = {};
         var period = $('input[name=progressOfUsedPeriod]:checked').val();
         if (period == 'month') {
             data['byMonth'] = true;
@@ -292,7 +284,7 @@
         }
         $.ajax({
             type: "GET",
-            url: AGN.Lib.RecipientStatsData.URL,
+            url: AGN.url("/recipient/chart/progressOfUsedDevices.action"),
             data: data,
             success: function (data) {
                 updateUsedDevicesCharts(data);

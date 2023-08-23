@@ -40,11 +40,11 @@ public interface AutoExportService {
 
     void setAutoActivationDateAndActivate(int companyId, int autoExportId, Date date, boolean isWmDriven) throws Exception;
 
-    void deactivateAutoExport(int companyId, int autoExportId) throws Exception;
-
     void saveAutoExport(AutoExport autoExport) throws Exception;
 
     void changeAutoExportActiveStatus(int autoExportId, int companyId, boolean active);
+
+    String findName(int autoExportId, int companyId);
 
     AutoExport getAutoExport(int autoExportId, int companyId);
 

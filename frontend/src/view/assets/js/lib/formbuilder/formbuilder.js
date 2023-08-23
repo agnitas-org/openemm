@@ -6,11 +6,11 @@
 
     var template = "<html>\n" +
         "    <head>\n" +
-        "        <script type=\"text/javascript\" src=\"" + AGN.url("/js/lib/jquery/jquery-3.5.1.js") + "\"></script>\n" +
-        "        <script type=\"text/javascript\" src=\"" + AGN.url("/assets/js/vendor/pickadate-3.5.6.js") + "\"></script>\n" +
-        "        <script type=\"text/javascript\" src=\"" + AGN.url("/assets/js/vendor/pickadate-3.5.6.date.js") + "\"></script>\n" +
-        "        <script type=\"text/javascript\" src=\"" + AGN.url("/js/lib/formbuilder/generated-form.js") + "\"></script>\n" +
-        "        <link rel=\"stylesheet\" href=\"" + AGN.url("/assets/form.css") + "\">" +
+        "        <script type=\"text/javascript\" src=\"" + AGN.url("/js/lib/jquery/jquery-3.5.1.js", true) + "\"></script>\n" +
+        "        <script type=\"text/javascript\" src=\"" + AGN.url("/assets/js/vendor/pickadate-3.5.6.js", true) + "\"></script>\n" +
+        "        <script type=\"text/javascript\" src=\"" + AGN.url("/assets/js/vendor/pickadate-3.5.6.date.js", true) + "\"></script>\n" +
+        "        <script type=\"text/javascript\" src=\"" + AGN.url("/js/lib/formbuilder/generated-form.js", true) + "\"></script>\n" +
+        "        <link rel=\"stylesheet\" href=\"" + AGN.url("/assets/form.css", true) + "\">" +
         "        {{ if (cssUrl) { }}\n" +
         "        <link rel=\"stylesheet\" href=\"{{- cssUrl }}\">\n" +
         "        {{ } }}\n" +
@@ -137,8 +137,8 @@
     FormBuilder.defaultFields = function(builder) {
         return [{
             type: "hidden",
-            name: "agnCI",
-            value: builder.options.companyId.toString()
+            name: "agnCTOKEN",
+            value: builder.options.companyToken
         },
         {
             type: "hidden",
@@ -155,8 +155,8 @@
                 fields: [
                     {
                         type: 'hidden',
-                        name: 'agnCI',
-                        value: builder.options.companyId.toString(),
+                        name: 'agnCTOKEN',
+                        value: builder.options.companyToken,
                         label: ' '
                     },
                     {
@@ -216,8 +216,8 @@
                 fields: [
                     {
                         type: 'hidden',
-                        name: 'agnCI',
-                        value: builder.options.companyId.toString(),
+                        name: 'agnCTOKEN',
+                        value: builder.options.companyToken,
                         label: ' '
                     },
                     {
@@ -244,8 +244,8 @@
                 fields: [
                     {
                         type: 'hidden',
-                        name: 'agnCI',
-                        value: builder.options.companyId.toString(),
+                        name: 'agnCTOKEN',
+                        value: builder.options.companyToken,
                         label: ' '
                     },
                     {
@@ -293,8 +293,8 @@
                 fields: [
                     {
                         type: 'hidden',
-                        name: 'agnCI',
-                        value: builder.options.companyId.toString(),
+                        name: 'agnCTOKEN',
+                        value: builder.options.companyToken,
                         label: ' '
                     },
                     {
@@ -476,9 +476,15 @@
                     label: t('userform.formBuilder.emmField'),
                     options: builder.options.numberProfileFields
                 }
+            },
+            select: {
+                emmField: {
+                    label: t('userform.formBuilder.emmField'),
+                    options: builder.options.profileFieldsForSelect
+                }
             }
         };
-        var typesForTextEmmAttrs = ['text', 'hidden', 'textarea', 'select', 'radio-group', 'checkbox-group'];
+        var typesForTextEmmAttrs = ['text', 'hidden', 'textarea', 'radio-group', 'checkbox-group'];
         typesForTextEmmAttrs.forEach(function (type) {
             userAttrsByType[type] = {
                 emmField: {

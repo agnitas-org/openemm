@@ -28,8 +28,8 @@ public class DbColumnType {
 	private boolean nullable;
 	
 	public enum SimpleDataType {
-		Characters("settings.fieldType.Characters"),
-		Numeric("settings.fieldType.Numeric"),
+		Characters("settings.fieldType.VARCHAR"),
+		Numeric("settings.fieldType.INTEGER"),
 		Float("settings.fieldType.FLOAT"),
 		Date("settings.fieldType.DATE"),
 		DateTime("settings.fieldType.DATETIME"),
@@ -46,6 +46,9 @@ public class DbColumnType {
 		}
 		
 		public static SimpleDataType getFromString(String dataTypeString) throws Exception {
+			if ("integer".equalsIgnoreCase(dataTypeString)) {
+				return SimpleDataType.Numeric;
+			}
 			for(SimpleDataType simpleDataType : SimpleDataType.values()) {
 				if (simpleDataType.name().equalsIgnoreCase(dataTypeString)) {
 					return simpleDataType;

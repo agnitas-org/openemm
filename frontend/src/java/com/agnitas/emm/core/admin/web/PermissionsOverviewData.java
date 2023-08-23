@@ -11,7 +11,9 @@
 
 package com.agnitas.emm.core.admin.web;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -22,6 +24,7 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 import org.agnitas.beans.AdminGroup;
+import org.agnitas.util.AgnUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.agnitas.beans.Admin;
@@ -107,6 +110,7 @@ public class PermissionsOverviewData {
 	            
 	            Set<Permission> filtered = visiblePermissions.stream()
 	                    .filter(permission -> (permission.getPermissionType() != PermissionType.System || admin.permissionAllowed(permission) || ((admin.permissionAllowed(Permission.MASTER_SHOW) || admin.getAdminID() == ROOT_ADMIN_ID) && !"Inhouse".equalsIgnoreCase(licenseType))))
+	                    .filter(permission -> (permission.getPermissionType() != PermissionType.Migration || admin.permissionAllowed(Permission.SHOW_MIGRATION_PERMISSIONS)))
 	                    .collect(Collectors.toSet());
 	    
 	            Map<String, PermissionCategoryEntry> permissionsCategories;
@@ -149,8 +153,9 @@ public class PermissionsOverviewData {
 				    	
 				    	permissionEntry.name = permission.toString();
 				    	permissionEntry.granted = adminToCollectPermissionsFor.permissionAllowed(permission);
-				    	
-					    for (AdminGroup adminGroup : adminToCollectPermissionsFor.getGroups()) {
+                        permissionEntry.recent = isNewPermission(permissionInfosEntry.getValue().getCreationDate());
+
+                        for (AdminGroup adminGroup : adminToCollectPermissionsFor.getGroups()) {
 					    	if (adminGroup != null && adminGroup.permissionAllowed(permission)) {
 								permissionEntry.adminGroup = adminGroup;
 					    		break;
@@ -187,7 +192,13 @@ public class PermissionsOverviewData {
 			
 			return permissionsCategories;
         }
-    
+
+        private boolean isNewPermission(Date creationDate) {
+            LocalDate creationLocalDate = LocalDate.ofInstant(creationDate.toInstant(), AgnUtils.getZoneId(admin));
+            LocalDate currentDateMinus30Days = LocalDate.now(AgnUtils.getZoneId(admin)).minusDays(30);
+            return creationLocalDate.isAfter(currentDateMinus30Days);
+        }
+
         private Map<String, PermissionCategoryEntry> collectPermissionsByCategory(AdminGroup groupToCollectPermissionsFor, Set<Permission> filteredVisiblePermissions) {
 			Map<String, PermissionCategoryEntry> permissionsCategories = new TreeMap<>();
 			for (String orderedCategory : Permission.CATEGORY_DISPLAY_ORDER) {
@@ -273,6 +284,7 @@ public class PermissionsOverviewData {
         private AdminGroup adminGroup = null;
         private String name;
         private boolean granted = false;
+        private boolean recent;
     
         public PermissionEntry() {
         }
@@ -302,6 +314,10 @@ public class PermissionsOverviewData {
         
         public boolean isShowInfoTooltip() {
             return !changeable && adminGroup != null;
+        }
+
+        public boolean isRecent() {
+            return recent;
         }
     }
     

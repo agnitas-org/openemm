@@ -14,7 +14,6 @@ import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.util.Map;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public interface Recipient {
 	int MAILTYPE_TEXT = 0;
@@ -213,7 +212,7 @@ public interface Recipient {
      *
      * @param companyID New value of property companyID.
      */
-	void setCompanyID(@VelocityCheck int companyID);
+	void setCompanyID(int companyID);
 
     /**
      * Setter for property custDBStructure.

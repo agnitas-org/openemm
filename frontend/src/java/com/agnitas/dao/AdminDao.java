@@ -19,7 +19,6 @@ import javax.sql.DataSource;
 
 import org.agnitas.beans.AdminEntry;
 import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.agnitas.util.Tuple;
 
 import com.agnitas.beans.Admin;
@@ -28,25 +27,25 @@ import com.agnitas.emm.core.admin.AdminNameNotUniqueException;
 import com.agnitas.emm.core.news.enums.NewsType;
 
 public interface AdminDao {
-    List<Map<String, Object>> getAdminsNames(@VelocityCheck int companyID, List<Integer> adminsIds);
+    List<Map<String, Object>> getAdminsNames(int companyID, List<Integer> adminsIds);
 
-    List<AdminEntry> getAllAdminsByCompanyIdOnly(@VelocityCheck int companyID);
+    List<AdminEntry> getAllAdminsByCompanyIdOnly(int companyID);
 
-	Admin getAdminForReport(@VelocityCheck int companyID);
+	Admin getAdminForReport(int companyID);
 
-    List<AdminEntry> getAllAdminsByCompanyIdOnlyHasEmail(@VelocityCheck int companyID);
+    List<AdminEntry> getAllAdminsByCompanyIdOnlyHasEmail(int companyID);
 
 	/**
 	 * <Admin ID, Username> list sorted by username
 	 */
     List<Tuple<Integer, String>> getAdminsUsernames(int companyID);
     
-    int getNumberOfGuiAdmins(@VelocityCheck int companyID);
+    int getNumberOfGuiAdmins(int companyID);
 
-    Map<Integer, String> getAdminsNamesMap(@VelocityCheck int companyId);
+    Map<Integer, String> getAdminsNamesMap(int companyId);
 
     PaginatedListImpl<AdminEntry> getAdminList(
-    	@VelocityCheck int companyID,
+    	int companyID,
     	String searchFirstName,
     	String searchLastName,
     	String searchEmail,
@@ -74,13 +73,11 @@ public interface AdminDao {
 	
 	int getNumberOfRestfulUsers(int companyID);
 
-	void deleteFeaturePermissions(Set<String> unAllowedPremiumFeatures, int companyID);
-
 	boolean updateNewsDate(final int adminID, final Date newsDate, final NewsType type);
 	
 	boolean isAdminPassword(Admin admin, String password);
 	
-	Admin getAdmin(int adminID, @VelocityCheck int companyID);
+	Admin getAdmin(int adminID, int companyID);
 
 	Admin getAdminByLogin(String name, String password);
 
@@ -97,11 +94,11 @@ public interface AdminDao {
 	
 	boolean delete(final int adminID, final int companyID);
 
-	List<AdminEntry> getAllAdminsByCompanyId( @VelocityCheck int companyID);
+	List<AdminEntry> getAllAdminsByCompanyId( int companyID);
 
 	List<AdminEntry> getAllAdmins();
 
-	List<AdminEntry> getAllWsAdminsByCompanyId( @VelocityCheck int companyID);			// TODO Move to webservice related class
+	List<AdminEntry> getAllWsAdminsByCompanyId( int companyID);			// TODO Move to webservice related class
 
 	List<AdminEntry> getAllWsAdmins();													// TODO Move to webservice related class
 
@@ -129,7 +126,7 @@ public interface AdminDao {
     int saveAdminRights(int adminID, Set<String> userRights);
 
     Admin getAdmin(String username) throws AdminNameNotFoundException, AdminNameNotUniqueException;
-    String getAdminName(int adminID, @VelocityCheck int companyID);
+    String getAdminName(int adminID, int companyID);
 
 	/**
 	 * Get timezone id for an admin referenced by {@code adminId}.
@@ -138,7 +135,7 @@ public interface AdminDao {
 	 * @param companyId an identifier of a company that a referenced admin belongs to.
 	 * @return a timezone id or {@code null} if admin doesn't exist or timezone is not specified.
 	 */
-	String getAdminTimezone(int adminId, @VelocityCheck int companyId);
+	String getAdminTimezone(int adminId, int companyId);
 
 	Admin getOldestAdminOfCompany(int companyId);
 
@@ -155,6 +152,10 @@ public interface AdminDao {
 	boolean isDisabledMailingListsSupported();
 
 	List<Integer> getAccessLimitingAdmins(int accessLimitingTargetGroupID);
+
+	int getSecurityCodeMailingId(String language);
+
+	void deleteAdminPermissionsForCompany(int companyID);
 
 	List<Map<String, Object>> getAdminsLight(int companyID, boolean restful);
 }

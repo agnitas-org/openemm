@@ -80,7 +80,7 @@
                             </emm:ShowByPermission>
                             <emm:ShowByPermission token="import.mode.blacklist_exclusive">
                                 <html:option value="<%=Integer.toString(ImportMode.BLACKLIST_EXCLUSIVE.getIntValue())%>"><bean:message
-                                        key="import.mode.blacklist"/></html:option>
+                                        key="import.mode.blacklist_exclusive"/></html:option>
                             </emm:ShowByPermission>
                             <emm:ShowByPermission token="import.mode.remove_status">
                                 <html:option value="<%=Integer.toString(ImportMode.MARK_SUSPENDED.getIntValue())%>"><bean:message

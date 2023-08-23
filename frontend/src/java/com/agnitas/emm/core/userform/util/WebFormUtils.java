@@ -12,7 +12,6 @@ package com.agnitas.emm.core.userform.util;
 
 import static org.agnitas.util.AgnUtils.getNormalizedRdirDomain;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public final class WebFormUtils {
 
@@ -20,7 +19,7 @@ public final class WebFormUtils {
     private static final String IMAGE_SRC_PATTERN_NO_CACHE = "{rdir-domain}formImage/nc/{license-id}/{company-id}/{form-id}/{name}";
     private static final String IMAGE_THUMBNAIL_PATTERN = "{rdir-domain}formImage/thb/{company-id}/{form-id}/{name}";
 
-    public static final String getImageSrcPattern(final String rdirDomain, final int licenceId, @VelocityCheck final int companyId, final int formId, final boolean noCache) {
+    public static final String getImageSrcPattern(final String rdirDomain, final int licenceId, final int companyId, final int formId, final boolean noCache) {
         if (noCache) {
 			return getImageSrcPattern(IMAGE_SRC_PATTERN_NO_CACHE, rdirDomain, licenceId, companyId, formId);
 		} else {
@@ -28,11 +27,11 @@ public final class WebFormUtils {
 		}
     }
 
-    public static final String getImageThumbnailPattern(final String rdirDomain, final int licenceId, @VelocityCheck final int companyId, final int formId) {
+    public static final String getImageThumbnailPattern(final String rdirDomain, final int licenceId, final int companyId, final int formId) {
        return getImageSrcPattern(IMAGE_THUMBNAIL_PATTERN, rdirDomain, licenceId, companyId, formId);
     }
 
-	private static final String getImageSrcPattern(final String pattern, final String rdirDomain, final int licenceId, @VelocityCheck final int companyId, final int formId) {
+	private static final String getImageSrcPattern(final String pattern, final String rdirDomain, final int licenceId, final int companyId, final int formId) {
 		return pattern
 				.replace("{form-id}", Integer.toString(formId))
                 .replace("{license-id}", Integer.toString(licenceId))

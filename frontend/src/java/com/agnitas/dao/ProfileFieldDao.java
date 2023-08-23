@@ -24,6 +24,10 @@ import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.ProfileFieldMode;
 import com.agnitas.emm.core.profilefields.ProfileFieldException;
 
+/**
+ * @deprecated Use RecipientFieldService instead
+ */
+@Deprecated
 public interface ProfileFieldDao {
 	int MAX_SORT_INDEX = 1000;
 
@@ -202,4 +206,6 @@ public interface ProfileFieldDao {
 	Map<Integer, ProfileFieldMode> getProfileFieldAdminPermissions(int companyID, String columnName) throws Exception;
 
 	void storeProfileFieldAdminPermissions(int companyID, String columnName, Set<Integer> readOnlyUsers, Set<Integer> notVisibleUsers);
+
+	boolean isWithinGracefulLimit(int companyId);
 }

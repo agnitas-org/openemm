@@ -31,7 +31,7 @@ public class RecipientForm {
     private String email;
     private MailType mailtype = MailType.HTML;
     private boolean trackingVeto;
-    private boolean encryptedSend;
+    private boolean encryptedSend = true;
     private int latestDataSourceId;
     private int dataSourceId;
 

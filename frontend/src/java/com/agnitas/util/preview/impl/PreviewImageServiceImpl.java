@@ -19,12 +19,16 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import javax.imageio.ImageIO;
 
+import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.thumbnails.service.ThumbnailService;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.MailingComponentType;
 import org.agnitas.beans.impl.MailingComponentImpl;
@@ -32,7 +36,6 @@ import org.agnitas.dao.MailingComponentDao;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.util.AgnUtils;
-import org.agnitas.web.MailingSendAction;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -55,7 +58,6 @@ import com.agnitas.emm.core.mediatypes.service.MediaTypesService;
 import com.agnitas.util.preview.PreviewImageGenerationQueue;
 import com.agnitas.util.preview.PreviewImageGenerationTask;
 import com.agnitas.util.preview.PreviewImageService;
-import com.agnitas.web.MailingBaseAction;
 
 import cz.vutbr.web.css.MediaSpec;
 
@@ -63,7 +65,7 @@ import cz.vutbr.web.css.MediaSpec;
 public class PreviewImageServiceImpl implements PreviewImageService {
     /** The logger */
     private static final Logger logger = LogManager.getLogger(PreviewImageServiceImpl.class);
-    
+
 	public static final String PREVIEW_FILE_DIRECTORY = AgnUtils.getTempDir() + File.separator + "Preview";
 
 	protected static final int GRID_TEMPLATE_THUMBNAIL_WIDTH = 300;
@@ -83,24 +85,17 @@ public class PreviewImageServiceImpl implements PreviewImageService {
         int customerId = recipientDao.getPreviewRecipient(admin.getCompanyID(), mailingId);
         MediaTypes activeMediaType = mediaTypesService.getActiveMediaType(admin.getCompanyID(), mailingId);
         if (customerId > 0) {
-            queue.enqueue(new MailingPreviewTask(sessionId, admin.getCompanyID(), mailingId, customerId, activeMediaType), async);
+            queue.enqueue(new MailingPreviewTask(sessionId, admin.getCompanyID(), mailingId, customerId, activeMediaType, admin), async);
         } else {
             logger.error("Cannot create mailing preview: no test or admin recipient found");
         }
     }
 
-    protected byte[] generatePreview(String url, Dimension maxSize, boolean isMailingPreview) throws Exception {
+    protected byte[] generatePreview(String url, Dimension maxSize, boolean isMailingPreview, Admin admin) throws Exception {
         ByteArrayOutputStream outputStream = null;
         try {
-            BufferedImage image;
-            if (StringUtils.isNotBlank(configService.getValue(ConfigValue.WkhtmlToImageToolPath))) {
-            	// Use wkhtmltoimage for rendering
-            	image = renderDocumentWithWkhtml(url);
-            } else {
-            	// Use cssBox for rendering
-            	image = renderDocumentWithCssBox(url);
-            }
-            
+            BufferedImage image = renderDocument(url, admin);
+
             if (image != null) {
                 image = resizePreview(image, maxSize, isMailingPreview);
 
@@ -125,13 +120,58 @@ public class PreviewImageServiceImpl implements PreviewImageService {
         return null;
     }
 
-	private BufferedImage renderDocumentWithWkhtml(String url) throws Exception, IOException, InterruptedException {
+    private BufferedImage renderDocument(String url, Admin admin) throws Exception {
+        if (admin.permissionAllowed(Permission.FIREFOX_SCREENSHOTS)) {
+            return renderDocumentViaFireFox(url);
+        }
+
+        if (StringUtils.isNotBlank(configService.getValue(ConfigValue.WkhtmlToImageToolPath))) {
+            return renderDocumentWithWkhtml(url);
+        }
+
+        return renderDocumentWithCssBox(url);
+    }
+
+    private BufferedImage renderDocumentViaFireFox(String url) throws Exception {
+        File imageTempFile = File.createTempFile("preview_", ".png");
+
+        List<String> command = new ArrayList<>();
+        command.add("firefox");
+        command.add("--headless");
+
+        // if firefox was already open this operation will be rejected, so as solution we must use another profile
+        // it even can be an empty directory (https://bugzilla.mozilla.org/show_bug.cgi?id=1386727)
+        command.add("--profile");
+        File tmpDir = Files.createTempDirectory(UUID.randomUUID().toString()).toFile();
+        command.add(tmpDir.getAbsolutePath());
+
+        command.add("--no-remote");
+        command.add("--screenshot");
+        command.add(imageTempFile.getAbsolutePath());
+        command.add(url);
+        command.add("--fullpage");
+
+        Process process = Runtime.getRuntime().exec(command.toArray(new String[0]));
+        process.waitFor();
+
+        if (!imageTempFile.exists() || imageTempFile.length() == 0 || !tmpDir.exists()) {
+            throw new Exception("Preview generation via FF failed: \n" + StringUtils.join(command, "\n"));
+        }
+
+        BufferedImage image = ImageIO.read(imageTempFile);
+        imageTempFile.delete();
+        tmpDir.delete();
+
+        return image;
+    }
+
+	private BufferedImage renderDocumentWithWkhtml(String url) throws Exception {
 		if (!new File(configService.getValue(ConfigValue.WkhtmlToImageToolPath)).exists()) {
 			throw new Exception("Preview generation via wkhtmltoimage failed: " + configService.getValue(ConfigValue.WkhtmlToImageToolPath) + " does not exist");
 		}
-		
+
 		File imageTempFile = File.createTempFile("preview_", ".png", AgnUtils.createDirectory(PREVIEW_FILE_DIRECTORY));
-        
+
         String proxyString = "None";
 		String proxyHost = System.getProperty("http.proxyHost");
 		List<String> nonProxyHosts = new ArrayList<>();
@@ -143,12 +183,12 @@ public class PreviewImageServiceImpl implements PreviewImageService {
 					nonProxyHosts.add(nonProxyHost);
 				}
 			}
-			
+
 			proxyString = proxyHost;
 			if (!proxyString.contains("://")) {
 				proxyString = "http://" + proxyString;
 			}
-			
+
 			String proxyPort = System.getProperty("http.proxyPort");
 			if (StringUtils.isNotBlank(proxyPort)) {
 				proxyString = proxyString + ":" + proxyPort;
@@ -156,20 +196,20 @@ public class PreviewImageServiceImpl implements PreviewImageService {
 				proxyString = proxyString + ":" + 8080;
 			}
 		}
-		
+
 		List<String> command = new ArrayList<>();
-		
+
 		command.add(configService.getValue(ConfigValue.WkhtmlToImageToolPath));
-		
+
 //			"--crop-x", Integer.toString(0),
 //			"--crop-y", Integer.toString(0),
 //			"--crop-w", Integer.toString(maxWidth),
 //			"--crop-h", Integer.toString(maxHeight),
 //			"--format, png",
-		
+
 		command.add("--quality");
 		command.add(Integer.toString(50));
-		
+
 		if (StringUtils.isNotBlank(proxyString) && !"None".equals(proxyString)) {
 			command.add("--proxy");
 			command.add(proxyString);
@@ -178,28 +218,28 @@ public class PreviewImageServiceImpl implements PreviewImageService {
 				command.add(nonProxyHost);
 			}
 		}
-		
+
 		command.add(url);
-		
+
 		command.add(imageTempFile.getAbsolutePath());
-		
+
 		Process process = Runtime.getRuntime().exec(command.toArray(new String[0]));
 		process.waitFor();
-		
+
 		if (!imageTempFile.exists() || imageTempFile.length() == 0) {
 			throw new Exception("Preview generation via wkhtmltoimage failed: \n" + StringUtils.join(command, "\n"));
 		}
-		
+
 		BufferedImage image = ImageIO.read(imageTempFile);
-		
+
 		imageTempFile.delete();
-		
+
 		return image;
 	}
 
     private BufferedImage renderDocumentWithCssBox(String url) throws IOException, SAXException {
     	DocumentSource docSource = new DefaultDocumentSource(ensureUrlHasProtocol(url));
-        
+
         final Dimension windowSize = new Dimension(VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
         final String mediaType = "screen";
 
@@ -371,25 +411,27 @@ public class PreviewImageServiceImpl implements PreviewImageService {
     public void setPreviewImageGenerationQueue(PreviewImageGenerationQueue previewImageGenerationQueue) {
         this.queue = previewImageGenerationQueue;
     }
-    
+
     @Required
     public void setMediaTypesService(MediaTypesService mediaTypesService) {
         this.mediaTypesService = mediaTypesService;
     }
-    
+
     private class MailingPreviewTask implements PreviewImageGenerationTask {
+        private Admin admin;
         private String sessionId;
         private int companyId;
         private int mailingId;
         private int customerId;
         private MediaTypes mediaType;
 
-        MailingPreviewTask(String sessionId, int companyId, int mailingId, int customerId, MediaTypes mediaType) {
+        MailingPreviewTask(String sessionId, int companyId, int mailingId, int customerId, MediaTypes mediaType, Admin admin) {
             this.sessionId = sessionId;
             this.companyId = companyId;
             this.mailingId = mailingId;
             this.customerId = customerId;
             this.mediaType = mediaType;
+            this.admin = admin;
         }
 
         @Override
@@ -400,8 +442,8 @@ public class PreviewImageServiceImpl implements PreviewImageService {
         @Override
         public void run() {
             try {
-                Dimension maxSize = new Dimension(MailingBaseAction.MAILING_PREVIEW_WIDTH, MailingBaseAction.MAILING_PREVIEW_HEIGHT);
-                byte[] preview = generatePreview(getPreviewUrl(), maxSize, true);
+                Dimension maxSize = new Dimension(ThumbnailService.MAILING_THUMBNAIL_WIDTH, ThumbnailService.MAILING_THUMBNAIL_HEIGHT);
+                byte[] preview = generatePreview(getPreviewUrl(), maxSize, true, admin);
 
                 List<MailingComponent> components = mailingComponentDao.getMailingComponents(mailingId, companyId, MailingComponentType.ThumbnailImage, false);
                 if (components.size() > 1) {
@@ -409,7 +451,7 @@ public class PreviewImageServiceImpl implements PreviewImageService {
                 	mailingComponentDao.deleteMailingComponents(components);
                 	components = new ArrayList<>();
                 }
-                
+
                 if (components.isEmpty()) {
                 	// Create a single thumbnail
                     MailingComponent component = new MailingComponentImpl();
@@ -441,11 +483,10 @@ public class PreviewImageServiceImpl implements PreviewImageService {
                 baseUrl = configService.getValue(ConfigValue.SystemUrl);
             }
 
-            return baseUrl + "/mailingsend.do" + ";jsessionid=" + sessionId + "?action=" + MailingSendAction.ACTION_PREVIEW +
-                    "&mailingID=" + mailingId +
-                    "&previewForm.format=" + (mediaType == null ? MailingPreviewHelper.INPUT_TYPE_HTML : mediaType.getMediaCode() + 1) +
-                    "&previewForm.customerID=" + customerId;
+            return baseUrl + "/mailing/preview/view-content.action;jsessionid=" + sessionId
+                    + "?format=" + (mediaType == null ? MailingPreviewHelper.INPUT_TYPE_HTML : mediaType.getMediaCode() + 1)
+                    + "&customerID=" + customerId
+                    + "&mailingId=" + mailingId;
         }
     }
-
 }

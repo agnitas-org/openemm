@@ -11,7 +11,7 @@
 package org.agnitas.emm.core.component.service;
 
 import org.agnitas.beans.MailingComponentType;
-import org.agnitas.emm.core.velocity.VelocityCheck;
+
 
 public class ComponentModel {
 	private int companyId;
@@ -27,7 +27,7 @@ public class ComponentModel {
 		return companyId;
 	}
 
-	public void setCompanyId(@VelocityCheck int companyId) {
+	public void setCompanyId(int companyId) {
 		this.companyId = companyId;
 	}
 

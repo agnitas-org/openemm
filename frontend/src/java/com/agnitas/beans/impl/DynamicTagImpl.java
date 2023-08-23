@@ -17,7 +17,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.agnitas.beans.DynamicTagContent;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 import org.apache.commons.lang3.StringUtils;
 
 import com.agnitas.beans.DynamicTag;
@@ -56,7 +55,7 @@ public final class DynamicTagImpl implements DynamicTag {
 	}
 
 	@Override
-	public void setCompanyID( @VelocityCheck int id) {
+	public void setCompanyID( int id) {
 		companyID = id;
 	}
 

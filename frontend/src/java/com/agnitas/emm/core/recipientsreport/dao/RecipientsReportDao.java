@@ -14,27 +14,26 @@ import java.io.File;
 import java.util.Date;
 
 import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 import com.agnitas.emm.core.recipientsreport.bean.RecipientsReport;
 
 public interface RecipientsReportDao {
 
-    void createReport(@VelocityCheck int companyId, RecipientsReport report, String fileContent) throws Exception;
+    void createReport(int companyId, RecipientsReport report, String fileContent) throws Exception;
 
-    String getReportTextContent(@VelocityCheck int companyId, int reportId);
+    String getReportTextContent(int companyId, int reportId);
 
-    PaginatedListImpl<RecipientsReport> getReports(@VelocityCheck int companyId, int pageNumber, int pageSize, String sortProperty, String dir, Date startDate, Date finishDate, RecipientsReport.RecipientReportType...types);
+    PaginatedListImpl<RecipientsReport> getReports(int companyId, int pageNumber, int pageSize, String sortProperty, String dir, Date startDate, Date finishDate, RecipientsReport.RecipientReportType...types);
 
-    RecipientsReport getReport(@VelocityCheck int companyId, int reportId);
+    RecipientsReport getReport(int companyId, int reportId);
 
-    int deleteOldReports(@VelocityCheck int companyId, Date oldestReportDate);
+    int deleteOldReports(int companyId, Date oldestReportDate);
     
-    boolean deleteReportsByCompany(@VelocityCheck int companyId);
+    boolean deleteReportsByCompany(int companyId);
 
 	void createSupplementalReportData(int companyId, RecipientsReport report, File temporaryDataFile, String textContent) throws Exception;
 
 	byte[] getReportFileData(int companyId, int reportId) throws Exception;
     
-    RecipientsReport.RecipientReportType getReportType(@VelocityCheck int companyId, int reportId);
+    RecipientsReport.RecipientReportType getReportType(int companyId, int reportId);
 }

@@ -14,7 +14,7 @@ import java.io.File;
 import java.util.Date;
 import java.util.List;
 
-import org.agnitas.emm.core.useractivitylog.dao.UserActivityLogDao;
+import com.agnitas.emm.core.useractivitylog.dao.RestfulUserActivityLogDao;
 import org.agnitas.util.HttpUtils.RequestMethod;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Required;
@@ -44,12 +44,12 @@ public class AccessLimitingTargetGroupsServiceHandler implements RestfulServiceH
 	
 	public static final String NAMESPACE = "altg";
 
-	protected UserActivityLogDao userActivityLogDao;
+	protected RestfulUserActivityLogDao userActivityLogDao;
 	protected AdminService adminService;
 	protected ComTargetService targetService;
 
 	@Required
-	public void setUserActivityLogDao(UserActivityLogDao userActivityLogDao) {
+	public void setUserActivityLogDao(RestfulUserActivityLogDao userActivityLogDao) {
 		this.userActivityLogDao = userActivityLogDao;
 	}
 	
@@ -81,17 +81,13 @@ public class AccessLimitingTargetGroupsServiceHandler implements RestfulServiceH
 	/**
 	 * Return a all altg target groups and their users
 	 * 
-	 * @param request
-	 * @param admin
-	 * @return
-	 * @throws Exception
 	 */
 	private Object getAltgUsersData(HttpServletRequest request, Admin admin) throws Exception {
 		RestfulServiceHandler.getRestfulContext(request, NAMESPACE, 0, 0);
 		
 		userActivityLogDao.addAdminUseOfFeature(admin, "restful/altg", new Date());
-		userActivityLogDao.writeUserActivityLog(admin, "restful/altg GET", " Requested all ALTG users list");
-		
+		writeActivityLog(userActivityLogDao, "Requested all ALTG users list", request, admin);
+
 		JsonArray result = new JsonArray();
 		for (TargetLight target : targetService.getAccessLimitationTargetLights(admin.getCompanyID())) {
 			JsonObject targetJsonObject = new JsonObject();

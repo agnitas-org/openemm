@@ -73,7 +73,7 @@ public class Extractor implements ResultSetExtractor<Object> {
 			rmap = new Column[metacount];
 			usecount = 3;
 			for (EMMTag current_tag : tagNames.values()) {
-				if ((!current_tag.globalValue) && (!current_tag.fixedValue) && (current_tag.tagType == EMMTag.TAG_DBASE)) {
+				if ((!current_tag.globalValue) && (current_tag.tagType == EMMTag.TAG_DBASE)) {
 					++usecount;
 				}
 			}
@@ -142,7 +142,7 @@ public class Extractor implements ResultSetExtractor<Object> {
 		int count = 3;
 
 		for (EMMTag tmpTag : tagNames.values()) {
-			if ((!tmpTag.globalValue) && (!tmpTag.fixedValue) && (tmpTag.tagType == EMMTag.TAG_DBASE)) {
+			if ((!tmpTag.globalValue) && (tmpTag.tagType == EMMTag.TAG_DBASE)) {
 				if ((rmap[count] != null) && (!rmap[count].getIsnull())) {
 					tmpTag.setTagValue(rmap[count].get());
 				} else {

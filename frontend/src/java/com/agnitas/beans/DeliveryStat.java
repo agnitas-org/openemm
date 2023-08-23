@@ -12,7 +12,6 @@ package com.agnitas.beans;
 
 import java.util.Date;
 
-import org.agnitas.emm.core.velocity.VelocityCheck;
 
 public class DeliveryStat {
     public static final int STATUS_NOT_SENT = 0;
@@ -119,7 +118,7 @@ public class DeliveryStat {
     public int getCompanyID() {
         return companyID;
     }
-    public void setCompanyID(@VelocityCheck int companyID) {
+    public void setCompanyID(int companyID) {
         this.companyID = companyID;
     }
 

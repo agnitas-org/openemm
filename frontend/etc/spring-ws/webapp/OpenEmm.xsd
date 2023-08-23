@@ -616,10 +616,13 @@
 	<!-- Get subscribers from subscriber table by criteria -->
 	<xs:element name="ListSubscribersRequest">
 		<xs:complexType>
-			<xs:all>
-				<!-- Map with Key/Value-Pairs of criteria -->
-				<xs:element name="criteria" type="agn:Criteria" />
-			</xs:all>
+			<xs:sequence>
+				<xs:choice>
+					<!-- Map with Key/Value-Pairs of criteria -->
+					<xs:element name="criteria" type="agn:Criteria" minOccurs="0" maxOccurs="1" />
+					<xs:element name="eql" type="xs:string" minOccurs="0" maxOccurs="1" />
+				</xs:choice>
+			</xs:sequence>
 		</xs:complexType>
 	</xs:element>
 	<xs:element name="ListSubscribersResponse">

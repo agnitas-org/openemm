@@ -104,13 +104,11 @@ public class AgnTagUtils {
 
     public static List<String> getOptionalParametersForTag(final String tagName) {
         final String safeTagName = StringUtils.defaultIfEmpty(tagName, "");
-        switch (safeTagName) {
-            case "agnVOUCHER":
-                return Collections.singletonList("default");
 
-            default:
-                return Collections.emptyList();
+        if ("agnVOUCHER".equals(safeTagName)) {
+            return Collections.singletonList("default");
         }
+        return Collections.emptyList();
     }
 
     public static String unescapeAgnTags(String text) {
@@ -179,4 +177,20 @@ public class AgnTagUtils {
 	private static String fromB64(String text) {
 		return new String(Base64.getUrlDecoder().decode(text));
 	}
+	
+    public static String getAgnTagName(String componentLinkString) {
+    	String name = StringUtils.substringBetween(componentLinkString, "name=\"", "\"/]");
+    	if (!StringUtils.isBlank(name)) {
+    	    return name;
+        }
+        name = StringUtils.substringBetween(componentLinkString, "name=\"", "\"]");
+        if (!StringUtils.isBlank(name)) {
+            return name;
+        }
+        name = StringUtils.substringBetween(componentLinkString, "name='", "'/]");
+        if (!StringUtils.isBlank(name)) {
+            return name;
+        }
+        return StringUtils.substringBetween(componentLinkString, "name='", "']");
+    }
 }

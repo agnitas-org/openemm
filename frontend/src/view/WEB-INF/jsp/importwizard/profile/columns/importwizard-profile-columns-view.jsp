@@ -8,6 +8,8 @@
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
 <c:set var="ACTION_BULK_REMOVE" value="<%= ImportProfileColumnsAction.ACTION_BULK_REMOVE %>"/>
+<c:set var="ACTION_SAVE" value="<%= ImportProfileColumnsAction.ACTION_SAVE %>"/>
+<c:set var="ACTION_SAVE_AND_START" value="<%= ImportProfileColumnsAction.ACTION_SAVE_AND_START %>"/>
 <c:set var="ACTION_UPLOAD" value="<%= ImportProfileColumnsAction.ACTION_UPLOAD %>"/>
 
 <agn:agnForm action="/importprofile_columns" id="importProfileColumnsForm" enctype="multipart/form-data" data-form="resource"
@@ -25,6 +27,8 @@
     
     <script type="application/json" id="config:importprofile-fields">
         {
+            "ACTION_SAVE": "${ACTION_SAVE}",
+            "ACTION_SAVE_AND_START": "${ACTION_SAVE_AND_START}",
             "columns" : ${emm:toJson(importProfileColumnsForm.profileFields)}
         }
     </script>    
@@ -92,13 +96,13 @@
 
 				<c:if test="${importProfileColumnsForm.mappingNumber > 0}">
 					<c:if test="${not isReadonly}">
-						<div class="tile-header table-controls">
-							<div class="table-control pull-left" style="margin: 0 0 15px 0">
+						<div class="tile-header table-controls" style="margin-bottom: 15px">
+							<div class="table-control pull-left">
 								<div class="well well-info block">
 									<bean:message key="export.CsvMappingMsg"/>
 								</div>
 							</div>
-							<ul class="table-control pull-right">
+							<ul class="tile-header-actions">
 								<li class="dropdown">
 									<a href="#" class="dropdown-toggle" data-toggle="dropdown">
 										<i class="icon icon-pencil"></i>

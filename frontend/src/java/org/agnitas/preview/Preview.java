@@ -129,9 +129,10 @@ public interface Preview {
 	 * @param targetIDs		 targetID is considered as true during text block creation for previewing
 	 * @param isMobile		 parameter for preview purpose to resolve image url
 	 * @param sendDate		 sendDate of original mailing as unix epoch
+	 * @param onAnonPreserveLinks    if an anon preview is created, preserve the plain links instead of eliminating them
 	 * @return the preview
 	 */
-	Page makePreview(long mailingID, long customerID, String selector, String text, boolean anon, boolean convertEntities, boolean ecsUIDs, boolean createAll, boolean cachable, long[] targetIDs, boolean isMobile, long sendDate);
+	Page makePreview(long mailingID, long customerID, String selector, String text, boolean anon, boolean convertEntities, boolean ecsUIDs, boolean createAll, boolean cachable, long[] targetIDs, boolean isMobile, long sendDate, boolean onAnonPreserveLinks);
 
 	Page makePreview(long mailingID, long customerID, String selector, String text, boolean anon, boolean convertEntities, boolean ecsUIDs, boolean createAll, boolean cachable);
 
@@ -144,6 +145,8 @@ public interface Preview {
 	Page makePreview(long mailingID, long customerID, String selector, boolean anon, boolean cachable, long sendDate);
 
 	Page makePreview(long mailingID, long customerID, boolean cachable);
+
+    Page makeAnonPreview(long mailingId, boolean mobile);
 
 	Page makePreview(long mailingID, long customerID, boolean cachable, long sendDate);
 

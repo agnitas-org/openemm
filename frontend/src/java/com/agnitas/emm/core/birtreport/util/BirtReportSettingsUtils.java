@@ -13,12 +13,11 @@ package com.agnitas.emm.core.birtreport.util;
 import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportDateRangedSettings.DATE_RANGE_KEY;
 import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportDateRangedSettings.DATE_RANGE_PREDEFINED;
 import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportDateRangedSettings.DATE_RANGE_PREDEFINED_KEY;
-import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportDateRangedSettings.DATE_RANGE_PREDEFINED_MONTH;
-import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportDateRangedSettings.DATE_RANGE_PREDEFINED_THREE_MONTHS;
-import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportDateRangedSettings.DATE_RANGE_PREDEFINED_WEEK;
 import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportMailingSettings.MAILING_ACTION_BASED;
 import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportMailingSettings.MAILING_DATE_BASED;
+import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportMailingSettings.MAILING_FOLLOW_UP;
 import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportMailingSettings.MAILING_GENERAL_TYPES_KEY;
+import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportMailingSettings.MAILING_INTERVAL_BASED;
 import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportMailingSettings.MAILING_NORMAL;
 import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportMailingSettings.PERIOD_TYPE_KEY;
 import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings.ENABLED_KEY;
@@ -31,10 +30,6 @@ import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings.PR
 import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings.PREDEFINED_MAILINGS_KEY;
 import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings.TARGETS_KEY;
 import static com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings.TARGET_GROUPS_KEY;
-import static com.agnitas.emm.core.birtreport.dto.PeriodType.DATE_RANGE_CUSTOM;
-import static com.agnitas.emm.core.birtreport.dto.PeriodType.DATE_RANGE_DAY;
-import static com.agnitas.emm.core.birtreport.dto.PeriodType.DATE_RANGE_MONTH;
-import static com.agnitas.emm.core.birtreport.dto.PeriodType.DATE_RANGE_WEEK;
 import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.Properties.ACTIVATE_LINK_STATISTICS;
 import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.Properties.ACTIVITY_ANALYSIS;
 import static com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils.Properties.CLICKERS_AFTER_DEVICE;
@@ -87,6 +82,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 
 import com.agnitas.beans.Admin;
+import com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportDateRangedSettings;
 import com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportMailingSettings;
 import com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportRecipientSettings;
 import com.agnitas.emm.core.birtreport.bean.impl.ComBirtReportSettings;
@@ -323,15 +319,6 @@ public class BirtReportSettingsUtils {
         return settingsMap;
     }
     
-    public static String getLocalizedReportName(ComBirtReportSettings reportSettings, Locale locale, String format) {
-        ReportSettingsType type = reportSettings.getReportSettingsType();
-        return getLocalizedReportName(type, locale, format);
-    }
-    
-    public static String getLocalizedReportName(ReportSettingsType type, Locale locale, String format) {
-        return String.format("%s.%s", I18nString.getLocaleString(type.getTypeMsgKey(), locale), format);
-    }
-    
     public static boolean updateDateRestrictions(ReportSettingsType type, Map<String, Object> settings) {
         switch (type) {
             case MAILING:
@@ -452,15 +439,16 @@ public class BirtReportSettingsUtils {
         PeriodType periodType = PeriodType.getTypeByStringKey(
                 BirtReportSettingsUtils.getSettingsProperty(settings, PERIOD_TYPE_KEY));
     
-        return periodType == DATE_RANGE_WEEK ||
-                periodType == DATE_RANGE_MONTH ||
-                periodType == DATE_RANGE_CUSTOM ||
-                periodType == DATE_RANGE_DAY;
+        return  periodType == PeriodType.DATE_RANGE_DAY ||
+                periodType == PeriodType.DATE_RANGE_WEEK ||
+                periodType == PeriodType.DATE_RANGE_30DAYS ||
+                periodType == PeriodType.DATE_RANGE_LAST_MONTH ||
+                periodType == PeriodType.DATE_RANGE_CUSTOM;
     }
     
     public static boolean validateMailingsDateRange(Map<String, Object> settings) {
         int generalType = NumberUtils.toInt(getSettingsProperty(settings, MAILING_GENERAL_TYPES_KEY), -1);
-        if(generalType == MAILING_DATE_BASED || generalType == MAILING_ACTION_BASED) {
+        if (generalType == MAILING_DATE_BASED || generalType == MAILING_ACTION_BASED || generalType == MAILING_INTERVAL_BASED || generalType == MAILING_FOLLOW_UP) {
             return isPeriodTypeValid(settings);
         }
         
@@ -473,9 +461,10 @@ public class BirtReportSettingsUtils {
         if (dateRange == DATE_RANGE_PREDEFINED) {
             int dateRangeType = NumberUtils.toInt(BirtReportSettingsUtils.getSettingsProperty(settings,
                     DATE_RANGE_PREDEFINED_KEY));
-            return dateRangeType == DATE_RANGE_PREDEFINED_WEEK ||
-                    dateRangeType == DATE_RANGE_PREDEFINED_MONTH ||
-                    dateRangeType == DATE_RANGE_PREDEFINED_THREE_MONTHS;
+            return dateRangeType == ComBirtReportDateRangedSettings.DATE_RANGE_PREDEFINED_WEEK ||
+                    dateRangeType == ComBirtReportDateRangedSettings.DATE_RANGE_PREDEFINED_30_DAYS ||
+                    dateRangeType == ComBirtReportDateRangedSettings.DATE_RANGE_PREDEFINED_LAST_MONTH ||
+                    dateRangeType == ComBirtReportDateRangedSettings.DATE_RANGE_PREDEFINED_THREE_MONTHS;
         }
         
         return dateRange == ComBirtReportRecipientSettings.DATE_RANGE_CUSTOM;
@@ -526,6 +515,24 @@ public class BirtReportSettingsUtils {
         if (isMailingSettings(type)) {
             int subType = getIntProperty(settings, MAILING_GENERAL_TYPES_KEY);
             return subType == ComBirtReportMailingSettings.MAILING_ACTION_BASED;
+        }
+
+        return false;
+    }
+
+    public static boolean isMailingIntervalBased(ReportSettingsType type, Map<String, Object> settings) {
+        if (isMailingSettings(type)) {
+            int subType = getIntProperty(settings, MAILING_GENERAL_TYPES_KEY);
+            return subType == ComBirtReportMailingSettings.MAILING_INTERVAL_BASED;
+        }
+
+        return false;
+    }
+
+    public static boolean isMailingFollowUp(ReportSettingsType type, Map<String, Object> settings) {
+        if (isMailingSettings(type)) {
+            int subType = getIntProperty(settings, MAILING_GENERAL_TYPES_KEY);
+            return subType == ComBirtReportMailingSettings.MAILING_FOLLOW_UP;
         }
 
         return false;

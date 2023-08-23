@@ -15,11 +15,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import com.agnitas.beans.Admin;
 import org.agnitas.beans.ColumnMapping;
 import org.agnitas.beans.ImportProfile;
 import org.agnitas.dao.ImportProfileDao;
-import org.agnitas.emm.core.velocity.VelocityCheck;
+import org.agnitas.emm.core.recipient.service.RecipientService;
 import org.agnitas.service.ImportProfileService;
+import org.agnitas.util.ImportUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -30,6 +33,7 @@ public class ImportProfileServiceImpl implements ImportProfileService {
 
     private static final Logger logger = LogManager.getLogger(ImportProfileServiceImpl.class);
 
+    private RecipientService recipientService;
     private ImportProfileDao importProfileDao;
 
     @Override
@@ -47,6 +51,48 @@ public class ImportProfileServiceImpl implements ImportProfileService {
         importProfileDao.deleteColumnMappings(getColumnIdsForRemove(columnMapping, oldColumnMappings));
         importProfileDao.insertColumnMappings(columnMapping.stream().filter(item -> item.getId() == 0).collect(Collectors.toList()));
         importProfileDao.updateColumnMappings(columnMapping.stream().filter(item -> item.getId() != 0).collect(Collectors.toList()));
+    }
+    @Override
+    public ColumnMapping findColumnMappingByDbColumn(String dbColumnName, List<ColumnMapping> mappings) {
+        for (ColumnMapping mapping : mappings) {
+            if (mapping.getDatabaseColumn().equalsIgnoreCase(dbColumnName)) {
+                return mapping;
+            }
+        }
+
+        return null;
+    }
+
+    @Override
+    @Transactional
+    public void saveColumnsMappings(List<ColumnMapping> columnMappings, int profileId, Admin admin) {
+        List<Integer> columnsForRemove = Collections.emptyList();
+
+        if (profileId != 0) {
+            ImportProfile profile = importProfileDao.getImportProfileById(profileId);
+            columnsForRemove = getColumnIdsForRemove(columnMappings, profile.getColumnMapping());
+        }
+
+        List<String> hiddenColumns = ImportUtils.getHiddenColumns(admin);
+
+        for (ColumnMapping mapping : columnMappings) {
+            mapping.setProfileId(profileId);
+
+            if (hiddenColumns.contains(mapping.getDatabaseColumn())) {
+                mapping.setDatabaseColumn(ColumnMapping.DO_NOT_IMPORT);
+            }
+        }
+
+        List<ColumnMapping> columnsForInsert = columnMappings.stream()
+                .filter(item -> item.getId() == 0)
+                .collect(Collectors.toList());
+        List<ColumnMapping> columnsForUpdate = columnMappings.stream()
+                .filter(item -> item.getId() != 0)
+                .collect(Collectors.toList());
+
+        importProfileDao.deleteColumnMappings(columnsForRemove);
+        importProfileDao.insertColumnMappings(columnsForInsert);
+        importProfileDao.updateColumnMappings(columnsForUpdate);
     }
 
     @Override
@@ -78,20 +124,21 @@ public class ImportProfileServiceImpl implements ImportProfileService {
     }
 
     @Override
-    public List<Integer> getSelectedMailingListIds(int id, @VelocityCheck int companyId) {
+    public List<Integer> getSelectedMailingListIds(int id, int companyId) {
         return importProfileDao.getSelectedMailingListIds(id, companyId);
     }
 
     private List<Integer> getColumnIdsForRemove(List<ColumnMapping> mappings, List<ColumnMapping> oldMappings) {
-        List<Integer> oldIds = oldMappings.stream().map(ColumnMapping::getId).collect(Collectors.toList());
-        List<Integer> newIds = mappings.stream().map(ColumnMapping::getId).collect(Collectors.toList());
+        List<Integer> oldIds = oldMappings.stream()
+                .map(ColumnMapping::getId)
+                .collect(Collectors.toList());
+
+        List<Integer> newIds = mappings.stream()
+                .map(ColumnMapping::getId)
+                .collect(Collectors.toList());
+
         oldIds.removeAll(newIds);
         return oldIds;
-    }
-
-    @Required
-    public void setImportProfileDao(ImportProfileDao importProfileDao) {
-        this.importProfileDao = importProfileDao;
     }
 
 	@Override
@@ -127,4 +174,41 @@ public class ImportProfileServiceImpl implements ImportProfileService {
 			return false;
 		}
 	}
+
+    @Override
+    public boolean isKeyColumnsIndexed(ImportProfile profile) {
+        List<String> columnsToCheck = profile.getKeyColumns();
+        return CollectionUtils.isEmpty(columnsToCheck)
+                || recipientService.isColumnsIndexed(columnsToCheck, profile.getCompanyId());
+    }
+
+    @Override
+    public boolean isDuplicatedName(String name, int id, int companyId) {
+        int foundImportProfile = importProfileDao.findImportProfileIdByName(name, companyId);
+
+        if (foundImportProfile == -1) {
+            return false;
+        }
+
+        return foundImportProfile != id;
+    }
+
+    @Override
+    public boolean isColumnWasImported(String columnName, int id) {
+        if (id <= 0) {
+            return false;
+        }
+
+        return importProfileDao.isColumnWasImported(columnName, id);
+    }
+
+    @Required
+    public void setImportProfileDao(ImportProfileDao importProfileDao) {
+        this.importProfileDao = importProfileDao;
+    }
+
+    @Required
+    public void setRecipientService(RecipientService recipientService) {
+        this.recipientService = recipientService;
+    }
 }

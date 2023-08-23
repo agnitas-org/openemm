@@ -11,7 +11,7 @@
 package com.agnitas.emm.grid.grid.beans;
 
 import com.agnitas.beans.TemplateTrackableLink;
-import org.agnitas.emm.core.velocity.VelocityCheck;
+
 
 import java.util.Date;
 import java.util.List;
@@ -25,7 +25,7 @@ public interface ComGridTemplate {
     void setId(int id);
 
     int getCompanyId();
-    void setCompanyId(@VelocityCheck int companyId);
+    void setCompanyId(int companyId);
 
     String getName();
     void setName(String name);

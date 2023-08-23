@@ -23,7 +23,6 @@ import jakarta.servlet.jsp.tagext.BodyContent;
 import jakarta.servlet.jsp.tagext.BodyTagSupport;
 
 import org.agnitas.emm.core.navigation.ConditionsHandler;
-import org.agnitas.util.AgnUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -236,15 +235,14 @@ public class ShowNavigationTag extends BodyTagSupport {
             logger.error("Conditions handler is not allowed!!!");
             return false;
         }
-        int companyId = AgnUtils.getCompanyID((HttpServletRequest) pageContext.getRequest());
-        return conditionsHandler.checkCondition(conditionId, companyId);
+        return conditionsHandler.checkCondition(conditionId, (HttpServletRequest) pageContext.getRequest());
     }
 
 	private void setBodyAttributes() {
 		NavigationData navigationData = navigationDataIterator.next();
 		navigationIndex++;
 
-		logger.info("setting navigation attributes " + prefix + "_navigation_href = " + navigationData.getHref());
+		logger.info("setting navigation attributes {}_navigation_href = {}", prefix, navigationData.getHref());
 
 		if (StringUtils.isNotBlank(highlightKey) && StringUtils.equals(navigationData.getMessage(), highlightKey)) {
             pageContext.setAttribute(prefix + "_navigation_switch", "on");
@@ -258,7 +256,9 @@ public class ShowNavigationTag extends BodyTagSupport {
         pageContext.setAttribute(prefix + "_navigation_href", StringUtils.trimToEmpty(navigationData.getHref()));
         pageContext.setAttribute(prefix + "_navigation_navMsg", StringUtils.trimToEmpty(navigationData.getMessage()));
         pageContext.setAttribute(prefix + "_navigation_index", navigationIndex);
-        pageContext.setAttribute(prefix + "_navigation_iconClass", StringUtils.trimToEmpty(navigationData.getIconClass()));
+        if (navigationData.conditionSatisfied) {
+            pageContext.setAttribute(prefix + "_navigation_iconClass", StringUtils.trimToEmpty(navigationData.getIconClass()));
+        }
 		pageContext.setAttribute(prefix + "_navigation_submenu", StringUtils.trimToEmpty(navigationData.getSubMenu()));
 		pageContext.setAttribute(prefix + "_navigation_hideForToken", StringUtils.trimToEmpty(navigationData.getHideForToken()));
 		pageContext.setAttribute(prefix + "_navigation_upsellingRef", StringUtils.trimToEmpty(navigationData.getUpsellingRef()));
