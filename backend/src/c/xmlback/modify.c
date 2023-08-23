@@ -102,6 +102,8 @@ mkonepixellogurl (blockmail_t *blockmail, receiver_t *rec) /*{{{*/
 			buffer_set (blockmail -> link_maker, xmlBufferContent (blockmail -> onepixel_url), xmlBufferLength (blockmail -> onepixel_url));
 			buffer_appends (blockmail -> link_maker, "uid=");
 			buffer_appends (blockmail -> link_maker, uid);
+			if (blockmail -> gui)
+				buffer_appends (blockmail -> link_maker, "&nocount=1");
 		}
 		free (uid);
 		return buffer_length (blockmail -> link_maker) ? buffer_string (blockmail -> link_maker) : NULL;
@@ -195,7 +197,7 @@ typedef struct { /*{{{*/
 	/*}}}*/
 }	rplc_t;
 static bool_t
-replace_anon_hashtags (void *rp, xmlbuf_t *output, const xchar_t *token, int tlen) /*{{{*/
+replace_anon_hashtags (void *rp, buffer_t *output, const xchar_t *token, int tlen) /*{{{*/
 {
 	rplc_t	*replacer = (rplc_t *) rp;
 	int	pos;
@@ -231,8 +233,8 @@ replace_anon_hashtags (void *rp, xmlbuf_t *output, const xchar_t *token, int tle
 		free (param);
 	return true;
 }/*}}}*/
-bool_t
-modify_urls (blockmail_t *blockmail, receiver_t *rec, block_t *block, protect_t *protect, bool_t ishtml, record_t *record) /*{{{*/
+static bool_t
+modify_urls_original (blockmail_t *blockmail, receiver_t *rec, block_t *block, protect_t *protect, bool_t ishtml, record_t *record) /*{{{*/
 {
 	int		n;
 	int		len;
@@ -320,7 +322,12 @@ modify_urls (blockmail_t *blockmail, receiver_t *rec, block_t *block, protect_t 
 					state = ST_PLAIN_START_FOUND;
 					break;
 				/* HTML */
-				case 100:	CCHK ('a');	break;
+				case 100:
+					if ((tolower (ch) == 'a') || (tolower (ch) == 'v'))
+						++state;
+					else
+						state = ST_INITIAL;
+					break;
 # define	HCHK(ccc)	do { if ((ccc) == tolower (ch)) ++state; else if ('>' == ch) state = ST_INITIAL; else state = 101; } while (0)
 				case 101:	HCHK ('h');	break;
 				case 102:	HCHK ('r');	break;
@@ -402,22 +409,24 @@ modify_urls (blockmail_t *blockmail, receiver_t *rec, block_t *block, protect_t 
 				}
 			}
 			if (blockmail -> anon) {
-				if ((m == blockmail -> url_count) || blockmail -> url[m] -> admin_link) {
-					xmlBufferAdd (block -> out, (const xmlChar *) "#", 1);
-					lstore = end;
-					changed = true;
-				} else if (url_is_personal (cont + start, ulen)) {
-					if (! scratch)
-						scratch = purl_alloc (NULL);
-					if (scratch && purl_parsen (scratch, cont + start, ulen)) {
-						const xchar_t	*rplc;
-						int		rlen;
-						rplc_t		replacer = { blockmail, rec };
-							
-						if ((rplc = purl_build (scratch, NULL, & rlen, replace_anon_hashtags, & replacer)) && rlen)
-							xmlBufferAdd (block -> out, (const xmlChar *) rplc, rlen);
+				if (! blockmail -> anon_preserve_links) {
+					if ((m == blockmail -> url_count) || blockmail -> url[m] -> admin_link) {
+						xmlBufferAdd (block -> out, (const xmlChar *) "#", 1);
 						lstore = end;
 						changed = true;
+					} else if (url_is_personal (cont + start, ulen)) {
+						if (! scratch)
+							scratch = purl_alloc (NULL);
+						if (scratch && purl_parsen (scratch, cont + start, ulen)) {
+							const xchar_t	*rplc;
+							int		rlen;
+							rplc_t		replacer = { blockmail, rec };
+							
+							if ((rplc = purl_build (scratch, NULL, & rlen, replace_anon_hashtags, & replacer)) && rlen)
+								xmlBufferAdd (block -> out, (const xmlChar *) rplc, rlen);
+							lstore = end;
+							changed = true;
+						}
 					}
 				}
 			} else if (m < blockmail -> url_count) {
@@ -459,7 +468,240 @@ modify_urls (blockmail_t *blockmail, receiver_t *rec, block_t *block, protect_t 
 		purl_free (scratch);
 	return true;
 }/*}}}*/
+static bool_t
+modify_urls_updated (blockmail_t *blockmail, receiver_t *rec, block_t *block, protect_t *protect, bool_t ishtml, record_t *record) /*{{{*/
+{
+	int		n;
+	int		len;
+	const xmlChar	*cont;
+	int		lstore;
+	int		state;
+	char		ch, quote;
+	int		start, end;
+	int		mask;
+	int		clen;
+	bool_t		changed;
+	purl_t		*scratch;
+	
+	scratch = NULL;
+	xmlBufferEmpty (block -> out);
+	len = xmlBufferLength (block -> in);
+	cont = xmlBufferContent (block -> in);
+	lstore = 0;
+	state = ST_INITIAL;
+	quote = '\0';
+	if (ishtml) {
+		mask = 2;
+	} else {
+		mask = 1;
+	}
+	start = -1;
+	end = -1;
+	changed = false;
+	for (n = 0; n <= len; ) {
+		if (n < len) {
+			clen = xmlCharLength (cont[n]);
+			if (protect) {
+				if (n >= protect -> start) {
+					if (n < protect -> end)
+						n += clen;
+					else 
+						protect = protect -> next;
+					continue;
+				}
+			}
+			if ((clen > 1) || isascii ((char) cont[n])) {
+				ch = clen == 1 ? (char) cont[n] : '\0';
+				switch (state) {
+				case ST_INITIAL:
+					if (ishtml) {
+						if (ch == '<') {
+							state = 100;
+						}
+					} else if (strchr ("hm", tolower (ch))) {
+						if (tolower (ch) == 'h') {
+							state = 1;
+						} else {
+							state = 31;
+						}
+						start = n;
+					}
+					break;
+# define	CHK(ccc)	do { if ((ccc) == ch) ++state; else state = ST_INITIAL; } while (0)
+# define	CCHK(ccc)	do { if ((ccc) == tolower (ch)) ++state; else state = ST_INITIAL; } while (0)
+				/* plain: http:// and https:// */
+				case 1:		CCHK ('t');	break;
+				case 2:		CCHK ('t');	break;
+				case 3:		CCHK ('p');	break;
+				case 4:
+					++state;
+					if (tolower (ch) == 's')
+						break;
+					/* Fall through . . . */
+				case 5:		CHK (':');	break;
+				case 6:		CHK ('/');	break;
+				case 7:
+					if (ch == '/')
+						state = ST_PLAIN_START_FOUND;
+					else
+						state = ST_INITIAL;
+					break;
+				/* plain: mailto: */
+				case 31:	CCHK ('a');	break;
+				case 32:	CCHK ('i');	break;
+				case 33:	CCHK ('l');	break;
+				case 34:	CCHK ('t');	break;
+				case 35:	CCHK ('o');	break;
+				case 36:	CHK (':');	break;
+				case 37:
+					state = ST_PLAIN_START_FOUND;
+					break;
+				/* HTML */
+# define	HCHK(ccc)	do { if ((ccc) == tolower (ch)) ++state; else if ('>' == ch) state = ST_INITIAL; else state = 100; } while (0)
+				case 100:	HCHK ('h');	break;
+				case 101:	HCHK ('r');	break;
+				case 102:	HCHK ('e');	break;
+				case 103:	HCHK ('f');	break;
+# undef		HCHK						
+				case 104:	CHK ('=');	break;
+				case 105:
+					if ((ch == '"') || (ch == '\'')) {
+						quote = ch;
+						state = ST_QUOTED_START_FOUND;
+						start = n + 1;
+					} else {
+						state = ST_PLAIN_START_FOUND;
+						start = n;
+					}
+					break;
+				case ST_PLAIN_START_FOUND:
+					if (isspace (ch) || (ch == '>')) {
+						end = n;
+						state = ST_END_FOUND;
+					}
+					break;
+				case ST_QUOTED_START_FOUND:
+					if (isspace (ch) || (ch == quote)) {
+						end = n;
+						state = ST_END_FOUND;
+					}
+					break;
+				default:
+					log_out (blockmail -> lg, LV_ERROR, "modify_urls: invalid state %d at position %d", state, n);
+					state = ST_INITIAL;
+					break;
+				}
+# undef		CHK
+# undef		CCHK					
+			} else {
+				if (state == ST_PLAIN_START_FOUND) {
+					end = n;
+					state = ST_END_FOUND;
+				} else
+					state = ST_INITIAL;
+			}
+			n += clen;
+		} else {
+			if (state == ST_PLAIN_START_FOUND) {
+				end = n;
+				state = ST_END_FOUND;
+			}
+			++n;
+		}
+		if (state == ST_END_FOUND) {
+			int	ulen, m;
+			url_t	*match;
+			int	first_orig = -1;
 
+			ulen = end - start;
+			for (m = 0, match = NULL; m < blockmail -> url_count; ++m) {
+				if (url_match (blockmail -> url[m], cont + start, ulen)) {
+					match = blockmail -> url[m];
+					if (blockmail -> url[m] -> usage & mask)
+						break;
+				}
+				if ((first_orig == -1) && blockmail -> url[m] -> orig) {
+					first_orig = m;
+				}
+			}
+			if (lstore < start) {
+				xmlBufferAdd (block -> out, cont + lstore, start - lstore);
+				lstore = start;
+			}
+			if ((match == NULL) && (first_orig != -1)) {
+				for (m = first_orig; m < blockmail -> url_count; ++m) {
+					if (url_match_original (blockmail -> url[m], cont + start, ulen)) {
+						match = blockmail -> url[m];
+						if (blockmail -> url[m] -> usage & mask)
+							break;
+					}
+				}
+			}
+			if (blockmail -> anon) {
+				if (! blockmail -> anon_preserve_links) {
+					if ((m == blockmail -> url_count) || blockmail -> url[m] -> admin_link) {
+						xmlBufferAdd (block -> out, (const xmlChar *) "#", 1);
+						lstore = end;
+						changed = true;
+					} else if (url_is_personal (cont + start, ulen)) {
+						if (! scratch)
+							scratch = purl_alloc (NULL);
+						if (scratch && purl_parsen (scratch, cont + start, ulen)) {
+							const xchar_t	*rplc;
+							int		rlen;
+							rplc_t		replacer = { blockmail, rec };
+							
+							if ((rplc = purl_build (scratch, NULL, & rlen, replace_anon_hashtags, & replacer)) && rlen)
+								xmlBufferAdd (block -> out, (const xmlChar *) rplc, rlen);
+							lstore = end;
+							changed = true;
+						}
+					}
+				}
+			} else if (m < blockmail -> url_count) {
+				mkautourl (blockmail, rec, block, blockmail -> url[m], record);
+				lstore = end;
+				changed = true;
+			} else if (match && match -> resolved) {
+				const xmlChar	*url = NULL;
+				int		ulength = -1;
+				buffer_t	*resolve;
+				
+				if (resolve = link_resolve_get (match -> resolved, blockmail, block, match, rec, record)) {
+					url = resolve -> buffer;
+					ulength = resolve -> length;
+				}
+				if (blockmail -> tracker) {
+					if (! url) {
+						url = cont + start;
+						ulength = ulen;
+					}
+					tracker_fill (blockmail -> tracker, blockmail, & url, & ulength);
+				}
+				if (url) {
+					if (ulength > 0)
+						xmlBufferAdd (block -> out, url, ulength);
+					lstore = end;
+					changed = true;
+				}
+			}
+			state = ST_INITIAL;
+		}
+	}
+	if (changed) {
+		if (lstore < len)
+			xmlBufferAdd (block -> out, cont + lstore, len - lstore);
+		SWAP (block);
+	}
+	if (scratch)
+		purl_free (scratch);
+	return true;
+}/*}}}*/
+bool_t
+modify_urls (blockmail_t *blockmail, receiver_t *rec, block_t *block, protect_t *protect, bool_t ishtml, record_t *record) /*{{{*/
+{
+	return (blockmail -> use_new_url_modification ? modify_urls_updated : modify_urls_original) (blockmail, rec, block, protect, ishtml, record);
+}/*}}}*/
 static inline const byte_t *
 lskip (const byte_t *line, int *linelen) /*{{{*/
 {
@@ -1108,19 +1350,30 @@ modify_linelength (blockmail_t *blockmail, block_t *block, blockspec_t *bspec) /
 # undef		DOIT_SKIP
 }/*}}}*/
 bool_t
+modify_header (blockmail_t *blockmail, block_t *header) /*{{{*/
+{
+	bool_t	rc = (header -> tid == TID_EMail_Head) ? true : false;
+	
+	if (rc && blockmail -> revalidate_mfrom) {
+		rc = revalidate_mfrom (blockmail, header);
+	}
+	return rc;
+}/*}}}*/
+bool_t
 modify_output (blockmail_t *blockmail, receiver_t *rec, block_t *block, blockspec_t *bspec, links_t *links) /*{{{*/
 {
 	bool_t	rc;
 	
 	rc = true;
-	if (rc && (block -> tid == TID_EMail_Head) && blockmail -> revalidate_mfrom) {
-		rc = revalidate_mfrom (blockmail, block);
-	}
-	if (rc && (block -> tid == TID_EMail_HTML) && links) {
+	if (rc &&
+	    (block -> tid == TID_EMail_HTML) &&
+	    links) {
 		rc = collect_links (blockmail, block, links);
 	}
-	if (rc && (! blockmail -> anon) &&
+	if (rc &&
+	    (! blockmail -> anon) &&
 	    (block -> tid == TID_EMail_HTML) &&
+	    bspec &&
 	    (bspec -> opl != OPL_None)) {
 		rc = add_onepixellog_image (blockmail, rec, block, bspec -> opl);
 	}
@@ -1129,10 +1382,18 @@ modify_output (blockmail_t *blockmail, receiver_t *rec, block_t *block, blockspe
 	    blockmail -> convert_to_entities) {
 		rc = convert_entities (blockmail, block);
 	}
-	if (rc && blockmail -> vip && (block -> tid == TID_EMail_HTML) && islower (rec -> user_type) && (tolower (blockmail -> status_field) == rec -> user_type)) {
+	if (rc &&
+	    blockmail -> vip &&
+	    (block -> tid == TID_EMail_HTML) &&
+	    islower (rec -> user_type) &&
+	    (tolower (blockmail -> status_field) == rec -> user_type)) {
 		rc = add_vip_block (blockmail, block);
 	}
-	if (rc && (bspec -> linelength > 0) && bspec -> linesep) {
+	if (rc &&
+	    (block -> tid == TID_EMail_Text) &&
+	    bspec &&
+	    (bspec -> linelength > 0) &&
+	    bspec -> linesep) {
 		rc = modify_linelength (blockmail, block, bspec);
 	}
 	return rc;

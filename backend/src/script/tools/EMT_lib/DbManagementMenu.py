@@ -39,8 +39,17 @@ def dbcfgMenuAction(actionParameters):
 
 	print("Database configuration for " + dbEntryName + ":")
 
-	if not "secure" in DbConnector.dbcfgProperties[dbEntryName] and DbConnector.dbcfgProperties[dbEntryName]["dbms"] == "oracle":
-		DbConnector.dbcfgProperties[dbEntryName]["secure"] = "false"
+	if DbConnector.dbcfgProperties[dbEntryName]["dbms"] == "oracle":
+		if not "secure" in DbConnector.dbcfgProperties[dbEntryName]:
+			if Environment.unsavedDbcfgChanges is None:
+				Environment.unsavedDbcfgChanges = {}
+				Environment.unsavedDbcfgChanges["dbEntryName"] = dbEntryName
+			Environment.unsavedDbcfgChanges["secure"] = "false"
+		if not "tablespaces" in DbConnector.dbcfgProperties[dbEntryName]:
+			if Environment.unsavedDbcfgChanges is None:
+				Environment.unsavedDbcfgChanges = {}
+				Environment.unsavedDbcfgChanges["dbEntryName"] = dbEntryName
+			Environment.unsavedDbcfgChanges["tablespaces"] = "true"
 
 	for key, value in sorted(DbConnector.dbcfgProperties[dbEntryName].items()):
 		color = ""
@@ -50,6 +59,11 @@ def dbcfgMenuAction(actionParameters):
 			print(Colors.YELLOW + " " + key + " = " + Environment.unsavedDbcfgChanges[key] + Colors.DEFAULT)
 		else:
 			print(" " + key + " = " + value)
+	if Environment.unsavedDbcfgChanges is not None:
+		for key, value in sorted(Environment.unsavedDbcfgChanges.items()):
+			if key != "dbEntryName" and key not in DbConnector.dbcfgProperties[dbEntryName]:
+				print(Colors.YELLOW + " " + key + " = " + Environment.unsavedDbcfgChanges[key] + Colors.DEFAULT)
+
 
 	print()
 
@@ -68,22 +82,6 @@ def dbcfgMenuAction(actionParameters):
 			if not os.access(DbConnector.dbcfgPropertiesFilePath, os.W_OK):
 				Environment.errors.append("File is readonly: " + DbConnector.dbcfgPropertiesFilePath)
 				return False
-
-			if ((not "jdbc-connect" in DbConnector.dbcfgProperties[dbEntryName]) or DbConnector.dbcfgProperties[dbEntryName]["jdbc-connect"] is None or DbConnector.dbcfgProperties[dbEntryName]["jdbc-connect"] == ""):
-				if Environment.unsavedDbcfgChanges["dbms"] == "oracle":
-					Environment.unsavedDbcfgChanges["jdbc-connect"] = "[to be defined]"
-				elif Environment.unsavedDbcfgChanges["dbms"] == "mariadb":
-					Environment.unsavedDbcfgChanges["jdbc-connect"] = "jdbc:mariadb://" + DbConnector.dbcfgProperties[dbEntryName]["host"] + "/" + DbConnector.dbcfgProperties[dbEntryName]["name"] + "?zeroDateTimeBehavior=convertToNull&useUnicode=true&characterEncoding=UTF-8"
-				elif Environment.unsavedDbcfgChanges["dbms"] == "mysql":
-					Environment.unsavedDbcfgChanges["jdbc-connect"] = "jdbc:mysql://" + DbConnector.dbcfgProperties[dbEntryName]["host"] + "/" + DbConnector.dbcfgProperties[dbEntryName]["name"] + "?zeroDateTimeBehavior=convertToNull&useUnicode=true&characterEncoding=UTF-8"
-
-			if (not "jdbc-driver" in DbConnector.dbcfgProperties[dbEntryName]) or DbConnector.dbcfgProperties[dbEntryName]["jdbc-driver"] is None or DbConnector.dbcfgProperties[dbEntryName]["jdbc-driver"] == "":
-				if Environment.unsavedDbcfgChanges["dbms"] == "oracle":
-					Environment.unsavedDbcfgChanges["jdbc-driver"] = "[to be defined]"
-				elif Environment.unsavedDbcfgChanges["dbms"] == "mariadb":
-					Environment.unsavedDbcfgChanges["jdbc-driver"] = "org.mariadb.jdbc.Driver"
-				elif Environment.unsavedDbcfgChanges["dbms"] == "mysql":
-					Environment.unsavedDbcfgChanges["jdbc-driver"] = "com.mysql.cj.jdbc.Driver"
 
 			try:
 				DbConnector.updateDbcfgPropertiesFile(DbConnector.dbcfgPropertiesFilePath, Environment.unsavedDbcfgChanges)
@@ -112,7 +110,7 @@ def dbcfgMenuAction(actionParameters):
 				else:
 					Environment.messages.append("New database and user credentials created.")
 
-			if Environment.getSystemUrl() is None or Environment.getSystemUrl().strip() == "" or Environment.getSystemUrl().strip() == "Unknown" and DbConnector.checkDbServiceAvailable() and DbConnector.checkDbStructureExists():
+			if EMTUtilities.isBlank(Environment.getSystemUrl()) or Environment.getSystemUrl().strip() == "Unknown" and DbConnector.checkDbServiceAvailable() and DbConnector.checkDbStructureExists():
 				Environment.errors.append("Basic configuration is missing. Please configure.")
 				Environment.overrideNextMenu = Environment.configTableMenu
 
@@ -128,6 +126,8 @@ def dbcfgMenuAction(actionParameters):
 				print("Please enter new value for key '" + dbcfgKey + "' (Allowed values are '" + "', '".join(Environment.allowedDbmsSystems) + "'): ")
 			elif dbcfgKey == "secure":
 				print("Please enter new value for key '" + dbcfgKey + "' (Allowed values are 'true' or 'false'): ")
+			elif dbcfgKey == "tablespaces":
+				print("Please enter new value for key '" + dbcfgKey + "' (Allowed values are 'true' or 'false'): ")
 			else:
 				print("Please enter new value for key '" + dbcfgKey + "': ")
 			dbcfgValue = input(" > ")
@@ -135,8 +135,8 @@ def dbcfgMenuAction(actionParameters):
 				Environment.errors.append("Invalid dbms-type '" + dbcfgValue + "' for key '" + dbcfgKey + "'. Only '" + "', '".join(Environment.allowedDbmsSystems) + "' allowed.")
 			elif dbcfgKey == "secure" and not dbcfgValue in ["true", "false"]:
 					Environment.errors.append("Invalid secure attribute '" + dbcfgValue + "' for key '" + dbcfgKey + "'. Only 'true' or 'false' allowed.")
-			elif "," in dbcfgValue:
-				Environment.errors.append("Invalid ',' character in new value '" + dbcfgValue + "' for key '" + dbcfgKey + "'")
+			elif dbcfgKey == "tablespaces" and not dbcfgValue in ["true", "false"]:
+					Environment.errors.append("Invalid secure attribute '" + dbcfgValue + "' for key '" + dbcfgKey + "'. Only 'true' or 'false' allowed.")
 			else:
 				dbcfgValue = dbcfgValue.strip()
 				DbConnector.dbcfgProperties[dbEntryName][dbcfgKey] = dbcfgValue
@@ -144,6 +144,27 @@ def dbcfgMenuAction(actionParameters):
 					Environment.unsavedDbcfgChanges = {}
 					Environment.unsavedDbcfgChanges["dbEntryName"] = dbEntryName
 				Environment.unsavedDbcfgChanges[dbcfgKey] = dbcfgValue
+
+			if dbcfgKey == "dbms":
+				# Use default values
+				if Environment.unsavedDbcfgChanges["dbms"] == "oracle":
+					Environment.unsavedDbcfgChanges["jdbc-connect"] = "jdbc:oracle:thin:@[to be defined]:1521:emm"
+					Environment.unsavedDbcfgChanges["jdbc-driver"] = "oracle.jdbc.driver.OracleDriver"
+					Environment.unsavedDbcfgChanges["sid"] = "[to be defined]"
+					Environment.unsavedDbcfgChanges["secure"] = "false"
+					Environment.unsavedDbcfgChanges["tablespaces"] = "true"
+				elif Environment.unsavedDbcfgChanges["dbms"] == "mariadb":
+					Environment.unsavedDbcfgChanges["jdbc-connect"] = "jdbc:mariadb://localhost/" + Environment.applicationName.lower() + "?zeroDateTimeBehavior=convertToNull&useUnicode=true&characterEncoding=UTF-8"
+					Environment.unsavedDbcfgChanges["jdbc-driver"] = "org.mariadb.jdbc.Driver"
+					Environment.unsavedDbcfgChanges["secure"] = "false"
+					Environment.unsavedDbcfgChanges.pop("sid")
+					Environment.unsavedDbcfgChanges.pop("tablespaces")
+				elif Environment.unsavedDbcfgChanges["dbms"] == "mysql":
+					Environment.unsavedDbcfgChanges["jdbc-connect"] = "jdbc:mysql://localhost/" + Environment.applicationName.lower() + "?zeroDateTimeBehavior=convertToNull&useUnicode=true&characterEncoding=UTF-8"
+					Environment.unsavedDbcfgChanges["jdbc-driver"] = "com.mysql.cj.jdbc.Driver"
+					Environment.unsavedDbcfgChanges["secure"] = "false"
+					Environment.unsavedDbcfgChanges.pop("sid")
+					Environment.unsavedDbcfgChanges.pop("tablespaces")
 
 			return True
 		else:

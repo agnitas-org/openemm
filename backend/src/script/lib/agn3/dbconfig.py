@@ -40,7 +40,7 @@ reads and stores configuration from a configuration file"""
 			self.dbid = dbid
 			self.data: Dict[str, str] = {}
 			if param is not None:
-				for elem in [_p.strip () for _p in param.split (',')]:
+				for elem in [_p.strip () for _p in param.split (', ')]:
 					elem = elem.strip ()
 					parts = [_e.strip () for _e in elem.split ('=', 1)]
 					if len (parts) == 2:

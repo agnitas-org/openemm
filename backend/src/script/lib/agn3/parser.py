@@ -13,10 +13,12 @@ from	__future__ import annotations
 import	re, time, csv
 from	collections import namedtuple
 from	datetime import datetime
+from	functools import partial
 from	io import StringIO
 from	itertools import takewhile, zip_longest
+from	urllib.parse import quote, unquote
 from	typing import Any, Callable, Iterable, Optional, Protocol, Union
-from	typing import Dict, Iterator, List, NamedTuple, Tuple, Type
+from	typing import Dict, Iterator, List, NamedTuple, Set, Tuple, Type
 from	typing import cast
 from	.exceptions import error
 from	.ignore import Ignore
@@ -226,7 +228,7 @@ class Field (NamedTuple):
 	name: str
 	converter: Optional[Callable[[str], Any]] = None
 	optional: bool = False
-	default: Optional[Callable[[], Any]] = None
+	default: Optional[Callable[[str], Any]] = None
 	source: Optional[str] = None
 
 class Lineparser:
@@ -273,13 +275,13 @@ raise an ``error''. """
 					return f.converter (e) if f.converter is not None else e
 				if not f.optional:
 					raise error (f'{f.name}: missing value')
-				return f.default () if f.default is not None else None
+				return f.default (f.name) if f.default is not None else None
 			return self.target_class (*tuple (convert (_f, _e) for (_f, _e) in zip_longest (self.fields, elements)))
 		except Exception as e:
 			raise error (f'{line}: failed to parse: {e}')
 	
 	def make (self, **kws: Any) -> Line:
-		return self.target_class (*tuple (kws.get (_f.name, _f.default () if _f.default is not None else None) for _f in self.fields))
+		return self.target_class (*tuple (kws.get (_f.name, _f.default (_f.name) if _f.default is not None else None) for _f in self.fields))
 
 	def from_csv (self, source: Iterable[str], dialect: Union[None, str, csv.Dialect, Type[csv.Dialect]] = None, **kws: Any) -> Iterator[Line]:
 		rd = csv.reader (source, dialect = dialect, **kws) if dialect is not None else csv.reader (source, **kws)
@@ -292,6 +294,35 @@ raise an ``error''. """
 		wr.writerow (source)
 		self.scratch.flush ()
 		return self.scratch.getvalue ()
+
+class Coder:
+	class Logic (NamedTuple):
+		encode: Callable[[str], str]
+		decode: Callable[[str], str]
+		save_encode: Optional[Callable[[str], str]] = None
+		save_decode: Optional[Callable[[str], str]] = None
+	coders: Dict[str, Logic] = {
+		'default': Logic (
+			encode = quote,
+			decode = unquote,
+			save_decode = lambda s: unquote (s, errors = 'backslashreplace')
+		)
+	}
+	@classmethod
+	def find (cls, name: str, save: bool = True) -> Tuple[Callable[[str], str], Callable[[str], str]]:
+		logic = cls.coders[name]
+		encode, decode = logic.encode, logic.decode
+		if save and (logic.save_encode or logic.save_decode):
+			def save_coder (coder: Callable[[str], str], save_coder: Callable[[str], str], s: str) -> str:
+				try:
+					return coder (s)
+				except:
+					return save_coder (s)
+			if logic.save_encode is not None:
+				encode = partial (save_coder, logic.encode, logic.save_encode)
+			if logic.save_decode is not None:
+				decode = partial (save_coder, logic.decode, logic.save_decode)
+		return (encode, decode)
 
 class Tokenparser:
 	"""Parse a single line into name/value tokens
@@ -307,11 +338,20 @@ dict. Useful, if you want to parse one single line into several parser
 to get distinct results. This way, the overhead is marginal as the
 line itself is only parsed once and processed only for the configured
 target fields."""
-	__slots__ = ['fields', 'target_class']
+	__slots__ = ['fields', 'fieldmap', 'target_class', 'post_encoder', 'pre_decoder']
 	def __init__ (self, *fields: Union[Field, str]) -> None:
 		self.fields: List[Field] = [_f if isinstance (_f, Field) else Field (_f, lambda a: a) for _f in fields]
+		self.fieldmap: Dict[str, Field] = Stream (self.fields).map (lambda f: (f.name, f)).dict ()
 		self.target_class = cast (Type[Line], namedtuple ('Line', tuple (_f.name for _f in self.fields)))
-	
+		self.post_encoder: Optional[Callable[[str], str]] = None
+		self.pre_decoder: Optional[Callable[[str], str]] = None
+
+	def set_pre_decoder (self, name: Optional[str] = None) -> None:
+		if name is not None:
+			self.post_encoder, self.pre_decoder = Coder.find (name)
+		else:
+			self.post_encoder, self.pre_decoder = None, None
+			
 	def __call__ (self, line: Union[None, str, Dict[str, str]]) -> Line:
 		if line is None:
 			tokens: Dict[str, str] = {}
@@ -326,12 +366,30 @@ target fields."""
 			except KeyError:
 				if not field.optional:
 					raise
-				return field.default () if field.default is not None else None
+				return field.default (field.name) if field.default is not None else None
 		return self.target_class (*tuple (get (_f, tokens) for _f in self.fields))
 	
 	def parse (self, line: str) -> Dict[str, str]:
 		return (Stream (line.split ('\t'))
 			.map (lambda l: tuple (_l.strip () for _l in l.split ('=', 1)))
 			.filter (lambda kv: len (kv) == 2)
+			.map (lambda kv: kv if self.pre_decoder is None else (kv[0], self.pre_decoder (kv[1])))
 			.dict ()
+		)
+	
+	def create (self, record: Dict[str, Any]) -> str:
+		seen: Set[str] = set ()
+		use: Dict[str, Any] = (Stream (record.items ())
+			.filter (lambda kv: kv[0] in self.fieldmap)
+			.peek (lambda kv: seen.add (kv[0]))
+			.dict ()
+		)
+		use.update (Stream (self.fields)
+			.filter (lambda f: f.name not in seen and not f.optional)
+			.map (lambda f: (f.name, f.default ('') if f.default is not None else ''))
+			.dict ()
+		)
+		return (Stream (use.items ())
+			.map (lambda kv: '{k}={v}'.format (k = kv[0], v = str (kv[1]) if self.post_encoder is None else self.post_encoder (str (kv[1]))))
+			.join ('\t')
 		)

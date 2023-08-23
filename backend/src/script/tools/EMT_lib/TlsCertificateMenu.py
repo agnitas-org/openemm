@@ -8,28 +8,24 @@
 #        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            #
 #                                                                                                                                                                                                                                                                  #
 ####################################################################################################################################################################################################################################################################
-#
-CFLAGS	= -I.
-LDFLAGS	= -L.
-LIBS	:= -lagn -lparson
-SRCS	= buffer.c var.c log.c node.c map.c csig.c \
-	  tzdiff.c atob.c str.c net.c hash.c path.c \
-	  set.c skip.c lock.c xml.c daemon.c call.c cache.c \
-	  unhex.c which.c timeout.c url.c systemconfig.c \
-	  fsdb.c \
-	  parson.c
-OBJS	= $(SRCS:%.c=%.o)
-LIB	= libagn.a
+import os
+import re
 
-all:	parson.h $(LIB)
+from EMT_lib import EMTUtilities
 
-clean:
-	rm -f $(LIB) $(OBJS) parson.c parson.h
-	
-$(LIB):	$(OBJS)
-	rm -f $@
-	ar rc $@ $(OBJS)
+from EMT_lib.Environment import Environment
 
-parson.c parson.h:	parson-0.0.0.tar.gz
-	tar xaf $< && ( cd parson-0.0.0; mv parson.c parson.h ..; cd ..; rm -rf parson-0.0.0 )
-	touch -c parson.c parson.h
+def executeTlsCertificateMenuAction(actionParameters):
+	if Environment.frontendUserName == "openemm":
+		EMTUtilities.manageTlsCertificateForTomcat("/home/openemm/etc/ssl", "/home/openemm/tomcat/conf/server.xml", Environment.applicationName)
+	elif Environment.frontendUserName == "console":
+		EMTUtilities.manageTlsCertificateForTomcat("/home/console/sslcert", "/home/console/tomcat/conf/server.xml", Environment.applicationName)
+	elif Environment.frontendUserName == "rdir":
+		EMTUtilities.manageTlsCertificateForTomcat("/home/rdir/sslcert", "/home/rdir/tomcat/conf/server.xml", Environment.applicationName)
+	else:
+		print("Not a frontend server. 'conf/server.xml' is not available")
+
+	print()
+	print("Press any key to continue")
+	choice = input(" > ")
+	return

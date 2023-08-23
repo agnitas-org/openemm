@@ -19,12 +19,14 @@ import datetime
 import getpass
 import shutil
 import logging
+import tempfile
 import urllib.request, urllib.error, urllib.parse
 
 from EMT_lib.Environment import Environment
 from EMT_lib import Colors
 from EMT_lib import DbConnector
 from EMT_lib import EMTUtilities
+from EMT_lib import License
 
 from EMT_lib import SupplementalMenu
 
@@ -485,16 +487,15 @@ def installFile(packageFilePath, logfile, interactive):
 		if Environment.environmentConfigurationFilePath != None and os.path.isfile(Environment.environmentConfigurationFilePath):
 			environmentProperties = EMTUtilities.readEnvironmentPropertiesFile(Environment.environmentConfigurationFilePath)
 			environmentProperties["TOMCAT_NATIVE"] = Environment.tomcatNative
-			if Environment.isOpenEmmServer:
-				username = "openemm"
-			else:
-				if Environment.isEmmFrontendServer or Environment.isEmmStatisticsServer or Environment.isEmmWebservicesServer:
+			if Environment.isEmmFrontendServer or Environment.isEmmStatisticsServer or Environment.isEmmWebservicesServer:
+				username = "console"
+			elif Environment.isEmmConsoleRdirServer:
+				if Environment.isEmmRdirServer:
+					username = "rdir"
+				else:
 					username = "console"
-				if Environment.isEmmConsoleRdirServer:
-					if Environment.isEmmRdirServer:
-						username = "rdir"
-					else:
-						username = "console"
+			else:
+				username = "console"
 			EMTUtilities.updateEnvironmentPropertiesFile(Environment.environmentConfigurationFilePath, username, environmentProperties)
 
 		if os.path.islink(Environment.tomcatNative):
@@ -592,11 +593,11 @@ def installFile(packageFilePath, logfile, interactive):
 				answer = input(" > ").lower().strip()
 				if answer == "" or answer.startswith("y") or answer.startswith("j"):
 					print(Colors.YELLOW + "Restarting ..." + Colors.DEFAULT)
-					os.execl(sys.executable, sys.executable, *sys.argv)
+					os.execl(sys.executable, Environment.scriptFilePath, *sys.argv)
 					sys.exit(0)
 			else:
 				print(Colors.YELLOW + "Restart for Runtime Update..." + Colors.DEFAULT)
-				os.execl(sys.executable, sys.executable, *sys.argv)
+				os.execl(sys.executable, Environment.scriptFilePath, *sys.argv)
 				sys.exit(0)
 	elif applicationName == "backend-startup":
 		newBackendVersion = EMTUtilities.getVersionFromFilename(packageFilename)
@@ -645,11 +646,11 @@ def installFile(packageFilePath, logfile, interactive):
 				answer = input(" > ").lower().strip()
 				if answer == "" or answer.startswith("y") or answer.startswith("j"):
 					print(Colors.YELLOW + "Restarting ..." + Colors.DEFAULT)
-					os.execl(sys.executable, sys.executable, *sys.argv)
+					os.execl(sys.executable, Environment.scriptFilePath, *sys.argv)
 					sys.exit(0)
 			else:
 				print(Colors.YELLOW + "Restart for Update..." + Colors.DEFAULT)
-				os.execl(sys.executable, sys.executable, *sys.argv)
+				os.execl(sys.executable, Environment.scriptFilePath, *sys.argv)
 				sys.exit(0)
 	elif applicationName == "backend-merger" or applicationName == "backend-mailer" or applicationName == "backend-mailloop":
 		newBackendVersion = EMTUtilities.getVersionFromFilename(packageFilename)
@@ -1459,7 +1460,7 @@ def installFileFromCloud(packageUrl, interactive, alreadyOpenLogFile = None):
 			logfile.write(errorText + "\n")
 			return
 
-		if releaseSubdirectoryName is None or releaseSubdirectoryName == "":
+		if EMTUtilities.isBlank(releaseSubdirectoryName):
 			downloadDestinationFilePath = "/tmp/" + packageFilename
 		else:
 			downloadDestinationFilePath = "/home/" + applicationUserName + "/release/" + releaseSubdirectoryName + "/" + packageFilename
@@ -1636,6 +1637,7 @@ def installFileFromWebsite(interactive, alreadyOpenLogFile = None):
 					logfile.write("Release version upgrade: " + versionInfo["new-release-backend-startup"][0] + " " + versionInfo["new-release-backend-startup"][1] + "\n")
 					downloadFileUrlPaths["new-release-backend-startup"] = versionInfo["new-release-backend-startup"][1]
 					print(Colors.YELLOW + "\nStarting release upgrade" + Colors.DEFAULT)
+					downloadAndInstallNewLicense()
 			elif "new-release-runtime" in versionInfo and interactive:
 				print(Colors.YELLOW + "\nA new release version is available: " + versionInfo["new-release-runtime"][0] + Colors.DEFAULT)
 				print("Do you want to upgrade? (N/y, Blank => Cancel):")
@@ -1645,6 +1647,7 @@ def installFileFromWebsite(interactive, alreadyOpenLogFile = None):
 					logfile.write("Release version upgrade: " + versionInfo["new-release-runtime"][0] + " " + versionInfo["new-release-runtime"][1] + "\n")
 					downloadFileUrlPaths["new-release-runtime"] = versionInfo["new-release-runtime"][1]
 					print(Colors.YELLOW + "\nStarting release upgrade" + Colors.DEFAULT)
+					downloadAndInstallNewLicense()
 
 			if len(downloadFileUrlPaths) == 0:
 				# Application updates
@@ -1948,7 +1951,7 @@ def installFileFromWebsite(interactive, alreadyOpenLogFile = None):
 					logfile.write(errorText + "\n")
 					return
 
-				if releaseSubdirectoryName is None or releaseSubdirectoryName == "":
+				if EMTUtilities.isBlank(releaseSubdirectoryName):
 					downloadDestinationFilePath = "/tmp/" + packageFilename
 				else:
 					if not os.path.isdir("/home/" + applicationUserName + "/release"):
@@ -2021,7 +2024,7 @@ def installFileFromWebsite(interactive, alreadyOpenLogFile = None):
 					else:
 						Environment.messages.append("Update package file '" + packageFilename + "' deployed with errors.\nFor logs see '" + os.path.realpath(logfile.name) + "'")
 
-		if Environment.getSystemUrl() is None or Environment.getSystemUrl().strip() == "" or Environment.getSystemUrl().strip() == "Unknown" and DbConnector.checkDbServiceAvailable() and DbConnector.checkDbStructureExists():
+		if EMTUtilities.isBlank(Environment.getSystemUrl()) or Environment.getSystemUrl().strip() == "Unknown" and DbConnector.checkDbServiceAvailable() and DbConnector.checkDbStructureExists():
 			Environment.errors.append("Basic configuration is missing. Please configure.")
 			Environment.overrideNextMenu = Environment.configTableMenu
 	except urllib.error.URLError as e:
@@ -2342,7 +2345,7 @@ def executeUnattendedUpdate():
 			logfile = open(logfilePath, "w", encoding="UTF-8")
 			logfile.write("Update started at: " + now.strftime("%Y-%m-%d_%H:%M:%S") + "\n")
 
-		if updateFile is None or updateFile.strip() == "":
+		if EMTUtilities.isBlank(updateFile):
 			logfile.write("Update from website\n")
 			installFileFromWebsite(False, logfile)
 		elif not os.path.isfile(updateFile):
@@ -2416,7 +2419,7 @@ def cleanupOldVersions(releaseDirectoryPath, updateVersion, currentVersion, logf
 				maximumVersion = getMaximumVersionForMajorMinorVersion(availableMajorMinorVersions[index], availableVersionsToDelete)
 				if maximumVersion is not None:
 					availableVersionsToDelete.remove(maximumVersion)
-				
+
 		for index in range(0, updateVersionHotfixVersionsToKeep):
 			maximumMajorMinorMicroVersion = getMaximumVersionForMajorMinorMicroVersion(updateVersion, availableVersionsToDelete)
 			if maximumMajorMinorMicroVersion is not None:
@@ -2471,3 +2474,66 @@ def getMaximumVersionForMajorMinorMicroVersion(majorMinorMicroVersion, versionLi
 				if maximumMajorMinorVersion is None or EMTUtilities.compareVersions(version, maximumMajorMinorVersion) < 0:
 					maximumMajorMinorVersion = version
 	return maximumMajorMinorVersion
+
+def downloadAndInstallNewLicense():
+	licenseProperties = License.License.readLicenseValues()
+	if "licenseUrl" in licenseProperties and EMTUtilities.isNotBlank(licenseProperties.get("licenseUrl")):
+		licenseUrl = licenseProperties.get("licenseUrl")
+
+		if not EMTUtilities.checkDownloadFileIsAvailable(licenseUrl):
+			print("LicenseUrl: " + licenseUrl + " (not reachable)")
+			return
+		else:
+			if EMTUtilities.debugMode:
+				print("LicenseUrl: " + licenseUrl)
+
+			downloadDestinationFilePath = "/tmp/emm_license.zip"
+			if os.path.isfile(downloadDestinationFilePath):
+				os.remove(downloadDestinationFilePath)
+
+			downloadPageResponse = None
+			try:
+				downloadPageResponse = EMTUtilities.openUrlConnection(licenseUrl)
+				with open(downloadDestinationFilePath, "wb") as downloadDestinationFile:
+					chunk_size = 8192
+					while True:
+						chunk = downloadPageResponse.read(chunk_size)
+
+						if not chunk:
+							break
+
+						downloadDestinationFile.write(chunk)
+			except:
+				errorText = "Download of new license file failed"
+				if EMTUtilities.debugMode:
+					logging.exception(errorText + "\nUrl: " + str(licenseUrl))
+					raise
+				else:
+					raise Exception(errorText)
+			finally:
+				if downloadPageResponse is not None:
+					downloadPageResponse.close()
+
+			if os.path.isfile(downloadDestinationFilePath):
+				with tempfile.TemporaryDirectory() as licenseTempDirectory:
+					if downloadDestinationFilePath.endswith(".zip"):
+						EMTUtilities.unzipFile(downloadDestinationFilePath, licenseTempDirectory)
+					elif downloadDestinationFilePath.endswith(".tar.gz"):
+						EMTUtilities.unTarGzFile(downloadDestinationFilePath, licenseTempDirectory)
+
+					if not os.path.isfile(licenseTempDirectory + "/emm.license.xml") or not os.path.isfile(licenseTempDirectory + "/emm.license.xml.sig"):
+						Environment.errors.append("Given license file archive does not contain expected files (emm.license.xml, emm.license.xml.sig)")
+					else:
+						with open(licenseTempDirectory + "/emm.license.xml", "r", encoding="UTF-8") as licenseDataFileHandle:
+							licenseData = licenseDataFileHandle.read()
+						with open(licenseTempDirectory + "/emm.license.xml.sig", "rb") as licenseSignatureFileHandle:
+							licenseSignature = licenseSignatureFileHandle.read()
+
+						License.updateLicense(licenseData, licenseSignature)
+
+						DbConnector.update("INSERT INTO server_command_tbl(command, server_name, execution_date, admin_id, description, timestamp) VALUES ('RELOAD_LICENSE_DATA', 'ALL', CURRENT_TIMESTAMP, 1, 'New license data uploaded by Maintenance Tool', CURRENT_TIMESTAMP)")
+
+						Environment.messages.append("Successfully installed new license file")
+
+			if os.path.isfile(downloadDestinationFilePath):
+				os.remove(downloadDestinationFilePath)

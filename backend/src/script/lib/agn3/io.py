@@ -131,25 +131,30 @@ def normalize_path (path: str) -> str:
 	"""expand and normalize a filesystem path relative to home directory"""
 	return expand_path (path, base_path = base)
 	
-def create_path (path: str, mode: int = 0o777) -> None:
-	"""create a path and all missing elements"""
-	if not os.path.isdir (path):
-		try:
-			os.mkdir (path, mode)
-		except OSError as e:
-			if e.args[0] != errno.EEXIST:
-				if e.args[0] != errno.ENOENT:
-					raise error (f'Failed to create {path}: {e}')
-				elements = path.split (os.path.sep)
-				target = ''
-				for element in elements:
-					target += element
-					if target and not os.path.isdir (target):
-						try:
-							os.mkdir (target, mode)
-						except OSError as e:
-							raise error (f'Failed to create {path} at {target}: {e}')
-					target += os.path.sep
+def create_path (path: str, mode: int = 0o777) -> bool:
+	"""create a path and all missing elements
+
+returns ``False'' if ``path''' already exists and ``True'' if
+``path'' had been created. On failure, an exception is raised.
+"""
+	if os.path.isdir (path):
+		return False
+	try:
+		os.mkdir (path, mode)
+	except OSError as e:
+		if e.errno == errno.EEXIST or e.errno != errno.ENOENT:
+			raise error (f'failed to create already existing {path}: {e}')
+		elements = path.split (os.path.sep)
+		target = ''
+		for element in elements:
+			target += element
+			if target and not os.path.isdir (target):
+				try:
+					os.mkdir (target, mode)
+				except OSError as e:
+					raise error (f'failed to create {path} at {target}: {e}')
+			target += os.path.sep
+	return True
 
 class ArchiveDirectory:
 	__slots__: List[str] = []
@@ -400,7 +405,7 @@ permissions) while trying to determinate the access to the file."""
 							cpath = os.readlink (cpath)
 						else:
 							fpath = cpath
-					if not fpath is None and st[stat.ST_DEV] == device and st[stat.ST_INO] == inode:
+					if fpath is not None and st[stat.ST_DEV] == device and st[stat.ST_INO] == inode:
 						rc.append (pid)
 						seen[check] = True
 				except OSError as e:
@@ -676,7 +681,7 @@ append mode it is only written, if the file had zero length on open)."""
 
 	def done (self) -> None:
 		"""cleanup resources"""
-		if not self.fd is None:
+		if self.fd is not None:
 			if not self.foreign:
 				self.fd.close ()
 			else:
@@ -750,14 +755,17 @@ CSVIO.open (), for availble ``dialect'' values see CSVIO.__doc__,
 ``relaxed'' is True, errors are ignored otherwise raised (as
 implemented by the csv.DictWriter module)"""
 		super ().__init__ (stream, mode, bom_charset, header)
-		self.writer = csv.DictWriter (self.fd, field_list, dialect = dialect, extrasaction = 'ignore' if relaxed else 'raise')
+		if self.fd is not None:
+			self.writer = csv.DictWriter (self.fd, field_list, dialect = dialect, extrasaction = 'ignore' if relaxed else 'raise')
+		else:
+			raise error (f'failed to open {stream}')
 
 class _CSVReader (CSVIO):
 	__slots__ = ['reader']
-	def __init__ (self, stream: Union[str, IO[Any]]) -> None:
+	def __init__ (self, stream: Union[str, IO[Any]], *, mode: _ReadModes) -> None:
 		super ().__init__ ()
 		self.reader: Any = None
-		self.open (stream, 'r')
+		self.open (stream, mode)
 
 	def __iter__ (self) -> Iterator[Tuple[Any, ...]]:
 		return iter (self.reader)
@@ -778,10 +786,10 @@ class _CSVReader (CSVIO):
 class CSVReader (_CSVReader):
 	"""Wrapper to read a CSV file"""
 	__slots__: List[str] = []
-	def __init__ (self, stream: Union[str, IO[Any]], dialect: str) -> None:
+	def __init__ (self, stream: Union[str, IO[Any]], *, dialect: str, mode: _ReadModes = 'r') -> None:
 		"""for meaning of ``stream'' and ``bom_charset''see
 CSVIO.open (), for availble ``dialect'' values see CSVIO.__doc__"""
-		super ().__init__ (stream)
+		super ().__init__ (stream, mode = mode)
 		self.reader = csv.reader (cast (IO[Any], self.fd), dialect = dialect)
 
 class CSVDictReader (_CSVReader):
@@ -791,6 +799,8 @@ class CSVDictReader (_CSVReader):
 		stream: Union[str, IO[Any]],
 		field_list: List[str],
 		dialect: str,
+		*,
+		mode: _ReadModes = 'r',
 		rest_key: Optional[str] = None,
 		rest_value: Any = None
 	) -> None:
@@ -798,16 +808,16 @@ class CSVDictReader (_CSVReader):
 CSVIO.open (), for availble ``dialect'' values see CSVIO.__doc__,
 ``field_list'', ``rest_key'' and ``rest_value'' are passed to
 csv.DictReader to fill the dictionary."""
-		super ().__init__ (stream)
+		super ().__init__ (stream, mode = mode)
 		self.reader = csv.DictReader (cast (IO[Any], self.fd), field_list, dialect = dialect, restkey = rest_key, restval = rest_value)
 
 class CSVAutoDictReader (_CSVReader):
 	"""Wrapper to a read a CSV file as dict, determinating the field list form the first header line of the CSV"""
 	__slots__: List[str] = []
-	def __init__ (self, stream: Union[str, IO[Any]], dialect: str) -> None:
+	def __init__ (self, stream: Union[str, IO[Any]], dialect: str, *, mode: _ReadModes = 'r') -> None:
 		"""for meaning of ``stream'' and ``bom_charset''see
 CSVIO.open (), for availble ``dialect'' values see CSVIO.__doc__"""
-		super ().__init__ (stream)
+		super ().__init__ (stream, mode = mode)
 		header = next (csv.reader (cast (IO[Any], self.fd), dialect = dialect))
 		self.reader = csv.DictReader (cast (IO[Any], self.fd), header, dialect = dialect)
 
@@ -816,9 +826,10 @@ class CSVNamedReader:
 	def __init__ (self,
 		stream: Union[str, IO[Any]],
 		dialect: str,
-		*fields: Field
+		*fields: Field,
+		mode: _ReadModes = 'r'
 	) -> None:
-		self.csv = CSVReader (stream, dialect)
+		self.csv = CSVReader (stream, dialect = dialect, mode = mode)
 		header = next (self.csv.reader)
 		if header is not None:
 			typ = cast (Type[Line], namedtuple ('record', header))

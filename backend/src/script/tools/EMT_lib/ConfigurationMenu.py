@@ -33,9 +33,13 @@ def configTableMenuAction(actionParameters):
 		DbConnector.updateConfigurationValueInDB("system", "support_emergency_url", "", Environment.hostname)
 		DbConnector.updateConfigurationValueInDB("webservices", "url", choice + "/2.0/", Environment.hostname)
 
-		birtKeysExist = DbConnector.selectValue("SELECT COUNT(*) FROM config_tbl WHERE class = 'birt' and name = 'privatekey' AND value != '[to be defined]'") > 0
+		birtKeysExist = DbConnector.selectValue("SELECT COUNT(*) FROM config_tbl WHERE class = 'birt' and name = 'privatekey' AND value != '[to be defined]' AND (hostname IS NULL OR TRIM(hostname) = '' OR hostname = ?)", Environment.hostname) > 0
 
-		applicationUserName = "openemm" if Environment.isOpenEmmServer else "console"
+		if Environment.isOpenEmmServer:
+			applicationUserName = "openemm"
+		else:
+			applicationUserName = "console"
+
 		print()
 		if not birtKeysExist and not os.path.isfile("/home/" + applicationUserName + "/tomcat/conf/keys/birt_private.pem"):
 			print("Generating Initial Statistics PPK keys")
@@ -64,7 +68,7 @@ def configTableMenuAction(actionParameters):
 
 		print()
 
-	currentConfigurationValues = DbConnector.readConfigurationFromDB()
+	currentConfigurationValues = DbConnector.readConfigurationFromDB(Environment.hostname)
 	configurationValueDescriptions = {
 		"system.url": "Url for " + Environment.applicationName + "-GUI",
 		"system.defaultRdirDomain": "Default rdir domain for new created clients (Add the protocol, e.g. https://<rdir_domain>)",
@@ -214,9 +218,9 @@ def systemCfgMenuAction(actionParameters):
 		if Environment.unsavedSystemCfgChanges is not None and key in Environment.unsavedSystemCfgChanges:
 			print(Colors.YELLOW + " " + key + " = " + Environment.unsavedSystemCfgChanges[key] + Colors.DEFAULT)
 		elif key in Environment.readonlyLicenseCfgProperties:
-			print(Colors.RED + " " + key + " = " + value + Colors.DEFAULT)
+			print(Colors.RED + " " + key + " = " + str(value) + Colors.DEFAULT)
 		else:
-			print(" " + key + " = " + value)
+			print(" " + key + " = " + str(value))
 
 	print()
 

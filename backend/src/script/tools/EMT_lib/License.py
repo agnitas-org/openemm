@@ -23,7 +23,7 @@ class License:
 	@staticmethod
 	def readLicenseValues():
 		licenseXmlDocument = None
-		if DbConnector.checkDbServiceAvailable():
+		if DbConnector.checkDbConnection():
 			data = DbConnector.selectValue("SELECT data FROM license_tbl WHERE name = 'LicenseData'")
 			if data is not None:
 				# Read license information from db
@@ -82,12 +82,12 @@ class License:
 				returnValue = License.licenseProperties[companyID][licenseValueName]
 			elif companyID != 0 and 0 in License.licenseProperties and licenseValueName in License.licenseProperties[0] and EMTUtilities.isNotBlank(License.licenseProperties[0][licenseValueName]):
 				returnValue = License.licenseProperties[0][licenseValueName]
-			
+
 			if returnValue is not None and "unlimited" == returnValue:
 				returnValue = "-1"
-		
+
 		return returnValue
-	
+
 	@staticmethod
 	def getLicenseIntegerValue(licenseValueName, companyID=0):
 		licenseValueString = License.getLicenseValue(licenseValueName, companyID)
@@ -112,7 +112,7 @@ class License:
 				Environment.Environment.errors.append("LicenseID is not set in database")
 			elif License.getLicenseValue("licenseID") != dbLicenseId:
 				Environment.Environment.errors.append("LicenseID of database and licensedata do not match")
-			
+
 			if License.getLicenseValue("expirationDate") is not None:
 				today = date.today()
 				expirationDate = datetime.strptime(License.getLicenseValue("expirationDate"), "%d.%m.%Y")

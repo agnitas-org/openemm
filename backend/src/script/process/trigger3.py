@@ -30,7 +30,7 @@ from	agn3.tools import atoi
 logger = logging.getLogger (__name__)
 #
 class MergerProxy (Protocol):
-	class Merger:
+	class Merger (Protocol):
 		@staticmethod
 		def remote_control (command: str, parameter: str) -> str: ...
 

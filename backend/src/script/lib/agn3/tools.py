@@ -12,8 +12,9 @@
 #
 from	__future__ import annotations
 import	os, re, subprocess, errno, logging
+import	traceback
 from	enum import Enum
-from	typing import Any, Callable, Optional
+from	typing import Any, Callable, NoReturn, Optional, Union
 from	typing import Dict, Generator, List, Set
 from	.exceptions import error
 from	.stream import Stream
@@ -22,7 +23,8 @@ from	.template import Template
 logger = logging.getLogger (__name__)
 #
 __all__ = [
-	'atoi', 'atob', 'btoa', 'calc_hash', 'sizefmt',
+	'abstract',
+	'atoi', 'atof', 'atob', 'btoa', 'calc_hash', 'sizefmt',
 	'call', 'silent_call', 'match', 
 	'listsplit', 'listjoin', 
 	'Escape', 'escape', 'unescape',
@@ -30,7 +32,16 @@ __all__ = [
 	'Progress'
 ]
 #
-def atoi (s: Any, base: int = 10, default: int = 0) -> int:
+def abstract () -> NoReturn:
+	try:
+		invoker = traceback.extract_stack ()[-3]
+		msg = f'abstract method {invoker.filename}:{invoker.lineno}:{invoker.name}.{invoker.line} not implemented'
+	except:
+		msg = 'abstract method not implemented (no clue where)'
+	logger.error (msg)
+	raise NotImplementedError (msg)
+#
+def atoi (s: Any, base: int = 10, default: Union[int, float, str] = 0) -> int:
 	"""Lazy parses a value into an integer
 
 parses input parameter as numeric value, use default if it is not
@@ -59,9 +70,42 @@ parsable.
 		return int (s)
 	try:
 		return int (s, base)
-	except (ValueError, TypeError):
-		return default
+	except:
+		return int (default)
 
+def atof (s: Any, default: Union[int, float, str] = 0.0) -> float:
+	"""Lazy parses a value into a float
+
+>>> atof (0.0)
+0.0
+>>> atof (0)
+0.0
+>>> atof ('0')
+0.0
+>>> atof (1.0)
+1.0
+>>> atof (1)
+1.0
+>>> atof ('1')
+1.0
+>>> atof ('x')
+0.0
+>>> atof ('x', 2.0)
+2.0
+>>> atof ('x', 2)
+2.0
+>>> atof ('x', '2')
+2.0
+>>> atof ('x', 'y')
+Traceback (most recent call last):
+  ...
+ValueError: could not convert string to float: 'y'
+"""
+	try:
+		return float (s)
+	except:
+		return float (default)
+	
 def atob (s: Any) -> bool:
 	"""Interprets a value as a boolean
 
@@ -480,24 +524,27 @@ plugin ('pop')
 
 Beware: you cannot overwrite existing names in the namespace!
 
-You can subclass this class and implement the method "catchall" which must
-return a function which takes a variable number of arguments. "catchall"
-itself is only called with the name of the method which is not implemented
-itself.
+You can either pass a catchall function during instanciation or
+subclass this class and implement the method "catchall" which must
+return a function which takes a variable number of arguments.
+"catchall" itself is only called with the name of the method which is
+not implemented itself.
 """
 	__slots__ = ['_ns', '_st', '_ca']
-	def __init__ (self, code: str, name: Optional[str] = None, ns: Optional[Dict[str, Any]] = None) -> None:
+	def __init__ (self, code: str, name: Optional[str] = None, ns: Optional[Dict[str, Any]] = None, catchall: Optional[Callable[[str], Callable[..., Any]]] = None) -> None:
 		"""Create a plugin using ``code'' for ``name'' using namespace ``ns''"""
 		self._ns = {} if ns is None else ns.copy ()
 		self._st: List[Set[str]] = []
-		if 'catchall' in self.__class__.__dict__ and callable (self.__class__.__dict__['catchall']):
+		if catchall is not None:
+			self._ca: Callable[[str], Callable[..., Any]] = catchall
+		elif 'catchall' in self.__class__.__dict__ and callable (self.__class__.__dict__['catchall']):
 			self._ca = self.catchall
 		else:
-			def catchall (name: str) -> Callable[..., Any]:
+			def catchall_dummy (name: str) -> Callable[..., Any]:
 				def dummy (*args: Any, **kwargs: Any) -> Any:
 					return None
 				return dummy
-			self._ca = catchall
+			self._ca = catchall_dummy
 		compiled = compile (code, name if name is not None else '*unset*', 'exec')
 		exec (compiled, self._ns)
 	
@@ -541,7 +588,7 @@ class Progress (Stream.Progress):
 For longer running processes or loops, this can be used to visualize
 the progress of the process. For example when processing a CSV file:
 
-rd = CSVReader ('some/file/name', CSVDefault)
+rd = CSVReader ('some/file/name', dialect = CSVDefault)
 p = dagent.Progress ('csv reader')
 for row in rd:
 	# process the row
@@ -604,5 +651,4 @@ formated or $rawcount for unformated current count) and offering
 	
 	def handle (self) -> None:
 		"""Hook for more action, e.g. a database commit, when show() is invoked"""
-		pass
 

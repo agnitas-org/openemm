@@ -128,4 +128,38 @@ xml2long (xmlBufferPtr p) /*{{{*/
 	scratch[len] = '\0';
 	return strtol (scratch, NULL, 0);
 }/*}}}*/
+I void
+entity_escape (xmlBufferPtr target, const xmlChar *source, int source_length) /*{{{*/
+{
+	int	clen;
+					
+	while (source_length > 0) {
+		clen = xmlCharLength (*source);
+		if (clen > 1) {
+			xmlBufferAdd (target, source, clen);
+		} else
+			switch (*source) {
+			default:
+				xmlBufferAdd (target, source, clen);
+				break;
+			case '&':
+				xmlBufferCCat (target, "&amp;");
+				break;
+			case '<':
+				xmlBufferCCat (target, "&lt;");
+				break;
+			case '>':
+				xmlBufferCCat (target, "&gt;");
+				break;
+			case '\'':
+				xmlBufferCCat (target, "&apos;");
+				break;
+			case '"':
+				xmlBufferCCat (target, "&quot;");
+				break;
+			}
+		source += clen;
+		source_length -= clen;
+	}
+}/*}}}*/
 # endif		/* __MISC_C */

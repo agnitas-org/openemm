@@ -40,14 +40,6 @@ def basicWebappMenuAction(actionParameters):
 
 	if Environment.isOpenEmmServer:
 		applicationUserName = "openemm"
-	elif Environment.isEmmRdirServer:
-		applicationUserName = "rdir"
-	elif Environment.isEmmMergerServer:
-		applicationUserName = "merger"
-	elif Environment.isEmmMailerServer:
-		applicationUserName = "mailout"
-	elif Environment.isEmmMailloopServer:
-		applicationUserName = "mailloop"
 	else:
 		applicationUserName = "console"
 
@@ -71,7 +63,7 @@ def basicWebappMenuAction(actionParameters):
 	else:
 		# Using the default from emm.sh
 		currentTomcatNative = Environment.tomcatNativeEmmShDefault
-	if currentTomcatNative is None or currentTomcatNative == "" or EMTUtilities.getTomcatNativeVersion(currentTomcatNative) is None:
+	if EMTUtilities.isBlank(currentTomcatNative) or EMTUtilities.getTomcatNativeVersion(currentTomcatNative) is None:
 		currentTomcatNative = None
 
 	if environmentProperties is not None and len(environmentProperties) > 1:
@@ -232,11 +224,13 @@ def configureJavaHome(environmentProperties):
 	else:
 		if Environment.isEmmFrontendServer or Environment.isEmmStatisticsServer or Environment.isEmmWebservicesServer:
 			username = "console"
-		if Environment.isEmmConsoleRdirServer:
+		elif Environment.isEmmConsoleRdirServer:
 			if Environment.isEmmRdirServer:
 				username = "rdir"
 			else:
 				username = "console"
+		else:
+			username = "console"
 	EMTUtilities.updateEnvironmentPropertiesFile(Environment.environmentConfigurationFilePath, username, environmentProperties)
 
 def configureCatalinaHome(environmentProperties):
@@ -316,11 +310,13 @@ def configureCatalinaHome(environmentProperties):
 		else:
 			if Environment.isEmmFrontendServer or Environment.isEmmStatisticsServer or Environment.isEmmWebservicesServer:
 				username = "console"
-			if Environment.isEmmConsoleRdirServer:
+			elif Environment.isEmmConsoleRdirServer:
 				if Environment.isEmmRdirServer:
 					username = "rdir"
 				else:
 					username = "console"
+			else:
+				username = "console"
 		EMTUtilities.updateEnvironmentPropertiesFile(Environment.environmentConfigurationFilePath, username, environmentProperties)
 
 def configureTomcatnative(applicationUserName):
@@ -344,7 +340,7 @@ def configureTomcatnative(applicationUserName):
 	else:
 		# Using the default from emm.sh
 		currentTomcatNative = Environment.tomcatNativeEmmShDefault
-	if currentTomcatNative is None or currentTomcatNative == "" or EMTUtilities.getTomcatNativeVersion(currentTomcatNative) is None:
+	if EMTUtilities.isBlank(currentTomcatNative) or EMTUtilities.getTomcatNativeVersion(currentTomcatNative) is None:
 		currentTomcatNative = None
 
 	# Initial Tomcat-Native installation
@@ -420,7 +416,7 @@ def configureTomcatnative(applicationUserName):
 			print(Colors.RED + "Do NOT use command 'yum install tomcat-native', because it installs Apache Tomcat Native for Apache Tomcat 7, which is not compatible with " + Environment.applicationName + "." + Colors.DEFAULT)
 	else:
 		Environment.tomcatNative = tomcatNative
-		if Environment.tomcatNative is None or Environment.tomcatNative == "" or EMTUtilities.getTomcatNativeVersion(Environment.tomcatNative) is None:
+		if EMTUtilities.isBlank(Environment.tomcatNative) or EMTUtilities.getTomcatNativeVersion(Environment.tomcatNative) is None:
 			Environment.tomcatNative = None
 		environmentProperties = EMTUtilities.readEnvironmentPropertiesFile(Environment.environmentConfigurationFilePath)
 		environmentProperties["TOMCAT_NATIVE"] = Environment.tomcatNative
@@ -429,11 +425,13 @@ def configureTomcatnative(applicationUserName):
 		else:
 			if Environment.isEmmFrontendServer or Environment.isEmmStatisticsServer or Environment.isEmmWebservicesServer:
 				username = "console"
-			if Environment.isEmmConsoleRdirServer:
+			elif Environment.isEmmConsoleRdirServer:
 				if Environment.isEmmRdirServer:
 					username = "rdir"
 				else:
 					username = "console"
+			else:
+				username = "console"
 		EMTUtilities.updateEnvironmentPropertiesFile(Environment.environmentConfigurationFilePath, username, environmentProperties)
 
 def configureWkhtml(environmentProperties):
@@ -631,11 +629,13 @@ def configureWkhtml(environmentProperties):
 		else:
 			if Environment.isEmmFrontendServer or Environment.isEmmStatisticsServer or Environment.isEmmWebservicesServer:
 				username = "console"
-			if Environment.isEmmConsoleRdirServer:
+			elif Environment.isEmmConsoleRdirServer:
 				if Environment.isEmmRdirServer:
 					username = "rdir"
 				else:
 					username = "console"
+			else:
+				username = "console"
 		EMTUtilities.updateEnvironmentPropertiesFile(Environment.environmentConfigurationFilePath, username, environmentProperties)
 		# Store new WKHTML data in database config_tbl
 		if DbConnector.checkDbConnection():
@@ -644,15 +644,17 @@ def configureWkhtml(environmentProperties):
 
 def configureProxy(environmentProperties):
 	if Environment.isOpenEmmServer:
-		username = "openemm"
+			username = "openemm"
 	else:
 		if Environment.isEmmFrontendServer or Environment.isEmmStatisticsServer or Environment.isEmmWebservicesServer:
 			username = "console"
-		if Environment.isEmmConsoleRdirServer:
+		elif Environment.isEmmConsoleRdirServer:
 			if Environment.isEmmRdirServer:
 				username = "rdir"
 			else:
 				username = "console"
+		else:
+			username = "console"
 
 	print("Do you want to use a WebProxy? (N/y, Blank => No):")
 	choice = input(" > ").strip().lower()
@@ -674,7 +676,7 @@ def configureProxy(environmentProperties):
 	else:
 		environmentProperties.pop("PROXY", None)
 		environmentProperties.pop("NO_PROXY_HOSTS", None)
-		
+
 		print("Do you want to override any system configured proxy? (N/y, Blank => No):")
 		choice = input(" > ").strip().lower()
 		if choice.startswith("y") or choice.startswith("j"):

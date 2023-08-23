@@ -34,13 +34,13 @@ __all__ = ['Runtime', 'CLI']
 #
 logger = logging.getLogger (__name__)
 #
-def _expand_inline (args: List[str], enviroment: Optional[Dict[str, str]] = None) -> List[str]:
-	"""Expands element starting with an '@' from an enviroment variable or a file
+def _expand_inline (args: List[str], environment: Optional[Dict[str, str]] = None) -> List[str]:
+	"""Expands element starting with an '@' from an environment variable or a file
 
 >>> _expand_inline (['this', 'is', '@(sample)', 'test'], {})
 Traceback (most recent call last):
 ...
-agn3.exceptions.error: @(sample): specified enviroment not found
+agn3.exceptions.error: @(sample): specified environment not found
 >>> _expand_inline (['this', 'is', '@(sample)', 'test'], {'sample': '-?\\n--target=destination\\nfile1\\nfile2\\n'})
 ['this', 'is', '-?', '--target=destination', 'file1', 'file2', 'test']
 >>> import json
@@ -58,9 +58,9 @@ agn3.exceptions.error: @(sample): specified enviroment not found
 		if arg.startswith ('@'):
 			if arg.startswith ('@(') and arg.endswith (')'):
 				try:
-					content = (enviroment if enviroment is not None else os.environ)[arg[2:-1]]
+					content = (environment if environment is not None else os.environ)[arg[2:-1]]
 				except KeyError:
-					raise error (f'{arg}: specified enviroment not found')
+					raise error (f'{arg}: specified environment not found')
 			else:
 				try:
 					with open (arg[1:]) as fd:

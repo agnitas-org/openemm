@@ -299,7 +299,7 @@ only ``errors'' leading to an exit code not equal 0. """
 				virtual_env = os.environ.get ('VIRTUAL_ENV')
 				def installer (module: str, update: bool = False) -> None:
 					if virtual_env is None:
-						raise ImportError (f'{module}: not running in a virtual enviroment, missing modules are not installed on system installation')
+						raise ImportError (f'{module}: not running in a virtual environment, missing modules are not installed on system installation')
 					if pip is None:
 						raise ImportError (f'{module}: no command for installation found')
 					n = call ([pip, '--quiet', '--no-input', '--exists-action', 'w', '--disable-pip-version-check', 'install'] + (['-U'] if update else []) + [module])

@@ -131,7 +131,9 @@ main (int argc, char **argv) /*{{{*/
 	output_t	*out;
 	const char	*outparm;
 	const char	*auto_url_prefix;
+	bool_t		gui;
 	bool_t		anon;
+	bool_t		anon_preserve_links;
 	const char	*selector;
 	bool_t		convert_to_entities;
 	bool_t		force_ecs_uid;
@@ -151,7 +153,9 @@ main (int argc, char **argv) /*{{{*/
 	out = & output_table[1];
 	outparm = NULL;
 	auto_url_prefix = NULL;
+	gui = false;
 	anon = false;
+	anon_preserve_links = false;
 	selector = NULL;
 	convert_to_entities = false;
 	force_ecs_uid = false;
@@ -163,7 +167,8 @@ main (int argc, char **argv) /*{{{*/
 	xmlInitializePredefinedEntities ();
 	xmlInitCharEncodingHandlers ();
 	json_set_escape_slashes (0);
-	while ((n = getopt (argc, argv, "VDpqE:lru:as:egd:t:o:L:T:h")) != -1)
+	opterr = 0;
+	while ((n = getopt (argc, argv, "VDpqE:lru:UaAs:egd:t:o:L:T:h")) != -1)
 		switch (n) {
 		case 'V':
 # ifdef		EMM_VERSION			
@@ -188,8 +193,14 @@ main (int argc, char **argv) /*{{{*/
 		case 'u':
 			auto_url_prefix = optarg;
 			break;
+		case 'U':
+			gui = true;
+			break;
 		case 'a':
 			anon = true;
+			break;
+		case 'A':
+			anon_preserve_links = true;
 			break;
 		case 's':
 			selector = optarg;
@@ -231,7 +242,6 @@ main (int argc, char **argv) /*{{{*/
 			pointintime = atol (optarg);
 			break;
 		case 'h':
-		default:
 			fprintf (stderr, "Usage: %s [-h] [-V] [-L <loglevel>] [-D] [-v] [-p] [-q] [-E <file>] [-l] [-r] [-d <domain>] [-o <output>[:<parm>] <file(s)>\n", argv[0]);
 			fprintf (stderr, "       further options: [-u <prefix>] [-a] [-s <selector>] [-e] [-f]\n");
 			fputs ("Function: read and process XML files generated from database representation\n"
@@ -246,6 +256,7 @@ main (int argc, char **argv) /*{{{*/
 			       "\t-r         raw output, do not encode generated mails (used by preview)\n"
 			       "\t-u <pfix>  use <pfix> as prefix for generated auto urls\n"
 			       "\t-a         anonymize the output as far as possible\n"
+			       "\t-A         preserve links when creating anon output\n"
 			       "\t-s <sel>   selector to restrict usage of text blocks\n"
 			       "\t-e         convert known special characters to its HTML entity\n"
 			       "\t-g         force generation of extended click statistics UIDs\n"
@@ -264,7 +275,10 @@ main (int argc, char **argv) /*{{{*/
 					fputs ("\n", stderr);
 				}
 			}
-			return n != 'h';
+			return 0;
+		default:
+			/* silently ignore unknown options */
+			break;
 		}
 	pparm = NULL;
 	if (outparm && outparm[0] && (! (pparm = parse_parm (outparm))))
@@ -313,7 +327,8 @@ main (int argc, char **argv) /*{{{*/
 			log_idset (lg, "init");
 			blockmail -> outputdata = (*out -> oinit) (blockmail, pparm);
 			blockmail_setup_auto_url_prefix (blockmail, auto_url_prefix);
-			blockmail_setup_anon (blockmail, anon);
+			blockmail -> gui = gui || auto_url_prefix ? true : false;
+			blockmail_setup_anon (blockmail, anon, anon_preserve_links);
 			blockmail_setup_selector (blockmail, selector);
 			blockmail -> force_ecs_uid = force_ecs_uid;
 			blockmail -> convert_to_entities = convert_to_entities;
@@ -323,9 +338,11 @@ main (int argc, char **argv) /*{{{*/
 			if (! blockmail -> outputdata)
 				log_out (lg, LV_ERROR, "Unable to initialize output method %s for %s", out -> name, argv[n]);
 			else {
-				doc = xmlReadFile (argv[n], NULL, XML_PARSE_NONET | XML_PARSE_NOCDATA | XML_PARSE_COMPACT | XML_PARSE_HUGE);
+				doc = xmlReadFile (argv[n], NULL, XML_PARSE_NOENT | XML_PARSE_PEDANTIC | XML_PARSE_NONET | XML_PARSE_NOCDATA | XML_PARSE_COMPACT | XML_PARSE_HUGE);
 				if (doc) {
-					if (doc -> encoding) {
+					if (doc -> encoding &&
+					    strcasecmp (xml2char (doc -> encoding), "UTF-8") &&
+					    strcasecmp (xml2char (doc -> encoding), "UTF8")) {
 						blockmail -> translate = xmlFindCharEncodingHandler (xml2char (doc -> encoding));
 						if (! (blockmail -> translate -> input || blockmail -> translate -> iconv_in ||
 						       blockmail -> translate -> output || blockmail -> translate -> iconv_out)) {

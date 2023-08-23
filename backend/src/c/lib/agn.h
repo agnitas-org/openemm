@@ -262,6 +262,7 @@ typedef unsigned long	logmask_t;
 /**
  * All informations required for logging
  */
+typedef struct idc	idc_t;
 typedef struct { /*{{{*/
 	int		logfd;		/**< file desc. to copy output to	*/
 	int		slprio;		/**< syslog priority			*/
@@ -275,7 +276,7 @@ typedef struct { /*{{{*/
 	long		lastday;	/**< dito for the day			*/
 	int		diff;		/**< TZ drift				*/
 	FILE		*lfp;		/**< filepointer to output file		*/
-	void		*idc;		/**< ID chain				*/
+	idc_t		*idc;		/**< ID chain				*/
 	bool_t		slactive;	/**< syslog is active			*/
 	buffer_t	*obuf;		/**< output buffer			*/
 	buffer_t	*collect;	/**< to collect all messages		*/
@@ -478,7 +479,7 @@ extern bool_t		log_collect (log_t *l, int level);
 extern void		log_uncollect (log_t *l);
 extern bool_t		log_idset (log_t *l, const char *what);
 extern void		log_idclr (log_t *l);
-extern bool_t		log_idpush (log_t *l, const char *what, const char *separator);
+extern bool_t		log_idpush (log_t *l, const char *what);
 extern void		log_idpop (log_t *l);
 extern void		log_suspend_pop (log_t *l);
 extern void		log_suspend_push (log_t *l, unsigned long mask, bool_t set);
@@ -562,7 +563,7 @@ extern bool_t		purl_set_anchor (purl_t *p, const byte_t *anchor);
 extern const byte_t	*purl_build (purl_t *p, const char *extra_encode, int *rlen, bool_t (*callback) (void *, buffer_t *, const byte_t *, int), void *priv);
 
 extern void		*systemconfig_free (void *lc);
-extern void		*systemconfig_alloc (const char *fname);
+extern void		*systemconfig_alloc (void);
 extern const char	*systemconfig_find (void *lc, const char *key);
 extern bool_t		systemconfig_get (void *lc, int idx, const char **key, const char **value);
 

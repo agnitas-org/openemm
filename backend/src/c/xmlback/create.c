@@ -111,17 +111,18 @@ fixer (fix_t *fix, int attcount, blockmail_t *blockmail, receiver_t *rec, bool_t
 static bool_t
 create_mail (blockmail_t *blockmail, receiver_t *rec) /*{{{*/
 {
-	int		n, m;
-	bool_t		st;
-	int		attcount;
-	links_t		*links;
-	postfix_t	*postfixes;
-	buffer_t	*dest;
+	int			n, m;
+	bool_t			st;
+	int			attcount;
+	links_t			*links;
+	postfix_t		*postfixes;
+	buffer_t		*dest;
 	mailtypedefinition_t	*mtyp;
-	blockspec_t	*bspec;
-	block_t		*block;
-	rblock_t	*rbprev, *rbhead;
-	bool_t		changed;
+	blockspec_t		*bspec;
+	block_t			*block;
+	block_t			*header;
+	rblock_t		*rbprev, *rbhead;
+	bool_t			changed;
 	
 	mtyp = (rec -> mailtype >= 0) && (rec -> mailtype < blockmail -> mailtypedefinition_count) ? blockmail -> mailtypedefinition[rec -> mailtype] : NULL;
 	if (! mtyp) {
@@ -140,6 +141,7 @@ create_mail (blockmail_t *blockmail, receiver_t *rec) /*{{{*/
 	 * 1. Stage: check for usful blocks, count attachments and
 	 *           create the content part */
 	links = mtyp -> offline ? links_alloc () : NULL;
+	header = NULL;
 	for (n = 0; st && (n < mtyp -> blockspec_count); ++n) {
 		bspec = mtyp -> blockspec[n];
 		block = bspec -> block;
@@ -178,7 +180,7 @@ create_mail (blockmail_t *blockmail, receiver_t *rec) /*{{{*/
 				attcount++;
 			if (! block -> binary) {
 				if (st) {
-					log_idpush (blockmail -> lg, "replace_tags", "->");
+					log_idpush (blockmail -> lg, "replace_tags");
 					st = replace_tags (blockmail, rec, block,
 							   0, true,
 							   (block -> tid != TID_EMail_Head ? NULL : replace_head),
@@ -187,28 +189,18 @@ create_mail (blockmail_t *blockmail, receiver_t *rec) /*{{{*/
 					log_idpop (blockmail -> lg);
 					if (! st)
 						log_out (blockmail -> lg, LV_ERROR, "Unable to replace tags in block %d for %d", block -> nr, rec -> customer_id);
+					else if (block -> tid == TID_EMail_Head) {
+						if (block -> nr == 0) {
+							header = block;
+						}
+					}
 				}
-				if (st) {
-					log_idpush (blockmail -> lg, "modify_output", "->");
+				if (st && (block -> tid != TID_EMail_Head)) {
+					log_idpush (blockmail -> lg, "modify_output");
 					st = modify_output (blockmail, rec, block, bspec, links);
 					log_idpop (blockmail -> lg);
 					if (! st)
 						log_out (blockmail -> lg, LV_ERROR, "Unable to modify output in block %d for %d", block -> nr, rec -> customer_id);
-				}
-				if (st) {
-					if ((! blockmail -> raw) && (! block -> precoded)) {
-						log_idpush (blockmail -> lg, "convert_charset", "->");
-						st = convert_charset (blockmail, block);
-						log_idpop (blockmail -> lg);
-						if (! st)
-							log_out (blockmail -> lg, LV_ERROR, "Unable to convert chararcter set in block %d for %d", block -> nr, rec -> customer_id);
-					} else {
-						xmlBufferPtr	temp;
-						
-						temp = block -> out;
-						block -> out = block -> in;
-						block -> in = temp;
-					}
 				}
 			}
 		}
@@ -217,9 +209,39 @@ create_mail (blockmail_t *blockmail, receiver_t *rec) /*{{{*/
 	}
 	if (links)
 		links_free (links);
+	
+	/*
+	 * 2.1. Stage finalize header */
+	if (st && header) {
+		log_idpush (blockmail -> lg, "modify_header");
+		st = modify_header (blockmail, header);
+		log_idpop (blockmail -> lg);
+		if (! st)
+			log_out (blockmail -> lg, LV_ERROR, "Unable to modify header for %d", rec -> customer_id);
+	}
 
 	/*
-	 * 2. Stage: determinate the required postfixes */
+	 * 2.2. Stage: finalize blocks */
+	for (n = 0; st && (n < mtyp -> blockspec_count); ++n) {
+		bspec = mtyp -> blockspec[n];
+		block = bspec -> block;
+		if (block -> inuse && (! block -> binary)) {
+			if (st) {
+				if ((! blockmail -> raw) && (! block -> precoded)) {
+					log_idpush (blockmail -> lg, "convert_charset");
+					st = convert_charset (blockmail, block);
+					log_idpop (blockmail -> lg);
+					if (! st)
+						log_out (blockmail -> lg, LV_ERROR, "Unable to convert chararcter set in block %d for %d", block -> nr, rec -> customer_id);
+				} else {
+					block_swap_inout (block);
+				}
+			}
+		}
+	}
+
+	/*
+	 * 3. Stage: determinate the required postfixes */
 	postfixes = NULL;
 	for (n = 0; st && (n < mtyp -> blockspec_count); ++n) {
 		bspec = mtyp -> blockspec[n];
@@ -253,7 +275,7 @@ create_mail (blockmail_t *blockmail, receiver_t *rec) /*{{{*/
 	}
 
 	/*
-	 * 3. Stage: create the output */
+	 * 4. Stage: create the output */
 	rbprev = NULL;
 	rbhead = NULL;
 	for (n = 0; st && (n <= mtyp -> blockspec_count); ++n) {
@@ -371,6 +393,10 @@ create_output (blockmail_t *blockmail, receiver_t *rec) /*{{{*/
 	blockmail -> active = true;
 	blockmail -> reason = REASON_UNSPEC;
 	blockmail -> reason_detail = 0;
+	if (blockmail -> reason_custom) {
+		free (blockmail -> reason_custom);
+		blockmail -> reason_custom = NULL;
+	}
 	blockmail -> head -> length = 0;
 	blockmail -> body -> length = 0;
 	if (blockmail -> raw && blockmail -> rblocks)

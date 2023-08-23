@@ -17,6 +17,7 @@ from	collections import defaultdict
 from	functools import partial
 from	datetime import datetime, timedelta
 from	dataclasses import dataclass, field
+from	urllib.parse import unquote
 from	types import TracebackType
 from	typing import Any, Callable, Final, Optional, Union
 from	typing import DefaultDict, Dict, Iterator, List, NamedTuple, Pattern, Set, TextIO, Tuple, Type
@@ -40,7 +41,7 @@ from	agn3.plugin import Plugin, LoggingManager
 from	agn3.runtime import Runtime
 from	agn3.stream import Stream
 from	agn3.template import Template
-from	agn3.tools import atob, atoi, listsplit
+from	agn3.tools import abstract, atob, atoi, listsplit
 from	agn3.tracker import Key, Tracker
 #
 logger = logging.getLogger (__name__)
@@ -114,7 +115,29 @@ class Log: #{{{
 		self.logpath = logpath
 		self.name = name
 		self.target = os.path.join (self.logpath, self.name)
-		create_path (self.target)
+		if not create_path (self.target):
+			self.respool ()
+	
+	aborted = re.compile ('^([0-9]+-[0-9]+)-[0-9.]+$')
+	def respool (self) -> None:
+		now = time.time ()
+		for filename in sorted (os.listdir (self.target)):
+			if (mtch := self.aborted.match (filename)) is not None:
+				old = os.path.join (self.target, filename)
+				new = os.path.join (self.target, mtch.group (1))
+				try:
+					if os.path.isfile (new):
+						os.remove (old)
+						logger.info (f'{self.name}: removed duplicate spool file {old} due to existing {new}')
+					else:
+						st = os.stat (old)
+						if now < st.st_mtime + 6 * 60 * 60:
+							os.rename (old, new)
+							logger.info (f'{self.name}: respool {old} as {new}')
+						else:
+							logger.warning (f'{self.name}: do not respool {old} as {new} due to outdated file')
+				except OSError as e:
+					logger.warning (f'{self.name}: failed to respool {old} as {new}: {e}')
 	
 	def unpack (self, s: str) -> Tuple[int, int]:
 		(nr, seq) = (int (_v) for _v in s.split ('-'))
@@ -191,6 +214,7 @@ class Update: #{{{
 	]
 	name = 'update'
 	path = '/dev/null'
+	known_mediatypes = Stream (MediaType.__members__.values ()).map (lambda m: m.value).set ()
 	timestamp_parser = ParseTimestamp ()
 	def __init__ (self) -> None:
 		directory = os.path.dirname (self.path)
@@ -260,12 +284,16 @@ class Update: #{{{
 		return True
 	def update_finished (self) -> bool:
 		return True
+
+
 	def update_start (self, db: DB) -> bool:
-		raise error ('Need to overwrite update_start in your subclass')
+		abstract ()
+
 	def update_end (self, db: DB) -> bool:
-		raise error ('Need to overwrite update_end in your subclass')
+		abstract ()
+
 	def update_line (self, db: DB, line: str) -> bool:
-		raise error ('Need to overwrite update_line in your subclass')
+		abstract ()
 
 	def execute (self, is_active: Callable[[], bool], delay: Optional[int]) -> None:
 		self.setup ()
@@ -406,20 +434,33 @@ class UpdateBounce (Update): #{{{
 	__slots__ = [
 		'mailing_map',
 		'igcount', 'sucount', 'sbcount', 'hbcount', 'dupcount', 'blcount', 'rvcount', 'ccount',
-		'translate', 'delayed_processing', 'cache', 'succeeded',
+		'translate',
+		'delayed_processing', 'cache', 'succeeded',
 		'has_mailtrack', 'has_mailtrack_last_read', 'sys_encrypted_sending_enabled',
 		'bounce_mark_duplicate'
 	]
 	name = 'bounce'
 	path = os.path.join (base, 'log', 'extbounce.log')
 	class Info: #{{{
+		relay_pattern = re.compile ('^([^[]*)(\\[([^]]*)\\])?(:([0-9]+))?$')
 		def __init__ (self, info: str) -> None:
 			self.info = info
 			self.map: Dict[str, str] = {}
 			for elem in info.split ('\t'):
 				parts = elem.split ('=', 1)
 				if len (parts) == 2:
-					self.map[parts[0]] = parts[1]
+					if parts[0] == 'relay':
+						m = self.relay_pattern.match (parts[1])
+						if m is not None:
+							(relay, _, ip, _, port) = m.groups ()
+							for (name, value) in ('ip', ip), ('port', port):
+								if value:
+									self.map[name] = value
+						else:
+							relay = (parts[1].split (':')[0]).split ('[')[0]
+						self.map[parts[0]] = relay
+					else:
+						self.map[parts[0]] = parts[1]
 				elif len (parts) == 1:
 					self.map['stat'] = elem
 
@@ -448,7 +489,7 @@ class UpdateBounce (Update): #{{{
 			Detail.SoftbounceMailbox:	[421, 422, 520, 521, 522, 523, 524],
 			Detail.HardbounceOther:		[531],
 			Detail.HardbounceReceiver:	[511, 513, 516, 517, 572],
- 			Detail.HardbounceSystem:	[512, 518]
+			Detail.HardbounceSystem:	[512, 518]
 		}
 		class Pattern:
 			control_pattern = re.compile ('^/(.*)/([a-z]*)$')
@@ -515,11 +556,7 @@ class UpdateBounce (Update): #{{{
 			def match (self, infos: UpdateBounce.Info) -> bool:
 				for (key, pattern) in [(_k.lower (), _v) for (_k, _v) in self.checks.items ()]:
 					value = infos[key]
-					if value is None:
-						return False
-					if key == 'relay':
-						value = (value.split (':')[0]).split ('[')[0]
-					if pattern.search (value) is None:
+					if value is None or pattern.search (value) is None:
 						return False
 				return True
 		
@@ -681,7 +718,7 @@ class UpdateBounce (Update): #{{{
 		self.has_mailtrack: Dict[int, bool] = {}
 		self.has_mailtrack_last_read = 0
 		self.sys_encrypted_sending_enabled: Cache[int, bool] = Cache (timeout = '30m')
-		self.bounce_mark_duplicate: Dict[int, bool] = {}
+		self.bounce_mark_duplicate = EMMCompany.Enable ()
 	
 	def done (self) -> None:
 		self.delayed_processing.done ()
@@ -798,10 +835,10 @@ class UpdateBounce (Update): #{{{
 		self.blcount = 0
 		self.rvcount = 0
 		self.ccount = 0
-		self.bounce_mark_duplicate = (Stream (EMMCompany (db = db, keys = ['bounce-mark-duplicate']).scan_all ())
-			.map (lambda v: (v.company_id, atob (v.value)))
-			.dict ()
-		)
+		with EMMCompany (db = db, keys = [
+			'bounce-mark-duplicate',
+		]) as emmcompany:
+			self.bounce_mark_duplicate = emmcompany.enabled ('bounce-mark-duplicate', default = True)
 		self.succeeded.clear ()
 		self.translate.clear ()
 		self.translate.setup (db)
@@ -817,7 +854,13 @@ class UpdateBounce (Update): #{{{
 		if self.succeeded:
 			logger.info ('Add {mails:,d} mails to {mailings:d} mailings'.format (mails = cast (int, sum (self.succeeded.values ())), mailings = len (self.succeeded)))
 			for mailing_id in sorted (self.succeeded):
-				db.update ('UPDATE mailing_tbl SET delivered = delivered + :success WHERE mailing_id = :mailing_id', {'success': self.succeeded[mailing_id], 'mailing_id': mailing_id})
+				db.update (
+					'UPDATE mailing_tbl SET delivered = COALESCE(delivered, 0) + :success WHERE mailing_id = :mailing_id',
+					{
+						'success': self.succeeded[mailing_id],
+						'mailing_id': mailing_id
+					}
+				)
 			db.sync ()
 		logger.info ('Found %d hardbounces (%d duplicates), %d softbounces (%d written), %d successes, %d blocklisted, %d revoked, %d ignored in %d lines' % (self.hbcount, self.dupcount, self.sbcount, (self.sbcount - self.ccount), self.sucount, self.blcount, self.rvcount, self.igcount, self.lineno))
 		if self.delayed_processing:
@@ -867,9 +910,6 @@ class UpdateBounce (Update): #{{{
 					self.delayed_processing.add (now, line, record.mailing_id, record.media, record.customer_id)
 					return True
 				breakdown.timestamp = datetime.now ()
-			#
-			if breakdown.detail == Detail.Success or breakdown.detail in Detail.Hardbounces:
-				pass
 			#
 			if breakdown.detail == Detail.Success:
 				self.delayed_processing.drop (record.mailing_id, record.media, record.customer_id)
@@ -978,7 +1018,7 @@ class UpdateBounce (Update): #{{{
 								and
 								record.media == MediaType.EMAIL.value
 								and
-								self.bounce_mark_duplicate.get (company_id, self.bounce_mark_duplicate.get (0, True))
+								self.bounce_mark_duplicate (company_id)
 							):
 								rq = db.querys (
 									'SELECT email '
@@ -1020,9 +1060,6 @@ class UpdateBounce (Update): #{{{
 												customer_ids.append (record.customer_id)
 												self.dupcount += 1
 										db.sync ()
-										#
-										for customer_id in customer_ids:
-											pass
 					except error as e:
 						logger.error ('Unable to unsubscribe %r for company %d from database using %s: %s' % (data, company_id, query, e))
 						rc = False
@@ -1047,7 +1084,6 @@ class UpdateAccount (Update): #{{{
 	track_path: Final[str] = os.path.join (base, 'var', 'run', 'update-account.track')
 	track_section_mailing: Final[str] = 'mailing'
 	track_section_status: Final[str] = 'status'
-	known_mediatypes = Stream (MediaType.__members__.values ()).map (lambda m: m.value).set ()
 	class Mailcheck:
 		__slots__ = ['workstatus', 'lastcheck', 'total', 'info_sent']
 		persist_path: Final[str] = os.path.join (base, 'var', 'run', 'mailcheck.persist')
@@ -1091,10 +1127,11 @@ class UpdateAccount (Update): #{{{
 					count = db.update (
 						'UPDATE mailing_tbl '
 						'SET work_status = :work_status_sending '
-						'WHERE mailing_id = :mailing_id AND (work_status IS NULL OR work_status = :work_status_finished)',
+						'WHERE mailing_id = :mailing_id AND (work_status IS NULL OR work_status IN (:work_status_finished, :work_status_edit))',
 						{
 							'work_status_sending': WorkStatus.Sending.value,
 							'work_status_finished': WorkStatus.Finished.value,
+							'work_status_edit': WorkStatus.Edit.value,
 							'mailing_id': mailing_id
 						},
 						commit = True
@@ -1102,15 +1139,29 @@ class UpdateAccount (Update): #{{{
 					if count > 0:
 						logger.info (f'{mailing_id}: updated work status to "{WorkStatus.Sending.value}"')
 						return True
+					#
+					rq = db.querys (
+						'SELECT work_status, deleted '
+						'FROM mailing_tbl '
+						'WHERE mailing_id = :mailing_id',
+						{
+							'mailing_id': mailing_id
+						}
+					)
+					if rq is None:
+						logger.warning (f'{mailing_id}: no mailing found to update workstatus')
+					elif rq.work_status and rq.work_status not in (WorkStatus.Sending.value, WorkStatus.Sent.value, WorkStatus.Cancel.value):
+						deleted = ' [deleted]' if rq.deleted else ''
+						logger.warning (f'{mailing_id}{deleted}: do not change workstatus from "{rq.work_status}" to "{WorkStatus.Sending.value}"')
 					else:
-						logger.debug (f'{mailing_id}: no need to update workstatus')
+						logger.debug (f'{mailing_id}: no need to update workstatus from {rq.work_status} to "{WorkStatus.Sending.value}"')
 			return False
 
 		class Mailing (NamedTuple):
 			mailing_id: int
 			company_id: int
 			statmail: Optional[str]
-		
+
 		def update (self) -> None:
 			interval = unit.parse (syscfg.get (f'{program}:mailcheck-interval', '1m'), default = 60)
 			mailcheck_limit = unit.parse (syscfg.get (f'{program}:mailcheck-limit', '7d'), default = 7 * 24 * 60 * 60)
@@ -1131,12 +1182,13 @@ class UpdateAccount (Update): #{{{
 								'WHERE mdrop.status_field = :status_field AND '
 								'      mdrop.senddate >= :limit AND '
 								'      mdrop.genstatus = 3 AND '
-								'      (mt.work_status IS NULL OR mt.work_status = :work_status_finished) AND '
+								'      (mt.work_status IS NULL OR mt.work_status IN (:work_status_finished, :work_status_edit)) AND '
 								'      mt.deleted = 0',
 								{
 									'status_field': 'W',
 									'limit': limit,
-									'work_status_finished': WorkStatus.Finished.value
+									'work_status_finished': WorkStatus.Finished.value,
+									'work_status_edit': WorkStatus.Edit.value
 								}
 							)
 							.filter (lambda r: r.company_id in responsibility)
@@ -1252,7 +1304,6 @@ class UpdateAccount (Update): #{{{
 										commit = True
 									)
 									logger.info (f'{mailing.mailing_id}: set work status to sent')
-									pass
 									with Ignore (KeyError):
 										del self.total[mailing.mailing_id]
 									with Ignore (KeyError):
@@ -1350,8 +1401,8 @@ class UpdateAccount (Update): #{{{
 		self.control_parser = Tokenparser (
 			Field ('licence_id', int, source = 'licence'),
 			Field ('owner', int),
-			Field ('bcc_count', int, optional = True, default = int, source = 'bcc-count'),
-			Field ('bcc_bytes', int, optional = True, default = int, source = 'bcc-bytes')
+			Field ('bcc_count', int, optional = True, default = lambda n: 0, source = 'bcc-count'),
+			Field ('bcc_bytes', int, optional = True, default = lambda n: 0, source = 'bcc-bytes')
 		)
 		self.data_parser = Tokenparser (
 			Field ('company_id', int, source = 'company'),
@@ -1363,11 +1414,11 @@ class UpdateAccount (Update): #{{{
 			Field ('mailtype', int, source = 'subtype'),
 			Field ('no_of_mailings', int, source = 'count'),
 			Field ('no_of_bytes', int, source = 'bytes'),
-			Field ('skip', int, optional = True, default = int),
-			Field ('chunks', int, optional = True, default = lambda: 1),
+			Field ('skip', int, optional = True, default = lambda n: 0),
+			Field ('chunks', int, optional = True, default = lambda n: 1),
 			Field ('blocknr', int, source = 'block'),
 			'mailer',
-			Field ('timestamp', ParseTimestamp (), optional = True, default = lambda: datetime.now ())
+			Field ('timestamp', ParseTimestamp (), optional = True, default = lambda n: datetime.now ())
 		)
 
 	def setup (self) -> None:
@@ -1565,7 +1616,7 @@ class UpdateMailtrack (Update): #{{{
 		Field ('company_id', int),
 		Field ('mailing_id', int),
 		Field ('maildrop_status_id', int),
-		Field ('customer_ids', lambda n: [int (_n) for _n in n.split (',') if _n])
+		'customers'
 	)
 	@dataclass
 	class CompanyCounter:
@@ -1579,9 +1630,9 @@ class UpdateMailtrack (Update): #{{{
 		self.count = 0
 		self.insert_statement = (
 			'INSERT INTO {table} '
-			'       (company_id, mailing_id, maildrop_status_id, customer_id, timestamp) '
+			'       (company_id, mailing_id, maildrop_status_id, customer_id, mediatype, timestamp) '
 			'VALUES '
-			'       (:company_id, :mailing_id, :maildrop_status_id, :customer_id, :timestamp)'
+			'       (:company_id, :mailing_id, :maildrop_status_id, :customer_id, :mediatype, :timestamp)'
 			.format (table = self.mailtrack_process_table)
 		)
 		self.max_count = 0
@@ -1597,6 +1648,7 @@ class UpdateMailtrack (Update): #{{{
 						'	mailing_id		number,\n'
 						'	maildrop_status_id	number,\n'
 						'	customer_id		number,\n'
+						'	mediatype		number,\n'
 						'	timestamp		date\n'
 						'){tablespace}'
 						.format (table = self.mailtrack_process_table, tablespace = tablespace_expr)
@@ -1606,6 +1658,7 @@ class UpdateMailtrack (Update): #{{{
 						'	mailing_id		int(11),\n'
 						'	maildrop_status_id	int(11),\n'
 						'	customer_id		integer unsigned,\n'
+						'	mediatype		integer unsigned,\n'
 						'	timestamp		timestamp\n'
 						')'
 						.format (table = self.mailtrack_process_table)
@@ -1628,6 +1681,13 @@ class UpdateMailtrack (Update): #{{{
 							.format (prefix = mailtrack_index_prefix, id = index_id, column = index_column, table = self.mailtrack_process_table)
 						)
 					))
+			else:
+				if 'mediatype' not in {_f.name for _f in db.layout (self.mailtrack_process_table, normalize = True)}:
+					db.execute (db.qselect (
+						oracle = 'ALTER TABLE {table} ADD mediatype number'.format (table = self.mailtrack_process_table),
+						mysql = 'ALTER TABLE {table} ADD mediatype INTEGER UNSIGNED'.format (table = self.mailtrack_process_table)
+					))
+					logger.info ('added missing column "mediatype" to {table}'.format (table = self.mailtrack_process_table))
 		
 	def update_start (self, db: DB) -> bool:
 		db.execute ('TRUNCATE TABLE %s' % self.mailtrack_process_table)
@@ -1706,22 +1766,32 @@ class UpdateMailtrack (Update): #{{{
 			record = UpdateMailtrack.line_parser (line)
 			if record.licence_id != licence:
 				logger.debug (f'{record.licence_id}: ignore foreign licence id (own is {licence})')
-			elif record.customer_ids:
+			elif record.customers:
 				data = {
 					'timestamp': record.timestamp,
 					'company_id': record.company_id,
 					'mailing_id': record.mailing_id,
 					'maildrop_status_id': record.maildrop_status_id
 				}
-				for customer_id in record.customer_ids:
+				customer_id: int
+				mediatype: Optional[int]
+				count = 0
+				for entry in record.customers.split (','):
+					try:
+						(customer_id, mediatype) = (int (_e) for _e in entry.split ('/', 1))
+					except ValueError:
+						customer_id = int (entry)
+						mediatype = -1
 					data['customer_id'] = customer_id
+					data['mediatype'] = mediatype if mediatype in self.known_mediatypes else None
 					db.update (self.insert_statement, data)
+					count += 1
 					self.count += 1
 					if self.count % 10000 == 0:
 						db.sync ()
 						logger.info (f'now at #{self.count:,d}')
 				company = self.companies[record.company_id]
-				company.count += len (record.customer_ids)
+				company.count += count
 				company.mailings.add (record.mailing_id)
 		except Exception as e:
 			logger.warning (f'{line}: invalid line: {e}')
@@ -1737,8 +1807,8 @@ class UpdateMailtrack (Update): #{{{
 				with db.request () as cursor:
 					count = cursor.update (
 						'INSERT INTO {mailtrack_table} '
-						'       (mailing_id, maildrop_status_id, customer_id, timestamp) '
-						'SELECT mailing_id, maildrop_status_id, customer_id, timestamp '
+						'       (mailing_id, maildrop_status_id, customer_id, mediatype, timestamp) '
+						'SELECT mailing_id, maildrop_status_id, customer_id, mediatype, timestamp '
 						'FROM {table} WHERE company_id = :company_id'
 						.format (mailtrack_table = mailtrack_table, table = self.mailtrack_process_table),
 						{
@@ -1915,6 +1985,106 @@ class UpdateRelease (Update): #{{{
 						self.releases[key] = record
 				except KeyError:
 					self.releases[key] = record
+		except Exception as e:
+			logger.warning (f'{line}: invalid line: {e}')
+			return False
+		else:
+			return True
+#}}}
+class UpdateMailloop (Update): #{{{
+	__slots__ = []
+	name = 'mailloop'
+	path = os.path.join (base, 'log', 'mailloop.log')
+	mailloop_log_table: Final[str] = 'mailloop_log_tbl'
+	line_parser = Lineparser (
+		lambda a: a.split (';', 6),
+		Field ('licence_id', int),
+		Field ('rid', lambda s: {'0': 'internal'}.get (s, s)),
+		Field ('timestamp', Update.timestamp_parser),
+		'action',
+		Field ('status', lambda s: s == '+'),
+		Field ('info', lambda s: (Stream (s.split ('\t'))
+			.map (lambda e: e.split ('=', 1))
+			.filter (lambda kv: len (kv) == 2)
+			.map (lambda kv: (kv[0], unquote (kv[1], errors = 'backslashreplace')))
+			.dict ()
+		))
+	)
+	def update_start (self, db: DB) -> bool:
+		return True
+
+	def update_end (self, db: DB) -> bool:
+		return True
+
+	def update_line (self, db: DB, line: str) -> bool:
+		try:
+			record = UpdateMailloop.line_parser (line)
+			if record.licence_id != licence:
+				logger.debug (f'{record.licence_id}: ignore foreign licence id (own is {licence})')
+			else:
+				def iget (key: str) -> Optional[int]:
+					try:
+						return int (record.info[key])
+					except:
+						return None
+				remark: List[str] = []
+				for (key, display) in (
+					('sent', 'mail sent to {value}'),
+					('unsubscribe', 'unsubscribed using remark "{value}"'),
+				):
+					if bool (value := record.info.get (key)):
+						remark.append (display.format (value = value))
+				#
+				# If spam reporting is active and a spam core has reached the limits
+				with Ignore (KeyError, ValueError):
+					spam_score = float (record.info['spam-score'])
+					spam_consequence = record.info['spam-consequence']
+					remark.append (f'incoming message has a spam score of {spam_score:.2f} and is {spam_consequence}')
+				#
+				# If an autoresponder is in use
+				with Ignore (KeyError, ValueError):
+					mailing_id = int (record.info['autoresponder-mailing-id'])
+					if mailing_id > 0:
+						failure = record.info.get ('autoresponder-failure')
+						success = record.info.get ('autoresponder-success')
+						if failure or success:
+							remark.append ('autoresponder mailing {mailing_id} {status}: {message}'.format (
+								mailing_id = mailing_id,
+								status = 'succeeded' if success else 'failed',
+								message = success if success else failure
+							))
+				#
+				# If the message had been considered as a bounce
+				with Ignore (KeyError, ValueError):
+					bounce_dsn = record.info['bounce-dsn']
+					mailing_id = int (record.info['bounce-mailing-id'])
+					remark.append (f'got bounce with DSN {bounce_dsn} on mailing_id {mailing_id}')
+				data = {
+					'rid': record.rid,
+					'timestamp': record.timestamp,
+					'status': 1 if record.status else 0,
+					'action': record.action if record.action in ('sent', 'filtered', 'ignore', 'unsubscribe', 'bounce') else 'drop',
+					'company_id': iget ('company_id'),
+					'mailing_id': iget ('mailing_id'),
+					'customer_id': iget ('customer_id'),
+					'remark': ', '.join (remark) if remark else None
+				}
+				db.update (
+					db.qselect (
+						oracle = (
+							f'INSERT INTO {UpdateMailloop.mailloop_log_table} '
+							'            (mailloop_log_id, rid, timestamp, status, company_id, mailing_id, customer_id, action, remark) '
+							'VALUES '
+							f'            ({UpdateMailloop.mailloop_log_table}_seq.nextval, :rid, :timestamp, :status, :company_id, :mailing_id, :customer_id, :action, :remark)'
+						), mysql = (
+							f'INSERT INTO {UpdateMailloop.mailloop_log_table} '
+							'            (rid, timestamp, status, company_id, mailing_id, customer_id, action, remark) '
+							'VALUES '
+							'            (:rid, :timestamp, :status, :company_id, :mailing_id, :customer_id, :action, :remark)'
+						)
+					),
+					data
+				)
 		except Exception as e:
 			logger.warning (f'{line}: invalid line: {e}')
 			return False

@@ -133,8 +133,7 @@ def updateDbcfgPropertiesFile(filePath, changedDbcfgProperties):
 
 					line = ""
 					for key, value in list(oldProperties.items()):
-						if not (key == "secure" and value == "false"):
-							line = line + (", " if len(line) > 0 else "") + key + "=" + value
+						line = line + (", " if len(line) > 0 else "") + key + "=" + value
 					line = dbEntryName + ": " + line
 		dbcfgPropertiesNewData = dbcfgPropertiesNewData + line + "\n"
 	dbcfgPropertiesData = dbcfgPropertiesNewData
@@ -144,10 +143,10 @@ def updateDbcfgPropertiesFile(filePath, changedDbcfgProperties):
 			propertiesFileHandle.write(dbcfgPropertiesData)
 	else:
 		raise Exception("Cannot update DbcfgProperties in readonly file '" + filePath + "'")
-	
+
 	dbcfgProperties = readDbcfgPropertiesFile(filePath)
 	if dbcfgProperties[dbEntryName]["dbms"] == "oracle":
-		if "secure" in dbcfgPropertiesData[dbEntryName] and dbcfgPropertiesData[dbEntryName]["secure"] == "true":
+		if "secure" in dbcfgProperties[dbEntryName] and dbcfgProperties[dbEntryName]["secure"] == "true":
 			if os.path.isdir("/home/openemm") and (os.getlogin() == "openemm" or EMTUtilities.hasRootPermissions()):
 				setupSecureOracleDbLibrariesForStartup("openemm")
 			if os.path.isdir("/home/console") and (os.getlogin() == "console" or EMTUtilities.hasRootPermissions()):
@@ -162,10 +161,19 @@ def updateDbcfgPropertiesFile(filePath, changedDbcfgProperties):
 			if os.path.isdir("/home/rdir") and (os.getlogin() == "rdir" or EMTUtilities.hasRootPermissions()):
 				removeSecureOracleDbLibrariesForStartup("rdir")
 
-def parseJdbcConnectionString(jdbcConnectionString):
+# Example JDBC ConnectionStrings:
+# jdbc:oracle:oci:@XE
+# jdbc:oracle:thin:@127.0.0.1:1521:emm
+# jdbc:oracle:thin:@test.domain.local:1521:EMM
+# jdbc:oracle:thin:@//test.domain.local:1521/special.domain.local
+# -- not parsed hereby jdbc:mariadb://mariadb/emm?zeroDateTimeBehavior=convertToNull&useUnicode=true&characterEncoding=UTF-8
+# -- not parsed hereby jdbc:mariadb://localhost/emm?zeroDateTimeBehavior=convertToNull&useUnicode=true&characterEncoding=UTF-8
+# -- not parsed hereby jdbc:mariadb://127.0.0.1:3306/emm?zeroDateTimeBehavior=convertToNull&useUnicode=true&characterEncoding=UTF-8
+def parseOracleJdbcConnectionString(jdbcConnectionString):
 	if jdbcConnectionString is None or len(jdbcConnectionString.strip()) == 0:
 		return None
 	else:
+		jdbcConnectionString = jdbcConnectionString.replace("@//", "@")
 		jdbcConnectionProperties = {}
 		protocolEndIndex = jdbcConnectionString.find("@")
 		if protocolEndIndex > 0:
@@ -178,7 +186,7 @@ def parseJdbcConnectionString(jdbcConnectionString):
 			# TNS names based SID
 			jdbcConnectionProperties["sid"] = dbIdentifierParts[0]
 		elif len(dbIdentifierParts) == 3:
-			# Format hostname:port:dbname
+			# Format "hostname:port:dbname"
 			host = dbIdentifierParts[0]
 			while host.startswith("/"):
 				host = host[1:]
@@ -470,7 +478,7 @@ def checkDbServiceAvailable():
 		return False
 
 	if dbcfgEntry["dbms"] is not None and dbcfgEntry["dbms"].lower() == "oracle":
-		jdbcConnectProperties = parseJdbcConnectionString(dbcfgEntry["jdbc-connect"])
+		jdbcConnectProperties = parseOracleJdbcConnectionString(dbcfgEntry["jdbc-connect"])
 		if jdbcConnectProperties is None:
 			return False
 
@@ -572,6 +580,9 @@ def checkDbExists(databaseName):
 		return False
 
 def checkDbStructureExists():
+	return checkTableExists("agn_dbversioninfo_tbl");
+
+def checkTableExists(tableName):
 	connection = None
 	cursor = None
 	try:
@@ -580,7 +591,31 @@ def checkDbStructureExists():
 			raise Exception("Cannot establish db connection")
 		cursor = connection.cursor()
 
-		cursor.execute("SELECT COUNT(*) FROM agn_dbversioninfo_tbl")
+		cursor.execute("SELECT COUNT(*) FROM " + tableName + " WHERE 1 = 0")
+
+		for row in cursor:
+			if row[0] >= 0:
+				return True
+		return False
+	except:
+		return False
+	finally:
+		if cursor is not None:
+			cursor.close()
+		if connection is not None:
+			connection.commit()
+			connection.close()
+
+def checkColumnExists(tableName, columnName):
+	connection = None
+	cursor = None
+	try:
+		connection = openDbConnection()
+		if connection is None:
+			raise Exception("Cannot establish db connection")
+		cursor = connection.cursor()
+
+		cursor.execute("SELECT " + columnName + " FROM " + tableName + " WHERE 1 = 0")
 
 		for row in cursor:
 			if row[0] >= 0:
@@ -708,15 +743,25 @@ def createDatabaseAndUser(host, dbname, username, userpassword, dbRootPassword =
 			sqlUpdateReturnCode = os.system(getDbClientPath() + " -u root -h " + host + passwordParameterPart + " --default-character-set=utf8 -e \"FLUSH PRIVILEGES\"")
 		return sqlUpdateReturnCode == 0
 
-def readConfigurationFromDB():
+def readConfigurationFromDB(hostname):
 	configurationValues = []
-	result = select("SELECT class, name, value, hostname FROM config_tbl ORDER BY class, name")
+	result = select("SELECT class, name, value, hostname FROM config_tbl WHERE hostname IS NULL OR TRIM(hostname) = '' OR hostname = ? ORDER BY class, name", hostname)
 	for row in result:
 		className = row[0]
 		configName = row[1]
 		value = row[2]
-		hostname = row[3]
-		configurationValues.append({"class": className, "name": configName, "value": value, "hostname": hostname})
+		valueHostname = row[3]
+
+		foundValue = False
+		if valueHostname == hostname:
+			for configurationValue in configurationValues:
+				if configurationValue["class"] == className and configurationValue["name"] == configName:
+					configurationValue["value"] = value
+					configurationValue["hostname"] = hostname
+					foundValue = True
+					break
+		if not foundValue:
+			configurationValues.append({"class": className, "name": configName, "value": value, "hostname": valueHostname})
 	return configurationValues
 
 def readConfigurationValueFromDB(configClass, configName, hostname):
@@ -745,7 +790,7 @@ def readConfigurationValueFromDB(configClass, configName, hostname):
 def updateConfigurationValueInDB(configClass, configName, configValue, hostname):
 	# Check if entry already exists. SQL-Update of an entry with same value returns rowcount 0, so a SQL-Select is used.
 	if configValue == "<delete>":
-		update("DELETE FROM config_tbl WHERE class = ? AND name = ? AND (hostname = ? OR hostname IS NULL)", configClass, configName, hostname)
+		update("DELETE FROM config_tbl WHERE class = ? AND name = ? AND (hostname IS NULL OR TRIM(hostname) = '' OR hostname = ?)", configClass, configName, hostname)
 	else:
 		itemExists = selectValue("SELECT COUNT(*) FROM config_tbl WHERE class = ? AND name = ? AND hostname = ?", configClass, configName, hostname) > 0
 		if itemExists:
@@ -771,9 +816,9 @@ def readJobQueueHostsFromDB():
 
 def storeJobQueueHostInDB(hostName, status):
 	if hostName == "*" or hostName is None:
-		itemExists = selectValue("SELECT COUNT(*) FROM config_tbl WHERE class = 'jobqueue' AND name = 'execute' AND (hostname IS NULL OR hostname = '')") > 0
+		itemExists = selectValue("SELECT COUNT(*) FROM config_tbl WHERE class = 'jobqueue' AND name = 'execute' AND (hostname IS NULL OR TRIM(hostname) = '')") > 0
 		if itemExists:
-			update("UPDATE config_tbl SET change_date = CURRENT_TIMESTAMP, description = 'Changed by Maintenance Tool', value = ? WHERE class = 'jobqueue' AND name = 'execute' AND (hostname IS NULL OR hostname = '')", 1 if status else 0)
+			update("UPDATE config_tbl SET change_date = CURRENT_TIMESTAMP, description = 'Changed by Maintenance Tool', value = ? WHERE class = 'jobqueue' AND name = 'execute' AND (hostname IS NULL OR TRIM(hostname) = '')", 1 if status else 0)
 		else:
 			update("INSERT INTO config_tbl (class, name, hostname, value, creation_date, change_date, description) VALUES ('jobqueue', 'execute', NULL, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Changed by Maintenance Tool')", 1 if status else 0)
 	else:
@@ -785,7 +830,7 @@ def storeJobQueueHostInDB(hostName, status):
 
 def removeJobQueueHostFromDB(hostName):
 	if hostName == "*" or hostName is None:
-		update("DELETE FROM config_tbl WHERE class = 'jobqueue' AND name = 'execute' AND (hostname IS NULL OR hostname = '')")
+		update("DELETE FROM config_tbl WHERE class = 'jobqueue' AND name = 'execute' AND (hostname IS NULL OR TRIM(hostname) = '')")
 	else:
 		update("DELETE FROM config_tbl WHERE class = 'jobqueue' AND name = 'execute' AND hostname = ?", hostName)
 
@@ -921,7 +966,7 @@ def setupSecureOracleDbLibrariesForStartup(username):
 		if not "# OracleDB secure connection setup: start" in additionalPropertiesData:
 			additionalPropertiesData = additionalPropertiesData\
 				+ "# OracleDB secure connection setup: start\n"\
-				+ "rm -f ~/tomcat/lib/ojdbc8.jar\n"\
+				+ "rm -f ~/tomcat/lib/ojdbc8*.jar\n"\
 				+ "rm -f ~/tomcat/lib/orai18n.jar\n"\
 				+ "rm -f ~/tomcat/lib/ucp.jar\n"\
 				+ "rm -f ~/tomcat/lib/xstreams.jar\n"\

@@ -113,7 +113,11 @@ replace_tags (blockmail_t *blockmail, receiver_t *rec, block_t *block,
 {
 	bool_t		st;
 	record_t	*record;
+	xmlBufferPtr	source;
+	tagpos_t	**tagpos;
+	int		tagpos_count;
 	int		sorted_size;
+	tagpos_t	**sorted;
 	const dyn_t	*dyn, *root;
 	int		dyncount, dynused;
 	long		start, cur, next, end, len;
@@ -129,33 +133,41 @@ replace_tags (blockmail_t *blockmail, receiver_t *rec, block_t *block,
 	record = rec -> rvdata -> cur;
 	if (! set_content (blockmail, rec, record))
 		st = false;
-	for (n = 0, sorted_size = 0; n < block -> tagpos_count; ++n) {
-		if ((block -> tagpos[n] -> type & TP_DYNAMIC) && block -> tagpos[n] -> tname &&
-		    (dyn = find_dynamic (blockmail, rec, block -> tagpos[n] -> tname)) &&
-		    dyn -> interest && (dyn -> interest_index != -1)) {
-			if (record -> isnull[dyn -> interest_index])
-				block -> tagpos[n] -> sort_value = 0;
-			else
-				block -> tagpos[n] -> sort_value = xml2long (record -> data[dyn -> interest_index]);
-			block -> sorted[sorted_size++] = block -> tagpos[n];
-			block -> tagpos[n] -> sort_enable = true;
-		} else
-			block -> tagpos[n] -> sort_enable = false;
+	source = block -> content;
+	tagpos = block -> tagpos;
+	tagpos_count = block -> tagpos_count;
+	if ((tagpos_count > 0) && (sorted = (tagpos_t **) malloc (sizeof (tagpos_t *) * tagpos_count))) {
+		for (n = 0, sorted_size = 0; n < tagpos_count; ++n) {
+			if ((tagpos[n] -> type & TP_DYNAMIC) && tagpos[n] -> tname &&
+			    (dyn = find_dynamic (blockmail, rec, tagpos[n] -> tname)) &&
+			    dyn -> interest && (dyn -> interest_index != -1)) {
+				if (record -> isnull[dyn -> interest_index])
+					tagpos[n] -> sort_value = 0;
+				else
+					tagpos[n] -> sort_value = xml2long (record -> data[dyn -> interest_index]);
+				sorted[sorted_size++] = tagpos[n];
+				tagpos[n] -> sort_enable = true;
+			} else
+				tagpos[n] -> sort_enable = false;
+		}
+		if (sorted_size > 1)
+			qsort (sorted, sorted_size, sizeof (sorted[0]), tp_compare);
+	} else {
+		sorted_size = 0;
+		sorted = NULL;
 	}
-	if (sorted_size > 1)
-		qsort (block -> sorted, sorted_size, sizeof (block -> sorted[0]), tp_compare);
 	dyncount = 0;
 	dynused = 0;
 	start = 0;
 	proot = NULL;
 	pprev = NULL;
 	clear_output = false;
-	end = xmlBufferLength (block -> content);
-	content = xmlBufferContent (block -> content);
+	end = xmlBufferLength (source);
+	content = xmlBufferContent (source);
 	xmlBufferEmpty (block -> in);
 	for (cur = start, tidx = 0, sidx = 0; cur < end; ) {
-		if (tidx < block -> tagpos_count) {
-			tp = block -> tagpos[tidx++];
+		if (tidx < tagpos_count) {
+			tp = tagpos[tidx++];
 			next = tp -> start;
 		} else {
 			tp = NULL;
@@ -172,7 +184,7 @@ replace_tags (blockmail_t *blockmail, receiver_t *rec, block_t *block,
 				++dyncount;
 				if (tp -> sort_enable) {
 					if (sidx < sorted_size)
-						sp = block -> sorted[sidx++];
+						sp = sorted[sidx++];
 					else
 						sp = NULL;
 				} else
@@ -281,36 +293,7 @@ replace_tags (blockmail_t *blockmail, receiver_t *rec, block_t *block,
 			}
 			if (tag && (cont = tag_content (tag, blockmail, rec, & n)) && (n > 0)) {
 				if (ispdf) {
-					int	clen;
-					
-					while (n > 0) {
-						clen = xmlCharLength (*cont);
-						if (clen > 1) {
-							xmlBufferAdd (block -> in, cont, clen);
-						} else
-							switch (*cont) {
-							default:
-								xmlBufferAdd (block -> in, cont, clen);
-								break;
-							case '&':
-								xmlBufferCCat (block -> in, "&amp;");
-								break;
-							case '<':
-								xmlBufferCCat (block -> in, "&lt;");
-								break;
-							case '>':
-								xmlBufferCCat (block -> in, "&gt;");
-								break;
-							case '\'':
-								xmlBufferCCat (block -> in, "&apos;");
-								break;
-							case '"':
-								xmlBufferCCat (block -> in, "&quot;");
-								break;
-							}
-						cont += clen;
-						n -= clen;
-					}
+					entity_escape (block -> in, cont, n);
 				} else if (replace) {
 					individual_replace (replace, block -> in, cont, n);
 				} else {
@@ -327,6 +310,8 @@ replace_tags (blockmail_t *blockmail, receiver_t *rec, block_t *block,
 		xmlBufferEmpty (block -> in);
 		dynused = 0;
 	}
+	if (sorted)
+		free (sorted);
 	if ((level == 0) && (dyncount > 0) && (dynused == 0)) {
 		/* have hit one empty text block */
 		if (rec -> media && rec -> media -> empty) {

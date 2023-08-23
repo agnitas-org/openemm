@@ -24,7 +24,7 @@ from	agn3.stream import Stream
 from	agn3.tools import silent_call
 #
 class DKIM (CLI):
-	__slots__ = ['company_id', 'verbose', 'newkey', 'display_key', 'validate_only', 'dns_options', 'parameter']
+	__slots__ = ['company_id', 'verbose', 'newkey', 'display_key', 'validate_only', 'skip_validation', 'dns_options', 'parameter']
 	def add_arguments (self, parser: argparse.ArgumentParser) -> None:
 		parser.add_argument (
 			'-c', '--company-id', action = 'store', type = int, dest = 'company_id',
@@ -47,6 +47,10 @@ class DKIM (CLI):
 			help = 'validate only'
 		)
 		parser.add_argument (
+			'-S', '--skip-validation', action = 'store_true', dest = 'skip_validation',
+			help = 'do not validate DNS entry at all'
+		)
+		parser.add_argument (
 			'--dns-tcp', action = 'store_true', dest = 'dns_tcp',
 			help = 'use TCP for DNS operations instead of UDP'
 		)
@@ -64,6 +68,9 @@ class DKIM (CLI):
 		self.newkey = args.newkey
 		self.display_key = args.display_key
 		self.validate_only = args.validate_only
+		self.skip_validation = args.skip_validation
+		if self.validate_only and self.skip_validation:
+			raise error ('either just valid or skip validation, not both, supported')
 		self.dns_options: Dict[str, Any] = {}
 		if args.dns_tcp:
 			self.dns_options['protocol'] = 'TCP'
@@ -106,7 +113,7 @@ class DKIM (CLI):
 						valid_end = datetime.fromordinal (valid_end.toordinal () + 1)
 			with open (key_file) as fd:
 				key = fd.read ()
-			if self.validate (domain, selector, key) and not self.validate_only:
+			if (self.skip_validation or self.validate (domain, selector, key)) and not self.validate_only:
 				self.insert (domain, selector, key, valid_start, valid_end)
 		else:
 			self.show ()

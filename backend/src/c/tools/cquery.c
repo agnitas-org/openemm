@@ -13,25 +13,20 @@
 static void
 usage (const char *pgm) /*{{{*/
 {
-	fprintf (stderr, "Usage: %s [-c <config-file>] [-d|<field>+]\n", pgm);
+	fprintf (stderr, "Usage: %s [-d|<field>+]\n", pgm);
 }/*}}}*/
 int
 main (int argc, char **argv) /*{{{*/
 {
 	int		rc;
 	int		n;
-	const char	*config;
 	bool_t		dump;
 	void		*cfg;
 	const char	*key, *value;
 	
-	config = NULL;
 	dump = false;
-	while ((n = getopt (argc, argv, "c:d?h")) != -1)
+	while ((n = getopt (argc, argv, "d?h")) != -1)
 		switch (n) {
-		case 'c':
-			config = optarg;
-			break;
 		case 'd':
 			dump = true;
 			break;
@@ -40,8 +35,8 @@ main (int argc, char **argv) /*{{{*/
 		default:
 			return usage (argv[0]), (n != '?') && (n != 'h');
 		}
-	if (! (cfg = systemconfig_alloc (config)))
-		return fprintf (stderr, "Failed to setup config %s.\n", config ? config : "from default"), 1;
+	if (! (cfg = systemconfig_alloc ()))
+		return fprintf (stderr, "Failed to setup config.\n"), 1;
 	rc = 0;
 	if (dump) {
 		if (optind == argc) {

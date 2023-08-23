@@ -160,7 +160,7 @@ main (int argc, char **argv) /*{{{*/
 			bool_t		fst;
 
 			log_out (lg, LV_DEBUG, "Initializing command %s", cmdtab[n].cmd);
-			log_idpush (lg, cmdtab[n].cmd, NULL);
+			log_idpush (lg, cmdtab[n].cmd);
 			data = (*cmdtab[n].finit) (lg, force, args, alen);
 			log_idpop (lg);
 			if (data) {
@@ -178,7 +178,7 @@ main (int argc, char **argv) /*{{{*/
 						csig_block (csig);
 						log_mark (lg, LV_INFO, 180);
 						log_out (lg, LV_DEBUG, "Executing command %s", cmdtab[n].cmd);
-						log_idpush (lg, cmdtab[n].cmd, NULL);
+						log_idpush (lg, cmdtab[n].cmd);
 						fst = (*cmdtab[n].fexec) (data);
 						log_idpop (lg);
 						if (! fst) {
@@ -210,7 +210,7 @@ main (int argc, char **argv) /*{{{*/
 					csig_free (csig);
 				}
 				log_out (lg, LV_DEBUG, "Deinitialize command %s", cmdtab[n].cmd);
-				log_idpush (lg, cmdtab[n].cmd, NULL);
+				log_idpush (lg, cmdtab[n].cmd);
 				fst = (*cmdtab[n].fdeinit) (data);
 				log_idpop (lg);
 				if (! fst)

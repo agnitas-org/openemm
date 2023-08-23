@@ -28,12 +28,15 @@ from EMT_lib import LayoutMenu
 from EMT_lib import VersionSwitchMenu
 from EMT_lib import ConfigurationMenu
 from EMT_lib import SupplementalMenu
+from EMT_lib import TlsCertificateMenu
 
 def configureTool():
 	Environment.toolName = "OpenEMM Maintenance Tool (OMT)"
 
 	# OpenEMM at GitHub: https://github.com/agnitas-org/OpenEMM
 	Environment.applicationName = "OpenEMM"
+	Environment.scriptFilePath = os.path.dirname(os.path.realpath(__file__))
+
 	if os.path.isfile("/home/" + os.getlogin() + "/.OMT/OMT.override.properties"):
 		customProperty = EMTUtilities.readPropertiesFile("/home/" + os.getlogin() + "/.OMT/OMT.override.properties")
 		Environment.applicationUserNamesToCheck = customProperty["Environment.applicationUserNamesToCheck"].split(",")
@@ -42,10 +45,12 @@ def configureTool():
 
 	Environment.applicationDbcfgEntryDefaultName = "openemm"
 
+	Environment.readonlyDbcfgProperties = ["host"]
+
 	Environment.agnitasDownloadSiteUrl = "https://www.agnitas.de/download"
-	Environment.agnitasDownloadPathVersionInfo = Environment.agnitasDownloadSiteUrl + "/openemm-version-22.10/"
+	Environment.agnitasDownloadPathVersionInfo = Environment.agnitasDownloadSiteUrl + "/openemm-version-23.04/"
 	Environment.updateChannel = None
-	Environment.agnitasUpdateChannels = {"TEST": Environment.agnitasDownloadSiteUrl + "/openemm-version-22.10_TEST/"}
+	Environment.agnitasUpdateChannels = {"TEST": Environment.agnitasDownloadSiteUrl + "/openemm-version-23.04_TEST/"}
 
 	Environment.defaultLandingPage = None
 	Environment.multiServerSystem = False
@@ -94,19 +99,10 @@ def main():
 	Environment.init()
 
 	if "-update" in sys.argv:
-		errorsOccurred = InstallAndUpdateMenu.executeUnattendedUpdate()
+		InstallAndUpdateMenu.executeUnattendedUpdate()
 	elif "-check" in sys.argv:
 		foundError = CheckMenu.executeCheck()
 		sys.exit(1 if foundError else 0)
-	else:
-		foundApplicationUserName = False
-		for applicationUserNameToCheck in Environment.applicationUserNamesToCheck:
-			if Environment.username == applicationUserNameToCheck:
-				foundApplicationUserName = True
-				break
-		if not foundApplicationUserName and not EMTUtilities.hasRootPermissions() and not EMTUtilities.isDebugMode():
-			print(Colors.RED + "\nYou must start this program as one of the allowed users '" + "', '".join(Environment.applicationUserNamesToCheck) + "' or with root permissions (sudo)!" + Colors.DEFAULT + "\n")
-			sys.exit(1)
 
 	menu = Menu("Main")
 
@@ -119,6 +115,7 @@ def main():
 	configurationMenu.addSubMenu(Environment.configTableMenu)
 	if Environment.systemCfgFilePath is not None and os.path.isfile(Environment.systemCfgFilePath):
 		configurationMenu.addSubMenu(Menu("Change system.cfg").setAction(ConfigurationMenu.systemCfgMenuAction))
+	configurationMenu.addSubMenu(Menu("Change layout images", lambda: DbConnector.checkDbStructureExists()).setAction(LayoutMenu.layoutImagesTableMenuAction))
 	configurationMenu.addSubMenu(Menu("Change client/account configuration", lambda: DbConnector.checkDbStructureExists()).setAction(ConfigurationMenu.clientMenuAction))
 	configurationMenu.addSubMenu(Menu("Change jobqueue configuration", lambda: DbConnector.checkDbStructureExists()).setAction(ConfigurationMenu.jobqueueMenuAction))
 	if Environment.defaultLandingPage is not None:
@@ -134,6 +131,8 @@ def main():
 	securityMenu.addSubMenu(Menu("Create new initial 'emm-master' password", lambda: DbConnector.checkDbStructureExists()).setAction(SupplementalMenu.masterPasswordMenuAction))
 	if Environment.isEmmFrontendServer:
 		securityMenu.addSubMenu(Menu("Install license file", lambda: DbConnector.checkDbStructureExists()).setAction(SupplementalMenu.licenseFileMenuAction))
+	if Environment.isOpenEmmServer:
+		securityMenu.addSubMenu(Menu("Configure TLS certificate (https)", None).setAction(TlsCertificateMenu.executeTlsCertificateMenuAction))
 
 	menu.addSubMenu(Menu("Install or update package from AGNITAS Website", lambda: Environment.agnitasDownloadSiteUrlReachable and Environment.agnitasDownloadPathVersionInfo is not None).setAction(InstallAndUpdateMenu.siteUpdateMenuAction))
 	menu.addSubMenu(Menu("Install or update package from local file").setAction(InstallAndUpdateMenu.fileUpdateMenuAction))
@@ -144,22 +143,22 @@ def main():
 	menu.addSubMenu(Menu("Send configuration and log files in email", lambda: DbConnector.checkDbStructureExists()).setAction(ApplicationStatusMenu.sendConfigAndLogsAction))
 
 	try:
-		if Environment.javaHome is None or Environment.javaHome == "" or not EMTUtilities.checkJavaAvailable(Environment.javaHome):
+		if EMTUtilities.isBlank(Environment.javaHome) or not EMTUtilities.checkJavaAvailable(Environment.javaHome):
 			Environment.errors.append("Basic webapplication configuration for JAVA is missing or invalid. Please configure.")
 			Environment.overrideNextMenu = basicWebappMenu
-		elif Environment.catalinaHome is None or Environment.catalinaHome == "" or not EMTUtilities.checkTomcatAvailable(Environment.javaHome, Environment.catalinaHome):
+		elif EMTUtilities.isBlank(Environment.catalinaHome) or not EMTUtilities.checkTomcatAvailable(Environment.javaHome, Environment.catalinaHome):
 			Environment.errors.append("Basic webapplication configuration for Tomcat/CatalinaHome is missing or invalid. Please configure.")
 			Environment.overrideNextMenu = basicWebappMenu
-		elif not Environment.isEmmRdirServer and (Environment.wkhtmltopdf is None or Environment.wkhtmltopdf == "" or not os.path.isfile(Environment.wkhtmltopdf)):
+		elif not Environment.isEmmRdirServer and (EMTUtilities.isBlank(Environment.wkhtmltopdf) or not os.path.isfile(Environment.wkhtmltopdf)):
 			Environment.errors.append("Basic webapplication configuration for WKHTML (wkhtmltopdf) is missing or invalid. Please configure.")
 			Environment.overrideNextMenu = basicWebappMenu
-		elif not Environment.isEmmRdirServer and (Environment.wkhtmltoimage is None or Environment.wkhtmltoimage == "" or not os.path.isfile(Environment.wkhtmltoimage)):
+		elif not Environment.isEmmRdirServer and (EMTUtilities.isBlank(Environment.wkhtmltoimage) or not os.path.isfile(Environment.wkhtmltoimage)):
 			Environment.errors.append("Basic webapplication configuration for WKHTML (wkhtmltoimage) is missing or invalid. Please configure.")
 			Environment.overrideNextMenu = basicWebappMenu
 		elif (DbConnector.emmDbVendor is None or not DbConnector.checkDbServiceAvailable()) and Environment.username != "mailout":
 			Environment.errors.append("Database is not running or host is invalid. Please configure.")
 			Environment.overrideNextMenu = dbcfgMenu
-		elif Environment.getSystemUrl() is None or Environment.getSystemUrl().strip() == "" or Environment.getSystemUrl().strip() == "Unknown" and DbConnector.checkDbServiceAvailable() and DbConnector.checkDbStructureExists():
+		elif EMTUtilities.isBlank(Environment.getSystemUrl()) or Environment.getSystemUrl().strip() == "Unknown" and DbConnector.checkDbServiceAvailable() and DbConnector.checkDbStructureExists():
 			Environment.errors.append("Basic configuration is missing. Please configure.")
 			Environment.overrideNextMenu = Environment.configTableMenu
 		menu.show()

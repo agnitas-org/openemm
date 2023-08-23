@@ -17,7 +17,7 @@ from	datetime import datetime, timedelta
 from	dataclasses import dataclass
 from	typing import Dict, List, NamedTuple, Pattern, Set
 from	agn3.db import DB
-from	agn3.definitions import base, fqdn, user
+from	agn3.definitions import base, fqdn, user, ams
 from	agn3.email import EMail
 from	agn3.emm.config import EMMConfig, Responsibility
 from	agn3.exceptions import error
@@ -67,7 +67,7 @@ class Mailing: #{{{
 							mode = 1
 					elif mode == 1:
 						mtch = pattern.search (line)
-						if not mtch is None:
+						if mtch is not None:
 							current.add (int (mtch.groups ()[0]))
 				self.seen.update (current)
 			except IOError as e:
@@ -75,7 +75,7 @@ class Mailing: #{{{
 	#}}}
 	def __collect (self, pattern: Pattern[str], path: str, remove: bool) -> None: #{{{
 		files = os.listdir (path)
-		for fname in [_f for _f in files if not pattern.match (_f) is None]:
+		for fname in [_f for _f in files if pattern.match (_f) is not None]:
 			fpath = os.path.join (path, fname)
 			if remove:
 				try:
@@ -94,15 +94,16 @@ class Mailing: #{{{
 	#}}}
 	def collect_seen (self) -> None: #{{{
 		self.seen.clear ()
-		pattern = re.compile ('^AgnMail(-[0-9]+)?=D[0-9]{14}=%d=%d=[^=]+=liaMngA\\.(stamp|final|xml\\.gz)$' % (self.company_id, self.mailing_id))
-		self.__collect (pattern, self.meta, True)
-		for sdir in self.check:
-			spath = os.path.join (self.archive, sdir)
-			if os.path.isdir (spath):
-				self.__collect (pattern, spath, False)
-		track = os.path.join (self.track, str (self.company_id), str (self.mailing_id))
-		if os.path.isdir (track):
-			self.__collect_track (track)
+		if self.status_field not in ('A', 'T'):
+			pattern = re.compile ('^AgnMail(-[0-9]+)?=D[0-9]{14}=%d=%d=[^=]+=liaMngA\\.(stamp|final|xml\\.gz)$' % (self.company_id, self.mailing_id))
+			self.__collect (pattern, self.meta, True)
+			for sdir in self.check:
+				spath = os.path.join (self.archive, sdir)
+				if os.path.isdir (spath):
+					self.__collect (pattern, spath, False)
+			track = os.path.join (self.track, str (self.company_id), str (self.mailing_id))
+			if os.path.isdir (track):
+				self.__collect_track (track)
 	#}}}
 	def create_filelist (self) -> None: #{{{
 		if self.seen:
@@ -152,13 +153,21 @@ class Recovery (CLI): #{{{
 	def executor (self) -> bool:
 		log.set_loglevel ('debug')
 		try:
-			with Lock ():
-				with log ('collect'):
-					self.collect_mailings ()
-				with log ('recover'):
-					self.recover_mailings ()
-				with log ('report'):
-					self.report_mailings ()
+			if ams and self.startup_delay > 0:
+				with log ('delay'):
+					delay = self.startup_delay
+					while self.running and delay > 0:
+						delay -= 1
+						time.sleep (1)
+
+			if self.running:
+				with Lock ():
+					with log ('collect'):
+						self.collect_mailings ()
+					with log ('recover'):
+						self.recover_mailings ()
+					with log ('report'):
+						self.report_mailings ()
 			return True
 		except error as e:
 			logger.exception ('Failed recovery: %s' % e)
@@ -235,18 +244,35 @@ class Recovery (CLI): #{{{
 			self.db.sync ()
 		#
 		query = (
-			'SELECT status_id, mailing_id, company_id, status_field, senddate, processed_by '
+			'SELECT status_id, mailing_id, company_id, status_field, genchange, senddate, processed_by '
 			'FROM maildrop_status_tbl '
-			'WHERE genstatus IN (1, 2) AND genchange > :expire AND genchange < CURRENT_TIMESTAMP AND status_field = \'W\''
+			'WHERE genstatus IN (1, 2) AND genchange > :expire AND genchange < CURRENT_TIMESTAMP AND status_field IN (\'A\', \'T\', \'W\')'
 		)
+		limit_restart_test_and_admin_mailings = datetime.now () - timedelta (hours = 1)
 		for row in (self.db.streamc (query, {'expire': expire})
 			.filter (lambda r: r.company_id in self.responsibilities and (not r.processed_by or r.processed_by == fqdn))
 			.filter (lambda r: self.restrict_to_mailings is None or r.mailing_id in self.restrict_to_mailings)
 			.filter (lambda r: self.__mailing_valid (r.mailing_id))
 		):
-			check = self.__make_range (row.senddate, now)
-			self.mailings.append (Mailing (row.status_id, row.status_field, row.mailing_id, row.company_id, check))
-			logger.info ('Mark mailing %d (%s) for recovery' % (row.mailing_id, self.__mailing_name (row.mailing_id)))
+			mailing_name = self.__mailing_name (row.mailing_id)
+			if row.status_field == 'W' or (row.genstatus == 1 and row.genchange is not None and row.genchange > limit_restart_test_and_admin_mailings):
+				check = self.__make_range (row.senddate, now)
+				self.mailings.append (Mailing (row.status_id, row.status_field, row.mailing_id, row.company_id, check))
+				logger.info ('Mark mailing %d (%s) for recovery' % (row.mailing_id, mailing_name))
+			else:
+				if self.db.update (
+					'UPDATE maildrop_status_tbl '
+					'SET genstatus = 4 '
+					'WHERE status_id = :status_id',
+					{
+						'status_id': row.status_id
+					}
+				) > 0:
+					logger.info (f'Mark {row.status_field}-mailing {row.mailing_id} ({mailing_name}) as finished in an unknown state')
+				else:
+					logger.warning (f'Failed to mark {row.status_id} for finished')
+		if not self.dryrun:
+			self.db.sync ()
 		self.mailings.sort (key = lambda m: m.status_id)
 		logger.info ('Found %d mailing(s) to recover' % len (self.mailings))
 	#}}}
@@ -268,7 +294,7 @@ class Recovery (CLI): #{{{
 				m.create_filelist ()
 				count = 0
 				for (total_mails, ) in self.db.query ('SELECT total_mails FROM mailing_backend_log_tbl WHERE status_id = :sid', {'sid': m.status_id}):
-					if not total_mails is None and total_mails > count:
+					if total_mails is not None and total_mails > count:
 						count = total_mails
 				m.set_generated_count (count)
 				self.db.update ('DELETE FROM mailing_backend_log_tbl WHERE status_id = :sid', {'sid': m.status_id})
@@ -309,7 +335,7 @@ class Recovery (CLI): #{{{
 							if m.last:
 								current = 0
 								for (currentMails, ) in self.db.query ('SELECT current_mails FROM mailing_backend_log_tbl WHERE status_id = :sid', {'sid': m.status_id}):
-									if not currentMails is None:
+									if currentMails is not None:
 										current = currentMails
 								if current != m.current:
 									logger.debug (f'Mailing {m.mailing_id} has created {current:,d} vs. {m.current:,d} when last checked')
@@ -341,7 +367,7 @@ class Recovery (CLI): #{{{
 				if not m.active:
 					count = 0
 					for (total_mails, ) in self.db.query ('SELECT total_mails FROM mailing_backend_log_tbl WHERE status_id = :sid', {'sid': m.status_id}):
-						if not total_mails is None:
+						if total_mails is not None:
 							count = total_mails
 					count += len (m.seen)
 					self.db.update ('UPDATE mailing_backend_log_tbl SET total_mails = :cnt, current_mails = :cnt WHERE status_id = :sid', {'sid': m.status_id, 'cnt': count})

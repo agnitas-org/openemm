@@ -20,6 +20,7 @@ from	dataclasses import dataclass, field
 from	datetime import datetime
 from	email.message import EmailMessage
 from	email.utils import parseaddr
+from	urllib.parse import quote
 from	typing import Any, Final, Optional
 from	typing import ClassVar, DefaultDict, Dict, List, NamedTuple, Pattern, Tuple
 from	typing import cast
@@ -28,8 +29,8 @@ from	agn3.definitions import base, licence, fqdn, syscfg
 from	agn3.email import EMail, ParseEMail
 from	agn3.emm.bounce import Bounce
 from	agn3.emm.datasource import Datasource
-from	agn3.emm.types import UserStatus
-from	agn3.exceptions import error
+from	agn3.emm.types import MediaType, UserStatus
+from	agn3.exceptions import error, Stop
 from	agn3.ignore import Ignore
 from	agn3.io import which
 from	agn3.log import log_limit, log
@@ -66,6 +67,50 @@ def invoke (url: str, retries: int = 3, **kws: Any) -> Tuple[bool, requests.Resp
 				logger.error (f'{url} invocation failed: {e}')
 				raise
 		raise error (f'{url} invocation failed after {retries} retries')
+
+class Report:
+	__slots__ = ['logpath', 'content']
+	def __init__ (self, logpath: Optional[str]) -> None:
+		self.logpath = logpath
+		self.content: Dict[str, str] = {}
+		self['rid'] = 'unknown'
+		self['timestamp'] = datetime.now ()
+		self['action'] = 'unprocessed'
+	
+	def __setitem__ (self, option: str, value: Any) -> None:
+		if value is None:
+			use = ''
+		elif isinstance (value, str):
+			use = value
+		elif isinstance (value, bool):
+			use = 'true' if value else 'false'
+		elif isinstance (value, datetime):
+			use = f'{value:%Y-%m-%d %H:%M:%S}'
+		else:
+			use = str (value)
+		self.content[option] = use
+	
+	def write (self, ok: bool) -> None:
+		report = '{licence};{rid};{timestamp};{action};{status};{info}'.format (
+			licence = atoi (self.content.get ('licence', licence)),
+			rid = self.content['rid'],
+			timestamp = self.content['timestamp'],
+			action = self.content['action'],
+			status = '+' if ok else '-',
+			info = (Stream (self.content.items ())
+				.filter (lambda kv: kv[0] not in ('rid', 'timestamp', 'action'))
+				.map (lambda kv: '{k}={v}'.format (k = kv[0], v = quote (kv[1])))
+				.join ('\t')
+			)
+		)
+		if self.logpath is not None:
+			try:
+				with open (self.logpath, 'a') as fd:
+					fd.write (f'{report}\n')
+			except IOError as e:
+				logger.error (f'report: failed to write "{report}" to "{self.logpath}": {e}')
+		else:
+			print (f'Would report {report}')
 
 class Autoresponder:
 	__slots__ = ['aid', 'sender']
@@ -148,6 +193,7 @@ class Autoresponder:
 
 	def trigger_message (self,
 		db: DB,
+		report: Report,
 		bounce: Bounce,
 		cinfo: Optional[ParseEMail.Origin],
 		parameter: Line,
@@ -160,9 +206,12 @@ class Autoresponder:
 				raise error ('no company id set')
 			mailing_id = parameter.autoresponder_mailing_id
 			company_id = parameter.company_id
+			report['autoresponder-mailing-id'] = mailing_id
 			if cinfo is None:
+				report['autoresponder-failure'] = 'unable to detect origin'
 				raise error ('failed to determinate origin of mail')
 			if not cinfo.valid:
+				report['autoresponder-failure'] = 'invalid origin detected'
 				raise error ('uid from foreign instance %s (expected from %s)' % (cinfo.licence_id, licence))
 			customer_id = cinfo.customer_id
 			rdir_domain = None
@@ -175,28 +224,44 @@ class Autoresponder:
 					{'mailing_id': mailing_id}
 				)
 				if rq is None:
+					report['autoresponder-failure'] = f'mailing with mailing-id {mailing_id} not found'
 					raise error ('mailing %d not found' % mailing_id)
 				if rq.company_id != company_id:
+					report['autoresponder-failure'] = f'mailing with mailing-id {mailing_id} does not belong to company_id {company_id} but {rq.company_id}'
 					raise error ('mailing %d belongs to company %d, but mailloop belongs to company %d' % (mailing_id, rq[1], company_id))
 				if rq.deleted:
-					logger.info ('mailing %d is marked as deleted' % mailing_id)
+					report['autoresponder-failure'] = f'mailing with mailing-id {mailing_id} is marked as deleted'
+					raise error ('mailing %d is marked as deleted' % mailing_id)
 				mailinglist_id = rq.mailinglist_id
+				mailinglist_ids = {mailinglist_id}
+				if cinfo.mailing_id > 0:
+					rq = db.querys (
+						'SELECT mailinglist_id '
+						'FROM mailing_tbl '
+						'WHERE mailing_id = :mailing_id',
+						{
+							'mailing_id': cinfo.mailing_id
+						}
+					)
+					if rq is not None and rq.mailinglist_id:
+						mailinglist_ids.add (rq.mailinglist_id)
 				#
-				rq = db.querys (
-					'SELECT user_type '
-					'FROM customer_%d_binding_tbl '
-					'WHERE customer_id = :customer_id AND mailinglist_id = :mailinglist_id AND mediatype = 0'
-					% company_id,
+				for row in db.queryc (
+					'SELECT mailinglist_id, user_type '
+					f'FROM customer_{company_id}_binding_tbl '
+					'WHERE customer_id = :customer_id AND mediatype = :mediatype',
 					{
 						'customer_id': customer_id,
-						'mailinglist_id': mailinglist_id
+						'mediatype': MediaType.EMAIL.value
 					}
-				)
-				if rq is None or rq.user_type not in ('A', 'T', 't'):
-					if not self.allow (db, bounce, parameter, cinfo, dryrun):
-						raise error ('recipient is not allowed to received (again) an autoresponder')
+				):
+					if row.user_type in ('A', 'T', 't') and row.mailinglist_id in mailinglist_ids:
+						logger.info ('recipient %d on %d for %d is admin/test recipient and not blocked' % (customer_id, row.mailinglist_id, mailing_id))
+						break
 				else:
-					logger.info ('recipient %d on %d for %d is admin/test recipient and not blocked' % (customer_id, mailinglist_id, mailing_id))
+					if not self.allow (db, bounce, parameter, cinfo, dryrun):
+						report['autoresponder-failure'] = 'recipient blocked due to previous sent autoresponder'
+						raise error ('recipient is not allowed to received (again) an autoresponder')
 				#
 				rq = db.querys (
 					'SELECT rdir_domain '
@@ -227,7 +292,7 @@ class Autoresponder:
 				if rq is None:
 					raise error ('no entry in mailloop_tbl for %s found' % self.aid)
 				security_token = rq.security_token if rq.security_token else ''
-				url = f'{rdir_domain}/sendMailloopAutoresponder.do'
+				url = f'{rdir_domain}/sendMailloopAutoresponder.action'
 				params: Dict[str, str] = {
 					'mailloopID': self.aid,
 					'companyID': str (company_id),
@@ -240,12 +305,12 @@ class Autoresponder:
 					try:
 						(success, response) = invoke (url, params = params)
 						if success:
+							report['autoresponder-success'] = f'sent to {customer_id}'
 							logger.info ('Autoresponder mailing %d for customer %d triggered: %s' % (mailing_id, customer_id, response))
 						else:
 							logger.warning (f'Autoresponder mailing {mailing_id} for customer {customer_id} failed due to: {response} with {response.text}')
 					except Exception as e:
 						logger.error (f'Failed to trigger {url}: {e}')
-
 		except error as e:
 			logger.info ('Failed to send autoresponder: %s' % str (e))
 		except (KeyError, ValueError, TypeError) as e:
@@ -484,7 +549,7 @@ class BAVConfig:
 			super ().__init__ (
 				Field ('sender', self.__parse_address, optional = True, source = 'from'),
 				Field ('to', self.__parse_address, optional = True),
-				Field ('rid', atoi, optional = True, default = lambda: 0),
+				Field ('rid', atoi, optional = True, default = lambda n: 0),
 				Field ('rid_name', optional = True, source = 'rid'),
 				Field ('company_id', int, optional = True, source = 'cid'),
 				Field ('forward', self.__listsplit, optional = True, source = 'fwd'),
@@ -551,7 +616,8 @@ class BAVConfig:
 class BAV:
 	__slots__ = [
 		'bounce',
-		'raw', 'msg', 'dryrun', 'uid_handler', 'parsed_email', 'cinfo', 'parameter',
+		'raw', 'msg', 'dryrun', 'report',
+		'uid_handler', 'parsed_email', 'cinfo', 'parameter',
 		'header_from', 'rid', 'sender', 'rule', 'reason'
 	]
 	x_agn = 'X-AGNMailloop'
@@ -559,6 +625,7 @@ class BAV:
 	has_spamassassin = which ('spamassassin') is not None
 	save_pattern = os.path.join (base, 'var', 'spool', 'filter', '%s-%s')
 	ext_bouncelog = os.path.join (base, 'log', 'extbounce.log')
+	reportlog = os.path.join (base, 'log', 'mailloop.log')
 	class From (NamedTuple):
 		realname: str
 		address: str
@@ -568,15 +635,22 @@ class BAV:
 		self.raw = raw
 		self.msg = msg
 		self.dryrun = dryrun
+		self.report = Report (BAV.reportlog if not dryrun else None)
 		self.uid_handler = UIDHandler (enable_cache = True)
 		self.parsed_email = ParseEMail (raw, uid_handler = self.uid_handler)
 		self.cinfo = self.parsed_email.get_origin ()
+		if self.cinfo is not None and self.cinfo.valid:
+			self.report['customer_id'] = self.cinfo.customer_id
+			self.report['mailing_id'] = self.cinfo.mailing_id
+			self.report['company_id'] = self.cinfo.company_id
+			self.report['licence_id'] = self.cinfo.licence_id if self.cinfo.licence_id is not None else licence
 		return_path = None
 		return_path_header = self.msg['return-path']
 		if return_path_header is not None:
 			match = BAVConfig.address_pattern.search (return_path_header)
 			if match is not None:
 				return_path = match.group (1)
+				self.report['return-path'] = return_path
 		try:
 			parameter: Optional[str] = self.msg[BAV.x_agn]
 		except KeyError:
@@ -587,6 +661,7 @@ class BAV:
 					address = '{local_part}@{domain_part}'.format (local_part = local_part, domain_part = domain_part.lower ())
 					parameter = bavconfig[address][0]
 		if parameter is not None:
+			self.report['parameter'] = parameter
 			self.parameter = bavconfig.parse (parameter)
 			if (
 				self.cinfo is not None and
@@ -595,7 +670,7 @@ class BAV:
 				self.cinfo.company_id != self.parameter.company_id and
 				self.parameter.to
 			):
-				with Ignore (StopIteration):
+				with Ignore (Stop):
 					for address in (
 						self.parameter.to,
 						'@{domain}'.format (domain = self.parameter.to.split ('@', 1)[-1])
@@ -605,21 +680,25 @@ class BAV:
 								new_parameter = bavconfig.parse (parameter)
 								if new_parameter.company_id == self.cinfo.company_id:
 									self.parameter = new_parameter._replace (sender = self.parameter.sender, to = self.parameter.to)
-									raise StopIteration ()
+									raise Stop ()
 		else:
 			self.parameter = bavconfig.parse ('')
 
 		try:
 			self.header_from: Optional[BAV.From] = BAV.From (*parseaddr (cast (str, self.msg['from']))) if 'from' in self.msg else None
+			if self.header_from is not None:
+				self.report['from'] = self.header_from.address
 		except:
 			self.header_from = None
 		self.rid = self.parameter.rid
+		self.report['rid'] = self.rid
 		if return_path is not None:
 			self.sender = return_path
 		elif self.parameter.sender:
 			self.sender = self.parameter.sender
 		else:
 			self.sender = 'postmaster'
+		self.report['sender'] = self.sender
 		if not msg.get_unixfrom ():
 			msg.set_unixfrom (time.strftime ('From ' + self.sender + '  %c'))
 		self.rule = Rule (bounce.get_rule (0 if self.cinfo is None else self.cinfo.company_id, self.rid))
@@ -636,6 +715,7 @@ class BAV:
 				logger.debug (f'Saved mesage to {fname}')
 			except IOError as e:
 				logger.error ('Unable to save mail copy to %s %s' % (fname, e))
+		self.report['saved'] = fname
 	
 	def sendmail (self, msg: EmailMessage, to: List[str]) -> None:
 		if self.dryrun:
@@ -654,6 +734,7 @@ class BAV:
 					logger.debug (f'Send message to {to}')
 			except Exception as e:
 				logger.exception ('Sending mail to %s failed %s' % (to, e))
+		self.report['sent'] = ','.join (to)
 
 	__find_score = re.compile ('score=([0-9]+(\\.[0-9]+)?)')
 	def filter_with_spam_assassin (self, fwd: Optional[List[str]]) -> Optional[List[str]]:
@@ -669,14 +750,18 @@ class BAV:
 				self.msg = nmsg
 				spam_status = nmsg['x-spam-status']
 				if spam_status is not None:
+					self.report['spam-status'] = spam_status
 					try:
 						m = self.__find_score.search (cast (str, spam_status))
 						if m is not None:
 							spam_score = float (m.group (1))
+							self.report['spam-score'] = spam_score
 							if self.parameter.spam_required is not None and self.parameter.spam_required < spam_score:
+								self.report['spam-consequence'] = 'not forwarded'
 								fwd = None
 							elif self.parameter.spam_forward is not None and self.parameter.spam_forward < spam_score:
 								fwd = self.parameter.spam_email
+								self.report['spam-consequence'] = 'forwarded to alternatives'
 					except ValueError as e:
 						logger.warning ('Failed to parse spam score/spam parameter: %s' % str (e))
 				else:
@@ -685,246 +770,256 @@ class BAV:
 				logger.warning ('Failed to parse filtered mail')
 		else:
 			logger.warning ('Failed to retrieve filtered mail')
+		if fwd:
+			self.report['spam_forward'] = ','.join (fwd)
 		return fwd
 	
 	def unsubscribe (self, db: DB, customer_id: int, mailing_id: int, user_remark: str) -> None:
 		if self.dryrun:
 			print (f'Would unsubscribe {customer_id} due to mailing {mailing_id} with {user_remark}')
-			return
-		#
-		if db.isopen ():
-			rq = db.querys ('SELECT mailinglist_id, company_id FROM mailing_tbl WHERE mailing_id = :mailing_id', {'mailing_id': mailing_id})
-			if rq is not None:
-				mailinglist_id = rq.mailinglist_id
-				company_id = rq.company_id
-				cnt = db.update (
-					'UPDATE customer_%d_binding_tbl '
-					'SET user_status = :userStatus, user_remark = :user_remark, timestamp = CURRENT_TIMESTAMP, exit_mailing_id = :mailing_id '
-					'WHERE customer_id = :customer_id AND mailinglist_id = :mailinglist_id'
-					% company_id,
-					{
-						'userStatus': UserStatus.OPTOUT.value,
-						'user_remark': user_remark,
-						'mailing_id': mailing_id,
-						'customer_id': customer_id,
-						'mailinglist_id': mailinglist_id
-					}
-				)
-				if cnt > 0:
-					logger.info ('Unsubscribed customer %d for company %d on mailinglist %d due to mailing %d using %s' % (customer_id, company_id, mailinglist_id, mailing_id, user_remark))
+		else:
+			if db.isopen ():
+				rq = db.querys ('SELECT mailinglist_id, company_id FROM mailing_tbl WHERE mailing_id = :mailing_id', {'mailing_id': mailing_id})
+				if rq is not None:
+					mailinglist_id = rq.mailinglist_id
+					company_id = rq.company_id
+					cnt = db.update (
+						'UPDATE customer_%d_binding_tbl '
+						'SET user_status = :userStatus, user_remark = :user_remark, timestamp = CURRENT_TIMESTAMP, exit_mailing_id = :mailing_id '
+						'WHERE customer_id = :customer_id AND mailinglist_id = :mailinglist_id'
+						% company_id,
+						{
+							'userStatus': UserStatus.OPTOUT.value,
+							'user_remark': user_remark,
+							'mailing_id': mailing_id,
+							'customer_id': customer_id,
+							'mailinglist_id': mailinglist_id
+						}
+					)
+					if cnt > 0:
+						logger.info ('Unsubscribed customer %d for company %d on mailinglist %d due to mailing %d using %s' % (customer_id, company_id, mailinglist_id, mailing_id, user_remark))
+					else:
+						logger.warning ('Failed to unsubscribe customer %d for company %d on mailinglist %d due to mailing %d, matching %d rows (expected one row)' % (customer_id, company_id, mailinglist_id, mailing_id, cnt))
+					db.sync ()
 				else:
-					logger.warning ('Failed to unsubscribe customer %d for company %d on mailinglist %d due to mailing %d, matching %d rows (expected one row)' % (customer_id, company_id, mailinglist_id, mailing_id, cnt))
-				db.sync ()
-			else:
-				logger.debug (f'No mailing for {mailing_id} found')
+					logger.debug (f'No mailing for {mailing_id} found')
+		self.report['unsubscribe'] = user_remark
 
 	def subscribe (self, db: DB, address: str, fullname: str, company_id: int, mailinglist_id: int, formular_id: int) -> None:
 		if self.dryrun:
 			print ('Would try to subscribe "%s" (%r) on %d/%d sending DOI using %r' % (address, fullname, company_id, mailinglist_id, formular_id))
-			return
-		#
-		if db.isopen ():
-			logger.info ('Try to subscribe %s (%s) for %d to %d using %d' % (address, fullname, company_id, mailinglist_id, formular_id))
-			customer_id: Optional[int] = None
-			new_binding = True
-			send_mail = True
-			user_remark = 'Subscribe via mailloop #%s' % self.rid
-			custids = (db.stream ('SELECT customer_id FROM customer_%d_tbl WHERE email = :email' % company_id, {'email': address })
-				.map_to (int, lambda r: r.customer_id)
-				.list ()
-			)
-			if custids:
-				logger.info ('Found these customer_ids %s for the email %s' % (custids, address))
-				query = 'SELECT customer_id, user_status FROM customer_%d_binding_tbl WHERE customer_id ' % company_id
-				if len (custids) > 1:
-					query += 'IN ('
-					sep = ''
-					for custid in custids:
-						query += '%s%d' % (sep, custid)
-						sep = ', '
-					query += ')'
-				else:
-					query += '= %d' % custids[0]
-				query += ' AND mailinglist_id = %d AND mediatype = 0' % mailinglist_id
-				use: Optional[Row] = None
-				for rec in db.query (query):
-					logger.info (f'Found binding [cid, status] {rec}')
-					if rec.user_status == UserStatus.ACTIVE.value:
-						if use is None or use.user_status != UserStatus.ACTIVE.value or rec.user_status > use.user_status:
-							use = rec
-					elif use is None or (use.user_status != UserStatus.ACTIVE.value and rec.customer_id > use.customer_id):
-						use = rec
-				if use is not None:
-					logger.info ('Use customer_id %d with user_status %d' % (use.customer_id, use.user_status))
-					customer_id = use.customer_id
-					new_binding = False
-					if use.user_status in (UserStatus.ACTIVE.value, UserStatus.WAITCONFIRM.value):
-						logger.info ('User status is %d, stop processing here' % use.user_status)
-						send_mail = False
+		else:
+			if db.isopen ():
+				logger.info ('Try to subscribe %s (%s) for %d to %d using %d' % (address, fullname, company_id, mailinglist_id, formular_id))
+				customer_id: Optional[int] = None
+				new_binding = True
+				send_mail = True
+				user_remark = 'Subscribe via mailloop #%s' % self.rid
+				custids = (db.stream ('SELECT customer_id FROM customer_%d_tbl WHERE email = :email' % company_id, {'email': address })
+					.map_to (int, lambda r: r.customer_id)
+					.list ()
+				)
+				if custids:
+					logger.info ('Found these customer_ids %s for the email %s' % (custids, address))
+					query = 'SELECT customer_id, user_status FROM customer_%d_binding_tbl WHERE customer_id ' % company_id
+					if len (custids) > 1:
+						query += 'IN ('
+						sep = ''
+						for custid in custids:
+							query += '%s%d' % (sep, custid)
+							sep = ', '
+						query += ')'
 					else:
-						logger.info ('Set user status to 5')
+						query += '= %d' % custids[0]
+					query += ' AND mailinglist_id = %d AND mediatype = 0' % mailinglist_id
+					use: Optional[Row] = None
+					for rec in db.query (query):
+						logger.info (f'Found binding [cid, status] {rec}')
+						if rec.user_status == UserStatus.ACTIVE.value:
+							if use is None or use.user_status != UserStatus.ACTIVE.value or rec.user_status > use.user_status:
+								use = rec
+						elif use is None or (use.user_status != UserStatus.ACTIVE.value and rec.customer_id > use.customer_id):
+							use = rec
+					if use is not None:
+						logger.info ('Use customer_id %d with user_status %d' % (use.customer_id, use.user_status))
+						customer_id = use.customer_id
+						new_binding = False
+						if use.user_status in (UserStatus.ACTIVE.value, UserStatus.WAITCONFIRM.value):
+							logger.info ('User status is %d, stop processing here' % use.user_status)
+							send_mail = False
+						else:
+							logger.info ('Set user status to 5')
+							db.update (
+								'UPDATE customer_%d_binding_tbl '
+								'SET timestamp = CURRENT_TIMESTAMP, user_status = :user_status, user_remark = :user_remark '
+								'WHERE customer_id = :customer_id AND mailinglist_id = :mailinglist_id AND mediatype = 0'
+								% company_id,
+								{
+									'user_status': UserStatus.WAITCONFIRM.value,
+									'user_remark': user_remark,
+									'customer_id': customer_id,
+									'mailinglist_id': mailinglist_id
+								},
+								commit = True
+							)
+					else:
+						customer_id = max (custids)
+						logger.info ('No matching binding found, use cutomer_id %s' % customer_id)
+				else:
+					datasource_description = 'Mailloop #%s' % self.rid
+					dsid = Datasource ()
+					datasource_id = dsid.get_id (datasource_description, company_id, 4)
+					if db.dbms in ('mysql', 'mariadb'):
 						db.update (
-							'UPDATE customer_%d_binding_tbl '
-							'SET timestamp = CURRENT_TIMESTAMP, user_status = :user_status, user_remark = :user_remark '
-							'WHERE customer_id = :customer_id AND mailinglist_id = :mailinglist_id AND mediatype = 0'
+							'INSERT INTO customer_%d_tbl (email, gender, mailtype, timestamp, creation_date, datasource_id) '
+							'VALUES (:email, 2, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, :datasource_id)'
 							% company_id,
 							{
-								'user_status': UserStatus.WAITCONFIRM.value,
-								'user_remark': user_remark,
-								'customer_id': customer_id,
-								'mailinglist_id': mailinglist_id
+								'email': address,
+								'datasource_id': datasource_id
 							},
 							commit = True
 						)
-				else:
-					customer_id = max (custids)
-					logger.info ('No matching binding found, use cutomer_id %s' % customer_id)
-			else:
-				datasource_description = 'Mailloop #%s' % self.rid
-				dsid = Datasource ()
-				datasource_id = dsid.get_id (datasource_description, company_id, 4)
-				if db.dbms in ('mysql', 'mariadb'):
-					db.update (
-						'INSERT INTO customer_%d_tbl (email, gender, mailtype, timestamp, creation_date, datasource_id) '
-						'VALUES (:email, 2, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, :datasource_id)'
-						% company_id,
-						{
-							'email': address,
-							'datasource_id': datasource_id
-						},
-						commit = True
-					)
-					for rec in db.query ('SELECT customer_id FROM customer_%d_tbl WHERE email = :email' % company_id, {'email': address}):
-						customer_id = rec.customer_id
-				elif db.dbms == 'oracle':
-					for rec in db.query ('SELECT customer_%d_tbl_seq.nextval FROM dual' % company_id):
-						customer_id = rec[0]
-					logger.info ('No customer for email %s found, use new customer_id %s' % (address, customer_id))
-					if customer_id is not None:
-						logger.info ('Got datasource id %s for %s' % (datasource_id, datasource_description))
-						prefix = 'INSERT INTO customer_%d_tbl (customer_id, email, gender, mailtype, timestamp, creation_date, datasource_id' % company_id
-						values = 'VALUES (:customer_id, :email, 2, 1, sysdate, sysdate, :datasource_id'
-						data = {
-							'customer_id': customer_id,
-							'email': address,
-							'datasource_id': datasource_id
-						}
-						parts = fullname.split ()
-						while len (parts) > 2:
-							if parts[0] and parts[0][-1] == '.':
-								parts = parts[1:]
-							elif parts[1] and parts[1][-1] == '.':
-								parts = parts[:1] + parts[2:]
-							else:
-								temp = [parts[0], ' '.join (parts[1:])]
-								parts = temp
-						if len (parts) == 2:
-							prefix += ', firstname, lastname'
-							values += ', :firstname, :lastname'
-							data['firstname'] = parts[0]
-							data['lastname'] = parts[1]
-						elif len (parts) == 1:
-							prefix += ', lastname'
-							values += ', :lastname'
-							data['lastname'] = parts[0]
-						query = prefix + ') ' + values + ')'
-						logger.info ('Using "%s" with %s to write customer to database' % (query, data))
-						try:
-							db.update (query, data, commit = True)
-						except Exception as e:
-							logger.error ('Failed to insert new customer %r: %s' % (address, e))
-							customer_id = None
-			if customer_id is not None:
-				if new_binding:
-					db.update (
-						'INSERT INTO customer_%d_binding_tbl '
-						'            (customer_id, mailinglist_id, user_type, user_status, user_remark, timestamp, creation_date, mediatype) '
-						'VALUES '
-						'            (:customer_id, :mailinglist_id, :user_type, :user_status, :user_remark, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0)'
-						% company_id,
-						{
-							'customer_id': customer_id,
-							'mailinglist_id': mailinglist_id,
-							'user_type': 'W',
-							'user_status': UserStatus.WAITCONFIRM.value,
-							'user_remark': user_remark
-						},
-						commit = True
-					)
-					logger.info ('Created new binding using')
-				if send_mail:
-					formname = None
-					rdir = None
-					for rec in db.query ('SELECT formname FROM userform_tbl WHERE form_id = %d AND company_id = %d' % (formular_id, company_id)):
-						if rec.formname:
-							formname = rec.formname
-					for rec in db.query ('SELECT rdir_domain FROM mailinglist_tbl WHERE mailinglist_id = %d' % mailinglist_id):
-						rdir = rec.rdir_domain
-					if rdir is None:
-						for rec in db.query ('SELECT rdir_domain FROM company_tbl WHERE company_id = %d' % company_id):
+						for rec in db.query ('SELECT customer_id FROM customer_%d_tbl WHERE email = :email' % company_id, {'email': address}):
+							customer_id = rec.customer_id
+					elif db.dbms == 'oracle':
+						for rec in db.query ('SELECT customer_%d_tbl_seq.nextval FROM dual' % company_id):
+							customer_id = rec[0]
+						logger.info ('No customer for email %s found, use new customer_id %s' % (address, customer_id))
+						if customer_id is not None:
+							logger.info ('Got datasource id %s for %s' % (datasource_id, datasource_description))
+							prefix = 'INSERT INTO customer_%d_tbl (customer_id, email, gender, mailtype, timestamp, creation_date, datasource_id' % company_id
+							values = 'VALUES (:customer_id, :email, 2, 1, sysdate, sysdate, :datasource_id'
+							data = {
+								'customer_id': customer_id,
+								'email': address,
+								'datasource_id': datasource_id
+							}
+							parts = fullname.split ()
+							while len (parts) > 2:
+								if parts[0] and parts[0][-1] == '.':
+									parts = parts[1:]
+								elif parts[1] and parts[1][-1] == '.':
+									parts = parts[:1] + parts[2:]
+								else:
+									temp = [parts[0], ' '.join (parts[1:])]
+									parts = temp
+							if len (parts) == 2:
+								prefix += ', firstname, lastname'
+								values += ', :firstname, :lastname'
+								data['firstname'] = parts[0]
+								data['lastname'] = parts[1]
+							elif len (parts) == 1:
+								prefix += ', lastname'
+								values += ', :lastname'
+								data['lastname'] = parts[0]
+							query = prefix + ') ' + values + ')'
+							logger.info ('Using "%s" with %s to write customer to database' % (query, data))
+							try:
+								db.update (query, data, commit = True)
+							except Exception as e:
+								logger.error ('Failed to insert new customer %r: %s' % (address, e))
+								customer_id = None
+				if customer_id is not None:
+					if new_binding:
+						db.update (
+							'INSERT INTO customer_%d_binding_tbl '
+							'            (customer_id, mailinglist_id, user_type, user_status, user_remark, timestamp, creation_date, mediatype) '
+							'VALUES '
+							'            (:customer_id, :mailinglist_id, :user_type, :user_status, :user_remark, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0)'
+							% company_id,
+							{
+								'customer_id': customer_id,
+								'mailinglist_id': mailinglist_id,
+								'user_type': 'W',
+								'user_status': UserStatus.WAITCONFIRM.value,
+								'user_remark': user_remark
+							},
+							commit = True
+						)
+						logger.info ('Created new binding using')
+					if send_mail:
+						formname = None
+						rdir = None
+						company_token = None
+						for rec in db.query ('SELECT formname FROM userform_tbl WHERE form_id = %d AND company_id = %d' % (formular_id, company_id)):
+							if rec.formname:
+								formname = rec.formname
+						for rec in db.query ('SELECT rdir_domain FROM mailinglist_tbl WHERE mailinglist_id = %d' % mailinglist_id):
+							rdir = rec.rdir_domain
+						for rec in db.query ('SELECT rdir_domain, company_token FROM company_tbl WHERE company_id = %d' % company_id):
 							if rdir is None:
 								rdir = rec.rdir_domain
-					if not formname is None and not rdir is None:
-						mailing_id: Optional[int] = None
-						creation_date: Optional[datetime] = None
-						for rec in db.queryc ('SELECT mailing_id, creation_date FROM mailing_tbl WHERE company_id = %d AND (deleted = 0 OR deleted IS NULL)' % company_id):
-							if rec.mailing_id is not None:
-								mailing_id = rec.mailing_id
-								creation_date = rec.creation_date
-								break
-						if mailing_id is not None and creation_date is not None:
-							try:
-								uid = UID (
-									company_id = company_id,
-									mailing_id = mailing_id,
-									customer_id = customer_id
-								)
-								url = f'{rdir}/form.action'
-								params: Dict[str, str] = {
-									'agnCI': str (company_id),
-									'agnFN': formname,
-									'agnUID': self.uid_handler.create (uid)
-								}
-								logger.info (f'Trigger mail using {url} with {params}')
-								(success, response) = invoke (url, params = params)
-								logger.info (f'Subscription request returns "{response}" with "{response.text}"')
-								resp = response.text.strip ()
-								if not success or not isinstance (resp, str) or not resp.lower ().startswith ('ok'):
-									logger.error (f'Subscribe formular "{url}" returns error "{resp}"')
-							except Exception as e:
-								logger.error (f'Failed to trigger [prot] forumlar using "{url}": {e}')
+							if company_token is None:
+								company_token = rec.company_token
+						if formname is not None and rdir is not None:
+							mailing_id: Optional[int] = None
+							creation_date: Optional[datetime] = None
+							for rec in db.queryc ('SELECT mailing_id, creation_date FROM mailing_tbl WHERE company_id = %d AND (deleted = 0 OR deleted IS NULL)' % company_id):
+								if rec.mailing_id is not None:
+									mailing_id = rec.mailing_id
+									creation_date = rec.creation_date
+									break
+							if mailing_id is not None and creation_date is not None:
+								try:
+									uid = UID (
+										company_id = company_id,
+										mailing_id = mailing_id,
+										customer_id = customer_id
+									)
+									url = f'{rdir}/form.action'
+									params: Dict[str, str] = {
+										'agnFN': formname,
+										'agnUID': self.uid_handler.create (uid)
+									}
+									if company_token:
+										params['agnCTOKEN'] = company_token
+									else:
+										params['agnCI'] = str (company_id)
+									logger.info (f'Trigger mail using {url} with {params}')
+									(success, response) = invoke (url, params = params)
+									logger.info (f'Subscription request returns "{response}" with "{response.text}"')
+									resp = response.text.strip ()
+									if not success or not isinstance (resp, str) or not resp.lower ().startswith ('ok'):
+										logger.error (f'Subscribe formular "{url}" returns error "{resp}"')
+								except Exception as e:
+									logger.error (f'Failed to trigger [prot] forumlar using "{url}": {e}')
+							else:
+								logger.error ('Failed to find active mailing for company %d' % company_id)
 						else:
-							logger.error ('Failed to find active mailing for company %d' % company_id)
-					else:
-						if not formname:
-							logger.error ('No formular with id #%d found' % formular_id)
-						if not rdir:
-							logger.error ('No rdir domain for company #%d/mailinglist #%d found' % (company_id, mailinglist_id))
+							if not formname:
+								logger.error ('No formular with id #%d found' % formular_id)
+							if not rdir:
+								logger.error ('No rdir domain for company #%d/mailinglist #%d found' % (company_id, mailinglist_id))
+					self.report['customer_id'] = customer_id
 
 	def execute_is_systemmail (self) -> bool:
 		if self.parsed_email.unsubscribe:
-			return True
-		return self.rule.match_header (self.msg, ['systemmail']) is not None
+			rc = True
+		else:
+			rc = self.rule.match_header (self.msg, ['systemmail']) is not None
+		self.report['systemmail'] = rc
+		return rc
 	
 	def execute_filter_or_forward (self, db: DB) -> bool:
 		if self.parsed_email.ignore:
 			action = 'ignore'
 		else:
 			match = self.rule.match_header (self.msg, ['filter'])
-			if not match is None:
+			if match is not None:
 				if not match[1].action:
-					action = 'save'
+					action = 'filtered'
 				else:
 					action = match[1].action
 			else:
-				action = 'sent'
+				action = 'forward'
 		fwd: Optional[List[str]] = None
-		if action == 'sent':
+		if action == 'forward':
 			fwd = self.parameter.forward
 			if BAV.has_spamassassin and (self.parameter.spam_forward is not None or self.parameter.spam_required is not None):
 				fwd = self.filter_with_spam_assassin (fwd)
 		self.save_message (action)
-		if action == 'sent':
+		if action == 'forward':
 			while BAV.x_agn in self.msg:
 				del self.msg[BAV.x_agn]
 			if (
@@ -935,8 +1030,12 @@ class BAV:
 				self.cinfo.customer_id > 0
 			):
 				self.msg[BAV.x_customer] = str (self.cinfo.customer_id)
-			if fwd is not None:
+			if fwd:
 				self.sendmail (self.msg, fwd)
+				self.report['forward'] = ','.join (fwd)
+				action = 'sent'
+			else:
+				action = 'filtered'
 
 			if self.parameter.autoresponder:
 				if self.parameter.sender and self.header_from is not None and self.header_from.address:
@@ -944,7 +1043,7 @@ class BAV:
 					auto_responder = Autoresponder (self.parameter.autoresponder, sender)
 					if self.parameter.autoresponder_mailing_id:
 						logger.info ('Trigger autoresponder message for %s' % sender)
-						auto_responder.trigger_message (db, self.bounce, self.cinfo, self.parameter, self.dryrun)
+						auto_responder.trigger_message (db, self.report, self.bounce, self.cinfo, self.parameter, self.dryrun)
 					else:
 						logger.warning ('Old autorepsonder without content found')
 				else:
@@ -967,13 +1066,14 @@ class BAV:
 						self.parameter.subscribe.mailinglist_id,
 						self.parameter.subscribe.form_id
 					)
+		self.report['action'] = action
 		return True
 
 	def execute_scan_and_unsubscribe (self, db: DB) -> bool:
 		if self.parsed_email.ignore:
 			action = 'ignore'
 		else:
-			action = 'unspec'
+			action = 'filtered'
 			scan = self.rule.scan_message (self.cinfo, self.msg, ['hard', 'soft'])
 			if scan:
 				if scan.entry and scan.entry.action:
@@ -994,7 +1094,14 @@ class BAV:
 										fd.write ('%s;%s;%s;0;%s;timestamp=%s\tmailloop=%s\tserver=%s\n' % (scan.dsn, licence, scan.minfo.mailing_id, scan.minfo.customer_id, ParseTimestamp ().dump (datetime.now ()), scan.etext, fqdn))
 								except IOError as e:
 									logger.error ('Unable to write %s %s' % (BAV.ext_bouncelog, e))
+							self.report['bounce-dsn'] = scan.dsn
+							self.report['bounce-mailing-id'] = scan.minfo.mailing_id
+							self.report['bounce-customer-id'] = scan.minfo.customer_id
+							if scan.etext:
+								self.report['bounce-error-text'] = scan.etext
+							action = 'bounce'
 		self.save_message (action)
+		self.report['action'] = action
 		return True
 
 class BAVD (Runtime):
@@ -1043,6 +1150,7 @@ class BAVD (Runtime):
 					else:
 						print ('--> Filter or forward')
 						ok = bav.execute_filter_or_forward (db)
+					bav.report.write (ok)
 					if ok:
 						print ('OK')
 					else:
@@ -1105,6 +1213,7 @@ class BAVD (Runtime):
 						else:
 							with log ('filter'):
 								ok = bav.execute_filter_or_forward (db)
+						bav.report.write (ok)
 					except IOError as e:
 						logger.error ('Failed to open %s: %r' % (path, e.args))
 					except Exception as e:

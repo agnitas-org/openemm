@@ -14,7 +14,7 @@ import	logging
 from	datetime import datetime, timedelta
 from	types import TracebackType
 from	typing import Any, Callable, Iterable, Optional, Union
-from	typing import Dict, Iterator, List, Tuple, Type
+from	typing import Dict, Iterator, List, NamedTuple, Set, Tuple, Type
 from	typing import cast
 from	.dbdriver import DBDriver
 from	.dbcore import T, Row, Core, Cursor
@@ -403,7 +403,55 @@ queryc() and a querys() method is also available using the cache."""
 						self.release (cursor)
 			self._tablespace_cache[tablespace] = rc
 			return rc
+	
+	class Column (NamedTuple):
+		name: str
+		datatype: str
 		
+	class Index (NamedTuple):
+		name: str
+		columns: Union[str, List[str]]
+		tablespace: Optional[str] = None
+		
+	def update_layout (self,
+		table: str,
+		*,
+		columns: Optional[List[Column]] = None,
+		indexes: Optional[List[Index]] = None
+	) -> None:
+		cursor = self.check_open_cursor ()
+		if columns:
+			layout = self.layout (table, normalize = True)
+			available: Set[str] = {_l.name for _l in layout} if layout else set ()
+			columns = Stream (columns).filter (lambda c: c.name.lower () not in available).list ()
+			if columns:
+				cursor.execute ('ALTER TABLE {table} ADD ({columns})'.format (
+					table = table,
+					columns = (Stream (columns)
+						.map (lambda c: f'{c.name} {c.datatype}')
+						.join (', ')
+					)
+				))
+		if indexes:
+			available = cursor.streamc (
+				cursor.qselect (
+					oracle = 'SELECT index_name FROM user_indexes WHERE lower(table_name) = lower(:table)',
+					mysql = 'SELECT index_name FROM information_schema.statistics WHERE lower(table_name) = lower(:table) AND table_schema=(SELECT SCHEMA())',
+					sqlite = 'SELECT name AS index_name FROM sqlite_master WHERE lower(tbl_name) = lower(:table) AND type = \'index\''
+				), {
+					'table': table
+				}
+			).map_to (str, lambda r: r.index_name.lower ()).set ()
+			for index in indexes:
+				if index.name.lower () not in available:
+					tablespace = self.find_tablespace (index.tablespace)
+					cursor.execute ('CREATE INDEX {name} ON {table} ({columns}){tablespace}'.format (
+						name = index.name,
+						table = table,
+						columns = index.columns if isinstance (index.columns, str) else ', '.join (index.columns),
+						tablespace = f' TABLESPACE {tablespace}' if tablespace else ''
+					))
+
 	def scratch_request (self,
 		name: Optional[str] = None,
 		layout: Optional[str] = None,
@@ -422,7 +470,7 @@ list of strings with columns to create as index on the scratch table,
 ``select'' is a select statement to fill the scratch table.
 ``tablespace'' is the the tablespace where the table should be created
 in (Oracle ony), ``unique'' a host unique ID to avoid clashes in an
-active/active enviroment and if ``reuse'' is True, then an existing
+active/active environment and if ``reuse'' is True, then an existing
 table is reused by this process, otherwise it will scan for a non
 existing one."""
 		if name is None:

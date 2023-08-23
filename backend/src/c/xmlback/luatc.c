@@ -290,7 +290,7 @@ do_unittest (iflua_t *il, bool_t quiet, int benchmark) /*{{{*/
 	return rc;
 }/*}}}*/
 static bool_t
-validate (const char *fname, codeblock_t *cb, bool_t quiet, bool_t postproc, bool_t unittest, int benchmark) /*{{{*/
+validate (const char *fname, codeblock_t *cb, bool_t quiet, bool_t unittest, int benchmark) /*{{{*/
 {
 	bool_t		rc;
 	log_t		*lg;
@@ -324,18 +324,19 @@ validate (const char *fname, codeblock_t *cb, bool_t quiet, bool_t postproc, boo
 			blockmail -> company_token = strdup ("abc123");
 			blockmail -> mailinglist_id = 3;
 			blockmail -> mailinglist_name = xmlBufferCreate ();
-			xmlBufferCat (blockmail -> mailinglist_name, (const xmlChar *) "Mailinglist");
+			xmlBufferCCat (blockmail -> mailinglist_name, "Mailinglist");
 			blockmail -> mailing_id = 4;
 			blockmail -> mailing_name = xmlBufferCreate ();
-			xmlBufferCat (blockmail -> mailing_name, (const xmlChar *) "Mailing");
+			xmlBufferCCat (blockmail -> mailing_name, "Mailing");
 			blockmail -> maildrop_status_id = 5;
 			blockmail -> status_field = 'W';
 			blockmail -> senddate = tf_parse_date ("2010-03-20 12:34:56");
-			blockmail -> total_subscribers = 6;
-			blockmail -> blocknr = 7;
 			blockmail -> secret_key = xmlBufferCreate ();
 			xmlBufferCCat (blockmail -> secret_key, "This is secret");
-			blockmail -> secret_timestamp = 8;
+			blockmail -> secret_timestamp = 6;
+			blockmail -> total_subscribers = 7;
+			blockmail -> domain = strdup ("exsample.com");
+			blockmail -> blocknr = 8;
 			string_map_addsi (blockmail -> smap, "licence_id", blockmail -> licence_id);
 			string_map_addsi (blockmail -> smap, "owner_id", blockmail -> owner_id);
 			string_map_addsi (blockmail -> smap, "company_id", blockmail -> company_id);
@@ -356,7 +357,7 @@ validate (const char *fname, codeblock_t *cb, bool_t quiet, bool_t postproc, boo
 				if (cur -> var[0] == '_')
 					string_map_addss (blockmail -> smap, cur -> var + 1, cur -> val);
 			}
-			for (run = cb; run; run = run ->next) {
+			for (run = cb; run; run = run -> next) {
 				char	id[1024];
 				
 				if (run -> condition)
@@ -365,41 +366,37 @@ validate (const char *fname, codeblock_t *cb, bool_t quiet, bool_t postproc, boo
 					strcpy (id, fname);
 				rc = false;
 				if (r = receiver_alloc (blockmail, 0)) {
+					iflua_t		*il;
+						
 					r -> customer_id = 100;
 					r -> user_type = 'W';
-					if (postproc) {
-						fprintf (stderr, "Postprocessing not available for %s\n", id);
-					} else {
-						iflua_t		*il;
-
-						if (il = iflua_alloc (blockmail)) {
-							il -> rec = r;
-							alua_setup_function (il -> lua, NULL, "fileread", l_fileread, il);
-							if (quiet)
-								alua_setup_function (il -> lua, NULL, "print", l_silent, NULL);
-							if (alua_load (il -> lua, id, run -> code, run -> length)) {
-								if (unittest)
-									rc = do_unittest (il, quiet, benchmark);
-								else {
-									rc = true;
-									lua_getglobal (il -> lua, F_MAIN);
-									if (lua_isfunction (il -> lua, -1)) {
-										if (lua_pcall (il -> lua, 0, 0, 0) != 0) {
-											fprintf (stderr, "Failed to execute function \"" F_MAIN "\"\n");
-											fprintf (stderr, "*** %s\n", lua_tostring (il -> lua, -1));
-											rc = false;
-										}
-									} else
-										lua_pop (il -> lua, 1);
-								}
-							} else {
-								fprintf (stderr, "Failed to execute code for %s\n", id);
-								fprintf (stderr, "*** %s\n", lua_tostring (il -> lua, -1));
+					if (il = iflua_alloc (blockmail, false)) {
+						il -> rec = r;
+						alua_setup_function (il -> lua, NULL, "fileread", l_fileread, il);
+						if (quiet)
+							alua_setup_function (il -> lua, NULL, "print", l_silent, NULL);
+						if (alua_load (il -> lua, id, run -> code, run -> length)) {
+							if (unittest)
+								rc = do_unittest (il, quiet, benchmark);
+							else {
+								rc = true;
+								lua_getglobal (il -> lua, F_MAIN);
+								if (lua_isfunction (il -> lua, -1)) {
+									if (lua_pcall (il -> lua, 0, 0, 0) != 0) {
+										fprintf (stderr, "Failed to execute function \"" F_MAIN "\"\n");
+										fprintf (stderr, "*** %s\n", lua_tostring (il -> lua, -1));
+										rc = false;
+									}
+								} else
+									lua_pop (il -> lua, 1);
 							}
-							iflua_free (il);
-						} else
-							fprintf (stderr, "Failed to setup interpreter interface for %s\n", id);
-					}
+						} else {
+							fprintf (stderr, "Failed to execute code for %s\n", id);
+							fprintf (stderr, "*** %s\n", lua_tostring (il -> lua, -1));
+						}
+						iflua_free (il);
+					} else
+						fprintf (stderr, "Failed to setup interpreter interface for %s\n", id);
 					receiver_free (r);
 				} else
 					fprintf (stderr, "Failed to setup receiver structure for %s\n", id);
@@ -417,22 +414,17 @@ main (int argc, char **argv) /*{{{*/
 {
 	int	n;
 	bool_t	quiet;
-	bool_t	postproc;
 	bool_t	unittest;
 	int	benchmark;
 	int	rc;
 
 	quiet = false;
-	postproc = false;
 	unittest = false;
 	benchmark = 0;
-	while ((n = getopt (argc, argv, "hqpub:")) != -1)
+	while ((n = getopt (argc, argv, "hqub:")) != -1)
 		switch (n) {
 		case 'q':
 			quiet = true;
-			break;
-		case 'p':
-			postproc = true;
 			break;
 		case 'u':
 			unittest = true;
@@ -449,10 +441,6 @@ main (int argc, char **argv) /*{{{*/
 			fprintf (stderr, "Usage: %s [-q] [-p | -u [-b <cycles>]] <fname(s)>\n", argv[0]);
 			return n != 'h';
 		}
-	if (postproc && unittest) {
-		fprintf (stderr, "Warning: unittest in postprocess mode not supported, switched off.\n");
-		unittest = false;
-	}
 	rc = 0;
 	for (n = optind; n < argc; ++n) {
 		char	*buf;
@@ -462,7 +450,7 @@ main (int argc, char **argv) /*{{{*/
 			codeblock_t	*cb;
 			
 			if (cb = split_code (buf)) {
-				if (! validate (argv[n], cb, quiet, postproc, unittest, benchmark))
+				if (! validate (argv[n], cb, quiet, unittest, benchmark))
 					rc = 1;
 				codeblock_free_all (cb);
 			} else {

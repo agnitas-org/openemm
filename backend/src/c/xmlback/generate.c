@@ -1539,21 +1539,30 @@ generate_owrite (void *data, blockmail_t *blockmail, receiver_t *rec) /*{{{*/
 	}
 	if (! blockmail -> active) {
 		char		dsn[32];
-		char		scratch[128];
+		char		*custom;
 		const char	*reason;
 		
 		snprintf (dsn, sizeof (dsn) - 1, "1.%d.%d", blockmail -> reason, blockmail -> reason_detail);
+		custom = NULL;
 		switch (blockmail -> reason) {
 		case REASON_UNSPEC:		reason = "skip=unspec reason";		break;
 		case REASON_NO_MEDIA:		reason = "skip=no media";		break;
 		case REASON_EMPTY_DOCUMENT:	reason = "skip=no document";		break;
 		case REASON_UNMATCHED_MEDIA:	reason = "skip=unmatched media";	break;
+		case REASON_CUSTOM:
 		default:
-			snprintf (scratch, sizeof (scratch) - 1, "skip=reason %d", blockmail -> reason);
-			reason = scratch;
+			if ((blockmail -> reason == REASON_CUSTOM) && blockmail -> reason_custom) {
+				if (custom = malloc (strlen (blockmail -> reason_custom) + 6))
+					sprintf (custom, "skip=%s", blockmail -> reason_custom);
+			} else if (custom = malloc (32)) {
+				sprintf (custom, "skip=reason %d", blockmail -> reason);
+			}
+			reason = custom;
 			break;
 		}
-		st = write_bounce_log (g, blockmail, rec, dsn, reason);
+		st = write_bounce_log (g, blockmail, rec, dsn, reason ? reason : "skip=not specified");
+		if (custom)
+			free (custom);
 	} else if (! rec -> media) {
 		st = write_bounce_log (g, blockmail, rec, "1.0.0", "skip=missing media");
 	} else if (rec -> media -> type == Mediatype_EMail) {

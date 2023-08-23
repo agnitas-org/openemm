@@ -730,19 +730,28 @@ pool_flush (pool_t *p) /*{{{*/
 buffer_t *
 pool_request (pool_t *p, int nsize) /*{{{*/
 {
-	buffer_t	*b;
+	if (p -> root) {
+		buffer_t	*b, *prev;
 	
-	if (b = p -> root) {
-		p -> root = p -> root -> link;
+		for (b = p -> root, prev = NULL; b && b -> link; ) {
+			if ((b -> size < nsize) || ((b -> size >= nsize) && (b -> link -> size < nsize)))
+				break;
+			prev = b;
+			b = b -> link;
+		}
+		if (prev)
+			prev -> link = b -> link;
+		else
+			p -> root = b -> link;
 		b -> link = NULL;
 		buffer_clear (b);
-		buffer_size (b, nsize);
-	} else {
-		b = buffer_alloc (nsize);
+		if (b -> size < nsize) {
+			if (! buffer_size (b, nsize))
+				buffer_clear (b);
+		}
+		return b;
 	}
-	if (b && (! b -> valid))
-		buffer_clear (b);
-	return b;
+	return buffer_alloc (nsize);
 }/*}}}*/
 buffer_t *
 pool_release (pool_t *p, buffer_t *b) /*{{{*/

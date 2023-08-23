@@ -16,6 +16,7 @@ import datetime
 import smtplib
 import subprocess
 import logging
+import glob
 import urllib.request, urllib.error, urllib.parse
 
 from email.mime.application import MIMEApplication
@@ -126,6 +127,13 @@ def sslIsAvailable():
 	except:
 		return False
 
+def chown(filePath, userName = None, groupName = None):
+	if groupName is not None or (userName is not None and userName != os.environ["USER"]):
+		if groupName is not None:
+			os.system("chown -h " + userName + ":" + groupName + " " + filePath)
+		else:
+			os.system("chown -h " + userName + " " + filePath)
+
 def createLink(referencedPath, linkPath, userName = None, groupName = None):
 	os.symlink(referencedPath, linkPath)
 	if groupName is not None or (userName is not None and userName != os.environ["USER"]):
@@ -180,7 +188,7 @@ def printTextInBox(text, boxChar="*"):
 	print(boxChar * (len(text) + 4))
 
 def checkJavaAvailable(javaHome):
-	if javaHome is None or javaHome == "" or not os.path.isfile(javaHome + "/bin/java"):
+	if isBlank(javaHome) or not os.path.isfile(javaHome + "/bin/java"):
 		return False
 
 	try:
@@ -191,7 +199,7 @@ def checkJavaAvailable(javaHome):
 		return False
 
 def getJavaVersion(javaHome):
-	if javaHome is None or javaHome == "" or not os.path.isfile(javaHome + "/bin/java"):
+	if isBlank(javaHome) or not os.path.isfile(javaHome + "/bin/java"):
 		return None
 
 	try:
@@ -205,7 +213,7 @@ def getJavaVersion(javaHome):
 		return None
 
 def getJavaVendor(javaHome):
-	if javaHome is None or javaHome == "" or not os.path.isfile(javaHome + "/bin/java"):
+	if isBlank(javaHome) or not os.path.isfile(javaHome + "/bin/java"):
 		return None
 
 	try:
@@ -470,9 +478,9 @@ def zipFile(zipFilePath, filePathToAddToZipFile, password=""):
 	os.system(bashCommand)
 
 def unzipFile(zipFilePath, directoryPathToExtractTo):
-	if zipFilePath is None or zipFilePath.strip() == "":
+	if isBlank(zipFilePath):
 		raise ValueError("Invalid empty parameter zipFilePath")
-	elif directoryPathToExtractTo is None or directoryPathToExtractTo.strip() == "":
+	elif isBlank(directoryPathToExtractTo):
 		raise ValueError("Invalid empty parameter directoryPathToExtractTo")
 	elif directoryPathToExtractTo.endswith("/"):
 		directoryPathToExtractTo = directoryPathToExtractTo[:-1]
@@ -516,7 +524,7 @@ def getSendmailVersion():
 			sendmailPath = subprocess.check_output("which sendmail 2>/dev/null", shell=True).decode("UTF-8").strip()
 		except:
 			sendmailPath = None
-		if sendmailPath is None or sendmailPath == "":
+		if isBlank(sendmailPath):
 			return None
 		else:
 			try:
@@ -524,7 +532,7 @@ def getSendmailVersion():
 			except:
 				rpmPath = None
 
-			if rpmPath is None or rpmPath == "":
+			if isBlank(rpmPath):
 				logging.exception("Cannot detect SendmailVersion: rpm is missing")
 				return None
 			else:
@@ -545,7 +553,7 @@ def getPostfixVersion():
 			postfixPath = subprocess.check_output("which postconf 2>/dev/null", shell=True).decode("UTF-8").strip()
 		except:
 			postfixPath = None
-		if postfixPath is None or postfixPath == "":
+		if isBlank(postfixPath):
 			return None
 		else:
 			postfixVersion = subprocess.check_output("postconf -d mail_version 2>/dev/null", shell=True).decode("UTF-8")
@@ -668,8 +676,8 @@ def removeContentFromFile(filePath, startSign, endSign=None):
 		startSignFound = False
 		with open(filePath, "r", encoding="UTF-8") as fileHandle:
 			fileData = fileHandle.read()
-		startIndex = fileData.index(startSign)
-		while startIndex > -1:
+		while startSign in fileData:
+			startIndex = fileData.index(startSign)
 			startSignFound = True
 			endIndex = -1
 			if endSign is not None:
@@ -678,10 +686,104 @@ def removeContentFromFile(filePath, startSign, endSign=None):
 				fileData = fileData[0:startIndex] + fileData[endIndex + len(endSign)]
 			else:
 				fileData = fileData[0:startIndex]
-			startIndex = fileData.index(startSign)
 		if startSignFound:
 			with open(filePath, "w", encoding="UTF-8") as fileHandle:
 				fileHandle.write(fileData)
 		return startSignFound
 	else:
 		raise Exception("No such file: " + filePath)
+
+def getSingleFileByPattern(filePathPattern):
+	filesList = glob.glob(filePathPattern)
+	if filesList != None and len(filesList) == 1:
+		return filesList[0]
+	else:
+		return None
+
+def manageTlsCertificateForTomcat(defaultTlsCertificateDirectory, filePathServerXml, applicationName):
+	with open(filePathServerXml, "r") as file:
+		serverXmlContent = file.read()
+
+	activateTls = True
+	if "TLS configuration start" in serverXmlContent and "TLS configuration end" in serverXmlContent:
+		print("Do you want to activate a TLS certificate (https) for " + applicationName + "? (N/y, Blank => Cancel):")
+		answer = input(" > ").lower().strip()
+		if answer.startswith("y") or answer.startswith("j"):
+			activateTls = True
+		else:
+			activateTls = False
+	if activateTls:
+		defaultCertificateFilePath = getSingleFileByPattern(defaultTlsCertificateDirectory + "/*.crt")
+		while True:
+			if defaultCertificateFilePath == None:
+				print("Please enter path to TLS certificate file (.crt) (Blank => Cancel):")
+			else:
+				print("Please enter path to TLS certificate file (.crt) (Blank => '" + defaultCertificateFilePath + "', 'cancel' => Cancel):")
+			certificateFilePath = input(" > ").strip()
+			if isBlank(certificateFilePath):
+				if defaultCertificateFilePath != None:
+					certificateFilePath = defaultCertificateFilePath
+				else:
+					return
+			elif "cancel" == certificateFilePath.lower():
+				return
+			if not os.path.isfile(certificateFilePath):
+				print("File does not exist: " + certificateFilePath)
+				print()
+			else:
+				break
+
+		defaultKeyFilePath = getSingleFileByPattern(defaultTlsCertificateDirectory + "/*.key")
+		while True:
+			if defaultKeyFilePath == None:
+				print("Please enter path to TLS key file (.key) (Blank => Cancel):")
+			else:
+				print("Please enter path to TLS key file (.key) (Blank => '" + defaultKeyFilePath + "', 'cancel' => Cancel):")
+			keyFilePath = input(" > ").strip()
+			if isBlank(keyFilePath):
+				if defaultKeyFilePath != None:
+					keyFilePath = defaultKeyFilePath
+				else:
+					return
+			elif "cancel" == keyFilePath.lower():
+				return
+			if not os.path.isfile(keyFilePath):
+				print("File does not exist: " + keyFilePath)
+				print()
+			else:
+				break
+
+		defaultChainFilePath = getSingleFileByPattern(defaultTlsCertificateDirectory + "/*.ca-bundle")
+		while True:
+			if defaultChainFilePath == None:
+				print("Please enter path to TLS certificate CA chain file (.ca-bundle) (Blank => Cancel):")
+			else:
+				print("Please enter path to TLS certificate CA chain file (.ca-bundle) (Blank => '" + defaultChainFilePath + "', 'cancel' => Cancel):")
+			chainFilePath = input(" > ").strip()
+			if isBlank(chainFilePath):
+				if defaultChainFilePath != None:
+					chainFilePath = defaultChainFilePath
+				else:
+					return
+			elif "cancel" == chainFilePath.lower():
+				return
+			if not os.path.isfile(chainFilePath):
+				print("File does not exist: " + chainFilePath)
+				print()
+			else:
+				break
+
+		serverXmlContent = re.sub(r".*<!-- TLS configuration start.*", "\t\t<!-- TLS configuration start -->", serverXmlContent)
+		serverXmlContent = re.sub(r".*TLS configuration end -->.*", "\t\t<!-- TLS configuration end -->", serverXmlContent)
+
+		serverXmlContent = re.sub(r"certificateChainFile=\".*\"", 'certificateChainFile="' + chainFilePath + '"', serverXmlContent)
+		serverXmlContent = re.sub(r"certificateFile=\".*\"", 'certificateFile="' + certificateFilePath + '"', serverXmlContent)
+		serverXmlContent = re.sub(r"certificateKeyFile=\".*\"", 'certificateKeyFile="' + keyFilePath + '"', serverXmlContent)
+	else:
+		serverXmlContent = re.sub(r".*<!-- TLS configuration start.*", "\t\t<!-- TLS configuration start", serverXmlContent)
+		serverXmlContent = re.sub(r".*TLS configuration end -->.*", "\t\tTLS configuration end -->", serverXmlContent)
+
+	with open(filePathServerXml, "w", encoding="UTF-8") as file:
+		file.write(serverXmlContent)
+		print("Successfully configured TLS certificate")
+		print()

@@ -9,8 +9,7 @@
 #                                                                                                                                                                                                                                                                  #
 ####################################################################################################################################################################################################################################################################
 #
-
-CFLAGS	= '-DEMM_VERSION="OpenEMM 22.10.000.122"' -I. -I../lib -Iinclude
+CFLAGS	= '-DEMM_VERSION="OpenEMM 23.04.000.199"' -I. -I../lib -Iinclude
 LDFLAGS	= -L. -L../lib -Llib
 LIBS	= -lagn -lslang -lopendkim -lbsd -lresolv -llua -lmpack -lssl -lcrypto -lxml2 -lz -lm
 SRCS	= entity.c xmlback.c parse.c create.c replace.c modify.c protect.c convert.c append.c \
@@ -42,8 +41,8 @@ lib include:
 	[ -d $@ ] || mkdir $@
 lib/libslang.a:	slang-1.4.9.tar.gz slang-1.4.9.patch
 	tar xaf slang-1.4.9.tar.gz && ( cd slang-1.4.9; patch -p1 < ../slang-1.4.9.patch; ./configure; make; mv src/objs/libslang.a ../lib; mv src/slang.h ../include; cd ..; rm -rf slang-1.4.9 )
-lib/liblua.a:	lua-5.3.5.tar.gz
-	tar xaf lua-5.3.5.tar.gz && ( cd lua-5.3.5; make linux; mv src/liblua.a ../lib; mv src/lauxlib.h src/lua.h src/luaconf.h src/lualib.h ../include; cd ..; rm -rf lua-5.3.5 )
+lib/liblua.a:	lua-5.4.4.tar.gz
+	tar xaf lua-5.4.4.tar.gz && ( cd lua-5.4.4; make linux; mv src/liblua.a ../lib; mv src/lauxlib.h src/lua.h src/luaconf.h src/lualib.h ../include; cd ..; rm -rf lua-5.4.4 )
 lib/libssl.a lib/libcrypto.a:	openssl-1.0.1j.tar.gz
 	tar xzf openssl-1.0.1j.tar.gz && ( cd openssl-1.0.1j; ./config no-shared no-dso --prefix=`dirname \`pwd\`` --openssldir=/home/openemm//etc/openssl; make; mv libcrypto.a libssl.a ../lib; rm -rf ../include/openssl; mkdir ../include/openssl; cp include/openssl/*.h ../include/openssl; cd ..; rm -rf rm -rf openssl-1.0.1j )
 lib/libz.a:	zlib-1.2.3.tar.gz

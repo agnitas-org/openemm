@@ -111,6 +111,7 @@
 # define	REASON_NO_MEDIA		1
 # define	REASON_EMPTY_DOCUMENT	2
 # define	REASON_UNMATCHED_MEDIA	3
+# define	REASON_CUSTOM		4
 
 typedef enum { /*{{{*/
 	EncNone,
@@ -221,7 +222,6 @@ struct block { /*{{{*/
 	buffer_t	*bout;		/* encoded binary content	*/
 	DO_DECL (tagpos);		/* all tags with position in ..	*/
 					/* .. content			*/
-	tagpos_t	**sorted;	/* for output sorted tagpos	*/
 	struct {
 		buffer_t	*source;	/* source copy ..	*/
 		buffer_t	*target;	/* .. and target for ..	*/
@@ -406,12 +406,13 @@ struct blockmail { /*{{{*/
 	bool_t		active;		/* if user is active		*/
 	int		reason;		/* code, if user not active	*/
 	int		reason_detail;	/* specific reason, if available*/
+	char		*reason_custom;	/* custom reason text		*/
 	buffer_t	*head;		/* the created head ..		*/
 	buffer_t	*body;		/* .. and body			*/
 	rblock_t	*rblocks;	/* the raw blocks		*/
 
 	/*
-	 * from here, the data is from the input file or from dynamic enviroment
+	 * from here, the data is from the input file or from dynamic environment
 	 */
 	/* description part */
 	map_t		*smap;
@@ -434,7 +435,9 @@ struct blockmail { /*{{{*/
 	xmlBufferPtr	auto_url;
 	bool_t		auto_url_is_dynamic;
 	char		*auto_url_prefix;
+	bool_t		gui;
 	bool_t		anon;
+	bool_t		anon_preserve_links;
 	char		*selector;
 	bool_t		convert_to_entities;
 	xmlBufferPtr	onepixel_url;
@@ -482,6 +485,8 @@ struct blockmail { /*{{{*/
 	int		dynamic_count;
 	xmlBufferPtr	mtbuf[2];
 	
+	bool_t		use_new_url_modification;
+
 	/* URLs in the mailing */
 	DO_DECL (url);
 	DO_DECL (link_resolve);
@@ -624,6 +629,7 @@ extern bool_t		replace_tags (blockmail_t *blockmail, receiver_t *rec, block_t *b
 				      const char *selector,
 				      bool_t ishtml, bool_t ispdf);
 extern bool_t		modify_urls (blockmail_t *blockmail, receiver_t *rec, block_t *block, protect_t *protect, bool_t ishtml, record_t *record);
+extern bool_t		modify_header (blockmail_t *blockmail, block_t *header);
 extern bool_t		modify_output (blockmail_t *blockmail, receiver_t *rec, block_t *block, blockspec_t *bspec, links_t *links);
 extern int		convert_block (xmlCharEncodingHandlerPtr translate, xmlBufferPtr in, xmlBufferPtr out, bool_t isoutput);
 extern bool_t		convert_charset (blockmail_t *blockmail, block_t *block);
@@ -642,6 +648,7 @@ extern void		tagpos_find_name (tagpos_t *t);
 extern void		tagpos_setup_tag (tagpos_t *t, blockmail_t *blockmail);
 extern block_t		*block_alloc (void);
 extern block_t		*block_free (block_t *b);
+extern void		block_swap_inout (block_t *b);
 extern bool_t		block_setup_charset (block_t *b);
 extern void		block_setup_tagpositions (block_t *b, blockmail_t *blockmail);
 extern void		block_find_method (block_t *b);
@@ -692,15 +699,15 @@ extern bool_t		rblock_retrieve_content (rblock_t *r, buffer_t *content);
 extern bool_t		rblock_set_string_content (rblock_t *r, const char *content);
 extern mailtrack_t	*mailtrack_alloc (int licence_id, int company_id, int mailing_id, int maildrop_status_id);
 extern mailtrack_t	*mailtrack_free (mailtrack_t *m);
-extern void		mailtrack_add (mailtrack_t *m, int customer_id);
+extern void		mailtrack_add (mailtrack_t *m, receiver_t *rec);
 extern blockmail_t	*blockmail_alloc (const char *fname, bool_t syncfile, log_t *lg);
 extern blockmail_t	*blockmail_free (blockmail_t *b);
 extern time_t		blockmail_now (blockmail_t *b);
 extern bool_t		blockmail_count (blockmail_t *b, const char *mediatype, int subtype, int chunks, long bytes, int bcccount);
 extern void		blockmail_count_sort (blockmail_t *b);
 extern void		blockmail_unsync (blockmail_t *b);
-extern bool_t		blockmail_insync (blockmail_t *b, int cid, const char *mediatype, int subtype, int chunks, int bcccount);
-extern bool_t		blockmail_tosync (blockmail_t *b, int cid, const char *mediatype, int subtype, int chunks, long size, int bcccount);
+extern bool_t		blockmail_insync (blockmail_t *b, receiver_t *rec, int bcccount);
+extern bool_t		blockmail_tosync (blockmail_t *b, receiver_t *rec, int bcccount);
 extern bool_t		blockmail_extract_mediatypes (blockmail_t *b);
 extern void		blockmail_setup_senddate (blockmail_t *b, const char *date, time_t epoch);
 extern void		blockmail_setup_company_configuration (blockmail_t *b);
@@ -711,7 +718,7 @@ extern void		blockmail_setup_onepixel_template (blockmail_t *b);
 extern void		blockmail_setup_tagpositions (blockmail_t *b);
 extern void		blockmail_setup_offline_picture_prefix (blockmail_t *b);
 extern void		blockmail_setup_auto_url_prefix (blockmail_t *b, const char *nprefix);
-extern void		blockmail_setup_anon (blockmail_t *b, bool_t anon);
+extern void		blockmail_setup_anon (blockmail_t *b, bool_t anon, bool_t anon_preserve_links);
 extern void		blockmail_setup_selector (blockmail_t *b, const char *selector);
 extern void		blockmail_setup_preevaluated_targets (blockmail_t *blockmail);
 
@@ -846,6 +853,7 @@ extern const char	*byte2char (const byte_t *b);
 extern int		xmlstrcmp (const xmlChar *s1, const char *s2);
 extern int		xmlstrncmp (const xmlChar *s1, const char *s2, size_t n);
 extern long		xml2long (xmlBufferPtr p);
+extern void		entity_escape (xmlBufferPtr target, const xmlChar *source, int source_length);
 # else		/* __OPTIMIZE__ */
 # define	I	static inline
 # include	"misc.c"

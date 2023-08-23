@@ -13,7 +13,6 @@ from	__future__ import annotations
 import	os, stat, errno, signal, fcntl
 import	time, pickle, mmap, subprocess
 import	multiprocessing, logging
-from	abc import abstractmethod
 from	collections import deque
 from	dataclasses import dataclass, field
 from	datetime import datetime
@@ -29,6 +28,7 @@ from	.ignore import Ignore
 from	.log import log
 from	.parser import Parsable, unit
 from	.stream import Stream
+from	.tools import abstract
 #
 __all__ = ['Signal', 'Timer', 'Daemonic', 'Watchdog', 'EWatchdog', 'Daemon']
 #
@@ -187,11 +187,6 @@ as a daemon (a background process which runs continuously) and low
 level process control. In general this (or one of its subclasses)
 should be subclassed and extended for the process to implement."""
 	__slots__ = ['running', 'signals']
-	try:
-		devnull = os.devnull
-	except AttributeError:
-		devnull = '/dev/null'
-
 	class Channel(Generic[_T]):
 		__slots__ = ['_reader', '_writer']
 		def __init__ (self) -> None:
@@ -295,7 +290,7 @@ should be subclassed and extended for the process to implement."""
 		for fd in 0, 1, 2:
 			with Ignore (OSError):
 				os.close (fd)
-		fd = os.open (Daemonic.devnull, os.O_RDWR)
+		fd = os.open (os.devnull, os.O_RDWR)
 		if fd == 0:
 			if fcntl.fcntl (fd, fcntl.F_DUPFD) == 1:
 				fcntl.fcntl (fd, fcntl.F_DUPFD)
@@ -680,7 +675,6 @@ Every process to run under watchdog control must be an instance of
 		__slots__ = ['name', 'method', 'args', 'output', 'heartbeat', 'watchdog', 'pid', 'last', 'incarnation', 'hb', 'killed_by_heartbeat']
 		class Restart (Exception):
 			"""Exception to be thrown to force a restart of the process"""
-			pass
 		def __init__ (self,
 			name: str,
 			method: Callable[..., Any],
@@ -725,7 +719,7 @@ undefined condition."""
 			try:
 				if self.output is not None and self.watchdog is not None:
 					try:
-						self.watchdog.redirect (Daemonic.devnull, self.output)
+						self.watchdog.redirect (os.devnull, self.output)
 					except Exception as e:
 						logger.error (f'Failed to establish redirection: {e}')
 				rc = self.method (*self.args)
@@ -949,7 +943,10 @@ a process until the watchdog gives up."""
 			if n in (0, termination_delay):
 				for job in joblist:
 					self.term (cast (int, job.pid), signal.SIGKILL if n == 0 else signal.SIGTERM)
-					logger.info (f'Signaled job {job.name} to terminate')
+					logger.info ('Signaled job {name} to terminate {how}'.format (
+						name = job.name,
+						how = 'gracefully' if n == 0 else 'forced'
+					))
 			n -= 1
 			time.sleep (1)
 		self.teardown (done)
@@ -969,21 +966,19 @@ a process until the watchdog gives up."""
 	# Methods to override
 	#
 	# Must implement as entry point for new process
-	@abstractmethod
 	def run (self, *args: Any, **kwargs: Any) -> Any:
 		"""The entry point for the legacy ``start'' method"""
+		abstract ()
 	#
 	# called once during startup
 	def startup (self, jobs: List[Watchdog.Job]) -> None:
 		"""Is called after setup, but before any child process is started"""
-		pass
 	#
 	# called once for teardonw
 	def teardown (self, done: List[Watchdog.Job]) -> None:
 		"""Is called after all child processs are terminated, but before the watchdog exits
 
 ``done'' is the list of jobs which are known to had terminated."""
-		pass
 	#
 	# called once when ready to terminate
 	def terminating (self, jobs: List[Watchdog.Job], done: List[Watchdog.Job]) -> None:
@@ -991,22 +986,18 @@ a process until the watchdog gives up."""
 
 ``jobs'' are a list of still active children and ``done'' is a list of
 jobs already terminated."""
-		pass
 	#
 	# called before every starting of a process
 	def spawning (self, job: Watchdog.Job) -> None:
 		"""Is called after ``job'' had been started"""
-		pass
 	#
 	# called after every joining of a process
 	def joining (self, job: Watchdog.Job, ec: Daemonic.Status) -> None:
 		"""Is called after ``job'' has terminated with ``ec'' exit condition"""
-		pass
 	#
 	# called in subprocess before invoking method
 	def started (self, job: Watchdog.Job) -> None:
 		"""Is called before invoking ``job'' entry point"""
-		pass
 	#
 	# called in subprocess after method completed
 	def ended (self, job: Watchdog.Job, rc: Any) -> Any:
@@ -1167,5 +1158,4 @@ using the content of ``script''."""
 
 	def run (self, *args: Any, **kwargs: Any) -> Any:
 		"""Entry point for implemention"""
-		pass
 

@@ -18,7 +18,6 @@
  * XML data
  */
 typedef byte_t		xchar_t;
-typedef buffer_t	xmlbuf_t;
 typedef struct { /*{{{*/
 	int	csize;
 	cache_t	*lower,
@@ -40,67 +39,6 @@ extern int		xstrnlen (const xchar_t *s, int slen);
 extern int		xstrcmp (const xchar_t *s1, const char *s2);
 extern int		xstrncmp (const xchar_t *s1, const char *s2, size_t n);
 extern xchar_t		*xsubstr (const xchar_t *s, int start, int end);
-extern bool_t		xmlbuf_equal (xmlbuf_t *b1, xmlbuf_t *b2);
-extern char		*xmlbuf_to_string (xmlbuf_t *b);
-extern long		xmlbuf_to_long (xmlbuf_t *b);
-
-static inline xmlbuf_t *
-xmlbuf_alloc (int nsize) /*{{{*/
-{
-	return (xmlbuf_t *) buffer_alloc (nsize);
-}/*}}}*/
-static inline xmlbuf_t *
-xmlbuf_free (xmlbuf_t *b) /*{{{*/
-{
-	return (xmlbuf_t *) buffer_free ((buffer_t *) b);
-}/*}}}*/
-static inline void
-xmlbuf_clear (xmlbuf_t *b) /*{{{*/
-{
-	buffer_clear ((buffer_t *) b);
-}/*}}}*/
-static inline int
-xmlbuf_length (xmlbuf_t *b) /*{{{*/
-{
-	return buffer_length ((buffer_t *) b);
-}/*}}}*/
-static inline const xchar_t *
-xmlbuf_content (xmlbuf_t *b) /*{{{*/
-{
-	return (const xchar_t *) buffer_content ((buffer_t *) b);
-}/*}}}*/
-static inline bool_t
-xmlbuf_add (xmlbuf_t *b, const xchar_t *data, int dlen) /*{{{*/
-{
-	return buffer_append ((buffer_t *) b, (const byte_t *) data, dlen);
-}/*}}}*/
-static inline bool_t
-xmlbuf_set (xmlbuf_t *b, const xchar_t *data, int dlen) /*{{{*/
-{
-	xmlbuf_clear (b);
-	return xmlbuf_add (b, data, dlen);
-}/*}}}*/
-static inline const char *
-xmlbuf_string (xmlbuf_t *b) /*{{{*/
-{
-	return buffer_string ((buffer_t *) b);
-}/*}}}*/
-static inline char *
-xmlbuf_copystring (xmlbuf_t *b) /*{{{*/
-{
-	return buffer_copystring ((buffer_t *) b);
-}/*}}}*/
-static inline xmlbuf_t *
-pool_xrequest (pool_t *p, int nsize) /*{{{*/
-{
-	return (xmlbuf_t *) pool_request (p, nsize);
-}/*}}}*/
-static inline xmlbuf_t *
-pool_xrelease (pool_t *p, xmlbuf_t *b) /*{{{*/
-{
-	return (xmlbuf_t *) pool_release (p, (buffer_t *) b);
-}/*}}}*/
-
 extern const xchar_t	*xtolower (const xchar_t *s, int *slen, int *olen);
 extern const xchar_t	*xtoupper (const xchar_t *s, int *slen, int *olen);
 extern const xchar_t	*xtotitle (const xchar_t *s, int *slen, int *olen);

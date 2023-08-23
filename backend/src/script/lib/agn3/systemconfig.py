@@ -10,18 +10,20 @@
 ####################################################################################################################################################################################################################################################################
 #
 from	__future__ import annotations
-import	os, json, platform, pwd, re
-from	typing import Callable, Final, Optional, TypeVar, Union
+import	os, json, platform, pwd, re, base64
+from	typing import Any, Callable, Final, Optional, TypeVar, Union
 from	typing import Dict, KeysView, List, Set, Tuple
 from	typing import overload
+from	.exceptions import error
 from	.ignore import Ignore
 from	.stream import Stream
+from	.template import Placeholder
 from	.tools import atob, listsplit
 #
 __all__ = ['Systemconfig']
 #
-R = TypeVar ('R')
-T = TypeVar ('T')
+_R = TypeVar ('_R')
+_T = TypeVar ('_T')
 #
 def _determinate_essentials () -> Tuple[str, str, str, str]:
 	fqdn = platform.node ().lower ()
@@ -161,13 +163,13 @@ True
 		def host (self) -> str:
 			return self._host
 
-		def pick (self, collection: Dict[Optional[str], T]) -> T:
+		def pick (self, collection: Dict[Optional[str], _T]) -> _T:
 			for selection in self.selections:
 				with Ignore (KeyError):
 					return collection[selection]
 			raise KeyError ()
 	
-		def pick_pattern (self, collection: Dict[str, T], key: str) -> T:
+		def pick_pattern (self, collection: Dict[str, _T], key: str) -> _T:
 			for selection in self.selections:
 				with Ignore (KeyError):
 					return collection[f'{key}[{selection}]' if selection is not None else key]
@@ -180,7 +182,7 @@ True
 	
 	_selection = Selection (_user, _fqdn, _host)
 	__sentinel: Final[object] = object ()
-	def __init__ (self, path: Optional[str] = None) -> None:
+	def __init__ (self) -> None:
 		"""path to configuration file or None to use default
 
 Setup the Systemconfig object and read the content of the system confg
@@ -190,10 +192,9 @@ file, if it is available. """
 		self.content = os.environ.get ('SYSTEM_CONFIG')
 		self.cfg: Dict[str, str] = {}
 		if self.content is None:
-			if path is None:
-				path = self._default_path
-				if not os.path.isfile (path) and os.path.isfile (self._default_legacy_path):
-					path = self._default_legacy_path
+			path = self._default_path
+			if not os.path.isfile (path) and os.path.isfile (self._default_legacy_path):
+				path = self._default_legacy_path
 			self.path = path
 			self._check ()
 		else:
@@ -201,15 +202,13 @@ file, if it is available. """
 			
 	def _check (self) -> None:
 		if self.path is not None:
-			try:
+			with Ignore (OSError, IOError):
 				st = os.stat (self.path)
 				if st.st_mtime != self.last_modified:
 					self.last_modified = st.st_mtime
 					with open (self.path) as fd:
 						self.content = fd.read ()
 					self._parse ()
-			except (OSError, IOError):
-				pass
 
 	pattern_selective = re.compile ('^([^[]+)\\[([^]]+)\\]$')
 	def _parse (self) -> None:
@@ -232,15 +231,13 @@ file, if it is available. """
 						else:
 							cur.append (line)
 					elif line and not line.startswith ('#'):
-						try:
+						with Ignore (ValueError):
 							(var, val) = [_v.strip () for _v in line.split ('=', 1)]
 							if val == '{':
 								cont = var
 								cur.clear ()
 							else:
 								self.cfg[var] = val
-						except ValueError:
-							pass
 			update: Dict[str, str] = {}
 			for (option, value) in self.cfg.items ():
 				mtch = self.pattern_selective.match (option)
@@ -340,10 +337,10 @@ file, if it is available. """
 			return default
 
 	@overload
-	def __user (self, var: str, default: None, retriever: Callable[..., R]) -> Optional[R]: ...
+	def __user (self, var: str, default: None, retriever: Callable[..., _R]) -> Optional[_R]: ...
 	@overload
-	def __user (self, var: str, default: R, retriever: Callable[..., R]) -> R: ...
-	def __user (self, var: str, default: Optional[R], retriever: Callable[..., R]) -> Optional[R]:
+	def __user (self, var: str, default: _R, retriever: Callable[..., _R]) -> _R: ...
+	def __user (self, var: str, default: Optional[_R], retriever: Callable[..., _R]) -> Optional[_R]:
 		rc = retriever (f'{var}-{Systemconfig._user}', Systemconfig.__sentinel) if Systemconfig._user is not None else Systemconfig.__sentinel
 		return rc if rc is not Systemconfig.__sentinel else retriever (var, default)
 
@@ -392,7 +389,54 @@ file, if it is available. """
 		if (rc := self.user_bget (var)) is not None:
 			return rc
 		return self.has (var, default = default)
-			
+
+	__ph = Placeholder (True)
+	def as_config (self,
+		value: str,
+		*,
+		namespace: Optional[Dict[str, Any]] = None,
+		path_namespace: Optional[Dict[str, str]] = None,
+		path_base: str = '.',
+		optional: bool = False
+	) -> Dict[str, Any]:
+		rc: Dict[str, Any] = {}
+		if value.startswith ('@'):
+			path = value[1:].strip ()
+			if path_namespace:
+				path = Systemconfig.__ph (path, path_namespace)
+			path = os.path.expanduser (path)
+			if not os.path.isabs (path) and path_base:
+				path = os.path.abspath (os.path.join (path_base, path))
+			else:
+				path = os.path.normpath (path)
+			try:
+				with open (path) as fd:
+					value = '\n'.join ([_l for _l in fd.readlines () if not _l.lstrip ().startswith ('#')])
+			except IOError:
+				if optional:
+					return rc
+				raise
+		with Ignore ():
+			value = base64.b64decode (value, validate = True).decode ('UTF-8')
+		try:
+			config: Any = eval (value, namespace if namespace is not None else {})
+		except Exception as e:
+			for state in 0, 1:
+				with Ignore ():
+					if state == 0:
+						if not namespace:
+							continue
+						config = json.loads (Systemconfig.__ph (value, namespace))
+					else:
+						config = json.loads (value)
+					break
+			else:
+				raise error (f'"{value}": not a valid expression: {e}')
+		if isinstance (config, dict):
+			for (key, option) in config.items ():
+				if isinstance (key, str):
+					rc[key] = option
+		return rc
 
 	def dump (self) -> None:
 		"""Display current configuration content"""

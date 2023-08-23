@@ -74,7 +74,7 @@ the persistance and offers some handy methods."""
 		count = self.db.querys ('SELECT count(*) FROM timestamp_tbl WHERE name = :name', self.parm)
 		if count is None or not count[0]:
 			rc = self.db.querys ('SELECT max(timestamp_id) + 1 FROM timestamp_tbl')
-			if not rc is None and not rc[0] is None:
+			if rc is not None and rc[0] is not None:
 				tid = rc[0]
 			else:
 				tid = 1
@@ -135,7 +135,7 @@ default database id."""
 		if cast (DB, self.db).update ('UPDATE timestamp_tbl SET temp = :ts WHERE name = :name', parm) != 1:
 			raise error ('Failed to setup timestamp for current time')
 		rc = cast (DB, self.db).querys ('SELECT cur, temp FROM timestamp_tbl WHERE name = :name', self.parm)
-		if not rc is None:
+		if rc is not None:
 			(self.lowmark, self.highmark) = rc
 		cast (DB, self.db).sync ()
 

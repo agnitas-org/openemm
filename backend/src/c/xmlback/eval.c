@@ -1318,18 +1318,19 @@ do_init (blockmail_t *blockmail) /*{{{*/
 	s = NULL;
 	if (! parse_error) {
 		parse_error = buffer_alloc (512);
+		SLang_Error_Hook = record_error;
+		if ((SLang_init_slang () == -1) ||
+		    (SLang_init_slmath () == -1) ||
+		    (SLang_init_slassoc () == -1) ||
+		    (SLang_init_array () == -1) ||
+		    (SLdate_setup (& sd) == -1) ||
+		    (SLadd_intrin_fun_table (functab, (char *) "__XMLBACK__") == -1))
+			return NULL;
 	} else {
 		parse_error -> length = 0;
 	}
 	ctx_set (blockmail);
-	SLang_Error_Hook = record_error;
-	if ((SLang_init_slang () != -1) &&
-	    (SLang_init_slmath () != -1) &&
-	    (SLang_init_slassoc () != -1) &&
-	    (SLang_init_array () != -1) &&
-	    (SLdate_setup (& sd) != -1) &&
-	    (SLadd_intrin_fun_table (functab, (char *) "__XMLBACK__") != -1) &&
-	    (s = (slang_t *) malloc (sizeof (slang_t)))) {
+	if (s = (slang_t *) malloc (sizeof (slang_t))) {
 		char	*rcfile;
 
 		s -> blockmail = blockmail;

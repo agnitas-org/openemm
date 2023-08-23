@@ -749,9 +749,9 @@ found, no module is loaded at all.
 					if cb.path is not None:
 						name += f' loaded from {cb.path}'
 					if cb.calls == 0:
-						self.warning (f'registered method "{name}" is never called')
+						self.debug (f'registered method "{name}" is never called')
 					else:
-						self.verbose (f'fregistered method "{name}" is called {cb.calls} times')
+						self.debug (f'fregistered method "{name}" is called {cb.calls} times')
 		self.info ('Shuting down modules')
 		for m in reversed (self.modules):
 			self.info (f'Shuting down {m.name}')

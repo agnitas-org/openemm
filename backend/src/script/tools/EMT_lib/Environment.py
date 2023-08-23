@@ -24,10 +24,11 @@ class Environment:
 	# OpenEMM and EMM specific settings start here #
 	################################################
 
-	toolVersion = "22.10.024"
+	toolVersion = "23.04.032"
 	toolName = None
 
 	applicationName = None
+	scriptFilePath = None
 	applicationUserNamesToCheck = None
 	applicationDbcfgEntryDefaultName = None
 
@@ -72,7 +73,6 @@ class Environment:
 	agnitasCloudUrlReachable = False
 
 	hostname = os.uname()[1]
-	scriptFilePath = os.path.dirname(os.path.realpath(__file__))
 	systemUrl = None
 	username = os.environ["USER"]
 	frontendUserName = None
@@ -91,7 +91,7 @@ class Environment:
 	errors = []
 
 	unsavedDbcfgChanges = None
-	readonlyDbcfgProperties = ["host"]
+	readonlyDbcfgProperties = []
 
 	unsavedSystemCfgChanges = None
 	readonlyLicenseCfgProperties = ["licence"]
@@ -695,7 +695,7 @@ class Environment:
 						tomcatNative = ""
 						tomcatNative = "/opt/agnitas.com/software/tomcat-native"
 						environmentConfigurationFileData += "export TOMCAT_NATIVE=" + tomcatNative + "\n"
-						
+
 					environmentConfigurationFileData += "source $HOME/scripts/config.sh\n"
 
 					environmentConfigurationFileHandle.write(environmentConfigurationFileData)
@@ -922,7 +922,7 @@ class Environment:
 			os.remove("/home/" + Environment.username + "/bin/EmmMaintenanceTool.sh")
 		if os.path.islink("/home/" + Environment.username + "/bin/EmmMaintenanceTool.sh"):
 			os.remove("/home/" + Environment.username + "/bin/EmmMaintenanceTool.sh")
-		
+
 		Environment.checkMigration()
 
 	@staticmethod
@@ -949,6 +949,8 @@ class Environment:
 				EMTUtilities.createLink("/home/openemm/tomcat/conf", "/home/openemm/conf", "openemm")
 			if not os.path.isfile("/home/openemm/tomcat/conf/server.xml") and os.path.isfile("/home/openemm/tomcat/conf/server.xml.template"):
 				shutil.copy("/home/openemm/tomcat/conf/server.xml.template", "/home/openemm/tomcat/conf/server.xml")
+				EMTUtilities.chown("/home/openemm/tomcat/conf/server.xml", "openemm", "openemm")
+				EMTUtilities.manageTlsCertificateForTomcat("/home/openemm/etc/ssl", "/home/openemm/tomcat/conf/server.xml", Environment.applicationName)
 			if not os.path.isdir("/home/openemm/logs") and not os.path.islink("/home/openemm/logs"):
 				EMTUtilities.createLink("/home/openemm/tomcat/logs", "/home/openemm/logs", "openemm")
 			if os.path.isdir("/home/openemm/release/backend/current"):
@@ -1012,6 +1014,8 @@ class Environment:
 					EMTUtilities.createLink("/home/console/tomcat/conf", "/home/console/conf", "console")
 				if not os.path.isfile("/home/console/tomcat/conf/server.xml") and os.path.isfile("/home/console/tomcat/conf/server.xml.template"):
 					shutil.copy("/home/console/tomcat/conf/server.xml.template", "/home/console/tomcat/conf/server.xml")
+					EMTUtilities.chown("/home/openemm/tomcat/conf/server.xml", "console", "console")
+					EMTUtilities.manageTlsCertificateForTomcat("/home/console/sslcert", "/home/console/tomcat/conf/server.xml", Environment.applicationName)
 				if not os.path.isdir("/home/console/logs") and not os.path.islink("/home/console/logs"):
 					EMTUtilities.createLink("/home/console/tomcat/logs", "/home/console/logs", "console")
 
@@ -1104,6 +1108,8 @@ class Environment:
 					EMTUtilities.createLink("/home/rdir/tomcat/conf", "/home/rdir/conf", "rdir")
 				if not os.path.isfile("/home/rdir/tomcat/conf/server.xml") and os.path.isfile("/home/rdir/tomcat/conf/server.xml.template"):
 					shutil.copy("/home/rdir/tomcat/conf/server.xml.template", "/home/rdir/tomcat/conf/server.xml")
+					EMTUtilities.chown("/home/openemm/tomcat/conf/server.xml", "rdir", "rdir")
+					EMTUtilities.manageTlsCertificateForTomcat("/home/rdir/sslcert", "/home/rdir/tomcat/conf/server.xml", Environment.applicationName)
 				if not os.path.isdir("/home/rdir/logs") and not os.path.islink("/home/rdir/logs"):
 					EMTUtilities.createLink("/home/rdir/tomcat/logs", "/home/rdir/logs", "rdir")
 				if os.path.isdir("/home/rdir/release/backend/current"):
@@ -1170,8 +1176,8 @@ class Environment:
 	@staticmethod
 	def getSystemUrl():
 		try:
-			if (Environment.systemUrl is None or Environment.systemUrl == "Unknown") and DbConnector.checkDbServiceAvailable():
-				Environment.systemUrl = DbConnector.selectValue("SELECT value FROM config_tbl WHERE class = 'system' AND name = 'url' AND (hostname IS NULL OR TRIM(hostname) = '')")
+			if (Environment.systemUrl is None or Environment.systemUrl == "Unknown") and DbConnector.checkDbConnection():
+				Environment.systemUrl = DbConnector.selectValue("SELECT value FROM config_tbl WHERE class = 'system' AND name = 'url' AND (hostname IS NULL OR TRIM(hostname) = '' OR hostname = ?)", Environment.hostname)
 
 			if "[to be defined]" in Environment.systemUrl or Environment.systemUrl.strip() == "":
 				Environment.systemUrl = None
@@ -1185,8 +1191,9 @@ class Environment:
 
 	@staticmethod
 	def checkMigration():
-		if Environment.applicationName == "EMM":
-			if DbConnector.checkDbServiceAvailable():
+		try:
+			# To be removed in near future: GWUA-5514
+			if DbConnector.checkDbConnection() and DbConnector.checkColumnExists("workflow_tbl", "is_legacy_mode"):
 				problematicInActiveWorkflows = DbConnector.select("SELECT shortname, company_id, workflow_id FROM workflow_tbl WHERE status != 2 AND workflow_id IN (SELECT workflow_id FROM workflow_reaction_tbl WHERE is_legacy_mode = 1)")
 				if len(problematicInActiveWorkflows) > 0:
 					listOfWorkflowNames = ""
@@ -1197,7 +1204,7 @@ class Environment:
 						if len(listOfWorkflowNames) > 0:
 							listOfWorkflowNames = listOfWorkflowNames + ", "
 						listOfWorkflowNames = listOfWorkflowNames + "\"" + shortname + "\" (clientID: " + str(companyID) + ", workflowID: " + str(workflowID) + ")"
-					Environment.warnings.append("Your EMM database contains inactive legacy workflows " + listOfWorkflowNames + ". Please delete those workflows since they will no longer work with EMM 23.10 and later.")
+					Environment.warnings.append("Your " + Environment.applicationName + " database contains inactive legacy workflows " + listOfWorkflowNames + ". Please delete those workflows since they will no longer work with " + Environment.applicationName + " 23.10 and later.")
 
 				problematicActiveWorkflows = DbConnector.select("SELECT shortname, company_id, workflow_id FROM workflow_tbl WHERE status = 2 AND workflow_id IN (SELECT workflow_id FROM workflow_reaction_tbl WHERE is_legacy_mode = 1)")
 				if len(problematicActiveWorkflows) > 0:
@@ -1209,8 +1216,8 @@ class Environment:
 						if len(listOfWorkflowNames) > 0:
 							listOfWorkflowNames = listOfWorkflowNames + ", "
 						listOfWorkflowNames = listOfWorkflowNames + "\"" + shortname + "\" (clientID: " + str(companyID) + ", workflowID: " + str(workflowID) + ")"
-					Environment.warnings.append("Your EMM database contains active legacy workflows " + listOfWorkflowNames + " which can not be migrated. Please rebuild these workflows from scratch and delete the legacy workflows since they will no longer work with EMM 23.10 and later. If you need help, please contact support.")
-				
+					Environment.warnings.append("Your " + Environment.applicationName + " database contains active legacy workflows " + listOfWorkflowNames + " which can not be migrated. Please rebuild these workflows from scratch and delete the legacy workflows since they will no longer work with " + Environment.applicationName + " 23.10 and later. If you need help, please contact support.")
+
 				problematicWorkflowsWithReportIcon = DbConnector.select("SELECT shortname, company_id, workflow_id FROM workflow_tbl WHERE LOWER(workflow_schema) LIKE '%type\":\"report%'")
 				if problematicWorkflowsWithReportIcon is not None and len(problematicWorkflowsWithReportIcon) > 0:
 					listOfWorkflowNames = ""
@@ -1221,4 +1228,28 @@ class Environment:
 						if len(listOfWorkflowNames) > 0:
 							listOfWorkflowNames = listOfWorkflowNames + ", "
 						listOfWorkflowNames = listOfWorkflowNames + "\"" + shortname + "\" (clientID: " + str(companyID) + ", workflowID: " + str(workflowID) + ")"
-					Environment.warnings.append("Your EMM database contains campaign workflows " + listOfWorkflowNames + " which contain a report icon. Please remove the report icon from these workflows since they will no longer work with EMM 23.10 and later. If you need help, please contact support.")
+					Environment.warnings.append("Your " + Environment.applicationName + " database contains campaign workflows " + listOfWorkflowNames + " which contain a report icon. Please remove the report icon from these workflows since they will no longer work with " + Environment.applicationName + " 23.10 and later. If you need help, please contact support.")
+
+				oldFormDoLinks = DbConnector.selectValue("SELECT COUNT(*) FROM rdir_url_tbl WHERE full_url like '%/form.do%'")
+				if oldFormDoLinks is not None and oldFormDoLinks > 0:
+					Environment.warnings.append("Your " + Environment.applicationName + " database contains userform links in mailings of the old '.../form.do?...' format. Please switch those to the new format '.../form.action?...'. If you need help, please contact support.")
+		except Exception as e:
+			if EMTUtilities.isDebugMode():
+				logging.exception("Cannot check migration")
+			if hasattr(e, 'message'):
+				Environment.errors.append("Cannot check migration: " + str(e.message))
+			else:
+				Environment.errors.append("Cannot check migration")
+
+	@staticmethod
+	def getBackendApplicationUserName():
+		if Environment.isOpenEmmServer:
+			return "openemm"
+		elif Environment.isEmmMergerServer:
+			return "merger"
+		elif Environment.isEmmMailerServer:
+			return "mailout"
+		elif Environment.isEmmMailloopServer:
+			return "mailloop"
+		else:
+			return "merger"

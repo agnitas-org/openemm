@@ -40,9 +40,10 @@ extern int		alua_isdate (lua_State *lua, int idx);
 extern int		alua_isnull (lua_State *lua, int idx);
 extern void		alua_pushnull (lua_State *lua);
 
-extern void		alua_setup_libraries (lua_State *lua);
+extern void		alua_setup_libraries (lua_State *lua, bool_t sandbox);
 extern void		alua_setup_function (lua_State *lua, const char *modname, const char *funcname, lua_CFunction func, void *closure);
-extern lua_State	*alua_alloc (void);
+extern lua_State	*alua_alloc (bool_t sandbox);
 extern void		alua_free (lua_State *lua);
 extern bool_t		alua_load (lua_State *lua, const char *name, const void *code, size_t clen);
+extern int		alua_pcall (lua_State *lua, int nargs, int nresults, int msgh, int timeout);
 # endif		/* __ALUA_H */

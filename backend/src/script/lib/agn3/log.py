@@ -212,7 +212,7 @@ see ``logfilename'', in this case the name is required and no host
 name is part of the final filename"""
 		return self.__make_filename (ts, epoch, name)
 
-	def append (self, s: str) -> None:
+	def append (self, s: Union[str, Tuple[str, ...], List[str]]) -> None:
 		"""Writes data to a logfile
 
 s may either be a string or a list or tuple containing strings. If it
@@ -225,8 +225,8 @@ passed object."""
 					if isinstance (s, str):
 						fd.write (s)
 					elif isinstance (s, list) or isinstance (s, tuple):
-						for l in s:
-							fd.write (l)
+						for line in s:
+							fd.write (line)
 					else:
 						fd.write (str (s) + '\n')
 					fd.close ()

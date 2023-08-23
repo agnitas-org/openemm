@@ -107,10 +107,16 @@ class UID:
 	
 	@staticmethod
 	def encode (content: bytes) -> str:
-		return base64.urlsafe_b64encode (content).rstrip (b'=').decode ('us-ascii')
+		try:
+			return base64.urlsafe_b64encode (content).rstrip (b'=').decode ('us-ascii')
+		except Exception as e:
+			raise error (f'failed to encode {content!r}: {e}')
 	@staticmethod
 	def decode (content: str) -> bytes:
-		return base64.urlsafe_b64decode (content + '=' * (len (content) % 4))
+		try:
+			return base64.urlsafe_b64decode (content + '=' * (len (content) % 4))
+		except Exception as e:
+			raise error (f'failed to decode {content}: {e}')
 	
 class UIDCache:
 	__slots__ = ['instances']
@@ -200,7 +206,7 @@ class UIDCache:
 					try:
 						if db.open ():
 							licence_id = int (EMMConfig (db = db, class_names = ['system']).get ('system', 'licence'))
-							if licence_id != 0:
+							if licence_id <= 0:
 								raise error (f'invalid licence_id {licence_id} found')
 							self.instances[licence_id] = UIDCache.Instance (licence_id, db)
 							seen.add (dbid)
@@ -216,7 +222,7 @@ class UIDCache:
 			instance.close ()
 		
 	def find (self, uid: UID) -> Tuple[UIDCache.Company, UIDCache.Mailing]:
-		if uid.licence_id != 0:
+		if uid.licence_id <= 0:
 			raise error (f'invalid licence_id {uid.licence_id}')
 		try:
 			instance = self.instances[uid.licence_id]

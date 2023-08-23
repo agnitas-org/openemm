@@ -101,7 +101,7 @@ def licenseFileMenuAction(actionParameters):
 				EMTUtilities.unTarGzFile(licenseFilePath, licenseTempDirectory)
 
 			if not os.path.isfile(licenseTempDirectory + "/emm.license.xml") or not os.path.isfile(licenseTempDirectory + "/emm.license.xml.sig"):
-				Environment.errors.append("Given licensefile archive does not contain expected files (emm.license.xml, emm.license.xml.sig)")
+				Environment.errors.append("Given license file archive does not contain expected files (emm.license.xml, emm.license.xml.sig)")
 			else:
 				with open(licenseTempDirectory + "/emm.license.xml", "r", encoding="UTF-8") as licenseDataFileHandle:
 					licenseData = licenseDataFileHandle.read()
@@ -119,7 +119,7 @@ def licenseFileMenuAction(actionParameters):
 						os.mkdir("/home/console/tomcat/conf")
 					if os.path.isdir("/home/console/tomcat/conf") and not os.path.isdir("/home/console/tomcat/conf/keys"):
 						os.mkdir("/home/console/tomcat/conf/keys")
-					shutil.copy(licenseTempDirectory + "/emm.salt", "/home/console/tomcat/conf/keys/server.xml")
+					shutil.copy(licenseTempDirectory + "/emm.salt", "/home/console/tomcat/conf/keys/emm.salt")
 					Environment.messages.append("Successfully installed emm.salt file")
 
 def restartMenuAction(actionParameters):

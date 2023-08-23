@@ -11,13 +11,12 @@
 #
 from	__future__ import annotations
 import	os, logging, time, datetime, stat
-from	abc import abstractmethod
 from	typing import Callable, Optional
 from	typing import List, NamedTuple, Pattern, Set, Tuple
 from	.definitions import base
 from	.io import which
 from	.pattern import isnum
-from	.tools import sizefmt, call
+from	.tools import abstract, sizefmt, call
 #
 __all__ = ['Janitor']
 #
@@ -371,7 +370,7 @@ instead of list for ``rules''"""
 		self.execute ()
 		self.done ()
 
-	@abstractmethod
 	def execute (self) -> None:
 		"""Execute the cleanup, must be overwritten by subclass"""
+		abstract ()
 

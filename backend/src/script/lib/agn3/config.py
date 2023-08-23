@@ -116,7 +116,7 @@ standard values are set for the namespace:
 	- now: current date as time.struct_time
 	- today: current date as datetime.datetime
 
-This method also copies the enviroment of the process and any passed
+This method also copies the environment of the process and any passed
 keyword argument to the namespace. To further populate you can access
 the namespace directly using the ``ns'' attribute."""
 		self.ns['now'] = time.localtime ()
@@ -548,7 +548,7 @@ instead of using an in memory database. """
 				'timestamp': datetime,
 				'binary': bytes
 			}
-			rd = CSVReader (StringIO (value.strip ()), CSVDefault if dialect is None else dialect)
+			rd = CSVReader (StringIO (value.strip ()), dialect = CSVDefault if dialect is None else dialect)
 			for (lineno, row) in enumerate (rd):
 				if db is None:
 					table = var.split ('.')[-1]
@@ -722,7 +722,7 @@ instead of using an in memory database. """
 						cur[block] += f'{line}\n'
 				elif line and self.comment_pattern.match (line) is None:
 					mtch = self.section_pattern.match (line)
-					if not mtch is None:
+					if mtch is not None:
 						section_name = mtch.group (1)
 						mtch = self.include_pattern.match (section_name)
 						sname: Optional[str]
@@ -748,40 +748,36 @@ instead of using an in memory database. """
 									if include in self.sections:
 										for (var, val) in self.sections[include].items ():
 											cur[var] = val
-					else:
-						mtch = self.command_pattern.match (line)
-						if not mtch is None:
-							grps = mtch.groups ()
-							command = grps[0]
-							param = grps[2]
-							if command == 'abort':
-								fd.close ()
-								while len (fds) > 0:
-									fds.pop (0).close ()
-								fd = None
-							elif command == 'close':
-								fd.close ()
-								if fds:
-									fd = fds.pop (0)
-								else:
-									fd = None
-							elif command == 'include':
-								nfd = open (param, 'rt')
-								fds.insert (0, fd)
-								fd = nfd
-						else:
-							mtch = self.data_pattern.match (line)
-							if not mtch is None:
-								(var, val) = mtch.groups ()
-								if val == '{':
-									block = var
-									cur[var] = ''
-								else:
-									if len (val) > 1 and val[0] in '\'"' and val[-1] == val[0]:
-										val = val[1:-1]
-									cur[var] = val
+					elif (mtch := self.command_pattern.match (line)) is not None:
+						grps = mtch.groups ()
+						command = grps[0]
+						param = grps[2]
+						if command == 'abort':
+							fd.close ()
+							while len (fds) > 0:
+								fds.pop (0).close ()
+							fd = None
+						elif command == 'close':
+							fd.close ()
+							if fds:
+								fd = fds.pop (0)
 							else:
-								raise error (f'Unparsable line: {line}')
+								fd = None
+						elif command == 'include':
+							nfd = open (param, 'rt')
+							fds.insert (0, fd)
+							fd = nfd
+					elif (mtch := self.data_pattern.match (line)) is not None:
+						(var, val) = mtch.groups ()
+						if val == '{':
+							block = var
+							cur[var] = ''
+						else:
+							if len (val) > 1 and val[0] in '\'"' and val[-1] == val[0]:
+								val = val[1:-1]
+							cur[var] = val
+					else:
+						raise error (f'Unparsable line: {line}')
 
 	def write_xml (self, fname: str) -> None:
 		"""Write configuration as xml file"""

@@ -16,11 +16,11 @@ from	.parser import unit
 #
 __all__ = ['Cache']
 #
-K = TypeVar ('K')
-V = TypeVar ('V')
-E = TypeVar ('E')
+_K = TypeVar ('_K')
+_V = TypeVar ('_V')
+_E = TypeVar ('_E')
 #
-class Cache (Generic[K, V]):
+class Cache (Generic[_K, _V]):
 	"""Generic caching
 
 this class provides a generic caching implementation with limitiation
@@ -74,10 +74,10 @@ KeyError: "'a': expired"
 0
 """
 	__slots__ = ['limit', 'timeout', 'active', 'count', 'cache', 'cacheline', 'fill']
-	class Entry (Generic[E]):
+	class Entry (Generic[_E]):
 		"""Represents a single caching entry"""
 		__slots__ = ['created', 'value']
-		def __init__ (self, value: E, active: bool) -> None:
+		def __init__ (self, value: _E, active: bool) -> None:
 			if active:
 				self.created = time.time ()
 			self.value = value
@@ -100,11 +100,11 @@ seconds or as a str using modfiers "s" for seconds, "m" for minutes,
 		self.timeout: Union[float, int] = timeout if isinstance (timeout, float) else unit.parse (timeout, -1)
 		self.active = self.timeout >= 0.0
 		self.count = 0
-		self.cache: Dict[K, Cache.Entry[V]] = {}
-		self.cacheline: Deque[K] = collections.deque ()
-		self.fill: Optional[Callable[[K], V]] = None
+		self.cache: Dict[_K, Cache.Entry[_V]] = {}
+		self.cacheline: Deque[_K] = collections.deque ()
+		self.fill: Optional[Callable[[_K], _V]] = None
 
-	def __getitem__ (self, key: K) -> V:
+	def __getitem__ (self, key: _K) -> _V:
 		try:
 			e = self.cache[key]
 			if self.active and not e.valid (time.time (), self.timeout):
@@ -119,7 +119,7 @@ seconds or as a str using modfiers "s" for seconds, "m" for minutes,
 				return value
 			raise
 
-	def __setitem__ (self, key: K, value: V) -> None:
+	def __setitem__ (self, key: _K, value: _V) -> None:
 		if key in self.cache:
 			self.cacheline.remove (key)
 		else:
@@ -131,7 +131,7 @@ seconds or as a str using modfiers "s" for seconds, "m" for minutes,
 		self.cache[key] = self.Entry (value, self.active)
 		self.cacheline.append (key)
 
-	def __delitem__ (self, key: K) -> None:
+	def __delitem__ (self, key: _K) -> None:
 		del self.cache[key]
 		self.cacheline.remove (key)
 		self.count -= 1
@@ -139,7 +139,7 @@ seconds or as a str using modfiers "s" for seconds, "m" for minutes,
 	def __len__ (self) -> int:
 		return len (self.cache)
 
-	def __contains__ (self, key: K) -> bool:
+	def __contains__ (self, key: _K) -> bool:
 		return key in self.cache
 
 	def reset (self) -> None:
@@ -148,7 +148,7 @@ seconds or as a str using modfiers "s" for seconds, "m" for minutes,
 		self.cache = {}
 		self.cacheline = collections.deque ()
 
-	def remove (self, key: K) -> None:
+	def remove (self, key: _K) -> None:
 		"""remove ``key'' from cache, if ``key'' is in cache"""
 		if key in self.cache:
 			del self[key]

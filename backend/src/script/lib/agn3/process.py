@@ -142,10 +142,10 @@ perform serveral queries on the result."""
 					line = fd.readline ().strip ()
 					if line != '':
 						pid = int (line)
-		if pid == None:
+		if pid is None:
 			with Ignore (ValueError):
 				pid = int (val)
-		if pid == None:
+		if pid is None:
 			raise error (f'Given paramter "{val!r}" cannot be mapped to a pid')
 		match = None
 		for p in self.table:

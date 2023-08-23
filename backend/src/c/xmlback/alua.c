@@ -12,6 +12,7 @@
 # include	<ctype.h>
 # include	<unistd.h>
 # include	<errno.h>
+# define	_GNU_SOURCE	/* required to get extended fnmatch flag values */
 # include	<fnmatch.h>
 # include	<regex.h>
 # include	<iconv.h>
@@ -797,50 +798,69 @@ alua_type (lua_State *lua) /*{{{*/
 	lua_pushstring (lua, str);
 	return 1;
 }/*}}}*/
+static int
+alua_dofile (lua_State *lua) /*{{{*/
+{
+	return 0;
+}/*}}}*/
+static int
+alua_loadfile (lua_State *lua) /*{{{*/
+{
+	lua_pushnil (lua);
+	lua_pushstring (lua, "not implemented");
+	return 2;
+}/*}}}*/
 static struct { /*{{{*/
 	const char	*libname;
 	lua_CFunction	libfunc;
+	bool_t		sandbox;
 	/*}}}*/
 }	alua_libtab[] = { /*{{{*/
-	{	"",			luaopen_base		},
-	{	LUA_STRLIBNAME,		luaopen_string		},
+	{	"",			luaopen_base,		true		},
+	{	LUA_STRLIBNAME,		luaopen_string,		true		},
 # ifdef		LUA_UTF8LIBNAME
-	{	LUA_UTF8LIBNAME,	luaopen_utf8		},
+	{	LUA_UTF8LIBNAME,	luaopen_utf8,		true		},
 # endif		/* LUA_UTF8LIBNAME */
-	{	LUA_TABLIBNAME,		luaopen_table		},
-	{	LUA_MATHLIBNAME,	luaopen_math		},
-	{	LUA_COLIBNAME,		luaopen_coroutine	}
+	{	LUA_TABLIBNAME,		luaopen_table,		true		},
+	{	LUA_MATHLIBNAME,	luaopen_math,		true		},
+	{	LUA_COLIBNAME,		luaopen_coroutine,	true		}
 	/*}}}*/
 };
 static struct { /*{{{*/
 	const char	*modname;
 	const char	*funcname;
 	lua_CFunction	func;
+	bool_t		sandbox;
 	/*}}}*/
 }	alua_functab[] = { /*{{{*/
-	{	NULL,			"type",		alua_type	}
+	{	NULL,			"type",		alua_type,	true	},
+	{	NULL,			"dofile",	alua_dofile,	true	},
+	{	NULL,			"loadfile",	alua_loadfile,	true	}
 	/*}}}*/
 };
 # define	FTSIZE		(sizeof (alua_functab) / sizeof (alua_functab[0]))
 
 void
-alua_setup_libraries (lua_State *lua) /*{{{*/
+alua_setup_libraries (lua_State *lua, bool_t sandbox) /*{{{*/
 {
 	int		n;
 	const char	*modname;
 	
 	for (n = 0; n < sizeof (alua_libtab) / sizeof (alua_libtab[0]); ++n) {
+		if ((! sandbox) || alua_libtab[n].sandbox) {
 # if	LUA_VERSION_NUM >= 502
-		luaL_requiref (lua, alua_libtab[n].libname, alua_libtab[n].libfunc, 1);
-		lua_pop (lua, 1);
+			luaL_requiref (lua, alua_libtab[n].libname, alua_libtab[n].libfunc, 1);
+			lua_pop (lua, 1);
 # else		
-		lua_pushcfunction (lua, alua_libtab[n].libfunc);
-		lua_pushstring (lua, alua_libtab[n].libname);
-		lua_call (lua, 1, 0);
-# endif		
+			lua_pushcfunction (lua, alua_libtab[n].libfunc);
+			lua_pushstring (lua, alua_libtab[n].libname);
+			lua_call (lua, 1, 0);
+# endif
+		}
 	}
 	alua_date_setup (lua);
-	alua_env_setup (lua);
+	if (! sandbox)
+		alua_env_setup (lua);
 	alua_null_setup (lua);
 	modname = NULL;
 	for (n = 0; n <= FTSIZE; ++n) {
@@ -860,7 +880,7 @@ alua_setup_libraries (lua_State *lua) /*{{{*/
 				}
 			}
 		}
-		if (n < FTSIZE) {
+		if ((n < FTSIZE) && ((! sandbox) || alua_functab[n].sandbox)) {
 			lua_pushcfunction (lua, alua_functab[n].func);
 			if (modname)
 				lua_setfield (lua, -2, alua_functab[n].funcname);
@@ -905,13 +925,13 @@ alua_panic (lua_State *lua) /*{{{*/
 	return 0;
 }/*}}}*/
 lua_State *
-alua_alloc (void) /*{{{*/
+alua_alloc (bool_t sandbox) /*{{{*/
 {
 	lua_State	*lua;
 	
 	if (lua = lua_newstate (alua_allocator, NULL)) {
 		lua_atpanic (lua, alua_panic);
-		alua_setup_libraries (lua);
+		alua_setup_libraries (lua, sandbox);
 	}
 	return lua;
 }/*}}}*/
@@ -951,12 +971,44 @@ alua_load (lua_State *lua, const char *name, const void *code, size_t clen) /*{{
 	rd.clen = clen;
 	rd.sent = 0;
 # if	LUA_VERSION_NUM >= 502
-	if ((lua_load (lua, alua_reader, & rd, name, NULL) == 0) && (lua_pcall (lua, 0, 0, 0) == 0))
+	if ((lua_load (lua, alua_reader, & rd, name, NULL) == 0) && (lua_pcall (lua, 0, 0, 0) == LUA_OK))
 # else	
-	if ((lua_load (lua, alua_reader, & rd, name) == 0) && (lua_pcall (lua, 0, 0, 0) == 0))
+	if ((lua_load (lua, alua_reader, & rd, name) == 0) && (lua_pcall (lua, 0, 0, 0) == LUA_OK))
 # endif
 		rc = true;
 	else
 		rc = false;
 	return rc;
+}/*}}}*/
+typedef struct { /*{{{*/
+	lua_State	*lua;
+	int		nargs;
+	int		nresults;
+	int		msgh;
+	int		rc;
+	/*}}}*/
+}	pcall_t;
+static void
+pcall_wrapper (void *pp) /*{{{*/
+{
+	pcall_t	*pc = (pcall_t *) pp;
+	
+	pc -> rc = lua_pcall (pc -> lua, pc -> nargs, pc -> nresults, pc -> msgh);
+}/*}}}*/
+int
+alua_pcall (lua_State *lua, int nargs, int nresults, int msgh, int timeout) /*{{{*/
+{
+	if (timeout > 0) {
+		pcall_t	pc;
+	
+		pc.lua = lua;
+		pc.nargs = nargs;
+		pc.nresults = nresults;
+		pc.msgh = msgh;
+		pc.rc = -1;
+		if (timeout_exec (timeout, pcall_wrapper, & pc))
+			return pc.rc;
+		return -1;
+	} else
+		return lua_pcall (lua, nargs, nresults, msgh);
 }/*}}}*/

@@ -78,25 +78,36 @@ class Processor:
 				queue = self.__next_queue ()
 				if self.mta (src, target_directory = queue, flush_count = '2'):
 					logger.info ('Unpacked %s in %s' % (src, queue))
-					try:
-						target = ArchiveDirectory.make (self.archive)
-					except error as e:
-						logger.error ('Failed to setup archive directory %s: %s' % (self.archive, e))
+					if self.archive != os.devnull:
+						try:
+							target = ArchiveDirectory.make (self.archive)
+						except error as e:
+							logger.error ('Failed to setup archive directory %s: %s' % (self.archive, e))
+							target = self.archive
+					else:
 						target = self.archive
 				else:
 					logger.error ('Failed to unpack %s in %s' % (src, queue))
 					target = self.recover
 			else:
 				logger.error ('Do not process %s as control file(s) is/are missing' % src)
-			dst = os.path.join (target, os.path.basename (src))
-			try:
-				shutil.move (src, dst)
-			except (shutil.Error, IOError, OSError) as e:
-				logger.error ('Failed to move %s to %s: %s' % (src, dst, str (e)))
+			if target != os.devnull:
+				dst = os.path.join (target, os.path.basename (src))
+				try:
+					shutil.move (src, dst)
+				except (shutil.Error, IOError, OSError) as e:
+					logger.error ('Failed to move %s to %s: %s' % (src, dst, str (e)))
+					try:
+						os.unlink (src)
+						logger.info (f'Removed file {src} as moving to destination {dst} failed')
+					except OSError as e:
+						logger.error ('Failed to remove file %s: %s' % (src, str (e)))
+			else:
 				try:
 					os.unlink (src)
+					logger.info (f'Removed file {src} as target is {target}')
 				except OSError as e:
-					logger.error ('Failed to remove file %s: %s' % (src, str (e)))
+					logger.error (f'Failed to remove file {src} for target {target}: {e}')
 		else:
 			logger.debug ('Skip requested file %s which is already processed' % src)
 			for path in stamp, final:

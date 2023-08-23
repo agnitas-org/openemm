@@ -14,6 +14,10 @@ from	enum import Enum
 #
 class MediaType (Enum):
 	EMAIL = 0
+	@classmethod
+	def valid (cls, mediatype: int) -> bool:
+		return mediatype in {_m.value for _m in cls.__members__.values ()}
+
 class UserStatus (Enum):
 	ACTIVE = 1
 	BOUNCE = 2
@@ -21,13 +25,25 @@ class UserStatus (Enum):
 	OPTOUT = 4
 	WAITCONFIRM = 5
 	BLOCKLIST = 6
+	SUSPEND = 7
 	@classmethod
 	def find_status (cls, name: str) -> UserStatus:
 		return cls.__members__[name.upper ()]
 
 class WorkStatus (Enum):
+	New = 'mailing.status.new'
+	Admin = 'mailing.status.admin'
+	Active = 'mailing.status.active'
+	Disable = 'mailing.status.disable'
+	Cancel = 'mailing.status.canceled'
+	CancelCopy = 'mailing.status.canceledAndCopied'
+	Edit = 'mailing.status.edit'
+	Generating = 'mailing.status.in-generation'
 	Finished = 'mailing.status.generation-finished'
+	NoRecipient = 'mailing.status.norecipients'
+	Ready = 'mailing.status.ready'
+	Scheduled = 'mailing.status.scheduled'
 	Sending = 'mailing.status.sending'
 	Sent = 'mailing.status.sent'
-	CancelCopy = 'mailing.status.canceledAndCopied'
+	Test = 'mailing.status.test'
 

@@ -9,12 +9,15 @@
 #                                                                                                                                                                                                                                                                  #
 ####################################################################################################################################################################################################################################################################
 import os
+import stat
 import sys
 import logging
 import datetime
 import subprocess
 import getpass
 import time
+
+from pathlib import Path
 
 from EMT_lib import Colors
 from EMT_lib import DbConnector
@@ -47,6 +50,23 @@ def readApplicationStatus(colorize = True):
 
 	if not EMTUtilities.sslIsAvailable():
 		statusText += errorColorCode + "SSL connections are not supported by the current python installation" + defaultColorCode + "\n"
+
+	# File permissions
+	if DbConnector.dbcfgPropertiesFilePath != None:
+		if os.path.isfile(DbConnector.dbcfgPropertiesFilePath):
+			groupName = Path(DbConnector.dbcfgPropertiesFilePath).group()
+			dbcfgStat = os.stat(DbConnector.dbcfgPropertiesFilePath).st_mode
+			groupReadable = bool(dbcfgStat & stat.S_IRGRP)
+			if "dbcfg" != groupName and Environment.applicationName == "EMM":
+				statusText += errorColorCode + "DBCFG: Group of file '" + DbConnector.dbcfgPropertiesFilePath + "' is not 'dbcfg'" + defaultColorCode + "\n"
+			elif not groupReadable:
+				statusText += errorColorCode + "DBCFG: Group is missing read permission on file '" + DbConnector.dbcfgPropertiesFilePath + "'" + defaultColorCode + "\n"
+			else:
+				statusText += "DBCFG: OK" + "\n"
+		else:
+			statusText += errorColorCode + "DBCFG: File '" + DbConnector.dbcfgPropertiesFilePath + "' is missing" + defaultColorCode + "\n"
+	else:
+		statusText += errorColorCode + "DBCFG: File is not configured" + defaultColorCode + "\n"
 
 	dbcfgEntry = DbConnector.dbcfgProperties[DbConnector.applicationDbcfgEntryName] if DbConnector.applicationDbcfgEntryName in DbConnector.dbcfgProperties else None
 	if not "oracle" in Environment.allowedDbmsSystems and not DbConnector.isMysqlDriverModuleAvailable() and not DbConnector.isMariadbDriverModuleAvailable():
@@ -163,6 +183,23 @@ def readApplicationStatus(colorize = True):
 			if EMTUtilities.isDebugMode():
 				logging.exception("Database table emm_db_errorlog_tbl")
 			statusText += errorColorCode + "Database table emm_db_errorlog_tbl: ERROR" + defaultColorCode + "\n"
+
+		# Mandatory configuration values
+		birtUrlLinesCount = DbConnector.selectValue("SELECT COUNT(*) FROM config_tbl WHERE class = 'birt' AND name = 'url' AND value != '[to be defined]'")
+		if birtUrlLinesCount == 0:
+			statusText += errorColorCode + "BirtURL configvalue: ERROR ('birt.url' not set)" + defaultColorCode + "\n"
+		else:
+			statusText += "BirtURL configvalue: OK" + "\n"
+		undefinedMailAdresses = DbConnector.select("SELECT name FROM config_tbl WHERE class = 'mailaddress' AND value = '[to be defined]'")
+		if undefinedMailAdresses != None and len(undefinedMailAdresses) > 0:
+			undefinedMailAdressesString = ""
+			for row in undefinedMailAdresses:
+				if len(undefinedMailAdressesString) > 0:
+					undefinedMailAdressesString += ", "
+				undefinedMailAdressesString += row[0]
+			statusText += errorColorCode + "Mailaddresses: ERROR (" + undefinedMailAdressesString + " not set)" + defaultColorCode + "\n"
+		else:
+			statusText += "Mailaddresses: OK" + "\n"
 
 		# Jobqueue status
 		try:
@@ -289,7 +326,7 @@ def readApplicationStatus(colorize = True):
 						processOutput = subprocess.check_output("ps ux | grep -v grep | grep org.apache.catalina | grep '/home/console'", shell=True).decode("UTF-8")
 					elif Environment.isEmmRdirServer:
 						processOutput = subprocess.check_output("ps ux | grep -v grep | grep org.apache.catalina | grep '/home/rdir'", shell=True).decode("UTF-8")
-			if processOutput is None or processOutput.strip() == "":
+			if EMTUtilities.isBlank(processOutput):
 				statusText += errorColorCode + Environment.applicationName + "Application is NOT running" + defaultColorCode + "\n"
 			else:
 				if len(processOutput) > 0:
@@ -313,64 +350,52 @@ def readApplicationStatus(colorize = True):
 			statusText += errorColorCode + "Error while checking for " + Environment.applicationName + "Application running" + defaultColorCode + "\n"
 
 	# Backend status
-	if Environment.isOpenEmmServer:
-		applicationUserName = "openemm"
-	elif Environment.isEmmRdirServer:
-		applicationUserName = "rdir"
-	elif Environment.isEmmMergerServer:
-		applicationUserName = "merger"
-	elif Environment.isEmmMailerServer:
-		applicationUserName = "mailout"
-	elif Environment.isEmmMailloopServer:
-		applicationUserName = "mailloop"
-	else:
-		applicationUserName = "console"
-
-	if (Environment.isOpenEmmServer or Environment.isEmmMergerServer or Environment.isEmmMailerServer or Environment.isEmmMailloopServer) and os.path.isfile("/home/" + applicationUserName + "/bin/backend.sh"):
-		try:
-			# Text output comes via stderr
-			if EMTUtilities.hasRootPermissions():
-				processOutput = subprocess.check_output("su -c \"/home/" + applicationUserName + "/bin/backend.sh status\" " + applicationUserName, stderr=subprocess.STDOUT, shell=True).decode("UTF-8")
-			else:
-				processOutput = subprocess.check_output("/home/" + applicationUserName + "/bin/backend.sh status", stderr=subprocess.STDOUT, shell=True).decode("UTF-8")
-			if processOutput is None or processOutput.strip() == "":
-				statusText += errorColorCode + Environment.applicationName + "Backend is NOT installed or NOT running" + defaultColorCode + "\n"
-			else:
-				if len(processOutput) > 0:
-					backendStates = {}
-					for processOutputLine in processOutput.splitlines():
-						items = processOutputLine.split(":")
-						if len(items) > 1:
-							state = items[1].strip()
-							if "(" in state:
-								state = state[0:state.index("(")].strip()
-							if not state in backendStates:
-								backendStates[state] = []
-							backendStates[state].append(items[0].strip())
-
-					if len(backendStates) > 0:
-						for state in backendStates:
-							if state == "running" or state == "ok":
-								stateColorCode = defaultColorCode
-							else:
-								stateColorCode = errorColorCode
-							statusText += stateColorCode + Environment.applicationName + " Backend " + state + ": " + ", ".join(backendStates[state]) + defaultColorCode + "\n"
-					else:
-						statusText += errorColorCode + Environment.applicationName + " Backend is NOT running on this server" + defaultColorCode + "\n"
+	if Environment.isOpenEmmServer or Environment.isEmmMergerServer or Environment.isEmmMailerServer or Environment.isEmmMailloopServer:
+		if os.path.isfile("/home/" + Environment.getBackendApplicationUserName() + "/bin/backend.sh"):
+			try:
+				# Text output comes via stderr
+				if EMTUtilities.hasRootPermissions():
+					processOutput = subprocess.check_output("su -c \"/home/" + Environment.getBackendApplicationUserName() + "/bin/backend.sh status\" " + Environment.getBackendApplicationUserName(), stderr=subprocess.STDOUT, shell=True).decode("UTF-8")
 				else:
-					statusText += errorColorCode + Environment.applicationName + " Backend is NOT running" + defaultColorCode + "\n"
-		except subprocess.CalledProcessError as e:
-			print(e)
-			if e.returncode == 1:
-				statusText += errorColorCode + Environment.applicationName + " Backend is NOT installed or NOT running" + defaultColorCode + "\n"
-			else:
+					processOutput = subprocess.check_output("/home/" + Environment.getBackendApplicationUserName() + "/bin/backend.sh status", stderr=subprocess.STDOUT, shell=True).decode("UTF-8")
+				if EMTUtilities.isBlank(processOutput):
+					statusText += errorColorCode + Environment.applicationName + "Backend is NOT installed or NOT running" + defaultColorCode + "\n"
+				else:
+					if len(processOutput) > 0:
+						backendStates = {}
+						for processOutputLine in processOutput.splitlines():
+							items = processOutputLine.split(":")
+							if len(items) > 1:
+								state = items[1].strip()
+								if "(" in state:
+									state = state[0:state.index("(")].strip()
+								if not state in backendStates:
+									backendStates[state] = []
+								backendStates[state].append(items[0].strip())
+
+						if len(backendStates) > 0:
+							for state in backendStates:
+								if state == "running" or state == "ok":
+									stateColorCode = defaultColorCode
+								else:
+									stateColorCode = errorColorCode
+								statusText += stateColorCode + Environment.applicationName + " Backend " + state + ": " + ", ".join(backendStates[state]) + defaultColorCode + "\n"
+						else:
+							statusText += errorColorCode + Environment.applicationName + " Backend is NOT running on this server" + defaultColorCode + "\n"
+					else:
+						statusText += errorColorCode + Environment.applicationName + " Backend is NOT running" + defaultColorCode + "\n"
+			except subprocess.CalledProcessError as e:
+				print(e)
+				if e.returncode == 1:
+					statusText += errorColorCode + Environment.applicationName + " Backend is NOT installed or NOT running" + defaultColorCode + "\n"
+				else:
+					if EMTUtilities.isDebugMode():
+						logging.exception("Error while checking for Backend running")
+					statusText += errorColorCode + "Error while checking for Backend running" + defaultColorCode + "\n"
+			except:
 				if EMTUtilities.isDebugMode():
 					logging.exception("Error while checking for Backend running")
 				statusText += errorColorCode + "Error while checking for Backend running" + defaultColorCode + "\n"
-		except:
-			if EMTUtilities.isDebugMode():
-				logging.exception("Error while checking for Backend running")
-			statusText += errorColorCode + "Error while checking for Backend running" + defaultColorCode + "\n"
 
 	# Ping hostnames from system.cfg
 	if Environment.systemCfgProperties is not None and len(Environment.systemCfgProperties) > 0:
@@ -400,41 +425,10 @@ def sendConfigAndLogsAction(actionParameters):
 		if len(password) > 0:
 			print("Creating config and logs data zip file. This may take a moment.")
 
-			if Environment.isOpenEmmServer:
-				applicationUserName = "openemm"
-				applicationUserTempDirectory = "/home/openemm/temp"
-				if not os.path.isdir(applicationUserTempDirectory):
-					EMTUtilities.createDirectory(applicationUserTempDirectory, "openemm")
-			elif Environment.isEmmFrontendServer:
-				applicationUserName = "console"
-				applicationUserTempDirectory = "/home/console/temp"
-				if not os.path.isdir(applicationUserTempDirectory):
-					EMTUtilities.createDirectory(applicationUserTempDirectory, "console")
-			elif Environment.isEmmRdirServer:
-				applicationUserName = "rdir"
-				applicationUserTempDirectory = "/home/rdir/temp"
-				if not os.path.isdir(applicationUserTempDirectory):
-					EMTUtilities.createDirectory(applicationUserTempDirectory, "rdir")
-			elif Environment.isEmmMergerServer:
-				applicationUserName = "merger"
-				applicationUserTempDirectory = "/home/merger/temp"
-				if not os.path.isdir(applicationUserTempDirectory):
-					EMTUtilities.createDirectory(applicationUserTempDirectory, "merger")
-			elif Environment.isEmmMailerServer:
-				applicationUserName = "mailout"
-				applicationUserTempDirectory = "/home/mailout/temp"
-				if not os.path.isdir(applicationUserTempDirectory):
-					EMTUtilities.createDirectory(applicationUserTempDirectory, "mailout")
-			elif Environment.isEmmMailloopServer:
-				applicationUserName = "mailloop"
-				applicationUserTempDirectory = "/home/mailloop/temp"
-				if not os.path.isdir(applicationUserTempDirectory):
-					EMTUtilities.createDirectory(applicationUserTempDirectory, "mailloop")
-			else:
-				applicationUserName = "console"
-				applicationUserTempDirectory = "/home/console/temp"
-				if not os.path.isdir(applicationUserTempDirectory):
-					EMTUtilities.createDirectory(applicationUserTempDirectory, "console")
+			applicationUserName = Environment.getApplicationUserName()
+			applicationUserTempDirectory = "/home/" + applicationUserName + "/temp"
+			if not os.path.isdir(applicationUserTempDirectory):
+				EMTUtilities.createDirectory(applicationUserTempDirectory, applicationUserName)
 
 			configAndLogsZipFilePath = applicationUserTempDirectory + "/configAndLogs.zip"
 

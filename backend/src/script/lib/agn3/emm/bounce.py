@@ -39,6 +39,7 @@ class Bounce:
 	bav_rule_legacy_path: Final[str] = os.path.join (base, 'lib', 'bav.rule')
 	bounce_rule_table: Final[str] = 'bounce_rule_tbl'
 	bounce_config_table: Final[str] = 'bounce_config_tbl'
+	ote_table: Final[str] = 'one_time_provider_tbl'
 	name_conversion: Final[str] = 'conversion'
 	name_company_info_conversion: Final[str] = 'bounce-conversion-parameter'
 	epoch: Final[datetime] = datetime (1970, 1, 1)

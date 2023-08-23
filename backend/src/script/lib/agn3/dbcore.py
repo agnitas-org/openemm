@@ -10,8 +10,7 @@
 ####################################################################################################################################################################################################################################################################
 #
 from	__future__ import annotations
-import	base64, re, keyword, json
-from	abc import abstractmethod
+import	os, base64, re, keyword
 from	collections import namedtuple, defaultdict
 from	datetime import datetime
 from	itertools import zip_longest
@@ -27,6 +26,7 @@ from	.exceptions import error
 from	.ignore import Ignore
 from	.io import expand_path, normalize_path
 from	.stream import Stream
+from	.tools import abstract
 #
 __all__ = ['Row', 'Cursor', 'DBType', 'Core']
 #
@@ -446,40 +446,29 @@ but can produce lots of output in prdocutive use."""
 	def setup (self, cfg: DBConfig.DBRecord) -> None:
 		"""hook to add driver specific setup code"""
 		if (connect_config := cfg ('py-connect')) is not None:
-			if connect_config.startswith ('@'):
-				with open (expand_path (connect_config[1:])) as fd:
-					connect_config = fd.read ()
 			try:
-				content = base64.b64decode (connect_config, validate = True).decode ('UTF-8')
-			except:
-				content = connect_config
-			try:
-				value = eval (content, {
-					'driver': self.driver,
-					'datetime': datetime,
-					'expand': expand_path,
-					'normalize': normalize_path,
-					'syscfg': syscfg,
-					'fqdn': fqdn,
-					'program': program,
-					'base': base,
-					'home': home,
-					'user': user
-				})
-			except Exception as e:
-				try:
-					value = json.loads (Stream (content.split ('\n'))
-						.filter (lambda s: not s.lstrip ().startswith ('#'))
-						.join ('\n')
-					)
-				except:
-					raise error (f'py-connect: "{content}" is no valid expiression: {e}')
-			
-			if value:
-				if isinstance (value, dict):
+				value = syscfg.as_config (
+					connect_config,
+					namespace = {
+						'driver': self.driver,
+						'datetime': datetime,
+						'expand': expand_path,
+						'normalize': normalize_path,
+						'syscfg': syscfg,
+						'fqdn': fqdn,
+						'program': program,
+						'base': base,
+						'home': home,
+						'user': user
+					},
+					path_namespace = os.environ.copy (),
+					path_base = os.path.dirname (os.path.abspath (DBConfig.default_config_path))
+				)
+			except error as e:
+				raise error (f'py-connect: failed to parse "{connect_config}": {e}')
+			else:
+				if value:
 					self.connect_options.update (value)
-				else:
-					raise error (f'py-connect: "{content}" expected a dict, parsed to a {type (value)}')
 
 	def log (self, message: str) -> None:
 		if self.logger is not None:
@@ -747,9 +736,9 @@ closed and removed from the internal tracking."""
 		cursor.close ()
 		return Stream (result)
 
-	@abstractmethod
 	def connect (self) -> None:
 		"""Establish a connection to the database"""
+		abstract ()
 
 class Binary:
 	"""Generic wrapper to represent binaries"""

@@ -58,7 +58,7 @@ def executeCheck():
 		foundError = checkApplicationFileIntegrityWithOutput("Frontend", "/home/openemm/webapps/emm") or foundError
 		foundError = checkApplicationFileIntegrityWithOutput("Statistics", "/home/openemm/webapps/statistics") or foundError
 		foundError = checkApplicationFileIntegrityWithOutput("Webservices", "/home/openemm/webapps/webservices") or foundError
-	
+
 	if foundError:
 		print(Colors.RED + "Errors found" + Colors.DEFAULT)
 	else:
@@ -120,9 +120,9 @@ def checkApplicationFileIntegrity(applicationDirectoryPath):
 	if os.path.isfile(applicationDirectoryPath + "/checksums.sha256"):
 		invalidFiles = ssh256FileIntegrityCheck(applicationDirectoryPath)
 		if invalidFiles is None:
-			return False
-		else:
 			return True
+		else:
+			return False
 	else:
 		return False
 

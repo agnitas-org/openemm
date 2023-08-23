@@ -374,7 +374,7 @@ to_target (hashtag_t *h, buffer_t *input1, xmlBufferPtr input2, buffer_t *target
 	
 			if (block && block -> translate) {
 				xmlBufferPtr	out = xmlBufferCreate ();
-				xmlBufferPtr	buf;
+				xmlBufferPtr	buf = NULL;
 		
 				if (input1) {
 					buf = xmlBufferCreateSize (input1 -> length);
@@ -388,7 +388,7 @@ to_target (hashtag_t *h, buffer_t *input1, xmlBufferPtr input2, buffer_t *target
 					done = true;
 				}
 				xmlBufferFree (out);
-				if (input1)
+				if (buf)
 					xmlBufferFree (buf);
 			}
 			if (! done)

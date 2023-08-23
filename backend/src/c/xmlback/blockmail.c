@@ -103,6 +103,7 @@ blockmail_alloc (const char *fname, bool_t syncfile, log_t *lg) /*{{{*/
 		b -> active = false;
 		b -> reason = REASON_UNSPEC;
 		b -> reason_detail = 0;
+		b -> reason_custom = NULL;
 		b -> head = NULL;
 		b -> body = NULL;
 		b -> rblocks = NULL;
@@ -139,7 +140,9 @@ blockmail_alloc (const char *fname, bool_t syncfile, log_t *lg) /*{{{*/
 		b -> auto_url = NULL;
 		b -> auto_url_is_dynamic = false;
 		b -> auto_url_prefix = NULL;
+		b -> gui = false;
 		b -> anon = false;
+		b -> anon_preserve_links = false;
 		b -> selector = NULL;
 		b -> convert_to_entities = false;
 		b -> onepixel_url = NULL;
@@ -176,6 +179,8 @@ blockmail_alloc (const char *fname, bool_t syncfile, log_t *lg) /*{{{*/
 		
 		b -> mtbuf[0] = NULL;
 		b -> mtbuf[1] = NULL;
+		
+		b -> use_new_url_modification = false;
 		
 		DO_ZERO (b, url);
 		DO_ZERO (b, link_resolve);
@@ -243,6 +248,8 @@ blockmail_free (blockmail_t *b) /*{{{*/
 			tracker_free (b -> tracker);
 		if (b -> counter)
 			counter_free_all (b -> counter);
+		if (b -> reason_custom)
+			free (b -> reason_custom);
 		if (b -> head)
 			buffer_free (b -> head);
 		if (b -> body)
@@ -423,7 +430,7 @@ blockmail_unsync (blockmail_t *b) /*{{{*/
 	}
 }/*}}}*/
 bool_t
-blockmail_insync (blockmail_t *b, int cid, const char *mediatype, int subtype, int chunks, int bcccount) /*{{{*/
+blockmail_insync (blockmail_t *b, receiver_t *rec, int bcccount) /*{{{*/
 {
 	bool_t	rc;
 	
@@ -435,6 +442,7 @@ blockmail_insync (blockmail_t *b, int cid, const char *mediatype, int subtype, i
 		char	*size, *mtyp, *temp;
 		int	styp;
 		int	ncid;
+		int	chunks;
 		long	bytes;
 		
 		while (inp = fgets (buf, sizeof (buf) - 1, b -> syfp)) {
@@ -466,9 +474,9 @@ blockmail_insync (blockmail_t *b, int cid, const char *mediatype, int subtype, i
 					}
 				}
 			}
-			if (mtyp && (cid == ncid) && (! strcmp (mtyp, mediatype)) && (styp == subtype)) {
+			if (mtyp && (rec -> customer_id == ncid) && (! strcmp (mtyp, rec -> mid)) && (styp == rec -> mailtype)) {
 				if ((bytes > 0) && b -> mailtrack)
-					mailtrack_add (b -> mailtrack, cid);
+					mailtrack_add (b -> mailtrack, rec);
 				rc = true;
 				break;
 			}
@@ -479,7 +487,7 @@ blockmail_insync (blockmail_t *b, int cid, const char *mediatype, int subtype, i
 	return rc;
 }/*}}}*/
 bool_t
-blockmail_tosync (blockmail_t *b, int cid, const char *mediatype, int subtype, int chunks, long size, int bcccount) /*{{{*/
+blockmail_tosync (blockmail_t *b, receiver_t *rec, int bcccount) /*{{{*/
 {
 	bool_t	rc;
 
@@ -494,17 +502,17 @@ blockmail_tosync (blockmail_t *b, int cid, const char *mediatype, int subtype, i
 		} else
 			pos = -1;
 		if (rc) {
-			if ((fprintf (b -> syfp, "%d;%ld;%s;%d;%d\n", cid, size, mediatype, subtype, chunks) == -1) ||
+			if ((fprintf (b -> syfp, "%d;%ld;%s;%d;%d\n", rec -> customer_id, rec -> size, rec -> mid, rec -> mailtype, rec -> chunks) == -1) ||
 			    (fflush (b -> syfp) == -1))
 				rc = false;
 			if (rc && (pos != -1) && (fseek (b -> syfp, pos, SEEK_SET) == -1))
 				rc = false;
 		}
 	}
-	if (rc && cid) {
-		rc = blockmail_count (b, mediatype, subtype, chunks, size, bcccount);
+	if (rc && rec -> customer_id) {
+		rc = blockmail_count (b, rec -> mid, rec -> mailtype, rec -> chunks, rec -> size, bcccount);
 		if (b -> active && b -> mailtrack)
-			mailtrack_add (b -> mailtrack, cid);
+			mailtrack_add (b -> mailtrack, rec);
 	}
 	return rc;
 }/*}}}*/
@@ -760,9 +768,10 @@ blockmail_setup_auto_url_prefix (blockmail_t *b, const char *nprefix) /*{{{*/
 	b -> auto_url_prefix = nprefix && *nprefix ? strdup (nprefix) : NULL;
 }/*}}}*/
 void
-blockmail_setup_anon (blockmail_t *b, bool_t anon) /*{{{*/
+blockmail_setup_anon (blockmail_t *b, bool_t anon, bool_t anon_preserve_links) /*{{{*/
 {
 	b -> anon = anon;
+	b -> anon_preserve_links = anon_preserve_links;
 }/*}}}*/
 void
 blockmail_setup_selector (blockmail_t *b, const char *selector) /*{{{*/

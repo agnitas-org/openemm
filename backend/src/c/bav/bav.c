@@ -402,7 +402,7 @@ find_locals (void) /*{{{*/
 	void	*cfg;
 	
 	rc = true;
-	if (cfg = systemconfig_alloc (NULL)) {
+	if (cfg = systemconfig_alloc ()) {
 		const char	*value;
 		char		*copy;
 		

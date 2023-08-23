@@ -57,27 +57,43 @@ class Main (CLI):
 				'section',
 				'pattern'
 			)
+			ote_parser = Lineparser (
+				lambda l: l.split (';', 2),
+				'name',
+				'domains',
+				'relays'
+			)
 			#
+			pattern_reset = re.compile ('^## *RESET$')
 			pattern_parameter = re.compile ('^## *PARAMETER: *(.*)$')
 			pattern_bounce_rules = re.compile ('^## *BOUNCE-RULES$')
 			pattern_bav_rules = re.compile ('^## *BAV-RULES$')
+			pattern_ote = re.compile ('^## *OTE$')
 			section: Literal[
 				None,
 				'bounce',
-				'bav'
+				'bav',
+				'ote'
 			] = None
 			parameter: Optional[Parameter] = None
 			bounce_rules: List[Line] = []
 			bav_rules: List[Line] = []
+			ote_rules: List[Line] = []
 			for (lineno, line) in enumerate ((_l.strip () for _l in fd), start = 1):
 				if (match := pattern_parameter.match (line)) is not None:
 					parameter = Parameter (match.group (1))
+					continue
+				if pattern_reset.match (line) is not None:
+					section = None
 					continue
 				if pattern_bounce_rules.match (line) is not None:
 					section = 'bounce'
 					continue
 				if pattern_bav_rules.match (line) is not None:
 					section = 'bav'
+					continue
+				if pattern_ote.match (line) is not None:
+					section = 'ote'
 					continue
 				if section is None or not line or line.startswith ('#'):
 					continue
@@ -87,6 +103,8 @@ class Main (CLI):
 						bounce_rules.append (bounce_parser (line))
 					elif section == 'bav':
 						bav_rules.append (bav_parser (line))
+					elif section == 'ote':
+						ote_rules.append (ote_parser (line))
 				except error as e:
 					print (f'Failed to parse {self.caller[0]}:{lineno}:{line} due to: {e}')
 					ok = False
@@ -97,6 +115,8 @@ class Main (CLI):
 					if not self.update_bounce_rules (db, bounce_rules):
 						ok = False
 					if not self.update_bav_rules (db, bav_rules):
+						ok = False
+					if not self.update_ote_rules (db, ote_rules):
 						ok = False
 					db.sync (not self.dryrun and ok)
 		return ok
@@ -247,7 +267,7 @@ class Main (CLI):
 				)
 			new += 1
 		if self.dryrun or new or disabled or updated:
-			print (f'Added {new} rules, disable {disabled} rules, update {updated} rules')
+			print (f'Bounce rules: added {new} rules, disable {disabled} rules, update {updated} rules')
 		return True
 
 	def invalid_bounce_rule_pattern (self, pattern: str) -> bool:
@@ -257,7 +277,87 @@ class Main (CLI):
 			return True
 		else:
 			return False
-		
+	
+	def update_ote_rules (self, db: DB, rules: List[Line]) -> bool:
+		rc = True
+		if db.exists (Bounce.ote_table):
+			def mkdesc (name: str) -> str:
+				return f'predefined entry: {name}'
+			def norm (value: str) -> str:
+				return value.strip () if value else ''
+			source: Dict[str, Line] = {}
+			for rule in rules:
+				if not rule.name:
+					print ('Empty rule name not allowed')
+					rc = False
+				elif rule.name in source:
+					print (f'Duplicate entry from source: "{rule.name}" found')
+					rc = False
+				else:
+					source[mkdesc (rule.name)] = rule
+			if not rc:
+				return False
+			#
+			updated = 0
+			removed = 0
+			added = 0
+			for row in db.streamc (
+				'SELECT description, domains, relays '
+				f'FROM {Bounce.ote_table} '
+				'WHERE company_id = 0'
+			).filter (lambda r: bool (r.description) and r.description in source):
+				rule = source.pop (row.description)
+				domains = norm (row.domains)
+				relays = norm (row.relays)
+				if domains != rule.domains or relays != rule.relays:
+					if rule.domains or rule.relays:
+						if self.dryrun:
+							print (f'Would update "{row.description}" with: {rule}')
+							updated += 1
+						else:
+							updated += db.update (
+								f'UPDATE {Bounce.ote_table} '
+								'SET domains = :domains, relays = :relays, change_date = CURRENT_TIMESTAMP '
+								'WHERE description = :description AND company_id = 0',
+								{
+									'domains': rule.domains if rule.domains else None,
+									'relays': rule.relays if rule.relays else None,
+									'description': row.description
+								}
+							)
+					else:
+						if self.dryrun:
+							print (f'Would remove "{row.description}"')
+							removed += 1
+						else:
+							removed += db.update (
+								f'DELETE FROM {Bounce.ote_table} '
+								'WHERE description = :description AND company_id = 0',
+								{
+									'description': row.description
+								}
+							)
+			for (description, rule) in source.items ():
+				if rule.domains or rule.relays:
+					if self.dryrun:
+						print (f'Would add "{description}" with: {rule}')
+						added += 1
+					else:
+						added += db.update (
+							f'INSERT INTO {Bounce.ote_table} '
+							'        (company_id, domains, relays, active, description, creation_date, change_date) '
+							'VALUES '
+							'        (0, :domains, :relays, 1, :description, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)',
+							{
+								'domains': rule.domains if rule.domains else None,
+								'relays': rule.relays if rule.relays else None,
+								'description': description
+							}
+						)
+			if self.dryrun or updated or removed or added:
+				print (f'OTE: added {added} rules, removed {removed} rules, update {updated} rules')
+		return rc
+				
 	def update_bav_rules (self, db: DB, rules: List[Line]) -> bool:
 		rc = True
 		if db.exists (Bounce.bounce_rule_table):
@@ -273,7 +373,7 @@ class Main (CLI):
 				if original != updated:
 					if self.dryrun:
 						diff = '\n'.join (
-							difflib.context_diff (
+							difflib.unified_diff (
 								original.split ('\n'),
 								updated.split ('\n'),
 								fromfile = 'original',
@@ -300,9 +400,7 @@ fi
 exit $rc
 #STOP
 #
-#
 ## PARAMETER: convert-bounce-count="10", convert-bounce-duration="30", last-click="30", last-open="30", max-age-create="-", max-age-change="-", fade-out="14", expire="1100", threshold="5"
-# 
 ## BOUNCE-RULES
 50x;;50;400;
 51x;;51;410;
@@ -357,6 +455,8 @@ EMM-8027;;500;511;stat="no such recipient here|recipient unknown|invalid recipie
 EMM-8030;;500;511;stat="Mailaddress is administratively disabled"
 EMM-8029;;500;511;stat="mailbox for .* does not exist"
 EMM-8135;;474;513;stat="TLS is required, but was not offered"
+EMM-8135-4;;4;513;port="465"
+EMM-8135-5;;5;513;port="465"
 EMM-8617;;500;511;stat="No such local user", relay=".firemail.de."
 EMM-8629;;550;511;stat="recipient rejected"
 EMM-8634;;571;511;stat="user unknown|no such user", relay=".vol.at.|.yandex.ru.|.antispameurope.com.|.uni-wuerzburg.de.|.bund.de."
@@ -460,3 +560,4 @@ Sourceforge Bugreport #2620217;hard;^    Unrouteable address
 ;soft;552 RCPT TO:<.*> Mailbox disk quota
 ;soft;Quota exceeded. The recipients mailbox is full.
 ;soft;^User mailbox exceeds allowed size: .*
+## RESET

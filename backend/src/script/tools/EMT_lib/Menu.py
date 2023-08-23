@@ -9,6 +9,7 @@
 #                                                                                                                                                                                                                                                                  #
 ####################################################################################################################################################################################################################################################################
 import sys
+import os
 
 from EMT_lib.Environment import Environment
 from EMT_lib import Colors
@@ -73,6 +74,20 @@ class Menu:
 			if Environment.updateChannel is not None:
 				print("Update Channel: " + Environment.updateChannel)
 			print("Hostname: " + Environment.hostname)
+
+			harddriveProperties = os.statvfs("/tmp")
+			hddSize = harddriveProperties.f_frsize * harddriveProperties.f_blocks
+			hddFreeSize = harddriveProperties.f_frsize * harddriveProperties.f_bfree
+			hddFreePercentage = (hddFreeSize / hddSize) * 100
+			if hddFreePercentage < 10:
+				color = Colors.RED
+			elif hddFreePercentage < 20:
+				color = Colors.YELLOW
+			else:
+				color = Colors.GREEN
+
+			hddFreePercentageString = color + "{:.1f} %".format(hddFreePercentage) + Colors.DEFAULT
+			print("Free diskspace: " + hddFreePercentageString + " (of " + "{:.2f}".format(hddSize / 1024 / 1024 / 1024) + " GiB)")
 
 			if Environment.isOpenEmmServer:
 				if License.getLicenseName() is not None:

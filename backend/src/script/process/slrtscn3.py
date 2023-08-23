@@ -208,11 +208,13 @@ class Scanner:
 		recipient: str
 	) -> None:
 		try:
+			recipient = recipient.strip ('<>')
 			info = [
 				f'timestamp={timestamp.year:04d}-{timestamp.month:02d}-{timestamp.day:02d} {timestamp.hour:02d}:{timestamp.minute:02d}:{timestamp.second:02d}',
 				f'stat={reason}',
 				f'queue_id={queue_id}',
 				f'relay={relay}',
+				f'to={recipient}',
 				f'server={fqdn}'
 			]
 			self.plugin ().add_bounce_info (dsn, licence_id, mailing_id, customer_id, info)
@@ -226,7 +228,7 @@ class Scanner:
 							fqdn,
 							dsn,
 							relay,
-							recipient.strip ('<>').split ('@')[-1],
+							recipient.split ('@')[-1],
 							(f';{reason}' if not dsn.startswith ('2') else '')
 						))
 				except IOError as e:

@@ -11,8 +11,9 @@
 #
 from	__future__ import annotations
 from	types import ModuleType
-from	typing import Any, Callable, Literal, Optional, Union
+from	typing import Any, Callable, Literal, Optional, Protocol, Union
 from	typing import Dict, List, Tuple, Type
+from	typing import cast
 
 class DBAPI:
 	class Vendor (ModuleType):
@@ -27,8 +28,8 @@ class DBAPI:
 		ROWID: Any
 		paramstyle: Literal['qmark', 'numeric', 'named', 'format', 'pyformat']
 		class Error (Exception): ...
-		def connect (*args: Any, **kwargs: Any) -> DBAPI.Driver: ...
-	class Driver:
+		def connect (*args: Any, **kwargs: Any) -> DBAPI.Driver: return cast (DBAPI.Driver, None)
+	class Driver (Protocol):
 		def commit (self) -> None: ...
 		def rollback (self) -> None: ...
 		def close (self) -> None: ...
@@ -43,7 +44,7 @@ class DBAPI:
 	class DriverOracle (Driver):
 		stmtcachesize: int
 		autocommit: int
-	class Cursor:
+	class Cursor (Protocol):
 		description: Optional[List[Tuple[str, Any, Optional[int], Optional[int], Optional[int], Optional[int], Optional[bool]]]]
 		rowcount: int
 		arraysize: int

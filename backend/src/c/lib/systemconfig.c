@@ -445,7 +445,7 @@ systemconfig_free (void *lc) /*{{{*/
 	return NULL;
 }/*}}}*/
 void *
-systemconfig_alloc (const char *fname) /*{{{*/
+systemconfig_alloc (void) /*{{{*/
 {
 	config_t	*c;
 	
@@ -473,18 +473,18 @@ systemconfig_alloc (const char *fname) /*{{{*/
 				ok = false;
 			}
 		} else {
-			if (! fname) {
-				fname = getenv (PATH_CONFIG_ENV);
-				if (! fname) {
-					fname = PATH_CONFIG;
+			const char	*filename;
+			
+			filename = getenv (PATH_CONFIG_ENV);
+			if (! filename) {
+				filename = PATH_CONFIG;
 # ifdef		PATH_LEGACY					
-					if (access (fname, R_OK) == -1) {
-						fname = PATH_LEGACY;
-					}
-# endif	
+				if ((access (filename, R_OK) == -1) && (access (PATH_LEGACY, R_OK) != -1)) {
+					filename = PATH_LEGACY;
 				}
+# endif	
 			}
-			if (! (c -> filename = strdup (fname))) {
+			if (! (c -> filename = strdup (filename))) {
 				ok = false;
 			} else {
 				ok = config_check (c);

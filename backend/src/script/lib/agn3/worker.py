@@ -73,13 +73,10 @@ worker part, the executor.
 		return None
 	def controller_teardown (self, ctx: Any) -> None:
 		"""cleanup used resources"""
-		pass
 	def controller_register (self, ctx: Any, serv: XMLRPC) -> None:
 		"""register methods to XML-RPC server ``serv''"""
-		pass
 	def controller_step (self, ctx: Any) -> None:
 		"""called periodically"""
-		pass
 		
 	def __controller (self) -> None:
 		logger.debug ('Controller starting')
@@ -104,10 +101,8 @@ worker part, the executor.
 		return None
 	def executor_teardown (self, ctx: Any) -> None:
 		"""cleanup used resources"""
-		pass
 	def executor_step (self, ctx: Any) -> None:
 		"""called periodically"""
-		pass
 	def executor_request_preparse (self, ctx: Any, rq: Any) -> Any:
 		"""preparses request ``rq'' after fetching from queue"""
 		return rq
@@ -116,7 +111,6 @@ worker part, the executor.
 		return rq
 	def executor_request_handle (self, ctx: Any, rq: Any) -> None:
 		"""process request(s) ``rq''"""
-		pass
 		
 	def __executor (self) -> None:
 		logger.debug ('Executor starting')

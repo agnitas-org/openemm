@@ -16,7 +16,7 @@ case "$1" in
 start)
 	active update
 	shift
-	starter $command -bw "$@"
+	starter $command -bw --termination-delay=5m "$@"
 	;;
 stop)
 	softterm $command

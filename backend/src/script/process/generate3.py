@@ -733,7 +733,7 @@ class Worldmailing (Sending): #{{{
 					if self.invalidate_maildrop_entry (row.status_id, old_status = 0):
 						logger.info ('%s: disabled' % msg)
 					else:
-						logger.error ('%s: failed to disable' % msg);
+						logger.error ('%s: failed to disable' % msg)
 		self.db.sync ()
 #}}}
 class ScheduleGenerate (Schedule): #{{{

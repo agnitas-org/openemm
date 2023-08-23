@@ -37,10 +37,31 @@ from	.parser import ParseTimestamp
 from	.stream import Stream
 from	.uid import UID, UIDHandler
 #
-__all__ = ['EMail', 'CSVEMail', 'StatusMail', 'ParseMessageID', 'ParseEMail', 'EMailValidator']
+__all__ = ['sendmail', 'EMail', 'CSVEMail', 'StatusMail', 'ParseMessageID', 'ParseEMail', 'EMailValidator']
 #
 logger = logging.getLogger (__name__)
 #
+class SentStatus (NamedTuple):
+	status: bool = False
+	return_code: int = 0
+	command_output: str = ''
+	command_error: str = ''
+	
+def sendmail (recipients: List[str], mail: Union[str, bytes], sender: Optional[str] = None) -> SentStatus:
+	"""Send out mail by invoking MTA CLI"""
+	command = syscfg.sendmail (
+		recipients = recipients,
+		sender = sender
+	)
+	pp = subprocess.Popen (command, stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+	(out, err) = pp.communicate (mail.encode ('UTF-8') if isinstance (mail, str) else mail)
+	return SentStatus (
+		status = pp.returncode == 0,
+		return_code = pp.returncode,
+		command_output = out.decode ('UTF-8', errors = 'backslashreplace') if out else '',
+		command_error = err.decode ('UTF-8', errors = 'backslashreplace') if err else ''
+	)
+
 class EMail (IDs):
 	"""Create multipart E-Mails"""
 	__slots__ = [
@@ -89,6 +110,13 @@ class EMail (IDs):
 				return method (unixfrom, policy = EMail.nofold_policy)
 			except Exception:
 				return method (unixfrom, policy = compat32)
+	@staticmethod
+	def as_bytes (msg: EmailMessage, unixfrom: bool) -> bytes:
+		as_string = EMail.as_string (msg, unixfrom)
+		try:
+			return as_string.encode ('ascii')
+		except UnicodeEncodeError:
+			return as_string.encode ('UTF-8')
 
 	@staticmethod
 	def sign (message: str, sender: Optional[str] = None, company_id: Optional[int] = None) -> str:
@@ -283,20 +311,20 @@ class EMail (IDs):
 		avail_headers: Set[str] = set ()
 		for head in self.headers:
 			(name, header) = self.__cleanup_header (head)
-			if name is not None and not name.startswith ('content-') and not name in ('mime-version', ):
+			if name is not None and not name.startswith ('content-') and name != 'mime-version':
 				headers.append (header)
 				avail_headers.add (name)
-		if not 'from' in avail_headers and self.sender:
+		if 'from' not in avail_headers and self.sender:
 			headers.append (f'From: {self.sender}')
 		for (hid, sid) in [('to', self.TO), ('cc', self.CC)]:
-			if not hid in avail_headers:
+			if hid not in avail_headers:
 				recvs = [_r[1] for _r in self.receivers if _r[0] == sid]
 				if recvs:
 					headers.append ('{name}: {receivers}'.format (
 						name = hid.capitalize (),
 						receivers = ', '.join (recvs)
 					))
-		if not 'subject' in avail_headers and self.subject:
+		if 'subject' not in avail_headers and self.subject:
 			headers.append (f'Subject: {self.subject}')
 		charset = self.charset if self.charset is not None else 'UTF-8'
 		nheaders = []
@@ -369,9 +397,8 @@ class EMail (IDs):
 			del msg['MIME-Version']
 		return EMail.sign (EMail.as_string (root, False) + '\n', sender = self.sender, company_id = self.company_id)
 	
-	def send_mail (self) -> Tuple[bool, int, str, str]:
+	def send_mail (self) -> SentStatus:
 		"""Build and send the mail"""
-		(status, returnCode, out, err) = (False, 0, None, None)
 		mail = self.build_mail ()
 		mfrom: Optional[str] = None
 		if self.mfrom is not None:
@@ -379,16 +406,12 @@ class EMail (IDs):
 				mfrom = self.mfrom
 		elif self.sender:
 			mfrom = parseaddr (self.sender)[1]
-		cmd = syscfg.sendmail (
-			[parseaddr (_r[1])[1] for _r in self.receivers],
+		status = sendmail (
+			recipients = [parseaddr (_r[1])[1] for _r in self.receivers],
+			mail = mail,
 			sender = mfrom
 		)
-		pp = subprocess.Popen (cmd, stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True, errors = 'backslashreplace')
-		(out, err) = pp.communicate (mail)
-		returnCode = pp.returncode
-		if returnCode == 0:
-			status = True
-		return (status, returnCode, out, err)
+		return status
 #
 EMail.force_encoding ('UTF-8', 'qp')
 #
@@ -406,7 +429,7 @@ the ``charset'' of the csv content and the csv ``dialect'' to be used."""
 		receivers: List[str],
 		subject: Optional[str],
 		text: Optional[str],
-		data: List[Union[List[Any], Tuple[Any]]],
+		data: List[Union[List[Any], Tuple[Any, ...]]],
 		filename: Optional[str] = None,
 		charset: Optional[str] = None,
 		dialect: str = CSVDefault
@@ -526,7 +549,7 @@ added."""
 							pos = content.rfind ('\n')
 							if pos > 0:
 								content = content[:pos]
-							content += '\n...\n';
+							content += '\n...\n'
 					else:
 						content = fd.read ()
 				else:

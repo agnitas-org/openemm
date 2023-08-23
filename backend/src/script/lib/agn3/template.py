@@ -90,7 +90,7 @@ the language to use, ``fill'' used to mark unknown tokens"""
 					lang = line[1:-1]
 					if lang == '*':
 						lang = None
-					if not lang in self.messages:
+					if lang not in self.messages:
 						self.messages[lang] = {}
 					cur = self.messages[lang]
 				else:
@@ -113,7 +113,7 @@ the language to use, ``fill'' used to mark unknown tokens"""
 		try:
 			msg = self.messages[self.lang][token]
 		except KeyError:
-			if not self.lang is None:
+			if self.lang is not None:
 				try:
 					msg = self.messages[None][token]
 				except KeyError:
@@ -315,10 +315,10 @@ resp. after the auto generated code"""
 		pos = 0
 		clen = len (self.content)
 		mtch = self.codeStart.search (self.content)
-		if not mtch is None:
+		if mtch is not None:
 			start = mtch.end ()
 			mtch = self.codeEnd.search (self.content, start)
-			if not mtch is None:
+			if mtch is not None:
 				(end, pos) = mtch.span ()
 				self.code += self.content[start:end] + '\n'
 			else:
@@ -339,9 +339,9 @@ resp. after the auto generated code"""
 			if start > pos:
 				self.__compileString (self.content[pos:start])
 			pos = end
-			if not mtch is None:
+			if mtch is not None:
 				tstart = start
-				if not groups[2] is None:
+				if groups[2] is not None:
 					token = groups[2]
 					arg = ''
 					if token != '#':
@@ -358,7 +358,7 @@ resp. after the auto generated code"""
 									escape = False
 								elif ch == '\\':
 									escape = True
-								elif not quote is None:
+								elif quote is not None:
 									if ch == quote:
 										quote = None
 								elif ch in '\'"':
@@ -423,7 +423,7 @@ resp. after the auto generated code"""
 							self.__compileError (tstart, 'Too many closing blocks')
 					elif token in ('stop', ):
 						pos = clen
-				elif not groups[3] is None:
+				elif groups[3] is not None:
 					expr = groups[3]
 					if expr == '$':
 						self.__compileString ('$')
@@ -431,13 +431,13 @@ resp. after the auto generated code"""
 						if len (expr) >= 2 and expr[0] == '{' and expr[-1] == '}':
 							expr = expr[1:-1]
 						self.__compileExpr (expr)
-				elif not groups[5] is None:
+				elif groups[5] is not None:
 					expr = groups[5]
 					if expr[0] == '[':
 						self.__compileExpr ('_[\'{escape}\']'.format (escape =self.__escaper (expr[1:-1])))
 					elif expr[0] == '{':
 						self.__compileExpr ('_ (\'{escape}\')'.format (escape = self.__escaper (expr[1:-1])))
-				elif not groups[0] is None:
+				elif groups[0] is not None:
 					self.__compileString (groups[0])
 		if self.indent > 0:
 			self.__compileError (0, f'Missing {self.indent} closing #end statement(s)')
@@ -483,7 +483,7 @@ from ``namespace'' for language ``lang'' by using the message catalog
 			self.namespace = {}
 		else:
 			self.namespace = namespace.copy ()
-		if not lang is None:
+		if lang is not None:
 			self.namespace['lang'] = lang
 		self.namespace['property'] = self.properties
 		if mc is None:
@@ -498,7 +498,7 @@ from ``namespace'' for language ``lang'' by using the message catalog
 		except Exception as e:
 			raise error (f'Execution failed: {e}')
 		result = ''.join (self.namespace['__result'])
-		if not lang is None:
+		if lang is not None:
 			nresult = []
 			for line in result.split ('\n'):
 				mtch = self.langID.search (line)

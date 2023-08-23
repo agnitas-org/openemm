@@ -47,8 +47,9 @@ timeout_init (void) /*{{{*/
 			timeout_release ();
 		timeout -> seconds = 0;
 		timeout -> start = 0;
+		return true;
 	}
-	return timeout ? true : false;
+	return false;
 }/*}}}*/
 void
 timeout_release (void) /*{{{*/

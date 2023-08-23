@@ -304,16 +304,28 @@ value is split off by comma. """
 		return self.write (class_name, name, listjoin (new_values), description, hostname)
 	
 class EMMCompany (_Config):
-	__slots__ = ['keys', 'company_id', 'company_info']
+	__slots__ = ['keys', 'company_id', 'company_info', 'enabled_cache']
 	class Value (NamedTuple):
 		company_id: int
 		name: str
 		value: str
+	@dataclass
+	class Enable:
+		enabled: Dict[int, bool] = field (default_factory = dict)
+		default: bool = False
+		enabled0: bool = False
+		def __post_init__ (self) -> None:
+			self.enabled0 = self.enabled.get (0, self.default)
+			
+		def __call__ (self, company_id: int) -> bool:
+			return self.enabled.get (company_id, self.enabled0)
+			
 	def __init__ (self, db: Optional[DB] = None, reread: Parsable = None, selection: Optional[Systemconfig.Selection] = None, keys: Optional[Sequence[str]] = None) -> None:
 		super ().__init__ (db, reread, selection)
 		self.keys = keys
 		self.company_id: Optional[int] = None
 		self.company_info: DefaultDict[int, Dict[str, str]] = defaultdict (dict)
+		self.enabled_cache: Dict[Tuple[str, bool], EMMCompany.Enable] = {}
 
 	def __enter__ (self) -> EMMCompany:
 		return self
@@ -323,6 +335,7 @@ class EMMCompany (_Config):
 
 	def retrieve (self, db: DB) -> None:
 		self.company_info.clear ()
+		self.enabled_cache.clear ()
 		collect: DefaultDict[Tuple[int, str], Dict[Optional[str], str]] = defaultdict (dict)
 		query = (
 			'SELECT company_id, cname, cvalue, hostname '
@@ -395,6 +408,18 @@ found value to convert it before returning it."""
 			for (key, value) in company_config.items ():
 				yield EMMCompany.Value (company_id, key, value)
 
+	def enabled (self, key: str, default: bool = False) -> EMMCompany.Enable:
+		try:
+			rc = self.enabled_cache[(key, default)]
+		except KeyError:
+			rc = self.enabled_cache[(key, default)] = EMMCompany.Enable (Stream (self.scan_all ())
+				.filter (lambda v: v.name == key)
+				.map (lambda v: (v.company_id, atob (v.value)))
+				.dict (),
+				default = default
+			)
+		return rc
+	
 	def write (self,
 		company_id: int,
 		name: str,
@@ -545,7 +570,7 @@ class EMMMailerset (_Config):
 	def mailerset_stream (self) -> Stream[EMMMailerset.Mailerset]:
 		self.check ()
 		return Stream (self.mailersets.values ()).sorted (lambda m: m.id)
-		
+
 class Responsibility (_Config):
 	def __init__ (self, *args: Any, **kws: Any) -> None: pass
 	def __enter__ (self) -> Responsibility: return self

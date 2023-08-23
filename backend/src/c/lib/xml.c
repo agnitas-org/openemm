@@ -203,29 +203,6 @@ xsubstr (const xchar_t *s, int start, int end) /*{{{*/
 		rc = NULL;
 	return rc;		
 }/*}}}*/
-bool_t
-xmlbuf_equal (xmlbuf_t *b1, xmlbuf_t *b2) /*{{{*/
-{
-	if ((! b1) && (! b2))
-		return true;
-	if (b1 && b2 && (b1 -> length == b2 -> length) &&
-	    ((! b1 -> length) || (! memcmp (b1 -> buffer, b2 -> buffer, b1 -> length))))
-		return true;
-	return false;
-}/*}}}*/
-char *
-xmlbuf_to_string (xmlbuf_t *b) /*{{{*/
-{
-	return buffer_copystring ((buffer_t *) b);
-}/*}}}*/
-long
-xmlbuf_to_long (xmlbuf_t *b) /*{{{*/
-{
-	const char	*s = b ? buffer_string (b) : NULL;
-
-	return s ? strtol (s, NULL, 0) : -1;
-}/*}}}*/
-
 static inline unsigned long
 mkcp (const xchar_t *s, int *len) /*{{{*/
 {

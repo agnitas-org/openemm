@@ -55,18 +55,13 @@ filename."""
 			self.__error ('Invalid format of input file')
 		else:
 			self.valid = True
-			n = parts[0].find ('-')
-			if n != -1:
-				try:
-					self.licence_id = int (parts[0][n + 1:])
-				except ValueError:
-					self.licence_id = -1
-					self.__error (f'Unparsable licence ID in "{parts[0]}" found')
-			else:
-				self.licence_id = licence
-			cinfo = parts[2].split ('-')
 			try:
-				self.company_id = int (cinfo[0])
+				(_, licence_expr) = parts[0].split ('-')
+				self.licence_id = int (licence_expr)
+			except ValueError:
+				self.licence_id = licence
+			try:
+				self.company_id = int (parts[2].split ('-', 1)[0])
 			except ValueError:
 				self.company_id = -1
 				self.__error (f'Unparseable company ID in "{parts[2]}" found')

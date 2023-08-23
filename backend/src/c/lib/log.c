@@ -28,37 +28,11 @@
 /** Stack for IDs.
  * This stack is used to keep track of logging IDs.
  */
-typedef struct idc { /*{{{*/
-	char		*str;	/**< concated ID string			*/
-	struct idc	*next;	/**< next element in stack		*/
+struct idc { /*{{{*/
+	char	*str;		/**< concated ID string			*/
+	idc_t	*next;		/**< next element in stack		*/
 	/*}}}*/
-}	idc_t;
-/** Alloced ID.
- * @param prefix the already stacked IDs
- * @param str the new ID
- * @param separator
- * @return the new head of the stack on success, NULL otherwise
- */
-static idc_t *
-idc_alloc (idc_t *prefix, const char *str, const char *separator) /*{{{*/
-{
-	idc_t	*i;
-	
-	if (i = (idc_t *) malloc (sizeof (idc_t))) {
-		if (prefix) {
-			if (i -> str = malloc (strlen (prefix -> str) + strlen (str) + (separator ? strlen (separator) : 0) + 1))
-				sprintf (i -> str, "%s%s%s", prefix -> str, (separator ? separator : ""), str);
-		} else
-			i -> str = strdup (str);
-		if (i -> str)
-			i -> next = NULL;
-		else {
-			free (i);
-			i = NULL;
-		}
-	}
-	return i;
-}/*}}}*/
+};
 /** Frees an ID.
  * @param i the ID to free
  * @return NULL
@@ -72,6 +46,29 @@ idc_free (idc_t *i) /*{{{*/
 		free (i);
 	}
 	return NULL;
+}/*}}}*/
+/** Alloced ID.
+ * @param prefix the already stacked IDs
+ * @param str the new ID
+ * @return the new head of the stack on success, NULL otherwise
+ */
+static idc_t *
+idc_alloc (idc_t *prefix, const char *str) /*{{{*/
+{
+	idc_t	*i;
+	
+	if (i = (idc_t *) malloc (sizeof (idc_t))) {
+		if (prefix) {
+			if (i -> str = malloc (strlen (prefix -> str) + strlen (str) + 3))
+				sprintf (i -> str, "%s->%s", prefix -> str, str);
+		} else
+			i -> str = strdup (str);
+		if (i -> str)
+			i -> next = NULL;
+		else
+			i = idc_free (i);
+	}
+	return i;
 }/*}}}*/
 /** Frees stack.
  * @param i the ID to start from
@@ -267,7 +264,7 @@ log_free (log_t *l) /*{{{*/
 		if (l -> lfp)
 			fclose (l -> lfp);
 		if (l -> idc)
-			idc_free_all ((idc_t *) l -> idc);
+			idc_free_all (l -> idc);
 		if (l -> obuf)
 			buffer_free (l -> obuf);
 		if (l -> collect)
@@ -353,7 +350,7 @@ log_path_set (log_t *l, const char *logpath) /*{{{*/
 	return (logpath && (! l -> logpath)) ? false : true;
 }/*}}}*/
 /** Sets default logging path.
- * Sets the default logging path creating from enviroment variable
+ * Sets the default logging path creating from environment variable
  * @param l the logger
  * @return true on success, false otherwise
  */
@@ -460,7 +457,7 @@ bool_t
 log_idset (log_t *l, const char *what) /*{{{*/
 {
 	log_idclr (l);
-	l -> idc = idc_alloc (NULL, what, NULL);
+	l -> idc = idc_alloc (NULL, what);
 	return l -> idc ? true : false;
 }/*}}}*/
 /** Clears logging IDs.
@@ -471,24 +468,23 @@ void
 log_idclr (log_t *l) /*{{{*/
 {
 	if (l -> idc)
-		l -> idc = idc_free_all ((idc_t *) l -> idc);
+		l -> idc = idc_free_all (l -> idc);
 }/*}}}*/
 /** Push new logging ID.
  * The new logging id <i>what</i> is pushed on top of the ID stack.
  * If there is already one on the stack, the new ID is created using
- * the stack value, concaternated by separator and new ID
+ * the stack value.
  * @param l the logger
  * @param what the new ID
- * @param separator the separator for concaternation
  * @return true on success, false otherwise
  */
 bool_t
-log_idpush (log_t *l, const char *what, const char *separator) /*{{{*/
+log_idpush (log_t *l, const char *what) /*{{{*/
 {
 	idc_t	*tmp;
 	
-	if (tmp = idc_alloc ((separator ? (idc_t *) l -> idc : NULL), what, separator)) {
-		tmp -> next = (idc_t *) l -> idc;
+	if (tmp = idc_alloc (l -> idc, what)) {
+		tmp -> next = l -> idc;
 		l -> idc = tmp;
 	}
 	return tmp ? true : false;
@@ -502,7 +498,7 @@ log_idpop (log_t *l) /*{{{*/
 {
 	idc_t	*tmp;
 	
-	if (tmp = (idc_t *) l -> idc) {
+	if (tmp = l -> idc) {
 		l -> idc = tmp -> next;
 		idc_free (tmp);
 	}
@@ -684,7 +680,7 @@ log_mout (log_t *l, int level, logmask_t mask, const char *what, const char *fmt
 bool_t
 log_vidout (log_t *l, int level, logmask_t mask, const char *fmt, va_list par) /*{{{*/
 {
-	return log_vmout (l, level, mask, (l -> idc ? ((idc_t *) l -> idc) -> str : NULL), fmt, par);
+	return log_vmout (l, level, mask, (l -> idc ? l -> idc -> str : NULL), fmt, par);
 }/*}}}*/
 /** Write to logfile.
  * Same as <i>log_vidout</i> except that parameter are passed directly
@@ -747,7 +743,7 @@ log_slout (log_t *l, int level, logmask_t mask, int priority, const char *what, 
 bool_t
 log_vout (log_t *l, int level, const char *fmt, va_list par) /*{{{*/
 {
-	return log_vmout (l, level, 0, (l -> idc ? ((idc_t *) l -> idc) -> str : NULL), fmt, par);
+	return log_vmout (l, level, 0, l -> idc ? l -> idc -> str : NULL, fmt, par);
 }/*}}}*/
 /** Write to logfile.
  * Same as <i>log_vout</i> except that parameter are passed directly

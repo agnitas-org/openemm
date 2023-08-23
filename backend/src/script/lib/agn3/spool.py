@@ -217,7 +217,7 @@ limit hard drive usage in case of high volume mail traffic."""
 	
 	def check_path (self, path: str) -> bool:
 		"""Check and create missing ``path''"""
-		if path and not path in self.path_checked:
+		if path and path not in self.path_checked:
 			try:
 				if not os.path.isdir (path):
 					create_path (path, self.mode)

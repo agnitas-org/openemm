@@ -35,8 +35,8 @@ mailtrack_free (mailtrack_t *m) /*{{{*/
 	return NULL;
 }/*}}}*/
 void
-mailtrack_add (mailtrack_t *m, int customer_id) /*{{{*/
+mailtrack_add (mailtrack_t *m, receiver_t *rec) /*{{{*/
 {
-	buffer_format (m -> content, "%s%d", (m -> count ? "," : ""), customer_id);
+	buffer_format (m -> content, "%s%d/%d", (m -> count ? "," : ""), rec -> customer_id, rec -> media ? rec -> media -> type : Mediatype_Unspec);
 	m -> count++;
 }/*}}}*/

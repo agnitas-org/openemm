@@ -9,8 +9,48 @@
  *                                                                                                                                                                                                                                                                  *
  ********************************************************************************************************************************************************************************************************************************************************************/
 # include	<stdlib.h>
+# include	<ctype.h>
+# include	<string.h>
 # include	"xmlback.h"
 
+static const xmlChar *
+tagsearch (const xmlChar *haystack, int haystack_size, const xmlChar *needle, int needle_size, int *match_size) /*{{{*/
+{
+	const xmlChar	*match = NULL;
+	int		match_index = 0;
+	int		clen;
+
+	while (haystack_size > 0) {
+		clen = xmlCharLength (*haystack);
+		if ((clen <= haystack_size) && (clen <= needle_size - match_index)) {
+			if ((clen == 1) && isspace (*haystack) && match && (xmlCharLength (needle[match_index]) == 1) && isspace (needle[match_index])) {
+				++haystack;
+				--haystack_size;
+				++match_index;
+				while ((haystack_size > 0) && (xmlCharLength (*haystack) == 1) && isspace (*haystack))
+					++haystack, --haystack_size;
+				while ((match_index < needle_size) && (xmlCharLength (needle[match_index]) == 1) && isspace (needle[match_index]))
+					++match_index;
+				continue;
+			}
+			if (match && memcmp (haystack, needle + match_index, clen))
+				match_index = 0;
+			if (! memcmp (haystack, needle + match_index, clen)) {
+				if (! match_index)
+					match = haystack;
+				match_index += clen;
+				if (match_index == needle_size) {
+					*match_size = haystack - match + clen;
+					return match;
+				}
+			}
+		} else
+			match_index = 0;
+		haystack += clen;
+		haystack_size -= clen;
+	}
+	return NULL;
+}/*}}}*/
 block_t *
 block_alloc (void) /*{{{*/
 {
@@ -42,7 +82,6 @@ block_alloc (void) /*{{{*/
 		b -> bcontent = NULL;
 		b -> bout = NULL;
 		DO_ZERO (b, tagpos);
-		b -> sorted = NULL;
 		b -> revalidation.source = NULL;
 		b -> revalidation.target = NULL;
 		b -> inuse = false;
@@ -78,8 +117,6 @@ block_free (block_t *b) /*{{{*/
 		if (b -> bout)
 			buffer_free (b -> bout);
 		DO_FREE (b, tagpos);
-		if (b -> sorted)
-			free (b -> sorted);
 		if (b -> revalidation.source)
 			buffer_free (b -> revalidation.source);
 		if (b -> revalidation.target)
@@ -87,6 +124,14 @@ block_free (block_t *b) /*{{{*/
 		free (b);
 	}
 	return NULL;
+}/*}}}*/
+void
+block_swap_inout (block_t *b) /*{{{*/
+{
+	xmlBufferPtr	temp = b -> in;
+	
+	b -> in = b -> out;
+	b -> out = temp;
 }/*}}}*/
 bool_t
 block_setup_charset (block_t *b) /*{{{*/
@@ -117,10 +162,27 @@ block_setup_charset (block_t *b) /*{{{*/
 void
 block_setup_tagpositions (block_t *b, blockmail_t *blockmail) /*{{{*/
 {
-	int	n;
+	int		n;
+	int		position;
+	const xmlChar	*content = b -> content ? xmlBufferContent (b -> content) : NULL;
+	int		length = b -> content ? xmlBufferLength (b -> content) : 0;
 
-	for (n = 0; n < b -> tagpos_count; ++n)
-		tagpos_setup_tag (b -> tagpos[n], blockmail);
+	for (n = 0, position = 0; n < b -> tagpos_count; ++n) {
+		tagpos_t	*tp = b -> tagpos[n];
+		
+		if (content && tp -> name) {
+			int		match_size;
+			const xmlChar	*hit = tagsearch (content + position, length - position, xmlBufferContent (tp -> name), xmlBufferLength (tp -> name), & match_size);
+			
+			if (hit) {
+				tp -> start = hit - content;
+				tp -> end = position = tp -> start + match_size;
+			} else {
+				tp -> start = tp -> end = position = length;
+			}
+		}
+		tagpos_setup_tag (tp, blockmail);
+	}
 }/*}}}*/
 void
 block_find_method (block_t *b) /*{{{*/

@@ -23,24 +23,31 @@ fi
 export BASE
 #
 export	SYSTEM_CONFIG='{
-  "trigger-port": 8450,
-  "direct-path": true,
-  "direct-path-incoming": "/home/openemm/var/spool/DIRECT",
-  "direct-path-archive": "/home/openemm/var/spool/ARCHIVE",
-  "direct-path-recover": "/home/openemm/var/spool/RECOVER",
-  "direct-path-queues": "/home/openemm/var/spool/QUEUE",
-  "licence": 0,
-  "dbid": "openemm",
-  "merger-address": "127.0.0.1",
-  "filter-name": "localhost",
-  "mailout-server": "localhost",
-  "mailout-port": 8093,
-  "direct-path-server": "localhost",
-  "direct-path-port": 9403
+	"trigger-port": 8450,
+	"direct-path": true,
+	"direct-path-incoming": "/home/openemm/var/spool/DIRECT",
+	"direct-path-archive": "/home/openemm/var/spool/ARCHIVE",
+	"direct-path-recover": "/home/openemm/var/spool/RECOVER",
+	"direct-path-queues": "/home/openemm/var/spool/QUEUE",
+	"licence": 0,
+	"dbid": "openemm",
+	"merger-address": "127.0.0.1",
+	"filter-name": "localhost",
+	"mailout-server": "localhost",
+	"mailout-port": 8093,
+	"direct-path-server": "localhost",
+	"direct-path-port": 9403
 }'
 export	DBCFG_PATH="$BASE/etc/dbcfg"
 #
-version="`cut '-d;' -f1 ~/scripts/build.spec`"
+#
+if [ -f "$BASE/scripts/build.spec" ]; then
+	version="`cut '-d;' -f1 $BASE/scripts/build.spec`"
+elif [ -x "$BASE/bin/xmlback" ]; then
+	version="`$BASE/bin/xmlback -V | awk '{ print $3 }'`"
+else
+	version="current"
+fi
 licence="`$BASE/bin/config-query licence`"
 system="`uname -s`"
 host="`uname -n | cut -d. -f1`"
@@ -279,7 +286,7 @@ setupVirtualEnviron() {
 	3*)
 		;;
 	*)
-		die "virtual enviroment not support for deprectaed python versions"
+		die "virtual environment not support for deprectaed python versions"
 		;;
 	esac
 	venv="$BASE/.venv.$pyversion"

@@ -18,7 +18,9 @@ from	.io import which
 from	.log import log
 from	.tools import call, listsplit
 #
-__all__ = ['MTA']
+__all__ = [
+	'MTA'
+]
 #
 logger = logging.getLogger (__name__)
 #
@@ -75,12 +77,8 @@ used MTA."""
 	def getlist (self, key: str) -> List[str]:
 		"""returns the value for ``key'' as list"""
 		return list (listsplit (self[key]))
-	
-	def __call__ (self, path: str, **kwargs: str) -> bool:
-		"""``path'' is the file to process
 
-kwargs may contain other parameter required or optional used by specific
-instances of mail creation"""
+	def make (self, path: str, **kwargs: str) -> List[str]:
 		generate = [
 			f'account-logfile={base}/log/account.log',
 			f'bounce-logfile={base}/log/extbounce.log',
@@ -110,13 +108,20 @@ instances of mail creation"""
 					'queue-flush={count}'.format (count = kwargs.get ('flush_count', '2')),
 					f'queue-flush-command={base}/bin/fqu.sh'
 				]
-		cmd = [
+		return [
 			self.xmlback,
 			'-l',
 			'-o', 'generate:{generate}'.format (generate = ';'.join (generate)),
 			'-L', log.get_loglevel (default = 'info'),
 			path
 		]
+		
+	def __call__ (self, path: str, **kwargs: str) -> bool:
+		"""``path'' is the file to process
+
+kwargs may contain other parameter required or optional used by specific
+instances of mail creation"""
+		cmd = self.make (path, **kwargs)
 		logger.debug (f'{cmd} starting')
 		pp = subprocess.Popen (cmd, stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE, text = True, errors = 'backslashreplace')
 		(out, err) = pp.communicate (None)

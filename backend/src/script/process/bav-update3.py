@@ -79,7 +79,7 @@ class BavUpdate (Runtime):
 	
 	def file_reader (self, fname: str) -> List[str]:
 		with open (fname, errors = 'backslashreplace') as fd:
-			return [line.rstrip ('\r\n') for line in fd if not line[0] in '\n#']
+			return [line.rstrip ('\r\n') for line in fd if line[0] not in '\n#']
 	
 	def valid_domain (self, domain: Optional[str]) -> bool:
 		return domain is not None and self.valid_domain_pattern.match (domain) is not None

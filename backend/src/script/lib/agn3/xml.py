@@ -12,12 +12,12 @@
 from	__future__ import annotations
 import	re, logging
 import	xml.sax
-from	xml.sax import SAXParseException
 from	xml.sax.handler import ContentHandler, ErrorHandler
 from	types import TracebackType
-from	typing import Any, Callable, Optional, Union
+from	typing import Any, Callable, NoReturn, Optional, Union
 from	typing import Dict, IO, List, Type
 from	.exceptions import error
+from	.ignore import Ignore
 from	.io import copen
 #
 __all__ = ['XMLWriter', 'XMLReader']
@@ -128,7 +128,7 @@ XML declaration."""
 			for (var, val) in attrs.items ():
 				out += ' {var}="{val}"'.format (var = var, val =  self.__convert (val))
 		if simple:
-			if not text is None:
+			if text is not None:
 				out += '>{text}</{name}>\n'.format (text = self.__convert (text, cdata), name = name)
 			else:
 				out += '/>\n'
@@ -159,7 +159,7 @@ close it (implicit close all inner nodes as well)"""
 			name = self.backlog.pop ()
 			self.__end_node (name)
 		else:
-			if not name in self.backlog:
+			if name not in self.backlog:
 				raise error (f'{name} not found in backlog')
 			while self.backlog:
 				pname = self.backlog.pop ()
@@ -214,10 +214,8 @@ close it (implicit close all inner nodes as well)"""
 		if self.state == 1:
 			while self.backlog:
 				self.close ()
-			try:
+			with Ignore (AttributeError):
 				self.output.flush ()
-			except AttributeError:
-				pass
 			self.state = 2
 	
 class XMLReader (ContentHandler, ErrorHandler):
@@ -437,15 +435,17 @@ that all of them had been crossed.
 
 	#
 	# Error handler
-	def error (self, exc: SAXParseException) -> None:
+	def error (self, exc: BaseException) -> NoReturn:
 		"""writes an error"""
 		self.__set_status (self.ERROR)
 		logger.exception (exc)
-	def fatalError (self, exc: SAXParseException) -> None:
+		raise exc
+	def fatalError (self, exc: BaseException) -> NoReturn:
 		"""writes a fatal error"""
 		self.__set_status (self.FATAL)
 		logger.exception (exc)
-	def warning (self, exc: SAXParseException) -> None:
+		raise exc
+	def warning (self, exc: BaseException) -> None:
 		"""writes a warning"""
 		self.__set_status (self.WARNING)
 		logger.warning (exc)

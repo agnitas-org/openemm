@@ -42,7 +42,7 @@ if [ ! $? -eq 0 ]; then {
 	if [ "${osVendor}" == "Suse" ]; then {
 		echo "Commands to install python runtime:"
 		echo "zypper install -y python python-xml python3-pip python-gdbm"
-		echo "pip3 install pydns xlrd xlwt xlutils paramiko pyspf ipaddr dnspython pydkim pycrypto requests httpie setproctitle inotify"
+		echo "pip3 install pydns paramiko pyspf ipaddr dnspython pydkim pycrypto requests httpie setproctitle inotify aiohttp aiohttp-xmlrpc msgpack websockets asyncinotify asyncssh"
 		exit 1
 	} else {
 		echo "Command to install python runtime: 'sudo yum -y install python'"
@@ -156,4 +156,6 @@ if [ ! $? -eq 0 ]; then {
 } fi
 
 echo "Starting python ..."
+python_home="$(dirname "$(dirname "${PYTHON}")")"
+export PYTHONHOME=${python_home}
 ${PYTHON} "${scriptDir}/../scripts/OMT.py" $@
