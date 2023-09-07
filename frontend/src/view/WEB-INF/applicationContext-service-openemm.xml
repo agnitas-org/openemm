@@ -36,6 +36,7 @@
 
     <bean id="MailingImporterMediatypeFactory" class="org.agnitas.service.impl.MailingImporterMediatypeFactory" />
 
+
 	<bean id="actionOperationSubscribeCustomer" class="com.agnitas.emm.core.action.service.impl.ActionOperationSubscribeCustomerImpl">
 		<property name="companyDao" ref="CompanyDao" />
 		<property name="uidService" ref="ExtensibleUIDService" />
@@ -46,7 +47,14 @@
 		<property name="mobilephoneNumberWhitelist" ref="MobilephoneNumberWhitelist" />
 		<property name="recipientService" ref="recipientService"/>
 		<property name="blacklistService" ref="BlacklistService"/>
+		<property name="subscriberLimitCheck" ref="SubscriberLimitCheck" />
 	</bean>
+
+	<bean id="SubscriberLimitCheck" class="org.agnitas.emm.core.recipient.service.impl.SubscriberLimitCheckImpl">
+		<constructor-arg ref="ConfigService" />
+		<constructor-arg ref="RecipientDao" />
+	</bean>
+
 
 	<bean id="serviceLookupFactory" class="com.agnitas.service.impl.ServiceLookupFactory">
 		<lookup-method name="getBeanExtensibleUIDService" bean="ExtensibleUIDService" />

@@ -431,11 +431,15 @@ public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
 			}
 			update(logger, "DELETE FROM admin_permission_tbl WHERE admin_id = ?", adminID);
 			update(logger, "DELETE FROM admin_to_group_tbl WHERE admin_id = ?", adminID);
-			update(logger, "DELETE FROM admin_altg_list_tbl WHERE admin_id = ?", adminID);
+			deleteAdminDependentData(adminID);
 			int touchedLines = update(logger, "DELETE FROM admin_tbl WHERE admin_id = ? AND (company_id = ? OR company_id IN (SELECT company_id FROM company_tbl WHERE creator_company_id = ? and status != '" + CompanyStatus.DELETED.getDbValue() + "'))", adminID, companyID, companyID);
 			return touchedLines == 1;
 		}
 		
+	}
+
+	protected void deleteAdminDependentData(int adminId) {
+		// empty
 	}
 
 	@Override

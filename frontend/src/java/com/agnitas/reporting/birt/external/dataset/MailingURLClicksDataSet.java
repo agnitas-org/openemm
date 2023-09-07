@@ -10,17 +10,7 @@
 
 package com.agnitas.reporting.birt.external.dataset;
 
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.emm.core.mobile.bean.DeviceClass;
-import com.agnitas.reporting.birt.external.beans.LightTarget;
-import com.agnitas.reporting.birt.external.beans.MailingClickStatsPerTargetRow;
-import org.agnitas.beans.BindingEntry.UserType;
-import org.agnitas.util.Tuple;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.time.DateUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import static com.agnitas.reporting.birt.external.dataset.CommonKeys.ALL_SUBSCRIBERS_INDEX;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -28,6 +18,18 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.agnitas.beans.BindingEntry.UserType;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.emm.core.mobile.bean.DeviceClass;
+import com.agnitas.reporting.birt.external.beans.LightTarget;
+import com.agnitas.reporting.birt.external.beans.MailingClickStatsPerTargetRow;
 
 /**
  * BIRT-DataSet for mailing url clicks statistics
@@ -67,7 +69,7 @@ public class MailingURLClicksDataSet extends BIRTDataSet {
 				insertTargetGroup(target.getName(), resultTargetSql, mailingID, companyID, tempTableID, ++columnIndex, recipientsType, dateFormats.getStartDate(), dateFormats.getStopDate());
 			}
 		}
-		updateRates(tempTableID);
+		updateRates(tempTableID, targetsList);
 
 		return tempTableID;
 	}
@@ -256,24 +258,13 @@ public class MailingURLClicksDataSet extends BIRTDataSet {
 	}
 
 	@DaoUpdateReturnValueCheck
-	private void updateRates(int tempTableID) throws Exception {
-		List<Tuple<Integer, Integer>> result = selectEmbedded(logger,
-			"SELECT COALESCE(SUM(clicks_gross), 0) total_click_gross, COALESCE(SUM(clicks_net), 0) total_click_net FROM " + getTempTableName(tempTableID),
-			(resultSet, i) -> {
-				int totalGross = resultSet.getBigDecimal("total_click_gross").intValue();
-				int totalNet = resultSet.getBigDecimal("total_click_net").intValue();
-				return new Tuple<>(totalGross, totalNet);
-			});
-
-		int totalGross = 0;
-		int totalNet = 0;
-
-		if (!result.isEmpty()) {
-			totalGross = result.get(0).getFirst();
-			totalNet = result.get(0).getSecond();
+	private void updateRates(int tempTableID, List<LightTarget> targets) throws Exception {
+		for (int targetIndex = ALL_SUBSCRIBERS_INDEX; targetIndex <= targets.size() + 1; targetIndex++) {
+			int totalGross = selectEmbeddedIntWithDefault(logger, "SELECT COALESCE(SUM(clicks_gross), 0) total_click_gross FROM " + getTempTableName(tempTableID) + " WHERE target_group_index = ?", 0, targetIndex);
+			int totalNet = selectEmbeddedIntWithDefault(logger, "SELECT COALESCE(SUM(clicks_net), 0) total_click_net FROM " + getTempTableName(tempTableID) + " WHERE target_group_index = ?", 0, targetIndex);
+	
+			updateEmbedded(logger, "UPDATE " + getTempTableName(tempTableID) + " SET rate_gross = " + (totalGross > 0 ? "(" + "clicks_gross" + " * 1.0) / ?" : "?") + ", rate_net = " + (totalNet > 0 ? "(" + "clicks_net" + " * 1.0) / ?" : "?") + " WHERE target_group_index = ?", totalGross, totalNet, targetIndex);
 		}
-
-		updateEmbedded(logger, "UPDATE " + getTempTableName(tempTableID) + " SET rate_gross = " + (totalGross > 0 ? "(" + "clicks_gross" + " * 1.0) / ?" : "?") + ", rate_net = " + (totalNet > 0 ? "(" + "clicks_net" + " * 1.0) / ?" : "?"), totalGross, totalNet);
 	}
 
 	private boolean extractBooleanValue(Object intValue){
