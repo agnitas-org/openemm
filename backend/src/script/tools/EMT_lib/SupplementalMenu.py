@@ -8,6 +8,7 @@
 #        You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.                                                                                                            #
 #                                                                                                                                                                                                                                                                  #
 ####################################################################################################################################################################################################################################################################
+import sys
 import os
 import shutil
 import subprocess
@@ -132,6 +133,11 @@ def restartMenuAction(actionParameters):
 		restartApplication()
 	else:
 		Environment.messages.append("Restart canceled")
+
+def restartEMT(actionParameters):
+	print(Colors.YELLOW + "Restarting EMT: " + str(Environment.scriptFilePath) + Colors.DEFAULT)
+	os.execl(sys.executable, Environment.scriptFilePath, *sys.argv)
+	sys.exit(0)
 
 def dbTableFormatCheckMenuAction(actionParameters):
 	print(Environment.applicationName + "MariaDB table format check")

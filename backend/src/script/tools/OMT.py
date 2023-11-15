@@ -35,7 +35,7 @@ def configureTool():
 
 	# OpenEMM at GitHub: https://github.com/agnitas-org/OpenEMM
 	Environment.applicationName = "OpenEMM"
-	Environment.scriptFilePath = os.path.dirname(os.path.realpath(__file__))
+	Environment.scriptFilePath = os.path.dirname(os.path.realpath(__file__)) + "/OMT.py"
 
 	if os.path.isfile("/home/" + os.getlogin() + "/.OMT/OMT.override.properties"):
 		customProperty = EMTUtilities.readPropertiesFile("/home/" + os.getlogin() + "/.OMT/OMT.override.properties")

@@ -425,7 +425,14 @@ def sendConfigAndLogsAction(actionParameters):
 		if len(password) > 0:
 			print("Creating config and logs data zip file. This may take a moment.")
 
-			applicationUserName = Environment.getApplicationUserName()
+			if EMTUtilities.hasRootPermissions():
+				if Environment.applicationName == "OpenEMM":
+					applicationUserName = "openemm"
+				else:
+					applicationUserName = "console"
+			else:
+				applicationUserName = Environment.username
+
 			applicationUserTempDirectory = "/home/" + applicationUserName + "/temp"
 			if not os.path.isdir(applicationUserTempDirectory):
 				EMTUtilities.createDirectory(applicationUserTempDirectory, applicationUserName)

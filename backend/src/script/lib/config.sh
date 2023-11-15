@@ -523,7 +523,7 @@ PATH="`$pathstrip -s \"$PATH\"`"
 export PATH
 #
 if [ "$CLASSPATH" ] ; then
-	CLASSPATH="`$pathstrip \"$CLASSPATH\"`"
+	CLASSPATH="`$pathstrip -cb \"$CLASSPATH\"`"
 	export CLASSPATH
 fi
 #
