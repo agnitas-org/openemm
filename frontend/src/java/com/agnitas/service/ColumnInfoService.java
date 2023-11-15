@@ -50,5 +50,5 @@ public interface ColumnInfoService {
 
 	Map<Integer, ProfileFieldMode> getProfileFieldAdminPermissions(int companyID, String columnName) throws Exception;
 
-	void storeProfileFieldAdminPermissions(int companyID, String column, Set<Integer> readOnlyUsers, Set<Integer> notVisibleUsers);
+	void storeProfileFieldAdminPermissions(int companyID, String column, Set<Integer> editableUsers, Set<Integer> readOnlyUsers, Set<Integer> notVisibleUsers) throws Exception;
 }

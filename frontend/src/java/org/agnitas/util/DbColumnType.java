@@ -28,21 +28,27 @@ public class DbColumnType {
 	private boolean nullable;
 	
 	public enum SimpleDataType {
-		Characters("settings.fieldType.VARCHAR"),
-		Numeric("settings.fieldType.INTEGER"),
-		Float("settings.fieldType.FLOAT"),
-		Date("settings.fieldType.DATE"),
-		DateTime("settings.fieldType.DATETIME"),
-		Blob("settings.fieldType.Blob");
+		Characters("settings.fieldType.VARCHAR", "VARCHAR"),
+		Numeric("settings.fieldType.INTEGER", "INTEGER"),
+		Float("settings.fieldType.FLOAT", "FLOAT"),
+		Date("settings.fieldType.DATE", "DATE"),
+		DateTime("settings.fieldType.DATETIME", "DATETIME"),
+		Blob("settings.fieldType.Blob", "BLOB");
 
 		private String messageKey;
-		
-		private SimpleDataType(String messageKey) {
+		private String genericDbDataTypeName;
+
+		private SimpleDataType(String messageKey, String genericDbDataTypeName) {
 			this.messageKey = messageKey;
+			this.genericDbDataTypeName = genericDbDataTypeName;
 		}
 		
 		public String getMessageKey() {
 			return messageKey;
+		}
+		
+		public String getGenericDbDataTypeName() {
+			return genericDbDataTypeName;
 		}
 		
 		public static SimpleDataType getFromString(String dataTypeString) throws Exception {

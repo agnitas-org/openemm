@@ -12,6 +12,7 @@ package com.agnitas.emm.core.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public interface RecipientFieldService {
 	/**
@@ -95,8 +96,10 @@ public interface RecipientFieldService {
 	}
 	
 	List<RecipientFieldDescription> getRecipientFields(int companyID) throws Exception;
+	Map<String, String> getRecipientDBStructure(int companyID);
 	RecipientFieldDescription getRecipientField(int companyID, String recipientFieldName) throws Exception;
 	void saveRecipientField(int companyID, RecipientFieldDescription recipientFieldDescription) throws Exception;
 	void deleteRecipientField(int companyID, String recipientFieldName) throws Exception;
 	boolean isReservedKeyWord(String fieldname);
+	void clearCachedData(int companyID);
 }

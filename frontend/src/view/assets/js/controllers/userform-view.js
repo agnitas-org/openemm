@@ -133,7 +133,7 @@ AGN.Lib.Controller.new('userform-view', function () {
     function changeLinkState($link, actionId) {
         if ($link.exists()) {
             if (actionId > 0) {
-                $link.attr('href', actionURLPattern.replace('{action-ID}', actionId));
+                $link.attr('href', actionURLPattern.replace(':action-ID:', actionId));
                 $link.removeClass('hidden');
             } else {
                 $link.attr('href', "#");

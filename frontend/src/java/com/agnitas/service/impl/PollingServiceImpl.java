@@ -94,9 +94,13 @@ public class PollingServiceImpl implements PollingService {
                 // In this case, another task with the equal uid may be generated again. So same task working twice.
                 // To prevent second time execution, the retention delay was added for removing the task,
                 // so that when such a situation occurs, the result of the initial execution is returned.
-                long retentionTimeout = LONG_RUNNING_TASKS.contains(uid.getName())
-                        ? Pollable.LONG_RETENTION_TIMEOUT
-                        : Pollable.SHORT_RETENTION_TIMEOUT;
+                long retentionTimeout = 0;
+                if (uid.isRetained()) {
+                    retentionTimeout = LONG_RUNNING_TASKS.contains(uid.getName())
+                            ? Pollable.LONG_RETENTION_TIMEOUT
+                            : Pollable.SHORT_RETENTION_TIMEOUT;
+                }
+
                 scheduledExecutorService.schedule(
                         () -> pendingTasksMap.remove(uid),
                         retentionTimeout,

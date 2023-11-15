@@ -36,7 +36,8 @@ public class UpsellingController implements XssCheckAware {
             "auto_import_upselling",
             "manage_tables_upselling",
             "notification_upselling",
-            "mediapool_upselling"
+            "mediapool_upselling",
+            "common_upselling"
     };
 
     private final ConfigService configService;
@@ -56,7 +57,25 @@ public class UpsellingController implements XssCheckAware {
         model.addAttribute("navigationKey", StringUtils.trimToEmpty(form.getNavigationKey()));
         model.addAttribute("upsellingInfoUrl", getUpsellingInfoPageUrl(admin));
 
+        String messageKey = featureNameToMessageKey(StringUtils.defaultString(featureName));
+        if (StringUtils.isNotBlank(messageKey)) {
+            model.addAttribute("headlineKey", String.format("GWUA.%s.teaser.headline", messageKey));
+            model.addAttribute("descriptionKey", String.format("GWUA.%s.teaser.description", messageKey));
+            model.addAttribute("upgradeInfoKey", String.format("GWUA.%s.teaser.upgradeInfo", messageKey));
+        }
+
         return getView(form);
+    }
+
+    private String featureNameToMessageKey(String featureName) {
+        switch (featureName) {
+            case "CompanyAdmin":
+                return "clients";
+            case "Reports":
+                return "reports";
+            default:
+                return "";
+        }
     }
 
     private String getView(final UpsellingForm form) {

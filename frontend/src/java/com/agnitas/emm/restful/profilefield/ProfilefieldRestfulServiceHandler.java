@@ -198,6 +198,7 @@ public class ProfilefieldRestfulServiceHandler implements RestfulServiceHandler 
 		if (profileField.getPermissions() != null) {
 			Set<Integer> readOnlyUsers = new HashSet<>();
 			Set<Integer> notVisibleUsers = new HashSet<>();
+			Set<Integer> editableUsers = new HashSet<>();
 			if (profileField.getPermissions() != null) {
 				for (Entry<Integer, ProfileFieldMode> permission : profileField.getPermissions().entrySet()) {
 					if (permission.getKey() > 0) {
@@ -205,12 +206,14 @@ public class ProfilefieldRestfulServiceHandler implements RestfulServiceHandler 
 							readOnlyUsers.add(permission.getKey());
 						} else if (permission.getValue() == ProfileFieldMode.NotVisible) {
 							notVisibleUsers.add(permission.getKey());
+						} else if (permission.getValue() == ProfileFieldMode.Editable) {
+							editableUsers.add(permission.getKey());
 						}
 					}
 				}
 			}
 			
-			if (readOnlyUsers.size() > 0) {
+			if (readOnlyUsers.size() > 0 && profileField.getDefaultPermission() != ProfileFieldMode.ReadOnly) {
 				JsonArray readOnlyUsersArray = new JsonArray();
 				for (int adminID : readOnlyUsers) {
 					readOnlyUsersArray.add(adminNamesMap.get(adminID));
@@ -218,12 +221,20 @@ public class ProfilefieldRestfulServiceHandler implements RestfulServiceHandler 
 				profilefieldJsonObject.add("readOnlyUsers", readOnlyUsersArray);
 			}
 			
-			if (notVisibleUsers.size() > 0) {
+			if (notVisibleUsers.size() > 0 && profileField.getDefaultPermission() != ProfileFieldMode.NotVisible) {
 				JsonArray notVisibleUsersArray = new JsonArray();
 				for (int adminID : notVisibleUsers) {
 					notVisibleUsersArray.add(adminNamesMap.get(adminID));
 				}
 				profilefieldJsonObject.add("notVisibleUsers", notVisibleUsersArray);
+			}
+			
+			if (editableUsers.size() > 0 && profileField.getDefaultPermission() != ProfileFieldMode.Editable) {
+				JsonArray editableUsersArray = new JsonArray();
+				for (int adminID : editableUsers) {
+					editableUsersArray.add(adminNamesMap.get(adminID));
+				}
+				profilefieldJsonObject.add("editableUsers", editableUsersArray);
 			}
 		}
 
@@ -336,6 +347,7 @@ public class ProfilefieldRestfulServiceHandler implements RestfulServiceHandler 
 		try {
 			recipientFieldService.saveRecipientField(admin.getCompanyID(), profileField);
 		} catch (Exception e) {
+			e.printStackTrace();
 			throw new Exception("Storage of profilefield data failed", e);
 		}
 
@@ -391,6 +403,7 @@ public class ProfilefieldRestfulServiceHandler implements RestfulServiceHandler 
 			}
 			
 			profileField = new RecipientFieldDescription();
+			profileField.setNullable(true);
 		}
 
 		readJsonData(admin.getCompanyID(), jsonObject, profileField);
@@ -418,6 +431,7 @@ public class ProfilefieldRestfulServiceHandler implements RestfulServiceHandler 
 		try {
 			recipientFieldService.saveRecipientField(admin.getCompanyID(), profileField);
 		} catch (Exception e) {
+			e.printStackTrace();
 			throw new Exception("Storage of profilefield data failed", e);
 		}
 
@@ -487,7 +501,8 @@ public class ProfilefieldRestfulServiceHandler implements RestfulServiceHandler 
 		if (jsonObject.containsPropertyKey("notVisibleUsers") && jsonObject.containsPropertyKey("visibleUsers")) {
 			throw new RestfulClientException("Invalid data. Only one of 'notVisibleUsers' and 'visibleUsers' expected");
 		}
-		
+
+		Set<Integer> newEditableUsers = null;
 		Set<Integer> newReadOnlyUsers = null;
 		Set<Integer> newNotVisibleUsers = null;
 		
@@ -593,9 +608,51 @@ public class ProfilefieldRestfulServiceHandler implements RestfulServiceHandler 
 				} else {
 					throw new RestfulClientException("Invalid data type for 'allowedValues'. Array expected");
 				}
+			} else if ("editableUsers".equals(entry.getKey()) || "visibleUsers".equals(entry.getKey())) {
+				if (newEditableUsers != null) {
+					throw new RestfulClientException("Invalid multiple data for 'editableUsers' (alias 'visibleUsers'), because it is only allowed once");
+				} else if (entry.getValue() instanceof JsonArray) {
+					newEditableUsers = new HashSet<>();
+					if (adminNamesMap == null) {
+						adminNamesMap = adminService.getAdminsNamesMap(companyID);
+					}
+					
+					for (Object item : ((JsonArray) entry.getValue())) {
+						if (item instanceof Integer) {
+							if (adminNamesMap.containsKey(item)) {
+								newEditableUsers.add((Integer) item);
+							} else {
+								throw new RestfulClientException("Invalid userid item for 'editableUsers' (alias 'visibleUsers'): " + item.toString());
+							}
+						} else if (item instanceof String) {
+							int adminID = 0;
+							for (Entry<Integer, String> adminEntry : adminNamesMap.entrySet()) {
+								if (adminEntry.getValue().equals(item)) {
+									adminID = adminEntry.getKey();
+									break;
+								}
+							}
+							if (adminID != 0) {
+								newEditableUsers.add(adminID);
+							} else {
+								throw new RestfulClientException("Invalid user item for 'editableUsers' (alias 'visibleUsers'): " + item.toString());
+							}
+						}
+					}
+
+					for (Integer adminID : newEditableUsers) {
+						if (newReadOnlyUsers != null && newReadOnlyUsers.contains(adminID)) {
+							throw new RestfulClientException("Invalid user item for 'editableUsers' (alias 'visibleUsers'), because it is already included in 'readOnlyUsers': " + adminNamesMap.get(adminID) + " (" + adminID + ")");
+						} else if (newNotVisibleUsers != null && newNotVisibleUsers.contains(adminID)) {
+							throw new RestfulClientException("Invalid user item for 'editableUsers' (alias 'visibleUsers'), because it is already included in 'notVisibleUsers': " + adminNamesMap.get(adminID) + " (" + adminID + ")");
+						}
+					}
+				} else {
+					throw new RestfulClientException("Invalid data type for 'visibleUsers'. Array expected");
+				}
 			} else if ("readOnlyUsers".equals(entry.getKey())) {
 				if (newReadOnlyUsers != null) {
-					throw new RestfulClientException("Invalid multipe data for 'readOnlyUsers', because it is only allowed once");
+					throw new RestfulClientException("Invalid multiple data for 'readOnlyUsers', because it is only allowed once");
 				} else if (entry.getValue() instanceof JsonArray) {
 					newReadOnlyUsers = new HashSet<>();
 					if (adminNamesMap == null) {
@@ -605,9 +662,6 @@ public class ProfilefieldRestfulServiceHandler implements RestfulServiceHandler 
 					for (Object item : ((JsonArray) entry.getValue())) {
 						if (item instanceof Integer) {
 							if (adminNamesMap.containsKey(item)) {
-								if (newNotVisibleUsers != null && newNotVisibleUsers.contains(item)) {
-									throw new RestfulClientException("Invalid userid item for 'readOnlyUsers', because it is already included in 'notVisibleUsers': " + item.toString() + " (" + adminNamesMap.get(item) + ")");
-								}
 								newReadOnlyUsers.add((Integer) item);
 							} else {
 								throw new RestfulClientException("Invalid userid item for 'readOnlyUsers': " + item.toString());
@@ -617,16 +671,22 @@ public class ProfilefieldRestfulServiceHandler implements RestfulServiceHandler 
 							for (Entry<Integer, String> adminEntry : adminNamesMap.entrySet()) {
 								if (adminEntry.getValue().equals(item)) {
 									adminID = adminEntry.getKey();
+									break;
 								}
 							}
 							if (adminID != 0) {
-								if (newNotVisibleUsers != null && newNotVisibleUsers.contains(adminID)) {
-									throw new RestfulClientException("Invalid user item for 'readOnlyUsers', because it is already included in 'notVisibleUsers': " + item.toString() + " (" + adminID + ")");
-								}
 								newReadOnlyUsers.add(adminID);
 							} else {
 								throw new RestfulClientException("Invalid user item for 'readOnlyUsers': " + item.toString());
 							}
+						}
+					}
+
+					for (Integer adminID : newReadOnlyUsers) {
+						if (newEditableUsers != null && newEditableUsers.contains(adminID)) {
+							throw new RestfulClientException("Invalid user item for 'readOnlyUsers', because it is already included in 'editableUsers' (alias 'visibleUsers'): " + adminNamesMap.get(adminID) + " (" + adminID + ")");
+						} else if (newNotVisibleUsers != null && newNotVisibleUsers.contains(adminID)) {
+							throw new RestfulClientException("Invalid user item for 'readOnlyUsers', because it is already included in 'notVisibleUsers': " + adminNamesMap.get(adminID) + " (" + adminID + ")");
 						}
 					}
 				} else {
@@ -634,7 +694,7 @@ public class ProfilefieldRestfulServiceHandler implements RestfulServiceHandler 
 				}
 			} else if ("notVisibleUsers".equals(entry.getKey())) {
 				if (newNotVisibleUsers != null) {
-					throw new RestfulClientException("Invalid multipe data for 'notVisibleUsers' and 'visibleUsers', because only one of them is allowed");
+					throw new RestfulClientException("Invalid multiple data for 'notVisibleUsers', because it is only allowed once");
 				} else if (entry.getValue() instanceof JsonArray) {
 					newNotVisibleUsers = new HashSet<>();
 					if (adminNamesMap == null) {
@@ -644,9 +704,6 @@ public class ProfilefieldRestfulServiceHandler implements RestfulServiceHandler 
 					for (Object item : ((JsonArray) entry.getValue())) {
 						if (item instanceof Integer) {
 							if (adminNamesMap.containsKey(item)) {
-								if (newReadOnlyUsers != null && newReadOnlyUsers.contains(item)) {
-									throw new RestfulClientException("Invalid userid item for 'notVisibleUsers', because it is already included in 'readOnlyUsers': " + item.toString() + " (" + adminNamesMap.get(item) + ")");
-								}
 								newNotVisibleUsers.add((Integer) item);
 							} else {
 								throw new RestfulClientException("Invalid userid item for 'notVisibleUsers': " + item.toString());
@@ -656,75 +713,40 @@ public class ProfilefieldRestfulServiceHandler implements RestfulServiceHandler 
 							for (Entry<Integer, String> adminEntry : adminNamesMap.entrySet()) {
 								if (adminEntry.getValue().equals(item)) {
 									adminID = adminEntry.getKey();
+									break;
 								}
 							}
 							if (adminID != 0) {
-								if (newReadOnlyUsers != null && newReadOnlyUsers.contains(adminID)) {
-									throw new RestfulClientException("Invalid user item for 'notVisibleUsers', because it is already included in 'readOnlyUsers': " + item.toString() + " (" + adminID + ")");
-								}
 								newNotVisibleUsers.add(adminID);
 							} else {
 								throw new RestfulClientException("Invalid user item for 'notVisibleUsers': " + item.toString());
 							}
 						}
 					}
-				} else {
-					throw new RestfulClientException("Invalid data type for 'notVisibleUsers'. Array expected");
-				}
-			} else if ("visibleUsers".equals(entry.getKey())) {
-				if (newNotVisibleUsers != null) {
-					throw new RestfulClientException("Invalid multipe data for 'notVisibleUsers' and 'visibleUsers', because only one of them is allowed");
-				} else if (entry.getValue() instanceof JsonArray) {
-					Set<Integer> visibleUsers = new HashSet<>();
-					if (adminNamesMap == null) {
-						adminNamesMap = adminService.getAdminsNamesMap(companyID);
-					}
-					
-					for (Object item : ((JsonArray) entry.getValue())) {
-						if (item instanceof Integer) {
-							if (adminNamesMap.containsKey(item)) {
-								visibleUsers.add((Integer) item);
-							} else {
-								throw new RestfulClientException("Invalid userid item for 'visibleUsers': " + item.toString());
-							}
-						} else if (item instanceof String) {
-							int adminID = 0;
-							for (Entry<Integer, String> adminEntry : adminNamesMap.entrySet()) {
-								if (adminEntry.getValue().equals(item)) {
-									adminID = adminEntry.getKey();
-								}
-							}
-							if (adminID != 0) {
-								visibleUsers.add(adminID);
-							} else {
-								throw new RestfulClientException("Invalid user item for 'visibleUsers': " + item.toString());
-							}
-						}
-					}
 
-					newNotVisibleUsers = new HashSet<>();
-					for (Integer adminID : adminNamesMap.keySet()) {
-						if (!visibleUsers.contains(adminID)) {
-							newNotVisibleUsers.add(adminID);
-						}
-
-						if (newReadOnlyUsers != null && newReadOnlyUsers.contains(adminID)) {
-							throw new RestfulClientException("Invalid user item for 'visibleUsers', because it is already included in 'readOnlyUsers': " + adminNamesMap.get(adminID) + " (" + adminID + ")");
+					for (Integer adminID : newNotVisibleUsers) {
+						if (newEditableUsers != null && newEditableUsers.contains(adminID)) {
+							throw new RestfulClientException("Invalid user item for 'notVisibleUsers', because it is already included in 'editableUsers' (alias 'visibleUsers'): " + adminNamesMap.get(adminID) + " (" + adminID + ")");
+						} else if (newReadOnlyUsers != null && newReadOnlyUsers.contains(adminID)) {
+							throw new RestfulClientException("Invalid user item for 'notVisibleUsers', because it is already included in 'readOnlyUsers': " + adminNamesMap.get(adminID) + " (" + adminID + ")");
 						}
 					}
 				} else {
-					throw new RestfulClientException("Invalid data type for 'visibleUsers'. Array expected");
+					throw new RestfulClientException("Invalid data type for 'notVisibleUsers'. Array expected");
 				}
 			} else {
 				throw new RestfulClientException("Invalid property '" + entry.getKey() + "' for profilefield");
 			}
 		}
-		
+
+		Set<Integer> currentEditableUsers = new HashSet<>();
 		Set<Integer> currentReadOnlyUsers = new HashSet<>();
 		Set<Integer> currentNotVisibleUsers = new HashSet<>();
 		if (profileField.getPermissions() != null) {
 			for (Entry<Integer, ProfileFieldMode> permission : profileField.getPermissions().entrySet()) {
-				if (permission.getValue() == ProfileFieldMode.ReadOnly) {
+				if (permission.getValue() == ProfileFieldMode.Editable) {
+					currentEditableUsers.add(permission.getKey());
+				} else if (permission.getValue() == ProfileFieldMode.ReadOnly) {
 					currentReadOnlyUsers.add(permission.getKey());
 				} else if (permission.getValue() == ProfileFieldMode.NotVisible) {
 					currentNotVisibleUsers.add(permission.getKey());
@@ -734,22 +756,46 @@ public class ProfilefieldRestfulServiceHandler implements RestfulServiceHandler 
 		
 		Map<Integer, ProfileFieldMode> permissions = new HashMap<>();
 		permissions.put(0, profileField.getDefaultPermission());
-		if (newReadOnlyUsers != null) {
-			for (int adminID : newReadOnlyUsers) {
-				permissions.put(adminID, ProfileFieldMode.ReadOnly);
-			}
-		} else if (currentReadOnlyUsers != null) {
-			for (int adminID : currentReadOnlyUsers) {
-				permissions.put(adminID, ProfileFieldMode.ReadOnly);
+		if (profileField.getDefaultPermission() != ProfileFieldMode.Editable) {
+			if (newEditableUsers != null) {
+				for (int adminID : newEditableUsers) {
+					permissions.put(adminID, ProfileFieldMode.Editable);
+				}
+			} else if (currentEditableUsers != null) {
+				for (int adminID : currentEditableUsers) {
+					if ((newReadOnlyUsers == null || !newReadOnlyUsers.contains(adminID))
+							&& (newNotVisibleUsers == null || !newNotVisibleUsers.contains(adminID))) {
+						permissions.put(adminID, ProfileFieldMode.Editable);
+					}
+				}
 			}
 		}
-		if (newNotVisibleUsers != null) {
-			for (int adminID : newNotVisibleUsers) {
-				permissions.put(adminID, ProfileFieldMode.NotVisible);
+		if (profileField.getDefaultPermission() != ProfileFieldMode.ReadOnly) {
+			if (newReadOnlyUsers != null) {
+				for (int adminID : newReadOnlyUsers) {
+					permissions.put(adminID, ProfileFieldMode.ReadOnly);
+				}
+			} else if (currentReadOnlyUsers != null) {
+				for (int adminID : currentReadOnlyUsers) {
+					if ((newReadOnlyUsers == null || !newReadOnlyUsers.contains(adminID))
+							&& (newNotVisibleUsers == null || !newNotVisibleUsers.contains(adminID))) {
+						permissions.put(adminID, ProfileFieldMode.ReadOnly);
+					}
+				}
 			}
-		} else if (currentNotVisibleUsers != null) {
-			for (int adminID : currentNotVisibleUsers) {
-				permissions.put(adminID, ProfileFieldMode.NotVisible);
+		}
+		if (profileField.getDefaultPermission() != ProfileFieldMode.NotVisible) {
+			if (newNotVisibleUsers != null) {
+				for (int adminID : newNotVisibleUsers) {
+					permissions.put(adminID, ProfileFieldMode.NotVisible);
+				}
+			} else if (currentNotVisibleUsers != null) {
+				for (int adminID : currentNotVisibleUsers) {
+					if ((newReadOnlyUsers == null || !newReadOnlyUsers.contains(adminID))
+							&& (newNotVisibleUsers == null || !newNotVisibleUsers.contains(adminID))) {
+						permissions.put(adminID, ProfileFieldMode.NotVisible);
+					}
+				}
 			}
 		}
 		profileField.setPermissions(permissions);
@@ -760,6 +806,10 @@ public class ProfilefieldRestfulServiceHandler implements RestfulServiceHandler 
 			SafeString.getSafeDbColumnName(profileField.getColumnName());
 		} catch (Exception e) {
 			throw new RestfulClientException("Invalid value for property 'name' for profilefield: " + profileField.getColumnName(), e);
+		}
+		
+		if (StringUtils.isBlank(profileField.getShortName())) {
+			profileField.setShortName(profileField.getColumnName());
 		}
 		
 		RecipientFieldDescription profilefieldByShortname = recipientFieldService.getRecipientField(companyID, profileField.getShortName());

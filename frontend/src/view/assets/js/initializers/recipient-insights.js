@@ -323,7 +323,7 @@
 
       cells.filter(function(d) { return d.mailingId > 0; })
         .append('a')
-        .attr('href', function(d) { return mailingUriPattern.replace('{mailing-id}', d.mailingId); })
+        .attr('href', function(d) { return mailingUriPattern.replace(':mailing-id:', d.mailingId); })
         .attr('title', function(d) { return d.text; })
         .text(function(d) { return d.text; });
 

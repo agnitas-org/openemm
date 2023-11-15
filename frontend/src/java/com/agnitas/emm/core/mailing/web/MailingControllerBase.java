@@ -560,8 +560,8 @@ public class MailingControllerBase implements XssCheckAware {
         assert (admin != null);
         int mailingId = mailing.getId();
         int companyId = admin.getCompanyID();
-        List<TargetLight> allTargets = targetService.getTargetLights(admin);
-
+        List<TargetLight> allTargets = targetService.listTargetLightsForMailingSettings(admin, mailing);
+        
         model.addAttribute(IS_TEMPLATE_ATTR, options.isTemplate());
         model.addAttribute("mailtracking", Boolean.toString(mailingLightService.isMailtrackingActive(admin.getCompanyID())));
         model.addAttribute("limitedRecipientOverview", options.isWorldSend() && !mailinglistApprovalService.isAdminHaveAccess(admin, form.getMailinglistId()));

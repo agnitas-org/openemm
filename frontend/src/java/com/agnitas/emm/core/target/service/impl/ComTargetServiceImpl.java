@@ -675,6 +675,32 @@ public class ComTargetServiceImpl implements ComTargetService {
 
 		return getTargetLights(options);
 	}
+	
+	@Override
+	public List<TargetLight> listTargetLightsForMailingSettings(final Admin admin, final Mailing mailing) {
+		TargetLightsOptions options = TargetLightsOptions.builder()
+                .setAdminId(admin.getAdminID())
+				.setCompanyId(admin.getCompanyID())
+				.setWorldDelivery(true)
+				.setAdminTestDelivery(true)
+				.setIncludeDeleted(false)
+				.setContent(false)
+				.setIncludeInvalid(true)
+				.build();
+		
+		final List<TargetLight> targets = getTargetLights(options);
+		
+		final Collection<Integer> targetIdsInMailing = mailing.getTargetGroups() != null
+				? mailing.getTargetGroups()
+				: List.of();
+
+		/*
+		 * Return all valid target groups and invalid target groups already added to mailing.
+		 */
+		return targets.stream()
+				.filter(target -> target.isValid() || targetIdsInMailing.contains(target.getId()))
+				.collect(Collectors.toList());
+	}
 
 	@Override
 	public List<TargetLight> getTargetLights(final Admin admin, boolean worldDelivery, boolean adminTestDelivery, boolean content) {

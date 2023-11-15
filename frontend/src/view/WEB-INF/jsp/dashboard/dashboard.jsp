@@ -230,7 +230,7 @@
                             <div class="chart-controls">
                                 <c:choose>
                                     <c:when test="${dashboardForm.lastSentMailingId ne 0}">
-                                        <c:url var="mailingStatLink" value="/statistics/mailing/{mailing-id}/view.action"/>
+                                        <c:url var="mailingStatLink" value="/statistics/mailing/:mailing-id:/view.action"/>
 
                                         <div class="form-group" data-initializer="dashboard-statistics">
                                             <div class="col-sm-8">

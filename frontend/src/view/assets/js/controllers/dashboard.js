@@ -37,7 +37,7 @@ AGN.Lib.Controller.new('dashboard', function() {
     click: 'open-mailing-statistics'
   }, function() {
     if (statisticConfig.mailingId > 0) {
-      AGN.Lib.Page.reload(statisticConfig.mailingStatisticsLinkPattern.replace('{mailing-id}', statisticConfig.mailingId));
+      AGN.Lib.Page.reload(statisticConfig.mailingStatisticsLinkPattern.replace(':mailing-id:', statisticConfig.mailingId));
     }
   });
 

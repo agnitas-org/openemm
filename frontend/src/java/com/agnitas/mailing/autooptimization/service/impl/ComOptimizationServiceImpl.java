@@ -350,7 +350,6 @@ public class ComOptimizationServiceImpl implements ComOptimizationService {
 		}
 		return result;
 	}
-
 	
 	@Override
 	public int calculateBestMailing(ComOptimization optimization) {
@@ -359,25 +358,15 @@ public class ComOptimizationServiceImpl implements ComOptimizationService {
 		if(MapUtils.isEmpty(stats)) {
 			return -1;
 		}
-	
-		int[] mailingIDs = { optimization.getGroup2(),
-				optimization.getGroup3(), optimization.getGroup4(),
-				optimization.getGroup5() };
-		
-		int bestMailingID = optimization.getGroup1();
-		double bestRate = calculateFactor(stats.get(optimization.getGroup1()), optimization.getEvalType());
-				
-		for(Integer mailingID : mailingIDs) {
-					
-			if( stats.containsKey(mailingID)) {
-				if( bestRate < calculateFactor(stats.get(mailingID),optimization.getEvalType())) {
-					bestMailingID = mailingID;
-				}
-			}
-			
-		}
-				
-		return bestMailingID;
+
+        Map<Integer, Double> mailingsToFactors = stats.entrySet().stream()
+                .filter(entry -> optimization.getTestmailingIDs().contains(entry.getKey()))
+                .collect(Collectors.toMap(
+                        Entry::getKey,
+                        entry -> calculateFactor(entry.getValue(), optimization.getEvalType())));
+
+        Double bestFactor = Collections.max(mailingsToFactors.values());
+        return MapUtils.invertMap(mailingsToFactors).get(bestFactor);
 	}
 	
 	@Override

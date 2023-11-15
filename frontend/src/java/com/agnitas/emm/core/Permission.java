@@ -259,6 +259,7 @@ public class Permission {
 	public static final Permission IMPORT_PROFILES_ROLLBACK = new Permission("import.profiles.rollback", false, PermissionType.Migration);
     public static final Permission PROFILEFIELD_MIGRATION = new Permission("profileField.migration", false, PermissionType.Migration);
     public static final Permission IMPORT_INIT_ROLLBACK = new Permission("import.init.rollback", false, PermissionType.Migration);
+	public static final Permission AUTOMATIC_IMPORT_CANCEL_MIGRATION = new Permission("automatic.import.cancel.migration", false, PermissionType.Migration);
 
 	private final String tokenString;
 	private final boolean visible;

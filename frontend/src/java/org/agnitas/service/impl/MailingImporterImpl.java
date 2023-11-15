@@ -459,9 +459,13 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 				String targetEQL = (String) targetJsonObject.get("eql");
 				boolean isAccessLimitation = targetJsonObject.containsPropertyKey("access_limiting") && (Boolean) targetJsonObject.get("access_limiting");
 				for (ComTarget existingTarget : targetDao.getTargetByNameAndSQL(companyID, targetName, targetSQL, false, true, true)) {
-					if (AgnUtils.equalsIgnoreLineBreaks(existingTarget.getEQL(), targetEQL) && existingTarget.isAccessLimitation() == isAccessLimitation) {
-						targetID = existingTarget.getId();
-						break;
+					if(existingTarget.isValid()) {
+						if (AgnUtils.equalsIgnoreLineBreaks(existingTarget.getEQL(), targetEQL) && existingTarget.isAccessLimitation() == isAccessLimitation) {
+							targetID = existingTarget.getId();
+							break;
+						}
+					} else {
+						warnings.put("warning.mailing.import.targetgroupInvalid", new Object[] {existingTarget.getId(), existingTarget.getTargetName() });
 					}
 				}
 				

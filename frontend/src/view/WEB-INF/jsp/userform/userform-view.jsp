@@ -16,7 +16,7 @@
 <%--@elvariable id="workflowParameters" type="org.agnitas.web.forms.WorkflowParameters"--%>
 <%--@elvariable id="companyToken" type="java.lang.String"--%>
 
-<c:url var="actionEditUrlPattern" value="/action/{action-ID}/view.action"/>
+<c:url var="actionEditUrlPattern" value="/action/:action-ID:/view.action"/>
 <c:set var="labMsq"><mvc:message code="lab.message"/></c:set>
 
 <mvc:form servletRelativeAction="/webform/save.action" id="userFormForm" modelAttribute="form" data-form="resource"
@@ -170,7 +170,7 @@
                                 <emm:ShowByPermission token="actions.show">
                                     <mvc:message var="actionSwitchTooltip" code="form.action.switch"/>
                                     <a id="startActionLink" class="btn btn-info btn-regular ${form.successSettings.startActionId > 0 ? '' : 'hidden'}" data-tooltip="${actionSwitchTooltip}"
-                                       href="${fn:replace(actionEditUrlPattern, '{action-ID}', form.successSettings.startActionId)}">
+                                       href="${fn:replace(actionEditUrlPattern, ':action-ID:', form.successSettings.startActionId)}">
                                         <i class="icon icon-pencil"></i>
                                     </a>
                                 </emm:ShowByPermission>
@@ -291,7 +291,7 @@
                                 <emm:ShowByPermission token="actions.show">
                                     <mvc:message var="actionSwitchTooltip" code="form.action.switch"/>
                                     <a id="finalActionLink" class="btn btn-info btn-regular ${form.successSettings.finalActionId > 0 ? '' : 'hidden'}" data-tooltip="${actionSwitchTooltip}"
-                                       href="${fn:replace(actionEditUrlPattern, '{action-ID}', form.successSettings.finalActionId)}">
+                                       href="${fn:replace(actionEditUrlPattern, ':action-ID:', form.successSettings.finalActionId)}">
                                         <i class="icon icon-pencil"></i>
                                     </a>
                                 </emm:ShowByPermission>

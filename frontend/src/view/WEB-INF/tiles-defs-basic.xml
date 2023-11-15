@@ -1000,6 +1000,13 @@
 		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
 	</definition>
 
+    <definition name="common_upselling" extends="base">
+   		<put name="body" value="/WEB-INF/jsp/common-upselling.jsp" type="page"/>
+   		<put name="page-setup" value="/WEB-INF/jsp/common-upselling-setup.jsp" type="page"/>
+
+   		<!-- This is for transitional phase only! For new pages, remove that "put" and use messages and errors the correct way! -->
+   		<put name="messages" value="/WEB-INF/jsp/messages-transitional.jsp" type="page"/>
+   	</definition>
 
 	<!-- BOUNCE FILTER-->
 	<definition name="bounce_filter_list" extends="base">

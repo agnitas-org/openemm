@@ -14,7 +14,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
@@ -45,8 +44,8 @@ import net.sf.json.JSONArray;
 import net.sf.json.JSONException;
 
 public class RecipientFieldDaoImpl extends BaseDaoImpl implements RecipientFieldDao {
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(RecipientFieldDaoImpl.class);
+
+	private static final Logger logger = LogManager.getLogger(RecipientFieldDaoImpl.class);
 	
 	private static final int MAX_SORT_INDEX = 1000;
 	
@@ -239,13 +238,17 @@ public class RecipientFieldDaoImpl extends BaseDaoImpl implements RecipientField
 		
 		if (dbColumnType == null) {
 			// Create column in database table
-			DbUtilities.addColumnToDbTable(dataSource, "customer_" + companyID + "_tbl",
+			boolean success = DbUtilities.addColumnToDbTable(dataSource, "customer_" + companyID + "_tbl",
 				recipientFieldDescription.getColumnName(),
 				recipientFieldDescription.getDatabaseDataType(),
 				recipientFieldDescription.getCharacterLength(),
 				StringUtils.isEmpty(recipientFieldDescription.getDefaultValue()) ? null : recipientFieldDescription.getDefaultValue(),
 				new SimpleDateFormat(DateUtilities.YYYY_MM_DD),
 				!recipientFieldDescription.isNullable());
+			
+			if (!success) {
+				throw new Exception("Creation of new database profilefield failed");
+			}
 
 			// Create description data entry
 			ProfileFieldMode fallbackProfileFieldMode = (recipientFieldDescription.getPermissions() == null || recipientFieldDescription.getPermissions().get(0) == null) ? ProfileFieldMode.Editable : recipientFieldDescription.getPermissions().get(0);
@@ -271,15 +274,19 @@ public class RecipientFieldDaoImpl extends BaseDaoImpl implements RecipientField
 			// Update column in database table
 			if (dbColumnType.getSimpleDataType() != recipientFieldDescription.getSimpleDataType()) {
 				throw new Exception("Modification of recipient field type is not supported");
-			} else if (dbColumnType.getSimpleDataType() == SimpleDataType.Characters && dbColumnType.getCharacterLength() != recipientFieldDescription.getCharacterLength()) {
-				throw new Exception("Modification of recipient field type length is not supported");
-			} else {
-				String defaultValue = DbUtilities.getColumnDefaultValue(dataSource, "customer_" + companyID + "_tbl", recipientFieldDescription.getColumnName());
-				if ((defaultValue == null && defaultValue != null)
-					|| (defaultValue != null && !defaultValue.equals(recipientFieldDescription.getDefaultValue()))
-					|| dbColumnType.isNullable() != recipientFieldDescription.isNullable()) {
-					DbUtilities.alterColumnDefaultValueInDbTable(dataSource, "customer_" + companyID + "_tbl", recipientFieldDescription.getColumnName(), recipientFieldDescription.getDefaultValue(), new SimpleDateFormat(DateUtilities.YYYY_MM_DD), !recipientFieldDescription.isNullable());
-				}
+			} else if (dbColumnType.getSimpleDataType() == SimpleDataType.Characters && dbColumnType.getCharacterLength() > recipientFieldDescription.getCharacterLength()) {
+				throw new Exception("Decrease of recipient field type length is not supported");
+			}
+			
+			String defaultValue = DbUtilities.getColumnDefaultValue(dataSource, "customer_" + companyID + "_tbl", recipientFieldDescription.getColumnName());
+			if ((defaultValue == null && defaultValue != null)
+				|| (defaultValue != null && !defaultValue.equals(recipientFieldDescription.getDefaultValue()))
+				|| dbColumnType.isNullable() != recipientFieldDescription.isNullable()) {
+				DbUtilities.alterColumnDefaultValueInDbTable(dataSource, "customer_" + companyID + "_tbl", recipientFieldDescription.getColumnName(), recipientFieldDescription.getDefaultValue(), new SimpleDateFormat(DateUtilities.YYYY_MM_DD), !recipientFieldDescription.isNullable());
+			}
+			
+			if (dbColumnType.getSimpleDataType() == SimpleDataType.Characters && dbColumnType.getCharacterLength() < recipientFieldDescription.getCharacterLength()) {
+				DbUtilities.alterColumnTypeInDbTable(dataSource, "customer_" + companyID + "_tbl", recipientFieldDescription.getColumnName(), "VARCHAR", (int) recipientFieldDescription.getCharacterLength(), 0, defaultValue, null, !dbColumnType.isNullable());
 			}
 			
 			if (hasDescription) {
@@ -329,13 +336,13 @@ public class RecipientFieldDaoImpl extends BaseDaoImpl implements RecipientField
 	}
 
 	private void updateRecipientFieldPermissions(int companyID, RecipientFieldDescription recipientFieldDescription, String columnName, ProfileFieldMode fallbackProfileFieldMode) {
-		update(logger, "DELETE FROM customer_field_permission_tbl WHERE company_id = ? AND LOWER(column_name) = ?", companyID, columnName.toLowerCase());
-		
 		List<Object[]> parameterList = new ArrayList<>();
 		if (recipientFieldDescription.getPermissions() != null) {
+			update(logger, "DELETE FROM customer_field_permission_tbl WHERE company_id = ? AND LOWER(column_name) = ?", companyID, columnName.toLowerCase());
+			
 			for (Entry<Integer, ProfileFieldMode> permissionEntry : recipientFieldDescription.getPermissions().entrySet()) {
 				if (permissionEntry.getKey() != 0 && fallbackProfileFieldMode != permissionEntry.getValue()) {
-					parameterList.add(new Object[] { companyID, columnName.toUpperCase(), permissionEntry.getKey(), permissionEntry.getValue().getStorageCode() });
+					parameterList.add(new Object[] { companyID, columnName.toLowerCase(), permissionEntry.getKey(), permissionEntry.getValue().getStorageCode() });
 				}
 		    }
 			if (!parameterList.isEmpty()) {
@@ -347,7 +354,7 @@ public class RecipientFieldDaoImpl extends BaseDaoImpl implements RecipientField
 	private String getSerializedAllowedValues(RecipientFieldDescription recipientFieldDescription) {
 		if (recipientFieldDescription.getAllowedValues() != null) {
 			JSONArray array = new JSONArray();
-			array.addAll(Arrays.asList(recipientFieldDescription.getAllowedValues()));
+			array.addAll(recipientFieldDescription.getAllowedValues());
 			return array.toString();
 		} else {
 			return null;

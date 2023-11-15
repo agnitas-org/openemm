@@ -59,10 +59,7 @@ public interface ComCompanyDao {
 	
 	void updateCompanyStatus(int companyID, CompanyStatus status);
 
-	/**
-	 * This method gets a list with all NOT DELETED companies IDs from DB.
-	 */
-	List<Integer> getAllActiveCompaniesIdsWithoutMasterCompany();
+    List<Integer> getAllActiveCompaniesIds(boolean includeMaterCompany);
 	
 	List<Company> getActiveCompaniesWithoutMasterCompanyFromStart(int startCompany);
 

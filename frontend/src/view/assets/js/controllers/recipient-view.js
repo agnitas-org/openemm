@@ -26,7 +26,7 @@ AGN.Lib.Controller.new('recipient-view', function() {
           break;
 
         case RESULT_USED:
-          var btnUrl = self.config.urls.EXISTING_USER_URL_PATTERN.replace('{recipientID}', result.recipientID);
+          var btnUrl = self.config.urls.EXISTING_USER_URL_PATTERN.replace(':recipientID:', result.recipientID);
           var messageErrorInUseUser =
           '<div style="display: flex; width: 100%; justify-content: space-between; align-items: center;">' +
             t('error.inUse') +

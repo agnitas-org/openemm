@@ -373,21 +373,25 @@ public class MailingSendController implements XssCheckAware {
         int companyID = admin.getCompanyID();
         Mailing mailing = mailingDao.getMailing(mailingId, companyID);
 
-        MailingSendOptions sendOptions = MailingSendOptions.builder()
-                .setAdminTargetGroupId(form.getAdminTargetGroupID())
-                .build();
-
-        ServiceResult<UserAction> result = mailingSendService.sendAdminMailing(mailing, sendOptions);
-        popups.addPopups(result);
-
-        if (!result.isSuccess()) {
-            return MESSAGES_VIEW;
+        if (mailingService.containsInvalidTargetGroups(companyID, mailing.getId())) {
+            popups.alert("error.mailing.containsInvaidTargetGroups");
+        } else {
+	        MailingSendOptions sendOptions = MailingSendOptions.builder()
+	                .setAdminTargetGroupId(form.getAdminTargetGroupID())
+	                .build();
+	
+	        ServiceResult<UserAction> result = mailingSendService.sendAdminMailing(mailing, sendOptions);
+	        popups.addPopups(result);
+	
+	        if (!result.isSuccess()) {
+	            return MESSAGES_VIEW;
+	        }
+	
+	        UserAction userAction = result.getResult();
+	        writeUserActivityLog(admin, userAction.getAction(), userAction.getDescription());
+	        checkLimitationForSend(companyID, popups);
         }
-
-        UserAction userAction = result.getResult();
-        writeUserActivityLog(admin, userAction.getAction(), userAction.getDescription());
-        checkLimitationForSend(companyID, popups);
-
+        
         return redirectToSendView(mailingId);
     }
 
@@ -396,18 +400,23 @@ public class MailingSendController implements XssCheckAware {
         int companyID = admin.getCompanyID();
         Mailing mailing = mailingDao.getMailing(mailingId, companyID);
 
-        ServiceResult<UserAction> result = mailingSendService.sendTestMailing(mailing, form, admin);
-        popups.addPopups(result);
-
-        if (!result.isSuccess()) {
-            return MESSAGES_VIEW;
+        if (mailingService.containsInvalidTargetGroups(companyID, mailing.getId())) {
+            popups.alert("error.mailing.containsInvaidTargetGroups");
+        } else {
+	        ServiceResult<UserAction> result = mailingSendService.sendTestMailing(mailing, form, admin);
+	        popups.addPopups(result);
+	
+	        if (!result.isSuccess()) {
+	            return MESSAGES_VIEW;
+	        }
+	
+	        UserAction userAction = result.getResult();
+	        writeUserActivityLog(admin, userAction.getAction(), userAction.getDescription());
+	        checkLimitationForSend(companyID, popups);
+	
+	        ra.addFlashAttribute("testForm", form);
         }
-
-        UserAction userAction = result.getResult();
-        writeUserActivityLog(admin, userAction.getAction(), userAction.getDescription());
-        checkLimitationForSend(companyID, popups);
-
-        ra.addFlashAttribute("testForm", form);
+        
         return redirectToSendView(mailingId);
     }
 

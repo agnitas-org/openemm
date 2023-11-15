@@ -754,8 +754,8 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
     			update(logger, statementString, field.getCompanyID(), field.getColumn(), field.getAdminID(), field.getShortname().trim(), field.getDescription(), field.getModeEdit().getStorageCode(), field.getLine(), field.getSort(), field.getInterest(), field.getHistorize(), allowedValuesJson);
 			} else {
     			// Update existing entry
-    			update(logger, "UPDATE " + TABLE + " SET " + FIELD_SHORTNAME + " = ?, " + FIELD_DESCRIPTION + " = ?, " + FIELD_MODE_EDIT + " = ?, " + FIELD_LINE + " = ?, " + FIELD_SORT + " = ?, " + FIELD_ISINTEREST + " = ?, " + FIELD_CHANGE_DATE + " = CURRENT_TIMESTAMP, " + FIELD_HISTORIZE + " = ?, " + FIELD_ALLOWED_VALUES + " = ? WHERE " + FIELD_COMPANY_ID + " = ? AND UPPER(" + FIELD_COLUMN_NAME + ") = UPPER(?) AND " + FIELD_ADMIN_ID + " IN (0, ?)",
-   					field.getShortname().trim(), field.getDescription(), field.getModeEdit().getStorageCode(), field.getLine(), field.getSort(), field.getInterest(), field.getHistorize(), allowedValuesJson, field.getCompanyID(), field.getColumn(), field.getAdminID());
+    			update(logger, "UPDATE " + TABLE + " SET " + FIELD_SHORTNAME + " = ?, " + FIELD_DESCRIPTION + " = ?, " + FIELD_MODE_EDIT + " = ?, " + FIELD_LINE + " = ?, " + FIELD_SORT + " = ?, " + FIELD_ISINTEREST + " = ?, " + FIELD_CHANGE_DATE + " = CURRENT_TIMESTAMP, " + FIELD_HISTORIZE + " = ?, " + FIELD_ALLOWED_VALUES + " = ? WHERE " + FIELD_COMPANY_ID + " = ? AND UPPER(" + FIELD_COLUMN_NAME + ") = UPPER(?)",
+   					field.getShortname().trim(), field.getDescription(), field.getModeEdit().getStorageCode(), field.getLine(), field.getSort(), field.getInterest(), field.getHistorize(), allowedValuesJson, field.getCompanyID(), field.getColumn());
 			}
 		}
 
@@ -1234,8 +1234,8 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
 	}
 
 	@Override
-	public void storeProfileFieldAdminPermissions(int companyID, String columnName, Set<Integer> readOnlyUsers, Set<Integer> notVisibleUsers) {
-		boolean profileFieldEntryExists = selectInt(logger, "SELECT COUNT(*) FROM customer_field_tbl WHERE company_id = ? AND col_name = ?", companyID, columnName.toUpperCase()) > 0;
+	public void storeProfileFieldAdminPermissions(int companyID, String columnName, Set<Integer> editableUsers, Set<Integer> readOnlyUsers, Set<Integer> notVisibleUsers) throws Exception {
+		boolean profileFieldEntryExists = selectInt(logger, "SELECT COUNT(*) FROM customer_field_tbl WHERE company_id = ? AND LOWER(col_name) = ?", companyID, columnName.toLowerCase()) > 0;
 		if (!profileFieldEntryExists) {
 			update(logger, "INSERT INTO customer_field_tbl (company_id, col_name, admin_id, shortname, description, mode_edit) VALUES (?, ?, ?, ?, ?, ?)",
 				companyID,
@@ -1247,14 +1247,22 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
 			);
 		}
 		
+		ProfileFieldMode fallbackProfileFieldMode = ProfileFieldMode.getProfileFieldModeForStorageCode(selectIntWithDefaultValue(logger, "SELECT mode_edit FROM customer_field_tbl WHERE company_id = ? AND LOWER(col_name) = ?", ProfileFieldMode.Editable.getStorageCode(), companyID, columnName.toLowerCase()));
+		
 		List<Object[]> parameterList = new ArrayList<>();
-		if (readOnlyUsers != null) {
+		if (editableUsers != null && fallbackProfileFieldMode != ProfileFieldMode.Editable) {
+			update(logger, "DELETE FROM customer_field_permission_tbl WHERE company_id = ? AND LOWER(column_name) = ?", companyID, columnName.toLowerCase());
+	        for (Integer adminID : editableUsers) {
+	        	parameterList.add(new Object[] { companyID, columnName.toUpperCase(), adminID, ProfileFieldMode.Editable.getStorageCode() });
+	        }
+		}
+		if (readOnlyUsers != null && fallbackProfileFieldMode != ProfileFieldMode.ReadOnly) {
 			update(logger, "DELETE FROM customer_field_permission_tbl WHERE company_id = ? AND LOWER(column_name) = ?", companyID, columnName.toLowerCase());
 	        for (Integer adminID : readOnlyUsers) {
 	        	parameterList.add(new Object[] { companyID, columnName.toUpperCase(), adminID, ProfileFieldMode.ReadOnly.getStorageCode() });
 	        }
 		}
-		if (notVisibleUsers != null) {
+		if (notVisibleUsers != null && fallbackProfileFieldMode != ProfileFieldMode.NotVisible) {
 			update(logger, "DELETE FROM customer_field_permission_tbl WHERE company_id = ? AND LOWER(column_name) = ?", companyID, columnName.toLowerCase());
 	        for (Integer adminID : notVisibleUsers) {
 	        	parameterList.add(new Object[] { companyID, columnName.toUpperCase(), adminID, ProfileFieldMode.NotVisible.getStorageCode() });

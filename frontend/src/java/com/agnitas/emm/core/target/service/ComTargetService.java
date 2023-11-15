@@ -164,7 +164,7 @@ public interface ComTargetService {
 	List<TargetLight> getTargetLights(Admin admin, boolean includeDeleted, boolean worldDelivery, boolean adminTestDelivery, boolean content);
 
 	List<TargetLight> getTargetLights(TargetLightsOptions options);
-
+	
 	PaginatedListImpl<TargetLight> getTargetLightsPaginated(TargetLightsOptions options);
 
 	/**
@@ -265,4 +265,6 @@ public interface ComTargetService {
     void markAsFavorite(int targetId, int adminId, int companyId);
 
     void unmarkAsFavorite(int targetId, int adminId, int companyId);
+
+	List<TargetLight> listTargetLightsForMailingSettings(final Admin admin, final Mailing mailing);
 }

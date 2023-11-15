@@ -37,6 +37,7 @@ import com.agnitas.web.mvc.Pollable;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.impl.StrutsPopups;
 import com.agnitas.web.perm.annotations.PermissionMapping;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.agnitas.beans.ColumnMapping;
@@ -78,6 +79,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -94,7 +96,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -106,11 +107,10 @@ import static org.agnitas.util.ImportUtils.RECIPIENT_IMPORT_FILE_ATTRIBUTE_NAME;
 public class RecipientImportController {
 
     private static final Logger LOGGER = LogManager.getLogger(RecipientImportController.class);
+
+    public static final String SESSION_WORKER_KEY = "recipient-import-worker";
     private static final String IMPORT_DATA_KEY = "import-recipients";
     private static final String ERRORS_EDIT_KEY = "import-recipients-errors";
-
-    // TODO: think about keeping the worker in the session
-    private final Map<String, ProfileImportWorker> importWorkersMap = new ConcurrentHashMap<>();
 
     private final ImportProfileService importProfileService;
     private final MailinglistService mailinglistService;
@@ -151,7 +151,12 @@ public class RecipientImportController {
 
     @GetMapping("/chooseMethod.action")
     @PermissionMapping("choose.method")
-    public String chooseImportMethod(Admin admin) {
+    public String chooseImportMethod(@RequestParam(required = false) boolean cancelImport, Admin admin, Popups popups, HttpSession session) {
+        if (cancelImport) {
+            clearFinishedWorker(session, admin);
+            popups.warning("GWUA.canceled.import");
+        }
+
         boolean hasAccessToStandardImport = (admin.permissionAllowed(Permission.WIZARD_IMPORT));
         boolean hasAccessToWizardImport = admin.permissionAllowed(Permission.WIZARD_IMPORTCLASSIC);
 
@@ -172,7 +177,7 @@ public class RecipientImportController {
 
     @GetMapping("/view.action")
     public String view(@ModelAttribute("form") RecipientImportForm form, Admin admin, Model model, HttpSession session) {
-        clearFinishedWorker(session);
+        clearFinishedWorker(session, admin);
 
         if (isWorkerExists(session)) {
             return continueImportExecution();
@@ -190,6 +195,10 @@ public class RecipientImportController {
 
     @RequestMapping("/preview.action")
     public String preview(@ModelAttribute("form") RecipientImportForm form, Admin admin, Popups popups, Model model, HttpSession session) throws Exception {
+        if (admin.permissionAllowed(Permission.AUTOMATIC_IMPORT_CANCEL_MIGRATION) && existsWaitingForInteractionWorker(session)) {
+            return "redirect:/recipient/import/chooseMethod.action";
+        }
+
         if (!isImportFileExists(form, session)) {
             popups.alert("error.import.no_file");
             return MESSAGES_VIEW;
@@ -241,11 +250,16 @@ public class RecipientImportController {
         return "recipient_import_preview";
     }
 
+    private boolean existsWaitingForInteractionWorker(HttpSession session) {
+        ProfileImportWorker worker = extractImportWorker(session);
+        return worker != null && worker.isWaitingForInteraction();
+    }
+
     @RequestMapping("/execute.action")
     public Object execute(@ModelAttribute("form") RecipientImportForm form, Admin admin, Popups popups, HttpSession session) throws Exception {
         ProfileImportWorker importWorker;
 
-        if (importWorkersMap.containsKey(session.getId())) {
+        if (isWorkerExists(session)) {
             importWorker = extractImportWorker(session);
         } else {
             ImportProfile profile = importProfileService.getImportProfileById(form.getProfileId());
@@ -255,7 +269,7 @@ public class RecipientImportController {
 
             importWorker = createNewProfileImportWorker(form, profile, admin, session);
             writeImportStartLog(admin, form, importWorker.getImportFile().getLocalFile());
-            importWorkersMap.put(session.getId(), importWorker);
+            session.setAttribute(SESSION_WORKER_KEY, importWorker);
         }
 
         Callable<Object> worker = () -> {
@@ -284,7 +298,7 @@ public class RecipientImportController {
 
         Map<String, Object> attributesMap = new HashMap<>();
 
-        PollingUid pollingUid = new PollingUid(session.getId(), IMPORT_DATA_KEY);
+        PollingUid pollingUid = PollingUid.builder(session.getId(), IMPORT_DATA_KEY).setRetained(false).build();
         return new Pollable<>(pollingUid, SHORT_TIMEOUT, new ModelAndView(viewProgress(importWorker, attributesMap, false), attributesMap), worker);
     }
 
@@ -407,7 +421,7 @@ public class RecipientImportController {
         return continueImportExecution();
     }
 
-    @GetMapping("/cancel.action")
+    @RequestMapping("/cancel.action")
     public String cancel(HttpSession session) {
         ProfileImportWorker worker = extractImportWorker(session);
 
@@ -420,7 +434,7 @@ public class RecipientImportController {
 
     @GetMapping(value = "/download.action", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     public @ResponseBody
-    FileSystemResource downloadFile(ImportResultFileType importResultFileType, Admin admin, HttpServletResponse response, HttpSession session) throws Exception {
+    FileSystemResource downloadFile(ImportResultFileType importResultFileType, Admin admin, HttpServletResponse response, HttpSession session) {
         ProfileImportWorker importWorker = extractImportWorker(session);
 
         if (importWorker == null) {
@@ -585,7 +599,7 @@ public class RecipientImportController {
     }
 
     private ProfileImportWorker extractImportWorker(HttpSession session) {
-        return importWorkersMap.get(session.getId());
+        return (ProfileImportWorker) session.getAttribute(SESSION_WORKER_KEY);
     }
 
     private void cleanUpImportWorker(ProfileImportWorker worker, HttpSession session) {
@@ -593,17 +607,24 @@ public class RecipientImportController {
         clearWorkerInSession(session);
     }
 
-    private void clearFinishedWorker(HttpSession session) {
+    private void clearFinishedWorker(HttpSession session, Admin admin) {
         ProfileImportWorker worker = extractImportWorker(session);
 
-        if (worker != null && !worker.isWaitingForInteraction() && worker.isDone()) {
-            worker.cleanUp();
-            clearWorkerInSession(session);
+        if (admin.permissionAllowed(Permission.AUTOMATIC_IMPORT_CANCEL_MIGRATION)) {
+            if (worker != null && worker.isDone()) {
+                worker.cleanUp();
+                clearWorkerInSession(session);
+            }
+        } else {
+            if (worker != null && !worker.isWaitingForInteraction() && worker.isDone()) {
+                worker.cleanUp();
+                clearWorkerInSession(session);
+            }
         }
     }
 
     private void clearWorkerInSession(HttpSession session) {
-        importWorkersMap.remove(session.getId());
+        session.removeAttribute(SESSION_WORKER_KEY);
     }
 
     private void writeImportStartLog(Admin admin, RecipientImportForm form, File importFile) {

@@ -694,6 +694,10 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 		if (options.isContent()) {
 			preparedStatementManager.addWhereClause("component_hide = 0");
 		}
+		
+		if (!options.isIncludeInvalid()) {
+			preparedStatementManager.addWhereClause("(invalid = 0 or invalid is null)");
+		}
 
 		// If none of worldDelivery and adminTestDelivery is true, we also show all targets even if it would logically mean no items to show
 		if (options.isWorldDelivery() && !options.isAdminTestDelivery()) {

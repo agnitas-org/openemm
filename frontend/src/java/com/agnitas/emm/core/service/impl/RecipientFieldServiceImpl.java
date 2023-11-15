@@ -10,9 +10,12 @@
 
 package com.agnitas.emm.core.service.impl;
 
+import java.util.HashMap;
 import java.util.List;
-import java.util.Objects;
+import java.util.Map;
 import java.util.stream.Collectors;
+
+import org.agnitas.emm.core.commons.util.ConfigService;
 
 import com.agnitas.dao.ProfileFieldDao;
 import com.agnitas.emm.core.dao.RecipientFieldDao;
@@ -22,17 +25,11 @@ import com.agnitas.emm.core.service.RecipientFieldService;
 import com.agnitas.emm.core.service.RecipientFieldsCache;
 
 public class RecipientFieldServiceImpl implements RecipientFieldService {
+	private ConfigService configService;
 	private RecipientFieldsCache recipientFieldsCache;
 	private RecipientFieldDao recipientFieldDao;
 	private ProfileFieldDao profileFieldDao;
 	private RecipientProfileHistoryService recipientProfileHistoryService;
-	
-	public RecipientFieldServiceImpl(RecipientFieldsCache recipientFieldsCache, RecipientFieldDao recipientFieldDao, ProfileFieldDao profileFieldDao, RecipientProfileHistoryService recipientProfileHistoryService) {
-		this.recipientFieldsCache = Objects.requireNonNull(recipientFieldsCache, "RecipientFieldsCache may not be null");
-		this.recipientFieldDao = Objects.requireNonNull(recipientFieldDao, "RecipientFieldDao may not be null");
-		this.profileFieldDao = Objects.requireNonNull(profileFieldDao, "ProfileFieldDao may not be null");
-		this.recipientProfileHistoryService = Objects.requireNonNull(recipientProfileHistoryService, "RecipientProfileHistoryService may not be null");
-	}
 
 	@Override
 	public List<RecipientFieldDescription> getRecipientFields(int companyID) throws Exception {
@@ -58,11 +55,11 @@ public class RecipientFieldServiceImpl implements RecipientFieldService {
 		} else {
 			recipientFieldDao.saveRecipientField(companyID, recipientFieldDescription);
 
-			// Clear cached data
-			recipientFieldsCache.put(companyID, null);
-			profileFieldDao.clearProfileStructureCache(companyID);
+			clearCachedData(companyID);
 			
-			recipientProfileHistoryService.afterProfileFieldStructureModification(companyID);
+			if (configService.isRecipientProfileHistoryEnabled(companyID)) {
+				recipientProfileHistoryService.afterProfileFieldStructureModification(companyID);
+			}
 		}
 	}
 
@@ -73,12 +70,18 @@ public class RecipientFieldServiceImpl implements RecipientFieldService {
 		} else {
 			recipientFieldDao.deleteRecipientField(companyID, recipientFieldName);
 
-			// Clear cached data
-			recipientFieldsCache.put(companyID, null);
-			profileFieldDao.clearProfileStructureCache(companyID);
+			clearCachedData(companyID);
 			
-			recipientProfileHistoryService.afterProfileFieldStructureModification(companyID);
+			if (configService.isRecipientProfileHistoryEnabled(companyID)) {
+				recipientProfileHistoryService.afterProfileFieldStructureModification(companyID);
+			}
 		}
+	}
+
+	@Override
+	public void clearCachedData(int companyID) {
+		recipientFieldsCache.put(companyID, null);
+		profileFieldDao.clearProfileStructureCache(companyID);
 	}
 
 	private List<RecipientFieldDescription> getCachedRecipientFieldsData(int companyID) throws Exception {
@@ -96,5 +99,38 @@ public class RecipientFieldServiceImpl implements RecipientFieldService {
 	@Override
 	public boolean isReservedKeyWord(String fieldname) {
 		return recipientFieldDao.isReservedKeyWord(fieldname);
+	}
+	
+	@Override
+	public Map<String, String> getRecipientDBStructure(int companyID) {
+		try {
+			Map<String, String> returnMap = new HashMap<>();
+			for (RecipientFieldDescription field : getRecipientFields(companyID)) {
+				returnMap.put(field.getColumnName(), field.getSimpleDataType().getGenericDbDataTypeName());
+			}
+			return returnMap;
+		} catch (Exception e) {
+			throw new RuntimeException("Cannot read RecipientDBStructure: " + e.getMessage(), e);
+		}
+	}
+
+	public void setConfigService(ConfigService configService) {
+		this.configService = configService;
+	}
+
+	public void setRecipientFieldsCache(RecipientFieldsCache recipientFieldsCache) {
+		this.recipientFieldsCache = recipientFieldsCache;
+	}
+
+	public void setRecipientFieldDao(RecipientFieldDao recipientFieldDao) {
+		this.recipientFieldDao = recipientFieldDao;
+	}
+
+	public void setProfileFieldDao(ProfileFieldDao profileFieldDao) {
+		this.profileFieldDao = profileFieldDao;
+	}
+
+	public void setRecipientProfileHistoryService(RecipientProfileHistoryService recipientProfileHistoryService) {
+		this.recipientProfileHistoryService = recipientProfileHistoryService;
 	}
 }

@@ -33,6 +33,7 @@ public class TargetLightsOptions {
     private boolean content;
     private boolean isSearchName;
     private boolean isSearchDescription;
+    private boolean includeInvalid = true;
     private String searchText = "";
     private AltgMode altgMode = AltgMode.ALL;
     private int pageNumber;
@@ -96,7 +97,15 @@ public class TargetLightsOptions {
         return direction;
     }
 
-    @Override
+    public final boolean isIncludeInvalid() {
+		return includeInvalid;
+	}
+
+	public final void setIncludeInvalid(boolean includeInvalid) {
+		this.includeInvalid = includeInvalid;
+	}
+
+	@Override
     public String toString() {
         return new ToStringBuilder(this)
                 .append("adminId", adminId)
@@ -120,6 +129,7 @@ public class TargetLightsOptions {
         return adminId == that.adminId &&
                 companyId == that.companyId &&
                 includeDeleted == that.includeDeleted &&
+                includeInvalid == that.includeInvalid && 
                 worldDelivery == that.worldDelivery &&
                 adminTestDelivery == that.adminTestDelivery &&
                 content == that.content &&
@@ -131,7 +141,7 @@ public class TargetLightsOptions {
 
     @Override
     public int hashCode() {
-        return Objects.hash(adminId, companyId, includeDeleted, worldDelivery, adminTestDelivery, content, isSearchName, isSearchDescription, searchText, altgMode);
+        return Objects.hash(adminId, companyId, includeDeleted, includeInvalid, worldDelivery, adminTestDelivery, content, isSearchName, isSearchDescription, searchText, altgMode);
     }
 
     public static class Builder {
@@ -205,6 +215,12 @@ public class TargetLightsOptions {
         public Builder setDirection(String direction) {
             options.direction = direction;
             return this;
+        }
+        
+        public Builder setIncludeInvalid(boolean include) {
+        	options.includeInvalid = include;
+        	
+        	return this;
         }
 
         public TargetLightsOptions build() {

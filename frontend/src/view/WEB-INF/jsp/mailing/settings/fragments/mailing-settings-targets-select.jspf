@@ -53,6 +53,9 @@
                         data-complexity-grade="${targetComplexities[target.id]}"
                         data-url="${targetLink}">
                 ${fn:escapeXml(target.targetName)} (${target.id})
+                <c:if test="${not target.valid}">
+                  (<mvc:message code="default.invalid"/>)
+                </c:if>
             </mvc:option>
         </c:forEach>
     </mvc:select>

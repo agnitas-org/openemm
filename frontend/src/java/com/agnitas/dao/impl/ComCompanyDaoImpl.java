@@ -1120,10 +1120,12 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 		}
 	}
 
-	@Override
-	public List<Integer> getAllActiveCompaniesIdsWithoutMasterCompany() {
-		return select(logger, "SELECT company_id from company_tbl WHERE status = '" + CompanyStatus.ACTIVE.getDbValue() + "' AND company_id > 1", IntegerRowMapper.INSTANCE);
-	}
+    @Override
+   	public List<Integer> getAllActiveCompaniesIds(boolean includeMaterCompany) {
+   		return select(logger, "SELECT company_id from company_tbl" +
+                " WHERE status = '" + CompanyStatus.ACTIVE.getDbValue() + "'"
+                + (includeMaterCompany ? "" : " AND company_id > 1"), IntegerRowMapper.INSTANCE);
+   	}
 
 	@Override
 	public boolean createHistoryTables(int companyID) {

@@ -36,7 +36,6 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -1146,14 +1145,14 @@ public class DbUtilities {
 		}
 	}
 
-	public static Map<String, String> getColumnDefaultValues(DataSource dataSource, String tableName) throws Exception {
+	public static CaseInsensitiveMap<String, String> getColumnDefaultValues(DataSource dataSource, String tableName) throws Exception {
 		if (dataSource == null) {
 			throw new Exception("Invalid empty dataSource for getDefaultValueOf");
 		} else if (StringUtils.isBlank(tableName)) {
 			throw new Exception("Invalid empty tableName for getDefaultValueOf");
 		} else {
 			if (checkDbVendorIsOracle(dataSource)) {
-				Map<String, String> returnMap = new HashMap<>();
+				CaseInsensitiveMap<String, String> returnMap = new CaseInsensitiveMap<>();
 				String sql = "SELECT column_name, data_default FROM user_tab_columns WHERE table_name = ?";
 				List<Map<String, Object>> result = new JdbcTemplate(dataSource).queryForList(sql, tableName.toUpperCase());
 				for (Map<String, Object> row : result) {
@@ -1171,7 +1170,7 @@ public class DbUtilities {
 				}
 				return returnMap;
 			} else {
-				Map<String, String> returnMap = new HashMap<>();
+				CaseInsensitiveMap<String, String> returnMap = new CaseInsensitiveMap<>();
 				final String sql = "SELECT column_name, column_default FROM information_schema.columns WHERE table_schema = SCHEMA() AND table_name = ?";
 				List<Map<String, Object>> result = new JdbcTemplate(dataSource).queryForList(sql, tableName);
 				for (Map<String, Object> row : result) {
@@ -2842,4 +2841,19 @@ public class DbUtilities {
 			return "Unknown";
 		}
 	}
+
+	public static int getColumnTypeByName(ResultSetMetaData metaData, String columnName) throws SQLException {
+		for (int i = 1; i <= metaData.getColumnCount(); i++) {
+			if (columnName.equalsIgnoreCase(metaData.getColumnName(i))) {
+				return metaData.getColumnType(i);
+			}
+		}
+		throw new SQLException("Column not found: " + columnName);
+	}
+
+    public static String getPartialSearchSql(boolean isOracle, String searchIn) {
+        return isOracle
+                ? "UPPER(" + searchIn + ") LIKE ('%' || UPPER(?) || '%')"
+                : searchIn + " LIKE CONCAT('%', ?, '%')";
+    }
 }

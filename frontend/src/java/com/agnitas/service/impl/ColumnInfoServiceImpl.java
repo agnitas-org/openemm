@@ -108,7 +108,7 @@ public class ColumnInfoServiceImpl implements ColumnInfoService {
 	}
 
 	@Override
-	public void storeProfileFieldAdminPermissions(int companyID, String columnName, Set<Integer> readOnlyUsers, Set<Integer> notVisibleUsers) {
-		profileFieldDao.storeProfileFieldAdminPermissions(companyID, columnName, readOnlyUsers, notVisibleUsers);
+	public void storeProfileFieldAdminPermissions(int companyID, String columnName, Set<Integer> editableUsers, Set<Integer> readOnlyUsers, Set<Integer> notVisibleUsers) throws Exception {
+		profileFieldDao.storeProfileFieldAdminPermissions(companyID, columnName, editableUsers, readOnlyUsers, notVisibleUsers);
 	}
 }

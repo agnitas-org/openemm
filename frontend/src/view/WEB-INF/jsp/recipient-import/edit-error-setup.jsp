@@ -32,12 +32,17 @@
     <emm:instantiate var="element0" type="java.util.LinkedHashMap" scope="request">
         <c:set target="${itemActionsSettings}" property="0" value="${element0}"/>
         <c:set target="${element0}" property="btnCls" value="btn btn-regular btn-warning"/>
-        <c:set target="${element0}" property="extraAttributes" value=""/>
+        <emm:ShowByPermission token="automatic.import.cancel.migration">
+            <c:set target="${element0}" property="extraAttributes" value="data-action='ignore-errors'"/>
+        </emm:ShowByPermission>
+        <emm:HideByPermission token="automatic.import.cancel.migration">
+            <c:set target="${element0}" property="extraAttributes" value=""/>
+            <c:set target="${element0}" property="type" value="href"/>
+            <c:set target="${element0}" property="url">
+                <c:url value="/recipient/import/errors/ignore.action" />
+            </c:set>
+        </emm:HideByPermission>
         <c:set target="${element0}" property="iconBefore" value="icon-warning"/>
-        <c:set target="${element0}" property="type" value="href"/>
-        <c:set target="${element0}" property="url">
-            <c:url value="/recipient/import/errors/ignore.action" />
-        </c:set>
         <c:set target="${element0}" property="name">
             <mvc:message code="Ignore"/>
         </c:set>
@@ -47,11 +52,16 @@
         <c:set target="${itemActionsSettings}" property="1" value="${element1}"/>
         <c:set target="${element1}" property="btnCls" value="btn btn-secondary btn-regular"/>
         <c:set target="${element1}" property="iconBefore" value="icon-times"/>
-        <c:set target="${element1}" property="extraAttributes" value=""/>
-        <c:set target="${element1}" property="type" value="href"/>
-        <c:set target="${element1}" property="url">
-            <c:url value="/recipient/import/cancel.action" />
-        </c:set>
+        <emm:ShowByPermission token="automatic.import.cancel.migration">
+            <c:set target="${element1}" property="extraAttributes" value="data-action='cancel'"/>
+        </emm:ShowByPermission>
+        <emm:HideByPermission token="automatic.import.cancel.migration">
+            <c:set target="${element1}" property="extraAttributes" value=""/>
+            <c:set target="${element1}" property="type" value="href"/>
+            <c:set target="${element1}" property="url">
+                <c:url value="/recipient/import/cancel.action" />
+            </c:set>
+        </emm:HideByPermission>
         <c:set target="${element1}" property="name">
             <mvc:message code="button.Cancel"/>
         </c:set>
@@ -60,7 +70,12 @@
     <emm:instantiate var="element2" type="java.util.LinkedHashMap" scope="request">
         <c:set target="${itemActionsSettings}" property="2" value="${element2}"/>
         <c:set target="${element2}" property="btnCls" value="btn btn-regular btn-inverse"/>
-        <c:set target="${element2}" property="extraAttributes" value="data-form-target='#errors-form' data-form-submit"/>
+        <emm:ShowByPermission token="automatic.import.cancel.migration">
+            <c:set target="${element2}" property="extraAttributes" value="data-form-target='#errors-form' data-form-submit-event"/>
+        </emm:ShowByPermission>
+        <emm:HideByPermission token="automatic.import.cancel.migration">
+            <c:set target="${element2}" property="extraAttributes" value="data-form-target='#errors-form' data-form-submit"/>
+        </emm:HideByPermission>
         <c:set target="${element2}" property="iconBefore" value="icon-save"/>
         <c:set target="${element2}" property="name">
             <mvc:message code="button.Save"/>

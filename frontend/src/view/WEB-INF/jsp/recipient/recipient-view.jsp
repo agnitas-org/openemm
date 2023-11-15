@@ -62,7 +62,7 @@
                 "CHECK_ADDRESS": "<c:url value='/recipient/${form.id}/checkAddress.action'/>",
                 "CHECK_MATCH_ALTG": "<c:url value='/recipient/checkAltgMatch.action'/>",
                 "SAVE_AND_BACK_TO_LIST": "<c:url value='/recipient/saveAndBackToList.action'/>",
-                "EXISTING_USER_URL_PATTERN": "<c:url value='/recipient/{recipientID}/view.action'/>"
+                "EXISTING_USER_URL_PATTERN": "<c:url value='/recipient/:recipientID:/view.action'/>"
               }
             }
         </script>

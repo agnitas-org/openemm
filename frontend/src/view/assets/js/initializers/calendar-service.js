@@ -993,9 +993,9 @@
       var link;
 
       if (d.sent && d.workstatus != 'mailing.status.test' && isStatisticsViewPermitted) {
-        link = urlMailingStatisticsView.replace('{mailingId}', d.mailingId);
+        link = urlMailingStatisticsView.replace(':mailingId:', d.mailingId);
       } else {
-        link = urlMailingView.replace('{mailingId}', d.mailingId);
+        link = urlMailingView.replace(':mailingId:', d.mailingId);
       }
 
       return link;

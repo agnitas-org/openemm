@@ -10,13 +10,13 @@
 
 package com.agnitas.web.filter;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import com.agnitas.beans.Admin;
+import com.agnitas.emm.core.imports.web.RecipientImportController;
+import com.agnitas.emm.grid.grid.service.ComGridTemplateService;
+import com.agnitas.util.FutureHolderMap;
 import jakarta.servlet.http.HttpSession;
 import jakarta.servlet.http.HttpSessionEvent;
 import jakarta.servlet.http.HttpSessionListener;
-
 import org.agnitas.emm.core.download.service.DownloadService;
 import org.agnitas.service.ProfileImportWorker;
 import org.agnitas.util.AgnUtils;
@@ -26,9 +26,8 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.emm.grid.grid.service.ComGridTemplateService;
-import com.agnitas.util.FutureHolderMap;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Cleanup session data when user logs out or session is destroyed (after inactivity timeout or user closed browser)
@@ -77,6 +76,12 @@ public class HttpSessionCleanUpListener implements HttpSessionListener {
 			profileImportWorker.cleanUp();
 			session.removeAttribute(ProfileImportAction.PROFILEIMPORTWORKER_SESSIONKEY);
 			logger.info("Canceled interactively waiting ProfileImport for session: " + sessionID + " " + (admin != null ? "admin: " + admin.getUsername() : ""));
+		}
+
+		// Cleanup waiting interactive imports
+		ProfileImportWorker profileImportWorker1 = (ProfileImportWorker) session.getAttribute(RecipientImportController.SESSION_WORKER_KEY);
+		if (profileImportWorker1 != null && profileImportWorker1.isWaitingForInteraction()) {
+			profileImportWorker1.cleanUp();
 		}
 	}
 }

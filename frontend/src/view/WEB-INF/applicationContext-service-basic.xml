@@ -1300,9 +1300,10 @@
 	</bean>
 	
 	<bean id="RecipientFieldService" class="com.agnitas.emm.core.service.impl.RecipientFieldServiceImpl">
-		<constructor-arg ref="RecipientFieldsCache" />
-		<constructor-arg ref="RecipientFieldDao" />
-		<constructor-arg ref="ProfileFieldDao" />
-		<constructor-arg ref="RecipientProfileHistoryService" />
+		<property name="configService" ref="ConfigService" />
+		<property name="recipientFieldsCache" ref="RecipientFieldsCache"/>
+		<property name="recipientFieldDao" ref="RecipientFieldDao"/>
+		<property name="profileFieldDao" ref="ProfileFieldDao"/>
+		<property name="recipientProfileHistoryService" ref="RecipientProfileHistoryService"/>
 	</bean>
 </beans>

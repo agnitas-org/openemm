@@ -20,7 +20,7 @@ window.agnResolveRelativeUrl = function(relativeUrl, excludeSessionId) {
       relativeUrl = relativeUrl.substring(0, position);
     }
 
-    return '<c:url value="/{RELATIVE-PATH}"/>'.replace('{RELATIVE-PATH}', relativeUrl) + appendablePart;
+    return '<c:url value="/RELATIVE-PATH"/>'.replace('RELATIVE-PATH', relativeUrl) + appendablePart;
   }
 };
 

@@ -3,6 +3,7 @@
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://displaytag.sf.net" prefix="display" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
+<%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
 <%--@elvariable id="form" type="com.agnitas.emm.core.imports.form.RecipientImportForm"--%>
 <%--@elvariable id="columns" type="org.agnitas.service.impl.CSVColumnState[]"--%>
@@ -11,7 +12,14 @@
 <c:set var="VALIDATOR_RESULT_RESERVED" value="<%= ImportRecipientsDao.VALIDATOR_RESULT_RESERVED %>"/>
 <c:set var="ERROR_EDIT_REASON_KEY_RESERVED" value="<%= ImportRecipientsDao.ERROR_EDIT_REASON_KEY_RESERVED %>"/>
 
-<mvc:form servletRelativeAction="/recipient/import/errors/save.action" modelAttribute="form" id="errors-form" data-form="resource">
+<c:set var="automaticCancelMigration" value="false" />
+<emm:ShowByPermission token="automatic.import.cancel.migration">
+    <c:set var="automaticCancelMigration" value="true" />
+</emm:ShowByPermission>
+
+<mvc:form servletRelativeAction="/recipient/import/errors/save.action" modelAttribute="form" id="errors-form" data-form="resource"
+          data-controller="${automaticCancelMigration ? 'recipient-import-errors-edit' : ''}" data-initializer="recipient-import-errors-edit"
+          data-action="save-errors">
     <script type="application/json" data-initializer="web-storage-persist">
         {
             "import-wizard-errors-overview": {
