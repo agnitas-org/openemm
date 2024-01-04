@@ -128,7 +128,8 @@
 		<ref bean="wsSecurityInterceptor"/>
 		<ref bean="permissionInterceptor" />
 		<ref bean="throttlingInterceptor"/>
-		<ref bean="usageInterceptor" />
+		
+		
 	</sws:interceptors>
 
 	<bean id="marshallingPayloadMethodProcessor" class="org.springframework.ws.server.endpoint.adapter.method.MarshallingPayloadMethodProcessor">

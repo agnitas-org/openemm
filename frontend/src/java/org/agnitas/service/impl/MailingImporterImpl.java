@@ -505,9 +505,12 @@ public class MailingImporterImpl extends ActionImporter implements MailingImport
 		if (jsonObject.containsPropertyKey("mediatypes")) {
 			for (Object mediatypeObject : (JsonArray) jsonObject.get("mediatypes")) {
 				final JsonObject mediatypeJsonObject = (JsonObject) mediatypeObject;
-				final Mediatype mediatype = mediatypeFactory.createMediatypeFromJson(mediatypeJsonObject);
-	
-				mediatypes.put(mediatype.getMediaType().getMediaCode(), mediatype);
+				try {
+					final Mediatype mediatype = mediatypeFactory.createMediatypeFromJson(mediatypeJsonObject);
+					mediatypes.put(mediatype.getMediaType().getMediaCode(), mediatype);
+				} catch (@SuppressWarnings("unused") Exception e) {
+					logger.warn("Ignoring unsupported mediatype: " + (String) mediatypeJsonObject.get("type"));
+				}
 			}
 		}
 		if (mediatypes.isEmpty()) {

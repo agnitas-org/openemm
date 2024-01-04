@@ -39,6 +39,7 @@ import com.agnitas.beans.ComTarget;
 import com.agnitas.dao.ComTargetDao;
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.emm.core.mailinglist.bean.MailinglistEntry;
+import org.springframework.transaction.annotation.Transactional;
 
 public class MailinglistDaoImpl extends PaginatedBaseDaoImpl implements MailinglistDao {
 
@@ -151,19 +152,23 @@ public class MailinglistDaoImpl extends PaginatedBaseDaoImpl implements Mailingl
 		return performUpdate(companyId, list);
 	}
 
-
 	@Override
+    @Transactional
 	@DaoUpdateReturnValueCheck
 	public boolean deleteMailinglist(int listID, int companyId) {
 		// should be impossible to delete last available mailinglist
 		if (getCountOfMailinglists(companyId) <= 1) {
 			return false;
 		}
-		update(logger, "DELETE FROM disabled_mailinglist_tbl WHERE mailinglist_id = ? AND company_id = ?", listID, companyId);
-		return update(logger, "UPDATE mailinglist_tbl SET deleted = 1, binding_clean = 1, change_date = CURRENT_TIMESTAMP WHERE mailinglist_id = ? AND company_id = ? AND deleted = 0", listID, companyId) > 0;
+        deleteFromDisabledMailinglistTbl(listID, companyId);
+        return update(logger, "UPDATE mailinglist_tbl SET deleted = 1, binding_clean = 1, change_date = CURRENT_TIMESTAMP WHERE mailinglist_id = ? AND company_id = ? AND deleted = 0", listID, companyId) > 0;
 	}
-	
-	/**
+
+    protected void deleteFromDisabledMailinglistTbl(int listId, int companyId) {
+        // overridden in extended class
+    }
+
+    /**
 	 * Even deletes the last mailinglist wich would not be deleted by deleteMailinglist(int listID, int companyId)
 	 */
 	@Override

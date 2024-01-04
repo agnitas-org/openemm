@@ -1423,7 +1423,7 @@ CREATE TABLE title_tbl (
 	company_id                 INT(11) NOT NULL DEFAULT 0 COMMENT 'tenant - ID (company_tbl)',
 	description                VARCHAR(1000) NOT NULL DEFAULT '' COMMENT 'comment on title',
 	PRIMARY KEY (title_id)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'types for agnTITLE - tags which might be used in mailings';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'types for agnTITLE - tags which might be used in mailings';
 
 CREATE TABLE trackpoint_def_tbl (
 	company_id                 INT(10) NOT NULL DEFAULT 0 COMMENT 'tenant - ID (company_tbl)',

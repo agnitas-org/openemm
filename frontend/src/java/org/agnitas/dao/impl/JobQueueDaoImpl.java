@@ -164,9 +164,13 @@ public class JobQueueDaoImpl extends BaseDaoImpl implements JobQueueDao {
 	@Override
 	@DaoUpdateReturnValueCheck
 	public int resetJobsForCurrentHost() {
-		return update(logger,
+		int killedJobsResetted = update(logger,
 			"UPDATE job_queue_tbl SET running = 0, nextStart = CURRENT_TIMESTAMP WHERE hostname = ? AND running = 1",
 			AgnUtils.getHostName());
+		int errorneousJobsResetted = update(logger,
+			"UPDATE job_queue_tbl SET lastresult = NULL WHERE hostname = ? AND (lastresult IS NOT NULL AND lastresult != 'OK')",
+			AgnUtils.getHostName());
+		return killedJobsResetted + errorneousJobsResetted;
 	}
 
 	private class Job_RowMapper implements RowMapper<JobDto> {
