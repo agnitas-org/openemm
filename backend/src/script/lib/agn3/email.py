@@ -31,7 +31,7 @@ from	.definitions import fqdn, user, program, syscfg
 from	.exceptions import error
 from	.id import IDs
 from	.ignore import Ignore
-from	.io import CSVDefault
+from	.io import csv_default
 from	.log import log
 from	.parser import ParseTimestamp
 from	.stream import Stream
@@ -432,7 +432,7 @@ the ``charset'' of the csv content and the csv ``dialect'' to be used."""
 		data: List[Union[List[Any], Tuple[Any, ...]]],
 		filename: Optional[str] = None,
 		charset: Optional[str] = None,
-		dialect: str = CSVDefault
+		dialect: str = csv_default
 	) -> None:
 		mail = EMail ()
 		if sender is not None:
@@ -775,7 +775,8 @@ overwritten to implement further logic for resolving the customer."""
 				if isinstance (p, str):
 					content = p
 				elif isinstance (p, bytes):
-					charsets = [_c for _c in payload.get_charsets () if _c]
+					available_charsets = payload.get_charsets ()
+					charsets = [_c for _c in available_charsets if _c] if available_charsets else []
 					if not charsets:
 						charsets = ['UTF-8']
 					for charset in charsets:

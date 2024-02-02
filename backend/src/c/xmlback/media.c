@@ -137,6 +137,17 @@ media_parse_type (const char *str, mediatype_t *type) /*{{{*/
 	return true;
 }/*}}}*/
 const char *
+media_type (mediatype_t type) /*{{{*/
+{
+	switch (type) {
+	default:
+	case Mediatype_Unspec:
+		return NULL;
+	case Mediatype_EMail:
+		return "email";
+	}
+}/*}}}*/
+const char *
 media_typeid (mediatype_t type) /*{{{*/
 {
 	switch (type) {

@@ -323,9 +323,9 @@ should be subclassed and extended for the process to implement."""
 				ec = method (*args, **kwargs)
 				if ec is None:
 					ec = 0
-				elif type (ec) is bool:
+				elif isinstance (ec, bool):
 					ec = 0 if ec else 1
-				elif type (ec) is not int:
+				elif not isinstance (ec, int):
 					ec = 0
 			except Exception as e:
 				logger.exception (f'Failed to call {method}: {e}')
@@ -810,15 +810,15 @@ a process until the watchdog gives up."""
 		restart_delay = unit.parse (restart_delay, 60)
 		termination_delay = unit.parse (termination_delay, 10)
 		joblist = [jobs] if isinstance (jobs, self.Job) else jobs
-		hb = None
+		hb: Optional[Watchdog.Heart] = None
 		for job in joblist:
 			job.watchdog = self
 			if job.heartbeat is not None:
 				if hb is None:
-					hb = self.Heart (len (joblist))
+					hb = Watchdog.Heart (len (joblist))
 				job.hb = hb.slot ()
 			logger.info (f'Added job {job.name}')
-		done = []
+		done: List[Watchdog.Job] = []
 		self.setup_handler (True)
 		logger.info ('Startup with {count} jobs'.format (count = len (joblist)))
 		self.startup (joblist)
@@ -878,12 +878,11 @@ a process until the watchdog gives up."""
 					logger.warning (f'Waiting for {active} jobs is interrupted by {rc.error}')
 				continue
 			#
-			found = None
 			for job in joblist:
 				if job.pid == rc.pid:
 					found = job
 					break
-			if found is None:
+			else:
 				logger.info (f'Collected PID {rc.pid} without matching job')
 				continue
 			#
@@ -1134,7 +1133,7 @@ using the content of ``script''."""
 				self.__wait (active)
 		if active:
 			logger.info ('Watching waiting for {count} active child(ren)'.format (count = len (active)))
-			signr = None
+			signr: Optional[int] = None
 			while active:
 				for child in list (active.values ()):
 					if not self.term (child.pid, signr):

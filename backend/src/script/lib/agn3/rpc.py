@@ -358,8 +358,8 @@ client.some_remote_method ()
 		port = 8080
 		secure = False
 		path = ''
-		user = None
-		passwd = None
+		user: Optional[str] = None
+		passwd: Optional[str] = None
 		allow_none = False
 		use_datetime = False
 		if cfg is not None:

@@ -16,7 +16,7 @@ case "$1" in
 start)
 	active bav
 	shift
-	starter $HOME/bin/watchdog.sh -bo- -- $HOME/bin/bav -L DEBUG -l "$@"
+	starter $HOME/bin/watchdog.sh -bo- -- $HOME/bin/bav -L INFO -l "$@"
 	;;
 stop)
 	softterm "$HOME/scripts/watchdog.py -bo- -- $HOME/bin/bav" "$HOME/scripts/watchdog3.py -bo- -- $HOME/bin/bav"

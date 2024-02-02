@@ -67,9 +67,8 @@ class Pickdist (Runtime):
 		self.day = '%04d%02d%02d' % (now.year, now.month, now.day)
 		count = 0
 		for info in self.get_ready_to_run ():
-			if info.single or not self.queue_is_full ():
-				self.process (info)
-				count += 1
+			self.process (info)
+			count += 1
 		if count > 0:
 			self.scan_ready_to_run ()
 		
@@ -101,9 +100,8 @@ class Pickdist (Runtime):
 		for info in Stream (stamps.values ()).filter (lambda i: i.basename not in basenames):
 			logger.info ('Move dangeling stamp file %s to archive' % info.filename)
 			self.move (info.path, self.archive)
-		isfull = self.queue_is_full ()
 		ready = (Stream (data)
-			.filter (lambda i: i.basename in stamps and i.mailid in finals and (not isfull or i.single))
+			.filter (lambda i: i.basename in stamps and i.mailid in finals)
 			.sorted (key = lambda i: (not i.single, i.timestamp, i.blocknr))
 			.list ()
 		)
@@ -165,12 +163,6 @@ class Pickdist (Runtime):
 				if os.path.isfile (sync):
 					self.move (sync, target)
 
-	def queue_is_full (self) -> bool:
-		if self.mta.mta == 'sendmail':
-			count = sum (1 for _f in os.listdir (self.queue) if _f.startswith ('qf'))
-			return count >= self.queue_limit
-		return False
-	
 	def move (self, path: str, destination: str) -> None:
 		n = 0
 		filename = os.path.basename (path)

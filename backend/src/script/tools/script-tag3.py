@@ -86,6 +86,15 @@ class ScriptTag (CLI):
 				extension = extension[1:]
 			self.language = extension.lower ()
 		with DB () as db, db.request () as cursor:
+			change_date_column = db.qselect (
+				oracle = 'timestamp',
+				mysql = 'change_date'
+			)
+			layout = {_c.name for _c in db.layout ('tag_tbl', True)}
+			for column_name in 'change_date', 'timestamp':
+				if column_name in layout:
+					change_date_column = column_name
+					break
 			if not self.only_tags:
 				with open (self.filename) as fd:
 					code = self.cleanup_code (fd.read ())
@@ -193,12 +202,12 @@ class ScriptTag (CLI):
 					query = cursor.qselect (
 						oracle = (
 							'INSERT INTO tag_tbl '
-							'       (tag_id, tagname, selectvalue, type, company_id, description, timestamp) '
+							f'      (tag_id, tagname, selectvalue, type, company_id, description, {change_date_column}) '
 							'VALUES '
 							'       (tag_tbl_seq.nextval, :tname, :cdesc, :type, :company_id, :tdesc, CURRENT_TIMESTAMP)'
 						), mysql = (
 							'INSERT INTO tag_tbl '
-							'       (tagname, selectvalue, type, company_id, description, change_date) '
+							f'      (tagname, selectvalue, type, company_id, description, {change_date_column}) '
 							'VALUES '
 							'       (:tname, :cdesc, :type, :company_id, :tdesc, CURRENT_TIMESTAMP)'
 						)
@@ -234,11 +243,11 @@ class ScriptTag (CLI):
 					query = cursor.qselect (
 						oracle = (
 							'UPDATE tag_tbl '
-							f'SET selectvalue = :cdesc, timestamp = CURRENT_TIMESTAMP{extra} '
+							f'SET selectvalue = :cdesc, {change_date_column} = CURRENT_TIMESTAMP{extra} '
 							'WHERE tag_id = :tid'
 						), mysql = (
 							'UPDATE tag_tbl '
-							f'SET selectvalue = :cdesc, change_date = CURRENT_TIMESTAMP{extra} '
+							f'SET selectvalue = :cdesc, {change_date_column} = CURRENT_TIMESTAMP{extra} '
 							'WHERE tag_id = :tid'
 						)
 					)

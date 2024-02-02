@@ -10,14 +10,11 @@
 ####################################################################################################################################################################################################################################################################
 #
 from	__future__ import annotations
-import	os, errno, time, stat, gzip, bz2, re, logging
-import	csv, codecs, hashlib, shlex
+import	os, errno, time, stat, gzip, bz2, logging
+import	csv, hashlib, shlex, json
 from	collections import namedtuple
-from	dataclasses import dataclass
 from	functools import partial
-from	io import StringIO
-from	types import TracebackType
-from	typing import Any, Callable, Iterable, Literal, Optional, Union
+from	typing import Any, Callable, Iterable, Literal, Optional, Protocol, Union
 from	typing import Dict, IO, Iterator, List, Pattern, Set, TextIO, Tuple, Type
 from	typing import cast, overload
 from	.definitions import base
@@ -32,11 +29,8 @@ __all__ = [
 	'relink', 'which', 'mkpath', 'expand_path', 'normalize_path', 'create_path',
 	'ArchiveDirectory', 'Filepos', 'Filesystem', 'file_access',
 	'copen', 'cstreamopen', 'gopen', 'fingerprint', 'expand_command',
-	'CSVDialects', 'CSVDefault',
-	'CSVWriter', 'CSVDictWriter',
-	'CSVReader', 'CSVDictReader', 'CSVAutoDictReader',
-	'CSVNamedReader', 'Line', 'Field',
-	'CSVAuto'
+	'csv_dialect', 'csv_default', 'csv_reader', 'csv_named_reader', 'csv_writer',
+	'Line', 'Field'
 ]
 #
 logger = logging.getLogger (__name__)
@@ -92,10 +86,10 @@ def relink (source: str, target: str, pattern: Optional[List[Pattern[str]]] = No
 	)
 
 @overload
-def which (program: str, *args: str, default: None = ...) -> Optional[str]: ...
+def which (program: str, *args: str, default: None = ..., mode: int = ...) -> Optional[str]: ...
 @overload
-def which (program: str, *args: str, default: str) -> str: ...
-def which (program: str, *args: str, default: Optional[str] = None) -> Optional[str]:
+def which (program: str, *args: str, default: str, mode: int = ...) -> str: ...
+def which (program: str, *args: str, default: Optional[str] = None, mode: int = os.F_OK | os.X_OK) -> Optional[str]:
 	"""Finds the path to an executable
 
 ``args'' may contain more directories to search for if the programn
@@ -104,7 +98,7 @@ can be expected in a known directory which is not part of $PATH.
 	return cast (Optional[str], Stream (os.environ.get ('PATH', '').split (':') + list (args))
 		.distinct ()
 		.map (lambda p: os.path.join (p if p else os.path.curdir, program))
-		.filter (lambda p: os.access (p, os.X_OK))
+		.filter (lambda p: os.access (p, mode))
 		.first (no = default)
 	)
 
@@ -396,7 +390,7 @@ permissions) while trying to determinate the access to the file."""
 				seen[check] = False
 				cpath = check
 				try:
-					fpath = None
+					fpath: Optional[str] = None
 					count = 0
 					while fpath is None and count < 128 and cpath.startswith ('/'):
 						count += 1
@@ -418,36 +412,43 @@ def force_text (mode: _modes) -> _modes:
 	return mode
 def force_bz2 (mode: _modes) -> _bz2modes:
 	return cast (_bz2modes, force_text (mode))
-	
+
 @overload
-def copen (path: str, mode: _ReadText = ..., errors: Optional[str] = ...) -> IO[str]: ...
+def copen (path: str, mode: _ReadText = ..., encoding: Optional[str] = ..., errors: Optional[str] = ...) -> IO[str]: ...
 @overload
-def copen (path: str, mode: Union[_ReadBinary, _WriteBinary], errors: Optional[str] = ...) -> IO[bytes]: ...
+def copen (path: str, mode: Union[_ReadBinary, _WriteBinary], encoding: Optional[str] = ..., errors: Optional[str] = ...) -> IO[bytes]: ...
 @overload
-def copen (path: str, mode: Union[_ReadText, _WriteText], errors: Optional[str] = ...) -> IO[str]: ...
-def copen (path: str, mode: _modes = 'r', errors: Optional[str] = None) -> Union[IO[str], IO[bytes]]:
+def copen (path: str, mode: Union[_ReadText, _WriteText], encoding: Optional[str] = ..., errors: Optional[str] = ...) -> IO[str]: ...
+def copen (path: str, mode: _modes = 'r', encoding: Optional[str] = None, errors: Optional[str] = None) -> Union[IO[str], IO[bytes]]:
 	"""Opens a file according to its extension
 
 this opens a file dependig of the extension of the filename (and if a
 the required module is available). Fall back to standard open() if no
 match is found."""
+	istext = 'b' not in mode
 	if path.endswith ('.gz'):
-		return cast (IO[Any], gzip.open (path, force_text (mode), errors = errors))
+		if istext:
+			return cast (IO[str], gzip.open (path, force_text (mode), encoding = encoding, errors = errors))
+		return cast (IO[bytes], gzip.open (path, mode))
 	elif path.endswith ('.bz2'):
-		return bz2.open (path, force_bz2 (mode), errors = None)
-	return open (path, mode, errors = errors)
+		if istext:
+			return bz2.open (path, force_bz2 (mode), encoding = encoding, errors = errors)
+		return bz2.open (path, mode)
+	if istext:
+		return open (path, mode, encoding = encoding, errors = errors)
+	return open (path, mode)
 
 @overload
-def cstreamopen (path: str, mode: _ReadText = ..., errors: Optional[str] = ...) -> Stream[str]: ...
+def cstreamopen (path: str, mode: _ReadText = ..., encoding: Optional[str] = ..., errors: Optional[str] = ...) -> Stream[str]: ...
 @overload
-def cstreamopen (path: str, mode: _ReadBinary, errors: Optional[str] = ...) -> Stream[bytes]: ...
-def cstreamopen (path: str, mode: _ReadModes = 'r', errors: Optional[str] = None) -> Union[Stream[str], Stream[bytes]]:
+def cstreamopen (path: str, mode: _ReadBinary, encoding: Optional[str] = ..., errors: Optional[str] = ...) -> Stream[bytes]: ...
+def cstreamopen (path: str, mode: _ReadModes = 'r', encoding: Optional[str] = None, errors: Optional[str] = None) -> Union[Stream[str], Stream[bytes]]:
 	"""Openes a file for reading using copen and return a stream to process the file."""
 	def defer (o: Any) -> None:
 		o.close ()
-	return cast (Union[Stream[str], Stream[bytes]], Stream.defer (copen (path, mode, errors), defer))
+	return cast (Union[Stream[str], Stream[bytes]], Stream.defer (copen (path, mode, encoding = encoding, errors = errors), defer))
 
-def gopen (path: str, mode: _modes = 'r', errors: Optional[str] = None) -> IO[Any]:
+def gopen (path: str, mode: _modes = 'r', encoding: Optional[str] = None, errors: Optional[str] = None) -> IO[Any]:
 	"""Tries to open a compressed version of a file, if available
 
 looks up, if there is a compressed version of the file available and
@@ -455,8 +456,8 @@ opens this, otherwiese falls back to the standard open()."""
 	for (ext, method) in ('.gz', gzip.open), ('.bz2', bz2.open):
 		npath = f'{path}{ext}'
 		if os.path.isfile (npath):
-			return cast (Callable[..., IO[Any]], method) (npath, force_text (mode), errors = errors)
-	return open (path, mode, errors = errors)
+			return cast (Callable[..., IO[Any]], method) (npath, force_text (mode), encoding = encoding, errors = errors)
+	return open (path, mode, encoding = encoding, errors = errors)
 
 def fingerprint (path: str) -> str:
 	fp = hashlib.new ('md5')
@@ -500,539 +501,54 @@ agn3.exceptions.error: test: not found/parsable: 'test'
 				yield element
 	return list (processor ())
 
-class _CSVBase (csv.Dialect):
-	doublequote = True
-	escapechar = None
-	lineterminator = '\r\n'
-	quotechar = '"'
-	quoting: int = csv.QUOTE_NONE
-	skipinitialspace = True
-class _CSVSemicolon (_CSVBase):
-	delimiter = ';'
-class _CSVSemicolon1 (_CSVSemicolon):
-	quoting = csv.QUOTE_MINIMAL
-class _CSVSemicolon2 (_CSVSemicolon):
-	quoting = csv.QUOTE_ALL
-class _CSVComma (_CSVBase):
-	delimiter = ','
-class _CSVComma1 (_CSVComma):
-	quoting = csv.QUOTE_MINIMAL
-class _CSVComma2 (_CSVComma):
-	quoting = csv.QUOTE_ALL
-class _CSVTAB (_CSVBase):
-	delimiter = '\t'
-class _CSVTAB1 (_CSVTAB):
-	quoting = csv.QUOTE_MINIMAL
-class _CSVTAB2 (_CSVTAB):
-	quoting = csv.QUOTE_ALL
-class _CSVBar (_CSVBase):
-	delimiter = '|'
-class _CSVBar1 (_CSVBar):
-	quoting = csv.QUOTE_MINIMAL
-class _CSVBar2 (_CSVBar):
-	quoting = csv.QUOTE_ALL
-class _CSVSpace (_CSVBase):
-	delimiter = ' '
-class _CSVSpace1 (_CSVSpace):
-	quoting = csv.QUOTE_MINIMAL
-class _CSVSpace2 (_CSVSpace):
-	quoting = csv.QUOTE_ALL
-class _CSVAuto (_CSVBase):
-	pass
-_csvregister = [
-	('agn-default', _CSVSemicolon1),
-	('agn-semicolon-none', _CSVSemicolon),
-	('agn-semicolon-minimal', _CSVSemicolon1),
-	('agn-semicolon-full', _CSVSemicolon2),
-	('agn-comma-none', _CSVComma),
-	('agn-comma-minimal', _CSVComma1),
-	('agn-comma-full', _CSVComma2),
-	('agn-tab-none', _CSVTAB),
-	('agn-tab-minimal', _CSVTAB1),
-	('agn-tab-full', _CSVTAB2),
-	('agn-bar-none', _CSVBar),
-	('agn-bar-minimal', _CSVBar1),
-	('agn-bar-full', _CSVBar2),
-	('agn-space-none', _CSVSpace),
-	('agn-space-minimal', _CSVSpace1),
-	('agn-space-full', _CSVSpace2)
-]
-CSVDialects = []
-for (_csvname, _csvclass) in _csvregister:
-	csv.register_dialect (_csvname, _csvclass)
-	CSVDialects.append (_csvname)
-CSVDefault = CSVDialects[0]
-
-BOM = namedtuple ('BOM', ['name', 'bom'])
-class CSVIO:
-	"""Base class for all CSV wrapper
-
-in general you will not instance this class directly but some other
-class (CSVReader, CSVWriter) which inherits this class.
-
-The module ``agn'' defines some often used dialects which can be used
-in constructors for the various derivated classes. These all are
-starting with "agn-" following a (hopefully) descriptive name:
-	- agn-default
-	- agn-semicolon-none
-	- agn-semicolon-minimal
-	- agn-semicolon-full
-	- agn-comma-none
-	- agn-comma-minimal
-	- agn-comma-full
-	- agn-tab-none
-	- agn-tab-minimal
-	- agn-tab-full
-	- agn-bar-none
-	- agn-bar-minimal
-	- agn-bar-full
-	- agn-space-none
-	- agn-space-minimal
-	- agn-space-full
-
-There is als an ``CSVDefault'' which is "agn-semicolon-minimal" as
-a default (and has the alias name "agn-default"). The other names the
-middle part describes the separator for this dialct and tha last part
-the handling of text marks (where ``none'' means no marks at all,
-``minimal'' use textmark if required and ``full' use always
-textmarks). Textmark is the double quote sign. But you can always
-create new dialects either using one of these as a base or starting
-with an empty one as supported by the standard "csv" module."""
-	__slots__ = ['fd', 'foreign', 'bom', 'charset', 'empty']
-	boms = [BOM (_b, codecs.__dict__[_b]) for _b in dir (codecs) if _b.startswith ('BOM') and type (codecs.__dict__[_b]) is bytes]
-	maxBomLength = max ([len (_b.bom) for _b in boms])
-	bom2charset: Dict[bytes, str] = {
-		codecs.BOM_UTF16_BE:	'UTF-16-BE',
-		codecs.BOM_UTF16_LE:	'UTF-16-LE',
-		codecs.BOM_UTF32_BE:	'UTF-32-BE',
-		codecs.BOM_UTF32_LE:	'UTF-32-LE',
-		codecs.BOM_UTF8:	'UTF-8'
-	}
-	charset2bom: Dict[str, bytes] = dict ([(_i[1], _i[0]) for _i in bom2charset.items ()])
-	def __init__ (self) -> None:
-		self.fd: Optional[IO[Any]] = None
-		self.foreign = False
-		self.bom: Optional[BOM] = None
-		self.charset: Optional[str] = None
-		self.empty = False
-
-	def __del__ (self) -> None:
-		self.done ()
-
-	def open (self, stream: Union[str, IO[Any]], mode: _modes, bom_charset: Optional[str] = None) -> None:
-		"""opens a stream for reading or writiing
-
-``stream'' may either be a file like object or a string in the later
-case it is used as a filename.
-
-In reading mode it tries to find a BOM (byte order mark) and skip this
-for the reading of the content, but set the atribute ``charset'' to
-the corrosponding name of the found BOM.
-
-In writing mode and if ``bom_charset'' is not None and a BOM is found
-for this name, the BOM is written to the beginning of a file (in
-append mode it is only written, if the file had zero length on open)."""
-		if isinstance (stream, str):
-			self.fd = copen (stream, mode)
-			self.foreign = False
+_dialects: Dict[str, str] = {}
+_dialect_base = {
+	'delimiter': ';',
+	'quotechar': '"',
+	'escapechar': None,
+	'doublequote': True,
+	'skipinitialspace': True,
+	'lineterminator': '\r\n',
+	'quoting': csv.QUOTE_MINIMAL
+}
+def csv_dialect (name: str, base: Optional[str] = None, **kwargs: Any) -> str:
+	definitions = _dialect_base.copy () if base is None else json.loads (_dialects[base])
+	for (key, value) in kwargs.items ():
+		if key in definitions:
+			definitions[key] = value
 		else:
-			self.fd = stream
-			self.foreign = True
-		if not isinstance (stream, StringIO) and self.fd is not None:
-			self.bom = None
-			self.charset = None
-			if mode is None or 'r' in mode:
-				with Ignore (AttributeError):
-					self.fd.seek
-					pos = 0
-					start: bytes
-					if isinstance (stream, str):
-						with copen (stream, 'rb') as raw:
-							start = raw.read (self.maxBomLength)
-					else:
-						with open (self.fd.fileno (), 'rb', closefd = False) as raw:
-							pos = raw.tell ()
-							start = raw.read (self.maxBomLength)
-					for bom in self.boms:
-						if start.startswith (bom.bom):
-							pos += len (bom.bom)
-							self.bom = bom.name
-							self.charset = self.bom2charset.get (bom.bom)
-							self.fd.seek (pos)
-			elif 'w' in mode or 'a' in mode:
-				bom_seq: Optional[bytes] = None
-				if bom_charset is not None:
-					try:
-						self.charset = bom_charset.upper ()
-						bom_seq = self.charset2bom[self.charset]
-						for bom in self.boms:
-							if bom.bom == bom_seq:
-								self.bom = bom.name
-								break
-					except (AttributeError, KeyError) as e:
-						raise error (f'{bom_charset}: BOM not found: {e}')
-				if self.fd.tell () == 0:
-					if bom_seq is not None and len (bom_seq) > 0:
-						raw = open (self.fd.fileno (), 'wb', closefd = False)
-						raw.write (bom_seq)
-						raw.close ()
-						self.fd.seek (len (bom_seq))
-					self.empty = True
+			raise NameError (f'{key}: unexpected keyword for {name}')
+	idstr = json.dumps (definitions, indent = 0, separators = (',', ':'), sort_keys = True)
+	try:
+		if _dialects[name] != idstr:
+			raise NameError (f'{name}: already definied with different definition')
+	except KeyError:
+		csv.register_dialect (name, type (name, (csv.Dialect, ), definitions))
+		_dialects[name] = idstr
+	return name
+csv_default = csv_dialect ('default')
 
-	def done (self) -> None:
-		"""cleanup resources"""
-		if self.fd is not None:
-			if not self.foreign:
-				self.fd.close ()
-			else:
-				with Ignore (AttributeError):
-					if not self.fd.closed:
-						self.fd.flush ()
-			self.fd = None
+class csv_reader (Protocol):
+	def __iter__ (self) -> Iterator[List[str]]: ...
+	def __next__ (self) -> List[str]: ...
+class csv_writer (Protocol):
+	def writerow (self, row: Iterable[Any]) -> Any: ...
+	def writerows (self, rows: Iterable[Iterable[Any]]) -> None: ...
 
-	def close (self) -> None:
-		"""closes an open file descriptor"""
-		self.done ()
-
-class _CSVWriter (CSVIO):
-	__slots__ = ['writer', 'header']
-	def __init__ (self,
-		stream: Union[str, IO[Any]],
-		mode: Optional[_modes],
-		bom_charset: Optional[str],
-		header: Optional[List[str]]
-	) -> None:
-		super ().__init__ ()
-		self.writer: Any = None
-		self.open (stream, mode if mode is not None else 'w', bom_charset)
-		self.header = header
-
-	def __enter__ (self) -> _CSVWriter:
-		return self
-
-	def __exit__ (self, exc_type: Optional[Type[BaseException]], exc_value: Optional[BaseException], traceback: Optional[TracebackType]) -> Optional[bool]:
-		self.close ()
-		return None
-
-	def write (self, row: List[Any]) -> None:
-		if self.writer is not None:
-			if self.empty:
-				if self.header is not None:
-					self.writer.writerow (self.header)
-				self.empty = False
-			self.writer.writerow (row)
-
-class CSVWriter (_CSVWriter):
-	"""Wrapper to write a CSV file"""
-	__slots__: List[str] = []
-	def __init__ (self,
-		stream: Union[str, IO[Any]],
-		dialect: str,
-		mode: Optional[_modes] = None,
-		bom_charset: Optional[str] = None,
-		header: Optional[List[str]] = None
-	) -> None:
-		"""for meaning of ``stream'' and ``bom_charset''see
-CSVIO.open (), for availble ``dialect'' values see CSVIO.__doc__"""
-		super ().__init__ (stream, mode, bom_charset, header)
-		self.writer = csv.writer (cast (IO[Any], self.fd), dialect = dialect)
-
-class CSVDictWriter (_CSVWriter):
-	"""Wrapper to write a CSV file from a dict"""
-	__slots__: List[str] = []
-	def __init__ (self,
-		stream: Union[str, IO[Any]],
-		field_list: List[str],
-		dialect: str,
-		mode: Optional[_modes] = None,
-		bom_charset: Optional[str] = None,
-		header: Optional[List[str]] = None,
-		relaxed: bool = False
-	) -> None:
-		"""for meaning of ``stream'' and ``bom_charset''see
-CSVIO.open (), for availble ``dialect'' values see CSVIO.__doc__,
-``field_list'' is an array for the keys of the dictonary and if
-``relaxed'' is True, errors are ignored otherwise raised (as
-implemented by the csv.DictWriter module)"""
-		super ().__init__ (stream, mode, bom_charset, header)
-		if self.fd is not None:
-			self.writer = csv.DictWriter (self.fd, field_list, dialect = dialect, extrasaction = 'ignore' if relaxed else 'raise')
+def csv_named_reader (reader: csv_reader, *fields: Field, header_from_fields: bool = False) -> Iterator[Line]:
+	if header_from_fields:
+		header = [_f.name for _f in fields]
+	else:
+		header = next (reader)
+	if header is not None:
+		typ = cast (Type[Line], namedtuple ('record', header))
+		if fields:
+			converter: List[Callable[[str], Any]] = [lambda a: a] * len (header)
+			for field in fields:
+				if (index := header.index (field.name)) != -1 and field.converter is not None:
+					converter[index] = field.converter
+			for row in reader:
+				yield typ (*tuple (_c (_v) for (_c, _v) in zip (converter, row)))
 		else:
-			raise error (f'failed to open {stream}')
-
-class _CSVReader (CSVIO):
-	__slots__ = ['reader']
-	def __init__ (self, stream: Union[str, IO[Any]], *, mode: _ReadModes) -> None:
-		super ().__init__ ()
-		self.reader: Any = None
-		self.open (stream, mode)
-
-	def __iter__ (self) -> Iterator[Tuple[Any, ...]]:
-		return iter (self.reader)
-
-	def __enter__ (self) -> _CSVReader:
-		return self
-
-	def __exit__ (self, exc_type: Optional[Type[BaseException]], exc_value: Optional[BaseException], traceback: Optional[TracebackType]) -> Optional[bool]:
-		self.close ()
-		return None
-
-	def read (self) -> Any:
-		return next (self.reader, None)
-	
-	def stream (self) -> Stream[List[str]]:
-		return Stream.defer (self.reader, lambda o: self.close ())
-
-class CSVReader (_CSVReader):
-	"""Wrapper to read a CSV file"""
-	__slots__: List[str] = []
-	def __init__ (self, stream: Union[str, IO[Any]], *, dialect: str, mode: _ReadModes = 'r') -> None:
-		"""for meaning of ``stream'' and ``bom_charset''see
-CSVIO.open (), for availble ``dialect'' values see CSVIO.__doc__"""
-		super ().__init__ (stream, mode = mode)
-		self.reader = csv.reader (cast (IO[Any], self.fd), dialect = dialect)
-
-class CSVDictReader (_CSVReader):
-	"""Wrapper to read a CSV file as a dict"""
-	__slots__: List[str] = []
-	def __init__ (self,
-		stream: Union[str, IO[Any]],
-		field_list: List[str],
-		dialect: str,
-		*,
-		mode: _ReadModes = 'r',
-		rest_key: Optional[str] = None,
-		rest_value: Any = None
-	) -> None:
-		"""for meaning of ``stream'' and ``bom_charset''see
-CSVIO.open (), for availble ``dialect'' values see CSVIO.__doc__,
-``field_list'', ``rest_key'' and ``rest_value'' are passed to
-csv.DictReader to fill the dictionary."""
-		super ().__init__ (stream, mode = mode)
-		self.reader = csv.DictReader (cast (IO[Any], self.fd), field_list, dialect = dialect, restkey = rest_key, restval = rest_value)
-
-class CSVAutoDictReader (_CSVReader):
-	"""Wrapper to a read a CSV file as dict, determinating the field list form the first header line of the CSV"""
-	__slots__: List[str] = []
-	def __init__ (self, stream: Union[str, IO[Any]], dialect: str, *, mode: _ReadModes = 'r') -> None:
-		"""for meaning of ``stream'' and ``bom_charset''see
-CSVIO.open (), for availble ``dialect'' values see CSVIO.__doc__"""
-		super ().__init__ (stream, mode = mode)
-		header = next (csv.reader (cast (IO[Any], self.fd), dialect = dialect))
-		self.reader = csv.DictReader (cast (IO[Any], self.fd), header, dialect = dialect)
-
-class CSVNamedReader:
-	__slots__ = ['csv', 'maker']
-	def __init__ (self,
-		stream: Union[str, IO[Any]],
-		dialect: str,
-		*fields: Field,
-		mode: _ReadModes = 'r'
-	) -> None:
-		self.csv = CSVReader (stream, dialect = dialect, mode = mode)
-		header = next (self.csv.reader)
-		if header is not None:
-			typ = cast (Type[Line], namedtuple ('record', header))
-			#
-			def passthru (s: str) -> str:
-				return s
-			def convert_row (row: List[str]) -> Line:
-				return typ (*tuple (_c (_v) for (_c, _v) in zip (converter, row)))
-			def passthru_row (row: List[str]) -> Line:
-				return typ (*row)
-			#
-			if fields:
-				converter: List[Callable[[str], Any]] = [passthru] * len (header)
-				for field in fields:
-					index = header.index (field.name)
-					if index != -1:
-						converter[index] = field.converter if field.converter is not None else lambda a: a
-				self.maker = convert_row
-			else:
-				self.maker = passthru_row
-		
-	def __iter__ (self) -> Iterator[Line]:
-		return (self.maker (_r) for _r in self.csv.reader)
-	
-	def __enter__ (self) -> CSVNamedReader:
-		return self
-
-	def __exit__ (self, exc_type: Optional[Type[BaseException]], exc_value: Optional[BaseException], traceback: Optional[TracebackType]) -> Optional[bool]:
-		self.csv.close ()
-		return None
-
-	def read (self) -> Any:
-		r = self.csv.reader.read ()
-		return self.maker (r) if r is not None else None
-
-	def stream (self) -> Stream[Line]:
-		return Stream.defer (self, lambda o: self.csv.close ())
-
-class CSVAuto:
-	"""CSV reading class which tries to guess the dialect of the input file"""
-	__slots__ = ['fname', 'dialect', 'linecount', 'header', 'header_line']
-	validHeader = re.compile ('[0-9a-z_][0-9a-z_-]*', re.IGNORECASE)
-	@dataclass
-	class Guess:
-		delimiter: Optional[str] = None
-		doublequote: bool = False
-		escapechar: Optional[str] = None
-		lineterminator: str = '\n'
-		quotechar: Optional[str] = None
-		quoting: int = csv.QUOTE_NONE
-		skipinitialspace: bool = False
-
-	def __init__ (self, fname: str, dialect: str = 'agn-auto', linecount: int = 10) -> None:
-		self.fname = fname
-		self.dialect = dialect
-		self.linecount = linecount
-		self.header = None
-		self.header_line: Optional[bool] = None
-
-	def __enter__ (self) -> CSVAuto:
-		self.setup ()
-		return self
-
-	def __exit__ (self, exc_type: Optional[Type[BaseException]], exc_value: Optional[BaseException], traceback: Optional[TracebackType]) -> Optional[bool]:
-		self.done ()
-		return None
-
-	def __analyse (self) -> Any:
-		err = None
-		fd = open (self.fname, 'r')
-		head = fd.readline ()
-		datas = []
-		if head == '':
-			err = f'Empty input file "{self.fname}"'
-		else:
-			n = 0
-			while n < self.linecount:
-				data = fd.readline ()
-				if data == '':
-					break
-				datas.append (data)
-		fd.close ()
-		if err:
-			raise error (err)
-		temp = self.Guess ()
-		if len (head) > 1 and head[-2] == '\r':
-			temp.lineterminator = '\r\n'
-			head = head[:-2]
-		else:
-			head = head[:-1]
-		if head[0] == '"' or head[0] == '\'':
-			temp.quotechar = head[0]
-			temp.quoting = csv.QUOTE_ALL
-			n = 0
-			while True:
-				n = head.find (temp.quotechar, n + 1)
-				if n != -1 and n + 1 < len (head):
-					n += 1
-					if head[n] == temp.quotechar:
-						temp.doublequote = True
-					else:
-						temp.delimiter = head[n]
-						if n + 1 < len (head) and (head[n + 1] == ' ' or head[n + 1] == '\t'):
-							temp.skipinitialspace = True
-						break
-				else:
-					break
-		if temp.delimiter is None:
-			Counter = namedtuple ('Counter', ['char', 'count'])
-			use = Counter (None, 0)
-			most = Counter (None, 0)
-			for d in ',;|\t!@#$%^&*?':
-				cnt1 = head.count (d)
-				cnt2 = cnt1
-				for data in datas:
-					c = data.count (d)
-					if c < cnt2:
-						cnt2 = c
-				if cnt1 > use.count and cnt1 == cnt2:
-					use = Counter (d, cnt1)
-				if cnt1 > most.count:
-					most = Counter (d, cnt1)
-			if use.char is None:
-				if most.char is None:
-					raise error ('No delimiter found')
-				use = most
-			temp.delimiter = use.char
-		if not temp.doublequote:
-			for data in datas:
-				if '""' in data or '\'\'' in data:
-					temp.doublequote = True
-					break
-		for data in datas:
-			if '\\' in data:
-				temp.escapechar = '\\'
-				break
-		return temp
-
-	def setup (self) -> None:
-		"""Starts the auto detection"""
-		a = self.__analyse ()
-		_CSVAuto.delimiter = a.delimiter
-		_CSVAuto.doublequote = a.doublequote
-		_CSVAuto.escapechar = a.escapechar
-		_CSVAuto.lineterminator = a.lineterminator
-		_CSVAuto.quotechar = a.quotechar
-		_CSVAuto.quoting = a.quoting
-		_CSVAuto.skipinitialspace = a.skipinitialspace
-		csv.register_dialect (self.dialect, _CSVAuto)
-		rd = CSVReader (self.fname, dialect = self.dialect)
-		head = rd.read ()
-		rd.close ()
-		self.header_line = True
-		for h in head:
-			if self.validHeader.match (h) is None:
-				self.header_line = False
-				break
-		if self.header_line:
-			self.header = head
-		else:
-			self.header = None
-
-	def done (self) -> None:
-		"""Ends/cleanup the process"""
-		csv.unregister_dialect (self.dialect)
-		self.header = None
-		self.header_line = None
-
-	def reader (self) -> CSVReader:
-		"""Provides a reader a file in the guessed dialect"""
-		if self.header_line is None:
-			self.setup ()
-			temp = True
-		else:
-			temp = False
-		try:
-			rd = CSVReader (self.fname, dialect = self.dialect)
-			if self.header_line:
-				rd.read ()
-		finally:
-			if temp:
-				self.done ()
-		return rd
-
-	def writer (self, fname: Optional[str] = None, force: bool = False) -> CSVWriter:
-		"""Provides a writer based on the dialect of the original input file
-
-``fname'' is the file to be written to (if None, the input file name
-is used) and ``force'' must be set to True to overwrite an existing
-file."""
-		if fname is None or fname == self.fname:
-			if fname is None:
-				fname = self.fname
-			if not force:
-				raise error ('Will not overwrite source file w/o being forced to')
-		if self.header_line is None:
-			self.setup ()
-			temp = True
-		else:
-			temp = False
-		try:
-			wr = CSVWriter (fname, dialect = self.dialect, header = self.header if self.header_line else None)
-		finally:
-			if temp:
-				self.done ()
-		return wr
+			for row in reader:
+				yield typ (*row)

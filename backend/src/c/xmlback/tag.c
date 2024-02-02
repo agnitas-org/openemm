@@ -114,7 +114,7 @@ procmfrom_proc (void *pd, tag_t *t, blockmail_t *blockmail, receiver_t *rec) /*{
 		xmlBufferPtr	use;
 		
 		if (! pmf -> mfrom) {
-			if (blockmail -> dkim && blockmail -> mfrom) {
+			if (blockmail -> signdkim && blockmail -> mfrom) {
 				if (pmf -> mfrom = xmlBufferCreateSize (strlen (blockmail -> mfrom))) {
 					xmlBufferCCat (pmf -> mfrom, blockmail -> mfrom);
 				}
@@ -176,9 +176,9 @@ tag_free (tag_t *t) /*{{{*/
 		if (t -> parm)
 			var_free_all (t -> parm);
 		if (t -> filter)
-			ev_lua_free (t -> filter);
+			ev_free (t -> filter);
 		if (t -> on_error)
-			ev_lua_free (t -> on_error);
+			ev_free (t -> on_error);
 		if (t -> proc)
 			proc_free ((proc_t *) t -> proc);
 		free (t);
@@ -305,14 +305,14 @@ setup_filter (tag_t *t, blockmail_t *blockmail, const char *filter, const char *
 	if (filter) {
 		char	*expression;
 		
-		if (expression = ev_lua_convert (blockmail, filter)) {
-			t -> filter = ev_lua_alloc (blockmail, expression);
+		if (expression = ev_convert (blockmail, filter)) {
+			t -> filter = ev_filter_alloc (blockmail, expression);
 			if (! t -> filter)
 				log_out (blockmail -> lg, LV_ERROR, "Failed to interpret filter \"%s\" (%s)", filter, expression);
 			free (expression);
 			if (t -> filter && on_error) {
-				if (expression = ev_lua_convert (blockmail, on_error)) {
-					t -> on_error = ev_lua_alloc (blockmail, expression);
+				if (expression = ev_convert (blockmail, on_error)) {
+					t -> on_error = ev_filter_alloc (blockmail, expression);
 					if (! t -> on_error)
 						log_out (blockmail -> lg, LV_ERROR, "Failed to interpret on_error \"%s\" (%s)", on_error, expression);
 					free (expression);
@@ -445,8 +445,8 @@ tag_parse (tag_t *t, blockmail_t *blockmail) /*{{{*/
 				}
 			}
 		}
-		t -> filter = ev_lua_free (t -> filter);
-		t -> on_error = ev_lua_free (t -> on_error);
+		t -> filter = ev_free (t -> filter);
+		t -> on_error = ev_free (t -> on_error);
 		if (filter) {
 			setup_filter (t, blockmail, filter -> val, on_error ? on_error -> val : NULL);
 		}
@@ -544,7 +544,7 @@ execute_filter (void *pp) /*{{{*/
 {
 	priv_t	*priv = (priv_t *) pp;
 	
-	priv -> result = ev_lua_vevaluate (priv -> filter, priv -> rec, priv -> par);
+	priv -> result = ev_filter_vevaluate (priv -> filter, priv -> rec, priv -> par);
 }/*}}}*/
 bool_t
 tag_vfilter (tag_t *t, receiver_t *rec, int timeout, va_list par) /*{{{*/
@@ -562,14 +562,14 @@ tag_vfilter (tag_t *t, receiver_t *rec, int timeout, va_list par) /*{{{*/
 			if ((priv.result == -1) && t -> on_error) {
 				priv.filter = t -> on_error;
 				if (! timeout_exec (timeout, execute_filter, & priv)) {
-					t -> on_error = ev_lua_free (t -> on_error);
+					t -> on_error = ev_free (t -> on_error);
 					priv.result = -1;
 				}
 			}
 			if (priv.result == 1)
 				rc = true;
 		} else {
-			t -> filter = ev_lua_free (t -> filter);
+			t -> filter = ev_free (t -> filter);
 		}
 	} else
 		rc = true;

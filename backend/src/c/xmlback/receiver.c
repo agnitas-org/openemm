@@ -72,6 +72,7 @@ receiver_alloc (blockmail_t *blockmail, int data_blocks) /*{{{*/
 		r -> customer_id = -1;
 		r -> bcc = NULL;
 		r -> user_type = '\0';
+		r -> user_status = 0;
 		r -> tracking_veto = false;
 		r -> disable_link_extension = false;
 		r -> media_target = NULL;
@@ -79,9 +80,11 @@ receiver_alloc (blockmail_t *blockmail, int data_blocks) /*{{{*/
 		r -> mid_maker = NULL;
 		r -> mailtype = Mailtype_Text;
 		r -> mediatypes = NULL;
+		r -> user_statuses = NULL;
 		r -> media = NULL;
 		r -> mid[0] = '0';
 		r -> mid[1] = '\0';
+		r -> header = header_alloc ();
 		r -> rvdata = dataset_alloc (data_blocks, blockmail -> target_groups_count);
 		r -> encrypt = encrypt_alloc (blockmail);
 		r -> cache = NULL;
@@ -91,7 +94,9 @@ receiver_alloc (blockmail_t *blockmail, int data_blocks) /*{{{*/
 		r -> chunks = 1;
 		r -> size = 0;
 		r -> dkim = false;
-		if ((! r -> message_id) || (! r -> rvdata) ||
+		if ((! r -> message_id) ||
+		    (! r -> header) ||
+		    (! r -> rvdata) ||
 		    (! r -> encrypt)) {
 			r = receiver_free (r);
 		} else if (data_blocks > 0) {
@@ -118,6 +123,10 @@ receiver_free (receiver_t *r) /*{{{*/
 			mid_maker_free (r -> mid_maker);
 		if (r -> mediatypes)
 			free (r -> mediatypes);
+		if (r -> user_statuses)
+			free (r -> user_statuses);
+		if (r -> header)
+			header_free (r -> header);
 		if (r -> rvdata)
 			dataset_free (r -> rvdata);
 		if (r -> encrypt)
@@ -139,6 +148,8 @@ receiver_clear (receiver_t *r) /*{{{*/
 		free (r -> bcc);
 		r -> bcc = NULL;
 	}
+	r -> user_type = '\0';
+	r -> user_status = 0;
 	r -> tracking_veto = false;
 	r -> disable_link_extension = false;
 	r -> media_target = media_target_free_all (r -> media_target);
@@ -149,9 +160,14 @@ receiver_clear (receiver_t *r) /*{{{*/
 		free (r -> mediatypes);
 		r -> mediatypes = NULL;
 	}
+	if (r -> user_statuses) {
+		free (r -> user_statuses);
+		r -> user_statuses = NULL;
+	}
 	r -> media = NULL;
 	r -> mid[0] = '0';
 	r -> mid[1] = '\0';
+	header_clear (r -> header);
 	dataset_clear (r -> rvdata);
 	r -> cache = dcache_free_all (r -> cache);
 	r -> base_block = NULL;
@@ -252,7 +268,6 @@ receiver_make_message_id (receiver_t *rec, blockmail_t *blockmail) /*{{{*/
 		xmlBufferCCat (rec -> message_id, blockmail -> domain ? blockmail -> domain : blockmail -> fqdn);
 	}
 }/*}}}*/
-
 media_target_t *
 media_target_alloc (const char *media, const xmlChar *value) /*{{{*/
 {

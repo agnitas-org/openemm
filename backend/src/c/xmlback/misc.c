@@ -31,20 +31,6 @@ xmlEqual (xmlBufferPtr p1, xmlBufferPtr p2) /*{{{*/
 	return false;
 }/*}}}*/
 I int
-xmlCharLength (xmlChar ch) /*{{{*/
-{
-	extern int	xmlLengthtab[256];
-	
-	return xmlLengthtab[ch];
-}/*}}}*/
-I int
-xmlStrictCharLength (xmlChar ch) /*{{{*/
-{
-	extern int	xmlStrictLengthtab[256];
-	
-	return xmlStrictLengthtab[ch];
-}/*}}}*/
-I int
 xmlValidPosition (const xmlChar *str, int length) /*{{{*/
 {
 # define	VALID(ccc)	(((ccc) & 0xc0) == 0x80)
@@ -74,7 +60,7 @@ xmlValid (const xmlChar *str, int length) /*{{{*/
 			length -= n;
 		} else
 			break;
-	return length == 0 ? true : false;
+	return length == 0;
 }/*}}}*/
 I char *
 xml2string (xmlBufferPtr p) /*{{{*/
@@ -104,16 +90,6 @@ I const char *
 byte2char (const byte_t *b) /*{{{*/
 {
 	return (const char *) b;
-}/*}}}*/
-I int
-xmlstrcmp (const xmlChar *s1, const char *s2) /*{{{*/
-{
-	return strcmp (xml2char (s1), s2);
-}/*}}}*/
-I int
-xmlstrncmp (const xmlChar *s1, const char *s2, size_t n) /*{{{*/
-{
-	return strncmp (xml2char (s1), s2, n);
 }/*}}}*/
 I long
 xml2long (xmlBufferPtr p) /*{{{*/

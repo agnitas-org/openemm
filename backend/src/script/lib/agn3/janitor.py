@@ -14,7 +14,6 @@ import	os, logging, time, datetime, stat
 from	typing import Callable, Optional
 from	typing import List, NamedTuple, Pattern, Set, Tuple
 from	.definitions import base
-from	.io import which
 from	.pattern import isnum
 from	.tools import abstract, sizefmt, call
 #
@@ -97,12 +96,11 @@ be used as the directory to resolve relative pathnames"""
 		if not paths:
 			return True
 		#
-		command = None
 		if method in ('bzip', 'bzip2', 'bz'):
 			command = ['bzip2', '-9']
 		elif method == 'xz':
 			command = ['xz', '-9']
-		if command is None or which (command[0]) is None:
+		else:
 			command = ['gzip', '-9']
 		return self.call (command + paths)
 	
@@ -145,7 +143,7 @@ be used as the directory to resolve relative pathnames"""
 	def rotate (self, path: str, amount: int = 4, compress: bool = True) -> None:
 		"""Rotate ``path'' up to ``amount'' (default 4) instances, compress the rotated file, if ``rotate'' is True"""
 		source = amount
-		target = None
+		target: Optional[int] = None
 		while source >= 0:
 			if source > 0:
 				fname_source = f'{path}.{source}'
@@ -165,7 +163,7 @@ be used as the directory to resolve relative pathnames"""
 					self.move (fname_source, fname_target)
 					if source == 0 and compress:
 						logger.info (f'Compress {fname_target}')
-						self.compress (fname_target)
+						self.compress ([fname_target])
 			target = source
 			source -= 1
 

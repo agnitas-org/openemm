@@ -23,5 +23,5 @@
 bool_t
 atob (const char *str) /*{{{*/
 {
-	return (*str && strchr ("ty1+", tolower (*str))) ? true : false;
+	return *str && strchr ("ty1+", tolower (*str));
 }/*}}}*/

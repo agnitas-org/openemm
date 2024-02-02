@@ -23,12 +23,13 @@ __all__ = ['Lock']
 logger = logging.getLogger (__name__)
 #
 class Lock:
-	__slots__ = ['id', 'lazy', 'lockpath', 'is_locked']
+	__slots__ = ['id', 'lazy', 'lockpath', 'lockpid', 'is_locked']
 	lock_directory = os.environ.get ('LOCK_HOME', os.path.join (base, 'var', 'lock'))
 	def __init__ (self, id: Optional[str] = None, lazy: bool = False) -> None:
 		self.id = id if id is not None else program
 		self.lazy = lazy
 		self.lockpath = os.path.join (self.lock_directory, f'{self.id}.lock')
+		self.lockpid: Optional[int] = None
 		self.is_locked = False
 	
 	def __enter__ (self) -> Optional[Lock]:
@@ -48,13 +49,16 @@ returns False. If id is None then the logname for the current running
 program is used."""
 		if self.is_locked:
 			return True
-		content = '{pid:10d}\n'.format (pid = os.getpid ())
+		lockpid = os.getpid ()
+		content = f'{lockpid:10d}\n'
 		for state in 0, 1:
 			try:
 				fd = os.open (self.lockpath, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o444)
 				os.write (fd, content.encode ('UTF-8'))
 				os.close (fd)
+				self.lockpid = lockpid
 				self.is_locked = True
+				logger.info (f'{self.id}: lock created')
 				break
 			except OSError as e:
 				if e.errno == errno.EEXIST:
@@ -68,8 +72,11 @@ program is used."""
 								os.kill (pid, 0)
 							except OSError as e:
 								if e.errno == errno.ESRCH:
-									with Ignore (OSError):
+									try:
 										os.unlink (self.lockpath)
+										logger.info (f'{self.id}: stale lockfile removed')
+									except OSError as e:
+										logger.warning (f'{self.id}: failed to remove stale lockfile {self.lockpath}: {e}')
 								else:
 									break
 					except (IndexError, ValueError):
@@ -77,6 +84,7 @@ program is used."""
 							st = os.stat (self.lockpath)
 							if st.st_size == 0:
 								os.unlink (self.lockpath)
+								logger.info (f'{self.id}: removed corrupted (empty) lockfile')
 		if not self.is_locked and not self.lazy:
 			raise LockError (f'{self.lockpath}: lock exists')
 		return self.is_locked
@@ -84,6 +92,11 @@ program is used."""
 	def unlock (self) -> None:
 		"""Releases an acquired lock"""
 		if self.is_locked:
-			with Ignore (OSError):
-				os.unlink (self.lockpath)
+			if self.lockpid is not None and self.lockpid == os.getpid ():
+				try:
+					os.unlink (self.lockpath)
+					logger.info (f'{self.id}: removed lockfile')
+				except OSError as e:
+					if e.errno != errno.ENOENT:
+						logger.warning (f'{self.id}: failed to remove lockfile {self.lockpath}: {e}')
 			self.is_locked = False

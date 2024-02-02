@@ -187,7 +187,7 @@ True
 
 Setup the Systemconfig object and read the content of the system confg
 file, if it is available. """
-		self.path = None
+		self.path: Optional[str] = None
 		self.last_modified = 0.0
 		self.content = os.environ.get ('SYSTEM_CONFIG')
 		self.cfg: Dict[str, str] = {}
@@ -216,7 +216,7 @@ file, if it is available. """
 		if self.content is not None:
 			try:
 				self.cfg = json.loads (self.content)
-				if type (self.cfg) != dict:
+				if not isinstance (self.cfg, dict):
 					raise ValueError ('expect json object, not {typ}'.format (typ = type (self.cfg)))
 			except ValueError:
 				cont: Optional[str] = None

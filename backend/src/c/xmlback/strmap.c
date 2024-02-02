@@ -64,7 +64,7 @@ loc_match (loc_t *compare, loc_t *value, regex_t *rcompare) /*{{{*/
 		}
 		return false;
 	} else
-		return value -> data != NULL ? true : false;
+		return value -> data != NULL;
 }/*}}}*/
 static loc_t
 evaluate (map_t **maps, int mcount, const xmlChar *name, int len) /*{{{*/

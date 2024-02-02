@@ -406,7 +406,7 @@ purl_parse_param (purl_t *p, const byte_t *src) /*{{{*/
 				ptr = NULL;
 		}
 	}
-	return ptr || (! src) ? true : false;
+	return ptr || (! src);
 }/*}}}*/
 bool_t
 purl_parsen (purl_t *p, const byte_t *url, int ulen) /*{{{*/

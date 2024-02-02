@@ -322,12 +322,15 @@ validate (const char *fname, codeblock_t *cb, bool_t quiet, bool_t unittest, int
 			blockmail -> owner_id = 1;
 			blockmail -> company_id = 2;
 			blockmail -> company_token = strdup ("abc123");
+			blockmail -> allow_unnormalized_emails = false;
 			blockmail -> mailinglist_id = 3;
 			blockmail -> mailinglist_name = xmlBufferCreate ();
 			xmlBufferCCat (blockmail -> mailinglist_name, "Mailinglist");
 			blockmail -> mailing_id = 4;
 			blockmail -> mailing_name = xmlBufferCreate ();
 			xmlBufferCCat (blockmail -> mailing_name, "Mailing");
+			blockmail -> mailing_description = xmlBufferCreate ();
+			xmlBufferCCat (blockmail -> mailing_description, "Mailing description");
 			blockmail -> maildrop_status_id = 5;
 			blockmail -> status_field = 'W';
 			blockmail -> senddate = tf_parse_date ("2010-03-20 12:34:56");
@@ -337,6 +340,19 @@ validate (const char *fname, codeblock_t *cb, bool_t quiet, bool_t unittest, int
 			blockmail -> total_subscribers = 7;
 			blockmail -> domain = strdup ("exsample.com");
 			blockmail -> blocknr = 8;
+			{
+				media_t	*media;
+
+				DO_EXPAND (media, blockmail, media);
+				media -> type = Mediatype_EMail;
+				media -> prio = 1;
+				media -> stat = MS_Active;
+				media -> empty = false;
+				media -> parm = parm_alloc ();
+				media -> parm -> name = strdup ("preHeader");
+				media -> parm -> value = xmlBufferCreate ();
+				xmlBufferCCat (media -> parm -> value, "this is the pre header");
+			}
 			string_map_addsi (blockmail -> smap, "licence_id", blockmail -> licence_id);
 			string_map_addsi (blockmail -> smap, "owner_id", blockmail -> owner_id);
 			string_map_addsi (blockmail -> smap, "company_id", blockmail -> company_id);
@@ -346,6 +362,7 @@ validate (const char *fname, codeblock_t *cb, bool_t quiet, bool_t unittest, int
 			string_map_addsb (blockmail -> smap, "mailinglist_name", blockmail -> mailinglist_name);
 			string_map_addsi (blockmail -> smap, "mailing_id", blockmail -> mailing_id);
 			string_map_addsb (blockmail -> smap, "mailing_name", blockmail -> mailing_name);
+			string_map_addsb (blockmail -> smap, "mailing_description", blockmail -> mailing_description);
 			string_map_addsi (blockmail -> smap, "total_subscribers", blockmail -> total_subscribers);
 			for (n = 0, prv = NULL; n < sizeof (info) / sizeof (info[0]); ++n) {
 				cur = var_alloc (info[n].var, info[n].val);
@@ -370,6 +387,14 @@ validate (const char *fname, codeblock_t *cb, bool_t quiet, bool_t unittest, int
 						
 					r -> customer_id = 100;
 					r -> user_type = 'W';
+					r -> user_status = 1;
+					{
+						xmlBufferPtr	buf = xmlBufferCreate ();
+						
+						xmlBufferCCat (buf, "HFrom: Info <info@example.com>\nHSubject: Test!\n");
+						header_set_content (r -> header, buf);
+						xmlBufferFree (buf);
+					}
 					if (il = iflua_alloc (blockmail, false)) {
 						il -> rec = r;
 						alua_setup_function (il -> lua, NULL, "fileread", l_fileread, il);

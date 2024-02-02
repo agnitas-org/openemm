@@ -13,31 +13,21 @@ CFLAGS	= -I../lib
 LDFLAGS	= -L../lib
 LIBS	= -lagn
 
-SRCS1	= qctrl.c qlib.c qmove.c qstat.c qflush.c
+SRCS1	= cquery.c
 OBJS1	= $(SRCS1:%.c=%.o)
-SRCS2	= smctrl.c
+SRCS2	= pathstrip.c
 OBJS2	= $(SRCS2:%.c=%.o)
-SRCS3	= cquery.c
-OBJS3	= $(SRCS3:%.c=%.o)
-SRCS4	= pathstrip.c
-OBJS4	= $(SRCS4:%.c=%.o)
 
-all:	qctrl smctrl config-query pathstrip
+all:	config-query pathstrip
 
-qctrl:	$(OBJS1) ../lib/libagn.a
+config-query:	$(OBJS1) ../lib/libagn.a
 	$(CC) $(LDFLAGS) -o $@ $(OBJS1) $(LIBS)
 
-smctrl:	$(OBJS2) ../lib/libagn.a
-	$(CC) $(LDFLAGS) -o $@ $(OBJS2) $(LIBS) -lutil
-
-config-query:	$(OBJS3) ../lib/libagn.a
-	$(CC) $(LDFLAGS) -o $@ $(OBJS3) $(LIBS)
-
-pathstrip:	$(OBJS4)
-	$(CC) $(LDFLAGS) -o $@ $(OBJS4)
+pathstrip:	$(OBJS2)
+	$(CC) $(LDFLAGS) -o $@ $(OBJS2)
 
 ../lib/libagn.a:
 	@$(MAKE) -C ../lib `basename $@`
 
 clean:
-	rm -f $(OBJS1) $(OBJS2) $(OBJS3) $(OBJS4) qctrl smctrl config-query pathstrip
+	rm -f $(OBJS1) $(OBJS2) config-query pathstrip

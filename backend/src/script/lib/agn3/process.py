@@ -11,9 +11,8 @@
 #
 from	__future__ import annotations
 import	logging
-import	re, subprocess
-import	multiprocessing
-from	queue import Queue
+import	re, subprocess, multiprocessing
+from	multiprocessing.queues import Queue
 from	types import TracebackType
 from	typing import Any, Callable, Optional, Union
 from	typing import Dict, List, NamedTuple, Set, Tuple, Type
@@ -91,6 +90,7 @@ perform serveral queries on the result."""
 
 	def __init__ (self) -> None:
 		self.table: List[Processentry] = []
+		self.root: Optional[Processentry] = None
 		environ = {'COLUMNS': '4096'}
 		sub = subprocess.Popen (['ps', '-e', '-o', 'pid,ppid,user,group,etime,time,tty,vsz,comm,args'], stdout = subprocess.PIPE, env = environ, text = True, errors = 'backslashreplace')
 		(out, err) = sub.communicate (None)
@@ -112,7 +112,6 @@ perform serveral queries on the result."""
 							' '.join (elem[9:])
 						)))
 			self.table.sort (key = lambda a: a.stats.pid)
-			self.root = None
 			for p in self.table:
 				if p.stats.ppid == 0:
 					if p.stats.pid == 1:
@@ -147,14 +146,10 @@ perform serveral queries on the result."""
 				pid = int (val)
 		if pid is None:
 			raise error (f'Given paramter "{val!r}" cannot be mapped to a pid')
-		match = None
 		for p in self.table:
 			if p.stats.pid == pid:
-				match = p
-				break
-		if not match:
-			raise error (f'No process with pid {pid} (extracted from {val!r}) found')
-		return match
+				return p
+		raise error (f'No process with pid {pid} (extracted from {val!r}) found')
 	
 	def select (self, user: Optional[str] = None, group: Optional[str] = None, comm: Optional[str] = None, rcmd: Optional[str] = None, ropt: int = 0) -> List[Processentry]:
 		"""find processes according to the passed parameter
@@ -211,7 +206,7 @@ class Processtitle:
 		try:
 			import	setproctitle
 			
-			self._set: Callable[[Optional[str]], None] = setproctitle.setproctitle
+			self._set: Callable[[str], None] = setproctitle.setproctitle
 			self._get: Callable[[], str] = setproctitle.getproctitle
 		except ImportError:
 			self._set = lambda t: None
@@ -309,7 +304,7 @@ class Parallel:
 			self.kwargs: Dict[str, Any] = kwargs if kwargs is not None else dict ()
 			self.logname = logname
 			self.resultq: Queue[Any] = multiprocessing.Queue ()
-			self.value = None
+			self.value: Any = None
 			self.processtitle = processtitle
 			self.worker_name = worker_name
 

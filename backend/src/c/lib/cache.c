@@ -65,7 +65,7 @@ centry_update_key (centry_t *ce, hash_t hash, const byte_t *key, int klen) /*{{{
 		ce -> klen = 0;
 		ce -> hash = 0;
 	}
-	return ce -> klen == klen ? true : false;
+	return ce -> klen == klen;
 }/*}}}*/
 static bool_t
 centry_update_data (centry_t *ce, const byte_t *data, int dlen) /*{{{*/
@@ -77,12 +77,12 @@ centry_update_data (centry_t *ce, const byte_t *data, int dlen) /*{{{*/
 		ce -> dlen = dlen;
 	} else
 		ce -> dlen = 0;
-	return ce -> dlen == dlen ? true : false;
+	return ce -> dlen == dlen;
 }/*}}}*/
 static bool_t
 centry_update (centry_t *ce, hash_t hash, const byte_t *key, int klen, const byte_t *data, int dlen) /*{{{*/
 {
-	return centry_update_key (ce, hash, key, klen) && centry_update_data (ce, data, dlen) ? true : false;
+	return centry_update_key (ce, hash, key, klen) && centry_update_data (ce, data, dlen);
 }/*}}}*/
 
 cache_t *

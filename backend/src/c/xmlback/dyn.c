@@ -82,10 +82,10 @@ dyn_assign_interest_field (dyn_t *d, field_t **fields, int fcount) /*{{{*/
 			d -> interest_index = n;
 			break;
 		}
-	return n < fcount ? true : false;
+	return n < fcount;
 }/*}}}*/
 bool_t
 dyn_match_selector (const dyn_t *dyn, const char *selector) /*{{{*/
 {
-	return (! selector) || (fnmatch (selector, dyn -> name, FNM_NOESCAPE) == 0) ? true : false;
+	return (! selector) || (fnmatch (selector, dyn -> name, FNM_NOESCAPE) == 0);
 }/*}}}*/

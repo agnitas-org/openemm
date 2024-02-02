@@ -16,7 +16,55 @@
 # define	DKIM_SIGNHEADER_LEN	(sizeof (DKIM_SIGNHEADER) - 1)
 # endif		/* DKIM_SIGNHEADER_LEN */
 
-typedef struct { /*{{{*/
+adkim_t *
+adkim_alloc (void) /*{{{*/
+{
+	adkim_t	*a;
+	
+	if (a = (adkim_t *) malloc (sizeof (adkim_t))) {
+		a -> id = 0;
+		a -> key = NULL;
+		a -> domain = NULL;
+		a -> selector = NULL;
+		a -> domainlength = -1;
+	}
+	return a;
+}/*}}}*/
+adkim_t *
+adkim_free (adkim_t *a) /*{{{*/
+{
+	if (a) {
+		if (a -> key)
+			free (a -> key);
+		if (a -> domain)
+			free (a -> domain);
+		if (a -> selector)
+			free (a -> selector);
+		free (a);
+	}
+	return NULL;
+}/*}}}*/
+static bool_t
+adkim_match (adkim_t *a, const char *domain) /*{{{*/
+{
+	int		domainlength = strlen (domain);
+	const char	*checkdomain = NULL;
+	
+	if (a -> domainlength == -1)
+		a -> domainlength = strlen (a -> domain);
+	if (domainlength == a -> domainlength)
+		checkdomain = domain;
+	else if (domainlength > a -> domainlength) {
+		checkdomain = domain + domainlength - a -> domainlength;
+		if (checkdomain[-1] != '.')
+			checkdomain = NULL;
+	}
+	if (checkdomain && (! strcasecmp (checkdomain, a -> domain)))
+		return true;
+	return false;
+}/*}}}*/
+
+struct sdkim { /*{{{*/
 	DKIM_LIB	*lib;
 	char		*domain;
 	dkim_sigkey_t	key;
@@ -26,7 +74,12 @@ typedef struct { /*{{{*/
 	char		*column;
 	int		cindex;
 	/*}}}*/
-}	sdkim_t;
+};
+static const dkim_sigkey_t
+castkey (const char *key) /*{{{*/
+{
+	return (dkim_sigkey_t) key;
+}/*}}}*/
 static dkim_sigkey_t
 copykey (const char *key) /*{{{*/
 {
@@ -71,30 +124,33 @@ static buffer_t *
 normalize_eol_to_crlf (buffer_t *input, buffer_t *output) /*{{{*/
 {
 	buffer_t	*rc = input;
-	const xmlChar	*ptr = buffer_content (input);
-	int		ilen = buffer_length (input);
+	
+	if (rc) {
+		const xmlChar	*ptr = buffer_content (input);
+		int		ilen = buffer_length (input);
 
-	if (buffer_size (output, ilen + 128)) {
-		int	i;
+		if (buffer_size (output, ilen + 128)) {
+			int	i;
 
-		buffer_clear (output);
-		for (i = 0; i < ilen; ++i) {
-			if ((ptr[i] == '\n') && ((i == 0) || (ptr[i - 1] != '\r'))) {
-				if (! buffer_stiffch (output, '\r')) {
+			buffer_clear (output);
+			for (i = 0; i < ilen; ++i) {
+				if ((ptr[i] == '\n') && ((i == 0) || (ptr[i - 1] != '\r'))) {
+					if (! buffer_stiffch (output, '\r')) {
+						break;
+					}
+				}
+				if (! buffer_stiff (output, ptr + i, 1)) {
 					break;
 				}
 			}
-			if (! buffer_stiff (output, ptr + i, 1)) {
-				break;
+			if (i == ilen) {
+				rc = output;
 			}
-		}
-		if (i == ilen) {
-			rc = output;
 		}
 	}
 	return rc;
 }/*}}}*/
-void *
+sdkim_t *
 sdkim_alloc (blockmail_t *blockmail, const char *domain, const char *key, const char *ident,
 	     const char *selector, const char *column, bool_t enable_report, bool_t enable_debug) /*{{{*/
 {
@@ -165,11 +221,9 @@ sdkim_alloc (blockmail_t *blockmail, const char *domain, const char *key, const 
 	}
 	return s;
 }/*}}}*/
-void *
-sdkim_free (void *sp) /*{{{*/
+sdkim_t *
+sdkim_free (sdkim_t *s) /*{{{*/
 {
-	sdkim_t	*s = (sdkim_t *) sp;
-	
 	if (s) {
 		if (s -> lib)
 			dkim_close (s -> lib);
@@ -190,10 +244,8 @@ sdkim_free (void *sp) /*{{{*/
 	return NULL;
 }/*}}}*/
 bool_t
-sdkim_should_sign (void *sp, receiver_t *rec) /*{{{*/
+sdkim_should_sign (sdkim_t *s, receiver_t *rec) /*{{{*/
 {
-	sdkim_t	*s = (sdkim_t *) sp;
-
 	if (s -> cindex != -1) {
 		record_t	*record = rec -> rvdata -> cur;
 		xmlBufferPtr	check = record -> data[s -> cindex];
@@ -222,28 +274,64 @@ sdkim_should_sign (void *sp, receiver_t *rec) /*{{{*/
 	}
 	return true;
 }/*}}}*/
+static bool_t
+ignore_header (head_t *h) /*{{{*/
+{
+	static struct {
+		const char	*name;
+		int		namelength;
+	}	ignores[] = {
+# define	IHEAD(nnn)	{	nnn, sizeof (nnn) - 1	}
+		IHEAD ("return-path"),
+		IHEAD ("received"),
+		IHEAD ("comments"),
+		IHEAD ("keywords"),
+		IHEAD ("bcc"),
+		IHEAD ("resent-bcc"),
+		IHEAD ("dkim-signature")
+# undef		IHEAD			
+	};
+	int	n;
+	
+	for (n = 0; n < sizeof (ignores) / sizeof (ignores[0]); ++n)
+		if (head_matchn (h, ignores[n].name, ignores[n].namelength))
+			return true;
+	return false;
+}/*}}}*/
 char *
-sdkim_sign (blockmail_t *blockmail, head_t *head, buffer_t *body) /*{{{*/
+sdkim_sign (blockmail_t *blockmail, header_t *header, adkim_t *adkim, const char *ident, buffer_t *body) /*{{{*/
 {
 	char		*rc;
 	bool_t		ok;
 	buffer_t	*scratch;
 	sdkim_t		*s;
+	const char	*domain, *selector;
+	dkim_sigkey_t	key;
 	DKIM		*dkim;
 	DKIM_STAT	st;
 	buffer_t	*use;
+	head_t		*head;
 
 	rc = NULL;
 	ok = true;
 	if (! (scratch = buffer_alloc (512)))
 		return rc;
-	s = (sdkim_t *) blockmail -> dkim;
+	s = blockmail -> signdkim;
+	if (adkim) {
+		domain = adkim -> domain;
+		selector = adkim -> selector;
+		key = castkey (adkim -> key);
+	} else {
+		domain = s -> domain;
+		selector = s -> selector;
+		key = s -> key;
+	}
 	if (! (dkim = dkim_sign (s -> lib,
-				 (const unsigned char *) s -> domain,
+				 (const unsigned char *) domain,
 				 NULL,
-				 s -> key,
-				 (const unsigned char *) s -> selector,
-				 (const unsigned char *) s -> domain,
+				 key,
+				 (const unsigned char *) selector,
+				 (const unsigned char *) domain,
 				 DKIM_CANON_RELAXED,
 				 DKIM_CANON_DEFAULT,
 				 DKIM_SIGN_DEFAULT,
@@ -252,27 +340,28 @@ sdkim_sign (blockmail_t *blockmail, head_t *head, buffer_t *body) /*{{{*/
 		ok = false;
 	}
 	if (ok) {
-		if (s -> ident) {
-			if ((st = dkim_set_signer (dkim, (const unsigned char *) s -> ident)) != DKIM_STAT_OK) {
-				log_out (blockmail -> lg, LV_ERROR, "Failed to set signer to \"%s\": %d", blockmail -> mfrom, st);
-				ok = false;
-			}
-		} else if (blockmail -> mfrom) {
+		if (! ident) {
 			const char	*ptr;
 			
-			if ((ptr = strchr (blockmail -> mfrom, '@')) && (! strcmp (ptr + 1, s -> domain)) && ((st = dkim_set_signer (dkim, (const unsigned char *) blockmail -> mfrom)) != DKIM_STAT_OK)) {
-				log_out (blockmail -> lg, LV_ERROR, "Failed to set signer to \"%s\": %d", blockmail -> mfrom, st);
-				ok = false;
+			if (s -> ident) {
+				ident = s -> ident;
+			} else if ((ptr = strchr (blockmail -> mfrom, '@')) && (! strcasecmp (ptr + 1, domain))) {
+				ident = blockmail -> mfrom;
 			}
 		}
-	}
-	for (; ok && head; head = head -> next) {
-		use = normalize_eol_to_crlf (head -> h, scratch);
-		if ((st = dkim_header (dkim, use -> buffer, use -> length)) != DKIM_STAT_OK) {
-			log_out (blockmail -> lg, LV_ERROR, "Failed to sign header \"%s\": %d", buffer_string (head -> h), st);
+		if (ident && ((st = dkim_set_signer (dkim, (const unsigned char *) ident)) != DKIM_STAT_OK)) {
+			log_out (blockmail -> lg, LV_ERROR, "Failed to set signer to \"%s\": %d", ident, st);
 			ok = false;
 		}
 	}
+	for (head = header -> head; ok && head; head = head -> next)
+		if (! ignore_header (head)) {
+			use = normalize_eol_to_crlf (header_encode (header, head), scratch);
+			if (use && ((st = dkim_header (dkim, use -> buffer, use -> length)) != DKIM_STAT_OK)) {
+				log_out (blockmail -> lg, LV_ERROR, "Failed to sign header \"%s\": %d", buffer_string (head -> h), st);
+				ok = false;
+			}
+		}
 	if (ok)
 		if ((st = dkim_eoh (dkim)) != DKIM_STAT_OK) {
 			log_out (blockmail -> lg, LV_ERROR, "Failed to finalize header: %d", st);
@@ -294,13 +383,12 @@ sdkim_sign (blockmail_t *blockmail, head_t *head, buffer_t *body) /*{{{*/
 		unsigned char	scratch_head[8192];
 		int		used;
 
-		scratch_head[0] = 'H';
-		used = 1;
+		used = 0;
 		memcpy (scratch_head + used, DKIM_SIGNHEADER, DKIM_SIGNHEADER_LEN);
 		used += DKIM_SIGNHEADER_LEN;
 		memcpy (scratch_head + used, ": ", 2);
 		used += 2;
-		if ((st = dkim_getsighdr (dkim, scratch_head + used, sizeof (scratch_head) - used, used - 1)) != DKIM_STAT_OK) {
+		if ((st = dkim_getsighdr (dkim, scratch_head + used, sizeof (scratch_head) - used, used)) != DKIM_STAT_OK) {
 			log_out (blockmail -> lg, LV_ERROR, "Failed to get signature header: %d", st);
 			ok = false;
 		} else {
@@ -334,111 +422,49 @@ sdkim_sign (blockmail_t *blockmail, head_t *head, buffer_t *body) /*{{{*/
 	return rc;
 }/*}}}*/
 
-static bool_t
-ignore_header (const char *h, int hlen, bool_t *isrecv) /*{{{*/
-{
-	static struct {
-		const char	*h;
-		int		hlen;
-		bool_t		isrecv;
-	}	itab[] = {
-		{	"Return-Path",		11,	false	},
-		{	"Received",		8,	true	},
-		{	"Comments",		8,	false	},
-		{	"Keywords",		8,	false	},
-		{	"Bcc",			3,	false	},
-		{	"Resent-Bcc",		10,	false	},
-		{	"DKIM-Signature",	14,	false	}
-	};
-	int	n;
-
-	for (n = 0; n < sizeof (itab) / sizeof (itab[0]); ++n)
-		if ((hlen > itab[n].hlen) && (h[itab[n].hlen] == ':') && (! strncasecmp (h, itab[n].h, itab[n].hlen))) {
-			if (isrecv)
-				*isrecv = itab[n].isrecv;
-			return true;
-		}
-	return false;
-}/*}}}*/
 void
-sign_mail (blockmail_t *blockmail, buffer_t *header) /*{{{*/
+sign_mail (blockmail_t *blockmail, header_t *header) /*{{{*/
 {
-	const char	*content, *ptr, *save;
-	int		len;
-	head_t		*head, *prev, *cur;
-	int		hpos;
-	int		pos;
-	
-	head = NULL;
-	prev = NULL;
-	cur = NULL;
-	hpos = -1;
-	if (header == NULL) {
-		header = blockmail -> head;
-	}
-	content = buffer_string (header);
-	for (ptr = content; ptr; ) {
-		save = ptr;
-		if (ptr = strchr (ptr, '\n')) {
-			++ptr;
-			len = ptr - save;
-		} else
-			len = strlen (save);
-		pos = save - content;
-		if (save[0] == 'H') {
-			char	ch;
+	if (header && header -> head) {
+		head_t		*cur;
+		head_t		*received;
+		char		*dkhd;
+		const char	*from;
+		adkim_t		*adkim;
+		char		*ident;
+		const char	*domain;
+		int		n;
 
-			++save;
-			--len;
-			if ((len > 1) && (save[0] == '?')) {
-				++save;
-				--len;
-				while (len > 0) {
-					ch = save[0];
-					--len;
-					++save;
-					if (ch == '?')
-						break;
+		received = NULL;
+		adkim = NULL;
+		ident = NULL;
+		for (cur = header -> head; cur && (! adkim); cur = cur -> next)
+			if (head_match (cur, "received"))
+				received = cur;
+			else if ((blockmail -> adkim_count > 0) &&
+				 (! adkim) && 
+				 (head_match (cur, "from")) &&
+				 (from = head_value (cur)) &&
+				 (ident = extract_address (from))) {
+				if (domain = strchr (ident, '@')) {
+					++domain;
+					for (n = 0; n < blockmail -> adkim_count; ++n)
+						if (adkim_match (blockmail -> adkim[n], domain)) {
+							adkim = blockmail -> adkim[n];
+							break;
+						}
+				}
+				if (! adkim) {
+					free (ident);
+					ident = NULL;
 				}
 			}
-			if (len > 0) {
-				bool_t	isrecv;
-
-				if (ignore_header (save, len, & isrecv)) {
-					cur = NULL;
-				} else if (cur = head_alloc ()) {
-					if (hpos == -1)
-						hpos = pos;
-					if (prev)
-						prev -> next = cur;
-					else
-						head = cur;
-					prev = cur;
-					head_add (cur, save, len);
-				}
-			}
-		} else if (isspace (save[0]) && cur) {
-			head_add (cur, save, len);
-		} else if (save[0] == '.') {
-			if (hpos == -1)
-				hpos = pos;
-		}
-	}
-	if (head) {
-		char	*dkhd;
-
-		for (cur = head; cur; cur = cur -> next)
-			head_trim (cur);
-		if (dkhd = sdkim_sign (blockmail, head, blockmail -> body)) {
-			if (hpos == -1)
-				buffer_appends (header, dkhd);
-			else
-				buffer_inserts (header, hpos, dkhd);
+		header_remove (header, "dkim-signature");
+		if (dkhd = sdkim_sign (blockmail, header, adkim, ident, blockmail -> body)) {
+			header_insert (header, dkhd, received);
 			free (dkhd);
 		}
-		while (cur = head) {
-			head = head -> next;
-			head_free (cur);
-		}
+		if (ident)
+			free (ident);
 	}
 }/*}}}*/

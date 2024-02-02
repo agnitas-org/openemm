@@ -28,7 +28,7 @@ struse (char **buf, const char *str) /*{{{*/
 	if (*buf)
 		free (*buf);
 	*buf = str ? strdup (str) : NULL;
-	return (! str) || *buf ? true : false;
+	return (! str) || *buf;
 }/*}}}*/
 char *
 strldup (const char *s) /*{{{*/

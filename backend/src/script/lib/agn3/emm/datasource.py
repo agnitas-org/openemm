@@ -56,7 +56,7 @@ a default database driver is created for database access."""
 						rc = int (row.datasource_id)
 					if rc is None and state == 0:
 						for sourcegroup_field in 'sourcegroup_type', 'description':
-							if type (source_group) is int:
+							if isinstance (source_group, int):
 								break
 							rq = usedb.querys (
 								'SELECT sourcegroup_id '
@@ -66,7 +66,7 @@ a default database driver is created for database access."""
 							)
 							if rq is not None and rq.sourcegroup_id is not None:
 								source_group = int (rq.sourcegroup_id)
-						if type (source_group) is not int:
+						if not isinstance (source_group, int):
 							raise error (f'Invalid source_group: {source_group}')
 						#
 						rq = usedb.querys (

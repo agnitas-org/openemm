@@ -12,7 +12,10 @@
 __all__ = ['error', 'Timeout', 'Stop', 'LockError']
 #
 class error (Exception):
-	pass
+	def __str__ (self) -> str:
+		if not (m := super ().__str__ ()):
+			m = self.__repr__ ()
+		return m
 class Timeout (error):
 	pass
 class Stop (error):

@@ -12,9 +12,11 @@
 from	__future__ import annotations
 import	os, subprocess, logging
 from	typing import Optional
-from	typing import Dict, List
+from	typing import Dict, Iterator, List
 from	.definitions import base, syscfg
-from	.io import which
+from	.exceptions import error
+from	.ignore import Ignore
+from	.io import which, create_path
 from	.log import log
 from	.tools import call, listsplit
 #
@@ -34,7 +36,7 @@ used MTA."""
 	def __init__ (self, xmlback: Optional[str] = None) -> None:
 		"""``xmlback'' is an alternate path to the executable to call"""
 		self.xmlback = xmlback if xmlback is not None else os.path.join (base, 'bin', 'xmlback')
-		self.mta = os.environ.get ('MTA', 'postfix')
+		self.mta = 'postfix'
 		self.conf: Dict[str, str] = {}
 		if self.mta == 'postfix':
 			cmd = self.postfix_command ('postconf')
@@ -70,6 +72,65 @@ used MTA."""
 				logger.error (f'{filespec} not written using {cmd}: {n}')
 		else:
 			logger.error (f'{filespec} not written due to missing postmap command')
+	
+	class File:
+		__slots__ = ['mta', 'path', 'map', 'map_path', 'content']
+		extension_mapping = {
+			'btree':	'db',
+			'cdb':		'cdb',
+			'dbm':		'dir',		# also "pag" is created, but we just use one file to check for changes atm
+			'hash':		'db',
+			'sdbm':		'dir',		# like "dbm" the "pag" file is not handled here
+		}
+		def __init__ (self, mta: MTA, path: str, map: Optional[str] = None) -> None:
+			self.mta = mta
+			self.path = path
+			self.map = map
+			self.map_path: Optional[str] = None
+			if not os.path.isfile (self.path):
+				create_path (os.path.dirname (self.path))
+				with open (self.path, 'w'):
+					pass
+			if self.map is not None:
+				self.map_path = '{path}.{extension}'.format (
+					path = self.path,
+					extension = self.extension_mapping.get (self.map, self.map)
+				)
+				try:
+					map_stat = os.stat (self.map_path)
+					file_stat = os.stat (self.path)
+					if map_stat.st_mtime <= file_stat.st_mtime:
+						raise error (f'{self.path}: outdated map file {self.map_path}')
+				except:
+					self.mta.postfix_make (self.map, self.path)
+			with open (self.path) as fd:
+				self.content = fd.read ()
+
+		def __iter__ (self) -> Iterator[str]:
+			for line in self.content.split ('\n'):
+				if line:
+					yield line
+
+		def write (self, content: str) -> None:
+			if content != self.content:
+				with open (self.path, 'w') as fd:
+					fd.write (content)
+				self.content = content
+				if self.map is not None:
+					self.mta.postfix_make (self.map, self.path)
+					
+	def postfix_local_file (self, key: str) -> Optional[MTA.File]:
+		with Ignore (KeyError):
+			for element in self.getlist (key):
+				map: Optional[str]
+				path: str
+				try:
+					(map, path) = element.split (':', 1)
+				except ValueError:
+					(map, path) = (None, element)
+				if path.startswith (base + os.path.sep):
+					return MTA.File (self, path, map)
+		return None
 
 	def __getitem__ (self, key: str) -> str:
 		return self.conf[key]
@@ -82,32 +143,13 @@ used MTA."""
 		generate = [
 			f'account-logfile={base}/log/account.log',
 			f'bounce-logfile={base}/log/extbounce.log',
-			f'mailtrack-logfile={base}/log/mailtrack.log'
+			f'mailtrack-logfile={base}/log/mailtrack.log',
+			f'messageid-logfile={base}/var/run/messageid.log',
+			'media=email',
+			'inject={sendmail} -f %(sender) -- %(recipient)'.format (
+				sendmail = ' '.join (syscfg.sendmail ())
+			)
 		]
-		if self.mta == 'postfix':
-			generate += [
-				f'messageid-logfile={base}/var/run/messageid.log'
-			]
-		generate += [
-			'media=email'
-		]
-		if self.mta == 'postfix':
-			generate += [
-				'inject={sendmail} -f %(sender) -- %(recipient)'.format (
-					sendmail = ' '.join (syscfg.sendmail ())
-				)
-			]
-		else:
-			generate += [
-				'path={target}'.format (target = kwargs['target_directory'])
-			]
-			#
-			fqu = os.path.join (base, 'bin', 'fqu.sh')
-			if os.access (fqu, os.X_OK):
-				generate += [
-					'queue-flush={count}'.format (count = kwargs.get ('flush_count', '2')),
-					f'queue-flush-command={base}/bin/fqu.sh'
-				]
 		return [
 			self.xmlback,
 			'-l',

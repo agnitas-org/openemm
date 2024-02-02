@@ -76,14 +76,12 @@ block_alloc (void) /*{{{*/
 		b -> target_id = 0;
 		b -> target_index = -1;
 		b -> content = NULL;
-		b -> translate = NULL;
+		b -> convert = NULL;
 		b -> in = NULL;
 		b -> out = NULL;
 		b -> bcontent = NULL;
 		b -> bout = NULL;
 		DO_ZERO (b, tagpos);
-		b -> revalidation.source = NULL;
-		b -> revalidation.target = NULL;
 		b -> inuse = false;
 	}
 	return b;
@@ -106,8 +104,6 @@ block_free (block_t *b) /*{{{*/
 			xmlBufferFree (b -> condition);
 		if (b -> content)
 			xmlBufferFree (b -> content);
-		if (b -> translate)
-			xmlCharEncCloseFunc (b -> translate);
 		if (b -> in)
 			xmlBufferFree (b -> in);
 		if (b -> out)
@@ -117,10 +113,6 @@ block_free (block_t *b) /*{{{*/
 		if (b -> bout)
 			buffer_free (b -> bout);
 		DO_FREE (b, tagpos);
-		if (b -> revalidation.source)
-			buffer_free (b -> revalidation.source);
-		if (b -> revalidation.target)
-			buffer_free (b -> revalidation.target);
 		free (b);
 	}
 	return NULL;
@@ -134,30 +126,16 @@ block_swap_inout (block_t *b) /*{{{*/
 	b -> out = temp;
 }/*}}}*/
 bool_t
-block_setup_charset (block_t *b) /*{{{*/
+block_setup_charset (block_t *b, cvt_t *cvt) /*{{{*/
 {
-	bool_t	st;
-	
-	st = false;
-	if (b -> translate) {
-		xmlCharEncCloseFunc (b -> translate);
-		b -> translate = NULL;
-	}
-	if ((! b -> charset) || (b -> translate = xmlFindCharEncodingHandler (b -> charset))) {
-		if (b -> translate)
-			if (! (b -> translate -> input || b -> translate -> iconv_in ||
-			       b -> translate -> output || b -> translate -> iconv_out)) {
-				xmlCharEncCloseFunc (b -> translate);
-				b -> translate = NULL;
-			}
-		if (! b -> in)
-			b -> in = xmlBufferCreate ();
-		if (! b -> out)
-			b -> out = xmlBufferCreate ();
-		if (b -> in && b -> out)
-			st = true;
-	}
-	return st;
+	b -> convert = cvt_find (cvt, b -> charset);
+	if (! b -> in)
+		b -> in = xmlBufferCreate ();
+	if (! b -> out)
+		b -> out = xmlBufferCreate ();
+	if (b -> in && b -> out)
+		return true;
+	return false;
 }/*}}}*/
 void
 block_setup_tagpositions (block_t *b, blockmail_t *blockmail) /*{{{*/
@@ -192,7 +170,6 @@ block_find_method (block_t *b) /*{{{*/
 		encoding_t	code;
 	}	codetab[] = {
 		{	"none",			EncNone			},
-		{	"header",		EncHeader		},
 		{	"8bit",			Enc8bit			},
 		{	"quoted-printable",	EncQuotedPrintable	},
 		{	"base64",		EncBase64		}
@@ -222,9 +199,6 @@ block_code_binary_out (block_t *b) /*{{{*/
 	case EncNone:			/* 100% */
 		assume = current;
 		break;
-	case EncHeader:			/* 200% */
-		assume = current * 2;
-		break;
 	case Enc8bit:			/* 110% */
 		assume = (current * 11) / 10;
 		break;
@@ -250,9 +224,6 @@ block_code_binary_out (block_t *b) /*{{{*/
 			switch (b -> method) {
 			case EncNone:
 				st = encode_none (& temp, b -> bout);
-				break;
-			case EncHeader:
-				st = encode_header (& temp, b -> bout, b -> charset);
 				break;
 			case Enc8bit:
 				st = encode_8bit (& temp, b -> bout);

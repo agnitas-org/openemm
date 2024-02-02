@@ -764,7 +764,7 @@ found, no module is loaded at all.
 		select: Optional[Callable[[Any], bool]] = None,
 		modify: Optional[Callable[[Any], Any]] = None
 	) -> Any:
-		if type (s) is not list:
+		if not isinstance (s, list):
 			return s
 		if select is not None:
 			s = [_s for _s in s if select (_s)]

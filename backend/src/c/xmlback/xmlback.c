@@ -126,7 +126,6 @@ main (int argc, char **argv) /*{{{*/
 	int		len;
 	bool_t		quiet;
 	const char	*error_file;
-	bool_t		usecrlf;
 	bool_t		raw;
 	output_t	*out;
 	const char	*outparm;
@@ -148,7 +147,6 @@ main (int argc, char **argv) /*{{{*/
 	
 	quiet = false;
 	error_file = NULL;
-	usecrlf = true;
 	raw = false;
 	out = & output_table[1];
 	outparm = NULL;
@@ -168,7 +166,7 @@ main (int argc, char **argv) /*{{{*/
 	xmlInitCharEncodingHandlers ();
 	json_set_escape_slashes (0);
 	opterr = 0;
-	while ((n = getopt (argc, argv, "VDpqE:lru:UaAs:egd:t:o:L:T:h")) != -1)
+	while ((n = getopt (argc, argv, "VDpqE:ru:UaAs:egd:t:o:L:T:h")) != -1)
 		switch (n) {
 		case 'V':
 # ifdef		EMM_VERSION			
@@ -183,9 +181,6 @@ main (int argc, char **argv) /*{{{*/
 			break;
 		case 'E':
 			error_file = optarg;
-			break;
-		case 'l':
-			usecrlf = false;
 			break;
 		case 'r':
 			raw = true;
@@ -242,7 +237,7 @@ main (int argc, char **argv) /*{{{*/
 			pointintime = atol (optarg);
 			break;
 		case 'h':
-			fprintf (stderr, "Usage: %s [-h] [-V] [-L <loglevel>] [-D] [-v] [-p] [-q] [-E <file>] [-l] [-r] [-d <domain>] [-o <output>[:<parm>] <file(s)>\n", argv[0]);
+			fprintf (stderr, "Usage: %s [-h] [-V] [-L <loglevel>] [-D] [-v] [-p] [-q] [-E <file>] [-r] [-d <domain>] [-o <output>[:<parm>] <file(s)>\n", argv[0]);
 			fprintf (stderr, "       further options: [-u <prefix>] [-a] [-s <selector>] [-e] [-f]\n");
 			fputs ("Function: read and process XML files generated from database representation\n"
 			       "Options:\n"
@@ -252,7 +247,6 @@ main (int argc, char **argv) /*{{{*/
 			       "\t-p         switch on pedantic XML parsing\n"
 			       "\t-q         quiet mode, do not print logging to stdout\n"
 			       "\t-E <fname> write error messages to file <fname> instead of stderr\n"
-			       "\t-l         use just NL instead of CR-NL as end of line in generated mails\n"
 			       "\t-r         raw output, do not encode generated mails (used by preview)\n"
 			       "\t-u <pfix>  use <pfix> as prefix for generated auto urls\n"
 			       "\t-a         anonymize the output as far as possible\n"
@@ -320,14 +314,13 @@ main (int argc, char **argv) /*{{{*/
 		if (! (blockmail = blockmail_alloc (argv[n], out -> syncfile, lg)))
 			log_out (lg, LV_ERROR, "Unable to setup blockmail");
 		else {
-			blockmail -> usecrlf = usecrlf;
 			blockmail -> raw = raw;
 			blockmail -> output = out;
 			blockmail -> outputdata = NULL;
 			log_idset (lg, "init");
 			blockmail -> outputdata = (*out -> oinit) (blockmail, pparm);
 			blockmail_setup_auto_url_prefix (blockmail, auto_url_prefix);
-			blockmail -> gui = gui || auto_url_prefix ? true : false;
+			blockmail -> gui = gui || auto_url_prefix;
 			blockmail_setup_anon (blockmail, anon, anon_preserve_links);
 			blockmail_setup_selector (blockmail, selector);
 			blockmail -> force_ecs_uid = force_ecs_uid;
@@ -340,16 +333,6 @@ main (int argc, char **argv) /*{{{*/
 			else {
 				doc = xmlReadFile (argv[n], NULL, XML_PARSE_NOENT | XML_PARSE_PEDANTIC | XML_PARSE_NONET | XML_PARSE_NOCDATA | XML_PARSE_COMPACT | XML_PARSE_HUGE);
 				if (doc) {
-					if (doc -> encoding &&
-					    strcasecmp (xml2char (doc -> encoding), "UTF-8") &&
-					    strcasecmp (xml2char (doc -> encoding), "UTF8")) {
-						blockmail -> translate = xmlFindCharEncodingHandler (xml2char (doc -> encoding));
-						if (! (blockmail -> translate -> input || blockmail -> translate -> iconv_in ||
-						       blockmail -> translate -> output || blockmail -> translate -> iconv_out)) {
-							xmlCharEncCloseFunc (blockmail -> translate);
-							blockmail -> translate = NULL;
-						}
-					}
 					if (base = xmlDocGetRootElement (doc))
 						st = parse_file (blockmail, doc, base);
 					xmlFreeDoc (doc);

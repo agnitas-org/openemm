@@ -42,7 +42,7 @@ preview_set_output_path (preview_t *p, const char *path) /*{{{*/
 	if (p -> path)
 		free (p -> path);
 	p -> path = path ? strdup (path) : NULL;
-	return ((! path) || p -> path) ? true : false;
+	return (! path) || p -> path;
 }/*}}}*/
 
 void *
@@ -70,58 +70,6 @@ preview_odeinit (void *data, blockmail_t *blockmail, bool_t success) /*{{{*/
 	
 	preview_free (pv);
 	return true;
-}/*}}}*/
-
-static bool_t
-make_pure_header (buffer_t *dest, const byte_t *content, long length, bool_t usecrlf) /*{{{*/
-{
-	bool_t	st = true;
-	long	n = 0;
-	long	start, end;
-	
-	while (st && (n < length)) {
-		start = n;
-		while ((n  < length) && (content[n] != '\r') && (content[n] != '\n'))
-			++n;
-		end = n;
-		if (n < length && (content[n] == '\r'))
-			++n;
-		if (n < length && (content[n] == '\n'))
-			++n;
-		if ((start < end) && (content[start] == 'H')) {
-			++start;
-			if ((start + 2 < end) && (content[start] == '?')) {
-				++start;
-				while ((start < end) && (content[start] != '?'))
-					++start;
-				if ((start < end) && (content[start] == '?'))
-					++start;
-			}
-			if (start < end)
-				if ((! buffer_stiff (dest, content + start, end - start)) ||
-				    (! (usecrlf ? buffer_stiffcrlf (dest) : buffer_stiffnl (dest))))
-					st = false;
-		}
-	}
-	return st;
-}/*}}}*/
-static bool_t
-replace_crlf_by_nl (buffer_t *dest, const byte_t *content, long length) /*{{{*/
-{
-	bool_t	st = true;
-	long	n = 0;
-	long	start = 0;
-					
-	while (st && (n <= length))
-		if ((n == length) || ((n + 1 < length) && (content[n] == '\r') && (content[n + 1] == '\n'))) {
-			if (start < n)
-				if (! buffer_stiff (dest, content + start, n - start))
-					st = false;
-			++n;
-			start = n;
-		} else
-			++n;
-	return st;
 }/*}}}*/
 bool_t
 preview_owrite (void *data, blockmail_t *blockmail, receiver_t *rec) /*{{{*/
@@ -152,17 +100,6 @@ preview_owrite (void *data, blockmail_t *blockmail, receiver_t *rec) /*{{{*/
 							content = scratch -> buffer;
 							length = scratch -> length;
 							encode = "base64";
-						} else
-							st = false;
-					} else if ((run -> tid == TID_EMail_Head) || (! blockmail -> usecrlf)) {
-						if (scratch) {
-							buffer_clear (scratch);
-							if (run -> tid == TID_EMail_Head)
-								st = make_pure_header (scratch, content, length, blockmail -> usecrlf);
-							else
-								st = replace_crlf_by_nl (scratch, content, length);
-							content = scratch -> buffer;
-							length = scratch -> length;
 						} else
 							st = false;
 					}

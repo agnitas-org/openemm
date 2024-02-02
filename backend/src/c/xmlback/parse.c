@@ -14,49 +14,21 @@
 # include	"xmlback.h"
 
 static char *
-xml2str (blockmail_t *blockmail, const xmlChar *in) /*{{{*/
+xml2strn (const xmlChar *in, size_t length) /*{{{*/
 {
 	char	*out;
-	int	len;
-
-	if (! blockmail -> translate) {
-		len = xmlStrlen (in);
-		if (out = malloc (len + 1)) {
-			memcpy (out, in, len);
-			out[len] = '\0';
-		}
-	} else {
-		xmlBufferEmpty (blockmail -> in);
-		xmlBufferCat (blockmail -> in, in);
-		xmlBufferEmpty (blockmail -> out);
-		switch (convert_block (blockmail -> translate, blockmail -> in, blockmail -> out, true)) {
-		default:
-		case -1:
-			out = NULL;
-			break;
-		case 0:
-			len = xmlBufferLength (blockmail -> in);
-			if (out = malloc (len + 1)) {
-				int	n, m, clen;
-		
-				for (n = 0, m = 0; n < len; )
-					if (((clen = xmlCharLength (in[n])) == 1) && isascii (in[n]))
-						out[m++] = in[n++];
-					else
-						n += clen;
-				out[m] = '\0';
-			}
-			break;
-		case 1:
-			len = xmlBufferLength (blockmail -> out);
-			if (out = malloc (len + 1)) {
-				memcpy (out, xmlBufferContent (blockmail -> out), len);
-				out[len] = '\0';
-			}
-			break;
-		}
+	
+	if (out = malloc (length + 1)) {
+		if (length > 0)
+			memcpy (out, in, length);
+		out[length] = '\0';
 	}
 	return out;
+}/*}}}*/
+static char *
+xml2str (const xmlChar *in) /*{{{*/
+{
+	return xml2strn (in, xmlStrlen (in));
 }/*}}}*/
 static bool_t
 str2long (const char *str, long *value) /*{{{*/
@@ -112,12 +84,9 @@ extract_xml_properties (blockmail_t *blockmail, xmlNodePtr node) /*{{{*/
 	
 	root = NULL;
 	prev = NULL;
-	for (attr = node -> properties; attr; attr = attr -> next) {
+	for (attr = node -> properties; attr; attr = attr -> next)
 		if (attr -> name && (val = xmlGetProp (node, attr -> name))) {
-			cur = var_alloc (NULL, NULL);
-			cur -> var = xml2str (blockmail, attr -> name);
-			cur -> val = xml2str (blockmail, val);
-			if (cur -> var && cur -> val) {
+			if (cur = var_alloc (xml2char (attr -> name), xml2char (val))) {
 				if (prev)
 					prev -> next = cur;
 				else
@@ -126,7 +95,6 @@ extract_xml_properties (blockmail_t *blockmail, xmlNodePtr node) /*{{{*/
 			}
 			xmlFree (val);
 		}
-	}
 	return root;
 }/*}}}*/
 static xmlBufferPtr
@@ -151,7 +119,7 @@ extract_property (blockmail_t *blockmail, xmlNodePtr node, const char *prop) /*{
 	
 	value = NULL;
 	if (val = xmlGetProp (node, char2xml (prop))) {
-		value = xml2str (blockmail, val);
+		value = xml2str (val);
 		xmlFree (val);
 	}
 	return value;
@@ -224,7 +192,7 @@ extract_simple_content (blockmail_t *blockmail, xmlDocPtr doc, xmlNodePtr node) 
 	value = NULL;
 	buf = NULL;
 	if (extract_content (& buf, doc, node) && buf) {
-		value = xml2str (blockmail, xmlBufferContent (buf));
+		value = xml2strn (xmlBufferContent (buf), xmlBufferLength (buf));
 		xmlBufferFree (buf);
 	}
 	return value;
@@ -336,6 +304,7 @@ parse_description (blockmail_t *blockmail, xmlDocPtr doc, xmlNodePtr base) /*{{{
 				if (st = extract_numeric_property (blockmail, & val, node, "id")) {
 					blockmail -> company_id = (int) val;
 					blockmail -> company_token = extract_property (blockmail, node, "token");
+					extract_boolean_property (blockmail, & blockmail -> allow_unnormalized_emails, node, "allow_unnormalized_emails");
 					st = parse_company_info (blockmail, doc, node -> children);
 				}
 			} else if (! xmlstrcmp (node -> name, "mailinglist")) {
@@ -346,6 +315,8 @@ parse_description (blockmail_t *blockmail, xmlDocPtr doc, xmlNodePtr base) /*{{{
 				if (st = extract_numeric_property (blockmail, & val, node, "id"))
 					blockmail -> mailing_id = (int) val;
 				blockmail -> mailing_name = extract_xml_property (node, "name");
+			} else if (! xmlstrcmp (node -> name, "mailing-description")) {
+				st = extract_content (& blockmail -> mailing_description, doc, node);
 			} else if (! xmlstrcmp (node -> name, "maildrop")) {
 				if (st = extract_numeric_property (blockmail, & val, node, "status_id"))
 					blockmail -> maildrop_status_id = (int) val;
@@ -380,6 +351,8 @@ parse_description (blockmail_t *blockmail, xmlDocPtr doc, xmlNodePtr base) /*{{{
 		string_map_addsi (blockmail -> smap, "mailing_id", blockmail -> mailing_id);
 		if (blockmail -> mailing_name)
 			string_map_addsb (blockmail -> smap, "mailing_name", blockmail -> mailing_name);
+		if (blockmail -> mailing_description)
+			string_map_addsb (blockmail -> smap, "mailing_description", blockmail -> mailing_description);
 	}
 	log_idpop (blockmail -> lg);
 	return st;
@@ -672,6 +645,10 @@ parse_block (blockmail_t *blockmail, xmlDocPtr doc, xmlNodePtr node, block_t *bl
 				block -> tid = TID_EMail_Text;
 			else if (! strcmp (block -> cid, "agnHtml"))
 				block -> tid = TID_EMail_HTML;
+			else if (! strcmp (block -> cid, "agnPreheader"))
+				block -> tid = TID_EMail_HTML_Preheader;
+			else if (! strcmp (block -> cid, "agnClearance"))
+				block -> tid = TID_EMail_HTML_Clearance;
 		}
 		extract_boolean_property (blockmail, & block -> binary, node, "is_binary");
 		extract_boolean_property (blockmail, & block -> attachment, node, "is_attachment");
@@ -687,7 +664,7 @@ parse_block (blockmail_t *blockmail, xmlDocPtr doc, xmlNodePtr node, block_t *bl
 			if (child -> type == XML_ELEMENT_NODE) {
 				if (! xmlstrcmp (child -> name, "content")) {
 					if (st = extract_content (& block -> content, doc, child)) {
-						if (st = block_setup_charset (block)) {
+						if (st = block_setup_charset (block, blockmail -> cvt)) {
 							if (block -> binary && (! (st = block_code_binary (block))))
 								log_out (blockmail -> lg, LV_ERROR, "Unable to decode binary part in block %d in %s", block -> nr, blockmail -> fname);
 						} else
@@ -882,6 +859,10 @@ parse_type (blockmail_t *blockmail, mailtypedefinition_t *mtyp, xmlDocPtr doc, x
 									bspec -> opl = OPL_None;
 								free (ptr);
 							}
+							if (ptr = extract_property (blockmail, node, "clearance")) {
+								bspec -> clearance = atob (ptr);
+								free (ptr);
+							}
 							if (! bspec -> block -> binary)
 								blockspec_find_lineseparator (bspec);
 							st = parse_blockspec (blockmail, bspec, doc, node -> children);
@@ -923,7 +904,7 @@ parse_types (blockmail_t *blockmail, xmlDocPtr doc, xmlNodePtr base) /*{{{*/
 					if (mtyp) {
 						mtyp -> ident = sval;
 						mtyp -> idnr = atoi (sval);
-						mtyp -> offline = mtyp -> idnr == 2 ? true : false;
+						mtyp -> offline = mtyp -> idnr == 2;
 						st = parse_type (blockmail, mtyp, doc, node -> children);
 						if (! st)
 							DO_SHRINK (blockmail, mailtypedefinition);
@@ -1307,7 +1288,7 @@ parse_details (blockmail_t *blockmail, xmlDocPtr doc, xmlNodePtr base,
 						int	n;
 					
 						for (n = 0; n < cur -> target_group_count; ++n) {
-							cur -> target_group[n] = (n < target_group_len) && (target_group_value[n] == '1') ? true : false;
+							cur -> target_group[n] = (n < target_group_len) && (target_group_value[n] == '1');
 						}
 						if (target_group_value)
 							free (target_group_value);
@@ -1408,9 +1389,10 @@ parse_receivers (blockmail_t *blockmail, xmlDocPtr doc, xmlNodePtr base) /*{{{*/
 								rec -> mailtype = Mailtype_HTML_Offline;
 							}
 							rec -> mediatypes = extract_property (blockmail, node, "mediatypes");
+							rec -> user_statuses = extract_property (blockmail, node, "user_status");
 							if (parse_details (blockmail, doc, node -> children, rec)) {
 								st = true;
-								rec -> dkim = blockmail -> dkim && sdkim_should_sign (blockmail -> dkim, rec) ? true : false;
+								rec -> dkim = blockmail -> signdkim && sdkim_should_sign (blockmail -> signdkim, rec);
 								log_idpush (blockmail -> lg, "create");
 								st = create_output (blockmail, rec);
 								if (blockmail -> eval)

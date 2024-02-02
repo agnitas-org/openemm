@@ -244,7 +244,7 @@ class Recovery (CLI): #{{{
 			self.db.sync ()
 		#
 		query = (
-			'SELECT status_id, mailing_id, company_id, status_field, genchange, senddate, processed_by '
+			'SELECT status_id, mailing_id, company_id, status_field, genchange, genstatus, senddate, processed_by '
 			'FROM maildrop_status_tbl '
 			'WHERE genstatus IN (1, 2) AND genchange > :expire AND genchange < CURRENT_TIMESTAMP AND status_field IN (\'A\', \'T\', \'W\')'
 		)

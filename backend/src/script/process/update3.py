@@ -1127,11 +1127,13 @@ class UpdateAccount (Update): #{{{
 					count = db.update (
 						'UPDATE mailing_tbl '
 						'SET work_status = :work_status_sending '
-						'WHERE mailing_id = :mailing_id AND (work_status IS NULL OR work_status IN (:work_status_finished, :work_status_edit))',
+						'WHERE mailing_id = :mailing_id AND (work_status IS NULL OR work_status IN (:work_status_finished, :work_status_edit, :work_status_ready, :work_status_generating))',
 						{
 							'work_status_sending': WorkStatus.Sending.value,
 							'work_status_finished': WorkStatus.Finished.value,
 							'work_status_edit': WorkStatus.Edit.value,
+							'work_status_ready': WorkStatus.Ready.value,
+							'work_status_generating': WorkStatus.Generating.value,
 							'mailing_id': mailing_id
 						},
 						commit = True

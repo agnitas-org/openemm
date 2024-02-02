@@ -60,6 +60,44 @@ xchar_strict_length (xchar_t ch) /*{{{*/
 {
 	return utf8_strict_length_tab[ch];
 }/*}}}*/
+bool_t
+xchar_codepoint (const xchar_t *s, int length, unsigned long *codepoint) /*{{{*/
+{
+	bool_t	rc = false;
+	
+	if (length > 0) {
+		int	sequence = xchar_strict_length (*s);
+		
+		if ((sequence > 0) && (sequence <= length)) {
+			rc = true;
+			switch (sequence) {
+			default:
+				rc = false;
+				break;
+			case 1:
+				*codepoint = s[0];
+				break;
+			case 2:
+				*codepoint = ((s[0] & 0x3f) << 6) | (s[1] & 0x3f);
+				break;
+			case 3:
+				*codepoint = ((s[0] & 0x1f) << 12) | ((s[1] & 0x3f) << 6) | (s[2] & 0x3f);
+				break;
+			case 4:
+				*codepoint = ((s[0] & 0x0f) << 18) | ((s[1] & 0x3f) << 12) | ((s[2] & 0x3f) << 6) | (s[3] & 0x3f);
+				break;
+			case 5:
+				*codepoint = ((s[0] & 0x03) << 24) | ((s[1] & 0x3f) << 18) | ((s[2] & 0x3f) << 12) | ((s[3] & 0x3f) << 6) | (s[4] & 0x3f);
+				break;
+			case 6:
+				*codepoint = ((s[0] & 0x01) << 30) | ((s[1] & 0x3f) << 24) | ((s[2] & 0x3f) << 18) | ((s[3] & 0x3f) << 12) | ((s[4] & 0x3f) << 6) | (s[5] & 0x3f);
+				break;
+			}
+		}
+	}
+	return rc;
+}/*}}}*/
+
 int
 xchar_valid_position (const xchar_t *s, int length) /*{{{*/
 {
@@ -90,12 +128,12 @@ xchar_valid (const xchar_t *s, int length) /*{{{*/
 			length -= n;
 		} else
 			break;
-	return length == 0 ? true : false;
+	return length == 0;
 }/*}}}*/
 bool_t
 xequal (const xchar_t *s1, const xchar_t *s2) /*{{{*/
 {
-	return strcmp ((const char *) s1, (const char *) s2) == 0 ? true : false;
+	return strcmp ((const char *) s1, (const char *) s2) == 0;
 }/*}}}*/
 const char *
 xchar_to_char (const xchar_t *s) /*{{{*/
@@ -221,9 +259,8 @@ mapfind (const xchar_t *s, int *len, const utfmap_t *map, int msize) /*{{{*/
 {
 	unsigned long	cp;
 	int		low, high, pos;
-	int		dummy;
 
-	cp = mkcp (s, len ? len : & dummy);
+	cp = mkcp (s, len);
 	for (low = 0, high = msize; low < high; ) {
 		pos = (low + high) >> 1;
 		if (map[pos].cp == cp)
@@ -243,7 +280,7 @@ isword (const xchar_t *s) /*{{{*/
 	
 	cp = mkcp (s, & len);
 	if (len == 1)
-		return isalnum (s[0]) ? true : false;
+		return isalnum (s[0]);
 	else {
 		int	low, high, pos;
 		
@@ -262,8 +299,11 @@ isword (const xchar_t *s) /*{{{*/
 static inline const xchar_t *
 mapper (const utfmap_t *map, int msize, const xchar_t *s, int *slen, int *olen) /*{{{*/
 {
-	const utfmap_t	*m = mapfind (s, slen, map, msize);
+	int		len;
+	const utfmap_t	*m = mapfind (s, & len, map, msize);
 	
+	if (slen)
+		*slen = len;
 	if (m) {
 		if (olen)
 			*olen = m -> dlen;

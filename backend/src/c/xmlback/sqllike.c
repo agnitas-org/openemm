@@ -60,5 +60,5 @@ xmlSQLlike (const xmlChar *pattern, int plen,
 	if ((slen == 0) && (plen > 0))
 		while ((plen > 0) && (*pattern == '%'))
 			incr (pattern, plen);
-	return plen == slen ? true : false;
+	return plen == slen;
 }/*}}}*/

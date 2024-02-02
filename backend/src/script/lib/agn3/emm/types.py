@@ -12,11 +12,25 @@
 from	__future__ import annotations
 from	enum import Enum
 #
+__all__ = ['MediaType', 'MailType', 'UserType', 'UserStatus', 'MailingType', 'ComponentType', 'WorkStatus']
+#
 class MediaType (Enum):
 	EMAIL = 0
 	@classmethod
 	def valid (cls, mediatype: int) -> bool:
 		return mediatype in {_m.value for _m in cls.__members__.values ()}
+
+class MailType (Enum):
+	Text = 0
+	HTML = 1
+	OfflineHTML = 2
+
+class UserType (Enum):
+	ADMIN = 'A',
+	TEST = 'T',
+	TEST_VIP = 't',
+	WORLD = 'W',
+	WORLD_VIP = 'w'
 
 class UserStatus (Enum):
 	ACTIVE = 1
@@ -30,6 +44,29 @@ class UserStatus (Enum):
 	def find_status (cls, name: str) -> UserStatus:
 		return cls.__members__[name.upper ()]
 
+class MailingType (Enum):
+	WORLD = 'W'
+	TEST = 'T'
+	ADMIN = 'A'
+	DATE_BASED = 'R'
+	ACTION_BASED = 'E'
+
+class ComponentType (Enum):
+	Template = 0
+	Image = 1
+	Attachment = 3
+	PersonalizedAttachment = 4
+	HostedImage = 5
+	Font = 6
+	PrecodedAttachment = 7
+	ThumbnailImage = 8
+
+class ComponentName (Enum):
+	Head = 'agnHead'
+	Text = 'agnText'
+	HTML = 'agnHtml'
+	PreHeader = 'agnPreheader'
+	
 class WorkStatus (Enum):
 	New = 'mailing.status.new'
 	Admin = 'mailing.status.admin'

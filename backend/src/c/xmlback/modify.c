@@ -15,7 +15,6 @@
 # define	ST_PLAIN_START_FOUND	(-1)
 # define	ST_QUOTED_START_FOUND	(-2)
 # define	ST_END_FOUND		(-3)
-# define	SWAP(bbb)		do { xmlBufferPtr __temp = (bbb) -> in; (bbb) -> in = (bbb) -> out; (bbb) -> out = __temp; } while (0)
 
 static bool_t
 transcode_url_for_content (blockmail_t *blockmail, xmlBufferPtr url, const char *uid) /*{{{*/
@@ -234,7 +233,293 @@ replace_anon_hashtags (void *rp, buffer_t *output, const xchar_t *token, int tle
 	return true;
 }/*}}}*/
 static bool_t
-modify_urls_original (blockmail_t *blockmail, receiver_t *rec, block_t *block, protect_t *protect, bool_t ishtml, record_t *record) /*{{{*/
+replace_url (blockmail_t *blockmail, receiver_t *rec, block_t *block, record_t *record, const xmlChar *url, int url_length, int mask) /*{{{*/
+{
+	bool_t	changed;
+	int	m;
+	url_t	*match;
+	int	first_orig = -1;
+
+	changed = false;
+	for (m = 0, match = NULL; m < blockmail -> url_count; ++m) {
+		if (url_match (blockmail -> url[m], url, url_length)) {
+			match = blockmail -> url[m];
+			if (blockmail -> url[m] -> usage & mask)
+				break;
+		}
+		if ((first_orig == -1) && blockmail -> url[m] -> orig) {
+			first_orig = m;
+		}
+	}
+	if ((match == NULL) && (first_orig != -1)) {
+		for (m = first_orig; m < blockmail -> url_count; ++m) {
+			if (url_match_original (blockmail -> url[m], url, url_length)) {
+				match = blockmail -> url[m];
+				if (blockmail -> url[m] -> usage & mask)
+					break;
+			}
+		}
+	}
+	if (blockmail -> anon) {
+		if (! blockmail -> anon_preserve_links) {
+			if ((m == blockmail -> url_count) || blockmail -> url[m] -> admin_link) {
+				xmlBufferAdd (block -> out, (const xmlChar *) "#", 1);
+				changed = true;
+			} else if (url_is_personal (url, url_length)) {
+				if (purl_parsen (blockmail -> purl, url, url_length)) {
+					const xchar_t	*rplc;
+					int		rlen;
+					rplc_t		replacer = { blockmail, rec };
+							
+					if ((rplc = purl_build (blockmail -> purl, NULL, & rlen, replace_anon_hashtags, & replacer)) && rlen)
+						xmlBufferAdd (block -> out, (const xmlChar *) rplc, rlen);
+					changed = true;
+				}
+			}
+		}
+	} else if (m < blockmail -> url_count) {
+		mkautourl (blockmail, rec, block, blockmail -> url[m], record);
+		changed = true;
+	} else if (match && match -> resolved) {
+		const xmlChar	*resolved_url = NULL;
+		int		resolved_url_length = -1;
+		buffer_t	*resolve;
+				
+		if (resolve = link_resolve_get (match -> resolved, blockmail, block, match, rec, record)) {
+			resolved_url = resolve -> buffer;
+			resolved_url_length = resolve -> length;
+		}
+		if (blockmail -> tracker) {
+			if (! resolved_url) {
+				resolved_url = url;
+				resolved_url_length = url_length;
+			}
+			tracker_fill (blockmail -> tracker, blockmail, & resolved_url, & resolved_url_length);
+		}
+		if (resolved_url) {
+			if (resolved_url_length > 0)
+				xmlBufferAdd (block -> out, resolved_url, resolved_url_length);
+			changed = true;
+		}
+	}
+	return changed;
+}/*}}}*/
+static bool_t
+replace_url_html (blockmail_t *blockmail, receiver_t *rec, block_t *block, record_t *record, const xmlChar *chunk, int chunk_length, int mask) /*{{{*/
+{
+	if (html_parse (blockmail -> html, chunk, chunk_length) && html_match (blockmail -> html, rec)) {
+		int	lstore = 0;
+		int	n;
+		
+		for (n = 0; n < blockmail -> html -> count; ++n)
+			if (blockmail -> html -> matches[n]) {
+				if (lstore < blockmail -> html -> attr[n].value.position) {
+					xmlBufferAdd (block -> out, blockmail -> html -> chunk + lstore, blockmail -> html -> attr[n].value.position - lstore);
+					lstore = blockmail -> html -> attr[n].value.position;
+				}
+				if (replace_url (blockmail, rec, block, record, blockmail -> html -> chunk + blockmail -> html -> attr[n].value.position, blockmail -> html -> attr[n].value.length, mask))
+					lstore = blockmail -> html -> attr[n].value.position + blockmail -> html -> attr[n].value.length;
+			}
+		if (lstore < blockmail -> html -> chunk_length)
+			xmlBufferAdd (block -> out, blockmail -> html -> chunk + lstore, blockmail -> html -> chunk_length - lstore);
+		return true;
+	}
+	return false;
+}/*}}}*/
+static bool_t
+modify_urls_enhanced (blockmail_t *blockmail, receiver_t *rec, block_t *block, protect_t *protect, bool_t ishtml, record_t *record) /*{{{*/
+{
+	int		n;
+	int		len;
+	const xmlChar	*cont;
+	int		lstore;
+	int		state;
+	char		ch, quote;
+	int		start, end;
+	int		mask;
+	int		clen;
+	bool_t		changed;
+	
+	xmlBufferEmpty (block -> out);
+	len = xmlBufferLength (block -> in);
+	cont = xmlBufferContent (block -> in);
+	lstore = 0;
+	state = ST_INITIAL;
+	quote = '\0';
+	if (ishtml) {
+		mask = (1 << 1);
+	} else {
+		mask = (1 << 0);
+	}
+	start = -1;
+	end = -1;
+	changed = false;
+# define	CHK(ccc)	do { if ((ccc) == ch) ++state; else state = ST_INITIAL; } while (0)
+# define	CCHK(ccc)	do { if ((ccc) == tolower (ch)) ++state; else state = ST_INITIAL; } while (0)
+	for (n = 0; n < len; ) {
+		clen = xmlCharLength (cont[n]);
+# if	0
+		if (protect) {
+			if (n >= protect -> start) {
+				if (n < protect -> end)
+					n += clen;
+				else 
+					protect = protect -> next;
+				state = ST_INITIAL;
+				continue;
+			}
+		}
+# else
+		if (protect) {
+			while (protect && (n >= protect -> end))
+				protect = protect -> next;
+			rec -> disable_link_extension = protect && n >= protect -> start;
+		}
+# endif		
+		if (ishtml) {
+			ch = clen == 1 ? (char) cont[n] : '\0';
+			switch (state) {
+			case ST_INITIAL:
+				if (ch == '<') {
+					start = n + 1;
+					state = 1;
+				}
+				break;
+			case 1:
+				if (ch == '>')
+					state = ST_INITIAL;
+				else if (ch == '/')
+					state = 2;
+				else if (ch == '!')
+					state = 3;
+				else
+					state = 10;
+				break;
+			case 2:
+				if (ch == '>')
+					state = ST_INITIAL;
+				break;
+			case 3:
+				if (ch == '>')
+					state = ST_INITIAL;
+				else if (ch == '-')
+					state = 4;
+				else
+					state = 10;
+				break;
+			case 4:
+				if (ch == '>')
+					state = ST_INITIAL;
+				else if (ch == '-')
+					state = 5;
+				else
+					state = 10;
+				break;
+			case 5:
+				if (ch == '-')
+					state = 6;
+				break;
+			case 6:
+				if (ch == '-')
+					state = 7;
+				else
+					state = 5;
+				break;
+			case 7:
+				if (ch == '>')
+					state = ST_INITIAL;
+				else if (state != '-')
+					state = 5;
+				break;
+			case 10:
+				if ((ch == '"') || (ch == '\'')) {
+					quote = ch;
+					state = 11;
+				} else if (ch == '>') {
+					end = n;
+					state = ST_INITIAL;
+				}
+				break;
+			case 11:
+				if (ch == quote) {
+					quote = '\0';
+					state = 10;
+				}
+				break;
+			}
+		} else {
+			if ((clen > 1) || isascii ((char) cont[n])) {
+				ch = clen == 1 ? (char) cont[n] : '\0';
+				switch (state) {
+				case ST_INITIAL:
+					if (tolower (ch) == 'h') {
+						state = 1;
+						start = n;
+					}
+					break;
+				/* plain: http:// and https:// */
+				case 1:		CCHK ('t');	break;
+				case 2:		CCHK ('t');	break;
+				case 3:		CCHK ('p');	break;
+				case 4:
+					++state;
+					if (tolower (ch) == 's')
+						break;
+					/* Fall through . . . */
+				case 5:		CHK (':');	break;
+				case 6:		CHK ('/');	break;
+				case 7:
+					if (ch == '/')
+						++state;
+					else
+						state = ST_INITIAL;
+					break;
+				case 8:
+					if (isspace (ch) || (ch == '>'))
+						end = n;
+					break;
+				}
+			} else if (start != -1)
+				end = n;
+		}
+		if (end != -1) {
+			if (lstore < start) {
+				xmlBufferAdd (block -> out, cont + lstore, start - lstore);
+				lstore = start;
+			}
+			if ((ishtml ? replace_url_html : replace_url) (blockmail, rec, block, record, cont + start, end - start, mask)) {
+				changed = true;
+				lstore = end;
+			}
+			start = -1;
+			end = -1;
+			state = ST_INITIAL;
+		}
+		n += clen;
+	}
+# undef		CHK
+# undef		CCHK
+	if ((! ishtml) && (start != -1) && (start < n)) {
+		end = len;
+		if (lstore < start) {
+			xmlBufferAdd (block -> out, cont + lstore, start - lstore);
+			lstore = start;
+		}
+		if (replace_url (blockmail, rec, block, record, cont + start, end - start, mask)) {
+			changed = true;
+			lstore = end;
+		}
+	}
+	if (changed) {
+		if (lstore < len)
+			xmlBufferAdd (block -> out, cont + lstore, len - lstore);
+		block_swap_inout (block);
+	}
+	rec -> disable_link_extension = false;
+	return true;
+}/*}}}*/
+static bool_t
+modify_urls_classic (blockmail_t *blockmail, receiver_t *rec, block_t *block, protect_t *protect, bool_t ishtml, record_t *record) /*{{{*/
 {
 	int		n;
 	int		len;
@@ -281,7 +566,7 @@ modify_urls_original (blockmail_t *blockmail, receiver_t *rec, block_t *block, p
 				case ST_INITIAL:
 					if (ishtml) {
 						if (ch == '<') {
-							state = 100;
+							state = blockmail -> relaxed_url_resolver ? 101 : 100;
 						}
 					} else if (strchr ("hm", tolower (ch))) {
 						if (tolower (ch) == 'h') {
@@ -294,6 +579,7 @@ modify_urls_original (blockmail_t *blockmail, receiver_t *rec, block_t *block, p
 					break;
 # define	CHK(ccc)	do { if ((ccc) == ch) ++state; else state = ST_INITIAL; } while (0)
 # define	CCHK(ccc)	do { if ((ccc) == tolower (ch)) ++state; else state = ST_INITIAL; } while (0)
+					
 				/* plain: http:// and https:// */
 				case 1:		CCHK ('t');	break;
 				case 2:		CCHK ('t');	break;
@@ -462,236 +748,7 @@ modify_urls_original (blockmail_t *blockmail, receiver_t *rec, block_t *block, p
 	if (changed) {
 		if (lstore < len)
 			xmlBufferAdd (block -> out, cont + lstore, len - lstore);
-		SWAP (block);
-	}
-	if (scratch)
-		purl_free (scratch);
-	return true;
-}/*}}}*/
-static bool_t
-modify_urls_updated (blockmail_t *blockmail, receiver_t *rec, block_t *block, protect_t *protect, bool_t ishtml, record_t *record) /*{{{*/
-{
-	int		n;
-	int		len;
-	const xmlChar	*cont;
-	int		lstore;
-	int		state;
-	char		ch, quote;
-	int		start, end;
-	int		mask;
-	int		clen;
-	bool_t		changed;
-	purl_t		*scratch;
-	
-	scratch = NULL;
-	xmlBufferEmpty (block -> out);
-	len = xmlBufferLength (block -> in);
-	cont = xmlBufferContent (block -> in);
-	lstore = 0;
-	state = ST_INITIAL;
-	quote = '\0';
-	if (ishtml) {
-		mask = 2;
-	} else {
-		mask = 1;
-	}
-	start = -1;
-	end = -1;
-	changed = false;
-	for (n = 0; n <= len; ) {
-		if (n < len) {
-			clen = xmlCharLength (cont[n]);
-			if (protect) {
-				if (n >= protect -> start) {
-					if (n < protect -> end)
-						n += clen;
-					else 
-						protect = protect -> next;
-					continue;
-				}
-			}
-			if ((clen > 1) || isascii ((char) cont[n])) {
-				ch = clen == 1 ? (char) cont[n] : '\0';
-				switch (state) {
-				case ST_INITIAL:
-					if (ishtml) {
-						if (ch == '<') {
-							state = 100;
-						}
-					} else if (strchr ("hm", tolower (ch))) {
-						if (tolower (ch) == 'h') {
-							state = 1;
-						} else {
-							state = 31;
-						}
-						start = n;
-					}
-					break;
-# define	CHK(ccc)	do { if ((ccc) == ch) ++state; else state = ST_INITIAL; } while (0)
-# define	CCHK(ccc)	do { if ((ccc) == tolower (ch)) ++state; else state = ST_INITIAL; } while (0)
-				/* plain: http:// and https:// */
-				case 1:		CCHK ('t');	break;
-				case 2:		CCHK ('t');	break;
-				case 3:		CCHK ('p');	break;
-				case 4:
-					++state;
-					if (tolower (ch) == 's')
-						break;
-					/* Fall through . . . */
-				case 5:		CHK (':');	break;
-				case 6:		CHK ('/');	break;
-				case 7:
-					if (ch == '/')
-						state = ST_PLAIN_START_FOUND;
-					else
-						state = ST_INITIAL;
-					break;
-				/* plain: mailto: */
-				case 31:	CCHK ('a');	break;
-				case 32:	CCHK ('i');	break;
-				case 33:	CCHK ('l');	break;
-				case 34:	CCHK ('t');	break;
-				case 35:	CCHK ('o');	break;
-				case 36:	CHK (':');	break;
-				case 37:
-					state = ST_PLAIN_START_FOUND;
-					break;
-				/* HTML */
-# define	HCHK(ccc)	do { if ((ccc) == tolower (ch)) ++state; else if ('>' == ch) state = ST_INITIAL; else state = 100; } while (0)
-				case 100:	HCHK ('h');	break;
-				case 101:	HCHK ('r');	break;
-				case 102:	HCHK ('e');	break;
-				case 103:	HCHK ('f');	break;
-# undef		HCHK						
-				case 104:	CHK ('=');	break;
-				case 105:
-					if ((ch == '"') || (ch == '\'')) {
-						quote = ch;
-						state = ST_QUOTED_START_FOUND;
-						start = n + 1;
-					} else {
-						state = ST_PLAIN_START_FOUND;
-						start = n;
-					}
-					break;
-				case ST_PLAIN_START_FOUND:
-					if (isspace (ch) || (ch == '>')) {
-						end = n;
-						state = ST_END_FOUND;
-					}
-					break;
-				case ST_QUOTED_START_FOUND:
-					if (isspace (ch) || (ch == quote)) {
-						end = n;
-						state = ST_END_FOUND;
-					}
-					break;
-				default:
-					log_out (blockmail -> lg, LV_ERROR, "modify_urls: invalid state %d at position %d", state, n);
-					state = ST_INITIAL;
-					break;
-				}
-# undef		CHK
-# undef		CCHK					
-			} else {
-				if (state == ST_PLAIN_START_FOUND) {
-					end = n;
-					state = ST_END_FOUND;
-				} else
-					state = ST_INITIAL;
-			}
-			n += clen;
-		} else {
-			if (state == ST_PLAIN_START_FOUND) {
-				end = n;
-				state = ST_END_FOUND;
-			}
-			++n;
-		}
-		if (state == ST_END_FOUND) {
-			int	ulen, m;
-			url_t	*match;
-			int	first_orig = -1;
-
-			ulen = end - start;
-			for (m = 0, match = NULL; m < blockmail -> url_count; ++m) {
-				if (url_match (blockmail -> url[m], cont + start, ulen)) {
-					match = blockmail -> url[m];
-					if (blockmail -> url[m] -> usage & mask)
-						break;
-				}
-				if ((first_orig == -1) && blockmail -> url[m] -> orig) {
-					first_orig = m;
-				}
-			}
-			if (lstore < start) {
-				xmlBufferAdd (block -> out, cont + lstore, start - lstore);
-				lstore = start;
-			}
-			if ((match == NULL) && (first_orig != -1)) {
-				for (m = first_orig; m < blockmail -> url_count; ++m) {
-					if (url_match_original (blockmail -> url[m], cont + start, ulen)) {
-						match = blockmail -> url[m];
-						if (blockmail -> url[m] -> usage & mask)
-							break;
-					}
-				}
-			}
-			if (blockmail -> anon) {
-				if (! blockmail -> anon_preserve_links) {
-					if ((m == blockmail -> url_count) || blockmail -> url[m] -> admin_link) {
-						xmlBufferAdd (block -> out, (const xmlChar *) "#", 1);
-						lstore = end;
-						changed = true;
-					} else if (url_is_personal (cont + start, ulen)) {
-						if (! scratch)
-							scratch = purl_alloc (NULL);
-						if (scratch && purl_parsen (scratch, cont + start, ulen)) {
-							const xchar_t	*rplc;
-							int		rlen;
-							rplc_t		replacer = { blockmail, rec };
-							
-							if ((rplc = purl_build (scratch, NULL, & rlen, replace_anon_hashtags, & replacer)) && rlen)
-								xmlBufferAdd (block -> out, (const xmlChar *) rplc, rlen);
-							lstore = end;
-							changed = true;
-						}
-					}
-				}
-			} else if (m < blockmail -> url_count) {
-				mkautourl (blockmail, rec, block, blockmail -> url[m], record);
-				lstore = end;
-				changed = true;
-			} else if (match && match -> resolved) {
-				const xmlChar	*url = NULL;
-				int		ulength = -1;
-				buffer_t	*resolve;
-				
-				if (resolve = link_resolve_get (match -> resolved, blockmail, block, match, rec, record)) {
-					url = resolve -> buffer;
-					ulength = resolve -> length;
-				}
-				if (blockmail -> tracker) {
-					if (! url) {
-						url = cont + start;
-						ulength = ulen;
-					}
-					tracker_fill (blockmail -> tracker, blockmail, & url, & ulength);
-				}
-				if (url) {
-					if (ulength > 0)
-						xmlBufferAdd (block -> out, url, ulength);
-					lstore = end;
-					changed = true;
-				}
-			}
-			state = ST_INITIAL;
-		}
-	}
-	if (changed) {
-		if (lstore < len)
-			xmlBufferAdd (block -> out, cont + lstore, len - lstore);
-		SWAP (block);
+		block_swap_inout (block);
 	}
 	if (scratch)
 		purl_free (scratch);
@@ -700,155 +757,7 @@ modify_urls_updated (blockmail_t *blockmail, receiver_t *rec, block_t *block, pr
 bool_t
 modify_urls (blockmail_t *blockmail, receiver_t *rec, block_t *block, protect_t *protect, bool_t ishtml, record_t *record) /*{{{*/
 {
-	return (blockmail -> use_new_url_modification ? modify_urls_updated : modify_urls_original) (blockmail, rec, block, protect, ishtml, record);
-}/*}}}*/
-static inline const byte_t *
-lskip (const byte_t *line, int *linelen) /*{{{*/
-{
-	while ((*linelen > 0) && isspace (*line))
-		++line, --*linelen;
-	return line;
-}/*}}}*/
-static inline void
-ltrim (const byte_t *line, int *linelen) /*{{{*/
-{
-	while ((*linelen > 0) && isspace (line[*linelen - 1]))
-		--*linelen;
-}/*}}}*/
-static char *
-find_sender_in_from_header (const byte_t *line, int linelen) /*{{{*/
-{
-	int	resultpos = -1;
-	int	resultlen = -1;
-	char	*rc;
-	int	n;
-	bool_t	bracket, quote;
-
-	line = lskip (line, & linelen);
-	if ((linelen > 0) && (line[0] == '(')) {
-		++line;
-		--linelen;
-		while ((linelen > 0) && (*line != ')'))
-			++line, --linelen;
-		if (linelen > 0) {
-			++line, --linelen;
-			line = lskip (line, & linelen);
-		}
-	}
-	if ((linelen > 0) && (line[linelen - 1] == ')')) {
-		--linelen;
-		while ((linelen > 0) && (line[linelen - 1] != '('))
-			--linelen;
-		if (linelen > 0) {
-			--linelen;
-			ltrim (line, & linelen);
-		}
-	}
-	for (n = 0, bracket = false, quote = false; n < linelen; ++n) {
-		if (bracket) {
-			if (line[n] == '>')
-				break;
-			++resultlen;
-		} else if (quote) {
-			if (line[n] == '"')
-				quote = false;
-		} else if (line[n] == '<') {
-			bracket = true;
-			resultpos = n + 1;
-			resultlen = 0;
-		} else if (line[n] == '"') {
-			quote = true;
-		}
-	}
-	if (resultpos == -1) {
-		ltrim (line, & linelen);
-		resultpos = 0;
-		resultlen = linelen;
-	}
-	if (rc = malloc (resultlen + 1)) {
-		memcpy (rc, line + resultpos, resultlen);
-		rc[resultlen] = '\0';
-	}
-	return rc;
-}/*}}}*/
-static void
-update_sender_in_header (block_t *block, const char *sender) /*{{{*/
-{
-	const xmlChar	*content = xmlBufferContent (block -> in);
-	int		length = xmlBufferLength (block -> in);
-	int		linepos = 0;
-	const xmlChar	*inptr = content;
-	int		inlen = length;
-	const xmlChar	*current;
-	int		clen;
-								
-	while (inlen > 0) {
-		if ((linepos == 0) && (*inptr == 'S')) {
-			++inptr, --inlen;
-			if ((inlen > 0) && (*inptr == '<')) {
-				++inptr, --inlen;
-				current = inptr;
-				while ((inlen > 0) && (*inptr != '>') && (*inptr != '\n'))
-					++inptr, --inlen;
-				if ((inlen > 0) && (*inptr == '>')) {
-					clen = inptr - current;
-					if ((strlen (sender) != clen) || memcmp (inptr, sender, clen)) {
-						xmlBufferAdd (block -> out, content, current - content);
-						xmlBufferCCat (block -> out, sender);
-						xmlBufferAdd (block -> out, inptr, inlen);
-						SWAP (block);
-					}
-				}
-			}
-			break;
-		} else {
-			if (*inptr == '\n')
-				linepos = 0;
-			else
-				++linepos;
-			++inptr, --inlen;
-		}
-	}
-}/*}}}*/
-static bool_t
-revalidate_mfrom (blockmail_t *blockmail, block_t *block) /*{{{*/
-{
-	bool_t		rc = false;
-
-	if ((block -> revalidation.source = buffer_realloc (block -> revalidation.source, xmlBufferLength (block -> in) + 1)) &&
-	    (block -> revalidation.target = buffer_realloc (block -> revalidation.target, buffer_length (block -> revalidation.source) + 128)) &&
-	    buffer_set (block -> revalidation.source, xmlBufferContent (block -> in), xmlBufferLength (block -> in)) &&
-	    flatten_header (block -> revalidation.target, block -> revalidation.source, true)) {
-		const byte_t	*ptr = buffer_content (block -> revalidation.target);
-		int		len = buffer_length (block -> revalidation.target);
-		const byte_t	*line;
-		int		linelen;
-		char		*sender;
-
-		rc = true;
-		while (len > 0) {
-			line = ptr;
-			while ((len > 0) && (*ptr != '\n'))
-				++ptr, --len;
-			linelen = ptr - line;
-			if (len > 0)
-				++ptr, --len;
-			if ((linelen > 5) && (! strncasecmp ((const char *) line, "from:", 5))) {
-				line += 5;
-				linelen -= 5;
-				line = lskip (line, & linelen);
-				if (sender = find_sender_in_from_header (line, linelen)) {
-					if (*sender && spf_is_valid (blockmail -> spf, sender)) {
-						update_sender_in_header (block, sender);
-					}
-					free (sender);
-				} else
-					rc = false;
-				break;
-			}
-		}
-	}
-	return rc;
+	return (blockmail -> enhanced_url_resolver ? modify_urls_enhanced : modify_urls_classic) (blockmail, rec, block, protect, ishtml, record);
 }/*}}}*/
 static bool_t
 collect_links (blockmail_t *blockmail, block_t *block, links_t *links) /*{{{*/
@@ -1043,56 +952,83 @@ find_bottom (const xmlChar *cont, int len) /*{{{*/
 	return pos;
 }/*}}}*/
 static bool_t
-add_onepixellog_image (blockmail_t *blockmail, receiver_t *rec, block_t *block, opl_t opl) /*{{{*/
+update_html (blockmail_t *blockmail, receiver_t *rec, block_t *block, blockspec_t *bspec, block_t *preheader, block_t *clearance) /*{{{*/
 {
 	const char	*opx;
-	
-	if (opx = mkonepixellogurl (blockmail, rec)) {
-		int		pos;
-		int		len;
-		const xmlChar	*cont;
-		
-		pos = -1;
-		len = xmlBufferLength (block -> in);
-		cont = xmlBufferContent (block -> in);
-		switch (opl) {
-		case OPL_None:
-			break;
-		case OPL_Top:
-			pos = find_top (cont, len);
-			if (pos == -1)
-				pos = 0;
-			break;
-		case OPL_Bottom:
-			pos = find_bottom (cont, len);
-			if (pos == -1)
-				pos = len;
-			break;
-		}
-		if (pos != -1) {
-			xmlBufferEmpty (block -> out);
-			if (pos > 0)
-				xmlBufferAdd (block -> out, cont, pos);
-			if (blockmail -> onepix_template) {
-				map_t		*local = string_map_setup ();
-				xmlBufferPtr	temp;
-				
-				string_map_addss (local, "link", opx);
-				if (temp = string_mapn (blockmail -> onepix_template, local, rec -> smap, blockmail -> smap, NULL)) {
-					xmlBufferAdd (block -> out, xmlBufferContent (temp), xmlBufferLength (temp));
-					xmlBufferFree (temp);
+	opl_t		opl;
+	bool_t		clr;
+
+	opx = NULL;
+	if ((! blockmail -> anon) && bspec) {
+		opl = bspec -> opl;
+		if (opl != OPL_None)
+			if (! (opx = mkonepixellogurl (blockmail, rec)))
+				return false;
+		clr = blockmail -> status_field == 'T' && bspec -> clearance && clearance && xmlBufferLength (clearance -> in) > 0;
+	} else {
+		opl = OPL_None;
+		clr = false;
+	}
+	if ((opl != OPL_None) || preheader || clr) {
+		int		state;
+		int		position;
+		int		length;
+		const xmlChar	*content;
+
+		for (state = 0; state < 2; ++state) {
+			position = -1;
+			length = xmlBufferLength (block -> in);
+			content = xmlBufferContent (block -> in);
+			switch (state) {
+			case 0:
+				if ((opl == OPL_Top) || preheader) {
+					position = find_top (content, length);
+					if (position == -1)
+						position = 0;
 				}
-			} else {
-				const xmlChar	lprefix[] = "<img src=\"";
-				const xmlChar	lpostfix[] = "\" alt=\"\" border=\"0\" height=\"1\" width=\"1\"/>";
-			
-				xmlBufferAdd (block -> out, lprefix, sizeof (lprefix) - 1);
-				xmlBufferCCat (block -> out, opx);
-				xmlBufferAdd (block -> out, lpostfix, sizeof (lpostfix) - 1);
+				break;
+			case 1:
+				if ((opl == OPL_Bottom) || clr) {
+					position = find_bottom (content, length);
+					if (position == -1)
+						position = length;
+				}
+				break;
 			}
-			if (pos < len)
-				xmlBufferAdd (block -> out, cont + pos, len - pos);
-			SWAP (block);
+			if (position != -1) {
+				xmlBufferEmpty (block -> out);
+				if (position > 0)
+					xmlBufferAdd (block -> out, content, position);
+				if ((state == 0) && preheader) {
+					xmlBufferAdd (block -> out, xmlBufferContent (preheader -> in), xmlBufferLength (preheader -> in));
+				}
+				if (((state == 0) && (opl == OPL_Top)) ||
+				    ((state == 1) && (opl == OPL_Bottom))) {
+					if (blockmail -> onepix_template) {
+						map_t		*local = string_map_setup ();
+						xmlBufferPtr	temp;
+				
+						string_map_addss (local, "link", opx);
+						if (temp = string_mapn (blockmail -> onepix_template, local, rec -> smap, blockmail -> smap, NULL)) {
+							xmlBufferAdd (block -> out, xmlBufferContent (temp), xmlBufferLength (temp));
+							xmlBufferFree (temp);
+						}
+					} else {
+						const xmlChar	lprefix[] = "<img src=\"";
+						const xmlChar	lpostfix[] = "\" alt=\"\" border=\"0\" height=\"1\" width=\"1\"/>";
+			
+						xmlBufferAdd (block -> out, lprefix, sizeof (lprefix) - 1);
+						xmlBufferCCat (block -> out, opx);
+						xmlBufferAdd (block -> out, lpostfix, sizeof (lpostfix) - 1);
+					}
+				}
+				if ((state == 1) && clr) {
+					xmlBufferAdd (block -> out, xmlBufferContent (clearance -> in), xmlBufferLength (clearance -> in));
+				}
+				if (position < length)
+					xmlBufferAdd (block -> out, content + position, length - position);
+				block_swap_inout (block);
+			}
 		}
 	}
 	return true;
@@ -1102,7 +1038,7 @@ convert_entities (blockmail_t *blockmail, block_t *block) /*{{{*/
 {
 	xmlBufferEmpty (block -> out);
 	entity_replace (block -> in, block -> out, false);
-	SWAP (block);
+	block_swap_inout (block);
 	return true;
 }/*}}}*/
 static bool_t
@@ -1125,7 +1061,7 @@ add_vip_block (blockmail_t *blockmail, block_t *block) /*{{{*/
 	xmlBufferAdd (block -> out, xmlBufferContent (blockmail -> vip), xmlBufferLength (blockmail -> vip));
 	if (pos < len)
 		xmlBufferAdd (block -> out, cont + pos, len - pos);
-	SWAP (block);
+	block_swap_inout (block);
 	return rc;
 }/*}}}*/
 static
@@ -1235,7 +1171,7 @@ islink (const xmlChar *str, int len) /*{{{*/
 		}
 		n += clen;
 	}
-	return (! state) ? true : false;
+	return ! state;
 }/*}}}*/
 static bool_t
 modify_linelength (blockmail_t *blockmail, block_t *block, blockspec_t *bspec) /*{{{*/
@@ -1340,7 +1276,7 @@ modify_linelength (blockmail_t *blockmail, block_t *block, blockspec_t *bspec) /
 	if (changed) {
 		if (spos < len)
 			xmlBufferAdd (block -> out, cont + spos, len - spos);
-		SWAP (block);
+		block_swap_inout (block);
 	}
 	return true;
 # undef		DOIT_NONE
@@ -1350,17 +1286,7 @@ modify_linelength (blockmail_t *blockmail, block_t *block, blockspec_t *bspec) /
 # undef		DOIT_SKIP
 }/*}}}*/
 bool_t
-modify_header (blockmail_t *blockmail, block_t *header) /*{{{*/
-{
-	bool_t	rc = (header -> tid == TID_EMail_Head) ? true : false;
-	
-	if (rc && blockmail -> revalidate_mfrom) {
-		rc = revalidate_mfrom (blockmail, header);
-	}
-	return rc;
-}/*}}}*/
-bool_t
-modify_output (blockmail_t *blockmail, receiver_t *rec, block_t *block, blockspec_t *bspec, links_t *links) /*{{{*/
+modify_output (blockmail_t *blockmail, receiver_t *rec, block_t *block, blockspec_t *bspec, block_t *preheader, block_t *clearance, links_t *links) /*{{{*/
 {
 	bool_t	rc;
 	
@@ -1371,11 +1297,8 @@ modify_output (blockmail_t *blockmail, receiver_t *rec, block_t *block, blockspe
 		rc = collect_links (blockmail, block, links);
 	}
 	if (rc &&
-	    (! blockmail -> anon) &&
-	    (block -> tid == TID_EMail_HTML) &&
-	    bspec &&
-	    (bspec -> opl != OPL_None)) {
-		rc = add_onepixellog_image (blockmail, rec, block, bspec -> opl);
+	    (block -> tid == TID_EMail_HTML)) {
+		rc = update_html (blockmail, rec, block, bspec, preheader, clearance);
 	}
 	if (rc &&
 	    (block -> tid == TID_EMail_HTML) &&

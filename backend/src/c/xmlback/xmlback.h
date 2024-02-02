@@ -113,9 +113,9 @@
 # define	REASON_UNMATCHED_MEDIA	3
 # define	REASON_CUSTOM		4
 
+typedef struct iflua	iflua_t;
 typedef enum { /*{{{*/
 	EncNone,
-	EncHeader,
 	Enc8bit,
 	EncQuotedPrintable,
 	EncBase64
@@ -176,15 +176,29 @@ typedef enum { /*{{{*/
 	TID_Unspec = 0,
 	TID_EMail_Head = 1,
 	TID_EMail_Text = 2,
-	TID_EMail_HTML = 3
+	TID_EMail_HTML = 3,
+	TID_EMail_HTML_Preheader = 4,
+	TID_EMail_HTML_Clearance = 5
 	/*}}}*/
 }	tid_t;
 
 typedef struct head { /*{{{*/
 	buffer_t	*h;
+	char		*_name;
+	int		_namelength;
+	int		_valuepos;
 	struct head	*next;
 	/*}}}*/
 }	head_t;
+typedef struct { /*{{{*/
+	buffer_t	*content;
+	buffer_t	*scratch;
+	buffer_t	*sender;
+	buffer_t	*recipient;
+	head_t		*head;
+	convert_t	*convert;
+	/*}}}*/
+}	header_t;
 
 
 typedef struct protect { /*{{{*/
@@ -193,6 +207,30 @@ typedef struct protect { /*{{{*/
 	struct protect	*next;		/* next protected area		*/
 	/*}}}*/
 }	protect_t;
+typedef struct { /*{{{*/
+	int		position;	/* start position of slice	*/
+	int		length;		/* length of slice		*/
+	/*}}}*/
+}	slice_t;
+typedef struct { /*{{{*/
+	slice_t		name;		/* name of the attribute	*/
+	slice_t		value;		/* value of the attribute	*/
+	/*}}}*/
+}	attr_t;
+typedef struct { /*{{{*/
+	const xmlChar	*chunk;		/* the html element		*/
+	int		chunk_length;	/* length of the whole chunk	*/
+	slice_t		name;		/* name of the html element	*/
+	attr_t		*attr;		/* indexes for attributes	*/
+	int		size;		/* # of allocated slots in attr	*/
+	int		count;		/* # of used slots in attr	*/
+	iflua_t		*ev;		/* evaluation code		*/
+	buffer_t	*scratch;	/* scratch buffer		*/
+	bool_t		*matches;	/* position in attr of matches	*/
+	int		msize;		/* # of allocs in matches	*/
+	bool_t		matched;	/* if there had been a match	*/
+	/*}}}*/
+}	html_t;
 
 struct block { /*{{{*/
 	int		bid;		/* the unique blockID		*/
@@ -214,18 +252,12 @@ struct block { /*{{{*/
 	long		target_id;	/* ID of target group		*/
 	int		target_index;	/* index into values		*/
 	xmlBufferPtr	content;	/* content in UTF-8 as parsed	*/
-	xmlCharEncodingHandlerPtr
-			translate;	/* translate UTF-8 to the ..	*/
-					/* .. charset of this block	*/
+	convert_t	*convert;	/* library independed convert	*/
 	xmlBufferPtr	in, out;	/* temp. buffers for converting	*/
 	buffer_t	*bcontent;	/* the converted binary content	*/
 	buffer_t	*bout;		/* encoded binary content	*/
 	DO_DECL (tagpos);		/* all tags with position in ..	*/
 					/* .. content			*/
-	struct {
-		buffer_t	*source;	/* source copy ..	*/
-		buffer_t	*target;	/* .. and target for ..	*/
-	}		revalidation;	/* .. revalidation of mfrom	*/
 	bool_t		inuse;		/* required during generation	*/
 	/*}}}*/
 };
@@ -262,6 +294,7 @@ struct blockspec { /*{{{*/
 	xmlChar		*linesep;	/* the line separator		*/
 	int		seplength;	/* the length of the line sep.	*/
 	opl_t		opl;		/* insert onepixel URLs		*/
+	bool_t		clearance;	/* add clearance fragment	*/
 	/*}}}*/
 };
 typedef struct { /*{{{*/
@@ -370,6 +403,15 @@ typedef struct { /*{{{*/
 	/*}}}*/
 }	mailtrack_t;
 
+typedef struct { /*{{{*/
+	long		id;		/* ID of this dkim entry	*/
+	char		*key;		/* the key itself		*/
+	char		*domain;	/* doamin for the key		*/
+	char		*selector;	/* selector for DNS entry	*/
+	int		domainlength;	/* to speed up match		*/
+	/*}}}*/
+}	adkim_t;
+typedef struct sdkim	sdkim_t;
 
 typedef struct track	track_t;
 struct track { /*{{{*/
@@ -392,13 +434,12 @@ struct blockmail { /*{{{*/
 	char		syfname[PATH_MAX + 1];	/* sync filename	*/
 	bool_t		syeof;		/* if we hit EOF		*/
 	FILE		*syfp;		/* filepointer to sync file	*/
-	xmlBufferPtr	in, out;	/* temp. in/out buffer		*/
-	xmlCharEncodingHandlerPtr
-			translate;	/* required in parsing		*/
 	log_t		*lg;		/* logging interface		*/
 	eval_t		*eval;		/* to interpret dynamic content	*/
+	purl_t		*purl;		/* scratch buffer for URL build	*/
+	html_t		*html;		/* scratch HTML element parsing */
+	cvt_t		*cvt;		/* generalized charset convert	*/
 	/* output related data */
-	bool_t		usecrlf;	/* use CRLF or LF on output	*/
 	bool_t		raw;		/* just generate raw output	*/
 	output_t	*output;	/* output information		*/
 	void		*outputdata;	/* output related private data	*/
@@ -407,8 +448,8 @@ struct blockmail { /*{{{*/
 	int		reason;		/* code, if user not active	*/
 	int		reason_detail;	/* specific reason, if available*/
 	char		*reason_custom;	/* custom reason text		*/
-	buffer_t	*head;		/* the created head ..		*/
-	buffer_t	*body;		/* .. and body			*/
+	buffer_t	*control;	/* control block		*/
+	buffer_t	*body;		/* the body			*/
 	rblock_t	*rblocks;	/* the raw blocks		*/
 
 	/*
@@ -421,16 +462,19 @@ struct blockmail { /*{{{*/
 	char		nodename[96];
 	int		company_id;
 	char		*company_token;
+	bool_t		allow_unnormalized_emails;
 	var_t		*company_info;
 	int		mailinglist_id;
 	xmlBufferPtr	mailinglist_name;
 	int		mailing_id;
 	xmlBufferPtr	mailing_name;
+	xmlBufferPtr	mailing_description;
 	int		maildrop_status_id;
 	char		status_field;
 	int		*senddate;
 	time_t		epoch;
 	bool_t		rdir_content_links;
+	bool_t		omit_list_informations_for_doi;
 	/* general part */
 	xmlBufferPtr	auto_url;
 	bool_t		auto_url_is_dynamic;
@@ -484,9 +528,9 @@ struct blockmail { /*{{{*/
 	dyn_t		*dyn;
 	int		dynamic_count;
 	xmlBufferPtr	mtbuf[2];
+	bool_t		relaxed_url_resolver;
+	bool_t		enhanced_url_resolver;
 	
-	bool_t		use_new_url_modification;
-
 	/* URLs in the mailing */
 	DO_DECL (url);
 	DO_DECL (link_resolve);
@@ -511,7 +555,8 @@ struct blockmail { /*{{{*/
 	/* revalidate envelope from by header from */
 	bool_t		revalidate_mfrom;
 	/* DKIM sign message */
-	void		*dkim;
+	sdkim_t		*signdkim;
+	DO_DECL (adkim);
 	/* validation of SPF */
 	void		*spf;
 	/* for VIP exploder, the parsed block */
@@ -582,6 +627,7 @@ struct receiver { /*{{{*/
 	int		customer_id;	/* customer id, as in the dbase	*/
 	char		**bcc;		/* optional Bcc addresses	*/
 	char		user_type;	/* user type for mailing	*/
+	int		user_status;	/* user status for mailing	*/
 	bool_t		tracking_veto;	/* tracking-veto is enabled?	*/
 	bool_t		disable_link_extension;
 					/* are link extensions disabled?*/
@@ -590,8 +636,10 @@ struct receiver { /*{{{*/
 	void		*mid_maker;	/* opaque to make message id	*/
 	mailtype_t	mailtype;	/* which mailtype to use	*/
 	char		*mediatypes;	/* permission for which medias?	*/
+	char		*user_statuses;	/* user status per media type	*/
 	media_t		*media;		/* pointer to found media	*/
 	char		mid[32];	/* media ID			*/
+	header_t	*header;	/* preparsed header block	*/
 	dataset_t	*rvdata;	/* dynamic data			*/
 	encrypt_t	*encrypt;	/* for dynamic data passing	*/
 	dcache_t	*cache;		/* dynamic cache		*/
@@ -630,9 +678,8 @@ extern bool_t		replace_tags (blockmail_t *blockmail, receiver_t *rec, block_t *b
 				      bool_t ishtml, bool_t ispdf);
 extern bool_t		modify_urls (blockmail_t *blockmail, receiver_t *rec, block_t *block, protect_t *protect, bool_t ishtml, record_t *record);
 extern bool_t		modify_header (blockmail_t *blockmail, block_t *header);
-extern bool_t		modify_output (blockmail_t *blockmail, receiver_t *rec, block_t *block, blockspec_t *bspec, links_t *links);
-extern int		convert_block (xmlCharEncodingHandlerPtr translate, xmlBufferPtr in, xmlBufferPtr out, bool_t isoutput);
-extern bool_t		convert_charset (blockmail_t *blockmail, block_t *block);
+extern bool_t		modify_output (blockmail_t *blockmail, receiver_t *rec, block_t *block, blockspec_t *bspec, block_t *preheader, block_t *clearance, links_t *links);
+extern bool_t		convert_character_set (blockmail_t *blockmail, block_t *block);
 extern bool_t		append_mixed (buffer_t *dest, const char *desc, ...);
 extern bool_t		append_pure (buffer_t *dest, const xmlBufferPtr src);
 extern bool_t		append_raw (buffer_t *dest, const buffer_t *src);
@@ -642,6 +689,15 @@ extern bool_t		append_cooked (buffer_t *dest, const xmlBufferPtr src,
 extern protect_t	*protect_alloc (void);
 extern protect_t	*protect_free (protect_t *p);
 extern protect_t	*protect_free_all (protect_t *p);
+extern html_t		*html_alloc (void);
+extern html_t		*html_free (html_t *h);
+extern bool_t		html_expression (html_t *h, blockmail_t *blockmail, const char *expression);
+extern const char	*html_norm (html_t *h, int start, int length, int *rlen);
+extern bool_t		html_parse (html_t *h, const xmlChar *chunk, int chunk_length);
+extern bool_t		html_match (html_t *h, receiver_t *rec);
+extern void		html_set_pos (html_t *h, int position);
+extern void		html_set_name (html_t *h, const char *name, int name_length);
+
 extern tagpos_t		*tagpos_alloc (void);
 extern tagpos_t		*tagpos_free (tagpos_t *t);
 extern void		tagpos_find_name (tagpos_t *t);
@@ -649,7 +705,7 @@ extern void		tagpos_setup_tag (tagpos_t *t, blockmail_t *blockmail);
 extern block_t		*block_alloc (void);
 extern block_t		*block_free (block_t *b);
 extern void		block_swap_inout (block_t *b);
-extern bool_t		block_setup_charset (block_t *b);
+extern bool_t		block_setup_charset (block_t *b, cvt_t *cvt);
 extern void		block_setup_tagpositions (block_t *b, blockmail_t *blockmail);
 extern void		block_find_method (block_t *b);
 extern bool_t		block_code_binary_out (block_t *b);
@@ -671,6 +727,7 @@ extern bool_t		media_set_status (media_t *m, const char *status);
 extern parm_t		*media_find_parameter (media_t *m, const char *name);
 extern void		media_postparse (media_t *m, blockmail_t *blockmail);
 extern bool_t		media_parse_type (const char *str, mediatype_t *type);
+extern const char	*media_type (mediatype_t type);
 extern const char	*media_typeid (mediatype_t type);
 
 extern fix_t		*fix_alloc (void);
@@ -690,12 +747,12 @@ extern mailtypedefinition_t
 extern counter_t	*counter_alloc (const char *mediatype, int subtype);
 extern counter_t	*counter_free (counter_t *c);
 extern counter_t	*counter_free_all (counter_t *c);
-extern rblock_t		*rblock_alloc (tid_t tid, const char *bname, xmlBufferPtr content);
+extern rblock_t		*rblock_alloc (tid_t tid, const char *bname, const xmlBufferPtr content1, const buffer_t *content2);
 extern rblock_t		*rblock_free (rblock_t *r);
 extern rblock_t		*rblock_free_all (rblock_t *r);
 extern bool_t		rblock_set_name (rblock_t *r, const char *bname);
-extern bool_t		rblock_set_content (rblock_t *r, xmlBufferPtr content);
-extern bool_t		rblock_retrieve_content (rblock_t *r, buffer_t *content);
+extern bool_t		rblock_set_content (rblock_t *r, const xmlBufferPtr content);
+extern bool_t		rblock_retrieve_content (rblock_t *r, const buffer_t *content);
 extern bool_t		rblock_set_string_content (rblock_t *r, const char *content);
 extern mailtrack_t	*mailtrack_alloc (int licence_id, int company_id, int mailing_id, int maildrop_status_id);
 extern mailtrack_t	*mailtrack_free (mailtrack_t *m);
@@ -729,7 +786,7 @@ extern void		*tag_function_alloc (tag_t *t, blockmail_t *blockmail);
 extern void		*tag_function_free (void *pd);
 extern void		tag_function_proc (void *pd, tag_t *t, blockmail_t *blockmail, receiver_t *rec);
 extern void		*tfunc_alloc (blockmail_t *blockmail);
-extern void		tfunc_free (void *tp);
+extern void		tfunc_free (void *tfp);
 
 extern void		tf_lua_free (void *ilp);
 extern void		*tf_lua_alloc (const char *func, tag_t *tag, blockmail_t *blockmail);
@@ -737,11 +794,14 @@ extern bool_t		tf_lua_load (void *ilp, buffer_t *code, blockmail_t *blockmail);
 extern bool_t		tf_lua_setup (void *ilp, const char *func, tag_t *tag, blockmail_t *blockmail);
 extern bool_t		tf_lua_proc (void *ilp, const char *func, tag_t *tag, blockmail_t *blockmail, receiver_t *rec);
 
-extern char		*ev_lua_convert (blockmail_t *blockmail, const char *expression);
-extern void		*ev_lua_free (void *ilp);
-extern void		*ev_lua_alloc (blockmail_t *blockmail, const char *expression);
-extern int		ev_lua_vevaluate (void *ilp, receiver_t *rec, va_list par);
-extern int		ev_lua_evaluate (void *ilp, receiver_t *rec, ...);
+extern iflua_t		*ev_free (iflua_t *il);
+extern iflua_t		*ev_alloc (blockmail_t *blockmail, const char *expression, const char *global, bool_t sandbox, ...);
+extern char		*ev_convert (blockmail_t *blockmail, const char *expression);
+extern iflua_t		*ev_filter_alloc (blockmail_t *blockmail, const char *expression);
+extern int		ev_filter_vevaluate (iflua_t *il, receiver_t *rec, va_list par);
+extern int		ev_filter_evaluate (iflua_t *il, receiver_t *rec, ...);
+extern iflua_t		*ev_html_alloc (blockmail_t *blockmail, const char *expression, const char *global);
+extern bool_t		ev_html_evaluate (iflua_t *il, html_t *html, receiver_t *rec);
 
 extern tag_t		*tag_alloc (void);
 extern tag_t		*tag_free (tag_t *t);
@@ -795,6 +855,7 @@ extern void		receiver_set_data_buf (receiver_t *rec, const char *key, const buff
 extern void		receiver_set_data_default (receiver_t *rec);
 extern void		receiver_set_data (receiver_t *rec, const char *name, record_t *record);
 extern void		receiver_make_message_id (receiver_t *rec, blockmail_t *blockmail);
+
 extern media_target_t	*media_target_alloc (const char *media, const xmlChar *value);
 extern media_target_t	*media_target_free (media_target_t *mt);
 extern media_target_t	*media_target_free_all (media_target_t *mt);
@@ -804,7 +865,6 @@ extern links_t		*links_free (links_t *l);
 extern bool_t		links_expand (links_t *l);
 extern bool_t		links_nadd (links_t *l, const char *lnk, int llen);
 
-
 extern tracker_t	*tracker_alloc (void);
 extern tracker_t	*tracker_free (tracker_t *tracker);
 extern bool_t		tracker_add (tracker_t *t, blockmail_t *blockmail, const char *name, xmlBufferPtr content);
@@ -812,16 +872,40 @@ extern bool_t		tracker_fill (tracker_t *t, blockmail_t *blockmail, const xmlChar
 
 extern head_t		*head_alloc (void);
 extern head_t		*head_free (head_t *h);
-extern void		head_add (head_t *h, const char *str, int len);
-extern void		head_trim (head_t *h);
-extern bool_t		flatten_header (buffer_t *target, buffer_t *header, bool_t fold);
+extern head_t		*head_free_all (head_t *h);
+extern const char	*head_find_name (head_t *h, int *namelength);
+extern bool_t		head_add (head_t *h, const byte_t *chunk, int len);
+extern const char	*head_value (head_t *h);
+extern bool_t		head_set_value (head_t *h, buffer_t *value);
+extern bool_t		head_matchn (head_t *h, const char *name, int namelength);
+extern bool_t		head_match (head_t *h, const char *name);
+extern char		*head_is (head_t *h, const char *name);
+extern header_t		*header_alloc (void);
+extern header_t		*header_copy (header_t *source);
+extern header_t		*header_free (header_t *h);
+extern void		header_clear (header_t *h);
+extern buffer_t		*header_scratch (header_t *header, int size);
+extern bool_t		header_set_recipient (header_t *h, const char *recipient, bool_t normalize);
+extern void		header_set_charset (header_t *h, cvt_t *cvt, const char *charset);
+extern bool_t		header_set_content (header_t *h, xmlBufferPtr source);
+extern bool_t		header_append_content (header_t *h, xmlBufferPtr source);
+extern bool_t		header_insert (header_t *h, const char *line, head_t *after);
+extern void		header_remove (header_t *h, const char *name);
+extern bool_t		header_revalidate_mfrom (header_t *h, void *spf);
+extern int		header_size (header_t *h);
+extern void		header_cleanup (header_t *h, bool_t remove_list_information);
+extern buffer_t		*header_encode (header_t *h, head_t *head);
+extern buffer_t		*header_create (header_t *h, bool_t raw);
+extern buffer_t		*header_create_sendmail_spoolfile_header (header_t *h);
 
-extern void		*sdkim_alloc (blockmail_t *blockmail, const char *domain, const char *key, const char *ident,
+extern adkim_t		*adkim_alloc (void);
+extern adkim_t		*adkim_free (adkim_t *a);
+extern sdkim_t		*sdkim_alloc (blockmail_t *blockmail, const char *domain, const char *key, const char *ident,
 				      const char *selector, const char *column, bool_t enable_report, bool_t enable_debug);
-extern void		*sdkim_free (void *sp);
-extern bool_t		sdkim_should_sign (void *sp, receiver_t *rec);
-extern char		*sdkim_sign (blockmail_t *blockmail, head_t *head, buffer_t *body);
-extern void		sign_mail (blockmail_t *blockmail, buffer_t *header);
+extern sdkim_t		*sdkim_free (sdkim_t *s);
+extern bool_t		sdkim_should_sign (sdkim_t *s, receiver_t *rec);
+extern char		*sdkim_sign (blockmail_t *blockmail, header_t *header, adkim_t *adkim, const char *ident, buffer_t *body);
+extern void		sign_mail (blockmail_t *blockmail, header_t *header);
 
 extern void		*spf_alloc (void);
 extern void		*spf_free (void *sp);
@@ -832,26 +916,26 @@ extern bool_t		spf_is_valid (void *sp, const char *address);
  */
 extern bool_t		decode_base64 (const xmlBufferPtr src, buffer_t *dest);
 extern bool_t		encode_none (const xmlBufferPtr src, buffer_t *dest);
-extern bool_t		encode_header (const xmlBufferPtr src, buffer_t *dest, const char *charset);
 extern bool_t		encode_8bit (const xmlBufferPtr src, buffer_t *dest);
 extern bool_t		encode_quoted_printable (const xmlBufferPtr src, buffer_t *dest);
 extern bool_t		encode_base64 (const xmlBufferPtr src, buffer_t *dest);
 extern bool_t		encode_encrypted (buffer_t *src, buffer_t *dest);
 extern bool_t		encode_uid_parameter (const byte_t *parameter, size_t size, buffer_t *dest);
-extern bool_t		encode_url (const byte_t *input, int ilen, buffer_t *dest);
+extern bool_t		encode_head (const buffer_t *source, buffer_t *target, const char *charset);
+
+# define	xmlCharLength		xchar_length
+# define	xmlStrictCharLength	xchar_strict_length
+# define	xmlstrcmp		xstrcmp
+# define	xmlstrncmp		xstrncmp
 
 # ifndef	__OPTIMIZE__
 extern bool_t		xmlEqual (xmlBufferPtr p1, xmlBufferPtr p2);
-extern int		xmlCharLength (xmlChar ch);
-extern int		xmlStrictCharLength (xmlChar ch);
 extern int		xmlValidPosition (const xmlChar *str, int length);
 extern bool_t		xmlValid (const xmlChar *str, int length);
 extern char		*xml2string (xmlBufferPtr p);
 extern const char	*xml2char (const xmlChar *s);
 extern const xmlChar	*char2xml (const char *s);
 extern const char	*byte2char (const byte_t *b);
-extern int		xmlstrcmp (const xmlChar *s1, const char *s2);
-extern int		xmlstrncmp (const xmlChar *s1, const char *s2, size_t n);
 extern long		xml2long (xmlBufferPtr p);
 extern void		entity_escape (xmlBufferPtr target, const xmlChar *source, int source_length);
 # else		/* __OPTIMIZE__ */
@@ -859,6 +943,7 @@ extern void		entity_escape (xmlBufferPtr target, const xmlChar *source, int sour
 # include	"misc.c"
 # undef		I
 # endif		/* __OPTIMIZE__ */
+# define		bp()
 extern bool_t		xmlSQLlike (const xmlChar *pattern, int plen,
 				    const xmlChar *string, int slen,
 				    const xmlChar *escape, int elen);

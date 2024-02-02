@@ -86,7 +86,7 @@ var_variable (var_t *v, const char *var) /*{{{*/
 	if (v -> var)
 		free (v -> var);
 	v -> var = var ? strdup (var) : NULL;
-	return (! var) || v -> var ? true : false;
+	return (! var) || v -> var;
 }/*}}}*/
 /** Set the value.
  * Sets/replaces the value.
@@ -100,7 +100,7 @@ var_value (var_t *v, const char *val) /*{{{*/
 	if (v -> val)
 		free (v -> val);
 	v -> val = val ? strdup (val) : NULL;
-	return (! val) || v -> val ? true : false;
+	return (! val) || v -> val;
 }/*}}}*/
 static
 # ifdef		__OPTIMIZE__

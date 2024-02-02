@@ -12,9 +12,8 @@
 #
 . $HOME/scripts/config.sh
 #
-if py3available ; then
-	script=/var/tmp/bounce-rules3.py
-	cat << __EOF__ > $script
+script="$BASE/var/tmp/bounce-rules3.py"
+cat << __EOF__ > $script
 #!/usr/bin/env python3
 #
 import	argparse, re, json, difflib
@@ -390,13 +389,10 @@ class Main (CLI):
 if __name__ == '__main__':
 	Main.main ()
 __EOF__
-	chmod 755 $script
-	$script "$0"
-	rc=$?
-	rm -f $script
-else
-	rc=0
-fi
+chmod 755 $script
+$script "$0"
+rc=$?
+rm -f $script
 exit $rc
 #STOP
 #
@@ -484,6 +480,7 @@ EMM-8708;;500;511;stat="envelope blocked", relay=".mimecast.com."
 EMM-8870;;500;511;stat="Address not present in directory"
 EMM-8724;;500;511;stat="can't verify recipient", relay=".koeln.de.|.tele2.de|.hamburg.de.|.inter.net.|.berlin.de.'"
 EMM-9020;;500;511;stat="Domain not in use", relay=".tuwien.ac.at."
+EMM-10052;;500;511;stat="denied by SecuMail valid-address-filter"
 ##
 ## BAV-RULES
 ##

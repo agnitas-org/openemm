@@ -21,7 +21,7 @@ main (int argc, char **argv) /*{{{*/
 	int		rc;
 	int		n;
 	bool_t		dump;
-	void		*cfg;
+	config_t	*cfg;
 	const char	*key, *value;
 	
 	dump = false;

@@ -10,6 +10,7 @@
 ####################################################################################################################################################################################################################################################################
 #
 import	re
+from	types import CodeType
 from	typing import Any, Callable, Optional
 from	typing import Dict, Match
 from	.exceptions import error
@@ -225,7 +226,7 @@ resp. after the auto generated code"""
 		self.content = content
 		self.precode = precode
 		self.postcode = postcode
-		self.compiled = None
+		self.compiled: Optional[CodeType] = None
 		self.properties: Dict[str, Any] = {}
 		self.namespace: Optional[Dict[str, Any]] = None
 		self.code = ''
@@ -348,7 +349,7 @@ resp. after the auto generated code"""
 						if pos < clen and self.content[pos] == '(':
 							pos += 1
 							level = 1
-							quote = None
+							quote: Optional[str] = None
 							escape = False
 							start = pos
 							end = -1

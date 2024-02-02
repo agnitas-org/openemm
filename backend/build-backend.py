@@ -28,18 +28,15 @@ bin mode=0755:
 	src/script/tools/dkim-mgr
 	src/script/tools/script-tag
 	src/script/tools/service.sh
-	src/script/tools/OMT.sh
 
 	src/c/bav/bav
 	src/c/tools/config-query
 	src/c/tools/pathstrip
-	src/c/tools/qctrl		user=root, group=root, mode=06755
-	src/c/tools/smctrl		user=root, group=root, mode=06755
 	src/c/xmlback/luatc
 	src/c/xmlback/xmlback
 
 lib:
-	src/script/data/bav.rc		user=root, group=root, mode=0600
+	src/script/data/bav.rc
 	src/script/data/bav.rule
 
 scripts mode=0755:
@@ -52,7 +49,6 @@ scripts mode=0755:
 	src/script/tools/script-tag3.py
 	src/script/tools/service3.py
 	src/script/tools/service3.cfg		mode=0644
-	src/script/tools/OMT.py
 
 scripts/agn3:
 	src/script/lib/agn3/*.*
@@ -70,12 +66,12 @@ scripts/once mode=0755:
 scripts/once/tags:
 	lib/tags/*.lua
 
-scripts/EMT_lib:
-	src/script/tools/EMT_lib/*.*
+scripts/requirements:
+	src/script/lib/requirements.txt		mode=0644
 """
 
 def toint (s: Any) -> int:
-	if type (s) is str:
+	if isinstance (s, str):
 		if s.lower ().startswith ('0x'):
 			return int (s[2:], 16)
 		if s.lower ().startswith ('0o'):

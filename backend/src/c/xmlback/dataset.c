@@ -136,7 +136,7 @@ scanner_use (scanner_t *s, record_t *r) /*{{{*/
 				break;
 			}
 	}
-	return seen < refs ? true : false;
+	return seen < refs;
 }/*}}}*/
 
 static int *

@@ -76,7 +76,7 @@
  * Checks wether a given loglevel mask matches a used loglevel mask */
 # define	LM_NONE			((logmask_t) 0)
 # define	LM_BIT(bbb)		((logmask_t) (1 << (bbb)))
-# define	LM_MATCH(mmm,ppp)	(((! (mmm)) || ((ppp) & (mmm))) ? true : false)
+# define	LM_MATCH(mmm,ppp)	((! (mmm)) || ((ppp) & (mmm)))
 /*}}}*/
 /*{{{	logsuspend masks */
 /** @def LS_LOGFILE
@@ -328,23 +328,35 @@ typedef struct { /*{{{*/
 	/*}}}*/
 }	purl_t;
 
+/**
+ * charset encoding
+ */
+typedef struct convert	convert_t;
+typedef struct cvt	cvt_t;
+
+/**
+ * systemconfig
+ */
+typedef struct config	config_t;
+
 extern buffer_t		*buffer_alloc (int nsize);
+extern buffer_t		*buffer_copy (const buffer_t *source);
 extern buffer_t		*buffer_realloc (buffer_t *b, int nsize);
 extern buffer_t		*buffer_free (buffer_t *b);
-extern bool_t		buffer_valid (buffer_t *b);
+extern bool_t		buffer_valid (const buffer_t *b);
 extern void		buffer_clear (buffer_t *b);
 extern void		buffer_truncate (buffer_t *b, long length);
 extern int		buffer_length (const buffer_t *b);
 extern const byte_t	*buffer_content (const buffer_t *b);
 extern bool_t		buffer_size (buffer_t *b, int nsize);
 extern bool_t		buffer_set (buffer_t *b, const byte_t *data, int dlen);
-extern bool_t		buffer_setbuf (buffer_t *b, buffer_t *data);
+extern bool_t		buffer_setbuf (buffer_t *b, const buffer_t *data);
 extern bool_t		buffer_setb (buffer_t *b, byte_t data);
 extern bool_t		buffer_setsn (buffer_t *b, const char *str, int len);
 extern bool_t		buffer_sets (buffer_t *b, const char *str);
 extern bool_t		buffer_setch (buffer_t *b, char ch);
 extern bool_t		buffer_append (buffer_t *b, const byte_t *data, int dlen);
-extern bool_t		buffer_appendbuf (buffer_t *b, buffer_t *data);
+extern bool_t		buffer_appendbuf (buffer_t *b, const buffer_t *data);
 extern bool_t		buffer_appendb (buffer_t *b, byte_t data);
 extern bool_t		buffer_appendsn (buffer_t *b, const char *str, int len);
 extern bool_t		buffer_appends (buffer_t *b, const char *str);
@@ -352,11 +364,11 @@ extern bool_t		buffer_appendch (buffer_t *b, char ch);
 extern bool_t		buffer_appendnl (buffer_t *b);
 extern bool_t		buffer_appendcrlf (buffer_t *b);
 extern bool_t		buffer_insert (buffer_t *b, int pos, const byte_t *data, int dlen);
-extern bool_t		buffer_insertbuf (buffer_t *b, int pos, buffer_t *data);
+extern bool_t		buffer_insertbuf (buffer_t *b, int pos, const buffer_t *data);
 extern bool_t		buffer_insertsn (buffer_t *b, int pos, const char *str, int len);
 extern bool_t		buffer_inserts (buffer_t *b, int pos, const char *str);
 extern bool_t		buffer_stiff (buffer_t *b, const byte_t *data, int dlen);
-extern bool_t		buffer_stiffbuf (buffer_t *b, buffer_t *data);
+extern bool_t		buffer_stiffbuf (buffer_t *b, const buffer_t *data);
 extern bool_t		buffer_stiffb (buffer_t *b, byte_t data);
 extern bool_t		buffer_stiffsn (buffer_t *b, const char *str, int len);
 extern bool_t		buffer_stiffs (buffer_t *b, const char *str);
@@ -366,10 +378,11 @@ extern bool_t		buffer_stiffcrlf (buffer_t *b);
 extern bool_t		buffer_vformat (buffer_t *b, const char *fmt, va_list par) __attribute__ ((format (printf, 2, 0)));
 extern bool_t		buffer_format (buffer_t *b, const char *fmt, ...) __attribute__ ((format (printf, 2, 3)));
 extern bool_t		buffer_strftime (buffer_t *b, const char *fmt, const struct tm *tt);
+extern bool_t		buffer_read (buffer_t *b, int fd, int size);
 extern byte_t		*buffer_cut (buffer_t *b, long start, long length, long *rlength);
 extern const char	*buffer_string (buffer_t *b);
 extern char		*buffer_stealstring (buffer_t *b);
-extern char		*buffer_copystring (buffer_t *b);
+extern char		*buffer_copystring (const buffer_t *b);
 extern int		buffer_peek (const buffer_t *b, int pos);
 extern void		buffer_poke (buffer_t *b, int pos, byte_t value);
 extern int		buffer_index (const buffer_t *b, const byte_t *content, int clen);
@@ -530,6 +543,12 @@ extern char		*strudup (const char *s);
 extern char		*strlcat (const char *s, ...);
 extern char		*strucat (const char *s, ...);
 extern char		*get_fqdn (void);
+extern bool_t		encode_url (const byte_t *input, int ilen, buffer_t *dest);
+extern char		*extract_address (const char *hline);
+extern char		*_extract_address (const char *hline);
+extern const char	*addr_element (const char *chunk, int *matchlength);
+extern void		norm_element (char *chunk);
+extern char		*split_element (char *chunk);
 extern unsigned long	unhexn (const char *str, int len);
 extern unsigned long	unhex (const char *str);
 extern char		*which (const char *pgm);
@@ -562,10 +581,18 @@ extern bool_t		purl_set_anchorn (purl_t *p, const byte_t *anchor, int alen);
 extern bool_t		purl_set_anchor (purl_t *p, const byte_t *anchor);
 extern const byte_t	*purl_build (purl_t *p, const char *extra_encode, int *rlen, bool_t (*callback) (void *, buffer_t *, const byte_t *, int), void *priv);
 
-extern void		*systemconfig_free (void *lc);
-extern void		*systemconfig_alloc (void);
-extern const char	*systemconfig_find (void *lc, const char *key);
-extern bool_t		systemconfig_get (void *lc, int idx, const char **key, const char **value);
+extern bool_t		convert_match (convert_t *c, const char *charset);
+extern const char	*convert_charset (convert_t *c);
+extern const buffer_t	*convert_encode (convert_t *c, const byte_t *source_buffer, size_t source_length);
+extern const buffer_t	*convert_encode_buffer (convert_t *c, const buffer_t *source);
+extern cvt_t		*cvt_alloc (void);
+extern cvt_t		*cvt_free (cvt_t *c);
+extern convert_t	*cvt_find (cvt_t *c, const char *charset);
+
+extern config_t		*systemconfig_free (config_t *c);
+extern config_t		*systemconfig_alloc (void);
+extern const char	*systemconfig_find (config_t *c, const char *key);
+extern bool_t		systemconfig_get (config_t *c, int idx, const char **key, const char **value);
 
 # ifdef		__OPTIMIZE__
 static inline bool_t

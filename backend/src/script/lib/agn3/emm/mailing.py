@@ -10,6 +10,7 @@
 ####################################################################################################################################################################################################################################################################
 #
 import	socket, time, logging
+from	datetime import datetime
 from	typing import Callable, Optional, Protocol, Union
 from	typing import Tuple
 from	typing import cast
@@ -82,6 +83,7 @@ starting a mailing if a failure occurs."""
 			raise error ('missing status_id for starting mailing')
 		mailing_id: Optional[int] = None
 		if cursor is not None:
+			cursor.sync ()
 			query = (
 				'SELECT mailing_id '
 				'FROM maildrop_status_tbl '
@@ -106,7 +108,7 @@ starting a mailing if a failure occurs."""
 			if rq is not None:
 				mailing_name = f'{rq.mailing_name} (ID: {mailing_id}, status_id {status_id} for {rq.company_name}, ID {rq.company_id}'
 		#
-		genchange = None
+		genchange: Optional[datetime] = None
 		gcQuery = 'SELECT genstatus, genchange FROM maildrop_status_tbl WHERE status_id = :status_id'
 		gcData = {'status_id': status_id}
 		if cursor is not None:
@@ -142,6 +144,7 @@ starting a mailing if a failure occurs."""
 			if cursor is not None:
 				time.sleep (2)
 				if genchange is not None:
+					cursor.sync ()
 					rq = cursor.querys (gcQuery, gcData)
 					if rq is None or rq.genchange is None:
 						logger.error (f'{mailing_name}: no genchange found, no retry takes place')
@@ -157,6 +160,7 @@ starting a mailing if a failure occurs."""
 			startup = 30
 			while startup > 0:
 				startup -= 1
+				cursor.sync ()
 				rq = cursor.querys (gcQuery, gcData)
 				if rq is None:
 					logger.error (f'{mailing_name}: entry for status_id {status_id} vanished')

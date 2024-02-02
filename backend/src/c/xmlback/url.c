@@ -41,7 +41,7 @@ url_free (url_t *u) /*{{{*/
 static bool_t
 do_match (buffer_t *lnk, const xmlChar *check, int clen) /*{{{*/
 {
-	return lnk && lnk -> length == clen && (! memcmp (lnk -> buffer, check, clen)) ? true : false;
+	return lnk && lnk -> length == clen && (! memcmp (lnk -> buffer, check, clen));
 }/*}}}*/
 bool_t
 url_match (url_t *u, const xmlChar *check, int clen) /*{{{*/

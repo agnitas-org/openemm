@@ -34,30 +34,6 @@
 						lua_setfield (il -> lua, -2, (nnn));		\
 					}	while (0)
 
-static void	stack_dump (lua_State *lua, const char *fmt, ...) __attribute__ ((format (printf, 2, 3)));
-static void
-stack_dump (lua_State *lua, const char *fmt, ...) /*{{{*/
-{
-	va_list	par;
-	int	stack = lua_gettop (lua);
-	
-	va_start (par, fmt);
-	if (fmt) {
-		vfprintf (stderr, fmt, par);
-		fputc ('\n', stderr);
-	}
-	if (! stack) {
-		fprintf (stderr, "\temtpy stack\n\n");
-	} else {
-		int	n;
-		
-		for (n = stack; n > 0; --n) {
-			fprintf (stderr, "\t%4d  %4d  %s\n", n, n - stack - 1, lua_typename (lua, lua_type (lua, n)));
-		}
-		fputc ('\n', stderr);
-	}
-	va_end (par);
-}/*}}}*/
 static void
 push_record_field (lua_State *lua, char type, bool_t isnull, xmlBufferPtr data) /*{{{*/
 {
@@ -128,7 +104,7 @@ fetch_value (lua_State *lua, const char *column) /*{{{*/
 	fetchn_value (lua, column, strlen (column));
 }/*}}}*/
 
-typedef struct { /*{{{*/
+struct iflua { /*{{{*/
 	log_t		*lg;
 	bool_t		sandbox;
 	blockmail_t	*blockmail;
@@ -141,7 +117,7 @@ typedef struct { /*{{{*/
 	
 	void		*local;
 	/*}}}*/
-}	iflua_t;
+};
 
 # define	GET_IFLUA(xxx)	((iflua_t *) lua_touserdata ((xxx), lua_upvalueindex (1)))
 
@@ -503,10 +479,12 @@ iflua_setup_context (iflua_t *il) /*{{{*/
 	setifield (il -> blockmail -> licence_id, "licence_id");
 	setifield (il -> blockmail -> company_id, "company_id");
 	setsfield (il -> blockmail -> company_token, "company_token");
+	setbfield (il -> blockmail -> allow_unnormalized_emails, "allow_unnormalized_emails");
 	setifield (il -> blockmail -> mailinglist_id, "mailinglist_id");
 	setxfield (il -> blockmail -> mailinglist_name, "mailinglist_name");
 	setifield (il -> blockmail -> mailing_id, "mailing_id");
 	setxfield (il -> blockmail -> mailing_name, "mailing_name");
+	setxfield (il -> blockmail -> mailing_description, "mailing_description");
 	setifield (il -> blockmail -> maildrop_status_id, "status_id");
 	setcfield (il -> blockmail -> status_field, "status_field");
 	if (il -> blockmail -> senddate) {
@@ -547,6 +525,24 @@ iflua_setup_context (iflua_t *il) /*{{{*/
 			else
 				setnfield (mapper[n].map);
 	}
+	lua_createtable (il -> lua, 0, 0);
+	for (n = 0; n < il -> blockmail -> media_count; ++n) {
+		media_t		*media = il -> blockmail -> media[n];
+		const char	*type = media_type (media -> type);
+		
+		if (type && media -> parm) {
+			parm_t	*parm;
+			
+			lua_createtable (il -> lua, 0, 0);
+			for (parm = media -> parm; parm; parm = parm -> next)
+				if (parm -> value)
+					setbuffield (parm -> value, parm -> name);
+				else
+					setnfield (parm -> name);
+			lua_setfield (il -> lua, -2, type);
+		}
+	}
+	lua_setfield (il -> lua, -2, "media");
 	lua_setfield (il -> lua, LUA_REGISTRYINDEX, ID_CTX);
 }/*}}}*/
 static int
@@ -671,6 +667,7 @@ iflua_push_context (iflua_t *il) /*{{{*/
 		scratch[0] = il -> rec -> user_type;
 		scratch[1] = '\0';
 		setsfield (scratch, "user_type");
+		setifield (il -> rec -> user_status, "user_status");
 		setbuffield (il -> rec -> message_id, "message_id");
 	}
 	if (il -> last_base_block != il -> rec -> base_block) {
@@ -686,10 +683,12 @@ iflua_push_context (iflua_t *il) /*{{{*/
 				setnfield ("cid");
 			switch (b -> tid) {
 			default:
-			case TID_Unspec:	typ = "unspec";		break;
-			case TID_EMail_Head:	typ = "head";		break;
-			case TID_EMail_Text:	typ = "text";		break;
-			case TID_EMail_HTML:	typ = "html";		break;
+			case TID_Unspec:		typ = "unspec";		break;
+			case TID_EMail_Head:		typ = "head";		break;
+			case TID_EMail_Text:		typ = "text";		break;
+			case TID_EMail_HTML:		typ = "html";		break;
+			case TID_EMail_HTML_Preheader:	typ = "preheader";	break;
+			case TID_EMail_HTML_Clearance:	typ = "clearance";	break;
 			}
 			setsfield (typ, "type");
 		} 
@@ -833,7 +832,7 @@ tf_lua_proc (void *ilp, const char *func, tag_t *tag, blockmail_t *blockmail, re
 	} else
 		log_out (blockmail -> lg, LV_WARNING, "Tag \"%s\" propagates error \"%s\"", tag -> cname, (result ? result : "*no message found*"));
 	iflua_lgpop (il);
-	return rc == LUA_OK ? true : false;
+	return rc == LUA_OK;
 }/*}}}*/
 
 # define	EV_FUNC		"__evaluate"
@@ -1027,8 +1026,52 @@ convert_common_mistakes (buffer_t *target, const char *s, int slen) /*{{{*/
 		}
 	}
 }/*}}}*/
+iflua_t *
+ev_free (iflua_t *il) /*{{{*/
+{
+	return iflua_free (il);
+}/*}}}*/
+iflua_t *
+ev_alloc (blockmail_t *blockmail, const char *expression, const char *global, bool_t sandbox, ...) /*{{{*/
+{
+	va_list		par;
+	iflua_t		*il;
+	buffer_t	*frame;
+
+	va_start (par, sandbox);
+	il = NULL;
+	if (frame = buffer_alloc (512)) {
+		const char	*sep;
+		const char	*s;
+		
+		if (global) {
+			buffer_appends (frame, global);
+			buffer_appendch (frame, '\n');
+		}
+		buffer_appends (frame, "function " EV_FUNC " (");
+		sep = NULL;
+		while (s = va_arg (par, const char *)) {
+			if (sep)
+				buffer_appends (frame, sep);
+			buffer_appends (frame, s);
+			sep = ", ";
+		}
+		buffer_appends (frame, ")\n\treturn (");
+		buffer_appends (frame, expression);
+		buffer_appends (frame, ")\nend\n");
+		if (il = iflua_alloc (blockmail, sandbox)) {
+			if (! alua_load (il -> lua, "__expr__", buffer_content (frame), buffer_length (frame))) {
+				log_out (blockmail -> lg, LV_WARNING, "Expression \"%s\" does not compile: %s", expression, lua_tostring (il -> lua, -1));
+				il = iflua_free (il);
+			}
+		}
+		buffer_free (frame);
+	}
+	va_end (par);
+	return il;
+}/*}}}*/
 char *
-ev_lua_convert (blockmail_t *blockmail, const char *expression) /*{{{*/
+ev_convert (blockmail_t *blockmail, const char *expression) /*{{{*/
 {
 	char		*rc;
 	regex_t		column;
@@ -1087,39 +1130,14 @@ ev_lua_convert (blockmail_t *blockmail, const char *expression) /*{{{*/
 	}
 	return rc;
 }/*}}}*/
-void *
-ev_lua_free (void *ilp) /*{{{*/
+iflua_t *
+ev_filter_alloc (blockmail_t *blockmail, const char *expression) /*{{{*/
 {
-	return iflua_free ((iflua_t *) ilp);
-}/*}}}*/
-void *
-ev_lua_alloc (blockmail_t *blockmail, const char *expression) /*{{{*/
-{
-	iflua_t	*il;
-	
-	if (il = iflua_alloc (blockmail, true)) {
-		char	*frame;
-		int	flen;
-		
-		iflua_set_source (il, (const byte_t *) expression, strlen (expression));
-		if (frame = malloc (strlen (expression) + 256)) {
-			flen = sprintf (frame, "function " EV_FUNC " (ctx, cust)\n\treturn (%s)\nend", expression);
-			if (! alua_load (il -> lua, "__expr__", frame, flen)) {
-				log_out (blockmail -> lg, LV_WARNING, "Expression \"%s\" does not compile: %s", expression, lua_tostring (il -> lua, -1));
-				il = iflua_free (il);
-			}
-			free (frame);
-		} else {
-			log_out (blockmail -> lg, LV_ERROR, "Failed to allocate function frame for %s (%m)", expression);
-			il = iflua_free (il);
-		}
-	}
-	return il;
+	return ev_alloc (blockmail, expression, NULL, true, "ctx", "cust", NULL);
 }/*}}}*/
 int
-ev_lua_vevaluate (void *ilp, receiver_t *rec, va_list par) /*{{{*/
+ev_filter_vevaluate (iflua_t *il, receiver_t *rec, va_list par) /*{{{*/
 {
-	iflua_t		*il = (iflua_t *) ilp;
 	const char	*var;
 	char		typ;
 	const char	*sval;
@@ -1198,13 +1216,83 @@ ev_lua_vevaluate (void *ilp, receiver_t *rec, va_list par) /*{{{*/
 	return rc;
 }/*}}}*/
 int
-ev_lua_evaluate (void *ilp, receiver_t *rec, ...) /*{{{*/
+ev_filter_evaluate (iflua_t *il, receiver_t *rec, ...) /*{{{*/
 {
 	va_list	par;
 	int	rc;
 	
 	va_start (par, rec);
-	rc = ev_lua_vevaluate (ilp, rec, par);
+	rc = ev_filter_vevaluate (il, rec, par);
 	va_end (par);
 	return rc;
+}/*}}}*/
+iflua_t *
+ev_html_alloc (blockmail_t *blockmail, const char *expression, const char *global) /*{{{*/
+{
+	return ev_alloc (blockmail, expression, global, false, "ctx", "cust", "element", "name", "attr", NULL);
+}/*}}}*/
+bool_t
+ev_html_evaluate (iflua_t *il, html_t *html, receiver_t *rec) /*{{{*/
+{
+	int		n;
+	const char	*normed;
+	int		nlen;
+
+	il -> rec = rec;
+	lua_getglobal (il -> lua, EV_FUNC);
+	iflua_push_context (il);
+	iflua_push_customer (il);
+	lua_pushlstring (il -> lua, (const char *) html -> chunk, html -> chunk_length);
+	if (normed = html_norm (html, html -> name.position, html -> name.length, & nlen))
+		lua_pushlstring (il -> lua, normed, nlen);
+	else
+		lua_pushnil (il -> lua);
+	lua_createtable (il -> lua, html -> count, html -> count);
+	for (n = 0; n < html -> count; ++n) {
+		lua_pushnumber (il -> lua, n + 1);
+		lua_pushlstring (il -> lua, (const char *) (html -> chunk + html -> attr[n].value.position), html -> attr[n].value.length);
+		lua_settable (il -> lua, -3);
+		if (normed = html_norm (html, html -> attr[n].name.position, html -> attr[n].name.length, & nlen)) {
+			lua_pushlstring (il -> lua, normed, nlen);
+			lua_pushlstring (il -> lua, (const char *) (html -> chunk + html -> attr[n].value.position), html -> attr[n].value.length);
+			lua_settable (il -> lua, -3);
+		}
+	}
+	if (lua_pcall (il -> lua, 5, LUA_MULTRET, 0) == LUA_OK) {
+		int	stack = lua_gettop (il -> lua);
+		
+		if (stack > 0) {
+			int		typ;
+			const char	*value;
+			size_t		vlen;
+
+			for (n = 1; n <= stack; ++n) {
+				typ = lua_type (il -> lua, n);
+				if (typ == LUA_TNUMBER)
+					html_set_pos (html, (int) lua_tonumber (il -> lua, n) - 1);
+				else if (typ == LUA_TSTRING) {
+					value = lua_tolstring (il -> lua, n, & vlen);
+					if (vlen > 0)
+						html_set_name (html, value, vlen);
+				} else if (typ == LUA_TTABLE) {
+					lua_pushnil (il -> lua);
+					while (lua_next (il -> lua, n) != 0) {
+						typ = lua_type (il -> lua, -1);
+						if (typ == LUA_TNUMBER)
+							html_set_pos (html, (int) lua_tonumber (il -> lua, -1) - 1);
+						else if (typ == LUA_TSTRING) {
+							value = lua_tolstring (il -> lua, -1, & vlen);
+							if (vlen > 0)
+								html_set_name (html, value, vlen);
+						}
+						lua_pop (il -> lua, 1);
+					}
+				}
+			}
+			lua_settop (il -> lua, 0);
+			return html -> matched;
+		}
+	} else
+		log_out (il -> blockmail -> lg, LV_WARNING, "Failed to execute \"%s\": %s", il -> source, lua_tostring (il -> lua, -1));
+	return false;
 }/*}}}*/

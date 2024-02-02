@@ -69,6 +69,21 @@ buffer_alloc (int nsize) /*{{{*/
 	}
 	return b;
 }/*}}}*/
+/** Allocaed a buffer and copy existing content
+ * @param source the source buffer to fill the newlyallocated buffer with
+ * @return the allocated buffer on success, otherwise NULL
+ */
+buffer_t *
+buffer_copy (const buffer_t *source) /*{{{*/
+{
+	buffer_t	*b;
+	
+	if (source && (b = buffer_alloc (source -> length + 1))) {
+		buffer_setbuf (b, source);
+		return b;
+	}
+	return NULL;
+}/*}}}*/
 /** (Re)allocate a buffer
  * if the passed buffer is not NULL, try to resize the buffer,
  * otherwise allocate a new one. Returns the buffer pointer on
@@ -111,7 +126,7 @@ buffer_free (buffer_t *b) /*{{{*/
  * @return true, if the buffer is valid, false otherwise
  */
 bool_t
-buffer_valid (buffer_t *b) /*{{{*/
+buffer_valid (const buffer_t *b) /*{{{*/
 {
 	return b && b -> valid;
 }/*}}}*/
@@ -189,7 +204,7 @@ buffer_set (buffer_t *b, const byte_t *data, int dlen) /*{{{*/
  * @return true if content could be set, false otherwise
  */
 bool_t
-buffer_setbuf (buffer_t *b, buffer_t *data) /*{{{*/
+buffer_setbuf (buffer_t *b, const buffer_t *data) /*{{{*/
 {
 	return data ? buffer_set (b, data -> buffer, data -> length) : true;
 }/*}}}*/
@@ -263,7 +278,7 @@ buffer_append (buffer_t *b, const byte_t *data, int dlen) /*{{{*/
  * @see buffer_append
  */
 bool_t
-buffer_appendbuf (buffer_t *b, buffer_t *data) /*{{{*/
+buffer_appendbuf (buffer_t *b, const buffer_t *data) /*{{{*/
 {
 	return data ? buffer_append (b, data -> buffer, data -> length) : true;
 }/*}}}*/
@@ -355,7 +370,7 @@ buffer_insert (buffer_t *b, int pos, const byte_t *data, int dlen) /*{{{*/
 	return b -> valid;
 }/*}}}*/
 bool_t
-buffer_insertbuf (buffer_t *b, int pos, buffer_t *data) /*{{{*/
+buffer_insertbuf (buffer_t *b, int pos, const buffer_t *data) /*{{{*/
 {
 	return data ? buffer_insert (b, pos, data -> buffer, data -> length) : true;
 }/*}}}*/
@@ -397,7 +412,7 @@ buffer_stiff (buffer_t *b, const byte_t *data, int dlen) /*{{{*/
  * @see buffer_stiff
  */
 bool_t
-buffer_stiffbuf (buffer_t *b, buffer_t *data) /*{{{*/
+buffer_stiffbuf (buffer_t *b, const buffer_t *data) /*{{{*/
 {
 	return data ? buffer_stiff (b, data -> buffer, data -> length) : true;
 }/*}}}*/
@@ -532,6 +547,34 @@ buffer_strftime (buffer_t *b, const char *fmt, const struct tm *tt) /*{{{*/
 		b -> length += strftime ((char *) (b -> buffer + b -> length), b -> size - b -> length - 1, fmt, tt);
 	return b -> valid;
 }/*}}}*/
+/** Append content from file descriptor to buffer
+ * @param b the buffer to use
+ * @param size the amount of data to read, 0 means read all remaining data
+ * @return true, if content added successful, false otherwise
+ */
+bool_t
+buffer_read (buffer_t *b, int fd, int size) /*{{{*/
+{
+	if (size > 0) {
+		if (do_size (b, b -> length + size)) {
+			int	got;
+			
+			got = read (fd, b -> buffer + b -> length, size);
+			if (got > 0)
+				b -> length += got;
+		}
+	} else {
+		byte_t	scratch[4096];
+		int	n;
+		
+		while ((n = read (fd, scratch, sizeof (scratch))) > 0)
+			if (! buffer_append (b, scratch, n)) {
+				lseek (fd, -n, SEEK_CUR);
+				break;
+			}
+	}
+	return b -> valid;
+}/*}}}*/
 /** Cuts a piece of the buffer.
  * A part of the buffer is cut out, a new memory block is allocated
  * for the cut out copy to be returned (which must be freed using
@@ -595,7 +638,7 @@ buffer_stealstring (buffer_t *b) /*{{{*/
  * @return the new allocated string on success, or NULL on failure
  */
 char *
-buffer_copystring (buffer_t *b) /*{{{*/
+buffer_copystring (const buffer_t *b) /*{{{*/
 {
 	char	*rc;
 	

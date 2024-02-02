@@ -14,16 +14,15 @@ from	__future__ import annotations
 import	os, re, subprocess, errno, logging
 import	traceback
 from	enum import Enum
-from	typing import Any, Callable, NoReturn, Optional, Union
-from	typing import Dict, Generator, List, Set
+from	types import TracebackType
+from	typing import Any, Callable, Generic, NoReturn, Optional, TypeVar, Union
+from	typing import Dict, Generator, List, Set, Type
 from	.exceptions import error
 from	.stream import Stream
 from	.template import Template
 #
-logger = logging.getLogger (__name__)
-#
 __all__ = [
-	'abstract',
+	'abstract', 'defer',
 	'atoi', 'atof', 'atob', 'btoa', 'calc_hash', 'sizefmt',
 	'call', 'silent_call', 'match', 
 	'listsplit', 'listjoin', 
@@ -31,6 +30,10 @@ __all__ = [
 	'Range', 'Config', 'Plugin',
 	'Progress'
 ]
+#
+logger = logging.getLogger (__name__)
+#
+_T = TypeVar ('_T')
 #
 def abstract () -> NoReturn:
 	try:
@@ -40,6 +43,20 @@ def abstract () -> NoReturn:
 		msg = 'abstract method not implemented (no clue where)'
 	logger.error (msg)
 	raise NotImplementedError (msg)
+#
+class defer (Generic[_T]):
+	__slots__ = ['instance', 'deferrer']
+	def __init__ (self, instance: _T, deferrer: Optional[Callable[[_T], None]] = None) -> None:
+		self.instance = instance
+		self.deferrer = deferrer
+
+	def __enter__ (self) -> _T:
+		return self.instance
+
+	def __exit__ (self, exc_type: Optional[Type[BaseException]], exc_value: Optional[BaseException], traceback: Optional[TracebackType]) -> Optional[bool]:
+		if self.deferrer is not None:
+			self.deferrer (self.instance)
+		return None
 #
 def atoi (s: Any, base: int = 10, default: Union[int, float, str] = 0) -> int:
 	"""Lazy parses a value into an integer
@@ -586,15 +603,15 @@ class Progress (Stream.Progress):
 	"""Visiualize progress in logfile
 
 For longer running processes or loops, this can be used to visualize
-the progress of the process. For example when processing a CSV file:
+the progress of the process. For example when processing a csv file:
 
-rd = CSVReader ('some/file/name', dialect = CSVDefault)
-p = dagent.Progress ('csv reader')
-for row in rd:
-	# process the row
-	p ()
-p.fin ()
-rd.close ()"""
+with open ('/some/file/name') as fd:
+	rd = csv.reader (fd, dialect = csv_default)
+	p = dagent.Progress ('csv reader')
+	for row in rd:
+		# process the row
+		p ()
+p.fin ()"""
 	__slots__ = ['name', 'display', 'template', 'ns', 'last', 'count']
 	def __init__ (self, name: str, display: int = 10000, template: Optional[str] = None, ns: Optional[Dict[str, str]] = None) -> None:
 		"""``name'' to be used as the name for log entries,

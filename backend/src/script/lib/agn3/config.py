@@ -10,22 +10,19 @@
 ####################################################################################################################################################################################################################################################################
 #
 from	__future__ import annotations
-import	os, re, time, json
+import	os, re, time, csv
 from	io import StringIO
 from	datetime import datetime
-from	dataclasses import make_dataclass
 from	typing import Any, Callable, Optional, Union
 from	typing import Dict, IO, Iterator, List, Set, Tuple, Type
-from	typing import cast, overload
-from	.dbcore import Binary
-from	.dblite import DBLite, Row
+from	typing import overload
 from	.definitions import base, host, program
 from	.exceptions import error
 from	.ignore import Ignore
-from	.io import CSVDefault, CSVReader, CSVNamedReader, Line
+from	.io import Line, csv_default, csv_named_reader
 from	.parser import unit, ParseTimestamp
 from	.stream import Stream
-from	.template import Template
+from	.template import MessageCatalog, Template
 from	.tools import Plugin, atob, listsplit
 from	.xml import XMLReader, XMLWriter
 #
@@ -104,8 +101,8 @@ parametername has no section part."""
 		self.default_section_stack: List[Optional[str]] = []
 		self.section_sequence: List[str] = []
 		self.ns: Dict[str, Any] = {}
-		self.lang = None
-		self.mc = None
+		self.lang: Optional[str] = None
+		self.mc: Optional[MessageCatalog] = None
 		self.clear ()
 		self.getter = self.__get
 		self._section: Optional[str]
@@ -357,7 +354,7 @@ None to use the default "date"."""
 				elif callable (modify):
 					def modifier (v: str) -> Any:
 						try:
-							return cast (Callable[[str], Any], modify) (v)
+							return modify (v)
 						except:
 							return modify_default
 					rc = [modifier (_v) for _v in rc]
@@ -443,9 +440,8 @@ consult mget and lget repective."""
 		var: str,
 		dialect: Optional[str] = None
 	) -> List[Line]:
-		"""Retrieve the value for ``var'' as a CSV and parse it into a two dimensional array. Use ``default'' if ``var is not found"""
-		with CSVNamedReader (StringIO (self[var]), dialect if dialect else CSVDefault) as rd:
-			return list (rd)
+		"""Retrieve the value for ``var'' as a csv and parse it into a two dimensional array. Use ``default'' if ``var is not found"""
+		return list (csv_named_reader (csv.reader (StringIO (self[var]), dialect = dialect if dialect else csv_default)))
 		
 	def __pget (self,
 		code: Optional[str],
@@ -484,131 +480,6 @@ like pget(), but uses the tget() instead of get() to retrieve the
 plugin code to prefill it using its own namespace."""
 		return self.__pget (self.tget (var, default, **kwargs), name, ns, plugin)
 
-	def dbget (self,
-		var: str,
-		default: Any = None,
-		dialect: Optional[str] = None,
-		output: Optional[str] = None,
-		callback: Optional[Callable[[Optional[DBLite], str, List[str]], Any]] = None,
-		null: Optional[str] = None,
-		target: Optional[str] = None
-	) -> Any:
-		"""Retrieve the value for ``var'' as a database, use ``default'' as default if ``var'' is not found
-
-the retrieved value for ``var'' is interpreted as a csv representation
-for ``dialect''. The first line must be a header line where the name
-is separated by space from its type. These types are currently
-supported:
-	- integer: int
-	- real: float
-	- timestamp: datetime.datetime
-	- binary: base64 coded binary data
-	- anything else: str
-
-The ``output'' can be one of these to define the
-returned value:
-	- list: a list of each row where each row is a list
-	- named: ... is a namedtuple
-	- data: ... is a dataclass
-	- dict: ... is a dict
-	- json: a json object representing the dict version
-
-Internally the data is prepared using a sqlite3 in memory database. If
-``callback'' is set to a callable this function is called with three
-arguments:
-	- rc: the agn3.dblite.DBLite instance
-	- table: the name of the table where the data is stored
-	- fields: the name of the columns in the table
-
-This ``callback'' can be used to modify the data before being
-converted to its output format.
-
-If ``null'' is not None and a value is equals to this string, then
-NULL is written to the database.
-
-If ``target'' is a pathname then this is used as the sqlite3 database
-instead of using an in memory database. """
-		value = self.get (var, default)
-		if value is not None:
-			db: Optional[DBLite] = None
-			table = ''
-			fields: List[str] = []
-			types: List[Type[Any]] = []
-			insert: Optional[str] = None
-			timeParse = ParseTimestamp ()
-			converter: Dict[str, Callable[[str], Any]] = {
-				'integer': lambda a: int (a) if a else None,
-				'real': lambda a: float (a) if a else None,
-				'timestamp': lambda a: timeParse (a) if a else None,
-				'binary': lambda a: Binary.load (a) if a else None
-			}
-			typemap: Dict[str, Type[Any]] = {
-				'integer': int,
-				'real': float,
-				'timestamp': datetime,
-				'binary': bytes
-			}
-			rd = CSVReader (StringIO (value.strip ()), dialect = CSVDefault if dialect is None else dialect)
-			for (lineno, row) in enumerate (rd):
-				if db is None:
-					table = var.split ('.')[-1]
-					fields = [_r.split ()[0] for _r in row]
-					create_table = 'CREATE TABLE {table} ({rows})'.format (
-						table = table,
-						rows = ', '.join (row)
-					)
-					convert = [converter.get (_r.split ()[1], lambda a: a) for _r in row]
-					types = [typemap.get (_r.split ()[1], str) for _r in row]
-					db = DBLite (DBLite.in_memory_db if target is None else target)
-					if not db.isopen ():
-						raise error (f'{table}:{lineno}: failed to open database {target}')
-					db.check_open_cursor ().mode ('fast')
-					db.execute (create_table)
-					insert = 'INSERT INTO {table} ({fields}) VALUES ({placeholders})'.format (
-						table = table,
-						fields = ', '.join (fields),
-						placeholders = ', '.join (['?'] * len (fields))
-					)
-				elif len (row) != len (fields):
-					raise error ('{table}:{lineno}: expect {expect} values, got {got}'.format (
-						table = table,
-						lineno = lineno,
-						expect = len (fields),
-						got = len (row)
-					))
-				else:
-					if null is not None:
-						row = tuple (_r if _r != null else None for _r in row)
-					try:
-						db.update (cast (str, insert), [_c (_r) for (_c, _r) in zip (convert, row)])
-					except Exception as e:
-						raise error (f'{table}:{lineno}: failed processing row: {e}') from e
-			rd.close ()
-			if db is not None:
-				db.sync ()
-				if callback is not None and callable (callback):
-					callback (db, table, fields)
-				if output is None:
-					return db
-				#
-				rows = db.stream ('SELECT {fields} FROM {table} ORDER BY rowid'.format (fields = ', '.join (fields), table = table)).list ()
-				db.close ()
-				if output in ('list', 'named'):
-					return rows
-				#
-				if output in ('dict', 'json'):
-					temp = Stream (rows).map (lambda row: dict (zip (fields, row))).list ()
-					if output == 'json':
-						return json.dumps (temp)
-					return temp
-				#
-				if output == 'data':
-					creator = cast (Type[Row], make_dataclass ('Row', [(_n, _t) for (_n, _t) in zip (fields, types)]))
-					return Stream (rows).map (lambda row: creator (*row)).list ()
-				#
-				raise ValueError (f'{output}: not supported')
-		return None
-	
 	def keys (self) -> Iterator[str]:
 		return iter (Stream (self.sections.items ())
 			.map (lambda kv: (('{section}.{name}'.format (section = kv[0], name = _v)) if kv[0] is not None else _v for _v in kv[1]))
@@ -691,7 +562,7 @@ instead of using an in memory database. """
 	def read (self, stream: Union[None, IO[Any], str] = None) -> None:
 		"""Read configuration from ``fname''"""
 		cur = self.sections[None]
-		block = None
+		block: Optional[str] = None
 		fd: Optional[IO[Any]] = None
 		if stream is None:
 			for path in self.filenames ():

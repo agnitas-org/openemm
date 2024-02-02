@@ -10,18 +10,18 @@
 ####################################################################################################################################################################################################################################################################
 #
 from	__future__ import annotations
-import	logging
+import	logging, csv
 from	datetime import datetime, timedelta
 from	types import TracebackType
 from	typing import Any, Callable, Iterable, Optional, Union
-from	typing import Dict, Iterator, List, NamedTuple, Set, Tuple, Type
+from	typing import Dict, IO, Iterator, List, NamedTuple, Set, Tuple, Type
 from	typing import cast
 from	.dbdriver import DBDriver
 from	.dbcore import T, Row, Core, Cursor
 from	.definitions import program
 from	.exceptions import error
 from	.ignore import Ignore
-from	.io import copen, CSVDefault, CSVWriter
+from	.io import copen, csv_default, csv_writer
 from	.parser import ParseTimestamp, unit
 from	.stream import Stream
 #
@@ -258,11 +258,8 @@ queryc() and a querys() method is also available using the cache."""
 	def querys (self, statement: str, parameter: Union[None, List[Any], Dict[str, Any]] = None, cleanup: bool = False) -> Optional[Row]:
 		"""Execute a single row query try to resolve the query from the cache, if caching is enabled"""
 		if self._cache is not None:
-			rc = None
 			for rec in self.query (statement, parameter, cleanup):
-				rc = rec
-				break
-			return rc
+				return rec
 		#
 		return self.check_open_cursor ().querys (statement, parameter, cleanup)
 			
@@ -381,7 +378,7 @@ queryc() and a querys() method is also available using the cache."""
 			return self._tablespace_cache[tablespace]
 		except KeyError:
 			self.check_open ()
-			rc = None
+			rc: Optional[str] = None
 			if self.dbms == 'oracle':
 				cursor = self.request ()
 				try:
@@ -541,12 +538,12 @@ existing one."""
 		validator: Optional[Callable[[Row], bool]] = None,
 		limit: Optional[int] = None
 	) -> Tuple[bool, str]:
-		"""exports a query to one or more CSV files
+		"""exports a query to one or more csv files
 
 ``stream'' is either a filename or a callable which creates a filename
 (only if ``limit'' is used). ``query'' is the query to be executed
 using ``data'' as the named parameter. ``ignore'' is a list of columns
-not to output to the file. ``dialect'' is the CSV dialect to use for
+not to output to the file. ``dialect'' is the csv dialect to use for
 the output. ``conversion'' is a optional dict to convert input data to
 output strings. ``checkpoint'' is a numeric value after which a
 checkpoint should be executed which means a commit is performed to
@@ -569,16 +566,15 @@ files to limit the size of each file."""
 		]:
 			if typ not in cmap:
 				cmap[typ] = convert
-		if dialect is None:
-			dialect = CSVDefault
 		if checkpoint is None:
 			checkpoint = 10000
 		def handle_checkpoint (count: int) -> None:
 			self.sync ()
 			if checkpoint_log is not None and callable (checkpoint_log):
 				checkpoint_log (count)
-		fd = None
-		wr = None
+		fd: Optional[IO[str]] = None
+		wr: Optional[csv_writer] = None
+		written = 0
 		try:
 			fileno = 0
 			header: List[str] = []
@@ -608,8 +604,7 @@ files to limit the size of each file."""
 					continue
 				if modifier is not None:
 					row = modifier (row)
-				if wr is not None and limit is not None and limit > 0 and fd.written > limit:
-					wr.close ()
+				if wr is not None and limit is not None and limit > 0 and fd is not None and written > limit:
 					fd.close ()
 					wr = None
 					fd = None
@@ -623,15 +618,13 @@ files to limit the size of each file."""
 					else:
 						filename = cast (str, stream)
 					fd = copen (filename, 'w')
-					wr = CSVWriter (fd, dialect)
-					wr.write (header)
-				wr.write ([_c (_h, _v) for (_c, _h, _v) in zip (converter, header, reducer (row))])
+					wr = csv.writer (fd, dialect = dialect if dialect else csv_default)
+					written = wr.writerow (header)
+				written += wr.writerow ([_c (_h, _v) for (_c, _h, _v) in zip (converter, header, reducer (row))])
 			if count % checkpoint != 0:
 				handle_checkpoint (count)
 			rc = True
 		finally:
-			if wr is not None:
-				wr.close ()
 			if fd is not None:
 				fd.close ()
 		return (rc, ', '.join (msg))
@@ -729,7 +722,7 @@ if it had not existed."""
 		if self._checkpoints and name in self._checkpoints:
 			return self._checkpoints[name]
 		#
-		rc = None
+		rc: Optional[DB.Checkpoint] = None
 		self.check_open ()
 		cursor = self.request ()
 		if not self.exists (table):
@@ -796,7 +789,7 @@ if it had not existed."""
 						))
 					if offset != 0:
 						end -= timedelta (seconds = offset)
-			rc = self.Checkpoint (self, name, table, cursor, start, end)
+			rc = DB.Checkpoint (self, name, table, cursor, start, end)
 			if not fresh:
 				rc.setup ()
 			if self._checkpoints is None:

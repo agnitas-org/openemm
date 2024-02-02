@@ -61,5 +61,5 @@ field_normalize_name (field_t *f) /*{{{*/
 	f -> rname = f -> ref ? strlcat (f -> ref, ".", f -> lname, NULL) : NULL;
 	if (f -> ref && (! f -> rname))
 		return false;
-	return f -> lname || (! f -> name) ? true : false;
+	return f -> lname || (! f -> name);
 }/*}}}*/

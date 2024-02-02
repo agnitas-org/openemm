@@ -32,9 +32,11 @@ class Bounce:
 	__slots__ = [
 		'db',
 		'rules', 'config',
+		'company_cache',
 		'rules_cache', 'config_cache',
 		'rules_latest', 'config_latest',
-		'last_check', 'recheck_interval'
+		'last_check', 'recheck_interval',
+		'last_force', 'force_interval'
 	]
 	bav_rule_legacy_path: Final[str] = os.path.join (base, 'lib', 'bav.rule')
 	bounce_rule_table: Final[str] = 'bounce_rule_tbl'
@@ -43,16 +45,19 @@ class Bounce:
 	name_conversion: Final[str] = 'conversion'
 	name_company_info_conversion: Final[str] = 'bounce-conversion-parameter'
 	epoch: Final[datetime] = datetime (1970, 1, 1)
-	def __init__ (self, db: Optional[DB] = None, recheck_interval: Parsable = '3m') -> None:
+	def __init__ (self, db: Optional[DB] = None, recheck_interval: Parsable = '3m', force_interval: Parsable = '1h') -> None:
 		self.db = db
 		self.rules: Dict[Tuple[int, int], Dict[str, List[str]]] = {}
 		self.config: DefaultDict[Tuple[int, int], DefaultDict[str, Dict[str, Any]]] = defaultdict (lambda: defaultdict (dict))
+		self.company_cache: Dict[int, int] = {}
 		self.rules_cache: Dict[Tuple[int, int], Dict[str, List[str]]] = {}
 		self.config_cache: Dict[Tuple[int, int, str], Dict[str, Any]] = {}
 		self.rules_latest = self.epoch
 		self.config_latest = self.epoch
 		self.last_check = 0
-		self.recheck_interval = min (60, unit.parse (recheck_interval))
+		self.recheck_interval = max (60, unit.parse (recheck_interval))
+		self.last_force = 0
+		self.force_interval = max (self.recheck_interval * 5, unit.parse (force_interval))
 	
 	def __enter__ (self) -> Bounce:
 		self.read ()
@@ -68,6 +73,8 @@ class Bounce:
 		return json.loads (representation)
 
 	def get_rule (self, company_id: int, rid: int) -> Dict[str, List[str]]:
+		if company_id == 0:
+			company_id = self.company_cache.get (rid, company_id)
 		with Ignore (KeyError):
 			return self.rules_cache[(company_id, rid)]
 		#
@@ -184,19 +191,25 @@ class Bounce:
 	def check (self, *, read_rules: bool = True, read_config: bool = True) -> None:
 		now = int (time.time ())
 		if self.last_check + self.recheck_interval < now:
+			if self.last_check:
+				if self.last_force + self.force_interval < now:
+					self.last_force = now
+				else:
+					with TempDB (self.db) as db, db.request () as cursor:
+						def check (read: bool, latest: datetime, table: str) -> bool:
+							if read and latest is not self.epoch:
+								rq = cursor.querys (
+									f'SELECT count(*) FROM {table} WHERE change_date > :latest',
+									{'latest': latest}
+								)
+								if rq is not None and rq[0] == 0:
+									read = False
+							return read
+						read_rules = check (read_rules, self.rules_latest, self.bounce_rule_table)
+						read_config = check (read_config, self.config_latest, self.bounce_config_table)
+			else:
+				self.last_force = now
 			self.last_check = now
-			with TempDB (self.db) as db, db.request () as cursor:
-				def check (read: bool, latest: datetime, table: str) -> bool:
-					if read and latest is not self.epoch:
-						rq = cursor.querys (
-							f'SELECT count(*) FROM {table} WHERE change_date > :latest',
-							{'latest': latest}
-						)
-						if rq is not None and rq[0] == 0:
-							read = False
-					return read
-				read_rules = check (read_rules, self.rules_latest, self.bounce_rule_table)
-				read_config = check (read_config, self.config_latest, self.bounce_config_table)
 			#
 			if read_rules or read_config:
 				self.read (read_rules = read_rules, read_config = read_config)
@@ -207,6 +220,10 @@ class Bounce:
 		with TempDB (self.db) as db, db.request () as cursor:
 			if read_rules:
 				self.rules.clear ()
+				self.company_cache = (cursor.stream ('SELECT rid, company_id FROM mailloop_tbl')
+					.map (lambda r: (r.rid, r.company_id))
+					.dict ()
+				)
 				if db.exists (self.bounce_rule_table):
 					rule_fallback = False
 					rule_migrate = True

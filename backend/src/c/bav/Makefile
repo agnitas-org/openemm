@@ -9,22 +9,19 @@
 #                                                                                                                                                                                                                                                                  #
 ####################################################################################################################################################################################################################################################################
 #
-CFLAGS	= -I. -I../lib -pthread
-LDFLAGS	= -L. -L../lib -pthread
+CFLAGS	= -I. -I../lib -I../lib/include -pthread
+LDFLAGS	= -L. -L../lib -L../lib/lib -pthread
 LIBS	= -lagn
 SRCS1	= bav.c cfg.c
 OBJS1	= $(SRCS1:%.c=%.o)
 #
 all:	bav
 
-bav:	libmilter.a $(OBJS1) ../lib/libagn.a
+bav:	$(OBJS1) ../lib/libagn.a
 	$(CC) $(LDFLAGS) $(OBJS1) -o $@ $(LIBS) -lmilter
 
 ../lib/libagn.a:
 	$(MAKE) -C ../lib `basename $@`
 
-libmilter.a:	sendmail-8.13.8.tar.gz
-	tar xaf $< && ( cd sendmail-8.13.8/libmilter; echo QVBQRU5EREVGKGBjb25mRU5WREVGJyxgLURORVRJTkVUNicpCg== | base64 -d > env; sh Build -c -fenv; cd ..; cp -r obj.*/libmilter/libmilter.a include/libmilter ..; cd ..; rm -rf sendmail-8.13.8 )
-
 clean:
-	rm -rf $(OBJS1) bav libmilter.a libmilter
+	rm -rf $(OBJS1) bav

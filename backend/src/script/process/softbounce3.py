@@ -18,7 +18,7 @@ from	typing import Any, Final
 from	typing import DefaultDict, Dict, Deque, NamedTuple, Tuple, Set
 from	agn3.db import DB
 from	agn3.dbm import DBM
-from	agn3.definitions import unique
+from	agn3.definitions import base, unique
 from	agn3.emm.bounce import Bounce
 from	agn3.emm.config import Responsibility
 from	agn3.emm.timestamp import Timestamp
@@ -38,7 +38,7 @@ class Cache:
 	incarnation = 0
 	def __init__ (self, inmem: int) -> None:
 		self.incarnation += 1
-		fname = '/var/tmp/sbcache.%d.%d' % (os.getpid (), self.incarnation)
+		fname = f'{base}/var/tmp/sbcache.%d.%d' % (os.getpid (), self.incarnation)
 		self.gdb = DBM (fname, 'n')
 		os.unlink (fname)
 		self.inmem = inmem

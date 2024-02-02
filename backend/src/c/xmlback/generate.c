@@ -38,72 +38,34 @@ typedef struct { /*{{{*/
 static bool_t
 boolean (const char *str) /*{{{*/
 {
-	return ((! str) || atob (str)) ? true : false;
+	return (! str) || atob (str);
 }/*}}}*/
 static bool_t
-write_content (int fd, const byte_t *ptr, long len, const char *nl, int nllen) /*{{{*/
+write_content (int fd, const byte_t *ptr, long len) /*{{{*/
 {
 	bool_t	st;
+	int	n;
 	
 	st = true;
-	if (len > 0) {
-		int	n;
-			
-		if (nl) {
-			int	nlen;
-				
-			while (len > 0) {
-				for (nlen = 0; nlen < len; ++nlen)
-					if ((ptr[nlen] == '\r') || (ptr[nlen] == '\n'))
-						break;
-				if (nlen > 0) {
-					if (write (fd, ptr, nlen) == nlen) {
-						ptr += nlen;
-						len -= nlen;
-					} else {
-						st = false;
-						break;
-					}
-				}
-				if (len > 0) {
-					if ((len > 1) && (ptr[0] == '\r') && (ptr[1] == '\n')) {
-						ptr += 2;
-						len -= 2;
-					} else if ((ptr[0] == '\n') || (ptr[0] == '\r')) {
-						ptr += 1;
-						len -= 1;
-					}
-					if (write (fd, nl, nllen) != nllen) {
-						st = false;
-						break;
-					}
-				}
-			}
+	while (len > 0)
+		if ((n = write (fd, ptr, len)) > 0) {
+			ptr += n;
+			len -= n;
 		} else {
-			while (len > 0)
-				if ((n = write (fd, ptr, len)) > 0) {
-					ptr += n;
-					len -= n;
-				} else {
-					st = false;
-					break;
-				}
+			st = false;
+			break;
 		}
-	}
 	return st;
 }/*}}}*/
 static bool_t
-write_file (const char *fname, const buffer_t *content, const char *nl, int nllen) /*{{{*/
+write_file (const char *fname, const buffer_t *content) /*{{{*/
 {
 	bool_t	st;
 	int	fd;
 	
 	st = false;
 	if ((fd = open (fname, O_WRONLY | O_CREAT | O_TRUNC, 0644)) != -1) {
-		if (nl)
-			st = write_content (fd, content -> buffer, content -> length, nl, nllen);
-		else
-			st = write (fd, content -> buffer, content -> length) == content -> length ? true : false;
+		st = write (fd, content -> buffer, content -> length) == content -> length;
 		if (close (fd) == -1)
 			st = false;
 	}
@@ -137,63 +99,46 @@ write_bounce_log (gen_t *g, blockmail_t *blockmail, receiver_t *rec, const char 
 	}
 	return st;
 }/*}}}*/
-static bool_t
-create_bcc_head (buffer_t *target, blockmail_t *blockmail, const char *bcc, int nr) /*{{{*/
+static header_t *
+create_bcc_head (receiver_t *rec, blockmail_t *blockmail, const char *bcc, int nr) /*{{{*/
 {
-	bool_t		rc;
-	int		length = buffer_length (blockmail -> head);
-	const char	*ptr = (const char *) buffer_content (blockmail -> head);
-	bool_t		found_receiver = false,
-			found_message_id = false,
-			found_to = false;
-	bool_t		ignore_current = false;
-	const char	*cur;
-	int		len;
+	header_t	*header;
 	
-	rc = true;
-	if (blockmail -> status_field == 'V') {
-		/* is already marked to be ignored, so we can skip modifying the message id */
-		found_message_id = true;
-	}
-	buffer_clear (target);
-	while (rc && (length > 0)) {
-		cur = ptr;
-		while ((*ptr != '\n') && (length > 0))
-			++ptr, --length;
-		if (length > 0)
-			++ptr, --length;
-		len = ptr - cur;
-		if (*cur == 'R') {
-			rc = buffer_appendsn (target, "R<", 2) &&
-				buffer_appends (target, bcc) &&
-				buffer_appendsn (target, ">\n", 2);
-			found_receiver = true;
-		} else if (*cur == 'H') {
-# define	H_MESSAGE_ID		"HMessage-ID: <"
-# define	H_TO			"HTo: "
-			ignore_current = false;
-			if ((! found_message_id) && (! strncmp (cur, H_MESSAGE_ID, sizeof (H_MESSAGE_ID) - 1)) && (len > sizeof (H_MESSAGE_ID))) {
-				rc = buffer_appendsn (target, cur, sizeof (H_MESSAGE_ID) - 1) &&
-					buffer_format (target, "V%d-", nr) &&
-					buffer_appendsn (target, cur + sizeof (H_MESSAGE_ID) - 1, len - (sizeof (H_MESSAGE_ID) - 1));
-				found_message_id = true;
-# define	H_DKIM_SIGNATURE	"H" DKIM_SIGNHEADER ": "
-			} else if (! strncmp (cur, H_DKIM_SIGNATURE, sizeof (H_DKIM_SIGNATURE) - 1)) {
-				ignore_current = true;
-			} else {
-				rc = buffer_appendsn (target, cur, len);
-				if (rc && (! found_to) && (! strncmp (cur, H_TO, sizeof (H_TO) - 1))) {
-					rc = buffer_appendsn (target, "HBcc: <", 7) &&
-						buffer_appends (target, bcc) &&
-						buffer_appendsn (target, ">\n", 2);
-					found_to = true;
-				}
+	if (header = header_copy (rec -> header)) {
+		bool_t		status;
+		head_t		*head;
+		head_t		*message_id, *to;
+		buffer_t	*scratch;
+
+		status = header_set_recipient (header, bcc, ! blockmail -> allow_unnormalized_emails);
+		header_remove (header, "bcc");
+		for (head = header -> head, message_id = to = NULL; status && head; head = head -> next)
+			if ((! message_id) && head_matchn (head, "message-id", 10)) {
+				message_id = head;
+			} else if ((! to) && head_matchn (head, "to", 2)) {
+				to = head;
 			}
-		} else if ((! isspace (*cur)) || (! ignore_current)) {
-			rc = buffer_appendsn (target, cur, len);
+		if (status && message_id && (blockmail -> status_field != 'V')) {
+			const char	*value = head_value (message_id);
+		
+			if (value && (scratch = header_scratch (header, buffer_length (message_id -> h)))) {
+				buffer_format (scratch, "<V%d-", nr);
+				if (*value == '<') 
+					++value;
+				buffer_appends (scratch, value);
+				head_set_value (message_id, scratch);
+			} else
+				status = false;
 		}
+		if (status)
+			if ((scratch = header_scratch (header, 1024)) && buffer_format (scratch, "Bcc: <%s>", bcc))
+				status = header_insert (header, buffer_string (scratch), to);
+			else
+				status = false;
+		if (! status)
+			header = header_free (header);
 	}
-	return rc && found_receiver && found_message_id && found_to;
+	return header;
 }/*}}}*/
 
 typedef struct { /*{{{*/
@@ -350,14 +295,14 @@ spool_unique_by_number (spool_t *s) /*{{{*/
 	return true;
 }/*}}}*/
 static bool_t
-spool_write (spool_t *s, buffer_t *content, const char *nl, int nllen) /*{{{*/
+spool_write (spool_t *s, buffer_t *content) /*{{{*/
 {
-	return s -> devnull ? true : write_file (s -> buf, content, nl, nllen);
+	return s -> devnull ? true : write_file (s -> buf, content);
 }/*}}}*/
 static bool_t
-spool_write_temp (spool_t *s, buffer_t *content, const char *nl, int nllen) /*{{{*/
+spool_write_temp (spool_t *s, buffer_t *content) /*{{{*/
 {
-	return s -> devnull ? true : write_file (s -> temp, content, nl, nllen);
+	return s -> devnull ? true : write_file (s -> temp, content);
 }/*}}}*/
 static bool_t
 spool_validate (spool_t *s) /*{{{*/
@@ -369,431 +314,6 @@ spool_validate (spool_t *s) /*{{{*/
 }/*}}}*/
 
 # define	DEF_DESTDIR		"."
-# define	DEF_FLUSHCMD		"fqu"
-
-typedef struct action { /*{{{*/
-	int		interval;	/* how often to start		*/
-	int		instance;	/* # of times executed in run	*/
-	char		*cmd;		/* command to use		*/
-	char		**ags;		/* prepared for execv/execvp	*/
-	int		ccnt;		/* # of slots used for cmd	*/
-	int		size;		/* # of allocated slots		*/
-	struct action	*next;
-	/*}}}*/
-}	action_t;
-static action_t *
-action_free (action_t *a) /*{{{*/
-{
-	if (a) {
-		if (a -> cmd)
-			free (a -> cmd);
-		if (a -> ags)
-			free (a -> ags);
-		free (a);
-	}
-	return NULL;
-}/*}}}*/
-static action_t *
-action_free_all (action_t *a) /*{{{*/
-{
-	action_t	*tmp;
-	
-	while (tmp = a) {
-		a = a -> next;
-		action_free (tmp);
-	}
-	return NULL;
-}/*}}}*/
-static action_t *
-action_alloc (int interval, const char *cmd) /*{{{*/
-{
-	action_t	*a;
-	
-	if (a = (action_t *) malloc (sizeof (action_t))) {
-		a -> interval = interval;
-		a -> instance = 0;
-		a -> cmd = NULL;
-		a -> ags = NULL;
-		a -> ccnt = 0;
-		a -> size = 0;
-		a -> next = NULL;
-		if (a -> cmd = strdup (cmd)) {
-			char	*ptr, *sav;
-			char	quote;
-			int	n, m;
-
-			for (ptr = a -> cmd; *ptr; ) {
-				if (a -> ccnt >= a -> size) {
-					a -> size += 16;
-					if (! (a -> ags = (char **) realloc (a -> ags, (a -> size + 1) * sizeof (char *))))
-						break;
-				}
-				if ((*ptr == '"') || (*ptr == '\''))
-					quote = *ptr++;
-				else
-					quote = '\0';
-				a -> ags[a -> ccnt++] = ptr;
-				for (n = 0, m = 0; ptr[n]; ++n) {
-					if ((ptr[n] == '\\') && ptr[n + 1])
-						++n;
-					else if ((quote && (ptr[n] == quote)) ||
-						 ((! quote) && isspace ((int) ((unsigned char) ptr[n]))))
-						break;
-					if (n != m)
-						ptr[m++] = ptr[n];
-					else
-						++m;
-				}
-				sav = ptr;
-				ptr += n;
-				if (*ptr) {
-					*ptr++ = '\0';
-					while (isspace ((int) ((unsigned char) *ptr)))
-						++ptr;
-				}
-				sav[m] = '\0';
-			}
-			if (! a -> ags)
-				a = action_free (a);
-		} else
-			a = action_free (a);
-	}
-	return a;
-}/*}}}*/
-static bool_t
-action_go (action_t *a, log_t *lg, ...) /*{{{*/
-{
-	va_list		par;
-	bool_t		st;
-	int		n;
-	char		*ptr;
-
-	va_start (par, lg);
-	st = false;
-	n = a -> ccnt;
-	while (ptr = va_arg (par, char *)) {
-		if (n >= a -> size) {
-			a -> size += 16;
-			if (! (a -> ags = (char **) realloc (a -> ags, (a -> size + 1) * sizeof (char *)))) {
-				log_out (lg, LV_ERROR, "Unable to increase execution array to %d slots", a -> size);
-				break;
-			}
-		}
-		a -> ags[n++] = ptr;
-	}
-	if ((! ptr) && a -> ags && a -> ags[0]) {
-		pid_t	pid, npid;
-		int	rc;
-		
-		a -> ags[n] = NULL;
-		if ((pid = fork ()) == -1) {
-			log_out (lg, LV_ERROR, "Unable to fork (%m) for %s", a -> cmd);
-		} else if (pid == 0) {
-			if (a -> ags[0][0] == '/')
-				execv (a -> ags[0], a -> ags);
-			else
-				execvp (a -> ags[0], a -> ags);
-			_exit (127);
-		} else {
-			while (((npid = waitpid (pid, & rc, 0)) != pid) && ((npid != -1) || (errno == EINTR)))
-				;
-			if (npid != pid)
-				log_out (lg, LV_ERROR, "No child process found for %s (%m)", a -> cmd);
-			else if (WIFEXITED (rc) && WEXITSTATUS (rc))
-				log_out (lg, LV_INFO, "Child process %s terminated with status %d", a -> cmd, WEXITSTATUS (rc));
-			else if (WIFSIGNALED (rc))
-				log_out (lg, LV_ERROR, "Child process %s died due to signal %d", a -> cmd, WTERMSIG (rc));
-			else if (rc)
-				log_out (lg, LV_ERROR, "Child process %s returns %d", a -> cmd, rc);
-			else
-				st = true;
-		}
-	}
-	va_end (par);
-	return st;
-}/*}}}*/
-
-# define	dmatch(aa,bb)		(((aa)[0] == (bb)[0]) && (! strcmp ((aa), (bb))))
-typedef struct { /*{{{*/
-	char	*name;			/* the domain name		*/
-	int	count;			/* the number of occurances	*/
-	/*}}}*/
-}	domain_t;
-typedef struct { /*{{{*/
-	int	maxcount;		/* max # of domains to flush	*/
-	char	*cmd;			/* command to use		*/
-	char	*idpattern;		/* pattern for spool ID		*/
-	domain_t
-		*d;			/* all stored domains		*/
-	int	dcnt, dsiz;		/* used/allocated slots in d	*/
-	/*}}}*/
-}	qflush_t;
-static qflush_t *
-qflush_alloc (int maxcount, const char *cmd) /*{{{*/
-{
-	qflush_t	*q;
-	
-	if (q = (qflush_t *) malloc (sizeof (qflush_t))) {
-		q -> maxcount = maxcount;
-		q -> cmd = NULL;
-		q -> idpattern = NULL;
-		q -> d = NULL;
-		q -> dcnt = 0;
-		q -> dsiz = 0;
-		if (cmd && (! (q -> cmd = strdup (cmd)))) {
-			free (q);
-			q = NULL;
-		}
-	}
-	return q;
-}/*}}}*/
-static qflush_t *
-qflush_free (qflush_t *q) /*{{{*/
-{
-	if (q) {
-		if (q -> cmd)
-			free (q -> cmd);
-		if (q -> idpattern)
-			free (q -> idpattern);
-		if (q -> d) {
-			int	n;
-			
-			for (n = 0; n < q -> dcnt; ++n)
-				if (q -> d[n].name)
-					free (q -> d[n].name);
-			free (q -> d);
-		}
-		free (q);
-	}
-	return NULL;
-}/*}}}*/
-static bool_t
-qflush_set_command (qflush_t *q, const char *cmd) /*{{{*/
-{
-	return struse (& q -> cmd, cmd);
-}/*}}}*/
-static bool_t
-qflush_set_idpattern (qflush_t *q, const char *idpattern) /*{{{*/
-{
-	return struse (& q -> idpattern, idpattern);
-}/*}}}*/
-static bool_t
-qflush_add (qflush_t *q, const char *domain) /*{{{*/
-{
-	bool_t	rc;
-	int	n, m;
-
-	rc = false;
-	for (n = 0; n < q -> dcnt; ++n)
-		if (dmatch (q -> d[n].name, domain))
-			break;
-	if (n < q -> dcnt) {
-		q -> d[n].count++;
-		for (m = n - 1; m >= 0; --m)
-			if (q -> d[m].count > q -> d[n].count)
-				break;
-		if (++m != n) {
-			domain_t	tmp;
-			
-			tmp = q -> d[m];
-			q -> d[m] = q -> d[n];
-			q -> d[n] = tmp;
-		}
-		rc = true;
-	} else {
-		if (q -> dcnt == q -> dsiz) {
-			int		nsiz = q -> dsiz ? q -> dsiz * 2 : 128;
-			domain_t	*tmp;
-			
-			if (tmp = (domain_t *) realloc (q -> d, nsiz * sizeof (domain_t))) {
-				q -> dsiz = nsiz;
-				q -> d = tmp;
-			}
-		}
-		if ((q -> dcnt < q -> dsiz) && (q -> d[q -> dcnt].name = strdup (domain))) {
-			q -> d[q -> dcnt].count = 1;
-			q -> dcnt++;
-			rc = true;
-		}
-	}
-	return rc;
-}/*}}}*/
-static bool_t
-qflush_flush (qflush_t *q, log_t *lg, const char *destdir) /*{{{*/
-{
-	bool_t	rc;
-	char	**av;
-	int	ac;
-	int	domains;
-	
-	rc = false;
-	domains = q -> maxcount;
-	if (domains > q -> dcnt)
-		domains = q -> dcnt;
-	ac = domains + 3;
-	if (av = (char **) malloc ((ac + 1) * sizeof (char *))) {
-		int	n, idx;
-		char	*ddir;
-		char	*ipat;
-		pid_t	pid, npid;
-		int	st;
-		
-		idx = 0;
-		ddir = NULL;
-		av[idx++] = q -> cmd;
-		if (destdir && (ddir = malloc (strlen (destdir) + 8))) {
-			sprintf (ddir, "-d%s", destdir);
-			av[idx++] = ddir;
-		}
-		ipat = NULL;
-		if (q -> idpattern && (ipat = malloc (strlen (q -> idpattern) + 8))) {
-			sprintf (ipat, "-i%s", q -> idpattern);
-			av[idx++] = ipat;
-		}
-		for (n = 0; n < domains; ++n)
-			av[idx + n] = q -> d[n].name;
-		av[idx + n] = NULL;
-		if ((pid = fork ()) == -1) {
-			log_out (lg, LV_ERROR, "Unable to fork (%m) for flush-queue %s", q -> cmd);
-		} else if (pid == 0) {
-			if (av[0][0] == '/')
-				execv (av[0], av);
-			else
-				execvp (av[0], av);
-			_exit (127);
-		} else {
-			while (((npid = waitpid (pid, & st, 0)) != pid) && ((npid != -1) || (errno == EINTR)))
-				;
-			if (npid != pid)
-				log_out (lg, LV_ERROR, "No child process found for flush-queue %s (%m)", q -> cmd);
-			else if (st)
-				log_out (lg, LV_ERROR, "Child process for flush-queue %s returns %d", q -> cmd, st);
-			else
-				st = true;
-		}
-		if (ddir)
-			free (ddir);
-		if (ipat)
-			free (ipat);
-		free (av);
-	}
-	return rc;
-}/*}}}*/
-
-typedef struct bad { /*{{{*/
-	spool_t	*spool;			/* spool for bad domains	*/
-	char	**domains;		/* list of bad domains		*/
-	int	size;			/* # of slots availbale		*/
-	int	use;			/* # of slots used		*/
-	/*}}}*/
-}	bad_t;
-static bad_t *
-bad_alloc (const char *dir) /*{{{*/
-{
-	bad_t	*b;
-	
-	if (b = (bad_t *) malloc (sizeof (bad_t))) {
-		if (b -> spool = spool_alloc (dir, false)) {
-			b -> domains = NULL;
-			b -> size = 0;
-			b -> use = 0;
-		} else {
-			free (b);
-			b = NULL;
-		}
-	}
-	return b;
-}/*}}}*/
-static bad_t *
-bad_free (bad_t *b) /*{{{*/
-{
-	if (b) {
-		if (b -> spool)
-			spool_free (b -> spool);
-		if (b -> domains) {
-			int	n;
-			
-			for (n = 0; n < b -> use; ++n)
-				if (b -> domains[n])
-					free (b -> domains[n]);
-			free (b -> domains);
-		}
-		free (b);
-	}
-	return NULL;
-}/*}}}*/
-static bool_t
-bad_add (bad_t *b, const char *domain) /*{{{*/
-{
-	bool_t	rc;
-	
-	rc = false;
-	if (b -> use >= b -> size) {
-		int	nsize = b -> size ? b -> size << 1 : 256;
-		char	**ndomains;
-		
-		if (ndomains = (char **) realloc (b -> domains, nsize * sizeof (char *))) {
-			b -> domains = ndomains;
-			b -> size = nsize;
-		}
-	}
-	if (b -> use < b -> size) {
-		if (b -> domains[b -> use] = strdup (domain)) {
-			b -> use++;
-			rc = true;
-		}
-	}
-	return rc;
-}/*}}}*/
-static bool_t
-bad_readfile (bad_t *b, const char *fname) /*{{{*/
-{
-	bool_t	rc;
-	FILE	*fp;
-	char	scratch[256];
-	char	*ptr;
-	
-	rc = false;
-	if (fp = fopen (fname, "r")) {
-		rc = true;
-		while (rc && fgets (scratch, sizeof (scratch) - 1, fp))
-			if (ptr = strchr (scratch, '\n')) {
-				*ptr = '\0';
-				rc = bad_add (b, scratch);
-			} else
-				rc = false;
-		fclose (fp);
-	}
-	return rc;
-}/*}}}*/
-static bool_t
-bad_match (bad_t *b, const buffer_t *email) /*{{{*/
-{
-	bool_t		rc;
-	
-	rc = false;
-	if (email) {
-		int		len = buffer_length (email);
-		const byte_t	*ptr = buffer_content (email);
-		int		n;
-		
-		while ((len > 0) && (*ptr != '@')) {
-			n = xmlCharLength (*ptr);
-			len -= n;
-			ptr += n;
-		}
-		if (len > 0) {
-			++ptr;
-			--len;
-			for (n = 0; n < b -> use; ++n)
-				if ((! strncasecmp (b -> domains[n], (const char *) ptr, len)) && (! b -> domains[n][len])) {
-					rc = true;
-					break;
-				}
-		}
-	}
-	return rc;
-}/*}}}*/
 
 struct sendmail { /*{{{*/
 	spool_t	*	spool;		/* spool directory		*/
@@ -801,9 +321,6 @@ struct sendmail { /*{{{*/
 	char		**inject;	/* alt: command to inject mail	*/
 	int		ipos_sender,	/* position to set sender ..	*/
 			ipos_recipient;	/* .. and recipient		*/
-	action_t	*act;		/* optional actions to start	*/
-	qflush_t	*flush;		/* optional queue flushing	*/
-	bad_t	*	bad;		/* optional bad domain list	*/
 	/*}}}*/
 };
 
@@ -818,9 +335,6 @@ sendmail_alloc (void) /*{{{*/
 		s -> inject = NULL;
 		s -> ipos_sender = -1;
 		s -> ipos_recipient = -1;
-		s -> act = NULL;
-		s -> flush = NULL;
-		s -> bad = NULL;
 	}
 	return s;
 }/*}}}*/
@@ -837,12 +351,6 @@ sendmail_free (sendmail_t *s) /*{{{*/
 				free (s -> inject[n]);
 			free (s -> inject);
 		}
-		if (s -> act)
-			action_free_all (s -> act);
-		if (s -> flush)
-			qflush_free (s -> flush);
-		if (s -> bad)
-			bad_free (s -> bad);
 		free (s);
 	}
 	return NULL;
@@ -877,7 +385,7 @@ sendmail_oinit (sendmail_t *s, blockmail_t *blockmail, var_t *opt) /*{{{*/
 					subdirs |= SD_XF;
 			closedir (dp);
 		}
-		if (! (s -> spool = spool_alloc (opt -> val, (subdirs == SD_ALL ? true : false))))
+		if (! (s -> spool = spool_alloc (opt -> val, subdirs == SD_ALL)))
 			st = false;
 # undef		SD_NONE
 # undef		SD_QF
@@ -942,45 +450,6 @@ sendmail_oinit (sendmail_t *s, blockmail_t *blockmail, var_t *opt) /*{{{*/
 		if (s -> inject && iuse) {
 			s -> inject[iuse] = NULL;
 		}
-	} else if (var_partial_imatch (opt, "action")) {
-		int		interval;
-		const char	*ptr;
-		action_t	*temp, *prev;
-
-		for (temp = s -> act, prev = NULL; temp; temp = temp -> next)
-			prev = temp;
-		interval = 0;
-		for (ptr = opt -> val; isdigit ((int) ((unsigned char) *ptr)); ++ptr)
-			;
-		if (*ptr == ':') {
-			++ptr;
-			interval = atoi (opt -> val);
-		} else
-			ptr = opt -> val;
-		if (temp = action_alloc (interval, ptr)) {
-			if (prev)
-				prev -> next = temp;
-			else
-				s -> act = temp;
-		} else
-			st = false;
-	} else if (var_partial_imatch (opt, "queue-flush")) {
-		if (s -> flush || (s -> flush = qflush_alloc (0, NULL)))
-			s -> flush -> maxcount = atoi (opt -> val);
-		else
-			st = false;
-	} else if (var_partial_imatch (opt, "queue-flush-command")) {
-		if (s -> flush || (s -> flush = qflush_alloc (0, NULL)))
-			st = qflush_set_command (s -> flush, opt -> val);
-		else
-			st = false;
-	} else if (var_partial_imatch (opt, "bad-path")) {
-		if (s -> bad)
-			bad_free (s -> bad);
-		s -> bad = bad_alloc (opt -> val);
-	} else if (var_partial_imatch (opt, "bad-file")) {
-		if (s -> bad)
-			bad_readfile (s -> bad, opt -> val);
 	} else
 		log_out (blockmail -> lg, LV_WARNING, "Unknown option \"%s\" using \"%s\"", opt -> var, opt -> val);
 	return st;
@@ -992,53 +461,15 @@ sendmail_osanity (sendmail_t *s, blockmail_t *blockmail) /*{{{*/
 	
 	st = true;
 	if (s -> spool || (! s -> inject)) {
-		if (! s -> spool)
-			if (! (s -> spool = spool_alloc (DEF_DESTDIR, false)))
-				st = false;
-		if (st)
+		if (s -> spool || (s -> spool = spool_alloc (DEF_DESTDIR, false)))
 			spool_setprefix (s -> spool, "?f");
-		if (st && s -> flush && (! s -> flush -> cmd))
-			st = qflush_set_command (s -> flush, DEF_FLUSHCMD);
-		if (st) {
-			action_t	*run;
-		
-			for (run = s -> act; st && run; run = run -> next)
-				st = action_go (run, blockmail -> lg, "start", s -> spool -> dir, "0", NULL);
-		}
-		if (st && s -> bad)
-			spool_setprefix (s -> bad -> spool, "?f");
+		else
+			st = false;
 	}
 	return st;
 }/*}}}*/
 static bool_t
-sendmail_odeinit (sendmail_t *s, gen_t *g, blockmail_t *blockmail, bool_t success) /*{{{*/
-{
-	bool_t	st;
-	
-	st = true;
-	if (s && s -> spool) {
-		action_t	*run;
-		char		count[32];
-		char		instance[32];
-		
-		sprintf (count, "%lu", s -> nr);
-		for (run = s -> act; run; run = run -> next) {
-			if ((run -> interval > 0) && ((s -> nr % run -> interval) != 0)) {
-				run -> instance++;
-				sprintf (instance, "%d", run -> instance);
-				if (! action_go (run, blockmail -> lg, "run", s -> spool -> dir, count, instance, NULL))
-					st = false;
-			}
-			if (! action_go (run, blockmail -> lg, "stop", s -> spool -> dir, count, NULL))
-				st = false;
-		}
-		if (s -> flush && s -> flush -> dcnt && (! s -> spool -> devnull))
-			qflush_flush (s -> flush, blockmail -> lg, s -> spool -> dir);
-	}
-	return st;
-}/*}}}*/
-static bool_t
-sendmail_write_spoolfile (blockmail_t *blockmail, sendmail_t *s, spool_t *spool, bool_t istemp, int customer_id, buffer_t *head, const char *nl, int nllen) /*{{{*/
+sendmail_write_spoolfile (blockmail_t *blockmail, sendmail_t *s, spool_t *spool, bool_t istemp, int customer_id, buffer_t *head) /*{{{*/
 {
 	bool_t	st = false;
 	
@@ -1054,9 +485,9 @@ sendmail_write_spoolfile (blockmail_t *blockmail, sendmail_t *s, spool_t *spool,
 	spool -> ptr[0] = 'd';
 	if (! spool_unique (spool))
 		log_out (blockmail -> lg, LV_ERROR, "Unable to create unique file %s (%m)", spool -> ptr);
-	else if (! spool_write (spool, blockmail -> body, nl, nllen))
+	else if (! spool_write (spool, blockmail -> body))
 		log_out (blockmail -> lg, LV_ERROR, "Unable to write data file %s (%m)", spool -> ptr);
-	else if (! spool_write_temp (spool, head, nl, nllen))
+	else if (! spool_write_temp (spool, head))
 		log_out (blockmail -> lg, LV_ERROR, "Unable to write control file %s (%m)", spool -> temp);
 	else {
 		if (spool -> dptr)
@@ -1070,94 +501,44 @@ sendmail_write_spoolfile (blockmail_t *blockmail, sendmail_t *s, spool_t *spool,
 	return st;
 }/*}}}*/
 static bool_t
-sendmail_owrite_spool (sendmail_t *s, gen_t *g, blockmail_t *blockmail, receiver_t *rec, const char *nl, int nllen) /*{{{*/
+sendmail_owrite_spool (sendmail_t *s, gen_t *g, blockmail_t *blockmail, receiver_t *rec) /*{{{*/
 {
 	bool_t		st;
 	spool_t		*spool;
-	const buffer_t	*to_email;
-	buffer_t	*bcc_head;
 	
 	if (s -> nr == 0) {
 		if (g -> istemp) {
 			spool_tmpprefix (s -> spool);
-			if (s -> bad)
-				s -> bad = bad_free (s -> bad);
 		} else {
 			char	prefix[64];
 
 			sprintf (prefix, "%06X%03X", blockmail -> mailing_id, blockmail -> licence_id);
-			if (s -> flush)
-				qflush_set_idpattern (s -> flush, prefix);
 			spool_addprefix (s -> spool, prefix);
-			if (s -> bad)
-				spool_addprefix (s -> bad -> spool, prefix);
 		}
 	}
 	spool = s -> spool;
-	to_email = media_target_find (rec -> media_target, "email");
-	if (s -> bad && bad_match (s -> bad, to_email))
-		spool = s -> bad -> spool;
 	if (! spool -> devnull) {
-		st = sendmail_write_spoolfile (blockmail, s, spool, g -> istemp, rec -> customer_id, blockmail -> head, nl, nllen);
-		if (st && rec -> bcc && (bcc_head = buffer_alloc (buffer_length (blockmail -> head) + 1024))) {
+		header_t	*bcc_head;
+		
+		st = sendmail_write_spoolfile (blockmail, s, spool, g -> istemp, rec -> customer_id, header_create_sendmail_spoolfile_header (rec -> header));
+		if (st && rec -> bcc) {
 			int	n;
 
 			for (n = 0; rec -> bcc[n]; ++n)
-				if (! create_bcc_head (bcc_head, blockmail, rec -> bcc[n], n + 1))
-					log_out (blockmail -> lg, LV_ERROR, "Unable to create temp. bcc header for %s", rec -> bcc[n]);
-				else {
+				if (bcc_head = create_bcc_head (rec, blockmail, rec -> bcc[n], n)) {
 					if (rec -> dkim)
 						sign_mail (blockmail, bcc_head);
-					sendmail_write_spoolfile (blockmail, s, spool, false, 0, bcc_head, nl, nllen);
-				}
-			buffer_free (bcc_head);
+					sendmail_write_spoolfile (blockmail, s, spool, false, 0, header_create_sendmail_spoolfile_header (bcc_head));
+					header_free (bcc_head);
+				} else
+					log_out (blockmail -> lg, LV_ERROR, "Unable to create temp. bcc header for %s", rec -> bcc[n]);
 		}
 	} else
 		st = true;
-	if (st) {
-		action_t	*run;
-		char		count[32];
-		char		instance[32];
-
-		sprintf (count, "%lu", s -> nr);
-		for (run = s -> act; run && st; run = run -> next)
-			if ((run -> interval > 0) && ((s -> nr % run -> interval) == 0)) {
-				run -> instance++;
-				sprintf (instance, "%d", run -> instance);
-				if (! (st = action_go (run, blockmail -> lg, "run", s -> spool -> dir, count, instance, NULL)))
-					log_out (blockmail -> lg, LV_ERROR, "Failed in executing %s", run -> cmd);
-			}
-	}
-	if (s -> flush && to_email && (spool == s -> spool)) {
-		int		len = buffer_length (to_email);
-		const byte_t	*cont = buffer_content (to_email);
-		char		*domain;
-		
-		if ((len > 0) && (domain = malloc (len + 1))) {
-			int	n, m, clen;
-			bool_t	start;
-			
-			for (n = 0, m = 0, start = 0; n < len; ) {
-				clen = xmlCharLength (cont[n]);
-				if (clen == 1)
-					if (! start) {
-						if (cont[n] == '@')
-							start = true;
-					} else
-						domain[m++] = tolower (cont[n]);
-				n += clen;
-			}
-			if (m > 0) {
-				domain[m] = '\0';
-				qflush_add (s -> flush, domain);
-			}
-			free (domain);
-		}
-	}
 	return st;
 }/*}}}*/
 static bool_t
-sendmail_inject_mail (blockmail_t *blockmail, sendmail_t *s, gen_t *g, receiver_t *rec, buffer_t *header, const char *nl, int nllen) /*{{{*/
+sendmail_inject_mail (blockmail_t *blockmail, sendmail_t *s, gen_t *g, receiver_t *rec, header_t *header) /*{{{*/
 {
 	bool_t	st;
 	csig_t	*csig;
@@ -1175,38 +556,11 @@ sendmail_inject_mail (blockmail_t *blockmail, sendmail_t *s, gen_t *g, receiver_
 			nfd = dup (fds[0]);
 			close (fds[0]);
 			if (nfd == 0) {
-				char		*sender = NULL, *recipient = NULL;
-				int		hlen = buffer_length (header);
-				const byte_t	*head = buffer_content (header);
-				int		pos = 0;
-				
-				while ((! (sender && recipient)) && (pos < hlen)) {
-					if (((head[pos] == 'S') || (head[pos] == 'R')) && (pos + 2 < hlen)) {
-						char		**target = head[pos] == 'S' ? & sender : & recipient;
-						const xmlChar	*ptr;
-						int		len;
-						
-						if (head[++pos] == '<')
-							++pos;
-						ptr = head + pos;
-						len = 0;
-						while (pos < hlen && (head[pos] != '>') && (head[pos] != '\r') && (head[pos] != '\n'))
-							++pos, ++len;
-						if (*target = malloc (len + 1)) {
-							memcpy (*target, ptr, len);
-							(*target)[len] = '\0';
-						}
-					}
-					while ((pos < hlen) && (head[pos] != '\n'))
-						++pos;
-					if (pos < hlen)
-						++pos;
-				}
-				if (sender && recipient) {
+				if (header -> sender && header -> recipient) {
 					if (s -> ipos_sender != -1)
-						s -> inject[s -> ipos_sender] = sender;
+						s -> inject[s -> ipos_sender] = (char *) buffer_string (header -> sender);
 					if (s -> ipos_recipient != -1)
-						s -> inject[s -> ipos_recipient] = recipient;
+						s -> inject[s -> ipos_recipient] = (char *) buffer_string (header -> recipient);
 					if (s -> inject[0][0] == '/')
 						execv (s -> inject[0], s -> inject);
 					else
@@ -1223,20 +577,25 @@ sendmail_inject_mail (blockmail_t *blockmail, sendmail_t *s, gen_t *g, receiver_
 			pid_t		npid;
 			int		status;
 			buffer_t	*flatten;
+			int		size;
 
-			if (flatten = buffer_alloc (buffer_length (header))) {
-				st = flatten_header (flatten, header, false);
-				if (st) {
-					st = write_content (fds[1], buffer_content (flatten), buffer_length (flatten), nl, nllen);
-					if (! st)
-						log_out (blockmail -> lg, LV_ERROR, "Failed to write header: %m");
-				}
-				buffer_free (flatten);
+			size = 0;
+			if (flatten = header_create (header, false)) {
+				st = write_content (fds[1], buffer_content (flatten), buffer_length (flatten));
+				if (! st)
+					log_out (blockmail -> lg, LV_ERROR, "Failed to write header: %m");
+				else
+					size = buffer_length (flatten);
+			} else {
+				log_out (blockmail -> lg, LV_ERROR, "Failed to flatten header: %m");
+				st = false;
 			}
 			if (st) {
-				st = write_content (fds[1], buffer_content (blockmail -> body), buffer_length (blockmail -> body), nl, nllen);
+				st = write_content (fds[1], buffer_content (blockmail -> body), buffer_length (blockmail -> body));
 				if (! st)
 					log_out (blockmail -> lg, LV_ERROR, "Failed to write body: %m");
+				else if (rec)
+					rec -> size = size + buffer_length (blockmail -> body);
 			}
 			close (fds[1]);
 			while (((npid = waitpid (pid, & status, 0)) != pid) && (npid != -1))
@@ -1263,10 +622,11 @@ sendmail_inject_mail (blockmail_t *blockmail, sendmail_t *s, gen_t *g, receiver_
 								
 								snprintf (reason, sizeof (reason) - 1, "inject=exit %d", exit_status);
 								st = write_bounce_log (g, blockmail, rec, "4.9.9", reason);
-							} else
-								st = false;
+							}
 							break;
 						}
+					if (exit_status != EX_OK)
+						st = false;
 				} else {
 					if (WIFSIGNALED (status))
 						log_out (blockmail -> lg, LV_ERROR, "Inject processes return due to signal %d", WTERMSIG (status));
@@ -1285,34 +645,29 @@ sendmail_inject_mail (blockmail_t *blockmail, sendmail_t *s, gen_t *g, receiver_
 	return st;
 }/*}}}*/
 static bool_t
-sendmail_owrite_inject (sendmail_t *s, gen_t *g, blockmail_t *blockmail, receiver_t *rec, const char *nl, int nllen) /*{{{*/
+sendmail_owrite_inject (sendmail_t *s, gen_t *g, blockmail_t *blockmail, receiver_t *rec) /*{{{*/
 {
 	bool_t		st;
-	buffer_t	*bcc_head;
+	header_t	*bcc_head;
 	
-	st = sendmail_inject_mail (blockmail, s, g, rec, blockmail -> head, nl, nllen);
-	if (st && rec -> bcc && (bcc_head = buffer_alloc (buffer_length (blockmail -> head) + 1024))) {
+	st = sendmail_inject_mail (blockmail, s, g, rec, rec -> header);
+	if (st && rec -> bcc) {
 		int	n;
 
 		for (n = 0; rec -> bcc[n]; ++n)
-			if (! create_bcc_head (bcc_head, blockmail, rec -> bcc[n], n))
+			if (bcc_head = create_bcc_head (rec, blockmail, rec -> bcc[n], n)) {
+				if (rec -> dkim)
+					sign_mail (blockmail, bcc_head);
+				sendmail_inject_mail (blockmail, s, NULL, NULL, bcc_head);
+				header_free (bcc_head);
+			} else
 				log_out (blockmail -> lg, LV_ERROR, "Unable to create temp. bcc header for %s", rec -> bcc[n]);
-			else
-				sendmail_inject_mail (blockmail, s, NULL, NULL, bcc_head, nl, nllen);
-		buffer_free (bcc_head);
 	}
 	return st;
 }/*}}}*/
 static bool_t
 sendmail_owrite (sendmail_t *s, gen_t *g, blockmail_t *blockmail, receiver_t *rec) /*{{{*/
 {
-	const char	*nl = NULL;
-	int		nllen = 0;
-		
-	if (blockmail -> usecrlf) {
-		nl = "\r\n";
-		nllen = 2;
-	}
 	if ((s -> nr == 0) && blockmail -> mfrom) {
 		fsdb_t	*fsdb;
 		char	key[256];
@@ -1326,9 +681,9 @@ sendmail_owrite (sendmail_t *s, gen_t *g, blockmail_t *blockmail, receiver_t *re
 		}		
 	}
 	if (s -> spool)
-		return sendmail_owrite_spool (s, g, blockmail, rec, nl, nllen);
+		return sendmail_owrite_spool (s, g, blockmail, rec);
 	else
-		return sendmail_owrite_inject (s, g, blockmail, rec, nl, nllen);
+		return sendmail_owrite_inject (s, g, blockmail, rec);
 }/*}}}*/
 
 
@@ -1399,10 +754,7 @@ generate_odeinit (void *data, blockmail_t *blockmail, bool_t success) /*{{{*/
 	bool_t	st = true;
 	
 	if (g) {
-		if ((g -> s && (! sendmail_odeinit (g -> s, g, blockmail, success)))
-		   )
-			st = false;
-		if (st && success && blockmail -> counter) {
+		if (success && blockmail -> counter) {
 			counter_t	*crun;
 			int		fd;
 			int		len;

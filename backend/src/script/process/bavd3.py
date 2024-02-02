@@ -234,6 +234,21 @@ class Autoresponder:
 					raise error ('mailing %d is marked as deleted' % mailing_id)
 				mailinglist_id = rq.mailinglist_id
 				mailinglist_ids = {mailinglist_id}
+				#
+				for row in db.queryc (
+					'SELECT status_id, status_field '
+					'FROM maildrop_status_tbl '
+					'WHERE mailing_id = :mailing_id',
+					{
+						'mailing_id': mailing_id
+					}
+				):
+					if row.status_field and row.status_field == 'E':
+						logger.debug (f'mailing {mailing_id}: found active entry with status_id {row.status_id} in maildrop_status_tbl')
+						break
+				else:
+					raise error (f'mailing {mailing_id} is not active')
+				#
 				if cinfo.mailing_id > 0:
 					rq = db.querys (
 						'SELECT mailinglist_id '
@@ -464,7 +479,7 @@ class Rule:
 							scan.dsn = mt.groups ()[0]
 							scan.etext = line
 							logger.debug ('Found DSN %s in body: %s' % (scan.dsn, line))
-		elif type (pl) is list:
+		elif isinstance (pl, list):
 			for p in cast (List[EmailMessage], pl):
 				self.__scan (p, scan, sects, True, level + 1)
 				if scan.section and scan.dsn and scan.minfo:
@@ -690,7 +705,7 @@ class BAV:
 				self.report['from'] = self.header_from.address
 		except:
 			self.header_from = None
-		self.rid = self.parameter.rid
+		self.rid: str = self.parameter.rid
 		self.report['rid'] = self.rid
 		if return_path is not None:
 			self.sender = return_path
@@ -701,7 +716,7 @@ class BAV:
 		self.report['sender'] = self.sender
 		if not msg.get_unixfrom ():
 			msg.set_unixfrom (time.strftime ('From ' + self.sender + '  %c'))
-		self.rule = Rule (bounce.get_rule (0 if self.cinfo is None else self.cinfo.company_id, self.rid))
+		self.rule = Rule (bounce.get_rule (0 if self.cinfo is None else self.cinfo.company_id, atoi (self.rid)))
 		self.reason = ''
 
 	def save_message (self, action: str) -> None:
@@ -712,7 +727,7 @@ class BAV:
 			try:
 				with open (fname, 'a') as fd:
 					fd.write (EMail.as_string (self.msg, True) + '\n')
-				logger.debug (f'Saved mesage to {fname}')
+				logger.debug (f'Saved message to {fname}')
 			except IOError as e:
 				logger.error ('Unable to save mail copy to %s %s' % (fname, e))
 		self.report['saved'] = fname

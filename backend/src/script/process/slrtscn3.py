@@ -27,7 +27,7 @@ from	agn3.log import LogID, log, mark, log_filter
 from	agn3.mta import MTA
 from	agn3.plugin import Plugin, LoggingManager
 from	agn3.runtime import Runtime
-from	agn3.tools import call, atob
+from	agn3.tools import atob
 from	agn3.tracker import Key, Tracker
 from	agn3.uid import UIDHandler
 #
@@ -277,16 +277,9 @@ class Scanner:
 		try:
 			fp = Filepos (self.maillog, self.save_file, checkpoint = 1000)
 		except error as e:
-			logger.info ('Unable to open %s: %s, try to gain access' % (self.maillog, e))
-			n = call ([os.path.join (base, 'bin', 'smctrl'), 'logaccess'])
-			if n != 0:
-				logger.error ('Failed to gain access to %s (%d)' % (self.maillog, n))
-			with Ignore (OSError):
-				st = os.stat (self.save_file)
-				if st.st_size == 0:
-					logger.error ('Remove corrupt empty file %s' % self.save_file)
-					os.unlink (self.save_file)
+			logger.error (f'{self.maillog}: access failed: {e}')
 			return
+		#
 		self.mtrack.open ()
 		try:
 			sp = SyslogParser ()
@@ -364,60 +357,6 @@ class Scanner:
 		
 	def parse (self, log_id: LogID, info: SyslogParser.Info, line: str) -> bool:
 		raise error ('Subclass must implement parse()')
-
-class ScannerSendmail (Scanner):
-	__slots__: List[str] = []
-	tracker_path = os.path.join (base, 'var', 'run', 'scanner-sendmail.track3')
-	pattern_valid_queue_id = re.compile ('^[0-9A-F]{6}[0-9A-Z]{3}[0-9A-F]{8}[G-Zg-z]?')
-	def parse (self, log_id: LogID, info: SyslogParser.Info, line: str) -> bool:
-		if info.service not in ('sendmail', 'sm-msp-queue'):
-			logger.debug ('Skip non sendmail line: %s' % line)
-			return True
-		if self.pattern_valid_queue_id.match (info.queue_id) is None:
-			return True
-		#
-		log_id.push (info.queue_id)
-		mailing = int (info.queue_id[:6], 16)
-		licence = int (info.queue_id[6:9], 16)
-		if len (info.queue_id) == 17:
-			customer = int (info.queue_id[9:], 16)
-		else:
-			customer = int (info.queue_id[10:], 16)
-		#
-		if customer == 0 or customer >= 0xf0000000:
-			logger.debug ('Line leads to test customer_id 0x%x: %s' % (customer, line))
-			return True
-		#
-		self.line (info, line)
-		dsn = info.items.get ('dsn')
-		key = Key (self.SEC_MTAID, info.queue_id)
-		record = self.mtrack.get (key)
-		update: Dict[str, Any] = {
-			'use': True,
-			'timestamp': info.timestamp
-		}
-		if 'licence_id' not in record:
-			update['licence_id'] = licence
-			update['mailing_id'] = mailing
-			update['customer_id'] = customer
-		if dsn is not None and (dsn.startswith ('2') or dsn.startswith ('5')):
-			update['complete'] = True
-		if 'envelopeFrom' not in record:
-			envelopeFrom = info.items.get ('ctladdr', '').strip ('<>')
-			if envelopeFrom:
-				update['envelopeFrom'] = envelopeFrom
-		if 'to' in info.items and 'envelopeTo' not in record:
-			update['envelopeTo'] = info.items['to'].strip ('<>')
-		for available in 'to', 'dsn', 'status', 'relay':
-			if available in info.items:
-				update[available] = info.items[available]
-		record.update (update)
-		self.mtrack[key] = record
-		if dsn:
-			self.write_bounce (dsn, licence, mailing, customer, info.timestamp, info.status, info.queue_id, info.items.get ('relay', ''), info.items.get ('to', ''))
-		else:
-			logger.warning ('Line has no DSN: %s' % line)
-		return True
 #
 class ScannerPostfix (Scanner):
 	__slots__ = ['uid']
@@ -504,7 +443,7 @@ class ScannerPostfix (Scanner):
 			logger.info (f'Completed record without message_id found for {key}, remove')
 
 	ignore_ids = frozenset (('statistics', 'NOQUEUE', 'warning'))
-	ignore_services = frozenset (('postfix/smtpd', 'postfix/master', 'postfix/postfix-script', 'postfix/tlsproxy'))
+	ignore_services = frozenset (('postfix/smtpd', 'postfix/master', 'postfix/postfix-script', 'postfix/tlsproxy', 'postfix/trivial-rewrite'))
 	pattern_envelope_from = re.compile ('from=<([^>]*)>')
 	pattern_message_id = re.compile ('message-id=<([^>]*)>')
 	pattern_host_said = re.compile ('host [^ ]+ said: +(.*)$')
@@ -655,13 +594,8 @@ class Slrtscn (Runtime):
 		self.provider_log = args.provider_log
 
 	def executor (self) -> bool:
-		scanners = {
-			None:		ScannerSendmail,
-			'sendmail':	ScannerSendmail,
-			'postfix':	ScannerPostfix
-		}
 		mta = MTA ()
-		scanner = scanners.get (mta.mta, scanners[None]) (self.maillog, self.save_file, self.bounce_log, self.deliver_log, self.provider_log)
+		scanner = ScannerPostfix (self.maillog, self.save_file, self.bounce_log, self.deliver_log, self.provider_log)
 		logger.info ('Scanning for %s using %s' % (mta.mta, scanner.__class__.__name__))
 		while self.running:
 			time.sleep (1)

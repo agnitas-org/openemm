@@ -36,7 +36,7 @@ class OP:
 	def __call__ (self, method: str, fallback: Optional[Callable[[str, str], bool]] = None) -> bool:
 		if self.source is None:
 			return False
-		if type (self.source) is not str:
+		if not isinstance (self.source, str):
 			try:
 				if isinstance (self.source, bool):
 					converter = atob

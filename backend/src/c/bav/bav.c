@@ -30,16 +30,27 @@
 # define	LCFG_LOCALS_KEY		"filter-local-hostnames"
 
 typedef struct locals { /*{{{*/
+	char		*pattern;
 	regex_t		re;
 	struct locals	*next;
 	/*}}}*/
 }	locals_t;
 
-static const char	*program;
-static const char	*loglevel;
+static log_t		*lg;
 static char		*cfgfile;
 static locals_t		*locals;
 
+static locals_t *
+locals_free (locals_t *l) /*{{{*/
+{
+	if (l) {
+		if (l -> pattern)
+			free (l -> pattern);
+		regfree (& l -> re);
+		free (l);
+	}
+	return NULL;
+}/*}}}*/
 static locals_t *
 locals_alloc (const char *pattern) /*{{{*/
 {
@@ -48,21 +59,14 @@ locals_alloc (const char *pattern) /*{{{*/
 	if (l = (locals_t *) malloc (sizeof (locals_t))) {
 		if (regcomp (& l -> re, pattern, REG_EXTENDED | REG_ICASE | REG_NOSUB) == 0) {
 			l -> next = NULL;
+			if (! (l -> pattern = strdup (pattern)))
+				l = locals_free (l);
 		} else {
 			free (l);
 			l = NULL;
 		}
 	}
 	return l;
-}/*}}}*/
-static locals_t *
-locals_free (locals_t *l) /*{{{*/
-{
-	if (l) {
-		regfree (& l -> re);
-		free (l);
-	}
-	return NULL;
 }/*}}}*/
 static locals_t *
 locals_free_all (locals_t *l) /*{{{*/
@@ -117,13 +121,13 @@ charc_alloc (const char *str) /*{{{*/
 }/*}}}*/
 
 typedef struct { /*{{{*/
+	int		lid;
 	cfg_t		*cfg;
 	bool_t		is_local;
 	int		x_agn;
 	char		*from;
 	charc_t		*receiver, *prev;
 	char		*info;
-	log_t		*lg;
 	/*}}}*/
 }	priv_t;
 static char *
@@ -157,8 +161,6 @@ priv_free (priv_t *p) /*{{{*/
 {
 	if (p) {
 		priv_clear (p);
-		if (p -> lg)
-			log_free (p -> lg);
 		if (p -> cfg)
 			cfg_free (p -> cfg);
 		free (p);
@@ -168,18 +170,18 @@ priv_free (priv_t *p) /*{{{*/
 static priv_t *
 priv_alloc (void) /*{{{*/
 {
-	priv_t	*p;
+	static int	current_lid = 0;
+	priv_t		*p;
 	
 	if (p = (priv_t *) malloc (sizeof (priv_t)))
 		if (p -> cfg = cfg_alloc (cfgfile)) {
+			p -> lid = ++current_lid;
 			p -> is_local = false;
 			p -> x_agn = 0;
 			p -> from = NULL;
 			p -> receiver = NULL;
 			p -> prev = NULL;
 			p -> info = NULL;
-			if (! (p -> lg = log_alloc (NULL, program, loglevel)))
-				p = priv_free (p);
 		} else {
 			free (p);
 			p = NULL;
@@ -241,7 +243,7 @@ priv_addinfopair (priv_t *p, const char *var, const char *val) /*{{{*/
 }/*}}}*/
 
 static sfsistat
-handle_connect (SMFICTX *ctx, char  *hostname, _SOCK_ADDR *hostaddr) /*{{{*/
+handle_connect (SMFICTX *ctx, char *hostname, _SOCK_ADDR *hostaddr) /*{{{*/
 {
 	priv_t	*p;
 
@@ -271,9 +273,11 @@ handle_connect (SMFICTX *ctx, char  *hostname, _SOCK_ADDR *hostaddr) /*{{{*/
 		for (run = locals; run; run = run -> next)
 			if (regexec (& run -> re, hostname, 0, NULL, 0) == 0) {
 				p -> is_local = true;
+				log_out (lg, LV_DEBUG, "[%X connect] %s is considered as local due to pattern %s", p -> lid, hostname, run -> pattern);
 				break;
 			}
 	}
+	log_out (lg, LV_DEBUG, "[%X connect] %s: is accepted as %s host", p -> lid, hostname, p -> is_local ? "local" : "remote");
 	smfi_setpriv (ctx, p);
 	return SMFIS_CONTINUE;
 }/*}}}*/
@@ -288,6 +292,7 @@ handle_from (SMFICTX *ctx, char **argv) /*{{{*/
 	if (! priv_setfrom (p, argv[0]))
 		return SMFIS_TEMPFAIL;
 	priv_addinfopair (p, "from", argv[0]);
+	log_out (lg, LV_DEBUG, "[%X from] %s: used as sender", p -> lid, argv[0]);
 	return SMFIS_CONTINUE;
 }/*}}}*/
 static sfsistat
@@ -299,10 +304,12 @@ handle_to (SMFICTX *ctx, char **argv) /*{{{*/
 	
 	if (! p)
 		return SMFIS_TEMPFAIL;
-	if (p -> is_local)
+	if (p -> is_local) {
+		log_out (lg, LV_DEBUG, "[%X to] %s is accepted due to coming from local host", p -> lid, argv[0]);
 		return SMFIS_CONTINUE;
+	}
 	if (! (chk = cfg_valid_address (p -> cfg, argv[0]))) {
-		log_out (p -> lg, LV_ERROR, "Unable to setup initial data for `%s'", argv[0]);
+		log_out (lg, LV_ERROR, "[%X] Unable to setup initial data for `%s'", p -> lid, argv[0]);
 		return SMFIS_TEMPFAIL;
 	}
 	if (opt = strchr (chk, ':'))
@@ -318,17 +325,18 @@ handle_to (SMFICTX *ctx, char **argv) /*{{{*/
 	priv_addinfopair (p, "to", argv[0]);
 	free (chk);
 	if (reject) {
-		log_out (p -> lg, LV_INFO, "Receiver `%s' is rejected", argv[0]);
+		log_out (lg, LV_INFO, "[%X] Receiver `%s' is rejected", p -> lid, argv[0]);
 		smfi_setreply (ctx, (char *) "550", (char *) "5.1.1", (char *) "No such user");
 		return SMFIS_REJECT;
 	}
 	if (tempfail) {
-		log_out (p -> lg, LV_INFO, "Receiver `%s' is temp. disbaled", argv[0]);
+		log_out (lg, LV_INFO, "[%X] Receiver `%s' is temp. disbaled", p -> lid, argv[0]);
 		smfi_setreply (ctx, (char *) "400", (char *) "4.0.0", (char *) "Please try again later");
 		return SMFIS_TEMPFAIL;
 	}
 	if (! priv_setto (p, argv[0]))
 		return SMFIS_TEMPFAIL;
+	log_out (lg, LV_DEBUG, "[%X to] %s is added as receiver", p -> lid, argv[0]);
 	return SMFIS_CONTINUE;
 }/*}}}*/
 static sfsistat
@@ -341,12 +349,13 @@ handle_header (SMFICTX *ctx, char *field, char *value) /*{{{*/
 	if (p -> is_local)
 		return SMFIS_CONTINUE;
 	if (! strcasecmp (field, X_LOOP)) {
-		log_out (p -> lg, LV_WARNING, "Mail from `%s' has already loop marker set, rejected", p -> from);
+		log_out (lg, LV_WARNING, "[%X] Mail from `%s' has already loop marker set, rejected", p -> lid, p -> from);
 		smfi_setreply (ctx, (char *) "500", (char *) "5.4.6", (char *) "Loop detected");
 		return SMFIS_REJECT;
 	}
 	if (! strcasecmp (field, X_AGN))
 		p -> x_agn++;
+	log_out (lg, LV_DEBUG, "[%X header] accepted %s: %s", p -> lid, field, value);
 	return SMFIS_CONTINUE;
 }/*}}}*/
 static sfsistat
@@ -364,12 +373,16 @@ handle_eom (SMFICTX *ctx) /*{{{*/
 			smfi_addheader (ctx, (char *) X_AGN, p -> info);
 		smfi_addheader (ctx, (char *) X_LOOP, (char *) LOOP_SET);
 	}
+	log_out (lg, LV_DEBUG, "[%X eom] received end of message", p -> lid);
 	return SMFIS_CONTINUE;
 }/*}}}*/
 static sfsistat
 handle_close(SMFICTX *ctx) /*{{{*/
 {
-	priv_free (smfi_getpriv (ctx));
+	priv_t	*p = (priv_t *) smfi_getpriv (ctx);
+	
+	log_out (lg, LV_DEBUG, "[%X close] connection shutted down", p ? p -> lid : 0);
+	priv_free (p);
 	smfi_setpriv (ctx, NULL);
 	return SMFIS_CONTINUE;
 }/*}}}*/
@@ -387,19 +400,17 @@ static struct smfiDesc	bav = { /*{{{*/
 	handle_eom,
 	NULL,
 	handle_close,
-# if	SMFI_VERSION > 2	
 	NULL,
 	NULL,
 	NULL
-# endif	
 	/*}}}*/
 };
 
 static bool_t
 find_locals (void) /*{{{*/
 {
-	bool_t	rc;
-	void	*cfg;
+	bool_t		rc;
+	config_t	*cfg;
 	
 	rc = true;
 	if (cfg = systemconfig_alloc ()) {
@@ -424,7 +435,7 @@ find_locals (void) /*{{{*/
 							locals = temp;
 						prev = temp;
 					} else {
-						fprintf (stderr, "Invalid pattern \"%s\"\n", cur);
+						log_out (lg, LV_ERROR, "Invalid pattern \"%s\"", cur);
 						rc = false;
 					}
 				cur = ptr;
@@ -446,6 +457,7 @@ main (int argc, char **argv) /*{{{*/
 {
 	int		rc;
 	char		*ptr;
+	const char	*loglevel;
 	char		*sock_name;
 	int		reread;
 	int		n;
@@ -453,16 +465,11 @@ main (int argc, char **argv) /*{{{*/
 	const char	*home;
 	struct stat	st;
 
-	if (ptr = strrchr (argv[0], '/'))
-		program = ptr + 1;
-	else
-		program = argv[0];
 	loglevel = "WARNING";
 	sock_name = NULL;
 	reread = 0;
 	cfgfile = NULL;
 	locals = NULL;
-
 	while ((n = getopt (argc, argv, "L:s:r:c:l")) != -1)
 		switch (n) {
 		case 'L':
@@ -501,12 +508,20 @@ main (int argc, char **argv) /*{{{*/
 		}
 	if (optind < argc)
 		return usage (argv[0]);
+	if (ptr = strrchr (argv[0], '/'))
+		++ptr;
+	else
+		ptr = argv[0];
+	if (! (lg = log_alloc (NULL, ptr, loglevel))) {
+		fprintf (stderr, "Failed to allocate logger (%m).\n");
+		return 1;
+	}
 	if (! (lock = lock_alloc (LOCK_PATH))) {
-		fprintf (stderr, "Failed to allocate memory for locking (%m).\n");
+		log_out (lg, LV_ERROR, "Failed to allocate memory for locking (%m)");
 		return 1;
 	}
 	if (! lock_lock (lock)) {
-		fprintf (stderr, "Instance seems already to run, aborting.\n");
+		log_out (lg, LV_INFO, "Instance seems already to run, aborting");
 		return 1;
 	}
 
@@ -523,38 +538,39 @@ main (int argc, char **argv) /*{{{*/
 	if ((! sock_name) || (! cfgfile)) {
 		if (! sock_name) {
 			if (! (sock_name = malloc (strlen (home) + sizeof (SOCK_PATH) + 16))) {
-				fprintf (stderr, "Failed to allocate socket name %s/%s (%m).\n", home, SOCK_PATH);
+				log_out (lg, LV_ERROR, "Failed to allocate socket name %s/%s (%m)", home, SOCK_PATH);
 				return 1;
 			}
 			sprintf (sock_name, "unix:%s/%s", home, SOCK_PATH);
 		}
 		if (! cfgfile) {
 			if (! (cfgfile = malloc (strlen (home) + sizeof (CFGFILE) + 1))) {
-				fprintf (stderr, "Failed to allocate config.filename %s/%s (%m).\n", home, CFGFILE);
+				log_out (lg, LV_ERROR, "Failed to allocate config.filename %s/%s (%m)", home, CFGFILE);
 				return 1;
 			}
 			sprintf (cfgfile, "%s/%s", home, CFGFILE);
 		}
 	}
+	log_out (lg, LV_INFO, "Starting up with milter version 0x%x", bav.xxfi_version);
 	rc = 1;
 	umask (0);
 	if (smfi_register (bav) == MI_FAILURE)
-		fprintf (stderr, "Failed to register filter.\n");
+		log_out (lg, LV_ERROR, "Failed to register filter");
 	else if (smfi_setconn (sock_name) == MI_FAILURE)
-		fprintf (stderr, "Failed to register socket name \"%s\".\n", sock_name);
+		log_out (lg, LV_ERROR, "Failed to register socket name \"%s\"", sock_name);
 	else if (smfi_opensocket (1) == MI_FAILURE)
-		fprintf (stderr, "Failed to open socket socket \"%s\".\n", sock_name);
-	else {
-		if (smfi_main () == MI_FAILURE)
-			fprintf (stderr, "Failed to hand over control to milter.\n");
-		else
-			rc = 0;
-	}
+		log_out (lg, LV_ERROR, "Failed to open socket socket \"%s\"", sock_name);
+	else if (smfi_main () == MI_FAILURE)
+		log_out (lg, LV_ERROR, "Failed to hand over control to milter");
+	else
+		rc = 0;
+	log_out (lg, LV_INFO, "Going down");
 	unlink (sock_name);
 	lock_unlock (lock);
 	lock_free (lock);
 	free (sock_name);
 	locals_free_all (locals);
 	free (cfgfile);
+	log_free (lg);
 	return rc;
 }/*}}}*/

@@ -13,7 +13,7 @@
 # include	"xmlback.h"
 
 rblock_t *
-rblock_alloc (tid_t tid, const char *bname, xmlBufferPtr content) /*{{{*/
+rblock_alloc (tid_t tid, const char *bname, const xmlBufferPtr content1, const buffer_t *content2) /*{{{*/
 {
 	rblock_t	*r;
 	
@@ -23,7 +23,8 @@ rblock_alloc (tid_t tid, const char *bname, xmlBufferPtr content) /*{{{*/
 		r -> content = NULL;
 		r -> next = NULL;
 		if ((bname && (! rblock_set_name (r, bname))) ||
-		    (content && (! rblock_set_content (r, content))))
+		    (content1 && (! rblock_set_content (r, content1))) ||
+		    (content2 && (! rblock_retrieve_content (r, content2))))
 			r = rblock_free (r);
 	}
 	return r;
@@ -57,7 +58,7 @@ rblock_set_name (rblock_t *r, const char *bname) /*{{{*/
 	if (r -> bname)
 		free (r -> bname);
 	r -> bname = bname ? strdup (bname) : NULL;
-	return ((! bname) || r -> bname) ? true : false;
+	return (! bname) || r -> bname;
 }/*}}}*/
 static inline bool_t
 copy (rblock_t *r, const byte_t *content, int length) /*{{{*/
@@ -76,12 +77,12 @@ copy (rblock_t *r, const byte_t *content, int length) /*{{{*/
 	return r -> content ? true : false;
 }/*}}}*/
 bool_t
-rblock_set_content (rblock_t *r, xmlBufferPtr content) /*{{{*/
+rblock_set_content (rblock_t *r, const xmlBufferPtr content) /*{{{*/
 {
 	return copy (r, xmlBufferContent (content), xmlBufferLength (content));
 }/*}}}*/
 bool_t
-rblock_retrieve_content (rblock_t *r, buffer_t *content) /*{{{*/
+rblock_retrieve_content (rblock_t *r, const buffer_t *content) /*{{{*/
 {
 	return copy (r, content -> buffer, content -> length);
 }/*}}}*/

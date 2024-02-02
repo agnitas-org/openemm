@@ -60,7 +60,7 @@ list with different methods of persistance.
 		self.add_method (None, self.__decode, self.__encode)
 		def jsonDecode (ctx: Dict[str, Any], s: str, target: Dict[str, str]) -> None:
 			d = cast (json.JSONDecoder, ctx['decoder']).decode (s)
-			if type (d) != dict:
+			if not isinstance (d, dict):
 				raise ValueError (f'JSON: input {s} did not lead into a dictionary')
 			target.update (d)
 		def jsonEncode (ctx: Dict[str, Any], source: Dict[str, str]) -> str:

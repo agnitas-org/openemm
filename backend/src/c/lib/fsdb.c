@@ -99,7 +99,7 @@ do_read (int fd, void *buffer, int size) /*{{{*/
 		} else
 			break;
 	}
-	return size == 0 ? true : false;
+	return size == 0;
 }/*}}}*/
 static bool_t
 do_write (int fd, const void *buffer, int size) /*{{{*/
@@ -113,7 +113,7 @@ do_write (int fd, const void *buffer, int size) /*{{{*/
 		} else
 			break;
 	}
-	return size == 0 ? true : false;
+	return size == 0;
 }/*}}}*/
 fsdb_result_t *
 fsdb_result_alloc (int size, time_t updated) /*{{{*/

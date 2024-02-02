@@ -56,7 +56,7 @@ links_expand (links_t *l) /*{{{*/
 			l -> lsiz = nsiz;
 		}
 	}
-	return l -> lcnt < l -> lsiz ? true : false;
+	return l -> lcnt < l -> lsiz;
 }/*}}}*/
 bool_t
 links_nadd (links_t *l, const char *lnk, int llen) /*{{{*/

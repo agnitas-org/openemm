@@ -68,7 +68,7 @@ bool_t
 append_raw (buffer_t *dest, const buffer_t *src) /*{{{*/
 {
 	if (src -> length)
-		return (buffer_stiff (dest, src -> buffer, src -> length) && buffer_stiffnl (dest)) ? true : false;
+		return buffer_stiff (dest, src -> buffer, src -> length) && buffer_stiffnl (dest);
 	return true;
 }/*}}}*/
 bool_t
@@ -81,9 +81,6 @@ append_cooked (buffer_t *dest, const xmlBufferPtr src,
 	switch (method) {
 	case EncNone:
 		st = encode_none (src, dest);
-		break;
-	case EncHeader:
-		st = encode_header (src, dest, charset);
 		break;
 	case Enc8bit:
 		st = encode_8bit (src, dest);

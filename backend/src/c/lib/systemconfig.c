@@ -189,7 +189,7 @@ selection_key (selection_t *s, int index, const char *key) /*{{{*/
 	return NULL;
 }/*}}}*/
 
-typedef struct { /*{{{*/
+struct config { /*{{{*/
 	char		*filename;
 	struct timespec	last_modified;
 	selection_t	*selection;
@@ -199,7 +199,7 @@ typedef struct { /*{{{*/
 	char		*scratch;
 	int		scratch_size;
 	/*}}}*/
-}	config_t;
+};
 static bool_t
 config_add (config_t *c, const char *key, const char *value) /*{{{*/
 {
@@ -428,11 +428,9 @@ config_check (config_t *c) /*{{{*/
 	}
 	return rc;
 }/*}}}*/
-void *
-systemconfig_free (void *lc) /*{{{*/
+config_t *
+systemconfig_free (config_t *c) /*{{{*/
 {
-	config_t	*c = (config_t *) lc;
-	
 	if (c) {
 		config_reset (c);
 		selection_free (c -> selection);
@@ -444,7 +442,7 @@ systemconfig_free (void *lc) /*{{{*/
 	}
 	return NULL;
 }/*}}}*/
-void *
+config_t *
 systemconfig_alloc (void) /*{{{*/
 {
 	config_t	*c;
@@ -496,10 +494,8 @@ systemconfig_alloc (void) /*{{{*/
 	return c;
 }/*}}}*/
 const char *
-systemconfig_find (void *lc, const char *key) /*{{{*/
+systemconfig_find (config_t *c, const char *key) /*{{{*/
 {
-	config_t	*c = (config_t *) lc;
-
 	if (c && config_check (c)) {
 		int	keylen = strlen (key);
 		
@@ -550,10 +546,8 @@ systemconfig_find (void *lc, const char *key) /*{{{*/
 	return NULL;
 }/*}}}*/
 bool_t
-systemconfig_get (void *lc, int idx, const char **key, const char **value) /*{{{*/
+systemconfig_get (config_t *c, int idx, const char **key, const char **value) /*{{{*/
 {
-	config_t	*c = (config_t *) lc;
-	
 	if (c && config_check (c) && (idx >= 0) && (idx < c -> count)) {
 		if (key)
 			*key = c -> e[idx] -> key;

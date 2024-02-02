@@ -163,10 +163,10 @@ class DKIM (CLI):
 					fdt.write ('-----END PUBLIC KEY-----\n')
 			except IOError as e:
 				raise error (f'Failed to setup files: {e}')
-			n = silent_call ('openssl', 'dgst', '-sha1', '-sign', private_file, '-out', sign_file, data_file)
+			n = silent_call ('openssl', 'dgst', '-sha256', '-sign', private_file, '-out', sign_file, data_file)
 			if n:
 				raise error ('Failed to sign data, openssl returns with %d' % n)
-			n = silent_call ('openssl', 'dgst', '-sha1', '-verify', public_file, '-signature', sign_file, data_file)
+			n = silent_call ('openssl', 'dgst', '-sha256', '-verify', public_file, '-signature', sign_file, data_file)
 			if n:
 				raise error ('Failed to verify data, openssl returns with %d' % n)
 			rc = True

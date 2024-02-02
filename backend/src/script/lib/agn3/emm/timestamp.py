@@ -78,7 +78,7 @@ the persistance and offers some handy methods."""
 				tid = rc[0]
 			else:
 				tid = 1
-			ts = None
+			ts: Optional[datetime] = None
 			if self.initial_timestamp_from is not None:
 				rq = self.db.querys (
 					'SELECT cur '
@@ -205,10 +205,10 @@ The optional ``param'' (a dict) is used as the base for each created
 dictionary in cascade so you can directly use this for each
 incarnation of the query."""
 
-		rc = None
+		rc: Optional[Timestamp.Cascade] = None
 		cc = self.make_cascading_interval (days)
 		if cc is not None:
-			rc = self.Cascade (self.make_interval_clause (column), [])
+			rc = Timestamp.Cascade (self.make_interval_clause (column), [])
 			for c in cc:
 				if param is not None:
 					p = param.copy ()

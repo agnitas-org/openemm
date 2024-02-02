@@ -342,64 +342,48 @@ hashtag_parse (buffer_t *lnk, blockmail_t *blockmail, url_t *url) /*{{{*/
 	return root;
 }/*}}}*/
 static void
-to_target (hashtag_t *h, buffer_t *input1, xmlBufferPtr input2, buffer_t *target, block_t *block) /*{{{*/
+to_target (hashtag_t *h, const buffer_t *input1, xmlBufferPtr input2, buffer_t *target, block_t *block) /*{{{*/
 {
 	if (input1 || input2) {
-		buffer_t	*scratch[2] = { NULL, NULL };
+		buffer_t	*scratch[3] = { NULL, NULL, NULL };
+		const buffer_t	*input;
+		int		n;
 		
-		if (h -> coder) {
-			scratch[0] = buffer_alloc (0);
-			scratch[1] = buffer_alloc (0);
-			if (scratch[0] && scratch[1]) {
-				coder_t		*run;
+		if (input1)
+			input = input1;
+		else {
+			if (scratch[0] = buffer_alloc (xmlBufferLength (input2) + 1))
+				buffer_set (scratch[0], xmlBufferContent (input2), xmlBufferLength (input2));
+			input = scratch[0];
+		}
+		if (input) {
+			if (h -> coder) {
+				scratch[1] = buffer_alloc (0);
+				scratch[2] = buffer_alloc (0);
+				if (scratch[1] && scratch[2]) {
+					coder_t		*run;
 				
-				if (input1)
-					buffer_setbuf (scratch[0], input1);
-				else
-					buffer_set (scratch[0], xmlBufferContent (input2), xmlBufferLength (input2));
-				for (run = h -> coder; run; run = run -> next) {
-					coder_encode (run, run -> next ? false : true, scratch[0], scratch[1]);
-					SWAP (scratch[0], scratch[1]);
+					buffer_setbuf (scratch[1], input);
+					for (run = h -> coder; run; run = run -> next) {
+						coder_encode (run, run -> next ? false : true, scratch[1], scratch[2]);
+						SWAP (scratch[1], scratch[2]);
+					}
+					input = scratch[1];
 				}
-				input1 = scratch[0];
 			}
 		}
-		if (h -> raw) {
-			if (input1)
-				buffer_appendbuf (target, input1);
-			else
-				buffer_append (target, xmlBufferContent (input2), xmlBufferLength (input2));
-		} else {
-			bool_t	done = false;
-	
-			if (block && block -> translate) {
-				xmlBufferPtr	out = xmlBufferCreate ();
-				xmlBufferPtr	buf = NULL;
-		
-				if (input1) {
-					buf = xmlBufferCreateSize (input1 -> length);
-			
-					if (buf)
-						xmlBufferAdd (buf, input1 -> buffer, input1 -> length);
-				} else
-					buf = input2;
-				if (buf && out && (convert_block (block -> translate, buf, out, true) == 1)) {
-					encode_url (xmlBufferContent (out), xmlBufferLength (out), target);
-					done = true;
+		if (input)
+			if (h -> raw) {
+				buffer_appendbuf (target, input);
+			} else {
+				if (block -> convert) {
+					input = convert_encode_buffer (block -> convert, input);
 				}
-				xmlBufferFree (out);
-				if (buf)
-					xmlBufferFree (buf);
+				if (input)
+					encode_url (buffer_content (input), buffer_length (input), target);
 			}
-			if (! done)
-				if (input1)
-					encode_url (input1 -> buffer, input1 -> length, target);
-				else
-					encode_url (xmlBufferContent (input2), xmlBufferLength (input2), target);
-		}
-			
-		buffer_free (scratch[0]);
-		buffer_free (scratch[1]);
+		for (n = 0; n < sizeof (scratch) / sizeof (scratch[0]); ++n)
+			buffer_free (scratch[n]);
 	}
 }/*}}}*/
 static void

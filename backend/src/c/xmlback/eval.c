@@ -269,7 +269,7 @@ type_retrieve (int argc) /*{{{*/
 static inline bool_t
 dcompare (double chk, double val) /*{{{*/
 {
-	return ((chk >= val - 0.005) && (chk <= val + 0.005)) ? true : false;
+	return (chk >= val - 0.005) && (chk <= val + 0.005);
 }/*}}}*/
 typedef struct { /*{{{*/
 	int	year, month, day;
@@ -1476,7 +1476,7 @@ do_handle_variables (void *sp, field_t **fld, int fld_cnt, int *failpos) /*{{{*/
 	}
 	if ((n < fld_cnt) && failpos)
 		*failpos = n;
-	return n < fld_cnt ? false : true;
+	return n >= fld_cnt;
 }/*}}}*/
 static bool_t
 do_end_vars (void *sp) /*{{{*/

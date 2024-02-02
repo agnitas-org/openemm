@@ -23,20 +23,20 @@ fi
 export BASE
 #
 export	SYSTEM_CONFIG='{
-	"trigger-port": 8450,
-	"direct-path": true,
+	"trigger-port": "8450",
+	"direct-path": "true",
 	"direct-path-incoming": "/home/openemm/var/spool/DIRECT",
 	"direct-path-archive": "/home/openemm/var/spool/ARCHIVE",
 	"direct-path-recover": "/home/openemm/var/spool/RECOVER",
 	"direct-path-queues": "/home/openemm/var/spool/QUEUE",
-	"licence": 0,
+	"licence": "0",
 	"dbid": "openemm",
 	"merger-address": "127.0.0.1",
 	"filter-name": "localhost",
 	"mailout-server": "localhost",
-	"mailout-port": 8093,
+	"mailout-port": "8093",
 	"direct-path-server": "localhost",
-	"direct-path-port": 9403
+	"direct-path-port": "9403"
 }'
 export	DBCFG_PATH="$BASE/etc/dbcfg"
 #
@@ -95,7 +95,7 @@ if [ "$JBASE" ] && [ -d $JBASE ] ; then
 	fi
 fi
 # .. and for others ..
-for other in python2 python3 perl sqlite ; do
+for other in python2 python3 perl redis sqlite ; do
 	path="$softwarebase/$other"
 	if [ -d $path/bin ] ; then
 		PATH="$path/bin:$PATH"
@@ -116,60 +116,10 @@ loglast=0
 #
 # MTA related
 #
-smctrl="$BASE/bin/smctrl"
+export MTA="postfix"
 sendmail="/usr/sbin/sendmail"
 if [ ! -x $sendmail ] ; then
 	sendmail="/usr/lib/sendmail"
-fi
-#
-if [ ! "$MTA" ]; then
-	MTA="`$BASE/bin/config-query mta`"
-	if [ "$MTA" ]; then
-		case "$MTA" in
-		sendmail|postfix)
-			;;
-		*)
-			echo "Invalid entry mta \"$MTA\" in system configuration detected, try to detect it by myself" 1>&2
-			MTA=""
-			;;
-		esac
-	fi
-fi
-if [ ! "$MTA" ]; then
-	if [ -x $sendmail ]; then
-		mta="`readlink -en $sendmail`"
-		case "$mta" in
-		*/sendmail.postfix)
-			MTA="postfix"
-			;;
-		*/sendmail.sendmail)
-			MTA="sendmail"
-			;;
-		esac
-	fi
-	if [ ! "$MTA" ]; then
-		systemctl="`which systemctl 2>/dev/null`"
-		if [ "$systemctl" ] && [ -x "$systemctl" ]; then
-			for mta in sendmail postfix; do
-				value="`$systemctl is-enabled ${mta}.service 2>/dev/null`"
-				if [ "$value" = "enabled" ]; then
-					MTA=$mta
-					break
-				fi
-			done
-		fi
-	fi
-	if [ ! "$MTA" ]; then
-		count="`/bin/ps -ef | egrep 'postfix/(sbin/)?master' | grep -v grep|wc -l`"
-		if [ $count -gt 0 ]; then
-			MTA="postfix"
-		else
-			MTA="sendmail"
-		fi
-	fi
-fi
-if [ "$MTA" ]; then
-	export	MTA
 fi
 #
 SENDMAIL_DSN="`$BASE/bin/config-query enable-sendmail-dsn`"
@@ -257,20 +207,6 @@ uid() {
 		__uid="-1"
 	fi
 	echo "$__uid"
-}
-#
-call() {
-	if [ $# -eq 0 ] ; then
-		error "Usage: $0 <program> [<parm>]"
-		__rc=1
-	else
-		__tmp=/var/tmp/call.$$
-		"$@" > $__tmp 2>&1
-		__rc=$?
-		cat $__tmp
-		rm $__tmp
-	fi
-	return $__rc
 }
 #
 onErrorSendMail () {
@@ -387,7 +323,7 @@ getproc() {
 		else
 			__psopt="-u $__user $__psopt"
 		fi
-		__pids="`/bin/ps -f $__psopt | grep -- \"$__pat\" | grep -v grep | awk '{ print $2 }' | grep -v PID`"
+		__pids="`/bin/ps -fww $__psopt | grep -- \"$__pat\" | grep -v grep | awk '{ print $2 }' | grep -v PID`"
 		echo $__pids
 	else
 		echo "Usage: $0 <process-pattern> [<ps-opts>]" 1>&2
@@ -542,4 +478,26 @@ export PYTHONPATH
 export VERSION="$version"
 export LICENCE="$licence"
 py3required
-requires msgpack
+if [ "$BASE" = "$HOME" ]; then
+	rq="$BASE/scripts/requirements"
+	if [ -d "$rq" ]; then
+		upgrade() {
+			__log="$BASE/var/tmp/upgrade.log.$$"
+			python3 -m pip --require-virtualenv install "$@" > $__log 2>&1
+			rc=$?
+			if [ $rc -ne 0 ]; then
+				cat $__log
+			fi
+			rm -f $__log
+			return $rc
+		}
+		upgrade --upgrade pip
+		for req in $rq/*; do
+			if [ -f "$req" ]; then
+				upgrade --requirement "$req" || die "Failed to install/upgrade python packages from file \"$req\""
+				rm -f "$req"
+			fi
+		done
+		rmdir --ignore-fail-on-non-empty "$rq"
+	fi
+fi

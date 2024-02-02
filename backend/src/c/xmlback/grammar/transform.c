@@ -57,7 +57,7 @@ match (const xmlChar *str1, const char *str2, int len) /*{{{*/
 		++str2;
 		--len;
 	}
-	return len > 0 ? false : true;
+	return len == 0;
 }/*}}}*/
 static inline int
 isref (const xmlChar *str, int len, int *dotpos) /*{{{*/

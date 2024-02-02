@@ -48,7 +48,7 @@ hash_match (const byte_t *key, int klen, hash_t khash, const byte_t *match, int 
 {
 	if ((klen == mlen) && (khash == mhash)) {
 		if (mlen > 0)
-			return memcmp (key, match, klen) == 0 ? true : false;
+			return memcmp (key, match, klen) == 0;
 		return true;
 	}
 	return false;
@@ -60,7 +60,7 @@ hash_smatch (const char *key, int klen, hash_t khash, const char *match, int mle
 		return hash_match ((const byte_t *) key, klen, khash, (const byte_t *) match, mlen, mhash);
 	if ((klen == mlen) && (khash == mhash)) {
 		if (mlen > 0)
-			return strncasecmp (key, match, klen) == 0 ? true : false;
+			return strncasecmp (key, match, klen) == 0;
 		return true;
 	}
 	return false;

@@ -347,7 +347,7 @@ log_path_set (log_t *l, const char *logpath) /*{{{*/
 	if (l -> logpath)
 		free (l -> logpath);
 	l -> logpath = logpath ? strdup (logpath) : NULL;
-	return (logpath && (! l -> logpath)) ? false : true;
+	return (! logpath) || l -> logpath;
 }/*}}}*/
 /** Sets default logging path.
  * Sets the default logging path creating from environment variable
@@ -547,7 +547,7 @@ log_suspend (log_t *l, unsigned long what) /*{{{*/
 {
 	suspend_t	*s = (suspend_t *) l -> suspend;
 	
-	return (s && (s -> mask & what)) ? true : false;
+	return (s && (s -> mask & what));
 }/*}}}*/
 static bool_t
 mkfname (log_t *l, time_t now) /*{{{*/

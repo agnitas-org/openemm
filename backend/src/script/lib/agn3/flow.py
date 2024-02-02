@@ -296,7 +296,7 @@ is True, the rollback method for the method failed will be executed,
 too, otherwise only all rollback methods for the successful methods
 are executed. If ``callback''is not None, it is invoked with two
 arguments, the current name of the method and a state."""
-		error = None
+		error: Optional[Exception] = None
 		self.reset ()
 		for (name, method, method_arguments, rollback, rollback_arguments) in self.spool:
 			try:
@@ -384,7 +384,7 @@ job."""
 			end = time.time ()
 			schedule.log ('job', '{name} terminated {how} after {duration:.2f} seconds'.format (
 				name = self.name,
-				how = f'successful ({rc!r})' if type (rc) is bool else f'with error ({rc!r})',
+				how = f'successful ({rc!r})' if isinstance (rc, bool) else f'with error ({rc!r})',
 				duration =  end - start
 			))
 			if self.repeat:

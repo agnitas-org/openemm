@@ -176,5 +176,5 @@ node_setdata (node_t *n, const char *data) /*{{{*/
 	if (n -> data)
 		free (n -> data);
 	n -> data = data ? strdup (data) : NULL;
-	return (data && (! n -> data)) ? false : true;
+	return (! data) || n -> data;
 }/*}}}*/

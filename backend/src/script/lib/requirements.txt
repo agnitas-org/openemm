@@ -1,0 +1,17 @@
+py3dns
+dnspython
+dkimpy
+requests
+cryptography
+httpie
+setproctitle
+inotify
+aiodns
+aiohttp
+aiohttp-xmlrpc
+aiosmtplib
+msgpack
+websockets
+asyncinotify
+asyncssh
+mariadb==1.0.11

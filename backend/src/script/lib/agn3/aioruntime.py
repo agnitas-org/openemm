@@ -11,19 +11,22 @@
 ####################################################################################################################################################################################################################################################################
 #
 from	__future__ import annotations
-import	logging, signal
+import	os, time, logging, signal
 import	asyncio
+from	asyncinotify import Inotify, Mask
 from	collections import deque
 from	dataclasses import dataclass, field
 from	datetime import datetime
+from	functools import partial
 from	io import StringIO
-from	types import FrameType
+from	types import TracebackType
 from	typing import Any, Awaitable, Callable, Generic, Literal, Optional, Sequence, TypeVar, Union
-from	typing import Coroutine, Deque, Dict, List, Set, Tuple, Type
+from	typing import AsyncIterator, Coroutine, Deque, Dict, List, Set, Tuple, Type
 from	typing import cast, overload
 from	.exceptions import error, Timeout, Stop
 from	.log import log
 from	.ignore import Ignore
+from	.parser import Parsable, unit
 from	.runtime import Runtime
 from	.stream import Stream
 #
@@ -34,6 +37,13 @@ logger = logging.getLogger (__name__)
 _T = TypeVar ('_T')
 _U = TypeVar ('_U')
 #
+def _log_exception (method: Callable[[str], None], e: BaseException, task: asyncio.Task[Any]) -> None:
+	method (f'{task.get_name ()}: {e}')
+	buffer = StringIO ()
+	task.print_stack (file = buffer)
+	for line in buffer.getvalue ().strip ().split ('\n'):
+		method (line)
+
 class Queue (Generic[_T]):
 	__slots__ = ['maxsize', 'loop', 'getter', 'putter', 'queue']
 	class Entry (Generic[_U]):
@@ -171,7 +181,7 @@ class AIORuntime (Runtime):
 		async def put (self, element: _T, reject: bool = False) -> None:
 			await self.queue.put (element)
 			self.event.set ()
-			await asyncio.sleep (0)
+			await self.ref.aioyield ()
 		
 		async def pushback (self, element: _T) -> None:
 			await self.put (element, reject = True)
@@ -283,11 +293,7 @@ class AIORuntime (Runtime):
 				logger.debug (f'cancel {self.name}: task already cancelled')
 			
 		def _log_exception (self, method: Callable[[str], None], e: BaseException) -> None:
-			method (f'{self.name}: {e}')
-			buffer = StringIO ()
-			self.task.print_stack (file = buffer)
-			for line in buffer.getvalue ().strip ().split ('\n'):
-				method (line)
+			_log_exception (method, e, self.task)
 		
 	class Tasks:
 		__slots__ = ['tasks']
@@ -303,6 +309,9 @@ class AIORuntime (Runtime):
 			def remover (task: asyncio.Task[_T]) -> None:
 				with Ignore (KeyError):
 					myself = self.tasks.pop (task.get_name ())
+					with Ignore (asyncio.exceptions.CancelledError):
+						if (e := task.exception ()):
+							myself._log_exception (logger.debug, e)
 					logger.debug (f'{myself}: removed')
 			task.task.add_done_callback (remover)
 			return task
@@ -336,13 +345,85 @@ class AIORuntime (Runtime):
 			else:
 				await asyncio.sleep (timeout if timeout is not None else 0)
 			return None
-		
-	def signal_handler (self, sig: int, stack: Optional[FrameType]) -> Any:
-		super ().signal_handler (sig, stack)
-		with Ignore (AttributeError):
-			self.stop ()
 	
-	def signal_handler_stats (self, sig: int, stack: Optional[FrameType]) -> Any:
+	class Workers:
+		__slots__ = [
+			'base_group', 'limit', 'work_id',
+			'cleanup_interval', 'cleanup_threshold', 'cleanup_last',
+			'tasks', 'queued'
+		]
+		group_id = 0
+		def __init__ (self, group: Optional[str], limit: Optional[int], cleanup_interval: Parsable, cleanup_threshold: int) -> None:
+			self.__class__.group_id += 1
+			self.base_group = '{group}_{group_id}'.format (
+				group = group if group else 'worker',
+				group_id = self.__class__.group_id
+			)
+			self.limit = limit
+			self.work_id = 0
+			self.cleanup_interval = unit (cleanup_interval)
+			self.cleanup_threshold = cleanup_threshold
+			self.cleanup_last = 0.0
+			self.tasks: Set[asyncio.Task[None]] = set ()
+			self.queued: Deque[Coroutine[Any, Any, None]] = deque ()
+		
+		def __len__ (self) -> int:
+			return len (self.tasks) + len (self.queued)
+		
+		async def __aenter__ (self) -> AIORuntime.Workers:
+			self.cleanup_last = time.time ()
+			return self
+		
+		async def __aexit__ (self, exc_type: Optional[Type[BaseException]], exc_value: Optional[BaseException], traceback: Optional[TracebackType]) -> Optional[bool]:
+			while self.queued:
+				await self._cleanup (None)
+			await self._cleanup (None)
+			return None
+		
+		async def launch (self, coro: Coroutine[Any, Any, None]) -> None:
+			timestamp = time.time ()
+			if (
+				(self.limit and len (self.tasks) >= self.limit)
+				or
+				(self.cleanup_interval and self.cleanup_last + self.cleanup_interval < timestamp)
+				or
+				(self.cleanup_threshold and len (self.tasks) >= self.cleanup_threshold)
+			):
+				await self._cleanup (0)
+				self.cleanup_last = timestamp
+			if self.limit and len (self.tasks) >= self.limit:
+				self.queued.append (coro)
+			else:
+				self._start (coro)
+		
+		def cancel (self) -> None:
+			if self.tasks:
+				Stream (self.tasks).each (lambda t: t.cancel ())
+			self.queued.clear ()
+		
+		async def _cleanup (self, timeout: Union[None, int, float]) -> None:
+			if self.tasks:
+				done, pending = await asyncio.wait (self.tasks, timeout = timeout)
+				for task in done:
+					if not task.cancelled ():
+						if (e := task.exception ()) is not None:
+							_log_exception (logger.error, e, task)
+						else:
+							await task
+					self.tasks.remove (task)
+			if self.limit:
+				while len (self.tasks) < self.limit and self.queued:
+					self._start (self.queued.popleft ())
+		
+		def _start (self, coro: Coroutine[Any, Any, None]) -> None:
+			self.work_id += 1
+			self.tasks.add (asyncio.create_task (coro, name = f'{self.base_group}_{self.work_id}'))
+		
+	def signal_aiohandler (self) -> None:
+		super ().signal_handler (0, None)
+		self.stop ()
+	
+	def signal_aiohandler_stats (self) -> None:
 		with log ('stats'):
 			for (name, channel) in Stream (self._channels.channels.items ()).sorted (lambda kv: kv[0]):
 				logger.info (f'Channel {name}: {len (channel):,d} entries')
@@ -350,35 +431,58 @@ class AIORuntime (Runtime):
 				logger.info (f'Registered task {task}')
 			for aio_task in asyncio.all_tasks ():
 				logger.info (f'Task: {aio_task}')
-
-	def executor (self) -> bool:
+				
+	def executor (self, controller: Optional[Callable[[], Coroutine[Any, Any, None]]] = None) -> bool:
 		self._channels = AIORuntime.Channels (self)
 		self._tasks = AIORuntime.Tasks ()
-		async def execution () -> None:
-			if self.ctx.debug:
-				self.setsignal (signal.SIGUSR1, self.signal_handler_stats)
+		async def execution (controller: Callable[[], Coroutine[Any, Any, None]]) -> None:
 			self._loop = asyncio.get_running_loop ()
 			self._stop = self.future (type (None))
 			self._apply_delay: Set[asyncio.Task[Any]] = set ()
-			await self.controller ()
+			for signr in self.signals.saved:
+				if self.signals[signr] == self.signal_handler:
+					self._loop.add_signal_handler (signr, self.signal_aiohandler)
+			if self.ctx.debug:
+				self._loop.add_signal_handler (signal.SIGUSR1, self.signal_aiohandler_stats)
+			await controller ()
 			self._tasks.terminate ()
 			myself = asyncio.current_task ()
 			for task in asyncio.all_tasks ():
 				if task != myself:
 					if not task.done ():
 						task.cancel ()
-			await asyncio.sleep (0)
+			await self.aioyield ()
 		try:
-			asyncio.run (execution (), debug = self.ctx.debug)
+			asyncio.run (execution (controller if controller is not None else self.controller), debug = self.ctx.debug)
 		except asyncio.exceptions.CancelledError as e:
 			logger.exception (f'failed due to canceled task: {e}')
 		return True
+
+	def executors (self) -> Optional[List[Callable[[], bool]]]:
+		if (controllers := self.controllers ()) is not None and controllers:
+			executables: List[Callable[[], bool]] = []
+			for controller in controllers:
+				executable = partial (self.executor, controller)
+				try:
+					name = controller.__name__
+				except AttributeError:
+					name = str (controller)
+				setattr (executable, '__name__', name)
+				executables.append (executable)
+			return executables
+		return None
+	
+	def controllers (self) -> Optional[List[Callable[[], Coroutine[Any, Any, None]]]]:
+		return None
 	
 	async def controller (self) -> None:
-		await self._stop
+		await self.finished ()
 
 	def future (self, t: Type[_T]) -> asyncio.Future[_T]:
 		return self._loop.create_future ()
+
+	async def aioyield (self) -> None:
+		await asyncio.sleep (0)
 
 	async def delay (self, timeout: Union[int, float]) -> bool:
 		if self.running:
@@ -430,6 +534,9 @@ class AIORuntime (Runtime):
 		with Ignore (Timeout, Stop):
 			return (await self.wait (self._tasks.watch (only_exceptions = only_exceptions), timeout = timeout))[1]
 		return None
+	
+	def workers (self, group: Optional[str] = None, limit: Optional[int] = None, *, cleanup_interval: Parsable = None, cleanup_threshold: int = 0) -> AIORuntime.Workers:
+		return AIORuntime.Workers (group, limit, cleanup_interval, cleanup_threshold)
 
 	@dataclass
 	class Process:
@@ -482,7 +589,69 @@ class AIORuntime (Runtime):
 		self._tasks.add (name, AIORuntime.Task (name, coro, asyncio.create_task (coro, name = name)))
 		await process.launched ()
 		return process
+	
+	async def scan (self, path: str, rescan: Parsable = None, predicate: Optional[Callable[[str], bool]] = None) -> AsyncIterator[str]:
+		with Inotify () as inotify:
+			inotify.add_watch (path, Mask.CREATE | Mask.CLOSE_WRITE | Mask.MOVED_TO | Mask.MOVED_FROM | Mask.DELETE)
+			rescan_in = unit (rescan)
+			rescan_last = 0
+			ready: Deque[str] = deque ()
+			available: Dict[str, bool] = {}
+			timeout: Optional[int]
+			while self.running:
+				while self.running and ready:
+					filename = ready.popleft ()
+					if predicate is None or predicate (filename):
+						yield filename
+				if not rescan_last or rescan_in:
+					now = int (time.time ())
+					if not rescan_last or rescan_last + rescan_in < now:
+						rescan_last = now
+						new_files: List[Tuple[str, float]] = []
+						old_files = set (available.keys ())
+						for filename in os.listdir (path):
+							if filename not in available:
+								try:
+									st = os.stat (os.path.join (path, filename))
+									mtime = st.st_mtime
+								except OSError:
+									mtime = 0.0
+								new_files.append ((filename, mtime))
+							else:
+								old_files.discard (filename)
+						for filename in old_files:
+							del available[filename]
+						for (filename, _) in sorted (new_files, key = lambda kv: kv[1]):
+							available[filename] = True
+							ready.append (filename)
+						continue
+				#
+				if rescan_in:
+					timeout = max (0, int (time.time ()) - rescan_last + rescan_in)
+				else:
+					timeout = None
+				done, pending = await asyncio.wait ([self._stop, inotify.get ()], timeout = timeout, return_when = asyncio.FIRST_COMPLETED)
+				Stream (pending).filter (lambda f: f is not self._stop).each (lambda f: f.cancel ())
+				if self._stop in done:
+					break
+				if done:
+					event = await done.pop ()
+					if event is not None and event.name is not None:
+						filename = str (event.name)
+						if event.mask & (Mask.CLOSE_WRITE | Mask.MOVED_TO):
+							if not available.get (filename):
+								available[filename] = True
+								ready.append (filename)
+						elif event.mask & Mask.CREATE:
+							available[filename] = False
+						elif event.mask & (Mask.MOVED_FROM | Mask.DELETE):
+							available.pop (filename, None)
+			await self.aioyield ()
+
+	async def finished (self) -> None:
+		await self._stop
 
 	def stop (self) -> None:
 		if not self._stop.done ():
 			self._stop.set_result (None)
+	

@@ -28,6 +28,7 @@ typedef struct { /*{{{*/
 
 extern int		xchar_length (xchar_t ch);
 extern int		xchar_strict_length (xchar_t ch);
+extern bool_t		xchar_codepoint (const xchar_t *s, int length, unsigned long *codepoint);
 extern int		xchar_valid_position (const xchar_t *s, int length);
 extern bool_t		xchar_valid (const xchar_t *s, int length);
 extern bool_t		xequal (const xchar_t *s1, const xchar_t *s2);

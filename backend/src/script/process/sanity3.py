@@ -18,12 +18,13 @@ from	agn3.crontab import Crontab
 from	agn3.db import DB
 from	agn3.definitions import base
 from	agn3.io import relink
-from	agn3.sanity import Sanity, Report, File
+from	agn3.sanity import Sanity, Report
 #
 logger = logging.getLogger (__name__)
 #
 class OpenEMM (Sanity):
 	def __init__ (self) -> None:
+		relink (os.path.join (base, 'release', 'backend', 'current', 'bin'), os.path.join (base, 'bin'))
 		super ().__init__ (
 			directories = [
 				'log', 'var',
@@ -34,20 +35,13 @@ class OpenEMM (Sanity):
 				'var/spool/ADMIN', 'var/spool/ADMIN0', 'var/spool/RECOVER',
 				'var/spool/QUEUE', 'var/spool/MIDQUEUE', 'var/spool/SLOWQUEUE',
 				'var/spool/mail', 'var/spool/filter'
-			], files = [
-				File (name = 'bin/smctrl', issuid = True, uid = 0, gid=  0),
-				File (name = 'bin/qctrl', issuid = True, uid = 0, gid = 0)
 			], executables = [
 				'java'
 			], checks = [
-				self.__relink,
 				self.__db_sanity,
 				self.__crontab
 			], runas = 'openemm', startas = 'openemm', umask = 0o22
 		)
-	
-	def __relink (self, r: Report) -> None:
-		relink (os.path.join (base, 'release', 'backend', 'current', 'bin'), os.path.join (base, 'bin'))
 	
 	def __db_sanity (self, r: Report) -> None:
 		with DB () as db:

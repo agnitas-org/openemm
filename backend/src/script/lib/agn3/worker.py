@@ -13,8 +13,9 @@ from	__future__ import annotations
 import	os, logging, time
 import	select, multiprocessing
 from	collections import deque
-from	queue import Empty, Queue
-from	typing import Any
+from	multiprocessing.queues import Queue
+from	queue import Empty
+from	typing import Any, Optional
 from	typing import Deque, List
 from	.config import Config
 from	.daemon import Daemon
@@ -118,7 +119,7 @@ worker part, the executor.
 		ignoreDups = self.executor_config ('ignore-duplicate-requests', False)
 		multipleRequests = self.executor_config ('handle-multiple-requests', False)
 		pending: List[Any] = []
-		child = None
+		child: Optional[multiprocessing.Process] = None
 		while self.running:
 			self.executor_step (ctx)
 			with Ignore (IOError, Empty, error):

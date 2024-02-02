@@ -121,7 +121,7 @@ execution at all."""
 	def multi (*methods: Callable[..., Any]) -> Callable[..., Any]:
 		"""execute multi methods and return the result of the last one, work around for lambda limitations"""
 		def multier (*args: Any, **kwargs: Any) -> Any:
-			value = None
+			value: Any = None
 			for method in methods:
 				value = method (*args, **kwargs)
 			return value
@@ -133,7 +133,7 @@ execution at all."""
 return value as first argument to next method (initial this is None),
 returning the final value"""
 		def multichainer (*args: Any, **kwargs: Any) -> Any:
-			value = None
+			value: Any = None
 			for method in methods:
 				value = method (value, *args, **kwargs)
 			return value
@@ -228,7 +228,22 @@ matching object and the element itself."""
 	
 	def map_to (self, t: Type[_O], predicate: Callable[[_T], Any]) -> Stream[_O]:
 		"""Like map, but passing a type as a hint for the return type of predicate for type checking"""
-		return self.new ((cast (_O, predicate (_v)) for _v in self.iterator))
+		return self.map (predicate)
+	
+	def mapignore (self, predicate: Callable[[_T], _O], *exceptions: Type[BaseException]) -> Stream[_O]:
+		"""Like map, but ignoring given or all exceptions while calling predicate"""
+		def mapper () -> Iterator[_O]:
+			for elem in self.iterator:
+				try:
+					yield predicate (elem)
+				except BaseException as e:
+					if exceptions and len ([_e for _e in exceptions if issubclass (type (e), _e)]) == 0:
+						raise e
+		return self.new (mapper ())
+	
+	def mapignore_to (self, t: Type[_O], predicate: Callable[[_T], Any], *exceptions: Type[BaseException]) -> Stream[_O]:
+		"""Like mapingore, but passing a type as a hint for the return type for the new stream"""
+		return self.mapignore (predicate, *exceptions)
 	
 	def distinct (self, key: Optional[Callable[[_T], Any]] = None) -> Stream[_T]:
 		"""Create a new stream eleminating duplicate elements. If ``key'' is not None, it is used to build the key for checking identical elements"""

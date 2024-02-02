@@ -117,195 +117,6 @@ encode_none (const xmlBufferPtr src, buffer_t *dest) /*{{{*/
 {
 	return buffer_append (dest, xmlBufferContent (src), xmlBufferLength (src));
 }/*}}}*/
-static bool_t
-encode_qphead (const byte_t *src, int srclen, buffer_t *dest, 
-	       const char *charset) /*{{{*/
-{
-	bool_t	st;
-	
-	st = false;
-	if (buffer_stiffsn (dest, "=?", 2) &&
-	    buffer_stiffs (dest, charset) &&
-	    buffer_stiffsn (dest, "?Q?", 3)) {
-		int	n;
-		byte_t	hex[3];
-		
-		st = true;
-		hex[0] = '=';
-		for (n = 0; (n < srclen) && st; ++n)
-			if (src[n] == ' ')
-				st = buffer_stiffch (dest, '_');
-			else if ((! isascii (src[n])) || iscntrl (src[n]) || strchr (not_allowed_qp, src[n])) {
-				hex[1] = hexstr[src[n] >> 4];
-				hex[2] = hexstr[src[n] & 0xf];
-				st = buffer_stiff (dest, hex, 3);
-			} else
-				st = buffer_stiff (dest, src + n, 1);
-		if (st)
-			st = buffer_stiffsn (dest, "?=", 2);
-	}
-	return st;
-}/*}}}*/
-bool_t
-encode_header (const xmlBufferPtr src, buffer_t *dest, const char *charset) /*{{{*/
-{
-	bool_t		indata;
-	long		ospare;
-	const xmlChar	*content;
-	int		length;
-	int		n;
-	int		eol;
-	
-	indata = false;
-	ospare = dest -> spare;
-	content = xmlBufferContent (src);
-	length = xmlBufferLength (src);
-	dest -> spare = length + (length / 5);	/* make spare 120% of original length */
-	for (n = 0; n < length; )
-		if (indata) {
-			int	wstart;
-			bool_t	ascii;
-			char	quote;
-
-			while ((n < length) && indata) {
-				wstart = n;
-				while ((n < length) && iswhitespace (content[n]))
-					++n;
-				if (wstart != n)
-					if (! buffer_stiff (dest, content + wstart, n - wstart))
-						return false;
-
-				wstart = n;
-				ascii = true;
-				quote = '\0';
-				eol = 0;
-				if ((n < length) && ((content[n] == '"') || (content[n] == '('))) {
-					char	qstart = content[n];
-					char	qend = content[n] == '(' ? ')' : content[n];
-					int	qeol;
-					
-					++n;
-					while ((n < length) && (content[n] != qend)) {
-						qeol = iseol (content, length, n);
-						if (qeol) {
-							if ((n + qeol >= length) || (! iswhitespace (content[n + qeol])))
-								break;
-							n += qeol;
-						} else {
-							if (! isascii (content[n]))
-								ascii = false;
-							if ((content[n] == '\\') && (n + 1 < length))
-								++n;
-							++n;
-						}
-					}
-					if ((n < length) && (content[n] == qend)) {
-						if (! buffer_stiffch (dest, qstart))
-							return false;
-						quote = qend;
-						++wstart;
-					} else {
-						/* fallback due to missing closing quote: reset to start of chunk */
-						n = wstart;
-					}
-				}
-				if (! quote) {
-					int	ws, lws; 	/* index of current white space found and last white space found to go back in case */
-					bool_t	ow;		/* if this should be handled as just one word and not use as a chunk of words */
-					
-					lws = -1;
-					ws = -1;
-					ow = false;
-					while ((n < length) && (! (eol = iseol (content, length, n)))) {
-						if (! isascii (content[n]))
-							ascii = false;
-						else if (iswhitespace (content[n])) {
-							if (ws == -1) {
-								ws = n;
-								lws = ws;
-							}
-							if (ow)
-								break;
-						} else if ((ws != -1) && (content[n] == '<')) {
-							ow = true;
-							if (! ascii) {
-								n = ws;
-								break;
-							}
-						} else {
-							ws = -1;
-							if (content[n] == '@') {
-								if ((! ascii) && (lws != -1)) {
-									n = lws;
-									break;
-								}
-								ow = true;
-							}
-						}
-						++n;
-					}
-				}
-				if (wstart != n) {
-					if (ascii) {
-						if (! buffer_stiff (dest, content + wstart, n - wstart))
-							return false;
-					} else {
-						if (! encode_qphead (content + wstart, n - wstart, dest, charset))
-							return false;
-					}
-				}
-				if (quote) {
-					if (! buffer_stiffch (dest, quote))
-						return false;
-					++n;
-					eol = iseol (content, length, n);
-				}
-				if (eol) {
-					if (! buffer_stiffnl (dest))
-						return false;
-					n += eol;
-					if ((n < length) && (! iswhitespace (content[n])))
-						indata = false;
-				}
-				if ((n < length) && iswhitespace (content[n])) {
-					wstart = n++;
-					while ((n < length) && iswhitespace (content[n]))
-						++n;
-					if (! buffer_stiff (dest, content + wstart, n - wstart))
-						return false;
-				} else
-					indata = false;
-			}
-		} else {
-			int	start;
-
-			start = n;
-			eol = 0;
-			while ((n < length) && (! (eol = iseol (content, length, n)))) {
-				if ((content[n] == ':') && (n + 1 < length) && iswhitespace (content[n + 1])) {
-					n += 2;
-					break;
-				}
-				++n;
-			}
-			if (! buffer_stiff (dest, content + start, n - start))
-				return false;
-			if (eol) {
-				if (! buffer_stiffnl (dest))
-					return false;
-				n += eol;
-			} else {
-				while ((n < length) && iswhitespace (content[n])) {
-					if (! buffer_stiff (dest, content + n, 1))
-						return false;
-					++n;
-				}
-				indata = true;
-			}
-		}
-	dest -> spare = ospare;
-	return true;
-}/*}}}*/
 bool_t
 encode_8bit (const xmlBufferPtr src, buffer_t *dest) /*{{{*/
 {
@@ -461,20 +272,187 @@ encode_uid_parameter (const byte_t *parameter, size_t size, buffer_t *dest) /*{{
 {
 	return do_encode_base64 (parameter, size, dest, false, false, false);
 }/*}}}*/
-bool_t
-encode_url (const byte_t *input, int ilen, buffer_t *dest) /*{{{*/
+static bool_t
+encode_qphead (const byte_t *src, int srclen, buffer_t *target, const char *charset) /*{{{*/
 {
-	static const char
-		*allowed = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-~!@^*()[]{}|,./";
-	bool_t	rc = true;
-	int	n;
+	bool_t	st;
 	
-	for (n = 0; (n < ilen) && rc; ++n)
-		if (strchr (allowed, input[n]))
-			rc = buffer_appendch (dest, input[n]);
-		else if (input[n] == ' ')
-			rc = buffer_appendch (dest, '+');
-		else
-			rc = buffer_format (dest, "%%%02X", input[n]);
-	return rc;
+	st = false;
+	if (buffer_stiffsn (target, "=?", 2) &&
+	    buffer_stiffs (target, charset) &&
+	    buffer_stiffsn (target, "?Q?", 3)) {
+		int	n;
+		byte_t	hex[3];
+		
+		st = true;
+		hex[0] = '=';
+		for (n = 0; (n < srclen) && st; ++n)
+			if (src[n] == ' ')
+				st = buffer_stiffch (target, '_');
+			else if ((! isascii (src[n])) || iscntrl (src[n]) || strchr (not_allowed_qp, src[n])) {
+				hex[1] = hexstr[src[n] >> 4];
+				hex[2] = hexstr[src[n] & 0xf];
+				st = buffer_stiff (target, hex, 3);
+			} else
+				st = buffer_stiff (target, src + n, 1);
+		if (st)
+			st = buffer_stiffsn (target, "?=", 2);
+	}
+	return st;
+}/*}}}*/
+bool_t
+encode_head (const buffer_t *source, buffer_t *target, const char *charset) /*{{{*/
+{
+	bool_t		indata;
+	const byte_t	*content;
+	int		length;
+	int		n;
+	int		eol;
+	
+	indata = false;
+	content = buffer_content (source);
+	length = buffer_length (source);
+	for (n = 0; n < length; )
+		if (indata) {
+			int	wstart;
+			bool_t	ascii;
+			char	quote;
+
+			while ((n < length) && indata) {
+				wstart = n;
+				while ((n < length) && iswhitespace (content[n]))
+					++n;
+				if (wstart != n)
+					if (! buffer_stiff (target, content + wstart, n - wstart))
+						return false;
+
+				wstart = n;
+				ascii = true;
+				quote = '\0';
+				eol = 0;
+				if ((n < length) && ((content[n] == '"') || (content[n] == '('))) {
+					char	qstart = content[n];
+					char	qend = content[n] == '(' ? ')' : content[n];
+					int	qeol;
+					
+					++n;
+					while ((n < length) && (content[n] != qend)) {
+						qeol = iseol (content, length, n);
+						if (qeol) {
+							if ((n + qeol >= length) || (! iswhitespace (content[n + qeol])))
+								break;
+							n += qeol;
+						} else {
+							if (! isascii (content[n]))
+								ascii = false;
+							if ((content[n] == '\\') && (n + 1 < length))
+								++n;
+							++n;
+						}
+					}
+					if ((n < length) && (content[n] == qend)) {
+						if (! buffer_stiffch (target, qstart))
+							return false;
+						quote = qend;
+						++wstart;
+					} else {
+						/* fallback due to missing closing quote: reset to start of chunk */
+						n = wstart;
+					}
+				}
+				if (! quote) {
+					int	ws, lws; 	/* index of current white space found and last white space found to go back in case */
+					bool_t	ow;		/* if this should be handled as just one word and not use as a chunk of words */
+					
+					lws = -1;
+					ws = -1;
+					ow = false;
+					while ((n < length) && (! (eol = iseol (content, length, n)))) {
+						if (! isascii (content[n]))
+							ascii = false;
+						else if (iswhitespace (content[n])) {
+							if (ws == -1) {
+								ws = n;
+								lws = ws;
+							}
+							if (ow)
+								break;
+						} else if ((ws != -1) && (content[n] == '<')) {
+							ow = true;
+							if (! ascii) {
+								n = ws;
+								break;
+							}
+						} else {
+							ws = -1;
+							if (content[n] == '@') {
+								if ((! ascii) && (lws != -1)) {
+									n = lws;
+									break;
+								}
+								ow = true;
+							}
+						}
+						++n;
+					}
+				}
+				if (wstart != n) {
+					if (ascii) {
+						if (! buffer_stiff (target, content + wstart, n - wstart))
+							return false;
+					} else {
+						if (! encode_qphead (content + wstart, n - wstart, target, charset))
+							return false;
+					}
+				}
+				if (quote) {
+					if (! buffer_stiffch (target, quote))
+						return false;
+					++n;
+					eol = iseol (content, length, n);
+				}
+				if (eol) {
+					if (! buffer_stiffnl (target))
+						return false;
+					n += eol;
+					if ((n < length) && (! iswhitespace (content[n])))
+						indata = false;
+				}
+				if ((n < length) && iswhitespace (content[n])) {
+					wstart = n++;
+					while ((n < length) && iswhitespace (content[n]))
+						++n;
+					if (! buffer_stiff (target, content + wstart, n - wstart))
+						return false;
+				} else
+					indata = false;
+			}
+		} else {
+			int	start;
+
+			start = n;
+			eol = 0;
+			while ((n < length) && (! (eol = iseol (content, length, n)))) {
+				if ((content[n] == ':') && (n + 1 < length) && iswhitespace (content[n + 1])) {
+					n += 2;
+					break;
+				}
+				++n;
+			}
+			if (! buffer_stiff (target, content + start, n - start))
+				return false;
+			if (eol) {
+				if (! buffer_stiffnl (target))
+					return false;
+				n += eol;
+			} else {
+				while ((n < length) && iswhitespace (content[n])) {
+					if (! buffer_stiff (target, content + n, 1))
+						return false;
+					++n;
+				}
+				indata = true;
+			}
+		}
+	return true;
 }/*}}}*/

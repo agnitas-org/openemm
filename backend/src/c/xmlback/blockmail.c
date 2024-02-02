@@ -29,7 +29,9 @@ company_info_find (blockmail_t *blockmail, const char *key) /*{{{*/
 		if (tmp && tmp -> val)
 			return tmp;
 	}
-	return var_find (blockmail -> company_info, key);
+	if ((tmp = var_find (blockmail -> company_info, key)) && tmp -> val)
+		return tmp;
+	return NULL;
 }/*}}}*/
 static bool_t
 open_syncfile (blockmail_t *b) /*{{{*/
@@ -88,14 +90,13 @@ blockmail_alloc (const char *fname, bool_t syncfile, log_t *lg) /*{{{*/
 		b -> syfname[0] = '\0';
 		b -> syfp = NULL;
 		b -> syeof = false;
-		b -> in = NULL;
-		b -> out = NULL;
-		b -> translate = NULL;
 		b -> lg = lg;
 		b -> eval = NULL;
+		b -> purl = NULL;
+		b -> html = NULL;
+		b -> cvt = NULL;
 		b -> tracker = NULL;
 
-		b -> usecrlf = false;
 		b -> raw = false;
 		b -> output = NULL;
 		b -> outputdata = NULL;
@@ -104,7 +105,7 @@ blockmail_alloc (const char *fname, bool_t syncfile, log_t *lg) /*{{{*/
 		b -> reason = REASON_UNSPEC;
 		b -> reason_detail = 0;
 		b -> reason_custom = NULL;
-		b -> head = NULL;
+		b -> control = NULL;
 		b -> body = NULL;
 		b -> rblocks = NULL;
 
@@ -122,16 +123,19 @@ blockmail_alloc (const char *fname, bool_t syncfile, log_t *lg) /*{{{*/
 			b -> owner_id = atoi (ptr);
 		b -> company_id = -1;
 		b -> company_token = NULL;
+		b -> allow_unnormalized_emails = false;
 		b -> company_info = NULL;
 		b -> mailinglist_id = -1;
 		b -> mailinglist_name = NULL;
 		b -> mailing_id = -1;
 		b -> mailing_name = NULL;
+		b -> mailing_description = NULL;
 		b -> maildrop_status_id = -1;
 		b -> status_field = '\0';
 		b -> senddate = NULL;
 		b -> epoch = 0;
 		b -> rdir_content_links = false;
+		b -> omit_list_informations_for_doi = true;
 		b -> domain = NULL;
 		b -> mailtrack = NULL;
 		
@@ -179,8 +183,8 @@ blockmail_alloc (const char *fname, bool_t syncfile, log_t *lg) /*{{{*/
 		
 		b -> mtbuf[0] = NULL;
 		b -> mtbuf[1] = NULL;
-		
-		b -> use_new_url_modification = false;
+		b -> relaxed_url_resolver = false;
+		b -> enhanced_url_resolver = false;
 		
 		DO_ZERO (b, url);
 		DO_ZERO (b, link_resolve);
@@ -198,7 +202,8 @@ blockmail_alloc (const char *fname, bool_t syncfile, log_t *lg) /*{{{*/
 		b -> xconv = NULL;
 		b -> mfrom = NULL;
 		b -> revalidate_mfrom = false;
-		b -> dkim = NULL;
+		b -> signdkim = NULL;
+		DO_ZERO (b, adkim);
 		b -> spf = NULL;
 		b -> vip = NULL;
 		b -> onepix_template = NULL;
@@ -208,10 +213,11 @@ blockmail_alloc (const char *fname, bool_t syncfile, log_t *lg) /*{{{*/
 		b -> uid_version = 0;
 
 		if ((syncfile && (! open_syncfile (b))) ||
-		    (! (b -> in = xmlBufferCreate ())) ||
-		    (! (b -> out = xmlBufferCreate ())) ||
 		    (! (b -> eval = eval_alloc (b))) ||
-		    (! (b -> head = buffer_alloc (4096))) ||
+		    (! (b -> purl = purl_alloc (NULL))) ||
+		    (! (b -> html = html_alloc ())) ||
+		    ( !(b -> cvt = cvt_alloc ())) ||
+		    (! (b -> control = buffer_alloc (4096))) ||
 		    (! (b -> body = buffer_alloc (65536))) ||
 		    (! (b -> link_maker = buffer_alloc (1024))) ||
 		    (! (b -> secret_uid = buffer_alloc (1024))) ||
@@ -222,7 +228,7 @@ blockmail_alloc (const char *fname, bool_t syncfile, log_t *lg) /*{{{*/
 		    (! (b -> spf = spf_alloc ()))) {
 			b = blockmail_free (b);
 		} else {
-			b -> head -> spare = 1024;
+			b -> control -> spare = 1024;
 			b -> body -> spare = 8192;
 			xmlBufferCCat (b -> mtbuf[0], "0");
 			xmlBufferCCat (b -> mtbuf[1], "1");
@@ -236,22 +242,22 @@ blockmail_free (blockmail_t *b) /*{{{*/
 	if (b) {
 		if (b -> syfp)
 			fclose (b -> syfp);
-		if (b -> in)
-			xmlBufferFree (b -> in);
-		if (b -> out)
-			xmlBufferFree (b -> out);
-		if (b -> translate)
-			xmlCharEncCloseFunc (b -> translate);
 		if (b -> eval)
 			eval_free (b -> eval);
+		if (b -> purl)
+			purl_free (b -> purl);
+		if (b -> html)
+			html_free (b -> html);
+		if (b -> cvt)
+			cvt_free (b -> cvt);
 		if (b -> tracker)
 			tracker_free (b -> tracker);
 		if (b -> counter)
 			counter_free_all (b -> counter);
 		if (b -> reason_custom)
 			free (b -> reason_custom);
-		if (b -> head)
-			buffer_free (b -> head);
+		if (b -> control)
+			buffer_free (b -> control);
 		if (b -> body)
 			buffer_free (b -> body);
 		if (b -> rblocks)
@@ -272,6 +278,8 @@ blockmail_free (blockmail_t *b) /*{{{*/
 			xmlBufferFree (b -> mailinglist_name);
 		if (b -> mailing_name)
 			xmlBufferFree (b -> mailing_name);
+		if (b -> mailing_description)
+			xmlBufferFree (b -> mailing_description);
 		if (b -> senddate)
 			free (b -> senddate);
 		if (b -> domain)
@@ -329,8 +337,9 @@ blockmail_free (blockmail_t *b) /*{{{*/
 
 		if (b -> mfrom)
 			free (b -> mfrom);
-		if (b -> dkim)
-			sdkim_free (b -> dkim);
+		if (b -> signdkim)
+			sdkim_free (b -> signdkim);
+		DO_FREE (b, adkim);
 		if (b -> spf)
 			spf_free (b -> spf);
 		if (b -> vip)
@@ -609,6 +618,9 @@ blockmail_setup_company_configuration (blockmail_t *b) /*{{{*/
 	if ((tmp = var_find (b -> company_info, "rdir.UseRdirContextLinks")) && tmp -> val) {
 		b -> rdir_content_links = atob (tmp -> val);
 	}
+	if (tmp = company_info_find (b, "omit-list-informations-for-doi")) {
+		b -> omit_list_informations_for_doi = atob (tmp -> val);
+	}
 }/*}}}*/
 void
 blockmail_setup_mfrom (blockmail_t *b) /*{{{*/
@@ -621,7 +633,7 @@ blockmail_setup_mfrom (blockmail_t *b) /*{{{*/
 			b -> revalidate_mfrom = true;
 		}
 	}
-	if ((! b -> revalidate_mfrom) && (tmp = company_info_find (b, "revalidate-envelope-from")) && tmp -> val && atob (tmp -> val)) {
+	if ((! b -> revalidate_mfrom) && (tmp = company_info_find (b, "revalidate-envelope-from")) && atob (tmp -> val)) {
 		b -> revalidate_mfrom = true;
 	}
 	if ((! b -> mfrom) && b -> email.from) {
@@ -689,7 +701,7 @@ blockmail_setup_dkim (blockmail_t *b) /*{{{*/
 				z = true;
 		}
 	if (dom && key && sel)
-		b -> dkim = sdkim_alloc (b, dom -> val, key -> val, ident ? ident -> val : NULL, sel -> val, col ? col -> val : NULL, r, z);
+		b -> signdkim = sdkim_alloc (b, dom -> val, key -> val, ident ? ident -> val : NULL, sel -> val, col ? col -> val : NULL, r, z);
 }/*}}}*/
 void
 blockmail_setup_vip_block (blockmail_t *b) /*{{{*/
@@ -697,7 +709,7 @@ blockmail_setup_vip_block (blockmail_t *b) /*{{{*/
 	if (b -> smap) {
 		var_t	*tmp;
 
-		if ((tmp = company_info_find (b, "vip")) && tmp -> val) {
+		if (tmp = company_info_find (b, "vip")) {
 			int		vlen;
 			xmlBufferPtr	temp;
 
@@ -715,7 +727,7 @@ blockmail_setup_onepixel_template (blockmail_t *b) /*{{{*/
 {
 	var_t	*tmp;
 	
-	if ((tmp = company_info_find (b, "onepixel-template")) && tmp -> val) {
+	if (tmp = company_info_find (b, "onepixel-template")) {
 		if (b -> onepix_template)
 			xmlBufferEmpty (b -> onepix_template);
 		else
@@ -729,7 +741,7 @@ blockmail_setup_tagpositions (blockmail_t *b) /*{{{*/
 {
 	var_t	*tmp;
 	
-	if ((tmp = company_info_find (b, "clear-empty-dyn-block")) && tmp -> val)
+	if (tmp = company_info_find (b, "clear-empty-dyn-block"))
 		b -> clear_empty_dyn_block = atob (tmp -> val);
 	if (b -> ltag) {
 		int	n, m;

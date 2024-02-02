@@ -156,12 +156,14 @@ raised.
 		raise KeyError ((class_name, name))
 
 	def iget (self, class_name: str, name: str, default: int) -> int:
+		self.check ()
 		try:
 			return int (self.config[(class_name, name)])
 		except (KeyError, ValueError):
 			return default
 	
 	def fget (self, class_name: str, name: str, default: float) -> float:
+		self.check ()
 		try:
 			return float (self.config[(class_name, name)])
 		except (KeyError, ValueError):
@@ -576,5 +578,6 @@ class Responsibility (_Config):
 	def __enter__ (self) -> Responsibility: return self
 	def __exit__ (self, exc_type: Optional[Type[BaseException]], exc_value: Optional[BaseException], traceback: Optional[TracebackType]) -> Optional[bool]: return None
 	def __contains__ (self, company_id: int) -> bool: return True
+	def check (self, force: bool = False) -> bool: return True
 	def reset (self) -> None: pass
 	def is_responsible_for (self, *args: Any, **kws: Any) -> bool: return True
