@@ -102,6 +102,8 @@ public interface ComSupervisorDao {
 	void cleanupUnusedSupervisorBindings(int daysBeforeInactive);
 	
 	boolean deleteSupervisor(int supervisorId);
-
+	
+	boolean deleteSupervisorPermissionByCompany(int companyID);
+	
 	boolean existsSupervisor(String supervisorName);
 }

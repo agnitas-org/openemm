@@ -25,7 +25,9 @@
         <c:if test="${mailingId != 0 || !isMailingGrid || isCopying}">
             <ul class="tile-header-nav">
                 <li class="active"><a href="#" data-toggle-tab="#tab-mailingMediaEmailBase"><mvc:message code="default.basic"/></a></li>
+                <emm:ShowByPermission token="settings.extended">
                 <li><a href="#" data-toggle-tab="#tab-mailingMediaEmailAdvanced" data-extends-tab="#tab-mailingMediaEmailBase"><mvc:message code="default.advanced"/></a></li>
+                </emm:ShowByPermission>
             </ul>
         </c:if>
     </div>
@@ -44,6 +46,22 @@
                               data-action="count-text-chars"
                               data-validator-options="required: true, min: 2"/>
                     <div data-char-counter-for="emailSubject">
+                        <span class="small status">&nbsp;</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <div class="col-sm-4">
+                    <label class="control-label" for="pre-header">
+                        <mvc:message code="mailing.preheader"/>
+                    </label>
+                </div>
+                <div class="col-sm-8 text-char-counter">
+                    <mvc:text path="emailMediatype.preHeader" id="pre-header"
+                              cssClass="form-control" readonly="${emailSettingsDisabled}"
+                              data-action="count-text-chars" />
+                    <div data-char-counter-for="pre-header">
                         <span class="small status">&nbsp;</span>
                     </div>
                 </div>
@@ -71,6 +89,7 @@
                         <mvc:message code="mailing.SenderEmail"/>*
                     </label>
                 </div>
+
                 <%@include file="../fragments/domain-addresses-dropdown.jspf" %>
 
                 <c:choose>
@@ -125,54 +144,63 @@
             </div>
         </div>
 
-        <div id="tab-mailingMediaEmailAdvanced" class="hidden">
+        <emm:ShowByPermission token="settings.extended">
+            <div id="tab-mailingMediaEmailAdvanced" class="hidden">
 
-            <emm:ShowByPermission token="mailing.envelope_address">
+                <emm:ShowByPermission token="mailing.envelope_address">
+                    <div class="form-group">
+                        <div class="col-sm-4">
+                            <label class="control-label" for="emailEnvelopeEmail">
+                                <mvc:message code="EnvelopeEmail"/>
+                                <button class="icon icon-help" data-help="help_${helplanguage}/mailing/view_base/EnvelopeAddress.xml" tabindex="-1" type="button"></button>
+                            </label>
+                        </div>
+                        <div class="col-sm-8">
+                            <mvc:text path="emailMediatype.envelopeEmail" id="emailEnvelopeEmail"
+                                       cssClass="form-control" readonly="${emailSettingsDisabled}" />
+                        </div>
+                    </div>
+                </emm:ShowByPermission>
+                <emm:HideByPermission token="mailing.envelope_address">
+                    <mvc:hidden path="emailMediatype.envelopeEmail"/>
+                </emm:HideByPermission>
+
+
+                <div id="mailing-bcc-recipients"
+                     class="form-group ${mailingSettingsForm.mailingType eq MAILING_TYPE_DATE_BASED ? '' : 'hidden'}">
+                   <div class="col-sm-4">
+                       <label class="control-label" for="bccRecipientEmails">
+                           <mvc:message code="action.address.bcc"/>
+                       </label>
+                   </div>
+                   <div class="col-sm-8">
+                       <mvc:text path="emailMediatype.bccRecipients" id="bccRecipientEmails" cssClass="form-control" />
+                   </div>
+                </div>
+
                 <div class="form-group">
                     <div class="col-sm-4">
-                        <label class="control-label" for="emailEnvelopeEmail">
-                            <mvc:message code="EnvelopeEmail"/>
-	                        <button class="icon icon-help" data-help="help_${helplanguage}/mailing/view_base/EnvelopeAddress.xml" tabindex="-1" type="button"></button>
-	                    </label>
+                        <label class="control-label" for="emailCharset">
+                            <mvc:message code="mailing.Charset"/>
+                        </label>
                     </div>
                     <div class="col-sm-8">
-                        <mvc:text path="emailMediatype.envelopeEmail" id="emailEnvelopeEmail"
-                                   cssClass="form-control" readonly="${emailSettingsDisabled}" />
+                        <mvc:select path="emailMediatype.charset" id="emailCharset" cssClass="form-control" disabled="${emailSettingsDisabled}">
+                            <%@include file="../fragments/mailing-settings-email-charsets.jspf" %>
+                        </mvc:select>
                     </div>
                 </div>
-            </emm:ShowByPermission>
-            <emm:HideByPermission token="mailing.envelope_address">
-                <mvc:hidden path="emailMediatype.envelopeEmail"/>
-            </emm:HideByPermission>
-            
+                <mvc:hidden path="emailMediatype.linefeed"/>
+                <%@include file="../fragments/mailing-settings-email-onepixel.jspf" %>
 
-            <div id="mailing-bcc-recipients"
-                 class="form-group ${mailingSettingsForm.mailingType eq MAILING_TYPE_DATE_BASED ? '' : 'hidden'}">
-               <div class="col-sm-4">
-                   <label class="control-label" for="bccRecipientEmails">
-                       <mvc:message code="action.address.bcc"/>
-                   </label>
-               </div>
-               <div class="col-sm-8">
-                   <mvc:text path="emailMediatype.bccRecipients" id="bccRecipientEmails" cssClass="form-control" />
-               </div>
             </div>
-
-            <div class="form-group">
-                <div class="col-sm-4">
-                    <label class="control-label" for="emailCharset">
-                        <mvc:message code="mailing.Charset"/>
-                    </label>
-                </div>
-                <div class="col-sm-8">
-                    <mvc:select path="emailMediatype.charset" id="emailCharset" cssClass="form-control" disabled="${emailSettingsDisabled}">
-                        <%@include file="../fragments/mailing-settings-email-charsets.jspf" %>
-                    </mvc:select>                    
-                </div>
-            </div>
+        </emm:ShowByPermission>
+        <emm:HideByPermission token="settings.extended">
+            <mvc:hidden path="emailMediatype.envelopeEmail"/>
+            <mvc:hidden path="emailMediatype.bccRecipients"/>
+            <mvc:hidden path="emailMediatype.charset"/>
             <mvc:hidden path="emailMediatype.linefeed"/>
-            <%@include file="../fragments/mailing-settings-email-onepixel.jspf" %>
-            
-        </div>
+            <mvc:hidden path="emailMediatype.onepixel"/>
+        </emm:HideByPermission>
     </div>
 </div>

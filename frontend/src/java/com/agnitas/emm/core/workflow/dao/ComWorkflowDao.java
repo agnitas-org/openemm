@@ -11,9 +11,11 @@
 package com.agnitas.emm.core.workflow.dao;
 
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
+import com.agnitas.emm.core.dashboard.bean.DashboardWorkflow;
 import org.agnitas.beans.CompaniesConstraints;
 
 
@@ -53,6 +55,10 @@ public interface ComWorkflowDao {
      * @throws java.lang.NullPointerException if {@code schema} is {@code null}.
      */
 	boolean setSchema(String schema, int workflowId, int companyId);
+
+    int insertUndoEntry(Workflow workflow, int adminId);
+
+    String getSchemaBeforePause(int workflowId, int companyId);
 
 	void deleteWorkflow(int workflowId, int companyId);
 
@@ -104,7 +110,7 @@ public interface ComWorkflowDao {
      * @param clearTargetConditions the indicator for control delete all dependencies or delete all except target conditions before set new dependencies
      */
 	void setDependencies(int companyId, int workflowId, Set<WorkflowDependency> dependencies, boolean clearTargetConditions);
-    
+
     /**
      * Add new one dependency to workflow
      *
@@ -117,6 +123,16 @@ public interface ComWorkflowDao {
     List<Workflow> getWorkflowsOverview(Admin admin);
 
 	List<Workflow> getWorkflowsToDeactivate(CompaniesConstraints constraints);
+
+    /**
+     * Retrieves workflows that was paused more then 2 hours ago and wasn't manually reactivated.
+     *
+     * @param constraints companies info
+     * @return workflows to unpause
+     */
+    List<Workflow> getWorkflowsToUnpause(CompaniesConstraints constraints);
+
+    int getPauseAdminId(int workflowId, int companyId);
 
     List<Workflow> getWorkflows(Set<Integer> workflowIds, int companyId);
 
@@ -178,8 +194,16 @@ public interface ComWorkflowDao {
     int bulkDeleteTargetCondition(List<Integer> targetIds, int companyId);
     
     void removeMailingsTargetExpressions(int companyId, Set<Integer> mailingIds);
-    
-    void deactivateWorkflowScheduledReports(int workflowId, int companyId);
-    
-    void deleteWorkflowScheduledReports(int workflowId, int companyId);
+
+    void savePausedSchemaForUndo(Workflow workflow, int adminId);
+
+    Date getPauseDate(int workflowId, int companyId);
+
+    void deleteUndoEntry(int workflowId, int companyId);
+
+    void deletePauseUndoEntry(int workflowId, int companyId);
+
+    void setActualEndDate(int workflowId, Date date, int companyId);
+
+    List<DashboardWorkflow> getWorkflowsForDashboard(Admin admin);
 }

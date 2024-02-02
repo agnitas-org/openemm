@@ -24,7 +24,6 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.TimeZone;
 
-import com.agnitas.emm.core.useractivitylog.dao.RestfulUserActivityLogDao;
 import org.agnitas.beans.BindingEntry;
 import org.agnitas.beans.BindingEntry.UserType;
 import org.agnitas.beans.DatasourceDescription;
@@ -40,13 +39,11 @@ import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.commons.util.DateUtil;
 import org.agnitas.emm.core.mailing.beans.LightweightMailing;
 import org.agnitas.emm.core.recipient.service.RecipientService;
-import org.agnitas.preview.Page;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.HttpUtils.RequestMethod;
 import org.agnitas.util.MailoutClient;
 import org.agnitas.util.importvalues.Gender;
-import org.agnitas.util.importvalues.MailType;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -55,7 +52,6 @@ import org.springframework.beans.factory.annotation.Required;
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.MaildropEntry;
 import com.agnitas.beans.Mailing;
-import com.agnitas.beans.MediatypeEmail;
 import com.agnitas.beans.impl.MaildropEntryImpl;
 import com.agnitas.dao.ComBindingEntryDao;
 import com.agnitas.dao.ComMailingDao;
@@ -68,6 +64,8 @@ import com.agnitas.emm.core.mailing.service.MailgunOptions;
 import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.emm.core.mailing.service.SendActionbasedMailingService;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import com.agnitas.emm.core.service.RecipientFieldService;
+import com.agnitas.emm.core.useractivitylog.dao.RestfulUserActivityLogDao;
 import com.agnitas.emm.restful.BaseRequestResponse;
 import com.agnitas.emm.restful.ErrorCode;
 import com.agnitas.emm.restful.JsonRequestResponse;
@@ -99,6 +97,7 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler {
 	protected MailingService mailingService;
 	protected ComMailingDao mailingDao;
 	protected RecipientService recipientService;
+	protected RecipientFieldService recipientFieldService;
 	protected MailinglistDao mailinglistDao;
 	protected MaildropService maildropService;
 	protected ClassicTemplateGenerator classicTemplateGenerator;
@@ -166,6 +165,10 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler {
 	@Required
 	public void setBindingEntryDao(final ComBindingEntryDao bindingEntryDao) {
 		this.bindingEntryDao = bindingEntryDao;
+	}
+	
+	public void setRecipientFieldService(RecipientFieldService recipientFieldService) {
+		this.recipientFieldService = Objects.requireNonNull(recipientFieldService, "RecipientField Service cannot be null");
 	}
 
 	@Override
@@ -433,38 +436,9 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler {
 		}
 
 		Mailinglist aList = mailinglistDao.getMailinglist(mailing.getMailinglistID(), admin.getCompanyID());
-		String preview = null;
 
 		if (mailinglistDao.getNumberOfActiveSubscribers(adminSend, testSend, worldSend, mailing.getTargetID(), aList.getCompanyID(), aList.getId()) == 0) {
 			throw new RestfulClientException("This mailing has no subscribers");
-		}
-
-		// check syntax of mailing by generating dummy preview
-        final Page previewPage = this.mailingPreviewService.renderPreview(mailing.getId(), customerID);
-		preview = previewPage.getText();
-		if (StringUtils.isBlank(preview)) {
-			if (mailingService.isTextVersionRequired(admin.getCompanyID(), mailingID)) {
-				throw new RestfulClientException("Mandatory TEXT version is missing in mailing");
-			}
-		}
-		preview = previewPage.getHTML();
-		boolean isHtmlMailing = false;
-		MediatypeEmail emailMediaType = (MediatypeEmail) mailing.getMediatypes().get(MediaTypes.EMAIL.getMediaCode());
-		if (emailMediaType != null && (emailMediaType.getMailFormat() == MailType.HTML.getIntValue() || emailMediaType.getMailFormat() == MailType.HTML_OFFLINE.getIntValue())) {
-			isHtmlMailing = true;
-		}
-		if (isHtmlMailing && preview.trim().length() == 0) {
-			throw new RestfulClientException("Mandatory HTML version is missing in mailing");
-		}
-		
-		preview = this.mailingPreviewService.renderPreviewFor(mailing.getId(), customerID, mailing.getEmailParam().getSubject());
-		if (StringUtils.isBlank(mailing.getEmailParam().getSubject())) {
-			throw new RestfulClientException("Mailing subject is too short");
-		}
-		
-		preview = this.mailingPreviewService.renderPreviewFor(mailing.getId(), customerID, mailing.getEmailParam().getFromAdr());
-		if (preview.trim().length() == 0) {
-			throw new RestfulClientException("Mandatory mailing sender address is missing");
 		}
 
 		if (maildropStatus == MaildropStatus.ACTION_BASED || maildropStatus == MaildropStatus.ON_DEMAND) {
@@ -643,6 +617,10 @@ public class SendRestfulServiceHandler implements RestfulServiceHandler {
 			datasourceID = datasourceDescription.getId();
 		}
 
+		if (StringUtils.isBlank(email)) {
+			throw new RestfulClientException("Cannot create new recipient: 'email' value is missing");
+		}
+		
 		final Recipient recipient = new RecipientImpl();
 		recipient.setCompanyID(companyID);
 		recipient.getCustParameters().put("title", title);

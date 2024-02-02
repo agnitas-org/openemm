@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.agnitas.beans.Mailing;
+import org.agnitas.emm.core.mailing.beans.LightweightMailing;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.agnitas.beans.Admin;
@@ -31,6 +32,8 @@ public interface ComMailingGridService {
     void saveMailingGridInfo(int mailingID, int companyID, Map<String, Object> mailingGridInfo);
     
     List<ComGridTemplate> getReleasedGridTemplates(final Admin admin, String sort, String direction);
+
+    List<LightweightMailing> getGridMailings(Admin admin);
 
     @Transactional
     void saveUndoGridMailing(int mailingId, int gridTemplateId, int adminId);

@@ -94,6 +94,7 @@ public class ConfigValue {
 	
 	public static final ConfigValue CampaignEnableTargetGroups = new ConfigValue("campaign-enable-target-groups", "false");
 
+    public static final ConfigValue UseWkhtmltox = new ConfigValue("useWkhtmltox", "false");
 	/** Installation path of html to pdf converter application **/
 	public static final ConfigValue WkhtmlToPdfToolPath = new ConfigValue("system.wkhtmltopdf", "/usr/bin/wkhtmltopdf");
 	/** Installation path of html to image converter application **/
@@ -106,7 +107,12 @@ public class ConfigValue {
 	/** License types: SaaS, Inhouse **/
 	public static final ConfigValue System_License_Type = new ConfigValue("licenseType");
 	public static final ConfigValue System_License_Holder = new ConfigValue("licenseHolder");
+	/**
+	 * ExpirationDate format: "dd.MM.yyyy HH:mm:ss"
+	 */
 	public static final ConfigValue System_License_ExpirationDate = new ConfigValue("expirationDate");
+	public static final ConfigValue System_License_MaximumVersion = new ConfigValue("maximumVersion");
+	public static final ConfigValue System_License_LicenseUrl = new ConfigValue("licenseUrl");
 	public static final ConfigValue System_License_MaximumNumberOfCompanies = new ConfigValue("maximumNumberOfCompanies", 1, 0);
 	
 	/**
@@ -159,12 +165,11 @@ public class ConfigValue {
 
 	public static final ConfigValue Linkchecker_Linktimeout = new ConfigValue("linkchecker.linktimeout", "30000");
 	public static final ConfigValue Linkchecker_Threadcount = new ConfigValue("linkchecker.threadcount", "25");
-	public static final ConfigValue LinkChecker_UserAgent = new ConfigValue("linkchecker.userAgent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:106.0) Gecko/20100101 Firefox/106.0");
+	public static final ConfigValue LinkChecker_UserAgent = new ConfigValue("linkchecker.userAgent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/116.0");
 
 	public static final ConfigValue Predelivery_Litmusapikey = new ConfigValue("predelivery.litmusapikey");
 	public static final ConfigValue Predelivery_Litmusapiurl = new ConfigValue("predelivery.litmusapiurl", "https://soap.litmusapp.com/soap/api");
 	public static final ConfigValue Predelivery_Litmuspassword = new ConfigValue("predelivery.litmuspassword");
-	public static final ConfigValue Predelivery_LitmusGuidPrefix = new ConfigValue("litmus.GuidPrefix");
 	public static final ConfigValue Predelivery_LitmusStatusUrl = new ConfigValue("predelivery.litmusstatusurl", "https://status.litmus.com/");
 	public static final ConfigValue Predelivery_Litmus_DisableCertificateChecks = new ConfigValue("predelivery.litmus.disableCertificateChecks", "false");
 	public static final ConfigValue Predelivery_RetentionDays = new ConfigValue("predelivery.retentationDays", "90");
@@ -249,6 +254,8 @@ public class ConfigValue {
 	
 	/** Enable / disable historization of profile fields. */
 	public static final ConfigValue RecipientProfileFieldHistory = new ConfigValue("recipient.profile_history");
+	
+	public static final ConfigValue AllowHtmlInProfileFields = new ConfigValue("recipient.profileFields.allowHtml", "false");
 
 	/** Temporary flag to show if the trigger has to be rebuild after EMM Update **/
 	public static final ConfigValue RecipientProfileFieldHistoryRebuildOnStartup = new ConfigValue("recipient.profile_history.rebuild_trigger_on_startup");
@@ -271,17 +278,26 @@ public class ConfigValue {
 
 	/** Maximum number of rows included in an import file for classic import **/
 	public static final ConfigValue ClassicImportMaxRows = new ConfigValue("import.classic.maxRows", "200000");
-	/** Maximum filesize of an import file for classic import (in Bytes). (Default 25000000 Bytes) **/
-	public static final ConfigValue ClassicImportMaxFileSize = new ConfigValue("import.classic.maxSize", "25000000");
+	/** Maximum filesize of an import file for classic import (in Bytes). (Default 100 MegaBytes) **/
+	public static final ConfigValue ClassicImportMaxFileSize = new ConfigValue("import.classic.maxSize", "104857600");
 
 	/** Maximum number of rows included in an import file for profile recipient import **/
 	public static final ConfigValue ProfileRecipientImportMaxRows = new ConfigValue("import.recipient.maxRows", "500000");
+	/** Maximum filesize of an import file for profile recipient import (in Bytes). (Default 100 MegaBytes) **/
+	public static final ConfigValue ProfileRecipientImportMaxFileSize = new ConfigValue("import.recipient.maxSize", "104857600");
+	
+	public static final ConfigValue ImportQuotaEnabled = new ConfigValue("import.quota.enabled", "false");
+	public static final ConfigValue ImportQuota = new ConfigValue("import.quota.lines", "1500000");
+	
+	public static final ConfigValue ImportQuotaWarning = new ConfigValue("import.quota.lines.warn", "1000000");
 
 	/** Maximum number of rows included in an export file for profile recipient export **/
 	public static final ConfigValue ProfileRecipientExportMaxRows = new ConfigValue("export.recipient.maxRows", "-1");
 
 	/** Maximum number of rows included in an import file for reference table import **/
 	public static final ConfigValue ReferenceTableImportMaxRows = new ConfigValue("import.reference.maxRows", "200000");
+	/** Maximum filesize of an import file for reference table import (in Bytes). (Default 100 MegaBytes) **/
+	public static final ConfigValue ReferenceTableImportMaxFileSize = new ConfigValue("import.reference.maxSize", "104857600");
 
 	/** Days before user password expiration for warning **/
 	public static final ConfigValue UserPasswordExpireNotificationDays = new ConfigValue("password.expire.notification.days", "14");
@@ -585,6 +601,10 @@ public class ConfigValue {
 	/** Retention time in seconds for caches Restful API invocation costs. */
 	public static final ConfigValue RestfulApiCostsCacheRetentionSeconds = new ConfigValue("restful.quota.costs_cache_retention_seconds", "300");
 
+	/**
+	 * Special value to prevent reactivation on recipients in reatful/send method. See BAUR-948 for documentation
+	 */
+	public static final ConfigValue RestfulDisableForcedReactivation = new ConfigValue("restful.disableForcedReactivation", "false");
 
 	public static final ConfigValue CleanRecipientsWithoutBinding = new ConfigValue("cleanup.deleteRecipientsWithoutBinding", "false");
 	public static final ConfigValue CleanRecipientsData = new ConfigValue("cleanup.deleteRecipientsData", "-1");
@@ -751,7 +771,21 @@ public class ConfigValue {
 		 * Changing this configuration requires restart of EMM!
 		 * The value is read only at startup time.
 		 */
-		public static final ConfigValue CsrfProtectionEnabled = new ConfigValue("security.csrfProtection.enabled", "false");
+		public static final ConfigValue CsrfProtectionEnabled = new ConfigValue("security.csrfProtection.enabled", "true");
+	}
+	
+	public static final class Rdir {
+		public static final ConfigValue RdirAllowHeadRequest = new ConfigValue("rdir.request.head.allowed", "true");
+		
+		public static final ConfigValue RdirRedisEnabled = new ConfigValue("rdir.redis.enabled");
+		public static final ConfigValue RdirRedisHost = new ConfigValue("rdir.redis.host");
+		public static final ConfigValue RdirRedisPort = new ConfigValue("rdir.redis.port", "6379");
+		public static final ConfigValue RdirRedisUser = new ConfigValue("rdir.redis.username");
+		public static final ConfigValue RdirRedisPassword = new ConfigValue("rdir.redis.password");
+		public static final ConfigValue RdirRedisTimeout = new ConfigValue("rdir.redis.timeout", "60");
+		public static final ConfigValue RdirRedisKeyExpireSeconds = new ConfigValue("rdir.redis.key.expireSeconds", "7200");
+		public static final ConfigValue RdirRedisPoolMaxIdle = new ConfigValue("rdir.redis.pool.maxIdle", "8");
+		public static final ConfigValue RdirRedisPoolMaxSize = new ConfigValue("rdir.redis.pool.maxSize", "8");
 	}
 	
 	/**
@@ -760,14 +794,15 @@ public class ConfigValue {
 	 * All of these keys will be removed after successful rollout.
 	 */
 	public static final class Development {
-		public static final ConfigValue EnableCheckForEditableMailing = new ConfigValue("development.webservices.enableMailingEditableCheck", "false");
-
-		public static final ConfigValue RestfulDisableForcedReactivation = new ConfigValue("development.restful.disableForcedReactivation", "false");
-		
+		public static final ConfigValue EnableCheckForEditableMailing = new ConfigValue("development.webservices.enableMailingEditableCheck", "false");		
 		public static final ConfigValue ChangeStatusOnCancelAndCopyMailing = new ConfigValue("development.mailingStop.changeStatusOnCancelAndCopy", "false");
 	}
 	
-	// Fallback values for backend
+	// Backend configuration values
+	// Additional dynamic values and parameters of backend configuration (like FQDNs of backend servers) may be defined in file "system.cfg".
+	// See template in SVN at "projects/Lizenzen/00Template".
+	// Those values are client/customer specific.
+
 	public static final ConfigValue MailOut_Loglevel = new ConfigValue("mailout.ini.loglevel");
 	public static final ConfigValue MailOut_MailDir = new ConfigValue("mailout.ini.maildir");
 	public static final ConfigValue MailOut_DefaultEncoding = new ConfigValue("mailout.ini.default_encoding");
@@ -893,6 +928,12 @@ public class ConfigValue {
 	
 	public static final ConfigValue TriggerDialogDryRun = new ConfigValue("triggerdialog.dryRun");
 
+	public static final ConfigValue UseDefaulAdressFieldsForPost = new ConfigValue("use.default.address.fields.forPost");
+	public static final ConfigValue DefaultCountryField = new ConfigValue("default.country.field");
+	public static final ConfigValue DefaultCityField = new ConfigValue("default.city.field");
+	public static final ConfigValue DefaultStreetField = new ConfigValue("default.street.field");
+	public static final ConfigValue DefaultPostalCodeField = new ConfigValue("default.postalCode.field");
+
 	public static final ConfigValue SsoLoginHeaderType = new ConfigValue("system.SsoLoginHeaderType");
 	public static final ConfigValue SsoLoginSamlCertificate = new ConfigValue("system.SsoLoginSamlCertificate");
 	public static final ConfigValue SsoLoginSamlSpEntityID = new ConfigValue("system.SsoLoginSamlSpEntityID");
@@ -929,8 +970,35 @@ public class ConfigValue {
 
 	public static final ConfigValue MaximumRecipientDetailPeriodDays = new ConfigValue("statistics.maximumRecipientDetailPeriodDays", "180");
 
+	/**
+	 * Enable TOTP for login.
+	 */
 	public static final ConfigValue LogonTotpEnabled = new ConfigValue("logon.totp.enabled", "false");
+	
+	/**
+	 * Issuer of TOTP secret.
+	 */
 	public static final ConfigValue LogonTotpIssuer = new ConfigValue("logon.totp.issuer", "AGNITAS EMM");
+	
+	/**
+	 * Enable trusting devices for TOTP.
+	 */
+	public static final ConfigValue LoginTotpTrustDeviceEnabled = new ConfigValue("logon.totp.trustDeviceEnabled", "false");
+
+	/**
+	 * Validity period for trust device token.
+	 */
+	public static final ConfigValue LoginTotpTrustDevicePeriod = new ConfigValue("logon.totp.trustDevicePeriod", "PT10H");
+
+	/**
+	 * Name of cookie storing tokens for skip TOTP request.
+	 */
+	public static final ConfigValue LoginTotpTokenCookieName = new ConfigValue("logon.totp.cookie.name", "com.agnitas.emm.logon.totp.token");
+	
+	/**
+	 * Configuration to allow cookie on HTTP connections.
+	 */
+	public static final ConfigValue LoginTotpTokenCookieHttpsOnly = new ConfigValue("logon.totp.cookie.httpsOnly", "true");
 
 	/**
 	 * Check profilefields values of well known data types like german plz, when entered via webforms
@@ -940,13 +1008,42 @@ public class ConfigValue {
 	public static final ConfigValue RecipientFieldsMaxCache = new ConfigValue("recipientFields.maxCache", "100");
 	public static final ConfigValue RecipientFieldsMaxCacheTimeMillis = new ConfigValue("recipientFields.maxCacheTimeMillis", "300000");
 
-	public static final ConfigValue WorkflowPauseTest = new ConfigValue("workflow.pause.test", "false");
+	public static final ConfigValue UseRecipientFieldService = new ConfigValue("UseRecipientFieldService", "true");
+	
+	public static final ConfigValue WorkflowPauseExpirationHours = new ConfigValue("workflow.pause.expire.hours", "2");
 
 	public static final ConfigValue UserBasedFavoriteTargets = new ConfigValue("target.favorite.userBased", "false");
 
-	public static ConfigValue IntervalMailingStatisticsExpirationDays = new ConfigValue("mailing.interval.statistics.expiration", "30");
+	public static final ConfigValue UseFixedTrackableLinksRead = new ConfigValue("UseFixedTrackableLinksRead", "false");
+
+	public static final ConfigValue UseFixedGetContentElementsForTemplate = new ConfigValue("UseFixedGetContentElementsForTemplate", "false");
+
+	public static final ConfigValue UseFixedGetSaveContentMapBatchParams = new ConfigValue("UseFixedGetSaveContentMapBatchParams", "false");
+
+	public static final ConfigValue UseImprovedProfileImport = new ConfigValue("UseImprovedProfileImport", "false");
+	
+	public static final ConfigValue UseImprovedGenericImport = new ConfigValue("UseImprovedGenericImport", "false");
 	
 	public static final ConfigValue ExecutableTempDirPath = new ConfigValue("system.ExecutableTempDirPath", "/tmp");
+	
+	// temporary
+	public static final ConfigValue WriteExtendedRecipientReport = new ConfigValue("write.extended.recipient.report", "false");
+
+	public static final ConfigValue TextGeneratorUrl = new ConfigValue("TextGeneratorUrl");
+	public static final ConfigValue TextGeneratorApiKey = new ConfigValue("TextGeneratorApiKey");
+	public static final ConfigValue TextGeneratorModel = new ConfigValue("TextGeneratorModel");
+
+	public static final ConfigValue RestfulJwtSecret = new ConfigValue("RestfulJwtSecret");
+	public static final ConfigValue RestfulJwtValidityMinutes = new ConfigValue("RestfulJwtValidityMinutes", "60");
+
+	/**
+	 * Maximum duration an import may be active before the kill button is shown in server status page
+	 */
+	public static final ConfigValue MaxUserImportDurationMinutes = new ConfigValue("MaxUserImportDurationMinutes", "60");
+
+	public static ConfigValue IntervalMailingStatisticsExpirationDays = new ConfigValue("mailing.interval.statistics.expiration", "30");
+
+	public static ConfigValue FilterRecipientsOverviewForActiveRecipients = new ConfigValue("recipients.overview.filterForActive", "false");
 
 	private final String name;
 	private final String defaultValue;

@@ -45,8 +45,8 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.stream.Collectors;
 
-import com.agnitas.beans.ComTrackableLink;
-import com.agnitas.emm.core.trackablelinks.service.ComTrackableLinkService;
+import com.agnitas.beans.TrackableLink;
+import com.agnitas.emm.core.trackablelinks.service.TrackableLinkService;
 import com.agnitas.emm.core.workflow.beans.impl.WorkflowDateBasedMailingImpl;
 import com.agnitas.emm.core.workflow.beans.impl.WorkflowDecisionImpl;
 import com.agnitas.emm.core.workflow.beans.impl.WorkflowRecipientImpl;
@@ -234,7 +234,7 @@ public class ComWorkflowValidationService {
     // Allowed statuses for base mailings (for follow-up)
     private static final Set<String> FOLLOWED_MAILING_STATUSES = new HashSet<>();
 
-    private ComTrackableLinkService trackableLinkService;
+    private TrackableLinkService trackableLinkService;
     private ComWorkflowService workflowService;
     private AutoImportService autoImportService;
     private AutoExportService autoExportService;
@@ -261,7 +261,7 @@ public class ComWorkflowValidationService {
             errorCodes.add("error.workflow.connection.notAllowed");
         }
         if (isInvalidAutoOptimizationTime(icons)) {
-            errorCodes.add("GWUA.error.workflow.autoopt.invalidTime");
+            errorCodes.add("error.workflow.autoopt.time.short");
         }
         return errorCodes.stream().map(Message::of).collect(Collectors.toList());
     }
@@ -413,7 +413,7 @@ public class ComWorkflowValidationService {
     }
 
     private void validateClickedLink(int companyId, List<Message> messages, int linkId) {
-        ComTrackableLink link = trackableLinkService.getTrackableLink(companyId, linkId);
+        TrackableLink link = trackableLinkService.getTrackableLink(companyId, linkId);
         if (link == null) {
             messages.add(Message.of("error.workflow.link.removed"));
         }
@@ -1328,36 +1328,6 @@ public class ComWorkflowValidationService {
         return false;
     }
 
-    private void buildSeenStartsNodes(List<Integer> seenStartsNodes, WorkflowNode node) {
-        List<WorkflowNode> prevNodes = node.getPrevNodes();
-        int prevNodesSize = prevNodes.size();
-        for (int i = 0; i < prevNodesSize; i++) {
-            WorkflowNode prevNode = prevNodes.get(i);
-            WorkflowIcon prevNodeIcon = prevNode.getNodeIcon();
-            if (prevNodeIcon.getType() == WorkflowIconType.START.getId()) {
-                if (!seenStartsNodes.contains(prevNodeIcon.getId())) {
-                    seenStartsNodes.add(prevNodeIcon.getId());
-                }
-            }
-            node.deletePrevNode(prevNode);
-            prevNode.deleteNextNode(node);
-            i--;
-            buildSeenStartsNodes(seenStartsNodes, prevNode);
-            prevNodesSize = prevNodes.size();
-        }
-
-        List<WorkflowNode> nextNodes = node.getNextNodes();
-        int nextNodesSize = nextNodes.size();
-        for (int i = 0; i < nextNodesSize; i++) {
-            WorkflowNode nextNode = nextNodes.get(i);
-            node.deleteNextNode(nextNode);
-            nextNode.deletePrevNode(node);
-            i--;
-            buildSeenStartsNodes(seenStartsNodes, nextNode);
-            nextNodesSize = nextNodes.size();
-        }
-    }
-
     public boolean isFixedDeadlineUsageCorrect(List<WorkflowIcon> workflowIcons) {
         boolean usedFixedDeadline = false;
         boolean usedActionBasedOrDateBasedMailing = false;
@@ -1816,6 +1786,28 @@ public class ComWorkflowValidationService {
         throw new WorkflowStructureException("Unexpected icon type : " + WorkflowIconType.fromId(type));
     }
 
+    public boolean containNotAllowedPauseChanges(List<WorkflowIcon> oldIcons, List<WorkflowIcon> newIcons) {
+        if (oldIcons.size() != newIcons.size()) {
+            return true;
+        }
+        for (int i = 0; i < oldIcons.size(); i++) {
+            WorkflowIcon oldIcon = oldIcons.get(i);
+            WorkflowIcon newIcon = newIcons.get(i);
+            if (!oldIcon.getConnections().equals(newIcon.getConnections())) {
+                return true;
+            }
+            if (!oldIcon.equals(newIcon) && !isMailingOrStopIconWithNotChangedType(oldIcon, newIcon)) {
+                return true; // Only mailing and stop icons can be changed in a paused campaign
+            }
+        }
+        return false;
+    }
+
+    private boolean isMailingOrStopIconWithNotChangedType(WorkflowIcon oldIcon, WorkflowIcon newIcon) {
+        return (WorkflowUtils.isMailingIcon(oldIcon) && WorkflowUtils.isMailingIcon(newIcon))
+                || (WorkflowUtils.isStopIcon(oldIcon) && WorkflowUtils.isStopIcon(newIcon));
+    }
+
     @Required
     public void setWorkflowService(ComWorkflowService workflowService) {
         this.workflowService = workflowService;
@@ -1850,7 +1842,7 @@ public class ComWorkflowValidationService {
     }
     
     @Required
-    public void setTrackableLinkService(ComTrackableLinkService trackableLinkService) {
+    public void setTrackableLinkService(TrackableLinkService trackableLinkService) {
         this.trackableLinkService = trackableLinkService;
     }
 }

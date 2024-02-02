@@ -1,0 +1,13 @@
+
+.char-counter {
+  position: relative;
+  
+  & > * {
+    color: $gray-700;
+    position: absolute;
+    top: 0;
+    right: 0;
+    margin-top: -21px;
+    font-size: 12px;
+  }
+}

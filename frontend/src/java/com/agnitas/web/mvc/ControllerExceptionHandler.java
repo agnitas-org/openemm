@@ -10,15 +10,20 @@
 
 package com.agnitas.web.mvc;
 
+import java.util.Map;
+
+import com.agnitas.exception.DetailedValidationException;
 import com.agnitas.exception.ValidationException;
 import com.agnitas.emm.util.html.xssprevention.HtmlCheckError;
 import com.agnitas.emm.util.html.xssprevention.XSSHtmlException;
+import com.agnitas.web.dto.DataResponseDto;
 import org.agnitas.util.HttpUtils;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.client.HttpStatusCodeException;
 
 import com.agnitas.web.exception.NoPreviewImageException;
@@ -62,6 +67,15 @@ public class ControllerExceptionHandler {
 	@ExceptionHandler(ValidationException.class)
     public String onValidationException(ValidationException e, Popups popups) {
         e.getErrors().forEach(popups::alert);
+        e.getFieldsErrors().forEach((f, m) -> popups.fieldError(f, m));
         return MESSAGES_VIEW;
+    }
+
+    @ExceptionHandler(DetailedValidationException.class)
+    @ResponseBody
+    public DataResponseDto<Map<String, Object>> onDetailedValidationException(DetailedValidationException e, Popups popups) {
+        e.getErrors().forEach(popups::alert);
+        e.getFieldsErrors().forEach(popups::fieldError);
+        return new DataResponseDto<>(e.getDetails(), popups, false);
     }
 }

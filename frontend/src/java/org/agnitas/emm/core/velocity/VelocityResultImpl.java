@@ -10,8 +10,13 @@
 
 package org.agnitas.emm.core.velocity;
 
-import org.agnitas.emm.core.velocity.event.StrutsActionMessageEventHandler;
-import org.apache.struts.action.ActionErrors;
+import com.agnitas.messages.I18nString;
+import com.agnitas.messages.Message;
+import org.agnitas.emm.core.velocity.event.MessageEventHandlerImpl;
+import org.springframework.context.i18n.LocaleContextHolder;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Default implementation of {@link VelocityResult}.
@@ -22,7 +27,7 @@ class VelocityResultImpl implements VelocityResult {
 	private final boolean successful;
 	
 	/** Velocity event handler collecting error messages. */
-	private final StrutsActionMessageEventHandler eventHandler;
+	private final MessageEventHandlerImpl eventHandler;
 	
 	/**
 	 * Creates a new VelocityresultImpl.
@@ -30,7 +35,7 @@ class VelocityResultImpl implements VelocityResult {
 	 * @param successful true, if executing of script was successful
 	 * @param eventHandler Event handler that collected the script errors
 	 */
-	public VelocityResultImpl( boolean successful, StrutsActionMessageEventHandler eventHandler) {
+	public VelocityResultImpl( boolean successful, MessageEventHandlerImpl eventHandler) {
 		this.successful = successful;
 		this.eventHandler = eventHandler;
 	}
@@ -46,11 +51,23 @@ class VelocityResultImpl implements VelocityResult {
 	}
 
 	@Override
-	public ActionErrors getErrors() {
+	public List<Message> getErrors() {
 		if( hasErrors())
 			return eventHandler.getErrors();
 		else
 			return null;
 	}
 
+	@Override
+	public List<String> getErrorMessages() {
+		if (!hasErrors()) {
+			return null;
+		}
+
+		return eventHandler.getErrors().stream()
+				.map(msg -> msg.isResolvable()
+						? I18nString.getLocaleString(msg.getCode(), LocaleContextHolder.getLocale(), msg.getArguments())
+						: msg.getCode())
+				.collect(Collectors.toList());
+	}
 }

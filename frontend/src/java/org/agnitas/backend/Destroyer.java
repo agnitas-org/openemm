@@ -13,7 +13,6 @@ package org.agnitas.backend;
 import java.io.Closeable;
 import java.io.File;
 import java.io.FilenameFilter;
-import java.util.StringTokenizer;
 
 import org.agnitas.util.Log;
 
@@ -49,24 +48,19 @@ public class Destroyer implements Closeable {
 		 */
 		@Override
 		public boolean accept(File dir, String name) {
-			boolean st;
-			StringTokenizer tok;
-
-			st = false;
-			tok = new StringTokenizer(name, "=");
-			if (tok.countTokens() == 6) {
-				int n;
-				long mid;
-
-				for (n = 0; n < 3; ++n) {
-					tok.nextToken();
-				}
-				mid = Long.decode(tok.nextToken()).longValue();
-				if (mid == mailingID) {
-					st = true;
+			String[]	parts = name.split ("=");
+			
+			if (parts.length == 6) {
+				String[]	mailingIDParts = parts[3].split ("[^0-9]+");
+				
+				if (mailingIDParts.length > 0) {
+					long	filenameMailingID = Long.parseLong (mailingIDParts[mailingIDParts.length - 1]);
+					
+					if (filenameMailingID == mailingID)
+						return true;
 				}
 			}
-			return st;
+			return false;
 		}
 	}
 

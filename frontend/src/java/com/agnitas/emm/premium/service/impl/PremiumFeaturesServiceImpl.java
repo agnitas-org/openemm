@@ -10,10 +10,10 @@ import com.agnitas.emm.premium.bean.FeaturePackage;
 import com.agnitas.emm.premium.service.PremiumFeaturesService;
 import com.agnitas.emm.premium.web.SpecialPremiumFeature;
 
-@Service("PremiumFeaturesService")
 /**
  * Dummy implementation for OpenEMM.
  */
+@Service("PremiumFeaturesService")
 public class PremiumFeaturesServiceImpl implements PremiumFeaturesService {
 
 	@Override

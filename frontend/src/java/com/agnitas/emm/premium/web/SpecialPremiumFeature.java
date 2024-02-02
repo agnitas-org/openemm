@@ -52,7 +52,12 @@ public enum SpecialPremiumFeature {
     /**
      * Innerclients FeaturePackage needs additional company_info values
      */
-    INNERCLIENTS("Innerclients Package");
+    INNERCLIENTS("Innerclients Package"),
+	
+    /**
+     * Frequency Counter FeaturePackage needs additional profile fields
+     */
+	FREQUENCY_COUNTER("Frequency Counter Package");
     
     private final String name;
 

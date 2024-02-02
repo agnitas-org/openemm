@@ -10,6 +10,7 @@
 
 package com.agnitas.emm.core.objectusage.common;
 
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -25,6 +26,8 @@ public final class ObjectUsage {
 	
 	/** Name of object user. */
 	private final String objectUserName;
+
+	private Map<String, Object> details;
 	
 	/**
 	 * Creates a new instance.
@@ -40,6 +43,11 @@ public final class ObjectUsage {
 		this.objectUserID = objectUserID;
 		this.objectUserName = Objects.requireNonNull(objectUserName, "Object user name is null");
 	}
+
+    public ObjectUsage(ObjectUserType type, int userId, String userName, Map<String, Object> details) {
+        this(type, userId, userName);
+        this.details = details;
+  	}
 
 	/**
 	 * Returns the type of the object user.
@@ -67,5 +75,8 @@ public final class ObjectUsage {
 	public final String getObjectUserName() {
 		return this.objectUserName;
 	}
-	
+
+    public Map<String, Object> getDetails() {
+        return details;
+    }
 }

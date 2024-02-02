@@ -10,6 +10,8 @@
 
 package com.agnitas.emm.core.recipientsreport.bean;
 
+import com.agnitas.beans.IntEnum;
+
 import java.util.Date;
 
 public class RecipientsReport {
@@ -42,8 +44,13 @@ public class RecipientsReport {
      * download_tbl.download_id -> used if file can`t be stored in content(CLOB) column of recipients_report_tbl
      */
     private Integer fileId;
-    
+
     private boolean isError;
+
+    private int entityId;
+    private EntityType entityType;
+    private EntityExecution entityExecution;
+    private EntityData entityData;
 
     public int getId() {
         return id;
@@ -54,14 +61,14 @@ public class RecipientsReport {
     }
 
     public int getAutoImportID() {
-		return autoImportID;
-	}
+        return autoImportID;
+    }
 
-	public void setAutoImportID(int autoImportID) {
-		this.autoImportID = autoImportID;
-	}
+    public void setAutoImportID(int autoImportID) {
+        this.autoImportID = autoImportID;
+    }
 
-	public Date getReportDate() {
+    public Date getReportDate() {
         return reportDate;
     }
 
@@ -126,34 +133,119 @@ public class RecipientsReport {
         this.fileId = fileId;
     }
 
+    public void setIsError(boolean isError) {
+        this.isError = isError;
+    }
+
+    public boolean isError() {
+        return isError;
+    }
+
+    public String getReportDateFormatted() {
+        return reportDateFormatted;
+    }
+
+    public void setReportDateFormatted(String reportDateFormatted) {
+        this.reportDateFormatted = reportDateFormatted;
+    }
+
+    public int getEntityId() {
+        return entityId;
+    }
+
+    public void setEntityId(int entityId) {
+        this.entityId = entityId;
+    }
+
+    public EntityType getEntityType() {
+        return entityType;
+    }
+
+    public void setEntityType(EntityType entityType) {
+        this.entityType = entityType;
+    }
+
+    public EntityExecution getEntityExecution() {
+        return entityExecution;
+    }
+
+    public void setEntityExecution(EntityExecution entityExecution) {
+        this.entityExecution = entityExecution;
+    }
+
+    public EntityData getEntityData() {
+        return entityData;
+    }
+
+    public void setEntityData(EntityData entityData) {
+        this.entityData = entityData;
+    }
+
+    @Deprecated
     public enum RecipientReportType {
         IMPORT_REPORT("recipient.reports.type.import.report"),
         EXPORT_REPORT("recipient.reports.type.export.report");
-        
-    	private String messageKey;
-    	
+
+        private String messageKey;
+
         private RecipientReportType(String messageKey) {
-        	this.messageKey = messageKey;
+            this.messageKey = messageKey;
         }
 
-		public String getMessageKey() {
-			return messageKey;
-		}
+        public String getMessageKey() {
+            return messageKey;
+        }
     }
 
-	public void setIsError(boolean isError) {
-		this.isError = isError;
-	}
+    public enum EntityType implements IntEnum {
+        UNKNOWN(0),
+        IMPORT(1),
+        EXPORT(2);
 
-	public boolean isError() {
-		return isError;
-	}
+        private final int id;
 
-	public String getReportDateFormatted() {
-		return reportDateFormatted;
-	}
+        EntityType(int id) {
+            this.id = id;
+        }
 
-	public void setReportDateFormatted(String reportDateFormatted) {
-		this.reportDateFormatted = reportDateFormatted;
-	}
+        @Override
+        public int getId() {
+            return id;
+        }
+    }
+
+    public enum EntityExecution implements IntEnum {
+        UNKNOWN(0),
+        MANUAL(1),
+        AUTOMATIC(2);
+
+        private final int id;
+
+        EntityExecution(int id) {
+            this.id = id;
+        }
+
+        @Override
+        public int getId() {
+            return id;
+        }
+    }
+
+    public enum EntityData implements IntEnum {
+        UNKNOWN(0),
+        PROFILE(1),
+        REFERENCE_TABLE(2);
+
+        private final int id;
+
+        EntityData(int id) {
+            this.id = id;
+        }
+
+        @Override
+        public int getId() {
+            return id;
+        }
+    }
+
 }

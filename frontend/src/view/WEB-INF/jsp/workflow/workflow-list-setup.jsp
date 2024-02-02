@@ -1,8 +1,7 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
+<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.action" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-<%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
-<%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
 <emm:CheckLogon/>
 
@@ -19,10 +18,6 @@
 <c:set var="agnHelpKey" 			value="workflow" 			scope="request" />
 
 <emm:ShowByPermission token="workflow.change">
-    <c:set var="createNewItemUrl" scope="request">
-        <html:rewrite page='/workflow/create.action'/>
-    </c:set>
-    <c:set var="createNewItemLabel" scope="request">
-        <bean:message key="workflow.new"/>
-    </c:set>
+    <c:url var="createNewItemUrl" value="/workflow/create.action" scope="request"/>
+    <mvc:message code="workflow.new" var="createNewItemLabel" scope="request"/>
 </emm:ShowByPermission>

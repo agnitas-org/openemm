@@ -8,6 +8,13 @@
 
 */
 
+-- This sql update is only intended for EMM Inhouse
+
+DELETE FROM admin_permission_tbl WHERE permission_name like '%.migration' OR permission_name like '%.rollback';
+DELETE FROM admin_group_permission_tbl WHERE permission_name like '%.migration' OR permission_name like '%.rollback';
+DELETE FROM company_permission_tbl WHERE permission_name like '%.migration' OR permission_name like '%.rollback';
+DELETE FROM permission_tbl WHERE permission_name like '%.migration' OR permission_name like '%.rollback';
+
 INSERT INTO permission_tbl (permission_name, category, sub_category, sort_order, feature_package) VALUES ('profileField.migration', 'System', 'Migration', 3, NULL);
 
 INSERT INTO agn_dbversioninfo_tbl (version_number, updating_user, update_timestamp)

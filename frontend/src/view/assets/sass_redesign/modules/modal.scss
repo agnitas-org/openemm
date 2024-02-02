@@ -1,0 +1,189 @@
+
+
+//.modal {
+  //  display:  none;
+  //  position: fixed;
+  //  left: 0;
+  //  right: 0;
+  //  top: 50%;
+  //  max-height: 100vh;
+  //
+  //  overflow:   auto;
+  //  z-index:    1003;
+  //
+  //  @include translate(0, -50%);
+//}
+
+
+.modal-content {
+  border: 1px solid $border-color;
+//  position: relative;
+//
+//  font-size: $fs-regular;
+//  color:     $c-black-85;
+//
+//  outline:          none;
+//  border-radius:    3px;
+//  background-clip:  padding-box;
+//  background-color: #fff;
+//
+//  @include shadow-variant(hardest);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom-color: transparent;
+  height: $tile-header-height;
+  line-height: 26px;
+  padding-left: $gap;
+  padding-right: $gap;
+  font-weight: 600;
+  font-size: $font-size-lg;
+  color: $c-black;
+}
+
+//.modal-title {
+//  max-width: calc(90% - 20px);
+//  float: left;
+//  margin: 0;
+//  margin-right: 20px;
+//  font-size:   $fs-xlarge;
+//  line-height: 22px;
+//  margin-top: 14px;
+//  font-weight: $fw-semi;
+//
+//  @include text-overflow();
+//}
+
+.modal-body {
+  @include hide-scroll();
+  
+//  position: relative;
+  padding: $gap;
+//
+//  .modal-separator:last-child {
+//    display: none;
+//  }
+//
+//  &.ui-modal-loading {
+//    overflow: hidden;
+//  }
+}
+
+.modal-footer {
+  padding: $gap;
+  padding-top: 0;
+  gap: $gap;
+
+  border-top: none;
+  & > * {
+    margin: 0;
+  }
+}
+
+@include media-breakpoint-down(lg) {
+  .modal-backdrop.show {
+    opacity: 0;
+  }
+  
+  .modal-dialog {
+    padding: $gap-sm + $headerHeight $gap-sm $gap-sm;
+    
+    .modal-content {
+      border: 1px solid $border-color;
+      border-radius: $border-radius;
+      height: auto;
+    }
+    
+    .modal-header {
+      padding: $gap-sm;
+    }
+    
+    .modal-body {
+      padding: $gap-sm;
+    }
+  }
+}
+
+.modal.modal-adaptive {
+  text-align: center;
+}
+
+.modal-adaptive {
+  overflow-x: auto;
+  .modal-dialog {
+    max-width: max-content;
+    display: inline-flex;
+    width: auto;
+    text-align: initial;
+  }
+}
+
+//@media (max-width: 440px) {
+//  .modal-dialog {
+//    margin-left: 10px;
+//    margin-right: 10px;
+//  }
+//
+//  .modal-header, .modal-body {
+//    padding-left: 15px;
+//    padding-right: 15px;
+//  }
+//
+//  .modal-separator {
+//    margin: 30px -15px;
+//  }
+//}
+
+//.modal-wide {
+//  .modal-dialog {
+//    @media screen and (min-width: 768px) {
+//      width: 740px;
+//    }
+//  }
+//}
+//
+//.modal-extra-wide {
+//  .modal-dialog {
+//    width: 80vw;
+//    max-width: 1200px;
+//  }
+//}
+
+[data-modal] {
+  cursor: pointer;
+}
+
+.modal__close-icon {
+  cursor: pointer;
+}
+
+@mixin modal-variant($state, $color) {
+  .modal {
+    &-#{$state} {
+      .modal-content {
+        border-color: $color;
+      }
+
+      .modal-header {
+        color: $c-white;
+        background-color: $color;
+      }
+
+      .modal__close-icon {
+        &:hover, &:focus {
+          color: darken($color, 50%);
+        }
+      }
+    }
+  }
+}
+
+@each $conf in $states {
+  $state: nth($conf, 1);
+  $color: nth($conf, 2);
+
+  @include modal-variant($state, $color);
+}

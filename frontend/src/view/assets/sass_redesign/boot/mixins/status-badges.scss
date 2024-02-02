@@ -1,0 +1,28 @@
+
+@mixin mailing-badge-variant($state, $background) {
+  @include default-status-badge-variant($state, $background, $mailing-state-icons);
+}
+
+@mixin workflow-badge-variant($state, $background) {
+  @include default-status-badge-variant($state, $background, $workflow-state-icons);
+}
+
+@mixin status-badge-variant($state, $background) {
+  @include default-status-badge-variant($state, $background, $default-state-icons);
+}
+
+@mixin default-status-badge-variant($state, $background, $state-icons) {
+  background-color: $background;
+  font-size: 10px;
+
+  @each $conf in $state-icons {
+    $icon-state: nth($conf, 1);
+    $icon: nth($conf, 2);
+
+    @if $state == $icon-state {
+      &:before {
+        content: '#{$icon}';
+      }
+    }
+  }
+}

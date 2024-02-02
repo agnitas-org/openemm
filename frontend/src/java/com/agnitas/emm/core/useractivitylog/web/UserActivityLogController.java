@@ -22,7 +22,7 @@ import org.agnitas.beans.AdminEntry;
 import org.agnitas.beans.factory.UserActivityLogExportWorkerFactory;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.service.UserActivityLogService;
-import org.agnitas.service.WebStorage;
+import com.agnitas.service.WebStorage;
 import org.agnitas.util.UserActivityLogActions;
 import org.agnitas.web.forms.FormUtils;
 import org.agnitas.web.forms.PaginationForm;
@@ -44,7 +44,7 @@ import java.util.List;
 @Controller
 @RequestMapping("/administration/useractivitylog")
 @PermissionMapping("user.activity.log")
-public class UserActivityLogController extends UserActivityLogControllerBase implements XssCheckAware {
+public class UserActivityLogController extends AbstractUserActivityLogController implements XssCheckAware {
 
     protected UserActivityLogController(WebStorage webStorage, AdminService adminService, UserActivityLogService userActivityLogService,
                                         UserActivityLogExportWorkerFactory exportWorkerFactory) {

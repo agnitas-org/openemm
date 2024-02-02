@@ -1,12 +1,9 @@
-<%@ page language="java" pageEncoding="UTF-8" errorPage="/error.do" %>
-<%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
+<%@ page language="java" pageEncoding="UTF-8" errorPage="/error.action" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-<%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
-<%@ taglib prefix="tiles" uri="http://struts.apache.org/tags-tiles" %>
+<%@ taglib prefix="tiles" uri="http://tiles.apache.org/tags-tiles" %>
 <%@ taglib prefix="s" uri="http://www.springframework.org/tags" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="form" uri="http://www.springframework.org/tags/form" %>
-<%@ taglib prefix="logic" uri="http://struts.apache.org/tags-logic" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
@@ -36,7 +33,7 @@
 
         <link rel="shortcut icon" href="<c:url value="/favicon.ico"/>">
 
-        <tiles:insert page="/WEB-INF/jsp/assets.jsp"/>
+        <tiles:insertTemplate template="/WEB-INF/jsp/assets.jsp"/>
     </head>
     <body class="systempage">
         <div class="system-tile" role="main">
@@ -53,19 +50,12 @@
             </div>
             <div class="system-tile-content">
                 <mvc:form servletRelativeAction="/logon/authenticate-host.action" data-form-focus="authenticationCode" modelAttribute="form">
-                    <div class="form-group <logic:messagesPresent property="authenticationCode">has-alert has-feedback</logic:messagesPresent>">
+                    <div class="form-group">
                         <div class="col-sm-4">
                             <label class="control-label"><i class="icon icon-unlock"></i> <mvc:message code="logon.hostauth.code"/></label>
                         </div>
                         <div class="col-sm-8">
                             <mvc:text path="authenticationCode" cssClass="form-control" maxlength="20"/>
-
-                            <logic:messagesPresent property="authenticationCode">
-                                <html:messages id="msg" property="authenticationCode">
-                                    <span class="icon icon-state-alert form-control-feedback"></span>
-                                    <div class="form-control-feedback-message">${msg}</div>
-                                </html:messages>
-                            </logic:messagesPresent>
                         </div>
                     </div>
                     
@@ -109,14 +99,22 @@
 
         <div id="notifications-container">
             <script type="text/javascript" data-message="">
-                <html:messages id="msg" property="org.apache.struts.action.GLOBAL_MESSAGE" message="false">
+                <emm:messages var="msg" type="error">
                     AGN.Lib.Messages('<mvc:message code="Error"/>', '${emm:escapeJs(msg)}', 'alert');
-                </html:messages>
-                <html:messages id="msg" property="de.agnitas.GLOBAL_WARNING">
+                </emm:messages>
+                <emm:messages var="msg" type="warning">
                     AGN.Lib.Messages('<mvc:message code="warning"/>', '${emm:escapeJs(msg)}', 'warning');
-                </html:messages>
+                </emm:messages>
             </script>
         </div>
+
+        <emm:messagesPresent type="error" formField="true">
+            <emm:fieldMessages var="msg" type="error" fieldNameVar="fieldName">
+                <script type="text/html" data-message="${fieldName}">
+                    ${msg}
+                </script>
+            </emm:fieldMessages>
+        </emm:messagesPresent>
 
         <%@include file="/WEB-INF/jsp/additional.jsp"%>
     </body>

@@ -15,6 +15,8 @@ public class RecipientsStatisticRowByCategoryIndex extends RecipientsStatisticRo
     private double value;
     private int sortOrder;
 
+    private int percent;
+
     public double getValue() {
         return value;
     }
@@ -29,5 +31,13 @@ public class RecipientsStatisticRowByCategoryIndex extends RecipientsStatisticRo
 
     public void setSortOrder(int sortOrder) {
         this.sortOrder = sortOrder;
+    }
+
+    public int getPercent() {
+        return percent;
+    }
+
+    public void setPercent(int percent) {
+        this.percent = percent;
     }
 }

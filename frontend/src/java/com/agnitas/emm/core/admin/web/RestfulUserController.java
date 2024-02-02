@@ -30,7 +30,7 @@ import org.agnitas.emm.core.commons.password.WebservicePasswordCheckImpl;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.service.UserActivityLogService;
-import org.agnitas.service.WebStorage;
+import com.agnitas.service.WebStorage;
 import org.agnitas.util.HttpUtils;
 import org.agnitas.util.Tuple;
 import org.agnitas.web.forms.FormSearchParams;
@@ -64,9 +64,9 @@ import com.agnitas.emm.core.admin.service.AdminGroupService;
 import com.agnitas.emm.core.admin.service.AdminSavingResult;
 import com.agnitas.emm.core.admin.service.AdminService;
 import com.agnitas.emm.core.logon.service.ComLogonService;
-import com.agnitas.emm.core.logon.web.LogonControllerBasic;
+import com.agnitas.emm.core.logon.web.LogonController;
 import com.agnitas.service.ComCSVService;
-import com.agnitas.service.ComPDFService;
+import com.agnitas.service.PdfService;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.web.mvc.Pollable;
 import com.agnitas.web.mvc.Popups;
@@ -96,7 +96,7 @@ public class RestfulUserController implements XssCheckAware {
     private final AdminChangesLogService adminChangesLogService;
     private final PasswordCheck passwordCheck = new WebservicePasswordCheckImpl();
     private final ComCSVService csvService;
-    private final ComPDFService pdfService;
+    private final PdfService pdfService;
     private final ConversionService conversionService;
 
     protected static final String FUTURE_TASK = "GET_ADMIN_LIST";
@@ -107,7 +107,7 @@ public class RestfulUserController implements XssCheckAware {
 			AdminGroupService adminGroupService, WebStorage webStorage,
 			UserActivityLogService userActivityLogService,
 			AdminChangesLogService adminChangesLogService,
-			ComCSVService csvService, ComPDFService pdfService,
+			ComCSVService csvService, PdfService pdfService,
 			ConversionService conversionService,
 			ComLogonService logonService) {
         this.configService = configService;
@@ -187,7 +187,7 @@ public class RestfulUserController implements XssCheckAware {
     	final int adminIdToEdit = form.getAdminID();
     	final int companyID = admin.getCompanyID();
     	final Admin adminToEdit = adminService.getAdmin(adminIdToEdit, companyID);
-    	logonService.sendWelcomeMail(adminToEdit, clientIp, LogonControllerBasic.PASSWORD_RESET_LINK_PATTERN);
+    	logonService.sendWelcomeMail(adminToEdit, clientIp, LogonController.PASSWORD_RESET_LINK_PATTERN);
     	popups.success("admin.password.sent");
     	return MESSAGES_VIEW;
     }

@@ -26,6 +26,7 @@ public class DownloadDataToUploadFileDescConverter implements Converter<Download
         fileDescription.setFirstName(source.getContactFirstname());
         fileDescription.setPhone(source.getContactPhone());
         fileDescription.setOwner(source.getAdminID());
+        fileDescription.setOwners(source.getOwners());
         fileDescription.setUploadId(source.getUploadID());
         fileDescription.setFileName(source.getFilename());
         return fileDescription;

@@ -1,0 +1,12 @@
+
+#dashboard-planning {
+  .tile-body {
+    @include flex(column, $gap);
+  }
+
+  #schedule-send-date-container {
+    @include flex(column, 5px);
+    @include font($font-size-base);
+    color: #4B4B4B;
+  }
+}

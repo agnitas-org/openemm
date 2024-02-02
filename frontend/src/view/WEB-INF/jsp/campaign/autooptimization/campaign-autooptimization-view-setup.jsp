@@ -1,6 +1,5 @@
-<%@ page contentType="text/html; charset=utf-8" import="com.agnitas.mailing.autooptimization.beans.ComOptimization" buffer="64kb" errorPage="/error.do" %>
+<%@ page contentType="text/html; charset=utf-8" import="com.agnitas.mailing.autooptimization.beans.ComOptimization" buffer="64kb" errorPage="/error.action" %>
 <%@ page import="com.agnitas.mailing.autooptimization.beans.impl.AutoOptimizationStatus" %>
-<%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>

@@ -16,10 +16,5 @@
 		<context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
 		<context:exclude-filter type="annotation" expression="org.springframework.web.bind.annotation.ControllerAdvice"/>
 	</context:component-scan>
-	
-	<bean id="securityContextAccess" class="org.agnitas.emm.springws.util.impl.SecurityContextAccessImpl" />
-	<bean id="userActivityLogAccess" class="org.agnitas.emm.springws.util.impl.UserActivityLogAccessImpl">
-		<constructor-arg ref="UserActivityLogService" />
-		<constructor-arg ref="securityContextAccess" />
-	</bean>
+
 </beans>

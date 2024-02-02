@@ -17,7 +17,7 @@ import com.agnitas.web.perm.annotations.PermissionMapping;
 @Controller
 @PermissionMapping("server.status")
 @RequestMapping("/serverstatus")
-public class ServerStatusControllerOpenemm extends ServerStatusControllerBasic {
+public class ServerStatusControllerOpenemm extends ServerStatusController {
 	public ServerStatusControllerOpenemm(ServerStatusService serverStatusService, UserActivityLogService userActivityLogService, JobQueueService jobQueueService, JavaMailService javaMailService, ComLogonService logonService, LicenseDao licenseDao, ComServerMessageDao serverMessageDao, ConfigService configService, ComCompanyDao companyDao) {
 		super(serverStatusService, userActivityLogService, jobQueueService, javaMailService, logonService, licenseDao, serverMessageDao, configService, companyDao);
 	}

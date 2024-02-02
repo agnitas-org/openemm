@@ -10,12 +10,38 @@
 
 package com.agnitas.emm.core.upload.service.impl;
 
-import java.io.ByteArrayInputStream;
+import com.agnitas.beans.Admin;
+import com.agnitas.dao.ComCompanyDao;
+import com.agnitas.emm.core.JavaMailService;
+import com.agnitas.emm.core.admin.service.AdminService;
+import com.agnitas.emm.core.upload.bean.DownloadData;
+import com.agnitas.emm.core.upload.bean.UploadData;
+import com.agnitas.emm.core.upload.bean.UploadFileExtension;
+import com.agnitas.emm.core.upload.dao.ComUploadDao;
+import com.agnitas.emm.core.upload.service.UploadService;
+import com.agnitas.emm.core.upload.service.dto.EmailEntry;
+import com.agnitas.emm.core.upload.service.dto.PageSetUp;
+import com.agnitas.emm.core.upload.service.dto.PageUploadData;
+import com.agnitas.emm.core.upload.service.dto.UploadFileDescription;
+import com.agnitas.messages.I18nString;
+import com.agnitas.service.ExtendedConversionService;
+import com.agnitas.web.mvc.Popups;
+import org.agnitas.beans.AdminEntry;
+import org.agnitas.beans.impl.PaginatedListImpl;
+import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.util.AgnUtils;
+import org.agnitas.util.DateUtilities;
+import org.agnitas.util.SafeString;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Required;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -27,48 +53,16 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import com.agnitas.emm.core.upload.bean.UploadFileExtension;
-import org.agnitas.beans.AdminEntry;
-import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DateUtilities;
-import org.agnitas.util.SafeString;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.struts.upload.FormFile;
-import org.springframework.beans.factory.annotation.Required;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
-
-import com.agnitas.beans.Admin;
-import com.agnitas.dao.ComCompanyDao;
-import com.agnitas.emm.core.JavaMailService;
-import com.agnitas.emm.core.admin.service.AdminService;
-import com.agnitas.emm.core.upload.bean.DownloadData;
-import com.agnitas.emm.core.upload.bean.UploadData;
-import com.agnitas.emm.core.upload.dao.ComUploadDao;
-import com.agnitas.emm.core.upload.service.UploadService;
-import com.agnitas.emm.core.upload.service.dto.EmailEntry;
-import com.agnitas.emm.core.upload.service.dto.PageSetUp;
-import com.agnitas.emm.core.upload.service.dto.PageUploadData;
-import com.agnitas.emm.core.upload.service.dto.UploadFileDescription;
-import com.agnitas.messages.I18nString;
-import com.agnitas.service.ExtendedConversionService;
-import com.agnitas.web.mvc.Popups;
-
 public class UploadServiceImpl implements UploadService {
 
     private static final Logger logger = LogManager.getLogger(UploadServiceImpl.class);
 
-    private ComUploadDao uploadDao;
-    private ExtendedConversionService conversionService;
+    protected ComUploadDao uploadDao;
+    protected ExtendedConversionService conversionService;
     private ComCompanyDao companyDao;
-    private AdminService adminService;
+    protected AdminService adminService;
     private JavaMailService javaMailService;
-    private ConfigService configService;
+    protected ConfigService configService;
 
     @Override
     public boolean exists(int id) {
@@ -232,82 +226,17 @@ public class UploadServiceImpl implements UploadService {
         return data;
     }
 
-    private void calculateExpireDate(int expireRange, PageUploadData pageUploadData) {
+    protected void calculateExpireDate(int expireRange, PageUploadData pageUploadData) {
         LocalDate date = DateUtilities.toLocalDate(pageUploadData.getCreateDate());
         Date deleteDate = DateUtilities.toDate(date.plusDays(expireRange));
         pageUploadData.setDeleteDate(deleteDate);
     }
 
-    // TODO: GWUA-4801 replace magic "pdf" or "csv" extension string by constant or enum
-    @Override
-    public List<UploadData> getUploadsByExtension(Admin admin, String extension) {
-        return uploadDao.getOverviewListByExtention(admin, Collections.singletonList(Objects.requireNonNull(extension)));
-    }
-    
     @Override
     public List<UploadData> getUploadsByExtension(Admin admin, UploadFileExtension... extensions) {
         return uploadDao.getOverviewListByExtention(admin, Arrays.stream(extensions).map(UploadFileExtension::getName).collect(Collectors.toList()));
     }
 
-    @Override
-    @Deprecated
-    public FormFile getFormFileByUploadId(int uploadID, String mime){
-        // TODO: The byteArray should not be kept in memory, because it might be quite huge. Better use a Inputstream or temporary local file
-        final UploadData uploadData = uploadDao.loadData(uploadID);
-        final String fileName = uploadData.getFilename();
-        final byte[] fileData = uploadData.getData();
-        final Integer fileSize = uploadData.getFilesize();
-        final String mimeType = mime;
-
-        return new FormFile() {
-
-            @Override
-            public void destroy() {
-                // nothing to do
-            }
-
-            @Override
-            public String getContentType() {
-                return mimeType;
-            }
-
-            @Override
-            public byte[] getFileData() throws FileNotFoundException, IOException {
-                return fileData;
-            }
-
-            @Override
-            public String getFileName() {
-                return fileName;
-            }
-
-            @Override
-            public int getFileSize() {
-                return fileSize;
-            }
-
-            @Override
-            public InputStream getInputStream() throws FileNotFoundException, IOException {
-                return new ByteArrayInputStream(fileData);
-            }
-
-            @Override
-            public void setContentType(String contentType) {
-                // nothing to do
-            }
-
-            @Override
-            public void setFileName(String unusedFileName) {
-                // nothing to do
-            }
-
-            @Override
-            public void setFileSize(int unusedFileSize) {
-                // nothing to do
-            }
-        };
-    }
-	
     @Required
 	public void setUploadDao(ComUploadDao uploadDao) {
 		this.uploadDao = uploadDao;

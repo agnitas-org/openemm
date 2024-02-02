@@ -84,20 +84,25 @@
                 </div>
             </div>
         </c:if>
-        <div class="form-group">
-            <div class="col-sm-4">
-                <label class="control-label checkbox-control-label" for="mailingContentTypeAdvertising">
-                    <mvc:message code="mailing.contentType.advertising"/>
-                    <button class="icon icon-help" data-help="help_${helplanguage}/mailing/view_base/AdvertisingMsg.xml" tabindex="-1" type="button"></button>
-                </label>
+        <emm:ShowByPermission token="settings.extended">
+            <div class="form-group">
+                <div class="col-sm-4">
+                    <label class="control-label checkbox-control-label" for="mailingContentTypeAdvertising">
+                        <mvc:message code="mailing.contentType.advertising"/>
+                        <button class="icon icon-help" data-help="help_${helplanguage}/mailing/view_base/AdvertisingMsg.xml" tabindex="-1" type="button"></button>
+                    </label>
+                </div>
+                <div class="col-sm-8">
+                    <label class="toggle">
+                        <mvc:checkbox path="mailingContentTypeAdvertising" id="mailingContentTypeAdvertising"/>
+                        <div class="toggle-control"></div>
+                    </label>
+                </div>
             </div>
-            <div class="col-sm-8">
-                <label class="toggle">
-                    <mvc:checkbox path="mailingContentTypeAdvertising" id="mailingContentTypeAdvertising"/>
-                    <div class="toggle-control"></div>
-                </label>
-            </div>
-        </div>
+        </emm:ShowByPermission>
+        <emm:HideByPermission token="settings.extended">
+            <mvc:hidden path="mailingContentTypeAdvertising"/>
+        </emm:HideByPermission>
         <%@include file="../fragments/mailing-frequency-toggle.jspf" %>
 
         <c:if test="${isMailingGrid and (not empty mailingId and mailingId ne 0 or isCopying)}">

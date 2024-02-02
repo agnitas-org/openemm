@@ -28,7 +28,7 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.Admin;
-import com.agnitas.beans.ComTrackableLink;
+import com.agnitas.beans.TrackableLink;
 import com.agnitas.beans.LinkProperty;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.linkcheck.service.LinkService;
@@ -185,14 +185,14 @@ public class FormTrackableLinkServiceImpl implements FormTrackableLinkService {
 
         Map<String, ComTrackableUserFormLink> existingLinks = trackableLinkDao.getUserFormTrackableLinks(userFormId, companyId);
 
-        List<ComTrackableLink> trackableLinks = successSettingsLinkResult.getTrackableLinks();
+        List<TrackableLink> trackableLinks = successSettingsLinkResult.getTrackableLinks();
         trackableLinks.addAll(errorSettingsLinkResult.getTrackableLinks());
 
         List<LinkProperty> defaultExtensions = linkService.getDefaultExtensions(companyId);
 
         //collect objects with new links
         List<ComTrackableUserFormLink> userFormLinks = new ArrayList<>();
-        for(ComTrackableLink link: trackableLinks) {
+        for(TrackableLink link: trackableLinks) {
             String url = link.getFullUrl();
             ComTrackableUserFormLink trackableLink = existingLinks.get(url);
             if (trackableLink == null) {

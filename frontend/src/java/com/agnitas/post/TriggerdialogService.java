@@ -16,6 +16,7 @@ import java.util.Map;
 
 import com.agnitas.beans.DeliveryStat;
 import com.agnitas.beans.Mailing;
+import org.agnitas.emm.core.mailing.beans.LightweightMailing;
 
 public interface TriggerdialogService {
 
@@ -61,9 +62,15 @@ public interface TriggerdialogService {
 
 	void storeMandatoryFieldsIfNotExists(int mailingId, int companyID);
 
+	void createMappingsForCustomAddressFields(int mailingId, int companyId);
+
+	List<String> getDefaultAddressFields(int companyId);
+
 	void storeNewExternalFields(List<TriggerdialogField> fields);
 
 	List<String> getExternalFieldsNames(List<TriggerdialogField> externalFields);
 
 	TriggerdialogDeliveryStatus getTriggerdialogDeliveryStatusByMailingID(int mailingID) throws Exception;
+
+	List<LightweightMailing> getMailingsDependentOnProfileField(String column, int companyId);
 }

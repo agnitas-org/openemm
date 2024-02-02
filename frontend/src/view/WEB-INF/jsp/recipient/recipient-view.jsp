@@ -1,4 +1,4 @@
-<%@ page contentType="text/html; charset=utf-8" errorPage="/error.do" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.action" %>
 <%@ page import="org.agnitas.util.importvalues.MailType" %>
 <%@ page import="com.agnitas.beans.ProfileField" %>
 <%@ page import="org.agnitas.util.DbColumnType" %>
@@ -168,7 +168,6 @@
                             </div>
                         </div>
 
-                        <emm:ShowByPermission token="recipient.tracking.veto">
 						<div class="form-group">
                             <div class="col-sm-4">
                               <label for="trackingVeto" class="control-label checkbox-control-label">
@@ -183,7 +182,6 @@
   								</label>
             				</div>
                         </div>
-                        </emm:ShowByPermission>
 
                         <div class="form-group">
                             <div class="col-sm-4">

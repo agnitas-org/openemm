@@ -1,4 +1,4 @@
-<%@ page contentType="text/html; charset=utf-8" errorPage="/error.do" import="
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.action" import="
 	java.util.Locale,
 	org.agnitas.emm.core.logintracking.*" %>
 <%@ page import="com.agnitas.beans.AdminPreferences" %>

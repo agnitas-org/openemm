@@ -11,6 +11,9 @@
 package com.agnitas.exception;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -19,7 +22,8 @@ import com.agnitas.messages.Message;
 public class ValidationException extends RuntimeException {
 	private static final long serialVersionUID = -7339419974375371845L;
 	
-	private Set<Message> errors;
+	private Set<Message> errors = new HashSet<>();
+    private Map<String, Message> fieldsErrors = new HashMap<>();
 
     public ValidationException(Set<Message> errors) {
     	super("ValidationException");
@@ -36,7 +40,15 @@ public class ValidationException extends RuntimeException {
                 .collect(Collectors.toSet());
     }
 
+    public ValidationException(Map<String, Message> fieldsErrors) {
+        this.fieldsErrors = fieldsErrors;
+    }
+
     public Set<Message> getErrors() {
         return errors;
+    }
+
+    public Map<String, Message> getFieldsErrors() {
+        return fieldsErrors;
     }
 }

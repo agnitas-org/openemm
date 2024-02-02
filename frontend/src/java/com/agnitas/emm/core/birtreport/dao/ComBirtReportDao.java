@@ -29,6 +29,8 @@ public interface ComBirtReportDao {
 
     void deactivateReportSettings(int reportId, Collection<Integer> settingsTypes);
 
+    boolean hasActiveDelivery(int reportId, Collection<Integer> settingsTypes);
+
     void updateReportMailinglists(int reportId, int reportType, List<Integer> mailinglistIds);
 
     void insertSentMailings(Integer reportId, Integer companyID, List<Integer> sentMailings);

@@ -58,8 +58,10 @@ public class MailingSendForm extends PaginationForm {
     private int textEmailsCount;
     private Map<Integer, Integer> sentStatistics = new HashMap<>();
     private int templateId;
-    private MailingIntervalSettingsForm intervalSettings;
+    private boolean isActivateAgainToday;
     private Date date;
+    private MailingIntervalSettingsForm intervalSettings;
+    private SecurityAndNotificationsSettingsForm securitySettings;
 
     public int getWorkflowId() {
         return workflowId;
@@ -399,5 +401,25 @@ public class MailingSendForm extends PaginationForm {
 
     public void setDate(Date date) {
         this.date = date;
+    }
+
+    public boolean isActivateAgainToday() {
+        return isActivateAgainToday;
+    }
+
+    public void setActivateAgainToday(boolean activateAgainToday) {
+        isActivateAgainToday = activateAgainToday;
+    }
+
+    public SecurityAndNotificationsSettingsForm getSecuritySettings() {
+        if (securitySettings == null) {
+            securitySettings = new SecurityAndNotificationsSettingsForm();
+        }
+
+        return securitySettings;
+    }
+
+    public void setSecuritySettings(SecurityAndNotificationsSettingsForm securitySettings) {
+        this.securitySettings = securitySettings;
     }
 }

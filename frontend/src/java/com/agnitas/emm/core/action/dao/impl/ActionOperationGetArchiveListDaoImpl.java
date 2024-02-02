@@ -19,8 +19,8 @@ import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.emm.core.action.operations.ActionOperationGetArchiveListParameters;
 
 public class ActionOperationGetArchiveListDaoImpl extends AbstractActionOperationDaoImpl<ActionOperationGetArchiveListParameters> {
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(ActionOperationGetArchiveListDaoImpl.class);
+
+	private static final Logger logger = LogManager.getLogger(ActionOperationGetArchiveListDaoImpl.class);
 	
 	@Override
 	protected void processGetOperation(ActionOperationGetArchiveListParameters operation) {

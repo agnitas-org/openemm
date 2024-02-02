@@ -30,6 +30,7 @@ import com.agnitas.dao.ComMailingDao;
 import com.agnitas.dao.ComTargetDao;
 import com.agnitas.dao.DynamicTagDao;
 import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.maildrop.service.MaildropService;
 import com.agnitas.emm.core.mailingcontent.service.MailingContentService;
 import com.agnitas.emm.core.thumbnails.service.ThumbnailService;
 import com.agnitas.emm.core.useractivitylog.dao.RestfulUserActivityLogDao;
@@ -40,6 +41,8 @@ import com.agnitas.emm.restful.ResponseType;
 import com.agnitas.emm.restful.RestfulClientException;
 import com.agnitas.emm.restful.RestfulNoDataFoundException;
 import com.agnitas.emm.restful.RestfulServiceHandler;
+import com.agnitas.emm.util.html.HtmlChecker;
+import com.agnitas.emm.util.html.HtmlCheckerException;
 import com.agnitas.json.Json5Reader;
 import com.agnitas.json.JsonArray;
 import com.agnitas.json.JsonDataType;
@@ -66,6 +69,7 @@ public class ContentRestfulServiceHandler implements RestfulServiceHandler {
 	private ComTargetDao targetDao;
 	private ThumbnailService thumbnailService;
 	private MailingContentService mailingContentService;
+    private MaildropService maildropService;
 
 	@Required
 	public void setUserActivityLogDao(RestfulUserActivityLogDao userActivityLogDao) {
@@ -95,6 +99,11 @@ public class ContentRestfulServiceHandler implements RestfulServiceHandler {
 	@Required
 	public void setMailingContentService(MailingContentService mailingContentService) {
 		this.mailingContentService = mailingContentService;
+	}
+	
+	@Required
+	public void setMaildropService(MaildropService maildropService) {
+		this.maildropService = maildropService;
 	}
 
 	@Override
@@ -277,6 +286,8 @@ public class ContentRestfulServiceHandler implements RestfulServiceHandler {
 		int mailingID = Integer.parseInt(restfulContext[0]);
 		if (!mailingDao.exist(mailingID, admin.getCompanyID())) {
 			throw new RestfulClientException("Invalid not existing MailingID: " + mailingID);
+		} else if (!isMailingEditable(mailingID, admin)) {
+			throw new RestfulClientException("This mailing may not be changed, because it was already sent or is an active actionbased mailing");
 		}
 		
 		if (restfulContext.length == 1) {
@@ -395,6 +406,12 @@ public class ContentRestfulServiceHandler implements RestfulServiceHandler {
 						if ("name".equals(entry.getKey())) {
 							if (entry.getValue() != null && entry.getValue() instanceof String) {
 								dynamicTag.setDynName((String) entry.getValue());
+								// Check for unallowed html tags
+								try {
+									HtmlChecker.checkForNoHtmlTags(dynamicTag.getDynName());
+								} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
+									throw new RestfulClientException("Content name contains unallowed HTML tags");
+								}
 							} else {
 								throw new RestfulClientException("Invalid data type for 'name'. String expected");
 							}
@@ -436,6 +453,12 @@ public class ContentRestfulServiceHandler implements RestfulServiceHandler {
 											} else if ("text".equals(contentItemEntry.getKey())) {
 												if (contentItemEntry.getValue() != null && contentItemEntry.getValue() instanceof String) {
 													dynamicTagContent.setDynContent((String) contentItemEntry.getValue());
+													// Check for unallowed html tags
+													try {
+														HtmlChecker.checkForUnallowedHtmlTags(dynamicTagContent.getDynContent(), true);
+													} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
+														throw new RestfulClientException("Mailing content contains unallowed HTML tags");
+													}
 												} else {
 													throw new RestfulClientException("Invalid data type for 'text'. String expected");
 												}
@@ -477,4 +500,19 @@ public class ContentRestfulServiceHandler implements RestfulServiceHandler {
 	private void writeActivityLog(String description, HttpServletRequest request, Admin admin) {
 		writeActivityLog(userActivityLogDao, description, request, admin);
 	}
+
+    /**
+     * Check whether or not a mailing is editable.
+     * Basically a world sent mailing is not editable but there's a permission {@link com.agnitas.emm.core.Permission#MAILING_CONTENT_CHANGE_ALWAYS}
+     * that unlocks sent mailing so it could be edited anyway.
+     *
+     * @return whether ({@code true}) or not ({@code false}) mailing editing is permitted.
+     */
+    private boolean isMailingEditable(int mailingId, Admin admin) {
+        if (maildropService.isActiveMailing(mailingId, admin.getCompanyID())) {
+            return admin.permissionAllowed(Permission.MAILING_CONTENT_CHANGE_ALWAYS);
+        } else {
+            return true;
+        }
+    }
 }

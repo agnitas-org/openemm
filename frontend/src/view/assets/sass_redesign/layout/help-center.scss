@@ -1,0 +1,18 @@
+
+#help-center-modal {
+  .modal-content {
+    height: 600px;
+    
+    @include media-breakpoint-down(lg) {
+      height: 100vh;
+    }
+  }
+}
+
+#help-center-support-tab {
+  @include media-breakpoint-down(lg) {
+    .bordered-box {
+      padding: $gap $gap-sm $gap-sm;
+    }
+  }  
+}

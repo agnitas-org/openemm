@@ -1,0 +1,72 @@
+
+// some styles set in table.js
+
+$ag-theme: 'bootstrap';
+
+.ag-theme-#{$ag-theme} {
+  --ag-row-border-style: none;
+  --ag-border-radius: $border-radius;
+  --ag-row-height: 39px;
+  --ag-cell-horizontal-padding: #{$gap-sm};
+  --ag-row-hover-color: rgba(75, 75, 75, 0.30);
+  --ag-font-size: 1rem;
+  --ag-font-family: 'Poppins', sans-serif;
+  --ag-border-color: #{$border-color};
+
+  .ag-root-wrapper {
+    @include border-top-radius;
+  }
+
+  --ag-header-foreground-color: #{$gray-700};
+  --ag-header-background-color: #{$gray-100};
+
+  //header separator
+  --ag-header-column-separator-display: block;
+  --ag-header-column-separator-height: 75%;
+  --ag-header-column-separator-width: 1px;
+  --ag-header-column-separator-color: #{$gray-400};
+
+  //resizable separator
+  --ag-header-column-resize-handle-display: block;
+  --ag-header-column-resize-handle-height: 75%;
+  --ag-header-column-resize-handle-width: 1px;
+  --ag-header-column-resize-handle-color: #{$gray-400};
+
+  .ag-header-cell-label {
+    font-weight: $font-weight-semibold;
+  }
+
+  .ag-header-cell {
+    color: $gray-700;
+    .ag-header-icon {
+      color: $gray-700;
+    }
+
+    &:last-child:after {
+      display: none;
+    }
+
+    &[aria-sort=ascending], &[aria-sort=descending] {
+      color: $c-blue-27;
+      .ag-header-icon {
+        color: $c-blue-27;
+      }
+    }
+  }
+
+  .ag-header-icon {
+    padding-right: $gap-sm;
+  }
+
+  // When using "domLayout": "autoHeight", there is a minimum of 150px set to the grid rows section.
+  // This is to avoid an empty grid which would look weird.
+  // To remove this minimum height, add the following CSS:
+  .ag-center-cols-clipper {
+    min-height: unset !important;
+  }
+
+  .ag-cell-focus {
+    border-color: transparent !important;
+    box-shadow: none !important;
+  }
+}

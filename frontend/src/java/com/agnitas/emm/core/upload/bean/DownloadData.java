@@ -15,6 +15,7 @@ import java.text.DateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.List;
 import java.util.Locale;
 
 import com.agnitas.emm.core.upload.dao.ComUploadDao;
@@ -28,7 +29,8 @@ import com.agnitas.emm.core.upload.dao.ComUploadDao;
  */
 public class DownloadData {
 	private int uploadID;
-	private int adminID;
+	private int adminID; // remove after EMMGUI-714 has been tested and it's not used anymore. new field - owners
+	private List<Integer> owners;
 	private int fromAdminID;
 	private String adminName;
 	private Date creationDate;
@@ -130,7 +132,15 @@ public class DownloadData {
 	public int getAdminID() {
 		return adminID;
 	}
-	
+
+    public List<Integer> getOwners() {
+        return owners;
+    }
+
+    public void setOwners(List<Integer> owners) {
+        this.owners = owners;
+    }
+
 	public int getFromAdminID() {
 		return fromAdminID;
 	}

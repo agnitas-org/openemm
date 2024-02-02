@@ -19,6 +19,7 @@ import com.agnitas.emm.core.import_profile.component.ImportProfileFormValidator;
 import com.agnitas.emm.core.import_profile.form.ImportProfileForm;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
 import com.agnitas.service.ColumnInfoService;
+import com.agnitas.service.WebStorage;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.perm.annotations.PermissionMapping;
 import org.agnitas.beans.ImportProfile;
@@ -28,7 +29,6 @@ import org.agnitas.emm.core.recipient.service.RecipientService;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.service.ImportProfileService;
 import org.agnitas.service.UserActivityLogService;
-import org.agnitas.service.WebStorage;
 import org.agnitas.util.ImportUtils;
 import org.agnitas.util.importvalues.Charset;
 import org.agnitas.util.importvalues.CheckForDuplicates;
@@ -51,21 +51,16 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 import java.util.TimeZone;
-import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_CUSTOMER_ID;
 import static org.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
-import static org.agnitas.util.Const.Mvc.ERROR_MSG;
 import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
 import static org.agnitas.util.Const.Mvc.SELECTION_DELETED_MSG;
 
@@ -103,7 +98,7 @@ public class ImportProfileController {
     @RequestMapping("/list.action")
     public String list(@ModelAttribute("form") PaginationForm form, Admin admin, Model model) {
         FormUtils.syncNumberOfRows(webStorage, WebStorage.IMPORT_PROFILE_OVERVIEW, form);
-        model.addAttribute("profiles", importProfileService.getImportProfilesByCompanyId(admin.getCompanyID()));
+        model.addAttribute("profiles", importProfileService.getAvailableImportProfiles(admin));
         model.addAttribute("defaultProfileId", admin.getDefaultImportProfileID());
 
         return "import_wizard_profile_list";
@@ -157,11 +152,6 @@ public class ImportProfileController {
 
     @PostMapping("/save.action")
     public String save(@ModelAttribute ImportProfileForm form, Admin admin, Popups popups) throws Exception {
-        if (!isSavePossible(form, admin)) {
-            popups.alert(ERROR_MSG);
-            return MESSAGES_VIEW;
-        }
-
         if (!formValidator.validate(form, admin, popups)) {
             return MESSAGES_VIEW;
         }
@@ -176,12 +166,11 @@ public class ImportProfileController {
         profile.setCompanyId(admin.getCompanyID());
         profile.setAdminId(admin.getAdminID());
 
-        if (profile.getActionForNewRecipients() <= 0 && admin.permissionAllowed(Permission.MAILINGLIST_SHOW)) {
+        if (profile.getActionForNewRecipients() <= 0 && importProfileService.isAllowedToShowMailinglists(admin)) {
             profile.setMailinglists(getSelectedMailinglists(form.getMailinglist()));
         }
 
-        resetForbiddenProfileSettings(profile, existingProfile, admin);
-        importProfileService.saveImportProfileWithoutColumnMappings(profile);
+        importProfileService.saveImportProfileWithoutColumnMappings(profile, admin);
 
         if (existingProfile != null) {
             writeImportChangeLog(existingProfile, profile, admin);
@@ -196,39 +185,6 @@ public class ImportProfileController {
         checkIfProfileKeyColumnIndexed(profile, popups);
 
         return String.format("redirect:/import-profile/%d/view.action", profile.getId());
-    }
-
-    protected void resetForbiddenProfileSettings(ImportProfile profile, ImportProfile existingProfile, Admin admin) {
-        if (!admin.permissionAllowed(Permission.IMPORT_MAILINGLISTS_ALL)) {
-            profile.setMailinglistsAll(existingProfile != null && existingProfile.isMailinglistsAll());
-        }
-
-        if (!admin.permissionAllowed(Permission.MAILINGLIST_SHOW) && existingProfile != null) {
-            profile.setMailinglistsAll(existingProfile.isMailinglistsAll());
-            profile.setMailinglists(existingProfile.getMailinglistIds());
-        }
-
-        if (!admin.permissionAllowed(Permission.IMPORT_MODE_DUPLICATES)) {
-            profile.setUpdateAllDuplicates(existingProfile != null && existingProfile.getUpdateAllDuplicates());
-        }
-
-        if (!admin.permissionAllowed(Permission.IMPORT_MODE_DOUBLECHECKING)) {
-            profile.setCheckForDuplicates(existingProfile == null ? CheckForDuplicates.NO_CHECK.getIntValue() : existingProfile.getCheckForDuplicates());
-        }
-
-        if (existingProfile != null && existingProfile.getFirstKeyColumn().equalsIgnoreCase(COLUMN_CUSTOMER_ID)) {
-            if (!admin.permissionAllowed(Permission.IMPORT_CUSTOMERID)) {
-                profile.setFirstKeyColumn(COLUMN_CUSTOMER_ID);
-            }
-        }
-
-        if (!admin.permissionAllowed(Permission.IMPORT_MAPPING_AUTO)) {
-            profile.setAutoMapping(existingProfile != null && existingProfile.isAutoMapping());
-        }
-
-        if (!admin.permissionAllowed(Permission.IMPORT_MEDIATYPE)) {
-            profile.setMediatypes(new HashSet<>());
-        }
     }
 
     @GetMapping("/{id:\\d+}/confirmDelete.action")
@@ -246,6 +202,10 @@ public class ImportProfileController {
         ImportProfile importProfile = importProfileService.getImportProfileById(id);
 
         if (importProfile != null) {
+            if (!importProfileService.isManageAllowed(importProfile, admin)) {
+                throw new UnsupportedOperationException();
+            }
+
             AutoImportLight dependentAutoImport = findDependentAutoImport(id);
 
             if (dependentAutoImport != null) {
@@ -268,12 +228,18 @@ public class ImportProfileController {
         model.addAttribute("nullValuesActions", NullValuesAction.values());
         model.addAttribute("checkForDuplicatesValues", CheckForDuplicates.values());
         model.addAttribute("availableTimeZones", TimeZone.getAvailableIDs());
-        model.addAttribute("importModes", getAvailableImportModes(form, admin));
+        model.addAttribute("importModes", importProfileService.getAvailableImportModes(admin));
         model.addAttribute("availableImportProfileFields", getAvailableImportProfileFields(admin));
         model.addAttribute("availableMailinglists", mailinglistApprovalService.getEnabledMailinglistsForAdmin(admin));
-        model.addAttribute("isUserHasPermissionForSelectedMode", isUserHasPermissionForSelectedMode(admin, form));
+        model.addAttribute("isUserHasPermissionForSelectedMode", importProfileService.isImportModeAllowed(form.getImportMode(), admin));
         model.addAttribute("allowedModesForAllMailinglists", getAllowedModesForAllMailinglists());
         model.addAttribute("availableGenderIntValues", getAvailableGenders(admin));
+        model.addAttribute("isCheckForDuplicatesAllowed", importProfileService.isCheckForDuplicatesAllowed(admin));
+        model.addAttribute("isUpdateDuplicatesChangeAllowed", importProfileService.isUpdateDuplicatesChangeAllowed(admin));
+        model.addAttribute("isPreprocessingAllowed", importProfileService.isPreprocessingAllowed(admin));
+        model.addAttribute("isAllMailinglistsAllowed", importProfileService.isAllMailinglistsAllowed(admin));
+        model.addAttribute("isCustomerIdImportAllowed", importProfileService.isCustomerIdImportAllowed(admin));
+        model.addAttribute("isAllowedToShowMailinglists", importProfileService.isAllowedToShowMailinglists(admin));
 
         if (importProfile != null) {
             if (!importProfile.isMailinglistsAll() && importProfile.getActionForNewRecipients() != 0) {
@@ -360,43 +326,8 @@ public class ImportProfileController {
         }
     }
 
-    protected boolean isSavePossible(ImportProfileForm form, Admin admin) throws Exception {
-        return isUserHasPermissionForSelectedMode(admin, form)
-                && (form.getImportProcessActionID() == 0 || admin.permissionAllowed(Permission.IMPORT_PREPROCESSING))
-                && (!"json".equalsIgnoreCase(form.getDatatype()));
-    }
-
-    protected boolean isUserHasPermissionForSelectedMode(Admin admin, ImportProfileForm form) throws Exception {
-        String token = ImportMode.getFromInt(form.getImportMode()).getMessageKey();
-        return admin.permissionAllowed(Permission.getPermissionByToken(token));
-    }
-
     protected AutoImportLight findDependentAutoImport(int profileId) {
         return null;
-    }
-
-    private Set<ImportMode> getAvailableImportModes(ImportProfileForm form, Admin admin) throws Exception {
-        Set<ImportMode> modes = new TreeSet<>(Comparator.comparingInt(ImportMode::getIntValue));
-        modes.addAll(getAvailableImportModesForAdmin(admin));
-        if (form.getId() != 0) {
-            modes.add(ImportMode.getFromInt(form.getImportMode()));
-        }
-
-        return modes;
-    }
-
-    private List<ImportMode> getAvailableImportModesForAdmin(Admin admin) {
-        return ImportMode.values().stream()
-                .filter(mode -> isImportModeAllowed(mode, admin))
-                .collect(Collectors.toList());
-    }
-
-    private boolean isImportModeAllowed(ImportMode mode, Admin admin) {
-        try {
-            return admin.permissionAllowed(Permission.getPermissionsByToken(mode.getMessageKey()));
-        } catch (Exception e) {
-            return false;
-        }
     }
 
     private List<ProfileField> getAvailableImportProfileFields(Admin admin) throws Exception {

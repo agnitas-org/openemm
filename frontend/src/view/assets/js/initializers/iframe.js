@@ -54,7 +54,9 @@ AGN.Lib.CoreInitializer.new('iframe', function($scope) {
         height+= heightSafety;
 
         $el.height(height);
-        $el.width(width);
+        if ($el.data('max-width') !== '100%') {
+          $el.width(width);
+        }
 
         if (mediaQuery && isFF) {
           $el.contents().find('body').css('overflow', 'hidden');
@@ -66,11 +68,13 @@ AGN.Lib.CoreInitializer.new('iframe', function($scope) {
       resizeArea = function() {
         $page.width('auto');
 
-        if ($el.width() > maxWidth && maxWidth > $page.width()) {
-          $wrapper.width($el.width());
-        } else {
-          $wrapper.width(Math.min(maxWidth, $page.width()));
-          // $wrapper.parent().width(maxWidth);
+        if ($el.data('max-width') !== '100%') {
+          if ($el.width() > maxWidth && maxWidth > $page.width()) {
+            $wrapper.width($el.width());
+          } else {
+            $wrapper.width(Math.min(maxWidth, $page.width()));
+            // $wrapper.parent().width(maxWidth);
+          }
         }
 
         if (!mediaQuery) {

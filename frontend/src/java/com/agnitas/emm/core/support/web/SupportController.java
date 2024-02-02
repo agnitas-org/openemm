@@ -25,6 +25,7 @@ import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
 
@@ -44,6 +45,11 @@ public class SupportController implements XssCheckAware {
         this.configService = configService;
         this.formNotFoundEmailTemplate = formNotFoundEmailTemplate;
         this.formNotFoundUrlParameterTemplate = formNotFoundUrlParameterTemplate;
+    }
+
+    @GetMapping("/help-center.action")
+    public String helpCenter() {
+        return "help_center";
     }
 
     @PostMapping("/sendFormReport.action")

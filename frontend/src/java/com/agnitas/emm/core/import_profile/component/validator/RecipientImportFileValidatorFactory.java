@@ -26,7 +26,7 @@ public class RecipientImportFileValidatorFactory {
     }
 
     public RecipientImportFileValidator detectValidator(ImportProfile profile) throws Exception {
-        ImportDataType dataType = ImportDataType.valueOf(profile.getDatatype());
+        ImportDataType dataType = ImportDataType.getImportDataTypeForName(profile.getDatatype());
 
         if (ImportDataType.CSV.equals(dataType)) {
             return csvImportFileValidator;

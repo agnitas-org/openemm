@@ -209,7 +209,19 @@ public class ComBirtReportDaoImpl extends PaginatedBaseDaoImpl implements ComBir
         }
     }
 
-    @Override
+	@Override
+	public boolean hasActiveDelivery(int reportId, Collection<Integer> settingsTypes) {
+		if (CollectionUtils.isEmpty(settingsTypes)) {
+			return false;
+		}
+
+		String query = "SELECT COUNT(*) FROM birtreport_parameter_tbl WHERE parameter_name = ? AND parameter_value = 'true' " +
+				"AND report_id = ? AND report_type IN (" + joinForIn(settingsTypes) + ")";
+
+		return selectIntWithDefaultValue(logger, query, 0, ComBirtReportSettings.ENABLED_KEY, reportId) > 0;
+	}
+
+	@Override
     public void updateReportMailinglists(int reportId, int reportType, List<Integer> mailinglistIds) {
         String mailinglistIdsString = mailinglistIds.stream().map(String::valueOf).collect(Collectors.joining(","));
         update(logger, "UPDATE birtreport_parameter_tbl SET parameter_value = ? " +

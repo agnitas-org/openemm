@@ -358,9 +358,9 @@ public class BC {
 		String query;
 
 		if (tableCreated) {
-			query = "SELECT customer_id, mediatype FROM " + table;
+			query = "SELECT customer_id, user_status, mediatype FROM " + table;
 		} else {
-			query = "SELECT customer_id, mediatype FROM " + bindingTable + " bind WHERE " + partCustomer (false);
+			query = "SELECT customer_id, user_status, mediatype FROM " + bindingTable + " bind WHERE " + partCustomer (false);
 		}
 		return query;
 	}
@@ -435,6 +435,8 @@ public class BC {
 	private void getColumns(List<String> collect, Map<String, String> cmap) {
 		collect.add("customer_id");
 		cmap.put("customer_id", "cust.customer_id");
+		collect.add("user_status");
+		cmap.put("user_status", "bind.user_status");
 		collect.add("user_type");
 		cmap.put("user_type", "bind.user_type");
 		collect.add("mediatype");
@@ -489,7 +491,7 @@ public class BC {
 				String mss = data.getMediaSubselect();
 				String stmt;
 
-				stmt = "(bind.user_type = '" + userType + "' AND bind.mailinglist_id IN (0, " + data.mailinglist.id() + "))";
+				stmt = "(bind.user_type = '" + userType + "' AND bind.mailinglist_id IN (0, " + data.mailinglist.id() + ") AND bind.user_status != " + UserStatus.Bounce.getStatusCode() + ")";
 				if (mss != null) {
 					stmt += " AND " + mss;
 				}

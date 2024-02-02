@@ -10,7 +10,11 @@
 
 package com.agnitas.emm.core.upload.forms;
 
+import java.util.HashSet;
+import java.util.Set;
+
 public class UploadFileForm {
+
     private int uploadId;
     private String name;
     private String firstName;
@@ -18,7 +22,8 @@ public class UploadFileForm {
     private String email;
     private String[] notifyEmail;
     private String description;
-    private int owner;
+    private int owner; // remove after EMMGUI-714 has been tested and it's not used anymore. new field - owners
+    private Set<Integer> owners = new HashSet<>();
 
     public int getUploadId() {
         return uploadId;
@@ -82,6 +87,14 @@ public class UploadFileForm {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public Set<Integer> getOwners() {
+        return owners;
+    }
+
+    public void setOwners(Set<Integer> owners) {
+        this.owners = owners;
     }
 }
 

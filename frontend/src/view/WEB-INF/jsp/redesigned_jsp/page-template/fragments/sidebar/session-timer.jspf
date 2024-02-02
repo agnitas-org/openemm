@@ -1,0 +1,18 @@
+
+<script data-initializer="session-timer" type="application/json">
+    {
+        "creationTime": "${pageContext.session.creationTime}",
+        "lastAccessedTime": "${pageContext.session.lastAccessedTime}",
+        "maxInactiveInterval": "${pageContext.session.maxInactiveInterval}",
+        "sessionInfoUrl": "<c:url value="/session/info.action" />"
+    }
+</script>
+
+<div id="session-timer-block" class="sidebar__block sidebar__block-item hidden" data-action="display-tooltip">
+    <span id="session-time-label">
+        <%-- Loads by js --%>
+    </span>
+    <span id="session-time-message" class="sidebar__tooltip">
+        <mvc:message code="session.timer.mouseover" />
+    </span>
+</div>

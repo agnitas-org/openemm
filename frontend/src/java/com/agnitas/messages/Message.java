@@ -16,7 +16,6 @@ import java.util.Objects;
 import com.agnitas.json.serializers.MessageSerializer;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.agnitas.service.UserMessageException;
-import org.apache.struts.action.ActionMessage;
 
 @JsonSerialize(using = MessageSerializer.class)
 public class Message {
@@ -90,11 +89,4 @@ public class Message {
         return code.hashCode();
     }
 
-    public ActionMessage toStrutsMessage() {
-        if (resolvable) {
-            return new ActionMessage(code, arguments);
-        } else {
-            return new ActionMessage(code, false);
-        }
-    }
 }

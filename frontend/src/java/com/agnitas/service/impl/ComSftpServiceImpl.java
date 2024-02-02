@@ -23,7 +23,6 @@ import org.springframework.beans.factory.annotation.Required;
 import com.agnitas.service.ComSftpService;
 import com.agnitas.service.exceptions.SftpServerConnectionException;
 import com.agnitas.service.exceptions.SftpServerCredentialException;
-import com.agnitas.util.ImageUtils;
 
 public class ComSftpServiceImpl implements ComSftpService {
 
@@ -106,14 +105,13 @@ public class ComSftpServiceImpl implements ComSftpService {
     }
 
     @Override
-    public List<String> scanForImages(String serverAndCredentials, String privateKey) throws SftpServerConnectionException, SftpServerCredentialException {
+    public List<String> scanForFiles(String serverAndCredentials, String privateKey, String fileMask) throws SftpServerConnectionException, SftpServerCredentialException {
         if (StringUtils.isEmpty(serverAndCredentials)) {
             throw new SftpServerCredentialException();
         }
 
         try (SFtpHelper sFtpHelper = open(serverAndCredentials, privateKey)) {
-            String extensionMask = ImageUtils.getFileMask("*", "*");
-            String patternForWildcard = AgnUtils.getPatternForWildcard(extensionMask);
+            String patternForWildcard = AgnUtils.getPatternForWildcard(fileMask);
             return sFtpHelper.scanForFiles(patternForWildcard, true);
         } catch (Exception e) {
             throw new SftpServerConnectionException();

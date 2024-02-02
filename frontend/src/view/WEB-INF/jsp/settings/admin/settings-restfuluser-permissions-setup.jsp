@@ -1,4 +1,4 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" buffer="64kb" errorPage="/error.do"%>
+<%@ page language="java" contentType="text/html; charset=utf-8" buffer="64kb" errorPage="/error.action"%>
 <%@ page import="org.agnitas.web.forms.FormSearchParams" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core"      prefix="c" %>
 <%@ taglib uri="https://emm.agnitas.de/jsp/jsp/common"  prefix="emm" %>

@@ -35,6 +35,7 @@ import org.agnitas.util.importvalues.Separator;
 import org.agnitas.util.importvalues.TextRecognitionChar;
 import org.apache.commons.lang3.StringUtils;
 
+import com.agnitas.emm.core.import_profile.bean.ImportDataType;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 
 public class ImportProfileImpl implements ImportProfile {
@@ -421,7 +422,9 @@ public class ImportProfileImpl implements ImportProfile {
 		output.append("EncryptedZip: " + (zipPassword != null) + "\n");
 		output.append("AutoMapping: " + autoMapping + "\n");
 		
-		if ("CSV".equalsIgnoreCase(datatype)) {
+		output.append("Data type: " + datatype + "\n");
+		ImportDataType importDataType = ImportDataType.getImportDataTypeForName(datatype);
+		if (importDataType == ImportDataType.CSV) {
 			output.append("NoHeaders: " + noHeaders + "\n");
 			try {
 				output.append("Separator: " + Separator.getSeparatorById(separator).getValueChar() + "\n");
@@ -434,10 +437,10 @@ public class ImportProfileImpl implements ImportProfile {
 				output.append("TextRecognitionChar: Invalid (\"" + e.getMessage() + "\")\n");
 			}
 			output.append("DecimalSeparator: " + decimalSeparator + "\n");
-		} else if ("JSON".equalsIgnoreCase(datatype)) {
-			output.append("Json data import: true\n");
-		} else {
-			throw new RuntimeException("Invalid datatype: " + datatype);
+		} else if (importDataType == ImportDataType.Excel) {
+			output.append("NoHeaders: " + noHeaders + "\n");
+		} else if (importDataType == ImportDataType.ODS) {
+			output.append("NoHeaders: " + noHeaders + "\n");
 		}
 		
 		try {

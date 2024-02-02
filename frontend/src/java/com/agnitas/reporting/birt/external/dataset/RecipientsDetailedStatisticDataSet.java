@@ -180,7 +180,7 @@ public class RecipientsDetailedStatisticDataSet extends RecipientsBasedDataSet {
                 calculateAmount(resultRow, dataMap);
             }
 
-            if (getConfigService().getBooleanValue(ConfigValue.UseBindingHistoryForRecipientStatistics, companyId)) {
+            if (useBindingHistory(companyId)) {
                 // Select additional data from history tables
                 String hstSql = sql
                         .replace(getCustomerBindingTableName(companyId), getHstCustomerBindingTableName(companyId))
@@ -213,8 +213,6 @@ public class RecipientsDetailedStatisticDataSet extends RecipientsBasedDataSet {
             TreeMap<String, RecipientsDetailedStatisticsRow> dataMap = new TreeMap<>();
             target = getDefaultTarget(target);
 
-            final String filterTargetSql = getHiddenTargetSql(companyId, target, hiddenFilterTargetIdStr);
-
             // Create a RecipientsDetailedStatisticsRow entry for each day within the given time period
             Date datePoint = startDate;
             while (datePoint.before(endDate) || datePoint.equals(endDate)) {
@@ -228,40 +226,11 @@ public class RecipientsDetailedStatisticDataSet extends RecipientsBasedDataSet {
                 datePoint = DateUtilities.addDaysToDate(datePoint, 1);
             }
 
-            String truncDateFn = isOracleDB() ? "TRUNC" : "DATE";
-            String countClause = "COUNT(CASE WHEN bind.timestamp < dates.selected_date THEN 1 END)";
-            String dateRangeClause = DbUtilities.makeSelectRangeOfDates("selected_date", DateUtils.addDays(startDate, 1), DateUtils.addDays(endDate, 1), isOracleDB());
+            calculateAmount(dataMap, mailinglistId, target, hiddenFilterTargetIdStr, startDate, endDate, companyId, false);
 
-            String sqlPattern = "SELECT %3$s(dates.selected_date - 1) AS changedate, bind.user_status, " +
-                    " %1$s AS amount " +
-                    " FROM %2$s bind LEFT JOIN customer_" + companyId + "_tbl cust ON bind.customer_id = cust.customer_id, " +
-                    " (%4$s) dates" +
-                    " WHERE bind.mailinglist_id = ? ";
-
-            if (StringUtils.isNotBlank(target.getTargetSQL())) {
-                sqlPattern += " AND (" + target.getTargetSQL() + ")";
-            }
-
-            if (StringUtils.isNotBlank(filterTargetSql)) {
-                sqlPattern += " AND (" + filterTargetSql + ")";
-            }
-
-            sqlPattern += " GROUP BY dates.selected_date, user_status ORDER BY dates.selected_date, user_status";
-
-            String sql = String.format(sqlPattern, countClause, getCustomerBindingTableName(companyId), truncDateFn, dateRangeClause);
-            List<Map<String, Object>> result = select(logger, sql, mailinglistId);
-            for (Map<String, Object> resultRow : result) {
-                calculateAmount(resultRow, dataMap);
-            }
-
-            if (getConfigService().getBooleanValue(ConfigValue.UseBindingHistoryForRecipientStatistics, companyId)) {
+            if (useBindingHistory(companyId)) {
                 // Select additional data from history tables
-                countClause = "COUNT(DISTINCT (CASE WHEN bind.timestamp < dates.selected_date AND bind.timestamp_change > dates.selected_date THEN bind.customer_id END))";
-                sql = String.format(sqlPattern, countClause, getHstCustomerBindingTableName(companyId), truncDateFn, dateRangeClause);
-                List<Map<String, Object>> hstResult = select(logger, sql, mailinglistId);
-                for (Map<String, Object> resultRow : hstResult) {
-                    calculateAmount(resultRow, dataMap);
-                }
+                calculateAmount(dataMap, mailinglistId, target, hiddenFilterTargetIdStr, startDate, endDate, companyId, true);
             }
 
             // Sort and collect output data by date
@@ -276,6 +245,41 @@ public class RecipientsDetailedStatisticDataSet extends RecipientsBasedDataSet {
             logger.error("Error in getRecipientDetailedOverallStatAmountForEachDay: {}", e.getMessage(), e);
             throw e;
         }
+    }
+
+    // don't use String.format() to generate this sql. target sql may contain % which can clash with % placeholder
+    private void calculateAmount(TreeMap<String, RecipientsDetailedStatisticsRow> dataMap, int mailinglistId, LightTarget target, String hiddenTargetStr, Date startDate, Date endDate, int companyId, boolean useBindingHistory) {
+        String truncDateFn = isOracleDB() ? "TRUNC" : "DATE";
+        String dateRangeClause = DbUtilities.makeSelectRangeOfDates("selected_date", DateUtils.addDays(startDate, 1), DateUtils.addDays(endDate, 1), isOracleDB());
+        String filterTargetSql = getHiddenTargetSql(companyId, target, hiddenTargetStr);
+        String countClause = useBindingHistory
+                ? "COUNT(DISTINCT (CASE WHEN bind.timestamp < dates.selected_date AND bind.timestamp_change > dates.selected_date THEN bind.customer_id END))"
+                : "COUNT(CASE WHEN bind.timestamp < dates.selected_date THEN 1 END)";
+
+        String sql = "SELECT " + truncDateFn + "(dates.selected_date - 1) AS changedate, bind.user_status, " +
+                countClause + " AS amount " +
+                " FROM " + (useBindingHistory ? getHstCustomerBindingTableName(companyId) : getCustomerBindingTableName(companyId)) + " bind" +
+                " LEFT JOIN " + getCustomerTableName(companyId) + " cust ON bind.customer_id = cust.customer_id," +
+                " (" + dateRangeClause + ") dates" +
+                " WHERE bind.mailinglist_id = ? ";
+
+        if (StringUtils.isNotBlank(target.getTargetSQL())) {
+            sql += " AND (" + target.getTargetSQL() + ")";
+        }
+
+        if (StringUtils.isNotBlank(filterTargetSql)) {
+            sql += " AND (" + filterTargetSql + ")";
+        }
+        sql += " GROUP BY dates.selected_date, user_status ORDER BY dates.selected_date, user_status";
+
+        List<Map<String, Object>> result = select(logger, sql, mailinglistId);
+        for (Map<String, Object> resultRow : result) {
+            calculateAmount(resultRow, dataMap);
+        }
+    }
+
+    private boolean useBindingHistory(int companyId) {
+        return getConfigService().getBooleanValue(ConfigValue.UseBindingHistoryForRecipientStatistics, companyId);
     }
 
     private static void calculateAmount(final Map<String, Object> resultRow, final TreeMap<String, RecipientsDetailedStatisticsRow> dataMap) {

@@ -25,7 +25,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.agnitas.beans.TrackableLink;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.exception.target.TargetGroupLockedException;
 import org.agnitas.dao.exception.target.TargetGroupPersistenceException;
@@ -52,6 +51,7 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 import com.agnitas.beans.ComTarget;
+import com.agnitas.beans.TrackableLink;
 import com.agnitas.beans.TargetLight;
 import com.agnitas.dao.ComTargetDao;
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
@@ -128,7 +128,7 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 		if (!includeDeleted) {
 			sql += " AND deleted <> 1";
 		}
-		return selectObjectDefaultNull(logger, sql, (rs, index) -> rs.getString("target_shortname"), companyId, targetId);
+		return selectWithDefaultValue(logger, sql, String.class, null, companyId, targetId);
 	}
 
 	@Override
@@ -855,7 +855,7 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 
 	@Override
 	public List<TargetLight> getTestAndAdminTargetLights(int companyId) {
-		return getTargetLights(companyId, false, false, true);
+		return getTestAndAdminTargetLights(0, companyId);
 	}
 
 	@Override
@@ -940,11 +940,6 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 	}
 
 	@Override
-	public boolean isOracle() {
-		return super.isOracleDB();
-	}
-
-	@Override
 	public final List<ComTarget> listRawTargetGroups(int companyId, String... eqlRawFragments) {
 		final String sqlGetAll = "SELECT target_id, company_id, target_description, target_shortname, target_sql, " +
 				"deleted, creation_date, change_date, admin_test_delivery, locked, eql, COALESCE(complexity, -1) AS complexity, favorite, " +
@@ -1017,7 +1012,7 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
 	public PaginatedListImpl<Dependent<TargetGroupDependentType>> getDependents(int companyId, int targetId,
 																				Set<TargetGroupDependentType> allowedTypes, int pageNumber,
 																				int pageSize, String sortColumn, String order) {
-		final boolean isOracle = isOracle();
+		final boolean isOracle = isOracleDB();
 		final boolean isFilterDisabled = CollectionUtils.isEmpty(allowedTypes);
 		final boolean sortAscending = AgnUtils.sortingDirectionToBoolean(order, true);
 
@@ -1245,7 +1240,7 @@ public class ComTargetDaoImpl extends PaginatedBaseDaoImpl implements ComTargetD
     public boolean isLinkUsedInTarget(TrackableLink link) {
         return selectInt(logger, "SELECT 1 FROM dyn_target_tbl " +
                 "WHERE eql LIKE '%CLICKED LINK " + link.getId() + " IN MAILING " + link.getMailingID() + "%' " +
-                "AND deleted <= 0 AND hidden = 0 " + (isOracle() ? "AND rownum < 2" : "LIMIT 1")) == 1;
+                "AND deleted <= 0 AND hidden = 0 " + (isOracleDB() ? "AND rownum < 2" : "LIMIT 1")) == 1;
     }
 
     @Override

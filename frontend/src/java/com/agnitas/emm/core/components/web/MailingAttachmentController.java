@@ -22,6 +22,7 @@ import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
 import com.agnitas.emm.core.mailing.service.MailingPropertiesRules;
 import com.agnitas.emm.core.target.service.ComTargetService;
 import com.agnitas.emm.core.upload.bean.UploadData;
+import com.agnitas.emm.core.upload.bean.UploadFileExtension;
 import com.agnitas.emm.core.upload.service.UploadService;
 import com.agnitas.service.ExtendedConversionService;
 import com.agnitas.service.GridServiceWrapper;
@@ -102,7 +103,7 @@ public class MailingAttachmentController implements XssCheckAware {
         List<MailingComponent> attachments = mailingComponentsService.getPreviewHeaderComponents(companyId, mailingId);
         form.setAttachments(conversionService.convert(attachments, MailingComponent.class, MailingAttachmentDto.class));
 
-        List<UploadData> pdfUploads = uploadService.getUploadsByExtension(admin, "pdf");
+        List<UploadData> pdfUploads = uploadService.getUploadsByExtension(admin, UploadFileExtension.PDF);
         model.addAttribute("pdfUploads", pdfUploads);
 
         model.addAttribute("mailing", mailingBaseService.getMailing(companyId, mailingId));

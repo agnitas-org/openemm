@@ -1,4 +1,4 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" buffer="32kb"  errorPage="/error.do" %>
+<%@ page language="java" contentType="text/html; charset=utf-8" buffer="32kb"  errorPage="/error.action" %>
 
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>

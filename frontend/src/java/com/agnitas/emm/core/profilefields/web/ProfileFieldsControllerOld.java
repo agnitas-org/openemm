@@ -10,6 +10,10 @@
 
 package com.agnitas.emm.core.profilefields.web;
 
+import static org.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
+import static org.agnitas.util.Const.Mvc.ERROR_MSG;
+import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
+
 import java.text.DecimalFormatSymbols;
 import java.text.SimpleDateFormat;
 import java.util.LinkedHashSet;
@@ -18,14 +22,11 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 
-import com.agnitas.emm.core.objectusage.common.ObjectUsage;
-import com.agnitas.web.mvc.XssCheckAware;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.service.UserActivityLogService;
-import org.agnitas.service.WebStorage;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.DbColumnType;
@@ -50,6 +51,7 @@ import com.agnitas.beans.Admin;
 import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.ProfileFieldMode;
 import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.objectusage.common.ObjectUsage;
 import com.agnitas.emm.core.objectusage.common.ObjectUsages;
 import com.agnitas.emm.core.objectusage.service.ObjectUsageService;
 import com.agnitas.emm.core.objectusage.web.ObjectUsagesToPopups;
@@ -57,13 +59,10 @@ import com.agnitas.emm.core.profilefields.form.ProfileFieldForm;
 import com.agnitas.emm.core.profilefields.service.ProfileFieldService;
 import com.agnitas.emm.core.profilefields.service.ProfileFieldValidationService;
 import com.agnitas.emm.core.recipient.RecipientProfileHistoryUtil;
-import com.agnitas.service.ComWebStorage;
+import com.agnitas.service.WebStorage;
 import com.agnitas.web.mvc.Popups;
+import com.agnitas.web.mvc.XssCheckAware;
 import com.agnitas.web.perm.annotations.PermissionMapping;
-import static com.agnitas.emm.core.Permission.RECIPIENT_PROFILEFIELD_HTML_ALLOWED;
-import static org.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
-import static org.agnitas.util.Const.Mvc.ERROR_MSG;
-import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
 
 @Controller
 @RequestMapping("/profiledbold")
@@ -96,10 +95,10 @@ public class ProfileFieldsControllerOld implements XssCheckAware {
     @RequestMapping("/profiledb.action")
     public String list(@ModelAttribute("profileForm") ProfileFieldForm profileForm, Admin admin, Model model, Popups popups,
                        @RequestParam(value = "syncSorting", required = false) boolean syncSorting) throws Exception {
-    	FormUtils.syncNumberOfRows(webStorage, ComWebStorage.PROFILE_FIELD_OVERVIEW, profileForm);
+    	FormUtils.syncNumberOfRows(webStorage, WebStorage.PROFILE_FIELD_OVERVIEW, profileForm);
 
     	if (syncSorting) {
-            FormUtils.syncSortingParams(webStorage, ComWebStorage.PROFILE_FIELD_OVERVIEW, profileForm);
+            FormUtils.syncSortingParams(webStorage, WebStorage.PROFILE_FIELD_OVERVIEW, profileForm);
         }
 
     	int companyId = admin.getCompanyID();
@@ -240,31 +239,16 @@ public class ProfileFieldsControllerOld implements XssCheckAware {
 
     @RequestMapping("/{column}/confirmDelete.action")
     public String confirmDelete(Admin admin, @PathVariable String column, final Popups popups) {
-        ObjectUsages usages = objectUsageService.listUsageOfProfileFieldByDatabaseName(admin.getCompanyID(), column);
-        if (!usages.isEmpty()) {
-        	ObjectUsagesToPopups.objectUsagesToPopups(
-        	        "error.profilefield.used", "error.profilefield.used.withMore", usages, popups, admin.getLocale());
-        	return MESSAGES_VIEW;
+        if (!validationService.isValidToDelete(column, admin.getCompanyID(), admin.getLocale(), popups)) {
+            return MESSAGES_VIEW;
         }
         return "settings_profile_field_delete_old_ajax";
     }
 
     @RequestMapping(value = "/{fieldname}/delete.action", method = {RequestMethod.POST, RequestMethod.DELETE})
     public String delete(Admin admin, @PathVariable("fieldname") String fieldName, Popups popups) {
-        final int companyId = admin.getCompanyID();
-
-        if (validationService.notContainsInDb(companyId, fieldName)) {
-            popups.alert("error.profiledb.NotExists", fieldName);
-        } else if (validationService.hasNotAllowedNumberOfEntries(companyId)) {
-            popups.alert("error.profiledb.delete.tooMuchRecipients", fieldName);
-        } else if (validationService.hasTargetGroups(companyId, fieldName)) {
-            popups.alert("error.profiledb.delete.usedInTargetGroups", fieldName);
-        } else if (validationService.isStandardColumn(fieldName)) {
-            popups.alert("error.profiledb.cannotDropColumn", fieldName);
-        }
-
-        if (!popups.hasAlertPopups()) {
-            profileFieldService.removeProfileField(companyId, fieldName);
+        if (validationService.isValidToDelete(fieldName, admin.getCompanyID(), admin.getLocale(), popups)) {
+            profileFieldService.removeProfileField(admin.getCompanyID(), fieldName);
 
             popups.success("default.selection.deleted");
             writeUserActivityLog(admin, profileFieldService.getDeleteFieldLog(fieldName));
@@ -529,6 +513,6 @@ public class ProfileFieldsControllerOld implements XssCheckAware {
     @Override
     public boolean isParameterExcludedForUnsafeHtmlTagCheck(Admin admin, String param, String controllerMethodName) {
         return ("allowedValues".equals(param) || "fieldDefault".equals(param))
-                && admin.permissionAllowed(RECIPIENT_PROFILEFIELD_HTML_ALLOWED);
+        	&& configService.getBooleanValue(ConfigValue.AllowHtmlInProfileFields);
     }
 }

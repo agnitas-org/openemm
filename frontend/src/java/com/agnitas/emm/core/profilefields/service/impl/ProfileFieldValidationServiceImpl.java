@@ -15,6 +15,10 @@ import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Locale;
 
+import com.agnitas.emm.core.objectusage.common.ObjectUsages;
+import com.agnitas.emm.core.objectusage.service.ObjectUsageService;
+import com.agnitas.emm.core.objectusage.web.ObjectUsagesToPopups;
+import com.agnitas.web.mvc.Popups;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.util.AgnUtils;
@@ -50,12 +54,14 @@ public class ProfileFieldValidationServiceImpl implements ProfileFieldValidation
     private final ProfileFieldDao profileFieldDao;
     private final ComTargetService targetService;
     private final ConfigService configService;
+    private final ObjectUsageService objectUsageService;
 
-    public ProfileFieldValidationServiceImpl(KeywordList databaseKeywordList, ProfileFieldDao profileFieldDao, ComTargetService targetService, ConfigService configService) {
+    public ProfileFieldValidationServiceImpl(KeywordList databaseKeywordList, ProfileFieldDao profileFieldDao, ComTargetService targetService, ConfigService configService, ObjectUsageService objectUsageService) {
         this.databaseKeywordList = databaseKeywordList;
         this.profileFieldDao = profileFieldDao;
         this.targetService = targetService;
         this.configService = configService;
+        this.objectUsageService = objectUsageService;
     }
 
     @Override
@@ -179,6 +185,31 @@ public class ProfileFieldValidationServiceImpl implements ProfileFieldValidation
         List<TargetLight> targetLights = targetService.listTargetGroupsUsingProfileFieldByDatabaseName(fieldName, companyId);
 
         return !targetLights.isEmpty();
+    }
+
+    @Override
+    public boolean isValidToDelete(String fieldName, int companyId, Locale locale, Popups popups) {
+        if (notContainsInDb(companyId, fieldName)) {
+            popups.alert("error.profiledb.NotExists", fieldName);
+        }
+        if (hasNotAllowedNumberOfEntries(companyId)) {
+            popups.alert("error.profiledb.delete.tooMuchRecipients", fieldName);
+        }
+        if (isStandardColumn(fieldName)) {
+            popups.alert("error.profiledb.cannotDropColumn", fieldName);
+        }
+        checkObjectUsages(fieldName, companyId, locale, popups);
+        return !popups.hasAlertPopups();
+    }
+
+    private void checkObjectUsages(String fieldName, int companyId, Locale locale, Popups popups) {
+        ObjectUsages usages = objectUsageService.listUsageOfProfileFieldByDatabaseName(companyId, fieldName);
+        if (usages.isEmpty()) {
+            return;
+        }
+        ObjectUsagesToPopups.objectUsagesToPopups(
+                "error.profilefield.used", "error.profilefield.used.withMore",
+                usages, popups, locale);
     }
 
     @Override

@@ -45,11 +45,10 @@ import com.agnitas.beans.TargetLight;
 import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.birtreport.bean.ComLightweightBirtReport;
 import com.agnitas.emm.core.birtreport.dao.ComBirtReportDao;
-import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.emm.core.target.form.TargetForm;
 import com.agnitas.emm.core.target.service.ComTargetService;
 import com.agnitas.emm.core.target.service.TargetLightsOptions;
-import com.agnitas.service.ComWebStorage;
+import com.agnitas.service.WebStorage;
 import com.agnitas.service.SimpleServiceResult;
 import com.agnitas.web.mvc.Popups;
 
@@ -65,17 +64,15 @@ public class TargetController implements XssCheckAware {
     private static final String TARGET_DELETE_ERROR_MSG = "error.target.delete";
 
     protected final ComTargetService targetService;
-    private final ComWebStorage webStorage;
-    private final MailingService mailingService;
+    private final WebStorage webStorage;
     private final ComBirtReportDao birtReportDao;
     private final UserActivityLogService userActivityLogService;
 
-    public TargetController(ComTargetService targetService, ComWebStorage webStorage,
-                            UserActivityLogService userActivityLogService, MailingService mailingService,
+    public TargetController(ComTargetService targetService, WebStorage webStorage,
+                            UserActivityLogService userActivityLogService,
                             ComBirtReportDao birtReportDao) {
         this.webStorage = webStorage;
         this.birtReportDao = birtReportDao;
-        this.mailingService = mailingService;
         this.targetService = targetService;
         this.userActivityLogService = userActivityLogService;
     }
@@ -235,9 +232,9 @@ public class TargetController implements XssCheckAware {
     }
 
     private void prepareListParameters(TargetForm form, Admin admin) {
-        synchronized (ComWebStorage.TARGET_OVERVIEW) {
-            final boolean isBundlePresented = webStorage.isPresented(ComWebStorage.TARGET_OVERVIEW);
-            webStorage.access(ComWebStorage.TARGET_OVERVIEW, storage -> {
+        synchronized (WebStorage.TARGET_OVERVIEW) {
+            final boolean isBundlePresented = webStorage.isPresented(WebStorage.TARGET_OVERVIEW);
+            webStorage.access(WebStorage.TARGET_OVERVIEW, storage -> {
                 if (form.getNumberOfRows() > 0) {
                     storage.setRowsCount(form.getNumberOfRows());
                     storage.setShowWorldDelivery(form.isShowWorldDelivery());
@@ -270,7 +267,7 @@ public class TargetController implements XssCheckAware {
         if (CollectionUtils.isNotEmpty(affectedReports)) {
             model.addAttribute("affectedReports", affectedReports);
             model.addAttribute("affectedReportsMessageKey", "warning.target.delete.affectedBirtReports");
-            model.addAttribute("affectedReportsMessageType", GuiConstants.MESSAGE_TYPE_WARNING_PERMANENT);
+            model.addAttribute("affectedReportsMessageType", GuiConstants.MESSAGE_TYPE_WARNING);
         }
     }
 

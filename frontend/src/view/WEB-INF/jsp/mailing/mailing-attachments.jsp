@@ -1,9 +1,9 @@
-<%@ page language="java" contentType="text/html; charset=utf-8"  errorPage="/error.do" %>
+<%@ page language="java" contentType="text/html; charset=utf-8"  errorPage="/error.action" %>
 
 <%@ page import="org.agnitas.util.AgnUtils" %>
 
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<%@ taglib prefix="tiles" uri="http://struts.apache.org/tags-tiles" %>
+<%@ taglib prefix="tiles" uri="http://tiles.apache.org/tags-tiles" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 
@@ -19,18 +19,18 @@
 
 <c:set var="isMailingGrid" value="${not empty gridTemplateId and gridTemplateId gt 0}" scope="request"/>
 
-<tiles:insert page="/WEB-INF/jsp/mailing/template.jsp">
+<tiles:insertTemplate template="/WEB-INF/jsp/mailing/template.jsp">
     <c:if test="${isMailingGrid}">
-        <tiles:put name="header" type="string">
+        <tiles:putAttribute name="header" type="string">
             <ul class="tile-header-nav">
                 <!-- Tabs BEGIN -->
-                <tiles:insert page="/WEB-INF/jsp/tabsmenu-mailing.jsp" flush="false"/>
+                <tiles:insertTemplate template="/WEB-INF/jsp/tabsmenu-mailing.jsp" flush="false"/>
                 <!-- Tabs END -->
             </ul>
-        </tiles:put>
+        </tiles:putAttribute>
     </c:if>
 
-    <tiles:put name="content" type="string">
+    <tiles:putAttribute name="content" type="string">
         <c:set var="uploadFormContent">
             <mvc:form servletRelativeAction="/mailing/${mailing.id}/attachment/upload.action"
                       id="mailing-upload-attachments-form" cssClass="form-vertical"
@@ -189,5 +189,5 @@
             </c:otherwise>
         </c:choose>
 
-    </tiles:put>
-</tiles:insert>
+    </tiles:putAttribute>
+</tiles:insertTemplate>

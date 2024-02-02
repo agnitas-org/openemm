@@ -1,4 +1,4 @@
-<%@ page errorPage="/error.do" %>
+<%@ page errorPage="/error.action" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
 <%@ page contentType="text/html; charset=utf-8" buffer="64kb" %>

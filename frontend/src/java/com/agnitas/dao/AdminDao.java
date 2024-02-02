@@ -17,6 +17,7 @@ import java.util.Set;
 
 import javax.sql.DataSource;
 
+import com.agnitas.emm.core.Permission;
 import org.agnitas.beans.AdminEntry;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.util.Tuple;
@@ -125,6 +126,10 @@ public interface AdminDao {
      */
     int saveAdminRights(int adminID, Set<String> userRights);
 
+    void grantPermission(int adminId, Permission permission);
+
+    void revokePermission(int adminId, Permission permission);
+
     Admin getAdmin(String username) throws AdminNameNotFoundException, AdminNameNotUniqueException;
     String getAdminName(int adminID, int companyID);
 
@@ -158,4 +163,8 @@ public interface AdminDao {
 	void deleteAdminPermissionsForCompany(int companyID);
 
 	List<Map<String, Object>> getAdminsLight(int companyID, boolean restful);
+
+    void saveDashboardLayout(String layout, int adminId);
+
+	String getDashboardLayout(int adminId);
 }

@@ -1,0 +1,72 @@
+
+#sidebar__nav-block {
+  flex: 1 1 auto;
+  @include hover-scroll($primary, $primary, 8px, 0px);
+
+  // should be visible on mobile
+  @include mobile {
+    &::-webkit-scrollbar-thumb {
+      background-color: $primary;
+    }
+  }
+}
+
+#sidebar__nav-list {
+  @include flex(column, $gap-sm);
+
+  > li {
+    @include font($font-size-lg, $font-weight-normal, 27px);
+    flex: 0 0 auto;
+
+    &:hover .menu-item {
+      border-color: $c-white;
+    }
+  }
+
+  .menu-item {
+    display: flex;
+    @include sidebar-colors();
+    border: 1px solid transparent;
+
+    &.active {
+      @include sidebar-colors-inverse();
+    }
+  }
+}
+
+.submenu {
+  display: none;
+
+  &.open {
+    @include flex(column, $gap-sm);
+    @include sidebar-tooltip();
+    padding: $gap-sm;
+  }
+}
+
+.submenu-header {
+  white-space: nowrap;
+  @include font($font-size-lg, $font-weight-semibold, 30px);
+}
+
+.submenu-items-container {
+  @include flex(column, $gap-x-sm);
+  @include font($font-size-sm, $font-weight-normal);
+}
+
+.submenu-item {
+  display: block;
+  border-radius: $border-radius;
+  border: 1px solid transparent;
+  padding: $gap-x-sm $gap-sm;
+  white-space: nowrap;
+
+  &.active {
+    @include sidebar-colors-inverse();
+    font-weight: $font-weight-semibold;
+  }
+
+  &:hover {
+    border-color: $c-white;
+  }
+}

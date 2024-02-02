@@ -15,6 +15,7 @@ import org.agnitas.util.Tuple;
 public interface MailingBlockSizeService {
 
     int DEFAULT_STEPPING = 60;
+    int UNLIMITED_SPEED = 0;
 
     int calculateBlocksize(int stepping, int blockSize);
 

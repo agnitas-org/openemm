@@ -1,0 +1,36 @@
+
+@mixin hide-scroll() {
+  overflow-y: auto;
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none;    /* Firefox */
+  &::-webkit-scrollbar {    /* WebKit */
+    display: none;
+  }
+}
+
+@mixin hover-scroll($color: $gray-400, $hoverColor: darkgrey, $width: $gap, $borderWidth: 6px) {
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  scrollbar-gutter: stable both-edges;
+  scrollbar-color: $color transparent;
+
+  &::-webkit-scrollbar {
+    width: $width;
+    background-color: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    border: $borderWidth solid white;
+    border-radius: $gap;
+    background-color: transparent;
+  }
+
+  &:hover::-webkit-scrollbar-thumb {
+    background-color: $color;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background-color: $hoverColor;
+  }
+}

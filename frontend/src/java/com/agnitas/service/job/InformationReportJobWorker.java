@@ -14,7 +14,6 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.util.List;
 import java.util.Locale;
-import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
 
@@ -87,17 +86,9 @@ public class InformationReportJobWorker extends JobWorker {
 		this.recipientRetargetingHistoryDtoConverter = new RecipientRetargetingHistoryDtoConverter();
 		this.recipientDeviceHistoryDtoConverter = new RecipientDeviceHistoryDtoConverter();
 		
-		String includedCompanyIdsString = job.getParameters().get("includedCompanyIds");
-		List<Integer> includedCompanyIds = null;
-		if (StringUtils.isNotBlank(includedCompanyIdsString)) {
-			includedCompanyIds = AgnUtils.splitAndTrimList(includedCompanyIdsString).stream().map(Integer::parseInt).collect(Collectors.toList());
-		}
+		List<Integer> includedCompanyIds = getIncludedCompanyIdsListParameter();
 
-		String excludedCompanyIdsString = job.getParameters().get("excludedCompanyIds");
-		List<Integer> excludedCompanyIds = null;
-		if (StringUtils.isNotBlank(excludedCompanyIdsString)) {
-			excludedCompanyIds = AgnUtils.splitAndTrimList(excludedCompanyIdsString).stream().map(Integer::parseInt).collect(Collectors.toList());
-		}
+		List<Integer> excludedCompanyIds = getExcludedCompanyIdsListParameter();
 
 		String languageString = job.getParameters().get("language");
 		if (StringUtils.isBlank(languageString)) {

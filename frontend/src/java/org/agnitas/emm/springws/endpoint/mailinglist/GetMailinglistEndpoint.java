@@ -12,6 +12,8 @@ package org.agnitas.emm.springws.endpoint.mailinglist;
 
 import java.util.Objects;
 
+import org.agnitas.emm.core.mailinglist.service.MailinglistNotExistException;
+import org.agnitas.emm.core.mailinglist.service.impl.MailinglistException;
 import org.agnitas.emm.springws.endpoint.BaseEndpoint;
 import org.agnitas.emm.springws.endpoint.Namespaces;
 import org.agnitas.emm.springws.jaxb.GetMailinglistRequest;
@@ -42,7 +44,19 @@ public class GetMailinglistEndpoint extends BaseEndpoint {
 
     @PayloadRoot(namespace = Namespaces.AGNITAS_ORG, localPart = "GetMailinglistRequest")
     public @ResponsePayload JAXBElement<Mailinglist> getMailinglist(@RequestPayload GetMailinglistRequest request) throws Exception {
-		final Mailinglist mailinglist = new MailinglistResponseBuilder(mailinglistService.getMailinglist(request.getMailinglistID(), this.securityContextAccess.getWebserviceUserCompanyId())).createResponse();
-		return objectFactory.createGetMailinglistResponse(mailinglist);
+    	// TODO That check should be done in MailinglistService.getMailinglist(int, int)
+        if(request.getMailinglistID() <= 0) {
+        	throw new MailinglistException(request.getMailinglistID(), this.securityContextAccess.getWebserviceUserCompanyId(), "mailinglist id value should be > 0");
+        }
+    	
+    	final org.agnitas.beans.Mailinglist mailinglist = mailinglistService.getMailinglist(request.getMailinglistID(), this.securityContextAccess.getWebserviceUserCompanyId());
+    	
+    	if(mailinglist == null) {
+    		throw new MailinglistNotExistException(request.getMailinglistID(), this.securityContextAccess.getWebserviceUserCompanyId());
+    	}
+    	
+		final Mailinglist response = new MailinglistResponseBuilder(mailinglist).createResponse();
+		
+		return objectFactory.createGetMailinglistResponse(response);
     }
 }

@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import com.agnitas.emm.core.Permission;
 import org.agnitas.beans.AdminEntry;
 import org.agnitas.beans.AdminGroup;
 import com.agnitas.beans.EmmLayoutBase;
@@ -80,6 +81,10 @@ public interface AdminService {
      * @return tuple of added and removed permission tokens or {@code null} if something went wrong.
      */
     Tuple<List<String>, List<String>> saveAdminPermissions(int companyID, int savingAdminID, Collection<String> tokens, int editorAdminID);
+
+    void grantPermission(Admin admin, Permission permission);
+
+    void revokePermission(Admin admin, Permission permission);
 
     Admin getAdmin(int adminID, int companyID);
 
@@ -177,4 +182,8 @@ public interface AdminService {
 	
 	int getNumberOfGuiAdmins(int companyID);
 	void deleteAdminPermissionsForCompany(int companyID);
+
+    void saveDashboardLayout(String layout, Admin admin);
+
+    String getDashboardLayout(Admin admin);
 }

@@ -10,9 +10,10 @@
 
 package com.agnitas.emm.core.company.converter;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
-import com.agnitas.emm.core.components.entity.TestRunOption;
 import org.agnitas.emm.core.commons.password.policy.PasswordPolicies;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
@@ -26,6 +27,8 @@ import com.agnitas.emm.core.company.dto.CompanyInfoDto;
 import com.agnitas.emm.core.company.dto.CompanySettingsDto;
 import com.agnitas.emm.core.company.enums.LoginlockSettings;
 import com.agnitas.emm.core.company.form.CompanyViewForm;
+import com.agnitas.emm.core.components.entity.TestRunOption;
+import com.agnitas.post.PostalField;
 
 @Component
 public class ComCompanyToCompanyViewFormConverter implements Converter<Company, CompanyViewForm> {
@@ -57,7 +60,7 @@ public class ComCompanyToCompanyViewFormConverter implements Converter<Company, 
         settingsDto.setListHelpUrl(comCompany.getListHelpUrl());
         settingsDto.setHasMailTracking(BooleanUtils.toBoolean(comCompany.getMailtracking()));
         settingsDto.setStatisticsExpireDays(configService.getIntegerValue(ConfigValue.ExpireStatistics, comCompany.getId()));
-        settingsDto.setRecipientExpireDays(configService.getIntegerValue(ConfigValue.ExpireRecipient, comCompany.getId()));
+        settingsDto.setExpireRecipient(configService.getIntegerValue(ConfigValue.ExpireRecipient, comCompany.getId()));
         settingsDto.setBusiness(comCompany.getBusiness());
         settingsDto.setHasActivatedAccessAuthorization(configService.getBooleanValue(ConfigValue.SupervisorRequiresLoginPermission, comCompany.getId()));
         settingsDto.setHasExtendedSalutation(BooleanUtils.toBoolean(comCompany.getSalutationExtended()));
@@ -131,8 +134,24 @@ public class ComCompanyToCompanyViewFormConverter implements Converter<Company, 
         settingsDto.setDefaultBlockSize(configService.getIntegerValue(ConfigValue.DefaultBlocksizeValue, comCompany.getId()));
         settingsDto.setDefaultTestRunOption(TestRunOption.fromId(configService.getIntegerValue(ConfigValue.DefaultTestRunOption, comCompany.getId())));
         settingsDto.setUserBasedFavoriteTargets(configService.isUserBasedFavoriteTargets(comCompany.getId()));
+        settingsDto.setFilterRecipientsOverviewForActiveRecipients(configService.getBooleanValue(ConfigValue.FilterRecipientsOverviewForActiveRecipients, comCompany.getId()));
+        settingsDto.setAutoDeeptracking(configService.isAutoDeeptracking(comCompany.getId()));
+        
+        settingsDto.setHtmlContentAllowed(configService.getBooleanValue(ConfigValue.AllowHtmlInProfileFields, comCompany.getId()));
+
+        settingsDto.setUseDefaultAddressFieldsForPost(configService.getBooleanValue(ConfigValue.UseDefaulAdressFieldsForPost, comCompany.getId()));
+        settingsDto.setPostalFieldsMappings(getPostalFieldsMappings(comCompany.getId()));
 
         return settingsDto;
+    }
+
+    private Map<PostalField, String> getPostalFieldsMappings(int companyId) {
+    	Map<PostalField, String> returnMap = new HashMap<>();
+    	for (PostalField postalField : PostalField.values()) {
+    		String clientsDefaultPostalFieldName = configService.getValue(postalField.getConfigValue(), companyId);
+    		returnMap.put(postalField, clientsDefaultPostalFieldName);
+    	}
+        return returnMap;
     }
 
 	private String getPasswordPolicyName(final int companyId) {

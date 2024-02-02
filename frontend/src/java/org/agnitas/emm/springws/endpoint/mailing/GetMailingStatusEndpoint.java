@@ -44,7 +44,7 @@ public class GetMailingStatusEndpoint extends BaseEndpoint {
 		model.setMailingId(request.getMailingID());
 
 		GetMailingStatusResponse response = new GetMailingStatusResponse();
-		response.setStatus(mailingService.getMailingStatus(model));
+		response.setStatus(mailingService.getMailingStatus(model).getDbKey());
 		return response;
 	}
 }

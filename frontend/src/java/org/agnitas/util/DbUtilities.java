@@ -2850,10 +2850,4 @@ public class DbUtilities {
 		}
 		throw new SQLException("Column not found: " + columnName);
 	}
-
-    public static String getPartialSearchSql(boolean isOracle, String searchIn) {
-        return isOracle
-                ? "UPPER(" + searchIn + ") LIKE ('%' || UPPER(?) || '%')"
-                : searchIn + " LIKE CONCAT('%', ?, '%')";
-    }
 }

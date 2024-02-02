@@ -17,6 +17,7 @@ import java.util.Locale;
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.recipient.dto.RecipientFieldDto;
 import com.agnitas.service.ServiceResult;
+import com.agnitas.web.mvc.Popups;
 
 public interface ProfileFieldValidationService {
 
@@ -45,6 +46,8 @@ public interface ProfileFieldValidationService {
     boolean hasNotAllowedNumberOfEntries(int companyId);
 
     boolean hasTargetGroups(int companyId, String fieldName);
+
+    boolean isValidToDelete(String column, int companyId, Locale locale, Popups popups);
 
     boolean isStandardColumn(String fieldName);
     

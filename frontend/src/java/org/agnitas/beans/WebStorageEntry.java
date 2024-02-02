@@ -21,7 +21,7 @@ package org.agnitas.beans;
  */
 public interface WebStorageEntry extends Cloneable {
     /**
-     * Keep in mind to implement this method properly to make sure that {@link org.agnitas.service.WebStorage#get(org.agnitas.service.WebStorageBundle)}
+     * Keep in mind to implement this method properly to make sure that {@link com.agnitas.service.WebStorage#get(org.agnitas.service.WebStorageBundle)}
      * works as intended.
      */
     WebStorageEntry clone() throws CloneNotSupportedException;

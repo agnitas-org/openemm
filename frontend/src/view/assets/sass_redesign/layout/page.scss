@@ -1,0 +1,10 @@
+#page-wrapper {
+  display: flex;
+  height: 100vh;
+}
+
+#content-wrapper {
+  @include flex(column);
+  flex-grow: 1;
+  overflow: auto;
+}

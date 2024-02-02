@@ -51,7 +51,6 @@ import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.emm.core.commons.ActivenessStatus;
 import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
 import com.agnitas.emm.core.commons.uid.UIDFactory;
-import com.agnitas.emm.core.company.service.CompanyTokenService;
 import com.agnitas.emm.core.profilefields.service.ProfileFieldService;
 import com.agnitas.emm.core.servicemail.UnknownCompanyIdException;
 import com.agnitas.emm.core.trackablelinks.service.FormTrackableLinkService;
@@ -81,7 +80,6 @@ public class ComUserformServiceImpl extends UserformServiceImpl implements ComUs
     private ExtensibleUIDService uidService;
     private ComRecipientDao comRecipientDao;				// TODO Replace by RecipientService
     private ProfileFieldService profileFieldService;
-    private CompanyTokenService companyTokenService;
     private RecipientService recipentService;
 
     @Override
@@ -392,7 +390,7 @@ public class ComUserformServiceImpl extends UserformServiceImpl implements ComUs
     
     private Optional<String> companyTokenForAdmin(final Admin admin) {
     	try {
-    		return this.companyTokenService.getCompanyToken(admin.getCompanyID());
+    		return companyTokenService.getCompanyToken(admin.getCompanyID());
     	} catch(final UnknownCompanyIdException e) {
     		return Optional.empty();
     	}
@@ -431,11 +429,6 @@ public class ComUserformServiceImpl extends UserformServiceImpl implements ComUs
     @Required
     public void setProfileFieldService(ProfileFieldService profileFieldService) {
         this.profileFieldService = profileFieldService;
-    }
-    
-    @Required
-    public final void setCompanyTokenService(final CompanyTokenService service) {
-    	this.companyTokenService = Objects.requireNonNull(service, "CompanyTokenService is null");
     }
 
     @Required

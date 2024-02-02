@@ -14,7 +14,6 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -22,16 +21,13 @@ import java.util.Map.Entry;
 import org.agnitas.actions.EmmAction;
 import org.agnitas.beans.impl.ViciousFormDataException;
 import org.agnitas.dao.EmmActionDao;
-
 import org.agnitas.emm.core.velocity.VelocitySpringUtils;
 import org.agnitas.emm.core.velocity.VelocityWrapper;
 import org.agnitas.emm.core.velocity.VelocityWrapperFactory;
-import org.agnitas.util.AgnUtils;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.struts.action.ActionErrors;
 import org.springframework.context.ApplicationContext;
 
 import com.agnitas.emm.core.action.service.EmmActionOperationErrors;
@@ -426,11 +422,13 @@ public class UserFormImpl implements UserForm {
 	
 	private final CaseInsensitiveMap<String, Object> escapeRequestParameters(final Map<String, Object> params) {
 		final CaseInsensitiveMap<String, Object> paramsEscaped = new CaseInsensitiveMap<>(params);
-		
+
+		/*
 		@SuppressWarnings("unchecked")
 		final Map<String, Object> parameters = (Map<String, Object>) paramsEscaped.get("requestParameters");
         paramsEscaped.put("requestParameters", AgnUtils.escapeHtmlInValues(parameters));
-        
+        */
+		
         return paramsEscaped;
 	}
 	
@@ -483,15 +481,7 @@ public class UserFormImpl implements UserForm {
             result += "<br/><br/>" + params.get("velocity_error");
             params.remove("velocity_error");
         }
-        if(params.get("errors") != null) {
-            result += "<br/>";
-            ActionErrors velocityErrors = (ActionErrors) params.get("errors");
-            @SuppressWarnings("unchecked")
-			Iterator<Object> it = velocityErrors.get();
-            while(it.hasNext()) {
-                result += "<br/>" + it.next();
-            }
-        }
+
         return result;
     }
 

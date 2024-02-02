@@ -6,7 +6,6 @@
 <emm:CheckLogon/>
 <emm:Permission token="wizard.export"/>
 
-<c:set var="agnNavigationKey" 		value="subscriber_export" 	scope="request"/>
 <c:set var="agnTitleKey" 			value="export" 				scope="request"/>
 <c:set var="agnSubtitleKey" 		value="export" 				scope="request"/>
 <c:set var="sidemenu_active" 		value="ImportExport" 		scope="request"/>
@@ -33,7 +32,7 @@
         	<c:set target="${element0}" property="type" value="href"/>
         	<c:set target="${element0}" property="btnCls" value="btn btn-regular btn-inverse"/>
         	<c:set target="${element0}" property="iconBefore" value="icon-plus"/>
-        	<c:set target="${element0}" property="name"><mvc:message code="button.New"/></c:set>
+        	<c:set target="${element0}" property="name"><mvc:message code="export.new_export_profile"/></c:set>
     	</jsp:useBean>
     </emm:ShowByPermission>
 </jsp:useBean>

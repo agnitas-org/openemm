@@ -1,0 +1,77 @@
+
+.tile {
+  @extend .card;
+  background-color: $c-white;
+  height: 100%;
+  overflow: hidden;
+
+  .tile-header {
+    @extend .card-header;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: none;
+    min-height: $tile-header-height;
+    background-color: transparent;
+    padding: 0 $gap;
+    color: $c-black;
+
+    @include font($font-size-lg);
+
+    .tile-title {
+      display: flex;
+      gap: $gap-sm;
+      align-items: center;
+    }
+
+    .tile-controls {
+      display: flex;
+      gap: $gap-sm;
+
+      .btn {
+        cursor: pointer;
+      }
+
+      .btn-icon {
+        @include mobile {
+          @include btn-icon($gap-sm - 1, $gap);
+        }
+      }
+    }
+
+    @include mobile {
+      padding-left: $gap-sm;
+      padding-right: $gap-x-sm;
+    }
+  }
+
+  .card-title {
+    margin-bottom: 0;
+  }
+
+  .tile-body {
+    @extend .card-body;
+
+    @include desktop {
+      padding: $gap 0;
+      @include hover-scroll();
+
+      @supports (-moz-appearance:none) {
+        padding-inline: $gap;
+      }
+    }
+
+    @include mobile {
+      padding-inline: $gap-sm;
+      @include hide-scroll();
+    }
+  }
+
+  @include mobile {
+    &.collapsed-mobile {
+      .tile-body {
+        display: none;
+      }
+    }
+  }
+}

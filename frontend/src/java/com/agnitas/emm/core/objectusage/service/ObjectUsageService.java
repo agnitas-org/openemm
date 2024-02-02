@@ -90,4 +90,6 @@ public interface ObjectUsageService {
 	 * @return list of objects referencing given reference table column
 	 */
     ObjectUsages listUsageOfReferenceTableColumn(final int companyID, final int tableID, final String columnName);
+
+	ObjectUsages listUsageOfCompanyDomains(final int companyId, final int domainId, final String domainName, List<String> addressesNames);
 }

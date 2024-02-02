@@ -24,6 +24,7 @@ import java.util.Map;
 
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.impl.PaginatedBaseDaoImpl;
+import org.agnitas.dao.impl.mapper.IntegerRowMapper;
 import org.agnitas.util.AgnUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -37,11 +38,11 @@ import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.emm.core.upload.bean.DownloadData;
 import com.agnitas.emm.core.upload.bean.UploadData;
 import com.agnitas.emm.core.upload.dao.ComUploadDao;
+import org.springframework.transaction.annotation.Transactional;
 
 public class ComUploadDaoImpl extends PaginatedBaseDaoImpl implements ComUploadDao {
 	
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(ComUploadDaoImpl.class);
+	private static final Logger logger = LogManager.getLogger(ComUploadDaoImpl.class);
 	
 	// should be inserted by spring...
 	protected DefaultLobHandler lobhandler = new DefaultLobHandler();
@@ -98,10 +99,18 @@ public class ComUploadDaoImpl extends PaginatedBaseDaoImpl implements ComUploadD
 			data.setContactPhone(resultSet.getString("contact_phone"));
 			data.setSendtoMail(resultSet.getString("sendto_mail"));
 			data.setUploadID(resultSet.getInt("upload_id"));
+			data.setOwners(getUploadOwners(data.getUploadID()));
 
 			return data;
 		}
 	}
+
+
+	// returns a list of admins ids that can access the uploaded file
+    private List<Integer> getUploadOwners(int uploadId) {
+        return select(logger, "SELECT admin_id FROM admin_upload_list_tbl WHERE upload_id = ?",
+                IntegerRowMapper.INSTANCE, uploadId);
+    }
 
 	/**
 	 * This method loads ONLY a few fields from the database for given file
@@ -234,24 +243,6 @@ public class ComUploadDaoImpl extends PaginatedBaseDaoImpl implements ComUploadD
 	}
 
 	@Override
-	@Deprecated
-	
-	 /**
-	  * don't hold data in RAM
-	  * 
-     * @deprecated use {@link sendDataToStream(int uploadId, OutputStream stream)}.
-     */
-	public UploadData loadData(int uploadID) {
-		List<UploadData> resultList;
-		String sql = "SELECT payload, admin_id, creation_date, upload_id, filename, filesize, contact_firstname, contact_name,"
-				+ " contact_mail, contact_phone, sendto_mail, upload_id FROM upload_tbl WHERE upload_ID = ?";
-		// The list must contain only ONE result! Everything else would be a
-		// very big mistake!
-		resultList = select(logger, sql, new DownloadDataRowMapper(), uploadID);
-		return resultList.get(0); // see comment above.
-	}
-
-	@Override
 	@DaoUpdateReturnValueCheck
 	public void saveData(final UploadData uploadData, final InputStream inStream) throws Exception {
 		if (isOracleDB()) {
@@ -319,13 +310,17 @@ public class ComUploadDaoImpl extends PaginatedBaseDaoImpl implements ComUploadD
 	}
 
 	@Override
+    @Transactional
 	@DaoUpdateReturnValueCheck
 	public void deleteData(int uploadID) {
+		update(logger, "DELETE FROM admin_upload_list_tbl WHERE upload_id = ?", uploadID);
 		update(logger, "DELETE FROM upload_tbl WHERE upload_id = ?", uploadID);
 	}
 	
 	@Override
+    @Transactional
 	public boolean deleteByCompany(int companyID) {
+        update(logger, "DELETE FROM admin_upload_list_tbl WHERE admin_id IN (SELECT admin_id FROM admin_tbl WHERE company_id = ?)", companyID);
 		int touchedLines = update(logger, "DELETE FROM upload_tbl WHERE company_id = ?", companyID);
 		return touchedLines > 0;
 	}

@@ -1,0 +1,32 @@
+
+#dashboard-add-ons {
+  .tile-body {
+    @include flex(column, $gap-sm);
+  }
+
+  #feature-preview {
+    @include size(100%, 120px);
+  }
+
+  #feature-name-container {
+    @include flex(row, $gap-sm);
+    align-items: center;
+
+    @include font($font-size-base);
+
+    i {
+      @include flex-center();
+      flex: 0 0 auto;
+
+      @include size(20px);
+
+      background-color: #4B4B4B;
+      color: $c-white;
+      border-radius: 2px;
+    }
+  }
+
+  #feature-description {
+    @include font($font-size-sm, $font-weight-normal);
+  }
+}

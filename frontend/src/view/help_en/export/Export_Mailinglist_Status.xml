@@ -1,0 +1,14 @@
+<HelpBalloon>
+	<title><![CDATA[Add status of recipients for the following mailing lists]]></title>
+	<content><![CDATA[Here you can output the recipient status for any mailing lists for the addresses to be exported (selection in the "Select recipients for export" section). The recipient status is displayed numerically and can have the following values:
+	<br />
+	Value: 1 ; Status: active <br /> 
+	Value: 2 ; Status: Bounce <br />
+	Value: 3 ; Status: Opt-out by Admin <br />
+	Value: 4 ; Status: Opt-out by recipient <br />
+	Value: 5 ; Status: Waiting for double-opt-in-conformation <br />
+	Value: 6 ; Status: On blocklist <br />
+	Value: 7 ; Status: Temporarily inactive 
+	]]>
+	</content>
+</HelpBalloon>

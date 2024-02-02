@@ -250,11 +250,12 @@ public class TargetExpression {
 
 		if (rc == null) {
 			String sql = null;
+			boolean hidden = false;
 			boolean databaseOnly = false;
 
 			try {
 				Map <String, Object>	row = data.dbase.querys (
-					"SELECT target_sql, component_hide, eql, deleted, invalid "+
+					"SELECT target_sql, component_hide, eql, hidden, deleted, invalid "+
 					"FROM dyn_target_tbl "+
 					"WHERE target_id = :targetID",
 					"targetID", tid
@@ -281,6 +282,7 @@ public class TargetExpression {
 							sql = null;
 							reason = "invalid sql";
 						}
+						hidden = data.dbase.asInt(row.get("hidden")) == 1;
 						databaseOnly = (data.dbase.asInt(row.get("component_hide")) == 1) && (row.get("eql") != null);
 					}
 				} else {
@@ -293,7 +295,7 @@ public class TargetExpression {
 				sql = null;
 				reason = "failure";
 			}
-			rc = new Target(tid, sql, databaseOnly);
+			rc = new Target(tid, sql, hidden, databaseOnly);
 			targets.put(tid, rc);
 		}
 		if (!rc.valid()) {
@@ -339,7 +341,7 @@ public class TargetExpression {
 				targets
 					.values ()
 					.stream ()
-					.filter ((t) -> (forceResolveByDatabase || t.databaseOnly ()) && t.needEvaluation ())
+					.filter ((t) -> ((forceResolveByDatabase && (! t.isHidden ())) || t.databaseOnly ()) && t.needEvaluation ())
 					.forEach ((t) -> resolveByDatabase.add (t));
 			}
 		}

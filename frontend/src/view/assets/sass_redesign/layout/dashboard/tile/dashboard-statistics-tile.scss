@@ -1,0 +1,29 @@
+
+#dashboard-statistics {
+
+  --chart-bar-color: #569AFF;
+  --chart-label-color: #{$gray-700};
+  --chart-font-family: 'Poppins', sans-serif;
+  --chart-font-size: 14px; // note: rem not works!
+
+  .tile-header {
+    gap: $gap-sm;
+
+    .dropdown-container {
+      overflow: hidden;
+      flex-grow: 1;
+    }
+  }
+
+  .tile-body {
+    &.has-chart {
+      @media only screen and (min-width: 601px) {
+        padding: $gap $gap-sm;
+      }
+
+      @media only screen and (max-width: 600px) {
+        padding-inline: 0;
+      }
+    }
+  }
+}

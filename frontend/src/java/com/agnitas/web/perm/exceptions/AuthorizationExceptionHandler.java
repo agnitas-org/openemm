@@ -25,15 +25,15 @@ public class AuthorizationExceptionHandler {
 
     @ExceptionHandler(AuthorizationException.class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
-    public String onAuthorizationException(AuthorizationException e) {
-        logger.error("User authorization required", e);
+    public String onAuthorizationException(@SuppressWarnings("unused") AuthorizationException e) {
+        logger.error("User authorization required");
         return "forward:/logon.action";
     }
 
     @ExceptionHandler(NotAllowedActionException.class)
     @ResponseStatus(HttpStatus.FORBIDDEN)
     public String onNotAllowedActionException(NotAllowedActionException e) {
-        logger.error("Permission denied: user " + e.getUsername() + " does not have sufficient privileges for " + e.getToken(), e);
-        return "forward:/permissionDenied.do";
+        logger.error("Permission denied: user " + e.getUsername() + " does not have sufficient privileges for " + e.getToken());
+        return "permission_denied";
     }
 }

@@ -99,6 +99,8 @@ public interface MediatypeEmail extends Mediatype {
      */
     String getSubject();
 
+    String getPreHeader();
+
     /**
      * Getter for property subject.
      * 
@@ -168,6 +170,8 @@ public interface MediatypeEmail extends Mediatype {
      * @param subject New value of property subject.
      */
     void setSubject(String subject);
+
+    void setPreHeader(String preHeader);
 
     /**
      * Setter for property subject.

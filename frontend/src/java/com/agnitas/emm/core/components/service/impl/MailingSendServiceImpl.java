@@ -10,6 +10,7 @@
 
 package com.agnitas.emm.core.components.service.impl;
 
+import static com.agnitas.emm.core.components.service.MailingBlockSizeService.UNLIMITED_SPEED;
 import static org.apache.commons.lang3.ArrayUtils.isNotEmpty;
 
 import com.agnitas.beans.Admin;
@@ -45,6 +46,7 @@ import com.agnitas.emm.core.mailing.service.MailingDeliveryBlockingService;
 import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.emm.core.mailing.service.MailingStopService;
 import com.agnitas.emm.core.mailing.service.MailingStopServiceException;
+import com.agnitas.emm.core.mediatypes.service.MediaTypesService;
 import com.agnitas.exception.ValidationException;
 import com.agnitas.messages.I18nString;
 import com.agnitas.messages.Message;
@@ -86,11 +88,14 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.stream.Collectors;
 
 @Service("MailingSendService")
 public class MailingSendServiceImpl implements MailingSendService {
 
     private static final Logger logger = LogManager.getLogger(MailingSendServiceImpl.class);
+
+    private static final List<Integer> SPEED_OPTIONS = List.of(UNLIMITED_SPEED, 500_000, 250_000, 100_000, 50_000, 25_000, 10_000, 5_000, 1_000);
 
     protected final MailingSendLogWriter logWriter;
     protected final ComMailingDao mailingDao;
@@ -112,6 +117,7 @@ public class MailingSendServiceImpl implements MailingSendService {
     private final BounceFilterService bounceFilterService;
     private final JavaMailService javaMailService;
     private final MailingStopService mailingStopService;
+    private final MediaTypesService mediaTypesService;
 
     @Autowired
     public MailingSendServiceImpl(MailingSendLogWriter logWriter, ComMailingDao mailingDao, MaildropStatusDao maildropStatusDao, MailingTriggerService mailingTriggerService,
@@ -119,7 +125,7 @@ public class MailingSendServiceImpl implements MailingSendService {
                                   MaildropService maildropService, OnepixelDao onepixelDao, TrackableLinkDao trackableLinkDao, ComRecipientDao recipientDao, ComCompanyDao companyDao,
                                   ComMailingBaseService mailingBaseService, BlacklistService blacklistService, MailingReportScheduleService mailingReportScheduleService,
                                   MailingDeliveryBlockingService mailingDeliveryBlockingService, BounceFilterService bounceFilterService, JavaMailService javaMailService,
-                                  MailingStopService mailingStopService) {
+                                  MailingStopService mailingStopService, MediaTypesService mediaTypesService) {
 
         this.logWriter = logWriter;
         this.mailingDao = mailingDao;
@@ -141,6 +147,19 @@ public class MailingSendServiceImpl implements MailingSendService {
         this.bounceFilterService = bounceFilterService;
         this.javaMailService = javaMailService;
         this.mailingStopService = mailingStopService;
+        this.mediaTypesService = mediaTypesService;
+    }
+
+    @Override
+    public List<Integer> getAvailableSendingSpeedOptions(int companyID) {
+        if (!configService.getBooleanValue(ConfigValue.ForceSteppingBlocksize, companyID)) {
+            return SPEED_OPTIONS;
+        }
+
+        int maxSendingSpeed = configService.getIntegerValue(ConfigValue.DefaultBlocksizeValue, companyID);
+        return SPEED_OPTIONS.stream()
+                .filter(v -> v <= maxSendingSpeed && v != UNLIMITED_SPEED)
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -163,7 +182,7 @@ public class MailingSendServiceImpl implements MailingSendService {
         }
 
         if (MailingType.DATE_BASED.equals(mailing.getMailingType())) {
-            return activateDateBasedMailing(mailing, options);
+            return activateDateBasedMailing(mailing, options, admin);
         }
 
         if (MailingType.ACTION_BASED.equals(mailing.getMailingType())) {
@@ -192,10 +211,7 @@ public class MailingSendServiceImpl implements MailingSendService {
         }
 
         activateDeeptrackingIfPossible(mailingID, companyID);
-
-        if (!sendOptions.isFromWorkflow()) {
-            scheduleReport(admin, mailing, sendOptions);
-        }
+        scheduleReport(admin, mailing, sendOptions);
 
         updateMediatypeEmail(mailing, sendOptions);
 
@@ -209,7 +225,7 @@ public class MailingSendServiceImpl implements MailingSendService {
         } else {
             generationStatus = MaildropGenerationStatus.SCHEDULED.getCode();
             mailing.setSenddate(sendOptions.getDate());
-            mailingDao.updateStatus(mailing, MailingStatus.SCHEDULED);
+            mailingDao.updateStatus(mailing.getCompanyID(), mailing.getId(), MailingStatus.SCHEDULED, mailing.getSenddate());
         }
 
         MaildropEntry maildrop = prepareMaildropForWorldDelivery(mailing, sendOptions, generationDate, generationStatus);
@@ -220,13 +236,13 @@ public class MailingSendServiceImpl implements MailingSendService {
 
         int maildropId = maildropStatusDao.saveMaildropEntry(maildrop);
 
-        if (!sendOptions.isFromWorkflow()) {
+        if (!sendOptions.isFromWorkflow() || admin.permissionAllowed(Permission.WORKFLOW_REQUIRED_AUTO_IMPORT)) {
             mailingDeliveryBlockingService.blockByAutoImport(mailingID, sendOptions.getRequiredAutoImport(), maildropId);
         }
 
         if (generationStatus == MaildropGenerationStatus.NOW.getCode()) {
             mailingTriggerService.triggerMailing(maildropId, mailingType);
-            mailingDao.updateStatus(mailing, MailingStatus.SCHEDULED);
+            mailingDao.updateStatus(mailing.getCompanyID(), mailing.getId(), MailingStatus.SCHEDULED, mailing.getSenddate());
         }
 
         clearTestActionsData(mailingID, companyID);
@@ -530,33 +546,39 @@ public class MailingSendServiceImpl implements MailingSendService {
     private MaildropEntry prepareMaildropForWorldDelivery(Mailing mailing, MailingSendOptions sendOptions, Date generationDate, int generationStatus) {
         int companyID = mailing.getCompanyID();
         int mailingID = mailing.getId();
-        MailingType mailingType = mailing.getMailingType();
 
         MaildropEntry maildrop = new MaildropEntryImpl();
 
         maildrop.setGenDate(generationDate);
-        maildrop.setMailGenerationOptimization(getMaildropGenerationCode(sendOptions.getGenerationOptimization()));
         maildrop.setStatus(MaildropStatus.WORLD.getCode());
-        maildrop.setMaxRecipients(sendOptions.getMaxRecipients());
         maildrop.setSendDate(sendOptions.getDate());
         maildrop.setGenStatus(generationStatus);
         maildrop.setGenChangeDate(new Date());
         maildrop.setMailingID(mailingID);
         maildrop.setCompanyID(companyID);
 
-        if (sendOptions.getGenerationOptimization() == MailGenerationOptimizationMode.NONE.getCode()
-                && (mailingType == MailingType.NORMAL || mailingType == MailingType.FOLLOW_UP)) {
-            Tuple<Integer, Integer> result = blockSizeService.calculateBlocksizeStepping(companyID, sendOptions.getStepping(), sendOptions.getBlockSize());
-
-            maildrop.setStepping(result.getSecond());
-            maildrop.setBlocksize(result.getFirst());
-        }
+        setDeliveryOptionsToMaildrop(maildrop, sendOptions, mailing);
 
         return maildrop;
     }
 
+    private void setDeliveryOptionsToMaildrop(MaildropEntry maildrop, MailingSendOptions sendOptions, Mailing mailing) {
+        MailingType mailingType = mailing.getMailingType();
+
+        maildrop.setMailGenerationOptimization(getMaildropGenerationCode(sendOptions.getGenerationOptimization()));
+        maildrop.setMaxRecipients(sendOptions.getMaxRecipients());
+
+        if (sendOptions.getGenerationOptimization() == MailGenerationOptimizationMode.NONE.getCode()
+                && (mailingType == MailingType.NORMAL || mailingType == MailingType.FOLLOW_UP || mailingType == MailingType.DATE_BASED)) {
+            Tuple<Integer, Integer> result = blockSizeService.calculateBlocksizeStepping(mailing.getCompanyID(), sendOptions.getStepping(), sendOptions.getBlockSize());
+
+            maildrop.setStepping(result.getSecond());
+            maildrop.setBlocksize(result.getFirst());
+        }
+    }
+
     @Override
-    public ServiceResult<UserAction> activateDateBasedMailing(Mailing mailing, MailingSendOptions sendOptions) {
+    public ServiceResult<UserAction> activateDateBasedMailing(Mailing mailing, MailingSendOptions sendOptions, Admin admin) {
         int companyID = mailing.getCompanyID();
         int mailingID = mailing.getId();
 
@@ -571,18 +593,22 @@ public class MailingSendServiceImpl implements MailingSendService {
             return ServiceResult.error(result.getErrorMessages());
         }
 
+        if (sendOptions.isActivateAgainToday()) {
+            mailingService.allowDateBasedMailingResending(mailingID);
+        }
+
         activateDeeptrackingIfPossible(mailingID, companyID);
-        MaildropEntry maildrop = prepareDateBasedMaildrop(mailing, sendOptions.getDate(), sendOptions.isFromWorkflow());
+        MaildropEntry maildrop = prepareDateBasedMaildrop(mailing, sendOptions);
 
         try {
             if (sendOptions.isFromWorkflow()) {
                 maildropStatusDao.cleanup(mailing.getMaildropStatus());
-                updateMediatypeEmail(mailing, sendOptions);
             }
 
+            updateMediatypeEmail(mailing, sendOptions);
             int maildropId = maildropStatusDao.saveMaildropEntry(maildrop);
 
-            if (!sendOptions.isFromWorkflow()) {
+            if (!sendOptions.isFromWorkflow() || admin.permissionAllowed(Permission.WORKFLOW_REQUIRED_AUTO_IMPORT)) {
                 mailingDeliveryBlockingService.blockByAutoImport(mailingID, sendOptions.getRequiredAutoImport(), maildropId);
             }
 
@@ -599,9 +625,9 @@ public class MailingSendServiceImpl implements MailingSendService {
         }
     }
 
-    private MaildropEntry prepareDateBasedMaildrop(Mailing mailing, Date sendDate, boolean isFromWorkflow) {
-        sendDate = truncateDateSecondsAndMilliseconds(sendDate);
-        Date generationDate = detectGenerationDate(mailing.getCompanyID(), sendDate, isFromWorkflow);
+    private MaildropEntry prepareDateBasedMaildrop(Mailing mailing, MailingSendOptions options) {
+        Date sendDate = truncateDateSecondsAndMilliseconds(options.getDate());
+        Date generationDate = detectGenerationDate(mailing.getCompanyID(), sendDate, options.isFromWorkflow());
 
         MaildropEntry maildrop = new MaildropEntryImpl();
 
@@ -612,6 +638,8 @@ public class MailingSendServiceImpl implements MailingSendService {
         maildrop.setGenChangeDate(new Date());
         maildrop.setMailingID(mailing.getId());
         maildrop.setCompanyID(mailing.getCompanyID());
+
+        setDeliveryOptionsToMaildrop(maildrop, options, mailing);
 
         return maildrop;
     }
@@ -680,7 +708,7 @@ public class MailingSendServiceImpl implements MailingSendService {
         return null;
     }
 
-    private void updateMediatypeEmail(Mailing mailing, MailingSendOptions sendOptions) {
+    private void updateMediatypeEmail(Mailing mailing, MailingSendOptions sendOptions) throws Exception {
         MediatypeEmail emailParam = mailing.getEmailParam();
 
         if (emailParam != null) {
@@ -691,7 +719,7 @@ public class MailingSendServiceImpl implements MailingSendService {
                 emailParam.setFollowupFor(String.valueOf(sendOptions.getFollowupFor()));
             }
 
-            mailingDao.saveMailing(mailing, false);
+            mediaTypesService.saveMediatypes(mailing.getCompanyID(), mailing.getId(), mailing.getMediatypes());
         }
     }
 
@@ -801,9 +829,9 @@ public class MailingSendServiceImpl implements MailingSendService {
 
     private void updateStatusByMaildropStatus(Mailing mailing, MaildropStatus status) {
         if (status.getCode() == MaildropStatus.TEST.getCode()) {
-            mailingDao.updateStatus(mailing, MailingStatus.TEST);
+            mailingDao.updateStatus(mailing.getCompanyID(), mailing.getId(), MailingStatus.TEST, null);
         } else if (status.getCode() == MaildropStatus.ADMIN.getCode()) {
-            mailingDao.updateStatus(mailing, MailingStatus.ADMIN);
+            mailingDao.updateStatus(mailing.getCompanyID(), mailing.getId(), MailingStatus.ADMIN, null);
         }
     }
 
@@ -827,7 +855,7 @@ public class MailingSendServiceImpl implements MailingSendService {
 
         maildropStatusDao.cleanup(mailing.getMaildropStatus());
         mailingDao.saveMailing(mailing, false);
-        mailingDao.updateStatus(mailing, MailingStatus.DISABLE);
+        mailingDao.updateStatus(mailing.getCompanyID(), mailing.getId(), MailingStatus.DISABLE, null);
 
         return true;
     }
@@ -837,7 +865,7 @@ public class MailingSendServiceImpl implements MailingSendService {
         mailing.setLocked(0);
 
         mailingDao.saveMailing(mailing, false);
-        mailingDao.updateStatus(mailing, MailingStatus.READY);
+        mailingDao.updateStatus(mailing.getCompanyID(), mailing.getId(), MailingStatus.READY, null);
     }
 
     @Override

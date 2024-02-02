@@ -27,10 +27,6 @@
     return getEntityNameByType('form', webFormId, "/workflow/ajax/getWebFormNames.action");
   };
 
-  NodeTitleHelper.getReportName = function (reportId) {
-    return getEntityNameByType('report', reportId, "/workflow/ajax/getReportNames.action");
-  };
-
   NodeTitleHelper.getTargetName = function (targetId) {
     return getEntityNameByType('target', targetId, "/workflow/ajax/getTargetNames.action");
   };
@@ -214,20 +210,6 @@
       return targetNames.join(separator) + ' ' + t('defaults.andMore', targets.length - Def.TITLE_MAX_TARGETS) + '...';
     } else {
       return targetNames.join(separator);
-    }
-  }
-
-  function getReportDescription(reports) {
-    var reportNames = [];
-
-    for (var i = 0; i < Def.TITLE_MAX_REPORTS && i < reports.length; i++) {
-      reportNames.push(NodeTitleHelper.getReportName(reports[i]));
-    }
-
-    if (reports.length > Def.TITLE_MAX_REPORTS) {
-      return reportNames.join(',\n') + ' ' + t('defaults.andMore', reports.length - Def.TITLE_MAX_REPORTS) + '...';
-    } else {
-      return reportNames.join(',\n');
     }
   }
 
@@ -451,11 +433,6 @@
     recipient: {
       title: function(data, node) {
         return getRecipientDescription(data.mailinglistId, data.targets, data.targetsOption, !node.isInRecipientsChain());
-      }
-    },
-    report: {
-      title: function(data) {
-        return t('workflow.defaults.report') + ':\n' + getReportDescription(data.reports);
       }
     },
     archive: {

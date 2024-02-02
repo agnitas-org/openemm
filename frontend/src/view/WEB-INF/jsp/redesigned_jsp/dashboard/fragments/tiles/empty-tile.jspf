@@ -1,0 +1,17 @@
+
+<script id="dashboard-tile-empty" type="text/x-mustache-template">
+    <div class="tile draggable-tile dashboard-plus-tile">
+        <div class="tile-header">
+            <span class="tile-title">{{- tileName }}</span>
+            <div class="tile-controls">
+                <a class="btn draggable-button"><i class="icon icon-arrows-alt"></i></a>
+            </div>
+        </div>
+        <div class="tile-body">
+            <button type="button" class="btn" data-action="select-tile">
+                <i class="icon icon-plus"></i>
+            </button>
+        </div>
+        <div><div class="highlight-container"></div></div>
+    </div>
+</script>

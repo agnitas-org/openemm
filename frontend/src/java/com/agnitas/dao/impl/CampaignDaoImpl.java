@@ -46,8 +46,8 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.jdbc.core.RowMapper;
 
 public class CampaignDaoImpl extends BaseDaoImpl implements CampaignDao {
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(CampaignDaoImpl.class);
+
+	private static final Logger logger = LogManager.getLogger(CampaignDaoImpl.class);
 	
 	protected CampaignStatEntryFactory campaignStatEntryFactory;
 	
@@ -580,19 +580,5 @@ public class CampaignDaoImpl extends BaseDaoImpl implements CampaignDao {
 	
 	public void setCampaignStatEntryFactory(CampaignStatEntryFactory campaignStatEntryFactory) {
 		this.campaignStatEntryFactory = campaignStatEntryFactory;
-	}
-	
-	public class CampaignRowMapper implements RowMapper<Campaign> {
-		@Override
-		public Campaign mapRow(ResultSet resultSet, int row) throws SQLException {
-			Campaign campaign = new CampaignImpl();
-			
-			campaign.setId(resultSet.getInt("campaign_id"));
-			campaign.setCompanyID(resultSet.getInt("company_id"));
-			campaign.setDescription(resultSet.getString("description"));
-			campaign.setShortname(resultSet.getString("shortname"));
-			
-			return campaign;
-		}
 	}
 }

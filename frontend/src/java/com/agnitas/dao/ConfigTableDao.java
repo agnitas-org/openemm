@@ -14,6 +14,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import com.agnitas.util.Version;
+
 /**
  * This class is intended to simplify access to the config_tbl.
  */
@@ -32,4 +34,8 @@ public interface ConfigTableDao {
 	void checkAndSetReleaseVersion();
 
 	Date getCurrentDbTime();
+
+	int getStartupCountOfLtsVersion(Version versionToCheck);
+
+	int getStartupCount();
 }

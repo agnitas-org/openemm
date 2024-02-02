@@ -35,7 +35,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
@@ -74,6 +73,7 @@ import org.agnitas.emm.core.recipient.RecipientUtils;
 import org.agnitas.emm.core.recipient.service.InvalidDataException;
 import org.agnitas.emm.core.recipient.service.RecipientsModel.CriteriaEquals;
 import org.agnitas.service.ImportException;
+import org.agnitas.service.MailingRecipientExportWorker;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.CaseInsensitiveSet;
 import org.agnitas.util.CsvColInfo;
@@ -135,12 +135,17 @@ import com.agnitas.emm.core.profilefields.ProfileFieldBulkUpdateException;
 import com.agnitas.emm.core.recipient.ProfileFieldHistoryFeatureNotEnabledException;
 import com.agnitas.emm.core.recipient.RecipientException;
 import com.agnitas.emm.core.recipient.service.RecipientProfileHistoryService;
+import com.agnitas.emm.core.recipient.service.RecipientType;
+import com.agnitas.emm.core.service.RecipientFieldDescription;
 import com.agnitas.emm.core.target.eql.EqlFacade;
 import com.agnitas.emm.core.target.eql.codegen.CodeGeneratorException;
 import com.agnitas.emm.core.target.eql.codegen.resolver.ProfileFieldResolveException;
 import com.agnitas.emm.core.target.eql.codegen.resolver.ReferenceTableResolveException;
 import com.agnitas.emm.core.target.eql.codegen.sql.SqlCode;
 import com.agnitas.emm.core.target.eql.parser.EqlParserException;
+import com.agnitas.emm.restful.RestfulClientException;
+import com.agnitas.emm.util.html.HtmlChecker;
+import com.agnitas.emm.util.html.HtmlCheckerException;
 import com.agnitas.service.ColumnInfoService;
 import com.agnitas.util.NumericUtil;
 
@@ -463,7 +468,331 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 
 	@Override
 	public PaginatedListImpl<MailingRecipientStatRow> getMailingRecipients(int mailingId, int companyId, int filterType, int pageNumber, int pageSize, String sortCriterion, boolean sortAscending, List<String> columns) throws Exception {
-        throw new UnsupportedOperationException("Get mailing recipients is unsupported.");
+		Map<String, String> sortableColumns = new CaseInsensitiveMap<>();
+
+		if (columns != null && !columns.isEmpty()) {
+			List<String> columnNames = DbUtilities.getColumnNames(getDataSource(), "customer_" + companyId + "_tbl");
+			for (String column : columns) {
+				if (columnNames.contains(column)) {
+					sortableColumns.put(column, "cust." + column);
+				}
+			}
+		} else {
+			columns = new ArrayList<>();
+		}
+
+		if (!columns.contains("firstname")) {
+			columns.add("firstname");
+		}
+		if (!columns.contains("lastname")) {
+			columns.add("lastname");
+		}
+		if (!columns.contains("email")) {
+			columns.add("email");
+		}
+
+		sortableColumns.put("firstname", "cust.firstname");
+		sortableColumns.put("lastname", "cust.lastname");
+		sortableColumns.put("email", "cust.email");
+		sortableColumns.put("receive_time", "receive_time");
+		sortableColumns.put("open_time", "open_time");
+		sortableColumns.put("openings", "openings");
+		sortableColumns.put("click_time", "click_time");
+		sortableColumns.put("clicks", "clicks");
+		sortableColumns.put("bounce_time", "bounce_time");
+		sortableColumns.put("optout_time", "optout_time");
+
+		final int mailingListId = selectInt(logger, "SELECT mailinglist_id FROM mailing_tbl WHERE company_id = ? AND mailing_id = ?", companyId, mailingId);
+
+		// Keep the order of requested columns
+		List<String> sqlColumns = new ArrayList<>();
+		final List<String> toRemove = new ArrayList<>();
+		for (String column : columns) {
+			if (sortableColumns.get(column) == null) {
+				toRemove.add(column);
+			} else if (sortableColumns.get(column).startsWith("cust.")) {
+				sqlColumns.add(sortableColumns.get(column));
+			}
+		}
+		columns.removeAll(toRemove);
+
+		int totalRows = getNumberOfMailingRecipients(companyId, filterType, mailingId, mailingListId, sqlColumns);
+		List<Object> params = new ArrayList<>();
+		String selectSql;
+		List<MailingRecipientStatRow> recipients;
+		if (isRecipientsNumberExceedsLimit(totalRows, companyId)) {
+			// if the maximum number of recipients to show is exceeded
+			// only the first page of unsorted recipients is shown to discharge the database and its performance
+			// BTW: another sql statement will be executed that was optimized
+			pageNumber = 1;
+			selectSql = getMailingRecipientsQueryWithoutSorting(companyId, mailingId, mailingListId, filterType, columns, pageSize, params);
+		} else {
+			if ("customer_id".equalsIgnoreCase(sortCriterion)) {
+				sortCriterion = "customer_id";
+			} else if (StringUtils.isBlank(sortCriterion) || !sortableColumns.containsKey(sortCriterion)) {
+				sortCriterion = "receive_time";
+			} else if (sortableColumns.containsKey(sortCriterion)) {
+				sortCriterion = sortableColumns.get(sortCriterion);
+			}
+
+			selectSql =
+					"SELECT cust.customer_id,"
+							+ " " + StringUtils.join(sqlColumns, ", ") + ","
+							+ " MAX(succ.timestamp) AS receive_time,"
+							+ " MIN(opl.first_open) AS open_time,"
+							+ " COALESCE(MAX(opl.open_count), 0) AS openings,"
+							+ " MIN(rlog.timestamp) AS click_time,"
+							+ " COUNT(DISTINCT rlog.timestamp) AS clicks,"
+							+ " MAX(bind1.timestamp) AS bounce_time,"
+							+ " MAX(bind2.timestamp) AS optout_time"
+							+ " FROM customer_" + companyId + "_tbl cust"
+							+ " JOIN mailtrack_" + companyId + "_tbl track ON track.customer_id = cust.customer_id AND track.mailing_id = ?"
+							+ " LEFT OUTER JOIN success_" + companyId + "_tbl succ ON succ.customer_id = cust.customer_id AND succ.mailing_id = ?"
+							+ " LEFT OUTER JOIN onepixellog_" + companyId + "_tbl opl ON opl.customer_id = cust.customer_id AND opl.mailing_id = ?"
+							+ " LEFT OUTER JOIN rdirlog_" + companyId + "_tbl rlog ON rlog.customer_id = cust.customer_id AND rlog.mailing_id = ?"
+							+ " LEFT OUTER JOIN customer_" + companyId + "_binding_tbl bind1 ON bind1.customer_id = cust.customer_id AND bind1.exit_mailing_id = ? AND bind1.user_status = ? AND bind1.user_type NOT IN (?, ?, ?)"
+							+ " LEFT OUTER JOIN customer_" + companyId + "_binding_tbl bind2 ON bind2.customer_id = cust.customer_id AND bind2.exit_mailing_id = ? AND bind2.user_status IN (?, ?) AND bind2.user_type IN (?, ?)"
+							+ " WHERE EXISTS"
+							+ " (SELECT 1 FROM customer_" + companyId + "_binding_tbl bind WHERE bind.customer_id = cust.customer_id AND bind.mailinglist_id = ? AND bind.user_type NOT IN (?, ?, ?))"
+							+ " GROUP BY cust.customer_id, " + StringUtils.join(sqlColumns, ", ");
+
+			switch (filterType) {
+				case MailingRecipientExportWorker.MAILING_RECIPIENTS_OPENED:
+					selectSql = "SELECT * FROM (" + selectSql + ")" + (isOracleDB() ? "" : " subsel") + " WHERE open_time IS NOT NULL";
+					if (sortCriterion != null && sortCriterion.startsWith("cust.")) {
+						sortCriterion = sortCriterion.substring(5);
+					}
+					break;
+
+				case MailingRecipientExportWorker.MAILING_RECIPIENTS_CLICKED:
+					selectSql = "SELECT * FROM (" + selectSql + ")" + (isOracleDB() ? "" : " subsel") + " WHERE click_time IS NOT NULL";
+					if (sortCriterion != null && sortCriterion.startsWith("cust.")) {
+						sortCriterion = sortCriterion.substring(5);
+					}
+					break;
+
+				case MailingRecipientExportWorker.MAILING_RECIPIENTS_BOUNCED:
+					selectSql = "SELECT * FROM (" + selectSql + ")" + (isOracleDB() ? "" : " subsel") + " WHERE bounce_time IS NOT NULL";
+					if (sortCriterion != null && sortCriterion.startsWith("cust.")) {
+						sortCriterion = sortCriterion.substring(5);
+					}
+					break;
+
+				case MailingRecipientExportWorker.MAILING_RECIPIENTS_UNSUBSCRIBED:
+					selectSql = "SELECT * FROM (" + selectSql + ")" + (isOracleDB() ? "" : " subsel") + " WHERE optout_time IS NOT NULL";
+					if (sortCriterion != null && sortCriterion.startsWith("cust.")) {
+						sortCriterion = sortCriterion.substring(5);
+					}
+					break;
+
+				default:
+					// filter nothing
+			}
+
+			String sortClause = "ORDER BY ";
+			if (isOracleDB()) {
+				sortClause += sortCriterion + " " + (sortAscending ? "ASC" : "DESC") + " NULLS LAST";
+			} else {
+				// Force MySQL sort null values the same way that Oracle does
+				if ("receive_time".equals(sortCriterion)
+						|| "open_time".equals(sortCriterion)
+						|| "openings".equals(sortCriterion)
+						|| "click_time".equals(sortCriterion)
+						|| "clicks".equals(sortCriterion)
+						|| "bounce_time".equals(sortCriterion)
+						|| "optout_time".equals(sortCriterion)) {
+					if (filterType == 0) {
+						selectSql = "SELECT * FROM (" + selectSql + ")" + (isOracleDB() ? "" : " subsel");
+					}
+				}
+				sortClause += "ISNULL(" + sortCriterion + "), " + sortCriterion + " " + (sortAscending ? "ASC" : "DESC");
+			}
+			sortClause += ", customer_id " + (sortAscending ? "ASC" : "DESC");
+
+			params.add(mailingId);
+			params.add(mailingId);
+			params.add(mailingId);
+			params.add(mailingId);
+			params.add(mailingId);
+			params.add(UserStatus.Bounce.getStatusCode());
+			params.add(BindingEntry.UserType.Admin.getTypeCode());
+			params.add(BindingEntry.UserType.TestUser.getTypeCode());
+			params.add(BindingEntry.UserType.TestVIP.getTypeCode());
+			params.add(mailingId);
+			params.add(UserStatus.UserOut.getStatusCode());
+			params.add(UserStatus.AdminOut.getStatusCode());
+			params.add(BindingEntry.UserType.World.getTypeCode());
+			params.add(BindingEntry.UserType.WorldVIP.getTypeCode());
+			params.add(mailingListId);
+			params.add(BindingEntry.UserType.Admin.getTypeCode());
+			params.add(BindingEntry.UserType.TestUser.getTypeCode());
+			params.add(BindingEntry.UserType.TestVIP.getTypeCode());
+
+			pageNumber = AgnUtils.getValidPageNumber(totalRows, pageNumber, pageSize);
+			int offset = pageNumber * pageSize;
+
+			if (isOracleDB()) {
+				selectSql = "SELECT * FROM (SELECT selection.*, rownum AS r FROM (" + selectSql + " " + sortClause + ") selection) WHERE r BETWEEN ? AND ?";
+				params.addAll(List.of((offset - pageSize + 1), offset));
+			} else {
+				selectSql = selectSql + " " + sortClause + " LIMIT ?, ?";
+				params.addAll(List.of((offset - pageSize), pageSize));
+			}
+		}
+
+		List<String> selectedColumns = new ArrayList<>(columns);
+		selectedColumns.addAll(List.of(
+				"customer_id", "receive_time", "open_time", "openings", "click_time", "clicks", "bounce_time", "optout_time"
+		));
+
+		recipients = select(logger, selectSql, new MailingRecipientStatRow_RowMapper(companyId, selectedColumns), params.toArray());
+		return new PaginatedListImpl<>(recipients, totalRows, pageSize, pageNumber, sortCriterion, sortAscending);
+	}
+
+	private String getMailingRecipientsQueryWithoutSorting(int companyId, int mailingId, int mailingListId, int filterType, List<String> columns, int pageSize, List<Object> params) {
+		String sqlColumns = joinWithPrefixes(columns, "cust.");
+		String s3Columns = joinWithPrefixes(columns, "s3.");
+
+		String filteringQuery = "SELECT cust.customer_id, " + sqlColumns +
+				" FROM customer_" + companyId + "_tbl cust " +
+				"    JOIN mailtrack_" + companyId + "_tbl track " +
+				"        ON track.customer_id = cust.customer_id AND track.mailing_id = ? " +
+				"    JOIN customer_" + companyId + "_binding_tbl cb " +
+				"        ON cust.customer_id = cb.customer_id AND cb.mailinglist_id = ? AND cb.user_type NOT IN (?, ?, ?) ";
+
+		params.add(mailingId);
+		params.add(mailingListId);
+		params.add(BindingEntry.UserType.Admin.getTypeCode());
+		params.add(BindingEntry.UserType.TestUser.getTypeCode());
+		params.add(BindingEntry.UserType.TestVIP.getTypeCode());
+
+		filteringQuery += createJoinStatementWithMailingRecipientsFiltering(filterType, params, companyId, mailingId);
+		filteringQuery += " GROUP BY cust.customer_id, " + sqlColumns +
+				" ORDER BY cust.customer_id ";
+
+		String limitedFilteredSelect;
+
+		if (isOracleDB()) {
+			String s1Columns = joinWithPrefixes(columns, "s1.");
+			String s2Columns = joinWithPrefixes(columns, "s2.");
+
+			String filteredRowNumSelect = String.format("SELECT s1.customer_id, %s, rownum AS r FROM (%s) s1", s1Columns, filteringQuery);
+			limitedFilteredSelect = String.format("SELECT s2.customer_id, %s, s2.r FROM (%s) s2 WHERE s2.r BETWEEN 1 AND ?", s2Columns, filteredRowNumSelect);
+		} else {
+			limitedFilteredSelect = filteringQuery + " LIMIT 0, ?";
+		}
+
+		params.add(pageSize);
+
+		String selectQuery = "SELECT s3.customer_id, %s," +
+				"       MAX(succ.timestamp)              AS receive_time, " +
+				"       MIN(opl.first_open)              AS open_time, " +
+				"       COALESCE(MAX(opl.open_count), 0) AS openings, " +
+				"       MIN(rlog.timestamp)              AS click_time, " +
+				"       COUNT(DISTINCT rlog.timestamp)   AS clicks, " +
+				"       MAX(b1.timestamp)                AS bounce_time, " +
+				"       MAX(b2.timestamp)                AS optout_time " +
+				"FROM (%s) s3 " +
+				"     LEFT OUTER JOIN success_" + companyId + "_tbl succ " +
+				"             ON succ.customer_id = s3.customer_id AND succ.mailing_id = ? " +
+				"     LEFT OUTER JOIN onepixellog_" + companyId + "_tbl opl " +
+				"             ON opl.customer_id = s3.customer_id AND opl.mailing_id = ? " +
+				"     LEFT OUTER JOIN rdirlog_" + companyId + "_tbl rlog " +
+				"             ON rlog.customer_id = s3.customer_id AND rlog.mailing_id = ? " +
+				"     LEFT OUTER JOIN customer_" + companyId + "_binding_tbl b1 " +
+				"             ON b1.customer_id = s3.customer_id AND b1.exit_mailing_id = ? AND " +
+				"                     b1.user_status = ? AND b1.user_type NOT IN (?, ?, ?) " +
+				"     LEFT OUTER JOIN customer_" + companyId + "_binding_tbl b2 " +
+				"             ON b2.customer_id = s3.customer_id AND b2.exit_mailing_id = ? AND " +
+				"                     b2.user_status IN (?, ?) AND b2.user_type IN (?, ?) " +
+				"GROUP BY s3.customer_id, %s ";
+
+		params.add(mailingId);
+		params.add(mailingId);
+		params.add(mailingId);
+		params.add(mailingId);
+		params.add(UserStatus.Bounce.getStatusCode());
+		params.add(BindingEntry.UserType.Admin.getTypeCode());
+		params.add(BindingEntry.UserType.TestUser.getTypeCode());
+		params.add(BindingEntry.UserType.TestVIP.getTypeCode());
+
+		params.add(mailingId);
+		params.add(UserStatus.UserOut.getStatusCode());
+		params.add(UserStatus.AdminOut.getStatusCode());
+		params.add(BindingEntry.UserType.World.getTypeCode());
+		params.add(BindingEntry.UserType.WorldVIP.getTypeCode());
+
+		return String.format(selectQuery, s3Columns, limitedFilteredSelect, s3Columns);
+	}
+
+	private String joinWithPrefixes(List<String> strings, String prefix) {
+		return strings.stream()
+				.map(s -> prefix + s)
+				.collect(Collectors.joining(", "));
+	}
+
+	private int getNumberOfMailingRecipients(int companyId, int filterType, int mailingId, int mailinglistId, List<String> columns) {
+		List<Object> params = new ArrayList<>();
+		params.add(mailingId);
+
+		String subSel = "SELECT cust.customer_id, " + StringUtils.join(columns, ", ") +
+				" FROM customer_" + companyId + "_tbl cust " +
+				"         JOIN mailtrack_" + companyId + "_tbl track ON track.customer_id = cust.customer_id AND track.mailing_id = ? ";
+
+		subSel += createJoinStatementWithMailingRecipientsFiltering(filterType, params, companyId, mailingId);
+
+		subSel += " WHERE EXISTS(SELECT 1 FROM customer_" + companyId + "_binding_tbl bind " +
+				" WHERE bind.customer_id = cust.customer_id AND bind.mailinglist_id = ? " +
+				" AND bind.user_type NOT IN (?, ?, ?)) " +
+				" GROUP BY cust.customer_id, " + StringUtils.join(columns, ", ");
+
+		params.add(mailinglistId);
+		params.add(BindingEntry.UserType.Admin.getTypeCode());
+		params.add(BindingEntry.UserType.TestUser.getTypeCode());
+		params.add(BindingEntry.UserType.TestVIP.getTypeCode());
+
+		return selectInt(logger, String.format("SELECT COUNT(*) FROM (%s) sel", subSel), params.toArray());
+	}
+
+	private String createJoinStatementWithMailingRecipientsFiltering(int filterType, List<Object> params, int companyId, int mailingId) {
+		String joinStatement = "";
+
+		switch (filterType) {
+			case MailingRecipientExportWorker.MAILING_RECIPIENTS_OPENED:
+				joinStatement = " JOIN onepixellog_" + companyId + "_tbl opl ON opl.customer_id = cust.customer_id AND opl.mailing_id = ? ";
+				params.add(mailingId);
+				break;
+
+			case MailingRecipientExportWorker.MAILING_RECIPIENTS_CLICKED:
+				joinStatement = " JOIN rdirlog_" + companyId + "_tbl rlog ON rlog.customer_id = cust.customer_id AND rlog.mailing_id = ? ";
+				params.add(mailingId);
+				break;
+
+			case MailingRecipientExportWorker.MAILING_RECIPIENTS_BOUNCED:
+				joinStatement = " JOIN customer_" + companyId + "_binding_tbl bind1 ON bind1.customer_id = cust.customer_id AND bind1.exit_mailing_id = ? " +
+						"AND bind1.user_status = ? AND bind1.user_type NOT IN (?, ?, ?)";
+				params.add(mailingId);
+				params.add(UserStatus.Bounce.getStatusCode());
+				params.add(BindingEntry.UserType.Admin.getTypeCode());
+				params.add(BindingEntry.UserType.TestUser.getTypeCode());
+				params.add(BindingEntry.UserType.TestVIP.getTypeCode());
+				break;
+
+			case MailingRecipientExportWorker.MAILING_RECIPIENTS_UNSUBSCRIBED:
+				joinStatement = " JOIN customer_" + companyId + "_binding_tbl bind2 ON bind2.customer_id = cust.customer_id AND bind2.exit_mailing_id = ? " +
+						"AND bind2.user_status IN (?, ?) AND bind2.user_type IN (?, ?)";
+				params.add(mailingId);
+				params.add(UserStatus.UserOut.getStatusCode());
+				params.add(UserStatus.AdminOut.getStatusCode());
+				params.add(BindingEntry.UserType.World.getTypeCode());
+				params.add(BindingEntry.UserType.WorldVIP.getTypeCode());
+				break;
+
+			default:
+				// filter nothing
+		}
+
+		return joinStatement;
 	}
 	
 	@Override
@@ -1515,8 +1844,21 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 			String currentSqlStatement = null;
 			List<Object[]> currentSqlParameters = new ArrayList<>();
 			
+			boolean allowHtmlTags = configService.getBooleanValue(ConfigValue.AllowHtmlInProfileFields, companyID);
+			
 			for (int i = 0; i < recipients.size(); i++) {
 				Recipient customer = recipients.get(i);
+				
+				for (Entry<String, Object> entry : customer.getCustParameters().entrySet()) {
+					if (entry.getValue() instanceof String) {
+						// Check for unallowed html content
+						try {
+							HtmlChecker.checkForUnallowedHtmlTags((String) entry.getValue(), allowHtmlTags);
+						} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
+							throw new Exception("Invalid recipient data containing HTML for recipient field: " + entry.getKey());
+						}
+					}
+				}
 				
 				if (companyID != customer.getCompanyID()) {
 					results.add(false);
@@ -1626,7 +1968,7 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 			
 			return results;
 		} catch (Exception e) {
-			logger.error("insertCustomers: Exception in getGeneratedKeys", e);
+			logger.error("Error in insertCustomers: " + e.getMessage(), e);
 			return Collections.emptyList();
 		}
 	}
@@ -1673,9 +2015,22 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 			List<Object> results = new ArrayList<>();
 			CaseInsensitiveMap<String, ProfileField> customerTableStructure = loadCustDBProfileStructure(companyID);
 			
+			boolean allowHtmlTags = configService.getBooleanValue(ConfigValue.AllowHtmlInProfileFields, companyID);
+			
 			String currentSqlStatement = null;
 			List<Object[]> currentSqlParameters = new ArrayList<>();
 			for (Recipient customer : recipients) {
+				for (Entry<String, Object> entry : customer.getCustParameters().entrySet()) {
+					if (entry.getValue() instanceof String) {
+						// Check for unallowed html content
+						try {
+							HtmlChecker.checkForUnallowedHtmlTags((String) entry.getValue(), allowHtmlTags);
+						} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
+							throw new Exception("Invalid recipient data containing HTML for recipient field: " + entry.getKey());
+						}
+					}
+				}
+				
 				if (companyID != customer.getCompanyID()) {
 					if(logger.isInfoEnabled()) {
 						logger.info(String.format("Rejected updating recipient %d: Belongs to foreign company ID", customer.getCustomerID()));
@@ -1740,7 +2095,7 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 			
 			return results;
 		} catch (Exception e) {
-			logger.error("insertCustomers: Exception in getGeneratedKeys", e);
+			logger.error("Error in updateCustomers: " + e.getMessage(), e);
 			return Collections.emptyList();
 		}
 	}
@@ -1814,6 +2169,18 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 				throw new ViciousFormDataException("Cannot create customer, because customer data field \"plz\" is invalid");
 			}
 		}
+
+		boolean allowHtmlTags = configService.getBooleanValue(ConfigValue.AllowHtmlInProfileFields, customer.getCompanyID());
+		for (Entry<String, Object> entry : customer.getCustParameters().entrySet()) {
+			if (entry.getValue() instanceof String) {
+				// Check for unallowed html content
+				try {
+					HtmlChecker.checkForUnallowedHtmlTags((String) entry.getValue(), allowHtmlTags);
+				} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
+					throw new Exception("Invalid recipient data containing HTML for recipient field: " + entry.getKey());
+				}
+			}
+		}
 	
 		final CaseInsensitiveMap<String, ProfileField> customerTableStructure = loadCustDBProfileStructure(companyID);
 		final SqlPreparedInsertStatementManager insertStatementManager = prepareInsertStatement(customerTableStructure, customer, false);
@@ -1873,6 +2240,18 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 			String plzValue = customer.getCustParameters().get("plz") == null ? null : customer.getCustParameters().get("plz").toString();
 			if (StringUtils.isNotBlank(plzValue) && !Pattern.matches("^[0-9]{5}$", plzValue)) {
 				throw new ViciousFormDataException("Cannot update customer, because customer data field \"plz\" is invalid");
+			}
+		}
+
+		boolean allowHtmlTags = configService.getBooleanValue(ConfigValue.AllowHtmlInProfileFields, customer.getCompanyID());
+		for (Entry<String, Object> entry : customer.getCustParameters().entrySet()) {
+			if (entry.getValue() instanceof String) {
+				// Check for unallowed html content
+				try {
+					HtmlChecker.checkForUnallowedHtmlTags((String) entry.getValue(), allowHtmlTags);
+				} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
+					throw new Exception("Invalid recipient data containing HTML for recipient field: " + entry.getKey());
+				}
 			}
 		}
 		
@@ -2786,6 +3165,14 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 				value = 0.0;
 			}
 		} else if (columnType == SimpleDataType.Characters) {
+			boolean allowHtmlTags = configService.getBooleanValue(ConfigValue.AllowHtmlInProfileFields, companyID);
+			// Check for unallowed html content
+			try {
+				HtmlChecker.checkForUnallowedHtmlTags(updateValue, allowHtmlTags);
+			} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
+				throw new RestfulClientException("Invalid recipient data containing HTML for recipient field: " + columnName);
+			}
+			
 			switch (updateType) {
 				case ActionOperationUpdateCustomerParameters.TYPE_INCREMENT_BY:
 					final String CONCATENATE_PART = isOracleDB()
@@ -3597,45 +3984,77 @@ public class ComRecipientDaoImpl extends PaginatedBaseDaoImpl implements ComReci
 	}
 
 	@Override
-	public List<Integer> filterRecipientsByMailinglistAndTarget(List<Integer> recipientIds, int companyId, int mailinglistId, String sqlTargetExpression, boolean allRecipients) {
-		return filterRecipientsByMailinglistAndTarget(recipientIds, companyId, mailinglistId, sqlTargetExpression, allRecipients, true);
+	public List<Integer> getFilteredRecipientIDs(int companyID, CaseInsensitiveMap<String, RecipientFieldDescription> recipientFieldsMap, Map<String, String> recipientFilters) {
+		String sql = "SELECT customer_id FROM customer_" + companyID + "_tbl"
+			+ " WHERE " + ComCompanyDaoImpl.STANDARD_FIELD_BOUNCELOAD + " = 0";
+		List<Object> parameters = new ArrayList<>();
+		for (Entry<String, String> parameter : recipientFilters.entrySet()) {
+			if (recipientFieldsMap.get(parameter.getKey()).getSimpleDataType() == SimpleDataType.Date) {
+				if (isOracleDB()) {
+					sql += " AND TO_CHAR(" + SafeString.getSafeDbColumnName(parameter.getKey()) + ", 'YYYY-MM-DD') LIKE ?";
+				} else {
+					sql += " AND DATE_FORMAT(" + SafeString.getSafeDbColumnName(parameter.getKey()) + ", 'YYYY-MM-DD') LIKE ?";
+				}
+				parameters.add(parameter.getValue().replace("*", "%").replace("?", "_").replace("T", " "));
+			} else if (recipientFieldsMap.get(parameter.getKey()).getSimpleDataType() == SimpleDataType.DateTime) {
+				if (isOracleDB()) {
+					sql += " AND TO_CHAR(" + SafeString.getSafeDbColumnName(parameter.getKey()) + ", 'YYYY-MM-DD HH24:MI:SS') LIKE ?";
+				} else {
+					sql += " AND DATE_FORMAT(" + SafeString.getSafeDbColumnName(parameter.getKey()) + ", '%Y-%m-%d %H:%i:%s') LIKE ?";
+				}
+				parameters.add(parameter.getValue().replace("*", "%").replace("?", "_").replace("T", " "));
+			} else {
+				sql += " AND " + SafeString.getSafeDbColumnName(parameter.getKey()) + " LIKE ?";
+				parameters.add(parameter.getValue().replace("*", "%").replace("?", "_"));
+			}
+		}
+		return select(logger, sql, IntegerRowMapper.INSTANCE, parameters.toArray(new Object[0]));
 	}
 
 	@Override
-	public List<Integer> filterRecipientsByMailinglistAndTarget(List<Integer> recipientIds, int companyId, int mailinglistId, String sqlTargetExpression, boolean allRecipients, boolean shouldBeActive) {
-		// checks if we have initial set of recipients or if we need to filter all recipients
-		String recipientFilter = "";
-		if (!allRecipients && CollectionUtils.isNotEmpty(recipientIds)) {
-			updateRecipientIds(recipientIds);
-			recipientFilter = " EXISTS (SELECT 1 FROM workflow_reaction_cust_tbl t WHERE cust.customer_id = t.customer_id) AND ";
+	public int countFilteredRecipientIDs(int companyID, CaseInsensitiveMap<String, RecipientFieldDescription> recipientFieldsMap, Map<String, String> recipientFilters) {
+		String sql = "SELECT COUNT(*) FROM customer_" + companyID + "_tbl"
+			+ " WHERE " + ComCompanyDaoImpl.STANDARD_FIELD_BOUNCELOAD + " = 0";
+		List<Object> parameters = new ArrayList<>();
+		for (Entry<String, String> parameter : recipientFilters.entrySet()) {
+			if (recipientFieldsMap.get(parameter.getKey()).getSimpleDataType() == SimpleDataType.Date) {
+				if (isOracleDB()) {
+					sql += " AND TO_CHAR(" + SafeString.getSafeDbColumnName(parameter.getKey()) + ", 'YYYY-MM-DD') LIKE ?";
+				} else {
+					sql += " AND DATE_FORMAT(" + SafeString.getSafeDbColumnName(parameter.getKey()) + ", 'YYYY-MM-DD') LIKE ?";
+				}
+				parameters.add(parameter.getValue().replace("*", "%").replace("?", "_").replace("T", " "));
+			} else if (recipientFieldsMap.get(parameter.getKey()).getSimpleDataType() == SimpleDataType.DateTime) {
+				if (isOracleDB()) {
+					sql += " AND TO_CHAR(" + SafeString.getSafeDbColumnName(parameter.getKey()) + ", 'YYYY-MM-DD HH24:MI:SS') LIKE ?";
+				} else {
+					sql += " AND DATE_FORMAT(" + SafeString.getSafeDbColumnName(parameter.getKey()) + ", '%Y-%m-%d %H:%i:%s') LIKE ?";
+				}
+				parameters.add(parameter.getValue().replace("*", "%").replace("?", "_").replace("T", " "));
+			} else {
+				sql += " AND " + SafeString.getSafeDbColumnName(parameter.getKey()) + " LIKE ?";
+				parameters.add(parameter.getValue().replace("*", "%").replace("?", "_"));
+			}
 		}
-
-		// checks if we need to filter by mailinglist
-		String mailinglistFilter = mailinglistId == 0 ? "" : " AND bind.mailinglist_id = " + mailinglistId;
-
-		// checks if the user_status in mailinglist should be Active
-		String activeFilter = shouldBeActive ? " AND bind.user_status = " + UserStatus.Active.getStatusCode() : "";
-
-		// create query
-		String query = "SELECT cust.customer_id FROM " + getCustomerTableName(companyId) + " cust WHERE" + recipientFilter +
-				" EXISTS (SELECT 1 FROM " + getCustomerBindingTableName(companyId) + " bind WHERE bind.customer_id = cust.customer_id "
-				+ activeFilter + mailinglistFilter + ")";
-
-		// if we have target expression - append it to query
-		if (!StringUtils.isEmpty(sqlTargetExpression)) {
-			query += " AND (" + sqlTargetExpression + ")";
-		}
-
-		// return result
-		return select(logger, query, IntegerRowMapper.INSTANCE);
+		return selectInt(logger, sql, parameters.toArray(new Object[0]));
 	}
 
-	private void updateRecipientIds(List<Integer> recipientIds) {
-		update(logger, "DELETE FROM workflow_reaction_cust_tbl");
-		List<Object[]> parameterList = new ArrayList<>();
-		for (Integer recipientId : new HashSet<>(recipientIds)) {
-			parameterList.add(new Object[] {recipientId});
+	@Override
+	public int getNumberOfRecipients(int companyID, int mailinglistID, RecipientType... recipientTypes) {
+		String sql = "SELECT COUNT(*) FROM customer_" + companyID + "_tbl cust"
+			+ " JOIN customer_" + companyID + "_binding_tbl bind ON cust.customer_id = bind.customer_id"
+			+ " WHERE bind.user_status = ? AND bind.mailinglist_id = ?";
+		List<Object> params = new ArrayList<>();
+		params.add(UserStatus.Active.getStatusCode());
+		params.add(mailinglistID);
+		
+		if (recipientTypes != null && recipientTypes.length > 0) {
+			sql += " AND bind.user_type IN (" + StringUtils.repeat("?", ", ", recipientTypes.length) + ")";
+			for (RecipientType recipientType : recipientTypes) {
+				params.add(recipientType.getLetter());
+			}
 		}
-		batchupdate(logger, "INSERT INTO workflow_reaction_cust_tbl (customer_id) VALUES (?)", parameterList);
+				
+		return selectInt(logger, sql, params.toArray());
 	}
 }

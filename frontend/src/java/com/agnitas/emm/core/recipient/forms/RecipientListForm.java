@@ -15,7 +15,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import org.agnitas.dao.UserStatus;
 import org.apache.commons.lang.StringUtils;
 
 public class RecipientListForm extends RecipientListBaseForm {
@@ -24,13 +23,17 @@ public class RecipientListForm extends RecipientListBaseForm {
     private int filterMailinglistId;
     private int filterTargetId;
     private int filterAltgId;
-    private int filterUserStatus = UserStatus.Active.getStatusCode();
+    private int filterUserStatus;
     private String filterUserType;
     private String searchFirstName;
     private String searchLastName;
     private String searchEmail;
     private String searchQueryBuilderRules = "[]";
     private String eql;
+
+    public RecipientListForm(Integer filterUserStatus) {
+        this.filterUserStatus = filterUserStatus == null ? 0 : filterUserStatus;
+    }
 
     public int getFilterMailinglistId() {
         return filterMailinglistId;

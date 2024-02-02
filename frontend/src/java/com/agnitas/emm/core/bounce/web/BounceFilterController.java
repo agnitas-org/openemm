@@ -16,7 +16,7 @@ import java.net.IDN;
 import java.util.concurrent.Callable;
 
 import org.agnitas.service.UserActivityLogService;
-import org.agnitas.service.WebStorage;
+import com.agnitas.service.WebStorage;
 import org.agnitas.web.forms.FormUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -49,7 +49,6 @@ import com.agnitas.emm.core.bounce.util.BounceUtils;
 import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
 import com.agnitas.emm.core.userform.service.ComUserformService;
-import com.agnitas.service.ComWebStorage;
 import com.agnitas.web.mvc.Pollable;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.XssCheckAware;
@@ -99,7 +98,7 @@ public class BounceFilterController implements XssCheckAware {
 
     @RequestMapping(value = "/list.action")
     public Pollable<ModelAndView> list(Admin admin, HttpSession session, BounceFilterListForm form, Model model) {
-        FormUtils.syncNumberOfRows(webStorage, ComWebStorage.BOUNCE_FILTER_OVERVIEW, form);
+        FormUtils.syncNumberOfRows(webStorage, WebStorage.BOUNCE_FILTER_OVERVIEW, form);
 
         PollingUid uid = PollingUid.builder(session.getId(), "bounceFilterList")
             .arguments(form.getSort(), form.getOrder(), form.getPage(), form.getNumberOfRows())

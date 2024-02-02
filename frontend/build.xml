@@ -36,6 +36,44 @@
 			</then>
 		</if>
 		<echo message="Using Java version ${javaVersion}" />
+
+		<!-- Fallback property "jdk" for property "JAVA_HOME"-->
+		<if>
+			<not>
+				<isset property="JAVA_HOME" />
+			</not>
+			<then>
+				<if>
+					<isset property="jdk" />
+					<then>
+						<echo message="Using fallback property 'jdk' for property 'JAVA_HOME'" />
+						<property name="JAVA_HOME" value="${jdk}" />
+					</then>
+					<else>
+						<fail message="Missing property 'JAVA_HOME'" />
+					</else>
+				</if>
+			</then>
+		</if>
+		
+		<!-- Fallback property "container.home" for property "CATALINA_HOME"-->
+		<if>
+			<not>
+				<isset property="CATALINA_HOME" />
+			</not>
+			<then>
+				<if>
+					<isset property="container.home" />
+					<then>
+						<echo message="Using fallback property 'container.home' for property 'CATALINA_HOME'" />
+						<property name="CATALINA_HOME" value="${container.home}" />
+					</then>
+					<else>
+						<fail message="Missing property 'CATALINA_HOME'" />
+					</else>
+				</if>
+			</then>
+		</if>
 	</target>
 
 	<target name="setupBuildPaths" depends="checkForPropertiesFile, setDeploytarget" description="Setting up the needed paths">
@@ -306,9 +344,6 @@
 				<exclude name="**/WebservicePasswordEncryptor.class" />
 			</fileset>
 		</delete>
-
-		<!-- EMM logo, used for header of generated PDF files -->
-		<copy file="${emmSourcePath}/java/com/agnitas/emm/core/workflow/service/resources/preview_pdf_logo.png" todir="${deploydir}${appname}/WEB-INF/classes/com/agnitas/emm/core/workflow/service/resources" />
 	</target>
 
 	<target name="copyAdditionalPiwikFile" depends="setDeploytarget">
@@ -464,9 +499,6 @@
 				<exclude name="**/grunt_config.json" />
 				<exclude name="**/Gruntfile.js" />
 				<exclude name="**/grunt/**" />
-				<exclude name="**/node_modules/**" />
-
-				<exclude name="**/package.json" />
 				<exclude name="**/WEB-INF/conf/**" />
 				<exclude name="**/*.jsp" />
 				<exclude name="**/test*" />
@@ -513,11 +545,8 @@
 		</copy>
 
 		<copy file="${deploydir}${appname}/WEB-INF/tiles-defs-basic.xml" tofile="${deploydir}${appname}/WEB-INF/tiles-defs.xml"/>
+		<replace file="${deploydir}${appname}/WEB-INF/tiles-defs.xml" token="src/view/WEB-INF/tiles-config_3_0.dtd" value="http://tiles.apache.org/dtds/tiles-config_3_0.dtd" />
 		<delete file="${deploydir}${appname}/WEB-INF/tiles-defs-basic.xml" />
-
-		<mergexml source="${deploydir}${appname}/WEB-INF/struts-config-basic.xml" change="${deploydir}${appname}/WEB-INF/struts-config-openemm.xml" dest="${deploydir}${appname}/WEB-INF/struts-config.xml" overwrite="true" />
-		<delete file="${deploydir}${appname}/WEB-INF/struts-config-basic.xml" />
-		<delete file="${deploydir}${appname}/WEB-INF/struts-config-openemm.xml" />
 
 		<chmod file="${deploydir}${appname}/WEB-INF/sql/mariadb/*.sh" perm="ugo+x"/>
 

@@ -10,22 +10,11 @@
 
 package com.agnitas.emm.core.export.web;
 
-import java.io.File;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.TimeZone;
-import java.util.concurrent.Callable;
-import java.util.stream.Collectors;
-
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.PollingUid;
 import com.agnitas.beans.ProfileFieldMode;
 import com.agnitas.emm.core.export.form.ExportForm;
-import com.agnitas.emm.core.export.util.ExportWizardUtils;
+import com.agnitas.emm.core.export.util.ExportUtils;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistService;
 import com.agnitas.emm.core.target.service.ComTargetService;
@@ -61,6 +50,18 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.ModelAndView;
+
+import java.io.File;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.TimeZone;
+import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
+
 import static com.agnitas.emm.core.Permission.EXPORT_OWN_COLUMNS;
 import static org.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
 import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
@@ -75,7 +76,7 @@ public class ExportController {
 
     public static final String EXPORT_KEY = "EXPORT_RECIPIENTS";
     private static final String SHORTNAME_FIELD = "shortname";
-    
+
     private final ComTargetService targetService;
     private final ExportPredefService exportService;
     private final ColumnInfoService columnInfoService;
@@ -103,14 +104,15 @@ public class ExportController {
 
     @GetMapping("/{id:\\d+}/view.action")
     public String view(@PathVariable int id, ExportForm form, Model model, Admin admin) throws Exception {
+        ExportPredef export = null;
         if (id != 0) {
-            ExportPredef export = exportService.get(id, admin.getCompanyID());
+            export = exportService.get(id, admin.getCompanyID());
             exportToForm(export, form, admin);
             writeUserActivityLog(admin, "view export", export.toString());
         } else {
             prepareFormToCreateNewExport(form, admin);
         }
-        prepareViewAttrs(model, admin);
+        prepareViewAttrs(model, admin, export);
         return "export_view";
     }
 
@@ -128,6 +130,10 @@ public class ExportController {
         return redirectToView(id);
     }
 
+    private boolean isOwnColumnsExportAllowed(Admin admin) {
+        return admin.permissionAllowed(EXPORT_OWN_COLUMNS);
+    }
+
     private String redirectToView(@PathVariable int id) {
         return "redirect:/export/" + id + "/view.action";
     }
@@ -136,7 +142,7 @@ public class ExportController {
         ExportPredef export = exportService.get(id, companyId);
         ExportPredef oldExport = exportService.get(id, companyId);
         formToExport(form, export, admin);
-        exportService.save(export);
+        exportService.save(export, admin);
 
         String changelog = changelog(oldExport, export, admin);
         if (StringUtils.isNotBlank(changelog)) {
@@ -148,7 +154,7 @@ public class ExportController {
         ExportPredef export = new ExportPredef();
         export.setCompanyID(companyId);
         formToExport(form, export, admin);
-        int newId = exportService.save(export);
+        int newId = exportService.save(export, admin);
         writeUserActivityLog(admin, "create export definition", export.toString());
         return newId;
     }
@@ -218,7 +224,7 @@ public class ExportController {
         List<ExportColumnMapping> columns = Arrays.stream(form.getUserColumns())
                 .map(ExportColumnMapping::new)
                 .collect(Collectors.toList());
-        if (admin.permissionAllowed(EXPORT_OWN_COLUMNS)) {
+        if (isOwnColumnsExportAllowed(admin)) {
             columns.addAll(form.getCustomColumns());
         } else {
             columns.addAll(getExportCustomColumns(export, admin));
@@ -227,8 +233,7 @@ public class ExportController {
     }
 
     private List<ExportColumnMapping> getExportCustomColumns(ExportPredef export, Admin admin) throws Exception {
-        return ExportWizardUtils
-                .getCustomColumnMappingsFromExport(export, admin.getCompanyID(), admin.getAdminID(), columnInfoService);
+        return ExportUtils.getCustomColumnMappingsFromExport(export, admin.getCompanyID(), admin, columnInfoService);
     }
 
     private String changelog(ExportPredef oldExport, ExportPredef newExport, Admin admin) {
@@ -265,22 +270,27 @@ public class ExportController {
         if (StringUtils.length(form.getShortname()) < 3) {
             popups.field(SHORTNAME_FIELD, "error.name.too.short");
         }
-        
+
         List<Integer> disabledMailingListsForAdmin = mailinglistApprovalService.getDisabledMailinglistsForAdmin(admin.getCompanyID(), admin.getAdminID());
         if (disabledMailingListsForAdmin.size() > 0 && form.getMailinglistId() <= 0) {
-            popups.field("mailinglist", "error.alml.mustSelectMailinglist");
+            popups.field("mailinglist", "error.import.no_mailinglist");
         }
-        
+
         return popups.hasAlertPopups();
     }
 
-    private void prepareViewAttrs(Model model, Admin admin) throws Exception {
+    private void prepareViewAttrs(Model model, Admin admin, ExportPredef export) throws Exception {
         model.addAttribute("timeZones", TimeZone.getAvailableIDs());
         model.addAttribute("dateFormats", DateFormat.values());
         model.addAttribute("dateTimeFormats", DateFormat.values());
         model.addAttribute("targetGroups", targetService.getTargetLights(admin));
         model.addAttribute("mailinglists", mailinglistApprovalService.getEnabledMailinglistsForAdmin(admin));
         model.addAttribute("localeDatePattern", admin.getDateFormat().toPattern());
+        model.addAttribute("availableCharsetOptions", exportService.getAvailableCharsetOptionsForDisplay(admin, export));
+        model.addAttribute("availableUserStatusOptions", exportService.getAvailableUserStatusOptionsForDisplay(admin, export));
+        model.addAttribute("availableUserTypeOptions", exportService.getAvailableUserTypeOptionsForDisplay(admin, export));
+        model.addAttribute("isManageAllowed", exportService.isManageAllowed(export, admin));
+        model.addAttribute("isOwnColumnsExportAllowed", isOwnColumnsExportAllowed(admin));
         model.addAttribute("profileFields", columnInfoService
                 .getComColumnInfos(admin.getCompanyID(), admin.getAdminID()).stream()
                 .filter(t -> EnumSet.of(ProfileFieldMode.Editable, ProfileFieldMode.ReadOnly).contains(t.getModeEdit()))
@@ -312,7 +322,7 @@ public class ExportController {
         form.setUserColumns(export.getExportColumnMappings().stream()
                 .map(ExportColumnMapping::getDbColumn)
                 .toArray(String[]::new));
-        if (admin.permissionAllowed(EXPORT_OWN_COLUMNS)) {
+        if (isOwnColumnsExportAllowed(admin)) {
             form.setCustomColumns(getExportCustomColumns(export, admin));
         }
     }
@@ -397,9 +407,14 @@ public class ExportController {
                            Admin admin, HttpSession session, Popups popups) {
         Callable<ModelAndView> exportWorker = () -> {
             ExportPredef export = prepareExportToEvaluate(id, form, admin);
+
+            if (!exportService.isManageAllowed(export, admin)) {
+                throw new UnsupportedOperationException();
+            }
+
             RecipientExportWorker worker = exportService.getRecipientsToZipWorker(export, admin);
             worker.call();
-            createExportReport(worker, admin.getAdminID(), popups);
+            createExportReport(worker, admin, popups);
             writeEvaluationLog(form, admin, worker);
             model.addAttribute("tmpFileName", new File(worker.getExportFile()).getName());
             model.addAttribute("exportedLines", worker.getExportedLines());
@@ -430,13 +445,13 @@ public class ExportController {
         return export;
     }
 
-    private void createExportReport(RecipientExportWorker worker, int adminId, Popups popups) throws Exception {
+    private void createExportReport(RecipientExportWorker worker, Admin admin, Popups popups) throws Exception {
         if (worker.getError() != null) {
             recipientExportReporter.sendExportErrorMail(worker);
-            recipientExportReporter.createAndSaveExportReport(worker, adminId, true);
+            recipientExportReporter.createAndSaveExportReport(worker, admin, true);
             popups.alert("export.result.error", worker.getError().getMessage());
         } else {
-            recipientExportReporter.createAndSaveExportReport(worker, adminId, false);
+            recipientExportReporter.createAndSaveExportReport(worker, admin, false);
             recipientExportReporter.sendExportReportMail(worker);
         }
     }

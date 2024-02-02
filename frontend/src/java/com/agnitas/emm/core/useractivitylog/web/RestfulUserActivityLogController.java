@@ -22,7 +22,7 @@ import org.agnitas.beans.AdminEntry;
 import org.agnitas.beans.factory.UserActivityLogExportWorkerFactory;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.service.UserActivityLogService;
-import org.agnitas.service.WebStorage;
+import com.agnitas.service.WebStorage;
 import org.agnitas.web.forms.FormUtils;
 import org.agnitas.web.forms.PaginationForm;
 import org.springframework.http.ResponseEntity;
@@ -42,7 +42,7 @@ import java.util.List;
 @Controller
 @RequestMapping("/administration/restful-user/activitylog")
 @PermissionMapping("restful.user.activity.log")
-public class RestfulUserActivityLogController extends UserActivityLogControllerBase implements XssCheckAware {
+public class RestfulUserActivityLogController extends AbstractUserActivityLogController implements XssCheckAware {
 
     protected RestfulUserActivityLogController(WebStorage webStorage, AdminService adminService, UserActivityLogService userActivityLogService,
                                                UserActivityLogExportWorkerFactory exportWorkerFactory) {

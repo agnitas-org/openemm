@@ -1,4 +1,4 @@
-<%@ page language="java" contentType="text/html; charset=utf-8"  errorPage="/error.do" %>
+<%@ page language="java" contentType="text/html; charset=utf-8"  errorPage="/error.action" %>
 
 <jsp:include page="workflow-bulkOperationConfirm.jsp">
     <jsp:param name="headerMessageKey" value="Workflow"/>

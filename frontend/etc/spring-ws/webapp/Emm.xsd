@@ -81,45 +81,8 @@
 		<xs:list itemType="xs:int"/>
 	</xs:simpleType>
 	
-	<xs:element name="MailingSummaryStatisticJobRequest">
-		<xs:complexType>
-			<xs:all>
-				<xs:element name="mailingID" type="xs:int" />
-				<xs:element name="targetGroups" type="agn:TargetGroups" minOccurs="0" />
-			</xs:all>
-		</xs:complexType>
-	</xs:element>
-	<xs:element name="MailingSummaryStatisticJobResponse">
-		<xs:complexType>
-			<xs:all>
-				<xs:element name="statisticJobID" type="xs:int" />
-			</xs:all>
-		</xs:complexType>
-	</xs:element>
 	
-	<xs:element name="MailingSummaryStatisticResultRequest">
-		<xs:complexType>
-			<xs:all>
-				<xs:element name="statisticJobID" type="xs:int" />
-			</xs:all>
-		</xs:complexType>
-	</xs:element>
-	<xs:element name="MailingSummaryStatisticResultResponse">
-		<xs:complexType>
-			<xs:all>
-				<xs:element name="statisticJobStatus" type="xs:int" />
-				<xs:element name="statisticJobStatusDescription" type="xs:string" />
-				<xs:element name="timestamp" type="xs:dateTime" />
-				<xs:element name="items">
-					<xs:complexType>
-						<xs:sequence>
-							<xs:element name="item" type="agn:GroupStatisticInfo" maxOccurs="unbounded" />
-						</xs:sequence>
-					</xs:complexType>
-				</xs:element>
-			</xs:all>
-		</xs:complexType>
-	</xs:element>
+	
 
 	
 	<xs:complexType name="MailingContent">
@@ -163,21 +126,7 @@
 		<xs:complexType />
 	</xs:element>
 
-	<xs:element name="CreateDataSourceRequest">
-		<xs:complexType>
-			<xs:all>
-				<xs:element name="description" type="xs:string" />
-				<xs:element name="url" type="xs:string" />
-			</xs:all>
-		</xs:complexType>
-	</xs:element>
-	<xs:element name="CreateDataSourceResponse">
-		<xs:complexType>
-			<xs:all>
-				<xs:element name="id" type="xs:int" />
-			</xs:all>
-		</xs:complexType>
-	</xs:element>
+	
 	
 	<xs:element name="SendServiceMailRequest">
 	   <xs:complexType>
@@ -245,23 +194,7 @@
 		</xs:complexType>
 	</xs:element>
 	
-	<xs:element name="GetFullviewUrlRequest">
-		<xs:complexType>
-			<xs:all>
-				<xs:element name="mailingID" type="xs:int" />
-				<xs:element name="customerID" type="xs:int" />
-				<xs:element name="formName" type="xs:string" minOccurs="0" maxOccurs="1" />
-			</xs:all>
-		</xs:complexType>
-	</xs:element>
 	
-	<xs:element name="GetFullviewUrlResponse">
-		<xs:complexType>
-			<xs:all>
-				<xs:element name="url" />
-			</xs:all>
-		</xs:complexType>
-	</xs:element>
 	
 	
 	

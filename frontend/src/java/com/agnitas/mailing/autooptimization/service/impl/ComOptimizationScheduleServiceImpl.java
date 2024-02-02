@@ -190,7 +190,7 @@ public class ComOptimizationScheduleServiceImpl implements ComOptimizationSchedu
 
 		mailing.getMaildropStatus().add(drop);
 		mailingDao.saveMailing(mailing, false);
-		mailingDao.updateStatus(drop.getMailingID(), testRun ? MailingStatus.TEST : MailingStatus.SCHEDULED, sendDate);
+		mailingDao.updateStatus(drop.getCompanyID(), drop.getMailingID(), testRun ? MailingStatus.TEST : MailingStatus.SCHEDULED, sendDate);
 	}
 
 	private List<Mailing> getTestMailings(ComOptimization optimization) {

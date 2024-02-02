@@ -61,7 +61,7 @@
                 <ref bean="updateTargetGroupEndpoint"/>
                 <ref bean="copyMailingEndpoint"/>
 				<ref bean="addTargetGroupEndpoint"/>
-				<ref bean="getFullviewUrlEndpoint" />
+				
             </set>
         </property>
 		<property name="order" value="1"/>

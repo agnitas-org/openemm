@@ -12,7 +12,6 @@ package org.agnitas.emm.core.commons.uid.parser.impl;
 
 import java.util.Objects;
 
-import org.agnitas.emm.core.commons.daocache.CompanyDaoCache;
 import org.agnitas.emm.core.commons.uid.builder.ExtensibleUIDStringBuilder;
 import org.agnitas.emm.core.commons.uid.builder.impl.exception.RequiredInformationMissingException;
 import org.agnitas.emm.core.commons.uid.builder.impl.exception.UIDStringBuilderException;
@@ -25,8 +24,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.agnitas.beans.Company;
 import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
+import com.agnitas.emm.core.commons.uid.beans.CompanyUidData;
+import com.agnitas.emm.core.commons.uid.daocache.impl.CompanyUidDataDaoCache;
 
 /**
  * Base class for all UID parsers.
@@ -34,7 +34,7 @@ import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
 public abstract class BaseExtensibleUIDParser implements ExtensibleUIDParser {
     
     /** Caching DAO for accessing company data. */
-    protected CompanyDaoCache companyDaoCache;
+	protected CompanyUidDataDaoCache companyUidDataDaoCache;
     
     /** Corresponding UID string builder. */
     protected ExtensibleUIDStringBuilder stringBuilder;
@@ -139,8 +139,8 @@ public abstract class BaseExtensibleUIDParser implements ExtensibleUIDParser {
      * @throws DeprecatedUIDVersionException if UID version is not supported
      */
     private void checkUIDVersion(String uidString, ComExtensibleUID uid) throws DeprecatedUIDVersionException {
-        final Company company = this.companyDaoCache.getItem(uid.getCompanyID());
-        Number minimumSupportedVersion = company.getMinimumSupportedUIDVersion();
+        final CompanyUidData companyUidData = this.companyUidDataDaoCache.getItem(uid.getCompanyID());
+        Number minimumSupportedVersion = companyUidData.getMinimumSupportedUIDVersion();
         if (getHandledUidVersion().isOlderThan(minimumSupportedVersion)) {
             String descriptionTemplate = "Version validation Error. Deprecated UID version. minimumSupportedVersion: %d, actualVersion: %s, encodedUid: %s";
             String message = String.format(descriptionTemplate, minimumSupportedVersion, getHandledUidVersion().getVersionCode(), uidString);
@@ -216,13 +216,13 @@ public abstract class BaseExtensibleUIDParser implements ExtensibleUIDParser {
     }
 
     /**
-     * Set CompanyDaoCache.
+     * Set CompanyUidDataDaoCache.
      *
-     * @param companyDaoCache CompanyDaoCache
+     * @param companyDaoCache CompanyUidDataDaoCache
      */
     @Required
-    public void setCompanyDaoCache(final CompanyDaoCache companyDaoCache) {
-        this.companyDaoCache = Objects.requireNonNull(companyDaoCache, "Company cache cannot be null");
+    public void setCompanyUidDataDaoCache(final CompanyUidDataDaoCache companyUidDataDaoCache) {
+        this.companyUidDataDaoCache = Objects.requireNonNull(companyUidDataDaoCache, "Company cache cannot be null");
     }
 
     /**

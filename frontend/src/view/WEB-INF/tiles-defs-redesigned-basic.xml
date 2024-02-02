@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+<!DOCTYPE tiles-definitions PUBLIC "-//Apache Software Foundation//DTD Tiles Configuration 3.0//EN" "src/view/WEB-INF/tiles-config_3_0.dtd">
+<tiles-definitions>
+    <definition name="base_redesigned" template="/WEB-INF/jsp/redesigned_jsp/page-template/template.jsp">
+        <put-attribute name="head-tag" value="head_tag_default_redesigned" type="definition"/>
+        <put-attribute name="newresource" value="/WEB-INF/jsp/newresource.jsp" type="template"/>
+        <put-attribute name="itemactions" value="/WEB-INF/jsp/redesigned_jsp/page-template/item-actions.jsp" type="template"/>
+        <put-attribute name="tabsmenu" value="/WEB-INF/jsp/tabsmenu.jsp" type="template"/>
+        <put-attribute name="header" value="/WEB-INF/jsp/header-tiles.jsp" type="template"/>
+        <put-attribute name="usermessage" value="/WEB-INF/jsp/usermessage-tiles.jsp" type="template"/>
+        <put-attribute name="sidemenu" value="/WEB-INF/jsp/redesigned_jsp/page-template/sidemenu-tile.jsp" type="template"/>
+        <put-attribute name="topmenu" value="/WEB-INF/jsp/topmenu-tiles.jsp" type="template"/>
+        <put-attribute name="messages" value="/WEB-INF/jsp/messages.jsp" type="template"/>
+        <put-attribute name="footer_matomo" value="/WEB-INF/jsp/additional.jsp" type="template"/>
+    </definition>
+    
+    <definition name="base_ajax_redesigned" template="/WEB-INF/jsp/redesigned_jsp/page-template/ajax-response-template.jsp">
+   		<put-attribute name="messages" value="/WEB-INF/jsp/messages.jsp" type="template"/>
+   	</definition>
+
+    <definition name="head_tag_base_redesigned" template="/WEB-INF/jsp/redesigned_jsp/page-template/head-tag.jsp"/>
+
+    <definition name="head_tag_default_redesigned" extends="head_tag_base_redesigned">
+        <put-attribute name="head-extra-links" value="" type="string"/>
+        <put-attribute name="head-extra-meta-tags" value="/WEB-INF/jsp/head-extra-meta-tags.jsp" type="template"/>
+    </definition>
+
+    <definition name="dashboard_view_redesigned" extends="base_redesigned">
+        <put-attribute name="newresource" value="/WEB-INF/jsp/redesigned_jsp/dashboard/new-resource.jsp" type="template"/>
+        <put-attribute name="body" value="/WEB-INF/jsp/redesigned_jsp/dashboard/dashboard.jsp" type="template"/>
+        <put-attribute name="page-setup" value="/WEB-INF/jsp/redesigned_jsp/dashboard/dashboard-setup.jsp" type="template"/>
+    </definition>
+
+    <definition name="delete_modal_redesigned" extends="base_ajax_redesigned">
+   		<put-attribute name="body" value="/WEB-INF/jsp/redesigned_jsp/common/modal/delete-modal.jsp" type="template"/>
+        <put-attribute name="page-setup" value="" type="string" />
+   	</definition>
+</tiles-definitions>

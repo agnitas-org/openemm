@@ -5,7 +5,7 @@ import com.agnitas.emm.core.import_profile.component.ImportProfileChangesDetecto
 import com.agnitas.emm.core.import_profile.component.ImportProfileFormValidator;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
 import com.agnitas.service.ColumnInfoService;
-import org.agnitas.service.WebStorage;
+import com.agnitas.service.WebStorage;
 import com.agnitas.web.perm.annotations.PermissionMapping;
 import org.agnitas.emm.core.recipient.service.RecipientService;
 import org.agnitas.service.ImportProfileService;

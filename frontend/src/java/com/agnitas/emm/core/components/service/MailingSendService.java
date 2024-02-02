@@ -20,6 +20,7 @@ import com.agnitas.service.SimpleServiceResult;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 
 import java.util.Date;
+import java.util.List;
 import java.util.TimeZone;
 
 public interface MailingSendService {
@@ -38,7 +39,7 @@ public interface MailingSendService {
 
     ServiceResult<UserAction> sendAdminMailing(Mailing mailing, MailingSendOptions sendOptions) throws Exception;
 
-    ServiceResult<UserAction> activateDateBasedMailing(Mailing mailing, MailingSendOptions sendOptions);
+    ServiceResult<UserAction> activateDateBasedMailing(Mailing mailing, MailingSendOptions sendOptions, Admin admin);
 
     ServiceResult<UserAction> activateActionBasedMailing(Mailing mailing, MailingSendOptions sendOptions);
 
@@ -63,5 +64,7 @@ public interface MailingSendService {
     void sendEmail(Admin admin, String senderDomain);
 
     void checkIfMailingCanBeSend(Mailing mailing, Date sendDate, TimeZone timeZone) throws Exception;
+
+    List<Integer> getAvailableSendingSpeedOptions(int companyID);
 
 }

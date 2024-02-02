@@ -17,12 +17,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
 
+import com.agnitas.messages.Message;
 import com.agnitas.web.mvc.Popups;
 import org.agnitas.actions.EmmAction;
 import org.agnitas.beans.MailingBase;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.preview.AgnTagError;
-import org.apache.struts.action.ActionMessages;
 import org.springframework.context.ApplicationContext;
 
 import com.agnitas.emm.common.MailingType;
@@ -84,8 +84,8 @@ public interface Mailing extends MailingBase {
 
     boolean parseTargetExpression(String tExp);
 
-    Vector<String> scanForLinks(String aText1, String textModuleName, ApplicationContext con, ActionMessages messages, ActionMessages errors) throws Exception;
-    Vector<String> scanForLinks(String aText1, String textModuleName, ApplicationContext con, ActionMessages messages, ActionMessages errors, Admin admin) throws Exception;
+    Vector<String> scanForLinks(String aText1, String textModuleName, ApplicationContext con, String rdirDomain) throws Exception;
+    Vector<String> scanForLinks(String aText1, String textModuleName, ApplicationContext con, List<Message> warnings, List<Message> errors, Admin admin, String rdirDomain) throws Exception;
 
     /**
      * search for links
@@ -156,8 +156,8 @@ public interface Mailing extends MailingBase {
 
     boolean isEncryptedSend();
 
-    Map<String, ComTrackableLink> getTrackableLinks();
-    void setTrackableLinks(Map<String, ComTrackableLink> trackableLinks);
+    Map<String, TrackableLink> getTrackableLinks();
+    void setTrackableLinks(Map<String, TrackableLink> trackableLinks);
 
     void init(int companyID, ApplicationContext con);
 
@@ -167,8 +167,7 @@ public interface Mailing extends MailingBase {
      * Search for all dependency
      */
     boolean buildDependencies(boolean scanDynTags, ApplicationContext con) throws Exception;
-    boolean buildDependencies(boolean scanDynTags, List<String> dynNamesForDeletion, ApplicationContext con, ActionMessages messages, ActionMessages errors) throws Exception;
-    boolean buildDependencies(boolean scanDynTags, List<String> dynNamesForDeletion, ApplicationContext con, ActionMessages messages, ActionMessages errors, Admin admin) throws Exception;
+    boolean buildDependencies(boolean scanDynTags, List<String> dynNamesForDeletion, ApplicationContext con, List<Message> warnings, List<Message> errors, Admin admin) throws Exception;
     boolean buildDependencies(Popups popups, boolean scanDynTags, List<String> dynNamesForDeletion, ApplicationContext con, Admin admin) throws Exception;
     boolean buildDependencies(boolean scanDynTags, List<String> dynNamesForDeletion, ApplicationContext con) throws Exception;
 

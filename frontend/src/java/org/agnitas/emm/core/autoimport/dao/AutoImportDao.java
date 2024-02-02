@@ -27,8 +27,6 @@ public interface AutoImportDao {
 	
 	List<AutoImportLight> listAutoImports(final int companyID);
 	
-	List<AutoImport> getAutoImportsOverview(int companyId);
-
 	AutoImport getAutoImport(int autoImportId, int companyId);
 
 	List<AutoImport.UsedFile> getUsedFiles(int autoImportId, int companyId);
@@ -101,7 +99,9 @@ public interface AutoImportDao {
 
 	List<AutoImport> getStallingAutoImports();
 
-	int getStallingImportsAmount();
+	int getStallingImportsAmount(int maxUserImportDurationMinutes);
 
 	List<Integer> getOutdatedAutoImports(int companyID, Date autoImportExportExpireDate);
+
+	List<AutoImportLight> getListOfAllowedAutoImportsForWorkflow(int workflowId, int companyId);
 }

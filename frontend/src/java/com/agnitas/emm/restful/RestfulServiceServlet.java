@@ -29,7 +29,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
@@ -40,6 +39,10 @@ import com.agnitas.emm.core.logon.web.LogonFailedException;
 import com.agnitas.emm.util.quota.api.QuotaLimitExceededException;
 import com.agnitas.emm.util.quota.api.QuotaService;
 import com.agnitas.emm.util.quota.api.QuotaServiceException;
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.algorithms.Algorithm;
+import com.auth0.jwt.exceptions.JWTVerificationException;
+import com.auth0.jwt.interfaces.DecodedJWT;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -65,17 +68,24 @@ public class RestfulServiceServlet extends BaseRequestServlet {
 	 * Do not use directly. Use getComLogonService() instead
 	 */
 	private ComLogonService logonService;
-	
+
+	/**
+	 * Do not use directly. Use getQuotaService() instead
+	 */
 	private QuotaService quotaService;
 	
 	/**
-	 * Sets logon service.
-	 * 
-	 * @param logonService logon service
+	 * Sets logon service for testing
 	 */
-	@Required
 	public void setLogonService(ComLogonService logonService) {
 		this.logonService = logonService;
+	}
+
+	/**
+	 * Sets quotaService for testing
+	 */
+	public void setQuotaService(QuotaService quotaService) {
+		this.quotaService = quotaService;
 	}
 	
 	@Override
@@ -120,44 +130,101 @@ public class RestfulServiceServlet extends BaseRequestServlet {
 				}
 				return;
 			} else {
-				String basicAuthorizationUsername = HttpUtils.getBasicAuthenticationUsername(request);
-				String basicAuthorizationPassword = HttpUtils.getBasicAuthenticationPassword(request);
-				String username = StringUtils.isNotBlank(basicAuthorizationUsername) ? basicAuthorizationUsername : getRequestParameter(request, "username", true);
-				String password = StringUtils.isNotBlank(basicAuthorizationPassword) ? basicAuthorizationPassword : getRequestParameter(request, "password", true);
-				
-				try {
-					if (StringUtils.isBlank(username)) {
-						throw new RestfulAuthentificationException("Authentification failed: username is missing");
-					}
-	
-					if (StringUtils.isBlank(password)) {
-						throw new RestfulAuthentificationException("Authentification failed: password is missing");
-					}
-					
-					// Check authentication
+				String authorizationToken = HttpUtils.getAuthorizationToken(request);
+				if (authorizationToken != null) {
+					String username = "<undefined>";
 					try {
-						admin = getComLogonService().getAdminByCredentials(username, password, request.getRemoteAddr());
-					} catch (LogonFailedException e) {
-						throw new RestfulAuthentificationException("Authentication failed");
+						DecodedJWT jwtToken;
+						try {
+							jwtToken = JWT.decode(authorizationToken);
+							username = jwtToken.getClaim("username").asString();
+						} catch (Exception e) {
+							throw new RestfulAuthentificationException("Authentification by JWT authorization token failed", e);
+						}
+						
+						// HMAC512
+						if (!"HS512".equals(jwtToken.getAlgorithm())) {
+							throw new RestfulAuthentificationException("Authentification by JWT authorization token failed, because of an unsupported signature algorithm");
+						}
+
+						try {
+							try {
+								admin = getComLogonService().getAdminByUsername(username);
+							} catch (Exception e) {
+								throw new RestfulAuthentificationException("Authentification by JWT authorization token failed", e);
+							}
+							if (admin == null) {
+								throw new RestfulAuthentificationException("Authentification by JWT authorization token failed");
+							}
+							
+							String restfulJwtSharedSecret = getConfigService().getValue(ConfigValue.RestfulJwtSecret, admin.getCompanyID());
+							if (StringUtils.isBlank(restfulJwtSharedSecret)) {
+								throw new RestfulAuthentificationException("Authentification by JWT authorization token is not supported");
+							}
+							
+							// Throws JWTVerificationException on verification failure
+							Algorithm.HMAC512(restfulJwtSharedSecret).verify(jwtToken);
+							
+							if (jwtToken.getExpiresAt() == null || jwtToken.getExpiresAt().before(new Date())) {
+								throw new RestfulAuthentificationException("JWT authorization token has expired");
+							}
+							
+							AgnUtils.setAdmin(request, admin);
+						} catch (JWTVerificationException e) {
+							throw new RestfulAuthentificationException("Authentification by JWT authorization token failed", e);
+						}
+					} catch (RestfulAuthentificationException e) {
+						// do not show full stacktrace, because of possible log flooding
+						logger.error("JWT Authentication error (User: " + username + "): " + e.getMessage());
+						restfulResponse.setAuthentificationError(new Exception("JWT Authentication failed", e), ErrorCode.USER_AUTHENTICATION_ERROR);
+						writeResponse(response, restfulResponse);
+						return;
+					} catch (Exception e) {
+						logger.error("JWT Authentication error (User: " + username + "): " + e.getMessage(), e);
+						restfulResponse.setError(new Exception("JWT Authentication failed", e), ErrorCode.USER_AUTHENTICATION_ERROR);
+						writeResponse(response, restfulResponse);
+						return;
 					}
-					if (admin == null) {
-						throw new RestfulAuthentificationException("Authentication failed");
-					} else {
-						AgnUtils.setAdmin(request, admin);
+				} else {
+					String basicAuthorizationUsername = HttpUtils.getBasicAuthenticationUsername(request);
+					String basicAuthorizationPassword = HttpUtils.getBasicAuthenticationPassword(request);
+					String username = StringUtils.isNotBlank(basicAuthorizationUsername) ? basicAuthorizationUsername : getRequestParameter(request, "username", true);
+					String password = StringUtils.isNotBlank(basicAuthorizationPassword) ? basicAuthorizationPassword : getRequestParameter(request, "password", true);
+					
+					try {
+						if (StringUtils.isBlank(username)) {
+							throw new RestfulAuthentificationException("Authentification failed: username is missing");
+						}
+		
+						if (StringUtils.isBlank(password)) {
+							throw new RestfulAuthentificationException("Authentification failed: password is missing");
+						}
+						
+						// Check authentication
+						try {
+							admin = getComLogonService().getAdminByCredentials(username, password, request.getRemoteAddr());
+						} catch (LogonFailedException e) {
+							throw new RestfulAuthentificationException("Authentication failed", e);
+						}
+						if (admin == null) {
+							throw new RestfulAuthentificationException("Authentication failed");
+						} else {
+							AgnUtils.setAdmin(request, admin);
+						}
+					} catch (RestfulAuthentificationException e) {
+						// do not show full stacktrace, because of possible log flooding
+						logger.error("Authentication error (User: " + username + "): " + e.getMessage());
+						restfulResponse.setAuthentificationError(new Exception("Authentication failed", e), ErrorCode.USER_AUTHENTICATION_ERROR);
+						writeResponse(response, restfulResponse);
+						return;
+					} catch (Exception e) {
+						logger.error("Authentication error (User: " + username + "): " + e.getMessage(), e);
+						restfulResponse.setError(new Exception("Authentication failed", e), ErrorCode.USER_AUTHENTICATION_ERROR);
+						writeResponse(response, restfulResponse);
+						return;
 					}
-				} catch (RestfulAuthentificationException e) {
-					// do not show full stacktrace, because of possible log flooding
-					logger.error("Authentication error (User: " + username + "): " + e.getMessage());
-					restfulResponse.setAuthentificationError(new Exception("Authentication failed", e), ErrorCode.USER_AUTHENTICATION_ERROR);
-					writeResponse(response, restfulResponse);
-					return;
-				} catch (Exception e) {
-					logger.error("Authentication error (User: " + username + "): " + e.getMessage(), e);
-					restfulResponse.setError(new Exception("Authentication failed", e), ErrorCode.USER_AUTHENTICATION_ERROR);
-					writeResponse(response, restfulResponse);
-					return;
 				}
-				
+					
 				try {
 					// Check authorization
 					if (!admin.isRestful()) {
@@ -173,7 +240,7 @@ public class RestfulServiceServlet extends BaseRequestServlet {
 					return;
 				}
 
-				if ("profilefield".equals(restfulInterface1) && !admin.permissionAllowed(Permission.PROFILEFIELD_MIGRATION)) {
+				if ("profilefield".equals(restfulInterface1) && admin.permissionAllowed(Permission.PROFILEFIELD_ROLLBACK)) {
 					restfulInterface1 = "profilefield_old";
 				}
 
@@ -230,8 +297,8 @@ public class RestfulServiceServlet extends BaseRequestServlet {
 			writeResponse(response, restfulResponse);
 			logger.error("Error in Restful handler", e);
 		} finally {
-			if (request.getSession() != null) {
-				request.getSession().invalidate();
+			if (request.getSession(false) != null) {
+				request.getSession(false).invalidate();
 			}
 		}
 	}
@@ -337,8 +404,9 @@ public class RestfulServiceServlet extends BaseRequestServlet {
 	}
 	
 	protected QuotaService getQuotaService() {
-		if(this.quotaService == null) {
-			this.quotaService = WebApplicationContextUtils.getWebApplicationContext(getServletContext()).getBean("RestfulQuotaService", QuotaService.class);
+		if (quotaService == null) {
+			ApplicationContext applicationContext = WebApplicationContextUtils.getWebApplicationContext(getServletContext());
+			quotaService = applicationContext.getBean("RestfulQuotaService", QuotaService.class);
 		}
 		
 		return this.quotaService;

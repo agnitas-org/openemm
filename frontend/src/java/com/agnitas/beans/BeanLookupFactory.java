@@ -16,13 +16,11 @@ import org.agnitas.beans.DynamicTagContent;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.beans.Recipient;
-import org.agnitas.beans.TrackableLink;
 import org.agnitas.emm.core.commons.uid.ExtensibleUIDService;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.velocity.VelocityWrapperFactory;
 
 import com.agnitas.emm.core.JavaMailService;
-import com.agnitas.emm.core.workflow.dao.ComWorkflowReportScheduleDao;
 import com.agnitas.util.ScriptHelper;
 
 public abstract class BeanLookupFactory {
@@ -41,5 +39,4 @@ public abstract class BeanLookupFactory {
 	abstract public Mailinglist getBeanMailinglist();
 	abstract public JavaMailService getBeanJavaMailService();
 	abstract public ConfigService getBeanConfigService();
-	abstract public ComWorkflowReportScheduleDao getBeanWorkflowReportScheduleDao();
 }

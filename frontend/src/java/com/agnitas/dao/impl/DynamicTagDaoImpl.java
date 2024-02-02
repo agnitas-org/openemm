@@ -247,7 +247,7 @@ public class DynamicTagDaoImpl extends BaseDaoImpl implements DynamicTagDao {
     @Override
     @DaoUpdateReturnValueCheck
     public void deleteAllDynTags(final int mailingId) {
-        update(logger, "DELETE FROM dyn_content_tbl WHERE dyn_name_id IN (SELECT dyn_name_id FROM dyn_name_tbl WHERE mailing_id = ?)", mailingId);
+        update(logger, "DELETE FROM dyn_content_tbl WHERE mailing_id = ?", mailingId);
         update(logger, "DELETE FROM dyn_name_tbl WHERE mailing_id = ?", mailingId);
     }
 

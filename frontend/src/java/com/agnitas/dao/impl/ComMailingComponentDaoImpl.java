@@ -44,11 +44,13 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.jdbc.core.RowMapper;
 
-import com.agnitas.beans.ComTrackableLink;
-import com.agnitas.beans.impl.ComTrackableLinkImpl;
+import com.agnitas.beans.TrackableLink;
+import com.agnitas.beans.impl.TrackableLinkImpl;
 import com.agnitas.dao.ComMailingComponentDao;
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.dao.TrackableLinkDao;
+import com.agnitas.emm.util.html.HtmlChecker;
+import com.agnitas.emm.util.html.HtmlCheckerException;
 import com.agnitas.util.ImageUtils;
 import com.agnitas.web.CdnImage;
 
@@ -201,14 +203,31 @@ public class ComMailingComponentDaoImpl extends BaseDaoImpl implements ComMailin
 		// TODO: What are these defaultvalues for? They are only written to DB on the first insert and will not be read again
 		int mailtemplateID = 0;
 		int comppresent = 1;
+		
+		// Check for unallowed html tags
+		try {
+			HtmlChecker.checkForNoHtmlTags(mailingComponent.getComponentName());
+		} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
+			throw new Exception("Mailing component name contains unallowed HTML tags");
+		}
+		try {
+			HtmlChecker.checkForUnallowedHtmlTags(mailingComponent.getDescription(), false);
+		} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
+			throw new Exception("Mailing component description contains unallowed HTML tags");
+		}
+		try {
+			HtmlChecker.checkForUnallowedHtmlTags(mailingComponent.getEmmBlock(), true);
+		} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
+			throw new Exception("Mailing component description contains unallowed HTML tags");
+		}
 
 		try {
 			if (mailingComponent.getType() != MailingComponentType.Template && StringUtils.isNotBlank(mailingComponent.getLink()) && mailingComponent.getUrlID() == 0) {
 				Set<String> existingLinkUrls = trackableLinkDao.getTrackableLinks(mailingComponent.getCompanyID(), mailingComponent.getMailingID())
-					.stream().map(ComTrackableLink::getFullUrl).collect(Collectors.toSet());
+					.stream().map(TrackableLink::getFullUrl).collect(Collectors.toSet());
 				// Only create new link if its url does not exist by now
 				if (!existingLinkUrls.contains(mailingComponent.getLink())) {
-					final ComTrackableLink newTrackableLink = new ComTrackableLinkImpl();
+					final TrackableLink newTrackableLink = new TrackableLinkImpl();
 					newTrackableLink.setCompanyID(mailingComponent.getCompanyID());
 					newTrackableLink.setFullUrl(mailingComponent.getLink());
 					newTrackableLink.setMailingID(mailingComponent.getMailingID());
@@ -217,7 +236,7 @@ public class ComMailingComponentDaoImpl extends BaseDaoImpl implements ComMailin
 					trackableLinkDao.saveTrackableLink(newTrackableLink);
 					mailingComponent.setUrlID(newTrackableLink.getId());
 				} else {
-					final ComTrackableLink existingTrackableLink = trackableLinkDao.getTrackableLink(mailingComponent.getLink(), mailingComponent.getCompanyID(), mailingComponent.getMailingID());
+					final TrackableLink existingTrackableLink = trackableLinkDao.getTrackableLink(mailingComponent.getLink(), mailingComponent.getCompanyID(), mailingComponent.getMailingID());
 					mailingComponent.setUrlID(existingTrackableLink.getId());
 				}
 			}

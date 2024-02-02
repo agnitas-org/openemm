@@ -1,0 +1,12 @@
+
+.bordered-box {
+  padding: $gap;
+  border: $border-default;
+  border-radius: $border-radius;
+  @include hide-scroll();
+}
+
+.bordered-box-sm {
+  @extend .bordered-box;
+  padding: $gap-sm;
+}

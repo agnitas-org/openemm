@@ -29,6 +29,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.Objects;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 public class AgnCsrfFilter extends OncePerRequestFilter {
 
@@ -38,12 +39,15 @@ public class AgnCsrfFilter extends OncePerRequestFilter {
     private final CsrfTokenRepository tokenRepository;
     private final AccessDeniedHandlerImpl accessDeniedHandler;
 
+    private static final Pattern PUSH_API_PATTERN = Pattern.compile("^.*/push-api/.*$");
+    private static final Pattern MAILING_LOCK_PATTERN = Pattern.compile("^.*/mailing/ajax/\\d+/lock\\.action$");
+
     public AgnCsrfFilter() {
         this.tokenRepository = createTokenRepository();
         this.accessDeniedHandler = new AccessDeniedHandlerImpl();
     }
 
-    private CsrfTokenRepository createTokenRepository() {
+    private static CsrfTokenRepository createTokenRepository() {
         CookieCsrfTokenRepository cookieTokenRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
 
         cookieTokenRepository.setHeaderName(HEADER_AND_COOKIE_NAME);
@@ -94,24 +98,32 @@ public class AgnCsrfFilter extends OncePerRequestFilter {
         return csrfToken;
     }
 
-    private void addCsrfAttributes(CsrfToken csrfToken, HttpServletRequest req) {
+    private static void addCsrfAttributes(CsrfToken csrfToken, HttpServletRequest req) {
         req.setAttribute(CsrfToken.class.getName(), csrfToken);
         req.setAttribute(csrfToken.getParameterName(), csrfToken);
     }
 
-    private boolean shouldSkipTokenComparison(HttpServletRequest req) {
-        return isAllowedHttpMethod(req) || isSentFromUserWebForm(req);
+    private static boolean shouldSkipTokenComparison(HttpServletRequest req) {
+        return isAllowedHttpMethod(req) || isSentFromUserWebForm(req) || isPushApiRequest(req) || isMailingLockRequest(req);
     }
 
-    private boolean isSentFromUserWebForm(HttpServletRequest req) {
+    private static boolean isSentFromUserWebForm(HttpServletRequest req) {
         return req.getRequestURI().endsWith("form.action") || req.getRequestURI().endsWith("form.do");
     }
 
-    private boolean isAllowedHttpMethod(HttpServletRequest req) {
+    private static boolean isPushApiRequest(final HttpServletRequest req) {
+        return PUSH_API_PATTERN.matcher(req.getRequestURI()).matches();
+    }
+
+    private static boolean isMailingLockRequest(HttpServletRequest req) {
+        return MAILING_LOCK_PATTERN.matcher(req.getRequestURI()).matches();
+    }
+
+    private static boolean isAllowedHttpMethod(HttpServletRequest req) {
         return ALLOWED_METHODS.contains(req.getMethod());
     }
 
-    private String getSentToken(HttpServletRequest req, CsrfToken csrfToken) {
+    private static String getSentToken(HttpServletRequest req, CsrfToken csrfToken) {
         String token = req.getHeader(csrfToken.getHeaderName());
         if (token == null) {
             token = req.getParameter(csrfToken.getParameterName());

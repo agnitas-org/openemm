@@ -1,7 +1,6 @@
-<%@ page contentType="text/html; charset=utf-8" errorPage="/error.do" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.action" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
-<%@ taglib prefix="agn" uri="https://emm.agnitas.de/jsp/jstl/tags" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
 <%--@elvariable id="form" type="com.agnitas.emm.core.components.form.MailingSendForm"--%>

@@ -13,7 +13,6 @@ package com.agnitas.beans.impl;
 import static org.agnitas.beans.impl.MailingComponentImpl.COMPONENT_NAME_MAX_LENGTH;
 
 import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -36,13 +35,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import com.agnitas.emm.core.components.service.ComMailingComponentsService;
 import org.agnitas.actions.EmmAction;
 import org.agnitas.beans.DynamicTagContent;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.MailingComponentType;
 import org.agnitas.beans.MediaTypeStatus;
-import org.agnitas.beans.TrackableLink;
 import org.agnitas.beans.impl.MailingBaseImpl;
 import org.agnitas.dao.FollowUpType;
 import org.agnitas.emm.core.commons.util.ConfigService;
@@ -51,42 +48,39 @@ import org.agnitas.preview.AgnTagError;
 import org.agnitas.preview.TagSyntaxChecker;
 import org.agnitas.service.UserMessageException;
 import org.agnitas.util.AgnTagUtils;
-import org.agnitas.util.GuiConstants;
 import org.agnitas.util.MailoutClient;
 import org.agnitas.util.SafeString;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.struts.action.ActionMessage;
-import org.apache.struts.action.ActionMessages;
 import org.springframework.context.ApplicationContext;
 
 import com.agnitas.beans.Admin;
-import com.agnitas.beans.ComTrackableLink;
 import com.agnitas.beans.DynamicTag;
 import com.agnitas.beans.LinkProperty;
-import com.agnitas.beans.LinkProperty.PropertyType;
 import com.agnitas.beans.MaildropEntry;
 import com.agnitas.beans.Mailing;
 import com.agnitas.beans.MailingContentType;
 import com.agnitas.beans.Mediatype;
 import com.agnitas.beans.MediatypeEmail;
+import com.agnitas.beans.TrackableLink;
 import com.agnitas.emm.common.MailingType;
+import com.agnitas.emm.core.components.service.ComMailingComponentsService;
 import com.agnitas.emm.core.linkcheck.service.LinkService;
 import com.agnitas.emm.core.linkcheck.service.LinkService.ErroneousLink;
 import com.agnitas.emm.core.linkcheck.service.LinkService.LinkScanResult;
 import com.agnitas.emm.core.mailing.bean.ComMailingParameter;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.target.TargetExpressionUtils;
-import com.agnitas.emm.core.trackablelinks.web.LinkScanResultToActionMessages;
+import com.agnitas.emm.core.trackablelinks.web.LinkScanResultToMessages;
 import com.agnitas.messages.I18nString;
+import com.agnitas.messages.Message;
 import com.agnitas.service.AgnDynTagGroupResolverFactory;
 import com.agnitas.service.AgnTagService;
 import com.agnitas.util.ImageUtils;
 import com.agnitas.util.LinkUtils;
 import com.agnitas.web.mvc.Popups;
-import com.agnitas.web.mvc.impl.StrutsPopups;
 
 public class MailingImpl extends MailingBaseImpl implements Mailing {
 	public static final String LINK_SWYN_PREFIX = "SWYN: ";
@@ -98,7 +92,7 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 	protected int targetID;
 	protected Map<String, DynamicTag> dynTags = new LinkedHashMap<>();
 	protected Map<String, MailingComponent> components = new LinkedHashMap<>();
-	protected Map<String, ComTrackableLink> trackableLinks = new LinkedHashMap<>();
+	protected Map<String, TrackableLink> trackableLinks = new LinkedHashMap<>();
 	protected int clickActionID;
 	protected int openActionID;
 	protected Set<MaildropEntry> maildropStatus = new LinkedHashSet<>();
@@ -227,30 +221,29 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 	}
 
 	@Override
-	public Vector<String> scanForLinks(String text, String textModuleName, ApplicationContext applicationContext, ActionMessages actionMessages, ActionMessages errors) throws Exception {
-		return scanForLinks(text, textModuleName, applicationContext, actionMessages, errors, null);
+	public Vector<String> scanForLinks(String text, String textModuleName, ApplicationContext applicationContext, String rdirDomain) throws Exception {
+		return scanForLinks(text, textModuleName, applicationContext, null, null, null, rdirDomain);
 	}
 
 	@Override
-	public Vector<String> scanForLinks(String text, String textModuleName, ApplicationContext applicationContext, ActionMessages warnings, ActionMessages errors, Admin admin) throws Exception {
+	public Vector<String> scanForLinks(String text, String textModuleName, ApplicationContext applicationContext, List<Message> warnings, List<Message> errors, Admin admin, String rdirDomain) throws Exception {
 		final int defaultTrackingMode = readDefaultLinkTrackingMode(applicationContext, companyID);
-		
 		
 		try {
 			if (text != null) {
 				Vector<String> foundLinkUrls = new Vector<>();
 				LinkScanResult linkScanResult = getLinkService(applicationContext).scanForLinks(text, id, mailinglistID, companyID);
-				for (ComTrackableLink linkFound : linkScanResult.getTrackableLinks()) {
+				for (TrackableLink linkFound : linkScanResult.getTrackableLinks()) {
 					if (linkFound.getActionID() > 0 && !isActionExist(linkFound.getActionID())) {
 						if (warnings != null) {
-							warnings.add(GuiConstants.ACTIONMESSAGE_CONTAINER_WARNING, new ActionMessage("warning.mailing.link.invalidActionID", textModuleName, linkFound.getActionID()));
+							warnings.add(Message.of("warning.mailing.link.invalidActionID", textModuleName, linkFound.getActionID()));
 						}
 						linkFound.setActionID(0);
 					}
 					
 					if (linkFound.getFullUrl().contains("/form.do?")) {
 						if (warnings != null) {
-							warnings.add(GuiConstants.ACTIONMESSAGE_CONTAINER_WARNING, new ActionMessage("warning.mailing.link.oldFormDoLink", textModuleName));
+							warnings.add(Message.of("warning.mailing.link.oldFormDoLink", textModuleName));
 						}
 					}
 
@@ -291,26 +284,25 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 				
 				if (warnings != null) {
 					// Check for rdir links
-					Integer rdirLinkLineNumber = getLinkService(applicationContext).getLineNumberOfFirstRdirLink(companyID, text);
+					Integer rdirLinkLineNumber = getLinkService(applicationContext).getLineNumberOfFirstRdirLink(rdirDomain, text);
 					if (rdirLinkLineNumber != null) {
-						warnings.add(GuiConstants.ACTIONMESSAGE_CONTAINER_WARNING, new ActionMessage("warning.mailing.link.encoded", textModuleName, rdirLinkLineNumber));
+						warnings.add(Message.of("warning.mailing.link.encoded", textModuleName, rdirLinkLineNumber));
 					}
 					
 					// Check for not measurable links
 					if (linkScanResult.getNotTrackableLinks().size() > 0) {
-						warnings.add(GuiConstants.ACTIONMESSAGE_CONTAINER_WARNING, new ActionMessage("warning.mailing.link.agntag", textModuleName, StringEscapeUtils.escapeHtml4(linkScanResult.getNotTrackableLinks().get(0))));
+						warnings.add(Message.of("warning.mailing.link.agntag", textModuleName, StringEscapeUtils.escapeHtml4(linkScanResult.getNotTrackableLinks().get(0))));
 					}
 					
 					if (linkScanResult.getLocalLinks().size() > 0) {
 						for (final ErroneousLink link : linkScanResult.getLocalLinks()) {
-							warnings.add(GuiConstants.ACTIONMESSAGE_CONTAINER_WARNING_PERMANENT,
-									new ActionMessage("error.mailing.localLink",
-											textModuleName,
-											StringEscapeUtils.escapeHtml4(link.getLinkText())));
+							warnings.add(Message.of("error.mailing.localLink",
+									textModuleName,
+									StringEscapeUtils.escapeHtml4(link.getLinkText())));
 						}
 					}
-					
-					LinkScanResultToActionMessages.linkWarningsToActionMessages(linkScanResult, warnings);
+
+					LinkScanResultToMessages.linkWarningsToActionMessages(linkScanResult, warnings);
 					
 					// Check for not erroneous links
 					if (linkScanResult.getErroneousLinks().size() > 0) {
@@ -322,13 +314,12 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 								admin.getLocale(),
 								linkText
 							);
-						
-						errors.add(ActionMessages.GLOBAL_MESSAGE,
-								new ActionMessage("error.mailing.links",
-										linkScanResult.getErroneousLinks().size(),
-										textModuleName,
-										linkText,
-										errorText));
+
+						errors.add(Message.of("error.mailing.links",
+								linkScanResult.getErroneousLinks().size(),
+								textModuleName,
+								linkText,
+								errorText));
 					}
 				}
 				
@@ -341,8 +332,8 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 			}
 			Locale locale = admin.getLocale();
 			String message = SafeString.getLocaleString(e.getErrorMessage(), locale) + ":<br>" + e.getErrorLink();
-			
-			errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.invalid.link", SafeString.getLocaleString("error.in", locale)
+
+			errors.add(Message.of("error.invalid.link", SafeString.getLocaleString("error.in", locale)
 					+ " " + textModuleName + "<br> " + message));
 		} catch (Exception e) {
             logger.error("scanForLinks error in " + textModuleName + ": " + e.getMessage(), e);
@@ -353,10 +344,10 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
             Locale locale = admin.getLocale();
             if (e.getCause() instanceof LinkService.ErrorLinkStorage) {
                 LinkService.ErrorLinkStorage linkError = (LinkService.ErrorLinkStorage) e.getCause();
-                errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.invalid.link",
+                errors.add(Message.of("error.invalid.link",
                         String.format("%s %s<br> %s", SafeString.getLocaleString("error.in", locale), textModuleName, linkError.getErrorLink())));
             } else {
-                errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.invalid.link", SafeString.getLocaleString("error.in", locale)
+                errors.add(Message.of("error.invalid.link", SafeString.getLocaleString("error.in", locale)
                         + " " + textModuleName + "<br> " + e.getMessage()));
             }
         }
@@ -365,22 +356,24 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 	}
 
 	@Override
-	public Vector<String> scanForLinks(ApplicationContext con) throws Exception {
-        return scanForLinks(con, null, null, null);
+	public Vector<String> scanForLinks(ApplicationContext applicationContext) throws Exception {
+        return scanForLinks(applicationContext, null, null, null);
     }
 
-	private Vector<String> scanForLinks(ApplicationContext con, ActionMessages messages, ActionMessages errors, Admin admin) throws Exception {
+	private Vector<String> scanForLinks(ApplicationContext applicationContext, List<Message> messages, List<Message> errors, Admin admin) throws Exception {
 		Vector<String> addedLinks = new Vector<>();
+		
+        String rdirDomain = getLinkService(applicationContext).getRdirDomain(companyID);
 
 		for (MailingComponent component : components.values()) {
 			if (component.getType() == MailingComponentType.Template) {
-				addedLinks.addAll(scanForLinks(component.getEmmBlock(), component.getComponentName(), con, messages, errors, admin));
+				addedLinks.addAll(scanForLinks(component.getEmmBlock(), component.getComponentName(), applicationContext, messages, errors, admin, rdirDomain));
 			}
 		}
 
 		for (DynamicTag tag : dynTags.values()) {
 			for (DynamicTagContent content : tag.getDynContent().values()) {
-				addedLinks.addAll(scanForLinks(content.getDynContent(), tag.getDynName(), con, messages, errors, admin));
+				addedLinks.addAll(scanForLinks(content.getDynContent(), tag.getDynName(), applicationContext, messages, errors, admin, rdirDomain));
 				removeActionTag(content);
 			}
 		}
@@ -453,38 +446,11 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 		this.followUpType = followUpType;
 	}
 
-	private void setDefaultExtension(ComTrackableLink link, ApplicationContext con) throws UnsupportedEncodingException {
+	private void setDefaultExtension(TrackableLink link, ApplicationContext con) throws UnsupportedEncodingException {
 		ConfigService configService = (ConfigService) con.getBean("ConfigService");
 		String defaultExtensionString = configService.getValue(ConfigValue.DefaultLinkExtension, link.getCompanyID());
 		if (StringUtils.isNotBlank(defaultExtensionString)) {
-			if (defaultExtensionString.startsWith("?")) {
-				defaultExtensionString = defaultExtensionString.substring(1);
-			}
-			String[] extensionProperties = defaultExtensionString.split("&");
-			for (String extensionProperty : extensionProperties) {
-				final int eqIndex = extensionProperty.indexOf('=');
-				final String[] extensionPropertyData = (eqIndex == -1) ? new String[] { extensionProperty, "" } : new String[] { extensionProperty.substring(0, eqIndex), extensionProperty.substring(eqIndex + 1) };
-				
-				String extensionPropertyName = URLDecoder.decode(extensionPropertyData[0], "UTF-8");
-				String extensionPropertyValue = "";
-				if (extensionPropertyData.length > 1) {
-					extensionPropertyValue = URLDecoder.decode(extensionPropertyData[1], "UTF-8");
-				}
-		
-				// Change link properties
-				List<LinkProperty> properties = link.getProperties();
-				boolean changedProperty = false;
-				for (LinkProperty property : properties) {
-					if (LinkUtils.isExtension(property) && property.getPropertyName().equals(extensionPropertyName)) {
-						property.setPropertyValue(extensionPropertyValue);
-						changedProperty = true;
-					}
-				}
-				if (!changedProperty) {
-					LinkProperty newProperty = new LinkProperty(PropertyType.LinkExtension, extensionPropertyName, extensionPropertyValue);
-					properties.add(newProperty);
-				}
-			}
+			LinkUtils.extendTrackableLink(link, defaultExtensionString);
 		}
 	}
 	
@@ -497,7 +463,7 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 	public List<LinkProperty> getCommonLinkExtensions() {
 		List<LinkProperty> commonLinkProperties = null;
 		for (TrackableLink link : getTrackableLinks().values()) {
-			if (link.getShortname() == null || !link.getShortname().startsWith(LINK_SWYN_PREFIX)) {
+			if (!link.isDeleted() && (link.getShortname() == null || !link.getShortname().startsWith(LINK_SWYN_PREFIX))) {
 				if (commonLinkProperties == null) {
 					commonLinkProperties = new ArrayList<>(link.getProperties());
 				} else {
@@ -674,7 +640,7 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 		return names;
 	}
 
-	public Vector<String> scanForComponents(ApplicationContext con, int companyIDToCheckFor, ActionMessages errors) throws Exception {
+	public Vector<String> scanForComponents(ApplicationContext con, int companyIDToCheckFor) throws Exception {
 		Vector<String> addedTags = new Vector<>();
 		Set<MailingComponent> componentsToAdd = new HashSet<>();
 		Set<String> mediapoolImages = new HashSet<>();
@@ -806,7 +772,6 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
                     } else if (!isGridMailing() && foundComponent.getComponentName().trim().startsWith("[agnIMAGE")) {
                         // Collect mediapool images and later save to mailing_ref_mediapool_tbl
                         // in order to check if they is still used by classic mailing while mediapool element deletion:
-                        // com.agnitas.emm.grid.mediapool.dao.impl.ComGridMediapoolDaoImpl#entitiesWhereElementIsUsed(int, int)
                         String imageName = AgnTagUtils.getAgnTagName(foundComponent.getComponentName());
                         if (StringUtils.isNotBlank(imageName) && !mailingHostedImageNames.contains(imageName)) {
                             mediapoolImages.add(imageName);
@@ -874,7 +839,7 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 	}
 
 	@Override
-	public Map<String, ComTrackableLink> getTrackableLinks() {
+	public Map<String, TrackableLink> getTrackableLinks() {
 		return trackableLinks;
 	}
 
@@ -1016,7 +981,7 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 	 * @param trackableLinks
 	 */
 	@Override
-	public void setTrackableLinks(Map<String, ComTrackableLink> trackableLinks) {
+	public void setTrackableLinks(Map<String, TrackableLink> trackableLinks) {
 		this.trackableLinks = trackableLinks;
 	}
 
@@ -1223,30 +1188,29 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 
 	@Override
 	public boolean buildDependencies(boolean scanDynTags, ApplicationContext con) throws Exception {
-		return buildDependencies(scanDynTags, null, con, null, null);
+		return buildDependencies(scanDynTags, null, con);
 	}
 
 	@Override
-    public boolean buildDependencies(boolean scanDynTags, List<String> dynNamesForDeletion, ApplicationContext con) throws Exception {
-		return buildDependencies(scanDynTags, dynNamesForDeletion, con, null, null);
+	public boolean buildDependencies(boolean scanDynTags, List<String> dynNamesForDeletion, ApplicationContext con) throws Exception {
+		return buildDependencies(scanDynTags, dynNamesForDeletion, con, null, null, null);
 	}
 
 	@Override
-	public boolean buildDependencies(boolean scanDynTags, List<String> dynNamesForDeletion, ApplicationContext con, ActionMessages messages, ActionMessages errors) throws Exception {
-		return buildDependencies(scanDynTags, dynNamesForDeletion, con, messages, errors, null);
+	public boolean buildDependencies(Popups popups, boolean scanDynTags, List<String> dynNamesForDeletion, ApplicationContext con, Admin admin) throws Exception {
+		List<Message> errors = new ArrayList<>();
+		List<Message> warnings = new ArrayList<>();
+
+		boolean result = buildDependencies(scanDynTags, dynNamesForDeletion, con, warnings, errors, admin);
+
+		errors.forEach(popups::alert);
+		warnings.forEach(popups::warning);
+
+		return result;
 	}
 
-    @Override
-    public boolean buildDependencies(Popups popups, boolean scanDynTags, List<String> dynNamesForDeletion, ApplicationContext con, Admin admin) throws Exception {
-        ActionMessages errors = new ActionMessages();
-        ActionMessages warnings = new ActionMessages();
-        boolean result = buildDependencies(scanDynTags, dynNamesForDeletion, con, warnings, errors, admin);
-        StrutsPopups.insertMessagesToPopups(warnings, errors, popups);
-	    return result;
-    }
-	
 	@Override
-	public boolean buildDependencies(boolean scanDynTags, List<String> dynNamesForDeletion, ApplicationContext con, ActionMessages messages, ActionMessages errors, Admin admin) throws Exception {
+	public boolean buildDependencies(boolean scanDynTags, List<String> dynNamesForDeletion, ApplicationContext con, List<Message> warnings, List<Message> errors, Admin admin) throws Exception {
 		Vector<String> componentsToCheck = new Vector<>();
 
 		// scan for Dyntags
@@ -1257,6 +1221,7 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 			MediatypeEmail emailParam = getEmailParam();
 			if (emailParam != null) {
 				dynNamesInUse.addAll(findDynTagsInTemplates(emailParam.getSubject(), con));
+				dynNamesInUse.addAll(findDynTagsInTemplates(emailParam.getPreHeader(), con));
 				dynNamesInUse.addAll(findDynTagsInTemplates(emailParam.getReplyAdr(), con));
 				dynNamesInUse.addAll(findDynTagsInTemplates(emailParam.getFromAdr(), con));
 			}
@@ -1275,7 +1240,7 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 		// scan for Components
 		// in template-components and dyncontent
 		try {
-			componentsToCheck.addAll(scanForComponents(con, companyID, errors));
+			componentsToCheck.addAll(scanForComponents(con, companyID));
 		} catch (Exception e) {
 			logger.error(e.getMessage(), e);
 		}
@@ -1288,7 +1253,7 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
 
 		// scan for Links
 		// in template-components and dyncontent
-		Vector<String> links = new Vector<>(scanForLinks(con, messages, errors, admin));
+		Vector<String> links = new Vector<>(scanForLinks(con, warnings, errors, admin));
 		// if(ConfigService.isOracleDB()) {
 		// causes problem with links in OpenEMM
 		cleanupTrackableLinks(links);
@@ -1459,13 +1424,6 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
     protected final LinkService getLinkService(ApplicationContext applicationContext) {
     	if (linkService == null) {
     		linkService = applicationContext.getBean("LinkService", LinkService.class);
-    		
-    		if(linkService == null) {
-    			logger.error("Link service is still null!");
-    			
-    			throw new NullPointerException("Link service is still null");
-    		}
-    			
     	}
     	return linkService;
     }
@@ -1473,13 +1431,6 @@ public class MailingImpl extends MailingBaseImpl implements Mailing {
     protected final ComMailingComponentsService getMailingComponentService(ApplicationContext applicationContext) {
     	if (mailingComponentsService == null) {
             mailingComponentsService = applicationContext.getBean("mailingComponentService", ComMailingComponentsService.class);
-    		
-    		if(mailingComponentsService == null) {
-    			logger.error("mailing components service is still null!");
-    			
-    			throw new NullPointerException("mailing components service is still null");
-    		}
-    			
     	}
     	return mailingComponentsService;
     }

@@ -1,0 +1,64 @@
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  flex: 0 0 $headerHeight;
+  padding-inline: $gap;
+
+  background: $c-white;
+  border-bottom: 1px solid #C0C0C0;
+
+  @include mobile {
+    padding-left: $gap-sm;
+    padding-right: $gap-x-sm;
+  }
+}
+
+.header__actions {
+  display: flex;
+  align-items: center;
+  gap: $gap;
+
+  @include mobile {
+    gap: $gap-sm;
+  }
+}
+
+.header__action {
+  @include flex-center();
+  gap: $gap-x-sm;
+  padding: $gap-x-sm 8px;
+  @include font($font-size-base);
+
+  &.btn {
+    border: none;
+    background-color: $c-sidemenu;
+  }
+
+  .icon {
+    font-size: $font-size-sm;
+  }
+
+  @include mobile {
+    @include size(40px);
+
+    &.btn::after {
+      display: none; // hide bootstrap arrow
+    }
+
+    span {
+      display: none;
+    }
+
+    .icon {
+      font-size: 22px;
+    }
+  }
+}
+
+#new-resource {
+  body.edit-mode & {
+    display: none;
+  }
+}

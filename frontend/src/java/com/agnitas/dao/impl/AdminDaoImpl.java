@@ -71,7 +71,6 @@ import com.agnitas.emm.core.news.enums.NewsType;
  * This class is compatible with oracle and mysql datasources and databases
  */
 public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
-
 	private static final Logger logger = LogManager.getLogger(AdminDaoImpl.class);
 
 	private final RowMapper<Admin> adminRowMapper = new Admin_RowMapper();
@@ -424,8 +423,6 @@ public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
 		if (adminID == companyAdminId && CompanyStatus.ACTIVE == company.getStatus()) {
 			return false;
 		} else {
-			update(logger, "UPDATE auto_import_tbl SET admin_id = ? WHERE company_id = ? AND admin_id = ?", companyAdminId, companyID, adminID);
-			update(logger, "UPDATE auto_export_tbl SET admin_id = ? WHERE company_id = ? AND admin_id = ?", companyAdminId, companyID, adminID);
 			if (isDisabledMailingListsSupported()) {
 				mailinglistApprovalDao.allowAdminToUseAllMailinglists(companyID, adminID);
 			}
@@ -439,6 +436,8 @@ public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
 	protected void deleteAdminDependentData(int adminID) {
 		update(logger, "DELETE FROM admin_permission_tbl WHERE admin_id = ?", adminID);
 		update(logger, "DELETE FROM admin_to_group_tbl WHERE admin_id = ?", adminID);
+		update(logger, "DELETE FROM admin_upload_list_tbl WHERE admin_id = ?", adminID);
+		update(logger, "DELETE FROM undo_workflow_tbl WHERE admin_id = ?", adminID);
 	}
 
 	@Override
@@ -851,6 +850,16 @@ public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
 	}
 
     @Override
+	public void grantPermission(int adminId, Permission permission) {
+		update(logger, "INSERT INTO admin_permission_tbl (admin_id, permission_name) VALUES (?, ?)", adminId, permission.getTokenString());
+	}
+
+	@Override
+	public void revokePermission(int adminId, Permission permission) {
+		update(logger, "DELETE FROM admin_permission_tbl WHERE admin_id = ? AND permission_name = ?", adminId, permission.getTokenString());
+	}
+
+	@Override
 	@DaoUpdateReturnValueCheck
     public int saveAdminRights(int adminID, Set<String> userRights) {
     	update(logger, "DELETE FROM admin_permission_tbl WHERE admin_id = ?", adminID);
@@ -1016,5 +1025,15 @@ public class AdminDaoImpl extends PaginatedBaseDaoImpl implements AdminDao {
 	@Override
 	public List<Map<String, Object>> getAdminsLight(int companyID, boolean restful) {
 		return select(logger, "SELECT admin_id, username, fullname, firstname, employee_id, email FROM admin_tbl WHERE company_id = ? AND restful = ? ORDER BY LOWER(username)", companyID, restful ? 1 : 0);
+	}
+
+	@Override
+	public void saveDashboardLayout(String layout, int adminId) {
+		update(logger, "UPDATE admin_tbl SET dashboard_layout = ? WHERE admin_id = ?", layout, adminId);
+	}
+
+	@Override
+	public String getDashboardLayout(int adminId) {
+		return selectWithDefaultValue(logger, "SELECT dashboard_layout FROM admin_tbl WHERE admin_id = ?", String.class, "", adminId);
 	}
 }

@@ -27,7 +27,6 @@ import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
 import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
 import com.agnitas.emm.core.target.service.ComTargetService;
 import com.agnitas.mailing.autooptimization.service.ComOptimizationService;
-import com.agnitas.service.ComWebStorage;
 import com.agnitas.service.GridServiceWrapper;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.XssCheckAware;
@@ -35,7 +34,7 @@ import org.agnitas.beans.MailingSendStatus;
 import org.agnitas.dao.MailingStatus;
 import org.agnitas.emm.company.service.CompanyService;
 import org.agnitas.service.UserActivityLogService;
-import org.agnitas.service.WebStorage;
+import com.agnitas.service.WebStorage;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;
 import org.agnitas.util.DbUtilities;
@@ -308,7 +307,7 @@ public class MailingBirtStatController implements XssCheckAware {
     }
 
     private void syncFormProps(MailingStatatisticListForm form){
-        webStorage.access(ComWebStorage.MAILING_SEPARATE_STATS_OVERVIEW, storage -> {
+        webStorage.access(WebStorage.MAILING_SEPARATE_STATS_OVERVIEW, storage -> {
             if (form.getNumberOfRows() > 0) {
                 storage.setRowsCount(form.getNumberOfRows());
                 storage.setSelectedFields(Arrays.asList(form.getAdditionalFields()));
@@ -326,7 +325,7 @@ public class MailingBirtStatController implements XssCheckAware {
             }
         }
 
-        return !popups.hasFieldPopups();
+        return !popups.hasAlertPopups();
     }
 
     protected boolean validateDates(Admin admin, MailingStatisticForm form, Popups popups) {

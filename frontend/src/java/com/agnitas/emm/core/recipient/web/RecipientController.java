@@ -10,11 +10,10 @@
 
 package com.agnitas.emm.core.recipient.web;
 
-import static com.agnitas.emm.core.Permission.RECIPIENT_PROFILEFIELD_HTML_ALLOWED;
+import static com.agnitas.service.WebStorage.RECIPIENT_OVERVIEW;
 import static org.agnitas.emm.core.recipient.RecipientUtils.COLUMN_LATEST_DATASOURCE_ID;
 import static org.agnitas.emm.core.recipient.RecipientUtils.MAIN_COLUMNS;
 import static org.agnitas.emm.core.recipient.RecipientUtils.MAX_SELECTED_FIELDS_COUNT;
-import static org.agnitas.service.WebStorage.RECIPIENT_OVERVIEW;
 import static org.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
 import static org.agnitas.util.Const.Mvc.ERROR_MSG;
 import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
@@ -47,7 +46,6 @@ import org.agnitas.emm.core.recipient.service.SubscriberLimitExceededException;
 import org.agnitas.emm.core.recipient.service.impl.SubscriberLimitCheckResult;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.service.UserActivityLogService;
-import org.agnitas.service.WebStorage;
 import org.agnitas.target.ConditionalOperator;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DbColumnType;
@@ -114,14 +112,15 @@ import com.agnitas.emm.core.target.eql.parser.EqlParserException;
 import com.agnitas.emm.core.target.service.ComTargetService;
 import com.agnitas.messages.Message;
 import com.agnitas.service.ColumnInfoService;
-import com.agnitas.service.ComWebStorage;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.service.SimpleServiceResult;
+import com.agnitas.service.WebStorage;
 import com.agnitas.web.dto.BooleanResponseDto;
 import com.agnitas.web.mvc.Pollable;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.XssCheckAware;
 
+import jakarta.servlet.http.HttpServletRequest;
 import net.sf.json.JSONObject;
 
 @SuppressWarnings("all")
@@ -193,7 +192,7 @@ public class RecipientController implements XssCheckAware {
     // Spring passes model attributes to url by default.
     // Using RedirectAttributes we control which attributes to add explicitly. GWUA-4956
 	@RequestMapping("/list.action")
-	public Object list(Admin admin, @ModelAttribute("form") RecipientListForm form, Model model, Popups popups, @RequestHeader HttpHeaders headers,
+	public Object list(Admin admin, @ModelAttribute("listForm") RecipientListForm form, Model model, Popups popups, @RequestHeader HttpHeaders headers,
 					   @RequestParam(value = RESET_PARAM_NAME, required = false) boolean resetSearchParams,
 					   @RequestParam(value = RESTORE_PARAM_NAME, required = false) boolean restoreSearchParams,
 					   @RequestParam(value = "latestDataSourceId", required = false, defaultValue = "0") int dataSourceId,
@@ -314,7 +313,7 @@ public class RecipientController implements XssCheckAware {
 		}
 
 		model.addFlashAttribute("loadRecipients", true);
-		model.addFlashAttribute("form", form);
+		model.addFlashAttribute("listForm", form);
 
 		return "redirect:/recipient/list.action";
 	}
@@ -797,7 +796,7 @@ public class RecipientController implements XssCheckAware {
     @GetMapping("/{recipientId:\\d+}/contactHistory.action")
 	public String contactHistory(Admin admin, @PathVariable int recipientId, PaginationForm form, Model model, Popups popups) throws RejectAccessByTargetGroupLimit {
 		return processRecipientHistoryTab(() -> {
-			FormUtils.syncNumberOfRows(webStorage, ComWebStorage.RECIPIENT_MAILING_HISTORY_OVERVIEW, form);
+			FormUtils.syncNumberOfRows(webStorage, WebStorage.RECIPIENT_MAILING_HISTORY_OVERVIEW, form);
 			model.addAttribute("contactHistoryJson", recipientService.getContactHistoryJson(admin.getCompanyID(), recipientId));
 			model.addAttribute("deliveryHistoryEnabled", deliveryService.isDeliveryHistoryEnabled(admin));
 
@@ -847,7 +846,7 @@ public class RecipientController implements XssCheckAware {
 	@GetMapping("/{recipientId:\\d+}/statusChangesHistory.action")
 	public String statusChangesHistory(Admin admin, @PathVariable int recipientId, PaginationForm form, Model model, Popups popups) throws RejectAccessByTargetGroupLimit {
 		return processRecipientHistoryTab(() -> {
-			FormUtils.syncNumberOfRows(webStorage, ComWebStorage.RECIPIENT_STATUS_HISTORY_OVERVIEW, form);
+			FormUtils.syncNumberOfRows(webStorage, WebStorage.RECIPIENT_STATUS_HISTORY_OVERVIEW, form);
 
 			model.addAttribute("statusChangesHistoryJson", recipientService.getRecipientStatusChangesHistory(admin, recipientId));
 
@@ -950,9 +949,22 @@ public class RecipientController implements XssCheckAware {
     }
 
 	@ModelAttribute
-    public RecipientsFormSearchParams getRecipientsFormSearchParams(){
-        return new RecipientsFormSearchParams();
+    public RecipientsFormSearchParams getRecipientsFormSearchParams(HttpServletRequest req) {
+		return new RecipientsFormSearchParams(getDefaultUserStatusId(AgnUtils.getAdmin(req)));
     }
+
+	@ModelAttribute("listForm")
+    public RecipientListForm getListForm(HttpServletRequest req) {
+		return new RecipientListForm(getDefaultUserStatusId(AgnUtils.getAdmin(req)));
+	}
+
+	private int getDefaultUserStatusId(Admin admin) {
+		if (configService.getBooleanValue(ConfigValue.FilterRecipientsOverviewForActiveRecipients, admin.getCompanyID())) {
+			return UserStatus.Active.getStatusCode();
+		}
+
+		return 0;
+	}
 
 	@Override
     public boolean isParameterExcludedForUnsafeHtmlTagCheck(Admin admin, String parameter, String controllerMethodName) {
@@ -962,7 +974,7 @@ public class RecipientController implements XssCheckAware {
 				columnValue = StringUtils.substringBetween(parameter, "additionalColumns[", "]");
 			}
 			if (recipientService.getEditableColumns(admin).get(columnValue) != null) {
-				return admin.permissionAllowed(RECIPIENT_PROFILEFIELD_HTML_ALLOWED);
+				return configService.getBooleanValue(ConfigValue.AllowHtmlInProfileFields);
 			}
         }
 

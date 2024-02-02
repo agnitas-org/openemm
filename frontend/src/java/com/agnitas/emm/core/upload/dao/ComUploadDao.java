@@ -47,17 +47,6 @@ public interface ComUploadDao {
 	List<UploadData> getOverviewListByExtention(Admin admin, List<String> extentions);
 	
 	/**
-     * This method returns the file associated with the given uploadID.
-     * This method is dangerous, it loads the file completely into memory!
-     * If possible, use {@link #getDownloadData(int)} and {@link #sendDataToStream(int, OutputStream)}.
-     * 
-	 * @param uploadID
-	 * @return
-	 */
-	@Deprecated
-	UploadData loadData(int uploadID);
-	
-	/**
 	 * This method saves or updates the given Upload Data Object and returns the upload-id.
 	 * @return
 	 * @throws Exception

@@ -1,9 +1,6 @@
 <%@page import="com.agnitas.emm.common.MailingType"%>
-<%@ page contentType="text/html; charset=utf-8" errorPage="/error.do" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.action" %>
 <%@ page import="com.agnitas.beans.Mailing" %>
-<%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
-<%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
-<%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
@@ -35,10 +32,10 @@
             <div class="col-xs-12">
                 <div class="btn-group">
                     <a href="#" class="btn btn-regular" data-action="editor-cancel">
-                        <bean:message key="button.Cancel"/>
+                        <mvc:message code="button.Cancel"/>
                     </a>
                     <a href="#" class="btn btn-regular btn-primary hide-for-active" data-action="action-mailing-editor-save">
-                        <bean:message key="button.Apply"/>
+                        <mvc:message code="button.Apply"/>
                     </a>
                 </div>
             </div>

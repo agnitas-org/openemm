@@ -11,27 +11,26 @@
 package com.agnitas.ecs.service.impl;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
+import com.agnitas.service.PdfService;
 import org.agnitas.ecs.backend.beans.ClickStatColor;
 import org.agnitas.ecs.backend.dao.EmbeddedClickStatDao;
 import org.agnitas.emm.core.commons.util.ConfigService;
-import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.ecs.service.EcsService;
-import com.agnitas.emm.core.workflow.service.GenerationPDFService;
 
 public class EcsServiceImpl implements EcsService {
 
-    public static final String PDF_ORIENTATION = "Portrait";
     public static final String PDF_FOOTER_MESSAGE_KEY = "ecs.Heatmap";
 
-    protected GenerationPDFService generationPDFService;
+    protected PdfService pdfService;
     protected ComRecipientDao recipientDao;
     protected EmbeddedClickStatDao embeddedClickStatDao;
     protected ConfigService configService;
@@ -47,19 +46,19 @@ public class EcsServiceImpl implements EcsService {
     }
 
     @Override
-    public File generatePDF(Admin admin, String url, String title) {
-        return generationPDFService.generatePDF(configService.getValue(ConfigValue.WkhtmlToPdfToolPath),
-                url,
-                StringUtils.defaultString(title),
+    public File generatePDF(Admin admin, String url, String title) throws IOException {
+        return pdfService.generatePDF(
                 admin,
-                "heatmapLoadFinished",
-                PDF_ORIENTATION,
-                PDF_FOOTER_MESSAGE_KEY);
+                url,
+                false,
+                StringUtils.defaultString(title),
+                PDF_FOOTER_MESSAGE_KEY,
+                "heatmapLoadFinished");
     }
 
     @Required
-    public void setGenerationPDFService(GenerationPDFService generationPDFService) {
-        this.generationPDFService = generationPDFService;
+    public void setPdfService(PdfService pdfService) {
+        this.pdfService = pdfService;
     }
 
     @Required

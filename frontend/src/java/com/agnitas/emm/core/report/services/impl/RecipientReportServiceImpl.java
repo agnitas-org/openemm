@@ -10,6 +10,7 @@
 
 package com.agnitas.emm.core.report.services.impl;
 
+import java.io.ByteArrayOutputStream;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -17,14 +18,22 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.agnitas.beans.Admin;
+import com.agnitas.emm.core.recipientsreport.bean.SummedRecipientRemark;
+import com.agnitas.messages.I18nString;
 import jakarta.annotation.Resource;
 
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.util.CsvWriter;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.ListUtils;
 import org.springframework.stereotype.Service;
@@ -303,5 +312,52 @@ public class RecipientReportServiceImpl implements RecipientReportService {
         }
 
         return recipientBindingHistories;
+    }
+
+    @Override
+    public Map<String, Integer> getRecipientRemarksStat(int mailinglistId, int targetId, int companyId) {
+        return bindingEntryDao.getRecipientRemarksStat(mailinglistId, targetId, companyId);
+    }
+
+    @Override
+    public JSONArray getFilteredRemarksJson(Map<String, Integer> remarks, boolean summed) {
+        JSONArray jsonArray = new JSONArray();
+        remarks.entrySet().stream()
+                .filter(remarkEntry -> summed == SummedRecipientRemark.getNames().contains(remarkEntry.getKey()))
+                .map(remarkEntry -> getRemarkJson(remarkEntry.getKey(), remarkEntry.getValue()))
+                .forEach(jsonArray::add);
+        return jsonArray;
+    }
+
+    private JSONObject getRemarkJson(String remark, int value) {
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("remark", remark);
+        jsonObject.put("value", value);
+        return jsonObject;
+    }
+
+    @Override
+    public byte[] getRecipientRemarksCSV(Admin admin, int mailingListId, int targetId) {
+        Map<String, Integer> remarks = getRecipientRemarksStat(mailingListId, targetId, admin.getCompanyID());
+        Locale locale = admin.getLocale();
+
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        try (CsvWriter csvWriter = new CsvWriter(outputStream)) {
+            writeRemarksToCsv(csvWriter, remarks, locale);
+        } catch (Exception e) {
+            return new byte[0];
+        }
+        return outputStream.toByteArray();
+    }
+
+    private void writeRemarksToCsv(CsvWriter csvWriter, Map<String, Integer> remarks, Locale locale) throws Exception {
+        csvWriter.writeValues(localStr("recipient.Remark", locale), localStr("Value", locale));
+        for (Map.Entry<String, Integer> remark : remarks.entrySet()) {
+            csvWriter.writeValues(remark.getKey(), remark.getValue());
+        }
+    }
+
+    private String localStr(String code, Locale locale) {
+        return I18nString.getLocaleString(code, locale);
     }
 }

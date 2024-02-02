@@ -12,8 +12,8 @@ import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
 import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.emm.core.preview.service.MailingWebPreviewService;
-import com.agnitas.emm.core.workflow.service.GenerationPDFService;
 import com.agnitas.service.GridServiceWrapper;
+import com.agnitas.service.PdfService;
 import com.agnitas.web.perm.annotations.PermissionMapping;
 
 @Controller
@@ -21,7 +21,7 @@ import com.agnitas.web.perm.annotations.PermissionMapping;
 @PermissionMapping("mailing.preview")
 public class MailingPreviewControllerOpenemm extends MailingPreviewController {
     
-    public MailingPreviewControllerOpenemm(ComMailingDao mailingDao, MailinglistDao mailinglistDao, ComRecipientDao recipientDao, MailingService mailingService, MailingWebPreviewService previewService, GridServiceWrapper gridService, MailingComponentDao mailingComponentDao, TAGCheckFactory tagCheckFactory, ComMailingBaseService mailingBaseService, ConfigService configService, GenerationPDFService generationPDFService) {
-        super(mailingDao, mailinglistDao, recipientDao, mailingService, previewService, gridService, mailingComponentDao, tagCheckFactory, mailingBaseService, configService, generationPDFService);
+    public MailingPreviewControllerOpenemm(ComMailingDao mailingDao, MailinglistDao mailinglistDao, ComRecipientDao recipientDao, MailingService mailingService, MailingWebPreviewService previewService, GridServiceWrapper gridService, MailingComponentDao mailingComponentDao, TAGCheckFactory tagCheckFactory, ComMailingBaseService mailingBaseService, ConfigService configService, PdfService pdfService) {
+        super(mailingDao, mailinglistDao, recipientDao, mailingService, previewService, gridService, mailingComponentDao, tagCheckFactory, mailingBaseService, configService, pdfService);
     }
 }

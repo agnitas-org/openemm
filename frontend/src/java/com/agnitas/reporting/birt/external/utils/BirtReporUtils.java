@@ -58,7 +58,8 @@ public class BirtReporUtils {
 		CLICKER_DEVICES("clickerDevices"),
         MAILING_TYPE("mailingType"),
 		SENT_MAILS("sentMails"),
-        OPENERS("openers");
+        OPENERS("openers"),
+        RECIPIENT_DOI("recipientDOI");
 
 		private final String value;
 

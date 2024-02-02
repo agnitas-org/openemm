@@ -46,4 +46,12 @@ public interface Mailinglist {
 	boolean isFrequencyCounterEnabled();
 
 	void setRemoved(boolean removed);
+
+	String getSenderEmail();
+
+	void setSenderEmail(String senderEmail);
+
+	String getReplyEmail();
+
+	void setReplyEmail(String replyEmail);
 }

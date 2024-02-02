@@ -11,13 +11,16 @@
 package com.agnitas.emm.core.report.services;
 
 import java.util.List;
+import java.util.Map;
 
+import com.agnitas.beans.Admin;
 import com.agnitas.beans.ComRecipientHistory;
 import com.agnitas.beans.ComRecipientMailing;
 import com.agnitas.beans.ComRecipientReaction;
 import com.agnitas.beans.WebtrackingHistoryEntry;
 import com.agnitas.emm.core.report.bean.RecipientBindingHistory;
 import com.agnitas.emm.core.report.bean.RecipientEntity;
+import net.sf.json.JSONArray;
 
 public interface RecipientReportService {
 
@@ -86,4 +89,10 @@ public interface RecipientReportService {
      * @return information about recipient.
      */
     RecipientEntity getRecipientInfo(int recipientId, int companyId);
+
+    Map<String, Integer> getRecipientRemarksStat(int mailinglistId, int targetId, int companyId);
+
+    JSONArray getFilteredRemarksJson(Map<String, Integer> remarks, boolean summary);
+
+    byte[] getRecipientRemarksCSV(Admin admin, int mailingListId, int targetId) throws Exception;
 }

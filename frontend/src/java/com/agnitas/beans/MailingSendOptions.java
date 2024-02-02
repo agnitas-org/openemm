@@ -31,6 +31,7 @@ public class MailingSendOptions {
     private int requiredAutoImport;
     private int generationOptimization;
     private int adminTargetGroupId;
+    private boolean isActivateAgainToday;
     private DeliveryType deliveryType;
     private boolean reportSendAfter24h;
     private boolean reportSendAfter48h;
@@ -120,13 +121,18 @@ public class MailingSendOptions {
         return deliveryType;
     }
 
+    public boolean isActivateAgainToday() {
+        return isActivateAgainToday;
+    }
+
     public int getOverwriteTestRecipientId() {
         return overwriteTestRecipientId;
     }
-    
+
     public static class Builder {
         private int adminId;
         private Date date;
+        private boolean isActivateAgainToday;
         private int maxRecipients;
         private int blockSize;
         private int defaultStepping;
@@ -241,6 +247,11 @@ public class MailingSendOptions {
             return this;
         }
 
+        public Builder setActivateAgainToday(boolean activateAgainToday) {
+            this.isActivateAgainToday = activateAgainToday;
+            return this;
+        }
+
         public Builder setOverwriteTestRecipientId(int overwriteTestRecipientId) {
             this.overwriteTestRecipientId = overwriteTestRecipientId;
             return this;
@@ -268,6 +279,7 @@ public class MailingSendOptions {
             options.reportSendAfter1Week = reportSendAfter1Week;
             options.reportSendEmail = reportSendEmail;
             options.deliveryType = deliveryType;
+            options.isActivateAgainToday = isActivateAgainToday;
             options.overwriteTestRecipientId = overwriteTestRecipientId;
 
             return options;

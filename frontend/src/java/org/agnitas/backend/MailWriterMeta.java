@@ -29,6 +29,7 @@ import java.util.zip.GZIPOutputStream;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
+import org.agnitas.backend.dao.DkimDAO;
 import org.agnitas.util.Bit;
 import org.agnitas.util.Log;
 import org.agnitas.util.Str;
@@ -79,6 +80,7 @@ public class MailWriterMeta extends MailWriter {
 	 * if we should keep admin/test mails for debug purpose
 	 */
 	private boolean keepATmails;
+	private boolean keepPreviewMails;
 	private List<Reference> multi;
 
 	/**
@@ -110,6 +112,7 @@ public class MailWriterMeta extends MailWriter {
 		setup();
 
 		keepATmails = Str.atob(data.company.info("keep-xml-files"), false);
+		keepPreviewMails = Str.atob (data.company.info ("keep-preview-files"), false);
 	}
 
 	/**
@@ -140,7 +143,9 @@ public class MailWriterMeta extends MailWriter {
 				String opts = previewOutputOptions(path);
 				String error = null;
 
-				data.markToRemove(pathname);
+				if (! keepPreviewMails) {
+					data.markToRemove(pathname);
+				}
 				data.markToRemove(path);
 				try {
 					List<String> options = new ArrayList<>();
@@ -186,8 +191,10 @@ public class MailWriterMeta extends MailWriter {
 				if ((new File(path)).delete()) {
 					data.unmarkToRemove(path);
 				}
-				if ((new File(pathname)).delete()) {
-					data.unmarkToRemove(pathname);
+				if (! keepPreviewMails) {
+					if ((new File(pathname)).delete()) {
+						data.unmarkToRemove(pathname);
+					}
 				}
 			}
 		} else if (fname != null) {
@@ -339,21 +346,26 @@ public class MailWriterMeta extends MailWriter {
 
 				if (b.isEmailPlaintext() && (data.lineLength > 0)) {
 					c.add("linelength", data.lineLength);
-				} else if (b.isEmailHTML() && (data.onepixlog != Data.OPL_NONE)) {
-					String opl;
+				} else if (b.isEmailHTML()) {
+					if (data.onepixlog != Data.OPL_NONE) {
+						String opl;
 
-					switch (data.onepixlog) {
-						default:
-							opl = null;
-							break;
-						case Data.OPL_TOP:
-							opl = "top";
-							break;
-						case Data.OPL_BOTTOM:
-							opl = "bottom";
-							break;
+						switch (data.onepixlog) {
+							default:
+								opl = null;
+								break;
+							case Data.OPL_TOP:
+								opl = "top";
+								break;
+							case Data.OPL_BOTTOM:
+								opl = "bottom";
+								break;
+						}
+						c.add("onepixlog", opl);
 					}
-					c.add("onepixlog", opl);
+					if (data.requiresClearance && data.maildropStatus.isTestMailing ()) {
+						c.add ("clearance", "true");
+					}
 				}
 				writer.opennode(c);
 				if (b.comptype == 0) {
@@ -435,7 +447,7 @@ public class MailWriterMeta extends MailWriter {
 						writer.data ("--" + attachBoundary + "--\n\n");
 						writer.close ("fixdata");
 						writer.close ("postfix");
-					} else {
+					} else if (b.type == BlockData.HTML) {
 						writer.opennode("prefix");
 						writer.opennode("fixdata", "valid", "all");
 						if (n == 1) {
@@ -622,8 +634,11 @@ public class MailWriterMeta extends MailWriter {
 	 * @param tagNamesParameter the available tags
 	 */
 	@Override
-	public void writeMail(Custinfo cinfo, int mcount, int mailtype, long icustomer_id, String mediatypes, Map<String, EMMTag> tagNamesParameter) throws Exception {
-		super.writeMail(cinfo, mcount, mailtype, icustomer_id, mediatypes, tagNamesParameter);
+	public void writeMail(Custinfo cinfo,
+			      int mcount, int mailtype, long icustomer_id,
+			      String mediatypes, String userStatuses, Map<String,
+			      EMMTag> tagNamesParameter) throws Exception {
+		super.writeMail(cinfo, mcount, mailtype, icustomer_id, mediatypes, userStatuses, tagNamesParameter);
 		if ((mailCount % 100) == 0) {
 			data.logging(Log.VERBOSE, "writer/meta", "Currently at " + mailCount + " mails (in block " + blockCount + ": " + inBlockCount + ", records: " + inRecordCount + ") ");
 		}
@@ -640,6 +655,7 @@ public class MailWriterMeta extends MailWriter {
 		getMediaInformation(cinfo, c);
 		c.add("mailtype", mailtype);
 		c.add("mediatypes", mediatypes);
+		c.add("user_status", userStatuses);
 
 		if (icustomer_id > 0) {
 			//
@@ -857,10 +873,13 @@ public class MailWriterMeta extends MailWriter {
 
 	private void addGenerateMediaOptions(List<String> opts, String mta) {
 		opts.add("media=email");
-		if ((mta != null) && mta.equals("postfix")) {
-			opts.add("inject=/usr/sbin/sendmail -NNEVER -f %(sender) -- %(recipient)");
+		if ((mta != null) && "spool".equals (mta)) {
+			opts.add("path=" + data.mailing.outputDirectoryForCompany ("mailer"));
 		} else {
-			opts.add("path=" + data.mailing.outputDirectoryForCompany("mail"));
+			if ((mta != null) && (! "postfix".equals (mta))) {
+				data.logging(Log.WARNING, "writer/meta", "Unsupported MTA \"" + mta + "\", will use default behaviour using sendmail like calling interface");
+			}
+			opts.add("inject=/usr/sbin/sendmail -NNEVER -f %(sender) -- %(recipient)");
 		}
 		for (Media m : data.media()) {
 			if ((m.type != Media.TYPE_EMAIL) && Bit.isset(data.availableMedias, m.type)) {
@@ -1111,6 +1130,9 @@ public class MailWriterMeta extends MailWriter {
 		if (token != null) {
 			c.add ("token", token);
 		}
+		if (data.company.allowUnnormalizedEmails ()) {
+			c.add ("allow_unnormalized_emails", "true");
+		}
 		if (data.company.infoAvailable ()) {
 			writer.opennode (c);
 			for (String name : data.company.infoKeys()) {
@@ -1127,6 +1149,19 @@ public class MailWriterMeta extends MailWriter {
 		Date sendDate = data.genericSendDate();
 
 		writer.openclose("send", "date", fmt.format(sendDate), "epoch", (sendDate.getTime () / 1000));
+		if (Str.atob (data.company.info ("dkim-extended"), false) && (data.dkimAvailable != null) && (data.dkimAvailable.size () > 0)) {
+			writer.opennode ("dkims");
+			for (int state = 0; state < 2; ++state) {
+				boolean	local = state == 0;
+
+				for (DkimDAO.DKIM dkim : data.dkimAvailable) {
+					if (dkim.local () == local) {
+						writer.single ("dkim", dkim.key (), "id", dkim.id (), "domain", dkim.domain (), "selector", dkim.selector ());
+					}
+				}
+			}
+			writer.close ("dkims");
+		}
 	}
 
 	protected void mailingInfo() {
@@ -1139,6 +1174,9 @@ public class MailWriterMeta extends MailWriter {
 				writer.single("info", value, "name", name);
 			}
 			writer.close("mailing");
+		}
+		if (data.mailing.description () != null) {
+			writer.single ("mailing-description", data.mailing.description ());
 		}
 		writer.openclose("maildrop", "status_id", data.maildropStatus.id());
 		writer.openclose("status", "field", data.maildropStatus.statusField());

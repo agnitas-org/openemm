@@ -1,0 +1,49 @@
+
+.schedule__day-date {
+  @include font($font-size-xsm);
+  color: #4B4B4B;
+}
+
+.schedule__day-mailing {
+  @include flex(row, $gap);
+  align-items: center;
+  color: #6F6F6F;
+
+  &:hover {
+    color: #6F6F6F;
+  }
+}
+
+.schedule__send-time {
+  @include font($font-size-sm, $font-weight-normal);
+  min-width: 40px; // some time labels takes more space then others. so they should be with the same size
+}
+
+.schedule__mailing-info {
+  @include flex(column, 8px);
+  overflow: hidden;
+}
+
+.schedule__mailing-name {
+  @include flex(row, $gap-sm);
+  align-items: center;
+  @include font($font-size-base, $font-weight-normal);
+  color: $c-black;
+
+  .mailing-badge {
+    flex: 0 0 auto;
+  }
+}
+
+.schedule__mailing-mailinglist {
+  @include flex(row, $gap-sm);
+  align-items: center;
+  @include font($font-size-sm, $font-weight-normal);
+
+  i {
+    display: flex;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: $mailing-badge-size;
+  }
+}

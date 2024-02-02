@@ -149,8 +149,6 @@ public class MailingSummaryStatisticJobServiceImpl implements MailingSummaryStat
 			throw new TargetGroupsStringFormatException();
 		}
 		
-		// removeExpiredData(); // Done by CleanDBDaoImpl now
-		
 		int targetGroupIndex = 1;
 		 // DataSet uses target group ID = 1 for 'all subscribers'
 		collectSummaryStatistic(jobId, mailingId, 1, recipientsType, statDatas, targetGroupIndex);

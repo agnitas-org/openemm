@@ -18,10 +18,12 @@ import java.util.List;
 
 import org.agnitas.dao.impl.BaseDaoImpl;
 import org.agnitas.dao.impl.mapper.IntegerRowMapper;
+import org.agnitas.util.DbUtilities;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.support.incrementer.MySQLMaxValueIncrementer;
 
 import com.agnitas.beans.ComUndoMailing;
 import com.agnitas.beans.impl.ComUndoMailingImpl;
@@ -38,12 +40,7 @@ public class ComUndoMailingDaoImpl extends BaseDaoImpl implements ComUndoMailing
 	private static final String SELECT_MAILING_UNDO_STATEMENT = "SELECT * FROM undo_mailing_tbl WHERE mailing_id = ? AND undo_id = ?";
 
 	private static final String SELECT_LAST_MAILING_UNDO_ID_STATEMENT = "SELECT max(undo_id) AS last_undo_id FROM undo_mailing_tbl WHERE mailing_id = ?";
-	
-	private static final String INSERT_MAILING_UNDO_STATEMENT =
-		"INSERT INTO undo_mailing_tbl " +
-		"(mailing_id, undo_id, undo_creation_date, undo_admin_id) " +
-		"VALUES (?, ?, ?, ?)";
-	
+		
 	private static final String DELETE_MAILING_STATEMENT =
 		"DELETE FROM undo_mailing_tbl " +
 		"WHERE undo_id = ?";
@@ -103,18 +100,6 @@ public class ComUndoMailingDaoImpl extends BaseDaoImpl implements ComUndoMailing
 		return selectObjectDefaultNull(logger, SELECT_MAILING_UNDO_STATEMENT, new ComUndoMailing_RowMapper(), mailingId, undoId);
 	}
 
-	@Override
-	@DaoUpdateReturnValueCheck
-	public void saveUndoData(int mailingId, int undoId, Date undoCreationDate, int undoAdminId) {
-		if(mailingId == 0) {
-			return;
-		}
-
-		update(logger, INSERT_MAILING_UNDO_STATEMENT, mailingId, undoId, undoCreationDate, undoAdminId);
-		
-		this.undoComponentDao.saveUndoData(mailingId, undoId);
-		this.undoDynContentDao.saveUndoData(mailingId, undoId);
-	}
 	@Override
 	public ComUndoMailing getLastUndoData(int mailingId) {
 		int undoId = selectInt(logger, SELECT_LAST_MAILING_UNDO_ID_STATEMENT, mailingId);
@@ -188,5 +173,37 @@ public class ComUndoMailingDaoImpl extends BaseDaoImpl implements ComUndoMailing
 
 		String query = "DELETE FROM undo_mailing_tbl WHERE " + makeBulkInClauseForInteger("undo_id", undoIds);
 		update(logger, query);
+	}
+
+	@Override
+	public int saveUndoData(int mailingID, Date undoCreationDate, int undoAdminID) {
+        if (mailingID > 0 && undoAdminID > 0) {
+            int undoId;
+            
+            if (isOracleDB()) {
+                undoId = selectInt(logger, "SELECT undo_id_seq.NEXTVAL FROM DUAL");
+        		update(logger, "INSERT INTO undo_mailing_tbl (mailing_id, undo_id, undo_creation_date, undo_admin_id) VALUES (?, ?, ?, ?)", mailingID, undoId, undoCreationDate, undoAdminID);
+            } else {
+            	// TODO: Table check to be removed after EMM version 24.04
+            	// Also check for other MySQLMaxValueIncrementer uses. There should not be any.
+            	if (DbUtilities.checkIfTableExists(getDataSource(), "undo_id_seq")) {
+	                try {
+	                    undoId = new MySQLMaxValueIncrementer(getDataSource(), "undo_id_seq", "value").nextIntValue();
+	                } catch (@SuppressWarnings("unused") final Exception e) {
+	                    undoId = 1;
+	                }
+	                update(logger, "INSERT INTO undo_mailing_tbl (mailing_id, undo_id, undo_creation_date, undo_admin_id) VALUES (?, ?, ?, ?)", mailingID, undoId, undoCreationDate, undoAdminID);
+            	} else {
+            		undoId = insertIntoAutoincrementMysqlTable(logger, "undo_id", "INSERT INTO undo_mailing_tbl (mailing_id, undo_creation_date, undo_admin_id) VALUES (?, ?, ?)", mailingID, undoCreationDate, undoAdminID);
+            	}
+            }
+            
+    		this.undoComponentDao.saveUndoData(mailingID, undoId);
+    		this.undoDynContentDao.saveUndoData(mailingID, undoId);
+    		
+            return undoId;
+        } else {
+            return 0;
+        }
 	}
 }

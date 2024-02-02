@@ -1,0 +1,22 @@
+
+#breadcrumbs-wrapper {
+  color: $c-sidemenu;
+
+  li {
+    @include flex-center();
+
+    span, a {
+      @include font($font-size-lg);
+    }
+  }
+}
+
+.breadcrumb {
+  margin: 0;
+  gap: $gap-sm;
+
+  .arrow {
+    color: #bdbcbc;
+    font-size: 12px;
+  }
+}

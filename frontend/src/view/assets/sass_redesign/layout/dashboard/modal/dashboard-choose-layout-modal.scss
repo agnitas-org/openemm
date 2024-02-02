@@ -1,0 +1,29 @@
+
+#choose-layout-modal {
+  .col {
+    position: relative;
+    
+    .grid {
+      gap: 10px;
+      grid-template-rows: repeat(2, 1fr);
+      
+      .ratio {
+        position: unset;
+      }
+      
+      div {
+        background-color: $gray-400;
+      }
+    }
+  }
+  
+  .col:hover {
+    cursor: pointer;
+    .grid {
+      background-color: darken($white, 10%);
+      div {
+        background-color: darken($gray-400, 10%);
+      }
+    }
+  }
+}

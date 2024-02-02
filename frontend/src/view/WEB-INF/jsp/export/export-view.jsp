@@ -1,4 +1,4 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
+<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.action" %>
 <%@page import="org.agnitas.dao.UserStatus"%>
 <%@page import="org.agnitas.service.RecipientExportWorker"%>
 <%@ page import="org.agnitas.util.DbColumnType" %>
@@ -16,6 +16,8 @@
 <%--@elvariable id="dateTimeFormats" type="org.agnitas.util.importvalues.DateFormat[]"--%>
 <%--@elvariable id="exportForm" type="com.agnitas.emm.core.export.form.ExportForm"--%>
 <%--@elvariable id="id" type="java.lang.Integer"--%>
+<%--@elvariable id="isManageAllowed" type="java.lang.Boolean"--%>
+<%--@elvariable id="isOwnColumnsExportAllowed" type="java.lang.Boolean"--%>
 
 <c:set var="NO_MAILINGLIST" value="<%= RecipientExportWorker.NO_MAILINGLIST %>" scope="page" />
 <c:set var="GENERIC_TYPE_VARCHAR" value="<%= DbColumnType.GENERIC_TYPE_VARCHAR %>" scope="page" />
@@ -31,18 +33,12 @@
           data-form-focus="shortname"
           data-controller="export-view"
           data-initializer="export-view"
-          data-validator="export/form">
-
-    <emm:ShowByPermission token="export.ownColumns">
-        <c:set var="adminHasOwnColumnPermission" value="${true}"/>
-    </emm:ShowByPermission>
-    <emm:HideByPermission token="export.ownColumns">
-        <c:set var="adminHasOwnColumnPermission" value="${false}"/>
-    </emm:HideByPermission>
+          data-validator="export/form"
+          data-editable="${isManageAllowed}">
     
     <script id="config:export-view" type="application/json">
         {
-            "adminHasOwnColumnPermission": ${adminHasOwnColumnPermission},
+            "adminHasOwnColumnPermission": ${isOwnColumnsExportAllowed},
             "bounceUserStatusCode": ${BOUNCE_USER_STATUS_CODE},
             "customColumns": ${emm:toJson(exportForm.customColumns)}
         }
@@ -123,12 +119,11 @@
                 </div>
                 <div class="col-sm-8">
                     <mvc:select path="userType" cssClass="form-control" id="recipient-export-recipienttype">
-                        <mvc:option value="<%= RecipientExportWorker.ALL_BINDING_TYPES %>"><mvc:message code="default.All"/> </mvc:option>
-                        <mvc:option value="A"><mvc:message code="recipient.Administrator"/></mvc:option>
-                        <mvc:option value="T"><mvc:message code="recipient.TestSubscriber"/></mvc:option>
-                        <%@include file="fragments/export-novip-test-user-type.jspf" %>
-                        <mvc:option value="W"><mvc:message code="recipient.NormalSubscriber"/></mvc:option>
-                        <%@include file="fragments/export-novip-normal-user-type.jspf" %>
+                        <c:forEach var="userType" items="${availableUserTypeOptions}">
+                            <mvc:option value="${userType.typeCode}">
+                                <mvc:message code="${userType.messageKey}" />
+                            </mvc:option>
+                        </c:forEach>
                     </mvc:select>
                 </div>
             </div>
@@ -141,15 +136,11 @@
                 <div class="col-sm-8" data-action="add-bounce-col-to-choose">
                     <mvc:select path="userStatus" cssClass="form-control" id="recipient-export-recipientstatus">
                         <mvc:option value="0"><mvc:message code="default.All"/></mvc:option>
-                        <mvc:option value="1"><mvc:message code="recipient.MailingState1"/></mvc:option>
-                        <mvc:option value="2"><mvc:message code="recipient.MailingState2"/></mvc:option>
-                        <mvc:option value="3"><mvc:message code="recipient.OptOutAdmin"/></mvc:option>
-                        <mvc:option value="4"><mvc:message code="recipient.OptOutUser"/></mvc:option>
-                        <mvc:option value="5"><mvc:message code="recipient.MailingState5"/></mvc:option>
-                        <emm:ShowByPermission token="blacklist">
-                            <mvc:option value="6"><mvc:message code="recipient.MailingState6"/></mvc:option>
-                        </emm:ShowByPermission>
-                        <mvc:option value="7"><mvc:message code="recipient.MailingState7"/></mvc:option>
+                        <c:forEach var="userStatus" items="${availableUserStatusOptions}">
+                            <mvc:option value="${userStatus.statusCode}">
+                                <mvc:message code="${userStatus.messageKey}" />
+                            </mvc:option>
+                        </c:forEach>
                     </mvc:select>
                 </div>
             </div>
@@ -204,7 +195,7 @@
                     </mvc:select>
                 </div>
             </div>
-            <c:if test="${adminHasOwnColumnPermission}">
+            <c:if test="${isOwnColumnsExportAllowed}">
                 <div class="form-group">
                     <div class="col-sm-4">
                         <label class="control-label" for="columnMappings"><mvc:message code="export.columns.add.own"/></label>
@@ -243,6 +234,8 @@
                 <div class="col-sm-4">
                     <label class="control-label">
                         <mvc:message code="export.mailinglist.status"/>
+                        <button class="icon icon-help" data-help="help_${helplanguage}/export/Export_Mailinglist_Status.xml" tabindex="-1" type="button">
+                        </button>
                     </label>
                 </div>
                 <div class="col-sm-8">
@@ -321,7 +314,13 @@
                     </label>
                 </div>
                 <div class="col-sm-8">
-                	<%@include file="fragments/exportwizard-charsets.jspf" %>
+                    <mvc:select path="charset" cssClass="form-control" id="recipient-export-format-charset">
+                        <c:forEach var="charset" items="${availableCharsetOptions}">
+                            <mvc:option value="${charset.charsetName}">
+                                <mvc:message code="${charset.messageKey}" />
+                            </mvc:option>
+                        </c:forEach>
+                    </mvc:select>
                 </div>
             </div>
             
@@ -418,9 +417,7 @@
                         <th><mvc:message code="Start"/></th>
                         <th><mvc:message code="report.stopDate"/></th>
                         <th><mvc:message code="lastDays"/></th>
-                        <emm:ShowByPermission token="recipient.export.currentdate.option">
-                        <th><mvc:message code="export.dates.includeCurrentDay"/></th>
-                        </emm:ShowByPermission>
+                        <%@ include file="fragments/export-date-limits-currentdate-column.jspf" %>
                     </tr>
                 </thead>
                 <tbody>
@@ -458,16 +455,8 @@
                                 </div>
                             </div>
                         </td>
-                        <emm:ShowByPermission token="recipient.export.currentdate.option">
-                        <td>
-                            <div class="input-group align-center">
-                                <label class="toggle">
-                                    <mvc:checkbox path="timestampIncludeCurrentDay"/>
-                                    <div class="toggle-control"></div>
-                                </label>
-                            </div>
-                        </td>
-                        </emm:ShowByPermission>
+                        <c:set var="includeCurentDayInputName" value="timestampIncludeCurrentDay"/>
+                        <%@ include file="fragments/export-include-curent-day-switch.jspf" %>
                     </tr>
                     <tr>
                         <td><mvc:message code="export.dates.creation_date"/></td>
@@ -503,16 +492,8 @@
                                 </div>
                             </div>
                         </td>
-                        <emm:ShowByPermission token="recipient.export.currentdate.option">
-                        <td>
-                            <div class="input-group align-center">
-                                <label class="toggle">
-                                    <mvc:checkbox path="creationDateIncludeCurrentDay"/>
-                                    <div class="toggle-control"></div>
-                                </label>
-                            </div>
-                        </td>
-                        </emm:ShowByPermission>
+                        <c:set var="includeCurentDayInputName" value="creationDateIncludeCurrentDay"/>
+                        <%@ include file="fragments/export-include-curent-day-switch.jspf" %>
                     </tr>
                     <tr>
                         <td><mvc:message code="export.dates.mailinglists"/>*</td>
@@ -548,16 +529,8 @@
                                 </div>
                             </div>
                         </td>
-                        <emm:ShowByPermission token="recipient.export.currentdate.option">
-                        <td>
-                            <div class="input-group align-center">
-                                <label class="toggle">
-                                    <mvc:checkbox path="mailinglistBindIncludeCurrentDay"/>
-                                    <div class="toggle-control"></div>
-                                </label>
-                            </div>
-                        </td>
-                        </emm:ShowByPermission>
+                        <c:set var="includeCurentDayInputName" value="mailinglistBindIncludeCurrentDay"/>
+                        <%@ include file="fragments/export-include-curent-day-switch.jspf" %>
                     </tr>
                     <tr>
                         <td>

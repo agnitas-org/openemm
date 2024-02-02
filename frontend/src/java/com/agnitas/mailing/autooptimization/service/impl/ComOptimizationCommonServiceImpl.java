@@ -56,7 +56,7 @@ public class ComOptimizationCommonServiceImpl implements ComOptimizationCommonSe
         for (Integer mailingID : optimization.getTestmailingIDs()) {
             droppedEntriesCount += maildropStatusDao.deleteUnsentEntries(mailingID);
             if (!(optimization.isTestRun() && testComplete)) {
-                mailingDao.updateStatus(mailingID, MailingStatus.CANCELED);
+                mailingDao.updateStatus(optimization.getCompanyID(), mailingID, MailingStatus.CANCELED, null);
             }
         }
 
@@ -64,7 +64,7 @@ public class ComOptimizationCommonServiceImpl implements ComOptimizationCommonSe
         if (finalMailingId > 0) {
             droppedEntriesCount += maildropStatusDao.deleteUnsentEntries(finalMailingId);
             if (!(optimization.isTestRun() && testComplete)) {
-                mailingDao.updateStatus(finalMailingId, MailingStatus.CANCELED);
+                mailingDao.updateStatus(optimization.getCompanyID(), finalMailingId, MailingStatus.CANCELED, null);
             }
         }
 

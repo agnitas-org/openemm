@@ -36,11 +36,14 @@ public class MailingOverviewForm extends PaginationForm {
     private String filterSendDateEnd;
     private String filterCreationDateBegin;
     private String filterCreationDateEnd;
+    private String filterPlanDateBegin;
+    private String filterPlanDateEnd;
     private String filterChangeDateBegin;
     private String filterChangeDateEnd;
+    private boolean useRecycleBin;
     private List<String> selectedFields = new ArrayList<>();
     private Set<MailingType> mailingTypes = new HashSet<>(Collections.singletonList(MailingType.NORMAL));
-    private Set<MediaTypes> mediaTypes = new HashSet<>(Collections.singletonList(MediaTypes.EMAIL));
+    private Set<MediaTypes> mediaTypes = new HashSet<>();
     private Set<MailingStatus> filterStatuses;
     private List<String> filterBadges;
     private List<Integer> filterMailingLists;
@@ -126,6 +129,22 @@ public class MailingOverviewForm extends PaginationForm {
         this.filterCreationDateEnd = filterCreationDateEnd;
     }
 
+    public String getFilterPlanDateBegin() {
+        return filterPlanDateBegin;
+    }
+
+    public void setFilterPlanDateBegin(String filterPlanDateBegin) {
+        this.filterPlanDateBegin = filterPlanDateBegin;
+    }
+
+    public String getFilterPlanDateEnd() {
+        return filterPlanDateEnd;
+    }
+
+    public void setFilterPlanDateEnd(String filterPlanDateEnd) {
+        this.filterPlanDateEnd = filterPlanDateEnd;
+    }
+
     public String getFilterChangeDateBegin() {
         return filterChangeDateBegin;
     }
@@ -198,6 +217,14 @@ public class MailingOverviewForm extends PaginationForm {
         this.filterArchives = filterArchives;
     }
 
+    public boolean isUseRecycleBin() {
+        return useRecycleBin;
+    }
+
+    public void setUseRecycleBin(boolean useRecycleBin) {
+        this.useRecycleBin = useRecycleBin;
+    }
+
     @Override
     public Map<String, Object> toMap() {
         Map<String, Object> map = super.toMap();
@@ -220,6 +247,7 @@ public class MailingOverviewForm extends PaginationForm {
         map.put("filterBadges", filterBadges);
         map.put("filterMailingLists", filterMailingLists);
         map.put("filterArchives", filterArchives);
+        map.put("useRecycleBin", useRecycleBin);
         return map;
     }
 
@@ -243,7 +271,8 @@ public class MailingOverviewForm extends PaginationForm {
                 filterStatuses,
                 filterBadges,
                 filterMailingLists,
-                filterArchives
+                filterArchives,
+                useRecycleBin
         ).toArray(), super.toArray());
     }
 }

@@ -30,12 +30,14 @@ import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 import com.agnitas.emm.common.MailingType;
 import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.emm.core.thumbnails.service.ThumbnailService;
+import com.agnitas.emm.restful.RestfulClientException;
+import com.agnitas.emm.util.html.HtmlChecker;
+import com.agnitas.emm.util.html.HtmlCheckerException;
 
 @Endpoint
 public class AddMailingEndpoint extends BaseEndpoint {
 
-	/** The logger. */
-	private static final transient Logger LOGGER = LogManager.getLogger(AddMailingFromTemplateEndpoint.class);
+	private static final Logger LOGGER = LogManager.getLogger(AddMailingFromTemplateEndpoint.class);
 
 	private final ThumbnailService thumbnailService;
 	private final MailingService mailingService;
@@ -50,6 +52,18 @@ public class AddMailingEndpoint extends BaseEndpoint {
 	@PayloadRoot(namespace = Namespaces.AGNITAS_ORG, localPart = "AddMailingRequest")
 	public @ResponsePayload AddMailingResponse addMailing(@RequestPayload AddMailingRequest request) throws Exception {
 		final int companyID = this.securityContextAccess.getWebserviceUserCompanyId();
+		
+		// Check for unallowed html tags
+		try {
+			HtmlChecker.checkForNoHtmlTags(request.getShortname());
+		} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
+			throw new RestfulClientException("Mailing name contains unallowed HTML tags");
+		}
+		try {
+			HtmlChecker.checkForUnallowedHtmlTags(request.getDescription(), false);
+		} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
+			throw new RestfulClientException("Mailing description contains unallowed HTML tags");
+		}
 		
 		final AddMailingResponse response = new AddMailingResponse();
 
@@ -73,6 +87,7 @@ public class AddMailingEndpoint extends BaseEndpoint {
 		model.setLinefeed(request.getLinefeed());
 		model.setFormat(request.getFormat());
 		model.setOnePixel(request.getOnePixel());
+		model.setPlannedDate(request.getPlannedDate());
 //		model.setAutoUpdate(request.isAutoUpdate());
 
 		final int mailingID = mailingService.addMailing(model);

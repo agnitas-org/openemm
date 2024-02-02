@@ -31,34 +31,4 @@
 		<property name="queryBuilderConfiguration" ref="QueryBuilderConfiguration"/>
 		<property name="profileFieldService" ref="ProfileFieldService"/>
 	</bean>
-
-	<!-- Action beans -->
-	<bean name="/importwizard" class="com.agnitas.web.ComImportWizardAction">
-		<property name="dataSource" ref="dataSource" />
-		<property name="configService" ref="ConfigService" />
-		<property name="recipientDao" ref="RecipientDao" />
-		<property name="datasourceDescriptionDao" ref="DatasourceDescriptionDao" />
-		<property name="workerExecutorService" ref="WorkerExecutorService" />
-		<property name="futureHolder" ref="futureHolder" />
-		<property name="uploadDao" ref="UploadDao" />
-		<property name="userActivityLogService" ref="UserActivityLogService" />
-		<property name="importWizardService" ref="ImportWizardService"/>
-		<property name="reportService" ref="RecipientsReportService"/>
-		<property name="mailinglistService" ref="MailinglistService"/>
-		<property name="mailinglistApprovalService" ref="MailinglistApprovalService" />
-		<property name="profileImportWorkerFactory" ref="ProfileImportWorkerFactory" />
-		<property name="profileFieldDao" ref="ProfileFieldDao" />
-	</bean>
-	
-	<bean name="/sendMailloopAutoresponder" class="com.agnitas.emm.core.mailloop.web.SendAutoresponderMailAction">
-		<property name="mailloopService" ref="MailloopService" />
-	</bean>
-	
-	<bean name="/permissionDenied" class="com.agnitas.web.PermissionDeniedAction" />
-
-	<bean name="/error" class="com.agnitas.web.ErrorAction" />
-
-    <bean name="/form" class="com.agnitas.web.ComUserFormExecuteAction">
-    	<!-- Legacy form.do for redirection to form.action -->
-    </bean>
 </beans>

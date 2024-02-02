@@ -1,0 +1,37 @@
+
+$pageBtnWidth: 30px;
+$pagesCount: 6;
+
+.table-controls {
+  padding: $gap-x-sm $gap-sm;
+  background-color: $gray-100;
+
+  border: 1px solid $c-table-border;
+  border-top: none;
+  @include border-bottom-radius;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  @for $i from 2 through $pagesCount {
+    &.pages-#{$i} {
+      @container (max-width: #{510px + ($pageBtnWidth * ($i - 2))}) {
+        flex-direction: column;
+        gap: $gap;
+      }
+    }
+  }
+}
+
+.table-controls__entries-wrapper {
+  @include flex(row, $gap-x-sm);
+  align-items: center;
+
+  @include font(clamp(13px, 2vw, $font-size-base), $font-weight-base);
+  color: $gray-700;
+
+  span {
+    white-space: nowrap;
+  }
+}

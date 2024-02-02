@@ -1,0 +1,11 @@
+
+.inline-input-range {
+  display: flex;
+  gap: 18px;
+  position: relative;
+
+  &:before {
+    content: '-';
+    @include absolute-center;
+  }
+}

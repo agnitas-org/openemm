@@ -1,8 +1,5 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
+<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.action" %>
 
-<%@ taglib prefix="agn"     uri="https://emm.agnitas.de/jsp/jstl/tags" %>
-<%@ taglib prefix="bean"    uri="http://struts.apache.org/tags-bean" %>
-<%@ taglib prefix="html"    uri="http://struts.apache.org/tags-html" %>
 <%@ taglib prefix="c"       uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="display" uri="http://displaytag.sf.net" %>
 <%@ taglib prefix="mvc"     uri="https://emm.agnitas.de/jsp/jsp/spring" %>
@@ -30,7 +27,7 @@
     
     <div class="tile js-data-table" data-table="datasource-id-overview">
         <div class="tile-header">
-            <h2 class="headline"><bean:message key="default.Overview"/></h2>
+            <h2 class="headline"><mvc:message code="default.Overview"/></h2>
             <ul class="tile-header-actions">
                 <li class="dropdown">
                     <a href="#" class="dropdown-toggle" data-toggle="dropdown">
@@ -64,7 +61,7 @@
         
         <div class="tile-content" data-sizing="scroll">
             <div class="l-tile-recipient-info-box align-left">
-                <span> <bean:message key="recipient.datasource.info"/></span>
+                <span> <mvc:message code="recipient.datasource.info"/></span>
             </div>
             <div class="js-data-table-body" data-web-storage="datasource-overview" style="height: 100%;"></div>
         </div>

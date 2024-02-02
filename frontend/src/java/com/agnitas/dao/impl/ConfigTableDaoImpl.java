@@ -256,4 +256,18 @@ public class ConfigTableDaoImpl extends BaseDaoImpl implements ConfigTableDao {
 			return select(logger, "SELECT CURRENT_TIMESTAMP", Date.class);
 		}
 	}
+
+	@Override
+	public int getStartupCountOfLtsVersion(Version versionToCheck) {
+		if (isOracleDB()) {
+			return selectInt(logger, "SELECT COUNT(*) FROM release_log_tbl WHERE application_name = ? AND REGEXP_LIKE(version_number, '^0*' || ? || '.0*' || ? || '.000(.[0-9]+)*$')", Server.EMM.name(), versionToCheck.getMajorVersion(), versionToCheck.getMinorVersion());
+		} else {
+			return selectInt(logger, "SELECT COUNT(*) FROM release_log_tbl WHERE application_name = ? AND version_number REGEXP CONCAT('^0*', ?, '.0*', ?, '.000(.[0-9]+)*$')", Server.EMM.name(), versionToCheck.getMajorVersion(), versionToCheck.getMinorVersion());
+		}
+	}
+
+	@Override
+	public int getStartupCount() {
+		return selectInt(logger, "SELECT COUNT(*) FROM release_log_tbl WHERE application_name = ?", Server.EMM.name());
+	}
 }

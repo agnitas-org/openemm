@@ -46,28 +46,14 @@
 			<set>
 				<ref bean="setSubscriberBindingWithActionEndpoint" />
 				<ref bean="setSubscriberBindingEndpoint" />
-				<ref bean="decryptLinkDataEndpoint" />
 				
 			</set>
 		</property>
 	</bean>
 
-	<bean id="mailingSummaryStatExceptionResolver" class="com.agnitas.emm.core.stat.service.impl.MailingSummaryStatExceptionResolver">
-		<property name="mappedEndpoints">
-			<set>
-				<ref bean="mailingSummaryStatisticJobEndpoint" />
-				<ref bean="mailingSummaryStatisticResultEndpoint" />
-			</set>
-		</property>
-	</bean>
+	
 
-	<bean id="dataSourceExceptionResolver" class="com.agnitas.service.DataSourceExceptionResolver">
-		<property name="mappedEndpoints">
-			<list>
-				<ref bean="createDataSourceEndpoint"/>
-			</list>
-		</property>
-	</bean>
+	
 
 	<bean id="sendServiceMailExceptionResolver" class="com.agnitas.emm.springws.exceptionresolver.SendServiceMailExceptionResolver">
 		<property name="mappedEndpoints">

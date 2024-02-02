@@ -27,9 +27,12 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import com.agnitas.emm.core.Permission;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
+import org.agnitas.util.AgnUtils;
 import org.apache.bval.util.StringUtils;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.context.ApplicationContext;
@@ -51,7 +54,8 @@ public class CssServlet extends HttpServlet {
 	
 	/** Cache of generated CSS */
 	private static String APPLICATION_MIN_CSS_CACHE = null;
-	
+	private static String REDESIGNED_APPLICATION_MIN_CSS_CACHE = null;
+
 	/** Serial version UID. */
 	private static final long serialVersionUID = -595094416663851734L;
 
@@ -60,16 +64,9 @@ public class CssServlet extends HttpServlet {
 	private static String CSS_CACHE_TIMESTAMP = null;
 	
 	protected CssDao cssDao;
-
+	
 	protected ConfigService configService;
 	private ApplicationContext applicationContext;
-	
-	//----------------------------------------------------------------------------------------------------------------
-	// Dependency Injection
-
-	public void setCssDao(CssDao cssDao) {
-		this.cssDao = cssDao;
-	}
 	
 	// ----------------------------------------------------------------------------------------------------------------
 	// Business Logic
@@ -83,30 +80,28 @@ public class CssServlet extends HttpServlet {
 	 */
 	@Override
 	public void service(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+        boolean useRedesignedVersion = isRedesignedVersionAvailable(request);
+ 		String cachedCss = getCssCache(useRedesignedVersion);
 		File sassExecutableTempDirPath = new File(getConfigService().getValue(ConfigValue.ExecutableTempDirPath));
-		if (APPLICATION_MIN_CSS_CACHE == null) {
-			String prevTempDir = System.getProperty("java.io.tmpdir");
-			System.setProperty("java.io.tmpdir", "/tmp");
+
+        if (cachedCss == null) {
 			try (SassCompiler sassCompiler = AgnitasSassCompiler.bundled(sassExecutableTempDirPath)) {
 				replaceCssParametersInFile(request.getServletContext().getRealPath("/assets/sass/boot/variables.scss"), 0);
 				
 				//compile CSS from given SCSS File
-				CompileSuccess compileSuccess = sassCompiler.compileFile(new File(request.getServletContext().getRealPath("/assets/sass/application.scss")));
+				String scssPath = useRedesignedVersion ? "/assets/sass_redesign/application.scss" : "/assets/sass/application.scss";
+				CompileSuccess compileSuccess = sassCompiler.compileFile(new File(request.getServletContext().getRealPath(scssPath)));
 				
 				//get compiled CSS
 				String css = compileSuccess.getCss();
-				
-				//Cache CSS
-				APPLICATION_MIN_CSS_CACHE = minifyString(css);
-				
+
+				cachedCss = cacheCss(minifyString(css), useRedesignedVersion);
 			} catch (Exception e) {
 				//use backup css if exception occurs
-				APPLICATION_MIN_CSS_CACHE = Files.readString(Paths.get(request.getServletContext().getRealPath("/assets/application.min.css")));
-				
+				cachedCss = cacheCss(Files.readString(Paths.get(request.getServletContext().getRealPath("/assets/application.min.css"))), useRedesignedVersion);
 				logger.error("Exception: " + e.getMessage(), e);
 			} finally {
-				cleanDirectory(new File(System.getProperty("java.io.tmpdir")));
-					System.setProperty("java.io.tmpdir", prevTempDir);
+				cleanDirectory(sassExecutableTempDirPath);
 			}
 		}
 		// build filepath (outFileName + .css) and return it.
@@ -117,7 +112,29 @@ public class CssServlet extends HttpServlet {
 		response.setHeader("etag", "W/\"" + CSS_CACHE_TIMESTAMP + "\"");
 		response.setContentType("text/css");
 		PrintWriter writer = response.getWriter();
-		writer.print(APPLICATION_MIN_CSS_CACHE);
+		writer.print(cachedCss);
+	}
+
+	private boolean isRedesignedVersionAvailable(HttpServletRequest request) {
+		return AgnUtils.allowed(request, Permission.USE_REDESIGNED_UI) && BooleanUtils.toBoolean(request.getParameter("redesigned"));
+	}
+
+	private String getCssCache(boolean redesigned) {
+		if (redesigned) {
+			return REDESIGNED_APPLICATION_MIN_CSS_CACHE;
+		}
+
+		return APPLICATION_MIN_CSS_CACHE;
+	}
+
+	private String cacheCss(String css, boolean redesigned) {
+		if (redesigned) {
+			REDESIGNED_APPLICATION_MIN_CSS_CACHE = css;
+		} else {
+			APPLICATION_MIN_CSS_CACHE = css;
+		}
+
+		return css;
 	}
 	
 	/**
@@ -217,16 +234,17 @@ public class CssServlet extends HttpServlet {
 		return str.trim();
 	}
 	
-	/**
-	 * @return the cssDao
-	 */
+	public void setCssDao(CssDao cssDao) {
+		this.cssDao = cssDao;
+	}
+
 	private CssDao getCssDao() {
 		if (cssDao == null) {
 			cssDao = getApplicationContext().getBean("CssDao", CssDao.class);
 		}
 		return cssDao;
 	}
-	
+
 	public void setConfigService(ConfigService configService) {
 		this.configService = configService;
 	}
@@ -237,7 +255,7 @@ public class CssServlet extends HttpServlet {
 		}
 		return configService;
 	}
-	
+
 	public void setApplicationContext(ApplicationContext applicationContext) {
 		this.applicationContext = applicationContext;
 	}

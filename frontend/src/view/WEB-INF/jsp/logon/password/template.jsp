@@ -1,8 +1,7 @@
-<%@ page contentType="text/html;charset=UTF-8" errorPage="/error.do" %>
-<%@ taglib prefix="tiles" uri="http://struts.apache.org/tags-tiles" %>
+<%@ page contentType="text/html;charset=UTF-8" errorPage="/error.action" %>
+<%@ taglib prefix="tiles" uri="http://tiles.apache.org/tags-tiles" %>
 <%@ taglib prefix="s" uri="http://www.springframework.org/tags" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<%@ taglib prefix="html" uri="http://struts.apache.org/tags-html" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
@@ -27,12 +26,12 @@
 
         <title>${title}</title>
 
-        <tiles:insert page="/WEB-INF/jsp/assets.jsp"/>
+        <tiles:insertTemplate template="/WEB-INF/jsp/assets.jsp"/>
     </head>
     <body class="systempage">
         <div class="system-tile" role="main">
-            <tiles:insert attribute="body">
-                <tiles:put name="header" direct="true">
+            <tiles:insertAttribute name="body">
+                <tiles:putAttribute name="header" type="string">
                     <div class="logo">
                         <img class="logo-image" src="${agnitasEmmLogoSvgSrc}" onerror="this.onerror=null; this.src='${agnitasEmmLogoPngSrc}'" alt="Logo">
 
@@ -42,15 +41,18 @@
                     <div class="edition-logo">
                         <img class="logo-image" src="${editionLogoSrc}" alt="Edition Logo">
                     </div>
-                </tiles:put>
-            </tiles:insert>
+                </tiles:putAttribute>
+            </tiles:insertAttribute>
         </div>
 
         <div id="notifications-container">
             <script type="text/javascript" data-message>
-              <html:messages id="msg" property="org.apache.struts.action.GLOBAL_MESSAGE" message="false">
+              <emm:messages var="msg" type="error">
                 AGN.Lib.Messages('<mvc:message code="Error" javaScriptEscape="true"/>', '${emm:escapeJs(msg)}', 'alert');
-              </html:messages>
+              </emm:messages>
+              <emm:messages var="msg" type="info">
+                AGN.Lib.Messages('<mvc:message code="Info" javaScriptEscape="true"/>', '${emm:escapeJs(msg)}', 'info');
+              </emm:messages>
             </script>
         </div>
 

@@ -26,7 +26,6 @@ import javax.sql.DataSource;
 
 import org.agnitas.dao.impl.BaseDaoImpl;
 import org.agnitas.dao.impl.mapper.StringRowMapper;
-import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.CsvWriter;
 import org.agnitas.util.DateUtilities;
@@ -34,7 +33,6 @@ import org.agnitas.util.DbUtilities;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
 import org.springframework.dao.DataAccessException;
 
 import com.agnitas.dao.ComServerStatusDao;
@@ -44,8 +42,8 @@ import com.agnitas.dao.ComServerStatusDao;
  * This class is compatible with oracle and mysql datasources and databases
  */
 public class ComServerStatusDaoImpl extends BaseDaoImpl implements ComServerStatusDao {
-	/** The logger.. */
-	private static final transient Logger logger = LogManager.getLogger(ComServerStatusDaoImpl.class);
+
+	private static final Logger logger = LogManager.getLogger(ComServerStatusDaoImpl.class);
 	
 	private static final String DB_VERSION_TABLE = "agn_dbversioninfo_tbl";
 	
@@ -61,19 +59,6 @@ public class ComServerStatusDaoImpl extends BaseDaoImpl implements ComServerStat
 	private static final String SELECT_DB_VERSION_MYSQL = "SELECT " + StringUtils.join(DB_VERSION_FIELD_NAMES, ", ") + " FROM " + DB_VERSION_TABLE + " WHERE " + DB_VERSION_FIELD_VERSION + " REGEXP CONCAT('^0*', ?, '.0*', ?, '.0*', ?, '$')";
 	private static final String SELECT_DB_VERSION_MYSQL_HOTFIX = "SELECT " + StringUtils.join(DB_VERSION_FIELD_NAMES, ", ") + " FROM " + DB_VERSION_TABLE + " WHERE " + DB_VERSION_FIELD_VERSION + " REGEXP CONCAT('^0*', ?, '.0*', ?, '.0*', ?, '.0*', ?, '$')";
 	
-	// ----------------------------------------------------------------------------------------------------------------
-	// Dependency Injection
-	
-	protected ConfigService configService;
-
-	@Required
-	public void setConfigService(ConfigService configService) {
-		this.configService = configService;
-	}
-
-	// ----------------------------------------------------------------------------------------------------------------
-	// Business Logic
-
 	@Override
 	public boolean checkDatabaseConnection() {
 		try {
@@ -270,20 +255,41 @@ public class ComServerStatusDaoImpl extends BaseDaoImpl implements ComServerStat
 	}
 
 	@Override
-	public List<String> getErroneousImports() {
-		return select(logger,
-			"SELECT shortname || ' (CID ' || company_id || ' / AutoImportId ' || auto_import_id || ')' FROM auto_import_tbl WHERE running = 1 AND laststart < ?"
-			+ " UNION ALL "
-			+ "SELECT description || ' (Table ' || import_table_name || ')' FROM import_temporary_tables WHERE creation_date < ?",
-			StringRowMapper.INSTANCE,
-			DateUtilities.getDateOfHoursAgo(1), DateUtilities.getDateOfHoursAgo(1));
+	public List<String> getErroneousImports(int maxUserImportDurationMinutes) {
+		if (DbUtilities.checkIfTableExists(getDataSource(), "auto_import_tbl")) {
+			String query;
+			if (isOracleDB()) {
+				query = "SELECT shortname || ' (CID ' || company_id || ' / AutoImportId ' || auto_import_id || ')' FROM auto_import_tbl WHERE running = 1 AND laststart < ?"
+						+ " UNION ALL "
+						+ "SELECT description || ' (Table ' || import_table_name || ')' FROM import_temporary_tables WHERE creation_date < ?";
+			} else {
+				query = "SELECT CONCAT(shortname, ' (CID ', company_id, ' / AutoImportId ', auto_import_id, ')') FROM auto_import_tbl WHERE running = 1 AND laststart < ?"
+						+ " UNION ALL "
+						+ "SELECT CONCAT(description, ' (Table ', import_table_name, ')') FROM import_temporary_tables WHERE creation_date < ?";
+			}
+	
+			return select(logger, query, StringRowMapper.INSTANCE, DateUtilities.getDateOfHoursAgo(1), DateUtilities.getDateOfMinutesAgo(maxUserImportDurationMinutes));
+		} else {
+			String query;
+			if (isOracleDB()) {
+				query = "SELECT description || ' (Table ' || import_table_name || ')' FROM import_temporary_tables WHERE creation_date < ?";
+			} else {
+				query = "SELECT CONCAT(description, ' (Table ', import_table_name, ')') FROM import_temporary_tables WHERE creation_date < ?";
+			}
+	
+			return select(logger, query, StringRowMapper.INSTANCE, DateUtilities.getDateOfHoursAgo(1), DateUtilities.getDateOfMinutesAgo(maxUserImportDurationMinutes));
+		}
 	}
 
 	@Override
 	public List<String> getErroneousExports() {
-		return select(logger,
-			"SELECT shortname || ' (CID ' || company_id || ' / AutoExportId ' || auto_export_id || ')' FROM auto_export_tbl WHERE running = 1 AND laststart < ?",
-			StringRowMapper.INSTANCE,
-			DateUtilities.getDateOfHoursAgo(1));
+		String query;
+		if (isOracleDB()) {
+			query = "SELECT shortname || ' (CID ' || company_id || ' / AutoExportId ' || auto_export_id || ')' FROM auto_export_tbl WHERE running = 1 AND laststart < ?";
+		} else {
+			query = "SELECT CONCAT(shortname, ' (CID ', company_id, ' / AutoExportId ', auto_export_id, ')') FROM auto_export_tbl WHERE running = 1 AND laststart < ?";
+		}
+
+		return select(logger, query, StringRowMapper.INSTANCE, DateUtilities.getDateOfHoursAgo(1));
 	}
 }

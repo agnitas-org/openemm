@@ -51,11 +51,6 @@ public interface ComGridTemplate {
     String getChildTemplateName();
     void setChildTemplateName(String childTemplateName);
 
-    int getWorkCopyOf();
-    void setWorkCopyOf(int workCopyOf);
-
-    boolean isWorkCopy();
-
     int getOrientation();
     void setOrientation(int orientation);
 

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="193" height="193" fill="none" viewBox="0 0 193 193">
+  <path fill="#0071B9" d="M10 23h29v160H10z"/>
+  <rect width="15" height="7" fill="silver" rx="2" transform="matrix(1 0 0 -1 17 20)"/>
+  <path fill="#0071B9" d="M46 91h29v92H46z"/>
+  <rect width="15" height="7" fill="silver" rx="2" transform="matrix(1 0 0 -1 53 88)"/>
+  <rect width="15" height="7" fill="silver" rx="2" transform="matrix(1 0 0 -1 89 136)"/>
+  <rect width="15" height="7" fill="silver" rx="2" transform="matrix(1 0 0 -1 125 156)"/>
+  <rect width="15" height="7" fill="silver" rx="2" transform="matrix(1 0 0 -1 161 169)"/>
+  <path fill="#0071B9" d="M82 139h29v44H82zm36 20h29v24h-29zm36 13h29v11h-29z"/>
+</svg>

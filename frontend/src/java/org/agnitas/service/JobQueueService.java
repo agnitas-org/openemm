@@ -404,7 +404,7 @@ public class JobQueueService implements ApplicationContextAware {
 	}
 
 	public boolean isStatusOK() {
-		return jobQueueDao.selectErroneousJobs().size() == 0;
+		return jobQueueDao.selectCriticalErroneousJobs().size() == 0;
 	}
 
 	public boolean isJobQueueRunning() {

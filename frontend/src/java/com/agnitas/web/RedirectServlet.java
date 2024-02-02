@@ -17,8 +17,8 @@ import java.util.Objects;
 import java.util.Optional;
 
 import org.agnitas.beans.Recipient;
-import org.agnitas.beans.TrackableLink;
 import org.agnitas.beans.impl.CompanyStatus;
+import org.agnitas.emm.core.commons.exceptions.HttpMethodNotAllowedException;
 import org.agnitas.emm.core.commons.uid.ExtensibleUIDConstants;
 import org.agnitas.emm.core.commons.uid.ExtensibleUIDService;
 import org.agnitas.emm.core.commons.uid.parser.exception.DeprecatedUIDVersionException;
@@ -41,7 +41,7 @@ import org.springframework.beans.factory.annotation.Required;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
-import com.agnitas.beans.ComTrackableLink;
+import com.agnitas.beans.TrackableLink;
 import com.agnitas.beans.Company;
 import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.dao.ComMailingDao;
@@ -63,6 +63,7 @@ import com.agnitas.emm.core.mobile.bean.DeviceClass;
 import com.agnitas.emm.core.mobile.service.ClientService;
 import com.agnitas.emm.core.mobile.service.ComAccessDataService;
 import com.agnitas.emm.core.mobile.service.ComDeviceService;
+import com.agnitas.emm.core.trackablelinks.common.DeepTrackingMode;
 import com.agnitas.rdir.processing.SubstituteLinkRdirPostProcessor;
 import com.agnitas.rdir.processing.SubstituteLinkResult;
 import com.agnitas.util.DeepTrackingToken;
@@ -112,6 +113,12 @@ public class RedirectServlet extends HttpServlet {
 	public void service(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
 		try {
 			doResolveLink(request, response);
+		} catch(final HttpMethodNotAllowedException e) {
+			if(logger.isInfoEnabled()) {
+				logger.info(String.format("Request method not allowed for RDIR requests: %s", e.getHttpRequestMethod()), e);
+			}
+			
+			response.setStatus(405);		// Send "405 Method not allowed"
 		} catch(final Exception e) {
 			logger.error("Error resolving RDIR link", e);
 			
@@ -119,7 +126,7 @@ public class RedirectServlet extends HttpServlet {
 		}
 	}
 		
-	private final void doResolveLink(final HttpServletRequest request, final HttpServletResponse response) throws IOException {
+	private final void doResolveLink(final HttpServletRequest request, final HttpServletResponse response) throws IOException, HttpMethodNotAllowedException {
 		/*
 		 * Do not use a simple "return" in case of an error.
 		 * 
@@ -134,9 +141,15 @@ public class RedirectServlet extends HttpServlet {
 				agnUidString = uriParts[uriParts.length - 1];
 			}
         }
+        
 
         try {
 			ComExtensibleUID uid = decodeUid(agnUidString, request);
+			
+			if(isHeadRequest(request) && !getConfigService().getBooleanValue(ConfigValue.Rdir.RdirAllowHeadRequest, uid.getCompanyID())) {
+				throw new HttpMethodNotAllowedException(request.getMethod());
+			}
+			
 			final int deviceID = getDeviceService().getDeviceId(request.getHeader("User-Agent"));
 			final int clientID = getClientService().getClientId(request.getHeader("User-Agent"));
 			
@@ -153,7 +166,7 @@ public class RedirectServlet extends HttpServlet {
 			}
 
 			final boolean cachingDisabled = StringUtils.equals(uid.getPrefix(), "nc"); // StringUtils.equals() is null-safe
-			ComTrackableLink trackableLink = loadTrackableLink(uid, cachingDisabled);
+			TrackableLink trackableLink = loadTrackableLink(uid, cachingDisabled);
 			final Company company = getCompanyDao().getCompany(uid.getCompanyID());
 			final String referenceTableRecordSelector = referenceTableRecordSelector(request, company, uid.getCustomerID());
 			final String encryptedStaticValueMapOrNull = request.getParameter("stc");
@@ -216,6 +229,8 @@ public class RedirectServlet extends HttpServlet {
 	            	executeLinkActions(uid, deviceID, deviceClass, trackableLink, request);
 				}
 			}
+        } catch(final HttpMethodNotAllowedException e) {
+        	throw e;
 		} catch (final RedirectException e) {
         	if (logger.isInfoEnabled()) {
         		logger.info("Error resolving link: " + agnUidString, e);
@@ -251,6 +266,10 @@ public class RedirectServlet extends HttpServlet {
 		}
 	}
 	
+	private static final boolean isHeadRequest(final HttpServletRequest request) {
+		return "head".equalsIgnoreCase(request.getMethod());
+	}
+	
 	private final SubstituteLinkRdirPostProcessor getSubstituteLinkRdirPostProcessor() {
 		if(this.substituteLinkRdirPostProcessor == null) {
 			try {
@@ -267,16 +286,16 @@ public class RedirectServlet extends HttpServlet {
 		String newFullUrl = fullUrl;
 		
 		if(!recipient.isDoNotTrackMe()) {
-			if (trackableLink.getDeepTracking() != TrackableLink.DEEPTRACKING_NONE) {
+			if (trackableLink.getDeepTracking() != DeepTrackingMode.NONE.getDeepTrackingModeCode()) {
 				final int deepTrackingSessionID = (int) (Math.random() * 10000000.0);
 				final String deepTrackingUID = getLinkService().createDeepTrackingUID(uid.getCompanyID(), uid.getMailingID(), uid.getUrlID(), uid.getCustomerID());
 
-				switch (trackableLink.getDeepTracking()) {
-					case TrackableLink.DEEPTRACKING_NONE:
+				switch (DeepTrackingMode.getDeepTrackingModeByCode(trackableLink.getDeepTracking())) {
+					case NONE:
 						// Do nothing
 						break;
 					
-					case TrackableLink.DEEPTRACKING_ONLY_COOKIE:
+					case ONLY_COOKIE:
 						if (deepTrackingUID != null) {
 							setDeepTrackingCookie(response, getConfigService().getIntegerValue(ConfigValue.DeepTrackingCookieExpire, company.getId()), trackableLink.getCompanyID(), deepTrackingSessionID, deepTrackingUID);
 						}
@@ -308,8 +327,6 @@ public class RedirectServlet extends HttpServlet {
 			return getExtensibleUIDService().parse(uid);
 		}
 	}
-	
-	
 	
 	private final void sendRedirect(final HttpServletResponse response, final String redirectUrl, final int companyID) throws IOException {
 		final String punycodeFullUrl = punycodeEncodeDomainInLink(redirectUrl);
@@ -657,12 +674,12 @@ public class RedirectServlet extends HttpServlet {
 		return getConfigService().getValue(ConfigValue.RdirUndecodableLinkUrl);
 	}
 	
-	private final ComTrackableLink loadTrackableLink(final ComExtensibleUID uid, final boolean cachingDisabled) throws Exception {
-		ComTrackableLink trackableLink;
+	private final TrackableLink loadTrackableLink(final ComExtensibleUID uid, final boolean cachingDisabled) throws Exception {
+		TrackableLink trackableLink;
 		
 		if (!cachingDisabled) {
 			// If caching not disabled, do normal job (get link from cache if there, otherwise get it from DB)
-			trackableLink = (ComTrackableLink) getUrlCache().get(uid.getUrlID());
+			trackableLink = getUrlCache().get(uid.getUrlID());
 			if (trackableLink == null || trackableLink.getCompanyID() != uid.getCompanyID()) {
 				// get link and do actions
 				trackableLink = getTrackableLinkDao().getTrackableLink(uid.getUrlID(), uid.getCompanyID());

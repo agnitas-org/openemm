@@ -1,0 +1,35 @@
+.pagination {
+  border-radius: $border-radius;
+  border: $border-default;
+
+  li {
+    @include flex-center();
+    @include size(30px, 25px);
+    @include font($font-size-sm);
+    color: $gray-700;
+
+    &.active, &:hover {
+      color: $c-white;
+      background-color: $c-blue-27;
+    }
+
+    &:first-child {
+      @include border-start-radius;
+    }
+
+    &:last-child {
+      @include border-end-radius;
+    }
+
+    &.disabled {
+      cursor: not-allowed;
+      background-color: $gray-100;
+      color: $gray-400;
+    }
+
+    a {
+      width: 100%;
+      text-align: center;
+    }
+  }
+}

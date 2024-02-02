@@ -43,7 +43,7 @@
     </div>
 </c:set>
 
-<script id="frame-tile-template" type="text/x-mustache-template">
+<script id="frame-tile-template" type="text/html">
 <emm:ShowByPermission token="template.show">
     <div id="frame-tile" class="tile" data-action="scroll-to">
         <div class="tile-header">
@@ -56,9 +56,11 @@
                     <li class="active">
                         <a href="#" data-toggle-tab="#tab-mailingTemplateBase"><mvc:message code="default.basic"/></a>
                     </li>
+                    <emm:ShowByPermission token="settings.extended">
                     <li>
                         <a href="#" data-toggle-tab="#tab-mailingTemplateAdvanced" data-extends-tab="#tab-mailingTemplateBase"><mvc:message code="default.advanced"/></a>
                     </li>
+                    </emm:ShowByPermission>
                 </ul>
             </c:if>
         </div>
@@ -93,44 +95,14 @@
                 <div id="tab-mailingTemplateAdvanced" class="${mailingId ne 0 ? 'hidden' : ''}">
             </c:if>
 
-            <div class="inline-tile form-group" data-field="validator">
-                <div class="inline-tile-header">
-                    <h2 class="headline"><mvc:message code="Text_Version"/></h2>
-                    <ul class="inline-tile-header-actions">
-                        <li>
-                            <a href="#" data-modal="modal-editor"
-                               data-modal-set="title: <mvc:message code="Text_Version"/>, target: textTemplate, id: textTemplateLarge, type: text"
-                               data-tooltip="<mvc:message code='editor.enlargeEditor'/>">
-                                <i class="icon icon-arrows-alt"></i>
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-                <div class="inline-tile-content">
-                    <div class="row">
-                        <div class="col-sm-12">
-                            <mvc:textarea path="emailMediatype.textTemplate" id="textTemplate" rows="14"
-                                          cols="${TEXTAREA_WIDTH}"
-                                          data-field-validator="reject-script-element"
-                                          data-action="count-textarea-chars"
-                                          cssClass="form-control js-editor-text"
-                                          readonly="${not MAILING_EDITABLE}"/>
-                            <div class="align-right" data-char-counter-for="textTemplate">
-                                <span class="small status">&nbsp;</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <c:if test="${mailingSettingsForm.emailMediatype.mailFormat != 0 and not isMailingGrid}">
+            <emm:ShowByPermission token="settings.extended">
                 <div class="inline-tile form-group" data-field="validator">
                     <div class="inline-tile-header">
-                        <h2 class="headline"><mvc:message code="mailing.HTML_Version"/></h2>
+                        <h2 class="headline"><mvc:message code="Text_Version"/></h2>
                         <ul class="inline-tile-header-actions">
                             <li>
                                 <a href="#" data-modal="modal-editor"
-                                   data-modal-set="title: <mvc:message code="mailing.HTML_Version"/>, target: htmlTemplate, id: htmlTemplateLarge"
+                                   data-modal-set="title: <mvc:message code="Text_Version"/>, target: textTemplate, id: textTemplateLarge, type: text"
                                    data-tooltip="<mvc:message code='editor.enlargeEditor'/>">
                                     <i class="icon icon-arrows-alt"></i>
                                 </a>
@@ -140,36 +112,74 @@
                     <div class="inline-tile-content">
                         <div class="row">
                             <div class="col-sm-12">
-                                <mvc:textarea path="emailMediatype.htmlTemplate" id="htmlTemplate" rows="14"
+                                <mvc:textarea path="emailMediatype.textTemplate" id="textTemplate" rows="14"
                                               cols="${TEXTAREA_WIDTH}"
                                               data-field-validator="reject-script-element"
                                               data-action="count-textarea-chars"
-                                              cssClass="form-control js-editor" readonly="${not MAILING_EDITABLE}"/>
-                                <div class="align-right" data-char-counter-for="htmlTemplate">
+                                              cssClass="form-control js-editor-text"
+                                              readonly="${not MAILING_EDITABLE}"/>
+                                <div class="align-right" data-char-counter-for="textTemplate">
                                     <span class="small status">&nbsp;</span>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </c:if>
-            <c:if test="${showDynamicTemplateToggle}">
-                <div class="form-group checkbox">
-                    <label class="toggle">
-                        <mvc:checkbox path="useDynamicTemplate"/>
-                        <div class="toggle-control"></div>
-                        <span class="text">
-                            <c:if test="${isTemplate}">
-                                <mvc:message code="mailing.dynamic_template.preset"/>
-                                <button class="icon icon-help" data-help="help_${helplanguage}/mailing/view_base/TemplateUpdateMailingMsg.xml" tabindex="-1" type="button"></button>
-                            </c:if>
-                            <c:if test="${not isTemplate}">
-                                <mvc:message code="mailing.dynamic_template"/>
-                            </c:if>
-                        </span>
-                    </label>
-                </div>
-            </c:if>
+
+                <c:if test="${mailingSettingsForm.emailMediatype.mailFormat != 0 and not isMailingGrid}">
+                    <div class="inline-tile form-group" data-field="validator">
+                        <div class="inline-tile-header">
+                            <h2 class="headline"><mvc:message code="mailing.HTML_Version"/></h2>
+                            <ul class="inline-tile-header-actions">
+                                <li>
+                                    <a href="#" data-modal="modal-editor"
+                                       data-modal-set="title: <mvc:message code="mailing.HTML_Version"/>, target: htmlTemplate, id: htmlTemplateLarge"
+                                       data-tooltip="<mvc:message code='editor.enlargeEditor'/>">
+                                        <i class="icon icon-arrows-alt"></i>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="inline-tile-content">
+                            <div class="row">
+                                <div class="col-sm-12">
+                                    <mvc:textarea path="emailMediatype.htmlTemplate" id="htmlTemplate" rows="14"
+                                                  cols="${TEXTAREA_WIDTH}"
+                                                  data-field-validator="reject-script-element"
+                                                  data-action="count-textarea-chars"
+                                                  cssClass="form-control js-editor" readonly="${not MAILING_EDITABLE}"/>
+                                    <div class="align-right" data-char-counter-for="htmlTemplate">
+                                        <span class="small status">&nbsp;</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </c:if>
+                <c:if test="${showDynamicTemplateToggle}">
+                    <div class="form-group checkbox">
+                        <label class="toggle">
+                            <mvc:checkbox path="useDynamicTemplate"/>
+                            <div class="toggle-control"></div>
+                            <span class="text">
+                                <c:if test="${isTemplate}">
+                                    <mvc:message code="mailing.dynamic_template.preset"/>
+                                    <button class="icon icon-help" data-help="help_${helplanguage}/mailing/view_base/TemplateUpdateMailingMsg.xml" tabindex="-1" type="button"></button>
+                                </c:if>
+                                <c:if test="${not isTemplate}">
+                                    <mvc:message code="mailing.dynamic_template"/>
+                                </c:if>
+                            </span>
+                        </label>
+                    </div>
+                </c:if>
+            </emm:ShowByPermission>
+            <emm:HideByPermission token="settings.extended">
+                <mvc:hidden path="emailMediatype.textTemplate"/>
+                <mvc:hidden path="emailMediatype.htmlTemplate"/>
+                <mvc:hidden path="useDynamicTemplate"/>
+            </emm:HideByPermission>
+
             <c:if test="${not isTemplate}">
             </div>
             </c:if>

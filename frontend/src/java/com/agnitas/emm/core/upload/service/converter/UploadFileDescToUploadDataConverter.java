@@ -33,6 +33,8 @@ public class UploadFileDescToUploadDataConverter implements Converter<UploadFile
         data.setUploadID(source.getUploadId());
         data.setCompanyID(source.getCompanyId());
         data.setFilename(source.getFileName());
+        data.setOwners(source.getOwners());
+        data.setFromAdminID(source.getFromUser());
 
         return data;
     }

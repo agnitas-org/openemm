@@ -10,10 +10,29 @@
 
 package com.agnitas.emm.core.mailingcontent.service.impl;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import org.agnitas.actions.EmmAction;
+import org.agnitas.beans.DynamicTagContent;
+import org.agnitas.beans.factory.DynamicTagContentFactory;
+import org.agnitas.dao.EmmActionDao;
+import org.agnitas.dao.MailingStatus;
+import org.agnitas.emm.core.useractivitylog.UserAction;
+import org.springframework.context.ApplicationContext;
+import org.springframework.core.convert.ConversionService;
+import org.springframework.stereotype.Service;
+
 import com.agnitas.beans.Admin;
-import com.agnitas.beans.ComTrackableLink;
 import com.agnitas.beans.DynamicTag;
 import com.agnitas.beans.Mailing;
+import com.agnitas.beans.TrackableLink;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.dao.DynamicTagDao;
 import com.agnitas.emm.core.Permission;
@@ -26,28 +45,8 @@ import com.agnitas.emm.core.mailingcontent.service.MailingContentService;
 import com.agnitas.emm.core.trackablelinks.exceptions.DependentTrackableLinkException;
 import com.agnitas.messages.Message;
 import com.agnitas.service.ServiceResult;
-import org.agnitas.actions.EmmAction;
-import org.agnitas.beans.DynamicTagContent;
-import org.agnitas.beans.factory.DynamicTagContentFactory;
-import org.agnitas.dao.EmmActionDao;
-import org.agnitas.dao.MailingStatus;
-import org.agnitas.emm.core.useractivitylog.UserAction;
-import org.apache.struts.action.ActionMessage;
-import org.apache.struts.action.ActionMessages;
-import org.springframework.context.ApplicationContext;
-import org.springframework.core.convert.ConversionService;
-import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
+// Watch out: There is also "com.agnitas.service.impl.ComMailingContentServiceImpl" available as bean with name with uppercase 'M' "MailingContentService"
 @Service("mailingContentService")
 public class MailingContentServiceImpl implements MailingContentService {
 
@@ -81,25 +80,21 @@ public class MailingContentServiceImpl implements MailingContentService {
         DynamicTag oldDynamicTag = mailing.getDynamicTagById(dynTagDto.getId());
         DynamicTag newDynamicTag = convertDynTagDtoToDynamicTag(admin.getCompanyID(), oldDynamicTag, dynTagDto);
 
-        Collection<ComTrackableLink> oldLinks = new ArrayList<>(mailing.getTrackableLinks().values());
+        Collection<TrackableLink> oldLinks = new ArrayList<>(mailing.getTrackableLinks().values());
         mailing.getDynTags().replace(newDynamicTag.getDynName(), newDynamicTag);
         List<EmmAction> actions = actionDao.getEmmActions(admin.getCompanyID());
         mailing.setPossibleActions(actions);
-        final ActionMessages errors = new ActionMessages();
+        final List<Message> errors = new ArrayList<>();
         mailing.buildDependencies(false, null, applicationContext, null, errors, admin);
 
         isValidChangedLinks(oldLinks, mailing.getTrackableLinks().values(), errors);
 
         if (!errors.isEmpty()) {
-            final List<Message> messages = new ArrayList<>();
-            @SuppressWarnings("unchecked")
-            Iterator<ActionMessage> iterator = errors.get();
-            iterator.forEachRemaining(err -> messages.add(Message.of(err.getKey(), err.getValues())));
-            return ServiceResult.error(messages);
+            return ServiceResult.error(errors);
         }
         boolean hasNoCleanPermission = admin.permissionAllowed(Permission.MAILING_TRACKABLELINKS_NOCLEANUP);
         mailingBaseService.saveMailingWithUndo(mailing, admin.getAdminID(), hasNoCleanPermission);
-        mailingDao.updateStatus(mailing.getId(), MailingStatus.EDIT);
+        mailingDao.updateStatus(mailing.getCompanyID(), mailing.getId(), MailingStatus.EDIT, null);
         mailingService.removeApproval(mailing.getId(), admin);
 
         List<UserAction> userActions = getUserActions(oldDynamicTag, newDynamicTag, mailing);
@@ -118,13 +113,13 @@ public class MailingContentServiceImpl implements MailingContentService {
         return conversionService.convert(tag, DynTagDto.class);
     }
 
-    private boolean isValidChangedLinks(Collection<ComTrackableLink> oldLinks,
-                                        Collection<ComTrackableLink> newLinks, ActionMessages errors) {
+    private boolean isValidChangedLinks(Collection<TrackableLink> oldLinks,
+                                        Collection<TrackableLink> newLinks, List<Message> errors) {
         try {
             linkService.assertChangedOrDeletedLinksNotDepended(oldLinks, newLinks);
             return true;
         } catch (DependentTrackableLinkException ex) {
-            ex.toActionMessages(errors);
+            ex.toMessages(errors);
             return false;
         }
     }

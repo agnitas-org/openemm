@@ -35,6 +35,7 @@ import com.agnitas.beans.Admin;
 import com.agnitas.beans.MaildropEntry;
 import com.agnitas.beans.Mailing;
 import com.agnitas.dao.ComMailingDao;
+import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.calendar.service.CalendarService;
 import com.agnitas.emm.core.maildrop.MaildropGenerationStatus;
 import com.agnitas.emm.core.maildrop.MaildropStatus;
@@ -98,7 +99,9 @@ public class CalendarServiceImpl implements CalendarService {
 
     protected List<Map<String, Object>> getPlannedMailings(final Admin admin, final Date startDate, final Date endDate) {
         List<Map<String, Object>> plannedMailings;
-        plannedMailings = mailingDao.getPlannedMailings(admin, startDate, endDate);
+        plannedMailings = admin.permissionAllowed(Permission.USE_REDESIGNED_UI)
+                ? mailingDao.getPlannedMailingsRedesigned(admin, startDate, endDate)
+                : mailingDao.getPlannedMailings(admin, startDate, endDate);
         return addSomeFieldsToPlannedMailings(plannedMailings, AgnUtils.getZoneId(admin));
     }
 
@@ -115,7 +118,9 @@ public class CalendarServiceImpl implements CalendarService {
 
     protected List<Map<String, Object>> getMailings(final Admin admin, Date startDate, Date endDate) {
         List<Map<String, Object>> mailings;
-        mailings = mailingDao.getSentAndScheduled(admin, startDate, endDate);
+        mailings = admin.permissionAllowed(Permission.USE_REDESIGNED_UI)
+                ? mailingDao.getSentAndScheduledRedesigned(admin, startDate, endDate)
+                : mailingDao.getSentAndScheduled(admin, startDate, endDate);
 
         return addSomeFieldsToSentAndScheduledMailings(mailings);
     }
@@ -269,6 +274,7 @@ public class CalendarServiceImpl implements CalendarService {
             object.element("isOnlyPostType", isOnlyPostType);
             object.element("openers", openers.getOrDefault(mailingId, 0));
             object.element("clickers", clickers.getOrDefault(mailingId, 0));
+            object.element("mailinglistName", mailing.get("mailinglist_name"));
 
             result.add(object);
         }

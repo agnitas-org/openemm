@@ -102,7 +102,7 @@
 	
 <!-- ============================================================================================================================== ECS (Heatmap) -->
 	<bean id="EcsService" class="com.agnitas.ecs.service.impl.EcsServiceImpl">
-		<property name="generationPDFService" ref="GenerationPDFService"/>
+		<property name="pdfService" ref="pdfService"/>
 		<property name="recipientDao" ref="RecipientDao"/>
 		<property name="embeddedClickStatDao" ref="EmbeddedClickStatDao"/>
 		<property name="configService" ref="ConfigService" />
@@ -244,50 +244,50 @@
 <!-- ============================================================================================================================== UID -->
 	<bean id="UID_2_SHA512_StringBuilder" class="com.agnitas.emm.core.commons.uid.builder.impl.V2Sha512ComExtensibleUIDStringBuilderImpl">
 		<property name="configService" ref="ConfigService" />
-		<property name="companyDaoCache" ref="CompanyDaoCache" />
+		<property name="companyUidDataDaoCache" ref="CompanyUidDataDaoCache" />
 		<property name="rdirMailingDataDaoCache" ref="RdirMailingDataDaoCache" />
 		<property name="mailingDao" ref="MailingDao" />
 	</bean>
 
 	<bean id="UID_2_SHA512_Parser" class="com.agnitas.emm.core.commons.uid.parser.impl.V2Sha512ComExtensibleUIDParserImpl">
 		<property name="stringBuilder" ref="UID_2_SHA512_StringBuilder" />
-		<property name="companyDaoCache" ref="CompanyDaoCache" />
+		<property name="companyUidDataDaoCache" ref="CompanyUidDataDaoCache" />
 		<property name="rdirMailingDataDaoCache" ref="RdirMailingDataDaoCache" />
 	</bean>
 
 	<bean id="UID_3_StringBuilder" class="com.agnitas.emm.core.commons.uid.builder.impl.V3ComExtensibleUIDStringBuilderImpl">
 		<property name="configService" ref="ConfigService" />
-		<property name="companyDaoCache" ref="CompanyDaoCache" />
+		<property name="companyUidDataDaoCache" ref="CompanyUidDataDaoCache" />
 		<property name="rdirMailingDataDaoCache" ref="RdirMailingDataDaoCache" />
 		<property name="mailingDao" ref="MailingDao" />
 	</bean>
 
 	<bean id="UID_3_Parser" class="com.agnitas.emm.core.commons.uid.parser.impl.V3ComExtensibleUIDParserImpl">
 		<property name="stringBuilder" ref="UID_3_StringBuilder" />
-		<property name="companyDaoCache" ref="CompanyDaoCache" />
+		<property name="companyUidDataDaoCache" ref="CompanyUidDataDaoCache" />
 		<property name="rdirMailingDataDaoCache" ref="RdirMailingDataDaoCache" />
 	</bean>
 	
 	<bean id="UID_4_StringBuilder" class="com.agnitas.emm.core.commons.uid.builder.impl.V4ExtensibleUIDStringBuilderImpl">
-		<property name="companyDaoCache" ref="CompanyDaoCache" />
+		<property name="companyUidDataDaoCache" ref="CompanyUidDataDaoCache" />
 	</bean>
 
 	<bean id="UID_4_Parser" class="com.agnitas.emm.core.commons.uid.parser.impl.V4ExtensibleUIDParserImpl">
 		<property name="stringBuilder" ref="UID_4_StringBuilder" />
-		<property name="companyDaoCache" ref="CompanyDaoCache" />
+		<property name="companyUidDataDaoCache" ref="CompanyUidDataDaoCache" />
 	</bean>
 
 	<bean id="UID_5_StringBuilder" class="com.agnitas.emm.core.commons.uid.builder.impl.V5ExtensibleUIDStringBuilderImpl">
-		<property name="companyDaoCache" ref="CompanyDaoCache" />
+		<property name="companyUidDataDaoCache" ref="CompanyUidDataDaoCache" />
 	</bean>
 
 	<bean id="UID_5_Parser" class="com.agnitas.emm.core.commons.uid.parser.impl.V5ExtensibleUIDParserImpl">
 		<property name="stringBuilder" ref="UID_5_StringBuilder" />
-		<property name="companyDaoCache" ref="CompanyDaoCache" />
+		<property name="companyUidDataDaoCache" ref="CompanyUidDataDaoCache" />
 	</bean>
 
 	<bean id="ExtensibleUIDStringBuilder" class="com.agnitas.emm.core.commons.uid.builder.impl.ComExtensibleUIDStringBuilderChain">
-		<property name="companyDaoCache" ref="CompanyDaoCache" />
+		<property name="companyUidDataDaoCache" ref="CompanyUidDataDaoCache" />
 		<property name="stringBuilderList">
 			<list>
 				<!-- Add builder for new UID versions at start of list -->
@@ -568,7 +568,7 @@ Euer freundlicher EMM
 	<!--  =================================================================================
 			 Trackable links
 		  ================================================================================= -->
-	<bean id="TrackableLink" class="com.agnitas.beans.impl.ComTrackableLinkImpl" scope="prototype" />
+	<bean id="TrackableLink" class="com.agnitas.beans.impl.TrackableLinkImpl" scope="prototype" />
 	
 	
 	<!--  =================================================================================
@@ -705,6 +705,7 @@ Euer freundlicher EMM
     
     <bean id="recipientModelValidator" class="org.agnitas.emm.core.recipient.service.validation.RecipientModelValidator">
         <constructor-arg value="validator-messages"/>
+        <constructor-arg ref="ConfigService" />
     </bean>
 
     <bean id="mailingModelValidator" class="com.agnitas.emm.core.mailing.service.validation.MailingModelValidator">

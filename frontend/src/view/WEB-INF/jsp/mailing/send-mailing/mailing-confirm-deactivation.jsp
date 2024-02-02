@@ -1,4 +1,4 @@
-<%@ page contentType="text/html; charset=utf-8" buffer="32kb" errorPage="/error.do" %>
+<%@ page contentType="text/html; charset=utf-8" buffer="32kb" errorPage="/error.action" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
 <%--@elvariable id="form" type="com.agnitas.emm.core.components.form.MailingSendForm"--%>

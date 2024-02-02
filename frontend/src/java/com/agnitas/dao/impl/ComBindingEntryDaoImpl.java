@@ -18,12 +18,15 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.agnitas.dao.ComTargetDao;
+import com.agnitas.emm.core.recipientsreport.bean.SummedRecipientRemark;
 import org.agnitas.beans.BindingEntry;
 import org.agnitas.beans.BindingEntry.UserType;
 import org.agnitas.beans.Mailinglist;
@@ -57,12 +60,14 @@ public class ComBindingEntryDaoImpl extends BaseDaoImpl implements ComBindingEnt
 	private static final Logger logger = LogManager.getLogger(ComBindingEntryDaoImpl.class);
 	
 	private final ComRecipientDao recipientDao;
+	private final ComTargetDao targetDao;
 	
 	private List<OnBindingChangedHandler> bindingChangedHandlers;
 	
-	public ComBindingEntryDaoImpl(final ComRecipientDao recipientDao) {
+	public ComBindingEntryDaoImpl(final ComRecipientDao recipientDao, ComTargetDao targetDao) {
 		this.recipientDao = Objects.requireNonNull(recipientDao, "recipientDao");
-		this.bindingChangedHandlers = List.of();
+        this.targetDao = targetDao;
+        this.bindingChangedHandlers = List.of();
 	}
 	
 	public final void setOnBindingChangedHandlers(final List<OnBindingChangedHandler> handlers) {
@@ -684,7 +689,77 @@ public class ComBindingEntryDaoImpl extends BaseDaoImpl implements ComBindingEnt
 
 		return touchedLinesSum;
 	}
-	
+
+    @Override
+    public Map<String, Integer> getRecipientRemarksStat(int mailinglistId, int targetId, int companyId) {
+        Map<String, Integer> result = new LinkedHashMap<>();
+        List<Object> params = new ArrayList<>();
+
+        String sql = summedRemarksSelectPart(params, mailinglistId, targetId, companyId)
+                + notSummedRemarksSelectPart(params, mailinglistId, targetId, companyId);
+
+        query(logger, sql, rs -> result.put(rs.getString("remark_name"), rs.getInt("COUNT(*)")), params.toArray());
+        return result;
+    }
+
+    private String summedRemarksSelectPart(List<Object> params, int mailinglistId, int targetId, int companyId) {
+        return Arrays.stream(SummedRecipientRemark.values())
+                .map(remark  -> getRecipientRemarkSelect(params, remark, mailinglistId, targetId, companyId))
+                .collect(Collectors.joining());
+    }
+
+    private String getRecipientRemarkSelect(List<Object> params, SummedRecipientRemark remark, int mailinglistId,
+                                            int targetId, int companyId) {
+        String sql = "SELECT '" + remark.getName() + "' AS remark_name, COUNT(*)" +
+                " FROM customer_" + companyId + "_binding_tbl bind";
+        sql += getCustomerTblJoinIfNeededFoRemarks(mailinglistId, targetId, companyId);
+        sql += " WHERE user_remark LIKE '" + remark.getName() + "%'";
+        sql += getMailinglistFilterForRemarks(params, mailinglistId);
+        sql += getTargetIdFilterForRemarks(targetId, companyId);
+        sql += " UNION ALL ";
+        return sql;
+    }
+
+    private String getMailinglistFilterForRemarks(List<Object> params, int mailinglistId) {
+        if (mailinglistId <= 0) {
+            return "";
+        }
+        params.add(mailinglistId);
+        return " AND bind.mailinglist_id = ?";
+    }
+
+    private String getCustomerTblJoinIfNeededFoRemarks(int mailinglistId, int targetId, int companyId) {
+        if (mailinglistId <= 0 && targetId <= 0) {
+            return "";
+        }
+        return String.format(" JOIN customer_%d_tbl cust ON cust.customer_id = bind.customer_id", companyId);
+    }
+
+    private String notSummedRemarksSelectPart(List<Object> params, int mailinglistId, int targetId, int companyId) {
+        String sql = " SELECT * FROM (SELECT bind.user_remark AS remark_name, COUNT(*)" +
+                " FROM customer_" + companyId + "_binding_tbl bind";
+        sql += getCustomerTblJoinIfNeededFoRemarks(mailinglistId, targetId, companyId);
+        sql += " WHERE " + remarksNotLikeSummedRemarks();
+        sql += getMailinglistFilterForRemarks(params, mailinglistId);
+        sql += getTargetIdFilterForRemarks(targetId, companyId);
+        sql += " GROUP BY bind.user_remark ORDER BY 2 DESC)";
+        return sql;
+    }
+
+    private String getTargetIdFilterForRemarks(int targetId, int companyId) {
+        if (targetId <= 0) {
+            return "";
+        }
+        ComTarget target = targetDao.getTarget(targetId, companyId);
+        return " AND (" + target.getTargetSQL() + ")";
+    }
+
+    private String remarksNotLikeSummedRemarks() {
+        return Arrays.stream(SummedRecipientRemark.values())
+                .map(remark -> "user_remark NOT LIKE '" + remark.getName() + "%'")
+                .collect(Collectors.joining(" AND "));
+    }
+
 	protected void fireBindingCreated(final int companyID, final BindingEntry binding) {
 		try {
 			fireBindingCreated(

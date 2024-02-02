@@ -16,7 +16,7 @@ import com.agnitas.web.mvc.XssCheckAware;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.service.UserActivityLogService;
-import org.agnitas.service.WebStorage;
+import com.agnitas.service.WebStorage;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.HttpUtils;
 import org.agnitas.web.forms.FormUtils;
@@ -43,7 +43,6 @@ import com.agnitas.emm.core.recipientsreport.forms.RecipientsReportForm;
 import com.agnitas.emm.core.recipientsreport.service.RecipientsReportService;
 import com.agnitas.emm.core.recipientsreport.service.impl.RecipientReportUtils;
 import com.agnitas.messages.I18nString;
-import com.agnitas.service.ComWebStorage;
 import com.agnitas.web.perm.annotations.PermissionMapping;
 
 @Controller
@@ -66,7 +65,7 @@ public class RecipientsReportController implements XssCheckAware {
 
     @RequestMapping("/list.action")
     public String list(Admin admin, RecipientsReportForm reportForm, Model model) {
-        FormUtils.syncNumberOfRows(webStorage, ComWebStorage.IMPORT_EXPORT_LOG_OVERVIEW, reportForm);
+        FormUtils.syncNumberOfRows(webStorage, WebStorage.IMPORT_EXPORT_LOG_OVERVIEW, reportForm);
 
         Date startDate = reportForm.getFilterDateStart().get(admin.getDateFormat());
         Date finishDate = reportForm.getFilterDateFinish().get(admin.getDateFormat());

@@ -207,6 +207,11 @@ public class ServerStatus {
             return this;
         }
         
+        public ServerStatus.StatusBuilder databaseConnection(boolean dbConnectStatusToUse) {
+            this.dbConnectStatus = dbConnectStatusToUse;
+            return this;
+        }
+        
         public ServerStatus.StatusBuilder dbVersionStatuses(List<VersionStatus> versionStatuses) {
             this.dbVersionStatuses.addAll(versionStatuses);
             return this;
@@ -259,5 +264,51 @@ public class ServerStatus {
             return serverStatus;
         }
     }
+    
+    public static ServerStatus.ExternalStatusBuilder externalStatusBuilder() {
+        return new ServerStatus.ExternalStatusBuilder();
+    }
+    
+    
+    public static class ExternalStatusBuilder {
+
+        private boolean overallStatus;
+        private boolean jobQueueStatus;
+        private boolean importStatus;
+        private boolean exportStatus;
+        private boolean dbStatus;
+        private boolean reportStatus;
+        private boolean licenseStatusOK;
+        private boolean dbConnectStatus;
+
+        public ServerStatus.ExternalStatusBuilder statuses(boolean overallStatusToUse, boolean jobQueueStatusToUse, boolean importStatusToUse, boolean exportStatusToUse, boolean dbStatusToUse, boolean reportStatusToUse, boolean licenseStatusOK, boolean dbConnectStatusToUse) {
+            this.overallStatus = overallStatusToUse;
+            this.jobQueueStatus = jobQueueStatusToUse;
+            this.importStatus = importStatusToUse;
+            this.exportStatus = exportStatusToUse;
+            this.dbStatus = dbStatusToUse;
+            this.reportStatus = reportStatusToUse;
+            this.licenseStatusOK = licenseStatusOK;
+            this.dbConnectStatus = dbConnectStatusToUse;
+            return this;
+        }
+
+        public ServerStatus externalStatusBuilder() {
+        	
+            ServerStatus serverStatus = new ServerStatus();
+    
+            serverStatus.overallStatus = overallStatus;
+            serverStatus.jobQueueStatus = jobQueueStatus;
+            serverStatus.importStatus = importStatus;
+            serverStatus.exportStatus = exportStatus;
+            serverStatus.dbStatus = dbStatus;
+            serverStatus.reportStatus = reportStatus;
+            serverStatus.licenseStatusOK = licenseStatusOK;
+            serverStatus.dbConnectStatus = dbConnectStatus;
+            
+            return serverStatus;
+        }
+    }
+
 
 }

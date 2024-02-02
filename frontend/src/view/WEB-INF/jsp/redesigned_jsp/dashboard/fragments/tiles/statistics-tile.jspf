@@ -1,0 +1,47 @@
+
+<%--@elvariable id="worldmailinglist" type="java.util.List<java.util.Map<java.lang.String, java.lang.Object>"--%>
+
+<script id="dashboard-tile-statistics" type="text/x-mustache-template">
+    <c:set var="mailingsAvailable" value="${worldmailinglist.size() gt 0}" />
+
+    <div class="tile draggable-tile" id="dashboard-statistics">
+        <div class="tile-header">
+            <span class="tile-title">{{- tileName }}</span>
+            <c:if test="${mailingsAvailable}">
+                <div class="dropdown-container">
+                    <select id="mailing-statistics-item" class="form-control" data-action="redraw-mailing-statistics"
+                            data-select-options="dropdownAutoWidth: true, width: 'auto'">
+                        <c:forEach var="mailing" items="${worldmailinglist}" varStatus="status">
+                            <c:set var="optionValue" value="${mailing.shortname}"/>
+                            <c:if test="${status.index eq 0}">
+                                <mvc:message var="optionValue" code="dashboard.statistics.mailing.last_sent"/>
+                            </c:if>
+
+                            <option title="${mailing.shortname}" value="${mailing.mailingid}">${optionValue}</option>
+                        </c:forEach>
+                    </select>
+                </div>
+            </c:if>
+            <div class="tile-controls">
+                <a class="btn" data-action="delete-tile"><i class="icon icon-trash-alt"></i></a>
+                <a class="btn draggable-button"><i class="icon icon-arrows-alt"></i></a>
+            </div>
+        </div>
+        <div class="tile-body ${mailingsAvailable ? "has-chart" : ""}">
+            <c:choose>
+                <c:when test="${mailingsAvailable}">
+                    <canvas id="statistics-chart" class="h-100">
+                            <%-- loads by js --%>
+                    </canvas>
+                </c:when>
+                <c:otherwise>
+                    <div class="notification-simple">
+                        <i class="icon icon-info-circle"></i>
+                        <span><mvc:message code="dashboard.mailing.noMailings" /></span>
+                    </div>
+                </c:otherwise>
+            </c:choose>
+        </div>
+        <div><div class="highlight-container"></div></div>
+    </div>
+</script>

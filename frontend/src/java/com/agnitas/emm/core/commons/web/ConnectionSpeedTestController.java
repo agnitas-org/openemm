@@ -21,6 +21,7 @@ import com.agnitas.web.perm.annotations.Anonymous;
 
 @Controller
 @RequestMapping("/connectionSpeed")
+// TODO remove while removing the old UI design EMMGUI-714
 public class ConnectionSpeedTestController implements XssCheckAware {
 
     public static final int SPEED_TEST_RESOURCE_SIZE = 10000; // bytes

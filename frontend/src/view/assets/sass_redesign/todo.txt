@@ -1,0 +1,43 @@
+REMOVE THIS FILE AFTER FINISH OF THE UI REDESIGN EMMGUI-714
+
+assets/js/boot/jquery-bootstrap-modal_redesigned.js:2 TODO: recheck issue EMMGUI-443 with Bootstrap 5
+
+assets/js/initializers/select_redesigned.js:92 TODO: check if comment lines are redundant and remove them
+
+src/view/assets/js/boot/template_redesigned.js TODO: check if comment lines are redundant and remove them
+
+src/view/assets/js/initializers/tooltip_redesigned.js TODO: check if comment lines are redundant and remove them
+
+src/view/assets/js/lib/tooltip_redesigned.js TODO: check if comment lines are redundant and remove them
+
+src/view/assets/sass_redesign/modules/tooltips.scss TODO: check if comment lines are redundant and remove them
+
+src/view/assets/js/initializers/calendar-service_redesigned.js TODO: check if comment lines are redundant and remove them
+
+src/view/assets/sass_redesign/modules/notification.scss TODO in case of different notification types reuse @include notification-variant($state, $color); from old styles
+
+replace toastr.custom.js with toastr.custom_redesigned.js
+
+src/view/assets/sass_redesign/modules/icon.scss TODO: check if comment lines are redundant and remove them
+
+src/view/assets/sass_redesign/modules/notification.scss TODO: check if comment lines are redundant and remove them
+
+src/view/assets/js/lib/form_redesigned.js TODO: fix doc
+
+src/view/assets/sass_redesign/modules/form/validation.scss TODO: check if comment lines are redundant and remove them
+
+assets/js/listener/pickadate_redesigned.js TODO: rename to datepicker.js
+
+TODO transfer new messages from translation.js into translations.js.jsp
+
+check all TODO occurrences about EMMGUI-714
+
+check usage of /js/lib/calendar/localeDate.js and /js/lib/calendar/weekOfYear.js and remove
+
+TODO: remove WEB-INF/jsp/redesigned_jsp/displaytag/displaytag-properties.jspf and move properties to displaytag.properties files (if possible)
+
+search for redesign related 'switchDesignUrl' attribute and remove
+
+_overwrites_redesigned.js TODO check if comment lines are redundant and remove them
+
+mediapool-element-category-select.js TODO check usage and remove while removing the old UI design EMMGUI-714

@@ -1,4 +1,4 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
+<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.action" %>
 <%@ page import="org.agnitas.util.importvalues.ImportMode"%>
 <%@ page import="org.agnitas.util.AgnUtils" %>
 <%@ page import="org.agnitas.beans.ImportStatus" %>

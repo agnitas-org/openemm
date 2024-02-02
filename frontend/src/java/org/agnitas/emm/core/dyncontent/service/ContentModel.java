@@ -10,8 +10,6 @@
 
 package org.agnitas.emm.core.dyncontent.service;
 
-
-
 public class ContentModel {
 
 	private int companyId;
@@ -21,20 +19,19 @@ public class ContentModel {
 	private int targetId;
 	private String content;
 	private int order;
- 
-	
+
 	public int getCompanyId() {
 		return companyId;
 	}
-	
+
 	public void setCompanyId(int companyId) {
 		this.companyId = companyId;
 	}
-	
+
 	public int getContentId() {
 		return contentId;
 	}
-	
+
 	public void setContentId(int contentId) {
 		this.contentId = contentId;
 	}
@@ -78,5 +75,4 @@ public class ContentModel {
 	public void setOrder(int order) {
 		this.order = order;
 	}
-	
 }

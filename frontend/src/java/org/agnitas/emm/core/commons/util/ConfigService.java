@@ -372,7 +372,9 @@ public class ConfigService {
 				// On ConfigService startup read emm.properties file
 				EMM_PROPERTIES_VALUES = readEmmPropertiesFile();
 				try {
-					applicationVersion = new Version(EMM_PROPERTIES_VALUES.get(ConfigValue.ApplicationVersion.toString()).get(0));
+					if (EMM_PROPERTIES_VALUES.get(ConfigValue.ApplicationVersion.toString()) != null) {
+						applicationVersion = new Version(EMM_PROPERTIES_VALUES.get(ConfigValue.ApplicationVersion.toString()).get(0));
+					}
 				} catch (Exception e) {
 					// The version sign is not valid. Maybe it is text like 'Unknown'.
 				}
@@ -386,6 +388,9 @@ public class ConfigService {
 			if (LICENSE_VALUES == null) {
 				// On ConfigService startup read license data and check licensefile signature
 				LICENSE_VALUES = readLicenseData();
+
+				// Because EMM may contain java code migrations in a former version of EMM which have to be started before this version
+				checkFormerVersionWasStarted();
 
 				// On ConfigService startup check licensefile data
 				checkLicenseData();
@@ -609,6 +614,32 @@ public class ConfigService {
 			throw new Exception("Missing license data");
 		}
 	}
+
+	/**
+	 * When this is EMM LTS ??.10.x, we check for a former startup of EMM LTS ??.04.x,
+	 * because EMM may contain java code migrations in a former version of EMM which have to be started before this version 
+	 */
+	private void checkFormerVersionWasStarted() {
+		if (applicationVersion != null && applicationType == Server.EMM) {
+			Version formerVersionToCheck = null;
+			if (applicationVersion.getMinorVersion() == 4 && applicationVersion.getMicroVersion() == 0) {
+				formerVersionToCheck = new Version(applicationVersion.getMajorVersion() - 1, 10, 0, 0);
+			} else if (applicationVersion.getMinorVersion() == 10 && applicationVersion.getMicroVersion() == 0) {
+				formerVersionToCheck = new Version(applicationVersion.getMajorVersion(), 4, 0, 0);
+			}
+			
+			if (formerVersionToCheck != null) {
+				// Only check this on the very first startup of this version, so we do not have to create a special entry in full_db.sql
+				if (configTableDao.getStartupCount() > 0 && configTableDao.getStartupCountOfLtsVersion(applicationVersion) < 1 && configTableDao.getStartupCountOfLtsVersion(formerVersionToCheck) < 1) {
+					RuntimeException startupError = new RuntimeException("***** EMM version " + formerVersionToCheck + " needs to be started first because of data migration issues. Please install and run EMM version " + formerVersionToCheck + " first before this EMM version " + applicationVersion);
+					System.out.println(startupError.getMessage());
+					startupError.printStackTrace();
+					System.exit(1);
+					throw startupError;
+				}
+			}
+		}
+	}
 	
 	/**
 	 * Check validity of license data to current db data
@@ -616,98 +647,138 @@ public class ConfigService {
 	 * @return
 	 * @throws LicenseError
 	 */
-	public Message[] checkLicenseData() throws LicenseError {
-		if (applicationType == Server.STATISTICS) {
-			// Statistics server may start without license check
-			return null;
-		} else {
-			List<Message> licenseWarnings = new ArrayList<>();
-			
-			if (LICENSE_VALUES == null) {
-				throw new LicenseError("Missing License data");
-			}
-			
-			if (configTableDao != null) {
-				if (NumberUtils.toInt(LICENSE_VALUES.get(ConfigValue.System_Licence.toString()).get(0)) > 0) {
-					// Check or set license ID in DB
+	public Message[] checkLicenseData() {
+		try {
+			if (applicationType == Server.STATISTICS) {
+				// Statistics server may start without license check
+				return null;
+			} else {
+				List<Message> licenseWarnings = new ArrayList<>();
+				
+				if (LICENSE_VALUES == null) {
+					throw new LicenseError("Missing License data");
+				}
+				
+				if (configTableDao != null) {
+					if (NumberUtils.toInt(LICENSE_VALUES.get(ConfigValue.System_Licence.toString()).get(0)) > 0) {
+						// Check or set license ID in DB
+						try {
+							String storedLicenseID = configTableDao.getAllEntriesForThisHost().get(ConfigValue.System_Licence.toString()).get(0);
+							if (StringUtils.isBlank(storedLicenseID)) {
+								configTableDao.storeEntry("system", "licence", null,  LICENSE_VALUES.get(ConfigValue.System_Licence.toString()).get(0), "store licence value by EMM");
+								logger.info("Writing new LicenseID: " + LICENSE_VALUES.get(ConfigValue.System_Licence.toString()).get(0));
+							} else if (!storedLicenseID.equals(LICENSE_VALUES.get(ConfigValue.System_Licence.toString()).get(0))) {
+								throw new LicenseError("Invalid LicenseID", LICENSE_VALUES.get(ConfigValue.System_Licence.toString()).get(0), storedLicenseID);
+							}
+						} catch (Exception e) {
+							throw new LicenseError("Error while checking license id: " + e.getMessage(), e);
+						}
+					
+						// Check license ID in licence.cfg file, if exists
+						String licenceCfgLicenseId = Systemconfig.create ().get ("licence");
+						
+						if ((licenceCfgLicenseId != null) && (!licenceCfgLicenseId.equals(LICENSE_VALUES.get(ConfigValue.System_Licence.toString()).get(0)))) {
+							throw new LicenseError("Invalid LicenseID in licence.cfg", LICENSE_VALUES.get(ConfigValue.System_Licence.toString()).get(0), licenceCfgLicenseId);
+						}
+					}
+				}
+				
+				// Check validity time limit
+				Date validUntil;
+				if (StringUtils.isNotBlank(LICENSE_VALUES.get(ConfigValue.System_License_ExpirationDate.toString()).get(0))) {
 					try {
-						String storedLicenseID = configTableDao.getAllEntriesForThisHost().get(ConfigValue.System_Licence.toString()).get(0);
-						if (StringUtils.isBlank(storedLicenseID)) {
-							configTableDao.storeEntry("system", "licence", null,  LICENSE_VALUES.get(ConfigValue.System_Licence.toString()).get(0), "store licence value by EMM");
-							logger.info("Writing new LicenseID: " + LICENSE_VALUES.get(ConfigValue.System_Licence.toString()).get(0));
-						} else if (!storedLicenseID.equals(LICENSE_VALUES.get(ConfigValue.System_Licence.toString()).get(0))) {
-							throw new LicenseError("Invalid LicenseID", LICENSE_VALUES.get(ConfigValue.System_Licence.toString()).get(0), storedLicenseID);
+						validUntil = new SimpleDateFormat(DateUtilities.DD_MM_YYYY_HH_MM_SS).parse(LICENSE_VALUES.get(ConfigValue.System_License_ExpirationDate.toString()).get(0) + " 23:59:59");
+					} catch (ParseException e) {
+						throw new LicenseError("Invalid validity data: " + e.getMessage(), e);
+					}
+					if (new Date().after(validUntil)) {
+						throw new LicenseError("error.license.outdated", LICENSE_VALUES.get(ConfigValue.System_License_ExpirationDate.toString()).get(0), getMailaddressSupport());
+					}
+				}
+
+				String maximumLicensedVersionString = LICENSE_VALUES.get(ConfigValue.System_License_MaximumVersion.toString()) != null ? LICENSE_VALUES.get(ConfigValue.System_License_MaximumVersion.toString()).get(0) : "";
+				String installedVersionString = getValue(ConfigValue.ApplicationVersion);
+				// Make sure that the license is not invalid for this applications version.
+				if (StringUtils.isBlank(maximumLicensedVersionString)) {
+					throw new LicenseError("error.license.outoflimits", "<Undefined>", installedVersionString, getMailaddressSupport());
+				} else if (!"unlimited".equalsIgnoreCase(maximumLicensedVersionString.trim()) && !"-1".equalsIgnoreCase(maximumLicensedVersionString.trim())) {
+					try {
+						Version maximumLicensedVersion = new Version(maximumLicensedVersionString);
+						Version installedVersion = new Version(installedVersionString);
+						
+						if (maximumLicensedVersion.getMajorVersion() < installedVersion.getMajorVersion()
+							|| (maximumLicensedVersion.getMajorVersion() == installedVersion.getMajorVersion()
+								&& maximumLicensedVersion.getMinorVersion() < installedVersion.getMinorVersion())) {
+							throw new LicenseError("error.license.outoflimits", maximumLicensedVersionString, installedVersionString, getMailaddressSupport());
 						}
 					} catch (Exception e) {
-						throw new LicenseError("Error while checking license id: " + e.getMessage(), e);
+						throw new LicenseError("Invalid license validity data: " + e.getMessage(), e);
 					}
+				}
+
+				if (companyDao != null) {
+					// Check maximum number of companies
+					int maximumNumberOfCompanies = NumberUtils.toInt(LICENSE_VALUES.get(ConfigValue.System_License_MaximumNumberOfCompanies.toString()).get(0));
+					if (maximumNumberOfCompanies >= 0) {
+						int numberOfCompanies = companyDao.getNumberOfCompanies();
+						if (numberOfCompanies > maximumNumberOfCompanies) {
+							if (ConfigValue.System_License_MaximumNumberOfCompanies.getGracefulExtension() != null
+									&& numberOfCompanies <= maximumNumberOfCompanies + ConfigValue.System_License_MaximumNumberOfCompanies.getGracefulExtension()) {
+								logger.error("Invalid Number of tenants. Current value is " + numberOfCompanies + ". Limit is " + maximumNumberOfCompanies + ". Gracefully " + ConfigValue.System_License_MaximumNumberOfCompanies.getGracefulExtension() + " more accounts have been permitted");
+								licenseWarnings.add(Message.of("error.numberOfCompaniesExceeded.graceful", maximumNumberOfCompanies, numberOfCompanies, ConfigValue.System_License_MaximumNumberOfCompanies.getGracefulExtension()));
+			    			} else {
+			    				throw new LicenseError("Invalid Number of accounts", maximumNumberOfCompanies, numberOfCompanies);
+			    			}
+						}
+					}
+				}
+
+				if (supervisorDao != null) {
+					// Check maximum number of supervisors
+					int maximumNumberOfSupervisors = NumberUtils.toInt(LICENSE_VALUES.get(ConfigValue.System_License_MaximumNumberOfSupervisors.toString()).get(0));
+					if (maximumNumberOfSupervisors >= 0) {
+						int numberOfSupervisors = supervisorDao.getNumberOfSupervisors();
+						if (numberOfSupervisors > maximumNumberOfSupervisors) {
+							throw new LicenseError("Invalid Number of supervisors", maximumNumberOfSupervisors, numberOfSupervisors);
+						}
+					}
+				}
 				
-					// Check license ID in licence.cfg file, if exists
-					String licenceCfgLicenseId = Systemconfig.create ().get ("licence");
-					
-					if ((licenceCfgLicenseId != null) && (!licenceCfgLicenseId.equals(LICENSE_VALUES.get(ConfigValue.System_Licence.toString()).get(0)))) {
-						throw new LicenseError("Invalid LicenseID in licence.cfg", LICENSE_VALUES.get(ConfigValue.System_Licence.toString()).get(0), licenceCfgLicenseId);
+				licenseOK = true;
+
+				if (companyDao != null) {
+					for (CompanyEntry activeCompany : companyDao.getActiveCompaniesLight(false)) {
+						checkCompany(activeCompany.getCompanyId());
 					}
 				}
-			}
-			
-			// Check validity time limit
-			Date validUntil;
-			if (StringUtils.isNotBlank(LICENSE_VALUES.get(ConfigValue.System_License_ExpirationDate.toString()).get(0))) {
-				try {
-					validUntil = new SimpleDateFormat(DateUtilities.DD_MM_YYYY_HH_MM_SS).parse(LICENSE_VALUES.get(ConfigValue.System_License_ExpirationDate.toString()).get(0) + " 23:59:59");
-				} catch (ParseException e) {
-					throw new LicenseError("Invalid validity data: " + e.getMessage(), e);
-				}
-				if (new Date().after(validUntil)) {
-					throw new LicenseError("error.license.outdated", LICENSE_VALUES.get(ConfigValue.System_License_ExpirationDate.toString()).get(0), EMM_PROPERTIES_VALUES.get(ConfigValue.Mailaddress_Support.toString()).get(0));
+
+				// Company 0 must be checked after the other existing companies because it may change those, too
+				checkCompany(0);
+				
+				if (licenseWarnings.size() > 0) {
+					return licenseWarnings.toArray(new Message[0]);
+				} else {
+					return null;
 				}
 			}
-	
-			if (companyDao != null) {
-				// Check maximum number of companies
-				int maximumNumberOfCompanies = NumberUtils.toInt(LICENSE_VALUES.get(ConfigValue.System_License_MaximumNumberOfCompanies.toString()).get(0));
-				if (maximumNumberOfCompanies >= 0) {
-					int numberOfCompanies = companyDao.getNumberOfCompanies();
-					if (numberOfCompanies > maximumNumberOfCompanies) {
-						if (ConfigValue.System_License_MaximumNumberOfCompanies.getGracefulExtension() != null
-								&& numberOfCompanies <= maximumNumberOfCompanies + ConfigValue.System_License_MaximumNumberOfCompanies.getGracefulExtension()) {
-							logger.error("Invalid Number of tenants. Current value is " + numberOfCompanies + ". Limit is " + maximumNumberOfCompanies + ". Gracefully " + ConfigValue.System_License_MaximumNumberOfCompanies.getGracefulExtension() + " more accounts have been permitted");
-							licenseWarnings.add(Message.of("error.numberOfCompaniesExceeded.graceful", maximumNumberOfCompanies, numberOfCompanies, ConfigValue.System_License_MaximumNumberOfCompanies.getGracefulExtension()));
-		    			} else {
-		    				throw new LicenseError("Invalid Number of accounts", maximumNumberOfCompanies, numberOfCompanies);
-		    			}
-					}
-				}
-			}
-	
-			if (supervisorDao != null) {
-				// Check maximum number of supervisors
-				int maximumNumberOfSupervisors = NumberUtils.toInt(LICENSE_VALUES.get(ConfigValue.System_License_MaximumNumberOfSupervisors.toString()).get(0));
-				if (maximumNumberOfSupervisors >= 0) {
-					int numberOfSupervisors = supervisorDao.getNumberOfSupervisors();
-					if (numberOfSupervisors > maximumNumberOfSupervisors) {
-						throw new LicenseError("Invalid Number of supervisors", maximumNumberOfSupervisors, numberOfSupervisors);
-					}
-				}
-			}
-			
-			licenseOK = true;
-	
-			if (companyDao != null) {
-				for (CompanyEntry activeCompany : companyDao.getActiveCompaniesLight(false)) {
-					checkCompany(activeCompany.getCompanyId());
-				}
-			}
-	
-			// Company 0 must be checked after the other existing companies because it may change those, too
-			checkCompany(0);
-			
-			if (licenseWarnings.size() > 0) {
-				return licenseWarnings.toArray(new Message[0]);
+		} catch (LicenseError licenseError) {
+			System.out.println(licenseError.getMessage());
+			licenseError.printStackTrace();
+			System.exit(1);
+			throw licenseError;
+		}
+	}
+
+	private String getMailaddressSupport() {
+		if (EMM_PROPERTIES_VALUES != null) {
+			Map<Integer, String> mailaddressSupportValues = EMM_PROPERTIES_VALUES.get(ConfigValue.Mailaddress_Support.toString());
+			if (mailaddressSupportValues != null && mailaddressSupportValues.size() > 0) {
+				return mailaddressSupportValues.get(0);
 			} else {
 				return null;
 			}
+		} else {
+			return null;
 		}
 	}
 	
@@ -864,13 +935,13 @@ public class ConfigService {
 				}
 			}
 			
-			// Also load extended Permissions if available (OpenEMM has no PermissionExtended class)
 			try {
+				// Also load extended Permissions if available (OpenEMM has no PermissionExtended class)
 				Class.forName("com.agnitas.emm.core.PermissionExtended");
-			} catch (ClassNotFoundException e) {
+			} catch (@SuppressWarnings("unused") ClassNotFoundException e) {
 				// do nothing
 			}
-			
+
 			if (getApplicationType() == Server.EMM) {
 				// Check allowed premium features on Frontend Servers only 
 				boolean companyHasOwnPremiumFeatures;
@@ -1506,5 +1577,9 @@ public class ConfigService {
 
 	public boolean isLicenseStatusOK() {
 		return licenseOK;
+	}
+	
+	public boolean isAutoDeeptracking(int companyID) {
+		return companyDao.checkDeeptrackingAutoActivate(companyID);
 	}
 }

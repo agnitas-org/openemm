@@ -27,6 +27,8 @@ public class MailinglistFormToMailinglistDtoConverter implements Converter<Maili
 		dto.setTargetId(source.getTargetId());
 		dto.setMediatypes(source.getMediatypes());
 		dto.setFrequencyCounterEnabled(source.getFrequencyCounterEnabled());
+		dto.setSenderEmail(source.getSenderEmail());
+		dto.setReplyEmail(source.getReplyEmail());
 		return dto;
 	}
 }

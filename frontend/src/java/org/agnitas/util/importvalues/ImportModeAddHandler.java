@@ -160,6 +160,11 @@ public class ImportModeAddHandler implements ImportModeHandler {
 	}
 
 	@Override
+	public void handleExistingCustomersImproved(ImportStatus status, ImportProfile importProfile, String temporaryImportTableName, String importIndexColumn, List<String> transferDbColumns, int datasourceId) throws Exception {
+		// Do nothing
+	}
+
+	@Override
 	public Map<MediaTypes, Map<Integer, Integer>> handlePostProcessing(EmmActionService emmActionService, ImportStatus status, ImportProfile importProfile, String temporaryImportTableName, int datasourceId, List<Integer> mailingListIdsToAssign, Set<MediaTypes> mediatypes) throws Exception {
 		if (mailingListIdsToAssign != null && mailingListIdsToAssign.size() > 0) {
 			Map<MediaTypes, Map<Integer, Integer>> mailinglistAssignStatistics = new HashMap<>();

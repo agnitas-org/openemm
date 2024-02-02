@@ -15,6 +15,7 @@ import java.util.Date;
 public class PageUploadData {
 
     private int uploadId;
+    private String uploader; // username of the the admin, that uploaded the file
     private String fileName;
     private Date createDate;
     private String fileSize;
@@ -58,5 +59,13 @@ public class PageUploadData {
 
     public void setDeleteDate(Date deleteDate) {
         this.deleteDate = deleteDate;
+    }
+
+    public String getUploader() {
+        return uploader;
+    }
+
+    public void setUploader(String uploader) {
+        this.uploader = uploader;
     }
 }

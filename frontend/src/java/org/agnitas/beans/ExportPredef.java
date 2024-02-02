@@ -15,9 +15,12 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.stream.Collectors;
 
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.importvalues.DateFormat;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 
 public class ExportPredef {
 
@@ -159,6 +162,17 @@ public class ExportPredef {
 
 	public String getMailinglists() {
 		return mailinglists;
+	}
+
+	public List<Integer> getStatusMailinglistIDs() {
+		if (StringUtils.isNotBlank(getMailinglists())) {
+			return AgnUtils.splitAndTrimList(getMailinglists()).stream()
+				.map(NumberUtils::toInt)
+				.filter(x -> x > 0)
+				.collect(Collectors.toList());
+		} else {
+			return new ArrayList<>();
+		}
 	}
 
 	public int getMailinglistID() {

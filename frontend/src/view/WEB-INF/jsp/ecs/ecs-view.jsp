@@ -1,8 +1,8 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
+<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.action" %>
 <%@ page import="com.agnitas.emm.ecs.EcsModeType" %>
 <%@ page import="com.agnitas.emm.core.mobile.bean.DeviceClass" %>
 
-<%@ taglib prefix="tiles" uri="http://struts.apache.org/tags-tiles" %>
+<%@ taglib prefix="tiles" uri="http://tiles.apache.org/tags-tiles" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
@@ -109,19 +109,19 @@
             </ul>
         </li>
     </c:set>
-    <tiles:insert page="/WEB-INF/jsp/mailing/template.jsp">
+    <tiles:insertTemplate template="/WEB-INF/jsp/mailing/template.jsp">
         <c:if test="${isMailingGrid}">
-            <tiles:put name="header" type="string">
+            <tiles:putAttribute name="header" type="string">
                 <ul class="tile-header-nav">
                     <!-- Tabs BEGIN -->
-                    <tiles:insert page="/WEB-INF/jsp/tabsmenu-mailing.jsp" flush="false"/>
+                    <tiles:insertTemplate template="/WEB-INF/jsp/tabsmenu-mailing.jsp" flush="false"/>
                     <!-- Tabs END -->
                 </ul>
                 <ul class="tile-header-actions">${formHeaderActions}</ul>
-            </tiles:put>
+            </tiles:putAttribute>
         </c:if>
 
-        <tiles:put name="content" type="string">
+        <tiles:putAttribute name="content" type="string">
             <c:set var="formContent">
                 <div class="mailing-preview-header">
                     <div class="form-group">
@@ -204,7 +204,7 @@
                 </c:otherwise>
             </c:choose>
 
-        </tiles:put>
-    </tiles:insert>
+        </tiles:putAttribute>
+    </tiles:insertTemplate>
 
 </mvc:form>

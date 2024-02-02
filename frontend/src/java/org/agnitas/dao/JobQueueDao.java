@@ -57,4 +57,6 @@ public interface JobQueueDao {
 	void storeDynamicJobParameter(int jobID, String parameterName, String parameterValue);
 
 	List<Map<String, Object>> getLastJobResults(int job_id);
+
+	List<JobDto> selectCriticalErroneousJobs();
 }

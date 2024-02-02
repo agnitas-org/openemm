@@ -153,7 +153,7 @@ public class ActionOperationExecuteScriptImpl implements EmmActionOperation {
 			final VelocityResult velocityResult = velocity.evaluate( params, script, aWriter, 0, op.getActionId());
 
             if (velocityResult.hasErrors()) {
-				final Iterator<?> it = velocityResult.getErrors().get();
+				final Iterator<String> it = velocityResult.getErrorMessages().iterator();
             	while (it.hasNext()) {
             		logger.warn("Error in velocity script action " + operation.getCompanyId() + "/" + operation.getActionId()+ ": " + it.next());
             	}

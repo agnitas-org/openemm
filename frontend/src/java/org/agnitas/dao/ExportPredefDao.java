@@ -34,16 +34,6 @@ public interface ExportPredefDao {
     String findName(int id, int companyId);
     
     /**
-     * Creates an ExportPredef.
-     *
-     * @param companyID
-     *          The companyID for the definition.
-     * @return A new ExportPredef for given company id
-     *  null if company id == 0
-     */
-    ExportPredef create(int companyID);
-
-    /**
      * Updates or create export definition.
      *
      * @param src

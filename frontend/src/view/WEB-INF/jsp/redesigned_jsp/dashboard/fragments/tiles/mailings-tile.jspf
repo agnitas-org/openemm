@@ -1,0 +1,59 @@
+
+<script id="dashboard-tile-mailings" type="text/x-mustache-template">
+    <div class="tile draggable-tile" id="dashboard-mailings">
+        <div class="tile-header">
+            <span class="tile-title">{{- tileName }}</span>
+            <div class="tile-controls">
+                <a class="btn" data-action="delete-tile"><i class="icon icon-trash-alt"></i></a>
+                <a class="btn draggable-button"><i class="icon icon-arrows-alt"></i></a>
+            </div>
+        </div>
+        <div class="tile-body grid" style="grid-template-columns: repeat(auto-fit, minmax(160px, 1fr))">
+            <c:forEach var="mailing" items="${mailinglist.list}" begin="0" step="1">
+                <c:url var="mailingLink" value="/mailing/${mailing.mailingid}/settings.action"/>
+                <c:if test="${mailing.workstatus == 'mailing.status.sent' or mailing.workstatus == 'mailing.status.norecipients'}">
+                    <emm:ShowByPermission token="stats.mailing">
+                        <c:url var="mailingStatLink" value="/statistics/mailing/${mailing.mailingid}/view.action"/>
+                    </emm:ShowByPermission>
+                </c:if>
+                <div class="col">
+                    <a href="${mailingLink}">
+                        <c:choose>
+                            <c:when test="${mailing.isOnlyPostType}">
+                                <c:url var="previewUrl" value="assets/core/images/facelift/post_thumbnail.jpg"/>
+                            </c:when>
+                            <c:when test="${not empty mailing.component and mailing.component ne 0}">
+                                <c:url var="previewUrl" value="/sc">
+                                    <c:param name="compID" value="${mailing.component}"/>
+                                    <c:param name="cacheKiller" value="${emm:milliseconds()}"/>
+                                </c:url>
+                            </c:when>
+                            <c:otherwise>
+                                <c:url var="previewUrl" value="assets/core/images/facelift/no_preview.svg"/>
+                            </c:otherwise>
+                        </c:choose>
+                        <div class="card mailing-card">
+                            <img src="${previewUrl}" class="mailing-preview-card-image" />
+                            <div class="card-body">
+                                <strong class="card-title">
+                                    <c:set var="mailingWorkStatus">
+                                        <c:if test="${mailing.workstatus ne null}">
+                                            <mvc:message code="${mailing.workstatus}"/>
+                                        </c:if>
+                                    </c:set>
+                                    <span class="mailing-badge ${mailing.workstatus} small" data-tooltip="${mailingWorkStatus}"></span>
+                                    <span class="d-inline-block text-truncate">${mailing.shortname}</span>
+                                </strong>
+                                <div class="card-text">
+                                    <i class="icon icon-list" data-tooltip="<mvc:message code='birt.mailinglist'/>"></i>
+                                    <span class="d-inline-block text-truncate">${mailing.mailinglist}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </c:forEach>
+        </div>
+        <div><div class="highlight-container"></div></div>
+    </div>
+</script>

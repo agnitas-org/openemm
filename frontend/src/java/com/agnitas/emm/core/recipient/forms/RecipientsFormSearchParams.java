@@ -10,10 +10,16 @@
 
 package com.agnitas.emm.core.recipient.forms;
 
-import org.agnitas.dao.UserStatus;
 import org.agnitas.web.forms.FormSearchParams;
 
 public class RecipientsFormSearchParams implements FormSearchParams<RecipientListForm> {
+
+    private final int defaultUserStatus;
+
+    public RecipientsFormSearchParams(int defaultUserStatus) {
+        this.defaultUserStatus = defaultUserStatus;
+    }
+
     private int mailinglistId;
     private int targetId;
     private int userStatus;
@@ -51,7 +57,7 @@ public class RecipientsFormSearchParams implements FormSearchParams<RecipientLis
     public void resetParams() {
         mailinglistId = 0;
         targetId = 0;
-        userStatus = UserStatus.Active.getStatusCode();
+        userStatus = defaultUserStatus;
         userType = "";
         firstName = "";
         lastName = "";

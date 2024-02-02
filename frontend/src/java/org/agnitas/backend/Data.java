@@ -35,6 +35,7 @@ import java.util.Set;
 import java.util.TimeZone;
 
 import org.agnitas.backend.dao.ConfigDAO;
+import org.agnitas.backend.dao.DkimDAO;
 import org.agnitas.backend.dao.RecipientDAO;
 import org.agnitas.backend.dao.TagDAO;
 import org.agnitas.backend.dao.TitleDAO;
@@ -334,6 +335,10 @@ public class Data {
 	 */
 	public int onepixlog = OPL_NONE;
 	/**
+	 * if clearance fragment should be added to test mailing
+	 */
+	public boolean requiresClearance = false;
+	/**
 	 * the base domain to build the base URLs
 	 */
 	public String rdirDomain = null;
@@ -480,6 +485,7 @@ public class Data {
 	 * optional dkim in action
 	 */
 	protected boolean dkimActive = false;
+	protected List <DkimDAO.DKIM> dkimAvailable = null;
 	/**
 	 * database id
 	 */
@@ -667,6 +673,7 @@ public class Data {
 		logging(Log.DEBUG, "init", "\tmasterMailtype = " + masterMailtype);
 		logging(Log.DEBUG, "init", "\tlineLength = " + lineLength);
 		logging(Log.DEBUG, "init", "\tonepixlog = " + onepixlog);
+		logging(Log.DEBUG, "init", "\trequiresClearance = " + requiresClearance);
 		logging(Log.DEBUG, "init", "\trdirDomain = " + rdirDomain);
 		logging(Log.DEBUG, "init", "\tmailloopDomain = " + mailloopDomain);
 		logging(Log.DEBUG, "init", "\tdbID = " + (dbID == null ? "*unset*" : dbID));
@@ -1086,6 +1093,9 @@ public class Data {
 		Dkim dkim = new Dkim(this);
 
 		dkimActive = dkim.check(mailing.fromEmail());
+		if (dkimActive) {
+			dkimAvailable = dkim.dkims ();
+		}
 	}
 
 	private void parseMediaStaticInformation() throws Exception {
@@ -1109,6 +1119,7 @@ public class Data {
 					mailing.envelopeFrom(new EMail(env));
 				}
 				mailing.subject(findMediadata(tmp, "subject"));
+				mailing.setPreHeader(findMediadata(tmp, "preHeader"));
 				masterMailtype = ifindMediadata(tmp, "mailformat", masterMailtype);
 				if (masterMailtype > MailType.HTML_OFFLINE.getIntValue()) {
 					masterMailtype = MailType.HTML_OFFLINE.getIntValue();
@@ -1126,6 +1137,7 @@ public class Data {
 				} else {
 					onepixlog = OPL_NONE;
 				}
+				requiresClearance = bfindMediadata (tmp, "clearance", requiresClearance);
 
 				followupReference = ifindMediadata(tmp, "followup_for", 0L);
 				if (!maildropStatus.isWorldMailing()) {
@@ -2987,6 +2999,7 @@ public class Data {
 	public String deliveryCheckEmails () {
 		return company.isPermitted ("mia.premium") ? deliveryCheckEmails : null;
 	}
+
 	/**
 	 * if this is a dryrun test run
 	 *
@@ -2997,7 +3010,7 @@ public class Data {
 	}
 
 	public String getDefaultMediaType() {
-		return maildropStatus.isCampaignMailing() || maildropStatus.isVerificationMailing() ? Media.typeName(Media.TYPE_EMAIL) : null;
+		return maildropStatus != null && (maildropStatus.isCampaignMailing() || maildropStatus.isVerificationMailing()) ? Media.typeName(Media.TYPE_EMAIL) : null;
 	}
 
 	public long limitBlockOperations() {
@@ -3022,7 +3035,7 @@ public class Data {
 	public boolean enforceTestVIP () {
 		return enforceTestVIP;
 	}
-
+	
 	protected Map <String, String> retrieveOverwrittenTestRecipientColumns () {
 		Map <String, String>	rc = null;
 		long			sourceCustomerID = maildropStatus.overwriteTestRecipient ();

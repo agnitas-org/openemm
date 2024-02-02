@@ -1,0 +1,67 @@
+<%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowStop" %>
+<%@ page import="com.agnitas.emm.core.dashboard.bean.DashboardWorkflow" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
+
+<%--@elvariable id="workflows" type="java.util.List<com.agnitas.emm.core.dashboard.bean.DashboardWorkflow>"--%>
+
+<c:set var="STOP_TYPE_AUTOMATIC" value="<%= WorkflowStop.WorkflowEndType.AUTOMATIC %>"/>
+<c:set var="STATUS_ACTIVE" value="<%= DashboardWorkflow.Status.ACTIVE %>" />
+
+<script id="dashboard-tile-workflows" type="text/x-mustache-template">
+    <div class="tile draggable-tile scheduled-items">
+        <div class="tile-header">
+            <span class="tile-title">{{- tileName }}</span>
+            <div class="tile-controls">
+                <a class="btn" data-action="delete-tile"><i class="icon icon-trash-alt"></i></a>
+                <a class="btn draggable-button"><i class="icon icon-arrows-alt"></i></a>
+            </div>
+        </div>
+        <div class="tile-body grid" style="--bs-columns: 1">
+            <c:choose>
+                <c:when test="${not workflows.isEmpty()}">
+                    <c:forEach var="workflow" items="${workflows}">
+                        <c:set var="status" value="${fn:toLowerCase(workflow.status.name())}" />
+
+                        <a class="list-item overflow-hidden" href="<c:url value="/workflow/${workflow.id}/view.action" />">
+                            <div class="item__info-container">
+                                <span class="status-badge small workflow.status.${status}" data-tooltip="<mvc:message code="workflow.view.status.${status}"/>"></span>
+                                <span class="item__name-label text-truncate">${workflow.name}</span>
+                            </div>
+
+                            <div class="item__schedule-container">
+                                <i class="icon icon-calendar-alt"></i>
+                                <c:choose>
+                                    <c:when test="${workflow.status eq STATUS_ACTIVE}">
+                                        <fmt:formatDate var="startDate" value="${workflow.startDate}" pattern="${adminDateTimeFormat}" timeZone="${adminTimeZone}"/>
+                                        <span class="text-truncate"><mvc:message code="workflow.start.StartDate" />: ${startDate}</span>
+                                    </c:when>
+                                    <c:otherwise>
+                                        <c:choose>
+                                            <c:when test="${workflow.endType eq STOP_TYPE_AUTOMATIC}">
+                                                <mvc:message var="endDate" code="workflow.stop.AutomaticEnd" />
+                                            </c:when>
+                                            <c:when test="${workflow.endDate ne null}">
+                                                <fmt:formatDate var="endDate" value="${workflow.endDate}" pattern="${adminDateTimeFormat}" timeZone="${adminTimeZone}"/>
+                                            </c:when>
+                                            <c:otherwise>
+                                                <mvc:message var="endDate" code="MailType.unknown" />
+                                            </c:otherwise>
+                                        </c:choose>
+                                        <span class="text-truncate"><mvc:message code="workflow.stop.EndDate" />: ${endDate}</span>
+                                    </c:otherwise>
+                                </c:choose>
+                            </div>
+                        </a>
+                    </c:forEach>
+                </c:when>
+                <c:otherwise>
+                    <div class="notification-simple">
+                        <i class="icon icon-info-circle"></i>
+                        <span><mvc:message code="noResultsFound" /></span>
+                    </div>
+                </c:otherwise>
+            </c:choose>
+        </div>
+        <div><div class="highlight-container"></div></div>
+    </div>
+</script>

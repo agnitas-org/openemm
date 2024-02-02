@@ -35,7 +35,6 @@
 		<lookup-method name="getBeanMailinglist" bean="Mailinglist"/>
 		<lookup-method name="getBeanJavaMailService" bean="JavaMailService"/>
 		<lookup-method name="getBeanConfigService" bean="ConfigService"/>
-		<lookup-method name="getBeanWorkflowReportScheduleDao" bean="WorkflowReportScheduleDao"/>
 	</bean>
 
 <!-- ============================================================================================================================== Hash tags -->
@@ -45,7 +44,7 @@
 	</bean>
 		  	
 <!-- ============================================================================================================================== EQL -->
-	<bean id="EqlSqlDialect" class="com.agnitas.emm.core.target.eql.emm.sql.MysqlDialect" />
+	<bean id="EqlSqlDialect" class="com.agnitas.emm.core.target.eql.emm.sql.MariaDbDialect" />
 
 	<bean id="EqlCodeGenerator" class="com.agnitas.emm.core.target.eql.codegen.CodeGenerator" />
 
@@ -238,4 +237,11 @@
 		<property name="extensibleUIDService" ref="ExtensibleUIDService" />
 		<property name="datasourceDescriptionDao" ref="DatasourceDescriptionDao" />
 	</bean>
+	
+	
+	<bean id="CompanyUidDataDaoCache" class="com.agnitas.emm.core.commons.uid.daocache.impl.CompanyUidDataDaoCacheImpl">
+		<constructor-arg ref="CompanyDao" />
+		<constructor-arg ref="ConfigService" />
+	</bean>
+	
 </beans>

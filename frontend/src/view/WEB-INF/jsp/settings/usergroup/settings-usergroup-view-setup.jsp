@@ -1,9 +1,8 @@
 <%@ page import="com.agnitas.emm.core.usergroup.web.UserGroupController" %>
 <%@ page import="org.agnitas.util.AgnUtils" %>
-<%@ page contentType="text/html; charset=utf-8" errorPage="/error.do" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.action" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
-<%@ taglib prefix="logic" uri="http://struts.apache.org/tags-logic" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
 <%--@elvariable id="userGroupForm" type="com.agnitas.emm.core.usergroup.form.UserGroupForm"--%>
@@ -82,25 +81,25 @@
                     </c:set>
             </emm:instantiate>
         </emm:ShowByPermission>
-            <logic:notEqual name="groupID" scope="session" value="${userGroupForm.id}">
-            	<c:if test="${userGroupForm.companyId eq admin.companyID or admin.companyID eq ROOT_COMPANY_ID}">
-                	<emm:ShowByPermission token="role.delete">
-                    	<emm:instantiate var="element" type="java.util.LinkedHashMap">
-                        	<c:set target="${itemActionsSettings}" property="0" value="${element}"/>
-                        	<c:set target="${element}" property="btnCls" value="btn btn-regular btn-alert"/>
-                        	<c:set target="${element}" property="extraAttributes" value="data-confirm"/>
+            <c:if test="${userGroupForm.id ne sessionScope['groupID']}">
+                <c:if test="${userGroupForm.companyId eq admin.companyID or admin.companyID eq ROOT_COMPANY_ID}">
+                    <emm:ShowByPermission token="role.delete">
+                        <emm:instantiate var="element" type="java.util.LinkedHashMap">
+                            <c:set target="${itemActionsSettings}" property="0" value="${element}"/>
+                            <c:set target="${element}" property="btnCls" value="btn btn-regular btn-alert"/>
+                            <c:set target="${element}" property="extraAttributes" value="data-confirm"/>
                             <c:set target="${element}" property="type" value="href"/>
                             <c:set target="${element}" property="url">
                                 <c:url value="/administration/usergroup/${userGroupForm.id}/confirmDelete.action"/>
                             </c:set>
-                        	<c:set target="${element}" property="iconBefore" value="icon-trash-o"/>
-                        	<c:set target="${element}" property="name">
-                            	<mvc:message code="button.Delete"/>
-                        	</c:set>
-                    	</emm:instantiate>
-                	</emm:ShowByPermission>
+                            <c:set target="${element}" property="iconBefore" value="icon-trash-o"/>
+                            <c:set target="${element}" property="name">
+                                <mvc:message code="button.Delete"/>
+                            </c:set>
+                        </emm:instantiate>
+                    </emm:ShowByPermission>
                 </c:if>
-            </logic:notEqual>
+            </c:if>
 
 			<c:if test="${userGroupForm.companyId eq admin.companyID or admin.companyID eq ROOT_COMPANY_ID}">
             	<emm:ShowByPermission token="role.change">

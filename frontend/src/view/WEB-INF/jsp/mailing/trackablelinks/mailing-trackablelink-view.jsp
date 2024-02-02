@@ -1,5 +1,5 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" import="com.agnitas.web.*" errorPage="/error.do" %>
-<%@ taglib prefix="tiles" uri="http://struts.apache.org/tags-tiles" %>
+<%@ page language="java" contentType="text/html; charset=utf-8" import="com.agnitas.web.*" errorPage="/error.action" %>
+<%@ taglib prefix="tiles" uri="http://tiles.apache.org/tags-tiles" %>
 <%@ taglib prefix="emm"   uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc"   uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="fn"      uri="http://java.sun.com/jsp/jstl/functions" %>
@@ -20,16 +20,16 @@
 
 <c:set var="isMailingGrid" value="${not empty gridTemplateId and gridTemplateId gt 0}" scope="request"/>
 
-<tiles:insert page="/WEB-INF/jsp/mailing/template.jsp">
-    <tiles:put name="header" type="string">
+<tiles:insertTemplate template="/WEB-INF/jsp/mailing/template.jsp">
+    <tiles:putAttribute name="header" type="string">
         <h2 class="headline"><mvc:message code="TrackableLink.editLink"/></h2>
 
         <ul class="tile-header-nav">
-            <tiles:insert page="/WEB-INF/jsp/tabsmenu-mailing.jsp" flush="false"/>
+            <tiles:insertTemplate template="/WEB-INF/jsp/tabsmenu-mailing.jsp" flush="false"/>
         </ul>
-    </tiles:put>
+    </tiles:putAttribute>
     
-    <tiles:put name="content" type="string">
+    <tiles:putAttribute name="content" type="string">
         <c:if test="${not isMailingGrid}">
             <div class="row">
         </c:if>
@@ -190,10 +190,10 @@
         <c:if test="${not isMailingGrid}">
             </div>
         </c:if>
-    </tiles:put>
+    </tiles:putAttribute>
     
-    <tiles:putList name="footerItems">
-        <tiles:add>
+    <tiles:putListAttribute name="footerItems">
+        <tiles:addAttribute>
             <c:url var="backLink" value="/mailing/${mailingId}/trackablelink/list.action">
                 <c:param name="scrollToLinkId" value="${linkId}"/>
                 <c:if test="${not empty workflowForwardParams}">
@@ -205,13 +205,13 @@
                     <mvc:message code="button.Back"/>
                 </span>
             </a>
-        </tiles:add>
-        <tiles:add>
+        </tiles:addAttribute>
+        <tiles:addAttribute>
             <button type="button" class="btn btn-large btn-primary pull-right" data-form-target='#trackableLinkForm' data-action="save">
                 <span class="text">
                     <mvc:message code="button.Save"/>
                 </span>
             </button>
-        </tiles:add>
-    </tiles:putList>
-</tiles:insert>
+        </tiles:addAttribute>
+    </tiles:putListAttribute>
+</tiles:insertTemplate>

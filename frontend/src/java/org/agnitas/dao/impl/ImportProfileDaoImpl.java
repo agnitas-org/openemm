@@ -10,6 +10,28 @@
 
 package org.agnitas.dao.impl;
 
+import com.agnitas.dao.ComMailingDao;
+import com.agnitas.dao.DaoUpdateReturnValueCheck;
+import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
+import com.agnitas.emm.core.action.operations.ActionOperationSendMailingParameters;
+import com.agnitas.emm.core.mediatypes.common.MediaTypes;
+import org.agnitas.beans.ColumnMapping;
+import org.agnitas.beans.ImportProfile;
+import org.agnitas.beans.impl.ColumnMappingImpl;
+import org.agnitas.beans.impl.ImportProfileImpl;
+import org.agnitas.dao.EmmActionOperationDao;
+import org.agnitas.dao.ImportProfileDao;
+import org.agnitas.dao.impl.mapper.IntegerRowMapper;
+import org.agnitas.util.AgnUtils;
+import org.agnitas.util.DataEncryptor;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Required;
+import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.util.CollectionUtils;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -21,30 +43,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import org.agnitas.beans.ColumnMapping;
-import org.agnitas.beans.ImportProfile;
-import org.agnitas.beans.impl.ColumnMappingImpl;
-import org.agnitas.beans.impl.ImportProfileImpl;
-import org.agnitas.dao.EmmActionOperationDao;
-import org.agnitas.dao.ImportProfileDao;
-import org.agnitas.dao.impl.mapper.IntegerRowMapper;
-
-import org.agnitas.util.AgnUtils;
-import org.agnitas.util.DataEncryptor;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Required;
-import org.springframework.dao.DataAccessException;
-import org.springframework.jdbc.core.RowMapper;
-import org.springframework.util.CollectionUtils;
-
-import com.agnitas.dao.ComMailingDao;
-import com.agnitas.dao.DaoUpdateReturnValueCheck;
-import com.agnitas.emm.core.action.operations.AbstractActionOperationParameters;
-import com.agnitas.emm.core.action.operations.ActionOperationSendMailingParameters;
-import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 
 /**
  * DAO handler for ImportProfile-Objects
@@ -475,22 +473,6 @@ public class ImportProfileDaoImpl extends BaseDaoImpl implements ImportProfileDa
             return mapping;
     	}
     }
-
-	@Override
-	public Map<String, Integer> getImportProfileGenderMapping(int id) {
-		List<Map<String, Object>> queryResult = select(logger, "SELECT * FROM import_gender_mapping_tbl WHERE profile_id = ? AND deleted != 1 ORDER BY id", id);
-        Map<String, Integer> genderMappings = new HashMap<>();
-        for (Map<String, Object> resultSetRow : queryResult) {
-        	genderMappings.put((String) resultSetRow.get("string_gender"), ((Number)resultSetRow.get("int_gender")).intValue());
-        }
-		return genderMappings;
-	}
-
-	@Override
-	public void saveImportProfileGenderMapping(int id, Map<String, Integer> genderMapping) {
-		update(logger, "DELETE FROM import_gender_mapping_tbl WHERE profile_id = ?", id);
-		insertGenderMappings(genderMapping, id);
-	}
 
 	@Override
 	public int findImportProfileIdByName(String name, int companyId) {

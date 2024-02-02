@@ -1,0 +1,43 @@
+* {
+  --mobile-view-threshold: #{$mobile-view-threshold};
+}
+
+body {
+  font-family: 'Poppins', sans-serif;
+  font-style: normal;
+}
+
+ul, ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+
+  &:hover {
+    color: unset;
+  }
+}
+
+p {
+  margin-bottom: $gap-sm;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.mobile-hidden {
+  @include mobile {
+    display: none !important;
+  }
+}
+
+.desktop-hidden {
+  @include desktop {
+    display: none !important;
+  }
+}

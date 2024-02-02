@@ -21,15 +21,6 @@
 		http://www.springframework.org/schema/aop
 		http://www.springframework.org/schema/aop/spring-aop.xsd">
 		
-	<bean id="ConfigurationValidityCheck" class="com.agnitas.emm.core.ConfigurationValidityCheckBasicImpl">
-		<property name="dataSource" ref="dataSource" />
-		<property name="configService" ref="ConfigService" />
-		<property name="configTableDao" ref="ConfigTableDao" />
-		<property name="companyDao" ref="CompanyDao" />
-		<property name="targetService" ref="targetService"/>
-		<property name="layoutDao" ref="LayoutDao"/>
-	</bean>
-
 <!-- ============================================================================================================================== Login -->
 	<bean id="LogonService" class="com.agnitas.emm.core.logon.service.impl.ComLogonServiceImpl">
 		<property name="configService" ref="ConfigService" />
@@ -59,6 +50,7 @@
 		<property name="configService" ref="ConfigService" />
 		<property name="mobilephoneNumberWhitelist" ref="MobilephoneNumberWhitelist" />
 		<property name="recipientService" ref="recipientService"/>
+		<property name="recipientFieldService" ref="RecipientFieldService" />
 		<property name="blacklistService" ref="BlacklistService"/>
 		<property name="subscriberLimitCheck" ref="SubscriberLimitCheck" />
 	</bean>
@@ -72,10 +64,10 @@
 		<lookup-method name="getBeanOptimizationService" bean="optimizationService" />
 		<lookup-method name="getBeanWorkflowStartStopReminderService" bean="workflowStartStopReminderService" />
 		<lookup-method name="getBeanWorkflowService" bean="WorkflowService" />
+        <lookup-method name="getBeanWorkflowActivationService" bean="WorkflowActivationService" />
+        <lookup-method name="getBeanUserActivityLogService" bean="UserActivityLogService" />
 		<lookup-method name="getBeanJavaMailService" bean="JavaMailService" />
 		<lookup-method name="getBeanConfigService" bean="ConfigService" />
-		<lookup-method name="getBeanTargetService" bean="targetService" />
-		<lookup-method name="getBeanSendActionbasedMailingService" bean="SendActionbasedMailingService" />
 		<lookup-method name="getBeanBirtReportService" bean="BirtReportService" />
 		<lookup-method name="getBeanBirtStatisticsService" bean="BirtStatisticsService" />
 		<lookup-method name="getBeanCompanyService" bean="ComCompanyService" />
@@ -101,6 +93,7 @@
 		<property name="mailinglistApprovalService" ref="MailinglistApprovalService" />
 		<property name="configService" ref="ConfigService" />
 		<property name="gridServiceWrapper" ref="GridServiceWrapper"/>
+		<property name="mailingSendService" ref="MailingSendService" />
 	</bean>
 
 	<bean id="WorkflowValidationService" class="com.agnitas.emm.core.workflow.service.ComWorkflowValidationService">
@@ -120,7 +113,6 @@
 		<property name="targetFactory" ref="TargetFactory" />
 		<property name="targetDao" ref="TargetDao" />
 		<property name="reactionDao" ref="WorkflowReactionDao" />
-		<property name="reportScheduleDao" ref="WorkflowReportScheduleDao" />
 		<property name="recipientDao" ref="RecipientDao" />
 		<property name="eqlHelper" ref="WorkflowEQLHelper"/>
 		<property name="adminService" ref="AdminService"/>
@@ -145,7 +137,10 @@
 
 	<bean id="ExportPredefService" class="com.agnitas.service.impl.ExportPredefServiceImpl">
 		<property name="exportPredefDao" ref="ExportPredefDao" />
-	</bean>
+        <property name="recipientExportWorkerFactory" ref="RecipientExportWorkerFactory" />
+        <property name="dataSource" ref="dataSource"/>
+        <property name="configService" ref="ConfigService"/>
+    </bean>
 
 <!-- ============================================================================================================================== Company -->
 	<bean id="ComCompanyService" class="com.agnitas.emm.core.company.service.impl.ComCompanyServiceImpl">
@@ -156,7 +151,6 @@
 		<property name="recipientProfileHistoryService" ref="RecipientProfileHistoryService"/>
 		<property name="adminService" ref="AdminService"/>
 		<property name="adminGroupService" ref="AdminGroupService" />
-		<property name="webserviceUserService" ref="WebserviceUserService" />
 		<property name="userActivityLogService" ref="UserActivityLogService"/>
         <property name="bounceFilterService" ref="BounceFilterService"/>
         <property name="companyTokenService" ref="CompanyTokenService" />
@@ -170,6 +164,7 @@
 		<property name="importRecipientsDao" ref="ImportRecipientsDao" />
 		<property name="mailinglistDao" ref="MailinglistDao" />
 		<property name="columnInfoService" ref="ColumnInfoService" />
+		<property name="importQuotaCheckService" ref="ImportQuotaService" />
 	</bean>
 
 	<bean id="mailingDeliveryStatService" class="com.agnitas.emm.core.mailing.service.impl.ComMailingDeliveryStatServiceImpl">
@@ -191,6 +186,7 @@
 		<property name="mailingPreviewService" ref="MailingPreviewService" />
 		<property name="bindingEntryDao" ref="BindingEntryDao" />
 		<property name="datasourceDescriptionDao" ref="DatasourceDescriptionDao" />
+		<property name="recipientFieldService" ref="RecipientFieldService" />
 	</bean>
 	
 	<bean id="RestfulServiceHandler_target" class="com.agnitas.emm.restful.target.TargetRestfulServiceHandler">
@@ -200,4 +196,5 @@
 		<property name="recipientDao" ref="RecipientDao" />
         <property name="columnInfoService" ref="ColumnInfoService" />
 	</bean>
+
 </beans>

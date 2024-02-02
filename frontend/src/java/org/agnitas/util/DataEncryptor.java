@@ -27,12 +27,16 @@ import javax.crypto.spec.PBEParameterSpec;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.apache.commons.io.FileUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
 /**
  * Class to encrypt data and get the data back from encrypted base64 string.
  */
 public class DataEncryptor {
+	private static final Logger logger = LogManager.getLogger(DataEncryptor.class);
+	
 	private char[] encryptorPassword;
 	private byte[] saltBytes;
 	private String saltFilePathOverride = null;
@@ -41,7 +45,7 @@ public class DataEncryptor {
 	
 	public static final void main(final String...encryptorPassword) throws Exception {
 		final DataEncryptor enc = new DataEncryptor();
-		enc.setSaltFilePathOverride("/home/md/emm.salt");
+		enc.setSaltFilePathOverride(AgnUtils.getUserHomeDir() + "/emm.salt");
 		System.out.println(enc.encrypt("12345678901234567890"));
 	}
 	
@@ -89,8 +93,16 @@ public class DataEncryptor {
 		try {
 			return decryptByLiveMode(encryptedDataBase64);
 		} catch(final GeneralSecurityException e) {
-			// Cannot decrypt with stronger cipher, falling back to old one
-			return decryptByCompatibilityMode(encryptedDataBase64);
+			try {
+				// Cannot decrypt with stronger cipher, falling back to old one
+				return decryptByCompatibilityMode(encryptedDataBase64);
+			} catch (Exception e1) {
+				logger.error("Compatibility mode decryption had error: " + e1.getMessage(), e1);
+				e1.printStackTrace();
+				
+				// Throw the first exception, because most probably it contains the real problem
+				throw e;
+			}
 		}
     }
 	

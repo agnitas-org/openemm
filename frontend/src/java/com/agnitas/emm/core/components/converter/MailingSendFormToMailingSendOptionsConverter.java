@@ -33,6 +33,7 @@ public class MailingSendFormToMailingSendOptionsConverter implements Converter<M
                 .setBlockSize(form.getBlocksize())
                 .setRequiredAutoImport(form.getAutoImportId())
                 .setDate(form.getDate())
+                .setActivateAgainToday(form.isActivateAgainToday())
                 .build();
     }
 }

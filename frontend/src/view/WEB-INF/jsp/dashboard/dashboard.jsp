@@ -1,20 +1,14 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" buffer="64kb"  errorPage="/error.do" %>
+<%@ page language="java" contentType="text/html; charset=utf-8" buffer="64kb"  errorPage="/error.action" %>
 <%@ page import="org.agnitas.dao.MailingStatus" %>
-<%@ page import="org.agnitas.web.ExportWizardAction" %>
-<%@ page import="org.agnitas.web.ProfileImportAction" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
-<%@ taglib prefix="tiles" uri="http://struts.apache.org/tags-tiles" %>
 
 <%--@elvariable id="dashboardForm" type="com.agnitas.emm.core.dashboard.form.DashboardForm"--%>
 <%--@elvariable id="mailinglist" type="org.agnitas.beans.impl.PaginatedListImpl<java.util.Map<java.lang.String, java.lang.Object>"--%>
 <%--@elvariable id="worldmailinglist" type="java.utils.List<java.util.Map<java.lang.String, java.lang.Object>"--%>
 <%--@elvariable id="adminDateFormat" type="java.lang.String"--%>
 <%--@elvariable id="helplanguage" type="java.lang.String"--%>
-
-<c:set var="ACTION_IMPORT_RECIPIENT" value="<%= ProfileImportAction.ACTION_START %>" scope="request"/>
-<c:set var="ACTION_EXPORT_RECIPIENT" value="<%= ExportWizardAction.ACTION_LIST %>" scope="request"/>
 
 <div data-controller="dashboard">
     <div class="row" data-equalizer="max" data-equalizer-max="400">
@@ -300,4 +294,4 @@
     <jsp:include page="../calendar/calendar-view.jsp" />
 </emm:ShowByPermission>
 
-<emm:include page="fragments/dashboard-news.jsp"/>
+<%@include file="fragments/dashboard-news.jspf" %>

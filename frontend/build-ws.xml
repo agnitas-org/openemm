@@ -38,7 +38,45 @@
 				<property name="javaVersion" value="11" />
 			</then>
 		</if>
-		<echo message="Using Java version ${javaVersion}" /> 
+		<echo message="Using Java version ${javaVersion}" />
+
+		<!-- Fallback property "jdk" for property "JAVA_HOME"-->
+		<if>
+			<not>
+				<isset property="JAVA_HOME" />
+			</not>
+			<then>
+				<if>
+					<isset property="jdk" />
+					<then>
+						<echo message="Using fallback property 'jdk' for property 'JAVA_HOME'" />
+						<property name="JAVA_HOME" value="${jdk}" />
+					</then>
+					<else>
+						<fail message="Missing property 'JAVA_HOME'" />
+					</else>
+				</if>
+			</then>
+		</if>
+		
+		<!-- Fallback property "container.home" for property "CATALINA_HOME"-->
+		<if>
+			<not>
+				<isset property="CATALINA_HOME" />
+			</not>
+			<then>
+				<if>
+					<isset property="container.home" />
+					<then>
+						<echo message="Using fallback property 'container.home' for property 'CATALINA_HOME'" />
+						<property name="CATALINA_HOME" value="${container.home}" />
+					</then>
+					<else>
+						<fail message="Missing property 'CATALINA_HOME'" />
+					</else>
+				</if>
+			</then>
+		</if>
 	</target>
 
 	<target name="setupBuildPaths" depends="checkForPropertiesFile, setDeploytarget" description="Setting up the needed paths">
@@ -286,8 +324,5 @@
 			<!-- To exclude some files: -->
 			<compilerarg line="-Xlint:-unchecked" />
 		</javac>
-
-		<!-- EMM logo, used for header of generated PDF files -->
-		<copy file="${emmSourcePath}/java/com/agnitas/emm/core/workflow/service/resources/preview_pdf_logo.png" todir="${deploydir}${appname}/WEB-INF/classes/com/agnitas/emm/core/workflow/service/resources" />
 	</target>
 </project>

@@ -30,12 +30,15 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.TreeMap;
+import java.util.UUID;
 import java.util.Vector;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
 
+import com.agnitas.emm.core.recipientsreport.bean.RecipientsReport;
+import com.agnitas.web.mvc.XssCheckAware;
 import org.agnitas.beans.ColumnMapping;
 import org.agnitas.beans.DatasourceDescription;
 import org.agnitas.beans.ImportProfile;
@@ -107,7 +110,6 @@ import com.agnitas.emm.core.upload.service.UploadService;
 import com.agnitas.messages.I18nString;
 import com.agnitas.service.ServiceResult;
 import com.agnitas.service.SimpleServiceResult;
-import com.agnitas.web.ComImportWizardAction;
 import com.agnitas.web.mvc.Pollable;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.perm.annotations.PermissionMapping;
@@ -119,12 +121,11 @@ import jakarta.servlet.http.HttpSession;
 @RequestMapping("/recipient/import/wizard")
 @PermissionMapping("recipient.import.wizard")
 @SessionAttributes(types = ImportWizardSteps.class)
-public class RecipientImportWizardController {
+public class RecipientImportWizardController implements XssCheckAware {
 
-    private static final String RECIPIENTS_IMPORT_WIZARD_KEY = "RECIPIENTS_IMPORT_WIZARD";
+    public static final String RECIPIENTS_IMPORT_WIZARD_KEY = "RECIPIENTS_IMPORT_WIZARD";
     private static final Logger logger = LogManager.getLogger(RecipientImportWizardController.class);
     private static final String IMPORT_FILE_DIRECTORY = AgnUtils.getTempDir() + File.separator + "RecipientImport";
-    private static final String PROGRESS_VIEW = "recipient_import_wizard_progress";
     private static final String EMAIL_STR = "email";
     
     private final ComRecipientDao recipientDao;
@@ -167,9 +168,17 @@ public class RecipientImportWizardController {
     public String onNotAllowedImportWizardStepException(HttpSession session) {
         ImportWizardSteps steps = (ImportWizardSteps) session.getAttribute("importWizardSteps");
         if (steps.isImportRunning()) {
-            return PROGRESS_VIEW;
+            return showProgressPage(steps);
         }
         return "redirect:/recipient/import/wizard/step/" + steps.getCurrentStep().getControllerEndpointName();
+    }
+
+    private String showProgressPage(ImportWizardSteps steps) {
+        if (!steps.isImportRunning()) {
+            steps.setImportUID(UUID.randomUUID().toString());
+        }
+
+        return "recipient_import_wizard_progress";
     }
 
     @ModelAttribute("importWizardSteps")
@@ -223,7 +232,7 @@ public class RecipientImportWizardController {
             helper.clearDummyColumnsMappings();
         }
 
-        ServiceResult<List<CsvColInfo>> csvColumns = importWizardService.parseFirstLineNew(helper);
+        ServiceResult<List<CsvColInfo>> csvColumns = importWizardService.parseFirstLine(helper);
         if (!csvColumns.isSuccess()) {
             popups.addPopups(csvColumns);
             return MESSAGES_VIEW;
@@ -267,7 +276,7 @@ public class RecipientImportWizardController {
 
     private boolean tryParseContent(Admin admin, ImportWizardSteps steps, Popups popups) {
         try {
-            importWizardService.parseContentNew(steps.getHelper());
+            importWizardService.parseContent(steps.getHelper());
             steps.getHelper().setLinesOK(importWizardService.getLinesOKFromFile(steps.getHelper()));
             int maxRowsAllowedForClassicImport = configService.getIntegerValue(ConfigValue.ClassicImportMaxRows, admin.getCompanyID());
             if (maxRowsAllowedForClassicImport >= 0 && steps.getHelper().getLinesOK() > maxRowsAllowedForClassicImport) {
@@ -347,7 +356,7 @@ public class RecipientImportWizardController {
     @GetMapping("/step/mailinglists.action")
     public String mailinglistsStepView(Model model, ImportWizardSteps steps, Admin admin) {
         if (steps.getHelper().getMode() == ImportMode.TO_BLACKLIST.getIntValue()) {
-            return PROGRESS_VIEW;
+            return showProgressPage(steps);
         }
         model.addAttribute("mailinglists", mailinglistApprovalService.getEnabledMailinglistsForAdmin(admin));
         return "recipient_import_wizard_mailinglists_step";
@@ -360,7 +369,7 @@ public class RecipientImportWizardController {
             return MESSAGES_VIEW;
         }
         steps.getHelper().setDbInsertStatus(0);
-        return PROGRESS_VIEW;
+        return showProgressPage(steps);
     }
 
     @RequestMapping("/run.action")
@@ -380,7 +389,7 @@ public class RecipientImportWizardController {
             return new ModelAndView("recipient_import_wizard_result", model.asMap());
         };
         return new Pollable<>(
-                Pollable.uid(sessionId, RECIPIENTS_IMPORT_WIZARD_KEY),
+                Pollable.uid(sessionId, RECIPIENTS_IMPORT_WIZARD_KEY, steps.getImportUID()),
                 Pollable.DEFAULT_TIMEOUT,
                 new ModelAndView("recipient_import_wizard_result"),
                 importWorker);
@@ -474,11 +483,15 @@ public class RecipientImportWizardController {
         }
         helper.setResultMailingListAdded(resultMailingListAdded);
 
-        Date time = getTimeForResultCsv(admin);
-        String filename = time.getTime() + ".csv";
-        String csvFile = generateLocalizedImportCSVReport(admin.getLocale(), time, profileImportWorker.getStatus(), helper.getMode());
+        if (configService.getBooleanValue(ConfigValue.WriteExtendedRecipientReport, admin.getCompanyID())) {
+            createRecipientReport(admin, profileImportWorker, helper, isError);
+        } else {
+            Date time = getTimeForResultCsv(admin);
+            String filename = time.getTime() + ".csv";
+            String csvFile = generateLocalizedImportCSVReport(admin.getLocale(), time, profileImportWorker.getStatus(), helper.getMode());
 
-        reportService.createAndSaveImportReport(admin.getCompanyID(), admin.getAdminID(), filename, helper.getStatus().getDatasourceID(), new Date(), csvFile, -1, isError);
+            reportService.createAndSaveImportReport(admin.getCompanyID(), admin, filename, helper.getStatus().getDatasourceID(), new Date(), csvFile, -1, isError);
+        }
     }
 
     private Date getTimeForResultCsv(Admin admin) {
@@ -486,6 +499,26 @@ public class RecipientImportWizardController {
         TimeZone zone = TimeZone.getTimeZone(admin.getAdminTimezone());
         emmCalender.changeTimeWithZone(zone);
         return emmCalender.getTime();
+    }
+
+    private void createRecipientReport(Admin admin, ProfileImportWorker profileImportWorker, ImportWizardHelper helper, boolean isError) throws Exception {
+        Date time = getTimeForResultCsv(admin);
+        String filename = time.getTime() + ".csv";
+        String csvFile = generateLocalizedImportCSVReport(admin.getLocale(), time, profileImportWorker.getStatus(), helper.getMode());
+
+        RecipientsReport report = new RecipientsReport();
+
+        report.setDatasourceId(helper.getStatus().getDatasourceID());
+        report.setFilename(filename);
+        report.setReportDate(new Date());
+        report.setIsError(isError);
+
+        report.setEntityId(profileImportWorker.getImportProfileId());
+        report.setEntityType(RecipientsReport.EntityType.IMPORT);
+        report.setEntityExecution(RecipientsReport.EntityExecution.MANUAL);
+        report.setEntityData(RecipientsReport.EntityData.PROFILE);
+
+        reportService.saveNewReport(admin, admin.getCompanyID(), report, csvFile);
     }
 
     private String generateLocalizedImportCSVReport(Locale locale, Date date, ImportStatus status, int mode) {
@@ -524,7 +557,7 @@ public class RecipientImportWizardController {
         try {
             modeString = SafeString.getLocaleString(ImportMode.getFromInt(mode).getMessageKey(), locale);
         } catch (Exception e) {
-            logger.error("Invalid import mode in {}", ComImportWizardAction.class.getSimpleName() + ", mode : " + mode, e);
+            logger.error("Invalid import mode in {}", RecipientImportWizardController.class.getSimpleName() + ", mode : " + mode, e);
         }
         csvfile += "\n" + "mode:;" + modeString;
 
@@ -579,7 +612,6 @@ public class RecipientImportWizardController {
 
         // Data from second classic import page
 
-        // Translate ComImportWizardForm.ModeInt into ImportMode.ModeInt
         importProfile.setImportMode(ImportMode.getFromInt(helper.getMode()).getIntValue());
 
         importProfile.setNullValuesAction(helper.getStatus().getIgnoreNull());
@@ -621,6 +653,7 @@ public class RecipientImportWizardController {
                 false, // Not interactive mode, because there is no error edit GUI
                 mailingListIdsToAssign,
                 sessionId,
+                companyID,
                 admin,
                 dsDescription.getId(),
                 importProfile,
@@ -645,7 +678,7 @@ public class RecipientImportWizardController {
     @GetMapping("/downloadCsv.action")
     public ResponseEntity<?> downloadCsv(@RequestParam(required = false) String errorType, ImportWizardSteps steps, String downloadName, Admin admin) throws UnsupportedEncodingException {
         ImportWizardHelper helper = steps.getHelper();
-        String charset = "result_csv".equals(downloadName) ? "UTF-8" : helper.getStatus().getCharset();
+        String charset = "result".equals(downloadName) ? "UTF-8" : helper.getStatus().getCharset();
         return ResponseEntity.ok()
                 .contentType(new MediaType("text", "plain", Charset.forName(charset)))
                 .header(HttpHeaders.CONTENT_DISPOSITION, HttpUtils.getContentDispositionAttachment(downloadName + ".csv", charset))

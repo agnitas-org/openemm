@@ -2,7 +2,7 @@
   "openapi" : "3.0.0",
   "info" : {
     "title" : "EMM Restful API",
-    "description" : "This is the EMM Restful API.<br /><br />Authentification methods<br /><ul><li>\"username\" and \"password\" as URL parameters</li><li>Basic Auth (see https://en.wikipedia.org/wiki/Basic_access_authentication)</li><li>JWT (JSON Web Token) Auth (see https://de.wikipedia.org/wiki/JSON_Web_Token)</li></ul><br />Example for request via wget with URL parameters:<br /><pre>wget -S -O - --content-on-error \"https://&lt;emm_system_url>/restful/mailing/1?username=&lt;UrlencodedUserName>&password=&lt;UrlencodedPassword>\" > test.txt; cat test.txt</pre><br />Example for request via wget with BASIC AUTH:<br /><pre>wget -S -O - --content-on-error --auth-no-challenge --http-user=\"&lt;UrlencodedUserName>\" --http-password=\"&lt;UrlencodedPassword>\" \"https://&lt;emm_system_url>/restful/mailing/1\" > test.txt; cat test.txt</pre><br />Example for request via wget with JWT AUTH:<br /><pre>wget -S -O - --content-on-error --auth-no-challenge --http-user=\"&lt;UrlencodedUserName>\" --http-password=\"&lt;UrlencodedPassword>\" \"https://&lt;emm_system_url>/restful/login\" > login.txt; cat login.txt</pre><pre>wget -S -O - --content-on-error --auth-no-challenge --header=\"Authorization&colon; Bearer &lt;jwt token from login>\" \"https://&lt;emm_system_url>/restful/mailing/1\" > test.txt; cat test.txt</pre>",
+    "description" : "This is the EMM Restful API.<br /><br />Authentification methods<br /><ul><li>\"username\" and \"password\" as URL parameters</li><li>Basic Auth (see https://en.wikipedia.org/wiki/Basic_access_authentication)</li><li>JWT (JSON Web Token) Auth (see https://de.wikipedia.org/wiki/JSON_Web_Token)</li></ul>JWT (JSON Web Token) Auth is an optional feature which has to be activated on request by AGNITAS<br /><br />Example for request via wget with URL parameters:<br /><pre>wget -S -O - --content-on-error \"https://&lt;emm_system_url>/restful/mailing/1?username=&lt;UrlencodedUserName>&password=&lt;UrlencodedPassword>\" > test.txt; cat test.txt</pre><br />Example for request via wget with BASIC AUTH:<br /><pre>wget -S -O - --content-on-error --auth-no-challenge --http-user=\"&lt;UrlencodedUserName>\" --http-password=\"&lt;UrlencodedPassword>\" \"https://&lt;emm_system_url>/restful/mailing/1\" > test.txt; cat test.txt</pre><br />Example for request via wget with JWT AUTH:<br /><pre>wget -S -O - --content-on-error --auth-no-challenge --http-user=\"&lt;UrlencodedUserName>\" --http-password=\"&lt;UrlencodedPassword>\" \"https://&lt;emm_system_url>/restful/login\" > login.txt; cat login.txt</pre><pre>wget -S -O - --content-on-error --auth-no-challenge --header=\"Authorization&colon; Bearer &lt;jwt token from login>\" \"https://&lt;emm_system_url>/restful/mailing/1\" > test.txt; cat test.txt</pre>",
     "version" : "1.4.1",
     "contact" : {
       "email" : "info@agnitas.ag"
@@ -123,6 +123,63 @@
         "summary" : "Get a list of all existing mailings",
         "tags" : [ "Mailing" ],
         "operationId" : "getMailings",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "name",
+          "schema" : {
+            "type" : "string"
+          },
+          "required" : false,
+          "description" : "Filter for mailing names (wildcard *)"
+        }, {
+          "in" : "query",
+          "name" : "type",
+          "schema" : {
+            "type" : "string"
+          },
+          "required" : false,
+          "description" : "Filter for mailings with type (NORMAL, ACTION_BASED, DATE_BASED, FOLLOW_UP, INTERVAL)"
+        }, {
+          "in" : "query",
+          "name" : "mailinglistid",
+          "schema" : {
+            "type" : "string"
+          },
+          "required" : false,
+          "description" : "Filter for mailings with mailinglistid (wildcard *)"
+        }, {
+          "in" : "query",
+          "name" : "mailinglistname",
+          "schema" : {
+            "type" : "string"
+          },
+          "required" : false,
+          "description" : "Filter for mailings with mailinglist by name (wildcard *)"
+        }, {
+          "in" : "query",
+          "name" : "status",
+          "schema" : {
+            "type" : "string"
+          },
+          "required" : false,
+          "description" : "Filter for mailings with status (ACTIVE, ADMIN, CANCELED, CANCELED_AND_COPIED, DISABLE, EDIT, GENERATION_FINISHED, IN_GENERATION, NEW, NORECIPIENTS, READY, SCHEDULED, SENDING, SENT, TEST, wildcard *)"
+        }, {
+          "in" : "query",
+          "name" : "creationdate",
+          "schema" : {
+            "type" : "string"
+          },
+          "required" : false,
+          "description" : "Filter for mailings with creation date (Format yyyy-MM-dd, wildcard *)"
+        }, {
+          "in" : "query",
+          "name" : "senddate",
+          "schema" : {
+            "type" : "string"
+          },
+          "required" : false,
+          "description" : "Filter for mailings with send date (Format yyyy-MM-dd, wildcard *)"
+        } ],
         "responses" : {
           "200" : {
             "description" : "list of all existing mailings",
@@ -2691,6 +2748,44 @@
       }
     },
     "/recipient" : {
+      "get" : {
+        "summary" : "Get a dataitem or customer_id list of all matching existing recipients",
+        "tags" : [ "Recipient" ],
+        "operationId" : "getRecipient",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "<profilefield name>",
+          "schema" : {
+            "type" : "string"
+          },
+          "required" : true,
+          "description" : "Filter for recipient data values names (Wildcards * and ? allowed)"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Stored data of recipient entries. JsonObject when item is unique. JsonArray of recipient entries when results contains max. 5 items. JsonArray of recipient customer ids when results contains max. 1000 items.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RecipientItemGet"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Any client side error"
+          },
+          "401" : {
+            "description" : "Authorization information is missing or invalid"
+          },
+          "404" : {
+            "description" : "Data requested was not found"
+          },
+          "500" : {
+            "description" : "Server side error"
+          }
+        }
+      },
       "post" : {
         "summary" : "Create new recipient entry (no update)",
         "tags" : [ "Recipient" ],
@@ -5231,6 +5326,15 @@
         "tags" : [ "User" ],
         "operationId" : "getuser",
         "description" : "Read existing user data",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "fields",
+          "schema" : {
+            "type" : "string"
+          },
+          "required" : false,
+          "description" : "Optionally selected additional user details to include in list (\"groups\", \"permissions\", \"accesslimitingtargetgroups\", \"fieldpermissions\", \"disabledmailinglists\", \"others\", \"*\" = all, example \"GET https://<SystemUrl/restful/user?fields=permissions,groups\")"
+        } ],
         "responses" : {
           "200" : {
             "description" : "search results matching criteria",

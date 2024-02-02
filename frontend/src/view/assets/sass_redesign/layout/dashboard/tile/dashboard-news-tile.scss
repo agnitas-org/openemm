@@ -1,0 +1,46 @@
+
+#dashboard-news {
+
+  $card-padding-top: 8px;
+
+  .news__card {
+    @include flex(column, $gap-sm);
+
+    border: $border-default;
+    border-radius: $border-radius;
+  }
+
+  .news__card-header-container {
+    @include flex(row, 5px);
+    align-items: baseline;
+    justify-content: space-between;
+    padding: $card-padding-top $gap-sm;
+  }
+
+  .news__card-header, .message__card-header {
+    @include font($font-size-xsm);
+  }
+
+  .news__date-label, .message__date-label {
+    @include font($font-size-sm, $font-weight-normal);
+  }
+
+  .news__content, .message__content {
+    @include font($font-size-sm, $font-weight-normal);
+    line-height: initial;
+    padding: 0 10px $card-padding-top 10px;
+  }
+
+  .message__card {
+    @extend .news__card;
+    border-color: $c-blue-27;
+  }
+
+  .message__card-header-container {
+    @extend .news__card-header-container;
+
+    background-color: $c-blue-27;
+    border-radius: $border-radius $border-radius 0 0;
+    color: $c-white;
+  }
+}

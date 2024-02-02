@@ -103,7 +103,7 @@ public class Custinfo {
 	public String getUserType() {
 		return userType;
 	}
-
+	
 	public String getMediaFieldContent(Media m) {
 		if (m != null) {
 			if (m.type == Media.TYPE_EMAIL) {

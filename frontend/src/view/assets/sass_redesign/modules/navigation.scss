@@ -1,0 +1,94 @@
+
+.navbar {
+  @extend .border;
+  @extend .rounded;
+  width: 100%;
+
+  .navbar-nav {
+    display: flex;
+    gap: $gap-sm;
+    width: 100%;
+    li {
+      flex: 1 1 0;
+
+      .nav-item {
+        width: 100%;
+      }
+
+      .btn {
+        border-radius: $border-radius-sm;
+        padding-block: 7px;
+        width: 100%;
+
+        &.active {
+          font-weight: 600;
+        }
+        
+        &:not(.active):not(:hover) {
+          border-color: $gray-400;
+          color: $gray-600;     
+        }
+      }
+    }
+  }
+  
+  .navbar-toggler {
+    margin-left: $gap-sm;
+  }
+  
+  .chosen-tab {
+    color: $c-white;
+    flex-grow: 1;
+    border-radius: $border-radius-sm;
+    font-weight: $font-weight-semibold;
+    
+    @include media-breakpoint-up(lg) {
+      display: none;
+    }    
+  }
+  
+  .navbar-collapse {
+    transition: none;
+    height: min-content;
+    
+    &:not(.show) {
+      border: none;
+    }
+    
+    @include media-breakpoint-down(lg) {
+      background-color: $white;
+      position: absolute;
+      top: 56px;
+      left: -1px;
+      min-width: calc(100% + 2px);
+      border: 1px solid $border-color;
+      border-radius: $border-radius;
+      padding: $gap-sm;
+
+      .navbar-nav {
+        border: 1px solid $border-color;
+        border-radius: $border-radius;
+        overflow: hidden;
+        gap: 0;
+        padding: 0;
+
+        .btn {
+          border: none;
+          border-radius: 0;
+          font-size: 1rem;
+          text-align: left;
+          &:not(.active):not(:hover) {
+            color: $black;     
+          }
+        }
+      }
+    }
+  }
+  .collapsing {
+    border: none;
+  }
+  
+  .offcanvas-backdrop {
+    opacity: 0; // hide dark backdrop when collapsed nabbar opened on mobile
+  }
+}

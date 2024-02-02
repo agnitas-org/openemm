@@ -58,6 +58,11 @@ public class ImportModeBounceReactivateHandler implements ImportModeHandler {
 	}
 
 	@Override
+	public void handleExistingCustomersImproved(ImportStatus status, ImportProfile importProfile, String temporaryImportTableName, String importIndexColumn, List<String> transferDbColumns, int datasourceId) throws Exception {
+		// Do nothing
+	}
+
+	@Override
 	public Map<MediaTypes, Map<Integer, Integer>> handlePostProcessing(EmmActionService emmActionService, ImportStatus status, ImportProfile importProfile, String temporaryImportTableName, int datasourceId, List<Integer> mailingListIdsToAssign, Set<MediaTypes> mediatypes) throws Exception {
 		// Reactivate bounced customers in binding table
 		if (mailingListIdsToAssign != null) {

@@ -48,7 +48,7 @@ import com.agnitas.emm.core.mailing.forms.mediatype.MediatypeForm;
 import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.emm.core.mailing.web.MailingSettingsOptions;
 import com.agnitas.emm.core.mailinglist.service.MailinglistService;
-import com.agnitas.emm.core.trackablelinks.web.LinkScanResultToActionMessages;
+import com.agnitas.emm.core.trackablelinks.web.LinkScanResultToMessages;
 import com.agnitas.emm.core.workflow.service.ComWorkflowService;
 import com.agnitas.service.AgnTagService;
 import com.agnitas.web.mvc.Popups;
@@ -348,8 +348,8 @@ public class MailingSettingsFormValidator {
         try {
             LinkService.LinkScanResult linkScanResult = linkService.scanForLinks(htmlTemplate, mailingId, mailinglistId, companyId);
             linkScanResult.getErroneousLinks().forEach(link -> popups.alert(link.getErrorMessageKey(), link.getLinkText()));
-            linkScanResult.getLocalLinks().forEach(link -> popups.permanentWarning(link.getErrorMessageKey(), link.getLinkText()));
-            LinkScanResultToActionMessages.linkWarningsToPopups(linkScanResult, popups);
+            linkScanResult.getLocalLinks().forEach(link -> popups.warning(link.getErrorMessageKey(), link.getLinkText()));
+            LinkScanResultToMessages.linkWarningsToPopups(linkScanResult, popups);
         } catch (Exception e) {
             LOGGER.warn("something went wrong while validating links in html template");
         }

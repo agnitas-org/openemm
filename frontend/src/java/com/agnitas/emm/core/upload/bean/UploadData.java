@@ -12,12 +12,14 @@
 package com.agnitas.emm.core.upload.bean;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 
 
 public class UploadData {
 	private int uploadID;
-	private int adminID;
+	private int adminID; // remove after EMMGUI-714 has been tested and it's not used anymore. new field - owners
+	private List<Integer> owners;
 	private int fromAdminID;
 	private String adminName;
 	private Date creationDate;
@@ -118,7 +120,15 @@ public class UploadData {
 	public int getAdminID() {
 		return adminID;
 	}
-	
+
+    public List<Integer> getOwners() {
+        return owners;
+    }
+
+    public void setOwners(List<Integer> owners) {
+        this.owners = owners;
+    }
+
 	public int getFromAdminID() {
 		return fromAdminID;
 	}

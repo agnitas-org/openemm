@@ -26,7 +26,7 @@ public class RecipientImportFileContentParserFactory {
     }
 
     public RecipientImportFileContentParser detectParser(ImportProfile profile) throws Exception {
-        ImportDataType dataType = ImportDataType.valueOf(profile.getDatatype());
+        ImportDataType dataType = ImportDataType.getImportDataTypeForName(profile.getDatatype());
 
         if (ImportDataType.CSV.equals(dataType)) {
             return csvContentParser;

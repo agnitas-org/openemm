@@ -1,11 +1,10 @@
-<%@ page contentType="text/html; charset=utf-8" errorPage="/error.do" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.action" %>
 <%@ page import="com.agnitas.emm.core.mailing.web.MailingPreviewHelper" %>
 <%@ page import="com.agnitas.emm.core.mediatypes.common.MediaTypes" %>
 <%@ page import="org.agnitas.preview.ModeType" %>
 <%@ page import="org.agnitas.preview.Preview" %>
-<%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-<%@ taglib prefix="tiles" uri="http://struts.apache.org/tags-tiles" %>
+<%@ taglib prefix="tiles" uri="http://tiles.apache.org/tags-tiles" %>
 <%@ taglib prefix="mvc"   uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="emm"   uri="https://emm.agnitas.de/jsp/jsp/common" %>
 
@@ -57,8 +56,13 @@
     <c:set var="tileHeaderActions" scope="page">
         <c:if test="${emm:contains(availablePreviewFormats, EMAIL_TYPE_CODE)}">
             <li>
-                <c:url var="downloadHtmlLink" value="/mailing/preview/${form.mailingId}/html.action">
-                    <c:param name="mobile" value="${form.size eq MOBILE_PORTRAIT or form.size eq MOBILE_LANDSCAPE}"/>
+                <c:url var="downloadHtmlLink" value="/mailing/preview/html.action">
+                    <c:param name="mailingId" value="${form.mailingId}"/>
+                    <c:param name="format" value="${form.format}"/>
+                    <c:param name="modeTypeId" value="${form.modeTypeId}"/>
+                    <c:param name="size" value="${form.size}"/>
+                    <c:param name="customerID" value="${form.customerID}"/>
+                    <c:param name="targetGroupId" value="${form.targetGroupId}"/>
                     <c:param name="noImages" value="${form.noImages}"/>
                 </c:url>
                 <a href="${downloadHtmlLink}" class="link" data-tooltip="<mvc:message code="default.HTML.code"/>" data-prevent-load="">
@@ -230,6 +234,7 @@
                                                    <c:set var="customerId" value="${recipient.id}"/>
                                                     <c:set var="customerName" value="${recipient.firstname} ${recipient.lastname} &lt;${recipient.email}&gt;"/>
                                                     <c:set var="isSelected" value="${form.customerATID == customerId or form.customerID == customerId}"/>
+
                                                    <option value="${customerId}" data-email="${recipient.email}" ${isSelected ? 'selected="selected"' : ''}>${customerName}</option>
                                                </c:forEach>
                                             </select>
@@ -301,24 +306,24 @@
         </c:if>
     </c:set>
 
-    <tiles:insert page="/WEB-INF/jsp/mailing/template.jsp">
+    <tiles:insertTemplate template="/WEB-INF/jsp/mailing/template.jsp">
         <%-- There're no footer items --%>
 
         <c:if test="${isMailingGrid}">
-            <tiles:put name="header" type="string">
+            <tiles:putAttribute name="header" type="string">
                 <ul class="tile-header-nav">
                     <!-- Tabs BEGIN -->
-                    <tiles:insert page="/WEB-INF/jsp/tabsmenu-mailing.jsp" flush="false"/>
+                    <tiles:insertTemplate template="/WEB-INF/jsp/tabsmenu-mailing.jsp" flush="false"/>
                     <!-- Tabs END -->
                 </ul>
 
                 <c:if test="${empty mailingListExist or mailingListExist}">
                     <ul class="tile-header-actions">${tileHeaderActions}</ul>
                 </c:if>
-            </tiles:put>
+            </tiles:putAttribute>
         </c:if>
 
-        <tiles:put name="content" type="string">
+        <tiles:putAttribute name="content" type="string">
             <c:if test="${not isMailingGrid}">
                 <div class="tile">
                 <div class="tile-header">
@@ -357,7 +362,7 @@
                                                 src="${previewLink}" border="0"
                                                 data-max-width="${form.width}"
                                                 data-media-query="${form.mediaQuery}"
-                                                style="width: ${form.width}px;">
+                                                style="width: ${form.width}">
                                             Your Browser does not support IFRAMEs, please update!
                                         </iframe>
                                     </div>
@@ -376,8 +381,8 @@
                 </div>
                 </div>
             </c:if>
-        </tiles:put>
-    </tiles:insert>
+        </tiles:putAttribute>
+    </tiles:insertTemplate>
 </mvc:form>
 
 <c:if test="${not isMailingGrid}">

@@ -75,8 +75,6 @@ public interface ProfileFieldDao {
 	 */
 	Set<String> listUserSelectedProfileFieldColumnsWithHistoryFlag(int companyID);
 
-	boolean deleteByCompany(int companyID);
-
 	/**
 	 * Check whether or not a {@code column} exists (either a default (built-in) column or a custom profile field).
 	 *

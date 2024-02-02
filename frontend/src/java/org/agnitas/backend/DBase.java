@@ -1390,6 +1390,14 @@ public class DBase {
 		    (t instanceof org.springframework.transaction.TransactionException)) {
 			return true;
 		}
+		if ((t instanceof java.sql.SQLIntegrityConstraintViolationException) ||
+		    (t instanceof java.sql.SQLSyntaxErrorException)) {
+			return false;
+		}
+		if ((t instanceof java.sql.SQLRecoverableException) ||
+		    (t instanceof java.sql.SQLWarning)) {
+			return true;
+		}
 		if (t instanceof RuntimeException) {
 			return false;
 		}

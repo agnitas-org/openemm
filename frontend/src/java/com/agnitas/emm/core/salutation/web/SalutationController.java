@@ -17,7 +17,7 @@ import java.util.concurrent.Callable;
 import com.agnitas.web.mvc.XssCheckAware;
 import org.agnitas.beans.Title;
 import org.agnitas.beans.impl.TitleImpl;
-import org.agnitas.service.WebStorage;
+import com.agnitas.service.WebStorage;
 import org.agnitas.web.forms.FormUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;

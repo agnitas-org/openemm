@@ -20,7 +20,9 @@ import org.agnitas.service.UserActivityLogService;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.impl.AdminImpl;
+import org.springframework.stereotype.Component;
 
+@Component("userActivityLogAccess")
 public final class UserActivityLogAccessImpl implements UserActivityLogAccess {
 
 	private final UserActivityLogService service;

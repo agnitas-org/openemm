@@ -5,9 +5,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import com.agnitas.emm.core.birtreport.dao.ComBirtReportDao;
-import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.emm.core.target.service.ComTargetService;
-import com.agnitas.service.ComWebStorage;
+import com.agnitas.service.WebStorage;
 import com.agnitas.web.perm.annotations.PermissionMapping;
 
 @Controller
@@ -15,7 +14,7 @@ import com.agnitas.web.perm.annotations.PermissionMapping;
 @PermissionMapping("target")
 public class TargetControllerOpenemm extends TargetController {
 
-    public TargetControllerOpenemm(ComTargetService targetService, ComWebStorage webStorage, UserActivityLogService userActivityLogService, MailingService mailingService, ComBirtReportDao birtReportDao) {
-        super(targetService, webStorage, userActivityLogService, mailingService, birtReportDao);
+    public TargetControllerOpenemm(ComTargetService targetService, WebStorage webStorage, UserActivityLogService userActivityLogService, ComBirtReportDao birtReportDao) {
+        super(targetService, webStorage, userActivityLogService, birtReportDao);
     }
 }

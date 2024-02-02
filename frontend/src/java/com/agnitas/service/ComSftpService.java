@@ -10,12 +10,12 @@
 
 package com.agnitas.service;
 
+import com.agnitas.service.exceptions.SftpServerConnectionException;
+import com.agnitas.service.exceptions.SftpServerCredentialException;
+
 import java.io.InputStream;
 import java.util.List;
 import java.util.function.BiConsumer;
-
-import com.agnitas.service.exceptions.SftpServerConnectionException;
-import com.agnitas.service.exceptions.SftpServerCredentialException;
 
 public interface ComSftpService {
     /**
@@ -33,5 +33,5 @@ public interface ComSftpService {
 
     String getServer(String serverAndCredentials, String privateKey) throws SftpServerCredentialException, SftpServerConnectionException;
 
-    List<String> scanForImages(String serverAndCredentials, String privateKey) throws SftpServerConnectionException, SftpServerCredentialException;
+    List<String> scanForFiles(String serverAndCredentials, String privateKey, String fileMask) throws SftpServerConnectionException, SftpServerCredentialException;
 }

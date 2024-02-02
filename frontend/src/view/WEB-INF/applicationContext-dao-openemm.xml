@@ -100,9 +100,10 @@
 	</bean>
 	
 <!-- ============================================================================================================================== Mediatypes -->
-	<bean id="MediatypesDao" class="com.agnitas.emm.core.mediatypes.dao.ComMediatypesDaoImpl">
+	<bean id="MediatypesDao" class="org.agnitas.emm.core.mediatypes.dao.impl.MediatypesDaoImpl">
 		<property name="dataSource" ref="dataSource" />
 		<property name="javaMailService" ref="JavaMailService" />
+		<property name="mediatypeFactory" ref="MediatypeFactory" />
 		<property name="configService" ref="ConfigService" />
 	</bean>
 	

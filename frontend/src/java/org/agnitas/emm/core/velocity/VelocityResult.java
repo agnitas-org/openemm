@@ -10,7 +10,9 @@
 
 package org.agnitas.emm.core.velocity;
 
-import org.apache.struts.action.ActionErrors;
+import com.agnitas.messages.Message;
+
+import java.util.List;
 
 /**
  * Result of Velocity evaluation.
@@ -36,5 +38,7 @@ public interface VelocityResult {
 	 * 
 	 * @return errors
 	 */
-	public ActionErrors getErrors();					// TODO: That's not quite good. We get a dependency to the view layer. This was done to keep refactoring smaller.
+	public List<Message> getErrors();					// TODO: That's not quite good. We get a dependency to the view layer. This was done to keep refactoring smaller.
+
+	List<String> getErrorMessages();
 }

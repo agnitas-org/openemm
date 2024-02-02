@@ -25,18 +25,18 @@ import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
 import org.springframework.ws.server.endpoint.annotation.RequestPayload;
 import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
-import com.agnitas.beans.ComTrackableLink;
+import com.agnitas.beans.TrackableLink;
 import com.agnitas.beans.LinkProperty;
 import com.agnitas.beans.TrackableLinkSettings;
-import com.agnitas.emm.core.trackablelinks.service.ComTrackableLinkService;
+import com.agnitas.emm.core.trackablelinks.service.TrackableLinkService;
 
 @Endpoint
 public class GetTrackableLinkSettingsEndpoint extends BaseEndpoint {
 
-    private final ComTrackableLinkService trackableLinkService;
+    private final TrackableLinkService trackableLinkService;
     private final SecurityContextAccess securityContextAccess;
 
-    public GetTrackableLinkSettingsEndpoint(ComTrackableLinkService trackableLinkService, final SecurityContextAccess securityContextAccess) {
+    public GetTrackableLinkSettingsEndpoint(TrackableLinkService trackableLinkService, final SecurityContextAccess securityContextAccess) {
         this.trackableLinkService = Objects.requireNonNull(trackableLinkService, "trackableLinkService");
         this.securityContextAccess = Objects.requireNonNull(securityContextAccess, "securityContextAccess");
     }
@@ -54,7 +54,7 @@ public class GetTrackableLinkSettingsEndpoint extends BaseEndpoint {
     }
 
     private void setTrackableLinkSettingsToResponse(GetTrackableLinkSettingsResponse response, TrackableLinkSettings trackableLinkSettings) {
-    	final ComTrackableLink trackableLink = trackableLinkSettings.getTrackableLink();
+    	final TrackableLink trackableLink = trackableLinkSettings.getTrackableLink();
         response.setUrlID(trackableLink.getId());
         response.setUrl(AgnUtils.getStringIfStringIsNull(trackableLink.getFullUrl()));
         response.setActionID(trackableLink.getActionID());

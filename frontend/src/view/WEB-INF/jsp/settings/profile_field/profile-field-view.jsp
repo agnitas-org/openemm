@@ -1,7 +1,5 @@
-<%@ page contentType="text/html; charset=utf-8" errorPage="/error.do" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.action" %>
 <%@ page import="org.agnitas.util.DbColumnType" %>
-<%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
-<%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
@@ -20,6 +18,13 @@
 
 <mvc:form servletRelativeAction="/profiledb/save.action" data-form="resource" id="profileFieldForm" method="POST"
 		  data-action="submit-profile-field-save" data-controller="profile-field-view" modelAttribute="profileForm">
+
+	<script data-initializer="profile-field-view" type="application/json">
+        {
+            "targetUrl": "${targetUrl ne null ? targetUrl : ''}"
+        }
+    </script>
+
 	<div class="tile">
 		<div class="tile-header">
 			<h2 class="headline"><mvc:message code="settings.EditProfileDB_Field"/></h2>
@@ -177,7 +182,12 @@
 				<emm:ShowByPermission token="profileField.visible">
 					<div class="form-group">
 						<div class="col-sm-4">
-							<label class="control-label checkbox-control-label" for="fieldVisible"><mvc:message code="FieldVisible"/></label>
+							<label class="control-label checkbox-control-label" for="fieldVisible">
+							<mvc:message code="FieldVisible"/>
+							<button class="icon icon-help" data-help="help_${helplanguage}/recipient/profileField/FieldVisible.xml" tabindex="-1" type="button">
+							</button>
+							</label>
+							
 						</div>
 						<div class="col-sm-8">
 							<label class="toggle">
@@ -253,8 +263,7 @@
 			<c:if test="${not empty creationDate}">
 				<div class="form-group">
 					<div class="col-sm-4">
-						<label class="control-label" for="creationDate"><bean:message
-								key="default.creationDate"/></label>
+						<label class="control-label" for="creationDate"><mvc:message code="default.creationDate"/></label>
 					</div>
 					<div class="col-sm-8">
 						<input type="text" class="form-control" readonly value="${creationDate}"/>

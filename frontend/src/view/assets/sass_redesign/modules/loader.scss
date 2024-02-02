@@ -1,0 +1,15 @@
+
+.loader {
+  z-index: 1003;
+  color: $c-sidemenu;
+  background-color: $c-white;
+  border: 1px solid $c-sidemenu;
+  border-radius: $border-radius-sm;
+
+  @include desktop {
+    position: fixed;
+    top: 8.5px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+}

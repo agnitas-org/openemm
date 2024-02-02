@@ -820,6 +820,11 @@ public abstract class BaseDaoImpl {
 					insertParameterTypes[i] = Types.NULL;
 				} else if (parameter[i] instanceof Integer) {
 					insertParameterTypes[i] = Types.INTEGER;
+				} else if (parameter[i] instanceof Long) {
+					insertParameterTypes[i] = Types.BIGINT;
+				} else if (parameter[i] instanceof Boolean) {
+					insertParameterTypes[i] = Types.INTEGER;
+					parameter[i] = ((Boolean) parameter[i]) ? 1: 0;
 				} else if (parameter[i] instanceof Double) {
 					insertParameterTypes[i] = Types.DOUBLE;
 				} else if (parameter[i] instanceof Float) {
@@ -893,6 +898,8 @@ public abstract class BaseDaoImpl {
 					insertParameterTypes[i] = Types.NULL;
 				} else if (parameter[i] instanceof Integer) {
 					insertParameterTypes[i] = Types.INTEGER;
+				} else if (parameter[i] instanceof Long) {
+					insertParameterTypes[i] = Types.BIGINT;
 				} else if (parameter[i] instanceof Boolean) {
 					insertParameterTypes[i] = Types.INTEGER;
 					parameter[i] = ((Boolean) parameter[i]) ? 1: 0;
@@ -954,6 +961,15 @@ public abstract class BaseDaoImpl {
 					insertParameterTypes[i] = Types.NULL;
 				} else if (parameter[i] instanceof Integer) {
 					insertParameterTypes[i] = Types.INTEGER;
+				} else if (parameter[i] instanceof Long) {
+					insertParameterTypes[i] = Types.BIGINT;
+				} else if (parameter[i] instanceof Boolean) {
+					insertParameterTypes[i] = Types.INTEGER;
+					parameter[i] = ((Boolean) parameter[i]) ? 1: 0;
+				} else if (parameter[i] instanceof Double) {
+					insertParameterTypes[i] = Types.DOUBLE;
+				} else if (parameter[i] instanceof Float) {
+					insertParameterTypes[i] = Types.FLOAT;
 				} else if (parameter[i] instanceof String) {
 					insertParameterTypes[i] = Types.VARCHAR;
 				} else if (parameter[i] instanceof Date) {
@@ -1127,14 +1143,6 @@ public abstract class BaseDaoImpl {
 		
 		return AgnUtils.findUniqueCloneName(nameList, prefix);
 	}
-
-    protected String getContentSizeExpression() {
-        if (isOracleDB()) {
-            return "DBMS_LOB.GETLENGTH(content)";
-        } else {
-            return "OCTET_LENGTH(content)";
-        }
-    }
     
     protected boolean isDisabledMailingListsSupported() {
 		if (isDisabledMailingListsSupported == null) {

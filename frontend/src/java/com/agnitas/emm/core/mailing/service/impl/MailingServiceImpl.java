@@ -11,7 +11,7 @@
 package com.agnitas.emm.core.mailing.service.impl;
 
 import com.agnitas.beans.Admin;
-import com.agnitas.beans.ComTrackableLink;
+import com.agnitas.beans.TrackableLink;
 import com.agnitas.beans.DynamicTag;
 import com.agnitas.beans.MaildropEntry;
 import com.agnitas.beans.Mailing;
@@ -72,6 +72,8 @@ import org.agnitas.emm.core.mailing.service.WorldMailingAlreadySentException;
 import org.agnitas.emm.core.mailing.service.WorldMailingWithoutNormalTypeException;
 import org.agnitas.emm.core.mailinglist.service.MailinglistNotExistException;
 import org.agnitas.emm.core.mailinglist.service.impl.MailinglistException;
+import org.agnitas.emm.core.mediatypes.dao.MediatypesDao;
+import org.agnitas.emm.core.mediatypes.dao.MediatypesDaoException;
 import org.agnitas.emm.core.mediatypes.factory.MediatypeFactory;
 import org.agnitas.emm.core.target.service.TargetNotExistException;
 import org.agnitas.emm.core.useractivitylog.UserAction;
@@ -141,6 +143,7 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
     private ObjectUsageService objectUsageService;
     private UserActivityLogService userActivityLogService;
 	private CopyMailingService copyMailingService;
+    private MediatypesDao mediatypesDao;
 
 	@Override
 	@Transactional
@@ -157,7 +160,7 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
 			throw new RuntimeException(e);
 		}
        	mailingDao.saveMailing(aMailing, false);
-        mailingDao.updateStatus(aMailing.getId(), MailingStatus.EDIT);
+        mailingDao.updateStatus(aMailing.getCompanyID(), aMailing.getId(), MailingStatus.EDIT, null);
 
 		dynamicTagDao.markNamesAsDeleted( aMailing.getId(), dynNamesForDeletion);
 
@@ -229,7 +232,7 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
 
 	@Override
 	@Transactional
-	public String getMailingStatus(MailingModel model) {
+	public MailingStatus getMailingStatus(MailingModel model) {
 	    mailingModelValidator.assertIsValidToGet(model);
 		int mailingID = model.getMailingId();
 		int companyID = model.getCompanyId();
@@ -238,9 +241,16 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
 			throw new MailingNotExistException(mailingID, mailingID);
 		}
 
-		return mailingDao.getWorkStatus(model.getCompanyId(), mailingID);
+		return mailingDao.getStatus(model.getCompanyId(), mailingID);
 	}
 
+	/*
+	 * TODO: Rework method for transaction support
+	 * 
+	 * Removed @Transactional. 
+	 * Running this method in a transaction affects the backend, that does
+	 * not see the entry created in maildrop_status_tbl.
+	 */
     @Override
     public void sendMailing(MailingModel model, List<UserAction> userActions) throws Exception {
 	    mailingModelValidator.assertIsValidToSend(model);
@@ -258,11 +268,11 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
         if (!DateUtil.isDateForImmediateGeneration(maildrop.getGenDate()) && ((mailing.getMailingType() == MailingType.NORMAL) ||
                 (mailing.getMailingType() == MailingType.FOLLOW_UP))) {
             if (maildrop.getStatus() == MaildropStatus.ADMIN.getCode()) {
-                mailingDao.updateStatus(maildrop.getMailingID(), MailingStatus.ADMIN);
+                mailingDao.updateStatus(maildrop.getCompanyID(), maildrop.getMailingID(), MailingStatus.ADMIN, null);
             } else if (maildrop.getStatus() == MaildropStatus.TEST.getCode()) {
-            	mailingDao.updateStatus(maildrop.getMailingID(), MailingStatus.TEST);
+            	mailingDao.updateStatus(maildrop.getCompanyID(), maildrop.getMailingID(), MailingStatus.TEST, null);
             } else {
-                mailingDao.updateStatus(maildrop.getMailingID(), MailingStatus.SCHEDULED);
+                mailingDao.updateStatus(maildrop.getCompanyID(), maildrop.getMailingID(), MailingStatus.SCHEDULED, maildrop.getSendDate());
             }
         }
     }
@@ -275,7 +285,7 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
 			throw model.isTemplate() ? new TemplateNotExistException() : new MailingNotExistException(model.getCompanyId(), model.getMailingId());
 		}
 		mailingBaseService.deleteMailing(model.getMailingId(), model.getCompanyId());
-        mailingDao.updateStatus(model.getMailingId(), MailingStatus.DISABLE);
+        mailingDao.updateStatus(model.getCompanyId(), model.getMailingId(), MailingStatus.DISABLE, null);
 	}
 	
 	@Override
@@ -402,6 +412,9 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
 			logger.error("UnsupportedEncodingException in sender/reply address", e);
 			throw new RuntimeException(e);
 		}
+		if (model.getPlannedDate() != null) {
+            aMailing.setPlanDate(model.getPlannedDate());
+        }
 		paramEmail.setCharset(model.getCharset());
 		paramEmail.setMailFormat(model.getFormat().getValue());
 		paramEmail.setLinefeed(model.getLinefeed());
@@ -428,7 +441,7 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
 
 	@Override
 	@Transactional
-	public MaildropEntry addMaildropEntry(MailingModel model, List<UserAction> userActions) throws Exception {
+	public MaildropEntry addMaildropEntry(MailingModel model, List<UserAction> userActions) {
         mailingModelValidator.assertIsValidToSend(model);
 		if (!DateUtil.isValidSendDate(model.getSendDate())) {
 			throw new SendDateNotInFutureException();
@@ -513,7 +526,9 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
 			aMailing.setShortname(model.getShortname());
 			aMailing.setIsTemplate(false);
 			aMailing.setMailTemplateID(model.getTemplateId());
-
+            if (model.getPlannedDate() != null) {
+                aMailing.setPlanDate(model.getPlannedDate());
+            }
 			// copy components
 			for (MailingComponent compOrg : template.getComponents().values()) {
 				MailingComponent compNew = cloneBean(compOrg, "MailingComponent");
@@ -545,9 +560,9 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
 			}
 
 			// copy urls
-			for (ComTrackableLink linkOrg : template.getTrackableLinks().values()) {
+			for (TrackableLink linkOrg : template.getTrackableLinks().values()) {
 				linkOrg.setMeasureSeparately(false);
-				ComTrackableLink linkNew =  cloneBean(linkOrg, "TrackableLink");
+				TrackableLink linkNew =  cloneBean(linkOrg, "TrackableLink");
 				linkNew.setId(0);
 				linkNew.setMailingID(0);
 				aMailing.getTrackableLinks().put(linkNew.getFullUrl(), linkNew);
@@ -597,7 +612,6 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
 	}
 
 	@Override
-	@Transactional
 	public Mailing getMailing(MailingModel model) {
         mailingModelValidator.assertIsValidToGet(model);
 		Mailing mailing = mailingDao.getMailing(model.getMailingId(), model.getCompanyId());
@@ -610,7 +624,6 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
 	}
 	
 	@Override
-	@Transactional
 	public Mailing getMailing(final int companyID, final int mailingID) {
 		final Mailing mailing = mailingDao.getMailing(mailingID, companyID);
 		
@@ -672,8 +685,8 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
 	}
 
 	@Override
-	public boolean isMailingMarkedDeleted(int mailingID, int companyID) {
-		return mailingDao.isMailingMarkedDeleted(mailingID, companyID);
+	public boolean exists(int mailingID, int companyID) {
+		return mailingDao.exist(mailingID, companyID);
 	}
 
 	@Override
@@ -737,7 +750,6 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
 	}
 
 	@Override
-	@Transactional
 	public List<TargetLight> listTargetGroupsOfMailing(int companyID, int mailingID) throws MailingNotExistException {
 		Mailing mailing = getMailing(companyID, mailingID);
 		Collection<Integer> targetIdList = mailing.getAllReferencedTargetGroups();
@@ -821,7 +833,7 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
 
 	@Override
 	public void updateStatus(int companyID, int mailingID, MailingStatus status) {
-		this.mailingDao.updateStatus(mailingID, status);
+		mailingDao.updateStatus(companyID, mailingID, status, null);
 	}
 
 	@Override
@@ -1101,7 +1113,17 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
         }
     }
 
-    @Override
+	@Override
+	public void restoreMailing(int mailingId, Admin admin) {
+		mailingDao.restoreMailing(mailingId, admin.getCompanyID());
+	}
+
+	@Override
+	public void bulkRestore(Collection<Integer> mailingIds, Admin admin) {
+		mailingDao.restoreMailings(mailingIds, admin.getCompanyID());
+	}
+
+	@Override
     public boolean isApproved(int mailingId, int companyId) {
         return mailingDao.isApproved(mailingId, companyId);
     }
@@ -1134,6 +1156,26 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
 				admin.getFullUsername()
 		);
     }
+
+    @Override
+    public Mailing getMailing(int mailingId, int companyId, boolean includeDependencies) {
+        return mailingDao.getMailing(mailingId, companyId, includeDependencies);
+    }
+
+    @Override
+    public Map<Integer, Mediatype> getMediatypes(int mailingId, int companyId) throws MediatypesDaoException {
+        return mediatypesDao.loadMediatypes(mailingId, companyId);
+    }
+
+	@Override
+	public boolean isDateBasedMailingWasSentToday(int mailingId) {
+		return mailingDao.isDateBasedMailingWasSentToday(mailingId);
+	}
+
+	@Override
+	public void allowDateBasedMailingResending(int mailingId) {
+		mailingDao.allowDateBasedMailingResending(mailingId);
+	}
 
 	@Required
 	public void setMailingDao(ComMailingDao mailingDao) {
@@ -1231,19 +1273,24 @@ public class MailingServiceImpl implements MailingService, ApplicationContextAwa
 		this.copyMailingService = copyMailingService;
 	}
 
-	@Override
-	public boolean exists(int mailingID, int companyID) {
-		return mailingDao.exist(mailingID, companyID);
-	}
+    @Required
+    public void setMediatypesDao(MediatypesDao mediatypesDao) {
+        this.mediatypesDao = mediatypesDao;
+    }
 
 	@Override
 	public MailingStatus getMailingStatus(int companyID, int id) {
-		String workStatusString = mailingDao.getWorkStatus(companyID, id);
-		return MailingStatus.fromDbKey(workStatusString);
+		MailingStatus workStatus = mailingDao.getStatus(companyID, id);
+		return workStatus;
 	}
 
 	@Override
 	public boolean saveMailingDescriptiveData(Mailing mailing) {
 		return mailingDao.saveMailingDescriptiveData(mailing);
+	}
+
+	@Override
+	public List<LightweightMailing> getMailingsUsingEmmAction(int actionId, int companyID) {
+		return mailingDao.getMailingsUsingEmmAction(actionId, companyID);
 	}
 }

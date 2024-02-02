@@ -1,5 +1,5 @@
 <%@ page language="java" contentType="text/html; charset=utf-8"
-	errorPage="/error.do"%>
+	errorPage="/error.action"%>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring"%>
 <%@ taglib prefix="display" uri="http://displaytag.sf.net"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>

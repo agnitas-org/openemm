@@ -315,6 +315,7 @@ $c-campaign-inactive         : #707173;
 $c-campaign-completed        : #387c00;
 $c-campaign-tested           : #7f51b2;
 $c-campaign-testing          : #109e4d;
+$c-campaign-paused           : #707173;
 
 $i-campaign-open             : $fa-var-check;
 $i-campaign-active           : $fa-var-paper-plane;
@@ -322,6 +323,7 @@ $i-campaign-inactive         : $fa-var-ban;
 $i-campaign-completed        : $fa-var-check;
 $i-campaign-tested           : $fa-var-flask;
 $i-campaign-testing          : $fa-var-flask;
+$i-campaign-paused           : $fa-var-pause-circle;
 
 $campaign-states:(
   open        $c-campaign-open,
@@ -329,7 +331,8 @@ $campaign-states:(
   inactive    $c-campaign-inactive,
   completed   $c-campaign-completed,
   tested      $c-campaign-tested,
-  testing     $c-campaign-testing
+  testing     $c-campaign-testing,
+  paused      $c-campaign-paused
 );
 
 $campaign-state-icons:(
@@ -338,7 +341,8 @@ $campaign-state-icons:(
   inactive    $i-campaign-inactive,
   completed   $i-campaign-completed,
   tested      $i-campaign-tested,
-  testing     $i-campaign-testing
+  testing     $i-campaign-testing,
+  paused      $i-campaign-paused
 );
 
 $linkage-action            : #338599;

@@ -206,8 +206,7 @@ public final class MailingStopServiceImpl implements MailingStopService {
 		final boolean inProgress = this.maildropService.hasMaildropStatus(mailing.getMailingID(), mailing.getCompanyID(), MaildropStatus.WORLD)
 				&& !this.mailingService.isDeliveryComplete(mailing);
 		
-		return inProgress
-				&& !isStopped(mailing);
+		return inProgress && !isStopped(mailing);
 	}
 	
 	@Override

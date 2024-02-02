@@ -1,7 +1,7 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
+<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.action" %>
 <%@ taglib prefix="c"       uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="emm"     uri="https://emm.agnitas.de/jsp/jsp/common" %>
-<%@ taglib prefix="bean"    uri="http://struts.apache.org/tags-bean" %>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
 <c:set var="agnTitleKey" 			value="settings.Mailloop" 	scope="request" />
 <c:set var="agnSubtitleKey" 		value="settings.Mailloop" 	scope="request" />
@@ -17,7 +17,7 @@
         <c:url value="/administration/bounce/new.action"/>
     </c:set>
     <c:set var="createNewItemLabel" scope="request">
-        <bean:message key="settings.NewMailloop"/>
+        <mvc:message code="settings.NewMailloop"/>
     </c:set>
 </emm:ShowByPermission>
 

@@ -66,7 +66,6 @@ import com.agnitas.emm.core.company.service.CompanyTokenService;
 import com.agnitas.emm.core.logon.common.HostAuthenticationCookieExpirationSettings;
 import com.agnitas.emm.core.recipient.service.RecipientProfileHistoryService;
 import com.agnitas.emm.premium.web.SpecialPremiumFeature;
-import com.agnitas.emm.wsmanager.service.WebserviceUserService;
 import com.agnitas.service.ExtendedConversionService;
 import com.agnitas.service.LicenseError;
 import com.agnitas.web.mvc.Popups;
@@ -82,7 +81,6 @@ public class ComCompanyServiceImpl implements ComCompanyService {
     private ConfigService configService;
     private AdminService adminService;
     private AdminGroupService adminGroupService;
-    private WebserviceUserService webserviceUserService;
     private BounceFilterService bounceFilterService;
     protected ComCompanyDao companyDao;
     private CompanyTokenService companyTokenService;
@@ -371,6 +369,8 @@ public class ComCompanyServiceImpl implements ComCompanyService {
         
         checkChangeAndLogCompanyInfoBooleanValue(ConfigValue.AnonymizeAllRecipients, companyId, admin, settings.isAnonymizeAllRecipients());
         
+        checkChangeAndLogCompanyInfoBooleanValue(ConfigValue.AllowHtmlInProfileFields, companyId, admin, settings.isHtmlContentAllowed());
+        
         if (admin.permissionAllowed(Permission.COMPANY_SETTINGS_INTERN)) {      
             checkChangeAndLogCompanyInfoValue(ConfigValue.DefaultLinkExtension, companyId, admin, settings.getDefaultLinkExtension());
 	        
@@ -404,7 +404,7 @@ public class ComCompanyServiceImpl implements ComCompanyService {
 	        
 	        checkChangeAndLogCompanyInfoIntegerValue(ConfigValue.ExpireSuccess, companyId, admin, settings.getExpireSuccess());
 	        
-        	checkChangeAndLogCompanyInfoIntegerValue(ConfigValue.ExpireRecipient, companyId, admin, settings.getRecipientExpireDays());
+        	checkChangeAndLogCompanyInfoIntegerValue(ConfigValue.ExpireRecipient, companyId, admin, settings.getExpireRecipient());
 	        
 	        checkChangeAndLogCompanyInfoIntegerValue(ConfigValue.ExpireBounce, companyId, admin, settings.getExpireBounce());
 	        
@@ -427,6 +427,11 @@ public class ComCompanyServiceImpl implements ComCompanyService {
         if (settings.isRegenerateTargetSqlOnce()) {
         	regenerateTargetSql(companyId);
         	settings.setRegenerateTargetSqlOnce(false);
+        }
+        if (settings.isAutoDeeptracking()){
+            companyDao.setAutoDeeptracking(companyId, true);
+        }else {
+            companyDao.setAutoDeeptracking(companyId, false);
         }
     }
 
@@ -679,11 +684,6 @@ public class ComCompanyServiceImpl implements ComCompanyService {
 	@Required
     public void setAdminGroupService(AdminGroupService adminGroupService) {
         this.adminGroupService = adminGroupService;
-    }
-
-	@Required
-    public void setWebserviceUserService(WebserviceUserService webserviceUserService) {
-        this.webserviceUserService = webserviceUserService;
     }
 
 	@Required

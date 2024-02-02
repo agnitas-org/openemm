@@ -17,8 +17,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
 import java.util.Map.Entry;
+import java.util.Optional;
 
-import com.agnitas.emm.core.useractivitylog.dao.RestfulUserActivityLogDao;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.MailingComponentType;
 import org.agnitas.beans.impl.MailingComponentImpl;
@@ -33,7 +33,9 @@ import com.agnitas.dao.ComMailingComponentDao;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.dao.ComTargetDao;
 import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.company.service.CompanyTokenService;
 import com.agnitas.emm.core.thumbnails.service.ThumbnailService;
+import com.agnitas.emm.core.useractivitylog.dao.RestfulUserActivityLogDao;
 import com.agnitas.emm.restful.BaseRequestResponse;
 import com.agnitas.emm.restful.ErrorCode;
 import com.agnitas.emm.restful.JsonRequestResponse;
@@ -41,6 +43,8 @@ import com.agnitas.emm.restful.ResponseType;
 import com.agnitas.emm.restful.RestfulClientException;
 import com.agnitas.emm.restful.RestfulNoDataFoundException;
 import com.agnitas.emm.restful.RestfulServiceHandler;
+import com.agnitas.emm.util.html.HtmlChecker;
+import com.agnitas.emm.util.html.HtmlCheckerException;
 import com.agnitas.json.Json5Reader;
 import com.agnitas.json.JsonArray;
 import com.agnitas.json.JsonDataType;
@@ -67,6 +71,7 @@ public class ComponentRestfulServiceHandler implements RestfulServiceHandler {
 	private ComTargetDao targetDao;
 	private ComCompanyDao companyDao;
 	private ThumbnailService thumbnailService;
+	private CompanyTokenService companyTokenService;
 
 	@Required
 	public void setUserActivityLogDao(RestfulUserActivityLogDao userActivityLogDao) {
@@ -96,6 +101,11 @@ public class ComponentRestfulServiceHandler implements RestfulServiceHandler {
 	@Required
 	public void setThumbnailService(ThumbnailService thumbnailService) {
 		this.thumbnailService = thumbnailService;
+	}
+
+	@Required
+	public void setCompanyTokenService(CompanyTokenService companyTokenService) {
+		this.companyTokenService = companyTokenService;
 	}
 
 	@Override
@@ -359,6 +369,9 @@ public class ComponentRestfulServiceHandler implements RestfulServiceHandler {
 	private MailingComponent parseComponentJsonObject(byte[] requestData, File requestDataFile, Admin admin) throws Exception {
 		MailingComponent mailingComponent = new MailingComponentImpl();
 		mailingComponent.setCompanyID(admin.getCompanyID());
+
+		Optional<String> companyTokenOptional = companyTokenService.getCompanyToken(admin.getCompanyID());
+		String companyToken = companyTokenOptional.isPresent() ? companyTokenOptional.get() : null;
 		
 		try (InputStream inputStream = RestfulServiceHandler.getRequestDataStream(requestData, requestDataFile)) {
 			try (Json5Reader jsonReader = new Json5Reader(inputStream)) {
@@ -375,9 +388,21 @@ public class ComponentRestfulServiceHandler implements RestfulServiceHandler {
                                 throw new RestfulClientException("Invalid value for 'name'. Max length = " + COMPONENT_NAME_MAX_LENGTH);
                             }
                             mailingComponent.setComponentName((String) entry.getValue());
+							// Check for unallowed html tags
+							try {
+								HtmlChecker.checkForNoHtmlTags(mailingComponent.getComponentName());
+							} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
+								throw new RestfulClientException("Component name contains unallowed HTML tags");
+							}
 						} else if ("description".equals(entry.getKey())) {
 							if (entry.getValue() == null || entry.getValue() instanceof String) {
 								mailingComponent.setDescription((String) entry.getValue());
+								// Check for unallowed html tags
+								try {
+									HtmlChecker.checkForUnallowedHtmlTags(mailingComponent.getDescription(), false);
+								} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
+									throw new RestfulClientException("Component description contains unallowed HTML tags");
+								}
 							} else {
 								throw new RestfulClientException("Invalid data type for 'description'. String expected");
 							}
@@ -403,6 +428,17 @@ public class ComponentRestfulServiceHandler implements RestfulServiceHandler {
 							} else if (entry.getValue() != null && entry.getValue() instanceof String) {
 								String emmBlock = (String) entry.getValue();
 								emmBlock = emmBlock.replace("[COMPANY_ID]", Integer.toString(admin.getCompanyID())).replace("[RDIR_DOMAIN]", companyDao.getRedirectDomain(admin.getCompanyID()));
+								if (StringUtils.isNotBlank(companyToken)) {
+									emmBlock = emmBlock.replace("[CTOKEN]", companyToken);
+								} else {
+									emmBlock = emmBlock.replace("agnCTOKEN=[CTOKEN]", "agnCI=" + admin.getCompanyID());
+								}
+								// Check for unallowed html tags
+								try {
+									HtmlChecker.checkForUnallowedHtmlTags(emmBlock, true);
+								} catch(@SuppressWarnings("unused") final HtmlCheckerException e) {
+									throw new RestfulClientException("Mailing component contains unallowed HTML tags");
+								}
 								if (jsonObject.get("mimetype") != null  && jsonObject.get("mimetype") instanceof String) {
 									mailingComponent.setEmmBlock(emmBlock, (String) jsonObject.get("mimetype"));
 									mimeTypePropertyUsed = true;

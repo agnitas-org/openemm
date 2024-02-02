@@ -38,13 +38,11 @@ public interface MailingWebPreviewService {
 
     String getPreview(PreviewForm previewForm, int companyId, Admin admin) throws Exception;
 
-    String getMailingHtml(int mailingId, boolean mobile, boolean noImages);
-
     Page generateBackEndPreview(PreviewForm previewForm);
 
     boolean isPostMailing(Mailing mailing);
 
     String getMediaQuery(Preview.Size size);
 
-    int getPreviewWidth(Preview.Size size);
+    String getPreviewWidth(Preview.Size size);
 }

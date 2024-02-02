@@ -122,8 +122,8 @@ public class AgnUtils {
 	/** The logger. */
 	private static final Logger logger = LogManager.getLogger(AgnUtils.class);
 
-	public static final String DEFAULT_MAILING_HTML_DYNNAME = "HTML-Version";
-	public static final String DEFAULT_MAILING_TEXT_DYNNAME = "Text";
+	public static final String DEFAULT_MAILING_HTML_DYNNAME = Const.DynName.DEFAULT_MAILING_HTML_DYNNAME;
+	public static final String DEFAULT_MAILING_TEXT_DYNNAME = Const.DynName.DEFAULT_MAILING_TEXT_DYNNAME;
 	public static final String TOC_ITEM_SUFFIX = " (TOC Item)";
 
 	public static final String SESSION_CONTEXT_KEYNAME_ADMIN = "emm.admin";
@@ -717,6 +717,7 @@ public class AgnUtils {
 		return yearList;
 	}
 
+	// TODO remove while removing the old UI design EMMGUI-714
 	public static List<Integer> getCalendarYearList(int startYear) {
 		List<Integer> yearList = new ArrayList<>();
 		GregorianCalendar calendar = new GregorianCalendar();
@@ -726,6 +727,16 @@ public class AgnUtils {
 		}
 		return yearList;
 	}
+	
+    public static List<Integer> getCalendarYearList(int startYear, int extraYears) {
+  		List<Integer> yearList = new ArrayList<>();
+  		GregorianCalendar calendar = new GregorianCalendar();
+  		int currentYear = calendar.get(Calendar.YEAR);
+  		for (int year = currentYear + extraYears; year >= startYear; year--) {
+  			yearList.add(year);
+  		}
+  		return yearList;
+  	}
 
 	public static List<String[]> getMonthList() {
 		List<String[]> monthList = new ArrayList<>();
@@ -898,6 +909,10 @@ public class AgnUtils {
 		}
 		return returnStringBuilder.toString();
 	}
+
+    public static String csvQMark(int count) {
+	    return StringUtils.repeat("?", ",", count);
+    }
 
 	/**
 	 * Sort a map by a Comparator for the keytype
@@ -1616,7 +1631,7 @@ public class AgnUtils {
 	}
 
 	/**
-	 * @deprecated Use "com.agnitas.emm.core.LinkServiceImpl.personalizeLink(ComTrackableLink, String, int, String)" instead
+	 * @deprecated Use "com.agnitas.emm.core.LinkServiceImpl.personalizeLink(TrackableLink, String, int, String)" instead
 	 */
 	@Deprecated
 	public static String replaceHashTags(String hashTagString, @SuppressWarnings("unchecked") Map<String, Object>... replacementMaps) {
@@ -1835,8 +1850,8 @@ public class AgnUtils {
 			if (postfixVersionRaw != null && postfixVersionRaw.contains("mail_version = ")) {
 				postfixVersion = postfixVersionRaw.replace("mail_version = ", "");
 			}
-		} catch (Exception e) {
-			logger.error("Cannot obtain postfix version", e);
+		} catch (@SuppressWarnings("unused") Exception e) {
+			// do nothing
 		}
 		return postfixVersion;
 	}
@@ -1852,8 +1867,8 @@ public class AgnUtils {
 					sendmailVersion = sendmailVersionMatcher.group(1);
 				}
 			}
-		} catch (Exception e) {
-			logger.error("Cannot obtain send mail version", e);
+		} catch (@SuppressWarnings("unused") Exception e) {
+			// do nothing
 		}
 		return sendmailVersion;
 	}
@@ -2573,34 +2588,27 @@ public class AgnUtils {
 				.replace("|", "\\E|\\Q");
 	}
 
-	/**
-	 *  Check for Struts or BeanUtils Bug:
-	 *  Sometimes String-value is filled with String[]-value
-	 *  (This cannot be checked at compile-time, syntax says it is a String, but infact it is a String[])
-	 *  TODO: Check when using newer Strusts version (1.3.10), if Struts-bug still exists
-	 *
-	 *  This method replaces the String[]-values with their last element
-	 */
-	public static Map<String, String> repairFormMap(Map<String, String> formMap) {
-		Map<String, String> resultMap = new HashMap<>();
-		for (Map.Entry<String,String> entry : formMap.entrySet()) {
-			Object value = entry.getValue();
-			if (value instanceof String[]) {
-				// Findbug thinks this cast is a bug, but at runtime this really works
-				String[] keyData = (String[]) ((Object) entry.getValue());
-				resultMap.put(entry.getKey(), keyData[keyData.length - 1]);
-			} else {
-				resultMap.put(entry.getKey(), entry.getValue());
-			}
-		}
-		return resultMap;
-	}
-
 	public static Locale getLocale(HttpServletRequest request) {
         Admin admin = getAdmin(request);
-        return (admin == null)
-        		? Locale.getDefault() //(Locale)request.getSession().getAttribute(org.apache.struts.Globals.LOCALE_KEY)
-        		: admin.getLocale();
+        return getLocale(admin);
+	}
+
+	public static Locale getLocale(PageContext pageContext) {
+		Admin admin = getAdmin(pageContext);
+		return getLocale(admin);
+	}
+
+	private static Locale getLocale(Admin admin) {
+		return (admin == null)
+				? Locale.getDefault()
+				: admin.getLocale();
+	}
+
+	public static String getDateFormat(HttpServletRequest request) {
+		Admin admin = getAdmin(request);
+		return (admin == null)
+				? "M/d/yyyy"
+				: admin.getDateFormat().toPattern();
 	}
 
 	public static boolean isGerman(Locale locale) {

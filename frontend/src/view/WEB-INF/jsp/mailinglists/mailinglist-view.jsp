@@ -1,4 +1,4 @@
-<%@ page language="java" contentType="text/html; charset=utf-8"  errorPage="/error.do" %>
+<%@ page language="java" contentType="text/html; charset=utf-8"  errorPage="/error.action" %>
 <%@ taglib prefix="mvc"     uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="c"       uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="emm"     uri="https://emm.agnitas.de/jsp/jsp/common" %>
@@ -49,6 +49,40 @@
                     <mvc:textarea path="description" id="description" cssClass="form-control" rows="5" placeholder="${descriptionMsg}"/>
                 </div>
             </div>
+
+            <emm:ShowByPermission token="mailinglists.addresses">
+                <div class="form-group">
+                    <div class="col-sm-4">
+                        <label for="description" class="control-label">
+                            <mvc:message var="senderEmailMsg" code="mailing.SenderEmail"/>
+                            ${senderEmailMsg}
+                        </label>
+                    </div>
+                    <div class="col-sm-8">
+                        <%@include file="domain-addresses-dropdown.jspf" %>
+                        <c:choose>
+                            <c:when test="${domainAddressesDropdown eq null}">
+                                <mvc:text path="senderEmail" cssClass="form-control" id="senderEmail" placeholder="${senderEmailMsg}"/>
+                            </c:when>
+                            <c:otherwise>
+                                ${domainAddressesDropdown}
+                            </c:otherwise>
+                        </c:choose>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="col-sm-4">
+                        <label for="description" class="control-label">
+                            <mvc:message var="replyToEmailMsg" code="mailing.ReplyEmail"/>
+                            ${replyToEmailMsg}
+                        </label>
+                    </div>
+                    <div class="col-sm-8">
+                        <mvc:text path="replyEmail" cssClass="form-control" id="replyToEmail" placeholder="${replyToEmailMsg}"/>
+                    </div>
+                </div>
+            </emm:ShowByPermission>
 
             <%@include file="mailinglist-manage-approval-fragment.jspf.jsp" %>
 

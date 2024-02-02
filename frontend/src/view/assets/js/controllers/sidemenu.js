@@ -33,6 +33,20 @@ AGN.Lib.Controller.new('sidemenu', function() {
   });
 
   this.addAction({
+    click: 'switch-to-new-design'
+  }, function() {
+    const $el = this.el;
+    $.post(AGN.url('/ui-design/switch.action'))
+      .done(function() {
+        $el.prop('disabled', true);
+        // hack for wait for visual toggle switch.
+        window.setTimeout(function () {
+          AGN.Lib.Page.reload($el.data('switch-url'))
+        }, 500);
+      });
+  });
+
+  this.addAction({
     mouseleave: 'activateSubmenu'
   }, function() {
     var $item = $(this.el).find('.menu-item');

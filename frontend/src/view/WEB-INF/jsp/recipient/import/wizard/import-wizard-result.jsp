@@ -1,5 +1,5 @@
-<%@page import="org.apache.struts.action.ActionMessage"%>
-<%@ page language="java" contentType="text/html; charset=utf-8" import="org.agnitas.util.importvalues.ImportMode" errorPage="/error.do" %>
+<%@page import="com.agnitas.messages.Message"%>
+<%@ page language="java" contentType="text/html; charset=utf-8" import="org.agnitas.util.importvalues.ImportMode" errorPage="/error.action" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="fn"  uri="http://java.sun.com/jsp/jstl/functions" %>
@@ -59,7 +59,7 @@
 	                    <c:if test="${importWizardSteps.helper.dbInsertStatus > 100}">
 	                        <c:forEach var="messageAndParameter" items="${importWizardSteps.dbInsertStatusMessagesAndParameters}">
 	                            <li class="list-group-item">
-	                            	<bean:message key='<%= ((ActionMessage) pageContext.getAttribute("messageAndParameter")).getKey() %>' arg0='<%= ((ActionMessage) pageContext.getAttribute("messageAndParameter")).getValues().length > 0 ? ((String) ((ActionMessage) pageContext.getAttribute("messageAndParameter")).getValues()[0]) : "" %>'/>
+	                            	<mvc:message code='<%= ((Message) pageContext.getAttribute("messageAndParameter")).getCode() %>' arguments='<%= ((Message) pageContext.getAttribute("messageAndParameter")).getArguments().length > 0 ? ((String) ((Message) pageContext.getAttribute("messageAndParameter")).getArguments()[0]) : "" %>'/>
 	                            </li>
 	                        </c:forEach>
 	                    </c:if>

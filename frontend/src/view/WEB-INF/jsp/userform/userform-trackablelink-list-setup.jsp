@@ -1,9 +1,7 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
-<%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
-<%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
-<%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
+<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.action" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
 <%--@elvariable id="userFormId" type="java.lang.Integer"--%>
 <%--@elvariable id="userFormName" type="java.lang.String"--%>
@@ -62,7 +60,7 @@
             <c:set target="${element}" property="extraAttributes" value="data-form-target='#userFormTrackableLinksForm' data-form-submit-event=''"/>
             <c:set target="${element}" property="iconBefore" value="icon-save"/>
             <c:set target="${element}" property="name">
-                <bean:message key="button.Save"/>
+                <mvc:message code="button.Save"/>
             </c:set>
         </emm:instantiate>
 </emm:instantiate>

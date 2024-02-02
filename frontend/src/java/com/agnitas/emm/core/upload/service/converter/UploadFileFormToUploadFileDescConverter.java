@@ -10,9 +10,11 @@
 
 package com.agnitas.emm.core.upload.service.converter;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Objects;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.stereotype.Component;
 
@@ -29,12 +31,13 @@ public class UploadFileFormToUploadFileDescConverter implements Converter<Upload
         fileDescription.setEmail(source.getEmail());
         fileDescription.setFirstName(source.getFirstName());
         fileDescription.setLastName(source.getName());
-        Arrays.stream(source.getNotifyEmail())
+        Arrays.stream(ArrayUtils.nullToEmpty(source.getNotifyEmail()))
                 .filter(Objects::nonNull)
                 .findFirst()
                 .ifPresent(fileDescription::setNotifyEmail);
         fileDescription.setDescription(source.getDescription());
         fileDescription.setPhone(source.getPhone());
+        fileDescription.setOwners(new ArrayList<>(source.getOwners()));
         return fileDescription;
     }
 }

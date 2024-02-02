@@ -558,8 +558,8 @@ public class PreviewImpl implements Preview {
 		return makePreview(mailingID, customerID, null, null, false, false, false, false, cachable, null, false, sendDate, false);
 	}
 	@Override
-	public Page makePreview(long mailingID, long customerID, boolean cachable, boolean isMobile) {
-		return makePreview(mailingID, customerID, null, null, false, false, false, false, cachable, null, isMobile, 0L, false);
+	public Page makePreview(long mailingID, long customerID, boolean cachable, boolean isMobile, boolean anon, boolean onAnonPreserveLinks) {
+		return makePreview(mailingID, customerID, null, null, anon, false, false, false, cachable, null, isMobile, 0L, onAnonPreserveLinks);
 	}
 
 	@Override
@@ -569,9 +569,9 @@ public class PreviewImpl implements Preview {
 	}
 
 	@Override
-	public Page makePreview(long mailingID, long customerID, long targetID, boolean isMobile) {
+	public Page makePreview(long mailingID, long customerID, long targetID, boolean isMobile, boolean anon, boolean onAnonPreserveLinks) {
 		long[] targetIDs = { targetID };
-		return makePreview(mailingID, customerID, null, null, false, false, false, false, false, targetIDs, isMobile, 0L, false);
+		return makePreview(mailingID, customerID, null, null, anon, false, false, false, false, targetIDs, isMobile, 0L, onAnonPreserveLinks);
 	}
 
 	@Override

@@ -10,6 +10,9 @@
 
 package com.agnitas.emm.core.upload.service.converter;
 
+import java.util.HashSet;
+
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.stereotype.Component;
 
@@ -28,6 +31,7 @@ public class UploadFileDescToUploadFileFormConverter implements Converter<Upload
         form.setFirstName(source.getFirstName());
         form.setPhone(source.getPhone());
         form.setOwner(source.getOwner());
+        form.setOwners(new HashSet<>(CollectionUtils.emptyIfNull(source.getOwners())));
         return form;
     }
 }

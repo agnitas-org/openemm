@@ -10,7 +10,6 @@
 
 package com.agnitas.messages;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -26,7 +25,6 @@ import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.util.AgnUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.struts.taglib.bean.WriteTag;
 
 import com.agnitas.dao.ComMessageDao;
 import com.agnitas.dao.impl.ComMessageDaoImpl;
@@ -44,25 +42,6 @@ public class DBMessagesResource {
 
 	private static final String DEFAULT_LANGUAGE = "en";
 	private static final String DEFAULT_LANGUAGE_MAPKEY = "default";
-	
-	private static List<String> EXPLICIT_NULL_VALUE_KEYS = Arrays.asList(
-		WriteTag.DATE_FORMAT_KEY,
-		WriteTag.FLOAT_FORMAT_KEY,
-		WriteTag.INT_FORMAT_KEY,
-		WriteTag.SQL_DATE_FORMAT_KEY,
-		WriteTag.SQL_TIME_FORMAT_KEY,
-		WriteTag.SQL_TIMESTAMP_FORMAT_KEY
-	);
-	
-	/**
-	 * Special message key used by struts for "<html:errors>"-tags
-	 */
-	private static List<String> EXPLICIT_EMPTYSTRING_VALUE_KEYS = Arrays.asList(
-		"errors.header",
-		"errors.prefix",
-		"errors.suffix",
-		"errors.footer"
-	);
 	
 	/**
 	 * Import new messages from new_messages.properties file
@@ -207,12 +186,6 @@ public class DBMessagesResource {
 			return allMessages.get(fallbackLanguage).get(key);
 		} else if (allMessages.containsKey(DEFAULT_LANGUAGE_MAPKEY) && allMessages.get(DEFAULT_LANGUAGE_MAPKEY).containsKey(key) && allMessages.get(DEFAULT_LANGUAGE_MAPKEY).get(key) != null) {
 			return allMessages.get(DEFAULT_LANGUAGE_MAPKEY).get(key);
-		} else if(EXPLICIT_NULL_VALUE_KEYS.contains(key)) {
-			// Some keys need an explicit null value if not set otherwise
-			return null;
-		} else if(EXPLICIT_EMPTYSTRING_VALUE_KEYS.contains(key)) {
-			// Some keys need an explicit empty string value if not set otherwise
-			return "";
 		} else {
 			logger.error("[missing message for key \"" + key + "\"]", new Exception()); // new Exception() for Stacktrace in log
 			return "[missing message for key \"" + key + "\"]";

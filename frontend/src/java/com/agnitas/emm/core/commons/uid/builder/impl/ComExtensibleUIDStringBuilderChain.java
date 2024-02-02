@@ -15,16 +15,16 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Vector;
 
-import org.agnitas.emm.core.commons.daocache.CompanyDaoCache;
 import org.agnitas.emm.core.commons.uid.builder.ExtensibleUIDStringBuilder;
 import org.agnitas.emm.core.commons.uid.builder.impl.exception.RequiredInformationMissingException;
 import org.agnitas.emm.core.commons.uid.builder.impl.exception.UIDStringBuilderException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.agnitas.beans.Company;
 import com.agnitas.emm.core.commons.uid.ComExtensibleUID;
 import com.agnitas.emm.core.commons.uid.ExtensibleUidVersion;
+import com.agnitas.emm.core.commons.uid.beans.CompanyUidData;
+import com.agnitas.emm.core.commons.uid.daocache.impl.CompanyUidDataDaoCache;
 
 public final class ComExtensibleUIDStringBuilderChain implements ExtensibleUIDStringBuilder {
 
@@ -37,7 +37,7 @@ public final class ComExtensibleUIDStringBuilderChain implements ExtensibleUIDSt
 	private List<ExtensibleUIDStringBuilder> stringBuilderList = new Vector<>();
 	
 	/** Cache for companies. */
-	private CompanyDaoCache companyDaoCache;
+	private CompanyUidDataDaoCache companyUidDataCache;
 	
 	/** Newest UID version, that is handled by the list of string builder. */
 	private ExtensibleUidVersion newestUIDVersion;
@@ -62,8 +62,8 @@ public final class ComExtensibleUIDStringBuilderChain implements ExtensibleUIDSt
 	 * 
 	 * @param cache CompanyDaoCache
 	 */
-	public final void setCompanyDaoCache(final CompanyDaoCache cache) {
-		this.companyDaoCache = Objects.requireNonNull(cache, "Cache canno tbe null");
+	public final void setCompanyUidDataDaoCache(final CompanyUidDataDaoCache cache) { // TODO Replace by constructor injection
+		this.companyUidDataCache = Objects.requireNonNull(cache, "Cache canno tbe null");
 	}
 	
 	// ------------------------------------------------------------------------------ Business Logic
@@ -72,13 +72,13 @@ public final class ComExtensibleUIDStringBuilderChain implements ExtensibleUIDSt
 	 * Returns the UID version enabled for given company.
 	 * If version number is 0 or version number is unknown, the latest UID version is returned.
 	 * 
-	 * @param company company
+	 * @param companyUidData UID data for company
 	 * 
 	 * @return UID version enabled for given company 
 	 */
-	private static final ExtensibleUidVersion enabledUidVersionFromCompany(final Company company) {
+	private static final ExtensibleUidVersion enabledUidVersionFromCompany(final CompanyUidData companyUidData) {
 		try {
-			final ExtensibleUidVersion version = ExtensibleUidVersion.fromVersionNumber(company.getEnabledUIDVersion());
+			final ExtensibleUidVersion version = ExtensibleUidVersion.fromVersionNumber(companyUidData.getEnabledUIDVersion());
 			
 			if(version.getVersionCode() == 0) {
 				return ExtensibleUidVersion.latest();
@@ -94,13 +94,13 @@ public final class ComExtensibleUIDStringBuilderChain implements ExtensibleUIDSt
 	@Override
 	public String buildUIDString(final ComExtensibleUID extensibleUID) throws UIDStringBuilderException, RequiredInformationMissingException {
 		// Read the company for the UID to determine, which is the first string builder we try to use for UID generation.
-		final Company company = this.companyDaoCache.getItem(extensibleUID.getCompanyID());
+		final CompanyUidData companyUidData = this.companyUidDataCache.getItem(extensibleUID.getCompanyID());
 		
 		// Determine the UID version that is enabled for this company
-		final ExtensibleUidVersion enabledUidversion = enabledUidVersionFromCompany(company);
+		final ExtensibleUidVersion enabledUidversion = enabledUidVersionFromCompany(companyUidData);
 		
 		if(logger.isInfoEnabled()) {
-			logger.info(String.format("Company %d has UID version %s enabled", company.getId(), enabledUidversion));
+			logger.info(String.format("Company %d has UID version %s enabled", extensibleUID.getCompanyID(), enabledUidversion));
 		}
 		
 		for(final ExtensibleUIDStringBuilder stringBuilder : this.stringBuilderList) {

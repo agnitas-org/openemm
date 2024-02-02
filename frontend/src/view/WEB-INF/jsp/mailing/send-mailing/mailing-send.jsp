@@ -1,10 +1,9 @@
-<%@ page contentType="text/html; charset=utf-8" errorPage="/error.do" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.action" %>
 <%@ page import="com.agnitas.emm.common.MailingType" %>
 <%@ page import="com.agnitas.beans.Mailing" %>
-<%@ taglib uri="https://emm.agnitas.de/jsp/jstl/tags" prefix="agn" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
-<%@ taglib prefix="tiles" uri="http://struts.apache.org/tags-tiles" %>
+<%@ taglib prefix="tiles" uri="http://tiles.apache.org/tags-tiles" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
@@ -35,12 +34,12 @@
     </c:url>
 </c:if>
 
-<tiles:insert page="/WEB-INF/jsp/mailing/template.jsp">
+<tiles:insertTemplate template="/WEB-INF/jsp/mailing/template.jsp">
     <c:if test="${isMailingGrid}">
-        <tiles:put name="header" type="string">
+        <tiles:putAttribute name="header" type="string">
             <ul class="tile-header-nav">
                 <!-- Tabs BEGIN -->
-                <tiles:insert page="/WEB-INF/jsp/tabsmenu-mailing.jsp" flush="false"/>
+                <tiles:insertTemplate template="/WEB-INF/jsp/tabsmenu-mailing.jsp" flush="false"/>
                 <!-- Tabs END -->
             </ul>
 
@@ -67,10 +66,10 @@
                     </li>
                 </ul>
             </c:if>
-        </tiles:put>
+        </tiles:putAttribute>
     </c:if>
 
-    <tiles:put name="content" type="string">
+    <tiles:putAttribute name="content" type="string">
         <div class="${isMailingGrid ? "tile-content-padded" : "row"}">
 
             <c:set var="contentAttr" value=""/>
@@ -145,7 +144,7 @@
                             <div class="tile-content">
                                 <div class="mailing-preview-wrapper">
                                     <c:url var="deliveryStatisticsBoxLink" value="/mailing/send/${form.mailingID}/delivery-status-box/load.action"/>
-                                    <div data-load="${deliveryStatisticsBoxLink}" data-load-interval="50000"></div>
+                                    <div id="delivery-status-box" data-load="${deliveryStatisticsBoxLink}" data-load-interval="50000"></div>
                                 </div>
                             </div>
                         </div>
@@ -155,8 +154,8 @@
             </c:if>
         </div>
         <!-- Row END -->
-    </tiles:put>
-</tiles:insert>
+    </tiles:putAttribute>
+</tiles:insertTemplate>
 
 <script id="recipients-row" type="text/x-mustache-template">
     <tr class="js-recipients-row">

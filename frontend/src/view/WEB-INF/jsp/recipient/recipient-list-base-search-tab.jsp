@@ -1,4 +1,4 @@
-<%@ page contentType="text/html; charset=utf-8" buffer="32kb" errorPage="/error.do" %>
+<%@ page contentType="text/html; charset=utf-8" buffer="32kb" errorPage="/error.action" %>
 <%@ page import="org.agnitas.beans.BindingEntry" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>

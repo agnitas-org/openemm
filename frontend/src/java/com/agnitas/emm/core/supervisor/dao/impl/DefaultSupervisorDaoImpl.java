@@ -86,4 +86,9 @@ public class DefaultSupervisorDaoImpl implements ComSupervisorDao {
 	public boolean existsSupervisor(String supervisorName) {
 		return false;
 	}
+
+	@Override
+	public boolean deleteSupervisorPermissionByCompany(int companyID) {
+		return true;
+	}
 }

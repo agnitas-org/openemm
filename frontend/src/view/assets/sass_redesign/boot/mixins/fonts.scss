@@ -1,0 +1,5 @@
+@mixin font($fntSize, $fntWeight: $font-weight-semibold, $line-height: 132%) {
+  font-weight: $fntWeight;
+  font-size: $fntSize;
+  line-height: $line-height;
+}

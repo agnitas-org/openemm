@@ -97,6 +97,22 @@ For multi-selects you can also use `data-url` attributes on `<option>` elements 
         options.inlineTags = true;
       }
 
+      if ( $el.is('[data-sort]') ) {
+        if ($el.data('sort') === 'alphabetic') {
+          options.sortResults = function (results, container, query) {
+            return results.sort(function(a, b) {
+              if ($(a.element).is('[data-fix-position]')) {
+                return -1;
+              } else if ($(b.element).is('[data-fix-position]')) {
+                return 1;
+              }
+
+              return a.text.toLowerCase().localeCompare(b.text.toLowerCase());
+            });
+          }
+        }
+      }
+
       if ( $el.prop('multiple') ) {
         var selectionTemplateId = $el.data('selection-template');
 

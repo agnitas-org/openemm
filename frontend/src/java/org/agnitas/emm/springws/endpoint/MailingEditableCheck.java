@@ -23,9 +23,9 @@ import org.agnitas.emm.springws.exception.MailingNotEditableException;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
-import com.agnitas.beans.ComTrackableLink;
+import com.agnitas.beans.TrackableLink;
 import com.agnitas.emm.core.mailing.service.MailingPropertiesRules;
-import com.agnitas.emm.core.trackablelinks.service.ComTrackableLinkService;
+import com.agnitas.emm.core.trackablelinks.service.TrackableLinkService;
 
 /**
  * Auxiliary class for webservices to check, that a mailing is editable.
@@ -39,7 +39,7 @@ public class MailingEditableCheck {
 
 	private final ComponentService componentService;
 	private final DynamicTagContentService dynamicTagContentService;
-    private final ComTrackableLinkService trackableLinkService;
+    private final TrackableLinkService trackableLinkService;
 
 	/** Config service to enable / disable check. */
 	private final ConfigService configService;
@@ -52,7 +52,7 @@ public class MailingEditableCheck {
 	 * 
 	 * @throws NullPointerException if one of the arguments is <code>null</code> 
 	 */
-	public MailingEditableCheck(final MailingPropertiesRules rules, final ConfigService configService, @Qualifier("componentService") final ComponentService componentService, final DynamicTagContentService dynamicTagContentServices, final ComTrackableLinkService trackableLinkService) {
+	public MailingEditableCheck(final MailingPropertiesRules rules, final ConfigService configService, @Qualifier("componentService") final ComponentService componentService, final DynamicTagContentService dynamicTagContentServices, final TrackableLinkService trackableLinkService) {
 		this.mailingPropertiesRules = Objects.requireNonNull(rules);
 		this.configService = Objects.requireNonNull(configService);
 		this.componentService = Objects.requireNonNull(componentService);
@@ -101,7 +101,7 @@ public class MailingEditableCheck {
 	
 	public void requireMailingForTrackableLinkEditable(final int urlId, final int companyId) throws MailingNotEditableException {
 		if(isCheckEnabled(companyId)) {
-			final ComTrackableLink link = this.trackableLinkService.getTrackableLink(companyId, urlId);
+			final TrackableLink link = this.trackableLinkService.getTrackableLink(companyId, urlId);
 			
 			if(link != null) {
 				doCheck(link.getMailingID(), link.getCompanyID());

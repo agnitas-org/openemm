@@ -11,7 +11,7 @@
 package com.agnitas.emm.core.commons.web;
 
 import com.agnitas.web.perm.annotations.AlwaysAllowed;
-import org.agnitas.service.WebStorage;
+import com.agnitas.service.WebStorage;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 @AlwaysAllowed
 @RestController
 @RequestMapping("/sidebar/ajax")
+// TODO remove while removing the old UI design EMMGUI-714
 public class SidebarPropertiesAjaxController {
 
     private final WebStorage webStorage;

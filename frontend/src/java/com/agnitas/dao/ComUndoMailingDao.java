@@ -18,17 +18,7 @@ import com.agnitas.beans.ComUndoMailing;
 /**
  * Interface to access undo steps of mailings.
  */
-public interface ComUndoMailingDao {
-	/**
-	 * Save undo data for the given mailing.
-	 * 
-	 * @param mailingId mailing ID to save undo steps for
-	 * @param undoId ID of the undo step
-	 * @param undoCreationDate timestamp of creating undo step
-	 * @param undoAdminId initiator of undo step
-	 */
-	void saveUndoData(int mailingId, int undoId, Date undoCreationDate, int undoAdminId);
-	
+public interface ComUndoMailingDao {	
 	/**
 	 * Get the last undo step for the given mailing.
 	 * 
@@ -61,5 +51,7 @@ public interface ComUndoMailingDao {
 	List<Integer> findAllUndoIdsForMailings(List<Integer> mailings);
 
 	void deleteUndoData(List<Integer> undoIds);
+
+	int saveUndoData(int mailingId, Date date, int adminId);
 
 }

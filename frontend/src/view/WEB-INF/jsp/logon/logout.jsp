@@ -1,5 +1,5 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
-<%@ taglib prefix="tiles" uri="http://struts.apache.org/tags-tiles" %>
+<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.action" %>
+<%@ taglib prefix="tiles" uri="http://tiles.apache.org/tags-tiles" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib prefix="s" uri="http://www.springframework.org/tags" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
@@ -20,7 +20,7 @@
 
         <link rel="shortcut icon" href="<c:url value="/favicon.ico"/>">
 
-        <tiles:insert page="/WEB-INF/jsp/assets.jsp"/>
+        <tiles:insertTemplate template="/WEB-INF/jsp/assets.jsp"/>
     </head>
     <body class="systempage">
         <div class="system-tile" role="main">

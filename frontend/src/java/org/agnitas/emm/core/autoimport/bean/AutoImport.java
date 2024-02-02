@@ -69,7 +69,6 @@ public class AutoImport extends AutoImportLight {
 	}
 	
 	private AutoImportType type = AutoImportType.Recipient;
-	private int adminId;
 	private int importProfileId;
 	private int importCsvDescriptionID;
 	private int importReferenceTableID;
@@ -88,8 +87,8 @@ public class AutoImport extends AutoImportLight {
 	private Date laststart;
 	private boolean running;
 	private String lastresult;
-	private int lastresultID;
-	private boolean error;
+	private int recipientsReportId;
+	private Boolean isSuccessful;
 	private String intervalpattern;
 	private String intervalAsJson;
 	private Date nextStart;
@@ -101,7 +100,7 @@ public class AutoImport extends AutoImportLight {
 	private String timeZone;
 	private int mailingID;
 	private int contentSourceID;
-	private ContentSourceType contentSourceType = ContentSourceType.HTML;
+	private ContentSourceType contentSourceType;
 
 	private List<Integer> mailinglists = new ArrayList<>();
 	
@@ -117,14 +116,6 @@ public class AutoImport extends AutoImportLight {
 	private Locale reportLocale = new Locale("en", "US");
 	private String reportTimezone = "Europe/Berlin";
 	
-	public int getAdminId() {
-		return adminId;
-	}
-
-	public void setAdminId(int adminId) {
-		this.adminId = adminId;
-	}
-
 	public int getImportProfileId() {
 		return importProfileId;
 	}
@@ -293,20 +284,20 @@ public class AutoImport extends AutoImportLight {
 		this.lastresult = lastresult;
 	}
 
-	public int getLastresultID() {
-		return lastresultID;
+	public int getRecipientsReportId() {
+		return recipientsReportId;
 	}
 
-	public void setLastresultID(int lastresultID) {
-		this.lastresultID = lastresultID;
+	public void setRecipientsReportId(int recipientsReportId) {
+		this.recipientsReportId = recipientsReportId;
 	}
 
-	public void setIsError(boolean error) {
-		this.error = error;
+	public Boolean getSuccessful() {
+		return isSuccessful;
 	}
 
-	public boolean isError() {
-		return error;
+	public void setSuccessful(Boolean successful) {
+		isSuccessful = successful;
 	}
 
 	public String getIntervalpattern() {

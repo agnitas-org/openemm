@@ -39,7 +39,7 @@ public class Permission {
 	public static final Permission ADMIN_SETGROUP = new Permission("admin.setgroup", true, PermissionType.Standard);
 	public static final Permission ADMIN_SETPERMISSION = new Permission("admin.setpermission", true, PermissionType.Standard);
 	public static final Permission ADMIN_SHOW = new Permission("admin.show", true, PermissionType.Standard);
-	public static final Permission ADMINLOG_SHOW = new Permission("adminlog.show", false, PermissionType.Standard);
+	public static final Permission ADMINLOG_SHOW = new Permission("adminlog.show", true, PermissionType.Standard);
 	public static final Permission ADMIN_SEND_WELCOME = new Permission("admin.sendWelcome", true, PermissionType.Standard);
 
 	public static final Permission RESTFULUSER_CHANGE = new Permission("restfulUser.change", true, PermissionType.System);
@@ -66,7 +66,7 @@ public class Permission {
 	public static final Permission HTML_EDITOR_HIDE = new Permission("mailing.editor.hide.html", false, PermissionType.Standard);
 	public static final Permission CKEDITOR_EXTENDED = new Permission("mailing.editor.extended", false, PermissionType.Standard);
 
-	public static final Permission DATASOURCE_SHOW = new Permission("datasource.show", false, PermissionType.Standard);
+	public static final Permission DATASOURCE_SHOW = new Permission("datasource.show", true, PermissionType.Standard);
 	
 	public static final Permission EXPORT_CHANGE = new Permission("export.change", true, PermissionType.Standard);
 	public static final Permission EXPORT_DELETE = new Permission("export.delete", true, PermissionType.Standard);
@@ -93,7 +93,7 @@ public class Permission {
 	public static final Permission IMPORT_MODE_UNSUBSCRIBE = new Permission("import.mode.unsubscribe", true, PermissionType.Standard);
 	public static final Permission IMPORT_MODE_DUPLICATES = new Permission("import.mode.duplicates", true, PermissionType.Standard);
 	/** Import customer data without subscribing it to a mailinglist **/
-	public static final Permission IMPORT_WITHOUT_MAILINGLIST = new Permission("import.mailinglist.without", false, PermissionType.Premium);
+	public static final Permission IMPORT_WITHOUT_MAILINGLIST = new Permission("import.mailinglist.without", false, PermissionType.Standard);
 
 	public static final Permission MAILING_ATTACHMENTS_SHOW = new Permission("mailing.attachments.show", true, PermissionType.Standard);
 	public static final Permission MAILING_CAN_SEND_ALWAYS = new Permission("mailing.can_send_always", true, PermissionType.Standard);
@@ -102,10 +102,11 @@ public class Permission {
 	public static final Permission MAILING_COMPONENTS_CHANGE = new Permission("mailing.components.change", true, PermissionType.Standard);
 	public static final Permission MAILING_COMPONENTS_SHOW = new Permission("mailing.components.show", true, PermissionType.Standard);
 	public static final Permission MAILING_CONTENT_CHANGE_ALWAYS = new Permission("mailing.content.change.always", false, PermissionType.System);
-	public static final Permission MAILING_CONTENT_SHOW_EXCLUDED_TARGETGROUPS = new Permission("mailing.content.showExcludedTargetgroups", true, PermissionType.Standard);
+	public static final Permission MAILING_CONTENT_SHOW_EXCLUDED_TARGETGROUPS = new Permission("mailing.content.showExcludedTargetgroups", false, PermissionType.Standard);
 	/** Negative right **/
 	public static final Permission MAILING_CONTENT_SHOW = new Permission("mailing.content.show", true, PermissionType.Standard);
 	public static final Permission MAILING_CONTENT_TYPE_MULTI = new Permission("mailing.content.type.multi", false, PermissionType.Premium);
+	public static final Permission MAILING_DELETE = new Permission("mailing.delete", true, PermissionType.Standard);
 	/** Allow link extension change **/
 	public static final Permission MAILING_EXTEND_TRACKABLE_LINKS = new Permission("mailing.extend_trackable_links", true, PermissionType.Standard);
 	public static final Permission MAILING_IMPORT = new Permission("mailing.import", true, PermissionType.Standard);
@@ -116,8 +117,10 @@ public class Permission {
 	public static final Permission MAILING_SETMAXRECIPIENTS = new Permission("mailing.setmaxrecipients", true, PermissionType.Standard);
 	public static final Permission MAILING_SHOW = new Permission("mailing.show", true, PermissionType.Standard);
 	public static final Permission MAILING_SHOW_TYPES = new Permission("mailing.show.types", true, PermissionType.Standard);
+	
+	/** Negative permission **/
+	public static final Permission MAILING_CONTENT_READONLY = new Permission("mailing.content.readonly", true, PermissionType.Standard);
 
-	/** Edit link targets in sent mailings **/
 	public static final Permission MAILINGLIST_CHANGE = new Permission("mailinglist.change", true, PermissionType.Standard);
 	public static final Permission MAILINGLIST_DELETE = new Permission("mailinglist.delete", true, PermissionType.Standard);
 	public static final Permission MAILINGLIST_RECIPIENTS_DELETE = new Permission("mailinglist.recipients.delete", true, PermissionType.Standard);
@@ -138,10 +141,7 @@ public class Permission {
 	public static final Permission RECIPIENT_DELETE = new Permission("recipient.delete", true, PermissionType.Standard);
 	public static final Permission RECIPIENT_GENDER_EXTENDED = new Permission("recipient.gender.extended", true, PermissionType.Standard);
 	public static final Permission RECIPIENT_HISTORY = new Permission("recipient.history", true, PermissionType.Standard);
-
-	public static final Permission RECIPIENT_PROFILEFIELD_HTML_ALLOWED = new Permission("recipient.profileField.html.allowed", false, PermissionType.Premium);
 	public static final Permission RECIPIENT_SHOW = new Permission("recipient.show", true, PermissionType.Standard);
-	public static final Permission RECIPIENT_TRACKING_VETO = new Permission("recipient.tracking.veto", true, PermissionType.Standard);
 	public static final Permission RECIPIENT_HISTORY_MAILING_DELIVERY = new Permission("recipient.history.mailing.delivery", false, PermissionType.Premium);
 
 	public static final Permission ROLE_CHANGE = new Permission("role.change", true, PermissionType.Standard);
@@ -151,9 +151,11 @@ public class Permission {
 	public static final Permission SALUTATION_CHANGE = new Permission("salutation.change", true, PermissionType.Standard);
 	public static final Permission SALUTATION_DELETE = new Permission("salutation.delete", true, PermissionType.Standard);
 	public static final Permission SALUTATION_SHOW = new Permission("salutation.show", true, PermissionType.Standard);
-
+	public static final Permission SHOW_MIGRATION_PERMISSIONS = new Permission("master.permission.migration.show", false, PermissionType.System);
 	public static final Permission SERVER_STATUS = new Permission("server.status", true, PermissionType.System);
 
+	public static final Permission SETTINGS_EXTENDED = new Permission("settings.extended", true, PermissionType.Standard);
+	
 	public static final Permission STATISTIC_SOFTBOUNCES_SHOW = new Permission("statistic.softbounces.show", true, PermissionType.Standard);
 
 	public static final Permission STATS_DOMAINS = new Permission("stats.domains", true, PermissionType.Standard);
@@ -209,7 +211,6 @@ public class Permission {
 	public static final Permission MAILING_COMPONENTS_SFTP = new Permission("mailing.components.sftp", false, PermissionType.Premium);
 	public static final Permission MAILING_CONTENT_DISABLE_LINKEXTENSION = new Permission("mailing.content.disableLinkExtension", false, PermissionType.Premium);
 	public static final Permission MAILING_CONTENTSOURCE_DATE_LIMIT = new Permission("mailing.contentsource.date.limit", false, PermissionType.Standard);
-	public static final Permission MAILING_DELETE = new Permission("mailing.delete", false, PermissionType.Standard);
 	public static final Permission MAILING_ENVELOPE_ADDRESS = new Permission("mailing.envelope_address", false, PermissionType.Standard);
 	public static final Permission MAILING_EXPIRE = new Permission("mailing.expire", false, PermissionType.System);
 
@@ -240,26 +241,37 @@ public class Permission {
 
 	public static final Permission MAILING_RESUME_WORLD = new Permission("mailing.resume.world", false, PermissionType.Standard);
 
+	public static final Permission MAILING_RECIPIENTS_SHOW = new Permission("mailing.recipients.show", true, PermissionType.Standard);
+
     public static final Permission EXPORT_OWN_COLUMNS = new Permission("export.ownColumns", false, PermissionType.Standard);
     
 	public static final Permission COMPANY_SETTINGS_INTERN = new Permission("company.settings.intern", false, PermissionType.System);
 
 	public static final Permission MAILING_ENCRYPTED_SEND = new Permission("mailing.encrypted.send", false, PermissionType.System);
-	public static final Permission FIREFOX_SCREENSHOTS = new Permission("firefox.screenshots", false, PermissionType.System);
 
 	public static final Permission AUTO_IMPORT_CONTENT_SOURCE = new Permission("auto.import.content.source", false, PermissionType.Premium);
 	public static final Permission USER_ACTIVITY_ACTIONS_EXTENDED = new Permission("user.activity.actions.extended", false, PermissionType.System);
+	
+	public static final Permission IMPORT_DATATYPE_JSON = new Permission("import.datatype.json", false, PermissionType.Premium);
 
-	// Special migration and rollback permissions
-    public static final Permission SHOW_MIGRATION_PERMISSIONS = new Permission("master.permission.migration.show", false, PermissionType.System);
-    public static final Permission EXPORT_ROLLBACK = new Permission("export.rollback", false, PermissionType.Migration);
-    public static final Permission IMPORT_WIZARD_ROLLBACK = new Permission("import.wizard.rollback", false, PermissionType.Migration);
-	public static final Permission AUTO_EXPORT_ROLLBACK = new Permission("auto.export.rollback", false, PermissionType.Migration);
-	public static final Permission AUTO_IMPORT_ROLLBACK = new Permission("auto.import.rollback", false, PermissionType.Migration);
-	public static final Permission IMPORT_PROFILES_ROLLBACK = new Permission("import.profiles.rollback", false, PermissionType.Migration);
-    public static final Permission PROFILEFIELD_MIGRATION = new Permission("profileField.migration", false, PermissionType.Migration);
-    public static final Permission IMPORT_INIT_ROLLBACK = new Permission("import.init.rollback", false, PermissionType.Migration);
-	public static final Permission AUTOMATIC_IMPORT_CANCEL_MIGRATION = new Permission("automatic.import.cancel.migration", false, PermissionType.Migration);
+	// Special migration and rollback permissions 
+    public static final Permission PROFILEFIELD_ROLLBACK = new Permission("profileField.rollback", false, PermissionType.Migration);
+	public static final Permission WORKFLOW_REQUIRED_AUTO_IMPORT = new Permission("workflow.required.auto.import", false, PermissionType.Migration);
+	public static final Permission MAILING_AI_CONTENT = new Permission("mailing.ai.content", false, PermissionType.Premium);
+	public static final Permission IMPORT_DATATYPE_EXCEL_MIGRATION = new Permission("import.datatype.excel.migration", false, PermissionType.Migration);
+	public static final Permission AUTOMATIC_IMPORT_CANCEL_ROLLBACK = new Permission("automatic.import.cancel.rollback", false, PermissionType.Migration);
+	public static final Permission STATISTIC_RECIPIENT_DOI = new Permission("statistic.recipient.doi", false, PermissionType.Migration);
+	public static final Permission CUSTOM_POST_ADDRESS_FIELDS = new Permission("custom.post.address.fields", false, PermissionType.Migration);
+	public static final Permission MAILINGLISTS_ADDRESSES = new Permission("mailinglists.addresses", false, PermissionType.Migration);
+
+	// ---------- REDESIGN ----------
+	public static final Permission UI_DESIGN_MIGRATION = new Permission("ui.design.migration", false, PermissionType.Migration);
+	public static final Permission USE_REDESIGNED_UI = new Permission("use.redesigned.ui", false, PermissionType.Migration);
+	public static final Permission DASHBOARD_ADD_ONS_TILE = new Permission("dashboard.add-ons.tile", false, PermissionType.Migration);
+	public static final Permission MEDIAPOOL_CATEGORIES_UI_MIGRATION = new Permission("mediapool.categories.ui.migration", false, PermissionType.Migration);
+	public static final Permission UPLOAD_UI_MIGRATION = new Permission("upload.ui.migration", false, PermissionType.Migration);
+	public static final Permission MEDIAPOOL_UI_MIGRATION = new Permission("mediapool.ui.migration", false, PermissionType.Migration);
+	// ------------------------------
 
 	private final String tokenString;
 	private final boolean visible;

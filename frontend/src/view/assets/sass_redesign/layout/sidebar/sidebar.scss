@@ -1,0 +1,82 @@
+
+@mixin sidebar-tooltip() {
+  position: absolute;
+  left: $sideBarWidth;
+  z-index: 1000;
+  @include sidebar-colors();
+  border-radius: 0 $border-radius $border-radius 0;
+}
+
+@mixin sidebar-colors() {
+  background-color: $c-sidemenu;
+  color: $c-sidemenu-content;
+}
+
+@mixin sidebar-colors-inverse() {
+  background-color: $c-sidemenu-content;
+  color: $c-sidemenu;
+}
+
+.sidebar {
+  @include flex(column);
+  @include sidebar-colors();
+  position: relative;
+
+  transition: width 0.3s ease-in-out;
+  flex: 0 0 $sideBarWidth;
+}
+
+.sidebar__tooltip {
+  display: none;
+
+  &.open {
+    display: initial;
+    @include sidebar-tooltip();
+    padding: 6px $gap 6px $gap-sm;
+  }
+}
+
+.beta-badge {
+  background-color: $c-error;
+  border-radius: $border-radius-sm;
+  padding: 0 $gap-x-sm;
+  @include font($font-size-sm, $font-weight-semibold);
+}
+
+.sidebar__block {
+  @include flex(column, $gap-sm);
+  align-items: center;
+  flex: 0 0 auto;
+  padding-block: $gap-sm;
+
+  &:not(:last-child) {
+    border-bottom: 1px solid;
+  }
+}
+
+.sidebar__block-item {
+  @include flex(row, $gap-sm);
+  align-items: center;
+}
+
+a.sidebar__block-item:hover {
+  outline: 1px solid;
+  outline-offset: -1px;
+  border-radius: $border-radius-sm;
+}
+
+.sidebar__item-icon {
+  @include flex-center();
+  flex: 0 0 auto;
+
+  @include size($sidebar-icon-size);
+  border-radius: $border-radius-sm;
+
+  i {
+    font-size: $font-size-xsm;
+  }
+}
+
+.sidebar__icon-label {
+  @include font($font-size-lg, $font-weight-normal, 30px);
+}

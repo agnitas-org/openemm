@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="193" height="193" fill="none" viewBox="0 0 193 193">
+  <mask id="a" width="173" height="173" x="10" y="10" maskUnits="userSpaceOnUse" style="mask-type:alpha">
+    <path fill="#fff" stroke="silver" d="M10.5 10.5h172v172h-172z"/>
+  </mask>
+  <g mask="url(#a)">
+    <rect width="172.5" height="118.5" x="10.25" y="10.25" stroke="silver" stroke-width=".5" rx="4.75"/>
+    <mask id="b" fill="#fff">
+      <path d="M10 15a5 5 0 0 1 5-5h163a5 5 0 0 1 5 5v19H10V15Z"/>
+    </mask>
+    <path fill="#0071B9" d="M10 15a5 5 0 0 1 5-5h163a5 5 0 0 1 5 5v19H10V15Z"/>
+    <path fill="silver" d="M9.5 15A5.5 5.5 0 0 1 15 9.5h163a5.5 5.5 0 0 1 5.5 5.5h-1a4.5 4.5 0 0 0-4.5-4.5H15a4.5 4.5 0 0 0-4.5 4.5h-1ZM183 34H10h173ZM9.5 34V15A5.5 5.5 0 0 1 15 9.5v1a4.5 4.5 0 0 0-4.5 4.5v19h-1ZM178 9.5a5.5 5.5 0 0 1 5.5 5.5v19h-1V15a4.5 4.5 0 0 0-4.5-4.5v-1Z" mask="url(#b)"/>
+    <path fill="silver" d="M15 39h163v10H15zm0 30h122v10H15zm0 30h149v10H15zm0-45h156v10H15zm0 30h163v10H15zm0 30h163v10H15z"/>
+    <rect width="75" height="14" x="15" y="15" fill="#fff" rx="3"/>
+    <rect width="35" height="10" x="143" y="15" fill="#fff" rx="3"/>
+    <rect width="172.5" height="118.5" x="10.25" y="139.25" stroke="silver" stroke-width=".5" rx="4.75"/>
+    <path fill="silver" d="M15 168h163v10H15z"/>
+    <rect width="75" height="15" x="15" y="144" fill="#999" rx="3"/>
+    <rect width="35" height="10" x="143" y="144" fill="#999" rx="3"/>
+  </g>
+</svg>

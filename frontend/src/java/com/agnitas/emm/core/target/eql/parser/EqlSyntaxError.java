@@ -10,6 +10,8 @@
 
 package com.agnitas.emm.core.target.eql.parser;
 
+import org.apache.commons.lang3.StringUtils;
+
 public class EqlSyntaxError {
 
 	private final int line;
@@ -31,7 +33,7 @@ public class EqlSyntaxError {
 	}
 	
 	public String getSymbol() {
-		return this.symbol;
+		return StringUtils.defaultString(this.symbol);
 	}
 	
 	@Override

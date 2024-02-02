@@ -172,7 +172,7 @@
                                 </a>
                                 <a href="#" id="adminSendButton" class="btn btn-regular btn-primary"
                                    data-action="start-delivery"
-                                   data-action-value="/send-admin.action"
+                                   data-url="<c:url value="/mailing/send/${form.mailingID}/send-admin.action"/>"
                                    data-tooltip="<mvc:message code="mailing.send.admin"/>">
                                     <i class="icon icon-send-o"></i>
                                     <span class="text"><mvc:message code="adminMail" /></span>
@@ -180,7 +180,7 @@
 
                                 <a href="#" class="btn btn-regular btn-primary"
                                    data-action="start-delivery"
-                                   data-action-value="/send-test.action"
+                                   data-url="<c:url value="/mailing/send/${form.mailingID}/send-test.action"/>"
                                    data-tooltip="<mvc:message code="mailing.send.admin.test"/>">
                                     <i class="icon icon-send-o"></i>
                                     <span class="text"><mvc:message code="testMail" /></span>

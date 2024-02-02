@@ -27,7 +27,6 @@ import com.agnitas.emm.core.admin.web.PermissionsOverviewData;
 import com.agnitas.emm.core.usergroup.dto.UserGroupDto;
 import com.agnitas.emm.core.usergroup.form.UserGroupForm;
 import com.agnitas.emm.core.usergroup.service.UserGroupService;
-import com.agnitas.service.ComWebStorage;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.XssCheckAware;
 import com.agnitas.web.perm.annotations.PermissionMapping;
@@ -37,7 +36,7 @@ import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.service.UserActivityLogService;
-import org.agnitas.service.WebStorage;
+import com.agnitas.service.WebStorage;
 import org.agnitas.web.forms.FormUtils;
 import org.agnitas.web.forms.PaginationForm;
 import org.apache.commons.collections.CollectionUtils;
@@ -88,7 +87,7 @@ public class UserGroupController implements XssCheckAware {
     public String list(Admin admin, @ModelAttribute("userGroupListForm") PaginationForm form, Model model, Popups popups) {
         PaginatedListImpl<UserGroupDto> userGroupList;
         try {
-            FormUtils.syncNumberOfRows(webStorage, ComWebStorage.USER_GROUP_OVERVIEW, form);
+            FormUtils.syncNumberOfRows(webStorage, WebStorage.USER_GROUP_OVERVIEW, form);
 
             userGroupList = userGroupService.getUserGroupPaginatedList(admin, form.getSort(), form.getOrder(), form.getPage(), form.getNumberOfRows());
 

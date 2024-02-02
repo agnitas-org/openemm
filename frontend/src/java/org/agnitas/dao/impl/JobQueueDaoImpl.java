@@ -223,6 +223,19 @@ public class JobQueueDaoImpl extends BaseDaoImpl implements JobQueueDao {
 			throw new RuntimeException("Error while reading erroneous jobs from database", e);
 		}
 	}
+	
+	@Override
+	public List<JobDto> selectCriticalErroneousJobs() {
+		try {
+			if (isOracleDB()) {
+				return select(logger, "SELECT * FROM job_queue_tbl WHERE deleted <= 0 AND criticality > 3 AND ((lastResult IS NOT NULL AND lastResult != 'OK') OR (nextStart IS NOT NULL AND nextStart < CURRENT_TIMESTAMP - 0.05) OR interval IS NULL OR runClass IS NULL)", new Job_RowMapper());
+			} else {
+				return select(logger, "SELECT * FROM job_queue_tbl WHERE deleted <= 0 AND criticality > 3 AND ((lastResult IS NOT NULL AND lastResult != 'OK') OR (nextStart IS NOT NULL AND nextStart < DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 24 * 60 * 0.05 MINUTE)) OR `interval` IS NULL OR runClass IS NULL)", new Job_RowMapper());
+			}
+		} catch (Exception e) {
+			throw new RuntimeException("Error while reading erroneous jobs from database", e);
+		}
+	}
 
 	@Override
 	public List<JobDto> getAllActiveJobs() {
@@ -312,27 +325,35 @@ public class JobQueueDaoImpl extends BaseDaoImpl implements JobQueueDao {
 		if (job == null) {
 			return false;
 		} else {
-			try {
-				String lastResult = job.getLastResult();
-				if (lastResult != null && lastResult.length() > 512) {
-					// Watch out for german Umlaute in string which count as 2 bytes etc., so make it shorter than 508 chars.
-					lastResult = lastResult.substring(0, 500) + " ...";
+			while (true) {
+				try {
+					String lastResult = job.getLastResult();
+					if (lastResult != null && lastResult.length() > 512) {
+						// Watch out for german Umlaute in string which count as 2 bytes etc., so make it shorter than 508 chars.
+						lastResult = lastResult.substring(0, 500) + " ...";
+					}
+					int touchedLines = update(logger,
+						"UPDATE job_queue_tbl SET running = ?, lastResult = ?" + (lastResult == null || "OK".equalsIgnoreCase(lastResult) ? ", acknowledged = 0" : "") + ", lastDuration = ? WHERE id = ?",
+						job.isRunning(),
+						lastResult,
+						job.getLastDuration(),
+						job.getId());
+					
+					if (touchedLines != 1) {
+						throw new RuntimeException("Invalid touched lines amount");
+					} else {
+						return true;
+					}
+				} catch (Exception e) {
+					logger.error("Error while updating job job status", e);
+					// DO NOT throw any Exception here
+					// If there was a problem in updating the job status, this must be logged and retried for unlimited times until success.
+					try {
+						Thread.sleep(1000 * 60);
+					} catch (@SuppressWarnings("unused") InterruptedException e1) {
+						// Do nothing
+					}
 				}
-				int touchedLines = update(logger,
-					"UPDATE job_queue_tbl SET running = ?, lastResult = ?" + (lastResult == null || "OK".equalsIgnoreCase(lastResult) ? ", acknowledged = 0" : "") + ", lastDuration = ? WHERE id = ?",
-					job.isRunning(),
-					lastResult,
-					job.getLastDuration(),
-					job.getId());
-				
-				if (touchedLines != 1) {
-					throw new RuntimeException("Invalid touched lines amount");
-				} else {
-					return true;
-				}
-			} catch (Exception e) {
-				logger.error("Error while updating job job status", e);
-				throw new RuntimeException("Error while updating job job status", e);
 			}
 		}
 	}

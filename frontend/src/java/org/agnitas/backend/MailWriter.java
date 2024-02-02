@@ -258,7 +258,8 @@ abstract public class MailWriter {
 	 */
 	public void writeMail (Custinfo cinfo,
 			       int mcount, int mailtype, long icustomer_id,
-			       String mediatypes, Map <String, EMMTag> tagNames) throws Exception {
+			       String mediatypes, String userStatuses,
+			       Map <String, EMMTag> tagNames) throws Exception {
 		writeMailDone ();
 		mailType = mailtype;
 		checkBlock(false);

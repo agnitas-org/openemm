@@ -26,6 +26,8 @@ public class MailinglistToMailinglistFormConverter implements Converter<Mailingl
 		form.setShortname(source.getShortname());
 		form.setDescription(source.getDescription());
 		form.setFrequencyCounterEnabled(source.isFrequencyCounterEnabled());
+		form.setSenderEmail(source.getSenderEmail());
+		form.setReplyEmail(source.getReplyEmail());
 		return form;
 	}
 }

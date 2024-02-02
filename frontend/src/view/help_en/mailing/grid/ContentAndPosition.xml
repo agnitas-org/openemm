@@ -1,0 +1,17 @@
+<HelpBalloon>
+    <title><![CDATA[Content and Position]]></title>
+    <content><![CDATA[If you want certain content to always appear in the same position in your mailings, or if you don't want it to be changed, you can work with the options provided. The settings have the following properties:
+    <br /><br />
+    <b>Freely editable:</b> <br />
+    The module can be edited, moved and even completely removed from the mailing by the user at any time.
+    <br /><br />
+    <b>Contents fixed:</b> <br />
+    The content of the module is specified in the Standard Content tab and cannot be changed in the subsequent mailing. However, the user can reposition or delete the module in the mailing.
+    <br /><br />
+    <b>Anchored in the mailing:</b> <br />
+    The module is positioned in the template and cannot be moved or deleted in the subsequent mailing. However, the user can edit the content of the module in the mailing.
+    <br /><br />
+    <b>Content fixed and anchored in the mailing:</b> <br />
+    The module is positioned in the template and cannot be moved or deleted in the subsequent mailing. The content of the module is specified in the Standard Content tab and cannot be changed in the mailing either.
+]]></content>
+</HelpBalloon>

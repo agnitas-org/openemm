@@ -24,8 +24,8 @@ import com.agnitas.emm.core.action.dao.ActionOperationUpdateCustomerDao;
 import com.agnitas.emm.core.action.operations.ActionOperationUpdateCustomerParameters;
 
 public class ActionOperationUpdateCustomerDaoImpl extends AbstractActionOperationDaoImpl<ActionOperationUpdateCustomerParameters> implements ActionOperationUpdateCustomerDao {
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(ActionOperationUpdateCustomerDaoImpl.class);
+
+	private static final Logger logger = LogManager.getLogger(ActionOperationUpdateCustomerDaoImpl.class);
 
 	@Override
 	protected void processGetOperation(ActionOperationUpdateCustomerParameters operation) {

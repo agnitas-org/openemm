@@ -1,5 +1,5 @@
-<%@ page contentType="text/html; charset=utf-8" errorPage="/error.do" %>
-<%@ taglib prefix="tiles" uri="http://struts.apache.org/tags-tiles" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.action" %>
+<%@ taglib prefix="tiles" uri="http://tiles.apache.org/tags-tiles" %>
 <%@ taglib prefix="mvc"   uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="c"     uri="http://java.sun.com/jsp/jstl/core" %>
 
@@ -20,7 +20,7 @@
         <title><mvc:message code="FormNotFoundTitle" /></title>
         <link rel="shortcut icon" href="favicon.ico">
 
-        <tiles:insert page="/WEB-INF/jsp/assets.jsp"/>
+        <tiles:insertTemplate template="/WEB-INF/jsp/assets.jsp"/>
 
     </head>
     <body class="systempage">

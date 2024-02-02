@@ -713,11 +713,6 @@ footer#footnotes-container {
     background-image: url(../../images/campaignManager/icon_deadline_s.png);
 }
 
-.toolbarButton[data-type="report"],
-.dialog-title-image[data-type="report"] {
-    background-image: url(../../images/campaignManager/icon_report_s.png);
-}
-
 .toolbarButton[data-type="recipient"],
 .dialog-title-image[data-type="recipient"] {
     background-image: url(../../images/campaignManager/icon_recipient_s.png);

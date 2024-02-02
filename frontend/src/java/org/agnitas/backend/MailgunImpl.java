@@ -19,11 +19,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.agnitas.dao.MailingStatus;
 import org.agnitas.backend.exceptions.CancelException;
+import org.agnitas.dao.MailingStatus;
 import org.agnitas.util.Bit;
 import org.agnitas.util.Log;
-import org.agnitas.util.Str;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.ResultSetExtractor;
 
@@ -198,7 +197,23 @@ public class MailgunImpl implements Mailgun {
 	 * @param opts options to control the setup beyond DB information
 	 */
 	private void doPrepare(Map<String, Object> opts) throws Exception {
+		data.resume();
+		data.options(opts, 1);
+		
 		data.logging(Log.DEBUG, "prepare", "Starting firing");
+		// create new Block collection and store in member var if not already done by subclass
+		allBlocks = new BlockCollection();
+		data.setBlocks(allBlocks);
+		allBlocks.setupBlockCollection(data, data.previewInput);
+		
+		data.logging(Log.DEBUG, "prepare", "Parse blocks");
+		// read all tag names contained in the blocks into Hashtable
+                // - read selectvalues and store in EMMTag associated with tag name in Hashtable
+		tagNames = allBlocks.parseBlocks();
+		data.setUsedFieldsInLayout(allBlocks, tagNames);
+
+		readBlocklist();
+		data.suspend();
 	}
 
 	/**
@@ -208,20 +223,9 @@ public class MailgunImpl implements Mailgun {
 	 */
 	protected void doExecute(Map<String, Object> opts) throws Exception {
 		data.resume();
-		if (allBlocks == null) {
-			data.logging(Log.DEBUG, "prepare", "Parse blocks");
-			// create new Block collection and store in member var if not already done by subclass
-			data.options(opts, 1);
-			allBlocks = new BlockCollection();
-			data.setBlocks(allBlocks);
-			allBlocks.setupBlockCollection(data, data.previewInput);
-			tagNames = allBlocks.parseBlocks();
-			data.setUsedFieldsInLayout(allBlocks, tagNames);
-		}
-		// blocklist handling
-		readBlocklist();
 		data.options(opts, 2);
 		data.sanityCheck(blist);
+
 		// get constructed selectvalue based on tag names in Hashtable
 		data.startExecution();
 		selectQuery = getSelectvalue(tagNames, false);
@@ -307,14 +311,7 @@ public class MailgunImpl implements Mailgun {
 	 * Retrieve blocklist from database
 	 */
 	private void retrieveBlocklist () throws Exception {
-		String	bouncelog;
-		
-		if ((bouncelog = data.company.infoSubstituted ("bounce-log")) == null) {
-			bouncelog = data.mailing.bounceLogfile ();
-		} else {
-			bouncelog = Str.makePath(bouncelog);
-		}
-		blist.setBouncelog(bouncelog);
+		blist.setBouncelog (data.mailing.bounceLogfile ());
 
 		List<String> blocklistTables = new ArrayList<>();
 		int isLocal;
@@ -324,19 +321,6 @@ public class MailgunImpl implements Mailgun {
 		}
 		blocklistTables.add("cust" + data.company.id() + "_ban_tbl");
 		isLocal = blocklistTables.size() - 1;
-
-		String extraTables = data.company.info("blocklist-tables");
-		if (extraTables != null) {
-			String[] tables = extraTables.split(", *");
-
-			for (int n = 0; n < tables.length; ++n) {
-				String table = tables[n].trim();
-
-				if (table.length() > 0) {
-					blocklistTables.add(table);
-				}
-			}
-		}
 
 		data.logging (Log.INFO, "readblist", "Using simplified blocklist wildcard matching");
 		for (int blocklistIndex = 0; blocklistIndex < blocklistTables.size(); ++blocklistIndex) {
@@ -389,7 +373,7 @@ public class MailgunImpl implements Mailgun {
 		@Override
 		public Object extractData(ResultSet rset) throws SQLException, DataAccessException {
 			while (rset.next()) {
-				mmap.add(rset.getLong(1), rset.getInt(2));
+				mmap.add(rset.getLong(1), rset.getInt (2), rset.getInt(3));
 			}
 			return null;
 		}
@@ -562,8 +546,10 @@ public class MailgunImpl implements Mailgun {
 			}
 		}
 		if (tagNamesParameter != null) {
+			// if changing this list, ensure to set "Extractor.reservedColumns" to the amount of
+			// columns which are here directly referenced
+			selectString.append("cust.customer_id, bind.user_status, bind.user_type, cust.mailtype");
 			// append all select string values of all tags
-			selectString.append("cust.customer_id, bind.user_type, cust.mailtype");
 			for (EMMTag current_tag : tagNamesParameter.values()) {
 				if ((!current_tag.globalValue) && (current_tag.tagType == EMMTag.TAG_DBASE)) {
 					selectString.append(", " + current_tag.mSelectString);

@@ -1,0 +1,14 @@
+
+.highlight-container {
+  position: absolute;
+  inset: 0;
+  visibility: hidden;
+}
+
+.draggable-accept {
+  .highlight-container {
+    border: 1px dashed $c-blue-27;
+    background-image: repeating-linear-gradient(-45deg, transparent, transparent 5px, rgba(174, 199, 209, 0.5) 5px, rgba(174, 199, 209, 0.5) 10px);
+    visibility: inherit;
+  }
+}

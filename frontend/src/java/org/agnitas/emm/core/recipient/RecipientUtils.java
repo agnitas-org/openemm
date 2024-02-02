@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 
 import org.agnitas.emm.core.recipient.dto.RecipientLightDto;
 import org.agnitas.emm.core.recipient.dto.RecipientOverviewWebStorageEntry;
-import org.agnitas.service.WebStorage;
+import com.agnitas.service.WebStorage;
 import org.agnitas.service.WebStorageBundle;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DateUtilities;

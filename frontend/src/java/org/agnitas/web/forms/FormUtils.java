@@ -12,20 +12,15 @@ package org.agnitas.web.forms;
 
 import org.agnitas.beans.RowsCountAndSortingWebStorageEntry;
 import org.agnitas.beans.RowsCountWebStorageEntry;
-import org.agnitas.service.WebStorage;
+import com.agnitas.service.WebStorage;
 import org.agnitas.service.WebStorageBundle;
 import org.apache.commons.lang3.StringUtils;
 import org.displaytag.pagination.PaginatedList;
 
 public class FormUtils {
-    public static <T extends RowsCountWebStorageEntry> void syncNumberOfRows(WebStorage webStorage, WebStorageBundle<T> bundle, StrutsFormBase form) {
-        webStorage.access(bundle, entry -> {
-            if (form.getNumberOfRows() > 0) {
-                entry.setRowsCount(form.getNumberOfRows());
-            } else {
-                form.setNumberOfRows(entry.getRowsCount());
-            }
-        });
+
+    private FormUtils() {
+        // utility class
     }
 
     public static <T extends RowsCountWebStorageEntry> void syncNumberOfRows(WebStorage webStorage, WebStorageBundle<T> bundle, PaginationForm form) {

@@ -1,0 +1,19 @@
+
+#session-timer-block {
+  padding: $gap-sm $gap-x-sm;
+  gap: $gap-x-sm;
+}
+
+#session-time-label {
+  @include font($font-size-sm, $font-weight-semibold);
+
+  min-width: 40px;
+  display: inline-block;
+  text-align: center;
+  line-height: 1;
+}
+
+#session-time-message {
+  @include font($font-size-base, $font-weight-normal, 24px);
+  white-space: nowrap;
+}

@@ -24,6 +24,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.ResultSetExtractor;
 
 public class Extractor implements ResultSetExtractor<Object> {
+	private final int reservedColumns = 4;
 	private Map<String, EMMTag> tagNames = null;
 	private MediaMap mmap;
 	private Data data;
@@ -71,7 +72,7 @@ public class Extractor implements ResultSetExtractor<Object> {
 			meta = rset.getMetaData();
 			metacount = meta.getColumnCount();
 			rmap = new Column[metacount];
-			usecount = 3;
+			usecount = reservedColumns;
 			for (EMMTag current_tag : tagNames.values()) {
 				if ((!current_tag.globalValue) && (current_tag.tagType == EMMTag.TAG_DBASE)) {
 					++usecount;
@@ -139,7 +140,7 @@ public class Extractor implements ResultSetExtractor<Object> {
 			}
 		}
 
-		int count = 3;
+		int count = reservedColumns;
 
 		for (EMMTag tmpTag : tagNames.values()) {
 			if ((!tmpTag.globalValue) && (tmpTag.tagType == EMMTag.TAG_DBASE)) {
@@ -164,8 +165,8 @@ public class Extractor implements ResultSetExtractor<Object> {
 			skip = false;
 			lastCid = cid;
 
-			String userType = rmap[1] != null ? rmap[1].get() : null;
-			String mailtype = rmap[2] != null ? rmap[2].get() : null;
+			String userType = rmap[2] != null ? rmap[2].get() : null;
+			String mailtype = rmap[3] != null ? rmap[3].get() : null;
 			int mtype;
 
 			if ((userType == null) || userType.isEmpty()) {
@@ -220,7 +221,7 @@ public class Extractor implements ResultSetExtractor<Object> {
 				}
 			}
 
-			String mediatypes = getMediaTypes(cid);
+			MediaMap.MMEntry	mediatypes = getMediaTypes (cid);
 			if (mediatypes == null) {
 				skip = true;
 				return;
@@ -273,7 +274,7 @@ public class Extractor implements ResultSetExtractor<Object> {
 								}
 								for (int n = 0; (n < MailType.HTML_OFFLINE.getIntValue()) && (n <= data.masterMailtype); ++n) {
 									try {
-										mailer.writeMail(cinfo, mcount + 1, n, 0, Media.typeName(Media.TYPE_EMAIL), tagNames);
+										mailer.writeMail(cinfo, mcount + 1, n, 0, Media.typeName(Media.TYPE_EMAIL), "1", tagNames);
 										mailer.writeContent(cinfo, 0, tagNames, rmap);
 									} catch (Exception e) {
 										data.logging(Log.ERROR, "mailout", "Failed to write sample mail: " + e.toString(), e);
@@ -291,7 +292,7 @@ public class Extractor implements ResultSetExtractor<Object> {
 			}
 
 			try {
-				mailer.writeMail(cinfo, 0, mtype, cid, mediatypes, tagNames);
+				mailer.writeMail(cinfo, 0, mtype, cid, mediatypes.name, mediatypes.status, tagNames);
 				mailer.writeContent(cinfo, cid, tagNames, rmap);
 			} catch (Exception e) {
 				data.logging(Log.ERROR, "mailout", "Failed to write mail: " + e.toString(), e);
@@ -325,7 +326,7 @@ public class Extractor implements ResultSetExtractor<Object> {
 	 * @param customerID the customerID to get types for
 	 * @return mediatypes
 	 */
-	private String getMediaTypes(long cid) {
+	private MediaMap.MMEntry getMediaTypes (long cid) {
 		if (data.maildropStatus.isPreviewMailing()) {
 			return mmap.getActive();
 		}

@@ -45,21 +45,21 @@ Let's have a look at the following sample:
                 <div class="action-left">
                     <button type="button" class="btn btn-regular" data-upload-reset="">
                         <i class="icon icon-times"></i>
-                        <span class="text"><bean:message key="button.Cancel"/></span>
+                        <span class="text"><mvc:message code="button.Cancel"/></span>
                     </button>
                 </div>
                 <div class="action-right">
                     <button type="button" class="btn btn-regular btn-primary" data-form-submit="">
                         <i class="icon icon-cloud-upload"></i>
-                        <span class="text"><bean:message key="button.Upload"/></span>
+                        <span class="text"><mvc:message code="button.Upload"/></span>
                     </button>
                 </div>
             </div>
             <table class="table table-bordered table-striped">
                 <thead>
                     <tr>
-                        <th class="squeeze-column"><bean:message key="mailing.Graphics_Component"/></th>
-                        <th><bean:message key="default.settings"/></th>
+                        <th class="squeeze-column"><mvc:message code="mailing.Graphics_Component"/></th>
+                        <th><mvc:message code="default.settings"/></th>
                     </tr>
                 </thead>
                 <tbody data-upload-add-template="upload-images-template-add"></tbody>
@@ -69,14 +69,14 @@ Let's have a look at the following sample:
                     <button type="button" class="btn btn-regular" data-upload-reset="">
                         <i class="icon icon-times"></i>
                         <span class="text">
-                        <bean:message key="button.Cancel"/>
+                        <mvc:message code="button.Cancel"/>
                     </span>
                     </button>
                 </div>
                 <div class="action-right">
                     <button type="button" class="btn btn-regular btn-primary" data-form-submit="">
                         <i class="icon icon-cloud-upload"></i>
-                        <span class="text"><bean:message key="button.Upload"/></span>
+                        <span class="text"><mvc:message code="button.Upload"/></span>
                     </button>
                 </div>
             </div>
@@ -87,7 +87,7 @@ Let's have a look at the following sample:
                 <div class="action-right">
                     <button type="button" class="btn btn-regular" data-form-abort="">
                         <i class="icon icon-times"></i>
-                        <span class="text"><bean:message key="button.Cancel"/></span>
+                        <span class="text"><mvc:message code="button.Cancel"/></span>
                     </button>
                 </div>
             </div>
@@ -96,7 +96,7 @@ Let's have a look at the following sample:
                 <div class="action-right">
                     <button type="button" class="btn btn-regular" data-form-abort="">
                         <i class="icon icon-times"></i>
-                        <span class="text"><bean:message key="button.Cancel"/></span>
+                        <span class="text"><mvc:message code="button.Cancel"/></span>
                     </button>
                 </div>
             </div>

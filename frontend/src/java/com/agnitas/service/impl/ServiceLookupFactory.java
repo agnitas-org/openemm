@@ -10,8 +10,10 @@
 
 package com.agnitas.service.impl;
 
+import com.agnitas.emm.core.workflow.service.ComWorkflowActivationService;
 import org.agnitas.emm.core.commons.uid.ExtensibleUIDService;
 import org.agnitas.emm.core.commons.util.ConfigService;
+import org.agnitas.service.UserActivityLogService;
 
 import com.agnitas.emm.core.JavaMailService;
 import com.agnitas.emm.core.admin.service.AdminService;
@@ -20,11 +22,9 @@ import com.agnitas.emm.core.birtstatistics.service.BirtStatisticsService;
 import com.agnitas.emm.core.company.service.ComCompanyService;
 import com.agnitas.emm.core.mailing.service.MaildropStatusService;
 import com.agnitas.emm.core.mailing.service.MailingService;
-import com.agnitas.emm.core.mailing.service.SendActionbasedMailingService;
 import com.agnitas.emm.core.mobile.service.ClientService;
 import com.agnitas.emm.core.mobile.service.ComDeviceService;
 import com.agnitas.emm.core.reminder.service.ComReminderService;
-import com.agnitas.emm.core.target.service.ComTargetService;
 import com.agnitas.emm.core.workflow.service.ComWorkflowService;
 import com.agnitas.mailing.autooptimization.service.ComOptimizationService;
 
@@ -38,10 +38,10 @@ public abstract class ServiceLookupFactory {
 	abstract public ComOptimizationService getBeanOptimizationService();
 	abstract public ComReminderService getBeanWorkflowStartStopReminderService();
 	abstract public ComWorkflowService getBeanWorkflowService();
+	abstract public ComWorkflowActivationService getBeanWorkflowActivationService();
+	abstract public UserActivityLogService getBeanUserActivityLogService();
 	abstract public JavaMailService getBeanJavaMailService();
 	abstract public ConfigService getBeanConfigService();
-	abstract public ComTargetService getBeanTargetService();
-	abstract public SendActionbasedMailingService getBeanSendActionbasedMailingService();
 	abstract public ComCompanyService getBeanCompanyService();
 	abstract public AdminService getBeanAdminService();
 	abstract public MailingService getBeanMailingService();

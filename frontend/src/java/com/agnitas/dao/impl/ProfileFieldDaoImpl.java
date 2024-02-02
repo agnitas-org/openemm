@@ -47,9 +47,9 @@ import org.springframework.beans.factory.annotation.Required;
 import org.springframework.jdbc.core.RowMapper;
 
 import com.agnitas.beans.Admin;
-import com.agnitas.beans.ProfileFieldPermission;
 import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.ProfileFieldMode;
+import com.agnitas.beans.ProfileFieldPermission;
 import com.agnitas.beans.impl.ProfileFieldImpl;
 import com.agnitas.dao.DaoUpdateReturnValueCheck;
 import com.agnitas.dao.ProfileFieldDao;
@@ -57,6 +57,7 @@ import com.agnitas.emm.core.profilefields.ProfileFieldException;
 import com.agnitas.emm.core.recipient.RecipientProfileHistoryException;
 import com.agnitas.emm.core.recipient.RecipientProfileHistoryUtil;
 import com.agnitas.emm.core.recipient.service.RecipientProfileHistoryService;
+import com.agnitas.emm.core.service.RecipientFieldService;
 
 import net.sf.json.JSONArray;
 import net.sf.json.JSONException;
@@ -82,7 +83,6 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
 	private static final String FIELD_SHORTNAME = "shortname";
 	private static final String FIELD_DESCRIPTION = "description";
 	private static final String FIELD_MODE_EDIT = "mode_edit";
-	private static final String FIELD_GROUP = "field_group";
 	private static final String FIELD_SORT = "field_sort";
 	private static final String FIELD_LINE = "line";
 	private static final String FIELD_ISINTEREST = "isinterest";
@@ -91,7 +91,7 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
 	private static final String FIELD_HISTORIZE = "historize";
 	private static final String FIELD_ALLOWED_VALUES = "allowed_values";
 
-	private static final String[] FIELD_NAMES = new String[] { FIELD_COMPANY_ID, FIELD_COLUMN_NAME, FIELD_SHORTNAME, FIELD_DESCRIPTION, FIELD_MODE_EDIT, FIELD_GROUP, FIELD_SORT, FIELD_LINE, FIELD_CREATION_DATE, FIELD_ISINTEREST, FIELD_CHANGE_DATE, FIELD_HISTORIZE, FIELD_ALLOWED_VALUES };
+	private static final String[] FIELD_NAMES = new String[] { FIELD_COMPANY_ID, FIELD_COLUMN_NAME, FIELD_SHORTNAME, FIELD_DESCRIPTION, FIELD_MODE_EDIT, FIELD_SORT, FIELD_LINE, FIELD_CREATION_DATE, FIELD_ISINTEREST, FIELD_CHANGE_DATE, FIELD_HISTORIZE, FIELD_ALLOWED_VALUES };
 
 	private static final String SELECT_LIGHT_PROFILEFIELDS_BY_COMPANYID = "SELECT " + String.join(", ", FIELD_COLUMN_NAME, FIELD_SHORTNAME) + " FROM " + TABLE + " WHERE " + FIELD_COMPANY_ID + " = ? ORDER BY " + FIELD_SORT + ", LOWER(" + FIELD_SHORTNAME + "), LOWER(" + FIELD_COLUMN_NAME + ")";
     private static final String SELECT_LIGHT_PROFILEFIELDS_BY_COMPANYID_HISTORIZEDONLY = "SELECT " + String.join(", ", FIELD_COLUMN_NAME, FIELD_SHORTNAME) + " FROM " + TABLE + " WHERE " + FIELD_COMPANY_ID + " = ? AND " + FIELD_HISTORIZE + " = 1 ORDER BY " + FIELD_SORT + ", LOWER(" + FIELD_SHORTNAME + "), LOWER(" + FIELD_COLUMN_NAME + ")";
@@ -131,6 +131,8 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
 	protected ConfigService configService;
 	
 	private RecipientProfileHistoryService profileHistoryService;
+	
+	private RecipientFieldService recipientFieldService;
 
 	/**
 	 * Set service for accessing configuration data.
@@ -150,6 +152,11 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
 	@Required
 	public void setProfileHistoryService(final RecipientProfileHistoryService service) {
 		this.profileHistoryService = service;
+	}
+	
+	@Required
+	public void setRecipientFieldService(RecipientFieldService recipientFieldService) {
+		this.recipientFieldService = recipientFieldService;
 	}
 
 	@Override
@@ -750,7 +757,7 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
 			
 			if (selectInt(logger, "SELECT COUNT(*) FROM " + TABLE + " WHERE " + FIELD_COMPANY_ID + " = ? AND LOWER(" + FIELD_COLUMN_NAME + ") = LOWER(?)", field.getCompanyID(), field.getColumn()) < 1) {
     			// Insert new entry for some manually by db-support in db added fields
-				String statementString = "INSERT INTO " + TABLE + " (" + FIELD_COMPANY_ID + ", " + FIELD_COLUMN_NAME + ", " + FIELD_ADMIN_ID + ", " + FIELD_SHORTNAME + ", " + FIELD_DESCRIPTION + ", " + FIELD_MODE_EDIT + ", " + FIELD_LINE + ", " + FIELD_SORT + ", " + FIELD_ISINTEREST + ", " + FIELD_CREATION_DATE + ", " + FIELD_CHANGE_DATE + ", " + FIELD_HISTORIZE + ", " + FIELD_ALLOWED_VALUES + ") VALUES (?, UPPER(?), ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?)";
+				String statementString = "INSERT INTO " + TABLE + " (" + FIELD_COMPANY_ID + ", " + FIELD_COLUMN_NAME + ", " + FIELD_ADMIN_ID + ", " + FIELD_SHORTNAME + ", " + FIELD_DESCRIPTION + ", " + FIELD_MODE_EDIT + ", " + FIELD_LINE + ", " + FIELD_SORT + ", " + FIELD_ISINTEREST + ", " + FIELD_CREATION_DATE + ", " + FIELD_CHANGE_DATE + ", " + FIELD_HISTORIZE + ", " + FIELD_ALLOWED_VALUES + ") VALUES (?, UPPER(?), ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?)";
     			update(logger, statementString, field.getCompanyID(), field.getColumn(), field.getAdminID(), field.getShortname().trim(), field.getDescription(), field.getModeEdit().getStorageCode(), field.getLine(), field.getSort(), field.getInterest(), field.getHistorize(), allowedValuesJson);
 			} else {
     			// Update existing entry
@@ -925,18 +932,6 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
 				throw new ProfileFieldException(msg, e);
 			}
 		}
-	}
-	
-	@Override
-	public boolean deleteByCompany(int companyID) {
-		update(logger, "DELETE FROM customer_field_permission_tbl WHERE company_id = ?", companyID);
-		int touchedLines = update(logger, "DELETE FROM customer_field_tbl WHERE company_id = ?", companyID);
-		if (touchedLines > 0) {
-    		return true;
-    	} else {
-    		int remaining = selectInt(logger, "SELECT COUNT(*) FROM customer_field_tbl WHERE company_id = ?", companyID);
-    		return remaining == 0;
-    	}
 	}
 
 	private <T extends LightProfileField> List<T> sortProfileFields(CaseInsensitiveMap<String, T> map) {
@@ -1274,5 +1269,7 @@ public class ProfileFieldDaoImpl extends BaseDaoImpl implements ProfileFieldDao 
 		}
 		
 		clearProfileStructureCache(companyID);
+		
+		recipientFieldService.clearCachedData(companyID);
 	}
 }

@@ -19,7 +19,7 @@ import org.agnitas.beans.DynamicTagContent;
 import com.agnitas.beans.DynamicTag;
 
 public interface DynamicTagContentDao {
-	void saveDynamicContent(DynamicTagContent dynamicTagContent, String mailingCharset);
+	void saveDynamicContent(DynamicTagContent dynamicTagContent, String mailingCharset) throws Exception;
 
     /**
      * Deletes tag content for the given company from the database.

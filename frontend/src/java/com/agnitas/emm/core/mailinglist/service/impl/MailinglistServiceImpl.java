@@ -20,6 +20,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.agnitas.exception.ValidationException;
+import com.agnitas.messages.Message;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.beans.impl.MailinglistImpl;
 import org.agnitas.dao.MailingStatus;
@@ -39,12 +41,12 @@ import com.agnitas.dao.ComBindingEntryDao;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.dao.ComTargetDao;
+import com.agnitas.emm.common.exceptions.ShortnameTooShortException;
 import com.agnitas.emm.core.birtreport.bean.ComLightweightBirtReport;
 import com.agnitas.emm.core.birtreport.dao.ComBirtReportDao;
 import com.agnitas.emm.core.birtreport.util.BirtReportSettingsUtils;
 import com.agnitas.emm.core.mailinglist.dto.MailinglistDto;
 import com.agnitas.emm.core.mailinglist.service.MailinglistService;
-import com.agnitas.service.ExtendedConversionService;
 
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
@@ -62,8 +64,6 @@ public class MailinglistServiceImpl implements MailinglistService {
     private ComBirtReportDao birtReportDao;
     
     private ComRecipientDao recipientDao;
-    
-    private ExtendedConversionService conversionService;
     
     private ComTargetDao targetDao;
 
@@ -91,11 +91,6 @@ public class MailinglistServiceImpl implements MailinglistService {
     public void setBirtReportDao(ComBirtReportDao birtReportDao) {
         this.birtReportDao = birtReportDao;
     }
-	
-    @Required
-	public void setConversionService(ExtendedConversionService conversionService) {
-		this.conversionService = conversionService;
-	}
  
 	@Required
     public void setRecipientDao(ComRecipientDao recipientDao) {
@@ -136,6 +131,8 @@ public class MailinglistServiceImpl implements MailinglistService {
 
     @Override
     public Mailinglist getMailinglist(int mailinglistId, int companyId){
+    	// TODO Checking validity of mailinglist ID should be done here
+    	
         return mailinglistDao.getMailinglist(mailinglistId, companyId);
     }
 
@@ -222,13 +219,18 @@ public class MailinglistServiceImpl implements MailinglistService {
     }
 	
 	@Override
-	public int saveMailinglist(int companyId, MailinglistDto mailinglist) {
+	public int saveMailinglist(int companyId, MailinglistDto mailinglist) throws ShortnameTooShortException {
+        validateBeforeSave(mailinglist);
+
 		MailinglistImpl mailinglistForSave = new MailinglistImpl();
 		mailinglistForSave.setId(mailinglist.getId());
 		mailinglistForSave.setCompanyID(companyId);
 		mailinglistForSave.setShortname(mailinglist.getShortname());
 		mailinglistForSave.setDescription(mailinglist.getDescription());
 		mailinglistForSave.setFrequencyCounterEnabled(mailinglist.isFrequencyCounterEnabled());
+        mailinglistForSave.setSenderEmail(mailinglist.getSenderEmail());
+        mailinglistForSave.setReplyEmail(mailinglist.getReplyEmail());
+
 		int mailinglistId;
 		if (mailinglist.getId() == 0) {
 			mailinglistId = mailinglistDao.createMailinglist(companyId, mailinglistForSave);
@@ -244,6 +246,26 @@ public class MailinglistServiceImpl implements MailinglistService {
 		}
 		return mailinglistId;
 	}
+
+    private void validateBeforeSave(MailinglistDto mailinglist) throws ShortnameTooShortException {
+        if (mailinglist.getShortname() == null || mailinglist.getShortname().length() < 3) {
+            throw new ShortnameTooShortException(mailinglist.getShortname());
+        }
+
+        Map<String, Message> validationErrors = new HashMap<>();
+
+        if (StringUtils.isNotBlank(mailinglist.getSenderEmail()) && !AgnUtils.isEmailValid(mailinglist.getSenderEmail())) {
+            validationErrors.put("senderEmail", Message.of("error.invalid.email"));
+        }
+
+        if (StringUtils.isNotBlank(mailinglist.getReplyEmail()) && !AgnUtils.isEmailValid(mailinglist.getReplyEmail())) {
+            validationErrors.put("replyEmail", Message.of("error.invalid.email"));
+        }
+
+        if (!validationErrors.isEmpty()) {
+            throw new ValidationException(validationErrors);
+        }
+    }
 	
 	@Override
 	public boolean isShortnameUnique(String newShortname, int mailinglistId, int companyId) {
@@ -311,14 +333,14 @@ public class MailinglistServiceImpl implements MailinglistService {
     public List<Mailing> getUsedMailings(Set<Integer> mailinglistIds, int companyId) {
         return getAllDependedMailing(mailinglistIds, companyId).stream()
                 .filter(mail -> !mail.isIsTemplate())
-                .filter(mail -> !MailingStatus.SENT.getDbKey().equals(mailingDao.getWorkStatus(companyId, mail.getId())))
+                .filter(mail -> !MailingStatus.SENT.equals(mailingDao.getStatus(companyId, mail.getId())))
                 .collect(Collectors.toList());
     }
 
     @Override
     public int getSentMailingsCount(int mailinglistId, int companyId) {
         return getAllDependedMailing(Collections.singleton(mailinglistId), companyId).stream()
-                .filter(m -> MailingStatus.SENT.getDbKey().equals(mailingDao.getWorkStatus(companyId, m.getId())))
+                .filter(m -> MailingStatus.SENT.equals(mailingDao.getStatus(companyId, m.getId())))
                 .mapToInt(i -> 1).sum();
     }
 

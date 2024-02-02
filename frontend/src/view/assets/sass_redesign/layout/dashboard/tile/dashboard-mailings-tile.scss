@@ -1,0 +1,60 @@
+
+#dashboard-mailings {
+  
+  .tile-body {
+    padding-top: 0;
+    
+    .col {
+      padding-top: $gap;
+    }
+    
+    .mailing-card {
+      border: 0;
+      --bs-card-inner-border-radius: 0;
+
+      .mailing-preview-card-image {
+        border: 1px solid transparent;
+        &:hover {
+          border: 1px solid $c-blue-27;
+        }
+      }
+
+      &:hover {
+        .card-body {
+          .card-title {
+            color: $c-blue-27;
+          }
+        }
+      }
+  
+      .card-body {
+        gap: 0;
+        text-align: left;
+        padding: $gap-sm 0 0;
+  
+        .card-title {
+          display: flex;
+          align-items: center;
+          gap: $gap-sm;
+          font-size: $font-size-sm;
+          line-height: 18px;
+          color: $c-black;
+        }
+        
+        .card-text {
+          display: flex;
+          align-items: center;
+          font-size: 12px;
+          padding-left: 2px;
+          color: #6F6F6F;
+          gap: 12px;
+          line-height: 16px;
+          margin-top: 5px;
+          i {
+            font-size: $font-size-sm;
+          }
+        }
+      }
+    }
+  }   
+}

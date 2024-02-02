@@ -6,7 +6,7 @@
                     <button type="button" class="close-icon close js-confirm-negative" data-dismiss="modal">
                         <i aria-hidden="true" class="icon icon-times-circle"></i>
                     </button>
-                    <h4 class="modal-title"><bean:message key="workflow.editor"/></h4>
+                    <h4 class="modal-title"><mvc:message code="workflow.editor"/></h4>
                 </div>
                 <div class="modal-body">
                     <div id="modalCampaignEditorContainer"></div>
@@ -15,12 +15,12 @@
                     <div class="btn-group">
                         <button type="button" class="btn btn-default btn-large js-confirm-negative" data-dismiss="modal">
                             <i class="icon icon-times"></i>
-                            <span class="text"><bean:message key="button.Cancel"/></span>
+                            <span class="text"><mvc:message code="button.Cancel"/></span>
                         </button>
                         <emm:HideByPermission token="mailing.content.readonly" ignoreException="true">
                                 <button type="button" class="btn btn-primary btn-large js-confirm-positive" data-dismiss="modal">
                                     <i class="icon icon-save"></i>
-                                    <span class="text"><bean:message key="button.Save"/></span>
+                                    <span class="text"><mvc:message code="button.Save"/></span>
                                 </button>
                         </emm:HideByPermission>
                     </div>

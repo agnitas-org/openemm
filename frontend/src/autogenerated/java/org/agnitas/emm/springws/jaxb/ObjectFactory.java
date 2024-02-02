@@ -910,22 +910,6 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link DecryptLinkDataRequest }
-     * 
-     */
-    public DecryptLinkDataRequest createDecryptLinkDataRequest() {
-        return new DecryptLinkDataRequest();
-    }
-
-    /**
-     * Create an instance of {@link DecryptLinkDataResponse }
-     * 
-     */
-    public DecryptLinkDataResponse createDecryptLinkDataResponse() {
-        return new DecryptLinkDataResponse();
-    }
-
-    /**
      * Create an instance of {@link ListTrackableLinksRequest }
      * 
      */

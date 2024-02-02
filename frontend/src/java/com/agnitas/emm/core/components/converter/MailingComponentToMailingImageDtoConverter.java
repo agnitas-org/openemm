@@ -15,14 +15,14 @@ import org.springframework.core.convert.converter.Converter;
 import org.springframework.stereotype.Component;
 
 import com.agnitas.emm.core.components.dto.MailingImageDto;
-import com.agnitas.emm.core.trackablelinks.service.ComTrackableLinkService;
+import com.agnitas.emm.core.trackablelinks.service.TrackableLinkService;
 
 @Component
 public class MailingComponentToMailingImageDtoConverter implements Converter<MailingComponent, MailingImageDto> {
 
-    private final ComTrackableLinkService linkService;
+    private final TrackableLinkService linkService;
 
-    public MailingComponentToMailingImageDtoConverter(ComTrackableLinkService linkService) {
+    public MailingComponentToMailingImageDtoConverter(TrackableLinkService linkService) {
         this.linkService = linkService;
     }
 

@@ -15,9 +15,9 @@
 			</tr>
 			<tr>
 				<td><mvc:message code="serverStatus.status.jobqueue" /></td>
-				<c:set var="isOkJobQueuStatus" value="${serverStatus.jobQueueStatus}"/>
-				<td class="serverstatus_status ${isOkJobQueuStatus ? 'serverstatus_status-success' : 'serverstatus_status-error'}">
-					${isOkJobQueuStatus ? 'OK' : 'ERROR'}
+				<c:set var="isOkJobQueueStatus" value="${serverStatus.jobQueueStatus}"/>
+				<td class="serverstatus_status ${isOkJobQueueStatus ? 'serverstatus_status-success' : 'serverstatus_status-error'}">
+					${isOkJobQueueStatus ? 'OK' : 'ERROR'}
 				</td>
 			</tr>
 			<tr>
@@ -90,12 +90,12 @@
 							<div class="btn-group">
 								<div class="col-sm-4 pull-left">
 									<button type="button" class="btn btn-large pull-left kill-import-btn">
-										<i class="icon icon-times"></i> <span class="text"><bean:message key="button.Cancel" /></span>
+										<i class="icon icon-times"></i> <span class="text"><mvc:message code="button.Cancel" /></span>
 									</button>
 								</div>
 								<div class="col-sm-4 pull-right">
 									<button type="button" class="btn btn-large btn-primary pull-right kill-import-btn" data-form-url="${killRunningImportsUrl}" data-form-submit="">
-										<i class="icon icon-check"></i> <span class="text"><bean:message key="button.OK" /></span>
+										<i class="icon icon-check"></i> <span class="text"><mvc:message code="button.OK" /></span>
 										</button>
 									</div>
 								</div>

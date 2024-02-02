@@ -72,17 +72,11 @@ public class ResultSettings {
 	}
 	
 	public String getUrl() {
-		if (url != null) {
-			return url.trim();
-		}
-		return url;
+		return this.url != null ? url.trim() : null;	// TODO: Check: Useless trim()? Setter trims URL already
 	}
 	
 	public void setUrl(String url) {
-		if (url != null) {
-			url.trim();
-		}
-		this.url = url;
+		this.url = url != null ? url.trim() : null;
 	}
 
 	public String getFormBuilderJson() {

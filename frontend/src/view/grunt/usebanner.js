@@ -20,6 +20,16 @@ module.exports = function(grunt){
         linebreak: true
       }
     },
+    js_redesigned: {
+      files:  {
+        src: ['<%= config.assets %>/application.redesigned.min.js']
+      },
+      options: {
+        position: 'top',
+        banner: grunt.file.read('./assets/banner/application.js'),
+        linebreak: true
+      }
+    },
     birtjs: {
       files:  {
         src: ['<%= config.assets %>/birt.min.js']

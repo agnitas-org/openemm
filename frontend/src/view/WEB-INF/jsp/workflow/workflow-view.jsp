@@ -1,7 +1,8 @@
-<%@ page contentType="text/html; charset=utf-8" buffer="32kb" errorPage="/error.do" %>
+<%@ page contentType="text/html; charset=utf-8" buffer="32kb" errorPage="/error.action" %>
 <%@ page import="org.agnitas.beans.Recipient" %>
 <%@ page import="org.agnitas.target.ChainOperator" %>
 <%@ page import="org.agnitas.target.ConditionalOperator" %>
+<%@ page import="org.agnitas.emm.core.commons.util.ConfigValue" %>
 <%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowDeadline" %>
 <%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowDecision" %>
 <%@ page import="com.agnitas.emm.core.workflow.beans.WorkflowReactionType" %>
@@ -11,9 +12,6 @@
 <%@ page import="com.agnitas.emm.core.workflow.beans.impl.WorkflowDeadlineImpl" %>
 <%@ page import="com.agnitas.emm.core.workflow.web.WorkflowController" %>
 <%@ page import="com.agnitas.emm.core.workflow.web.forms.WorkflowForm.WorkflowStatus" %>
-<%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
-<%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
-<%@ taglib uri="http://struts.apache.org/tags-logic" prefix="logic" %>
 <%@ taglib uri="http://displaytag.sf.net" prefix="display" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
@@ -26,6 +24,8 @@
 <%--@elvariable id="accessLimitTargetId" type="java.lang.Integer"--%>
 <%--@elvariable id="statisticUrl" type="java.lang.String"--%>
 <%--@elvariable id="showStatisticsImmediately" type="java.lang.Boolean"--%>
+<%--@elvariable id="pauseTime" type="java.lang.Long"--%>
+<%--@elvariable id="pauseExpirationHours" type="java.lang.Integer"--%>
 
 <c:set var="operators" value="<%= WorkflowDecision.DECISION_OPERATORS %>"/>
 <c:set var="operatorsTypeSupportMap" value="<%= WorkflowDecision.OPERATOR_TYPE_SUPPORT_MAP %>"/>
@@ -38,6 +38,7 @@
 <c:set var="STATUS_COMPLETE" value="<%= WorkflowStatus.STATUS_COMPLETE %>" scope="page"/>
 <c:set var="STATUS_TESTING" value="<%= WorkflowStatus.STATUS_TESTING %>" scope="page"/>
 <c:set var="STATUS_TESTED" value="<%= WorkflowStatus.STATUS_TESTED %>" scope="page"/>
+<c:set var="STATUS_PAUSED" value="<%= WorkflowStatus.STATUS_PAUSED %>" scope="page"/>
 <c:set var="quote" value="'" />
 <c:set var="quoteReplace" value="\\'" />
 <c:set var="CHAIN_OPERATOR_AND" value="<%= ChainOperator.AND.getOperatorCode() %>"/>
@@ -47,9 +48,13 @@
 <c:set var="FORWARD_TARGETGROUP_CREATE" value="<%= WorkflowController.FORWARD_TARGETGROUP_CREATE_QB%>"/>
 <c:set var="FORWARD_TARGETGROUP_EDIT" value="<%= WorkflowController.FORWARD_TARGETGROUP_EDIT_QB%>"/>
 
+<c:set var="DEFAULT_PAUSE_EXPIRATION_HOURS" value="<%= ConfigValue.WorkflowPauseExpirationHours.getDefaultValue() %>"/>
+
 <c:set var="isActive" value="${workflowForm.status == STATUS_ACTIVE.name()}"/>
 <c:set var="showStatisticsTile" value="${workflowForm.status != STATUS_OPEN.name()}"/>
 <c:set var="isComplete" value="${workflowForm.status == STATUS_COMPLETE.name()}"/>
+<c:set var="isTesting" value="${workflowForm.status eq STATUS_TESTING}"/>
+<c:set var="isPause" value="${workflowForm.status eq STATUS_PAUSED}"/>
 
 <emm:instantiate var="mailingLists" type="java.util.LinkedHashMap">
     <c:forEach var="mailingList" items="${allMailinglists}">
@@ -66,12 +71,6 @@
 <emm:instantiate var="mailings" type="java.util.LinkedHashMap">
     <c:forEach var="mailing" items="${allMailings}">
         <c:set target="${mailings}" property="${mailing.mailingID}" value="${fn:replace(mailing.shortname, quote, quoteReplace)}"/>
-    </c:forEach>
-</emm:instantiate>
-
-<emm:instantiate var="reports" type="java.util.LinkedHashMap">
-    <c:forEach var="report" items="${allReports}">
-        <c:set target="${reports}" property="${report.key}" value="${fn:escapeXml(report.value)}"/>
     </c:forEach>
 </emm:instantiate>
 
@@ -168,8 +167,6 @@
 	            "forwardMailingCopy": "<%= WorkflowController.FORWARD_MAILING_COPY %>",
 	            "forwardUserFormCreate": "<%= WorkflowController.FORWARD_USERFORM_CREATE %>",
 	            "forwardUserFormEdit": "<%= WorkflowController.FORWARD_USERFORM_EDIT %>",
-	            "forwardReportCreate": "<%= WorkflowController.FORWARD_REPORT_CREATE %>",
-	            "forwardReportEdit": "<%= WorkflowController.FORWARD_REPORT_EDIT %>",
 	            "forwardAutoExportCreate": "<%= WorkflowController.FORWARD_AUTOEXPORT_CREATE %>",
 	            "forwardAutoExportEdit": "<%= WorkflowController.FORWARD_AUTOEXPORT_EDIT %>",
 	            "forwardAutoImportCreate": "<%= WorkflowController.FORWARD_AUTOIMPORT_CREATE %>",
@@ -179,6 +176,7 @@
 	            "statusActive": "${STATUS_ACTIVE}",
 	            "statusTesting": "${STATUS_TESTING}",
 	            "statusOpen": "${STATUS_OPEN}",
+	            "statusPaused": "${STATUS_PAUSED}",
 	            "genderOptions": {
 	                "<%= Recipient.GENDER_MALE %>": "Male",
 	                "<%= Recipient.GENDER_FEMALE %>": "Female",
@@ -190,8 +188,8 @@
 	                "<%= WorkflowRecipient.WorkflowTargetOption.ONE_TARGET_REQUIRED %>": "∪"
 	            },
 	            "chainOperatorOptions": {
-	                "<%= ChainOperator.AND.getOperatorCode() %>": "<bean:message key="default.and"/>",
-	                "<%= ChainOperator.OR.getOperatorCode() %>": "<bean:message key="default.or"/>"
+	                "<%= ChainOperator.AND.getOperatorCode() %>": "<mvc:message code="default.and"/>",
+	                "<%= ChainOperator.OR.getOperatorCode() %>": "<mvc:message code="default.or"/>"
 	            },
 	            "operators": [
 	                 <c:forEach items="${operators}"  var="operator" varStatus="index">
@@ -251,20 +249,22 @@
     <div id="activating-campaign-dialog" style="visibility: hidden; display: none;">
         <div class="form-group">
             <div class="col-sm-12">
-                <div class="well"><bean:message key="workflow.activating.question"/></div>
+                <div class="well"><mvc:message code="${isPause ? 'workflow.continue.question' : 'workflow.activating.question'}"/></div>
             </div>
         </div>
 
-        <div class="form-group">
-            <div class="col-sm-4">
-                <label class="control-label">
-                    <bean:message key="workflow.activating.mailings"/>
-                </label>
+        <c:if test="${!isPause}">
+            <div class="form-group">
+                <div class="col-sm-4">
+                    <label class="control-label">
+                        <mvc:message code="workflow.activating.mailings"/>
+                    </label>
+                </div>
+                <div class="col-sm-8">
+                    <label id="activating-campaign-mailings"></label>
+                </div>
             </div>
-            <div class="col-sm-8">
-                <label id="activating-campaign-mailings"></label>
-            </div>
-        </div>
+        </c:if>
 
         <hr>
 
@@ -273,11 +273,11 @@
                 <div class="btn-group">
                     <a href="#" class="btn btn-regular"
                        onclick="jQuery('#activating-campaign-dialog').dialog('close'); return false;">
-                        <bean:message key="button.Cancel"/>
+                        <mvc:message code="button.Cancel"/>
                     </a>
 
                     <a href="#" class="btn btn-regular btn-primary" id="activating-campaign-activate-button">
-                        <bean:message key="workflow.activating.title"/>
+                        <mvc:message code="${isPause ? 'button.continue.workflow' : 'workflow.activating.title'}"/>
                     </a>
                 </div>
             </div>
@@ -291,12 +291,12 @@
                     <div class="modal-header">
                         <button type="button" class="close-icon close js-confirm-negative" data-dismiss="modal"><i aria-hidden="true" class="icon icon-times-circle"></i></button>
                         <h4 class="modal-title">
-                            <bean:message key="warning"/>
+                            <mvc:message code="warning"/>
                         </h4>
                     </div>
 
                     <div class="modal-body">
-                        <p><bean:message key="workflow.mailingTypesFix.question"/></p>
+                        <p><mvc:message code="workflow.mailingTypesFix.question"/></p>
                     </div>
 
                     <div class="modal-footer">
@@ -304,14 +304,14 @@
                             <button type="button" class="btn btn-default btn-large js-confirm-negative" data-dismiss="modal">
                                 <i class="icon icon-times"></i>
                                 <span class="text">
-                                    <bean:message key="button.Cancel"/>
+                                    <mvc:message code="button.Cancel"/>
                                 </span>
                             </button>
 
                             <button type="button" class="btn btn-primary btn-large js-confirm-positive" data-dismiss="modal">
                                 <i class="icon icon-check"></i>
                                 <span class="text">
-                                    <bean:message key="button.Proceed"/>
+                                    <mvc:message code="button.Proceed"/>
                                 </span>
                             </button>
                         </div>
@@ -324,7 +324,7 @@
     <div id="inactivating-campaign-dialog" style=" visibility: hidden; display: none;">
         <div class="form-group">
             <div class="col-sm-12">
-                <div class="well"><bean:message key="workflow.inactivating.question"/></div>
+                <div class="well"><mvc:message code="workflow.inactivating.question"/></div>
             </div>
         </div>
 
@@ -335,11 +335,11 @@
                 <div class="btn-group">
                     <a href="#" class="btn btn-regular"
                        onclick="jQuery('#inactivating-campaign-dialog').dialog('close'); return false;">
-                        <span><bean:message key="button.Cancel"/></span>
+                        <span><mvc:message code="button.Cancel"/></span>
                     </a>
 
                     <a href="#" class="btn btn-regular btn-primary" id="inactivating-campaign-inactivate-button">
-                        <bean:message key="workflow.inactivating.title"/>
+                        <mvc:message code="workflow.inactivating.title"/>
                     </a>
                 </div>
             </div>
@@ -357,7 +357,6 @@
         <jsp:include page="editors/workflow-decision-editor.jsp"/>
         <jsp:include page="editors/workflow-deadline-editor.jsp"/>
         <jsp:include page="editors/workflow-parameter-editor.jsp"/>
-        <jsp:include page="editors/workflow-report-editor.jsp"/>
         <jsp:include page="editors/workflow-recipient-editor.jsp"/>
         <jsp:include page="editors/workflow-archive-editor.jsp"/>
         <jsp:include page="editors/workflow-mailing-editor.jsp"/>
@@ -410,12 +409,39 @@
     <mvc:hidden path="partOfActivatedWorkflowName"/>
     <input type="hidden" name="appName" id="appNameId" value="${pageContext.request.contextPath}"/>
 
+    <c:if test="${isPause}">
+        <script data-initializer="workflow-pause-timer" type="application/json">
+            {
+                "defaultExpirationHours": ${DEFAULT_PAUSE_EXPIRATION_HOURS},
+                "expirationHours": ${pauseExpirationHours},
+                "workflowId": ${workflowForm.workflowId},
+                "pauseTime": ${pauseTime}
+            }
+        </script>
+    </c:if>
+
     <div class="tile">
         <div class="tile-header">
             <a href="#" class="headline" data-toggle-tile="#tile-campaignInformation">
                 <i class="tile-toggle icon icon-angle-up"></i>
-                <bean:message key="campaignInformation"/>
+                <mvc:message code="campaignInformation"/>
             </a>
+            <ul class="tile-header-actions">
+                <c:if test="${isPause}">
+                    <li class="status">
+                        <div id="workflow-pause-timer" data-tooltip="<mvc:message code="workflow.pause.timer"/>" style="display: flex">
+                            <label for="workflow-pause-timer-text" style="font-size: 20px; margin-bottom: 0;"><i class="icon icon-clock-o"></i></label>&nbsp;&nbsp;
+                            <div id="workflow-pause-timer-text" class="form-badge badge-warning bold">--:--:--</div>
+                        </div>
+                    </li>
+                </c:if>
+                <li class="status">
+                    <label><mvc:message code="Status"/>: </label>
+                    <div class="form-badge campaign.status.background.${workflowForm.status.name} bold" style="margin-top: 0">
+                        <mvc:message code="${workflowForm.status.messageKey}"/>
+                    </div>
+                </li>
+            </ul>
         </div>
         <div id="tile-campaignInformation" class="tile-content tile-content-forms" data-field="toggle-vis">
             <div class="row">
@@ -438,33 +464,30 @@
                     </div>
                 </div>
 
-                <div class="col-sm-2">
-                    <div class="form-group">
-                        <label class="form-label block">
-                            <bean:message key="workflow.status"/>
-                        </label>
-                        <b class="form-badge campaign.status.background.${workflowForm.status.name}">
-                            <bean:message key="${workflowForm.status.messageKey}"/>
-                        </b>
-                    </div>
-                </div>
-
                 <div class="clearfix hidden-lg"></div>
 
                 <emm:ShowByPermission token="workflow.activate">
                     <div class="col-sm-4 col-lg-2">
                         <div class="form-group">
                             <c:if test="${workflowForm.statusMaybeChangedTo ne STATUS_NONE}">
-                                <label for="workflow_active" class="form-label block">
-                                    <bean:message key="workflow.view.setStatusTo"/>
-                                    <b>
-                                        <bean:message key="${workflowForm.statusMaybeChangedTo.messageKey}"/>
-                                    </b>
+                                <label class="form-label block">
+                                    <mvc:message code="workflow.status.change"/>
                                 </label>
-                                <label class="toggle">
-                                    <input id="workflow_active" data-action="workflow-view-change-status" ${isActive ? 'checked="checked"':''}  type="checkbox"/>
-                                    <div class="toggle-control"></div>
-                                </label>
+                                <c:if test="${workflowForm.status ne STATUS_ACTIVE}">
+                                    <a href="#" class="btn btn-workflow-state" data-tooltip="<mvc:message code='${isPause ? "button.continue.workflow" : "button.Activate"}'/>" data-action="${isPause ? 'workflow-unpause' : 'workflow-activate'}">
+                                        <i class="far icon-2x icon-play-circle"></i>
+                                    </a>
+                                </c:if>
+                                <c:if test="${isActive}">
+                                    <a href="#" class="btn btn-workflow-state" data-tooltip="<mvc:message code='button.Pause'/>" data-action="workflow-pause">
+                                        <i class="far icon-2x icon-pause-circle"></i>
+                                    </a>
+                                </c:if>
+                                <c:if test="${isActive or isTesting or isPause}">
+                                    <a href="#" class="btn btn-workflow-state" data-tooltip="<mvc:message code='stop'/>" data-action="workflow-deactivate">
+                                        <i class="far icon-2x icon-stop-circle"></i>
+                                    </a>
+                                </c:if>
                             </c:if>
                             <input id="workflow-status" type="hidden" name="status" value="${workflowForm.status}"/>
                         </div>
@@ -476,7 +499,7 @@
                     <div class="col-sm-12">
                         <div class="form-group">
                             <div class="well block">
-                                <bean:message key="workflow.activate.info"/>
+                                <mvc:message code="workflow.activate.info"/>
                                 <!--<b><i class="icon icon-phone"></i> upload.view.phone </b>-->
                             </div>
                         </div>
@@ -494,27 +517,27 @@
     <div class="tile" data-sizing="container">
         <div class="tile-header" data-sizing="top">
             <h2 class="headline">
-                <bean:message key="workflow.editor"/>
+                <mvc:message code="workflow.editor"/>
             </h2>
             <ul class="tile-header-actions">
                 <li class="dropdown">
                     <a href="#" class="dropdown-toggle" data-toggle="dropdown">
                         <i class="icon icon-cloud-download"></i>
-                        <span class="text"><bean:message key="export"/></span>
+                        <span class="text"><mvc:message code="export"/></span>
                         <i class="icon icon-caret-down"></i>
                     </a>
                     <ul class="dropdown-menu">
                         <li>
                             <a href="#" tabindex="-1" data-action="workflow-generate-pdf">
                                 <i class="icon icon-file-pdf-o"></i>
-                                <bean:message key="workflow.pdf.tooltip"/>
+                                <mvc:message code="workflow.pdf.tooltip"/>
                             </a>
                         </li>
                     </ul>
                 </li>
                 <li>
                     <a data-action="create-workflow-enlarged-editor-modal"
-                       data-tooltip="<bean:message key='editor.enlargeEditor'/>" class="dropdown-toggle">
+                       data-tooltip="<mvc:message code='editor.enlargeEditor'/>" class="dropdown-toggle">
                         <i class="icon icon-arrows-alt"></i>
                     </a>
                 </li>
@@ -530,31 +553,31 @@
                 <div class="editor-content-body-top unselectable" id="toolbarTop">
                     <div class="iconPanel">
                         <div class="iconPanelTitle">
-                            <bean:message key="workflow.process"/>
+                            <mvc:message code="workflow.process"/>
                         </div>
 
                         <div class="iconPanelRow">
                             <div class="toolbarButton js-draggable-button" data-type="start"
-                                 title="<bean:message key="workflow.icon.start"/>"></div>
+                                 title="<mvc:message code="workflow.icon.start"/>"></div>
                             <div class="toolbarButton js-draggable-button" data-type="decision"
-                                 title="<bean:message key="workflow.decision"/>"></div>
+                                 title="<mvc:message code="workflow.decision"/>"></div>
                             <div class="toolbarButton js-draggable-button" data-type="parameter"
-                                 title="<bean:message key="workflow.icon.parameter"/>"></div>
+                                 title="<mvc:message code="workflow.icon.parameter"/>"></div>
                         </div>
 
                         <div class="iconPanelRow">
-                            <div id="arrowButton" class="toolbarButton" title="<bean:message key="workflow.icon.chaining"/>" data-action="chain-mode"></div>
-                            <div class="toolbarButton js-draggable-button" data-type="deadline" title="<bean:message key="workflow.icon.deadline"/>"></div>
+                            <div id="arrowButton" class="toolbarButton" title="<mvc:message code="workflow.icon.chaining"/>" data-action="chain-mode"></div>
+                            <div class="toolbarButton js-draggable-button" data-type="deadline" title="<mvc:message code="workflow.icon.deadline"/>"></div>
                         </div>
                     </div>
 
                     <div class="iconPanel">
                         <div class="iconPanelTitle">
-                            <bean:message key="Recipient"/>
+                            <mvc:message code="Recipient"/>
                         </div>
 
                         <div class="iconPanelRow">
-                            <div class="toolbarButton js-draggable-button" data-type="recipient" title="<bean:message key="Recipient"/>"></div>
+                            <div class="toolbarButton js-draggable-button" data-type="recipient" title="<mvc:message code="Recipient"/>"></div>
                         </div>
 
                         <div class="iconPanelRow">
@@ -565,12 +588,12 @@
 
                     <div class="iconPanel">
                         <div class="iconPanelTitle">
-                            <bean:message key="workflow.panel.mailings"/>
+                            <mvc:message code="workflow.panel.mailings"/>
                         </div>
 
                         <div class="iconPanelRow">
-                            <div class="toolbarButton js-draggable-button" data-type="mailing" title="<bean:message key="workflow.icon.mailing"/>"></div>
-                            <div class="toolbarButton js-draggable-button" data-type="archive" title="<bean:message key="mailing.archive"/>"></div>
+                            <div class="toolbarButton js-draggable-button" data-type="mailing" title="<mvc:message code="workflow.icon.mailing"/>"></div>
+                            <div class="toolbarButton js-draggable-button" data-type="archive" title="<mvc:message code="mailing.archive"/>"></div>
                         </div>
 
                         <div class="iconPanelRow">
@@ -582,31 +605,31 @@
 
                     <div class="iconPanel">
                         <div class="iconPanelTitle">
-                            <bean:message key="Templates"/>
+                            <mvc:message code="Templates"/>
                         </div>
                         <div class="iconPanelRow">
                             <emm:ShowByPermission token="campaign.change" ignoreException="true">
-                                <div class="toolbarButton js-draggable-button" data-type="scABTest" title="<bean:message key='mailing.autooptimization'/>"></div>
+                                <div class="toolbarButton js-draggable-button" data-type="scABTest" title="<mvc:message code='mailing.autooptimization'/>"></div>
                             </emm:ShowByPermission>
-                            <div class="toolbarButton js-draggable-button" data-type="scDOI" title="<bean:message key='workflow.icon.DOI'/>"></div>
-                            <div class="toolbarButton js-draggable-button" data-type="scBirthday" title="<bean:message key='workflow.icon.birthday'/>"></div>
+                            <div class="toolbarButton js-draggable-button" data-type="scDOI" title="<mvc:message code='workflow.icon.DOI'/>"></div>
+                            <div class="toolbarButton js-draggable-button" data-type="scBirthday" title="<mvc:message code='workflow.icon.birthday'/>"></div>
                         </div>
                         <div class="iconPanelRow">
-                            <div class="toolbarButton js-draggable-button" data-type="ownWorkflow" title="<bean:message key='workflow.ownCampaign'/>"></div>
+                            <div class="toolbarButton js-draggable-button" data-type="ownWorkflow" title="<mvc:message code='workflow.ownCampaign'/>"></div>
                         </div>
                     </div>
 
                     <div class="actionPanel actionPanel-md">
                         <div class="actionPanelTool">
                             <div class="actionPanelTitle">
-                                <bean:message key="workflow.autoLayout"/>:
+                                <mvc:message code="workflow.autoLayout"/>:
                             </div>
-                            <div id="autoLayout" class="toolbarButton toolbarButtonLeft" title="<bean:message key='workflow.doAutoLayout'/>" data-action="align-all"></div>
+                            <div id="autoLayout" class="toolbarButton toolbarButtonLeft" title="<mvc:message code='workflow.doAutoLayout'/>" data-action="align-all"></div>
                         </div>
 
                         <div id="zoomTool" class="actionPanelTool">
                             <div class="actionPanelTitle">
-                                <bean:message key="workflow.panel.zoom"/>
+                                <mvc:message code="workflow.panel.zoom"/>
                             </div>
                             <div id="zoomToolContent">
                                 <div id="zoomMin" class="toolbarButton unselectable-text js-zoom-scale-down" data-action="zoom-out">-</div>
@@ -619,13 +642,13 @@
                         </div>
 
                         <div class="actionPanelTool">
-                            <div class="actionPanelTitle"><bean:message key="workflow.panel.undo"/></div>
+                            <div class="actionPanelTitle"><mvc:message code="workflow.panel.undo"/></div>
                             <div id="undoButton" class="toolbarButton disabled" data-action="undo"></div>
                         </div>
 
                         <emm:ShowByPermission token="workflow.change">
                             <div class="actionPanelTool">
-                                <div class="actionPanelTitle"><bean:message key="button.Delete"/></div>
+                                <div class="actionPanelTitle"><mvc:message code="button.Delete"/></div>
                                 <div id="deleteButton" class="toolbarButton disabled" data-action="delete-selected"></div>
                             </div>
                         </emm:ShowByPermission>
@@ -641,7 +664,7 @@
 
                     <div class="actionPanel actionPanel-sm">
                         <div class="dropdown">
-                            <div class="toolbarButton actionPanelButton" data-toggle="dropdown" title="<bean:message key="MoreComponents"/>">
+                            <div class="toolbarButton actionPanelButton" data-toggle="dropdown" title="<mvc:message code="MoreComponents"/>">
                                 <i class="icon icon-angle-double-right"></i>
                             </div>
 
@@ -649,13 +672,13 @@
                                 <li>
                                     <button type="button" id="autoLayoutItem" data-action="align-all">
                                         <i class="icon icon-th"></i>
-                                        <bean:message key="workflow.autoLayout"/>
+                                        <mvc:message code="workflow.autoLayout"/>
                                     </button>
                                 </li>
 
                                 <li class="dropdown-header">
                                     <i class="icon icon-search"></i>
-                                    <bean:message key="workflow.panel.zoom"/>
+                                    <mvc:message code="workflow.panel.zoom"/>
                                 </li>
 
                                 <li>
@@ -676,7 +699,7 @@
                                     <%-- Disabled by default — initially no change is made --%>
                                     <button type="button" id="undoItem" disabled="disabled" data-action="undo">
                                         <i class="icon icon-reply"></i>
-                                        <bean:message key="workflow.panel.undo"/>
+                                        <mvc:message code="workflow.panel.undo"/>
                                     </button>
                                 </li>
 
@@ -685,7 +708,7 @@
                                         <%-- Disabled by default — initially no icon is selected --%>
                                         <button type="button" id="deleteItem" disabled="disabled" data-action="delete-selected">
                                             <i class="icon icon-trash-o"></i>
-                                            <bean:message key="button.Delete"/>
+                                            <mvc:message code="button.Delete"/>
                                         </button>
                                     </li>
                                 </emm:ShowByPermission>
@@ -723,7 +746,7 @@
 
         <c:if test="${not isMailtrackingActive}">
             <div class="tile-notification tile-notification-info" data-sizing="bottom">
-                <span><bean:message key="workflow.info.noMailtracking"/></span>
+                <span><mvc:message code="workflow.info.noMailtracking"/></span>
             </div>
         </c:if>
         

@@ -1,0 +1,12 @@
+
+.popover .popover-arrow {
+  display: none;
+}
+
+.popover-header {
+  border-bottom: none;
+}
+
+.popover[data-popper-placement="bottom-start"] {
+  border-top-left-radius: 0;
+}

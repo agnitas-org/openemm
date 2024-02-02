@@ -1,8 +1,7 @@
-<%@ page language="java" contentType="text/html; charset=utf-8"  errorPage="/error.do" %>
-<%@ taglib uri="http://struts.apache.org/tags-bean" prefix="bean" %>
-<%@ taglib uri="http://struts.apache.org/tags-html" prefix="html" %>
+<%@ page language="java" contentType="text/html; charset=utf-8"  errorPage="/error.action" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
+<%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
 <script type="text/javascript">
 
@@ -50,9 +49,9 @@
                     }
                 %>
                 <li class="top_menu_point">
-                    <html:link page="<%= _navigation_href %>" styleClass="<%= styleClass %>">
-	                   	<bean:message key="<%= _navigation_navMsg %>"/>
-	                </html:link>
+                    <a href="<c:url value="${_navigation_href}" />" class="${styleClass}">
+                        <mvc:message code="<%= _navigation_navMsg %>"/>
+                    </a>
                 </li>
             </emm:ShowByPermission>
         </emm:ShowNavigation>
@@ -80,9 +79,9 @@
                             %>
                             <label>|</label>
                             <% } %>
-                            <html:link page="<%= _sub_navigation_href %>" styleClass="<%= \"top_navigation_level2\" + subCssClassPostfix %>">
-                            	<bean:message key="<%= _sub_navigation_navMsg %>"/>
-                            </html:link>
+                            <a href="<c:url value="${_sub_navigation_href}" />" class="<%= \"top_navigation_level2\" + subCssClassPostfix %>">
+                                <mvc:message code="<%= _sub_navigation_navMsg %>"/>
+                            </a>
                         </li>
                     </emm:ShowByPermission>
                 </emm:ShowNavigation>

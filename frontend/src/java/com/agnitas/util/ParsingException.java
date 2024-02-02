@@ -10,9 +10,15 @@
 
 package com.agnitas.util;
 
+import java.util.Locale;
 import java.util.Objects;
 
+import com.agnitas.messages.I18nString;
+import com.agnitas.messages.Message;
+import org.apache.commons.lang3.StringUtils;
+
 public class ParsingException extends Exception {
+
     private static final long serialVersionUID = 6209070435425158023L;
 
     private Caret caret;
@@ -57,5 +63,22 @@ public class ParsingException extends Exception {
 
     public int getColumn() {
         return caret.getColumn();
+    }
+
+    public Message getMessageWithPosition(Locale locale) {
+        return getMessageWithPosition("", locale);
+    }
+
+    public Message getMessageWithPosition(String itemName, Locale locale) {
+        String position = String.format("%s (%s: %d, %s: %d)",
+                this.getMessage(),
+                I18nString.getLocaleString("default.line", locale),
+                getLine(),
+                I18nString.getLocaleString("default.column", locale),
+                getColumn());
+        if (StringUtils.isNotBlank(itemName)) {
+            position = itemName + ": " + position;
+        }
+        return Message.of("error.html.parse", position);
     }
 }

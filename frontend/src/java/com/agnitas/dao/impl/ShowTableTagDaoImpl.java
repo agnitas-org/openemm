@@ -20,8 +20,8 @@ import org.apache.logging.log4j.Logger;
 import com.agnitas.dao.ShowTableTagDao;
 
 public class ShowTableTagDaoImpl extends BaseDaoImpl implements ShowTableTagDao {
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(ShowTableTagDaoImpl.class);
+
+	private static final Logger logger = LogManager.getLogger(ShowTableTagDaoImpl.class);
 	
 	@Override
 	public final List<Map<String, Object>> select(String sqlSelectStatement, int maxRows, int startOffset) {
@@ -31,9 +31,9 @@ public class ShowTableTagDaoImpl extends BaseDaoImpl implements ShowTableTagDao 
 			int rowcount = maxRows + startOffset;
 			String row = "";
 			if (isOracleDB()) {
-				row = "WHERE ROWNUM <= " + (rowcount < 1000 ? 1000 : rowcount);
+				row = "WHERE ROWNUM <= " + Math.max(rowcount, 1000);
 			} else {
-				row = "LIMIT " + (rowcount < 1000 ? 1000 : rowcount);
+				row = "LIMIT " + Math.max(rowcount, 1000);
 			}
 			return select(logger, "SELECT * FROM(" + sqlSelectStatement + ") subsel0 " + row);
 		}

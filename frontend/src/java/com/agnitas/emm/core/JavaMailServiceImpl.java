@@ -45,6 +45,12 @@ public class JavaMailServiceImpl implements JavaMailService {
 	/** The logger. */
 	private static final transient Logger logger = LogManager.getLogger(JavaMailServiceImpl.class);
 	
+	/**
+	 *  Thread-safe marker. Will be set to true, when entering method to send exception mail and will be reset 
+	 *  to false before leaving.
+	 */
+	private final ThreadLocal<Boolean> sendingExceptionMail = ThreadLocal.withInitial(() -> Boolean.FALSE);
+	
 	private ConfigService configService;
 	private ComDkimDao dkimDao;
 
@@ -98,39 +104,52 @@ public class JavaMailServiceImpl implements JavaMailService {
 	 */
 	@Override
 	public boolean sendExceptionMail(int dkimCompanyID, String errorText, Throwable e) {
-		String toAddress = configService.getValue(ConfigValue.Mailaddress_Error);
-		if (toAddress != null) {
-			if (StringUtils.isNotBlank(toAddress)) {
-				StringBuilder messageBuilder = new StringBuilder();
-				if (errorText != null) {
-					messageBuilder.append(errorText).append("\n");
-				}
-				messageBuilder.append("Exception:\n").append(AgnUtils.throwableToString(e, -1));
+		synchronized(this.sendingExceptionMail) {
+			if(this.sendingExceptionMail.get()) {
+				logger.error("We seems to entered a cycle of exceptions when sending exception mail. Aborting here.", e);
+				return false;
+			}
 
-				String subjectText = "EMM Error (Server: " + AgnUtils.getHostName() + " / Exceptiontype: " + e.getClass().getSimpleName() + ")";
+			this.sendingExceptionMail.set(Boolean.TRUE);
 		
-				if (logger.isInfoEnabled()) {
-					logger.info("Sending error message:\n" + messageBuilder.toString());
-				}
-	
-				try {
-					final boolean result = sendEmail(dkimCompanyID, toAddress, subjectText, messageBuilder.toString(), null);
-					
-					if (!result) {
-						logger.error("Could not send exception mail - unreported exception is:", e);
+			try {
+				String toAddress = configService.getValue(ConfigValue.Mailaddress_Error);
+				if (toAddress != null) {
+					if (StringUtils.isNotBlank(toAddress)) {
+						StringBuilder messageBuilder = new StringBuilder();
+						if (errorText != null) {
+							messageBuilder.append(errorText).append("\n");
+						}
+						messageBuilder.append("Exception:\n").append(AgnUtils.throwableToString(e, -1));
+		
+						String subjectText = "EMM Error (Server: " + AgnUtils.getHostName() + " / Exceptiontype: " + e.getClass().getSimpleName() + ")";
+				
+						if (logger.isInfoEnabled()) {
+							logger.info("Sending error message:\n" + messageBuilder.toString());
+						}
+			
+						try {
+							final boolean result = sendEmail(dkimCompanyID, toAddress, subjectText, messageBuilder.toString(), null);
+							
+							if (!result) {
+								logger.error("Could not send exception mail - unreported exception is:", e);
+							}
+							
+							return result;
+						} catch (Exception me) {
+							logger.error("Error sending email with exception: " + e.getMessage() + "\nEmailmessage:\n" + subjectText + "\n" + messageBuilder.toString(), me);
+							return false;
+						}
+					} else {
+						return true;
 					}
-					
-					return result;
-				} catch (Exception me) {
-					logger.error("Error sending email with exception: " + e.getMessage() + "\nEmailmessage:\n" + subjectText + "\n" + messageBuilder.toString(), me);
+				} else {
+					logger.error("Error sending email with exception (ConfigService not initialized): " + e.getMessage(), e);
 					return false;
 				}
-			} else {
-				return true;
+			} finally {
+				this.sendingExceptionMail.set(Boolean.FALSE);
 			}
-		} else {
-			logger.error("Error sending email with exception (ConfigService not initialized): " + e.getMessage(), e);
-			return false;
 		}
 	}
 	@Override

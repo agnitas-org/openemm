@@ -30,12 +30,10 @@ import java.util.stream.Collectors;
 import org.agnitas.beans.DynamicTagContent;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.beans.MailingComponentType;
-import org.agnitas.beans.TrackableLink;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.MailingComponentDao;
 import org.agnitas.dao.exception.target.TargetGroupLockedException;
 import org.agnitas.dao.exception.target.TargetGroupPersistenceException;
-import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.target.exception.UnknownTargetGroupIdException;
 import org.agnitas.emm.core.target.service.UserActivityLog;
 import org.agnitas.emm.core.useractivitylog.UserAction;
@@ -43,15 +41,13 @@ import org.agnitas.target.TargetFactory;
 import org.agnitas.util.beanshell.BeanShellInterpreterFactory;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.struts.action.ActionMessage;
-import org.apache.struts.action.ActionMessages;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.agnitas.beans.Admin;
 import com.agnitas.beans.ComTarget;
+import com.agnitas.beans.TrackableLink;
 import com.agnitas.beans.DynamicTag;
 import com.agnitas.beans.ListSplit;
 import com.agnitas.beans.Mailing;
@@ -60,7 +56,6 @@ import com.agnitas.beans.TargetLight;
 import com.agnitas.dao.ComMailingDao;
 import com.agnitas.dao.ComRecipientDao;
 import com.agnitas.dao.ComTargetDao;
-import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.beans.Dependent;
 import com.agnitas.emm.core.profilefields.ProfileFieldException;
 import com.agnitas.emm.core.profilefields.service.ProfileFieldService;
@@ -75,7 +70,6 @@ import com.agnitas.emm.core.target.beans.TargetGroupDependentType;
 import com.agnitas.emm.core.target.complexity.bean.TargetComplexityEvaluationCache;
 import com.agnitas.emm.core.target.complexity.bean.impl.TargetComplexityEvaluationCacheImpl;
 import com.agnitas.emm.core.target.complexity.service.TargetComplexityEvaluator;
-import com.agnitas.emm.core.target.eql.EqlAnalysisResult;
 import com.agnitas.emm.core.target.eql.EqlFacade;
 import com.agnitas.emm.core.target.eql.EqlValidatorService;
 import com.agnitas.emm.core.target.eql.codegen.CodeGeneratorException;
@@ -92,7 +86,6 @@ import com.agnitas.emm.core.target.service.RecipientTargetGroupMatcher;
 import com.agnitas.emm.core.target.service.ReferencedItemsService;
 import com.agnitas.emm.core.target.service.TargetGroupDependencyService;
 import com.agnitas.emm.core.target.service.TargetLightsOptions;
-import com.agnitas.emm.core.target.service.TargetSavingAndAnalysisResult;
 import com.agnitas.messages.Message;
 import com.agnitas.service.ColumnInfoService;
 import com.agnitas.service.ServiceResult;
@@ -107,8 +100,6 @@ import bsh.Interpreter;
 public class ComTargetServiceImpl implements ComTargetService {
 
 	private static final Logger logger = LogManager.getLogger(ComTargetServiceImpl.class);
-
-	private static final Pattern GENDER_EQUATION_PATTERN = Pattern.compile("(?:cust\\.gender\\s*(?:=|<>|>|>=|<|<=)\\s*(-?\\d+))|(?:mod\\(cust\\.gender,\\s+(\\d+)\\))");
 
 	/** DAO accessing target groups. */
     protected ComTargetDao targetDao;
@@ -152,7 +143,7 @@ public class ComTargetServiceImpl implements ComTargetService {
 		if (actualDependency.isPresent()) {
 			if (buildErrorMessages) {
 				String targetName = getTargetName(targetGroupID, companyID);
-				Message errorMessage = targetGroupDependencyService.buildErrorMessage(actualDependency.get(), targetName, admin);
+				Message errorMessage = targetGroupDependencyService.buildErrorMessage(actualDependency.get(), targetName);
 
 				return SimpleServiceResult.simpleError(errorMessage);
 			}
@@ -202,7 +193,7 @@ public class ComTargetServiceImpl implements ComTargetService {
 
 		if (actualDependency.isPresent()) {
 			String targetName = getTargetName(targetId, companyId);
-			Message errorMessage = targetGroupDependencyService.buildErrorMessage(actualDependency.get(), targetName, admin);
+			Message errorMessage = targetGroupDependencyService.buildErrorMessage(actualDependency.get(), targetName);
 
 			return SimpleServiceResult.simpleError(errorMessage);
 		}
@@ -326,40 +317,6 @@ public class ComTargetServiceImpl implements ComTargetService {
 
     	return targetIds;
     }
-
-    @Override
-    public int saveTarget(Admin admin, ComTarget newTarget, ComTarget target, ActionMessages errors, UserActivityLog userActivityLog) throws Exception {	// TODO: Remove "ActionMessages" to remove dependencies to Struts
-    	final TargetSavingAndAnalysisResult result = saveTargetWithAnalysis(admin, newTarget, target, errors, userActivityLog);
-
-    	return result.getTargetID();
-    }
-
-	@Override
-	public TargetSavingAndAnalysisResult saveTargetWithAnalysis(Admin admin, ComTarget newTarget, ComTarget target, ActionMessages errors, UserActivityLog userActivityLog) throws Exception {	// TODO: Remove "ActionMessages" to remove dependencies to Struts
-		if (target == null) {
-			// be sure to use id 0 if there is no existing object
-			newTarget.setId(0);
-		}
-
-		if (validateTargetDefinition(admin.getCompanyID(), newTarget.getEQL())) {
-			newTarget.setComplexityIndex(calculateComplexityIndex(newTarget.getEQL(), admin.getCompanyID()));
-
-			final int newId = saveTarget(newTarget);
-
-			postValidation(admin, newTarget).forEach(error -> errors.add(ActionMessages.GLOBAL_MESSAGE, error));
-
-			newTarget.setId(newId);
-
-			final EqlAnalysisResult analysisResultOrNull = this.eqlFacade.analyseEql(newTarget.getEQL());
-
-			getSavingLogs(newTarget, target).forEach(action -> userActivityLog.write(admin, action.getAction(), action.getDescription()));
-
-			return new TargetSavingAndAnalysisResult(newId, analysisResultOrNull);
-		} else {
-			errors.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("error.target.definition"));
-			return new TargetSavingAndAnalysisResult(0, null);
-		}
-	}
 
     @Override
     public int saveTarget(Admin admin, ComTarget newTarget, ComTarget target, List<Message> errors, List<UserAction> userActions) throws TargetGroupPersistenceException {
@@ -1124,24 +1081,6 @@ public class ComTargetServiceImpl implements ComTargetService {
 		}
 	}
 
-	private int getMaxGenderValue(Admin admin) {
-		if (admin.permissionAllowed(Permission.RECIPIENT_GENDER_EXTENDED)) {
-			return ConfigService.MAX_GENDER_VALUE_EXTENDED;
-		} else {
-			return ConfigService.MAX_GENDER_VALUE_BASIC;
-		}
-	}
-
-	private boolean validateTargetDefinition(int companyId, String eql) {
-		try {
-			eqlFacade.convertEqlToSql(eql, companyId);
-			return true;
-		} catch (Exception e) {
-			logger.error(String.format("Error occurred: %s", e.getMessage()), e);
-			return false;
-		}
-	}
-
 	private List<UserAction> getSavingLogs(ComTarget newTarget, ComTarget oldTarget) {
 		List<UserAction> userActions;
 		try {
@@ -1271,26 +1210,6 @@ public class ComTargetServiceImpl implements ComTargetService {
 		return Collections.emptyList();
 	}
 
-	private List<ActionMessage> postValidation(Admin admin, ComTarget target) {
-		// Check for maximum "compare to"-value of gender equations
-		// Must be done after saveTarget(..)-call because there the new target sql expression is generated
-		if (target.getTargetSQL().contains("cust.gender")) {
-			final int maxGenderValue = getMaxGenderValue(admin);
-
-			Matcher matcher = GENDER_EQUATION_PATTERN.matcher(target.getTargetSQL());
-			while (matcher.find()) {
-				int genderValue = NumberUtils.toInt(matcher.group(1));
-				if (genderValue < 0 || genderValue > maxGenderValue) {
-					return Collections.singletonList(new ActionMessage("error.gender.invalid", maxGenderValue));
-				}
-			}
-		} else if (target.getTargetSQL().equals("1=0")) {
-			return Collections.singletonList(new ActionMessage("error.target.definition"));
-		}
-
-		return Collections.emptyList();
-	}
-	
 	@Override
 	public List<TargetLight> getTargetLights(final int companyId, boolean includeDeleted) {
 		return targetDao.getTargetLights(companyId, includeDeleted);

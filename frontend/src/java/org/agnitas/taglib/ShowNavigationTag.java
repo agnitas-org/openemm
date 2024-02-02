@@ -23,6 +23,7 @@ import jakarta.servlet.jsp.tagext.BodyContent;
 import jakarta.servlet.jsp.tagext.BodyTagSupport;
 
 import org.agnitas.emm.core.navigation.ConditionsHandler;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -44,6 +45,7 @@ public class ShowNavigationTag extends BodyTagSupport {
 	private String navigation;
 	private String highlightKey;
 	private String prefix;
+	private String redesigned;
 
 	private final List<NavigationData> navigationDataList = new Vector<>();
 	private Iterator<NavigationData> navigationDataIterator;
@@ -107,6 +109,10 @@ public class ShowNavigationTag extends BodyTagSupport {
 		this.highlightKey = highlightKey;
 	}
 
+	public void setRedesigned(String redesigned) {
+		this.redesigned = redesigned;
+	}
+
 	@Override
 	public int doStartTag() throws JspException {
 		prepareNavigationData();
@@ -146,7 +152,7 @@ public class ShowNavigationTag extends BodyTagSupport {
 				if (!navigationDataList.isEmpty()) {
 					currentBodyContent.writeOut(getPreviousOut());
 				}
-				currentBodyContent.clearBody();
+//				currentBodyContent.clearBody();
 			}
 		} catch (IOException e) {
 			logger.error("Error in ShowNavigationTag.doEndTag: " + e.getMessage(), e);
@@ -165,7 +171,11 @@ public class ShowNavigationTag extends BodyTagSupport {
 			}
 
 			try {
-				bundle = ResourceBundle.getBundle("navigation." + navigation);
+				if (BooleanUtils.toBoolean(redesigned)) {
+					bundle = ResourceBundle.getBundle("navigation_redesigned." + navigation);
+				} else {
+					bundle = ResourceBundle.getBundle("navigation." + navigation);
+				}
 			} catch (Exception e) {
 				if (navigation.endsWith("Sub")) {
 					// no such submenu properties file found => no submenu

@@ -12,6 +12,8 @@ package com.agnitas.service;
 
 import java.util.Locale;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.agnitas.messages.I18nString;
 
 public class LicenseError extends RuntimeException {
@@ -56,7 +58,11 @@ public class LicenseError extends RuntimeException {
 	
 	public String getMessage(Locale locale) {
 		if (errorMessageKey != null) {
-			return I18nString.getLocaleString(errorMessageKey, locale, additionalErrorData);
+			try {
+				return I18nString.getLocaleString(errorMessageKey, locale, additionalErrorData);
+			} catch (@SuppressWarnings("unused") Exception e) {
+				return "LicenseError before messagekey initialisation with key: " + errorMessageKey + " and additionalErrorData: " + StringUtils.join(additionalErrorData, ", ");
+			}
 		} else {
 			return super.getMessage();
 		}
@@ -65,7 +71,11 @@ public class LicenseError extends RuntimeException {
 	@Override
 	public String getMessage() {
 		if (errorMessageKey != null) {
-			return I18nString.getLocaleString(errorMessageKey, Locale.getDefault(), additionalErrorData);
+			try {
+				return I18nString.getLocaleString(errorMessageKey, Locale.getDefault(), additionalErrorData);
+			} catch (@SuppressWarnings("unused") Exception e) {
+				return "LicenseError before messagekey initialisation with key: " + errorMessageKey + " and additionalErrorData: " + StringUtils.join(additionalErrorData, ", ");
+			}
 		} else {
 			return super.getMessage();
 		}

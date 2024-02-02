@@ -19,10 +19,12 @@ import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import com.agnitas.emm.core.dashboard.bean.DashboardRecipientReport;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.util.ZipUtilities;
 import org.apache.commons.io.FilenameUtils;
@@ -67,11 +69,33 @@ public class RecipientsReportServiceImpl implements RecipientsReportService {
     public void setMimeTypeService(MimeTypeService mimeTypeService) {
         this.mimeTypeService = mimeTypeService;
     }
-    
+
     @Override
-    public RecipientsReport createAndSaveImportReport(int companyID, int adminID, String filename, int datasourceId, Date reportDate, String content, int autoImportID, boolean isError) throws Exception {
+    public List<DashboardRecipientReport> getReportsForDashboard(int companyId) {
+        return recipientsReportDao.getReportsForDashboard(companyId);
+    }
+
+    @Override
+    public RecipientsReport saveNewReport(Admin admin, int companyId, RecipientsReport report, String content) throws Exception {
+        // TODO: remove in future after removing of 'autoimport_id' and 'type' columns. for backward compatibility only
+        if (report.getEntityType() == RecipientsReport.EntityType.IMPORT) {
+            report.setType(RecipientsReport.RecipientReportType.IMPORT_REPORT);
+            if (report.getEntityExecution() == RecipientsReport.EntityExecution.AUTOMATIC) {
+                report.setAutoImportID(report.getEntityId());
+            }
+        } else if (report.getEntityType() == RecipientsReport.EntityType.EXPORT) {
+            report.setType(RecipientsReport.RecipientReportType.EXPORT_REPORT);
+        }
+
+        report.setAdminId(admin != null ? admin.getAdminID() : 0);
+        recipientsReportDao.createNewReport(companyId, report, content);
+        return report;
+    }
+
+    @Override
+    public RecipientsReport createAndSaveImportReport(int companyID, Admin admin, String filename, int datasourceId, Date reportDate, String content, int autoImportID, boolean isError) throws Exception {
         RecipientsReport report = new RecipientsReport();
-        report.setAdminId(adminID);
+        report.setAdminId(admin != null ? admin.getAdminID() : 0);
         report.setDatasourceId(datasourceId);
         report.setFilename(filename);
         report.setReportDate(reportDate);
@@ -85,9 +109,9 @@ public class RecipientsReportServiceImpl implements RecipientsReportService {
     }
 
     @Override
-    public RecipientsReport createAndSaveExportReport(int companyID, int adminID, String filename, Date reportDate, String content, boolean isError) throws Exception {
+    public RecipientsReport createAndSaveExportReport(int companyID, Admin admin, String filename, Date reportDate, String content, boolean isError) throws Exception {
         RecipientsReport report = new RecipientsReport();
-        report.setAdminId(adminID);
+        report.setAdminId(admin != null ? admin.getAdminID() : 0);
         report.setFilename(filename);
         report.setReportDate(reportDate);
         report.setType(RecipientsReport.RecipientReportType.EXPORT_REPORT);
@@ -215,9 +239,9 @@ public class RecipientsReportServiceImpl implements RecipientsReportService {
     }
 
     @Override
-	public void createSupplementalReportData(int companyID, int adminID, String filename, int datasourceId, Date reportDate, File temporaryDataFile, String textContent, int autoImportID, boolean isError) throws Exception {
+	public void createSupplementalReportData(int companyID, Admin admin, String filename, int datasourceId, Date reportDate, File temporaryDataFile, String textContent, int autoImportID, boolean isError) throws Exception {
         RecipientsReport report = new RecipientsReport();
-        report.setAdminId(adminID);
+        report.setAdminId(admin != null ? admin.getAdminID() : 0);
         report.setDatasourceId(datasourceId);
         report.setFilename(filename);
         report.setReportDate(reportDate);
@@ -228,6 +252,20 @@ public class RecipientsReportServiceImpl implements RecipientsReportService {
         report.setIsError(isError);
 		recipientsReportDao.createSupplementalReportData(companyID, report, temporaryDataFile, textContent);
 	}
+
+    @Override
+    public void saveNewSupplementalReport(Admin admin, int companyId, RecipientsReport report, String content, File temporaryDataFile) throws Exception {
+        // TODO: remove in future after removing of 'autoimport_id' and 'type' columns. for backward compatibility only
+        if (report.getEntityType() == RecipientsReport.EntityType.IMPORT) {
+            report.setType(RecipientsReport.RecipientReportType.IMPORT_REPORT);
+            if (report.getEntityExecution() == RecipientsReport.EntityExecution.AUTOMATIC) {
+                report.setAutoImportID(report.getEntityId());
+            }
+        }
+
+        report.setAdminId(admin != null ? admin.getAdminID() : 0);
+        recipientsReportDao.createNewSupplementalReport(companyId, report, temporaryDataFile, content);
+    }
 
     private RecipientsReport.RecipientReportType[] getAllowedReportTypes(final RecipientsReport.RecipientReportType[] reportTypes, final Admin admin) {
         RecipientsReport.RecipientReportType[] result;

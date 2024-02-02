@@ -1,4 +1,4 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
+<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.action" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
@@ -24,7 +24,7 @@
 <c:set var="sidemenu_sub_active"	value="Actions"								scope="request" />
 <c:set var="isBreadcrumbsShown" 	value="true" 								scope="request" />
 <c:set var="agnBreadcrumbsRootKey"	value="TriggerManagement" 					scope="request" />
-<c:set var="agnHelpKey" 			value="actionList" 							scope="request" />
+<c:set var="agnHelpKey" 			value="newTrigger" 							scope="request" />
 
 <emm:instantiate var="agnNavHrefParams" type="java.util.LinkedHashMap" scope="request">
     <c:set target="${agnNavHrefParams}" property="action-id" value="${form.id}"/>

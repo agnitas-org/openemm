@@ -2,6 +2,8 @@
 
 <script id="enlarged-content-editor-template" type="text/x-mustache-template">
     {{var readonly = isEditableMailing ? '' : 'readonly="readonly"';}}
+    {{var disabled = isEditableMailing ? '' : 'disabled="disabled"';}}
+
     <div id="enlarged_content_modal"
          class="modal"
          data-backdrop="static"
@@ -10,7 +12,7 @@
          data-initializer="enlarged-content-editor-initializer">
         <div class="modal-dialog" style="width: 100vw; height: 100vh; margin: 0">
             <mvc:form cssClass="modal-fixed-content" cssStyle="display: block; height: 100%">
-                {{if (showHTMLEditor) { }}
+                {{if (showHTMLEditor || isContentGenerationAllowed) { }}
                 <div class="modal-fixed-header standard-header">
                     <ul class="modal-header-nav">
                         <emm:HideByPermission token="mailing.editor.hide.html">
@@ -21,11 +23,17 @@
                             </li>
                         </emm:HideByPermission>
                         <emm:HideByPermission token="mailing.editor.hide">
-                            <li class="active">
-                                <a href="#" data-toggle-tab="#tab-enlargedContent-wysiwyg" data-action="hide-enlarged-char-counter">
-                                    <mvc:message code="mailingContentHTMLEditor"/>
-                                </a>
-                            </li>
+                            {{ if(showHTMLEditor) { }}
+                                <li class="active">
+                                    <a href="#" data-toggle-tab="#tab-enlargedContent-wysiwyg" data-action="hide-enlarged-char-counter">
+                                        <mvc:message code="mailingContentHTMLEditor"/>
+                                    </a>
+                                </li>
+                            {{ } }}
+
+                            <jsp:include page="/WEB-INF/jsp/mailing/fragments/ai-text-generation-tab.jsp">
+                                <jsp:param name="enlargedEditor" value="true"/>
+                            </jsp:include>
                         </emm:HideByPermission>
                     </ul>
                 </div>
@@ -51,6 +59,10 @@
                                       data-editor-options="isFullHtml: {{- isFullHtmlTags }}, browseMailingId: ${mailingId}"
                                       {{- readonly }}>{{-content}}</textarea>
                         </div>
+
+                        <jsp:include page="/WEB-INF/jsp/mailing/fragments/ai-text-generation-tab-content.jsp" flush="true">
+                            <jsp:param name="enlargedEditor" value="true"/>
+                        </jsp:include>
                     </emm:HideByPermission>
                     <div class="modal-char-counter" data-enlarged-char-counter-for="enlargedContent">
                         <span class="small status">&nbsp;</span>

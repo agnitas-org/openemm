@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="193" height="193" fill="none" viewBox="0 0 193 193">
+  <mask id="a" width="173" height="173" x="10" y="10" maskUnits="userSpaceOnUse" style="mask-type:alpha">
+    <path fill="#fff" d="M10 10h173v173H10z"/>
+  </mask>
+  <g mask="url(#a)">
+    <rect width="8" height="8" x="10" y="96" fill="#0071B9" rx="1"/>
+    <rect width="6" height="6" x="11" y="107" fill="#6F6F6F" rx="1"/>
+    <path fill="silver" d="M10 20h81v34H10zm0 39h38v4H10zm0 7h38v4H10zm0 14h38v4H10zm0-7h38v4H10zm0 14h38v4H10zm43-28h38v32H53zM10 10h81v5H10z"/>
+    <path fill="#4B4B4B" fill-opacity=".5" d="M20 97h70v6H20zm0 11h67v4H20z"/>
+    <rect width="8" height="8" x="102" y="96" fill="#0071B9" rx="1"/>
+    <rect width="6" height="6" x="103" y="107" fill="#6F6F6F" rx="1"/>
+    <path fill="silver" d="M102 20h81v34h-81zm0 39h38v4h-38zm0 7h38v4h-38zm0 14h38v4h-38zm0-7h38v4h-38zm0 14h38v4h-38zm43-28h38v32h-38zm-43-49h81v5h-81z"/>
+    <path fill="#999" d="M113 97h70v6h-70zm-2 11h69v4h-69z"/>
+    <path fill="silver" d="M11 133h81v34H11zm0 39h38v4H11zm0 7h38v4H11zm43-7h38v32H54zm-43-49h81v5H11zm91 10h81v34h-81zm0 39h38v4h-38zm0 7h38v4h-38zm43-7h38v32h-38zm-43-49h81v5h-81z"/>
+  </g>
+</svg>

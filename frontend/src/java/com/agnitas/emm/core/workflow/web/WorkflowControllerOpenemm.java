@@ -4,7 +4,6 @@ import org.agnitas.emm.core.autoexport.service.AutoExportService;
 import org.agnitas.emm.core.autoimport.service.AutoImportService;
 import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.service.UserActivityLogService;
-import org.agnitas.service.WebStorage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.stereotype.Controller;
@@ -23,8 +22,9 @@ import com.agnitas.emm.core.workflow.service.ComWorkflowDataParser;
 import com.agnitas.emm.core.workflow.service.ComWorkflowService;
 import com.agnitas.emm.core.workflow.service.ComWorkflowStatisticsService;
 import com.agnitas.emm.core.workflow.service.ComWorkflowValidationService;
-import com.agnitas.emm.core.workflow.service.GenerationPDFService;
 import com.agnitas.mailing.autooptimization.service.ComOptimizationService;
+import com.agnitas.service.PdfService;
+import com.agnitas.service.WebStorage;
 import com.agnitas.web.perm.annotations.PermissionMapping;
 
 @Controller
@@ -36,10 +36,10 @@ public class WorkflowControllerOpenemm extends WorkflowController {
                               ComWorkflowActivationService workflowActivationService, ComWorkflowStatisticsService workflowStatisticsService,
                               @Autowired(required = false) AutoImportService autoImportService, @Autowired(required = false) AutoExportService autoExportService, ComWorkflowDataParser workflowDataParser,
                               CampaignDao campaignDao, ComMailingDeliveryStatService deliveryStatService, ComMailingComponentDao componentDao,
-                              GenerationPDFService generationPDFService, ComCompanyDao companyDao, ConfigService configService,
+                              PdfService pdfService, ComCompanyDao companyDao, ConfigService configService,
                               WebStorage webStorage, MailinglistApprovalService mailinglistApprovalService, UserActivityLogService userActivityLogService,
                               ConversionService conversionService, MailingService mailingService, ComOptimizationService optimizationService, AdminService adminService,
                               ComTargetService targetService) {
-        super(workflowService, validationService, workflowActivationService, workflowStatisticsService, autoImportService, autoExportService, workflowDataParser, campaignDao, deliveryStatService, componentDao, generationPDFService, companyDao, configService, webStorage, mailinglistApprovalService, userActivityLogService, conversionService, mailingService, optimizationService, adminService, targetService);
+        super(workflowService, validationService, workflowActivationService, workflowStatisticsService, autoImportService, autoExportService, workflowDataParser, campaignDao, deliveryStatService, componentDao, pdfService, companyDao, configService, webStorage, mailinglistApprovalService, userActivityLogService, conversionService, mailingService, optimizationService, adminService, targetService);
     }
 }

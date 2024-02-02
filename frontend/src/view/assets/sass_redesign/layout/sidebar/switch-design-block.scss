@@ -1,0 +1,24 @@
+
+#switch-design-block {
+  padding-inline: 9px;
+
+  #switch-design-label {
+    @include font($font-size-base, $font-weight-normal, 24px);
+  }
+
+  .sidebar__tooltip.open {
+    @include flex(row, $gap-sm);
+    align-items: center;
+  }
+}
+
+#switch-design__toggle-block {
+  padding: 0;
+  margin: 0;
+  min-height: unset;
+
+  .form-check-input {
+    margin: 0;
+    cursor: pointer;
+  }
+}

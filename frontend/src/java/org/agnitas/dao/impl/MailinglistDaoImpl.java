@@ -378,7 +378,7 @@ public class MailinglistDaoImpl extends PaginatedBaseDaoImpl implements Mailingl
 	}
 
 	protected String getMailinglistSqlFieldsForSelect() {
-        final String[] fields = new String[] {"mailinglist_id", "company_id", "shortname", "description", "creation_date", "change_date"};
+        final String[] fields = new String[] {"mailinglist_id", "company_id", "shortname", "description", "creation_date", "change_date", "sender_email", "reply_email"};
         return StringUtils.join(fields, ", ");
     }
 

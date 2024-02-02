@@ -48,24 +48,15 @@ public interface Popups extends Serializable {
      * @return self.
      */
     Popups warning(Message popup);
-    
+
     /**
-     * Add a new translatable warning popup.
-     *
-     * @param code a key of the translatable message.
-     * @param arguments an arguments for the translatable message.
-     * @return self.
-     */
-    Popups permanentWarning(String code, Object ...arguments);
-    
-    /**
-     * Add a new permanent warning popup.
+     * Add a new info popup.
      *
      * @param popup a popup content representation.
      * @return self.
      */
-    Popups permanentWarning(Message popup);
-
+    Popups info(Message popup);
+    
     /**
      * Add a new translatable warning popup.
      *
@@ -174,18 +165,6 @@ public interface Popups extends Serializable {
      * @return {@code true} if number of success popups > 0.
      */
     boolean hasSuccessPopups();
-
-    /**
-     * Check if at least one form field error popup is added.
-     * @return {@code true} if number of form field error popups > 0.
-     */
-    boolean hasFieldPopups();
-
-    /**
-     * Check if at least one form field error popup is added for field name {@code field}.
-     * @return {@code true} if number of form field error popups for field name {@code field} > 0.
-     */
-    boolean hasFieldPopups(String field);
 
     /**
      * Clear all the added popups.

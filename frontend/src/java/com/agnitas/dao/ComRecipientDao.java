@@ -42,6 +42,8 @@ import com.agnitas.beans.impl.RecipientDates;
 import com.agnitas.emm.core.mailing.bean.MailingRecipientStatRow;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.emm.core.recipient.RecipientException;
+import com.agnitas.emm.core.recipient.service.RecipientType;
+import com.agnitas.emm.core.service.RecipientFieldDescription;
 
 public interface ComRecipientDao {
     String SUPPLEMENTAL_DATECOLUMN_SUFFIX_FORMAT = "_FORMAT";
@@ -66,10 +68,6 @@ public interface ComRecipientDao {
 	List<ComRecipientLiteImpl> getAdminAndTestRecipients(int companyID, int mailinglistID);
 
     List<Integer> getAdminAndTestRecipientIds(int companyID, int mailinglistID);
-
-	List<Integer> filterRecipientsByMailinglistAndTarget(List<Integer> recipientIds, int companyId, int mailinglistId, String sqlTargetExpression, boolean allRecipients);
-
-	List<Integer> filterRecipientsByMailinglistAndTarget(List<Integer> recipientIds, int companyId, int mailinglistId, String sqlTargetExpression, boolean allRecipients, boolean shouldBeActive);
 
     boolean isMailtrackingEnabled(int companyID);
 
@@ -457,4 +455,10 @@ public interface ComRecipientDao {
 	int getSizeOfCustomerDataFromDbList(int companyId, String eql);
 
     int getOrCreateRecipientOfAdmin(Admin admin) throws Exception;
+
+	List<Integer> getFilteredRecipientIDs(int companyID, CaseInsensitiveMap<String, RecipientFieldDescription> recipientFieldsMap, Map<String, String> recipientFilters);
+
+	int countFilteredRecipientIDs(int companyID, CaseInsensitiveMap<String, RecipientFieldDescription> recipientFieldsMap, Map<String, String> recipientFilters);
+
+	int getNumberOfRecipients(int companyID, int mailinglistID, RecipientType... recipientTypes);
 }

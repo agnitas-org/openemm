@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.agnitas.beans.MailingsListProperties;
+import com.agnitas.beans.Mediatype;
 import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import com.agnitas.service.ServiceResult;
 import org.agnitas.beans.MailingBase;
@@ -27,6 +28,7 @@ import org.agnitas.emm.core.mailing.service.MailingModel;
 import org.agnitas.emm.core.mailing.service.MailingNotExistException;
 import org.agnitas.emm.core.mailinglist.service.MailinglistNotExistException;
 import org.agnitas.emm.core.mailinglist.service.impl.MailinglistException;
+import org.agnitas.emm.core.mediatypes.dao.MediatypesDaoException;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 
 
@@ -52,13 +54,13 @@ public interface MailingService {
 	
 	void updateMailing(MailingModel model, List<UserAction> userActions) throws MailinglistException;
 
-	String getMailingStatus(MailingModel model);
+	MailingStatus getMailingStatus(MailingModel model);
 
     void deleteMailing(MailingModel model);
 	
 	List<Mailing> getMailings(MailingModel model);
 
-	boolean isMailingMarkedDeleted(int mailingID, int companyID);
+	boolean exists(int mailingID, int companyID);
 
 	List<Mailing> listMailings(final int companyId, final ListMailingFilter filter);
 
@@ -192,8 +194,12 @@ public interface MailingService {
     ServiceResult<List<Mailing>> getMailingsForDeletion(Collection<Integer> mailingIds, Admin admin);
 
     ServiceResult<List<UserAction>> bulkDelete(Collection<Integer> mailingIds, Admin admin);
-    
+
+    void bulkRestore(Collection<Integer> mailingIds, Admin admin);
+
     ServiceResult<Mailing> getMailingForDeletion(int mailingId, Admin admin);
+
+    void restoreMailing(int mailingId, Admin admin);
 
     boolean isApproved(int mailingId, int companyId);
 
@@ -201,9 +207,17 @@ public interface MailingService {
 
 	void writeRemoveApprovalLog(int mailingId, Admin admin);
 
-	boolean exists(int mailingID, int companyID);
+    Mailing getMailing(int mailingId, int companyId, boolean includeDependencies);
+
+    Map<Integer, Mediatype> getMediatypes(int mailingId, int companyId) throws MediatypesDaoException;
+
+    boolean isDateBasedMailingWasSentToday(int mailingId);
+
+	void allowDateBasedMailingResending(int mailingId);
 
 	MailingStatus getMailingStatus(int companyID, int id);
 
 	boolean saveMailingDescriptiveData(Mailing mailing);
+
+	List<LightweightMailing> getMailingsUsingEmmAction(int actionId, int companyID);
 }

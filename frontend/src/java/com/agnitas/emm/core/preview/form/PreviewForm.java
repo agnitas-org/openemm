@@ -30,6 +30,7 @@ public class PreviewForm {
     private int size = Preview.Size.DESKTOP.getValue();
     private ModeType modeType = ModeType.RECIPIENT;
     private String subject;
+    private String preHeader;
     private String senderEmail;
     private int customerID;
     private int customerATID;
@@ -42,7 +43,9 @@ public class PreviewForm {
     private int emailFormat;
     private boolean reload;
     private String mediaQuery;
-    private int width;
+    private String width;
+    private boolean anon;
+    private boolean onAnonPreserveLinks;
     private List<String> personalizedTestRunRecipients;
 
     public int getMailingId() {
@@ -169,11 +172,11 @@ public class PreviewForm {
         this.noImages = noImages;
     }
 
-    public int getWidth() {
+    public String getWidth() {
         return width;
     }
 
-    public void setWidth(int width) {
+    public void setWidth(String width) {
         this.width = width;
     }
 
@@ -260,8 +263,31 @@ public class PreviewForm {
     public void setWorkflowId(int workflowId) {
         this.workflowId = workflowId;
     }
-    
-    
+
+    public String getPreHeader() {
+        return preHeader;
+    }
+
+    public void setPreHeader(String preHeader) {
+        this.preHeader = preHeader;
+    }
+
+    public boolean isAnon() {
+        return anon;
+    }
+
+    public void setAnon(boolean anon) {
+        this.anon = anon;
+    }
+
+    public boolean isOnAnonPreserveLinks() {
+        return onAnonPreserveLinks;
+    }
+
+    public void setOnAnonPreserveLinks(boolean onAnonPreserveLinks) {
+        this.onAnonPreserveLinks = onAnonPreserveLinks;
+    }
+
     public List<String> getPersonalizedTestRunRecipients() {
         return personalizedTestRunRecipients;
     }

@@ -73,9 +73,6 @@ AGN.Lib.Controller.new('mailing-send', function() {
     this.addAction({
         'click': 'start-delivery'
     }, function() {
-        const action = this.el.data('action-value');
-        const form = Form.get(this.el);
-
         if ($('#test-run-options').val() == RECIPIENT_TEST_RUN_OPTION) {
             var isTestRecipientsRequired = true;
 
@@ -94,12 +91,9 @@ AGN.Lib.Controller.new('mailing-send', function() {
 
         Helpers.disableSendButtons();
 
-        const baseUrl = form.url;
-        form.url += action;
-
-        form.submit().done(function() {
-            form.url = baseUrl;
-        });
+        const form = Form.get(this.el);
+        form.setActionOnce(this.el.data('url'));
+        form.submit();
     });
 
     this.addAction({
@@ -241,27 +235,6 @@ AGN.Lib.Controller.new('mailing-send', function() {
         $('#test-recipients-table input').prop('disabled', !isSingleRecipientOption);
     }
 
-    const STORAGE_TIME_OF_SETTINGS_CACHE_MS = 60000;
-    var settingsReceiptDate;
-    var settingsResponse;
-
-    this.addAction({click: 'save-security-settings'}, function() {
-        const form = AGN.Lib.Form.get(this.el);
-        const requiredAutoImportId = form.getValue('autoImportId');
-
-        form.submit().done(function(resp) {
-            if(resp.success === true) {
-                AGN.Lib.JsonMessages(resp.popups);
-                $('#close-security-settings').click();
-                settingsReceiptDate -= STORAGE_TIME_OF_SETTINGS_CACHE_MS;
-            } else {
-                AGN.Lib.JsonMessages(resp.popups, true);
-            }
-
-            $("#activation-form input[name='autoImportId']").val(requiredAutoImportId);
-        });
-    });
-
     function changeSaveTestRunTargetBtnState(saved) {
         const $testRunTargetBtn = $('#testTargetSaveButton');
         const $btnIcon = $testRunTargetBtn.find('i');
@@ -328,28 +301,6 @@ AGN.Lib.Controller.new('mailing-send', function() {
             });
     }
 
-    this.addAction({click: 'load-security-settings'}, function() {
-        const currentDate = new Date();
-
-        if (!settingsReceiptDate || currentDate - settingsReceiptDate >= STORAGE_TIME_OF_SETTINGS_CACHE_MS) {
-            const href = $(this.el).attr('href');
-
-            if (href) {
-                const jqxhr = $.get(href);
-                jqxhr.done(function(resp) {
-                    Page.render(resp);
-                    settingsResponse = resp;
-                    settingsReceiptDate = new Date();
-
-                    initializeFormFields($('#security-settings-form'));
-                });
-            }
-        } else {
-            Page.render(settingsResponse);
-            initializeFormFields($('#security-settings-form'));
-        }
-    });
-
     function initializeFormFields($form) {
         const form = AGN.Lib.Form.get($form);
         form.initFields();
@@ -397,6 +348,17 @@ AGN.Lib.Controller.new('mailing-send', function() {
             $toggle.prop('disabled', false);
         });
     }
+
+    AGN.Lib.Controller.new('mailing-deletion-modal', function() {
+        this.addDomInitializer('mailing-deletion-modal', function() {
+            this.el.find('.js-confirm-positive').on("click", function () {
+                const $deliveryStatusBox = $('#delivery-status-box');
+                if ($deliveryStatusBox.exists()) {
+                    AGN.Lib.Load.get($deliveryStatusBox).stop();
+                }
+            });
+        });
+    });
 });
 
 AGN.Lib.Controller.new('delivery-settings-view', function() {

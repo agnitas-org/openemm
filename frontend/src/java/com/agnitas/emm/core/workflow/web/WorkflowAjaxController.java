@@ -113,11 +113,4 @@ public class WorkflowAjaxController implements XssCheckAware {
         return workflowService.getAllTargets(admin.getCompanyID()).stream()
                 .collect(Collectors.toMap(TargetLight::getId, TargetLight::getTargetName));
     }
-
-    @GetMapping("/getReportNames.action")
-    @PermissionMapping("view")
-    public @ResponseBody
-    Map<Integer, String> getReportNames(Admin admin) {
-        return workflowService.getAllReports(admin.getCompanyID());
-    }
 }

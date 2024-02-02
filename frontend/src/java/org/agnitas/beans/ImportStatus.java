@@ -346,4 +346,8 @@ public interface ImportStatus {
 	void setDeletedEntries(int deletedEntries);
 
 	int getDeletedEntries();
+
+	int getDuplicateInImportData();
+
+	void setDuplicatesInImportData(int duplicateInImportData);
 }

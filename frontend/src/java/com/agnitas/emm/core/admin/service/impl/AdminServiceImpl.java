@@ -419,6 +419,18 @@ public class AdminServiceImpl implements AdminService {
 	}
 
 	@Override
+	public void grantPermission(Admin admin, Permission permission) {
+		adminDao.grantPermission(admin.getAdminID(), permission);
+		admin.getAdminPermissions().add(permission);
+	}
+
+	@Override
+	public void revokePermission(Admin admin, Permission permission) {
+		adminDao.revokePermission(admin.getAdminID(), permission);
+		admin.getAdminPermissions().remove(permission);
+	}
+
+	@Override
 	public Admin getAdmin(int adminID, int companyID){
 		return adminDao.getAdmin(adminID, companyID);
 	}
@@ -752,5 +764,15 @@ public class AdminServiceImpl implements AdminService {
 	@Override
 	public List<Map<String, Object>> getAdminsLight(int companyID, boolean restful) {
 		return adminDao.getAdminsLight(companyID, restful);
+	}
+
+	@Override
+	public void saveDashboardLayout(String layout, Admin admin) {
+		adminDao.saveDashboardLayout(layout, admin.getAdminID());
+	}
+
+	@Override
+	public String getDashboardLayout(Admin admin) {
+		return adminDao.getDashboardLayout(admin.getAdminID());
 	}
 }

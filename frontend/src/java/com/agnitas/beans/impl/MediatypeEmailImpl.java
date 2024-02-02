@@ -35,13 +35,15 @@ import com.agnitas.emm.core.mediatypes.common.MediaTypes;
 import jakarta.mail.internet.InternetAddress;
 
 public class MediatypeEmailImpl extends MediatypeImpl implements MediatypeEmail {
-	/** The logger. */
-	private static final transient Logger logger = LogManager.getLogger(MediatypeEmailImpl.class);
+
+	private static final Logger logger = LogManager.getLogger(MediatypeEmailImpl.class);
 
 	public final String DEFAULT_CHARSET = "UTF-8";
 
 	/** Holds value of property subject. */
 	protected String subject = "";
+
+	protected String preHeader = "";
 
 	/** Holds value of property linefeed. */
 	protected int linefeed;
@@ -163,27 +165,24 @@ public class MediatypeEmailImpl extends MediatypeImpl implements MediatypeEmail 
 		return onepixel;
 	}
 
-	/**
-	 * Getter for property subject.
-	 * 
-	 * @return Value of property subject.
-	 *
-	 */
 	@Override
 	public String getSubject() {
 		return subject;
 	}
 
-	/**
-	 * Setter for property subject.
-	 * 
-	 * @param subject
-	 *            New value of property subject.
-	 *
-	 */
+	@Override
+	public String getPreHeader() {
+		return preHeader;
+	}
+
 	@Override
 	public void setSubject(String subject) {
 		this.subject = subject;
+	}
+
+	@Override
+	public void setPreHeader(String preHeader) {
+		this.preHeader = preHeader;
 	}
 
 	/**
@@ -459,6 +458,8 @@ public class MediatypeEmailImpl extends MediatypeImpl implements MediatypeEmail 
 
 		subject = parameters.get("subject");
 
+		preHeader = parameters.get("preHeader");
+
 		mailFormat = NumberUtils.toInt(parameters.get("mailformat"), OFFLINE_HTML.getValue());
 
 		linefeed = NumberUtils.toInt(parameters.get("linefeed"), 72);
@@ -510,6 +511,12 @@ public class MediatypeEmailImpl extends MediatypeImpl implements MediatypeEmail 
 		result.append(", subject=\"");
 		result.append(ParameterParser.escapeValue(subject));
 		result.append("\"");
+
+		if (StringUtils.isNotBlank(preHeader)) {
+			result.append(", preHeader=\"");
+			result.append(ParameterParser.escapeValue(preHeader));
+			result.append("\"");
+		}
 
 		result.append(", charset=\"");
 		result.append(ParameterParser.escapeValue(charset));

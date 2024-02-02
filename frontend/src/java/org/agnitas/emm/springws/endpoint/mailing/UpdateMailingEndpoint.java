@@ -39,7 +39,7 @@ import com.agnitas.emm.core.thumbnails.service.ThumbnailService;
 @Endpoint
 public class UpdateMailingEndpoint extends BaseEndpoint {
 
-	private static final transient Logger LOGGER = LogManager.getLogger(AddMailingFromTemplateEndpoint.class);
+	private static final Logger LOGGER = LogManager.getLogger(AddMailingFromTemplateEndpoint.class);
 
 	private final ThumbnailService thumbnailService;
 	private final MailingService mailingService;
@@ -82,6 +82,7 @@ public class UpdateMailingEndpoint extends BaseEndpoint {
 		model.setLinefeed(request.getLinefeed());
 		model.setFormat(request.getFormat());
 		model.setOnePixel(request.getOnePixel());
+		model.setPlannedDate(request.getPlannedDate());
 //		model.setAutoUpdate(request.isAutoUpdate());
 
 		final List<UserAction> userActions = new ArrayList<>();

@@ -18,7 +18,7 @@ import javax.sql.DataSource;
 import org.agnitas.beans.BindingEntry.UserType;
 import org.agnitas.beans.ColumnMapping;
 import org.agnitas.beans.impl.PaginatedListImpl;
-import org.agnitas.service.ProfileImportCsvException.ReasonCode;
+import org.agnitas.service.ProfileImportException.ReasonCode;
 import org.agnitas.util.DbColumnType;
 import org.agnitas.util.ImportUtils.ImportErrorType;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
@@ -49,7 +49,7 @@ public interface ImportRecipientsDao {
 	 */
 	boolean isKeyColumnIndexed( int companyId, List<String> keyColumns);
 		
-	String createTemporaryCustomerImportTable(int companyID, String destinationTableName, int adminID, int datasourceID, List<String> keyColumns, String sessionId, String description) throws Exception;
+	String createTemporaryCustomerImportTable(int companyID, String destinationTableName, int datasourceID, List<String> keyColumns, String sessionId, String description) throws Exception;
 
 	String addIndexedIntegerColumn(int companyID, String tableName, String baseColumnName, String indexName) throws Exception;
 	
@@ -68,6 +68,7 @@ public interface ImportRecipientsDao {
 	int insertNewCustomers(int companyID, String temporaryImportTableName, String destinationTableName, List<String> keyColumns, List<String> importDbColumns, String duplicateIndexColumn, int datasourceId, int defaultMailType, List<ColumnMapping> columnMappingForDefaultValues, int companyId);
 
 	int updateFirstExistingCustomers(int companyID, String temporaryImportTableName, String destinationTableName, List<String> keyColumns, List<String> importDbColumns, String importIndexColumn, int nullValuesAction, int datasourceId, int companyId) throws Exception;
+	int updateFirstExistingCustomersImproved(int companyID, String tempTableName, String destinationTableName, List<String> keyColumns, List<String> updateColumns, String importIndexColumn, int nullValuesAction, int datasourceId, int companyId2) throws Exception;
 
 	int getNumberOfEntriesForInsert(String temporaryImportTableName, String duplicateIndexColumn);
 
@@ -80,10 +81,17 @@ public interface ImportRecipientsDao {
 	int importInBlackList(String temporaryImportTableName, int companyId);
 
 	int updateAllExistingCustomersByKeyColumn(int companyID, String tempTableName, String destinationTableName, List<String> keyColumns, List<String> updateColumns, String importIndexColumn, int nullValuesAction, int datasourceId, int companyId) throws Exception;
+	int updateAllExistingCustomersByKeyColumnImproved(int companyID, String tempTableName, String destinationTableName, List<String> keyColumns, List<String> updateColumns, String importIndexColumn, int nullValuesAction, int datasourceId, int companyId) throws Exception;
 
-	String createTemporaryCustomerErrorTable(int companyId, int adminId, int datasourceId, List<String> columns, String sessionId) throws Exception;
+	String createTemporaryCustomerErrorTable(int companyId, int datasourceId, List<String> columns, String sessionId) throws Exception;
 
+	void addErroneousCsvEntry(int companyID, String temporaryErrorTableName, List<String> csvDataLine, int csvLineIndex, ReasonCode reasonCode, String erroneousFieldName);
+	
 	void addErroneousCsvEntry(int companyID, String temporaryErrorTableName, List<Integer> importedCsvFileColumnIndexes, List<String> csvDataLine, int csvLineIndex, ReasonCode reasonCode, String erroneousFieldName);
+
+	void addErroneousJsonObject(int companyID, String temporaryErrorTableName, Map<String, ColumnMapping> columnMappingByDbColumn, List<String> importedDBColumns, JsonObject jsonDataObject, int jsonObjectCount, ReasonCode reasonCode, String jsonAttributeName);
+	
+	void addErroneousDataItem(int companyID, String temporaryErrorTableName, Map<String, ColumnMapping> columnMappingByDbColumn, List<String> importedDBColumns, Map<String, Object> dataItem, int dataItemCount, ReasonCode reasonCode, String dataAttributeName);
 
 	Map<ImportErrorType, Integer> getReasonStatistics(String temporaryErrorTableName);
 
@@ -99,8 +107,6 @@ public interface ImportRecipientsDao {
 
 	Map<String, Object> getErrorLine(String temporaryErrorTableName, int csvIndex);
 
-	void addErroneousCsvEntry(int companyID, String temporaryErrorTableName, List<String> csvDataLine, int csvLineIndex, ReasonCode reasonCode, String erroneousFieldName);
-
 	int getResultEntriesCount(String selectIntStatement);
 
 	void markErrorLineAsRepaired(int companyID, String temporaryErrorTableName, int csvIndex);
@@ -110,8 +116,6 @@ public interface ImportRecipientsDao {
 	int removeBlacklistedEmails(String tempTableName, int companyID);
 
 	CaseInsensitiveMap<String, DbColumnType> getCustomerDbFields(int companyId) throws Exception;
-
-	void addErroneousJsonObject(int companyID, String temporaryErrorTableName, Map<String, ColumnMapping> columnMappingByDbColumn, List<String> importedDBColumns, JsonObject jsonDataObject, int jsonObjectCount, ReasonCode reasonCode, String jsonAttributeName);
 
 	boolean checkUnboundCustomersExist(int companyID);
 

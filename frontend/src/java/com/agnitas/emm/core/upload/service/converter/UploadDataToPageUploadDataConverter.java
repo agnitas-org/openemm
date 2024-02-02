@@ -28,6 +28,7 @@ public class UploadDataToPageUploadDataConverter implements Converter<UploadData
         pageData.setFileName(source.getFilename());
         pageData.setFileSize(AgnUtils.bytesToKbStr(source.getFilesize()));
         pageData.setUploadId(source.getUploadID());
+        pageData.setUploader(source.getAdminName());
 
         return pageData;
     }

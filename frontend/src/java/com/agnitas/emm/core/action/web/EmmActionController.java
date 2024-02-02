@@ -27,7 +27,7 @@ import org.agnitas.emm.core.commons.util.ConfigService;
 import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.service.UserActivityLogService;
-import org.agnitas.service.WebStorage;
+import com.agnitas.service.WebStorage;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.UserActivityUtil;
 import org.agnitas.web.forms.BulkActionForm;
@@ -310,10 +310,12 @@ public class EmmActionController implements XssCheckAware {
 	}
 
 	@GetMapping("/{id:\\d+}/usage.action")
-	public String webformsView(Admin admin, @PathVariable int id, Model model) {
+	public String usagesView(Admin admin, @PathVariable int id, Model model) {
 		model.addAttribute("actionId", id);
 		model.addAttribute(SHORTNAME, emmActionService.getEmmActionName(id, admin.getCompanyID()));
 		model.addAttribute("webFormsByActionId", userFormService.getUserFormNamesByActionID(admin.getCompanyID(), id));
+		model.addAttribute("dependentMailings", mailingService.getMailingsUsingEmmAction(id, admin.getCompanyID()));
+
 		return "actions_view_forms";
 	}
 

@@ -24,7 +24,7 @@ import com.agnitas.web.mvc.XssCheckAware;
 import com.agnitas.web.perm.annotations.PermissionMapping;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
-import org.agnitas.service.WebStorage;
+import com.agnitas.service.WebStorage;
 import org.agnitas.web.forms.FormUtils;
 import org.agnitas.web.forms.PaginationForm;
 import org.agnitas.web.forms.WorkflowParametersHelper;
@@ -39,7 +39,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import static org.agnitas.service.WebStorage.ARCHIVE_OVERVIEW;
+import static com.agnitas.service.WebStorage.ARCHIVE_OVERVIEW;
 import static org.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
 import static org.agnitas.util.Const.Mvc.MESSAGES_VIEW;
 import static org.agnitas.util.Const.Mvc.SELECTION_DELETED_MSG;

@@ -22,7 +22,7 @@ import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.commons.util.ConfigValue.Webservices;
 import org.agnitas.emm.core.useractivitylog.UserAction;
 import org.agnitas.service.UserActivityLogService;
-import org.agnitas.service.WebStorage;
+import com.agnitas.service.WebStorage;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.web.forms.FormUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -50,7 +50,6 @@ import com.agnitas.emm.wsmanager.service.WebservicePermissionService;
 import com.agnitas.emm.wsmanager.service.WebserviceUserAlreadyExistsException;
 import com.agnitas.emm.wsmanager.service.WebserviceUserService;
 import com.agnitas.emm.wsmanager.service.WebserviceUserServiceException;
-import com.agnitas.service.ComWebStorage;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.perm.annotations.PermissionMapping;
 import static org.agnitas.util.Const.Mvc.CHANGES_SAVED_MSG;
@@ -96,7 +95,7 @@ public class WebserviceUserManagerController implements XssCheckAware {
 
     @RequestMapping(value = "/users.action")
     public String list(Admin admin, @ModelAttribute WebserviceUserListForm userListForm, WebserviceUserForm userForm, Model model) throws WebserviceUserServiceException {
-        FormUtils.syncNumberOfRows(webStorage, ComWebStorage.WS_MANAGER_OVERVIEW, userListForm);
+        FormUtils.syncNumberOfRows(webStorage, WebStorage.WS_MANAGER_OVERVIEW, userListForm);
 
         model.addAttribute("webserviceUserList",
                 webserviceUserService.getPaginatedWSUserList(admin.getCompanyID(),
@@ -167,7 +166,7 @@ public class WebserviceUserManagerController implements XssCheckAware {
         
         String email = userForm.getEmail();
         if (StringUtils.isBlank(email) || !AgnUtils.isEmailValid(email)) {
-            popups.field("email", "error.email.invalid");
+            popups.fieldError("email", "error.email.invalid");
             valid = false;
         }
         

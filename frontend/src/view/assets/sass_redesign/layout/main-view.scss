@@ -1,0 +1,22 @@
+
+.main-view {
+  overflow: hidden;
+  flex-grow: 1;
+
+  @include mobile {
+    @include hide-scroll();
+  }
+}
+
+.tiles-container {
+  display: grid;
+  padding: $gap-sm;
+  height: 100%;
+  grid-gap: $gap;
+  position: relative; // for select2 dropdown
+
+  @include mobile {
+    grid-template-columns: 1fr !important;
+    grid-gap: $gap-sm;
+  }
+}

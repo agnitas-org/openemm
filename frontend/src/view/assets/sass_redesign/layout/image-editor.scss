@@ -1,0 +1,23 @@
+
+#image-editor-modal {
+  .modal-body {
+    display: grid;
+    grid-template-columns: minmax(150px, 270px) auto minmax(200px, 270px);
+    gap: $gap;
+  }
+}
+
+/* Selection Border */
+.jcrop-vline,
+.jcrop-hline {
+  background: none;
+}
+.jcrop-vline {
+  border-left: 2px dashed $primary;
+  opacity: 1 !important;
+}
+
+.jcrop-hline {
+  border-top: 2px dashed $primary;
+  opacity: 1 !important;
+}

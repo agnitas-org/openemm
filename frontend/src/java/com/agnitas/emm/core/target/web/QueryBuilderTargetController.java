@@ -10,14 +10,13 @@
 
 package com.agnitas.emm.core.target.web;
 
-import static com.agnitas.emm.core.Permission.RECIPIENT_PROFILEFIELD_HTML_ALLOWED;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.agnitas.exception.DetailedValidationException;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.exception.target.TargetGroupTooLargeException;
 import org.agnitas.emm.core.commons.util.ConfigService;
@@ -25,7 +24,6 @@ import org.agnitas.emm.core.commons.util.ConfigValue;
 import org.agnitas.emm.core.recipient.service.RecipientService;
 import org.agnitas.emm.core.target.exception.UnknownTargetGroupIdException;
 import org.agnitas.service.UserActivityLogService;
-import org.agnitas.service.WebStorage;
 import org.agnitas.target.TargetFactory;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.web.forms.WorkflowParametersHelper;
@@ -53,7 +51,6 @@ import com.agnitas.emm.core.target.beans.TargetComplexityGrade;
 import com.agnitas.emm.core.target.beans.TargetGroupDependentType;
 import com.agnitas.emm.core.target.eql.EqlDetailedAnalysisResult;
 import com.agnitas.emm.core.target.eql.EqlFacade;
-import com.agnitas.emm.core.target.eql.parser.EqlSyntaxError;
 import com.agnitas.emm.core.target.form.TargetDependentsListForm;
 import com.agnitas.emm.core.target.form.TargetEditForm;
 import com.agnitas.emm.core.target.form.validator.TargetEditFormValidator;
@@ -66,6 +63,7 @@ import com.agnitas.emm.core.workflow.service.util.WorkflowUtils;
 import com.agnitas.messages.I18nString;
 import com.agnitas.messages.Message;
 import com.agnitas.service.GridServiceWrapper;
+import com.agnitas.service.WebStorage;
 import com.agnitas.web.mvc.Popups;
 import com.agnitas.web.mvc.XssCheckAware;
 import com.agnitas.web.perm.annotations.PermissionMapping;
@@ -147,16 +145,17 @@ public class QueryBuilderTargetController implements XssCheckAware {
             throws UnknownTargetGroupIdException {
 
         int mailinglistId = form.getMailinglistId();
+        int workflowId = WorkflowParametersHelper.getWorkflowIdFromSession(session);
+        boolean redirectRequired = workflowId > 0;
         TargetgroupViewFormat previousFormat = form.getPreviousViewFormat();
 
-        boolean isPrepared = doSavingPreparations(admin, form, popups);
-        if (!isPrepared) {
-            return MESSAGES_VIEW;
+        if (!isPreparedForSave(admin, form, popups, redirectRequired)) {
+            return getErrorView(form.getTargetId(), redirectAttributes, session, redirectRequired);
         }
 
         int targetId = trySave(admin, form, popups);
         if (targetId <= 0 || popups.hasAlertPopups()) {
-            return MESSAGES_VIEW;
+            return getErrorView(form.getTargetId(), redirectAttributes, session, redirectRequired);
         }
 
         analyzeComplexity(admin.getCompanyID(), targetId, popups);
@@ -173,12 +172,31 @@ public class QueryBuilderTargetController implements XssCheckAware {
 
         popups.success(CHANGES_SAVED_MSG_KEY);
 
-        int workflowId = WorkflowParametersHelper.getWorkflowIdFromSession(session);
-        if (workflowId > 0) {
+        if (redirectRequired) {
             WorkflowParametersHelper.addEditedElemRedirectAttrs(redirectAttributes, session, targetId);
             return String.format("redirect:/workflow/%d/view.action", workflowId);
         }
         return redirectToView(targetId);
+    }
+
+    private String getErrorView(int targetId, RedirectAttributes ra, HttpSession session, boolean redirectRequired) {
+        if (!redirectRequired) {
+            return MESSAGES_VIEW;
+        }
+        WorkflowParametersHelper.addEditedElemRedirectAttrs(ra, session, targetId);
+        return redirectToView(targetId);
+    }
+
+    private boolean isPreparedForSave(Admin admin, TargetEditForm form, Popups popups, boolean redirectRequired) {
+        try {
+            return doSavingPreparations(admin, form, popups);
+        } catch (DetailedValidationException ex) {
+            if (!redirectRequired) {
+                throw ex;
+            }
+            ex.getErrors().forEach(popups::alert);
+            return false;
+        }
     }
 
     @RequestMapping("/create.action")
@@ -310,14 +328,7 @@ public class QueryBuilderTargetController implements XssCheckAware {
             }
         } else {
             form.setViewFormat(form.getPreviousViewFormat());
-
-            List<Message> errorsMessages = new LinkedList<>();
-            List<EqlSyntaxError> syntaxErrors = analysisResult.getSyntaxErrors();
-            syntaxErrors.forEach(syntaxError ->
-                    errorsMessages.add(Message.of("error.target.eql.syntax", syntaxError.getLine(), syntaxError.getColumn(), syntaxError.getSymbol()))
-            );
-            errorsMessages.forEach(popups::alert);
-            model.addAttribute("eqlErrors", errorsMessages);
+            editFormValidator.throwEqlValidationException(form.getEql(), analysisResult.getSyntaxErrors().get(0));
         }
 
         setupCommonViewPageParams(admin, form.getTargetId(), form.getEql(), model);
@@ -359,7 +370,6 @@ public class QueryBuilderTargetController implements XssCheckAware {
     private String getReportUrl(Admin admin, String sessionId, int targetId, int mailinglistIs) {
         try {
             RecipientStatusStatisticDto statisticDto = new RecipientStatusStatisticDto();
-            statisticDto.setMediaType(0);
             statisticDto.setTargetId(targetId);
             statisticDto.setMailinglistId(mailinglistIs);
             statisticDto.setFormat("html");
@@ -498,9 +508,7 @@ public class QueryBuilderTargetController implements XssCheckAware {
     private void analyzeEqlForSaving(Admin admin, String eql, Popups popups) {
         EqlDetailedAnalysisResult analysisResult = eqlFacade.analyseEqlSafely(eql);
         if (!analysisResult.isAnaliseSuccess()) {
-            analysisResult.getSyntaxErrors().forEach(syntaxError ->
-                    popups.alert("error.target.eql.syntax", syntaxError.getLine(), syntaxError.getColumn(), syntaxError.getSymbol())
-            );
+            editFormValidator.throwEqlValidationException(eql, analysisResult.getSyntaxErrors().get(0));
         } else if (analysisResult.isMailTrackingRequired() && !AgnUtils.isMailTrackingAvailable(admin)) {
             popups.warning("warning.target.mailtrackingRequired");
         }
@@ -534,7 +542,7 @@ public class QueryBuilderTargetController implements XssCheckAware {
     @Override
     public boolean isParameterExcludedForUnsafeHtmlTagCheck(Admin admin, String param, String controllerMethodName) {
         return "save".equals(controllerMethodName)
-                && admin.permissionAllowed(RECIPIENT_PROFILEFIELD_HTML_ALLOWED)
+                && configService.getBooleanValue(ConfigValue.AllowHtmlInProfileFields)
                 && ("queryBuilderRules".equals(param) || param.matches("targetgroup-querybuilder_rule_\\d+_value_\\d+"));
     }
 }

@@ -100,7 +100,6 @@ public class AutoExport {
     private int autoExportId;
 	private AutoExportType type = AutoExportType.Recipient;
     private int companyId;
-    private int adminId;
     private int exportProfileId;
 	private int exportCsvDescriptionID;
 	private int exportReferenceTableID;
@@ -165,14 +164,6 @@ public class AutoExport {
 
     public void setCompanyId(int companyId) {
         this.companyId = companyId;
-    }
-
-    public int getAdminId() {
-        return adminId;
-    }
-
-    public void setAdminId(int adminId) {
-        this.adminId = adminId;
     }
 
     public int getExportProfileId() {

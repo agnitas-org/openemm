@@ -10,13 +10,35 @@
 
 package com.agnitas.emm.core.mailingcontent.web;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
+import com.agnitas.beans.Admin;
+import com.agnitas.beans.DynamicTag;
+import com.agnitas.beans.Mailing;
+import com.agnitas.beans.ProfileField;
+import com.agnitas.beans.TargetLight;
+import com.agnitas.dao.ProfileFieldDao;
+import com.agnitas.emm.core.Permission;
+import com.agnitas.emm.core.maildrop.service.MaildropService;
+import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
+import com.agnitas.emm.core.mailing.service.MailingPropertiesRules;
+import com.agnitas.emm.core.mailing.service.MailingService;
+import com.agnitas.emm.core.mailingcontent.dto.DynTagDto;
+import com.agnitas.emm.core.mailingcontent.enums.ContentGenerationTonality;
+import com.agnitas.emm.core.mailingcontent.form.MailingContentForm;
+import com.agnitas.emm.core.mailingcontent.service.MailingContentService;
+import com.agnitas.emm.core.mailingcontent.validator.DynTagChainValidator;
+import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
+import com.agnitas.emm.core.target.service.ComTargetService;
+import com.agnitas.service.AgnDynTagGroupResolverFactory;
+import com.agnitas.service.AgnTagService;
+import com.agnitas.service.ComMailingContentService;
+import com.agnitas.service.ExtendedConversionService;
+import com.agnitas.service.GridServiceWrapper;
+import com.agnitas.service.ServiceResult;
+import com.agnitas.util.preview.PreviewImageService;
+import com.agnitas.web.dto.DataResponseDto;
+import com.agnitas.web.mvc.Popups;
+import com.agnitas.web.mvc.XssCheckAware;
+import jakarta.servlet.http.HttpSession;
 import org.agnitas.beans.MailingComponent;
 import org.agnitas.emm.core.mailing.service.MailingNotExistException;
 import org.agnitas.emm.core.useractivitylog.UserAction;
@@ -33,35 +55,12 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import com.agnitas.beans.Admin;
-import com.agnitas.beans.DynamicTag;
-import com.agnitas.beans.Mailing;
-import com.agnitas.beans.ProfileField;
-import com.agnitas.beans.TargetLight;
-import com.agnitas.dao.ProfileFieldDao;
-import com.agnitas.emm.core.Permission;
-import com.agnitas.emm.core.maildrop.service.MaildropService;
-import com.agnitas.emm.core.mailing.service.ComMailingBaseService;
-import com.agnitas.emm.core.mailing.service.MailingPropertiesRules;
-import com.agnitas.emm.core.mailing.service.MailingService;
-import com.agnitas.emm.core.mailingcontent.dto.DynTagDto;
-import com.agnitas.emm.core.mailingcontent.form.MailingContentForm;
-import com.agnitas.emm.core.mailingcontent.service.MailingContentService;
-import com.agnitas.emm.core.mailingcontent.validator.DynTagChainValidator;
-import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
-import com.agnitas.emm.core.target.service.ComTargetService;
-import com.agnitas.service.AgnDynTagGroupResolverFactory;
-import com.agnitas.service.AgnTagService;
-import com.agnitas.service.ComMailingContentService;
-import com.agnitas.service.ExtendedConversionService;
-import com.agnitas.service.GridServiceWrapper;
-import com.agnitas.service.ServiceResult;
-import com.agnitas.util.preview.PreviewImageService;
-import com.agnitas.web.dto.DataResponseDto;
-import com.agnitas.web.mvc.Popups;
-import com.agnitas.web.mvc.XssCheckAware;
-
-import jakarta.servlet.http.HttpSession;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public class MailingContentController implements XssCheckAware {
 
@@ -228,6 +227,8 @@ public class MailingContentController implements XssCheckAware {
         model.addAttribute("isTextGenerationEnabled", isTextGenerationEnabled);
         model.addAttribute("isMailingEditable", isMailingEditable(admin, mailingId));
         model.addAttribute("isMailingExclusiveLockingAcquired", isMailingExclusiveLockingAcquired);
+        model.addAttribute("contentGenerationTonalities", ContentGenerationTonality.values());
+        model.addAttribute("isContentGenerationAllowed", false);
     }
 
     private void prepareForm(Mailing mailing, MailingContentForm form, Admin admin) {

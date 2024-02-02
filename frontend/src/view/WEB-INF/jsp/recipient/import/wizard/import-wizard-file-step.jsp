@@ -1,4 +1,4 @@
-<%@ page contentType="text/html; charset=utf-8" errorPage="/error.do" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.action" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 <%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
@@ -107,13 +107,9 @@
             </div>
         </div>
     </c:set>
+
     <c:set var="step" value="1"/>
-    <emm:ShowByPermission token="import.init.rollback">
-        <c:url var="backUrl" value="/newimportwizard.do?action=10"/>
-    </emm:ShowByPermission>
-    <emm:HideByPermission token="import.init.rollback">
-        <c:url var="backUrl" value="/recipient/import/chooseMethod.action"/>
-    </emm:HideByPermission>
+    <c:url var="backUrl" value="/recipient/import/chooseMethod.action"/>
 
     <%@ include file="fragments/import-wizard-step-template.jspf" %>
 </mvc:form>

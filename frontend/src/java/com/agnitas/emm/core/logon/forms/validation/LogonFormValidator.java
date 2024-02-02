@@ -25,7 +25,7 @@ public class LogonFormValidator {
 	private boolean validateUsername(final LogonForm form, final Popups popups) {
 		final String username = form.getUsername();
 		if(StringUtils.isBlank(username)) {
-			popups.field("username", "error.username.required");
+			popups.fieldError("username", "error.username.required");
 			return false;
 		}
 		return true;
@@ -34,7 +34,7 @@ public class LogonFormValidator {
 	private boolean validatePassword(final LogonForm form, final Popups popups) {
 		final String password = form.getPassword();
 		if(StringUtils.isBlank(password)) {
-			popups.field("password", "error.password.required");
+			popups.fieldError("password", "error.password.required");
 			return false;
 		}
 		return true;

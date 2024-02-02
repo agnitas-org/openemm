@@ -1,6 +1,5 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do" %>
+<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.action" %>
 
-<%@ taglib prefix="bean" uri="http://struts.apache.org/tags-bean" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
 
@@ -14,10 +13,10 @@
             <div class="modal-header">
                 <button type="button" class="close-icon close js-confirm-negative" data-dismiss="modal">
                     <i aria-hidden="true" class="icon icon-times-circle"></i>
-                    <span class="sr-only"><bean:message key="button.Cancel"/></span>
+                    <span class="sr-only"><mvc:message code="button.Cancel"/></span>
                 </button>
                 <h4 class="modal-title">
-                    <bean:message key="Recipient"/> ${blacklistDeleteForm.email}
+                    <mvc:message code="Recipient"/> ${blacklistDeleteForm.email}
                 </h4>
             </div>
 
@@ -27,13 +26,13 @@
                 <mvc:hidden path="email" />
 
                 <div class="modal-body">
-                    <bean:message key="recipient.blacklist.delete"/>
+                    <mvc:message code="recipient.blacklist.delete"/>
 
                     <c:if test="${not empty mailinglists}">
                         <div class="form-group">
                             <div class="col-sm-4">
                                 <label class="control-label">
-                                    <bean:message key="blacklist.mailinglists"/>
+                                    <mvc:message code="blacklist.mailinglists"/>
                                 </label>
                             </div>
                             <div class="col-sm-8">
@@ -47,7 +46,7 @@
                                         </li>
                                     </c:forEach>
                                 </ul>
-                                <p class="help-block"><bean:message key="blacklist.mailinglists.hint"/></p>
+                                <p class="help-block"><mvc:message code="blacklist.mailinglists.hint"/></p>
                             </div>
                         </div>
                     </c:if>
@@ -58,13 +57,13 @@
                         <button type="button" class="btn btn-default btn-large js-confirm-negative"
                                 data-dismiss="modal">
                             <i class="icon icon-times"></i>
-                            <span class="text"><bean:message key="button.Cancel"/></span>
+                            <span class="text"><mvc:message code="button.Cancel"/></span>
                         </button>
                         <button type="button" class="btn btn-primary btn-large js-confirm-positive"
                                 data-dismiss="modal"
                                 data-action="blacklist-delete">
                             <i class="icon icon-check"></i>
-                            <span class="text"><bean:message key="button.Delete"/></span>
+                            <span class="text"><mvc:message code="button.Delete"/></span>
                         </button>
                     </div>
                 </div>

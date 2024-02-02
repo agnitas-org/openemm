@@ -14,6 +14,7 @@ import java.util.List;
 
 
 import com.agnitas.beans.Admin;
+import org.agnitas.beans.ColumnMapping;
 
 public interface CsvImportExportDescriptionService {
 	CsvImportExportDescription getCsvImportExportDescription(int companyId, String cvsDescriptionName);
@@ -22,7 +23,7 @@ public interface CsvImportExportDescriptionService {
 
 	List<String> getCsvImportExportDescriptionNames(int companyId, String tableName);
 
-	List<CsvImportExportDescription> getCsvImportExportDescriptions(int companyId, String tableName, boolean forImport);
+	List<CsvImportExportDescription> getCsvImportExportDescriptions(Admin admin, String tableName, boolean forImport);
 
 	boolean deleteCsvImportExportDescription(int id);
 
@@ -33,4 +34,16 @@ public interface CsvImportExportDescriptionService {
 	SimpleServiceResult save(Admin admin, CsvImportExportDescription definition);
 
 	boolean addConstantToMappingData(int descriptionID);
+
+	boolean storeMappingData(int descriptionID, List<ColumnMapping> mappings);
+
+	boolean isImportPreprocessingAllowed(Admin admin);
+	boolean isImportWithoutCsvHeadersAllowed(Admin admin);
+	boolean isAutoMappingAllowed(Admin admin);
+	boolean isEncryptedImportAllowed(Admin admin);
+	boolean isJsonImportAllowed(Admin admin);
+	boolean isExcelImportAllowed(Admin admin);
+	boolean isImportManageAllowed(CsvImportExportDescription definition, Admin admin);
+	boolean isImportManageAllowed(int id, Admin admin);
+
 }

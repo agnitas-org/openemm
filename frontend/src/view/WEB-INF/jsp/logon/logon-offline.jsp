@@ -1,6 +1,5 @@
-<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.do"%>
-<%@ taglib uri="http://struts.apache.org/tags-html" prefix="html"%>
-<%@ taglib prefix="tiles" uri="http://struts.apache.org/tags-tiles"%>
+<%@ page language="java" contentType="text/html; charset=utf-8" errorPage="/error.action"%>
+<%@ taglib prefix="tiles" uri="http://tiles.apache.org/tags-tiles"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn"%>
 <%@ taglib prefix="s" uri="http://www.springframework.org/tags"%>
@@ -24,7 +23,7 @@
 <title></title>
 <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css" integrity="sha384-oS3vJWv+0UjzBfQzYUhtDYW+Pj2yciDJxpsK1OYPAYjqT085Qq/1cq5FLXAZQ7Ay" crossorigin="anonymous">
 
-<tiles:insert page="/WEB-INF/jsp/assets.jsp" />
+<tiles:insertTemplate template="/WEB-INF/jsp/assets.jsp" />
 
 <style>
 /*General START*/
@@ -157,10 +156,10 @@
 	}
 	
 	.version--wrapper {
-		background-image: url("/assets/core/images/logonPageOffline/Version.jpg");
-		background-position: 360% 65%;
-		background-repeat: repeat;
-		background-size: 95%;
+		background-image: url("/assets/core/images/logonPageOffline/Version.png");
+		background-position: 100% 70%;
+		background-repeat: no-repeat;
+		background-size: 100%;
 		background-color: #000;
 		align-items: start;
 		padding-top: 3em;
@@ -168,7 +167,7 @@
 	
 	.version__text {
 		color: #FFFFFF;
-		padding: 2em 38% 2em 0;
+		padding: 2em 30% 2em 0;
 	}
 	
 	.version__text--headline {

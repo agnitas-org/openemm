@@ -1,4 +1,4 @@
-<%@ page contentType="text/html; charset=utf-8" errorPage="/error.do" %>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.action" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
@@ -32,15 +32,15 @@
     <emm:instantiate var="element0" type="java.util.LinkedHashMap" scope="request">
         <c:set target="${itemActionsSettings}" property="0" value="${element0}"/>
         <c:set target="${element0}" property="btnCls" value="btn btn-regular btn-warning"/>
-        <emm:ShowByPermission token="automatic.import.cancel.migration">
-            <c:set target="${element0}" property="extraAttributes" value="data-action='ignore-errors'"/>
-        </emm:ShowByPermission>
-        <emm:HideByPermission token="automatic.import.cancel.migration">
+        <emm:ShowByPermission token="automatic.import.cancel.rollback">
             <c:set target="${element0}" property="extraAttributes" value=""/>
             <c:set target="${element0}" property="type" value="href"/>
             <c:set target="${element0}" property="url">
                 <c:url value="/recipient/import/errors/ignore.action" />
             </c:set>
+        </emm:ShowByPermission>
+        <emm:HideByPermission token="automatic.import.cancel.rollback">
+            <c:set target="${element0}" property="extraAttributes" value="data-action='ignore-errors'"/>
         </emm:HideByPermission>
         <c:set target="${element0}" property="iconBefore" value="icon-warning"/>
         <c:set target="${element0}" property="name">
@@ -52,15 +52,15 @@
         <c:set target="${itemActionsSettings}" property="1" value="${element1}"/>
         <c:set target="${element1}" property="btnCls" value="btn btn-secondary btn-regular"/>
         <c:set target="${element1}" property="iconBefore" value="icon-times"/>
-        <emm:ShowByPermission token="automatic.import.cancel.migration">
-            <c:set target="${element1}" property="extraAttributes" value="data-action='cancel'"/>
-        </emm:ShowByPermission>
-        <emm:HideByPermission token="automatic.import.cancel.migration">
+        <emm:ShowByPermission token="automatic.import.cancel.rollback">
             <c:set target="${element1}" property="extraAttributes" value=""/>
             <c:set target="${element1}" property="type" value="href"/>
             <c:set target="${element1}" property="url">
                 <c:url value="/recipient/import/cancel.action" />
             </c:set>
+        </emm:ShowByPermission>
+        <emm:HideByPermission token="automatic.import.cancel.rollback">
+            <c:set target="${element1}" property="extraAttributes" value="data-action='cancel'"/>
         </emm:HideByPermission>
         <c:set target="${element1}" property="name">
             <mvc:message code="button.Cancel"/>
@@ -70,11 +70,11 @@
     <emm:instantiate var="element2" type="java.util.LinkedHashMap" scope="request">
         <c:set target="${itemActionsSettings}" property="2" value="${element2}"/>
         <c:set target="${element2}" property="btnCls" value="btn btn-regular btn-inverse"/>
-        <emm:ShowByPermission token="automatic.import.cancel.migration">
-            <c:set target="${element2}" property="extraAttributes" value="data-form-target='#errors-form' data-form-submit-event"/>
-        </emm:ShowByPermission>
-        <emm:HideByPermission token="automatic.import.cancel.migration">
+        <emm:ShowByPermission token="automatic.import.cancel.rollback">
             <c:set target="${element2}" property="extraAttributes" value="data-form-target='#errors-form' data-form-submit"/>
+        </emm:ShowByPermission>
+        <emm:HideByPermission token="automatic.import.cancel.rollback">
+            <c:set target="${element2}" property="extraAttributes" value="data-form-target='#errors-form' data-form-submit-event"/>
         </emm:HideByPermission>
         <c:set target="${element2}" property="iconBefore" value="icon-save"/>
         <c:set target="${element2}" property="name">

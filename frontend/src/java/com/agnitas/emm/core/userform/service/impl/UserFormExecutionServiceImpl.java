@@ -12,7 +12,6 @@ package com.agnitas.emm.core.userform.service.impl;
 
 import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
 
@@ -33,7 +32,6 @@ import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.struts.action.ActionErrors;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.context.ApplicationContext;
@@ -393,17 +391,7 @@ public final class UserFormExecutionServiceImpl implements UserFormExecutionServ
 			responseContent += "<br/><br/>";
 			responseContent += params.get("velocity_error");
 		}
-		
-		if (params.get("errors") != null) {
-			responseContent += "<br/>";
-			ActionErrors velocityErrors = ((ActionErrors) params.get("errors"));
-			@SuppressWarnings("rawtypes")
-			Iterator it = velocityErrors.get();
-			while (it.hasNext()) {
-				responseContent += "<br/>" + it.next();
-			}
-		}
-		
+
 		return responseContent;
 	}
 

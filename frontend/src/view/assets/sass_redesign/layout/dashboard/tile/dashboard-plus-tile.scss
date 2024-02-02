@@ -1,0 +1,30 @@
+
+.dashboard-plus-tile {
+  border-width: 1px;
+  border-color: $primary;
+  border-style: dashed;
+  visibility: hidden;
+
+  .tile-body {
+    @include flex-center();
+
+    button {
+      color: $c-white;
+      @include size(100px);
+      background-color: $primary;
+      margin-bottom: $tile-header-height;
+      
+      i {
+        font-size: 70px;
+      }
+    }
+  }
+  
+  @include mobile {
+    display: none;
+  }
+  
+  body.edit-mode & {
+    visibility: visible;
+  }  
+}

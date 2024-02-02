@@ -1,0 +1,18 @@
+<%-- -*- scope: openemm -*- --%>
+<div class="sysstat__footer">
+	<div class="sysstat__footer__content">
+		<div class="sysstat__footer__text">
+			<div class="sysstat__footer__text__head">
+				<mvc:message code="serverStatus.statusExternal.footer.headline.openemm" />
+			</div>
+			<div class="sysstat__footer__text__sub">
+				<mvc:message code="serverStatus.statusExternal.footer.subline.openemm" />
+			</div>
+		</div>
+		<div class="sysstat__footer__button">
+			<div class="sysstat__footer__button__text">
+				<a href="<mvc:message code="serverStatus.statusExternal.footer.button.link.openemm" />"><mvc:message code="serverStatus.statusExternal.footer.button.openemm" /></a>
+			</div>
+		</div>
+	</div>
+</div>

@@ -39,7 +39,7 @@ import org.agnitas.emm.core.velocity.scriptvalidator.VelocityDirectiveScriptVali
 import org.agnitas.service.FormImportResult;
 import org.agnitas.service.UserActivityLogService;
 import org.agnitas.service.UserFormImporter;
-import org.agnitas.service.WebStorage;
+import com.agnitas.service.WebStorage;
 import org.agnitas.util.AgnUtils;
 import org.agnitas.util.DbColumnType;
 import org.agnitas.util.HttpUtils;

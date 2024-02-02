@@ -1,8 +1,7 @@
-<%@ page contentType="text/html; charset=utf-8" errorPage="/error.do"%>
+<%@ page contentType="text/html; charset=utf-8" errorPage="/error.action"%>
 <%@page import="org.agnitas.target.ConditionalOperator" %>
 <%@page import="org.agnitas.util.AgnUtils"%>
 <%@ page import="com.agnitas.emm.core.target.beans.TargetComplexityGrade" %>
-<%@ taglib prefix="agn" uri="https://emm.agnitas.de/jsp/jstl/tags" %>
 <%@ taglib prefix="c"   uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="emm" uri="https://emm.agnitas.de/jsp/jsp/common" %>
 <%@ taglib prefix="mvc" uri="https://emm.agnitas.de/jsp/jsp/spring" %>
@@ -56,7 +55,9 @@
              modelAttribute="targetEditForm"
              data-controller="target-group-view"
              data-initializer="target-group-view"
-             data-validator-options="skip_empty: false">
+             data-validator-options="skip_empty: false"
+             data-action="save-target"
+             data-submit-type="${not empty workflowForwardParams ? 'static' : ''}">
     <mvc:hidden path="targetId" />
     <mvc:hidden path="viewFormat" />
     <mvc:hidden path="previousViewFormat" value="${targetEditForm.viewFormat}"/>
@@ -99,17 +100,22 @@
                                   readonly="${DISABLED}" placeholder="${descriptionMsg}"/>
                 </div>
             </div>
-            <div class="form-group">
-                <div class="col-sm-4">
-                    <label class="control-label checkbox-control-label" for="admin_and_test_delivery"><mvc:message code="target.adminAndTestDelivery"/></label>
+            <emm:ShowByPermission token="settings.extended">
+                <div class="form-group">
+                    <div class="col-sm-4">
+                        <label class="control-label checkbox-control-label" for="admin_and_test_delivery"><mvc:message code="target.adminAndTestDelivery"/></label>
+                    </div>
+                    <div class="col-sm-8">
+                        <label class="toggle">
+                            <mvc:checkbox path="useForAdminAndTestDelivery" id="admin_and_test_delivery" disabled="${DISABLED}"/>
+                            <div class="toggle-control"></div>
+                        </label>
+                    </div>
                 </div>
-                <div class="col-sm-8">
-                    <label class="toggle">
-                        <mvc:checkbox path="useForAdminAndTestDelivery" id="admin_and_test_delivery" disabled="${DISABLED}"/>
-                        <div class="toggle-control"></div>
-                    </label>
-                </div>
-            </div>
+            </emm:ShowByPermission>
+            <emm:HideByPermission token="settings.extended">
+                <mvc:hidden path="useForAdminAndTestDelivery"/>
+            </emm:HideByPermission>
             <%@include file="fragments/view-altg-toggle.jspf" %>
         </div>
     </div>
@@ -125,11 +131,13 @@
                         <mvc:message code="default.basic"/>
                     </a>
                 </li>
+                <emm:ShowByPermission token="settings.extended">
                 <li class="${EQL_EDITOR_TAB_ACTIVE_CLASS}">
-                    <a href="#" data-toggle-tab="#tab-targetgroupEqlEditor" data-action="switch-tab-viewEQL">
+                    <a id="eql-editor-tab-trigger" href="#" data-toggle-tab="#tab-targetgroupEqlEditor" data-action="switch-tab-viewEQL">
                         <mvc:message code="default.advanced"/>
                     </a>
                 </li>
+                </emm:ShowByPermission>
             </ul>
 
             <ul class="tile-header-actions">
@@ -191,23 +199,17 @@
                 </div>
             </c:if>
             <c:if test="${targetEditForm.viewFormat == 'EQL'}">
-                <div id="tab-targetgroupEqlEditor" ${EQL_EDITOR_DIV_SHOW_STATE}>
-                    <div class="row">
-                        <div class="col-md-12">
-                            <div class="form-group">
-                                <c:forEach var="message" items="${eqlErrors}">
-                                    <mvc:message var="msg" code="${message.code}" arguments="${message.arguments}"/>
-                                    <ul>
-                                        <div class="tile">
-                                            <li class="tile-notification tile-notification-alert">${msg}</li>
-                                        </div>
-                                    </ul>
-                                </c:forEach>
-                                <mvc:textarea path="eql" id="eql" rows="14" cols="${TEXTAREA_WIDTH}" cssClass="form-control js-editor-eql" readonly="${DISABLED}" />
+                <emm:ShowByPermission token="settings.extended">
+                    <div id="tab-targetgroupEqlEditor" ${EQL_EDITOR_DIV_SHOW_STATE}>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <mvc:textarea path="eql" id="eql" rows="14" cols="${TEXTAREA_WIDTH}" cssClass="form-control js-editor-eql" readonly="${DISABLED}" />
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
+                </emm:ShowByPermission>
             </c:if>
         </div>
     </div>
@@ -225,7 +227,7 @@
                     <ul class="tile-header-actions">
                         <li>
                             <button type="button" class="btn btn-regular btn-primary" data-form-url="${saveUrl}" data-form-set="showStatistic: true" data-form-submit="">
-                                <i class="icon icon-refresh"></i>
+      						    <i class="icon icon-save"></i>
                                 <span class="text"><mvc:message code="button.save.evaluate" /></span>
                             </button>
                         </li>

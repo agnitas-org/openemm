@@ -10,13 +10,15 @@
 
 package com.agnitas.emm.core.upload.service.dto;
 
+import java.util.List;
 import java.util.Locale;
 
 public class UploadFileDescription {
     private int uploadId;
     private int companyId;
     private String fileName;
-    private int owner;
+    private int owner; // remove after EMMGUI-714 has been tested and it's not used anymore. new field - owners
+    private List<Integer> owners;
     private int fromUser;
     private String lastName;
     private String firstName;
@@ -74,6 +76,14 @@ public class UploadFileDescription {
         this.owner = owner;
     }
 
+    public List<Integer> getOwners() {
+        return owners;
+    }
+
+    public void setOwners(List<Integer> owners) {
+        this.owners = owners;
+    }
+
     public int getCompanyId() {
         return companyId;
     }
@@ -121,4 +131,9 @@ public class UploadFileDescription {
 	public void setFileName(String fileName) {
 		this.fileName = fileName;
 	}
+
+    @Override
+    public String toString() {
+        return fileName + " (" + uploadId + ")";
+    }
 }

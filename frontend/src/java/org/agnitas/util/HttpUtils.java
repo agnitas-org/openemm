@@ -627,6 +627,16 @@ public class HttpUtils {
         return httpClient;
     }
 	
+	public static String getAuthorizationToken(HttpServletRequest request) {
+		String authorizationToken = request.getHeader("Authorization"); // like: "Bearer abc.abc123.signature"
+		if (StringUtils.isBlank(authorizationToken) || !authorizationToken.startsWith("Bearer ")) {
+			return null;
+		} else {
+			String bearerToken = authorizationToken.substring(7); // like: "abc.abc123.signature"
+			return bearerToken;
+		}
+	}
+	
 	public static String getBasicAuthenticationUsername(HttpServletRequest request) {
 		try {
 			String basicAuthorizationHeader = request.getHeader("Authorization"); // like: "Basic bXl1c2VybmFtZTpteXBhc3N3b3Jk"

@@ -10,40 +10,15 @@
 
 package com.agnitas.emm.core.workflow.service.jobs;
 
-import java.util.List;
-
-import org.agnitas.service.JobWorker;
-
-import com.agnitas.emm.core.workflow.beans.Workflow;
-import com.agnitas.emm.core.workflow.service.ComWorkflowService;
-
 /**
  * Handles campaign stop
  */
-public class ComWorkflowStopJobWorker extends JobWorker {
-	@Override
-	public String runJob() throws Exception {
-		ComWorkflowService workflowService = serviceLookupFactory.getBeanWorkflowService();
-		List<Workflow> workflowsToDeactivate = workflowService.getWorkflowsToDeactivate(getCompaniesConstrains());
-
-		for (Workflow workflow : workflowsToDeactivate) {
-			int workflowId = workflow.getWorkflowId();
-			int companyId = workflow.getCompanyId();
-
-			switch (workflow.getStatus()) {
-				case STATUS_ACTIVE:
-					workflowService.changeWorkflowStatus(workflowId, companyId, Workflow.WorkflowStatus.STATUS_COMPLETE);
-					break;
-
-				case STATUS_TESTING:
-					workflowService.changeWorkflowStatus(workflowId, companyId, Workflow.WorkflowStatus.STATUS_TESTED);
-					break;
-
-				default:
-					break;
-			}
-		}
-		
-		return null;
-	}
+public class ComWorkflowStopJobWorker extends WorkflowStateTransitionJobWorker {
+    /* TODO In order to work with new PAUSED(9) workflow status
+        (i.e. autoreactivation of the workflow after pause expiration),
+        ComWorkflowStopJobWorker replaced with WorkflowStateTransitionJobWorker.
+        Currently ComWorkflowStopJobWorker handles both stop and unpause actions.
+        ComWorkflowStopJobWorker should be deleted after WorkflowStateTransitionJobWorker will be available on all systems.
+        An appropriate entry created in future_db_maintenance.txt
+        GWUA-4560 */
 }

@@ -1,0 +1,15 @@
+
+.table-box {
+  @include flex(column);
+  height: 100%;
+  container-type: inline-size;
+}
+
+.table-scrollable {
+  @include hide-scroll();
+  @include border-top-radius;
+
+  flex-grow: 1;
+
+  border: 1px solid $c-table-border;
+}

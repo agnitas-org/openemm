@@ -392,12 +392,64 @@ public final class ProfileFieldServiceImpl implements ProfileFieldService {
             }
         }
 
-        if (changes.size() > 0) {
+        List<String> deletedFixedValues = detectDeletedFixedValues(field, form);
+        if (!deletedFixedValues.isEmpty()) {
+            changes.add("fixed values deleted: [" + String.join(", ", deletedFixedValues) + "]");
+        }
+
+        List<String> addedFixedValues = detectNewAddedFixedValues(field, form);
+        if (!addedFixedValues.isEmpty()) {
+            changes.add("fixed values added: [" + String.join(", ", addedFixedValues) + "]");
+        }
+
+        if (!changes.isEmpty()) {
             userAction = new UserAction("edit profile field", String.format("Short name: %s. Profile field:%n%s",
                     existingShortName, StringUtils.join(changes, System.lineSeparator())));
         }
 
         return userAction;
+    }
+
+    private List<String> detectNewAddedFixedValues(ProfileField field, ProfileFieldForm form) {
+        if (form.getAllowedValues() == null) {
+            return Collections.emptyList();
+        }
+
+        if (field.getAllowedValues() == null) {
+            return List.of(form.getAllowedValues());
+        }
+
+        List<String> addedValues = new ArrayList<>();
+        List<String> previousValues = List.of(field.getAllowedValues());
+
+        for (String newValue : form.getAllowedValues()) {
+            if (!previousValues.contains(newValue)) {
+                addedValues.add(newValue);
+            }
+        }
+
+        return addedValues;
+    }
+
+    private List<String> detectDeletedFixedValues(ProfileField field, ProfileFieldForm form) {
+        if (field.getAllowedValues() == null) {
+            return Collections.emptyList();
+        }
+
+        if (form.getAllowedValues() == null) {
+            return List.of(field.getAllowedValues());
+        }
+
+        List<String> deletedValues = new ArrayList<>();
+        List<String> formValues = List.of(form.getAllowedValues());
+
+        for (String fieldValue : field.getAllowedValues()) {
+            if (!formValues.contains(fieldValue)) {
+                deletedValues.add(fieldValue);
+            }
+        }
+
+        return deletedValues;
     }
 
     @Override

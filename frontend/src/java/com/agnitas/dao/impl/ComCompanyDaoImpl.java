@@ -25,7 +25,6 @@ import java.util.Set;
 import org.agnitas.beans.BindingEntry.UserType;
 import org.agnitas.beans.DynamicTagContent;
 import org.agnitas.beans.MailingComponent;
-import org.agnitas.beans.TrackableLink;
 import org.agnitas.beans.impl.CompanyStatus;
 import org.agnitas.beans.impl.PaginatedListImpl;
 import org.agnitas.dao.impl.OnepixelDaoImpl;
@@ -49,6 +48,7 @@ import org.springframework.jdbc.core.RowMapper;
 import com.agnitas.beans.Company;
 import com.agnitas.beans.DynamicTag;
 import com.agnitas.beans.Mailing;
+import com.agnitas.beans.TrackableLink;
 import com.agnitas.beans.impl.CompanyImpl;
 import com.agnitas.dao.ComCompanyDao;
 import com.agnitas.dao.ComMailingDao;
@@ -210,17 +210,14 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 			return null;
 		}
 
-		try {
-			String sql = "SELECT company_id, creator_company_id, shortname, description, rdir_domain, mailloop_domain, status, mailtracking, stat_admin, secret_key, uid_version, auto_mailing_report_active, sector, business_field, max_recipients, salutation_extended, enabled_uid_version, export_notify, parent_company_id, contact_tech FROM company_tbl WHERE company_id = ?";
-			List<Company> list = select(logger, sql, new ComCompany_RowMapper(), companyID);
-			if (!list.isEmpty()) {
-				return list.get(0);
-			}
-
-			return null;
-		} catch (Exception e) {
-			throw new RuntimeException("Cannot read company data for companyid: " + companyID, e);
+		final String sql = "SELECT company_id, creator_company_id, shortname, description, rdir_domain, mailloop_domain, status, mailtracking, stat_admin, secret_key, uid_version, auto_mailing_report_active, sector, business_field, max_recipients, salutation_extended, enabled_uid_version, export_notify, parent_company_id, contact_tech FROM company_tbl WHERE company_id = ?";
+		final List<Company> list = select(logger, sql, new ComCompany_RowMapper(), companyID);
+		
+		if (!list.isEmpty()) {
+			return list.get(0);
 		}
+
+		return null;
 	}
 
 	@Override
@@ -791,7 +788,10 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 		}
 	}
 
-	private String replaceContentProperties(String content, int companyId, int mailingId, int mailinglistId, String rdirDomain) {
+	private String replaceContentProperties(String content, int companyId, int mailingId, int mailinglistId, String rdirDomain) throws Exception {
+		Optional<String> companyTokenOptional = getCompanyToken(companyId);
+		String companyToken = companyTokenOptional.isPresent() ? companyTokenOptional.get() : null;
+		
 		String cid = Integer.toString(companyId);
 		content = StringUtils.replaceEach(content, new String[]{"<CID>", "<cid>", "[COMPANY_ID]", "[company_id]", "[Company_ID]"},
 					new String[]{cid, cid, cid, cid, cid});
@@ -803,6 +803,12 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 		String mlid = Integer.toString(mailinglistId);
 		content = StringUtils.replaceEach(content, new String[]{"<MLID>", "<mlid>", "[MAILINGLIST_ID]", "[mailinglist_id]", "[Mailinglist_ID]"},
 					new String[]{mlid, mlid, mlid, mlid, mlid});
+		
+		if (StringUtils.isNotBlank(companyToken)) {
+			content = content.replace("[CTOKEN]", companyToken);
+		} else {
+			content = content.replace("agnCTOKEN=[CTOKEN]", "agnCI=" + companyId);
+		}
 
 		content = content.replace("<rdir-domain>", StringUtils.defaultIfBlank(rdirDomain, "RDIR-Domain"));
 		return content;
@@ -1085,6 +1091,11 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 	@Override
 	public boolean checkDeeptrackingAutoActivate(int companyID) {
 		return selectInt(logger, "SELECT auto_deeptracking FROM company_tbl WHERE company_id = ?", companyID) == 1;
+	}
+	@Override 
+	public void setAutoDeeptracking(int companyID, boolean active) {
+		String sql = "UPDATE company_tbl SET auto_deeptracking = ? WHERE company_id = ?";
+		update(logger, sql, active ? 1 : 0, companyID);
 	}
 
 	@Override
@@ -1539,9 +1550,9 @@ public class ComCompanyDaoImpl extends PaginatedBaseDaoImpl implements ComCompan
 
 	@Override
 	public final Optional<String> getCompanyToken(final int companyID) throws UnknownCompanyIdException {
-		final List<String> list = select(logger, "SELECT company_token FROM company_tbl WHERE company_id=?", StringRowMapper.INSTANCE, companyID);
+		final List<String> list = select(logger, "SELECT company_token FROM company_tbl WHERE company_id = ?", StringRowMapper.INSTANCE, companyID);
 		
-		if(list.isEmpty()) {
+		if (list.isEmpty()) {
 			throw new UnknownCompanyIdException(companyID);
 		}
 		

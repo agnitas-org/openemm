@@ -10,19 +10,18 @@
 
 package org.agnitas.emm.core.autoexport.service;
 
+import java.util.Date;
+import java.util.List;
+
+import org.agnitas.beans.ExportPredef;
+import org.agnitas.emm.core.autoexport.bean.AutoExport;
+import org.agnitas.emm.core.autoexport.bean.AutoExportWsJobState;
+
 import com.agnitas.beans.Admin;
 import com.agnitas.emm.core.autoexport.beans.AutoExportJobStatus;
 import com.agnitas.emm.core.referencetable.beans.ComReferenceTable;
 import com.agnitas.emm.core.workflow.beans.Workflow;
 import com.agnitas.service.CsvImportExportDescription;
-import org.agnitas.beans.ExportPredef;
-import org.agnitas.emm.core.autoexport.bean.AutoExport;
-import org.agnitas.emm.core.autoexport.bean.AutoExport.AutoExportType;
-import org.agnitas.emm.core.autoexport.bean.AutoExportWsJobState;
-
-import java.io.File;
-import java.util.Date;
-import java.util.List;
 
 public interface AutoExportService {
 
@@ -67,13 +66,6 @@ public interface AutoExportService {
     List<AutoExport> getAutoExports(int companyId, boolean active);
 
     List<AutoExport> getMailingAutoExports(int companyId, boolean active);
-
-    /**
-     * Returns temporary auto-export file
-     *
-     * @return null or file (can exist or not)
-     */
-    File getSavedAutoExportFile(int companyId, AutoExportType exportType, String fileName);
 
     AutoExportStatus doExportReactionsData(AutoExport autoExport) throws Exception;
 

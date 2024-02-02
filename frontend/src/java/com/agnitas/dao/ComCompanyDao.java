@@ -70,6 +70,8 @@ public interface ComCompanyDao {
     List<Company> getAllActiveCompanies();
     
     boolean checkDeeptrackingAutoActivate(int companyID);
+	
+	public void setAutoDeeptracking(int companyID, boolean active);
     
     int getCompanyDatasource(int companyID);
 

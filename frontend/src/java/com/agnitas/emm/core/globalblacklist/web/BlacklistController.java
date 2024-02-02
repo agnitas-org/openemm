@@ -20,7 +20,7 @@ import com.agnitas.web.mvc.XssCheckAware;
 import org.agnitas.beans.Mailinglist;
 import org.agnitas.emm.core.blacklist.service.BlacklistService;
 import org.agnitas.service.UserActivityLogService;
-import org.agnitas.service.WebStorage;
+import com.agnitas.service.WebStorage;
 import org.agnitas.web.forms.FormUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -51,7 +51,6 @@ import com.agnitas.emm.core.globalblacklist.forms.BlacklistListForm;
 import com.agnitas.emm.core.globalblacklist.forms.validation.BlacklistDeleteFormValidator;
 import com.agnitas.emm.core.globalblacklist.forms.validation.BlacklistFormValidator;
 import com.agnitas.emm.core.report.generator.TableGenerator;
-import com.agnitas.service.ComWebStorage;
 import com.agnitas.web.dto.BooleanResponseDto;
 import com.agnitas.web.mvc.Pollable;
 import com.agnitas.web.mvc.Popups;
@@ -103,7 +102,7 @@ public class BlacklistController implements XssCheckAware {
         int companyId = admin.getCompanyID();
         String sessionId = session.getId();
 
-        FormUtils.syncNumberOfRows(webStorage, ComWebStorage.BLACKLIST_OVERVIEW, listForm);
+        FormUtils.syncNumberOfRows(webStorage, WebStorage.BLACKLIST_OVERVIEW, listForm);
 
         PollingUid pollingUid = PollingUid.builder(sessionId, BLACKLISTS_DTO_KEY)
                 .arguments(listForm.getSort(), listForm.getOrder(), listForm.getPage(), listForm.getNumberOfRows())

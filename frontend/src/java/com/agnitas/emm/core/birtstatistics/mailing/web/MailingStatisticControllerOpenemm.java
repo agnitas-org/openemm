@@ -2,7 +2,6 @@ package com.agnitas.emm.core.birtstatistics.mailing.web;
 
 import org.agnitas.emm.company.service.CompanyService;
 import org.agnitas.service.UserActivityLogService;
-import org.agnitas.service.WebStorage;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -15,6 +14,7 @@ import com.agnitas.emm.core.mailinglist.service.MailinglistApprovalService;
 import com.agnitas.emm.core.target.service.ComTargetService;
 import com.agnitas.mailing.autooptimization.service.ComOptimizationService;
 import com.agnitas.service.GridServiceWrapper;
+import com.agnitas.service.WebStorage;
 import com.agnitas.web.perm.annotations.PermissionMapping;
 
 @Controller

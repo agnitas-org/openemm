@@ -186,9 +186,6 @@ public class ImportUtils {
 		if (!admin.permissionAllowed(Permission.IMPORT_CUSTOMERID)) {
 			hiddenColumns.add(ComCompanyDaoImpl.STANDARD_FIELD_CUSTOMER_ID);
 		}
-		if (!admin.permissionAllowed(Permission.RECIPIENT_TRACKING_VETO)) {
-			hiddenColumns.add(ComCompanyDaoImpl.STANDARD_FIELD_DO_NOT_TRACK);
-		}
 		return Collections.unmodifiableList(hiddenColumns);
 	}
 

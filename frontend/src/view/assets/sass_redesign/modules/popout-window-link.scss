@@ -1,0 +1,35 @@
+
+.popout-window-link-container {
+  border: 1px solid $border-color;
+  border-radius: $border-radius;
+  display: flex;
+  flex-direction: column;
+  height: inherit;
+  
+  [data-popuot-window] {
+    flex-grow: 1;
+    @include border-top-radius();
+    @include media-breakpoint-down(lg) {
+      @include border-bottom-radius();
+    }
+  }
+  
+  .popout-window-link {
+    display: flex;
+    justify-content: space-between;
+    text-align: right;
+    padding: 6px $gap-sm;
+    font-size: 12px;
+    text-wrap: nowrap;
+    color: $gray-600;
+    background-color: $gray-100;
+    border-top: 1px solid $border-color;
+    @include border-bottom-radius();
+    i {
+      padding-left: $gap-x-sm;
+    }
+    @include media-breakpoint-down(lg) {
+      display: none;
+    }
+  } 
+}

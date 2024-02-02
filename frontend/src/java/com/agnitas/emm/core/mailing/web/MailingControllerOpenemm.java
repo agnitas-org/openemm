@@ -6,7 +6,6 @@ import org.agnitas.emm.core.mailing.service.CopyMailingService;
 import org.agnitas.preview.TAGCheckFactory;
 import org.agnitas.service.MailingExporter;
 import org.agnitas.service.UserActivityLogService;
-import org.agnitas.service.WebStorage;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 
@@ -29,13 +28,14 @@ import com.agnitas.service.AgnTagService;
 import com.agnitas.service.ComMailingLightService;
 import com.agnitas.service.ExtendedConversionService;
 import com.agnitas.service.GridServiceWrapper;
+import com.agnitas.service.WebStorage;
 import com.agnitas.util.preview.PreviewImageService;
 import com.agnitas.web.perm.annotations.PermissionMapping;
 
 @Controller
 @RequestMapping("/mailing")
 @PermissionMapping("mailing")
-public class MailingControllerOpenemm extends MailingControllerBase {
+public class MailingControllerOpenemm extends MailingController {
 
     public MailingControllerOpenemm(ExtendedConversionService conversionService,
                                     ComMailingLightService mailingLightService,

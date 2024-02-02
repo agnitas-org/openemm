@@ -40,6 +40,8 @@ public interface GenericImportDao {
 
 	int updateAllExistingEntriesByKeyColumn(String tempTableName, String destinationTableName, List<String> keyColumns, List<String> updateColumns, String importIndexColumn, String duplicateIndexColumn, String duplicateInDestinationTableColumn, UpdateMethod updateMethod, int datasourceId, int companyId) throws Exception;
 
+	int updateAllExistingEntriesByKeyColumnImproved(String tempTableName, String destinationTableName, List<String> keyColumns, List<String> updateColumns, String importIndexColumn, String duplicateIndexColumn, String duplicateInDestinationTableColumn, UpdateMethod updateMethod, int datasourceId, int companyID) throws Exception;
+
 	String createTemporaryImportErrorTable(int companyId, int adminId, int datasourceId, List<String> columns, String sessionId) throws Exception;
 
 	void addErroneousCsvEntry(int companyID, String temporaryErrorTableName, List<Integer> importedCsvFileColumnIndexes, List<String> csvDataLine, int csvLineIndex, ReasonCode reasonCode, String erroneousFieldName);

@@ -42,7 +42,7 @@ import com.agnitas.beans.Admin;
 import com.agnitas.beans.ProfileField;
 import com.agnitas.beans.ProfileFieldMode;
 import com.agnitas.dao.impl.ComCompanyDaoImpl;
-import com.agnitas.emm.core.export.util.ExportWizardUtils;
+import com.agnitas.emm.core.export.util.ExportUtils;
 import com.agnitas.emm.core.target.service.ComTargetService;
 import com.agnitas.service.ColumnInfoService;
 
@@ -97,7 +97,7 @@ public class RecipientExportWorker extends GenericExportWorker {
 	}
 	
 	public final Admin getAdmin() {
-		return this.admin;
+		return admin;
 	}
 
 	public RecipientExportWorker(ExportPredef exportProfile, Admin admin, final ComTargetService targetService, final ColumnInfoService columnInfoService) throws Exception {
@@ -143,7 +143,6 @@ public class RecipientExportWorker extends GenericExportWorker {
 			done = false;
 			
 			int companyID = exportProfile.getCompanyID();
-            int adminId = admin.getAdminID();
 			List<Integer> mailingListIds = getMailingListIds();
 
 			// Create basic Select statement
@@ -151,9 +150,14 @@ public class RecipientExportWorker extends GenericExportWorker {
 			StringBuilder customerTableSql = new StringBuilder("SELECT ");
 			boolean selectBounces = false;
 			boolean isFirstColumn = true;
-            List<ExportColumnMapping> profileFieldsToExport = getProfileFieldsToExport(companyID, adminId);
+            List<ExportColumnMapping> profileFieldsToExport = getProfileFieldsToExport(companyID, admin);
 
-    		CaseInsensitiveMap<String, ProfileField> profilefields = columnInfoService.getColumnInfoMap(companyID, admin.getAdminID());
+    		CaseInsensitiveMap<String, ProfileField> profilefields;
+    		if (admin != null) {
+    			profilefields = columnInfoService.getColumnInfoMap(companyID, admin.getAdminID());
+    		} else {
+    			profilefields = columnInfoService.getColumnInfoMap(companyID);
+    		}
     		
     		for (ExportColumnMapping exportColumnMapping : profileFieldsToExport) {
     			if (profilefields.containsKey(exportColumnMapping.getDbColumn())) {
@@ -188,7 +192,7 @@ public class RecipientExportWorker extends GenericExportWorker {
 				}
 			}
             columnMappings = new ArrayList<>(profileFieldsToExport);
-            columnMappings.addAll(ExportWizardUtils.getCustomColumnMappingsFromExport(exportProfile, companyID, adminId, columnInfoService));
+            columnMappings.addAll(ExportUtils.getCustomColumnMappingsFromExport(exportProfile, companyID, admin, columnInfoService));
             
 			for (int selectedMailinglistID : mailingListIds) {
 				customerTableSql.append(", m" + selectedMailinglistID + ".user_status AS Userstate_Mailinglist_" + selectedMailinglistID);
@@ -263,7 +267,12 @@ public class RecipientExportWorker extends GenericExportWorker {
 			}
 
 			// Add date limits for change date to sql statement
-			TimeZone timeZone = TimeZone.getTimeZone(admin.getAdminTimezone());
+			TimeZone timeZone;
+			if (admin != null) {
+				timeZone = TimeZone.getTimeZone(admin.getAdminTimezone());
+			} else {
+				timeZone = TimeZone.getDefault();
+			}
 			
 			String timestampLimitPart = "";
 			if (exportProfile.getTimestampStart() != null) {
@@ -422,11 +431,17 @@ public class RecipientExportWorker extends GenericExportWorker {
                 columnsToExport.stream().map(ExportColumnMapping::getDbColumn).collect(Collectors.joining(";"))));
     }
 
-    private List<ExportColumnMapping> getProfileFieldsToExport(int companyID, int adminId) throws Exception {
-        List<ExportColumnMapping> profileFieldColumns = ExportWizardUtils
-                .getProfileFieldColumnsFromExport(exportProfile, companyID, adminId, columnInfoService);
+    private List<ExportColumnMapping> getProfileFieldsToExport(int companyID, Admin adminParam) throws Exception {
+        List<ExportColumnMapping> profileFieldColumns = ExportUtils.getProfileFieldColumnsFromExport(exportProfile, companyID, adminParam, columnInfoService);
         if (profileFieldColumns.isEmpty()) {
-            return columnInfoService.getComColumnInfos(companyID, adminId).stream()
+        	List<ProfileField> profileFields;
+        	if (adminParam !=  null) {
+        		profileFields = columnInfoService.getComColumnInfos(companyID, adminParam.getAdminID());
+        	} else {
+        		profileFields = columnInfoService.getComColumnInfos(companyID);
+        	}
+        	
+            return profileFields.stream()
 	            .filter(new Predicate<ProfileField>() {
 					@Override
 					public boolean test(ProfileField profileField) {
@@ -464,9 +479,9 @@ public class RecipientExportWorker extends GenericExportWorker {
 	protected String getTargetSql() throws Exception {
 		if (exportProfile.getTargetID() <= 0) {
 			return null;
+		} else {
+			return targetService.getTargetSQL(exportProfile.getTargetID(), exportProfile.getCompanyID());
 		}
-
-		return targetService.getTargetSQL(exportProfile.getTargetID(), exportProfile.getCompanyID());
 	}
 
 	protected ComTargetService getTargetService() {

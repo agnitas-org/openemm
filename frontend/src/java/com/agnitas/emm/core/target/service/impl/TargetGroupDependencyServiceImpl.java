@@ -10,9 +10,7 @@
 
 package com.agnitas.emm.core.target.service.impl;
 
-import com.agnitas.beans.Admin;
 import com.agnitas.dao.ComMailingComponentDao;
-import com.agnitas.emm.core.Permission;
 import com.agnitas.emm.core.mailing.service.MailingService;
 import com.agnitas.emm.core.target.beans.TargetGroupDependencyType;
 import com.agnitas.emm.core.target.beans.TargetGroupDependentEntry;
@@ -83,15 +81,10 @@ public class TargetGroupDependencyServiceImpl implements TargetGroupDependencySe
     }
 
     @Override
-    // TODO: replace admin parameter with companyId after remove of migration permission checks
-    public Message buildErrorMessage(TargetGroupDependentEntry dependency, String targetName, Admin admin) {
+    public Message buildErrorMessage(TargetGroupDependentEntry dependency, String targetName) {
         if (TargetGroupDependencyType.EXPORT_PROFILE.equals(dependency.getType())) {
             String exportProfileName = exportPredefService.findName(dependency.getId(), dependency.getCompanyId());
             String linkToExport = "/export/" + dependency.getId() + "/view.action";
-
-            if (admin.permissionAllowed(Permission.EXPORT_ROLLBACK)) {
-                linkToExport = "/exportwizard.do?action=2&exportPredefID=" + dependency.getId();
-            }
 
             return Message.of("error.target.delete.export", targetName, linkToExport, exportProfileName);
         }

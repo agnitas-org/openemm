@@ -23,7 +23,6 @@ import com.agnitas.emm.core.action.operations.ActionOperationUnsubscribeCustomer
 public class ActionOperationUnsubscribeCustomerDaoImpl
         extends AbstractActionOperationDaoImpl<ActionOperationUnsubscribeCustomerParameters> {
 
-	/** The logger. */
     private static final Logger LOGGER = LogManager.getLogger(ActionOperationUnsubscribeCustomerDaoImpl.class);
 
     @Override

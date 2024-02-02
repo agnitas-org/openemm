@@ -38,6 +38,10 @@ public class ApacheTikaUtils {
         return isContentTypeStartsWith(data, "video/");
     }
 
+    public static boolean isValidAudio(byte[] data) {
+        return isContentTypeStartsWith(data, "audio/");
+    }
+
     public static boolean isValidPdf(byte[] data) {
         return isExpectedContentType(data, "application/pdf");
     }
@@ -95,7 +99,7 @@ public class ApacheTikaUtils {
 
     public static String getContentType(InputStream stream) {
         try {
-            return getContentType(IOUtils.toByteArray(stream));
+            return new Tika().detect(stream);
         } catch (IOException e) {
             e.printStackTrace();
             return "";

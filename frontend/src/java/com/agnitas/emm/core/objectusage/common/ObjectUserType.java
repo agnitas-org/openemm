@@ -22,5 +22,14 @@ public enum ObjectUserType {
 	MAILING,
 
     /** Using object is a workflow. */
-	WORKFLOW
+	WORKFLOW,
+
+	/** Using object is a mailinglist. */
+	MAILINGLIST,
+
+	/** Used as a content component of the classic mailing. */
+    CLASSIC_MAILING_CONTENT,
+
+    /** Used as a content component of the EMC mailing or template. */
+    EMC_CONTENT
 }

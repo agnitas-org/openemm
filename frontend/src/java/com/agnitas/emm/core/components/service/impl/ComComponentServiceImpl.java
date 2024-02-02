@@ -80,7 +80,7 @@ public class ComComponentServiceImpl extends ComponentServiceImpl implements Com
 	public int addComponent(ComponentModel model) throws Exception {
 		modelValidator.assertIsValidToAdd(model);
 		int res = addComponentImpl(model);
-        ((ComMailingDao)mailingDao).updateStatus(model.getMailingId(), MailingStatus.EDIT);
+        ((ComMailingDao)mailingDao).updateStatus(model.getCompanyId(), model.getMailingId(), MailingStatus.EDIT, null);
         return res;
 	}
 
@@ -89,7 +89,7 @@ public class ComComponentServiceImpl extends ComponentServiceImpl implements Com
 	public void deleteComponent(ComponentModel model) {
 		modelValidator.assertIsValidToGetOrDelete(model);
 		deleteComponentImpl(model);
-	    ((ComMailingDao)mailingDao).updateStatus(model.getMailingId(), MailingStatus.EDIT);
+	    ((ComMailingDao)mailingDao).updateStatus(model.getCompanyId(), model.getMailingId(), MailingStatus.EDIT, null);
 	}
 
 	@Override
